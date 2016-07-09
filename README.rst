@@ -43,16 +43,22 @@ plain text diff, and the "rich diff" view, which provides a more readable
 rendered view of the markup. The view can be selected using the buttons on the
 top-right corner of the "Files Changed" tab.
 
-.. image:: rich-diff.png
-     :alt: Use the view selector buttons on the top right corner of the "Files
-           Changed" tab to change between "source diff" and "rich diff" views.
+.. figure:: rich-diff.png
+    :alt: The view selector buttons.
+    :align: right
+
+    Use the view selector buttons on the top right corner of the "Files
+    Changed" tab to change between "source diff" and "rich diff" views.
 
 Feedback on a proposal can be offered on open pull requests using both Github's
 in-line and pull request commenting features.
 
-.. image:: inline-comment.png
-    :alt: Hover over a line in the Raw Source Diff view of a Pull Request and
-          click on the ``+`` to leave an inline comment
+.. figure:: inline-comment.png
+    :alt: The ``+`` button appears while hovering over line in the source diff view.
+    :align: right
+
+    Hover over a line in the source diff view of a pull request and
+    click on the ``+`` to leave an inline comment
 
 How do I submit a proposal?
 ---------------------------
