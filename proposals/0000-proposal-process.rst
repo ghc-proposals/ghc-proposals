@@ -98,7 +98,7 @@ Each proposal goes through the following stages:
 
 1. The process begins with the opening of a pull request to the GHC proposals
    repository, proposing the merge of a document (derived from a
-   `provided template <https://github.com/bgamari/ghc-proposals/blob/master/0000-template.rst>`_)
+   `provided template <https://github.com/ghc-proposals/ghc-proposals/blob/master/0000-template.rst>`_)
    specifying the proposed change. This document is the primary specification
    of the feature and takes the place of the current Trac Wiki document.
    
