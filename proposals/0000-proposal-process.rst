@@ -279,7 +279,7 @@ not carry over for a variety of reasons:
 
 * *Shepherds*. In the Rust process each submitted proposal is assigned a
   shepherd. This is a trusted core developer who is charged with keeping the
-  proposal moving through the process. At the moment GHC arguable lacks the
+  proposal moving through the process. At the moment GHC arguably lacks the
   contributor pool to guarantee this.
 
 * *Final comment period*. The Rust process defines a portion of the proposal
