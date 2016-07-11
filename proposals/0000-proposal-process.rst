@@ -1,3 +1,7 @@
+**This proposal is open for community comments!** Please let us know what you
+think about the proposed protocol by leaving a comment on the Github pull
+request associated with the proposal by clicking on the "Conversation" tab.
+
 A Proposal for Proposals
 ========================
 
