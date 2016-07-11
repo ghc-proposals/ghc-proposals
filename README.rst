@@ -4,11 +4,11 @@ GHC Haskell proposals
 .. note::
     Currently the process that goes along with this repository is itself in the
     proposal stage. See the first proposal,
-    `Pull Request #1 <https://github.com/bgamari/ghc-proposals/pull/1>`_, for details. 
+    `Pull Request #1 <https://github.com/ghc-proposals/ghc-proposals/pull/1>`_, for details. 
 
 
 This repository contains specifications for proposed changes to the
-`Glasgow Haskell Compiler <http://ghc.haskell.org/>`_.
+`Glasgow Haskell Compiler <https://www.haskell.org/ghc>`_.
 
 What is a proposal?
 -------------------
@@ -64,12 +64,12 @@ How do I submit a proposal?
 ---------------------------
 
 While the full process is described in the `proposal
-<https://github.com/bgamari/ghc-proposals/pull/1>`_ describing the proposal
+<https://github.com/ghc-proposals/ghc-proposals/pull/1>`_ describing the proposal
 process, here is a short summary,
 
 1. Clone this repository and create a branch in your clone for your new proposal.
 
-2. Starting with the `template <https://github.com/bgamari/ghc-proposals/blob/master/0000-template.rst>`_,
+2. Starting with the `template <https://github.com/ghc-proposals/ghc-proposals/blob/master/0000-template.rst>`_,
    describe your proposed change in a file in the ``proposals/`` directory.
 
 3. When you feel your proposal document is complete, open a ``Pull Request``
