@@ -1,5 +1,5 @@
 **This proposal is open for community comments!** Please let us know what you
-think about the proposed protocol by leaving a comment on the Github pull
+think about the proposed protocol by leaving a comment on the GitHub pull
 request associated with the proposal by clicking on the "Conversation" tab.
 
 A Proposal for Proposals
@@ -93,7 +93,7 @@ dissemination and refinement of proposals with a standing committee acting as
 the final arbiter of proposal acceptance.
 
 To ensure that the process is as accessible and convenient as possible, I
-propose that we build this process on top of Github.
+propose that we build this process on top of GitHub.
 
 Proposal process
 ~~~~~~~~~~~~~~~~
@@ -221,7 +221,7 @@ discussed by `Aaron Turon
 <https://aturon.github.io/blog/2016/07/05/rfc-refinement/>`_). These issues will
 likely apply to the process proposed here as well. In particular,
 
-* Github discussions in particular don't scale terribly well; the lack of
+* GitHub discussions in particular don't scale terribly well; the lack of
   hierarchical threading means that long threads can become difficult to follow;
   experience suggests that Phabricator seems to be a bit better but long
   technical discussions are a challenge for nearly any tool.
@@ -244,9 +244,9 @@ There are a few alternatives which are worth considering,
   current protocol. Namely we attempt to better document and more consistently
   enforce the procedures we currently have.
 
-* Adopting the process discussed above but replacing Github with Phabricator.
+* Adopting the process discussed above but replacing GitHub with Phabricator.
   This would offer the disadvantage of being slightly harder for casual
-  contributors. Moreover, Phabricator lacks some of Github's support for
+  contributors. Moreover, Phabricator lacks some of GitHub's support for
   formatting markup. Phabricator, however, offers the advantage of integrating
   better with GHC's current Trac instance and avoid adding yet another tool to
   the GHC developer's toolchain.
