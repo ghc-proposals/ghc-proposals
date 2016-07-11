@@ -251,6 +251,12 @@ There are a few alternatives which are worth considering,
   better with GHC's current Trac instance and avoid adding yet another tool to
   the GHC developer's toolchain.
 
+* Adopting the process discussed above but replacing GitHub with Gitlab. Gitlab
+  has many of the features of GitHub but with the advantage of being open-source
+  and self-hostable. Unfortunately it would mean introducing yet another tool
+  into the GHC developer's toolbelt and add yet another piece of infrastructure
+  to administer.
+
 * We move to something closer to the Python PEP scheme. Here a committee is
   formed for each proposal; the committee is responsible for crafting and
   collecting feedback on the proposal. The final acceptance decision is made by
