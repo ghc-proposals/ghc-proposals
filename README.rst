@@ -34,7 +34,7 @@ How do I comment on a proposal?
 -------------------------------
 
 Discussion on a proposal occurs on its associated pull request. Click on the
-Pull Requests tab in Github to see a listing of the proposals currently under
+Pull Requests tab in GitHub to see a listing of the proposals currently under
 discussion. To see the text of the proposal click on the "Files Changed" tab on
 corresponding Pull Request page.
 
