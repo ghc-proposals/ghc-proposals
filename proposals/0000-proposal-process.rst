@@ -139,9 +139,10 @@ Each proposal goes through the following stages:
    The implementor should keep the specification up to date over the course of
    the implementation.
 
-Since the proposal pages already existing on the Trac Wiki represent a
-significant amount of effort and knowledge, we'll make an effort to import these
-into the proposals repository if this scheme is adopted.
+Since the proposal pages already existing on the Trac `Wiki
+<https://ghc.haskell.org/trac/ghc/wiki/Proposal>`_ represent a significant
+amount of effort and knowledge, we'll make an effort to import those which have
+been implemented into the proposals repository if this scheme is adopted.
 
 GHC Committee
 ~~~~~~~~~~~~~
