@@ -304,10 +304,10 @@ Open Questions
 --------------
 
 There are still questions regarding the desired scope of the process. While we
-want to process to ensure that changes which affect the user-facing aspects of
-the compiler are well-considered, we certainly don't want the process to become
-unduly burdensome. This is a careful balance which will require care to maintain
-moving forward.
+want to ensure that changes which affect the user-facing aspects of the compiler
+are well-considered, we certainly don't want the process to become unduly
+burdensome. This is a careful balance which will require care to maintain moving
+forward.
 
 Acknowledgments
 ---------------
