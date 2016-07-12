@@ -314,5 +314,6 @@ Acknowledgments
 
 Thanks to the Rust contributors ``eddyb``, ``nmatsakis``, and ``steveklabnik``
 for useful discussions sharing their experiences in the Rust community. Also,
-thanks to Anthony Cowley for his persistence in raising his concerns and helpful
-discussions over the course of this effort.
+thanks to Anthony Cowley for his `persistence
+<http://www.arcadianvisions.com/blog/2016/ghc-contributing.html>`_ in raising
+his concerns and helpful discussions over the course of this effort.
