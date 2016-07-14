@@ -125,17 +125,17 @@ Each proposal goes through the following stages:
    means a final decision; the submitter may at any time amend and re-submit the
    proposal to address the concerns of the committee.
 
-4. When the proposal is accepted the pull request will be merged and the
+5. When the proposal is accepted the pull request will be merged and the
    document will be preserved in the proposals repository as a permanent
    specification for the feature.
    
-5. The author will create a Trac ticket linking to the proposal to
+6. The author will create a Trac ticket linking to the proposal to
    provide a place track the progress of the implementation.
 
-6. The author may choose to implement the proposal after acceptance, but she is
+7. The author may choose to implement the proposal after acceptance, but she is
    under no obligation to do so. (Of course, neither is anyone else.)
 
-7. During implementation, it is very likely that the specification will be refined.
+8. During implementation, it is very likely that the specification will be refined.
    The implementor should keep the specification up to date over the course of
    the implementation.
 
