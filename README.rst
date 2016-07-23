@@ -77,8 +77,8 @@ process, here is a short summary,
    repository. Be sure to include a link to the rendered view of your proposal
    in the pull request description. Your proposal will automatically be
    announced on the ``ghc-devs`` mailing list when this pull request is opened.
-4. Discussion will proceed on the pull request; it is very likely that multiple
 
+4. Discussion will proceed on the pull request; it is very likely that multiple
    iterations will be necessary before the proposal stabilizes.
 
 5. When discussion has died down email the (yet to be formed) GHC Commitee , who
@@ -87,4 +87,3 @@ process, here is a short summary,
 
 6. When your proposal is accepted your pull request will be merged. At this
    point you or someone else may choose to implement your proposal.
-   
