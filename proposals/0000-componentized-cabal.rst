@@ -114,7 +114,7 @@ test suite) and specifies which version of ``tasty`` (a test library)
 should be used. This command configures both the library and the test
 suite of this package *simultaneously*.
 
-Currently, the ``configure`` command takes no arguments.
+Currently, the ``configure`` command takes no positional arguments.
 
 **The proposal.** We extend ``configure`` to take a single argument
 specifying which component is to be configured::
