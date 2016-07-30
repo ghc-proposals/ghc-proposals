@@ -12,7 +12,8 @@ Componentized Cabal
 ===================
 
 This is a proposal for adding per-component configure to the Cabal Setup
-script API.
+script API.  A prototype implementation is available at
+`#3644 <https://github.com/haskell/cabal/pull/3644>`_.
 
 Motivation
 ----------
@@ -231,6 +232,18 @@ With Backpack, we further qualify these identifiers with a *module
 substitution*, which specifies how we instantiate the various
 requirements (unfilled module implementations) of a component (using the
 ``--instantiate-with`` flag).
+
+**Advisory note on convenience libraries.** Internal dependencies
+permit a package to shadow packages that exist on Hackage: for
+example, if I define an internal library named ``bytestring``,
+and references to ``bytestring`` in ``build-depends`` refer to
+the internal library, not the Hackage library.
+
+When these internal libraries are installed to the package database,
+it is expedient to distinguish an internal library from the
+actual Hackage package.  The way this is done is that the registration
+information for an internal library has its package name mangled
+into the form ``z-pkgname-z-componentname``.
 
 Proposed Change: cabal-install
 ------------------------------
