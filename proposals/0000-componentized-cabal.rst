@@ -17,7 +17,7 @@ script API.
 Motivation
 ----------
 
-A package (e.g., `bytestring`) consists of multiple components (e.g., a
+A package (e.g., ``bytestring``) consists of multiple components (e.g., a
 library and its test suite). There are several motivations behind having
 multiple components in a package:
 
@@ -47,11 +47,11 @@ multiple components in a package:
 Unfortunately, components were not designed into Cabal at the beginning,
 and thus Cabal's support for components was not so much designed as
 evolved. But there is a basic guiding principle that components are an
-**internal implementation detail** of a package: the `Setup` interface
+**internal implementation detail** of a package: the ``Setup`` interface
 configures and builds a package as a whole, and internally this may mean
 that several components get built. Over the years we have accumulated
-options which violate this principle (`--enable-tests`, explicit
-arguments to `build`, `ComponentDeps` in cabal-install) but the core
+options which violate this principle (``--enable-tests``, explicit
+arguments to ``build``, ``ComponentDeps`` in cabal-install) but the core
 architectural principle still holds.
 
 In this document, I propose a **component** oriented design for Cabal,
@@ -93,93 +93,88 @@ Proposed Change: Cabal
 ----------------------
 
 **The status quo.** Currently, the Cabal library defines an command line
-API via the `./Setup configure` command. A conventional invocation of
-this command from, e.g., `cabal-install`, might look like this:
+API via the ``./Setup configure`` command. A conventional invocation of
+this command from, e.g., ``cabal-install``, might look like this::
 
-```
-./Setup configure --ghc --prefix=$HOME/.cabal --user --ipid=package-name-1.0-abcdefg --dependency=array=array-0.5.1.0-abcdef1234567 --dependency=base=base-4.8.2.0-abcdef123456 --dependency=tasty=tasty-1.0-abcdef123456 --enable-tests --exact-configuration --disable-benchmarks
-```
+    ./Setup configure --ghc --prefix=$HOME/.cabal --user --ipid=package-name-1.0-abcdefg --dependency=array=array-0.5.1.0-abcdef1234567 --dependency=base=base-4.8.2.0-abcdef123456 --dependency=tasty=tasty-1.0-abcdef123456 --enable-tests --exact-configuration --disable-benchmarks
 
-There are a few important flags: `--ipid` specifies the *installed
+There are a few important flags: ``--ipid`` specifies the *installed
 package identity* that the package will be built under: this is
 identifier is a unique identifier chosen by the package manager (for
-example, `cabal new-build` computes this identifier by hashing all of
+example, ``cabal new-build`` computes this identifier by hashing all of
 the possible inputs into the build, with the hope that the hash uniquely
 determines all of the build products of the package), and
-`--dependency=pkgname=ipid-1.0-abcdef` specifies a specific dependency
+``--dependency=pkgname=ipid-1.0-abcdef`` specifies a specific dependency
 to be used during the build of all the components.
-`--exact-configuration` requires ALL dependencies of all enabled
+``--exact-configuration`` requires ALL dependencies of all enabled
 components to be specified explicitly.  Notice that this particular
-command has `--enable-tests` passed (thus enabling the building of the
-test suite) and specifies which version of `tasty` (a test library)
+command has ``--enable-tests`` passed (thus enabling the building of the
+test suite) and specifies which version of ``tasty`` (a test library)
 should be used. This command configures both the library and the test
 suite of this package *simultaneously*.
 
-Currently, the `configure` command takes no arguments.
+Currently, the ``configure`` command takes no arguments.
 
-**The proposal.** We extend `configure` to take a single argument
-specifying which component is to be configured:
+**The proposal.** We extend ``configure`` to take a single argument
+specifying which component is to be configured::
 
-```
-./Setup configure test-suite
-```
+    ./Setup configure test-suite
 
 It is invalid to pass multiple arguments. Under this mode, the configure
 command behaves differently in the following ways:
 
 1. Subsequent commands, e.g., build, *no longer* use an inplace package
-   database (conventionally in `dist/package.conf.inplace`). It is
+   database (conventionally in ``dist/package.conf.inplace``). It is
    expected that all dependencies live in the database stack specified
    by the user.
 
-2. The set of required `--dependency` flags for an
-   `--exact-configuration` is changed to precisely the `build-depends`
+2. The set of required ``--dependency`` flags for an
+   ``--exact-configuration`` is changed to precisely the ``build-depends``
    of the component being enabled. Dependencies from non-enabled
    components do not have to be specified (similar to how
-   `--disable-tests` works today). However, an *internal* dependency,
+   ``--disable-tests`` works today). However, an *internal* dependency,
    e.g., from a test suite to the library, must now be specified as
-   `--dependency=packagename=pkgipid-1.0-abcdefg123`. In the presence of
+   ``--dependency=packagename=pkgipid-1.0-abcdefg123``. In the presence of
    convenience libraries, there may be multiple such extra "internal"
    dependencies. These are disambiguated from ordinary dependencies by
    inspection of the package description.
 
-3. We replace the `--ipid` flag with a `--cid` flag, which specifies the
+3. We replace the ``--ipid`` flag with a ``--cid`` flag, which specifies the
    *component identifier* of the component being built. The user must
-   pick a distinct `--cid` for each component in the package, as
+   pick a distinct ``--cid`` for each component in the package, as
    distinct from an installed package identifier which was global for a
    package.  This flag is only valid when a component is explicitly
-   specified to be built. For backwards compatibility, the `--ipid` flag
+   specified to be built. For backwards compatibility, the ``--ipid`` flag
    retains its original meaning as an identifier for the package as a
    whole: thus when we build a component with it, the IPID is qualified
    with the name of the component to form a component id.
 
 
-4. If a library contains a `build-tools` dependency on an executable, if
+4. If a library contains a ``build-tools`` dependency on an executable, if
    the library is being configured by itself, it is expected that the
-   caller arrange for the executable to be present on the `PATH`, so
+   caller arrange for the executable to be present on the ``PATH``, so
    that the build tool configuration process succeeds. (This currently
    happens automatically for internal executables.)
 
 5. While a user can still explicitly specify installation paths for
    various files the component may install, we will apply different
-   defaults to these paths:
-   ```
-Variable    Current         New
------------------------------------------
-bindir      $prefix/bin     (same)
-libsubdir   $abi/$libname   $abi/$cid
-datasubdir  $abi/$pkgid     $abi/$cid
-docdir      $datadir/doc/$abi/$pkgid     $datadir/doc/$abi/$cid
-```
+   defaults to these paths::
 
-6. As you might expect, subsequent `build`, `register`, etc commands
+        Variable    Current         New
+        -----------------------------------------
+        bindir      $prefix/bin     (same)
+        libsubdir   $abi/$libname   $abi/$cid
+        datasubdir  $abi/$pkgid     $abi/$cid
+        docdir      $datadir/doc/$abi/$pkgid     $datadir/doc/$abi/$cid
+
+6. As you might expect, subsequent ``build``, ``register``, etc commands
    operate only on the enabled component.
 
 There are a few expectations as to how this per-component configure
 interface is intended to be used by a client:
 
 1. If the client reuses the same source directory to build multiple
-   components, it must assign a distinct build directory `--distdir` to
+   components, it must assign a distinct build directory ``--distdir`` to
    each component build.
 
 2. The installation directories configured for each component are
@@ -191,16 +186,16 @@ interface is intended to be used by a client:
    dependents can be built.
 
 4. The ordering components are built should respect internal
-   `build-tools` dependencies.
+   ``build-tools`` dependencies.
 
 **Interaction with hooks.** This proposal leaves the hooks API
 unchanged. Thus, just as before, hooks are responsible for determining
 what components are enabled before performing the operations they need.
-If they operate on the available `ComponentLocalBuildInfo`s hooks should
+If they operate on the available ``ComponentLocalBuildInfo`` hooks should
 automatically work properly with these changes (even better than
-manually specifying which components to build at `./Setup build` time)
+manually specifying which components to build at ``./Setup build`` time)
 
-**Interaction with Haddock.** Initially, `haddock` will be kept as it is
+**Interaction with Haddock.** Initially, ``haddock`` will be kept as it is
 today: a command which builds Haddock documentation for every enabled
 component (one in this case). However, eventually, it would be good to
 treat building Haddock documentation as a "component" in and of itself.
@@ -209,9 +204,9 @@ actually built library, making it easy to retroactively build the
 Haddock documentation for a package after the fact.
 
 **Interaction with package common files.** Cabal packages can be bundled
-with package-common files (specified by the `data-files` field), which
+with package-common files (specified by the ``data-files`` field), which
 are installed to a location common over all components inside a package.
-Initially, our plan is that `./Setup copy` for a single enabled
+Initially, our plan is that ``./Setup copy`` for a single enabled
 component will unconditionally copy the data files to a
 component-specific directory. A refinement would be to treat data file
 installation as a "component" of its own, which the libraries and
@@ -224,7 +219,7 @@ e.g., installed to a (now in-aptly named) installed package database.
 With Backpack, we further qualify these identifiers with a *module
 substitution*, which specifies how we instantiate the various
 requirements (unfilled module implementations) of a component (using the
-`--instantiate-with` flag).
+``--instantiate-with`` flag).
 
 Proposed Change: cabal-install
 ------------------------------
@@ -246,7 +241,7 @@ into installed package identifiers).
 
 When setup dependencies were added to cabal-install, cabal-install's
 dependency solver was also refined to keep track of dependencies on a
-per-component basis (`ComponentDeps`).  Thus, although the graph of
+per-component basis (``ComponentDeps``).  Thus, although the graph of
 resolver packages is determined by the full, combined dependencies of
 all components in a package, it's also possible to determine the
 dependencies for a specific component. At the moment, this is only used
@@ -261,21 +256,21 @@ This is how it works:
 
 1. For each package, we resolve the conditionals (using the solver
    provided flag assignments) in order to produce a
-   `PackageDescription`, which is essentially a Cabal file with all
+   ``PackageDescription``, which is essentially a Cabal file with all
    conditionals stripped off. Prior to this step, we don't even know
    what the components of the package necessarily will be (a component
    can be marked as un-buildable through the dependency solving
    process).
 
 2. We can now convert a graph of packages into a graph of components. In
-   doing so, the `ComponentDeps` tree of dependencies gets exploded into
+   doing so, the ``ComponentDeps`` tree of dependencies gets exploded into
    an individual set of package level dependencies. Each component
    identity is defined by looking at the input dependencies *of the
    component*, as well other options which would affect the build. Note
    that in a solver plan, the dependencies refer to *packages*, not
    components: these package references are resolved to the *public
    library component* of a package in question. After componentization,
-   `ComponentDeps` is eliminated from the install plan.
+   ``ComponentDeps`` is eliminated from the install plan.
 
 3. A component is built by configuring its member package for solely the
    component in question and then building it in a distinct build
@@ -285,7 +280,7 @@ This is how it works:
 **Determining if non-libraries are already installed.** In general, we
 can determine if a library is already installed by consulting the
 installed package database; however, no such database exists for
-executables. However, in `new-build`, executables are installed to a
+executables. However, in ``new-build``, executables are installed to a
 deterministic directory in the Nix store; thus, we can simply check if
 the directory already exists in order to determine if an executable has
 already been built.
@@ -311,13 +306,13 @@ Drawbacks
 * This feature will not be compatible with Custom setup scripts that
   are linked against an old version of Cabal.
 
-* Package-global `data-files` will be duplicated until we consider
+* Package-global ``data-files`` will be duplicated until we consider
   these files a "component" in-and-of-themselves.
 
 * File paths for installed things will change from where they are
   currently being stored.
 
-* We need to `configure` the package for each component, rather
+* We need to ``configure`` the package for each component, rather
   than once for all components.
 
 * This may require BC-breaking changes to the Cabal API (though I
@@ -326,12 +321,12 @@ Drawbacks
 Alternatives
 ------------
 
-An alternate design I considered was to not extend `./Setup configure`
+An alternate design I considered was to not extend ``./Setup configure``
 with a per-component mode.  Instead, a package would be configured once,
-and then the package manager would use a newly added `--assume-deps-up-to-date`
+and then the package manager would use a newly added ``--assume-deps-up-to-date``
 flag to build components individually (or in parallel.)  However, I
 decided that this approach would not be hermetic enough.  It also
-turned out to be difficult to work into the existing `cabal-install`
+turned out to be difficult to work into the existing ``cabal-install``
 code, although that is arguably a bug.
 
 Unresolved Questions
