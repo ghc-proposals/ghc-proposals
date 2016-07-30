@@ -198,10 +198,21 @@ manually specifying which components to build at ``./Setup build`` time)
 **Interaction with Haddock.** Initially, ``haddock`` will be kept as it is
 today: a command which builds Haddock documentation for every enabled
 component (one in this case). However, eventually, it would be good to
-treat building Haddock documentation as a "component" in and of itself.
-A Haddock build target for a library has a single dependency on the
-actually built library, making it easy to retroactively build the
-Haddock documentation for a package after the fact.
+treat building Haddock documentation as a "component" in and of itself,
+so it can be generated and installed independently of building any
+component (indeed, Haddock is completely independent of a build).
+Thus, every component would also have a corresponding Haddock component
+for the documentation.
+
+The primary complication is that cross-linking for Haddock documentation
+is implemented by storing paths for haddock interfaces and HTMLs in
+the package database
+(``hadock-interfaces`` and ``haddock-html``).  Clearly, since we want
+to build Haddocks independently of libraries, this should no longer
+be done.  I suggest we workaround this problem by making "fake"
+installed package database entries to represent Haddock documentation:
+Haddock components form an independent, parallel dependency tree
+to the library tree.
 
 **Interaction with package common files.** Cabal packages can be bundled
 with package-common files (specified by the ``data-files`` field), which
