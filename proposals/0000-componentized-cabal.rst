@@ -55,23 +55,30 @@ arguments to `build`, `ComponentDeps` in cabal-install) but the core
 architectural principle still holds.
 
 In this document, I propose a **component** oriented design for Cabal,
-where every essential operation is done on a per-component basis.  This
-design has multiple benefits:
+where every essential operation is done on a per-component basis.
+I am not the first to have done so: @snoyberg has previously [asked for
+this very feature](https://github.com/haskell/cabal/issues/2802).
+The purpose of this proposal is to fully flesh out
+the implications of the change.
 
-1. It makes it possible for package managers like cabal-install and
+This design has multiple benefits:
+
+1. It permits building only specific components for packages, without
+   needing all of the dependencies of the package as a whole to be
+   built.  [cabal#1725](https://github.com/haskell/cabal/issues/1725)
+
+2. It makes it possible for package managers like cabal-install and
    Stack to organize builds on a per-component basis, improving
    parallelism (e.g., when a package contains many independent
    executables) and making it easier to avoid unnecessary rebuilds when
-   a new component is built. In fact, this feature has been long
-   requested by the community, see:
-   https://github.com/haskell/cabal/issues/2802
+   a new component is built. [cabal#2775](https://github.com/haskell/cabal/issues/2775)
 
-2. It solves the cyclic dependency problem where a test suite depends on
+3. It solves the cyclic dependency problem where a test suite depends on
    a testing library that depends on the the library being tested. Now
    the test suite can be built independently from the library, after the
    testing library has been built.
 
-3. It allows for an architecturally sound implementation of Backpack, as
+4. It allows for an architecturally sound implementation of Backpack, as
    the process of instantiating requirements of a Backpack only makes
    sense for libraries, rather than an entire package (an executable and
    test suite cannot be instantiated in any meaningful sense).
@@ -79,8 +86,8 @@ design has multiple benefits:
 I have divided this proposal into two parts: first the changes necessary
 for the Cabal library (which is shared between cabal-install and Stack),
 and then a description of how cabal-install can take advantage of this
-new feature. I haven't written how Stack can use this feature, mostly
-because I am not too familiar with the internal architecture of Stack.
+new feature.  There is not a Stack portion to this proposal, but
+commentary from the Stack team would be appreciated.
 
 Proposed Change: Cabal
 ----------------------
