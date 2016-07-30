@@ -57,7 +57,7 @@ architectural principle still holds.
 In this document, I propose a **component** oriented design for Cabal,
 where every essential operation is done on a per-component basis.
 I am not the first to have done so: @snoyberg has previously
-[asked for this very feature](https://github.com/haskell/cabal/issues/2802).
+`asked for this very feature <https://github.com/haskell/cabal/issues/2802>`_.
 The purpose of this proposal is to fully flesh out
 the implications of the change.
 
@@ -65,13 +65,13 @@ This design has multiple benefits:
 
 1. It permits building only specific components for packages, without
    needing all of the dependencies of the package as a whole to be
-   built.  [cabal#1725](https://github.com/haskell/cabal/issues/1725)
+   built.  (`#1725 <https://github.com/haskell/cabal/issues/1725`_)
 
 2. It makes it possible for package managers like cabal-install and
    Stack to organize builds on a per-component basis, improving
    parallelism (e.g., when a package contains many independent
    executables) and making it easier to avoid unnecessary rebuilds when
-   a new component is built. [cabal#2775](https://github.com/haskell/cabal/issues/2775)
+   a new component is built. (`#2775 <https://github.com/haskell/cabal/issues/2775>`_)
 
 3. It solves the cyclic dependency problem where a test suite depends on
    a testing library that depends on the the library being tested. Now
