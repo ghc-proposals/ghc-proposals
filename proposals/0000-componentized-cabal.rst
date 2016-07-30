@@ -154,8 +154,10 @@ command behaves differently in the following ways:
 4. If a library contains a ``build-tools`` dependency on an executable, if
    the library is being configured by itself, it is expected that the
    caller arrange for the executable to be present on the ``PATH``, so
-   that the build tool configuration process succeeds. (This currently
-   happens automatically for internal executables.)
+   that the build tool configuration process succeeds. (For example,
+   if I have an internal exe ``foo`` and a component ``bar`` which
+   has a ``build-tools`` dependency on it, you are guaranteed that ``foo``
+   is part of the build graph for ``bar``.)
 
 5. While a user can still explicitly specify installation paths for
    various files the component may install, we will apply different
