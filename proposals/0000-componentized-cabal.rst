@@ -65,7 +65,7 @@ This design has multiple benefits:
 
 1. It permits building only specific components for packages, without
    needing all of the dependencies of the package as a whole to be
-   built.  (`#1725 <https://github.com/haskell/cabal/issues/1725`_)
+   built.  (`#1725 <https://github.com/haskell/cabal/issues/1725>`_)
 
 2. It makes it possible for package managers like cabal-install and
    Stack to organize builds on a per-component basis, improving
