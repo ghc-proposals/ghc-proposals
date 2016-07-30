@@ -56,8 +56,8 @@ architectural principle still holds.
 
 In this document, I propose a **component** oriented design for Cabal,
 where every essential operation is done on a per-component basis.
-I am not the first to have done so: @snoyberg has previously [asked for
-this very feature](https://github.com/haskell/cabal/issues/2802).
+I am not the first to have done so: @snoyberg has previously
+[asked for this very feature](https://github.com/haskell/cabal/issues/2802).
 The purpose of this proposal is to fully flesh out
 the implications of the change.
 
