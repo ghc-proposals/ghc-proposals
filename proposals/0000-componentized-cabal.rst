@@ -358,5 +358,15 @@ code, although that is arguably a bug.
 Unresolved Questions
 --------------------
 
-None at the moment.
+* Currently, ``./Setup`` scripts accept the arguments
+  ``--enable-library-vanilla``, ``--enable-library-shared``,
+  ``--enable-executable-dynamic``, ``--enable-library-for-ghci``,
+  ``--enable-executable-profiling``, ``--enable-profiling``,
+  ``--enable-library-profiling`` apply to a package as a whole.  With
+  per-component configure, these options can be applied to a
+  component *specifically*; thus, ``--enable-executable-profiling``
+  doesn't make much sense if you're just configuring a library.
+  Should we introduce new variants of these flags which are not
+  "component" qualified? How in ``cabal-install`` can you ask for
+  only a specific executable to be profiled?
 
