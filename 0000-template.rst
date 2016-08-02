@@ -11,8 +11,7 @@
 Proposal title
 ==============
 
-Here you should write a short abstract briefly summarizing what change is
-being proposed and a bit of motivation.
+Here you should write a short abstract motivating and briefly summarizing the proposed change.
 
 Motivation
 ----------
@@ -27,7 +26,7 @@ Proposed Change
 Here you should describe in precise terms what the proposal seeks to change.
 This should cover several things,
 
-* define the grammar and semantics of any new syntact constructs
+* define the grammar and semantics of any new syntactic constructs
 * define the interfaces for any new library interfaces
 * discuss how the change addresses the points raised in the Motivation section
 * discuss how the proposed approach might interact with existing features  
