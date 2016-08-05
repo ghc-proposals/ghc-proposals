@@ -347,6 +347,12 @@ Drawbacks
 * This may require BC-breaking changes to the Cabal API (though I
   will work hard to minimize these.)
 
+* Resolving ``build-depends`` to point to libraries rather than
+  packages means that depending on a package with an executable
+  does *not* imply that the executable will also be installed.
+  (This misfeature is occasionally used in the wild on Hackage.
+  More information at `cabal#3661 <https://github.com/haskell/cabal/issues/3661>`_.)
+
 Alternatives
 ------------
 
