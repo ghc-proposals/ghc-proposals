@@ -224,10 +224,15 @@ to the library tree.
 with package-common files (specified by the ``data-files`` field), which
 are installed to a location common over all components inside a package.
 Initially, our plan is that ``./Setup copy`` for a single enabled
-component will unconditionally copy the data files to a
-component-specific directory. A refinement would be to treat data file
+component will copy those package-common files to the install
+directory of that component; thus, for a package with multiple
+installable components, the common files will be duplicated across
+each component install. A refinement would be to treat data file
 installation as a "component" of its own, which the libraries and
 executables of a package can depend on.
+
+Another way to solve this problem is to introduce per-component
+``data-files``.
 
 **Interaction with Backpack.** A component id encodes all of the
 non-Backpack dependency configuration about a component; in the absence
