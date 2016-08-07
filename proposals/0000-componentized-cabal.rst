@@ -291,9 +291,9 @@ This is how it works:
    can be marked as un-buildable through the dependency solving
    process).
 
-2. We can now convert a graph of packages into a graph of components. In
-   doing so, the ``ComponentDeps`` tree of dependencies gets exploded into
-   an individual set of package level dependencies. Each component
+2. We can now convert a graph of packages into a graph of components. Each
+   resulting component inherits only the dependencies of that component,
+   as specified by ``ComponentDeps``. The component
    identity is defined by looking at the input dependencies *of the
    component*, as well other options which would affect the build. Note
    that in a solver plan, the dependencies refer to *packages*, not
