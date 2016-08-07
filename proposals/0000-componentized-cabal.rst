@@ -314,6 +314,10 @@ deterministic directory in the Nix store; thus, we can simply check if
 the directory already exists in order to determine if an executable has
 already been built.
 
+Note that we cannot use this strategy for libraries, because we do
+need to load the `InstalledPackageInfo` (in particular, this
+information is used by Backpack when mix-in linking).
+
 **Interaction with packages with legacy Custom scripts.** We can only
 build a package on a per-component basis if the Setup script is
 sufficiently new and supports this interface.  If it does not, we cannot
