@@ -76,6 +76,8 @@ This design has multiple benefits:
    parallelism (e.g., when a package contains many independent
    executables) and making it easier to avoid unnecessary rebuilds when
    a new component is built. (`#2775 <https://github.com/haskell/cabal/issues/2775>`_)
+   One particular example is that you can build a test suite for a package
+   without building the library.
 
 3. It solves the cyclic dependency problem where a test suite depends on
    a testing library that depends on the the library being tested. Now
@@ -185,11 +187,12 @@ interface is intended to be used by a client:
 
 2. The installation directories configured for each component are
    expected to be disjoint for each component. This is encouraged by the
-   different default install directories. 
+   different default install directories.
 
-3. A component must be copied and registered to a package database
-   within the package database, before any of its (same-package)
-   dependents can be built.
+3. A component must be copied and registered to a package database,
+   before any of its (same-package) dependents can be built.
+   (This is unlike the current behavior, where the component is
+   automatically registered to an inplace database.)
 
 4. The ordering components are built should respect internal
    ``build-tools`` dependencies.
