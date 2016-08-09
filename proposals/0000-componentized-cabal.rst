@@ -354,7 +354,12 @@ Drawbacks
   currently being stored.
 
 * We need to ``configure`` the package for each component, rather
-  than once for all components.
+  than once for all components.  This is particularly terrible
+  for packages with setup type ``Configure``, since the configure
+  script can take quite a long time to run.  Passing ``-C``
+  to the configure script (via ``--configure-option`` or
+  ``configure-options`` in your ``cabal.project.local``) can help if you
+  are rebuilding.
 
 * This may require BC-breaking changes to the Cabal API (though I
   will work hard to minimize these.)
