@@ -227,9 +227,9 @@ declarations, but no implementations::
 
     -- in Str.hsig
     signature Str where
-        data Str
-        null   :: Str
-        append :: Str -> Str -> Str
+    data Str
+    null   :: Str
+    append :: Str -> Str -> Str
 
 Other modules in the library import this signature and can use
 the types and functions declared in the signature as if it were
@@ -237,8 +237,8 @@ an ordinary module (i.e., *just normal Haskell*, with *no copy-pasting*)::
 
     -- in Concat.hs
     module Concat where
-        import Str
-        concat xs = foldr append null xs
+    import Str
+    concat xs = foldr append null xs
 
 Signatures are declared in the Cabal file as a ``required-signature``
 and parametrize *all* of the modules in the library (providing
@@ -266,8 +266,8 @@ An indefinite library can be used in two ways:
 
         -- in StringUtils.hs
         module StringUtils where
-            import Concat
-            import Str -- the signature is importable too
+        import Concat
+        import Str -- the signature is importable too
 
    An inherited requirement can be extended simply by adding
    a local signature.  Similarly, if two dependencies have
@@ -667,8 +667,7 @@ by the module substitution::
 
     unit p where          p/A.hs ---imports---> p/H.hsig
       signature H
-      module A
-        import H
+      module A -- import H
 
     -- Import on p/H.hsig is replaced with import to q/H.hs
     dependency p[H=q:H]   p/A.hs -\             p/H.hsig <-\
