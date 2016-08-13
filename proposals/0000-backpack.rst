@@ -966,7 +966,7 @@ itself in a very specific part of the design space:
   out of the box; it must be taught how to instantiate Backpack
   packages.  Similarly, it will not integrate seamlessly with GHCi,
   which only knows about GHC and not Cabal, and may cause a headache
-  for OS distributors, who know have to create
+  for OS distributors, who now have to create
   a package for every instantiation of a library.
 
 * It operates at the package level, which makes it inconvenient
