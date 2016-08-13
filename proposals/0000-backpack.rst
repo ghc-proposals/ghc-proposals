@@ -879,8 +879,8 @@ follows the following rules:
    renamed using the ``as`` keyword in the module renaming
    after the ``requires`` keyword.
 
-   TODO: An alternative proposed syntax is ``satisfies`` keyword:
-   ``p satisfies (Str with ByteString, Path with FilePath)``
+   TODO: An alternative proposed syntax is ``satisfy`` keyword:
+   ``p (Impl) satisfy (Str with ByteString, Path with FilePath)``
    specifies that the holes ``Str`` and ``Path`` are brought
    into scope under the names ``ByteString`` and ``FilePath``,
    respectively, making it clearer in intent.
