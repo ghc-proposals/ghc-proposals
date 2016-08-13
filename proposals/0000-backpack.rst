@@ -794,7 +794,13 @@ Includes
 
     backpack-include  ::= PackageName IncludeRenaming
 
-    IncludeRenaming   ::= ModuleRenaming ( "requires" ModuleRenaming )?
+    IncludeRenaming    ::= ModuleRenaming ( "requires" ModuleRenaming )?
+                         -- TODO: proposed alternate syntax
+                         | ModuleRenaming ( "satisfy" WithModuleRenaming ) ?
+
+    WithModuleRenaming ::= ""
+                         | "(" with_entry "," ... "," with_entry ")"
+    with_entry ::= ModuleName "with" ModuleName
 
 Entities exported by a library component can be brought into scope in
 another component via the ``backpack-includes`` field.
@@ -870,7 +876,14 @@ follows the following rules:
 
 1. Unlike provided modules, a requirement cannot be hidden; it is
    always brought into scope.  Like provided modules, they can be
-   renamed using the ``as`` keyword.
+   renamed using the ``as`` keyword in the module renaming
+   after the ``requires`` keyword.
+
+   TODO: An alternative proposed syntax is ``satisfies`` keyword:
+   ``p satisfies (Str with ByteString, Path with FilePath)``
+   specifies that the holes ``Str`` and ``Path`` are brought
+   into scope under the names ``ByteString`` and ``FilePath``,
+   respectively, making it clearer in intent.
 
 2. If a requirement is brought into scope under the same module
    name as an unambiguous provided module, the requirement is *linked*:
