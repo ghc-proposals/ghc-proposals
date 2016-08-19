@@ -240,9 +240,7 @@ an ordinary module (i.e., *just normal Haskell*, with *no copy-pasting*)::
     import Str
     concat xs = foldr append null xs
 
-Signatures are declared in the Cabal file as a ``required-signature``
-and parametrize *all* of the modules in the library (providing
-*package-level modularity*)::
+Signatures are declared in the Cabal file as a ``required-signature``::
 
     library concat-indef
         required-signatures: Str
@@ -252,60 +250,86 @@ A library with required signatures is called an **indefinite library**.
 As it is missing implementations for its signatures, it cannot be
 compiled; however, it can still be type-checked (*separate
 type-checking*) and registered with the compiler, so that it can be used
-by other indefinite libraries which depend on it.
+by other indefinite libraries which depend on it.  In contrast, a
+**definite library** is a library with no signatures: any library that
+doesn't use Backpack features is a definite library.
 
-An indefinite library can be used in two ways:
+An indefinite library can be **instantiated** (possibly multiple times)
+with implementations for all of its required signature, allowing it
+to be compiled.  Instantiation happens automatically when a user depends
+on an indefinite library and a library which exposes modules with the
+same names as the signatures (any library which fulfills the signatures
+is valid, making this a *extensible* mechanism for *package-level
+modularity*)::
 
-1. It can be depended upon by other libraries, which inherit
-   the requirement of this library::
+     library str-bytestring
+         exposed-modules: Str
 
-        -- in the Cabal file
-        library stringutils-indef
-            build-depends: concat-indef
-            exposed-modules: StringUtils
+     library concat-bytestring
+         build-depends: str-bytestring, concat-indef
+         reexported-modules:
+             -- Concat from concat-indef is instantiated
+             -- with Str from str-bytestring.  We can
+             -- reexport it under a qualified name for
+             -- more convenient use.
+             Concat as Concat.ByteString
 
-        -- in StringUtils.hs
-        module StringUtils where
-        import Concat
-        import Str -- the signature is importable too
+Thus, indefinite libraries can be thought of parametrized modules,
+where the actual parameters are computed automatically by wiring
+up signatures with similarly named module implementations.  This process
+of determining the explicit instantiations is called **mix-in linking**.
 
-   An inherited requirement can be extended simply by adding
-   a local signature.  Similarly, if two dependencies have
-   the same requirement, the two requirements are merged
-   together (*interface composibility.*)
+An indefinite library can be instantiated to various degrees.
+Compilation does not occur unless *all* signatures are implemented,
+allowing a compiler can optimize as if Backpack was not present (*no
+performance overhead.*)  An indefinite library can also be partially
+instantiated, or not instantiated at all: indefinite libraries can be
+combined with other indefinite libraries to form combined libraries
+which are still indefinite::
 
-   Using these facilities, a user can, for example, write a **signature
-   library** simply by defining a library which has only signatures in
-   it, which allow signatures to be shared between multiple indefinite
-   libraries.
+    -- in the Cabal file
+    library stringutils-indef
+        -- No Str module in scope, so Str is left uninstantiated,
+        -- giving stringutils-indef an (implicit) requirement
+        -- on Str.
+        build-depends: concat-indef
+        exposed-modules: StringUtils
 
-2. It can be **instantiated** (possibly multiple times)
-   into a **definite library** which can be compiled. (*Extensibility*)
-   A client instantiates a library by bringing it into scope with
-   another library which exposes modules with the same names as the
-   signatures (a process called **mix-in linking**)::
+    -- in StringUtils.hs
+    module StringUtils where
+    import Concat
+    import Str -- the signature is importable
 
-        library str-bytestring
-            exposed-modules: Str
+The required signatures of a library are not necessarily syntactically
+apparent (a ``required-signature`` field is specified only for every
+locally available ``hsig`` file); this is by design, to allow users to
+reuse signatures by putting them in libraries. (TODO: Mechanism for
+explicitly stating what the requirements are)
 
-        library concat-bytestring
-            build-depends: str-bytestring, concat-indef
-            reexported-modules:
-                -- Concat from concat-indef is instantiated
-                -- with Str from str-bytestring.  We can
-                -- reexport it under a qualified name for
-                -- more convenient use.
-                Concat as Concat.ByteString
+Backpack is quite flexible about the way the uninstantiated
+signatures can be handled:
 
-   Compilation does not occur until the implementation of all
-   signatures is known, so that when compilation occurs, a compiler can optimize
-   as if Backpack was not present (*no performance overhead.*)
-   The types for each instantiation are considered distinct
-   (in a sense that is made precise in the `Identifiers`_ section.)
+* If you depend on two indefinite libraries, both of which
+  have the same required signature (e.g., ``Str``), then you
+  have a single required signature ``Str`` that is the union
+  of these two signatures: signatures are identified only
+  by module name.  To keep these two requirements separate,
+  you would rename one of the requirements to a different name
+  using the ``backpack-includes`` directive::
 
-Backpack additionally provides the ``backpack-includes`` field for
-renaming modules to make their names coincide (so that instantiation
-can take place.)
+    library one-string
+        -- One requirement, named Str
+        build-depends: concat-indef, stringutils-indef
+
+    library two-string
+        -- Two requirements, Str and Str2
+        build-depends: concat-indef, stringutils-indef
+        backpack-include:
+            stringutils-indef requires (Str as Str2)
+
+* In addition to the inherited requirements from dependencies,
+  a user can also define a local ``hsig`` to refine the signature
+  further (i.e., define extra types).
 
 Identifiers
 -----------
