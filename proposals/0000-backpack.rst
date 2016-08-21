@@ -509,7 +509,7 @@ this AST into the command line arguments that the compiler accepts.
 ::
 
     mlib  ::= "library" ComponentId "where" "{"
-                udecl_0 ";" ... ";" udecl_n
+                mdecl_0 ";" ... ";" mdecl_n
               "}"
     mdecl ::= "dependency" UnitId ModuleRenaming
             | "module"    ModuleName
@@ -595,9 +595,9 @@ libraries (since there's no compiled code to actually depend on);
 however, uninstantiated libraries can depend on
 instantiated/non-Backpack libraries.
 
-(TODO: This is totally not implemented correctly yet: in particular,
-if something is fully instantiated, we are obligated to use the
-TRUE interfaces for it, not the renamed on the fly ones.)
+(TODO: This ties into some tricky implementation business about
+whether or not we use an on-the-fly renamed interface or the
+actual one, assuming both are available.)
 
 Note that there are never partially instantiated libraries in
 the database: instead, these instantiations are computed "on the
@@ -622,7 +622,7 @@ depend on it, but not enough to compile them.
 
 ::
 
-    udecl ::= "signature" ModuleName
+    mdecl ::= "signature" ModuleName
 
 A **source signature** is a locally defined signature
 signature file whose contents are exactly that of an `hs-boot file <https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/separate_compilation.html#how-to-compile-mutually-recursive-modules>`_,
@@ -685,7 +685,7 @@ Dependencies
 
 ::
 
-    udecl ::= "dependency" UnitId ModuleRenaming
+    mdecl ::= "dependency" UnitId ModuleRenaming
     ModuleRenaming    ::= ""
                         | "(" entry "," ... "," entry ")"
                         -- TODO: "hiding" "(" ModuleName "," ... "," ModuleName ")"
