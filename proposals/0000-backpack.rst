@@ -788,21 +788,21 @@ A library defines a collection of provided modules and
 required signatures in an environment that is created by a set of
 ``backpack-includes`` and ``build-depends``.  Libraries are
 specified in the Cabal file and are the user-facing interface for
-working with Backpack.  This environment of in-scope modules implies how
-requirements of the dependent components are wired up through mix-in
-linking; no explicit instantiation is necessary.  A library exports some
-modules, making them available to other components; required signatures
-are always exported.
+working with Backpack.  Unliked mixed libraries, the environment of
+in-scope modules implies how requirements of the dependent components
+are wired up through mix-in linking; no explicit instantiation is
+necessary.  A library exports some modules, making them available to
+other components; required signatures are always exported.
 
-Components may reference each other through ``build-depends``, which
+Libraries may reference each other through ``build-depends``, which
 implicitly bring all of the exposed modules of the referenced component
 into scope, or an explicit ``backpack-includes``, which can specify
 which modules to bring under scope or instantiate a referenced component
 multiple times.
 
-Components are used for name-space control, which in turn specifies how
-mix-in linking is carried out.  Higher-order components are out of scope
-for this proposal: components are parametrized by the requirements they
+Libraries are used for name-space control, which in turn specifies how
+mix-in linking is carried out.  Higher-order libraries are out of scope
+for this proposal: libraries are parametrized by the requirements they
 define or inherit.
 
 Cabal's libraries predate Backpack, but for completeness
@@ -1009,7 +1009,7 @@ The ``exposed-modules``, ``other-modules`` and ``signatures``
 field specify the Haskell modules (``hs``) and signatures (``hsig``)
 which are locally defined by this package.  It is NOT required for all
 the transitive requirements of a component
-to be listed in ``required-signature``: only requirements which have
+to be listed in ``signatures``: only requirements which have
 locally defined ``hsig`` files are needed.
 
 These modules are added to the scope *after* all ``backpack-includes``
