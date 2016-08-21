@@ -540,10 +540,14 @@ For typechecking an uninstantiated mixed library via ``ghc --make``:
    in the free module variables of ``dependency`` and each ``m``
    in ``signature m``.
 
-A single module or signature in an uninstantiated mixed library can be
+A single module in an uninstantiated mixed library can be
 typechecked with ``ghc -c`` by specifying only that module name.
 (this motivates the "redundant" specification of requirements in
 ``this-unit-id``; it's not redundant when compiling with ``ghc -c``!)
+Signatures must always be compiled at once using ``ghc --make-sigs``
+which takes signatures as its arguments; this operation
+is also responsible for determining that the dependencies are
+well-typed.  (``ghc --make`` calls this operation implicitly.)
 
 For compiling a mixed library instantiated with module substitution ``ModuleSubst``,
 the only difference is ``-this-unit-id`` now takes a ``UnitId``
