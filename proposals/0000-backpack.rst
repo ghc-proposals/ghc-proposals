@@ -19,9 +19,9 @@ Backpack
 
 #. `Identifiers`_
 
-#. `Units`_
+#. `Mixed libraries`_
 
-   a. `Unit structure`_
+   a. `Mixed library structure`_
 
    b. `Installed unit database`_
 
@@ -29,7 +29,7 @@ Backpack
 
    d. `Dependencies`_
 
-#. `Library components`_
+#. `Libraries`_
 
    a. `Library structure`_
 
@@ -257,10 +257,10 @@ doesn't use Backpack features is a definite library.
 An indefinite library can be **instantiated** (possibly multiple times)
 with implementations for all of its required signature, allowing it
 to be compiled.  Instantiation happens automatically when a user depends
-on an indefinite library and a library which exposes modules with the
-same names as the signatures (any library which fulfills the signatures
-is valid, making this a *extensible* mechanism for *package-level
-modularity*)::
+on an indefinite library and another library which provides modules
+with the same name as the signatures.  For implementation reasons, it is
+only possible to fill signatures with modules from ``build-depends``
+(and not locally defined ones)::
 
      library str-bytestring
          exposed-modules: Str
@@ -275,8 +275,8 @@ modularity*)::
              Concat as Concat.ByteString
 
 Thus, indefinite libraries can be thought of parametrized modules,
-where the actual parameters are computed automatically by wiring
-up signatures with similarly named module implementations.  This process
+but rather than explicitly specifying each parameter, it is
+implicitly specified with module namespaces.  This process
 of determining the explicit instantiations is called **mix-in linking**.
 
 An indefinite library can be instantiated to various degrees.
@@ -352,30 +352,40 @@ when two types are equal.
 
 .. _ComponentId:
 
-A **component identifier** consists of an arbitrary sequence of
+A **component identifier** intuitively identifies the transitive closure
+of source code, and is represented as an arbitrary sequence of
 alphanumeric letters, dashes, underscores and periods.  Component
 identifiers are uniquely allocated by the package manager (e.g.,
 ``cabal-install``), and in practice, encode the package name, package
 version, component name, and a hash (which is computed over the source
 code sdist tarball, Cabal flags, GHC flags and component identifiers of
-direct dependencies of the component.)  Effectively, a component
-identifier uniquely identifies precisely what is necessary to
-typecheck a component (and, if it has no requirements, compile it
-as well.)  A component identifier uniquely identifies a typechecked
-indefinite library and compiled non-Backpack libraries.
+direct dependencies of the component.)
+
+A component identifier tracks only direct dependencies (i.e.,
+``build-depends``) as determined by the dependency solver, but
+not indirect dependencies (i.e., how an indefinite library is
+instantiated).  A component identifier uniquely identifies a source library
+(whether it's definite or indefinite.)
 We will use the metavariable ``p`` to represent component identifiers.
+
+Example: the component identifier for ``concat-indef``
+might be ``concat-indef-0.1-abcdefg``.
 
 .. _UnitId:
 
 A **unit identifier** consists of a component identifier combined with a
 module substitution describing how the library is instantiated.
-(The term **unit** refers to the intermediate language of units which
-mediates between the compiler and the package system; see the section `Units`_
-for more information.) Non-Backpack
+Non-Backpack
 libraries do not have a module substitution (since they have no
 signatures to fill).  A unit identifier with no free module variables
-(see below) uniquely identifies a definite library.  We will use the
+(see below) uniquely identifies an instantiated library for which we
+can compile code.  We will use the
 metavariable ``P`` to represent unit identifiers.
+
+Example: a fully uninstantiated unit identifier for ``concat-indef``
+would be ``concat-indef-0.1-abcdefg[Str=<Str>]``; if instantiated
+with ``str-bytestring``, it's unit identifier is
+``concat-indef-0.1-abcdefg[Str=str-bytestring-0.2-xxx:Str]``.
 
 .. _Module:
 
@@ -399,6 +409,11 @@ not well-specified without extra information, since only module
 names are specified in syntax) is ascribed the unique name ``M.n``:
 two identifiers are only equal if their unique names are equal.
 
+Example: the module identifier for ``Str`` from ``str-bytestring``
+is ``str-bytestring-0.2-xxx:Str``; the module identifier for
+``Concat`` frmo an uninstantiated ``concat-indef`` is
+``concat-indef-0.1-abcdefg[Str=<Str>]:Concat``.
+
 .. _ModuleSubst:
 
 A **module substitution** is a mapping from module names to modules identifiers.
@@ -420,39 +435,24 @@ Module substitutions can be applied to identifiers::
     -- Substitution on ModuleSubst (NOT substitution composition)
     (m=M, S')⟦S⟧ = m=M⟦S⟧, S'⟦S⟧
 
-.. _`generalized unit id`:
+Mixed libraries
+---------------
 
-A unit identifier can be **generalized** by replacing every mapping from
-``m=M`` in its module substitution with
-``m=<m>``.  This concept is useful when defining an
-index over both indefinite and definite libraries. Naively, we would
-have to use ``Either ComponentId UnitId`` as the key, since indefinite
-libraries are uniquely identified by component identifiers, while
-definite libraries identified by unit identifiers with no free module
-variables. Generalization lets us embed ``ComponentId`` in ``UnitId``,
-allowing us to use unit identifiers as the key uniformly across all
-types of libraries.
+Libraries defines a collection of modules and dependencies parametrized
+over a set of required signatures.  Mixed libraries are an *explicit*
+variant of the libraries users write in Cabal files, where the
+instantiation of all dependencies is recorded explicitly via unit
+identities (similar to ML's *applicative functors*).  Mixed libraries
+are the output of mix-in linking performed by Cabal.
 
-Units
------
+Although users are not expected to ever write a mixed library directly,
+mixed libraries serve as an important intermediate language between
+GHC and Cabal: a mixed library represents a set of command
+line flags and input files that can be directly typechecked by GHC.
+This section also contains a specification of signatures, which are
+a new type of input file 
 
-A unit defines a collection of modules and dependent units parametrized
-over a set of required signatures.  A non-Backpack library
-is simply a unit with no requirements.  A unit with requirements can be
-typechecked; if it is equipped with a module substitution, such a unit
-can also be compiled.  Concretely, a unit corresponds directly to the
-command line flags and input files the compiler is invoked with to
-typecheck/compile the modules and signatures.
-
-It is not expected that Backpack users program directly with units:
-units are an intermediate language reminiscent of ML's *applicative
-functors*, where the instantiation of every dependency must be
-*explicitly* specified; user's instead write `library components`_ in
-a Cabal file, which are then
-converted via `mix-in linking`_ into units that can then be typechecked
-and compiled.
-
-Unit structure
+Mixed library structure
 ~~~~~~~~~~~~~~
 
 To discuss the unit language in a more user friendly form, we
@@ -720,12 +720,12 @@ in the following ways:
 2. If the ``ModuleRenaming`` is omitted, all modules exposed by the
    specified unit are brought into scope.
 
-Library components
+Libraries
 ---------------------
 
-A library component defines a collection of provided modules and
+A library defines a collection of provided modules and
 required signatures in an environment that is created by a set of
-``backpack-includes`` and ``build-depends``.  Library components are
+``backpack-includes`` and ``build-depends``.  Libraries are
 specified in the Cabal file and are the user-facing interface for
 working with Backpack.  This environment of in-scope modules implies how
 requirements of the dependent components are wired up through mix-in
@@ -744,13 +744,13 @@ mix-in linking is carried out.  Higher-order components are out of scope
 for this proposal: components are parametrized by the requirements they
 define or inherit.
 
-Cabal's library components predate Backpack, but for completeness
+Cabal's libraries predate Backpack, but for completeness
 we give a full description of it here.
 
 Library structure
 ~~~~~~~~~~~~~~~~~~~
 
-A library component defines a scope containing declarations for modules
+A library defines a scope containing declarations for modules
 and signatures.
 
 ::
@@ -826,7 +826,7 @@ Includes
                          | "(" with_entry "," ... "," with_entry ")"
     with_entry ::= ModuleName "with" ModuleName
 
-Entities exported by a library component can be brought into scope in
+Entities exported by a library can be brought into scope in
 another component via the ``backpack-includes`` field.
 
 What provisions are brought into scope
