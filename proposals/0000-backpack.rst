@@ -502,26 +502,26 @@ line flags and input files that can be directly typechecked by GHC.
 Mixed library structure
 ~~~~~~~~~~~~~~
 
-To discuss the unit language in a more user friendly form, we
-define an abstract syntax tree for units and show how to translate
+To discuss mixed libraries in a more user friendly form, we
+define an abstract syntax tree for mixed libraries and show how to translate
 this AST into the command line arguments that the compiler accepts.
 
 ::
 
-    unit  ::= "unit" ComponentId "where" "{"
+    mlib  ::= "library" ComponentId "where" "{"
                 udecl_0 ";" ... ";" udecl_n
               "}"
-    udecl ::= "dependency" UnitId ModuleRenaming
+    mdecl ::= "dependency" UnitId ModuleRenaming
             | "module"    ModuleName
             | "signature" ModuleName
 
-A unit begins with a header recording the component identity.  The
-body of a unit consists of any number of dependencies, modules
+A mixed library begins with a header recording its component identity.  The
+body of a library consists of any number of dependencies, modules
 and signatures.
 
 Here is an informal translation of this AST into command line flags:
 
-For typechecking an indefinite unit via ``ghc --make``:
+For typechecking an uninstantiated mixed library via ``ghc --make``:
 
 1. ``"dependency" UnitId ModuleRenaming`` is translated into
    the flag ``-unit-id "UnitId ModuleRenaming"`` (the
@@ -534,18 +534,18 @@ For typechecking an indefinite unit via ``ghc --make``:
 3. ``"signature" ModuleName`` is translated into the argument
    ``ModuleName``, identifying an ``hsig`` file in the include path.
 
-4. The header of a unit ``"unit" ComponentId`` is translated into
+4. The header of a mixed library ``"library" ComponentId`` is translated into
    ``-this-unit-id UnitId``, where ``UnitId`` consists of ``ComponentId``
    and a generalized module substitution ``m=<m>``, for each ``m``
    in the free module variables of ``dependency`` and each ``m``
    in ``signature m``.
 
-A single module or signature in an indefinite unit can be
+A single module or signature in an uninstantiated mixed library can be
 typechecked with ``ghc -c`` by specifying only that module name.
 (this motivates the "redundant" specification of requirements in
 ``this-unit-id``; it's not redundant when compiling with ``ghc -c``!)
 
-For compiling a definite unit with module substitution ``ModuleSubst``,
+For compiling a mixed library instantiated with module substitution ``ModuleSubst``,
 the only difference is ``-this-unit-id`` now takes a ``UnitId``
 consisting of ``ComponentId`` and the specified substitution
 ``ModuleSubst`` to instantiate the module with.  Note that the
@@ -556,12 +556,12 @@ lose information.)
 
 Not all unit identifiers are valid as arguments to
 ``this-unit-id``: only fully generalized unit identifiers
-(in the case of typechecking indefinite units) or unit identifiers
-with no free module variables (in the case of compiling a definite
-unit) are permissible.
+(in the case of typechecking uninstantiated mixed libraries) or unit identifiers
+with no free module variables (in the case of compiling an instantiated
+mixed library) are permissible.
 
 We impose an additional requirement that there must be an ``hsig`` file
-for every required signature of a unit (even if all nontrivial
+for every required signature of a library (even if all nontrivial
 requirements are inherited from dependencies).  This is to preserve the
 compilation model of "one source file, one invocation of the compiler."
 
@@ -569,8 +569,8 @@ Installed library database
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 The **installed library database** (previously known as the installed
-package database) records indefinite libraries and definite libraries
-that have been typechecked or compiled so that they can be reused
+package database) records uninstantiated and instantiated libraries
+that have been typechecked or compiled (respectively) so that they can be reused
 in later invocations of GHC.
 
 Logically, the installed library database is composed of two parts:
