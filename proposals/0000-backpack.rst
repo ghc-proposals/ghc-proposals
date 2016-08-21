@@ -240,27 +240,31 @@ an ordinary module (i.e., *just normal Haskell*, with *no copy-pasting*)::
     import Str
     concat xs = foldr append null xs
 
-Signatures are declared in the Cabal file as a ``required-signature``::
+Locally defined ``hsig`` files are declared in the Cabal file via the
+``signatures`` field::
 
     library concat-indef
-        required-signatures: Str
+        signatures: Str
         exposed-modules: Concat
 
+Signatures can also be inherited from other libraries (more on this
+shortly); we refer to the set of all locally defined and inherited
+signatures as the set of **required signatures**.
 A library with required signatures is called an **indefinite library**.
-As it is missing implementations for its signatures, it cannot be
+As it is missing implementations for its required signatures, it cannot be
 compiled; however, it can still be type-checked (*separate
 type-checking*) and registered with the compiler, so that it can be used
 by other indefinite libraries which depend on it.  In contrast, a
-**definite library** is a library with no signatures: any library that
-doesn't use Backpack features is a definite library.
+**definite library** is a library with no required signatures (any library that
+doesn't use Backpack features is a definite library).
 
 An indefinite library can be **instantiated** (possibly multiple times)
-with implementations for all of its required signature, allowing it
-to be compiled.  Instantiation happens automatically when a user depends
-on an indefinite library and another library which provides modules
-with the same name as the signatures.  For implementation reasons, it is
-only possible to fill signatures with modules from ``build-depends``
-(and not locally defined ones)::
+with implementations for all of its required signatures, allowing it to
+be compiled.  Instantiation happens
+automatically when a user depends on an indefinite library and another
+library which provides modules with the same name as the signatures.
+For implementation reasons, it is only possible to fill required signatures with
+modules from ``build-depends`` (and not locally defined ones)::
 
      library str-bytestring
          exposed-modules: Str
@@ -280,12 +284,11 @@ implicitly specified with module namespaces.  This process
 of determining the explicit instantiations is called **mix-in linking**.
 
 An indefinite library can be instantiated to various degrees.
-Compilation does not occur unless *all* signatures are implemented,
+Compilation does not occur unless *all* required signatures are implemented,
 allowing a compiler can optimize as if Backpack was not present (*no
 performance overhead.*)  An indefinite library can also be partially
-instantiated, or not instantiated at all: indefinite libraries can be
-combined with other indefinite libraries to form combined libraries
-which are still indefinite::
+instantiated, or not instantiated at all.  If a required signature is not
+instantiated, it gets inherited by the user of the library::
 
     -- in the Cabal file
     library stringutils-indef
@@ -300,14 +303,14 @@ which are still indefinite::
     import Concat
     import Str -- the signature is importable
 
-The required signatures of a library are not necessarily syntactically
-apparent (a ``required-signature`` field is specified only for every
-locally available ``hsig`` file); this is by design, to allow users to
-reuse signatures by putting them in libraries. (TODO: Mechanism for
-explicitly stating what the requirements are)
+It's worth reiterating that contents of a ``signatures`` field
+do not specify the *required* signatures of a library, since a library
+may also inherit many other required signatures from its dependencies.
+(TODO: A user can explicitly specify all implicit signatures using
+the ``implicit-signatures`` field.)
 
 Backpack is quite flexible about the way the uninstantiated
-signatures can be handled:
+required signatures can be handled:
 
 * If you depend on two indefinite libraries, both of which
   have the same required signature (e.g., ``Str``), then you
@@ -328,8 +331,54 @@ signatures can be handled:
             stringutils-indef requires (Str as Str2)
 
 * In addition to the inherited requirements from dependencies,
-  a user can also define a local ``hsig`` to refine the signature
-  further (i.e., define extra types).
+  a user can also define a local ``hsig`` to refine the required
+  signature further (i.e., define extra types).
+
+The current implementation of Backpack in GHC has some notable
+user-facing limitations:
+
+1. It is not possible to define a module in a library, and then
+   use it to immediately to instantiate an indefinite library::
+
+        library concat-bytestring-bad
+            build-depends: concat-indef -- has Str requirement
+            exposed-modules: Str, ConcatUser -- can't use these to fill
+
+   Instead, ``Str`` must be pulled out into a separate library
+   of its own (Cabal 2.0 supports multiple libraries in a package,
+   making this less burdensome.)  The reason for this restriction
+   is to simplify implementation of the build system: if this
+   mode of use was allowed, it would be necesary to first build
+   ``Str``, then build ``concat-indef``, and then come back to
+   ``concat-bytestring-bad`` and finish building the rest of the
+   modules.
+
+   Note, however, it is permissible to inherit a signature while also
+   defining a local signature.
+
+2. Mutual recursion is not allowed.  For example, these libraries
+   cannot be instantiated with each other::
+
+        library p
+            signatures: A
+            exposed-modules: B
+        library q
+            signatures: B
+            exposed-modules: A
+
+   Signature merging can also result in mutual recursion; suppose
+   a library has these two signatures::
+
+        signature A where
+        signature B where
+            import A
+
+   and another library has the import swapped: merging these would
+   result in a cycle between ``A`` and ``B``; thus it is not allowed.
+
+   Eventually we do want to support mutual recursion in all these cases
+   (the theory certainly allows for it), but we declared it as out of
+   scope for the initial release of Backpack.
 
 Identifiers
 -----------
