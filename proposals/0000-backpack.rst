@@ -23,7 +23,7 @@ Backpack
 
    a. `Mixed library structure`_
 
-   b. `Installed unit database`_
+   b. `Installed library database`_
 
    c. `Signatures`_
 
@@ -449,8 +449,6 @@ Although users are not expected to ever write a mixed library directly,
 mixed libraries serve as an important intermediate language between
 GHC and Cabal: a mixed library represents a set of command
 line flags and input files that can be directly typechecked by GHC.
-This section also contains a specification of signatures, which are
-a new type of input file 
 
 Mixed library structure
 ~~~~~~~~~~~~~~
@@ -518,34 +516,48 @@ for every required signature of a unit (even if all nontrivial
 requirements are inherited from dependencies).  This is to preserve the
 compilation model of "one source file, one invocation of the compiler."
 
-Installed unit database
+Installed library database
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-The **installed unit database** (previously known as the installed
-package database) records the set of units which can be referenced by
-``dependency`` declarations.  A unit identifier uniquely identifies
-a unit in the installed unit database.
+The **installed library database** (previously known as the installed
+package database) records indefinite libraries and definite libraries
+that have been typechecked or compiled so that they can be reused
+in later invocations of GHC.
 
-Logically, entries in the installed unit database can be classified
-into three types:
+Logically, the installed library database is composed of two parts:
 
-1. Non-Backpack libraries (units), for which the unit identifier is
-   equivalent to the component identifier,
+1. Uninstantiated libraries, which are uniquely
+   identified by component identifier.  These libraries have only been
+   typechecked, but they can be instantiated on the fly according to a
+   unit identifier.
 
-2. Definite Backpack units, where the unit identifier has a nontrivial
-   substition with no free module variables, and
+2. Fully instantiated libraries, which are uniquely identifed by
+   unit identifier with no free module variables in its instantiating
+   substitution. These libraries have been compiled.
 
-3. Indefinite Backpack units, where the unit identifier is in most
-   general form.
+3. Non-Backpack libraries, which don't have any signatures and
+   thus can't be instantiated in any meaningful way.  These libraries
+   have been compiled.  These are uniquely identified by component
+   or unit identifier (as without instantiations, these identifiers
+   are equivalent.)
 
-Definite Backpack units and non-Backpack libraries never depend on
-indefinite Backpack units.  Indefinite Backpack units never refer
-to definite Backpack units (this makes typechecking possible even
-when no compilation has occurred at all); e.g., a dependency on a
-partially instantiated unit identifier refers to the indefinite
-unit identified by the generalized unit identifier.
+Instantiated/non-Backpack libraries cannot depend on uninstantiated
+libraries (since there's no compiled code to actually depend on);
+however, uninstantiated libraries can depend on
+instantiated/non-Backpack libraries.
 
-An entry in the installed unit database records a variety of
+(TODO: This is totally not implemented correctly yet: in particular,
+if something is fully instantiated, we are obligated to use the
+TRUE interfaces for it, not the renamed on the fly ones.)
+
+Note that there are never partially instantiated libraries in
+the database: instead, these instantiations are computed "on the
+fly" from the corresponding fully uninstantiated library.
+
+During the course of compilation, a user may look up an uninstantiated
+or instantiated/non-Backpack library by querying for a component
+or unit identifier (respectively).
+An entry in the installed library database records a variety of
 information, but the most important for the purposes of Backpack
 are the **exposed modules**, which are a mapping from module names
 to module identities, which specify what modules get brought into
