@@ -823,7 +823,7 @@ and signatures.
     library-fields ::=
         "exposed-modules:"      exposed-module        ...     exposed-module
       | "other-modules:"        other-module          ...     other-module
-      | "required-signatures:"  required-signature    ...     required-signature
+      | "signatures:"           signature             ...     signature
       | "reexported-modules:"   reexported-module "," ... "," reexported-module
       | buildinfo-fields
       | ... -- Cabal supports more fields
@@ -1001,11 +1001,11 @@ Modules and signatures
 
 ::
 
-    exposed-module     ::= ModuleName
-    other-module       ::= ModuleName
-    required-signature ::= ModuleName
+    exposed-module  ::= ModuleName
+    other-module    ::= ModuleName
+    signature       ::= ModuleName
 
-The ``exposed-modules``, ``other-modules`` and ``required-signatures``
+The ``exposed-modules``, ``other-modules`` and ``signatures``
 field specify the Haskell modules (``hs``) and signatures (``hsig``)
 which are locally defined by this package.  It is NOT required for all
 the transitive requirements of a component
