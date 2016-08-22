@@ -563,7 +563,7 @@ Thus, these two ASTs would translate into these two command lines::
         --make Str.hsig Concat.hs
 
     ghc -this-unit-id "stringutils-indef-0.1-xxx[Str=<Str>]" \
-        -unit-id "concat-indef-0.1-abcdefg[Str=<Str>]"
+        -unit-id "concat-indef-0.1-abcdefg[Str=<Str>]" \
         --make Str.hsig StringUtils.hs
 
 A single module in an uninstantiated mixed library can be
@@ -589,8 +589,14 @@ consisting of ``ComponentId`` and the specified substitution
 ``ModuleSubst`` to instantiate the module with.  Note that the
 unit identifiers from dependencies do NOT have the substitution
 applied to them (GHC can read off the necesary substitution from
-``-this-unit-id``; in fact, applying this substitution would
-lose information.)
+``-this-unit-id``.)  Here it is::
+
+    ghc -this-unit-id "concat-indef-0.1-abcdefg[Str=str-bytestring-0.2-xxx:Str]" \
+        --make Str.hsig Concat.hs
+
+    ghc -this-unit-id "stringutils-indef-0.1-xxx[Str=str-bytestring-0.2-xxx:Str]" \
+        -unit-id "concat-indef-0.1-abcdefg[Str=<Str>]" \
+        --make Str.hsig StringUtils.hs
 
 Not all unit identifiers are valid as arguments to
 ``this-unit-id``: only fully generalized unit identifiers
