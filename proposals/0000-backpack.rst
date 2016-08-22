@@ -519,6 +519,17 @@ A mixed library begins with a header recording its component identity.  The
 body of a library consists of any number of dependencies, modules
 and signatures.
 
+For example, ``concat-indef`` and ``stringutils-indef`` would have the
+following ASTs::
+
+    library concat-indef-0.1-abcdefg where
+        signature Str
+        module Concat
+
+    library stringutils-indef-0.1-xxx where
+        dependency concat-indef-0.1-abcdefg[Str=<Str>]
+        module StringUtils
+
 Here is an informal translation of this AST into command line flags:
 
 For typechecking an uninstantiated mixed library via ``ghc --make``:
@@ -533,6 +544,12 @@ For typechecking an uninstantiated mixed library via ``ghc --make``:
 
 3. ``"signature" ModuleName`` is translated into the argument
    ``ModuleName``, identifying an ``hsig`` file in the include path.
+   Every required signature *must* have an ``hsig`` file (unlike
+   the Cabal syntax, where required signatures can be implicit);
+   it is expected that Cabal generates blank signature files for
+   all inherited signatures.  (This restriction simplifies the
+   compilation model: one source file per compilation product. It may be
+   lifted in the future.)
 
 4. The header of a mixed library ``"library" ComponentId`` is translated into
    ``-this-unit-id UnitId``, where ``UnitId`` consists of ``ComponentId``
@@ -540,14 +557,31 @@ For typechecking an uninstantiated mixed library via ``ghc --make``:
    in the free module variables of ``dependency`` and each ``m``
    in ``signature m``.
 
+Thus, these two ASTs would translate into these two command lines::
+
+    ghc -this-unit-id "concat-indef-0.1-abcdefg[Str=<Str>]" \
+        --make Str.hsig Concat.hs
+
+    ghc -this-unit-id "stringutils-indef-0.1-xxx[Str=<Str>]" \
+        -unit-id "concat-indef-0.1-abcdefg[Str=<Str>]"
+        --make Str.hsig StringUtils.hs
+
 A single module in an uninstantiated mixed library can be
 typechecked with ``ghc -c`` by specifying only that module name.
 (this motivates the "redundant" specification of requirements in
 ``this-unit-id``; it's not redundant when compiling with ``ghc -c``!)
-Signatures must always be compiled at once using ``ghc --make-sigs``
-which takes signatures as its arguments; this operation
-is also responsible for determining that the dependencies are
-well-typed.  (``ghc --make`` calls this operation implicitly.)
+Signatures must always be compiled at once using ``ghc --make`` with
+*only* signatures: this operation is also responsible for determining
+that the dependencies are well-typed.  (TODO: Design a more separate
+compilation interface here.)  To continue our example::
+
+    ghc -this-unit-id "concat-indef-0.1-abcdefg[Str=<Str>]" --make Str.hsig
+    ghc -this-unit-id "concat-indef-0.1-abcdefg[Str=<Str>]" -c Concat.hs
+
+    ghc -this-unit-id "stringutils-indef-0.1-xxx[Str=<Str>]" \
+        -unit-id "concat-indef-0.1-abcdefg[Str=<Str>]" --make Str.hsig
+    ghc -this-unit-id "stringutils-indef-0.1-xxx[Str=<Str>]" \
+        -unit-id "concat-indef-0.1-abcdefg[Str=<Str>]" -c StringUtils.hs
 
 For compiling a mixed library instantiated with module substitution ``ModuleSubst``,
 the only difference is ``-this-unit-id`` now takes a ``UnitId``
@@ -563,11 +597,6 @@ Not all unit identifiers are valid as arguments to
 (in the case of typechecking uninstantiated mixed libraries) or unit identifiers
 with no free module variables (in the case of compiling an instantiated
 mixed library) are permissible.
-
-We impose an additional requirement that there must be an ``hsig`` file
-for every required signature of a library (even if all nontrivial
-requirements are inherited from dependencies).  This is to preserve the
-compilation model of "one source file, one invocation of the compiler."
 
 Installed library database
 ~~~~~~~~~~~~~~~~~~~~~~~
