@@ -424,12 +424,17 @@ might be ``concat-indef-0.1-abcdefg``.
 
 A **unit identifier** consists of a component identifier combined with a
 module substitution describing how the library is instantiated.
-Non-Backpack
-libraries do not have a module substitution (since they have no
-signatures to fill).  A unit identifier with no free module variables
-(see below) uniquely identifies an instantiated library for which we
-can compile code.  We will use the
-metavariable ``P`` to represent unit identifiers.
+Non-Backpack libraries do not have a module substitution (since they
+have no signatures to fill).  A unit identifier with no free module
+variables (see below) uniquely identifies an instantiated library for
+which we can compile code.  We will use the metavariable ``P`` to
+represent unit identifiers.
+
+A fully instantiated unit identifier is also converted into a **hashed
+unit identifier** by Cabal, which is used for the library name on the
+file system and symbol names in GHC. (TODO: GHC doesn't currently use
+the hash.) The expanded form of a hashed unit identifier can be found in
+the installed package database.
 
 Example: a fully uninstantiated unit identifier for ``concat-indef``
 would be ``concat-indef-0.1-abcdefg[Str=<Str>]``; if instantiated
@@ -583,26 +588,51 @@ compilation interface here.)  To continue our example::
     ghc -this-unit-id "stringutils-indef-0.1-xxx[Str=<Str>]" \
         -unit-id "concat-indef-0.1-abcdefg[Str=<Str>]" -c StringUtils.hs
 
-For compiling a mixed library instantiated with module substitution ``ModuleSubst``,
-the only difference is ``-this-unit-id`` now takes a ``UnitId``
-consisting of ``ComponentId`` and the specified substitution
-``ModuleSubst`` to instantiate the module with.  Note that the
-unit identifiers from dependencies do NOT have the substitution
-applied to them (GHC can read off the necesary substitution from
-``-this-unit-id``.)  Here it is::
+For compiling a mixed library instantiated with module substitution
+``ModuleSubst``, for engineering reasons there are two differences:
+
+    1.  For ``-unit-id``, we specify *hashed* unit identifiers instead
+        of pure unit identifiers, to avoid making the command line too
+        long.  (GHC can extract the full unit identifier from the
+        installed library database, although there is generally no
+        need to do so at this point.)
+
+    2. ``-this-unit-id`` remains a unit identifier (since we need to
+       know how it is instantiated), but we also specify the
+       hashed unit identifier for this unit identifier using the
+       ``-this-hashed-unit-id`` flag.
+
+For example, given that ``<Str>`` is instantiated with
+``str-bytestring-0.2-xxx:Str``, we have::
 
     ghc -this-unit-id "concat-indef-0.1-abcdefg[Str=str-bytestring-0.2-xxx:Str]" \
+        -this-hashed-unit-id "concat-indef-0.1-abcdefg-xyz12345"
         --make Str.hsig Concat.hs
 
     ghc -this-unit-id "stringutils-indef-0.1-xxx[Str=str-bytestring-0.2-xxx:Str]" \
-        -unit-id "concat-indef-0.1-abcdefg[Str=<Str>]" \
+        -this-hashed-unit-id "stringutils-indef-0.1-xxx-hijklm"
+        -unit-id "concat-indef-0.1-abcdefg-xyz12345" \
         --make Str.hsig StringUtils.hs
 
-Not all unit identifiers are valid as arguments to
-``this-unit-id``: only fully generalized unit identifiers
-(in the case of typechecking uninstantiated mixed libraries) or unit identifiers
-with no free module variables (in the case of compiling an instantiated
-mixed library) are permissible.
+Legacy (but implemented) behavior
+
+    A ``-this-unit-id`` now takes a fully instantiated ``UnitId``.  Note
+    that the unit identifiers from dependencies do NOT have the
+    substitution applied to them (GHC can read off the necesary
+    substitution from ``-this-unit-id``.)  Here it is::
+
+        ghc -this-unit-id "concat-indef-0.1-abcdefg[Str=str-bytestring-0.2-xxx:Str]" \
+            --make Str.hsig Concat.hs
+
+        ghc -this-unit-id "stringutils-indef-0.1-xxx[Str=str-bytestring-0.2-xxx:Str]" \
+            -unit-id "concat-indef-0.1-abcdefg[Str=<Str>]" \
+            --make Str.hsig StringUtils.hs
+
+Not all unit identifiers are valid as arguments to ``this-unit-id``:
+only fully generalized unit identifiers (in the case of typechecking
+uninstantiated mixed libraries) or unit identifiers with no free module
+variables (in the case of compiling an instantiated mixed library) are
+permissible.
 
 Installed library database
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -634,9 +664,10 @@ libraries (since there's no compiled code to actually depend on);
 however, uninstantiated libraries can depend on
 instantiated/non-Backpack libraries.
 
-(TODO: This ties into some tricky implementation business about
-whether or not we use an on-the-fly renamed interface or the
-actual one, assuming both are available.)
+(TODO: This ties into some tricky implementation business, where
+an uninstantiated library depends on a non-immediate instantiated
+library, because it partially instantiates a dependency which
+in turn instantiates the full library.)
 
 Note that there are never partially instantiated libraries in
 the database: instead, these instantiations are computed "on the
