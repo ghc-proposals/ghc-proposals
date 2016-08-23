@@ -492,52 +492,80 @@ Module substitutions can be applied to identifiers::
 Mixed libraries
 ---------------
 
-Libraries defines a collection of modules and dependencies parametrized
-over a set of required signatures.  Mixed libraries are an *explicit*
-variant of the libraries users write in Cabal files, where the
-instantiation of all dependencies is recorded explicitly via unit
-identities (similar to ML's *applicative functors*).  Mixed libraries
-are the output of mix-in linking performed by Cabal.
+A library is a collection of modules and dependencies on other libraries,
+which is parametrized by a set of required signatures.  Libraries live
+in Cabal files, and look like this::
 
-Although users are not expected to ever write a mixed library directly,
-mixed libraries serve as an important intermediate language between
-GHC and Cabal: a mixed library represents a set of command
-line flags and input files that can be directly typechecked by GHC.
+    library stringutils-indef
+        build-depends: concat-indef
+        exposed-modules: StringUtils
+
+Cabal transforms a library into an intermediate form called a **mixed
+library**, in which the dependencies are made explicit.  This
+transformation involves both dependency solving (picking the source
+code to be used) and *mix-in linking*::
+
+    library stringutils-indef-0.1-xxx <Str>
+        dependency concat-indef-0.1-abcdefg[Str=<Str>]
+        module StringUtils
+
+You can see that the ``build-depends`` has been translated into
+a ``dependency``, which has an explicit instantion of ``Str`` with
+the module variable ``<Str>`` (the names have also been expanded
+with hashes, a side effect of dependency resolution).
+
+From a mixed library, Cabal can easily generate a sequence of calls
+to GHC with command line flags and input files::
+
+    ghc -this-unit-id "stringutils-indef-0.1-xxx[Str=<Str>]" \
+        -unit-id "concat-indef-0.1-abcdefg[Str=<Str>]" \
+        --make Str.hsig StringUtils.hs
 
 Mixed library structure
 ~~~~~~~~~~~~~~
 
-To discuss mixed libraries in a more user friendly form, we
-define an abstract syntax tree for mixed libraries and show how to translate
-this AST into the command line arguments that the compiler accepts.
+To discuss mixed libraries in a more user friendly form, we define an
+abstract syntax tree for mixed libraries and show how to translate this
+AST into the command line arguments that the compiler accepts.
 
 ::
 
-    mlib  ::= "library" ComponentId "where" "{"
+    mlib  ::= "library" ComponentId
+                "<" ModuleName "," ... "," ModuleName ">"
+              "where" "{"
                 mdecl_0 ";" ... ";" mdecl_n
               "}"
     mdecl ::= "dependency" UnitId ModuleRenaming
             | "module"    ModuleName
             | "signature" ModuleName
 
-A mixed library begins with a header recording its component identity.  The
-body of a library consists of any number of dependencies, modules
-and signatures.
+A mixed library begins with a header recording its component identity
+and a list of its required signatures.  The body of a library consists
+of any number of dependencies, modules and signatures.
 
 For example, ``concat-indef`` and ``stringutils-indef`` would have the
 following ASTs::
 
-    library concat-indef-0.1-abcdefg where
+    library concat-indef-0.1-abcdefg <Str> where
         signature Str
         module Concat
 
-    library stringutils-indef-0.1-xxx where
+    library stringutils-indef-0.1-xxx <Str> where
         dependency concat-indef-0.1-abcdefg[Str=<Str>]
         module StringUtils
 
-Here is an informal translation of this AST into command line flags:
+There are two operations we can perform on a mixed library with
+required signatures:
 
-For typechecking an uninstantiated mixed library via ``ghc --make``:
+1. We can **typecheck** it, which can be done with the library
+   all by itself and generates interface files or
+
+2. We can **compile** it against some instantiation of its signatures
+   to implementations, giving us object code.
+
+**Typechecking an uninstantiated mixed library.** Each
+declaration in ``ghc --make`` desugars into a flag (defined in
+the next section) or an argument:
 
 1. ``"dependency" UnitId ModuleRenaming`` is translated into
    the flag ``-unit-id "UnitId ModuleRenaming"`` (the
@@ -556,11 +584,10 @@ For typechecking an uninstantiated mixed library via ``ghc --make``:
    compilation model: one source file per compilation product. It may be
    lifted in the future.)
 
-4. The header of a mixed library ``"library" ComponentId`` is translated into
+4. The header of a mixed library ``"library" ComponentId "<" ModuleName + ">"``
+   is translated into
    ``-this-unit-id UnitId``, where ``UnitId`` consists of ``ComponentId``
-   and a generalized module substitution ``m=<m>``, for each ``m``
-   in the free module variables of ``dependency`` and each ``m``
-   in ``signature m``.
+   and a generalized module substitution ``m=<m>``, for each ``ModuleName``.
 
 Thus, these two ASTs would translate into these two command lines::
 
@@ -571,68 +598,54 @@ Thus, these two ASTs would translate into these two command lines::
         -unit-id "concat-indef-0.1-abcdefg[Str=<Str>]" \
         --make Str.hsig StringUtils.hs
 
-A single module in an uninstantiated mixed library can be
-typechecked with ``ghc -c`` by specifying only that module name.
-(this motivates the "redundant" specification of requirements in
-``this-unit-id``; it's not redundant when compiling with ``ghc -c``!)
-Signatures must always be compiled at once using ``ghc --make`` with
-*only* signatures: this operation is also responsible for determining
-that the dependencies are well-typed.  (TODO: Design a more separate
-compilation interface here.)  To continue our example::
-
-    ghc -this-unit-id "concat-indef-0.1-abcdefg[Str=<Str>]" --make Str.hsig
-    ghc -this-unit-id "concat-indef-0.1-abcdefg[Str=<Str>]" -c Concat.hs
-
-    ghc -this-unit-id "stringutils-indef-0.1-xxx[Str=<Str>]" \
-        -unit-id "concat-indef-0.1-abcdefg[Str=<Str>]" --make Str.hsig
-    ghc -this-unit-id "stringutils-indef-0.1-xxx[Str=<Str>]" \
-        -unit-id "concat-indef-0.1-abcdefg[Str=<Str>]" -c StringUtils.hs
-
-For compiling a mixed library instantiated with module substitution
-``ModuleSubst``, for engineering reasons there are two differences:
-
-    1.  For ``-unit-id``, we specify *hashed* unit identifiers instead
-        of pure unit identifiers, to avoid making the command line too
-        long.  (GHC can extract the full unit identifier from the
-        installed library database, although there is generally no
-        need to do so at this point.)
-
-    2. ``-this-unit-id`` remains a unit identifier (since we need to
-       know how it is instantiated), but we also specify the
-       hashed unit identifier for this unit identifier using the
-       ``-this-hashed-unit-id`` flag.
-
-For example, given that ``<Str>`` is instantiated with
-``str-bytestring-0.2-xxx:Str``, we have::
+**Compiling an instantiated mixed library.**  To compile an instantiated
+mixed library, we specify specify an instantiated unit identifier::
 
     ghc -this-unit-id "concat-indef-0.1-abcdefg[Str=str-bytestring-0.2-xxx:Str]" \
-        -this-hashed-unit-id "concat-indef-0.1-abcdefg-xyz12345"
+        -this-hashed-unit-id "concat-indef-0.1-abcdefg-xyz12345" \
         --make Str.hsig Concat.hs
 
     ghc -this-unit-id "stringutils-indef-0.1-xxx[Str=str-bytestring-0.2-xxx:Str]" \
-        -this-hashed-unit-id "stringutils-indef-0.1-xxx-hijklm"
+        -this-hashed-unit-id "stringutils-indef-0.1-xxx-hijklm" \
         -unit-id "concat-indef-0.1-abcdefg-xyz12345" \
         --make Str.hsig StringUtils.hs
 
-Legacy (but implemented) behavior
+There are a few other differences in the command line format:
 
-    A ``-this-unit-id`` now takes a fully instantiated ``UnitId``.  Note
-    that the unit identifiers from dependencies do NOT have the
-    substitution applied to them (GHC can read off the necesary
-    substitution from ``-this-unit-id``.)  Here it is::
+1. We also provide a hashed unit identifier for this unit identifier
+   using the ``-this-hashed-unit-id`` flag.  This hashed form is
+   used to generate linker symbols for the code we compile.  It
+   is passed to GHC (rather than GHC computing it itself) so
+   that Cabal can allocate the hash, and use it to name the
+   library in the file system.
 
-        ghc -this-unit-id "concat-indef-0.1-abcdefg[Str=str-bytestring-0.2-xxx:Str]" \
-            --make Str.hsig Concat.hs
+2. The ``-unit-id`` flag accepts a hashed unit identifiers.
+   (You can also pass a full unit identifier as well.)
 
-        ghc -this-unit-id "stringutils-indef-0.1-xxx[Str=str-bytestring-0.2-xxx:Str]" \
-            -unit-id "concat-indef-0.1-abcdefg[Str=<Str>]" \
-            --make Str.hsig StringUtils.hs
+Command line flags
+~~~~~~~~~~~~~~~~~~~~
 
-Not all unit identifiers are valid as arguments to ``this-unit-id``:
-only fully generalized unit identifiers (in the case of typechecking
-uninstantiated mixed libraries) or unit identifiers with no free module
-variables (in the case of compiling an instantiated mixed library) are
-permissible.
+In this section, we summarize the accepted command line flags of GHC:
+
+``-this-unit-id``
+    Specifies the unit identifier of the library we are compiling
+    (the **home library**).  This unit identifier must either be
+    completely uninstantiated or totally instantiated (partially
+    instantiated unit identifiers are illegal.)  If it is
+    uninstantiated, this means we are typechecking the code only.
+
+``-this-hashed-unit-id``
+    The hashed form of the unit identifier of the library we are
+    compiling.  This can only be specified when we are compiling
+    a unit identifier (i.e., ``-this-unit-id`` is fully instantiated.)
+
+``-unit-id``
+    Specifies the unit identifier of a library we depend on.
+    The module variables of these unit identifiers can only refer
+    to module variables in ``-this-unit-id``.
+
+``ghc --make`` accepts a list of modules and signatures that are
+to be typechecked or compiled.
 
 Installed library database
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -642,27 +655,41 @@ package database) records uninstantiated and instantiated libraries
 that have been typechecked or compiled (respectively) so that they can be reused
 in later invocations of GHC.
 
-Logically, the installed library database is composed of two parts:
+Logically, the installed library database is composed of three parts:
 
-1. Uninstantiated libraries, which are uniquely
+1. Uninstantiated indefinite libraries, which are uniquely
    identified by component identifier.  These libraries have only been
    typechecked, but they can be instantiated on the fly according to a
-   unit identifier.
+   unit identifier::
 
-2. Fully instantiated libraries, which are uniquely identifed by
+        library p <H>
+            signature H
+
+2. Fully instantiated indefinite libraries, which are uniquely identifed by
    unit identifier with no free module variables in its instantiating
-   substitution. These libraries have been compiled.
+   substitution. These libraries have been compiled::
 
-3. Non-Backpack libraries, which don't have any signatures and
+        library p[H=himpl:H]
+            signature H
+
+3. Definite libraries, which don't have any signatures and
    thus can't be instantiated in any meaningful way.  These libraries
    have been compiled.  These are uniquely identified by component
    or unit identifier (as without instantiations, these identifiers
-   are equivalent.)
+   are equivalent)::
 
-Instantiated/non-Backpack libraries cannot depend on uninstantiated
+        library p
+            module M
+
+To typecheck an indefinite library, you need to have first
+installed all the uninstantiated and definite libraries you
+depend on.  To compile a definite library, you need the
+fully instantiated and definite libraries you depend on.
+
+Instantiated/definite libraries cannot depend on uninstantiated
 libraries (since there's no compiled code to actually depend on);
 however, uninstantiated libraries can depend on
-instantiated/non-Backpack libraries.
+instantiated/definite libraries.
 
 (TODO: This ties into some tricky implementation business, where
 an uninstantiated library depends on a non-immediate instantiated
@@ -674,7 +701,7 @@ the database: instead, these instantiations are computed "on the
 fly" from the corresponding fully uninstantiated library.
 
 During the course of compilation, a user may look up an uninstantiated
-or instantiated/non-Backpack library by querying for a component
+or instantiated/definite library by querying for a component
 or unit identifier (respectively).
 An entry in the installed library database records a variety of
 information, but the most important for the purposes of Backpack
@@ -708,6 +735,17 @@ except with the following differences:
   *not* used to implement mutual recursion (although, in
   principle, they can be).
 
+* Entities defined in the signature ``H`` are given the
+  original name ``{H.T}``, stating that ``T`` comes from
+  some unspecified module.  (This module need not be ``<H>``,
+  since the implementor may reexport it from elsewhere.)  For example::
+
+    signature H where
+    data T
+    x :: T
+
+  ...defines two entities with original names ``{H.T}`` and ``{H.x}``.
+
 * TODO not implemented: Explicit declarations of type equalities, e.g.,
   ``instance T ~ S`` are permitted.
 
@@ -720,9 +758,26 @@ the following differences:
 * A declaration in a signature may be implemented by a
   *reexport* in the implementation, so long as the reexported
   entity implements the declaration according to these rules.
+  For example::
+
+    module M(Bool) where
+    import Prelude(Bool)
+
+  ...is an adequate implementation of::
+
+    signature M where
+    data Bool
 
 * An abstract data type declaration ``data T`` can be implemented
-  by a type synonym with the same kind.
+  by a type synonym with the same kind.  For example::
+
+    module M where
+    type T = Bool
+
+  ...is an adequate implementation of::
+
+    signature M where
+    data T
 
 A notable restriction carried over from ``hs-boot`` files is that a
 polymorphic function cannot be used to implement a monomorphic one: the
@@ -735,16 +790,50 @@ the minimal signature S, such that any module which implements S
 also implements S1 and S2.  Signature merging can be specified
 algorithmically as follows:
 
+* For each export of the signatures which have the same
+  occurrence name, we unify their original names, with
+  the flexible variables (ones that can be the target
+  of a unifying substitution) of the form ``{S.n}``,
+  and otherwise union the other exports.
+  So for example, if we merge these two signatures::
+
+    signature A(Bool,x) where
+        data Bool -- original name {A.Bool}
+        x :: Bool
+
+    signature A(Bool,y) where
+        import Prelude(Bool)
+        y :: Bool
+
+  ...the resulting signature is::
+
+    signature A(Bool, x, y)
+        import Prelude(Bool)
+        -- {A.Bool} was unified to base:Prelude.Bool
+        x :: Bool
+        y :: Bool
+
 * For each occurrence name exported by both signatures,
   if the declaration d implements another declaration d',
   d and d' merge to d.  (So, for example, ``data T = MkT`` implements
   ``data T``, so they merge to ``data T = MkT``.)  This is
   deterministic, as the *implements* relation for signatures
-  is trivial.
+  is trivial.  So for example::
+
+    signature A where
+        data Bool
+
+    signature A where
+        data Bool = True | False
+
+  merges to::
+
+    signature A where
+        data Bool = True | False
 
 * The other declarations are simply unioned.
 
-The **local merged signature** of a unit at some module name ``m``
+The **home signature** of a unit at some module name ``m``
 is the merge of all signatures from unit dependencies which were
 instantiated with ``<m>``, as well as the local source signature at ``m``.
 This merged signature is what is brought into scope when a module
@@ -762,34 +851,36 @@ Dependencies
     entry ::= ModuleName
             | ModuleName "as" ModuleName
 
-A ``dependency`` declaration instantiates an external unit,
-possibly parametrized over the requirements of the enclosing unit.
-A ``dependency`` declaration has two primary functions:
+A ``dependency`` declaration specifies a dependency on an
+external library.  For example::
 
-1. First, all occurrences of a module variable in the
-   unit identifier of a unit dependency specify all external
-   signatures which will be **inherited** to this unit.
-   The inherited signatures for each module variable are merged with the
-   corresponding local source signature to form the local merged
-   signature that represents this module variable.
+    dependency p[A=<B>]
 
-2. Second, module substitution of the dependencies **instantiates**
-   the unit, essentially by rewriting the unit's internal imports on its
-   signatures to the specified modules (or local merged signatures).
-   The resulting instantiated modules are brought into scope (modulo a
-   module renaming) and can be imported by source signatures and modules.
+...states that we depend on the library ``p``, with its requirement ``A``
+instantiated with the ``B`` requirement from our **home library** (the
+library the dependency is in).  The unit identity of a dependency
+declaration specifies what implementations we feed *in* to the dependency
+and provides modules for us to import.  (For example, if ``p`` provides
+the module named ``M``, this dependency brings ``M`` into scope.)
 
-Merging and instantiation happen in an interleaved fashion, as
-a local source signature may be used to instantiate an external
-dependency, which in turn contributes an unfilled requirement
-to be merged into another signature.  For clarity of exposition,
-we will present them separately.
+More subtly, the dependency identifier feeds *out* required signatures
+which get merged to the signature of the home library.  For example,
+``p[A=<B>]`` additionally states that, to compute the required signature
+``B`` in our home library, we must merge in the requirement ``A`` from
+``p``.  The operation of the unit identifier is bidirectional: it
+feeds out signatures for us to **merge**, but we feed in the merged
+signatures and implementations to **instantiate** it.
 
-Signature inheritance
+Signature merging
 '''''''''''''''''''''
 
-The **inherited signatures** are a mapping from required module names to a
-*set* of module identifiers identifying signatures from external units.
+When we want to merge all external signatures for a signature in the
+home library ``m``, we must find all occurrences of ``<m>`` in the
+dependencies of our library.  Let us call the **inherited signatures**
+of a library a mapping from a required signature module name to a
+set of module identifiers identifying signatures to be merged into that
+required signature.
+
 The inherited signatures induced by a ``dependency`` are determined by
 the following recursive procedure:
 
@@ -805,17 +896,13 @@ For example, a unit with the declaration::
 
     dependency p[A=q[B=<H>]:C,D=<H>]:E
 
-brings into scope ``q[B=<H>]:B`` and ``p[A=q[B=<H>]:C,D=<H>]:D`` under
-the signature name ``H``.
+specifies that signatures ``q[B=<H>]:B`` and ``p[A=q[B=<H>]:C,D=<H>]:D``
+must be merged to form the home signature ``H``.
 
-The inherited signatures for a module name are merged together with
-the source signature to form the local merged signature, which
-is subsequently used to fill all occurrences of ``<m>``.
-
-Unit instantiation
+Dependency instantiation
 ''''''''''''''''''
 
-A unit with requirements can be thought of as a collection of modules
+A library with requirements can be thought of as a collection of modules
 which import some signatures.  The process of *instantiating* such a
 unit replaces the imports of these signatures with the modules specified
 by the module substitution::
@@ -828,9 +915,9 @@ by the module substitution::
     dependency p[H=q:H]   p/A.hs -\             p/H.hsig <-\
                                    \--imports-> q/H.hs ----/ implements
 
-    -- Import on p/H.hsig is replaced with import of local merged signature H
+    -- Import on p/H.hsig is replaced with import of home merged signature H
     dependency p[H=<H>]   p/A.hs -\             p/H.hsig
-                                   \--imports-> (local merged signature H)
+                                   \--imports-> (home merged signature H)
 
 For each dependency, we must show that each implementing module
 *implements* the signature of the unit it is instantiating.  We can
@@ -858,7 +945,7 @@ A library defines a collection of provided modules and
 required signatures in an environment that is created by a set of
 ``backpack-includes`` and ``build-depends``.  Libraries are
 specified in the Cabal file and are the user-facing interface for
-working with Backpack.  Unliked mixed libraries, the environment of
+working with Backpack.  Unlike mixed libraries, the environment of
 in-scope modules implies how requirements of the dependent components
 are wired up through mix-in linking; no explicit instantiation is
 necessary.  A library exports some modules, making them available to
