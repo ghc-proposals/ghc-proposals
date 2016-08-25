@@ -31,9 +31,9 @@ This should cover several things,
 * discuss how the change addresses the points raised in the Motivation section
 * discuss how the proposed approach might interact with existing features  
 
-Note, however, that this section need not (but may) describe details of the
-implementation of the feature. The proposal is merely intended to describe what
-the new feature is and how it should behave.
+Note, however, that this section need not describe details of the
+implementation of the feature. The proposal is merely supposed to give a
+conceptual specification of the new feature and its behavior.
 
 Drawbacks
 ---------

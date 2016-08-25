@@ -1,5 +1,5 @@
-GHC Haskell proposals
-=====================
+GHC Proposals
+=============
 
 .. note::
     Currently the process that goes along with this repository is itself in the
@@ -72,15 +72,40 @@ process, here is a short summary,
 2. Starting with the `template
    <https://github.com/ghc-proposals/ghc-proposals/blob/master/0000-template.rst>`_,
    describe your proposed change in a file in the ``proposals/`` directory. Use
-   a filename of the form ``proposals/0000-short-proposal-title.rst``.
+   a filename of the form ``proposals/0000-short-proposal-title.rst``; leave the
+   proposal number as ``0000``, it will be chosen when the proposal is
+   accepted.
 
-3. Write down the details of your proposal. At very least this will involve
-   filling in the empty fields of the template. Note that proposals are written
-   in `ReStructuredText <http://www.sphinx-doc.org/en/stable/rest.html>`_, not
-   Markdown, for its expressiveness and ease of integration into other GHC
-   infrastructure.
+3. Write the proposal. At very least this should describe the following,
 
-4. When you feel your proposal document is complete, open a ``Pull Request``
+   a. *Motivation*: What is the problem that you are trying to solve? Be specific:
+      a concrete example or two can do wonders. Be sure to point out out the
+      particular ways in which the status quo falls short.
+   b. *Proposed Change*: What change are you proposing? This is the
+      specification of your change and should be precise and comprehensive. This
+      might include,
+      * grammar and semantics of any new syntactic constructs
+      * the types and semantics of any new library interfaces
+      * how the proposed change addresses the original problem (perhaps
+        returning to the concrete examples introduced in the *Motivation*
+        section).
+      * how the proposed change might interact with existing language or
+        compiler features
+      This generally shouldn't discuss the implementation of the change.
+   c. *Drawbacks*: There's no such thing as a free lunch; what is the cost of
+      your proposal?
+   d. *Alternatives*: What alternatives to the proposed change exist? These can
+      range from minor variants to completely . This doesn't need to go into
+      great detail, just give the reader a sketch of the design space.
+   e. *Unresolved questions*: What issues area still outstanding in the design?
+      This needn't discuss outstanding *implementation* questions, we are
+      presently only concerned with the conceptual design of your idea.
+
+   Note that proposals are written in `ReStructuredText
+   <http://www.sphinx-doc.org/en/stable/rest.html>`_, not Markdown, for its
+   expressiveness and ease of integration into other GHC infrastructure.
+
+4. When you feel your proposal document is complete, open a Pull Request
    requesting that your branch be merged into the ``master`` branch of this
    repository. Be sure to include a link to the rendered view of your proposal
    in the pull request description. Your proposal will automatically be
@@ -89,9 +114,10 @@ process, here is a short summary,
 5. Discussion will proceed on the pull request; it is very likely that multiple
    iterations will be necessary before the proposal stabilizes.
 
-6. When discussion has died down email the (yet to be formed) GHC Commitee , who
-   will review the proposal, the feedback collected on the pull request, and
-   general community sentiment and decide whether the proposal will be accepted.
+6. When discussion has died down notify the (yet to be formed) GHC Commitee via
+   email. The committee will will review the proposal, the feedback collected on
+   the pull request, and general community sentiment and decide whether the
+   proposal will be accepted.
 
 7. When your proposal is accepted your pull request will be merged. At this
    point you or someone else may choose to implement your proposal.
