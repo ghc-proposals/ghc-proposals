@@ -17,19 +17,23 @@ Backpack
 
    b. `Overview`_
 
+   c. `Pipeline`_
+
 #. `Identifiers`_
 
-#. `Mixed libraries`_
+#. `GHC`_
 
    a. `Mixed library structure`_
 
-   b. `Installed library database`_
+   b. `GHC command line flags`_
 
-   c. `Signatures`_
+   c. `Installed library database`_
 
-   d. `Dependencies`_
+   d. `Signatures`_
 
-#. `Libraries`_
+   e. `Dependencies`_
+
+#. `Cabal`_
 
    a. `Library structure`_
 
@@ -380,6 +384,16 @@ user-facing limitations:
    (the theory certainly allows for it), but we declared it as out of
    scope for the initial release of Backpack.
 
+Pipeline
+~~~~~~~~
+
+An important aspect of the Backpack design is that it is separated
+across GHC and Cabal, with the compiler and package manager handling
+separate concerns of the design.  So while the overall
+pipeline of how a Backpack library is compiled is technically not
+necessary to understand the language extensions defined by Backpack,
+it is helpful for motivating
+
 Identifiers
 -----------
 
@@ -501,7 +515,7 @@ Module substitutions can be applied to identifiers::
     -- Substitution on ModuleSubst (NOT substitution composition)
     (m=M, S')⟦S⟧ = m=M⟦S⟧, S'⟦S⟧
 
-Mixed libraries
+GHC
 ---------------
 
 A library is a collection of modules and dependencies on other libraries,
@@ -634,8 +648,8 @@ There are a few other differences in the command line format:
 2. The ``-unit-id`` flag accepts a hashed unit identifiers.
    (You can also pass a full unit identifier as well.)
 
-Command line flags
-~~~~~~~~~~~~~~~~~~~~
+GHC command line flags
+~~~~~~~~~~~~~~~~~~~~~~~
 
 In this section, we summarize the accepted command line flags of GHC:
 
@@ -950,7 +964,7 @@ in the following ways:
 2. If the ``ModuleRenaming`` is omitted, all modules exposed by the
    specified unit are brought into scope.
 
-Libraries
+Cabal
 ---------------------
 
 A library defines a collection of provided modules and
