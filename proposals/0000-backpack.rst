@@ -392,7 +392,53 @@ across GHC and Cabal, with the compiler and package manager handling
 separate concerns of the design.  So while the overall
 pipeline of how a Backpack library is compiled is technically not
 necessary to understand the language extensions defined by Backpack,
-it is helpful for motivating
+it is helpful for motivating the structure of this
+specification.
+
+.. image:: https://raw.githubusercontent.com/ezyang/ghc-proposals/backpack/proposals/backpack-pipeline.png
+
+A Cabal file describing a package is first given as input to a
+package manager (e.g., ``cabal-install``)::
+
+    library stringutils-indef
+        build-depends: concat-indef
+        exposed-modules: StringUtils
+
+The package manager parses and resolves ``build-depends`` to specific
+versions of other packages.  At the point where Backpack processing
+begins, we know the specific source code ``str-bytestring`` and
+``concat-indef`` refer to, and we've eliminated all conditional
+statements from the package description::
+
+    library stringutils-indef-0.1-xxx
+        build-depends: concat-indef-0.1-abcdefg
+        exposed-modules: StringUtils
+
+At this point, we perform **mix-in** linking, taking each dependency
+on an indefinite library and filling in requirements based on the
+module names which are in scope::
+
+    library stringutils-indef-0.1-xxx <Str> where
+        dependency concat-indef-0.1-abcdefg[Str=<Str>]
+        module StringUtils
+
+(In this example, there is no module named ``Str`` in scope, so
+the requirement from from ``concat-indef-0.1`` gets inherited
+to ``stringutils`` itself).
+
+At this point, the pipeline goes from Cabal to GHC, with the mixed
+library being translated into a series of command line flags for
+GHC::
+
+    ghc -this-unit-id "stringutils-indef-0.1-xxx[Str=<Str>]" \
+        -unit-id "concat-indef-0.1-abcdefg[Str=<Str>]" \
+        StringUtils
+
+Every indefinite library is initially typechecked by GHC against
+its signatures (to demonstrate that the signature, indeed, captures
+what is needed to successfully typecheck the library).
+
+
 
 Identifiers
 -----------
