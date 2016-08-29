@@ -396,6 +396,7 @@ it is helpful for motivating the structure of this
 specification.
 
 .. image:: https://raw.githubusercontent.com/ezyang/ghc-proposals/backpack/proposals/backpack-pipeline.png
+    :align: center
 
 A Cabal file describing a package is first given as input to a
 package manager (e.g., ``cabal-install``)::
