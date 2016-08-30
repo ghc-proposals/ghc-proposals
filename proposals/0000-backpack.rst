@@ -414,8 +414,8 @@ source code that will be built. (In cabal-install, this is done
 with a backtracking solver that looks at version bounds
 in ``build-depends``; in Stack, there is always a specific version
 assignment that is used.)  The result is we get a series of
-package descriptions which refer to specific versions of other
-packages::
+package descriptions (described in `Library structure`_) which refer to
+specific versions of other packages::
 
     library impl-0.1
         exposed-modules: H
@@ -430,8 +430,8 @@ packages::
 
 At this point, we perform **mix-in linking**, taking each dependency
 on an indefinite library and filling in requirements based on the
-module names which are in scope::
-
+module names which are in scope.  We call these **mixed libraries**,
+and they are described in `Mixed library structure`_.
 
     library impl-0.1
         exposed-modules: H
@@ -465,7 +465,8 @@ library being translated into a series of command line flags for
 GHC.
 
 Indefinite libraries are typechecked only (no compilation
-occurs).  We run GHC with the flags::
+occurs).  We run GHC with the flags (described in more detail in `GHC
+command line flags`)::
 
     ghc -this-unit-id p-0.2[H=<H>] \
         -fno-code -fwrite-interface \
@@ -480,7 +481,8 @@ run GHC with the flags::
         H P
 
 (``p-0.2+k2Fa9xZlb`` is a hashed version of ``p-0.2[H=impl-0.1:H]``
-which will be used for symbols and filepaths.)
+which will be used for symbols and filepaths.)  The results
+are installed to the `Installed library database`_.
 
 Identifiers
 -----------
