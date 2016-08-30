@@ -497,7 +497,9 @@ when two types are equal.
     ComponentId ::= [A-Za-z0-9-_.]+
     UnitId      ::= ComponentId
                   | ComponentId "[" ModuleSubst "]"
+                  | ComponentId "+" ModuleSubstHash
     ModuleSubst ::= ( ModuleName "=" Module ) +
+    ModuleSubstHash ::= [A-Za-z0-9]+
     -- from Haskell'98
     ModuleName  ::= [A-Z][A-Za-z0-9_']* ( "." [A-Z][A-Za-z0-9_']* ) +
     Module      ::= UnitId ":" ModuleName
@@ -534,28 +536,17 @@ variables (see below) uniquely identifies an instantiated library for
 which we can compile code.  We will use the metavariable ``P`` to
 represent unit identifiers.
 
+A fully instantiated unit identifier which have compiled (or are
+compiling) is specified in a compressed form, a **hashed unit
+identifier.**  This hashed unit identifier is used for symbol
+names and file paths.
+
 Example: a fully uninstantiated unit identifier for ``concat-indef``
 would be ``concat-indef-0.1-abcdefg[Str=<Str>]``; if instantiated
 with ``str-bytestring``, it's unit identifier is
 ``concat-indef-0.1-abcdefg[Str=str-bytestring-0.2-xxx:Str]``.
-
-A **hashed unit identifier** is a unit identifier, where the module
-substitution has been replaced with a hash::
-
-    UnitId ::= ...
-             | ComponentId "+" ModuleSubstHash
-    ModuleSubstHash ::= [A-Za-z0-9]+
-
-Only fully instantiated unit identifiers which have been compiled
-are allocated hashed unit identifiers: the hash is used for the name
-of the compiled library on the file system, and symbol names in the
-compiled code.  The substitution of a hashed unit identifier can
-be found by consulting the installed library database.
-
-Example: the hashed form of
-``concat-indef-0.1-abcdefg[Str=str-bytestring-0.2-xxx:Str]``
-would look something like
-``concat-indef-0.1-abcdefg+xyzzyx``
+The hashed version of this instantiated unit id might
+look like ``concat-indef-0.1-abcdefg+xyzzyx``.
 
 .. _Module:
 
@@ -717,26 +708,25 @@ Thus, these two ASTs would translate into these two command lines::
 **Compiling an instantiated mixed library.**  To compile an instantiated
 mixed library, we specify specify an instantiated unit identifier::
 
-    ghc -this-unit-id "concat-indef-0.1-abcdefg[Str=str-bytestring-0.2-xxx:Str]" \
-        -this-unit-id-hash "xyz12345" \
+    ghc -this-unit-id "concat-indef-0.1-abcdefg+xyz12345" \
+        -instantiated-with "Str=str-bytestring-0.2-xxx:Str" \
         --make Str.hsig Concat.hs
 
-    ghc -this-unit-id "stringutils-indef-0.1-xxx[Str=str-bytestring-0.2-xxx:Str]" \
-        -this-unit-id-hash "hijklm" \
+    ghc -this-unit-id "stringutils-indef-0.1-xxx+hijklm" \
+        -instantiated-with "Str=str-bytestring-0.2-xxx:Str" \
         -unit-id "concat-indef-0.1-abcdefg+xyz12345" \
         --make Str.hsig StringUtils.hs
 
 There are a few other differences in the command line format:
 
-1. We also provide the hash of the module substitution
-   using the ``-this-unit-id-hash`` flag.  This hashed form is
-   used to generate linker symbols for the code we compile.  It
-   is passed to GHC (rather than GHC computing it itself) so
-   that Cabal can allocate the hash, and also use it to name the
-   library in the file system.
+1. ``-this-unit-id`` is provided in *hashed form*.
+   We must also provide how this unit is to be instantiated
+   using the `-instantiated-with` flag.  The hashed unit identifier is
+   passed to GHC (rather than GHC computing it itself) so that Cabal can
+   allocate the hash, and also use it to name the library in the file
+   system.
 
 2. The ``-unit-id`` flag accepts a hashed unit identifiers.
-   (You can also pass a full unit identifier as well.)
 
 GHC command line flags
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -746,14 +736,13 @@ In this section, we summarize the accepted command line flags of GHC:
 ``-this-unit-id``
     Specifies the unit identifier of the library we are compiling
     (the **home library**).  This unit identifier must either be
-    completely uninstantiated or totally instantiated (partially
+    completely uninstantiated or a hashed unit identifier (partially
     instantiated unit identifiers are illegal.)  If it is
     uninstantiated, this means we are typechecking the code only.
 
-``-this-unit-id-hash``
-    The hash of the *module substitution* of the library we are
-    compiling.  This can only be specified when we are compiling
-    a unit identifier (i.e., ``-this-unit-id`` is fully instantiated.)
+``-instantiated-with``
+    The *module substitution* of the library we are
+    instantiating.
 
 ``-unit-id``
     Specifies the unit identifier of a library we depend on.
