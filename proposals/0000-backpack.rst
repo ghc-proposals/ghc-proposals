@@ -431,7 +431,7 @@ specific versions of other packages::
 At this point, we perform **mix-in linking**, taking each dependency
 on an indefinite library and filling in requirements based on the
 module names which are in scope.  We call these **mixed libraries**,
-and they are described in `Mixed library structure`_.
+and they are described in `mixed library structure`_::
 
     library impl-0.1
         exposed-modules: H
