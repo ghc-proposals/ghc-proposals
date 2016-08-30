@@ -396,50 +396,91 @@ it is helpful for motivating the structure of this
 specification.
 
 .. image:: https://raw.githubusercontent.com/ezyang/ghc-proposals/backpack/proposals/backpack-pipeline.png
-    :align: center
 
-A Cabal file describing a package is first given as input to a
-package manager (e.g., ``cabal-install``)::
+The initial input into the compilation pipeline for is
+your **local source code**, as well as the the **Hackage index**
+which provides possible external packages that you might
+be building::
 
-    library stringutils-indef
-        build-depends: concat-indef
-        exposed-modules: StringUtils
+    impl-0.1.tgz
+    p-0.1.tgz
+    p-0.2.tgz
+    q-0.1.tgz
 
-The package manager parses and resolves ``build-depends`` to specific
-versions of other packages.  At the point where Backpack processing
-begins, we know the specific source code ``str-bytestring`` and
-``concat-indef`` refer to, and we've eliminated all conditional
-statements from the package description::
+The very first thing the package manager does is do **dependency
+resolution**, in order to pick specific versions and flags of
+the depended upon packages, settling the specific, transitive
+source code that will be built. (In cabal-install, this is done
+with a backtracking solver that looks at version bounds
+in ``build-depends``; in Stack, there is always a specific version
+assignment that is used.)  The result is we get a series of
+package descriptions which refer to specific versions of other
+packages::
 
-    library stringutils-indef-0.1-xxx
-        build-depends: concat-indef-0.1-abcdefg
-        exposed-modules: StringUtils
+    library impl-0.1
+        exposed-modules: H
 
-At this point, we perform **mix-in** linking, taking each dependency
+    library p-0.2
+        signatures: H
+        exposed-modules: P
+
+    library q-0.1
+        build-depends: p-0.2, impl-0.1
+        exposed-modules: Q
+
+At this point, we perform **mix-in linking**, taking each dependency
 on an indefinite library and filling in requirements based on the
 module names which are in scope::
 
-    library stringutils-indef-0.1-xxx <Str> where
-        dependency concat-indef-0.1-abcdefg[Str=<Str>]
-        module StringUtils
 
-(In this example, there is no module named ``Str`` in scope, so
-the requirement from from ``concat-indef-0.1`` gets inherited
-to ``stringutils`` itself).
+    library impl-0.1
+        exposed-modules: H
 
-At this point, the pipeline goes from Cabal to GHC, with the mixed
+    library p-0.2 <H>
+        signature H
+        module P
+
+    library q-0.1
+        dependency p-0.2[H=impl-0.1:H]
+        dependency impl-0.1
+        module Q
+
+Two kinds of libraries can be output by mix-in linking:
+**definite libraries** which have no holes (``impl-0.1``
+and ``q-0.1``), and **indefinite libraries** which have
+holes.  This is our provisional install plan.
+
+This install plan is not complete, however:
+the design of Backpack dictates that we must rebuild
+an indefinite library whenever it is instantiated. The
+**instantiation** step takes indefinite libraries which
+are referenced by definite libraries and instantiates them according to
+``dependency`` declarations.  In our running example, we add one
+instantiation of ``p`` to our install plan::
+
+    instantiate p-0.2[H=impl-0.1:H]
+
+At this point, we transition from Cabal to GHC, with the mixed
 library being translated into a series of command line flags for
-GHC::
+GHC.
 
-    ghc -this-unit-id "stringutils-indef-0.1-xxx[Str=<Str>]" \
-        -unit-id "concat-indef-0.1-abcdefg[Str=<Str>]" \
-        StringUtils
+Indefinite libraries are typechecked only (no compilation
+occurs).  We run GHC with the flags::
 
-Every indefinite library is initially typechecked by GHC against
-its signatures (to demonstrate that the signature, indeed, captures
-what is needed to successfully typecheck the library).
+    ghc -this-unit-id p-0.2[H=<H>] \
+        -fno-code -fwrite-interface \
+        H P
 
+Definite libraries (including those which are fully instantiated) get
+compiled.  To build the instantiated copy of ``p-0.2``, for example, we
+run GHC with the flags::
 
+    ghc -this-unit-id p-0.2+k2Fa9xZlb \
+        -instantiated-with "H=impl-0.1:H" \
+        H P
+
+(``p-0.2+k2Fa9xZlb`` is a hashed version of ``p-0.2[H=impl-0.1:H]``
+which will be used for symbols and filepaths.)
 
 Identifiers
 -----------
