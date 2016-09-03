@@ -384,6 +384,12 @@ user-facing limitations:
    (the theory certainly allows for it), but we declared it as out of
    scope for the initial release of Backpack.
 
+3. It's not possible to declare what the signature of a module
+   is (e.g., you can't have both ``A.hsig`` and ``A.hs`` in the
+   same module), nor is it possible to declare *exactly* what
+   the required signature of a library is (merging always takes
+   place.)
+
 Pipeline
 ~~~~~~~~
 
