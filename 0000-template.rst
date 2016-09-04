@@ -8,6 +8,8 @@
 .. implemented:: Leave blank. This will be filled in with the first GHC version which
                  implements the described feature.
 
+.. highlight:: haskell
+
 Proposal title
 ==============
 
