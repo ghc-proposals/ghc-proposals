@@ -183,7 +183,14 @@ OverloadedLabels extension
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The ``IsLabel`` class defined in ``GHC.OverloadedLabels`` is changed
-to the following:
+from:
+
+::
+
+  class IsLabel (x :: Symbol) t where
+    fromLabel :: Proxy# x -> t
+
+to:
 
 ::
 
