@@ -29,7 +29,8 @@ Motivation
 
 Consider the case of ``Data.Dynamic`` which provides a type for working with
 dynamically-typed values. Its definition is straightforward Haskell 98,
-::
+
+.. code-block:: haskell
 
     data Dynamic = Dynamic TypeRep Any
 
@@ -65,7 +66,9 @@ Proposed Change
 
 The core of the proposal is the introduction of a new type reflection interface,
 exposed in the ``Type.Reflection`` module. This interface provides a mechanism
-similar to ``Typeable`` but with an indexed representation type, ::
+similar to ``Typeable`` but with an indexed representation type,
+
+.. code-block:: haskell
 
     module Type.Reflection where
 
@@ -82,7 +85,9 @@ similar to ``Typeable`` but with an indexed representation type, ::
     typeRepKind :: TypeRep (a :: k) -> TypeRep k
 
 With a ``Typeable`` constraint we can get a ``TypeRep`` for a (non-kind
-polymorphic) type ``a`` with ``typeRep``, ::
+polymorphic) type ``a`` with ``typeRep``,
+
+.. code-block:: haskell
 
     class Typeable (a :: k)
 
@@ -93,7 +98,9 @@ to ``typeRep``; the desired type propagates through ``TypeRep``\'s index.
 
 
 We can pattern match on the structure of a ``TypeRep``. For instance, on type
-constructors, ::
+constructors,
+
+.. code-block:: haskell
 
     -- | A type constructor type. This is a bidirectional pattern.
     pattern TRCon :: forall k (a :: k). TyCon -> TypeRep a
@@ -106,7 +113,9 @@ constructors, ::
     tyConModule :: TyCon -> String
     tyConName :: TyCon -> String
 
-Type application can also be decomposed, ::
+Type application can also be decomposed,
+
+.. code-block:: haskell
 
     -- | A representation of a type application, @a b@. This is a bidirectional pattern.
     pattern TRApp :: forall k2 (fun :: k2). ()
@@ -116,7 +125,9 @@ Type application can also be decomposed, ::
 We can also decompose function types (e.g. ``Int -> String``) in their argument
 (e.g. ``Int``) and result types (``String``). Strictly speaking this can be
 expressed in terms of ``TRFun`` but it seems like a common enough pattern that
-it's worth providing a pattern for it, ::
+it's worth providing a pattern for it,
+
+.. code-block:: haskell
 
     pattern TRFun :: forall fun. ()
                   => forall arg res. (fun ~ (arg -> res))
@@ -124,7 +135,9 @@ it's worth providing a pattern for it, ::
                   -> TypeRep res
                   -> TypeRep fun
 
-We can also test for type equality, ::
+We can also test for type equality,
+
+.. code-block:: haskell
 
     -- | Kind-homogenous type equality
     eqTypeRep  :: forall k (a :: k) (b :: k).
@@ -135,7 +148,9 @@ We can also test for type equality, ::
                   TypeRep a -> TypeRep b -> Maybe (a :~~: b)
 
 Since ``TypeRep`` is a singleton, we can provide a means of satisfying a
-``Typeable`` constraint with a ``TypeRep`` without loss of coherence, ::
+``Typeable`` constraint with a ``TypeRep`` without loss of coherence,
+
+.. code-block:: haskell
 
     withTypeable :: TypeRep a -> (Typeable a => b) -> b
     
@@ -143,7 +158,9 @@ Implementing ``Data.Dynamic``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 With this reflection machinery we can implement the ``Data.Dynamic`` type
-described in the Motivation section in a perfectly type-safe manner, ::
+described in the Motivation section in a perfectly type-safe manner,
+
+.. code-block:: haskell
 
     data Dynamic where
         Dynamic :: TypeRep a -> a -> Dynamic
@@ -169,7 +186,9 @@ Preserving ``Data.Typeable``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The existing ``Data.Typeable`` machinery can be expressed in terms of the
-primitives provided by ``Type.Reflection``, ::
+primitives provided by ``Type.Reflection``,
+
+.. code-block:: haskell
 
     module Data.Typeable where
 
