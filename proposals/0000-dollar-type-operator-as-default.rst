@@ -32,9 +32,10 @@ default when I use the language extension.
 Drawbacks
 ---------
 
-It forces us to start thinking about a Prelude-like default operators
-for the ``TypeOperators`` extension. It adds bloat to the extension and
-assigns it more than one responsibility (violating the SRP).
+It forces us to start thinking about a Prelude-like default operators for
+the ``TypeOperators`` extension. It adds bloat to the extension and assigns
+assigns it more than one responsibility (violating the single responsibility
+principle).
 
 Alternatives
 ------------
