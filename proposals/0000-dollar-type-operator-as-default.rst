@@ -13,9 +13,13 @@ the `TypeOperators` extension.
 Motivation
 ----------
 
-Though, I have admittedly only used the `TypeOperators` extension once, I
-think that the main reason it is used is to have the function application
-operator available in type signatures. That's what I used it for.
+The function application operator is often thought of as ‘that separator that
+lets you get rid of brackets’. Although it's just an infix function, like any
+other, and logically speaking, doesn't belong in a type signature, looking at
+it from a naïve perspective, I expect to be able to use it in type signatures
+with the same bracket-destroying effect. Obviously, that'd be silly, since it
+is not a type operator, but it can be with `TypeOperators`, and it may be the
+main reason why that extension is used.
 
 Proposed Change
 ---------------
