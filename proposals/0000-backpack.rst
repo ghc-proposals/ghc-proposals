@@ -91,7 +91,7 @@ properties:
    having to rely on some central authority having defined what
    it means for something to be *string-like.*
 
-5. **Interface composibility.** Oppositely, it should be possible
+5. **Interface composability.** Oppositely, it should be possible
    to publish and reuse an interface declaration, possibly extending it
    as necessary.
 
@@ -147,7 +147,7 @@ Dictionary passing fails criteria (2), (3), (5) and (7):
   is known, it is possible to avoid this overhead; however, ``concat``
   must be re-optimized at every such call-site, and its code duplicated!
 
-* **Interface composibility?**  Dictionary-passing style inherits
+* **Interface composability?**  Dictionary-passing style inherits
   many of the same problems that plague Haskell's record system:
   records of this form simply cannot be composed in a nice way.
   If you want to extend ``StrDict`` to contain another field,
@@ -179,7 +179,7 @@ instead of defining a ``StrDict`` type, we simply define a
 
 Clearly, type classes can reduce some of the encoding overhead
 seen in dictionary-passing style.  But it does not solve all
-the issues of dictionary-passing style (performance, composibility,
+the issues of dictionary-passing style (performance, composability,
 and applicability to the package level all apply to type classes),
 and they introduce some issues of their own:
 
