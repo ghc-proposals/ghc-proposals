@@ -183,6 +183,27 @@ Unpacking constructors with mutable fields
 UNPACK must be a no-op on constructors with mutable fields.  There's
 no sensible way to make UNPACK work with mutable fields.
 
+Can we get rid of ``MutVar#``?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If we got rid of ``MutVar#`` and instead defined ``IORef`` like this::
+
+  data IORef a = IORef (IOField a)
+
+then
+
+- This ``IORef`` is faster and uses less memory,
+- but it cannot be UNPACKed. Memory-wise this new ``IORef`` is the
+  same as an UNPACKed old ``IORef``.  However, it is lifted where
+  ``MutVar#`` is unlifted, leading to some extra overhead to access it.
+
+So the conclusion is:
+
+- Provided we use ``IOField`` wherever we currenty UNPACK ``IORef``,
+  then this ``IORef`` is an unambiguous improvement over the old
+  ``IORef``.
+
+
 Drawbacks
 ---------
 
