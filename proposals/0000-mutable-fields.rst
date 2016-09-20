@@ -76,8 +76,8 @@ the programmer nor the compiler can create one accidentally.  A
 ``MutPair`` has identity, like other mutable objects.
 
 Specifically, the type of the constructor is derived by
-- replacing each ``Ref# s a`` field with ``a``
-- adding ``IO`` to the result type
+ - replacing each ``Ref# s a`` field with ``a``
+ - adding ``IO`` to the result type
 
 As with ordinary constructors, we need a constructor *wrapper*, which
 is defined in terms of the constructor worker::
