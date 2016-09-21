@@ -169,6 +169,9 @@ info table.  Probably:
 The GC needs to do the same CLEAN/DIRTY and non-eager promotion stuff
 that it does with other mutable objects.
 
+TODO: pin down the details of info table representation and the form
+of the GC write barrier code.
+
 Code generation
 ~~~~~~~~~~~~~~~
 
@@ -203,6 +206,51 @@ So the conclusion is:
   then this ``IORef`` is an unambiguous improvement over the old
   ``IORef``.
 
+How does this work with records?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We can use record syntax when defining the constructor::
+
+  data MutPair a b = MutPair
+    { mutFst :: IOField a
+    , mutSnd :: IOField b
+    }
+
+and then the record selectors are exactly what we'd expect:
+
+  mutFst :: MutPair a b -> IOField a
+  mutSnd :: MutPair a b -> IOField b
+
+so record selction and pattern matching work out smoothly.  Record
+construction is also fine::
+
+  do
+    mpair <- MutPair { fst = 3, snd = 4 }
+    ...
+
+but record *update* cannot be allowed for records with mutable fields,
+so GHC must reject those with an error.
+
+Mutable unboxed fields
+~~~~~~~~~~~~~~~~~~~~~~
+
+We can extend this to handle mutable unboxed fields too:
+
+  Ref# :: forall r. * -> TYPE 'r -> Type Ref
+
+It's perfectly fine for ``Ref#`` to be parameterised by a
+representation-polymorphic type because the representation of ``Ref#``
+itself does not depend on this type argument.
+
+However, we now need a family of primitives to work with these::
+
+  readRefInt#  :: Ref# s Int# -> State# s -> (# State# s, Int# #)
+  writeRefInt# :: Ref# s Int# -> Int# -> State# s -> (# State# s, () #)
+
+  readRefDouble#  :: Ref# s Double# -> State# s -> (# State# s, Double# #)
+  writeRefDouble# :: Ref# s Double# -> Double# -> State# s -> (# State# s, () #)
+
+and so on.
 
 Drawbacks
 ---------
@@ -222,12 +270,12 @@ Don't do this :)
 Unresolved Questions
 --------------------
 
-
-Garbage collection
-~~~~~~~~~~~~~~~~~~
-
-The exact details of how we represent the info tables for mutable
-constructors and how we get the CLEAN/DIRTY info pointers.
+* Should we provide a way to test for reference equality between
+  mutable constructors?
+* Can we add a way to include mutable arrays in a constructor?
+* It would be great to allow STM as an option in addition to IO and
+  ST.  The constructor will need to store extra metadata, because
+  TVar# is more complex than MutVar#.
 
 GADT syntax
 ~~~~~~~~~~~
