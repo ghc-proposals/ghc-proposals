@@ -235,7 +235,7 @@ We can use record syntax when defining the constructor::
     , mutSnd :: IOField b
     }
 
-and then the record selectors are exactly what we'd expect:
+and then the record selectors are exactly what we'd expect::
 
   mutFst :: MutPair a b -> IOField a
   mutSnd :: MutPair a b -> IOField b
