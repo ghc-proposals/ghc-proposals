@@ -253,7 +253,7 @@ so GHC must reject those with an error.
 Mutable unboxed fields
 ~~~~~~~~~~~~~~~~~~~~~~
 
-We can extend this to handle mutable unboxed fields too:
+We can extend this to handle mutable unboxed fields too::
 
   Ref# :: forall r. * -> TYPE 'r -> Type Ref
 
