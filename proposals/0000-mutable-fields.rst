@@ -183,8 +183,27 @@ correct information about the mutable fields.
 Unpacking constructors with mutable fields
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-UNPACK must be a no-op on constructors with mutable fields.  There's
-no sensible way to make UNPACK work with mutable fields.
+
+While C++ or Rust allow unpacking a mutable product type into another,
+this requires a recursive notion of object construction/initialization
+and would not fit here. If we tried the following::
+
+  data MutPair2 = MP Int {-# UNPACK #-} MutPair
+
+what is the type of the MP constructor? It cannot be this::
+
+  MP :: Int -> MutPair -> IO MutPair2
+
+because the only way to make that work would be to copy the mutable
+record ``MutPair`` into the ``MP`` constructor. This is (1) not what
+we'd want for including inner objects as value types, and (2) ruins
+the guarantee that ``UNPACK`` is a performance hint rather than
+semantically important.
+
+So, ``UNPACK`` cannot do anything when used on a type with mutable
+fields.  However, there's nothing preventing ``UNPACK`` from working
+as normal in a type definition with mutable fields.
+
 
 Can we get rid of ``MutVar#``?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
