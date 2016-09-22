@@ -34,8 +34,8 @@ Removing a layer of indirection can make a big difference.  Currently
 ``IORef`` consists of two objects: the outer ``IORef`` constructor and
 the inner ``MutVar#`` type.  This proposal allows the two layers to be
 collapsed. Operations on the collapsed ``IORef`` are approximately 2x
-faster than the current ``IORef`` (according to [rough
-experiments](https://gist.github.com/simonmar/d8a05797c01799abcb979aacf27164c7)).
+faster than the current ``IORef`` (according to `rough
+experiments <https://gist.github.com/simonmar/d8a05797c01799abcb979aacf27164c7>`_).
 Note that the outer constructor in the current ``IORef``
 representation can be eliminated by using ``UNPACK`` or
 sometimes automatically by strictness analysis, but not always.  The proposed
@@ -46,8 +46,8 @@ structures, where the library writer is prepared to invest some effort
 into defining an optimal representation.  This extension makes it
 possible to eliminate a layer of indirection in mutable data
 structures in a type-safe way, where currently this can only be done
-by using ``unsafeCoerce`` tricks; see for example [the structs
-package](http://hackage.haskell.org/package/structs).
+by using ``unsafeCoerce`` tricks; see for example `the structs
+package <http://hackage.haskell.org/package/structs>`_.
 
 
 Proposed Change
