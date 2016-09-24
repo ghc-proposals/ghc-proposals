@@ -68,9 +68,9 @@ Note:
 
 - The new ``mutable`` keyword declares a mutable field
 - The return type is in ``IO``: a constructor with any ``mutable``
-  fields *must* have a return type that is of the form ``IO t`` or
-  ``ST s t``, where ``t`` takes the form of the normal return type for
-  the constructor.
+  fields *must* have a return type that has one of the forms ``IO t``, ``ST
+  s t``, or ``State# s -> (# State# s, t #)``, where ``t`` takes the
+  form of the normal return type for the constructor.
 
 Given this declaration, GHC will create a constructor ``MutPair`` that
 has the following type::
