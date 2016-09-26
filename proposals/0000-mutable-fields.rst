@@ -123,7 +123,7 @@ and then the record selectors are exactly what we'd expect::
   mutFst :: MutPair a b -> Mutable a
   mutSnd :: MutPair a b -> Mutable b
 
-so record selction and pattern matching work out smoothly.  Record
+so record selection and pattern matching work out smoothly.  Record
 construction is also fine::
 
   do
