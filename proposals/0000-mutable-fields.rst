@@ -309,8 +309,8 @@ efficient than the write barrier for a ``MutVar#``, but this is more
 than compensated for by losing a layer of indirection.
 
 Adding new syntax has lots of costs: changes in the parser and
-`HsSyn`, the renamer and typechecker, not to mention knock-on effects
-on external packages: `haskell-src-exts` and clients of that.
+``HsSyn``, the renamer and typechecker, not to mention knock-on effects
+on external packages: ``haskell-src-exts`` and clients of that.
 
 Types that contain mutable fields cannot be UNPACKed into other
 constructors.
