@@ -52,11 +52,13 @@ Or patterns solve this problem by allowing programmers to explicitly match a
 list of constructors in a concise way. As an example, suppose we had this type:
 
 ::
+
     data T = T1 String | T2 | T3
 
 We might want to write a function on this like
 
 ::
+
     stringOfT :: T -> Maybe String
     stringOfT (T1 s) = Just s
     stringOfT _      = Nothing
@@ -64,6 +66,7 @@ We might want to write a function on this like
 Now suppose that some time later we add a new constructor:
 
 ::
+
     data T = T1 String | T2 | T3 | T4 String
 
 We need to update `stringOfT` but unfortunately we don't get a warning because
@@ -72,6 +75,7 @@ we used a `_` pattern.
 Or patterns solve the problem by allowing us to do this:
 
 ::
+
     stringOfT :: T -> Maybe String
     stringOfT (T1 s)        = Just s
     stringOfT (T2{} | T3{}) = Nothing
@@ -82,6 +86,7 @@ This function doesn't match `T4`, so we get our warning.
 extend `stringOfT` to something like
 
 ::
+
     stringOfT :: T -> Maybe String
     stringOfT (T1 s) = Just s
     stringOfT (T4 s) = Just s
@@ -94,12 +99,13 @@ repetitive.
 Or patterns can solve this problem like this
 
 ::
+
     stringOfT :: T -> Maybe String
     stringOfT (T1 s | T4 s) = Just s
     stringOfT (T2{} | T3{}) = Nothing
 
-Now we have code reuse, and we get nice warnings next time a new constructor is
-added.
+Now we have code reuse, and we will get nice warnings next time a new
+constructor is added.
 
 Details
 -------
