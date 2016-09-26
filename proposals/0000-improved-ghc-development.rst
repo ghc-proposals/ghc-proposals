@@ -39,9 +39,9 @@ Proposed Change
   link to https://www.haskell.org/contributing (see above).
 
 - Add a dedicated contribution page to haskell.org
-  As @mpickering pointed out, there are many projects to contirbute to. Hence we suggest:
+  As @mpickering pointed out, there are many projects to contribute to. Hence we suggest:
   https://www.haskell.org/contributing to provide a list of haskell project to contribute to.
-  https://www.haskell.org/contributung/ghc to list the following content
+  https://www.haskell.org/contributing/ghc to list the following content
   
   
   GHC Development is facilitated through phabricator
@@ -49,7 +49,7 @@ Proposed Change
   Please go to https://phabricator.haskell.org[4] and
   create an account.
   
-  If you want to report a bug, please file a bugreport through
+  If you want to report a bug, please file a bug report through
   the “Maniphest” module, you can find on the left.
   
   If you are looking for something to contribute, and browse the
@@ -66,10 +66,10 @@ Proposed Change
   
   Validate your build [ plus instructions how to do so, and how to run
   performance measurements on the changed ghc; if one is interested in
-  that as well ]
+  that as well ] (MP: This should perhaps suggest just submitting a diff and let phab validate).
   
-  Upload your patch to GHC using the arc command line tool. You will have
-  to set up your token during the first use, just follow the instructions.
+  Upload your patch to Phabricator using the arc command line tool. You will have
+  to upload your public key during the first use, just follow the instructions.
   
   To upload your patch, commit your local changes; and run
   `$ arc diff origin/master`
