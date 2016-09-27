@@ -57,10 +57,6 @@ to help us avoid,
 
 * we need to use ``unsafeCoerce`` in a number of places
 
-Here you should describe in greater detail the motivation for the change. This
-should include concrete examples of the shortcomings of the current
-state of things.
-
 Proposed Change
 ---------------
 
@@ -81,6 +77,10 @@ similar to ``Typeable`` but with an indexed representation type,
     instance Ord (TypeRep a) where compare _ _ = EQ
     instance TestEquality TypeRepX
 
+Like today, the new ``Typeable`` mechanism will only support kind-monomorphic
+types. Unlike today's mechanism, we provide a means of extracting the *kind* of
+a type representation,
+
     -- | The kind of a type.
     typeRepKind :: TypeRep (a :: k) -> TypeRep k
 
@@ -93,8 +93,9 @@ polymorphic) type ``a`` with ``typeRep``,
 
     typeRep :: forall (a :: k). Typeable a => TypeRep a
 
-Note how in contrast to ``Data.Typeable.typeRep`` we needn't provide a ``Proxy``
-to ``typeRep``; the desired type propagates through ``TypeRep``\'s index.
+Note how, in contrast to ``Data.Typeable.typeRep``, we needn't provide a
+``Proxy`` to ``typeRep``; the desired type propagates through ``TypeRep``\'s
+index.
 
 
 We can pattern match on the structure of a ``TypeRep``. For instance, on type
@@ -153,7 +154,22 @@ Since ``TypeRep`` is a singleton, we can provide a means of satisfying a
 .. code-block:: haskell
 
     withTypeable :: TypeRep a -> (Typeable a => b) -> b
-    
+
+We will also see later that it is helpful to quantify over the type index. For
+this we introduce,
+
+
+.. code-block:: haskell
+
+    data SomeTypeRep where
+        SomeTypeRep :: forall a. TypeRep a -> SomeTypeRep
+
+    instance Eq SomeTypeRep
+    instance Ord SomeTypeRep
+    instance Show SomeTypeRep
+
+    someTypeRep :: Typeable a => Proxy a -> SomeTypeRep
+
 Implementing ``Data.Dynamic``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -190,28 +206,213 @@ primitives provided by ``Type.Reflection``,
 
 .. code-block:: haskell
 
+                {-# LANGUAGE ScopedTypeVariables #-}
+
     module Data.Typeable where
 
     import qualified Type.Reflection as R
 
-    data TypeRep where
-        TypeRep :: R.TypeRep a -> TypeRep
+    type TypeRep = R.SomeTypeRep
 
-    instance Eq TypeRepX
-    instance Ord TypeRepX
-    instance Show TypeRepX
+    typeOf :: forall a. Typeable a => a -> TypeRep
+    typeOf _ = R.SomeTypeRep (R.typeRep :: TypeRep a)
 
-Here you should describe in precise terms what the proposal seeks to change.
-This should cover several things,
+    typeRep :: forall proxy a. Typeable a => proxy a -> TypeRep
+    typeRep = $.SomeTypeRep (R.typeRep :: TypeRep a)
 
-* define the grammar and semantics of any new syntactic constructs
-* define the interfaces for any new library interfaces
-* discuss how the change addresses the points raised in the Motivation section
-* discuss how the proposed approach might interact with existing features  
+    cast :: forall a b. (Typeable a, Typeable b) => a -> Maybe b
+    cast x
+      | Just HRefl <- ta `R.eqTypeRep` tb = Just x
+      | otherwise                         = Nothing
+      where
+        ta = I.typeRep :: R.TypeRep a
+        tb = I.typeRep :: R.TypeRep b
 
-Note, however, that this section need not describe details of the
-implementation of the feature. The proposal is merely supposed to give a
-conceptual specification of the new feature and its behavior.
+    eqT :: forall a b. (Typeable a, Typeable b) => Maybe (a :~: b)
+    eqT
+      | Just HRefl <- ta `I.eqTypeRep` tb = Just Refl
+      | otherwise                         = Nothing
+      where
+        ta = I.typeRep :: I.TypeRep a
+        tb = I.typeRep :: I.TypeRep b
+
+The remaining existing exports of ``Data.Typeable`` follow easily.
+
+.. code-block:: haskell
+
+    gcast :: forall a b c. (Typeable a, Typeable b) => c a -> Maybe (c b)
+
+    gcast1 :: forall c t t' a. (Typeable t, Typeable t')
+           => c (t a) -> Maybe (c (t' a))
+           
+    gcast2 :: forall c t t' a b. (Typeable t, Typeable t')
+           => c (t a b) -> Maybe (c (t' a b))
+
+    typeRepTyCon :: TypeRep -> TyCon
+
+    rnfTypeRep :: TypeRep -> ()
+
+We can also continue to provide the deprecated non-kind polymorphic ``Typeable``
+exports,
+
+.. code-block:: haskell
+
+    typeOf1 :: forall t (a :: *). Typeable t => t a -> TypeRep
+    typeOf2 :: forall t (a :: *) (b :: *). Typeable t => t a b -> TypeRep
+
+
+Defining ``TypeRep``
+~~~~~~~~~~~~~~~~~~~~
+
+The heart of ``Type.Reflection`` is the ``TypeRep`` type. It can be defined as a
+standard GADT (omitting the ``Fingerprint``s used for O(1) comparison), ::
+
+    data TypeRep (a :: k) where
+        TrTyCon :: TyCon -> TypeRep k -> TypeRep (a :: k)
+        TrApp   :: forall k1 k2 (a :: k1 -> k2) (b :: k1).
+                   TypeRep (a :: k1 -> k2)
+                -> TypeRep (b :: k1)
+                -> TypeRep (a b)
+
+Here a type constructor type consists of a (possibly kind-polymorphic)
+type constructor and a ``TypeRep`` of its kind. The kind is necessary to ensure
+that we represent only kind-monomorphic types. Type application types are
+represented by the representations of the two types of the application.
+
+
+Serializing type representations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Serializing type representations (with, e.g., the ``binary`` library) is a bit
+trickier than it was in the past. Let's look at a few reasons why this is so.
+
+Recursive kind relationships
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Let's start by only considering a naive serializer,
+
+.. code-block:: haskell
+
+    -- TyCon is just plain data, this is trivially provided...
+    instance Binary TyCon
+
+    putTypeRep :: TypeRep a -> Put
+    putTypeRep (TrTyCon tycon kind) = put 0 >> putTypeRep tycon >> putTypeRep kind
+    putTypeRep (TrApp a b) = put 1 >> putTypeRep a >> putTypeRep b
+
+Consider, what happens when we attempt to serialize ``typeRep :: TypeRep Type``.
+Recall that ``Type`` is one of the primitive types provided by GHC and that
+``Type :: Type``. Forgetting for a moment that ``Type`` is in fact a type
+synonym, this means that,
+
+.. code-block:: haskell
+
+    typeTypeRep :: TypeRep Type
+    typeTypeRep = TrTyCon typeTyCon typeTypeRep
+
+    typeTyCon :: TyCon
+    typeTyCon = {- ... -}
+
+Here we immediately see a problem: the recursive kind relationship of ``Type``
+will cause our naive serializer ``putTypeRep`` to loop. Indeed the situation is
+a bit more complicated and ``Type`` isn't the only of GHC's primitive types
+which has this property. We also have,
+
+.. code-block:: haskell
+
+    type Type = TYPE 'PtrRepLifted
+
+    data TYPE :: RuntimeRep -> Type
+
+    data RuntimeRep :: Type
+         = PtrRepLifted
+         | {- ... -}
+
+Therefore we have four distinct loops:
+
+* Involving ``(->)``
+
+  * ``(->) :: a -> b -> c``
+
+* Involing ``(->)``, ``Type``, and ``TYPE``
+
+  * ``(->) :: a -> b -> c``
+  * ``Type :: TYPE 'PtrRepLifted``
+  * ``TYPE :: RuntimeRep -> Type``
+
+* Involving ``TYPE``, ``Type``
+
+  * ``Type :: TYPE 'PtrRepLifted``
+  * ``TYPE :: RuntimeRep -> Type``
+
+* Involving ``TYPE``, and ``RuntimeRep``
+
+  * ``TYPE :: RuntimeRep -> Type``
+  * ``RuntimeRep :: Type``
+
+* Involing ``RuntimeRep``, and ``'PtrRepLifted``
+
+  * ``RuntimeRep :: Type``
+  * ``'PtrRepLifted :: RuntimeRep``
+
+This poses a rather unfortunate safety issue for authors of serializers. One
+option for approaching this would be to restructure the ``TypeRep`` type to draw
+particular attention to these cases,
+
+.. code-block:: haskell
+
+    data TypeRep a where
+        TRTyCon :: TyCon -> TypeRep k -> TypeRep (a :: k)
+        TRApp   :: TypeRep a -> TypeRep b -> TypeRep (a b)
+        TRTYPE  :: TypeRep (r :: RuntimeRep) -> TypeRep (TYPE r)
+        TRArrow :: TypeRep a -> TypeRep b -> TypeRep (a -> b)
+        TRPtrRepLifted :: TypeRep 'PtrRepLifted
+
+This also may have the advantage of simplifying production of compiler evidence
+and making the runtime representations of common types more concise.
+Another option would be to retain the simpler two-constructor ``TypeRep``
+described above but expose pattern synonyms for the special cases seen here,
+along with clear documentation instructing library authors to handle them.
+
+Type indexes and deserialization
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Consider the following potential type for a deserializer of ``TypeRep``, 
+
+.. code-block:: haskell
+
+    getTypeRep :: Get (TypeRep a)
+
+Here ``getTypeRep`` claims to be a deserializer for any ``TypeRep a``, where
+``a`` is determined by the caller. However, what if the ``TypeRep`` being
+deserialized represents a distinct type ``b``? Clearly this deserializer should
+fail, but how would it know? Afterall, ``getTypeRep`` does not have access to a
+``TypeRep a`` to compare against.
+
+It is easier to think of deserialization of ``TypeRep`` as a two-step operation:
+
+1. First deserialize an unknown ``SomeTypeRep``
+2. Then compare the ``SomeTypeRep`` against the type ``a`` expected by the caller
+
+That is,
+
+.. code-block:: haskell
+
+    getSomeTypeRep :: Get SomeTypeRep
+    getSomeTypeRep = {- ... -}
+
+    getTypeRep :: forall a. Typeable a => Get (TypeRep a)
+    getTypeRep = do
+        r <- getSomeTypeRep
+        case r of
+          SomeTypeRep rep
+            | rep `eqTypeRep` expected = expected
+            | otherwise                = fail "Type mismatch"
+      where
+        expected = typeRep @a
+
+Note the ``Typeable`` constraint on ``getTypeRep``. This is crucial since we
+need to have ``Typeable`` evidence for the type that the caller *expects*.
 
 Drawbacks
 ---------
@@ -222,11 +423,26 @@ complicating the language grammar, poor interactions with other features,
 Alternatives
 ------------
 
-Here is where you can describe possible variants to the approach described in
-the Proposed Change section.
+Type-indexed TyCon
+~~~~~~~~~~~~~~~~~~
+
+The design described above does not propagate any type information beyond
+``TypeRep``. An alterative would be to also add an index to ``Tycon``,
+
+.. code-block:: haskell
+
+    data TyCon (a :: k)
+
+    data TypeRep (a :: k) where
+        TRTyCon :: TyCon a -> TypeRep k -> TypeRep a
+
+However, the benefits to this approach are unclear and it would complicate
+evidence generation.
 
 Unresolved Questions
 --------------------
 
-Are there any parts of the design that are still unclear? Hopefully this section
-will be empty by the time the proposal is brought up for a final decision.
+Do we want to allow the user to construct ill-kinded type representations? Given
+that the the user could never cast with such a representation, it seems like
+there is likely no potential for unsafety by doing so.
+
