@@ -121,10 +121,13 @@ process, here is a short summary,
 4. When you feel your proposal document is complete, push your branch to your
    fork (e.g. ``git push origin type-indexed-typeable``), and open a Pull
    Request requesting that your branch be merged into the ``master`` branch of
-   the ``ghc-proposals/ghc-proposals`` repository. Be sure to include a link to
-   the rendered view of your proposal in the pull request description. Your
-   proposal will automatically be announced on the ``ghc-devs`` mailing list
-   when this pull request is opened.
+   the ``ghc-proposals/ghc-proposals`` repository. If you unfamiliar with
+   GitHub pull requests then see the `relevant documentation
+   <https://help.github.com/articles/creating-a-pull-request/#creating-the-pull-request>`_.
+
+   Be sure to include a link to the rendered view of your proposal in the pull
+   request description. Your proposal will automatically be announced on the
+   ``ghc-devs`` mailing list when this pull request is opened.
 
 5. Discussion will proceed on the pull request; it is very likely that multiple
    iterations will be necessary before the proposal stabilizes.
@@ -136,4 +139,4 @@ process, here is a short summary,
 
 7. When your proposal is accepted your pull request will be merged. At this
    point you or someone else may choose to implement your proposal.
-   
+
