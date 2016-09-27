@@ -130,13 +130,19 @@ The module ``GHC.Records`` defines the following class:
 
 When the new extension ``OverloadedRecordFields`` is enabled:
 
-* the existing ``DuplicateRecordFields`` extension is automatically enabled,
 * overloaded label syntax is available, and
 * a label ``#foo`` is translated to
   ``GHC.Records.fromLabel @"foo" :: HasField "foo" r a => r -> a``.
 
-The third point assumes ``OverloadedLabels`` and ``RebindableSyntax``
+The second point assumes ``OverloadedLabels`` and ``RebindableSyntax``
 are *disabled* (see `Multiple versions of fromLabel`_ below).
+
+Note that this is orthogonal to ``DuplicateRecordFields``.  While they
+will often be used together, it is entirely possible to use
+``DuplicateRecordFields`` alone (avoiding ambiguous selectors via type
+annotations if necessary) or ``OverloadedRecordFields`` alone (using
+overloaded label syntax even where a plain selector would be
+unambiguous).
 
 
 Solving HasField constraints
