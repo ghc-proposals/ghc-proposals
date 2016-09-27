@@ -84,16 +84,20 @@ process, here is a short summary,
    b. *Proposed Change*: What change are you proposing? This is the
       specification of your change and should be precise and comprehensive. This
       might include,
+
       * grammar and semantics of any new syntactic constructs
       * the types and semantics of any new library interfaces
-      * how the proposed change addresses the original problem (perhaps
-        returning to the concrete examples introduced in the *Motivation*
-        section).
+      * how the proposed change addresses the original problem
+        (perhaps returning to the concrete examples introduced in the
+        *Motivation* section).
       * how the proposed change might interact with existing language or
         compiler features
-      This generally shouldn't discuss the implementation of the change.
+
+      This generally needn't discuss the implementation of the change.
    c. *Drawbacks*: There's no such thing as a free lunch; what is the cost of
-      your proposal?
+      your proposal? This includes the cost of implementing the proposal,
+      mainintaining it indefinitely, teaching it to new users, and considering
+      its interaction with future proposals.
    d. *Alternatives*: What alternatives to the proposed change exist? These can
       range from minor variants to completely . This doesn't need to go into
       great detail, just give the reader a sketch of the design space.
@@ -102,8 +106,8 @@ process, here is a short summary,
       presently only concerned with the conceptual design of your idea.
 
    Note that proposals are written in `ReStructuredText
-   <http://www.sphinx-doc.org/en/stable/rest.html>`_, not Markdown, for its
-   expressiveness and ease of integration into other GHC infrastructure.
+   <http://www.sphinx-doc.org/en/stable/rest.html>`_ rather than Markdown for
+   its expressiveness and ease of integration into other GHC infrastructure.
 
 4. When you feel your proposal document is complete, open a Pull Request
    requesting that your branch be merged into the ``master`` branch of this
