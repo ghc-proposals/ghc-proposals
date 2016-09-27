@@ -67,7 +67,7 @@ While the full process is described in the `proposal
 <https://github.com/ghc-proposals/ghc-proposals/pull/1>`_ describing the proposal
 process, here is a short summary,
 
-1. Clone this repository and create a branch in your clone for your new proposal.
+1. Fork this repository and create a branch in your fork for your new proposal.
 
 2. Starting with the `template
    <https://github.com/ghc-proposals/ghc-proposals/blob/master/0000-template.rst>`_,
