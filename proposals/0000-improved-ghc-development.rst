@@ -145,52 +145,53 @@ Proposed Change
   link to https://www.haskell.org/contributing (see above).
 
 - Add a dedicated contribution page to haskell.org
+
   As @mpickering pointed out, there are many projects to contribute to. Hence we suggest:
   https://www.haskell.org/contributing to provide a list of haskell project to contribute to.
   https://www.haskell.org/contributing/ghc to list the following content
   
   
-  GHC Development is facilitated through phabricator
-  
-  Please go to https://phabricator.haskell.org[4] and
-  create an account.
-  
-  If you want to report a bug, please file a bug report through
-  the “Maniphest” module, you can find on the left.
-  
-  If you are looking for something to contribute, and browse the
-  Open Tasks at https://phabricator.haskell.org/maniphest/query/open/[5]
-  
-  Clone the GHC tree and build it
-  [ clone and build instructions here; note about stage2 pinning to reduce compile times and other
-  build system features ]
-  
-  Hack to your hearts content on GHC (you might get some quick responses
-  regarding ghc’s internals at irc://irc.freenode.net/ghc, as well as in
-  the ghc commentary at …[6], or the ghc-dev mailing list for which you
-  can sign up at ...)
-  
-  Validate your build [ plus instructions how to do so, and how to run
-  performance measurements on the changed ghc; if one is interested in
-  that as well ] (MP: This should perhaps suggest just submitting a diff and let phab validate).
-  
-  Upload your patch to Phabricator using the arc command line tool. You will have
-  to upload your public key during the first use, just follow the instructions.
-  
-  To upload your patch, commit your local changes; and run
-  `$ arc diff origin/master`
-  
-  arc will run a few linters against your diff, and provide you with a form
-  to fill in all the details regarding your patch. This form is usually
-  prepopulated with the commit messages from your local commits.
-  
-  During the review process you might have to update your diff. To do so
-  you can rebase your changes against the most recent master and/or add
-  additional commits to it; once you are done updating your patch, run
-  `$ arc diff --update`
-  
-  Once your diff has been accepted, someone with commit rights with “land” your
-  diff into the official ghc tree.
+    GHC Development is facilitated through phabricator
+    
+    Please go to https://phabricator.haskell.org and
+    create an account.
+    
+    If you want to report a bug, please file a bug report through
+    the “Maniphest” module, you can find on the left.
+    
+    If you are looking for something to contribute, and browse the
+    Open Tasks at https://phabricator.haskell.org/maniphest/query/open/
+    
+    Clone the GHC tree and build it
+    [ clone and build instructions here; note about stage2 pinning to reduce compile times and other
+    build system features ]
+    
+    Hack to your hearts content on GHC (you might get some quick responses
+    regarding ghc’s internals at irc://irc.freenode.net/ghc, as well as in
+    the ghc commentary at ..., or the ghc-dev mailing list for which you
+    can sign up at ...)
+    
+    Validate your build [ plus instructions how to do so, and how to run
+    performance measurements on the changed ghc; if one is interested in
+    that as well ] (MP: This should perhaps suggest just submitting a diff and let phab validate).
+    
+    Upload your patch to Phabricator using the arc command line tool. You will have
+    to upload your public key during the first use, just follow the instructions.
+    
+    To upload your patch, commit your local changes; and run
+    `$ arc diff origin/master`
+    
+    arc will run a few linters against your diff, and provide you with a form
+    to fill in all the details regarding your patch. This form is usually
+    prepopulated with the commit messages from your local commits.
+    
+    During the review process you might have to update your diff. To do so
+    you can rebase your changes against the most recent master and/or add
+    additional commits to it; once you are done updating your patch, run
+    `$ arc diff --update`
+    
+    Once your diff has been accepted, someone with commit rights with “land” your
+    diff into the official ghc tree.
 
 On this note. I'd like to see haskell.org/contributing to match the style of
 haskell.org, as well as being built thorugh a static page generater off of a
