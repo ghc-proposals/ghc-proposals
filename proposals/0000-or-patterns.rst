@@ -170,6 +170,8 @@ First `<expr_1>` is abstracted as a function:
 
 Then the or pattern is expanded to ordinary patterns:
 
+::
+
     f (Left (Right i)) = f_rhs_1 i
     f (Right (Just i)) = f_rhs_1 i
     f _ = <expr_2>
