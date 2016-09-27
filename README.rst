@@ -67,17 +67,20 @@ While the full process is described in the `proposal
 <https://github.com/ghc-proposals/ghc-proposals/pull/1>`_ describing the proposal
 process, here is a short summary,
 
-1. Fork this repository and create a branch in your fork for your new proposal.
+1. Fork this repository and clone your fork.
    See GitHub's `documentation
    <https://help.github.com/articles/fork-a-repo/>`_ if you are unfamiliar with
-   forking.
+   this aspect of GitHub's workflow.
+
+2. Create a branch with a sensible name in your fork for your new proposal. For
+   instance, ``git checkout -b type-indexed-typeable``.
 
 2. Starting with the `template
    <https://github.com/ghc-proposals/ghc-proposals/blob/master/0000-template.rst>`_,
    describe your proposed change in a file in the ``proposals/`` directory. Use
-   a filename of the form ``proposals/0000-short-proposal-title.rst``; leave the
-   proposal number as ``0000``, it will be chosen when the proposal is
-   accepted.
+   a file name of the form ``proposals/0000-short-proposal-title.rst``; leave the
+   proposal number as ``0000``, a fresh identifier will be chosen when the
+   proposal is accepted.
 
 3. Write the proposal. At very least this should describe the following,
 
@@ -111,12 +114,17 @@ process, here is a short summary,
    Note that proposals are written in `ReStructuredText
    <http://www.sphinx-doc.org/en/stable/rest.html>`_ rather than Markdown for
    its expressiveness and ease of integration into other GHC infrastructure.
+   See the `GHC Users Guide
+   <http://downloads.haskell.org/~ghc/latest/docs/html/users_guide/editing-guide.html>`_
+   for a brief introduction to ReStructuredText.
 
-4. When you feel your proposal document is complete, open a Pull Request
-   requesting that your branch be merged into the ``master`` branch of this
-   repository. Be sure to include a link to the rendered view of your proposal
-   in the pull request description. Your proposal will automatically be
-   announced on the ``ghc-devs`` mailing list when this pull request is opened.
+4. When you feel your proposal document is complete, push your branch to your
+   fork (e.g. ``git push origin type-indexed-typeable``), and open a Pull
+   Request requesting that your branch be merged into the ``master`` branch of
+   the ``ghc-proposals/ghc-proposals`` repository. Be sure to include a link to
+   the rendered view of your proposal in the pull request description. Your
+   proposal will automatically be announced on the ``ghc-devs`` mailing list
+   when this pull request is opened.
 
 5. Discussion will proceed on the pull request; it is very likely that multiple
    iterations will be necessary before the proposal stabilizes.
