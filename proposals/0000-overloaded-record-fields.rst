@@ -23,7 +23,7 @@ Motivation
 A serious limitation of the Haskell record system is the inability to
 overload field names in record types: for example, if the data types
 
-::
+.. code-block:: haskell
 
   data Person  = Person  { personId :: Int, name :: String }
   data Address = Address { personId :: Int, address :: String }
@@ -50,7 +50,7 @@ predictable type inference behaviour.
 For example, the following are accepted when both occurrences of
 ``personId`` are in scope:
 
-::
+.. code-block:: haskell
 
   \ p -> personId (p :: Person)         -- explicit type signature on argument
   \ p -> (personId :: Person -> Int) p  -- type pushed in to selector
@@ -60,7 +60,7 @@ For example, the following are accepted when both occurrences of
 
 However, the following are rejected:
 
-::
+.. code-block:: haskell
 
   \ (p :: Person) -> personId p  -- type of argument not used, even if obvious
   personId (Person 1 "Me")       -- again, argument is not an explicit signature
@@ -85,7 +85,7 @@ The current proposal makes it possible to interpret a label
 field types as part of the type inference process.  For example, the
 expression
 
-::
+.. code-block:: haskell
 
   \ (p :: Person) -> #personId p
 
@@ -101,13 +101,13 @@ In addition to resolving ambiguous field selectors to a single record
 type using type inference, the proposed change enables definitions
 that are polymorphic over record fields, so for example
 
-::
+.. code-block:: haskell
 
   \ p -> #personId p + (1 :: Int)
 
 will be given the inferred type
 
-::
+.. code-block:: haskell
 
   HasField "personId" r Int => r -> Int
 
@@ -123,7 +123,7 @@ HasField class and OverloadedRecordFields extension
 
 The module ``GHC.Records`` defines the following class:
 
-::
+.. code-block:: haskell
 
   class HasField (x :: Symbol) r a | x r -> a where
     fromLabel :: r -> a
@@ -153,7 +153,7 @@ behaviour (e.g. ``Coercible``).
 For the ``personId`` example above, the end result is rather like
 having an instance
 
-::
+.. code-block:: haskell
 
   instance HasField "personId" Person Int where
     fromLabel = personId
@@ -185,14 +185,14 @@ OverloadedLabels extension
 The ``IsLabel`` class defined in ``GHC.OverloadedLabels`` is changed
 from:
 
-::
+.. code-block:: haskell
 
   class IsLabel (x :: Symbol) t where
     fromLabel :: Proxy# x -> t
 
 to:
 
-::
+.. code-block:: haskell
 
   class IsLabel (x :: Symbol) t where
     fromLabel :: t
@@ -240,7 +240,7 @@ demonstrates.
 
 Consider the following module:
 
-::
+.. code-block:: haskell
 
   {-# LANGUAGE OverloadedRecordFields, NoMonomorphismRestriction #-}
   import Control.Category
@@ -252,14 +252,14 @@ not, the label is automatically interpreted as a function.  This means
 that type inference succeeds for ``fooBar``, giving it the inferred
 type
 
-::
+.. code-block:: haskell
 
   (HasField "foo" s t, HasField "bar" r s) => r -> t
 
 However, when ``OverloadedLabels`` is enabled as well, the inferred
 type of ``fooBar`` is
 
-::
+.. code-block:: haskell
 
   (Category cat, IsLabel "foo" (cat s t), IsLabel "bar" (cat r s)) => cat r t
 
@@ -333,7 +333,7 @@ label syntax.
 We could use a type family rather than a functional dependency in the
 definition of ``HasField``.  That is, we could define
 
-::
+.. code-block:: haskell
 
   class HasField (x :: Symbol) r where
     type FieldType x r :: *
