@@ -50,7 +50,7 @@ Proposed Change
   Also we have and continue to accept patches just uploaded
   to Trac as a diff. We tend to ask people to upload it to phab for better reviews
   and so it's attributed to them when we commit. Some don't (and we then do it ourselves),
-  most due. If they don't need another login then I suspect almost all would.
+  most do. If they don't need another login then I suspect almost all would.
 
   There's a (seemingly) actively maintained project that does all the above, could we leverage it?
   https://github.com/trac-hacks/trac-github
@@ -72,10 +72,10 @@ Proposed Change
    * Clean up build instructions. The pages have become way too complex over the years. 
    * Create native setup script particular to an environment.
 
-  As I am a windows maintainer, I will offer a proposal: Use scripts similar to my own setup scripts. my setup script for a 100% unattended build env setup for Windows are here: https://github.com/Mistuke/GhcDevelChoco/releases
+  As I am a Windows maintainer, I will offer a proposal: Use scripts similar to my own setup scripts. my setup script for a 100% unattended build env setup for Windows are here: https://github.com/Mistuke/GhcDevelChoco/releases
 
-  These are entirely self contained environments that can be removed by a simple rm -rf /.
-  You can have as many as you want on the same machine without them interfering with eachother or with whatever else you might have done to your GHC already installed.
+  These are entirely self contained environments that can be removed by a simple `rm -rf /`.
+  You can have as many as you want on the same machine without them interfering with each other or with whatever else you might have done to your GHC already installed.
    
   It's not 100% production ready but it works and does so well.
 
@@ -106,7 +106,7 @@ Proposed Change
   The git linters and Arc linters aren't currently checking the same things.
 
   Particularly is the fact that the pre-commit hooks check
-  the summary text but arc doesn't. So commits can get rejected at push time requiring more fork for maintainers.
+  the summary text but arc doesn't. So commits can get rejected at push time requiring more work for maintainers.
 
   Also I want to say I love the summary document you have to fill in.
   It ensures useful information is there later when I have to find out why a change was made. So whatever we do, don't remove this.
