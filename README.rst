@@ -68,6 +68,9 @@ While the full process is described in the `proposal
 process, here is a short summary,
 
 1. Fork this repository and create a branch in your fork for your new proposal.
+   See GitHub's `documentation
+   <https://help.github.com/articles/fork-a-repo/>`_ if you are unfamiliar with
+   forking.
 
 2. Starting with the `template
    <https://github.com/ghc-proposals/ghc-proposals/blob/master/0000-template.rst>`_,
