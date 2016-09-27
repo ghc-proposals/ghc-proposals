@@ -206,8 +206,7 @@ These changes have potentially higher maintenance overhead. But they should be a
 Alternatives
 ------------
 
-TODO: Here is where you can describe possible variants to the approach described in
-the Proposed Change section.
+There are no alternatives ;-)
 
 Unresolved Questions
 --------------------
