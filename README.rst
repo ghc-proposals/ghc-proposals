@@ -1,14 +1,11 @@
 GHC Proposals
 =============
 
-.. note::
-    Currently the process that goes along with this repository is itself in the
-    proposal stage. See the first proposal,
-    `Pull Request #1 <https://github.com/ghc-proposals/ghc-proposals/pull/1>`_, for details. 
-
-
 This repository contains specifications for proposed changes to the
-`Glasgow Haskell Compiler <https://www.haskell.org/ghc>`_.
+`Glasgow Haskell Compiler <https://www.haskell.org/ghc>`_. See the `Proposal
+Process Process
+<https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-proposal-process.rst>`_
+for a complete description of the GHC proposal process.
 
 What is a proposal?
 -------------------
