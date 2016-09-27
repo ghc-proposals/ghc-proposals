@@ -22,13 +22,13 @@ Motivation
 
 Make GHC development fun again! What I’d really like to see improved is the “multiple (web)services, multiple accounts” issue solved. As it is right now I need to have a github account (ghc-proposals, soon tiny PR against ghc), a trac account (for the wiki and issue tracker; which never seems to remember me), a phabricator account, likely a stack overflow account for questions and answers. On top of that I also need to be on a large set of mailing lists if I want to not miss anything, and an irc, reddit, and twitter client to tap into the most recent discussions. And there’s another wiki on haskell.org for which I would need to sign up and get an approved account.
 
-A common complaint is that new users need to create multiple accounts on Trac and Phab in order to be able to contribute a patch to GHC. The often proposed solution is to move everything to GitHub. I believe GitHub is not up to the task of managing a project such as GHC. But I do believe with minor changes we can greater leverage the user base of GitHub while also providing valuable information back to the non GitHub users.
+The often proposed solution is to move everything to GitHub. Some of us believe GitHub is not up to the task of managing a project such as GHC. But we also believe with minor changes we can greater leverage the user base of GitHub while also providing valuable information back to the non GitHub users.
 
 Proposed Change
 ---------------
 - Link Phabricator and GitHub
 
-  Phabricator seems to have built in support for OAuth. One easy way so lower the barrier is to support OAuth logins to GitHub. This way a user doesn't have to create a new account. They can simply login using their GitHub credentials.
+  Phabricator seems to have built in support for OAuth. One easy way so lower the barrier is to support OAuth logins to GitHub. This way a user doesn't have to create a new account. They can simply login using their GitHub credentials. *(This seems to already be enabled, maybe we should advertise it more.)*
 
   Bonus points if the GitHub API allows us to extract the user's public key from GitHub. This would also mean less setup for the user to be able to push a diff.
 
@@ -67,19 +67,17 @@ Proposed Change
 
 - Helping Newcomers
 
-   * Create a better landing page for newcomers
+   * Create a better landing page for newcomers (see proposal below)
    * Show newcomers tickets more prominently
    * Clean up build instructions. The pages have become way too complex over the years. 
    * Create native setup script particular to an environment.
 
-  As I am a windows maintainer, I will offer a proposal: Use scripts similar to my own setup scripts. my setup script for a 100% unattended build env setup for Windows
-     are here: https://github.com/Mistuke/GhcDevelChoco/releases
+  As I am a windows maintainer, I will offer a proposal: Use scripts similar to my own setup scripts. my setup script for a 100% unattended build env setup for Windows are here: https://github.com/Mistuke/GhcDevelChoco/releases
 
-    These are entirely self contained environments that can be removed by a simple rm -rf /.
-     You can have as many as you want on the same machine without them interfering with eachother
-     or with whatever else you might have done to your GHC already installed.
+  These are entirely self contained environments that can be removed by a simple rm -rf /.
+  You can have as many as you want on the same machine without them interfering with eachother or with whatever else you might have done to your GHC already installed.
    
-     It's not 100% production ready but it works and does so well.
+  It's not 100% production ready but it works and does so well.
 
   This script will setup an environment containing (if you want):
    * A full msys setup
@@ -88,7 +86,7 @@ Proposed Change
    * do a local install of php and arc
    * configure arc
    * setup Hadrian
-   * setup SSH
+   * setup SSH (for those who want to interface with it this way)
  
   The script is set up to provide you with a working environment with little interaction needed. Setup is just one call. 
 
@@ -117,7 +115,7 @@ Proposed Change
 
   It's recently been made a requirement to require a public key to push to phab. The error you get when you don't do this and try to push a patch is very very cryptic and unintuitive. Could we make a plugin that asks the user to upload a public key on trac if they haven't done so? Like a banner at the top?
 
-- Add some automation to Trac
+- Add some automation to Trac (Or whatever bug tracker we end up using)
 
   - Particular on new tickets post a friendly reminder that if they want they can give it a hand in fixing it themselves.
   - Parse information added, in particular check if reproduction steps are there etc.
@@ -132,17 +130,17 @@ Proposed Change
 
 - Unify the issue tracker and code review into phabricator
 
-- Move the Wiki someplace else. I don’t know if the wiki in phabricator is any good, I’ve never used it.
+- Move the Wiki someplace else. Is the wiki in phabricator any good, maybe we should use it.
   However, finding something in the ghc wiki has been more hit and miss for me than anything else. The
   built in search almost never reveals what I’m looking for, and resorting to a search engine only sometimes
   helps me find what I’m looking for. (This might totally be my fault).
 
-- Reduce the number of Mailing lists. I’m supposedly not on the haskell ml; so I missed
+- Reduce the number of Mailing lists. Some people are supposedly not on the haskell ml; so they missed emails such as
   https://mail.haskell.org/pipermail/haskell/2016-September/024995.html, and only saw it due to
   https://twitter.com/ezyang/status/780134457101516800.
   Are our MLs really that high volume that we need so many?
 
-- I like the idea of trivial pull requests to be accepted on GH as well. And I don’t see it as a big hurdle
+- Allow trivial pull requests to be accepted on GH as well. It shouldn't be as a big hurdle
   to ask someone to please be so kind and submit the patch through phabricator if it’s more involved with a
   link to https://www.haskell.org/contributing (see above).
 
