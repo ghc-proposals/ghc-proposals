@@ -297,6 +297,19 @@ translation, so it may not be very convenient to use two different
 libraries that rely on this option.  This is why ``OverloadedLabels``
 and the ``IsLabel`` class are retained.
 
+The following table shows how the desugaring of overloaded labels
+depends on which of ```OverloadedRecordFields``, ``OverloadedLabels``
+and ``RebindableSyntax`` are enabled:
+
+======  ======  ======  =================================================================
+ORF     OL      RS      Desugaring of ``#foo``
+======  ======  ======  =================================================================
+Off     Off     On/Off  Invalid syntax
+On      Off     Off     ``GHC.Records.fromLabel @"foo" :: HasField "foo" r a => r -> a``
+On/Off  On      Off     ``GHC.OverloadedLabels.fromLabel @"foo" :: IsLabel "foo" t => t``
+On/Off  On/Off  On      ``fromLabel @"foo"`` using in-scope ``fromLabel``
+======  ======  ======  =================================================================
+
 
 Drawbacks
 ---------
