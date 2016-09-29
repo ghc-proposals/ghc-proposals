@@ -43,6 +43,10 @@ Add a mechanism to Phab that allows a merge to master and upstream push
 the moment a patch validates. If anything goes wrong with the merge or validation,
 this process is aborted.
 
+Merging would be done at the branch level and would not squash commits. That
+is, it would take the state of a git branch as an input and then merge that
+with master (rebasing if necessary) upon successful validation.
+
 The precise mechanism should be filled in by someone with more knowledge of
 what would be easiest to implement. Do you know of such a mechanism? Please
 submit a PR against this PR!
