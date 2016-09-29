@@ -134,6 +134,9 @@ Proposed Change
   However, finding something in the ghc wiki has been more hit and miss for me than anything else. The
   built in search almost never reveals what I’m looking for, and resorting to a search engine only sometimes
   helps me find what I’m looking for. (This might totally be my fault).
+  
+  The Wiki covers quite a lot. Commentary and Documentation as well as Proposals and others.
+  Moving just the Commentary and Documenation part out of the Wiki is now tracked in PR #10.
 
 - Reduce the number of Mailing lists. Some people are supposedly not on the haskell ml; so they missed emails such as
   https://mail.haskell.org/pipermail/haskell/2016-September/024995.html, and only saw it due to
