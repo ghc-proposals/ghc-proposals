@@ -37,7 +37,7 @@ Proposed Change
 
 The proposed change consists of setting up a [(1) repository | (2) folder in the existing
 ghc-proposals repo] that will hold the documentation
-files in [(1) reStructuredText format | (2) either reStructuredText or GitHub markdown];
+files in reStructuredText format;
 (1) compiling a list of pages to be migrated from the
 wiki to the repository; and (1) finding a group of volounteers to move these over.
 
