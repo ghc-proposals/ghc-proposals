@@ -73,7 +73,7 @@ process, here is a short summary,
    instance, ``git checkout -b type-indexed-typeable``.
 
 2. Starting with the `template
-   <https://github.com/ghc-proposals/ghc-proposals/blob/master/0000-template.rst>`_,
+   <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.rst>`_,
    describe your proposed change in a file in the ``proposals/`` directory. Use
    a file name of the form ``proposals/0000-short-proposal-title.rst``; leave the
    proposal number as ``0000``, a fresh identifier will be chosen when the
