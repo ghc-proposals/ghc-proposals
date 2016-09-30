@@ -41,8 +41,7 @@ files in reStructuredText format;
 (1) compiling a list of pages to be migrated from the
 wiki to the repository; and (1) finding a group of volounteers to move these over.
 
-The repository will be periodically built using sphinx (as deployed for cabal and GHC)
-[(2) and markdown], and produce an easy-to-read experience on the web.
+The repository will be periodically built using sphinx (as deployed for cabal and GHC), and produce an easy-to-read experience on the web.
 
 I suggest that everyone who has a pull request merged into the repository is
 given commit rights. The entry barrier to actually add new documentary or comments to
