@@ -12,7 +12,7 @@ open-source compiler projects address these issues (focusing on LLVM, Python,
 and Rust) with an eye towards improving GHC's own practices.
 
 To be clear, the process discussed below only affects proposal of the following
-three classes,
+five classes,
 
 * A syntactic change to GHC Haskell (e.g. the various ``ShortImports``
   `proposals <https://ghc.haskell.org/trac/ghc/ticket/10478>`_, ``do``
@@ -28,6 +28,9 @@ three classes,
   ``Typeable`` representations)
 
 * The removal of major features from the compiler
+
+* Meta-proposals that affect the way that contributors to GHC do their business,
+  such as this proposal itself
 
 Note that this process does not cover,
 
