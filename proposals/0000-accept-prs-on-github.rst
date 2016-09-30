@@ -142,6 +142,9 @@ performed. This raises two concerns:
 
 * it becomes slightly harder to monitor the list of all proposed and
   merged patches.
+  
+* GH PRs get ticket numbers that look suspiciously like Trac ticket numbers.
+  There is the possibility for confusion here.
 
 It should be noted that having two review tools under active use is
 not entirely `comparable
