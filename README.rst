@@ -64,20 +64,16 @@ While the full process is described in the `proposal
 <https://github.com/ghc-proposals/ghc-proposals/pull/1>`_ describing the proposal
 process, here is a short summary,
 
-1. Fork this repository and clone your fork.
+1. Edit the `template
+   <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.rst>`_
+   to reflect your proposal. Rename the template file according to your
+   desired proposal, but leave the numerical prefix as ``0000``.
+   This can done either online through GitHub's in-place
+   editing feature (the pencil icon visible when viewing a file on GitHub)
+   or by forking this repository and cloning the fork.
    See GitHub's `documentation
    <https://help.github.com/articles/fork-a-repo/>`_ if you are unfamiliar with
    this aspect of GitHub's workflow.
-
-2. Create a branch with a sensible name in your fork for your new proposal. For
-   instance, ``git checkout -b type-indexed-typeable``.
-
-2. Starting with the `template
-   <https://github.com/ghc-proposals/ghc-proposals/blob/master/0000-template.rst>`_,
-   describe your proposed change in a file in the ``proposals/`` directory. Use
-   a file name of the form ``proposals/0000-short-proposal-title.rst``; leave the
-   proposal number as ``0000``, a fresh identifier will be chosen when the
-   proposal is accepted.
 
 3. Write the proposal. At very least this should describe the following,
 
