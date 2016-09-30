@@ -51,10 +51,10 @@ Drawbacks
 ---------
 
 * (2) This fragments our documentation. Some will remain on the wiki, and some features
-will be migrated to the GitHub repo. However, this fragmentation would happen naturally
-with the ghc-proposals process, as any new features after summer 2016 would end up in
-GitHub and not on the wiki anyway. This backports the problem. In some years, however,
-I would expect most features to be on GitHub and this drawback to diminish.
+  will be migrated to the GitHub repo. However, this fragmentation would happen naturally
+  with the ghc-proposals process, as any new features after summer 2016 would end up in
+  GitHub and not on the wiki anyway. This backports the problem. In some years, however,
+  I would expect most features to be on GitHub and this drawback to diminish.
 
 * Loss of Trac integration with comments; it's now harder to link to Trac tickets.
 
