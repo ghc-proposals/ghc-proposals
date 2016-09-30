@@ -12,7 +12,7 @@ open-source compiler projects address these issues (focusing on LLVM, Python,
 and Rust) with an eye towards improving GHC's own practices.
 
 To be clear, the process discussed below only affects proposal of the following
-three classes,
+five classes,
 
 * A syntactic change to GHC Haskell (e.g. the various ``ShortImports``
   `proposals <https://ghc.haskell.org/trac/ghc/ticket/10478>`_, ``do``
@@ -28,6 +28,9 @@ three classes,
   ``Typeable`` representations)
 
 * The removal of major features from the compiler
+
+* Meta-proposals that affect the way that contributors to GHC do their business,
+  such as this proposal itself
 
 Note that this process does not cover,
 
@@ -101,6 +104,10 @@ Each proposal goes through the following stages:
    `provided template <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.rst>`_)
    specifying the proposed change. This document is the primary specification
    of the feature and takes the place of the current Trac Wiki document.
+
+   Due to GitHub's in-place editing feature (the pencil icon visible when viewing
+   a file on GitHub), proposals can be made quickly without manual forking
+   or cloning.
    
 2. Community members (including members of the proposal committee) will discuss
    the proposal. The submitter is responsible for amending the specification to
