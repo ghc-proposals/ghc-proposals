@@ -60,9 +60,10 @@ to help us avoid,
 Proposed Change
 ---------------
 
-The core of the proposal is the introduction of a new type reflection interface,
-exposed in the ``Type.Reflection`` module. This interface provides a mechanism
-similar to ``Typeable`` but with an indexed representation type,
+This proposal follows the idea proposed in [PeytonJones2016]_. The core of the
+proposal is the introduction of a new type reflection interface, exposed in the
+``Type.Reflection`` module. This interface provides a mechanism similar to
+``Typeable`` but with an indexed representation type,
 
 .. code-block:: haskell
 
@@ -76,6 +77,11 @@ similar to ``Typeable`` but with an indexed representation type,
     instance Eq (TypeRep a)  where (==) _ _    = True
     instance Ord (TypeRep a) where compare _ _ = EQ
     instance TestEquality TypeRepX
+
+.. [PeytonJones2016]
+    Peyton Jones, Weirich, Eisenberg, Vytiniotis. "`A Reflection on Types
+    <http://research.microsoft.com/en-us/um/people/simonpj/papers/haskell-dynamic/index.htm>`__."
+    *Proc. Philip Wadler's 60th birthday Festschrift*. Edinburgh, April 2016.
 
 Like today, the new ``Typeable`` mechanism will only support kind-monomorphic
 types. Unlike today's mechanism, we provide a means of extracting the *kind* of
