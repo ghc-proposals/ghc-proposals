@@ -136,7 +136,7 @@ Type application can also be decomposed,
 
 We can also decompose function types (e.g. ``Int -> String``) in their argument
 (e.g. ``Int``) and result types (``String``). Strictly speaking this can be
-expressed in terms of ``TRFun`` but it seems like a common enough pattern that
+expressed in terms of ``TRApp`` but it seems like a common enough pattern that
 it's worth providing a pattern for it,
 
 .. code-block:: haskell
@@ -229,7 +229,7 @@ primitives provided by ``Type.Reflection``,
     typeOf _ = R.SomeTypeRep (R.typeRep :: TypeRep a)
 
     typeRep :: forall proxy a. Typeable a => proxy a -> TypeRep
-    typeRep = $.SomeTypeRep (R.typeRep :: TypeRep a)
+    typeRep = R.SomeTypeRep (R.typeRep :: TypeRep a)
 
     cast :: forall a b. (Typeable a, Typeable b) => a -> Maybe b
     cast x
@@ -463,8 +463,11 @@ Do we want to allow the user to construct ill-kinded type representations? Given
 that the the user could never cast with such a representation, it seems like
 there is likely no potential for unsafety by doing so.
 
-Current Status
---------------
+Implementation Status
+---------------------
 
 A variant of this proposal has been implemented and is available in the
 `wip/ttypeable <https://github.com/bgamari/ghc/tree/wip/ttypeable>`_ branch.
+However, there are a number of limitations elsewhere in the compiler that must
+be lifted before this is can be merged. See the `GHC Wiki
+<https://ghc.haskell.org/trac/ghc/wiki/Typeable/BenGamari>`_ for details.
