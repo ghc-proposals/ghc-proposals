@@ -10,8 +10,8 @@
 
 .. highlight:: haskell
 
-Proposal title
-==============
+Type Applications in ``SPECIALISE`` pragmas
+===========================================
 
 GHC's ``SPECIALISE`` pragma allows the user to instruct the compiler specialise
 a polymorphic function at a concrete type. However, its current syntax is quite
