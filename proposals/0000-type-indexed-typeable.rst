@@ -366,7 +366,8 @@ Therefore we have four distinct loops:
   * ``RuntimeRep :: Type``
   * ``'PtrRepLifted :: RuntimeRep``
 
-This poses a rather unfortunate safety issue for authors of serializers. One
+This poses a rather unfortunate safety issue for authors of serializers,
+pretty-printers, and other consumers which deeply inspect ``TypeRep`` s. One
 option for approaching this would be to restructure the ``TypeRep`` type to draw
 particular attention to these cases,
 
@@ -379,9 +380,14 @@ particular attention to these cases,
         TRArrow :: TypeRep a -> TypeRep b -> TypeRep (a -> b)
         TRPtrRepLifted :: TypeRep 'PtrRepLifted
 
-This also may have the advantage of simplifying production of compiler evidence
-and making the runtime representations of common types more concise.
-Another option would be to retain the simpler two-constructor ``TypeRep``
+This would ensure that consumers who match totally on ``TypeRep``\ s won't face
+unexpected loops. This also may have the advantage of in some ways simplifying
+production of evidence by the compiler and making the runtime representations of
+common types more concise. Unfortunately, in other ways it complicates the
+implementation of ``TypeRep`` since it needs to maintain some normalization
+invariants.
+
+Another option would be to retain the more simple two-constructor ``TypeRep``
 described above but expose pattern synonyms for the special cases seen here,
 along with clear documentation instructing library authors to handle them.
 
@@ -457,3 +463,8 @@ Do we want to allow the user to construct ill-kinded type representations? Given
 that the the user could never cast with such a representation, it seems like
 there is likely no potential for unsafety by doing so.
 
+Current Status
+--------------
+
+A variant of this proposal has been implemented and is available in the
+`wip/ttypeable <https://github.com/bgamari/ghc/tree/wip/ttypeable>`_ branch.
