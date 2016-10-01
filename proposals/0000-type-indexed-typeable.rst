@@ -57,6 +57,11 @@ to help us avoid,
 
 * we need to use ``unsafeCoerce`` in a number of places
 
+In general the current ``Typeable`` mechanism gives us no way to tell the
+type-checker about the relationship between the (potentially unknown) type of a
+value (say, the ``Any`` in the ``Dynamic`` example above) and the type
+represented by a ``TypeRep``.
+
 Proposed Change
 ---------------
 
