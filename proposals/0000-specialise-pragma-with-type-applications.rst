@@ -48,7 +48,7 @@ GHC to derive an appropriate specialisation, ::
         #-}
 
 This is, of course, quite a mouthful! Moreover, if we would at some point like
-to change the type of ``foldWithParser``, we would need to updae each of the
+to change the type of ``foldWithParser``, we would need to update each of the
 specialisations.
 
 We would ideally like to use the fact that we are merely instantiating the
