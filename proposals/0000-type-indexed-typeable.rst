@@ -81,7 +81,7 @@ proposal is the introduction of a new type reflection interface, exposed in the
     -- provide these
     instance Eq (TypeRep a)  where (==) _ _    = True
     instance Ord (TypeRep a) where compare _ _ = EQ
-    instance TestEquality TypeRepX
+    instance TestEquality TypeRep
 
 .. [PeytonJones2016]
     Peyton Jones, Weirich, Eisenberg, Vytiniotis. "`A Reflection on Types
@@ -91,6 +91,8 @@ proposal is the introduction of a new type reflection interface, exposed in the
 Like today, the new ``Typeable`` mechanism will only support kind-monomorphic
 types. Unlike today's mechanism, we provide a means of extracting the *kind* of
 a type representation,
+
+.. code-block:: haskell
 
     -- | The kind of a type.
     typeRepKind :: TypeRep (a :: k) -> TypeRep k
@@ -182,8 +184,6 @@ this we introduce,
     instance Eq SomeTypeRep
     instance Ord SomeTypeRep
     instance Show SomeTypeRep
-
-    someTypeRep :: Typeable a => Proxy a -> SomeTypeRep
 
 Implementing ``Data.Dynamic``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -292,6 +292,10 @@ Here a type constructor type consists of a (possibly kind-polymorphic)
 type constructor and a ``TypeRep`` of its kind. The kind is necessary to ensure
 that we represent only kind-monomorphic types. Type application types are
 represented by the representations of the two types of the application.
+
+Since we cannot guarantee that the ``TrTyCon`` couldn't be used to construct
+ill-kinded ``TypeRep``\ s we must hide it and instead expose a unidirectional
+pattern synonym. In contrast, ``TrApp`` can be exposed bidirectionally.
 
 
 Serializing type representations
