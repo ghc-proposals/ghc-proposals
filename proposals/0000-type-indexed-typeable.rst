@@ -203,10 +203,9 @@ described in the Motivation section in a perfectly type-safe manner,
        where
 
     dynApply :: Dynamic -> Dynamic -> Maybe Dynamic
-    dynApply (Dynamic t1 f) (Dynamic t2 x) =
-      case funResultTy t1 t2 of
-        Just t3 -> Just (Dynamic t3 ((unsafeCoerce f) x))
-        Nothing -> Nothing
+    dynApply (Dynamic (TRFun ta tr) f) (Dynamic ta' x)
+      | Just HRefl <- ta `eqTypeRep` ta' = Just (Dynamic tr (f x))
+    dynApply _ _                         = Nothing
 
 
 Preserving ``Data.Typeable``
