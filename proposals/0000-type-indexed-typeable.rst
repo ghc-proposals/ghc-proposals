@@ -159,6 +159,10 @@ We can also test for type equality,
     eqTypeRep' :: forall k1 k2 (a :: k1) (b :: k2).
                   TypeRep a -> TypeRep b -> Maybe (a :~~: b)
 
+    -- | Kind-heterogenous type equality
+    data (a :: k1) :~~: (b :: k2) where
+        HRefl :: a :~~: a
+
 Since ``TypeRep`` is a singleton, we can provide a means of satisfying a
 ``Typeable`` constraint with a ``TypeRep`` without loss of coherence,
 
