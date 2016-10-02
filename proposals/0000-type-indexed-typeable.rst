@@ -20,7 +20,7 @@ the represented type.
 
 Here we propose a reimagining of the ``Typeable`` mechanism, adding
 indexing the ``TypeRep`` type with the represented type. This additional type
-information enables the type system to provde the soundness of many uses of
+information enables the type system to provide the soundness of many uses of
 ``Typeable``, allowing many currently unsafe programs to be written in a
 completely type-safe manner.
 
