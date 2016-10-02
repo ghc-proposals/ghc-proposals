@@ -279,7 +279,7 @@ Defining ``TypeRep``
 ~~~~~~~~~~~~~~~~~~~~
 
 The heart of ``Type.Reflection`` is the ``TypeRep`` type. It can be defined as a
-standard GADT (omitting the ``Fingerprint``s used for O(1) comparison), ::
+standard GADT (omitting the ``Fingerprint``\ s used for O(1) comparison), ::
 
     data TypeRep (a :: k) where
         TrTyCon :: TyCon -> TypeRep k -> TypeRep (a :: k)
