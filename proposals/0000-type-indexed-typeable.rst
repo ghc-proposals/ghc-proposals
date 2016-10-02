@@ -266,7 +266,7 @@ The remaining existing exports of ``Data.Typeable`` follow easily.
 
     rnfTypeRep :: TypeRep -> ()
 
-We can also continue to provide the deprecated non-kind polymorphic ``Typeable``
+We can also continue to provide the deprecated non-kind-polymorphic ``Typeable``
 exports,
 
 .. code-block:: haskell
