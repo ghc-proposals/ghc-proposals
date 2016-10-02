@@ -116,7 +116,9 @@ constructors,
 
 .. code-block:: haskell
 
-    -- | A type constructor type. This is a bidirectional pattern.
+    -- | A type constructor type. This must be a unidirectional pattern since
+    -- we have no way of preventing the user from instantiating a TyCon in an
+    -- ill-kinded manner.
     pattern TRCon :: forall k (a :: k). TyCon -> TypeRep a
 
     -- | Information about a type constructor. No means of constructing 'TyCon's
