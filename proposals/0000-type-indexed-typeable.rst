@@ -443,8 +443,11 @@ need to have ``Typeable`` evidence for the type that the caller *expects*.
 Drawbacks
 ---------
 
-What are the reasons for *not* adopting the proposed change. These might include
-complicating the language grammar, poor interactions with other features, 
+The only obvious drawback is the complexity burden which this places on those
+who must deeply inspect ``TypeRep``\ s. Otherwise the proposal has a good
+backwards compatibility story, nicely subsumes the existing ``Typeable``
+mechanism, and has introduces only a small amount of additional compiler
+complexity which providing additional expressive power.
 
 Alternatives
 ------------
@@ -463,7 +466,8 @@ The design described above does not propagate any type information beyond
         TRTyCon :: TyCon a -> TypeRep k -> TypeRep a
 
 However, the benefits to this approach are unclear and it would complicate
-evidence generation.
+evidence generation, and potentially have adverse effects on runtime and
+compile-time.
 
 Unresolved Questions
 --------------------
