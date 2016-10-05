@@ -48,7 +48,8 @@ top-right corner of the "Files Changed" tab.
     Changed" tab to change between "source diff" and "rich diff" views.
 
 Feedback on a proposal can be offered on open pull requests using both Github's
-in-line and pull request commenting features.
+in-line and pull request commenting features. Do note, however, that inline
+comments can only be added via the "source diff" view.
 
 .. figure:: inline-comment.png
     :alt: The ``+`` button appears while hovering over line in the source diff view.
