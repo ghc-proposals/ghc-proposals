@@ -1,56 +1,39 @@
-.. proposal-number:: Leave blank. This will be filled in when the proposal is
-                     accepted.
-
-.. trac-ticket:: Leave blank. This will eventually be filled with the Trac
-                 ticket number which will track the progress of the
-                 implementation of the feature.
-
-.. implemented:: Leave blank. This will be filled in with the first GHC version which
-                 implements the described feature.
-
+.. proposal-number:: 
+.. trac-ticket::
+.. implemented:: 
 .. highlight:: haskell
 
-Proposal title
-==============
-
-Here you should write a short abstract motivating and briefly summarizing the proposed change.
+Use `%rsp` for the SP on x86_64
+===============================
 
 Motivation
 ----------
 
-Here you should describe in greater detail the motivation for the change. This
-should include concrete examples of the shortcomings of the current
-state of things.
+We currently use `%rbp` for the stack pointer on x86_64.  It might be a good idea to switch to using `%rsp`; this proposal is to collect the evidence and rationale and come to a conclusion.
+
+Why we might want this:
+
+* We could potentially use the `ret` instruction for returning.  This is one byte shorter than `jmp *(%rbp)`, and might benefit from better CPU optimisations.  Using `call` is not possible, because the return address has an info table preceding it.
+* Some tools (e.g. perf) look at `%rsp` to collect information about the stack.  This might enable smoother integration with external tooling, especially in conjunction with DWARF.  (TODO: flesh this out).
 
 Proposed Change
 ---------------
 
-Here you should describe in precise terms what the proposal seeks to change.
-This should cover several things,
-
-* define the grammar and semantics of any new syntactic constructs
-* define the interfaces for any new library interfaces
-* discuss how the change addresses the points raised in the Motivation section
-* discuss how the proposed approach might interact with existing features  
-
-Note, however, that this section need not describe details of the
-implementation of the feature. The proposal is merely supposed to give a
-conceptual specification of the new feature and its behavior.
+Swap the purposes of `%rbp` and `%rsp`; make `%rbp` point to the spill area on the C stack, and make `%rsp` point to the Haskell stack.
 
 Drawbacks
 ---------
 
-What are the reasons for *not* adopting the proposed change. These might include
-complicating the language grammar, poor interactions with other features, 
+* Unfortunately the instruction encoding for instructions using `%rsp` is often longer than for `%rbp`.  e.g. `mov  %rax,-0x8(%rsp)` is 5 bytes compared with 4 bytes for the corresponding instruction using `%rbp`.  So despite the 1-byte saving for a `ret` instruction, code would likely get larger if we used `%rsp` for the stack.
+
+* We have to worry about signals messing up the stack, but we have a 128-byte red zone on x86_64.  (what fallback mechanisms would be required if we needed more than this?)
 
 Alternatives
 ------------
 
-Here is where you can describe possible variants to the approach described in
-the Proposed Change section.
+Don't do this :)
 
 Unresolved Questions
 --------------------
 
-Are there any parts of the design that are still unclear? Hopefully this section
-will be empty by the time the proposal is brought up for a final decision.
+See TODOs above.
