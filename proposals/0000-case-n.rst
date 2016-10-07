@@ -9,13 +9,13 @@
 
 .. highlight:: haskell
 
-Extend `LambdaCase` with `\case2`, `\case3`
+Extend ``LambdaCase`` with ``\case2``, ``\case3``
 ==============
 
-`LambdaCase` lets you write less code or have fewer variable to worry
-about by using `\case`. It allows a convenient notation for anonymous
+``LambdaCase`` lets you write less code or have fewer variable to worry
+about by using ``\case``. It allows a convenient notation for anonymous
 functions that pattern match, I would like those benefits extended to
-functions of two or more arguments with `\case2`, `\case3`.
+functions of two or more arguments with ``\case2``, ``\case3``.
 
 Motivation
 ----------
@@ -27,7 +27,7 @@ Motivation
     transpose ([]   : xss)   = transpose xss
     transpose ((x:xs) : xss) = (x : [h | (h:_) <- xss]) : transpose (xs : [ t | (_:t) <- xss])
 
-I use `LambdaCase` a lot. The code is terser with more focus on the
+I use ``LambdaCase`` a lot. The code is terser with more focus on the
 structure of the program, I don't have to repeat a function's name and
 sometimes it lets me omit parentheses::
 
@@ -37,7 +37,7 @@ sometimes it lets me omit parentheses::
       []    :xss -> transpose xss
       (x:xs):xss -> (x : [h | (h:_) <- xss]) : transpose (xs : [ t | (_:t) <- xss])
 
-You avoid another variable name: I will call the argument `xs` and
+You avoid another variable name: I will call the argument ``xs``` and
 shadow it in the last pattern which can lead to confusion::
 
     transpose :: [[a]] -> [[a]]
@@ -56,7 +56,7 @@ It would be nice to get the same benefits for more than one argument.
 Proposed Change
 ---------------
 
-Using `\case2` it would desugar into a lambda of two arguments
+Using ``\case2`` it would desugar into a lambda of two arguments
 followed by a case analysis of their product::
 
     -- foo = \x y -> case (x, y) of
@@ -67,7 +67,7 @@ followed by a case analysis of their product::
       (Nothing, y) -> y
       (Just x,  y) -> x + y
 
-and a `\case3` desugars into a lambda of 3 arguments and scrutinises
+and a ``\case3``` desugars into a lambda of 3 arguments and scrutinises
 their 3-product::
 
     -- foo = \x y z -> case (x, y, z) of
@@ -92,7 +92,7 @@ arguments simultaneously::
       (_,    [])   -> False
       (x:xs, y:ys) -> x == y && isPrefixOf xs ys
 
-Using `\case2` and some arranging we can rewrite::
+Using ``\case2`` and some arranging we can rewrite::
 
     instance (Eq1 f, Eq1 g) => Eq1 (Sum f g) where
       liftEq :: (a -> b -> Bool) -> ((Sum f g) a -> (Sum f g) b -> Bool)
@@ -122,8 +122,8 @@ the user cannot use a multi-equation definition::
       , (/=) = neqDef (eqList a)
       }
 
-Let's say we defined our own version of `Bool` and wanted to use
-`foldBy` to crush some structure like we would with `All`::
+Let's say we defined our own version of ``Bool`` and wanted to use
+``foldBy`` to crush some structure like we would with ``All``::
 
     data B = F | T
     
@@ -180,7 +180,7 @@ This is a very minimal change but it would improve my life.
 Alternatives
 ------------
 
-Just use a lambda and a `case`, come on.
+Just use a lambda and a ``case``, come on.
 
 Unresolved Questions
 --------------------
