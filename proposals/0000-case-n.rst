@@ -110,9 +110,8 @@ to::
         (InR y1, InR y2) -> liftEq eq y1 y2
         _                -> False
 
-Usecase for record syntax from [Trac
-#12376](https://ghc.haskell.org/trac/ghc/ticket/12376#comment:3) where
-the user cannot use a multi-equation definition::
+
+Usecase for record syntax from `Trac #12376 <https://ghc.haskell.org/trac/ghc/ticket/12376#comment:3>`_ where the user cannot use a multi-equation definition::
 
     eqList a = MkEq
       { (==) = \case2
