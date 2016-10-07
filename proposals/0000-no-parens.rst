@@ -25,6 +25,7 @@ Example from `There is no Fork
 intense example from Figure 5)
 
 .. code-block:: haskell
+
     case (f', x') of
       (Done g,        Done y       ) -> ...
       (Done g,        Blocked cr c ) -> ...
@@ -34,6 +35,7 @@ intense example from Figure 5)
 With proposal
 
 .. code-block:: haskell
+
     case (f', x') of
       Done g,        Done y        -> ...
       Done g,        Blocked cr c  -> ...
@@ -45,18 +47,21 @@ Along with proposal `#18
 from
 
 .. code-block:: haskell
+
     foldB :: Foldable f => f B -> B
     foldB = foldBy (\a b -> case (a, b) of (T, T) -> T; _ -> F) T
 
 to
 
 .. code-block:: haskell
+
     foldB :: Foldable f => f B -> B
     foldB = foldBy (\case2 (T, T) -> T; _ -> F) T
 
 to
 
 .. code-block:: haskell
+
     foldB :: Foldable f => f B -> B
     foldB = foldBy (\case2 T, T -> T; _ -> F) T
 
