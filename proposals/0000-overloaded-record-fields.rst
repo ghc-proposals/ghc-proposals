@@ -126,10 +126,7 @@ The module ``GHC.Records`` defines the following:
 .. code-block:: haskell
 
   class HasField (x :: k) r a | x r -> a where
-    getField :: r -> a
-
-  fromLabel :: forall (x :: Symbol) r a . HasField x r a => r -> a
-  fromLabel = getField @Symbol @x
+    fromLabel :: r -> a
 
 When the new extension ``OverloadedRecordFields`` is enabled:
 
@@ -289,8 +286,7 @@ is translated to ``fromLabel @"foo"`` using whatever ``fromLabel`` is
 in scope (see `Trac #12243
 <https://ghc.haskell.org/trac/ghc/ticket/12243>`_ for a request for
 this feature).  The existence of this third option explains why we use
-``fromLabel`` as the ``OverloadedRecordFields`` desugaring, rather
-than directly invoking ``getField``.
+``fromLabel`` as the name of the ``HasField`` class method.
 
 This allows alternative interpretations of labels that cannot be
 expressed using the ``IsLabel`` class.  For example, labels could be
