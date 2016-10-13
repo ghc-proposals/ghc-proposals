@@ -69,7 +69,7 @@ process, here is a short summary,
    <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.rst>`_
    to reflect your proposal. Rename the template file according to your
    desired proposal, but leave the numerical prefix as ``0000``.
-   This can done either online through GitHub's in-place
+   This can be done either online through GitHub's in-place
    editing feature (the pencil icon visible when viewing a file on GitHub)
    or by forking this repository and cloning the fork.
    See GitHub's `documentation
@@ -79,7 +79,7 @@ process, here is a short summary,
 3. Write the proposal. At very least this should describe the following,
 
    a. *Motivation*: What is the problem that you are trying to solve? Be specific:
-      a concrete example or two can do wonders. Be sure to point out out the
+      a concrete example or two can do wonders. Be sure to point out the
       particular ways in which the status quo falls short.
    b. *Proposed Change*: What change are you proposing? This is the
       specification of your change and should be precise and comprehensive. This
