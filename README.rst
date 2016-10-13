@@ -127,7 +127,7 @@ process, here is a short summary,
    iterations will be necessary before the proposal stabilizes.
 
 6. When discussion has died down notify the (yet to be formed) GHC Commitee via
-   email. The committee will will review the proposal, the feedback collected on
+   email. The committee will review the proposal, the feedback collected on
    the pull request, and general community sentiment and decide whether the
    proposal will be accepted.
 
