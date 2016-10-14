@@ -45,20 +45,22 @@ Too many space used, too less space left for imported items list, too hard to ma
 Proposed Change
 ---------------
 
-Allow to write ``qualified`` keyword (exactly) after module name.
+Allow to write ``qualified`` keyword, safety and source notions exactly after module name.
 
 Current grammar (from ``compiler/parser/Parser.y``): ::
 
     importdecl
-        : 'import' maybe_src maybe_safe
-          optqualified maybe_pkg modid
+        : 'import'
+          maybe_src maybe_safe optqualified maybe_pkg modid
           maybeas maybeimpspec
 
 Proposed grammar: ::
 
     importdecl
-        : 'import' maybe_src maybe_safe
-          (optqualified maybe_pkg modid | maybe_pkg modid optqualified)
+        : 'import'
+          ( maybe_src maybe_safe optqualified maybe_pkg modid
+          | maybe_pkg modid maybe_src maybe_safe optqualified
+          )
           maybeas maybeimpspec
 
 No semantics changes proposed.
@@ -74,7 +76,7 @@ Profit: ::
     import Data.Text (Text)
     import Data.Text qualified as Text
 
-1. Module names aligned vertically for free (except "safe" and "source", see below).
+1. Module names aligned vertically for free.
 2. No extra spaces => more space for import spec list => less lines used.
 3. It is easy to understand.
 4. It looks more natural from the point of view of English language.
@@ -101,4 +103,4 @@ This proposal looks a little like `ShorterImportSyntax <https://ghc.haskell.org/
 Unresolved Questions
 --------------------
 
-"Safe" and "source" import: very special case, may be discussed.
+None.
