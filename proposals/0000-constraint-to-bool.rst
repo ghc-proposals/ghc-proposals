@@ -13,7 +13,7 @@
 Constraint to Bool type family
 ==============================
 
-The proposal is to include a new wired-in type family,::
+The proposal is to include a new wired-in type family::
    
    type family Fulfilled (c :: Constraint) :: Bool where
 
@@ -25,14 +25,14 @@ Motivation
 
 Currently GHC doesn't easily allow to choose a type-class instance based on a
 context. Suppose for example that you want to provide a new ``ShowHTML`` class
-that pretty print a data type into a nice HTML document,::
+that pretty print a data type into a nice HTML document::
 
    class ShowHTML a where
       showHTML :: a -> HTML
 
 Not everyone is using your class yet so you would like fall back cases for data
 types with ``Show`` instances and also for data types without a ``Show``
-instance,::
+instance::
 
    class Show a => ShowHTML a where
       showHTML a = toHtml (show a)
@@ -49,7 +49,7 @@ Let's present a simpler example first, the one exposed here
 `AdvancedOverlap <https://wiki.haskell.org/GHC/AdvancedOverlap>`_.
 We would like to write the following code, but we can't because both instances
 match the same data types (remember that contexts are not taken into account
-during instance selection),::
+during instance selection)::
 
    class Print a where
        print :: a -> IO ()
@@ -61,7 +61,7 @@ during instance selection),::
        print x = putStrLn "No show method"
 
 The solution consists in adding a parameter to the type class that indicates
-whether to use one instance or the other,::
+whether to use one instance or the other::
 
    class Print u a where
        print' :: a -> IO ()
@@ -75,7 +75,7 @@ whether to use one instance or the other,::
 The wiki page presents several methods that force the user to declare
 boilerplate class instances or type family instances that serve as evidences
 that a data type has a ``Show`` instance. But we don't need that anymore, we can
-use the ``Fulfilled`` type family instead,::
+use the ``Fulfilled`` type family instead::
 
 
    print :: forall u a.
@@ -84,7 +84,7 @@ use the ``Fulfilled`` type family instead,::
                ) => a -> IO ()
    print = print' @u
 
-And it works,::
+And it works::
 
    main :: IO ()
    main = do
@@ -94,7 +94,7 @@ And it works,::
 
 
 Now this was a simple example with only two cases, but we can handle the more
-complex ``ShowHTML`` example as easily,::
+complex ``ShowHTML`` example as easily::
 
    {-# LANGUAGE ConstraintKinds #-}
    {-# LANGUAGE FlexibleContexts #-}
@@ -211,7 +211,8 @@ associated to the first fulfilled constraint (i.e., "showHTML", "oldShow" or
 Proposed Change
 ---------------
 
-Add a wired-in type family in GHC.Exts for instance,::
+Add a wired-in type family in GHC.Exts for instance::
+
    type family Fulfilled (c :: Constraint) :: Bool where
 
 If GHC can solve the constraint ``c``, then a coercion ``Fulfilled c ~ True`` is
