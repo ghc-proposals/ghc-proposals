@@ -45,7 +45,7 @@ instance::
 
 This proposal allows to simply fix these kinds of problems.
 
-Let's present a simpler example first, the one exposed here
+Let's present a simpler example first, the one exposed on
 `AdvancedOverlap <https://wiki.haskell.org/GHC/AdvancedOverlap>`_.
 We would like to write the following code, but we can't because both instances
 match the same data types (remember that contexts are not taken into account
