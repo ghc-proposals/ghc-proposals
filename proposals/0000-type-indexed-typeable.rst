@@ -20,7 +20,7 @@ the represented type.
 
 Here we propose a reimagining of the ``Typeable`` mechanism, adding
 indexing the ``TypeRep`` type with the represented type. This additional type
-information enables the type system to provide the soundness of many uses of
+information enables the type system to prove the soundness of many uses of
 ``Typeable``, allowing many currently unsafe programs to be written in a
 completely type-safe manner.
 
@@ -356,7 +356,7 @@ Therefore we have four distinct loops:
 
   * ``(->) :: a -> b -> c``
 
-* Involing ``(->)``, ``Type``, and ``TYPE``
+* Involving ``(->)``, ``Type``, and ``TYPE``
 
   * ``(->) :: a -> b -> c``
   * ``Type :: TYPE 'PtrRepLifted``
@@ -372,13 +372,13 @@ Therefore we have four distinct loops:
   * ``TYPE :: RuntimeRep -> Type``
   * ``RuntimeRep :: Type``
 
-* Involing ``RuntimeRep``, and ``'PtrRepLifted``
+* Involving ``RuntimeRep``, and ``'PtrRepLifted``
 
   * ``RuntimeRep :: Type``
   * ``'PtrRepLifted :: RuntimeRep``
 
 This poses a rather unfortunate safety issue for authors of serializers,
-pretty-printers, and other consumers which deeply inspect ``TypeRep`` s. One
+pretty-printers, and other consumers which deeply inspect ``TypeRep``\ s. One
 option for approaching this would be to restructure the ``TypeRep`` type to draw
 particular attention to these cases,
 
