@@ -15,7 +15,9 @@ instantiates any ``Cls a`` constraint encountered, including in error messages, 
 Motivation
 ----------
 
-I am teaching a Haskell class right now, and in the first few lectures, I had to tell them: „Whenever you see ``Foldable t => … t a …`` anywhere, just mentally replace this with ``… [a] …``.”. Similarly, when discussing ``IO`` before discussing `Monad`, I had to tell them the same for these two. Finally, the first few weeks (because using [CodeWorld](http://code.world/haskell)), we turned on ``OverloadedStrings``, but I really do not want want to see them `IsString a` and rather have them see ``Text`` in error messages.
+I am teaching a Haskell class right now, and in the first few lectures, I had to tell them: „Whenever you see ``Foldable t => … t a …`` anywhere, just mentally replace this with ``… [a] …``.”. Similarly, when discussing ``IO`` before discussing `Monad`, I had to tell them the same for these two. Finally, the first few weeks (because of using CodeWorld_), we turned on ``OverloadedStrings``, but I really do not want want to see them `IsString a` and rather have them see ``Text`` in error messages.
+
+.. _CodeWorld: http://code.world/haskell
 
 The students coped, but it would be better if the compiler did that for them. So the main motiviation is to tell them to include a line like
 ::
@@ -36,20 +38,20 @@ I propose to introduce a declaration
 
 which, restricted to the scope of one modules, hides the existance of the type class ``Cls`` to the user. This includes:
  
- * Inferred types.
- * Types printed with ``:print``, even for imported identifiers.
- * Types printed with ``:browse`` or ``:info`` (``:info`` might point out that the type is force-instantiated)
- * Type error messages.
- * Type inference: Ambiguities involving ``Cls`` should be resolved in favor of these types, (similar to but taking precedence over defaulting)
+* Inferred types.
+* Types printed with ``:print``, even for imported identifiers.
+* Types printed with ``:browse`` or ``:info`` (``:info`` might point out that the type is force-instantiated)
+* Type error messages.
+* Type inference: Ambiguities involving ``Cls`` should be resolved in favor of these types, (similar to but taking precedence over defaulting)
 
 Occurrences of ``Cls`` that cannot be instantiated (e.g. ``foo :: (forall t. Foldable t => t () -> Bool) -> …``) are left in place.
 
 Drawbacks
 ---------
 
- * It might lead to more instead of less confusion if ``:type Prelude.length`` has different output depending on the current context.
- * Some keywords are required.
- * The interaction with ``defaulting`` might be confusing.
+* It might lead to more instead of less confusion if ``:type Prelude.length`` has different output depending on the current context.
+* Some keywords are required.
+* The interaction with ``defaulting`` might be confusing.
 
 Alternatives
 ------------
