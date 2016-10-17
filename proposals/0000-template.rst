@@ -33,8 +33,6 @@ Drawbacks
 
 * On Windows it is simply not possible to use memory below `%rsp`; there is no red zone and no `sigaltstack`.
 
-* We 
-
 Alternatives
 ------------
 
