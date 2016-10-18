@@ -35,8 +35,12 @@ Proposed Change
 I propose to introduce a declaration 
 ::
   instance force Cls Ty1 Ty2 …
+  
+The declaration is valid if the mentioned instance exists (i.e. if the constraing ``Cls Ty1 Ty2`` can be completely solved). If not, as in ``instance force Eq [a]``, a usual error message (“Could not solve constraint Eq [a]: No instance [a]” or similar) is produced, and the program is rejected.
 
-which, restricted to the scope of one modules, hides the existance of the type class ``Cls`` to the user. This includes:
+The declaration has the effect that, within the scope of one module, the existance of the type class ``Cls`` is hidden from the user, by consistenly instantiationg it with the instance given in the declaration.
+
+The affects:
  
 * Inferred types.
 * Types printed with ``:print``, even for imported identifiers.
@@ -45,6 +49,8 @@ which, restricted to the scope of one modules, hides the existance of the type c
 * Type inference: Ambiguities involving ``Cls`` should be resolved in favor of these types, (similar to but taking precedence over defaulting)
 
 Occurrences of ``Cls`` that cannot be instantiated (e.g. ``foo :: (forall t. Foldable t => t () -> Bool) -> …``) are left in place.
+
+
 
 Drawbacks
 ---------
