@@ -39,9 +39,9 @@ Backpack
 
    b. `Exports`_
 
-   c. `Includes`_
+   c. `Mixins`_
 
-   d. `Mix-in linking`_
+   d. `Mixin linking`_
 
    e. `Modules and signatures`_
 
@@ -56,7 +56,7 @@ Backpack
 Introduction
 ------------
 
-Backpack is a proposal to add *mix-in libraries* to Haskell.  Mix-in
+Backpack is a proposal to add *mixin libraries* to Haskell.  Mixin
 libraries can have *signatures* which permit implementations of values
 and types to be deferred, while allowing a library with missing
 implementations to still be type-checked.
@@ -285,7 +285,7 @@ modules from ``build-depends`` (and not locally defined ones)::
 Thus, indefinite libraries can be thought of parametrized modules,
 but rather than explicitly specifying each parameter, it is
 implicitly specified with module namespaces.  This process
-of determining the explicit instantiations is called **mix-in linking**.
+of determining the explicit instantiations is called **mixin linking**.
 
 An indefinite library can be instantiated to various degrees.
 Compilation does not occur unless *all* required signatures are implemented,
@@ -322,7 +322,7 @@ required signatures can be handled:
   of these two signatures: signatures are identified only
   by module name.  To keep these two requirements separate,
   you would rename one of the requirements to a different name
-  using the ``backpack-includes`` directive::
+  using the ``mixins`` directive::
 
     library one-string
         -- One requirement, named Str
@@ -331,7 +331,7 @@ required signatures can be handled:
     library two-string
         -- Two requirements, Str and Str2
         build-depends: concat-indef, stringutils-indef
-        backpack-include:
+        mixin:
             stringutils-indef requires (Str as Str2)
 
 * In addition to the inherited requirements from dependencies,
@@ -393,48 +393,78 @@ user-facing limitations:
 Pipeline
 ~~~~~~~~
 
-An important aspect of the Backpack design is that it is separated
-across GHC and Cabal, with the compiler and package manager handling
-separate concerns of the design.  So while the overall
-pipeline of how a Backpack library is compiled is technically not
-necessary to understand the language extensions defined by Backpack,
-it is helpful for motivating the structure of this
-specification.
+In this section, we give an outline of the compilation pipeline from
+package manager to compiler, describing all of the important
+intermediate representations that a package goes through when being
+typechecked and compiled.
 
 .. image:: https://raw.githubusercontent.com/ezyang/ghc-proposals/backpack/proposals/backpack-pipeline.png
 
-The initial input into the compilation pipeline for is
-your **local source code**, as well as the the **Hackage index**
-which provides possible external packages that you might
-be building::
+**Dependency solving.**
+To begin with, we are given a **package identifier** to build (e.g.,
+``q-0.1``, consisting of a package name ``q`` and a package version
+``0.1``), and an **index** which maps package identifiers to source code
+tarballs::
 
     impl-0.1.tgz
     p-0.1.tgz
     p-0.2.tgz
     q-0.1.tgz
 
-The very first thing the package manager does is do **dependency
-resolution**, in order to pick specific versions and flags of
-the depended upon packages, settling the specific, transitive
-source code that will be built. (In cabal-install, this is done
-with a backtracking solver that looks at version bounds
-in ``build-depends``; in Stack, there is always a specific version
-assignment that is used.)  The result is we get a series of
-package descriptions (described in `Library structure`_) which refer to
-specific versions of other packages::
+The first step of the pipeline is dependency solving, which
+picks the versions of all packages we transitively depend on.
+For example, dependency solving on the above index might pick
+``impl-0.1``, ``p-0.2`` and ``q-0.1`` as the package to build,
+forming a graph of **solved packages**.
 
-    library impl-0.1
+  *Guru meditation.* The package manager has wide latitude in
+  determining how to do dependency solving.  Stack, for example, simply
+  takes a known good version set from the Stackage distribution.
+
+  cabal-install, in contrast, has a sophisticated dependency solver,
+  whose output is a graph of package identifiers, where the dependency
+  edges are labeled based on the component that has a dependency.  For
+  example, if ``p`` has a test suite ``p-tests`` which depends on
+  ``tasty``, the solved package will have a ``p-tests`` dependency on
+  ``tasty``, but not necessarily a library dependency on this library.
+  A single package may occur with multiple versions in the graph: the
+  simplest situation this can occur is with setup dependencies, where
+  individual packages may have Custom setups built with different
+  versions of ``Cabal``.
+
+**Project planning.**
+The next step is project planning, which expands a package into a
+graph of **configured components** (described in `Library structure`_).
+A dependency on a package is reinterpreted as a dependency on the
+*public library component* of the package (thus, ``build-depends:
+stack`` would depend on the ``stack`` library, not the executable).  For
+example::
+
+    library impl-0.1-3a03e0f9
         exposed-modules: H
 
-    library p-0.2
+    library p-0.2-aac464b1
         signatures: H
         exposed-modules: P
 
-    library q-0.1
-        build-depends: p-0.2, impl-0.1
+    library q-0.1-3feeb96f
+        build-depends: p-0.2-aac464b1, impl-0.1-3a03e0f9
         exposed-modules: Q
 
-At this point, we perform **mix-in linking**, taking each dependency
+Configured components are uniquely identified by a **component
+identifier** (e.g., ``p-0.2-aac464b1``).  A component identifier is an
+arbitrary, package manager allocated string::
+
+    ComponentId     ::= [A-Za-z0-9-_.]+
+
+Generally, the component identifier records the package name, package
+version, component name, and a hash of the component identifiers of the
+direct dependencies and other important configuration information (e.g.,
+flag assignments).  For brevity, we will often omit the hash from our
+examples.
+
+**Mix-in linking.**
+At this point, we perform **mixin linking**, taking each dependency
 on an indefinite library and filling in requirements based on the
 module names which are in scope.  We call these **mixed libraries**,
 and they are described in `mixed library structure`_::
@@ -451,20 +481,24 @@ and they are described in `mixed library structure`_::
         dependency impl-0.1
         module Q
 
-Two kinds of libraries can be output by mix-in linking:
+Two kinds of libraries can be output by mixin linking:
 **definite libraries** which have no holes (``impl-0.1``
 and ``q-0.1``), and **indefinite libraries** which have
-holes.  This is our provisional install plan.
+holes.  The dependencies of these libraries refer to both
 
-This install plan is not complete, however:
-the design of Backpack dictates that we must rebuild
-an indefinite library whenever it is instantiated. The
-**instantiation** step takes indefinite libraries which
-are referenced by definite libraries and instantiates them according to
-``dependency`` declarations.  In our running example, we add one
-instantiation of ``p`` to our install plan::
 
-    instantiate p-0.2[H=impl-0.1:H]
+This is our provisional install plan.
+
+This install plan is not complete, however: we must *compile* any fully
+instantiated library.  The **instantiation** step takes indefinite
+libraries which are referenced by definite libraries and instantiates
+them according to ``dependency`` declarations.  In our running example,
+``q-0.1`` is a definite library that instantiates ``p``, so
+we add one instantiation of ``p`` to our install plan, at the
+same time allocating a final identifier for the instantiated
+package::
+
+    instantiate p-0.2[H=impl-0.1:H] => p-0.2+k2F9xZlb
 
 At this point, we transition from Cabal to GHC, with the mixed
 library being translated into a series of command line flags for
@@ -474,7 +508,8 @@ Indefinite libraries are typechecked only (no compilation
 occurs).  We run GHC with the flags (described in more detail in `GHC
 command line flags`)::
 
-    ghc -this-unit-id p-0.2[H=<H>] \
+    ghc -this-unit-id p-0.2 \
+        -instantiated-with "H=<H>" \
         -fno-code -fwrite-interface \
         H P
 
@@ -483,6 +518,7 @@ compiled.  To build the instantiated copy of ``p-0.2``, for example, we
 run GHC with the flags::
 
     ghc -this-unit-id p-0.2+k2Fa9xZlb \
+        -this-component-id p-0.2 \
         -instantiated-with "H=impl-0.1:H" \
         H P
 
@@ -490,8 +526,26 @@ run GHC with the flags::
 which will be used for symbols and filepaths.)  The results
 are installed to the `Installed library database`_.
 
-Identifiers
------------
+Semantic objects and identifiers
+--------------------------------
+
+At the heart of Backpack are *indefinite libraries*, which are
+parametrized libraries that can be typechecked independently, or
+instantiated by later users.  In the process of Backpack, a
+library gets more and more "defined" (in the sense that it
+is initially just a transitive closure of source code, then
+it is a
+
+In this section, we precisely describe
+the various forms a library goes through as it is processed by
+Backpack, and how those forms are uniquely identified.
+
+In this section, we will formally describe the main semantic objects in
+Backpack.  We have already seen an informal description of 
+
+
+
+
 
 In this section, we describe the grammar of identifiers in Backpack.
 These identifiers are used, for example, to determine the unique
@@ -500,11 +554,12 @@ when two types are equal.
 
 ::
 
-    ComponentId ::= [A-Za-z0-9-_.]+
-    UnitId      ::= ComponentId
-                  | ComponentId "[" ModuleSubst "]"
-                  | ComponentId "+" ModuleSubstHash
-    ModuleSubst ::= ( ModuleName "=" Module ) +
+    ComponentId     ::= [A-Za-z0-9-_.]+
+    UnitId          ::= ComponentId "[" ModuleSubst "]"
+                      | DefiniteUnitId
+    DefiniteUnitId  ::= InstalledUnitId
+    InstalledUnitId ::= [A-Za-z0-9-_.+]+
+    ModuleSubst     ::= ( ModuleName "=" Module ) +
     ModuleSubstHash ::= [A-Za-z0-9]+
     -- from Haskell'98
     ModuleName  ::= [A-Z][A-Za-z0-9_']* ( "." [A-Z][A-Za-z0-9_']* ) +
@@ -534,8 +589,14 @@ might be ``concat-indef-0.1-abcdefg``.
 
 .. _UnitId:
 
-A **unit identifier** consists of a component identifier combined with a
-module substitution describing how the library is instantiated.
+An **unit identifier** identifies a component along with the module
+substitution (possibly trivial) which describes how the library
+was instantiated.  However, the precise instantiation is not
+necessarily conveyed
+
+identifier
+combined with a module substitution describing how the library is
+instantiated.
 Non-Backpack libraries do not have a module substitution (since they
 have no signatures to fill).  A unit identifier with no free module
 variables (see below) uniquely identifies an instantiated library for
@@ -546,6 +607,8 @@ A fully instantiated unit identifier which have compiled (or are
 compiling) is specified in a compressed form, a **hashed unit
 identifier.**  This hashed unit identifier is used for symbol
 names and file paths.
+
+An **installed unit identifier** is a string which uniquely 
 
 Example: a fully uninstantiated unit identifier for ``concat-indef``
 would be ``concat-indef-0.1-abcdefg[Str=<Str>]``; if instantiated
@@ -616,7 +679,7 @@ in Cabal files, and look like this::
 Cabal transforms a library into an intermediate form called a **mixed
 library**, in which the dependencies are made explicit.  This
 transformation involves both dependency solving (picking the source
-code to be used) and *mix-in linking*::
+code to be used) and *mixin linking*::
 
     library stringutils-indef-0.1-xxx <Str>
         dependency concat-indef-0.1-abcdefg[Str=<Str>]
@@ -630,8 +693,10 @@ with hashes, a side effect of dependency resolution).
 From a mixed library, Cabal can easily generate a sequence of calls
 to GHC with command line flags and input files::
 
-    ghc -this-unit-id "stringutils-indef-0.1-xxx[Str=<Str>]" \
+    ghc -this-unit-id "stringutils-indef-0.1-xxx" \
+        -instantiated-with "Str=<Str>" \
         -unit-id "concat-indef-0.1-abcdefg[Str=<Str>]" \
+        -fno-code -fwrite-interface \
         --make Str.hsig StringUtils.hs
 
 Mixed library structure
@@ -704,7 +769,8 @@ the next section) or an argument:
 
 Thus, these two ASTs would translate into these two command lines::
 
-    ghc -this-unit-id "concat-indef-0.1-abcdefg[Str=<Str>]" \
+    ghc -this-unit-id "concat-indef-0.1-abcdefg" \
+        -instantiated-with "Str=<Str>" \
         --make Str.hsig Concat.hs
 
     ghc -this-unit-id "stringutils-indef-0.1-xxx[Str=<Str>]" \
@@ -1040,11 +1106,12 @@ well-typed.  Then, check that ``M`` *matches* the signature ``p[S]:m``.
 The instantiated modules are then brought into scope for import
 in the following ways:
 
-1. The included modules can be specified explicitly by listing them
-   in the ``ModuleRenaming``. An entry can either be a bare ``ModuleName``,
-   in which case the exposed module at that name is brought into scope,
-   or using ``m as m'``, in which case the exposed module at ``m``
-   is brought into scope under the name ``m'``.
+1. The modules to bring into scope form a dependency can be specified
+   explicitly by listing them in the ``ModuleRenaming``. An entry can
+   either be a bare ``ModuleName``, in which case the exposed module at
+   that name is brought into scope, or using ``m as m'``, in which case
+   the exposed module at ``m`` is brought into scope under the name
+   ``m'``.
 
 2. If the ``ModuleRenaming`` is omitted, all modules exposed by the
    specified unit are brought into scope.
@@ -1054,22 +1121,22 @@ Cabal
 
 A library defines a collection of provided modules and
 required signatures in an environment that is created by a set of
-``backpack-includes`` and ``build-depends``.  Libraries are
+``mixins`` and ``build-depends``.  Libraries are
 specified in the Cabal file and are the user-facing interface for
 working with Backpack.  Unlike mixed libraries, the environment of
 in-scope modules implies how requirements of the dependent components
-are wired up through mix-in linking; no explicit instantiation is
+are wired up through mixin linking; no explicit instantiation is
 necessary.  A library exports some modules, making them available to
 other components; required signatures are always exported.
 
 Libraries may reference each other through ``build-depends``, which
 implicitly bring all of the exposed modules of the referenced component
-into scope, or an explicit ``backpack-includes``, which can specify
+into scope, or an explicit ``mixins``, which can specify
 which modules to bring under scope or instantiate a referenced component
 multiple times.
 
 Libraries are used for name-space control, which in turn specifies how
-mix-in linking is carried out.  Higher-order libraries are out of scope
+mixin linking is carried out.  Higher-order libraries are out of scope
 for this proposal: libraries are parametrized by the requirements they
 define or inherit.
 
@@ -1097,7 +1164,7 @@ and signatures.
       | ... -- Cabal supports more fields
 
     build-info ::=
-        "backpack-includes:"    backpack-include  "," ... "," backpack-include
+        "mixins:"    mixin  "," ... "," mixin
       | ... -- Cabal supports more fields
 
 A library begins with a header: the keyword ``library``, an
@@ -1140,23 +1207,21 @@ distinct.  For example, the following component is invalid::
 Reexported modules are NOT available for locally defined modules to
 ``import``; they strictly affect the exports of a component.
 
-Includes
+Mixins
 ~~~~~~~~
 
 ::
 
-    backpack-include  ::= PackageName IncludeRenaming
+    mixin  ::= PackageName MixinRenaming
 
-    IncludeRenaming    ::= ModuleRenaming ( "requires" ModuleRenaming )?
-                         -- TODO: proposed alternate syntax
-                         | ModuleRenaming ( "satisfy" WithModuleRenaming ) ?
+    MixinRenaming      ::= ModuleRenaming ( "requires" ModuleRenaming )?
 
     WithModuleRenaming ::= ""
                          | "(" with_entry "," ... "," with_entry ")"
     with_entry ::= ModuleName "with" ModuleName
 
 Entities exported by a library can be brought into scope in
-another component via the ``backpack-includes`` field.
+another component via the ``mixins`` field.
 
 What provisions are brought into scope
 ''''''''''''''''''''''''''''''''''''''
@@ -1177,7 +1242,7 @@ Package qualified modules
 
 For each module brought into scope, it is brought into scope both as an
 unqualified module name, and a package-qualified name qualified by the
-package name of the ``backpack-include`` which brought it into scope.
+package name of the ``mixin`` which brought it into scope.
 
 A programmer can refer to a package-qualified in several situations:
 
@@ -1188,7 +1253,7 @@ A programmer can refer to a package-qualified in several situations:
 2. In the ``reexported-modules``, the package qualifier can be used
    to disambiguate which module should be reexported.
 
-Implicit build-depends includes
+Implicit build-depends mixins
 '''''''''''''''''''''''''''''''
 
 ::
@@ -1205,26 +1270,26 @@ version bounds for each external package dependency of the component
 exported modules of that component into scope.
 
 We preserve this behavior by introducing the following "implicit
-include" rule: every package name ``p`` in ``build-depends`` which is
-not mentioned by any include in ``backpack-includes`` adds an implicit
-include ``p`` (with the default provision and requirement renaming).
-Since the implicit include is only added when the package name is not
-mentioned by ``backpack-includes``, it can be suppressed simply by specifying
-an include, e.g., ``backpack-includes: p ()``, which does not bring any
+mixin" rule: every package name ``p`` in ``build-depends`` which is
+not mentioned in ``mixins`` adds an implicit
+mixin ``p`` (with the default provision and requirement renaming).
+Since the implicit mixin is only added when the package name is not
+mentioned by ``mixins``, it can be suppressed simply by specifying
+an mixin, e.g., ``mixins: p ()``, which does not bring any
 provided modules into scope.
 
 Conversely, as the dependency solver requires version bounds for all
-external packages, any package name referenced in a ``backpack-include``
+external packages, any package name referenced in a ``mixin``
 must also be mentioned in a ``build-depends`` version bound, so that
 the dependency solver solves for it.
 
-Mix-in linking
+Mixin linking
 ~~~~~~~~~~~~~~
 
-An included component may also specify some requirements.  Like
+A mixin may also specify some requirements.  Like
 provided modules, these requirements are brought into the same scope
 as provided modules.  However, when a requirement has has the
-same name as a module, mix-in linking occurs.  Mix-in linking
+same name as a module, mixin linking occurs.  Mixin linking
 follows the following rules:
 
 1. Unlike provided modules, a requirement cannot be hidden; it is
@@ -1280,7 +1345,7 @@ the transitive requirements of a component
 to be listed in ``signatures``: only requirements which have
 locally defined ``hsig`` files are needed.
 
-These modules are added to the scope *after* all ``backpack-includes``
+These modules are added to the scope *after* all ``mixins``
 have been linked together, but before ``reexported-modules`` is
 processed.  This is because using a locally defined module to implement
 an included component constitutes a mutually recursive reference, which
@@ -1303,7 +1368,7 @@ of the library we are compiling.
 
 In all situations (including instantiated components), the ``--dependency``
 flag is used to specify a component identifier, NOT a unit identifier. The
-``Setup`` script is responsible for performing `mix-in linking`_ in order to determine
+``Setup`` script is responsible for performing `mixin linking`_ in order to determine
 the actual unit identifier dependencies, when a unit is fully instantiated,
 which are then passed to the compiler.
 
@@ -1351,7 +1416,7 @@ Alternatives
   have equally well been generative, which would have simplified
   many implementation considerations.  It is unclear how important
   applicativity actually is in practice, but given that instantiation
-  via mix-in linking is an *implicit* process, it seems like the
+  via mixin linking is an *implicit* process, it seems like the
   right choice.
 
 * If one is willing to give up on typechecking against interfaces,
