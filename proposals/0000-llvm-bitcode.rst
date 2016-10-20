@@ -27,27 +27,27 @@ This would change the way the current llvm backend works, in that it is esential
 
 The proposed new backend would be structured as follows:
 
-- [data-bitcode](https://github.com/angerman/data-bitcode)
+- `data-bitcode <https://github.com/angerman/data-bitcode>`_
 
   A pure haskell package to read/write the bitcode format.
 
-- [data-bitcode-llvm](https://github.com/angerman/data-bitcode-llvm)
+- `data-bitcode-llvm <https://github.com/angerman/data-bitcode-llvm>`_
 
   A pure haskell package that can read/write a higher level llvm module
   representation using the data-bitcode package.
 
-- [data-bitcode-edsl](https://github.com/angerman/data-bitcode-edsl)
+- `data-bitcode-edsl <https://github.com/angerman/data-bitcode-edsl>`_
 
   A pure haskell package that provides a simple interface to generating
   llvm modules, which can subsequently be turned into bitcode though the
   data-bitcode-llvm package.
 
-- [data-bitcode-plugin](https://github.com/angerman/data-bitcode-plugin)
+- `data-bitcode-plugin <https://github.com/angerman/data-bitcode-plugin>`_
 
   A ghc plugin that turns cmm into bitcode.
 
 NOTE: The current llvm bitcode backend is being developed as a ghc plugin, and needs
-a slightly larger plugin interface. The relevant wip patch is in [D535](https://phabricator.haskell.org/D535)
+a slightly larger plugin interface. The relevant wip patch is in `D535 <https://phabricator.haskell.org/D535>`_
 
 Drawbacks
 ---------
