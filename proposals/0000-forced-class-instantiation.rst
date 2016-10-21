@@ -3,6 +3,10 @@
 .. implemented::
 .. highlight:: haskell
 
+This is a GHC proposal `under discussion`_.
+
+.. _`under discussion`: https://github.com/ghc-proposals/ghc-proposals/pull/23
+
 Forced Class Instantiation
 ==========================
 
