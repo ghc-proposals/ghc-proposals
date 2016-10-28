@@ -331,8 +331,7 @@ required signatures can be handled:
     library two-string
         -- Two requirements, Str and Str2
         build-depends: concat-indef, stringutils-indef
-        mixin:
-            stringutils-indef requires (Str as Str2)
+        mixins: stringutils-indef requires (Str as Str2)
 
 * In addition to the inherited requirements from dependencies,
   a user can also define a local ``hsig`` to refine the required
@@ -390,321 +389,151 @@ user-facing limitations:
    the required signature of a library is (merging always takes
    place.)
 
-Pipeline
-~~~~~~~~
 
-In this section, we give an outline of the compilation pipeline from
-package manager to compiler, describing all of the important
-intermediate representations that a package goes through when being
-typechecked and compiled.
+The Cabal Pipeline
+~~~~~~~~~~~~~~~~~~
 
-.. image:: https://raw.githubusercontent.com/ezyang/ghc-proposals/backpack/proposals/backpack-pipeline.png
+The Cabal pipeline is the entire lifecycle of compiling a set of Cabal
+packages from beginning to end.  The core part of Backpack is performing
+mix-in linking and then appropriately invoking GHC to actually compile
+modules and signatures, but the end-to-end process also involves
+dependency solving, reusing already installed packages and installing
+the build products output by GHC.
 
-**Dependency solving.**
-To begin with, we are given a **package identifier** to build (e.g.,
-``q-0.1``, consisting of a package name ``q`` and a package version
-``0.1``), and an **index** which maps package identifiers to source code
-tarballs::
+1.  **Dependency solving.**
+    Dependency solving resolves the version-range bounded dependencies of a
+    package to specific versions of the dependencies, and picks a flag
+    assignment for each package, simplifying away all conditional sections
+    in the Cabal file.  This step must happen first: prior to dependency
+    solving, we don't know which source packages we are compiling!  The
+    input to dependency solving is the entire Hackage index; the output is a
+    graph of packages to be compiled.
 
-    impl-0.1.tgz
-    p-0.1.tgz
-    p-0.2.tgz
-    q-0.1.tgz
+2.  **Componentization.**
+    Cabal packages can define multiple independent components (libraries,
+    executables, test suites and benchmarks).  Componentization decomposes
+    the graph of packages into a graph of components, exposing finer-grained
+    dependency structure and simplifying subsequent Backpack passes which
+    apply only to libraries.
 
-The first step of the pipeline is dependency solving, which
-picks the versions of all packages we transitively depend on.
-For example, dependency solving on the above index might pick
-``impl-0.1``, ``p-0.2`` and ``q-0.1`` as the package to build,
-forming a graph of **solved packages**.
+3.  **Mix-in linking.**
+    Components implicitly instantiate mixin libraries by combining the
+    namespaces of their provided modules and required signatures.  Mix-in
+    linking elaborates each component into a form where its dependencies are
+    explicitly instantiated. For libraries, mix-in linking also infers a
+    library shape, which describes what the library requires and provides
+    (though similar to a type, we use a different term, as a library shape
+    knows nothing about the Haskell-level type system).  Mix-in linking is
+    compositional, in that the shape and elaboration of a library is derived
+    only from the shapes of its direct dependencies.
 
-  *Guru meditation.* The package manager has wide latitude in
-  determining how to do dependency solving.  Stack, for example, simply
-  takes a known good version set from the Stackage distribution.
+4.  **Instantiation.**
+    We expect typechecking of libraries to be compositional: the type of a
+    library should be derivable from the types of its uninstantiated
+    dependencies.  However, this compositionality is in tension with
+    Backpack's promise of no overhead:  a library can only be specialized
+    against its instantiation if we compile it for that specific
+    instantiation.  The instantiation phase recursively adds these fully
+    instantiated libraries to the component graph, giving us the full
+    graph of components that will eventually be installed.  If any of
+    these components has already been installed, we can skip building
+    them in this run (this step is called *improvement.*)
 
-  cabal-install, in contrast, has a sophisticated dependency solver,
-  whose output is a graph of package identifiers, where the dependency
-  edges are labeled based on the component that has a dependency.  For
-  example, if ``p`` has a test suite ``p-tests`` which depends on
-  ``tasty``, the solved package will have a ``p-tests`` dependency on
-  ``tasty``, but not necessarily a library dependency on this library.
-  A single package may occur with multiple versions in the graph: the
-  simplest situation this can occur is with setup dependencies, where
-  individual packages may have Custom setups built with different
-  versions of ``Cabal``.
+5.  **Building.**
+    Finally, we build and install each of the resulting components in
+    topological order.  Instantiated libraries and components with no
+    holes are compiled, while indefinite libraries are typechecked only,
+    using the signatures to provide types for the uninstantiated holes.
 
-**Project planning.**
-The next step is project planning, which expands a package into a
-graph of **configured components** (described in `Library structure`_).
-A dependency on a package is reinterpreted as a dependency on the
-*public library component* of the package (thus, ``build-depends:
-stack`` would depend on the ``stack`` library, not the executable).  For
-example::
+Syntax and identifiers
+----------------------
 
-    library impl-0.1-3a03e0f9
-        exposed-modules: H
+In this section, we describe the low-level syntactic entities defined by
+Backpack, which GHC and Cabal produce and consume.  Unlike the
+informally defined intermediate representations which arise in the Cabal
+pipeline, these identifiers have a precise syntax.
 
-    library p-0.2-aac464b1
-        signatures: H
-        exposed-modules: P
+Notational conventions
+~~~~~~~~~~~~~~~~~~~~~~
 
-    library q-0.1-3feeb96f
-        build-depends: p-0.2-aac464b1, impl-0.1-3a03e0f9
-        exposed-modules: Q
+We use the following conventions for presenting syntax::
 
-Configured components are uniquely identified by a **component
-identifier** (e.g., ``p-0.2-aac464b1``).  A component identifier is an
-arbitrary, package manager allocated string::
+    pat +           one or more repetitions
+    pat *           zero or more repetitions
+    ( pat )         grouping
+    pat1 | pat2     choice
+    [chars]         bracket expression
+    "foo"           terminal syntax
 
-    ComponentId     ::= [A-Za-z0-9-_.]+
+All whitespace is expressed explicitly in the syntax of this section:
+there is no implicit whitespace between juxtaposed symbols.  The rest of
+this specification also uses these conventions to informally describe
+the abstract syntax trees of Cabal files and various intermediate
+representations; precisely specifying the grammar of these formats is
+out of scope for this specification.
 
-Generally, the component identifier records the package name, package
-version, component name, and a hash of the component identifiers of the
-direct dependencies and other important configuration information (e.g.,
-flag assignments).  For brevity, we will often omit the hash from our
-examples.
+Opaque identifiers
+~~~~~~~~~~~~~~~~~~
 
-**Mix-in linking.**
-At this point, we perform **mixin linking**, taking each dependency
-on an indefinite library and filling in requirements based on the
-module names which are in scope.  We call these **mixed libraries**,
-and they are described in `mixed library structure`_::
-
-    library impl-0.1
-        exposed-modules: H
-
-    library p-0.2 <H>
-        signature H
-        module P
-
-    library q-0.1
-        dependency p-0.2[H=impl-0.1:H]
-        dependency impl-0.1
-        module Q
-
-Two kinds of libraries can be output by mixin linking:
-**definite libraries** which have no holes (``impl-0.1``
-and ``q-0.1``), and **indefinite libraries** which have
-holes.  The dependencies of these libraries refer to both
-
-
-This is our provisional install plan.
-
-This install plan is not complete, however: we must *compile* any fully
-instantiated library.  The **instantiation** step takes indefinite
-libraries which are referenced by definite libraries and instantiates
-them according to ``dependency`` declarations.  In our running example,
-``q-0.1`` is a definite library that instantiates ``p``, so
-we add one instantiation of ``p`` to our install plan, at the
-same time allocating a final identifier for the instantiated
-package::
-
-    instantiate p-0.2[H=impl-0.1:H] => p-0.2+k2F9xZlb
-
-At this point, we transition from Cabal to GHC, with the mixed
-library being translated into a series of command line flags for
-GHC.
-
-Indefinite libraries are typechecked only (no compilation
-occurs).  We run GHC with the flags (described in more detail in `GHC
-command line flags`)::
-
-    ghc -this-unit-id p-0.2 \
-        -instantiated-with "H=<H>" \
-        -fno-code -fwrite-interface \
-        H P
-
-Definite libraries (including those which are fully instantiated) get
-compiled.  To build the instantiated copy of ``p-0.2``, for example, we
-run GHC with the flags::
-
-    ghc -this-unit-id p-0.2+k2Fa9xZlb \
-        -this-component-id p-0.2 \
-        -instantiated-with "H=impl-0.1:H" \
-        H P
-
-(``p-0.2+k2Fa9xZlb`` is a hashed version of ``p-0.2[H=impl-0.1:H]``
-which will be used for symbols and filepaths.)  The results
-are installed to the `Installed library database`_.
-
-Semantic objects and identifiers
---------------------------------
-
-At the heart of Backpack are *indefinite libraries*, which are
-parametrized libraries that can be typechecked independently, or
-instantiated by later users.  In the process of Backpack, a
-library gets more and more "defined" (in the sense that it
-is initially just a transitive closure of source code, then
-it is a
-
-In this section, we precisely describe
-the various forms a library goes through as it is processed by
-Backpack, and how those forms are uniquely identified.
-
-In this section, we will formally describe the main semantic objects in
-Backpack.  We have already seen an informal description of 
-
-
-
-
-
-In this section, we describe the grammar of identifiers in Backpack.
-These identifiers are used, for example, to determine the unique
-name associated with each entity in Haskell, which in turn determines
-when two types are equal.
+Opaque identifiers are unstructured strings which are used as
+unique identifiers.  They are designed to be usable for
+symbol names and on the file system.
 
 ::
 
-    ComponentId     ::= [A-Za-z0-9-_.]+
+    InstalledUnitId  ::= [A-Za-z0-9-_.+]+
+    ComponentId      ::= [A-Za-z0-9-_.]+
+    ModuleName       ::= [A-Z][A-Za-z0-9_']* ( "." [A-Z][A-Za-z0-9_']* ) +
+
+    DefiniteUnitId       InstalledUnitId of definite library
+    IndefiniteUnitId     InstalledUnitId of indefinite library
+
+An **installed unit identifier** identifies a definite or indefinite
+library, whose build products have been installed and registered to the
+installed package database.  It incorporates information about the
+package name, version, component, transitive source code and
+instantiation.  We classify these into two types: **definite unit
+identifiers** (which are either fully instantiated or refer to
+components with no holes) and **indefinite unit identifiers** (which are
+completely uninstantiated.)
+
+A **component identifier** identifies a component, disregarding its
+instantiation.  An installed indefinite unit or definite unit with no
+holes has the same installed package identifier as its component
+identifier.
+
+A **module name** identifies a module as defined in Haskell'98.
+
+Unit identifier
+~~~~~~~~~~~~~~~
+
+::
+
     UnitId          ::= ComponentId "[" ModuleSubst "]"
                       | DefiniteUnitId
-    DefiniteUnitId  ::= InstalledUnitId
-    InstalledUnitId ::= [A-Za-z0-9-_.+]+
-    ModuleSubst     ::= ( ModuleName "=" Module ) +
-    ModuleSubstHash ::= [A-Za-z0-9]+
-    -- from Haskell'98
-    ModuleName  ::= [A-Z][A-Za-z0-9_']* ( "." [A-Z][A-Za-z0-9_']* ) +
-    Module      ::= UnitId ":" ModuleName
-                  | "<" ModuleName ">"
+    ModuleSubst     ::= ( ModuleName "=" Module ) *
+    Module          ::= UnitId ":" ModuleName
+                      | "<" ModuleName ">"
 
-.. _ComponentId:
+A **unit identifier** is a structured identifier which identifies an
+instantiated library which doesn't necessarily correspond to an
+installed library that exists on the files system.  These identifiers
+are passed to GHC when typechecking an indefinite library, as an
+indefinite library can refer to partially instantiated libraries which
+are never installed to the package database.  Unit identifiers
+can be thought of as a very small language of *applicative functor
+instantiations.*
 
-A **component identifier** intuitively identifies the transitive closure
-of source code, and is represented as an arbitrary sequence of
-alphanumeric letters, dashes, underscores and periods.  Component
-identifiers are uniquely allocated by the package manager (e.g.,
-``cabal-install``), and in practice, encode the package name, package
-version, component name, and a hash (which is computed over the source
-code sdist tarball, Cabal flags, GHC flags and component identifiers of
-direct dependencies of the component.)
-
-A component identifier tracks only direct dependencies (i.e.,
-``build-depends``) as determined by the dependency solver, but
-not indirect dependencies (i.e., how an indefinite library is
-instantiated).  A component identifier uniquely identifies a source library
-(whether it's definite or indefinite.)
-We will use the metavariable ``p`` to represent component identifiers.
-
-Example: the component identifier for ``concat-indef``
-might be ``concat-indef-0.1-abcdefg``.
-
-.. _UnitId:
-
-An **unit identifier** identifies a component along with the module
-substitution (possibly trivial) which describes how the library
-was instantiated.  However, the precise instantiation is not
-necessarily conveyed
-
-identifier
-combined with a module substitution describing how the library is
-instantiated.
-Non-Backpack libraries do not have a module substitution (since they
-have no signatures to fill).  A unit identifier with no free module
-variables (see below) uniquely identifies an instantiated library for
-which we can compile code.  We will use the metavariable ``P`` to
-represent unit identifiers.
-
-A fully instantiated unit identifier which have compiled (or are
-compiling) is specified in a compressed form, a **hashed unit
-identifier.**  This hashed unit identifier is used for symbol
-names and file paths.
-
-An **installed unit identifier** is a string which uniquely 
-
-Example: a fully uninstantiated unit identifier for ``concat-indef``
-would be ``concat-indef-0.1-abcdefg[Str=<Str>]``; if instantiated
-with ``str-bytestring``, it's unit identifier is
-``concat-indef-0.1-abcdefg[Str=str-bytestring-0.2-xxx:Str]``.
-The hashed version of this instantiated unit id might
-look like ``concat-indef-0.1-abcdefg+xyzzyx``.
-
-.. _Module:
-
-A **module identifier** is either a concrete module or a module
-variable.  A concrete module consists of a module name (the module
-being identified) and a unit identifier (the library it is a member of.)
-A module variable consists only of a module name, and specifies the
-name of an unfilled requirement.  Instantiation takes place by
-substituting module variables with concrete module identifiers;
-e.g., ``p[A=<A>]:B`` is instantiated to ``p[A=q:C]:B`` by applying
-the substitution ``<A>`` maps to ``q:C``.  We may speak of the
-**free module variables** of a module or unit identifier in the
-conventional sense.  Module variables are bound by the requirements
-of their defining library.  We will use the metavariable ``M`` to
-represent module identifiers, and ``m`` to represent module names.
-
-Module identifiers are used to ascribe unique names to Haskell entities:
-a Haskell entity ``n`` defined in a module with the module identity
-``M`` (notice that the unique name of a declaration in a module is
-not well-specified without extra information, since only module
-names are specified in syntax) is ascribed the unique name ``M.n``:
-two identifiers are only equal if their unique names are equal.
-
-Example: the module identifier for ``Str`` from ``str-bytestring``
-is ``str-bytestring-0.2-xxx:Str``; the module identifier for
-``Concat`` frmo an uninstantiated ``concat-indef`` is
-``concat-indef-0.1-abcdefg[Str=<Str>]:Concat``.
-
-.. _ModuleSubst:
-
-A **module substitution** is a mapping from module names to modules identifiers.
-Any module name occurs only once in a substitution, and a substitution
-is in canonical form if it is sorted by module name.  We will use
-the metavariable ``S`` to represent substitutions.
-
-Module substitutions can be applied to identifiers::
-
-    -- Substitution on UnitId
-    (p[S])⟦S'⟧   = p[S⟦S'⟧]
-
-    -- Substitution on Module
-    <m>⟦⟧        = <m>
-    <m>⟦m=M,  S⟧ = M
-    <m>⟦m'=M, S⟧ = <m>⟦S⟧    (m ≠ m')
-    (P:m)⟦S⟧     = P⟦S⟧:m
-
-    -- Substitution on ModuleSubst (NOT substitution composition)
-    (m=M, S')⟦S⟧ = m=M⟦S⟧, S'⟦S⟧
+A unit identifier can either specify the installed unit identifier of a
+definite library (never an indefinite library; those always have module
+substitutions) or a component identifier with a **module substitution**
+describing the instantiation.  A module substitution is a mapping from
+module names to **module identities**, which identify either a module
+from a particular instantiated library (``UnitId:ModuleName``) or from
+an unfilled requirement (``<ModuleName>``).
 
 GHC
----------------
-
-A library is a collection of modules and dependencies on other libraries,
-which is parametrized by a set of required signatures.  Libraries live
-in Cabal files, and look like this::
-
-    library stringutils-indef
-        build-depends: concat-indef
-        exposed-modules: StringUtils
-
-Cabal transforms a library into an intermediate form called a **mixed
-library**, in which the dependencies are made explicit.  This
-transformation involves both dependency solving (picking the source
-code to be used) and *mixin linking*::
-
-    library stringutils-indef-0.1-xxx <Str>
-        dependency concat-indef-0.1-abcdefg[Str=<Str>]
-        module StringUtils
-
-You can see that the ``build-depends`` has been translated into
-a ``dependency``, which has an explicit instantion of ``Str`` with
-the module variable ``<Str>`` (the names have also been expanded
-with hashes, a side effect of dependency resolution).
-
-From a mixed library, Cabal can easily generate a sequence of calls
-to GHC with command line flags and input files::
-
-    ghc -this-unit-id "stringutils-indef-0.1-xxx" \
-        -instantiated-with "Str=<Str>" \
-        -unit-id "concat-indef-0.1-abcdefg[Str=<Str>]" \
-        -fno-code -fwrite-interface \
-        --make Str.hsig StringUtils.hs
-
-Mixed library structure
-~~~~~~~~~~~~~~
-
-To discuss mixed libraries in a more user friendly form, we define an
-abstract syntax tree for mixed libraries and show how to translate this
-AST into the command line arguments that the compiler accepts.
+---
 
 ::
 
@@ -716,6 +545,13 @@ AST into the command line arguments that the compiler accepts.
     mdecl ::= "dependency" UnitId ModuleRenaming
             | "module"    ModuleName
             | "signature" ModuleName
+
+    ModuleRenaming    ::= ""
+                        | "(" entry "," ... "," entry ")"
+                        | "hiding" "(" ModuleName "," ... "," ModuleName ")"
+    entry ::= ModuleName
+            | ModuleName "as" ModuleName
+
 
 A mixed library begins with a header recording its component identity
 and a list of its required signatures.  The body of a library consists
@@ -1024,7 +860,7 @@ Dependencies
     mdecl ::= "dependency" UnitId ModuleRenaming
     ModuleRenaming    ::= ""
                         | "(" entry "," ... "," entry ")"
-                        -- TODO: "hiding" "(" ModuleName "," ... "," ModuleName ")"
+                        | "hiding" "(" ModuleName "," ... "," ModuleName ")"
     entry ::= ModuleName
             | ModuleName "as" ModuleName
 
@@ -1149,31 +985,13 @@ Library structure
 A library defines a scope containing declarations for modules
 and signatures.
 
-::
-
-    library ::=
-        "library" ( PackageName )?
-            library-fields *
-
-    library-fields ::=
-        "exposed-modules:"      exposed-module        ...     exposed-module
-      | "other-modules:"        other-module          ...     other-module
-      | "signatures:"           signature             ...     signature
-      | "reexported-modules:"   reexported-module "," ... "," reexported-module
-      | buildinfo-fields
-      | ... -- Cabal supports more fields
-
-    build-info ::=
-        "mixins:"    mixin  "," ... "," mixin
-      | ... -- Cabal supports more fields
-
 A library begins with a header: the keyword ``library``, an
 optional library name (if omitted, the name defaults to the
 name of the package), and then a series of library fields defining
 what is brought into scope, what is defined and what is exported.
 
 Cabal also defines test suite, benchmark and executable components
-which only include ``build-info`` fields; we will ignore them for
+which only include ``buildinfo-fields``; we will ignore them for
 the purposes of this specification.
 
 Exports
@@ -1215,7 +1033,6 @@ Mixins
     mixin  ::= PackageName MixinRenaming
 
     MixinRenaming      ::= ModuleRenaming ( "requires" ModuleRenaming )?
-
     WithModuleRenaming ::= ""
                          | "(" with_entry "," ... "," with_entry ")"
     with_entry ::= ModuleName "with" ModuleName
