@@ -62,7 +62,7 @@ How do I submit a proposal?
 ---------------------------
 
 While the full process is described in the `proposal
-<https://github.com/ghc-proposals/ghc-proposals/pull/1>`_ describing the proposal
+<https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-proposal-process.rst>`_ describing the proposal
 process, here is a short summary,
 
 1. Edit the `template
