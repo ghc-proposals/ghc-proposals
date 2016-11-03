@@ -17,35 +17,33 @@ Backpack
 
    a. `Motivation`_
 
-   b. `Overview`_
+   #. `Overview`_
 
-   c. `Pipeline`_
+   #. `The Cabal Pipeline`_
 
-#. `Identifiers`_
+#. `Unit identifiers`_
 
 #. `GHC`_
 
-   a. `Mixed library structure`_
+   a. `GHC command line flags`_
 
-   b. `GHC command line flags`_
+   #. `Installed library database`_
 
-   c. `Installed library database`_
+   #. `Signatures`_
 
-   d. `Signatures`_
-
-   e. `Dependencies`_
+   #. `Dependencies`_
 
 #. `Cabal`_
 
    a. `Library structure`_
 
-   b. `Exports`_
+   #. `Exports`_
 
-   c. `Mixins`_
+   #. `Mixins`_
 
-   d. `Mixin linking`_
+   #. `Mixin linking`_
 
-   e. `Modules and signatures`_
+   #. `Modules and signatures`_
 
 #. `Setup interface`_
 
@@ -513,6 +511,9 @@ formulation of unit identifiers.  In the author's opinion, pictorial
 unit identifiers are easier to understand and manipulate; of course, in
 an actual implementation, a syntactic representation must be used.
 
+Syntax
+~~~~~~
+
 The concrete syntax of unit identifiers is given below:
 
 ::
@@ -527,42 +528,47 @@ The concrete syntax of unit identifiers is given below:
 
 We fix a set of **component identifiers** and **module names**, which
 serve as labels to identify libraries prior to instantiation and
-modules within them, respectively.  Component identifiers are allocated
+the modules within them, respectively.  Component identifiers are allocated
 by the package manager after dependency solving and componentization,
 and generally encode the source package name, version, and transitive
 dependency structure.
 
-A **unit identifier** is composed of a library (specified by a
+A **unit identifier** consists of a library (specified by a
 component identifier) and a **module substitution**, specifying how
 each of its holes is to be filled.  A module substitution is
 a mapping from module name to **module identifier**, which specifies
 a particular module name from an instantiated component (specified
-by a unit identifier.)  Each module name key of the substitution
+by a unit identifier), or a hole module (indicating that the
+module is uninstantiated).  Each module name key of the substitution
 must be distinct; to ensure a canonical form for the concrete syntax,
 entries are given in lexicographically sorted order.
 
-The pictorial language of unit identifiers is given inductively below:
+Pictorial language
+~~~~~~~~~~~~~~~~~~
+
+Pictorially, we represent a unit identifier as component box (within a
+wiring graph of components) and a module identifier as an output port on
+a component box:
 
 .. image:: backpack/unit-identifier-pictorial.png
 
-The instantiation of a library is specified by a series of
-input ports, which we conventionally place on the
-left hand side of a component.  A module provided by an instantiated
-library is represented as an output port on the right hand side of
-the component box, while an unimplemented hole is represented by
-an unboxed module name.
+Each component box is labelled with a component identifier, and has
+a series of input ports and output ports.  The input ports represent
+all of the required module names of the component, while the output
+ports signify a subset of the provided modules from this component
+(output ports can be elided if they are unused).  An output port
+can be wired up to an input port to indicate the module is being
+used to instantiate the requirement; if a hole module name is wired
+to an input port, it indicates that this port is uninstantiated.
+Component graphs are acyclic.
 
-It is natural to consider the pictorial language as representing
-acyclic graphs rather than trees; thus, we will often depict
-modules which come from the same instantiated library by drawing multiple
-output ports on a single component:
-
-.. image:: backpack/unit-identifier-pictorial-equivalence-example.png
-
-In general, we'll assume that we can common up any component boxes
-with the same unit identifier, combining their shared module names:
+Component graphs are equivalent up to the following relation, which
+states that we can common up component boxes corresponding
+to the same unit identifier, or split up a component box into
+two identical component boxes.
 
 .. image:: backpack/unit-identifier-pictorial-equivalence.png
+
 
 Syntax and identifiers
 ----------------------
