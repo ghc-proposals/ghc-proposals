@@ -570,22 +570,6 @@ with the same unit identifier, combining their shared module names:
 
 .. image:: backpack/unit-identifier-pictorial-equivalence.png
 
-Extension: Mutual recursion
-''''''''''''''''''''''''''''
-
-The language of unit identifiers can be extended to support
-mutually recursive components::
-
-    UnitId ::= ...
-             | n
-
-where *n* ranges over natural numbers.
-
-Extension: Compressed representation
-''''''''''''''''''''''''''''''''''''
-
-(empty)
-
 Syntax and identifiers
 ----------------------
 
