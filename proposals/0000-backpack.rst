@@ -559,10 +559,32 @@ the component box, while an unimplemented hole is represented by
 an unboxed module name.
 
 It is natural to consider the pictorial language as representing
-*acyclic graphs* rather than trees; thus, we will often depict
+acyclic graphs rather than trees; thus, we will often depict
 modules which come from the same instantiated library by drawing multiple
 output ports on a single component:
 
+.. image:: backpack/unit-identifier-pictorial-equivalence-example.png
+
+In general, we'll assume that we can common up any component boxes
+with the same unit identifier, combining their shared module names:
+
+.. image:: backpack/unit-identifier-pictorial-equivalence.png
+
+Extension: Mutual recursion
+''''''''''''''''''''''''''''
+
+The language of unit identifiers can be extended to support
+mutually recursive components::
+
+    UnitId ::= ...
+             | n
+
+where *n* ranges over natural numbers.
+
+Extension: Compressed representation
+''''''''''''''''''''''''''''''''''''
+
+Nothing
 
 Syntax and identifiers
 ----------------------
