@@ -513,9 +513,6 @@ formulation of unit identifiers.  In the author's opinion, pictorial
 unit identifiers are easier to understand and manipulate; of course, in
 an actual implementation, a syntactic representation must be used.
 
-Syntax
-'''''''
-
 The concrete syntax of unit identifiers is given below:
 
 ::
@@ -544,9 +541,6 @@ by a unit identifier.)  Each module name key of the substitution
 must be distinct; to ensure a canonical form for the concrete syntax,
 entries are given in lexicographically sorted order.
 
-Pictorial language
-'''''''''''''''''''
-
 The pictorial language of unit identifiers is given inductively below:
 
 .. image:: backpack/unit-identifier-pictorial.png
@@ -570,17 +564,6 @@ with the same unit identifier, combining their shared module names:
 
 .. image:: backpack/unit-identifier-pictorial-equivalence.png
 
-Extension: Mutual recursion
-''''''''''''''''''''''''''''
-
-The language of unit identifiers can be extended to support
-mutually recursive components::
-
-    UnitId ::= ...
-             | Nat
-
-Extension: Compressed representation
-''''''''''''''''''''''''''''''''''''
 
 Syntax and identifiers
 ----------------------
