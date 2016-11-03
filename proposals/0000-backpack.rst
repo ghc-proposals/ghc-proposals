@@ -513,15 +513,35 @@ formulation of unit identifiers.  In the author's opinion, pictorial
 unit identifiers are easier to understand and manipulate; of course, in
 an actual implementation, a syntactic representation must be used.
 
-Syntax
-'''''''
-
 The concrete syntax of unit identifiers is given below:
 
-Pictorial language
-'''''''''''''''''''
+::
 
-The pictorial language of unit identifiers is given inductively below:
+    ComponentId      ::= [A-Za-z0-9-_.]+
+    ModuleName       ::= [A-Z][A-Za-z0-9_']* ( "." [A-Z][A-Za-z0-9_']* ) +
+
+    UnitId          ::= ComponentId "[" ModuleSubst "]"
+    ModuleSubst     ::= ( ModuleName "=" Module ) *
+    Module          ::= UnitId ":" ModuleName
+                      | "<" ModuleName ">"      # hole
+
+We fix a set of **component identifiers** and **module names**, which
+serve as labels to identify libraries prior to instantiation and
+modules within them, respectively.  Component identifiers are allocated
+by the package manager after dependency solving and componentization,
+and generally encode the source package name, version, and transitive
+dependency structure.
+
+A **unit identifier** is composed of a library (specified by a
+component identifier) and a **module substitution**, specifying how
+each of its holes is to be filled.  A module substitution is
+a mapping from module name to **module identifier**, which specifies
+a particular module name from an instantiated component (specified
+by a unit identifier.)  Each module name key of the substitution
+must be distinct; to ensure a canonical form for the concrete syntax,
+entries are given in lexicographically sorted order.
+
+The pictorial language of unit identifiers is given below:
 
 .. image:: backpack/unit-identifier-pictorial.png
 
@@ -532,33 +552,16 @@ library is represented as an output port on the right hand side of
 the component box, while an unimplemented hole is represented by
 an unboxed module name.
 
-It is natural to consider the pictorial language as representing
-acyclic graphs rather than trees; thus, we will often depict
+As the pictorial language represents a *graph* (rather than a tree, as is
+suggested by the syntactic representation), we will often depict
 modules which come from the same instantiated library by drawing multiple
-output ports on a single component:
+output ports:
 
 .. image:: backpack/unit-identifier-pictorial-equivalence-example.png
 
-In general, we'll assume that we can common up any component boxes
-with the same unit identifier, combining their shared module names:
+In general, we'll assume the following equivalence:
 
 .. image:: backpack/unit-identifier-pictorial-equivalence.png
-
-Extension: Mutual recursion
-''''''''''''''''''''''''''''
-
-The language of unit identifiers can be extended to support
-mutually recursive components::
-
-    UnitId ::= ...
-             | n
-
-where *n* ranges over natural numbers.
-
-Extension: Compressed representation
-''''''''''''''''''''''''''''''''''''
-
-Nothing
 
 Syntax and identifiers
 ----------------------
