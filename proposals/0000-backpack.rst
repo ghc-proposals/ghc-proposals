@@ -513,9 +513,6 @@ formulation of unit identifiers.  In the author's opinion, pictorial
 unit identifiers are easier to understand and manipulate; of course, in
 an actual implementation, a syntactic representation must be used.
 
-Syntax
-'''''''
-
 The concrete syntax of unit identifiers is given below:
 
 ::
@@ -543,9 +540,6 @@ a particular module name from an instantiated component (specified
 by a unit identifier.)  Each module name key of the substitution
 must be distinct; to ensure a canonical form for the concrete syntax,
 entries are given in lexicographically sorted order.
-
-Pictorial language
-'''''''''''''''''''
 
 The pictorial language of unit identifiers is given inductively below:
 
