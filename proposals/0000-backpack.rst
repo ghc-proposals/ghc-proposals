@@ -544,6 +544,9 @@ by a unit identifier.)  Each module name key of the substitution
 must be distinct; to ensure a canonical form for the concrete syntax,
 entries are given in lexicographically sorted order.
 
+Pictorial language
+'''''''''''''''''''
+
 The pictorial language of unit identifiers is given inductively below:
 
 .. image:: backpack/unit-identifier-pictorial.png
@@ -556,7 +559,7 @@ the component box, while an unimplemented hole is represented by
 an unboxed module name.
 
 It is natural to consider the pictorial language as representing
-*acyclic graphs* rather than trees; thus, we will often depict
+acyclic graphs rather than trees; thus, we will often depict
 modules which come from the same instantiated library by drawing multiple
 output ports on a single component:
 
@@ -567,8 +570,21 @@ with the same unit identifier, combining their shared module names:
 
 .. image:: backpack/unit-identifier-pictorial-equivalence.png
 
-Extension: Recursive modules
-'''''''''''''''''''''''''''''
+Mutual recursion
+''''''''''''''''''''''''''''
+
+The language of unit identifiers can be extended to support
+mutually recursive components::
+
+    UnitId ::= ...
+             | n
+
+where *n* ranges over natural numbers.
+
+Compressed representation
+''''''''''''''''''''''''''''''''''''
+
+Nothing
 
 Syntax and identifiers
 ----------------------
