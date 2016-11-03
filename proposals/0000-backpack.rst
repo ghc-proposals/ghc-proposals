@@ -584,6 +584,8 @@ where *n* ranges over natural numbers.
 Extension: Compressed representation
 ''''''''''''''''''''''''''''''''''''
 
+(empty)
+
 Syntax and identifiers
 ----------------------
 
