@@ -518,32 +518,47 @@ Syntax
 
 The concrete syntax of unit identifiers is given below:
 
-::
+Pictorial language
+'''''''''''''''''''
 
-    ComponentId      ::= [A-Za-z0-9-_.]+
-    ModuleName       ::= [A-Z][A-Za-z0-9_']* ( "." [A-Z][A-Za-z0-9_']* ) +
+The pictorial language of unit identifiers is given inductively below:
 
-    UnitId          ::= ComponentId "[" ModuleSubst "]"
-    ModuleSubst     ::= ( ModuleName "=" Module ) *
-    Module          ::= UnitId ":" ModuleName
-                      | "<" ModuleName ">"      # hole
+.. image:: backpack/unit-identifier-pictorial.png
 
-We fix a set of **component identifiers** and **module names**, which
-serve as labels to identify libraries prior to instantiation and
-modules within them, respectively.  Component identifiers are allocated
-by the package manager after dependency solving and componentization,
-and generally encode the source package name, version, and transitive
-dependency structure.
+The instantiation of a library is specified by a series of
+input ports, which we conventionally place on the
+left hand side of a component.  A module provided by an instantiated
+library is represented as an output port on the right hand side of
+the component box, while an unimplemented hole is represented by
+an unboxed module name.
 
-A **unit identifier** is composed of a library (specified by a
-component identifier) and a **module substitution**, specifying how
-each of its holes is to be filled.  A module substitution is
-a mapping from module name to **module identifier**, which specifies
-a particular module name from an instantiated component (specified
-by a unit identifier.)  Each module name key of the substitution
-must be distinct; to ensure a canonical form for the concrete syntax,
-entries are given in lexicographically sorted order.
+It is natural to consider the pictorial language as representing
+acyclic graphs rather than trees; thus, we will often depict
+modules which come from the same instantiated library by drawing multiple
+output ports on a single component:
 
+.. image:: backpack/unit-identifier-pictorial-equivalence-example.png
+
+In general, we'll assume that we can common up any component boxes
+with the same unit identifier, combining their shared module names:
+
+.. image:: backpack/unit-identifier-pictorial-equivalence.png
+
+Extension: Mutual recursion
+''''''''''''''''''''''''''''
+
+The language of unit identifiers can be extended to support
+mutually recursive components::
+
+    UnitId ::= ...
+             | n
+
+where *n* ranges over natural numbers.
+
+Extension: Compressed representation
+''''''''''''''''''''''''''''''''''''
+
+Nothing
 
 Syntax and identifiers
 ----------------------
