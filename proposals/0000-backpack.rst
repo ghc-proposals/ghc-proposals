@@ -544,24 +544,6 @@ by a unit identifier.)  Each module name key of the substitution
 must be distinct; to ensure a canonical form for the concrete syntax,
 entries are given in lexicographically sorted order.
 
-Pictorial language
-'''''''''''''''''''
-
-The pictorial language of unit identifiers is given inductively below:
-
-.. image:: backpack/unit-identifier-pictorial.png
-
-The instantiation of a library is specified by a series of
-input ports, which we conventionally place on the
-left hand side of a component.  A module provided by an instantiated
-library is represented as an output port on the right hand side of
-the component box, while an unimplemented hole is represented by
-an unboxed module name.
-
-It is natural to consider the pictorial language as representing
-acyclic graphs rather than trees; thus, we will often depict
-modules which come from the same instantiated library by drawing multiple
-output ports on a single component:
 
 Syntax and identifiers
 ----------------------
