@@ -513,6 +513,9 @@ formulation of unit identifiers.  In the author's opinion, pictorial
 unit identifiers are easier to understand and manipulate; of course, in
 an actual implementation, a syntactic representation must be used.
 
+Syntax
+'''''''
+
 The concrete syntax of unit identifiers is given below:
 
 ::
@@ -564,6 +567,8 @@ with the same unit identifier, combining their shared module names:
 
 .. image:: backpack/unit-identifier-pictorial-equivalence.png
 
+Extension: Recursive modules
+'''''''''''''''''''''''''''''
 
 Syntax and identifiers
 ----------------------
