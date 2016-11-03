@@ -541,7 +541,7 @@ by a unit identifier.)  Each module name key of the substitution
 must be distinct; to ensure a canonical form for the concrete syntax,
 entries are given in lexicographically sorted order.
 
-The pictorial language of unit identifiers is given below:
+The pictorial language of unit identifiers is given inductively below:
 
 .. image:: backpack/unit-identifier-pictorial.png
 
@@ -552,16 +552,18 @@ library is represented as an output port on the right hand side of
 the component box, while an unimplemented hole is represented by
 an unboxed module name.
 
-As the pictorial language represents a *graph* (rather than a tree, as is
-suggested by the syntactic representation), we will often depict
+It is natural to consider the pictorial language as representing
+*acyclic graphs* rather than trees; thus, we will often depict
 modules which come from the same instantiated library by drawing multiple
-output ports:
+output ports on a single component:
 
 .. image:: backpack/unit-identifier-pictorial-equivalence-example.png
 
-In general, we'll assume the following equivalence:
+In general, we'll assume that we can common up any component boxes
+with the same unit identifier, combining their shared module names:
 
 .. image:: backpack/unit-identifier-pictorial-equivalence.png
+
 
 Syntax and identifiers
 ----------------------
