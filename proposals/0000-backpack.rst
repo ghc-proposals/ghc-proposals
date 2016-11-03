@@ -11,6 +11,8 @@
 Backpack
 ========
 
+.. image:: backpack/logo.png
+
 #. `Introduction`_
 
    a. `Motivation`_
@@ -251,6 +253,12 @@ Locally defined ``hsig`` files are declared in the Cabal file via the
         signatures: Str
         exposed-modules: Concat
 
+Diagramatically, we represent the library ``concat-indef`` as a
+component with one input port (the signature ``Str``) and one
+output port (the module ``Concat``):
+
+.. image:: backpack/concat-indef.png
+
 Signatures can also be inherited from other libraries (more on this
 shortly); we refer to the set of all locally defined and inherited
 signatures as the set of **required signatures**.
@@ -282,6 +290,8 @@ modules from ``build-depends`` (and not locally defined ones)::
              -- more convenient use.
              Concat as Concat.ByteString
 
+.. image:: backpack/concat-bytestring.png
+
 Thus, indefinite libraries can be thought of parametrized modules,
 but rather than explicitly specifying each parameter, it is
 implicitly specified with module namespaces.  This process
@@ -307,6 +317,8 @@ instantiated, it gets inherited by the user of the library::
     import Concat
     import Str -- the signature is importable
 
+.. image:: backpack/stringutils-indef.png
+
 It's worth reiterating that contents of a ``signatures`` field
 do not specify the *required* signatures of a library, since a library
 may also inherit many other required signatures from its dependencies.
@@ -320,18 +332,24 @@ required signatures can be handled:
   have the same required signature (e.g., ``Str``), then you
   have a single required signature ``Str`` that is the union
   of these two signatures: signatures are identified only
-  by module name.  To keep these two requirements separate,
-  you would rename one of the requirements to a different name
-  using the ``mixins`` directive::
+  by module name::
 
     library one-string
         -- One requirement, named Str
         build-depends: concat-indef, stringutils-indef
 
+  .. image:: backpack/one-string.png
+
+  To keep these two requirements separate,
+  you would rename one of the requirements to a different name
+  using the ``mixins`` directive::
+
     library two-string
         -- Two requirements, Str and Str2
         build-depends: concat-indef, stringutils-indef
         mixins: stringutils-indef requires (Str as Str2)
+
+  .. image:: backpack/two-string.png
 
 * In addition to the inherited requirements from dependencies,
   a user can also define a local ``hsig`` to refine the required
@@ -400,6 +418,8 @@ modules and signatures, but the end-to-end process also involves
 dependency solving, reusing already installed packages and installing
 the build products output by GHC.
 
+.. image:: backpack/pipeline.png
+
 1.  **Dependency solving.**
     Dependency solving resolves the version-range bounded dependencies of a
     package to specific versions of the dependencies, and picks a flag
@@ -439,22 +459,14 @@ the build products output by GHC.
     these components has already been installed, we can skip building
     them in this run (this step is called *improvement.*)
 
-5.  **Building.**
+5.  **Typechecking and compiling.**
     Finally, we build and install each of the resulting components in
     topological order.  Instantiated libraries and components with no
     holes are compiled, while indefinite libraries are typechecked only,
     using the signatures to provide types for the uninstantiated holes.
 
-Syntax and identifiers
-----------------------
-
-In this section, we describe the low-level syntactic entities defined by
-Backpack, which GHC and Cabal produce and consume.  Unlike the
-informally defined intermediate representations which arise in the Cabal
-pipeline, these identifiers have a precise syntax.
-
 Notational conventions
-~~~~~~~~~~~~~~~~~~~~~~
+----------------------
 
 We use the following conventions for presenting syntax::
 
@@ -472,6 +484,114 @@ the abstract syntax trees of Cabal files and various intermediate
 representations; precisely specifying the grammar of these formats is
 out of scope for this specification.
 
+Unit identifiers
+----------------
+
+.. image:: backpack/unit-identifier.png
+
+At the core of Backpack is the expression language of unit
+identifiers.  A unit identifier can be thought of in two
+ways:
+
+1. A unit identifier is an *expression* in the language of
+   applicative functor applications, specifying how a
+   library is instantiated.  In this sense, ``p[A=q:B]``
+   says, ``p`` applied with ``q:B`` at its hole (argument) ``A``.
+
+2. A unit identifier uniquely *identifies* a library: if
+   two instances of a library are instantiated in the same
+   way, they provide the same types and will be compiled
+   and installed only once in the package database.
+
+Unit identifiers are pervasive in both the Cabal and GHC: Cabal mix-in
+links libraries to determine the unit identifiers of the libraries that
+are in scope; GHC consumes these unit identifiers to determine what
+modules are in scope for import and what requirements are inherited.
+
+In this specification, we present both a syntactic and pictorial
+formulation of unit identifiers.  In the author's opinion, pictorial
+unit identifiers are easier to understand and manipulate; of course, in
+an actual implementation, a syntactic representation must be used.
+
+Syntax
+'''''''
+
+The concrete syntax of unit identifiers is given below:
+
+::
+
+    ComponentId      ::= [A-Za-z0-9-_.]+
+    ModuleName       ::= [A-Z][A-Za-z0-9_']* ( "." [A-Z][A-Za-z0-9_']* ) +
+
+    UnitId          ::= ComponentId "[" ModuleSubst "]"
+    ModuleSubst     ::= ( ModuleName "=" Module ) *
+    Module          ::= UnitId ":" ModuleName
+                      | "<" ModuleName ">"      # hole
+
+We fix a set of **component identifiers** and **module names**, which
+serve as labels to identify libraries prior to instantiation and
+modules within them, respectively.  Component identifiers are allocated
+by the package manager after dependency solving and componentization,
+and generally encode the source package name, version, and transitive
+dependency structure.
+
+A **unit identifier** is composed of a library (specified by a
+component identifier) and a **module substitution**, specifying how
+each of its holes is to be filled.  A module substitution is
+a mapping from module name to **module identifier**, which specifies
+a particular module name from an instantiated component (specified
+by a unit identifier.)  Each module name key of the substitution
+must be distinct; to ensure a canonical form for the concrete syntax,
+entries are given in lexicographically sorted order.
+
+Pictorial language
+'''''''''''''''''''
+
+The pictorial language of unit identifiers is given inductively below:
+
+.. image:: backpack/unit-identifier-pictorial.png
+
+The instantiation of a library is specified by a series of
+input ports, which we conventionally place on the
+left hand side of a component.  A module provided by an instantiated
+library is represented as an output port on the right hand side of
+the component box, while an unimplemented hole is represented by
+an unboxed module name.
+
+It is natural to consider the pictorial language as representing
+*acyclic graphs* rather than trees; thus, we will often depict
+modules which come from the same instantiated library by drawing multiple
+output ports on a single component:
+
+.. image:: backpack/unit-identifier-pictorial-equivalence-example.png
+
+In general, we'll assume that we can common up any component boxes
+with the same unit identifier, combining their shared module names:
+
+.. image:: backpack/unit-identifier-pictorial-equivalence.png
+
+Extension: Mutual recursion
+''''''''''''''''''''''''''''
+
+The language of unit identifiers can be extended to support
+mutually recursive components::
+
+    UnitId ::= ...
+             | n
+
+where *n* ranges over natural numbers.
+
+Extension: Compressed representation
+''''''''''''''''''''''''''''''''''''
+
+Syntax and identifiers
+----------------------
+
+In this section, we describe the low-level syntactic entities defined by
+Backpack, which GHC and Cabal produce and consume.  Unlike the
+informally defined intermediate representations which arise in the Cabal
+pipeline, these identifiers have a precise syntax.
+
 Opaque identifiers
 ~~~~~~~~~~~~~~~~~~
 
@@ -482,8 +602,6 @@ symbol names and on the file system.
 ::
 
     InstalledUnitId  ::= [A-Za-z0-9-_.+]+
-    ComponentId      ::= [A-Za-z0-9-_.]+
-    ModuleName       ::= [A-Z][A-Za-z0-9_']* ( "." [A-Z][A-Za-z0-9_']* ) +
 
     DefiniteUnitId       InstalledUnitId of definite library
     IndefiniteUnitId     InstalledUnitId of indefinite library
@@ -502,18 +620,11 @@ instantiation.  An installed indefinite unit or definite unit with no
 holes has the same installed package identifier as its component
 identifier.
 
-A **module name** identifies a module as defined in Haskell'98.
+A **module name** identifies an unqualified module as defined in Haskell'98.
 
 Unit identifier
 ~~~~~~~~~~~~~~~
 
-::
-
-    UnitId          ::= ComponentId "[" ModuleSubst "]"
-                      | DefiniteUnitId
-    ModuleSubst     ::= ( ModuleName "=" Module ) *
-    Module          ::= UnitId ":" ModuleName
-                      | "<" ModuleName ">"
 
 A **unit identifier** is a structured identifier which identifies an
 instantiated library which doesn't necessarily correspond to an
@@ -535,6 +646,8 @@ an unfilled requirement (``<ModuleName>``).
 GHC
 ---
 
+In this section, we describe the language of 
+
 ::
 
     mlib  ::= "library" ComponentId
@@ -542,15 +655,14 @@ GHC
               "where" "{"
                 mdecl_0 ";" ... ";" mdecl_n
               "}"
-    mdecl ::= "dependency" UnitId ModuleRenaming
+    mdecl ::= "dependency" UnitId ThinningRenaming
             | "module"    ModuleName
             | "signature" ModuleName
 
-    ModuleRenaming    ::= ""
-                        | "(" entry "," ... "," entry ")"
-                        | "hiding" "(" ModuleName "," ... "," ModuleName ")"
-    entry ::= ModuleName
-            | ModuleName "as" ModuleName
+    ThinningRenaming    ::= ""
+                        | "(" tr "," ... "," tr ")"
+    tr ::= ModuleName
+         | ModuleName "as" ModuleName
 
 
 A mixed library begins with a header recording its component identity
@@ -887,6 +999,8 @@ signatures and implementations to **instantiate** it.
 Signature merging
 '''''''''''''''''''''
 
+.. image:: backpack/signature-merging.png
+
 When we want to merge all external signatures for a signature in the
 home library ``m``, we must find all occurrences of ``<m>`` in the
 dependencies of our library.  Let us call the **inherited signatures**
@@ -913,7 +1027,7 @@ specifies that signatures ``q[B=<H>]:B`` and ``p[A=q[B=<H>]:C,D=<H>]:D``
 must be merged to form the home signature ``H``.
 
 Dependency instantiation
-''''''''''''''''''
+''''''''''''''''''''''''
 
 A library with requirements can be thought of as a collection of modules
 which import some signatures.  The process of *instantiating* such a
@@ -1033,6 +1147,11 @@ Mixins
     mixin  ::= PackageName MixinRenaming
 
     MixinRenaming      ::= ModuleRenaming ( "requires" ModuleRenaming )?
+    ModuleRenaming    ::= ""
+                        | "(" entry "," ... "," entry ")"
+                        | "hiding" "(" ModuleName "," ... "," ModuleName ")"
+    entry ::= ModuleName
+            | ModuleName "as" ModuleName
     WithModuleRenaming ::= ""
                          | "(" with_entry "," ... "," with_entry ")"
     with_entry ::= ModuleName "with" ModuleName
