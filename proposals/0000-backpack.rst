@@ -513,6 +513,9 @@ formulation of unit identifiers.  In the author's opinion, pictorial
 unit identifiers are easier to understand and manipulate; of course, in
 an actual implementation, a syntactic representation must be used.
 
+Syntax
+'''''''
+
 The concrete syntax of unit identifiers is given below:
 
 ::
@@ -541,7 +544,10 @@ by a unit identifier.)  Each module name key of the substitution
 must be distinct; to ensure a canonical form for the concrete syntax,
 entries are given in lexicographically sorted order.
 
-The pictorial language of unit identifiers is given below:
+Pictorial language
+'''''''''''''''''''
+
+The pictorial language of unit identifiers is given inductively below:
 
 .. image:: backpack/unit-identifier-pictorial.png
 
@@ -551,6 +557,11 @@ left hand side of a component.  A module provided by an instantiated
 library is represented as an output port on the right hand side of
 the component box, while an unimplemented hole is represented by
 an unboxed module name.
+
+It is natural to consider the pictorial language as representing
+*acyclic graphs* rather than trees; thus, we will often depict
+modules which come from the same instantiated library by drawing multiple
+output ports on a single component:
 
 
 Syntax and identifiers
