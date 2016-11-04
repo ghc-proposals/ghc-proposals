@@ -608,10 +608,70 @@ hole module:
 
 .. image:: backpack/substitution-pictorial-example.png
 
-Compactly representing definite unit identifiers
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Compactly representing installed unit identifiers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-(To be written)
+In some situations, the full structure of a unit identifier is not
+needed; for example, if a unit identifier has no module holes, it is
+invariant under substitution.  Thus, we fix a set of **definite unit
+identifiers**, which label unit identifiers with no holes, and add them
+to the grammar of unit identifiers:
+
+::
+
+    DefiniteUnitId  ::= [A-Za-z0-9-_.+]+
+
+    UnitId          ::= ComponentId "[" ModuleSubst "]"
+                      | DefiniteUnitId
+
+With definite unit identifiers, we can enforce the invariant
+that module substitutions are non-empty: a unit identifier
+with an empty module substitution is simply a definite unit
+identifier (with ``ComponentId`` equal to ``DefiniteUnitId``.)
+
+Unit identifiers are equivalent up to "unfoldings" of definite
+unit identifiers, as seen in the diagram below (definite unit
+identifiers are highlighted in blue):
+
+.. image:: backpack/unit-identifier-improvement.png
+
+Recursive components
+~~~~~~~~~~~~~~~~~~~~~~
+
+Backpack with recursive components requires generalizing unit
+identifiers to be infinite regular trees.  These trees can be
+represently finitely using μ-binders (ala recursive types),
+with the following abstract syntax (where α ranges over
+unit identity variables):
+
+::
+
+    UnitId ::= μα. ComponentId[ModuleSubst]
+             | α
+
+A more parsimonious extension to the concrete syntax is to
+have every ``ComponentId`` "constructor" implicitly introduce
+a μ-binding, and represent the variables with de Bruijn indexes.
+Let ``UnitIdVar`` range over natural numbers, then:
+
+::
+
+    UnitId ::= ComponentId "[" ModuleSubst "]"
+             | UnitIdVar
+
+Pictorially, recursive components simply relax the acyclicity restriction on
+the component graph:
+
+.. image:: backpack/recursive-unit-identifier.png
+
+These graphs are equivalent up to unfoldings (i.e., unrolling the
+cycles).
+
+For every unit identifier, there exists a canonical form which can
+be computed by DFA minimization.  Intuitively, the DFA recognizes
+paths through the unit identifier:
+
+.. image:: backpack/dfa-weirdness.png
 
 Syntax and identifiers
 ----------------------
