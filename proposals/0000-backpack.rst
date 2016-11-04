@@ -506,11 +506,6 @@ links libraries to determine the unit identifiers of the libraries that
 are in scope; GHC consumes these unit identifiers to determine what
 modules are in scope for import and what requirements are inherited.
 
-In this specification, we present both a syntactic and pictorial
-formulation of unit identifiers.  In the author's opinion, pictorial
-unit identifiers are easier to understand and manipulate; of course, in
-an actual implementation, a syntactic representation must be used.
-
 Syntax
 ~~~~~~
 
@@ -546,29 +541,77 @@ entries are given in lexicographically sorted order.
 Pictorial language
 ~~~~~~~~~~~~~~~~~~
 
-Pictorially, we represent a unit identifier as component box (within a
-wiring graph of components) and a module identifier as an output port on
-a component box:
+Another way to understand unit identifiers is to visualize a graph of
+component boxes:
 
 .. image:: backpack/unit-identifier-pictorial.png
 
-Each component box is labelled with a component identifier, and has
-a series of input ports and output ports.  The input ports represent
-all of the required module names of the component, while the output
-ports signify a subset of the provided modules from this component
-(output ports can be elided if they are unused).  An output port
-can be wired up to an input port to indicate the module is being
-used to instantiate the requirement; if a hole module name is wired
-to an input port, it indicates that this port is uninstantiated.
-Component graphs are acyclic.
+Each component box is labelled with a component identifier and has a
+series of input ports (on the left) and output ports (on the right).
+The input ports represent all of the required module names of the
+component, while the output ports signify a subset of the provided
+modules from this component (output ports can be elided if they are
+unused).  An output port can be wired up to an input port to indicate
+the module is being used to instantiate the requirement; if a hole
+module name is wired to an input port, it indicates that this port is
+uninstantiated.  Component graphs are acyclic.
+
+A unit identifier represents a specific box in a component graph,
+while a module identifier represents a specific output port on one
+of these boxes.  It is worth emphasizing that the inputs to a
+component box determine its identity (for example, the component
+box for a component identifier can appear multiple times with
+different inputs.)
 
 Component graphs are equivalent up to the following relation, which
-states that we can common up component boxes corresponding
-to the same unit identifier, or split up a component box into
-two identical component boxes.
+states that we can common up component boxes which have the same
+component identifier and input modules, or (in reverse) duplicate a
+component box and all of its inputs into two identical graphs.
 
 .. image:: backpack/unit-identifier-pictorial-equivalence.png
 
+For example, on the left below we have the most expanded representation
+of a component graph, while on the right we have the most compact
+representation (with one component box per distinct unit identifier):
+
+.. image:: backpack/unit-identifier-pictorial-equivalence-example-2.png
+
+The most expanded representation is always a tree of component boxes, each
+with only a single output port; this representation corresponds exactly
+to the abstract syntax tree of unit identifiers:
+
+.. image:: backpack/module-identifier-pictorial.png
+
+Substitutions
+~~~~~~~~~~~~~
+
+Module substitutions can be applied to identifiers, treating hole
+modules as variables. In the equations below, ``p`` ranges over
+``ComponentId``, ``P`` ranges over ``UnitId``, ``S`` ranges over
+``ModuleSubst``, ``m`` ranges over ``ModuleName`` and ``M`` ranges over
+``Module``::
+
+    -- Substitution on UnitId
+    (p[S])⟦S'⟧   = p[S⟦S'⟧]
+
+    -- Substitution on Module
+    <m>⟦⟧        = <m>
+    <m>⟦m=M,  S⟧ = M
+    <m>⟦m'=M, S⟧ = <m>⟦S⟧    (m ≠ m')
+    (P:m)⟦S⟧     = P⟦S⟧:m
+
+    -- Substitution on ModuleSubst (NOT substitution composition)
+    (m=M, S')⟦S⟧ = m=M⟦S⟧, S'⟦S⟧
+
+Pictorially, substitution plugs a component into an unfilled
+hole module:
+
+.. image:: backpack/substitution-pictorial-example.png
+
+Compactly representing definite unit identifiers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+(To be written)
 
 Syntax and identifiers
 ----------------------
