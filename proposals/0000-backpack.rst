@@ -665,13 +665,70 @@ the component graph:
 .. image:: backpack/recursive-unit-identifier.png
 
 These graphs are equivalent up to unfoldings (i.e., unrolling the
-cycles).
+cycles).  Indeed, due to this equivalence, it is more accurate to
+describe these as *regular infinite (coinductive) trees* rather than graphs.
 
-For every unit identifier, there exists a canonical form which can
-be computed by DFA minimization.  Intuitively, the DFA recognizes
-paths through the unit identifier:
+For every unit identifier, there exists a canonical form which can be
+computed by Moore machine minimization.  Canonicalization can be achieved
+in three steps:
 
-.. image:: backpack/dfa-weirdness.png
+1. Convert the unit identifier into a Moore machine,
+2. Minimize the Moore machine (the procedure is similar to DFA
+   minimization, except that states with differing outputs are
+   initialized to be in separate equivalence classes initially), and
+3. Convert the Moore machine back into a unit identifier.
+
+Intuitively, the Moore machine of a unit identifier recognizes paths
+(from right to left) through the component graph, outputting the
+component identifiers of the component boxes it traverses.
+
+.. image:: backpack/moore-description.png
+
+To define our Moore machine, we'll first define a partial Moore machine
+(where the transition function is partial), and then make it total by
+adding a sink state (and sink output) which all missing transitions go
+to.
+
+Formally, we define the partial Moore machine corresponding to a unit
+identifier as follows:
+
+1. The state set ranges over component boxes and hole modules in the
+   graph (in the diagram above, we simply assigned a number to each
+   box/hole).
+2. The input alphabet is the Cartesian product of output module names
+   and input module names.  Intuitively, each member of the alphabet
+   corresponds to a wire labeled with the name of the input and output
+   ports it is wired to.
+3. The output alphabet is the set of component identifiers, as well
+   as a distinguished element ``HOLE`` for hole modules.
+4. The inital state is the state corresponding to the component box of
+   the unit identifier we want to denote.
+5. A transition from S to S' on the input (m, m') exists
+   if there is a wire from the input port m' of S to the output
+   port m of S' (or a hole module m, if S' corresponds to a hole
+   module.)
+6. The output of a state is the component identifier of its component
+   box, or ``HOLE`` if it is a hole module.
+
+We can complete the partial Moore machine into a total Moore machine by
+adding a new sink state ``SINK``, which outputs a new output value
+``SINK``, and directing all undefined transitions to it (not depicted on
+the diagram.)
+
+Here are two examples of recursive components expressed as Moore
+machines:
+
+.. image:: backpack/moore-p.png
+
+.. image:: backpack/moore-pq.png
+
+The unit identifier corresponding to a Moore machine is defined by
+recursively traversing the Moore machine, creating unit identifiers
+whose component identifier is the output at a state, and module
+substitution is all of the outgoing transitions from the state. During
+this traversal, we maintain a stack of seen states:  when we reach a
+state that is already on our stack, we emit a de Bruijn index
+corresponding to the depth of the state in the stack.
 
 Syntax and identifiers
 ----------------------
