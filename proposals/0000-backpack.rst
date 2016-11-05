@@ -638,6 +638,9 @@ identifiers are highlighted in blue):
 Recursive components
 ~~~~~~~~~~~~~~~~~~~~~~
 
+**Warning:** The extension described in this section is not implemented
+in GHC 8.2.  It can be skipped upon a first reading.
+
 Backpack with recursive components requires generalizing unit
 identifiers to be infinite regular trees.  These trees can be
 represently finitely using μ-binders (ala recursive types),
@@ -665,8 +668,7 @@ the component graph:
 .. image:: backpack/recursive-unit-identifier.png
 
 These graphs are equivalent up to unfoldings (i.e., unrolling the
-cycles).  Indeed, due to this equivalence, it is more accurate to
-describe these as *regular infinite (coinductive) trees* rather than graphs.
+cycles).
 
 For every unit identifier, there exists a canonical form which can be
 computed by Moore machine minimization.  Canonicalization can be achieved
@@ -683,11 +685,6 @@ Intuitively, the Moore machine of a unit identifier recognizes paths
 component identifiers of the component boxes it traverses.
 
 .. image:: backpack/moore-description.png
-
-To define our Moore machine, we'll first define a partial Moore machine
-(where the transition function is partial), and then make it total by
-adding a sink state (and sink output) which all missing transitions go
-to.
 
 Formally, we define the partial Moore machine corresponding to a unit
 identifier as follows:
@@ -725,69 +722,11 @@ machines:
 The unit identifier corresponding to a Moore machine is defined by
 recursively traversing the Moore machine, creating unit identifiers
 whose component identifier is the output at a state, and module
-substitution is all of the outgoing transitions from the state. During
+substitution is all of the outgoing transitions to non-sink states. During
 this traversal, we maintain a stack of seen states:  when we reach a
 state that is already on our stack, we emit a de Bruijn index
-corresponding to the depth of the state in the stack.
-
-Syntax and identifiers
-----------------------
-
-In this section, we describe the low-level syntactic entities defined by
-Backpack, which GHC and Cabal produce and consume.  Unlike the
-informally defined intermediate representations which arise in the Cabal
-pipeline, these identifiers have a precise syntax.
-
-Opaque identifiers
-~~~~~~~~~~~~~~~~~~
-
-Opaque identifiers are unstructured strings which are used as
-unique identifiers.  They are designed to be usable for
-symbol names and on the file system.
-
-::
-
-    InstalledUnitId  ::= [A-Za-z0-9-_.+]+
-
-    DefiniteUnitId       InstalledUnitId of definite library
-    IndefiniteUnitId     InstalledUnitId of indefinite library
-
-An **installed unit identifier** identifies a definite or indefinite
-library, whose build products have been installed and registered to the
-installed package database.  It incorporates information about the
-package name, version, component, transitive source code and
-instantiation.  We classify these into two types: **definite unit
-identifiers** (which are either fully instantiated or refer to
-components with no holes) and **indefinite unit identifiers** (which are
-completely uninstantiated.)
-
-A **component identifier** identifies a component, disregarding its
-instantiation.  An installed indefinite unit or definite unit with no
-holes has the same installed package identifier as its component
-identifier.
-
-A **module name** identifies an unqualified module as defined in Haskell'98.
-
-Unit identifier
-~~~~~~~~~~~~~~~
-
-
-A **unit identifier** is a structured identifier which identifies an
-instantiated library which doesn't necessarily correspond to an
-installed library that exists on the files system.  These identifiers
-are passed to GHC when typechecking an indefinite library, as an
-indefinite library can refer to partially instantiated libraries which
-are never installed to the package database.  Unit identifiers
-can be thought of as a very small language of *applicative functor
-instantiations.*
-
-A unit identifier can either specify the installed unit identifier of a
-definite library (never an indefinite library; those always have module
-substitutions) or a component identifier with a **module substitution**
-describing the instantiation.  A module substitution is a mapping from
-module names to **module identities**, which identify either a module
-from a particular instantiated library (``UnitId:ModuleName``) or from
-an unfilled requirement (``<ModuleName>``).
+corresponding to the depth of the state in the stack.  This traversal
+is guaranteed to terminate as the size of the state set is finite.
 
 GHC
 ---
