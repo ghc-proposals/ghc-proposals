@@ -30,11 +30,21 @@ overload field names in record types: for example, if the data types
 
 are in scope in the same module, there is no way to determine which
 type an occurrence of the ``personId`` record selector refers to.  A
-common workaround is to use a unique prefix for each record type, but
+common workaround is to use a unique affix for each record type, but
 this leads to less clear code and obfuscates relationships between
 fields of different records.  Qualified names can be used to
 distinguish record selectors from different modules, but using one
-module per record is often impractical.
+module per record is often impractical.  Thus it is desirable to make
+use of type information to disambiguate record selectors.
+
+Moreover, modern Haskell code often makes use of lenses, which
+(amongst other things) provide a compositional way to get and set
+fields in nested record types.  However, defining lenses requires
+either significant boilerplate or the use of Template Haskell, and
+either the field name or lens must use an affix to avoid ambiguity.
+This proposal lays the foundation for a compiler mechanism to generate
+lenses automatically, requiring nothing more than a field definition.
+
 
 DuplicateRecordFields
 ~~~~~~~~~~~~~~~~~~~~~
@@ -70,6 +80,7 @@ discussion of this aspect of ``DuplicateRecordFields``.
 
 We need some way to write polymorphic record projections, so that
 the ambiguous selector is resolved using type *inference*.
+
 
 From OverloadedLabels to OverloadedRecordFields
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
