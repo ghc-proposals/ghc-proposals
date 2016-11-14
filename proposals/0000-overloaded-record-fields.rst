@@ -176,9 +176,13 @@ from defining modules: since there is no mechanism for limiting the
 scope of instances, doing so would expose representation details that
 should be hidden.
 
-Users may define their own instances of ``HasField``, subject to the
-usual rules about overlapping and incoherent instances.  This allows
-"virtual" record fields to be defined for datatypes that do not
+
+Virtual record fields
+~~~~~~~~~~~~~~~~~~~~~
+
+Users may define their own instances of ``HasField``, provided they do
+not conflict with the built-in constraint solving behaviour.  This
+allows "virtual" record fields to be defined for datatypes that do not
 otherwise have them.  For example, an anonymous records library could
 provide ``HasField`` instances and thus be compatible with the
 polymorphic record selectors introduced by ``OverloadedRecordFields``.
@@ -186,6 +190,20 @@ Since such libraries may support field labels represented using kinds
 other than ``Symbol``, the ``HasField`` class is poly-kinded (even
 though ``OverloadedRecordFields`` uses it only at kind ``Symbol``).
 
+In order to avoid conflicting with the built-in constraint solving,
+the following user-defined ``HasField`` instances are prohibited:
+
+  1. ``HasField _ r _`` where ``r`` is a variable;
+
+  2. ``HasField _ (T ...) _`` if ``T`` is a data family
+     (because it might have fields introduced later, using
+     data instance declarations);
+
+  3. ``HasField x (T ...) _`` if ``x`` is a variable and ``T`` has any
+     fields at all (but this is permitted if ``T`` has no fields);
+
+  4. ``HasField "foo" (T ...) _`` if ``T`` has a field ``foo``
+     (but this is permitted if not).
 
 
 OverloadedLabels extension
