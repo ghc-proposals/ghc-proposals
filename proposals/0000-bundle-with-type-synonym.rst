@@ -1,0 +1,138 @@
+.. proposal-number:: Leave blank. This will be filled in when the proposal is
+                     accepted.
+
+.. trac-ticket:: Leave blank. This will eventually be filled with the Trac
+                 ticket number which will track the progress of the
+                 implementation of the feature.
+
+.. implemented:: Leave blank. This will be filled in with the first GHC version which
+                 implements the described feature.
+
+.. highlight:: haskell
+
+Bundle pattern synonyms with a type synonym
+===========================================
+
+With `AssociatingSynonyms <https://ghc.haskell.org/trac/ghc/wiki/PatternSynonyms/AssociatingSynonyms>`_
+it is possible to associate pattern synonyms with a datatype,
+enabling them to be imported just like a data constructor using the ``Type(..)`` syntax.
+Pattern synonyms can also be used to offer a simplified view on a type,
+in which case it would be more natural to associate them with a type synonym
+for the corresponding simplified type,
+e.g., ``State`` instead of ``StateT`` for the state monad.
+Therefore, support for associating pattern synonyms with type aliases seems desirable.
+
+Motivation
+----------
+
+Consider the following motivating example, which is a stripped-down version of
+`mtl <https://hackage.haskell.org/package/mtl>`_'s ``Identity`` and ``State`` monads.
+
+::
+
+ {-# LANGUAGE ViewPatterns #-}
+ {-# LANGUAGE PatternSynonyms #-}
+ {-# LANGUAGE ScopedTypeVariables #-}
+ 
+ module State (
+     Identity(..),
+     State, pattern State, runState
+ ) where
+ 
+ import Control.Monad
+ 
+ newtype Identity a = Identity { runIdentity :: a }
+ 
+ newtype StateT s m a = StateT { runStateT :: s -> m (s, a) }
+ 
+ type State s a = StateT s Identity a
+ 
+ pattern State { runState } <- ((runIdentity .) . runStateT -> runState)
+     where State runState = StateT (Identity . runState)
+
+This code works, but any user code that wants to explicitly import the state monad,
+its constructor (namely, the pattern ``State``) and selector (``runState``)
+will have to import the three exported entities separately, which is a bit annoying.
+More importantly, it is impossible to change a data type (like ``State``) to a type synonym
+without breaking backward compatibility for imports.
+
+Proposed Change
+---------------
+
+The change affects import and export lists and their semantics.
+
+Syntax
+^^^^^^
+
+There is no change to the formal syntax of
+import declarations (`HR:5.3 <https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1010005.3>`_) and
+export lists (`HR:5.2 <https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1000005.2>`_).
+However, the constraint that a type synonym can only be referred to by its namein export lists is relaxed.
+
+More precisely, in `HR:5.2 <https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1000005.2>`_,
+the restriction
+
+::
+
+ A type synonym T declared by a type declaration may be named by the form T , where T is in scope.
+
+is replaced by
+
+::
+
+ A type synonym T declared by a type declaration may be named by the form T, where T is in scope,
+ or in the form T(c1,...,cn), where c1...cn name pattern synonyms or record field selectors.
+
+Note that `HR:5.3 <https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1010005.3>`_
+does not spell out any corresponding restriction.
+
+Semantics
+^^^^^^^^^
+
+An export of the form ``T(c1,...,cn)``, where ``T`` is a type synonym,
+will export the type synonym ``T``, and the pattern synonyms and selectors ``c1`` to ``cn``.
+
+An import of the form ``T(d1,...,dm)``, where ``T`` is a type synonym exported in the form ``T(c1,...,cn)`` will import ``T`` and ``d1`` to ``dm``, provided that each ``dj`` equals some ``ci``.
+
+An import of the form ``T(..)``, where ``T`` is a type synonym exported in the form ``T(c1,...,cn)`` will import ``T`` and ``c1`` to ``cn``.
+
+Discussion
+^^^^^^^^^^
+
+Revisiting the motivating example,
+the export list of the `State` module could be changed to
+
+::
+
+ module State (
+     Identity(..),
+     State(State, runState)
+ ) where
+
+Then, importing ``State(..)`` from the ``State`` module would import the pattern and selector into another module.
+
+Drawbacks
+---------
+
+As specified, one can associate any pattern synonym and any record selector with a type synonym,
+which can be abused to cause confusion.
+
+Alternatives
+------------
+
+Here is where you can describe possible variants to the approach described in
+the Proposed Change section.
+
+Unresolved Questions
+--------------------
+
+* Should this be tied to some language extension?
+* Is there a sane way of checking whether ``c1`` to ``cn`` are actually associated with the type synonym ``T``?
+  
+Remarks
+-------
+
+* There is a Trac ticket (`#12857 <https://ghc.haskell.org/trac/ghc/ticket/12857>`_) that predates the prosal
+* For another motivating example, see https://github.com/int-e/haskell-src-exts-simple/issues/2
+* It may make sense to give arbitrary functions the benefit of being associated with a type synonym, or possibly a type class or data type.
+  But this should be a separate proposal.
