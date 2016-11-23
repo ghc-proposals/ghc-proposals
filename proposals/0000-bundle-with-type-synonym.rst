@@ -13,42 +13,43 @@
 Bundle pattern synonyms with a type synonym
 ===========================================
 
-With `AssociatingSynonyms <https://ghc.haskell.org/trac/ghc/wiki/PatternSynonyms/AssociatingSynonyms>`_
-it is possible to associate pattern synonyms with a datatype,
-enabling them to be imported just like a data constructor using the ``Type(..)`` syntax.
+GHC allows bundling pattern synonyms with a datatype, cf.
+`Section 9.7.3 <https://downloads.haskell.org/~ghc/8.0.1/docs/html/users_guide/glasgow_exts.html#import-and-export-of-pattern-synonyms>`_
+of the ghc manual
+(the design is discussed on the ghc wiki, see `AssociatingSynonyms <https://ghc.haskell.org/trac/ghc/wiki/PatternSynonyms/AssociatingSynonyms>`_).
+Bundling enables pattern synonyms to be imported along with a datatype just like data constructors, using the ``Type(..)`` syntax.
 Pattern synonyms can also be used to offer a simplified view on a type,
-in which case it would be more natural to associate them with a type synonym
+in which case it would be more natural to bundle them with a type synonym
 for the corresponding simplified type,
 e.g., ``State`` instead of ``StateT`` for the state monad.
-Therefore, support for associating pattern synonyms with type aliases seems desirable.
+Therefore, support for bundling pattern synonyms with type aliases seems desirable.
 
 Motivation
 ----------
 
 Consider the following motivating example, which is a stripped-down version of
-`mtl <https://hackage.haskell.org/package/mtl>`_'s ``Identity`` and ``State`` monads.
+`mtl <https://hackage.haskell.org/package/mtl>`_'s ``Identity`` and ``State`` monads,
+with a pattern synonym for the latter. ::
 
-::
+    {-# LANGUAGE ViewPatterns #-}
+    {-# LANGUAGE PatternSynonyms #-}
+    {-# LANGUAGE ScopedTypeVariables #-}
 
- {-# LANGUAGE ViewPatterns #-}
- {-# LANGUAGE PatternSynonyms #-}
- {-# LANGUAGE ScopedTypeVariables #-}
- 
- module State (
-     Identity(..),
-     State, pattern State, runState
- ) where
- 
- import Control.Monad
- 
- newtype Identity a = Identity { runIdentity :: a }
- 
- newtype StateT s m a = StateT { runStateT :: s -> m (s, a) }
- 
- type State s a = StateT s Identity a
- 
- pattern State { runState } <- ((runIdentity .) . runStateT -> runState)
-     where State runState = StateT (Identity . runState)
+    module State (
+        Identity(..),
+        State, pattern State, runState
+    ) where
+
+    import Control.Monad
+
+    newtype Identity a = Identity { runIdentity :: a }
+
+    newtype StateT s m a = StateT { runStateT :: s -> m (s, a) }
+
+    type State s a = StateT s Identity a
+
+    pattern State { runState } <- ((runIdentity .) . runStateT -> runState)
+        where State runState_ = StateT (Identity . runState_)
 
 This code works, but any user code that wants to explicitly import the state monad,
 its constructor (namely, the pattern ``State``) and selector (``runState``)
@@ -70,18 +71,15 @@ export lists (`HR:5.2 <https://www.haskell.org/onlinereport/haskell2010/haskellc
 However, the constraint that a type synonym can only be referred to by its namein export lists is relaxed.
 
 More precisely, in `HR:5.2 <https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1000005.2>`_,
-the restriction
+the restriction ::
 
-::
+    A type synonym T declared by a type declaration may be named by the form T , where T is in scope.
 
- A type synonym T declared by a type declaration may be named by the form T , where T is in scope.
+is replaced by ::
 
-is replaced by
-
-::
-
- A type synonym T declared by a type declaration may be named by the form T, where T is in scope,
- or in the form T(c1,...,cn), where c1...cn name pattern synonyms or record field selectors.
+    A type synonym T declared by a type declaration may be named by the form T, where T is in scope,
+    or in the form T(c1,...,cn), where c1...cn name pattern synonyms, data constructors,
+    or record field selectors.
 
 Note that `HR:5.3 <https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1010005.3>`_
 does not spell out any corresponding restriction.
@@ -100,9 +98,7 @@ Discussion
 ^^^^^^^^^^
 
 Revisiting the motivating example,
-the export list of the `State` module could be changed to
-
-::
+the export list of the `State` module could be changed to ::
 
  module State (
      Identity(..),
@@ -114,20 +110,23 @@ Then, importing ``State(..)`` from the ``State`` module would import the pattern
 Drawbacks
 ---------
 
-As specified, one can associate any pattern synonym and any record selector with a type synonym,
-which can be abused to cause confusion.
+As specified, one can bundle any pattern synonym, data consrtructor, or record selector with a type synonym.
+This may be abused to cause confusion.
 
 Alternatives
 ------------
 
-Here is where you can describe possible variants to the approach described in
-the Proposed Change section.
+None so far.
 
 Unresolved Questions
 --------------------
 
 * Should this be tied to some language extension?
 * Is there a sane way of checking whether ``c1`` to ``cn`` are actually associated with the type synonym ``T``?
+  It should be possible to adapt the approach taken for bundling with data types,
+  see `AssociatingSynonyms#Typing <https://ghc.haskell.org/trac/ghc/wiki/PatternSynonyms/AssociatingSynonyms#Typing>`_.
+  To make it work, the type synonym needs to be unfolded and given similar treatment.
+  (**TODO**: incorporate this into the specification)
   
 Remarks
 -------
