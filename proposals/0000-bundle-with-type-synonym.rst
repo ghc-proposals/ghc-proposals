@@ -48,6 +48,7 @@ with a pattern synonym for the latter. ::
 
     type State s a = StateT s Identity a
 
+    pattern State :: (s -> (s, a)) -> State s a
     pattern State { runState } <- ((runIdentity .) . runStateT -> runState)
         where State runState_ = StateT (Identity . runState_)
 
