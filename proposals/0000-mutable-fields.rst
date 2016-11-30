@@ -151,6 +151,23 @@ representation* will be ``(# Any, Int# #)``, that is, an unboxed pair
 of the object that contains the mutable field and the offset of the
 mutable field.
 
+Core
+~~~~
+
+There would be a new constraint on Core: *we cannot create an
+expresison representing a mutable constructor*.
+
+GHC currently assumes that constructors can be built in a couple of
+places:
+
+- In Worker-wrapper, we build an expression representing the re-packed
+  constructor.  Worker-wrapper would need to be either disabled
+  (easiest) or adapted for mutable constructors.
+- When simplifying a case expression like ``case x of y { C a b -> E
+  }``, GHC creates the mapping ``y -> C a b`` when simplifying ``E``.
+  We will have to avoid creating this mapping If ``C`` is a mutable
+  constructor.
+
 Unpacking constructors with mutable fields
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -174,6 +191,8 @@ So, ``UNPACK`` cannot do anything when used on a type with mutable
 fields.  However, there's nothing preventing ``UNPACK`` from working
 as normal in a type definition with mutable fields.
 
+``UNPACK`` would be a no-op on a mutable field itself, just like it is
+for other primitive types.
 
 Can we get rid of ``MutVar#``?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -314,6 +333,11 @@ on external packages: `haskell-src-exts` and clients of that.
 
 Types that contain mutable fields cannot be UNPACKed into other
 constructors.
+
+Worker-wrapper doesn't work on mutable constructors, at least not
+without some changes.  Perhaps this isn't so bad, since we would never
+be able to eliminate the original construction of the mutable
+constructor anyway.
 
 Alternatives
 ------------
