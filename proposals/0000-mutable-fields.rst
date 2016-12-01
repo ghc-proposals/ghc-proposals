@@ -154,6 +154,28 @@ mutable field.
 Core
 ~~~~
 
+For each mutable data constructor ``K`` (where a "mutable data
+constructor" is one that is declared with at least on e mutable
+field), we get a new primitive mutable constructor function ``$mkK``,
+whose type is:
+
+  $mkK :: forall xs s . t1 -> ... -> tn -> State# s -> (# State# s, K v1...vn #)
+
+where ``K`` was defined to have the type
+
+  K :: forall xs s . u1 -> ... un -> IO (K v1...vn)
+
+and
+
+  ti = w,  if ui == mutable w
+     = ui, otherwise
+
+(``t``, ``u``, ``v`` and ``w`` are types, and ``xs`` is a set of type
+variables)
+
+When ``K`` is used in a pattern in a case alternative in Core, the
+types of its fields are ``t1...tn``.
+
 There would be a new constraint on Core: *we cannot create an
 expresison representing a mutable constructor*.
 
