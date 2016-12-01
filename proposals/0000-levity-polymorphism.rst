@@ -104,6 +104,10 @@ to be instantiated, say, at both ``(# Int#, Float# #)`` and ``(# Int#, (# (# #),
 both have the same representation. This is all well and type-safe, but no one is really asking for this
 feature, and it complicates the type system.
 
+A fully broken partial implementation of this is available `here`__.
+
+__ https://github.com/goldfirere/ghc/tree/wip/runtime-rep-lists
+
 Unresolved Questions
 --------------------
 
