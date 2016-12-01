@@ -1,13 +1,3 @@
-.. proposal-number:: Leave blank. This will be filled in when the proposal is
-                     accepted.
-
-.. trac-ticket:: Leave blank. This will eventually be filled with the Trac
-                 ticket number which will track the progress of the
-                 implementation of the feature.
-
-.. implemented:: Leave blank. This will be filled in with the first GHC version which
-                 implements the described feature.
-
 Backpack
 ========
 
@@ -23,16 +13,6 @@ Backpack
 
 #. `Unit identifiers`_
 
-#. `GHC`_
-
-   a. `GHC command line flags`_
-
-   #. `Installed library database`_
-
-   #. `Signatures`_
-
-   #. `Dependencies`_
-
 #. `Cabal`_
 
    a. `Library structure`_
@@ -46,6 +26,16 @@ Backpack
    #. `Modules and signatures`_
 
 #. `Setup interface`_
+
+#. `GHC`_
+
+   a. `GHC command line flags`_
+
+   #. `Installed library database`_
+
+   #. `Signatures`_
+
+   #. `Dependencies`_
 
 #. `Drawbacks`_
 
@@ -475,12 +465,13 @@ We use the following conventions for presenting syntax::
     [chars]         bracket expression
     "foo"           terminal syntax
 
-All whitespace is expressed explicitly in the syntax of this section:
-there is no implicit whitespace between juxtaposed symbols.  The rest of
-this specification also uses these conventions to informally describe
-the abstract syntax trees of Cabal files and various intermediate
-representations; precisely specifying the grammar of these formats is
-out of scope for this specification.
+In general, this document defines syntax abstractly; in both the
+cases of the Cabal package description language and the Haskell source
+language, there are existing authoritative specifications of the
+concrete syntax; e.g., we will not consider questions of layout or
+whitespace.  The one exception is the concrete syntax of unit
+identifiers, which are defined precisely (as GHC consumes unit
+identifiers in its command line interface).
 
 Unit identifiers
 ----------------
@@ -505,6 +496,7 @@ Unit identifiers are pervasive in both the Cabal and GHC: Cabal mix-in
 links libraries to determine the unit identifiers of the libraries that
 are in scope; GHC consumes these unit identifiers to determine what
 modules are in scope for import and what requirements are inherited.
+Unit identifiers are not intended to be written by hand.
 
 Syntax
 ~~~~~~
@@ -728,10 +720,376 @@ state that is already on our stack, we emit a de Bruijn index
 corresponding to the depth of the state in the stack.  This traversal
 is guaranteed to terminate as the size of the state set is finite.
 
+Cabal
+-----
+
+.. image:: backpack/library-shape-overview.png
+
+The basic unit of modularity in Backpack is a **library**.
+
+* Libraries have dependencies, modules and signatures
+* Libraries are ascribed a shape, which specify what they require
+  (module names) and what they the provide (module identities).
+  Shapes are computed and consumed by mix-in linking.
+  Shapes are represented diagramatically similarly to unit identifiers,
+  except that some output ports can be provided by "inner" libraries,
+  and it's the inner identity that matters for type identity.
+* Libraries are handled by Cabal.  This processing is agnostic to
+  the source code (treat modules/signatures as opaque.)
+
+Packages versus Libraries
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. image:: backpack/components.png
+
+A **package** is a tree of source code described by a ``cabal`` file,
+which can be distributed to other users.  What does a package contain?
+There are two ways to think about this:
+
+1. The traditional perspective is that a package represents a library,
+   which may also have some tests, benchmarks and executables bundled
+   with it.  This perspective encourages users to identify packages
+   and libraries: for example, build dependencies are declared on
+   packages, even though what you are really depending on is the library
+   of the package (and not the tests, benchmarks or executables).
+
+2. The more modern perspective is that a package is simply a bundle
+   of libraries, executables, tests and benchmarks.  This perspective
+   reflects the fact that each of these components has independent
+   dependencies and can be built seperately; here, the package is
+   simply a purely a way of specifying common metadata for a collection
+   of components.
+
+Colloquially, if we say that we "instantiated a package", what is really
+meant is that we instantiated the *primary library* of the package.
+If a package contains only a single library, the intent is clear; but
+if a package contains multiple libraries, saying "the package was
+instantiated" is confusing: only one library was instantiated.  To avoid
+confusion, we will be precise, and use the term library (not package)
+when describing the unit of modularity: the unit of code that can have
+requirements and be instantiated.
+
+    It's interesting to compare Cabal's approach to supporting test
+    suites and executables in packages to other package systems.  A
+    critical question to answer is the meaning of a package: is a
+    package a library, which may also have some auxiliary components
+    (library-oriented packages) or a collection of components
+    (collection-oriented packages)?
+
+    For example, most test suites commonly rely on some external test
+    framework.  How can you specify a "test-only" dependency, which
+    should not be built if you are not using the test framework?
+    In a library-oriented setting, a common way to resolve this
+    problem is to support conditional dependencies, where the
+    extra test dependencies can be disabled if a package is being
+    built solely as a library.  In a collection-oriented setting,
+    this problem can be resolved by allowing dependencies to be
+    specified on a per-component basis.
+
+    By in large, most package managers are library-oriented:
+
+    * `Cargo <http://doc.crates.io/manifest.html>`_ allows you to
+      specify `multiple targets (our components)
+      <http://doc.crates.io/manifest.html#configuring-a-target>`_ in a
+      package. A package can have any number of tests, benchmarks and
+      executables, but at most one library (library-oriented!)  Cargo
+      offers some degree of independent configuration for each target,
+      but dependencies are always global to the entire package; however, Cargo
+      supports developer-only dependencies (dependencies are only needed
+      during development, e.g., for tests).  On the more
+      collection-oriented side, however, Cargo would like to eventually
+      support `separate dependencies for targets
+      <https://github.com/rust-lang/cargo/issues/1982>`_.
+
+    * `npm <https://docs.npmjs.com/files/package.json>`_, `gem
+      <http://guides.rubygems.org/specification-reference/>`_ and
+      `Composer <https://getcomposer.org/doc/04-schema.md>`_, a trio of
+      package managers for interpreted languages, all operate
+      quite similarly.  A package is primarily a library, but it may
+      have some number of scripts to be installed into the PATH when
+      it is installed (`npm' <https://docs.npmjs.com/files/package.json#bin>`_,
+      `gem' <http://guides.rubygems.org/specification-reference/#executables>`_,
+      `Composer' <https://getcomposer.org/doc/04-schema.md#bin>`_).  None
+      of these explicitly handle tests or benchmarks, but they
+      support developer-only dependencies
+      (`npm'' <https://docs.npmjs.com/files/package.json#devdependencies>`_,
+      `ruby'' <http://guides.rubygems.org/specification-reference/#add_development_dependency>`_,
+      `Composer'' <https://getcomposer.org/doc/04-schema.md#require-dev>`_)
+      for things like test harnesses.
+
+Fields
+~~~~~~
+
+A Cabal file (file extension ``cabal``) contains a number of fields
+describing the package as a whole, as well as a series of stanzas, which
+describe the components of the package.  The set of valid fields inside
+a stanza varies between the different types of component, although there
+is a common set of build information fields common to all components.
+
+Backpack adds a number of new fields and interacts closely...
+
+Syntax
+~~~~~~
+
+
+::
+
+
+    library ::=
+        "library" ( PackageName )?
+            library-fields *
+
+    library-fields ::=
+        "exposed-modules:"      ModuleName ...
+      | "other-modules:"        ModuleName ...
+      | "signatures:"           ModuleName ...
+      | "reexported-modules:"   reexported-module "," ...
+      | buildinfo-fields
+      | ... -- Cabal supports more fields
+
+    exposed-module    ::= ModuleName
+    other-module      ::= ModuleName
+    signature         ::= ModuleName
+    reexported-module ::= ( PackageName ":" ) ModuleName ( "as" ModuleName )?
+
+    buildinfo-fields ::=
+        "mixins:"        mixin  "," ... "," mixin
+      | "build-depends:" build-depend      "," ... "," build-depend
+      | ... -- Cabal supports more fields
+
+    mixin  ::= PackageName MixinRenaming
+    build-depend      ::= PackageName VersionBound
+
+    MixinRenaming      ::= ModuleRenaming ( "requires" ModuleRenaming )?
+    ModuleRenaming    ::= ""
+                        | "(" entry "," ... "," entry ")"
+                        | "hiding" "(" ModuleName "," ... "," ModuleName ")"
+    entry ::= ModuleName
+            | ModuleName "as" ModuleName
+    WithModuleRenaming ::= ""
+                         | "(" with_entry "," ... "," with_entry ")"
+    with_entry ::= ModuleName "with" ModuleName
+
+Library structure
+~~~~~~~~~~~~~~~~~~~
+
+A library defines a scope containing declarations for modules
+and signatures.
+
+A library begins with a header: the keyword ``library``, an
+optional library name (if omitted, the name defaults to the
+name of the package), and then a series of library fields defining
+what is brought into scope, what is defined and what is exported.
+
+Cabal also defines test suite, benchmark and executable components
+which only include ``buildinfo-fields``; we will ignore them for
+the purposes of this specification.
+
+Exports
+~~~~~~~
+
+::
+
+    exposed-module    ::= ModuleName
+    reexported-module ::= ( PackageName ":" ) ModuleName ( "as" ModuleName )?
+
+The ``exposed-modules`` field consists of a list of module names to
+be exported by the component.  Declaration identifies the locally
+defined modules (not signature) that are exported by the library
+component.
+
+The ``reexported-modules`` field consists of a list of possibly
+package qualified module name to be reexported from a component, possibly under
+a different name.  Every named module must be in scope.  The (possibly)
+qualified module name must unambiguously identify a module: while it is
+not an error to have to modules in scope under the same name, it is an
+error to reexport such a module name without qualification.  Like in
+Haskell, it is possible to construct a scope where it is not possible
+to unambiguous refer to a module name.
+
+The unqualified names of every exposed and reexported module must be
+distinct.  For example, the following component is invalid::
+
+    exposed-modules: A
+    reexported-modules: B as A
+
+Reexported modules are NOT available for locally defined modules to
+``import``; they strictly affect the exports of a component.
+
+Mixins
+~~~~~~~~
+
+::
+
+    mixin  ::= PackageName MixinRenaming
+
+    MixinRenaming      ::= ModuleRenaming ( "requires" ModuleRenaming )?
+    ModuleRenaming    ::= ""
+                        | "(" entry "," ... "," entry ")"
+                        | "hiding" "(" ModuleName "," ... "," ModuleName ")"
+    entry ::= ModuleName
+            | ModuleName "as" ModuleName
+    WithModuleRenaming ::= ""
+                         | "(" with_entry "," ... "," with_entry ")"
+    with_entry ::= ModuleName "with" ModuleName
+
+Entities exported by a library can be brought into scope in
+another component via the ``mixins`` field.
+
+What provisions are brought into scope
+''''''''''''''''''''''''''''''''''''''
+
+Exactly which provided modules are to be brought into scope in two
+ways:
+
+1. The imported module names can be specified explicitly by listing them
+   in parentheses.  A module name can be renamed using the ``as``
+   keyword: ``p (A as B)`` imports the module exported from component
+   ``p`` with name ``A`` under the new name ``B``.
+
+2. If the module renaming is omitted, all modules provided by the
+   specified component are brought into scope.
+
+Package qualified modules
+'''''''''''''''''''''''''
+
+For each module brought into scope, it is brought into scope both as an
+unqualified module name, and a package-qualified name qualified by the
+package name of the ``mixin`` which brought it into scope.
+
+A programmer can refer to a package-qualified in several situations:
+
+1. With the GHC extension ``PackageImports``, a package qualified
+   import ``import "pkgname" M`` can disamiguate between two
+   modules which have the same unqualified name.
+
+2. In the ``reexported-modules``, the package qualifier can be used
+   to disambiguate which module should be reexported.
+
+Implicit build-depends mixins
+'''''''''''''''''''''''''''''''
+
+::
+
+    buildinfo-fields ::=
+        "build-depends:"        build-depend      "," ... "," build-depend
+      | ...
+
+    build-depend      ::= PackageName VersionBound
+
+Traditionally, the ``build-depends`` field both specifies
+version bounds for each external package dependency of the component
+(to be used by the dependency solver) AND brings all of the
+exported modules of that component into scope.
+
+We preserve this behavior by introducing the following "implicit
+mixin" rule: every package name ``p`` in ``build-depends`` which is
+not mentioned in ``mixins`` adds an implicit
+mixin ``p`` (with the default provision and requirement renaming).
+Since the implicit mixin is only added when the package name is not
+mentioned by ``mixins``, it can be suppressed simply by specifying
+an mixin, e.g., ``mixins: p ()``, which does not bring any
+provided modules into scope.
+
+Conversely, as the dependency solver requires version bounds for all
+external packages, any package name referenced in a ``mixin``
+must also be mentioned in a ``build-depends`` version bound, so that
+the dependency solver solves for it.
+
+Mixin linking
+~~~~~~~~~~~~~~
+
+A mixin may also specify some requirements.  Like
+provided modules, these requirements are brought into the same scope
+as provided modules.  However, when a requirement has has the
+same name as a module, mixin linking occurs.  Mixin linking
+follows the following rules:
+
+1. Unlike provided modules, a requirement cannot be hidden; it is
+   always brought into scope.  Like provided modules, they can be
+   renamed using the ``as`` keyword in the module renaming
+   after the ``requires`` keyword.
+
+   TODO: An alternative proposed syntax is ``satisfy`` keyword:
+   ``p (Impl) satisfy (Str with ByteString, Path with FilePath)``
+   specifies that the holes ``Str`` and ``Path`` are brought
+   into scope under the names ``ByteString`` and ``FilePath``,
+   respectively, making it clearer in intent.
+
+2. If a requirement is brought into scope under the same module
+   name as an unambiguous provided module, the requirement is *linked*:
+   that module is used to instantiate the component with this
+   requirement.  It is an error if the module is ambiguous.
+
+3. If a requirement is brought into scope without being linked
+   against an implementation, it automatically becomes
+   a requirement of this component.  Components inherit
+   unlinked requirements of components they depend on.
+
+4. If two requirements are brought into scope under the same name,
+   they are *merged* into a single requirement, which is merged
+   by itself.  (This process is carried out by the compiler
+   under the name of `signature merging`_.)
+
+5. Every include of a component generates a fresh set of requirements.
+   These requirements may be *merged* together, but they do not
+   have to be (i.e., if they are renamed).
+
+Intuitively, every component can be represented as a box with
+outgoing wires labeled by module name for the modules it provides, and
+incoming wires labeled by module name for the signatures it requires.
+When two wires have the same module name, they are linked up.  The
+wiring diagram then is translated into unit identifiers which
+are passed to the compiler in the unit language.
+
+Modules and signatures
+~~~~~~~~~~~~~~~~~~~~~~
+
+::
+
+    exposed-module  ::= ModuleName
+    other-module    ::= ModuleName
+    signature       ::= ModuleName
+
+The ``exposed-modules``, ``other-modules`` and ``signatures``
+field specify the Haskell modules (``hs``) and signatures (``hsig``)
+which are locally defined by this package.  It is NOT required for all
+the transitive requirements of a component
+to be listed in ``signatures``: only requirements which have
+locally defined ``hsig`` files are needed.
+
+These modules are added to the scope *after* all ``mixins``
+have been linked together, but before ``reexported-modules`` is
+processed.  This is because using a locally defined module to implement
+an included component constitutes a mutually recursive reference, which
+we consider out-of-scope for this proposal.  (TODO: Does this work right? Test.)
+
+Setup interface
+---------------
+
+The ``./Setup configure`` interface is extended with a new
+``--instantiated-with`` flag, which may be specified multiple times,
+taking an argument with the grammar ``ModuleName "=" Module`` (i.e., an
+entry in a module substitution).  This parameter specifies how the
+public library (if the package is being configured for all components)
+or the specified component (if the package is being configured in
+one-component mode) should be instantiated.  The module specified in
+this flag MUST NOT contain any free module variables; that is to say,
+this flag is only used to instantiate a package with *definite modules*.
+Combined with the ``--cid`` parameter, this forms the unit identifier
+of the library we are compiling.
+
+In all situations (including instantiated components), the ``--dependency``
+flag is used to specify a component identifier, NOT a unit identifier. The
+``Setup`` script is responsible for performing `mixin linking`_ in order to determine
+the actual unit identifier dependencies, when a unit is fully instantiated,
+which are then passed to the compiler.
+
 GHC
 ---
 
-In this section, we describe the language of 
+Syntax
+~~~~~~
 
 ::
 
@@ -751,7 +1109,7 @@ In this section, we describe the language of
 
 
 A mixed library begins with a header recording its component identity
-and a list of its required signatures.  The body of a library consists
+and a list of its signatures.  The body of a library consists
 of any number of dependencies, modules and signatures.
 
 For example, ``concat-indef`` and ``stringutils-indef`` would have the
@@ -766,7 +1124,7 @@ following ASTs::
         module StringUtils
 
 There are two operations we can perform on a mixed library with
-required signatures:
+signatures:
 
 1. We can **typecheck** it, which can be done with the library
    all by itself and generates interface files or
@@ -788,7 +1146,7 @@ the next section) or an argument:
 
 3. ``"signature" ModuleName`` is translated into the argument
    ``ModuleName``, identifying an ``hsig`` file in the include path.
-   Every required signature *must* have an ``hsig`` file (unlike
+   Every signature *must* have an ``hsig`` file (unlike
    the Cabal syntax, where required signatures can be implicit);
    it is expected that Cabal generates blank signature files for
    all inherited signatures.  (This restriction simplifies the
@@ -858,7 +1216,7 @@ In this section, we summarize the accepted command line flags of GHC:
 to be typechecked or compiled.
 
 Installed library database
-~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The **installed library database** (previously known as the installed
 package database) records uninstantiated and instantiated libraries
@@ -1150,248 +1508,6 @@ in the following ways:
 
 2. If the ``ModuleRenaming`` is omitted, all modules exposed by the
    specified unit are brought into scope.
-
-Cabal
----------------------
-
-A library defines a collection of provided modules and
-required signatures in an environment that is created by a set of
-``mixins`` and ``build-depends``.  Libraries are
-specified in the Cabal file and are the user-facing interface for
-working with Backpack.  Unlike mixed libraries, the environment of
-in-scope modules implies how requirements of the dependent components
-are wired up through mixin linking; no explicit instantiation is
-necessary.  A library exports some modules, making them available to
-other components; required signatures are always exported.
-
-Libraries may reference each other through ``build-depends``, which
-implicitly bring all of the exposed modules of the referenced component
-into scope, or an explicit ``mixins``, which can specify
-which modules to bring under scope or instantiate a referenced component
-multiple times.
-
-Libraries are used for name-space control, which in turn specifies how
-mixin linking is carried out.  Higher-order libraries are out of scope
-for this proposal: libraries are parametrized by the requirements they
-define or inherit.
-
-Cabal's libraries predate Backpack, but for completeness
-we give a full description of it here.
-
-Library structure
-~~~~~~~~~~~~~~~~~~~
-
-A library defines a scope containing declarations for modules
-and signatures.
-
-A library begins with a header: the keyword ``library``, an
-optional library name (if omitted, the name defaults to the
-name of the package), and then a series of library fields defining
-what is brought into scope, what is defined and what is exported.
-
-Cabal also defines test suite, benchmark and executable components
-which only include ``buildinfo-fields``; we will ignore them for
-the purposes of this specification.
-
-Exports
-~~~~~~~
-
-::
-
-    exposed-module    ::= ModuleName
-    reexported-module ::= ( PackageName ":" ) ModuleName ( "as" ModuleName )?
-
-The ``exposed-modules`` field consists of a list of module names to
-be exported by the component.  Declaration identifies the locally
-defined modules (not signature) that are exported by the library
-component.
-
-The ``reexported-modules`` field consists of a list of possibly
-package qualified module name to be reexported from a component, possibly under
-a different name.  Every named module must be in scope.  The (possibly)
-qualified module name must unambiguously identify a module: while it is
-not an error to have to modules in scope under the same name, it is an
-error to reexport such a module name without qualification.  Like in
-Haskell, it is possible to construct a scope where it is not possible
-to unambiguous refer to a module name.
-
-The unqualified names of every exposed and reexported module must be
-distinct.  For example, the following component is invalid::
-
-    exposed-modules: A
-    reexported-modules: B as A
-
-Reexported modules are NOT available for locally defined modules to
-``import``; they strictly affect the exports of a component.
-
-Mixins
-~~~~~~~~
-
-::
-
-    mixin  ::= PackageName MixinRenaming
-
-    MixinRenaming      ::= ModuleRenaming ( "requires" ModuleRenaming )?
-    ModuleRenaming    ::= ""
-                        | "(" entry "," ... "," entry ")"
-                        | "hiding" "(" ModuleName "," ... "," ModuleName ")"
-    entry ::= ModuleName
-            | ModuleName "as" ModuleName
-    WithModuleRenaming ::= ""
-                         | "(" with_entry "," ... "," with_entry ")"
-    with_entry ::= ModuleName "with" ModuleName
-
-Entities exported by a library can be brought into scope in
-another component via the ``mixins`` field.
-
-What provisions are brought into scope
-''''''''''''''''''''''''''''''''''''''
-
-Exactly which provided modules are to be brought into scope in two
-ways:
-
-1. The imported module names can be specified explicitly by listing them
-   in parentheses.  A module name can be renamed using the ``as``
-   keyword: ``p (A as B)`` imports the module exported from component
-   ``p`` with name ``A`` under the new name ``B``.
-
-2. If the module renaming is omitted, all modules provided by the
-   specified component are brought into scope.
-
-Package qualified modules
-'''''''''''''''''''''''''
-
-For each module brought into scope, it is brought into scope both as an
-unqualified module name, and a package-qualified name qualified by the
-package name of the ``mixin`` which brought it into scope.
-
-A programmer can refer to a package-qualified in several situations:
-
-1. With the GHC extension ``PackageImports``, a package qualified
-   import ``import "pkgname" M`` can disamiguate between two
-   modules which have the same unqualified name.
-
-2. In the ``reexported-modules``, the package qualifier can be used
-   to disambiguate which module should be reexported.
-
-Implicit build-depends mixins
-'''''''''''''''''''''''''''''''
-
-::
-
-    buildinfo-fields ::=
-        "build-depends:"        build-depend      "," ... "," build-depend
-      | ...
-
-    build-depend      ::= PackageName VersionBound
-
-Traditionally, the ``build-depends`` field both specifies
-version bounds for each external package dependency of the component
-(to be used by the dependency solver) AND brings all of the
-exported modules of that component into scope.
-
-We preserve this behavior by introducing the following "implicit
-mixin" rule: every package name ``p`` in ``build-depends`` which is
-not mentioned in ``mixins`` adds an implicit
-mixin ``p`` (with the default provision and requirement renaming).
-Since the implicit mixin is only added when the package name is not
-mentioned by ``mixins``, it can be suppressed simply by specifying
-an mixin, e.g., ``mixins: p ()``, which does not bring any
-provided modules into scope.
-
-Conversely, as the dependency solver requires version bounds for all
-external packages, any package name referenced in a ``mixin``
-must also be mentioned in a ``build-depends`` version bound, so that
-the dependency solver solves for it.
-
-Mixin linking
-~~~~~~~~~~~~~~
-
-A mixin may also specify some requirements.  Like
-provided modules, these requirements are brought into the same scope
-as provided modules.  However, when a requirement has has the
-same name as a module, mixin linking occurs.  Mixin linking
-follows the following rules:
-
-1. Unlike provided modules, a requirement cannot be hidden; it is
-   always brought into scope.  Like provided modules, they can be
-   renamed using the ``as`` keyword in the module renaming
-   after the ``requires`` keyword.
-
-   TODO: An alternative proposed syntax is ``satisfy`` keyword:
-   ``p (Impl) satisfy (Str with ByteString, Path with FilePath)``
-   specifies that the holes ``Str`` and ``Path`` are brought
-   into scope under the names ``ByteString`` and ``FilePath``,
-   respectively, making it clearer in intent.
-
-2. If a requirement is brought into scope under the same module
-   name as an unambiguous provided module, the requirement is *linked*:
-   that module is used to instantiate the component with this
-   requirement.  It is an error if the module is ambiguous.
-
-3. If a requirement is brought into scope without being linked
-   against an implementation, it automatically becomes
-   a requirement of this component.  Components inherit
-   unlinked requirements of components they depend on.
-
-4. If two requirements are brought into scope under the same name,
-   they are *merged* into a single requirement, which is merged
-   by itself.  (This process is carried out by the compiler
-   under the name of `signature merging`_.)
-
-5. Every include of a component generates a fresh set of requirements.
-   These requirements may be *merged* together, but they do not
-   have to be (i.e., if they are renamed).
-
-Intuitively, every component can be represented as a box with
-outgoing wires labeled by module name for the modules it provides, and
-incoming wires labeled by module name for the signatures it requires.
-When two wires have the same module name, they are linked up.  The
-wiring diagram then is translated into unit identifiers which
-are passed to the compiler in the unit language.
-
-Modules and signatures
-~~~~~~~~~~~~~~~~~~~~~~
-
-::
-
-    exposed-module  ::= ModuleName
-    other-module    ::= ModuleName
-    signature       ::= ModuleName
-
-The ``exposed-modules``, ``other-modules`` and ``signatures``
-field specify the Haskell modules (``hs``) and signatures (``hsig``)
-which are locally defined by this package.  It is NOT required for all
-the transitive requirements of a component
-to be listed in ``signatures``: only requirements which have
-locally defined ``hsig`` files are needed.
-
-These modules are added to the scope *after* all ``mixins``
-have been linked together, but before ``reexported-modules`` is
-processed.  This is because using a locally defined module to implement
-an included component constitutes a mutually recursive reference, which
-we consider out-of-scope for this proposal.  (TODO: Does this work right? Test.)
-
-Setup interface
----------------
-
-The ``./Setup configure`` interface is extended with a new
-``--instantiated-with`` flag, which may be specified multiple times,
-taking an argument with the grammar ``ModuleName "=" Module`` (i.e., an
-entry in a module substitution).  This parameter specifies how the
-public library (if the package is being configured for all components)
-or the specified component (if the package is being configured in
-one-component mode) should be instantiated.  The module specified in
-this flag MUST NOT contain any free module variables; that is to say,
-this flag is only used to instantiate a package with *definite modules*.
-Combined with the ``--cid`` parameter, this forms the unit identifier
-of the library we are compiling.
-
-In all situations (including instantiated components), the ``--dependency``
-flag is used to specify a component identifier, NOT a unit identifier. The
-``Setup`` script is responsible for performing `mixin linking`_ in order to determine
-the actual unit identifier dependencies, when a unit is fully instantiated,
-which are then passed to the compiler.
 
 Drawbacks
 ---------
