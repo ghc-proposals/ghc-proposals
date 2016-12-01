@@ -155,7 +155,7 @@ Core
 ~~~~
 
 For each mutable data constructor ``K`` (where a "mutable data
-constructor" is one that is declared with at least on e mutable
+constructor" is one that is declared with at least one mutable
 field), we get a new primitive mutable constructor function ``$mkK``,
 whose type is::
 
@@ -163,7 +163,7 @@ whose type is::
 
 where ``K`` was defined to have the type::
 
-  K :: forall xs s . u1 -> ... un -> IO (K v1...vn)
+  K :: forall xs s . u1 -> ... -> un -> IO (K v1...vn)
 
 and::
 
