@@ -169,7 +169,7 @@ having an instance
 .. code-block:: haskell
 
   instance HasField "personId" Person Int where
-    fromLabel = personId
+    getField = personId
 
 except that this instance is not actually generated anywhere, rather
 the constraint is solved directly by the constraint solver.
@@ -233,7 +233,7 @@ to:
     fromLabel :: t
 
   instance HasField x r a => IsLabel x (r -> a) where
-    fromLabel = GHC.Records.fromLabel
+    fromLabel = getField
 
 When the ``OverloadedLabels`` extension is enabled, a
 label ``#foo`` is translated to
@@ -419,14 +419,12 @@ Other minor design alternatives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Rather than dropping the ``Proxy#`` argument to ``fromLabel``, we
-could retain it (for both ``GHC.Records.fromLabel`` and
-``GHC.OverloadedLabels.fromLabel``).  This would be backwards
-compatible with GHC 8.0.1, and would allow ``fromLabel`` to be called
-directly without use of the ``TypeApplications`` extension.  However,
-the argument is unnecessary and would cause a (small) performance
-overhead.  Moreover, users are not usually expected to call
-``fromLabel`` directly, rather they will typically use the overloaded
-label syntax.
+could retain it.  This would be backwards compatible with GHC 8.0.1,
+and would allow ``fromLabel`` to be called directly without use of the
+``TypeApplications`` extension.  However, the argument is unnecessary
+and would cause a (small) performance overhead.  Moreover, users are
+not usually expected to call ``fromLabel`` directly, rather they will
+typically use the overloaded label syntax.
 
 We could use a type family rather than a functional dependency in the
 definition of ``HasField``.  That is, we could define
@@ -435,7 +433,7 @@ definition of ``HasField``.  That is, we could define
 
   class HasField (x :: k) r where
     type FieldType x r :: *
-    fromLabel :: r -> FieldType x r
+    getField :: r -> FieldType x r
 
 with the constraint solver automatically reducing ``FieldType x r``
 whenever ``r`` is a concrete record type with a field ``x``.  This is
