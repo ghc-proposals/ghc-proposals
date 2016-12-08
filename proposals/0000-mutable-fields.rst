@@ -156,10 +156,10 @@ Core
 
 For each mutable data constructor ``K`` (where a "mutable data
 constructor" is one that is declared with at least one mutable
-field), we get a new primitive mutable constructor function ``$mkK``,
+field), we get a constructor worker function ``$wK``,
 whose type is::
 
-  $mkK :: forall xs s . t1 -> ... -> tn -> State# s -> (# State# s, K v1...vn #)
+  $wK :: forall xs s . t1 -> ... -> tn -> State# s -> (# State# s, K v1...vn #)
 
 where ``K`` was defined to have the type::
 
@@ -174,13 +174,15 @@ and::
 variables)
 
 When ``K`` is used in a pattern in a case alternative in Core, the
-types of its fields are ``u1...un``.
+types of its fields are ``x1....xn`` where::
 
-There would be a new constraint on Core: *we cannot create an
-expresison representing a mutable constructor*.
+  xi = Ref# s w, if ui == mutable w
+     = ui,       otherwise
 
-GHC currently assumes that constructors can be built in a couple of
-places:
+Because the constructor worker for a mutable constructor is a stateful
+operation, GHC can no longer assume that an expression like ``$wK e1...en``
+has type ``K t1...tn`` when ``K`` is a mutable constructor.  This
+assumption is currently used in a couple of places:
 
 - In Worker-wrapper, we build an expression representing the re-packed
   constructor.  Worker-wrapper would need to be either disabled
