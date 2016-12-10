@@ -43,7 +43,7 @@ this proposal makes it levity polymorphic::
     (+) :: Double# -> Double# -> Double#
     (+) = (+##)
 
-This also works for other type classes (thoughts on kind of `Functor`)
+This also works for other type classes (thoughts on kind of `Functor`)::
 
   class Show        (a :: TYPE rep)
   class Read        (a :: TYPE rep)
