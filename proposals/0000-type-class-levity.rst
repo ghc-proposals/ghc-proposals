@@ -70,7 +70,7 @@ and the interesting ``Distributive :: (TYPE rep -> TYPE rep) -> Constraint`` and
 .. code-block:: haskell
 
   data PAIR :: TYPE IntRep -> Type where
-    (:#) :: int -> int -> C int
+    (:#) :: int -> int -> PAIR int
     
   instance Functor PAIR where
     fmap :: (a -> b) -> (PAIR a -> PAIR b)
