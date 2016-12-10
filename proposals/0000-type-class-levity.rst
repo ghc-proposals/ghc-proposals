@@ -25,12 +25,16 @@ Proposed Change
 
 More detail in the trac ticket `#12708 <https://ghc.haskell.org/trac/ghc/ticket/12708/>`_.
 
-Instead of::
+Instead of
+
+.. code-block:: haskell
 
   class Num (a :: Type) where
     (+) :: a -> a -> a
     
-this proposal makes it levity polymorphic::
+this proposal makes it levity polymorphic
+
+.. code-block:: haskell
 
   class Num (a :: TYPE rep) where
     (+) :: a -> a -> a
@@ -43,7 +47,9 @@ this proposal makes it levity polymorphic::
     (+) :: Double# -> Double# -> Double#
     (+) = (+##)
 
-This also works for other type classes (thoughts on kind of `Functor`)::
+This also works for other type classes (thoughts on kind of `Functor`)
+
+.. code-block:: haskell
 
   class Show        (a :: TYPE rep)
   class Read        (a :: TYPE rep)
@@ -59,7 +65,9 @@ This also works for other type classes (thoughts on kind of `Functor`)::
   class Eq1         (f :: TYPE rep1 -> TYPE rep2)
   ...
 
-and the interesting ``Distributive :: (TYPE rep -> TYPE rep) -> Constraint`` and ``Representable`` which has a ``Distributive`` superclass but may have a more general kind, I will look into this. This allows weird instances like::
+and the interesting ``Distributive :: (TYPE rep -> TYPE rep) -> Constraint`` and ``Representable`` which has a ``Distributive`` superclass but may have a more general kind, I will look into this. This allows weird instances like
+
+.. code-block:: haskell
 
   data PAIR :: TYPE IntRep -> Type where
     (:#) :: int -> int -> C int
