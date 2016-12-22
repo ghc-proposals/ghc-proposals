@@ -31,7 +31,8 @@ Debate steps
 -  Once a decision is requested, the shepherd has four weeks (in holiday
    times or near the ICFP deadline, 5) to generate consensus. If
    consensus is elusive, then we vote, with the Simons retaining veto
-   power.
+   power. Naturally, if consensus occurs in less time, then a decision
+   can be rendered early.
 
 -  If we say no: the shepherd updates the proposal (not just the
    commentary) with the reasons for rejection. The proposer is welcome
@@ -45,9 +46,8 @@ Debate steps
 -  If we say yes: A Trac ticket is created, referring back to the
    proposal and commentary. (The shepherd is responsible for making sure
    this happens.) At this point, the proposal process is technically
-   complete. I believe it is outside of our purview to implement,
-   oversee implementation, attract implementors, etc. Naturally, we will
-   want to do this as individuals, but I believe it’s not in our remit.
+   complete. It is outside the purview of the committee to implement,
+   oversee implementation, attract implementors, etc. 
 
 .. raw:: html
 
@@ -72,13 +72,13 @@ and any other relevant considerations appropriately.
 
 -  *Elegant and principled*. Haskell is a beautiful and principled
    langauge. It is tempting to pile feature upon feature (and GHC
-   Haskell has quite a bit of that), but we should constatntly and
+   Haskell has quite a bit of that), but we should constantly and
    consciously strive for simplicity and elegance.
 
-This is not always easy. Sometimes an important problem has lots of
-solutions, none of which have that "aha" feeling of "this is the Right
-way to solve this"; in that case we might delay rather than forge ahead
-regard.ess.
+   This is not always easy. Sometimes an important problem has lots of
+   solutions, none of which have that "aha" feeling of "this is the Right
+   Way to solve this"; in that case we might delay rather than forge ahead
+   regardless.
 
 -  *Fit with the language*. If we just throw things into GHC
    willy-nilly, it will become a large ball of incoherent and
@@ -98,16 +98,16 @@ regard.ess.
    a feature *and* offer a patch that implements it, then the
    implementation cost to GHC is zero and the patch should be accepted.
 
-But in fact every new feature imposes a tax on future implementors, (a)
-to keep it working, and (b) to understand and manage its interactions
-with other new features. In the common case the original implementor of
-a feature moves on to other things after a few years, and this
-maintenance burden falls on others.
+   But in fact every new feature imposes a tax on future implementors, (a)
+   to keep it working, and (b) to understand and manage its interactions
+   with other new features. In the common case the original implementor of
+   a feature moves on to other things after a few years, and this
+   maintenance burden falls on others.
 
 Membership
 ----------
 
-The current members are,
+The current members are:
 
 - Christopher Allen
 - Manuel M T Chakravarty
