@@ -68,3 +68,10 @@ How are proposals decided upon?
 Proposals are ultimately evaluated by the `GHC Steering Committee
 <steering-committee.rst>`_ based upon a number of criteria and in light of
 community feedback.
+
+Who do I contact if I have questions about the process?
+-------------------------------------------------------
+
+Feel free to contact any of the members of the `GHC Steering Committee
+<steering-committee.rst>`_ with questions. Email and IRC (``#ghc`` on
+``irc.freenode.net``) are both good ways of accomplishing this.
