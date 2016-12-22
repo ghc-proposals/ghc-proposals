@@ -34,11 +34,12 @@ Proposal discussion occurs on GitHub pull requests. See the
 active discussions. To see the text of the proposal click on the *Files Changed*
 tab on corresponding Pull Request page.
 
-Note that Github offers two ways of viewing diffs: the "source diff" view, which shows a
-plain text diff, and the "rich diff" view, which provides a more readable
-rendered view of the markup. Comments can be left only when viewing in *source
-diff* mode. The view can be selected using the buttons on the top-right corner
-of the *Files Changed* tab.
+How do I comment on a proposal?
+-------------------------------
+
+To comment on a proposal you need to be viewing the proposal's diff in "source
+diff" view. To switch to this view use the buttons on the top-right corner of
+the *Files Changed* tab.
 
 .. figure:: rich-diff.png
     :alt: The view selector buttons.
@@ -47,8 +48,9 @@ of the *Files Changed* tab.
     Use the view selector buttons on the top right corner of the "Files
     Changed" tab to change between "source diff" and "rich diff" views.
 
-Feedback on a proposal can be offered on open pull requests using both Github's
-in-line and pull request commenting features.
+Feedback on a open pull requests can be offered using both Github's in-line and
+pull request commenting features. Inline comments can be added by hovering over
+a line of the diff.
 
 .. figure:: inline-comment.png
     :alt: The ``+`` button appears while hovering over line in the source diff view.
@@ -56,6 +58,11 @@ in-line and pull request commenting features.
 
     Hover over a line in the source diff view of a pull request and
     click on the ``+`` to leave an inline comment
+
+For the maintenance of general sanity, try to avoid leaving "me too" comments.
+If you would like to register your approval or disapproval of a particular
+comment or proposal, feel free to use GitHub's "Reactions"
+`feature <https://help.github.com/articles/about-discussions-in-issues-and-pull-requests>`_.
 
 How do I submit a proposal?
 ---------------------------
