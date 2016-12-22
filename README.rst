@@ -48,7 +48,7 @@ the *Files Changed* tab.
     Use the view selector buttons on the top right corner of the "Files
     Changed" tab to change between "source diff" and "rich diff" views.
 
-Feedback on a open pull requests can be offered using both Github's in-line and
+Feedback on a open pull requests can be offered using both GitHub's in-line and
 pull request commenting features. Inline comments can be added by hovering over
 a line of the diff.
 
