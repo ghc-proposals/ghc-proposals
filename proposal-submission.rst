@@ -66,10 +66,11 @@ process, here is a short summary,
 5. Discussion will proceed on the pull request; it is very likely that multiple
    iterations will be necessary before the proposal stabilizes.
 
-6. When discussion has died down notify the (yet to be formed) GHC Commitee via
-   email. The committee will review the proposal, the feedback collected on
-   the pull request, and general community sentiment and decide whether the
-   proposal will be accepted.
+6. When discussion has died down notify the `GHC Commitee
+   <steering-committee.rst>`_ with a comment mentioning ``@bgamari``. The
+   committee will review the proposal, as well as the feedback collected on the
+   pull request and general community sentiment, and decide whether the proposal
+   will be accepted.
 
 7. When your proposal is accepted your pull request will be merged. At this
    point you or someone else may choose to implement your proposal.
