@@ -2,9 +2,10 @@ GHC Proposals
 =============
 
 This repository contains specifications for proposed changes to the
-`Glasgow Haskell Compiler <https://www.haskell.org/ghc>`_. 
-The purpose of the GHC `proposal process <./README.md#Proposals>`_, and of the GHC
+`Glasgow Haskell Compiler <https://www.haskell.org/ghc>`_.
+The purpose of the GHC `proposal process <./README.rst#Proposals>`_, and of the GHC
 Steering Committee, is to broaden the discussion of the evolution of GHC.
+
 
 What is a proposal?
 -------------------
@@ -26,13 +27,31 @@ include,
   `type-indexed <https://ghc.haskell.org/trac/ghc/wiki/Typeable>`_
   ``Typeable`` representations)
 
+
 Where can I find proposals currently under discussion?
 ------------------------------------------------------
 
 Proposal discussion occurs on GitHub pull requests. See the
-`Pull Requests list </ghc-proposals/ghc-proposals/pulls>`_ list for the list of
+`Pull Requests list <https://github.com/ghc-proposals/ghc-proposals/pulls>`_ list for the list of
 active discussions. To see the text of the proposal click on the *Files Changed*
 tab on corresponding Pull Request page.
+
+
+Expectations from discussion participants
+-----------------------------------------
+
+Members of the Haskell community are warmly invited to offer feedback on
+proposals. Feedback ensures that a variety of perspectives are heard, that
+alternative designs are considered, and that all of the pros and cons of a
+design are uncovered. We particularly encourage the following types of feedback,
+
+- Completeness: Is the proposal missing a case?
+- Soundness: Is the specification sound or does it include mistakes?
+- Alternatives: Are all reasonable alternatives listed and discussed. Are the pros and cons argued convincingly?
+- Costs: Are the costs for implementation believable? How much would this hinder learning the language?
+- Other questions: Ask critical questions that need to be resolved.
+- Motivation: Is the motivation reasonable?
+
 
 How do I comment on a proposal?
 -------------------------------
@@ -80,5 +99,5 @@ Who do I contact if I have questions about the process?
 -------------------------------------------------------
 
 Feel free to contact any of the members of the `GHC Steering Committee
-<steering-committee.rst>`_ with questions. Email and IRC (``#ghc`` on
-``irc.freenode.net``) are both good ways of accomplishing this.
+<steering-committee.rst>`_ with questions. `Email <https://wiki.haskell.org/Mailing_lists>`_
+and IRC (``#ghc`` on ``irc.freenode.net``) are both good ways of accomplishing this.

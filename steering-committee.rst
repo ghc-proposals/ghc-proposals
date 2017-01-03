@@ -1,8 +1,8 @@
 The GHC Steering Committee
 ==========================
 
-This document defines the structure and process of the GHC steering
-committee.
+This document defines the structure and process of the GHC Steering
+Committee.
 
 Process
 -------
@@ -49,12 +49,12 @@ Debate steps
    oversee implementation, attract implementors, etc. Naturally, we will
    want to do this as individuals, but I believe it’s not in our remit.
 
-.. raw:: html
+.. comment::
 
-   <!-- TODO: Do we solicit a vote 7 days before deadline like Chakravarty suggested? Or is the commentary enough since any vote would be advisory anyway? I (Chris) worry that voting could be contentious and if it's advisory, would prefer to focus on the weight of the arguments brought forth.
+   Do we solicit a vote 7 days before deadline like Chakravarty suggested? Or is the commentary enough since any vote would be advisory anyway? I (Chris) worry that voting could be contentious and if it's advisory, would prefer to focus on the weight of the arguments brought forth.
 
-   >Manuel, is your proposal that the end of Debate stage culminates with a community vote that the committee regards as advisory?  (i.e. not binding in any way, just informative)
-   -->
+   > Manuel, is your proposal that the end of Debate stage culminates with a community vote that the committee regards as advisory?  (i.e. not binding in any way, just informative)
+
 
 Criteria for successful proposals
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -80,7 +80,7 @@ solutions, none of which have that "aha" feeling of "this is the Right
 way to solve this"; in that case we might delay rather than forge ahead
 regard.ess.
 
--  *Fit with the language*. If we just throw things into GHC
+-  *Fit with the language.* If we just throw things into GHC
    willy-nilly, it will become a large ball of incoherent and
    inconsistent mud. We strive to add features that are consistent with
    the rest of the language.
@@ -90,9 +90,9 @@ regard.ess.
    interact awkwardly with existing features, or does it enhance them?
    How easy is it for users to understand the new feature?
 
--  *Implementation cost*. How hard is it to implement?
+-  *Implementation cost.* How hard is it to implement?
 
--  *Maintainability*. Writing code is cheap; maintaining it is
+-  *Maintainability.* Writing code is cheap; maintaining it is
    expensive. GHC is a very large piece of software, with a lifetime
    stretching over decades. It is tempting to think that if you propose
    a feature *and* offer a patch that implements it, then the
@@ -121,14 +121,13 @@ The current members are,
 
 Simon Peyton-Jones and Simon Marlow co-chair the committee.
 
-.. raw:: html
+.. comment::
 
-  <!-- TODO: Every two years henceforth, the committee agrees on a chair.
-       Keep? Chakravarty was fine with perpetual Simonarchy.
-  -->
+    TODO: Every two years henceforth, the committee agrees on a chair.
+    Keep? Chakravarty was fine with perpetual Simonarchy.
 
 - Members have terms of 3, 4, and 5 years.
 
-.. raw:: html
+.. comment::
 
-  <!-- TODO: Term limits and nomination process clarifying -->
+    Term limits and nomination process clarifying

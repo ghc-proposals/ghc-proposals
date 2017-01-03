@@ -1,76 +1,176 @@
-Proposal Submission
-===================
+The GHC Proposals Process
+=========================
 
-While the full process is described in the `proposal
-<https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-proposal-process.rst>`_ describing the proposal
-process, here is a short summary,
+GHC proposals move through the following phases,
 
-1. Edit the `template
-   <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.rst>`_
-   to reflect your proposal. Rename the template file according to your
-   desired proposal, but leave the numerical prefix as ``0000``.
-   This can be done either online through GitHub's in-place
-   editing feature (the pencil icon visible when viewing a file on GitHub)
-   or by forking this repository and cloning the fork.
-   See GitHub's `documentation
-   <https://help.github.com/articles/fork-a-repo/>`_ if you are unfamiliar with
-   this aspect of GitHub's workflow.
+- *Development*: Develop a proposal document laying out the motivation for your
+  proposed change, specifying the change, and assessing its benefits
+  and drawbacks. The discussion phase is started by opening a pull request
+  against the ``ghc-proposals`` repository.
 
-3. Write the proposal. At very least this should describe the following,
+- *Discussion*: The community will debate the pros and cons of your proposal
+  as described by the document. You should revise your proposal document as
+  discussion progresses. This discussion phase will end four weeks after
+  the last edit.
 
-   a. *Motivation*: What is the problem that you are trying to solve? Be specific:
-      a concrete example or two can do wonders. Be sure to point out the
-      particular ways in which the status quo falls short.
-   b. *Proposed Change*: What change are you proposing? This is the
-      specification of your change and should be precise and comprehensive. This
-      might include,
+- *Committee decision*: The GHC Steering Committee will review your proposal
+  document and its ensuing debate and decide whether to accept or reject
+  your proposal. If rejected you may amend and resubmit your proposal document
+  at any time.
 
-      * grammar and semantics of any new syntactic constructs
-      * the types and semantics of any new library interfaces
-      * how the proposed change addresses the original problem
-        (perhaps returning to the concrete examples introduced in the
-        *Motivation* section).
-      * how the proposed change might interact with existing language or
-        compiler features
+- *Implementation*: Accepted proposals may be implemented and submitted
+  for code review. In most cases, proposal authors will implement the
+  change themselves, but there is no obligation to do so.
 
-      This generally needn't discuss the implementation of the change.
-   c. *Drawbacks*: There's no such thing as a free lunch; what is the cost of
-      your proposal? This includes the cost of implementing the proposal,
-      mainintaining it indefinitely, teaching it to new users, and considering
-      its interaction with future proposals.
-   d. *Alternatives*: What alternatives to the proposed change exist? These can
-      range from minor variants to completely . This doesn't need to go into
-      great detail, just give the reader a sketch of the design space.
-   e. *Unresolved questions*: What issues area still outstanding in the design?
-      This needn't discuss outstanding *implementation* questions, we are
-      presently only concerned with the conceptual design of your idea.
 
-   Note that proposals are written in `ReStructuredText
-   <http://www.sphinx-doc.org/en/stable/rest.html>`_ rather than Markdown for
-   its expressiveness and ease of integration into other GHC infrastructure.
-   See the `GHC Users Guide
-   <http://downloads.haskell.org/~ghc/latest/docs/html/users_guide/editing-guide.html>`_
-   for a brief introduction to ReStructuredText.
+Content of the Proposal Document
+--------------------------------
 
-4. When you feel your proposal document is complete, push your branch to your
-   fork (e.g. ``git push origin type-indexed-typeable``), and open a Pull
-   Request requesting that your branch be merged into the ``master`` branch of
-   the ``ghc-proposals/ghc-proposals`` repository. If you unfamiliar with
-   GitHub pull requests then see the `relevant documentation
-   <https://help.github.com/articles/creating-a-pull-request/#creating-the-pull-request>`_.
+Each proposal document must follow the following outline. A template is provided in `proposal template <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.rst>`_.
 
-   Be sure to include a link to the rendered view of your proposal in the pull
-   request description. Your proposal will automatically be announced on the
-   ``ghc-devs`` mailing list when this pull request is opened.
+a. *Motivation*: Give a strong reason for why the community needs this change. Describe the use case as clearly as possible and give at least one concrete example. Explain how the status quo is insufficient or not ideal.
 
-5. Discussion will proceed on the pull request; it is very likely that multiple
-   iterations will be necessary before the proposal stabilizes.
+b. *Proposed Change Specification*: Specify the change in precise and comprehensive yet concise language. Your specification may include,
+ - grammar and semantics of any new syntactic constructs
+ - the types and semantics of any new library interfaces
+ - how the proposed change addresses the original problem (perhaps referring back to the example)
 
-6. When discussion has died down notify the `GHC Commitee
-   <steering-committee.rst>`_ with a comment mentioning ``@bgamari``. The
-   committee will review the proposal, as well as the feedback collected on the
-   pull request and general community sentiment, and decide whether the proposal
-   will be accepted.
+c. *Effect and Interactions*. Detail how the proposed change addresses the original problem raised in the motivation. Detail how the proposed change interacts with existing language or compiler features and provide arguments why this is not going to pose any problems.
 
-7. When your proposal is accepted your pull request will be merged. At this
-   point you or someone else may choose to implement your proposal.
+d. *Costs and Drawbacks*. What are the drawbacks and costs to the community should this change be implemented? For example, does this make Haskell harder to learn for novice users?  Does it make Haskell code harder to read or reason about? Will the implementation be complex or invasive?
+
+e. *Alternatives*: List alternatives to your proposed change and discuss why they are insufficient.
+
+f. *Unresolved questions*: Explicitly list any remaining issues that remain in the conceptual design and specification. Be upfront and trust that the community will help. Please do not list *implementation* issues.
+
+g. *Implementation Plan* (Optional): If accepted who will implement the change? It's quite okay to say "unknown" if you don't feel willing or able to carry out the implementation yourself.
+
+
+Note that proposals are written in `ReStructuredText
+<http://www.sphinx-doc.org/en/stable/rest.html>`_ rather than Markdown for its
+expressiveness and ease of integration into other GHC infrastructure. See the
+`GHC Users Guide
+<http://downloads.haskell.org/~ghc/latest/docs/html/users_guide/editing-guide.html>`_
+for a brief introduction to ReStructuredText.
+
+
+Submitting your Proposal for Discussion
+---------------------------------------
+
+If you are unfamiliar with GitHub, see detailed instructions below.
+
+1. Fork the ``ghc-proposals`` repository
+2. Setup your fork
+ a. Create a branch for your proposal
+ b. Start your proposal by copying ``proposals/0000-template.rst`` to a new file in the ``proposals/`` directory.
+3. Write the proposal document, commit, and push to your ``ghc-proposals`` fork
+4. Submit your proposal for discussion by opening a pull request for your branch against the ``master`` branch of ``ghc-proposals/ghc-proposals``. Label it with the ``discussion`` label.
+
+The pull request summary should include a brief description of your
+proposal, along with a link to the rendered view of proposal document
+in your branch. For instance,
+
+.. code-block::
+
+    This is a proposal augmenting our existing `Typeable` mechanism with a
+    variant, `Type.Reflection`, which provides a more strongly typed variant as
+    originally described in [A Reflection on
+    Types](http://research.microsoft.com/en-us/um/people/simonpj/papers/haskell-dynamic/index.htm)
+    (Peyton Jones, _et al._ 2016).
+
+    [Rendered](https://github.com/bgamari/ghc-proposals/blob/typeable/proposals/0000-type-indexed-typeable.rst)
+
+
+Notice that your pull request will only be merged when your proposal is accepted by the GHC Steering committee.
+
+
+What happens next?
+------------------
+
+After you submit your proposal docment, the community is invited to comment and
+debate. Feel free to improve your document to reflect the discussion. The goal
+is to make the strongest case possible and demonstrate that all alternatives
+have been considered. It is very likely that multiple iterations are necessary
+before the proposal is ready for review.
+
+If you think the proposal is ready for review by the GHC steering committee move
+to the next phase (see Technical Facilitation of the Process, above).
+
+For more details see `README <README.rst>`_
+
+
+Detailed instructions
+---------------------
+
+Forking repositories
+^^^^^^^^^^^^^^^^^^^^
+
+1. Point your browser to the ghc-proposals/ghc-proposals repository
+2. Click on "Fork" (in the upper right corner)
+
+See GitHub's `documentation <https://help.github.com/articles/fork-a-repo/>`_ if
+you are unfamiliar with forking Github repositories
+
+
+Setting up your proposal fork
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+1. Clone the repository to your computer.
+ a. You find the clone command after clicking on "Clone or Download" button.
+ b. Open a terminal in the cloned directory.
+2. Create a new branch for your proposal (say, $myproposal). ``git branch $myproposal; git checkout $myproposal``
+3. Copy the template to a new file ``cd proposals;  cp 0000-template.rst 0000-$myproposal.rst``
+4. Add the new file to the repository ``git add 000-$myproposal.rst``
+5. Commit the file to your github ``git commit -a``
+6. Push your new branch to your github repository ``git push --set-upstream origin $myproposal``
+
+You only need to do this once. For all future edits to your proposal you only need to commit and push.``git commit -a; git push``
+
+Setting up your proposal fork on Github
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+1. Locate your ``ghc-proposals`` fork on GitHub
+2. Create a new branch by clicking on the drop-down box labeled "Branch:", and entering a new name, say ``$myproposal``. When editing your proposal, always be sure to have the branch named ``$myproposal`` selected.
+3. Change into the proposals directory
+4. Create a new file for your proposal document by
+ a. Click on "Create new file"
+ b. Enter ``0000-$myproposal.rst``
+ c. At the bottom of the pag: enter a commit message, e.g. "initial commit"
+ d. Click "Commit new file"
+5. Copy the proposal template (``0000-proposal-template.rst``) into the new file by
+ a. Click on the proposal template
+ b. Click on the pen icon to enter edit mode
+ c. Copy the content
+ d. Navigate back to your proposal document, entering edit mode by clicking on the pen icon
+ e. Paste the content
+ f. At the bottom of the page, enter commit message "copy template" and click "Commit Changes".
+
+You only need to do this once. For all future edits to your proposal you only need to
+1. Locate your proposal document
+2. Enter edit mode by clicking the pen icon
+3. Edit your To save your edits:
+4. Write a commit message
+5. Click on "Commit changes".
+
+
+Submitting your proposal to the Discussion phase
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In order to submit your proposal to the discussion phase,
+1. Navigate to the main page of your repository in your browser
+2. Select the branch containing your proposal in the "Branch:" drop-down
+3. Click on "Compare & pull request" button
+4. You will be brough to the "Open a pull request" page. Ensure that ``ghc-proposals/ghc-proposals`` is specifed as the "base fork" and that ``master`` is specified as the "base branch".
+5. Verify that the diff shown only contains your proposal document.
+4. Select the label ``discussion`` on the right hand side.
+5. In the "comment" box at the top of the page write a brief description of your proposal along with a link to the proposal document (link to the ``$myproposal.rst`` file your GitHub fork)
+
+  .. code-block::
+
+    This is a proposal augmenting our existing `Typeable` mechanism with a
+    variant, `Type.Reflection`, which provides a more strongly typed variant as
+    originally described in [A Reflection on
+    Types](http://research.microsoft.com/en-us/um/people/simonpj/papers/haskell-dynamic/index.htm)
+    (Peyton Jones, _et al._ 2016).
+
+    [Rendered](https://github.com/bgamari/ghc-proposals/blob/typeable/proposals/0000-type-indexed-typeable.rst)
