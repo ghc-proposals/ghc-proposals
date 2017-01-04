@@ -67,7 +67,7 @@ If you are unfamiliar with GitHub, see detailed instructions below.
    b. Start your proposal by copying ``proposals/0000-template.rst`` to a new file in the ``proposals/`` directory.
 
 3. Write the proposal document, commit, and push to your ``ghc-proposals`` fork
-4. Submit your proposal for discussion by opening a pull request for your branch against the ``master`` branch of ``ghc-proposals/ghc-proposals``. Label it with the ``discussion`` label.
+4. Submit your proposal for discussion by opening a pull request for your branch against the ``master`` branch of ``ghc-proposals/ghc-proposals``. Label it with the ``Under discussion`` label.
 
 The pull request summary should include a brief description of your
 proposal, along with a link to the rendered view of proposal document
@@ -84,22 +84,23 @@ in your branch. For instance,
     [Rendered](https://github.com/bgamari/ghc-proposals/blob/typeable/proposals/0000-type-indexed-typeable.rst)
 
 
-Notice that your pull request will only be merged when your proposal is accepted by the GHC Steering committee.
-
-
-What happens next?
-------------------
-
-After you submit your proposal docment, the community is invited to comment and
+After you open your pull request, the community is invited to comment and
 debate. Feel free to improve your document to reflect the discussion. The goal
-is to make the strongest case possible and demonstrate that all alternatives
+is to make the strongest proposal possible and demonstrate that all alternatives
 have been considered. It is very likely that multiple iterations are necessary
-before the proposal is ready for review.
+before the proposal is ready for consideration by the GHC Steering Committee.
 
-If you think the proposal is ready for review by the GHC steering committee move
-to the next phase (see Technical Facilitation of the Process, above).
+When you feel that your proposal is ready,
 
-For more details see `README <README.rst>`_
+ 1. review the discussion thread and ensure that the proposal text accounts for
+    all salient points.
+ 2. write a pull request comment briefly summarizing the major points raised
+    during the discussion period and stating your belief that the proposal is
+    ready for review..
+ 3. replace the ``Under discussion`` label with ``Pending committee review``.
+
+The committee will review the proposal, your summary, and the surrounding discussion
+within two weeks and leave a comment with its conclusion.
 
 
 Detailed instructions
