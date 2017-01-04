@@ -106,10 +106,13 @@ within two weeks and leave a comment with its conclusion.
 Detailed instructions
 ---------------------
 
+The instructions below are intended for users with little experience using
+GitHub and git.
+
 Forking repositories
 ^^^^^^^^^^^^^^^^^^^^
 
-1. Point your browser to the ghc-proposals/ghc-proposals repository
+1. Point your browser to the ``ghc-proposals/ghc-proposals`` repository
 2. Click on "Fork" (in the upper right corner)
 
 See GitHub's `documentation <https://help.github.com/articles/fork-a-repo/>`_ if
