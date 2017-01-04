@@ -92,12 +92,12 @@ before the proposal is ready for consideration by the GHC Steering Committee.
 
 When you feel that your proposal is ready,
 
- 1. review the discussion thread and ensure that the proposal text accounts for
-    all salient points.
- 2. write a pull request comment briefly summarizing the major points raised
-    during the discussion period and stating your belief that the proposal is
-    ready for review..
- 3. replace the ``Under discussion`` label with ``Pending committee review``.
+1. review the discussion thread and ensure that the proposal text accounts for
+   all salient points.
+2. write a pull request comment briefly summarizing the major points raised
+   during the discussion period and stating your belief that the proposal is
+   ready for review..
+3. replace the ``Under discussion`` label with ``Pending committee review``.
 
 The committee will review the proposal, your summary, and the surrounding discussion
 within two weeks and leave a comment with its conclusion.
