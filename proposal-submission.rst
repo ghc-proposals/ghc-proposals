@@ -13,7 +13,7 @@ GHC proposals move through the following phases,
   discussion progresses. This discussion phase will end four weeks after
   the last edit.
 
-- *Committee decision*: The GHC Steering Committee will review your proposal
+- *Committee decision*: The `GHC Steering Committee`_ will review your proposal
   document and its ensuing debate and decide whether to accept or reject
   your proposal. If rejected you may amend and resubmit your proposal document
   at any time.
@@ -22,6 +22,7 @@ GHC proposals move through the following phases,
   for code review. In most cases, proposal authors will implement the
   change themselves, but there is no obligation to do so.
 
+.. _GHC Steering Committee: https://github.com/ghc-proposals/ghc-proposals/blob/master/steering-committee.rst
 
 Content of the Proposal Document
 --------------------------------
@@ -88,7 +89,7 @@ After you open your pull request, the community is invited to comment and
 debate. Feel free to improve your document to reflect the discussion. The goal
 is to make the strongest proposal possible and demonstrate that all alternatives
 have been considered. It is very likely that multiple iterations are necessary
-before the proposal is ready for consideration by the GHC Steering Committee.
+before the proposal is ready for consideration by the `GHC Steering Committee`_.
 
 When you feel that your proposal is ready,
 
