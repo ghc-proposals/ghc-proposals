@@ -31,11 +31,12 @@ Each proposal document must follow the following outline. A template is provided
 a. *Motivation*: Give a strong reason for why the community needs this change. Describe the use case as clearly as possible and give at least one concrete example. Explain how the status quo is insufficient or not ideal.
 
 b. *Proposed Change Specification*: Specify the change in precise and comprehensive yet concise language. Your specification may include,
- - grammar and semantics of any new syntactic constructs
- - the types and semantics of any new library interfaces
- - how the proposed change addresses the original problem (perhaps referring back to the example)
 
-c. *Effect and Interactions*. Detail how the proposed change addresses the original problem raised in the motivation. Detail how the proposed change interacts with existing language or compiler features and provide arguments why this is not going to pose any problems.
+   - grammar and semantics of any new syntactic constructs
+   - the types and semantics of any new library interfaces
+   - how the proposed change addresses the original problem (perhaps referring back to the example)
+
+c. *Effect and Interactions*. Detail how the proposed change addresses the original problem raised in the motivation. Detail how the proposed change interacts with existing language or compiler features. Think about what surprising or problematic interactions may occur.
 
 d. *Costs and Drawbacks*. What are the drawbacks and costs to the community should this change be implemented? For example, does this make Haskell harder to learn for novice users?  Does it make Haskell code harder to read or reason about? Will the implementation be complex or invasive?
 
@@ -60,9 +61,11 @@ Submitting your Proposal for Discussion
 If you are unfamiliar with GitHub, see detailed instructions below.
 
 1. Fork the ``ghc-proposals`` repository
-2. Setup your fork
- a. Create a branch for your proposal
- b. Start your proposal by copying ``proposals/0000-template.rst`` to a new file in the ``proposals/`` directory.
+2. Setup your fork,
+
+   a. Create a branch for your proposal
+   b. Start your proposal by copying ``proposals/0000-template.rst`` to a new file in the ``proposals/`` directory.
+
 3. Write the proposal document, commit, and push to your ``ghc-proposals`` fork
 4. Submit your proposal for discussion by opening a pull request for your branch against the ``master`` branch of ``ghc-proposals/ghc-proposals``. Label it with the ``discussion`` label.
 
@@ -109,61 +112,39 @@ Forking repositories
 2. Click on "Fork" (in the upper right corner)
 
 See GitHub's `documentation <https://help.github.com/articles/fork-a-repo/>`_ if
-you are unfamiliar with forking Github repositories
+you are unfamiliar with GitHub's notion of "forking".
 
 
 Setting up your proposal fork
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 1. Clone the repository to your computer.
- a. You find the clone command after clicking on "Clone or Download" button.
- b. Open a terminal in the cloned directory.
+
+   a. You find the clone command after clicking on "Clone or Download" button.
+   b. Open a terminal in the cloned directory.
+
 2. Create a new branch for your proposal (say, $myproposal). ``git branch $myproposal; git checkout $myproposal``
 3. Copy the template to a new file ``cd proposals;  cp 0000-template.rst 0000-$myproposal.rst``
 4. Add the new file to the repository ``git add 000-$myproposal.rst``
 5. Commit the file to your github ``git commit -a``
 6. Push your new branch to your github repository ``git push --set-upstream origin $myproposal``
 
-You only need to do this once. For all future edits to your proposal you only need to commit and push.``git commit -a; git push``
-
-Setting up your proposal fork on Github
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-1. Locate your ``ghc-proposals`` fork on GitHub
-2. Create a new branch by clicking on the drop-down box labeled "Branch:", and entering a new name, say ``$myproposal``. When editing your proposal, always be sure to have the branch named ``$myproposal`` selected.
-3. Change into the proposals directory
-4. Create a new file for your proposal document by
- a. Click on "Create new file"
- b. Enter ``0000-$myproposal.rst``
- c. At the bottom of the pag: enter a commit message, e.g. "initial commit"
- d. Click "Commit new file"
-5. Copy the proposal template (``0000-proposal-template.rst``) into the new file by
- a. Click on the proposal template
- b. Click on the pen icon to enter edit mode
- c. Copy the content
- d. Navigate back to your proposal document, entering edit mode by clicking on the pen icon
- e. Paste the content
- f. At the bottom of the page, enter commit message "copy template" and click "Commit Changes".
-
-You only need to do this once. For all future edits to your proposal you only need to
-1. Locate your proposal document
-2. Enter edit mode by clicking the pen icon
-3. Edit your To save your edits:
-4. Write a commit message
-5. Click on "Commit changes".
+You only need to do this once. For all future edits to your proposal you only
+need to commit and push. e.g. ``git commit -a; git push``.
 
 
-Submitting your proposal to the Discussion phase
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Moving your proposal to the Discussion phase
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In order to submit your proposal to the discussion phase,
+
 1. Navigate to the main page of your repository in your browser
 2. Select the branch containing your proposal in the "Branch:" drop-down
 3. Click on "Compare & pull request" button
-4. You will be brough to the "Open a pull request" page. Ensure that ``ghc-proposals/ghc-proposals`` is specifed as the "base fork" and that ``master`` is specified as the "base branch".
+4. You will be brought to the "Open a pull request" page. Ensure that ``ghc-proposals/ghc-proposals`` is specifed as the "base fork" and that ``master`` is specified as the "base branch".
 5. Verify that the diff shown only contains your proposal document.
 4. Select the label ``discussion`` on the right hand side.
-5. In the "comment" box at the top of the page write a brief description of your proposal along with a link to the proposal document (link to the ``$myproposal.rst`` file your GitHub fork)
+5. In the "comment" box at the top of the page write a brief description of your proposal along with a link to the proposal document (link to the ``0000-$myproposal.rst`` file in your GitHub fork)
 
   .. code-block::
 
