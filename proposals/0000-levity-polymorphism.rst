@@ -55,6 +55,7 @@ Here is the current state of affairs::
     TYPE :: RuntimeRep -> Type   -- super-magical constant
     data RuntimeRep = PtrRepLifted
                     | PtrRepUnlifted
+                    | VoidRep
                     | IntRep
                     | FloatRep
                     | ...
@@ -86,6 +87,9 @@ I propose changing this to become::
 Note the name changes and the new parameters to ``TupleRep`` and ``SumRep``.
 These parameters mean that different unboxed tuples/sums have *different*
 kinds. Hooray!
+
+Also, this change removes ``VoidRep`` in favor of ``TupleRep []``, a small
+simplification.
 
 Drawbacks
 ---------
