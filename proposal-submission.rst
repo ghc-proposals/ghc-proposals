@@ -147,8 +147,8 @@ In order to submit your proposal to the discussion phase,
 3. Click on "Compare & pull request" button
 4. You will be brought to the "Open a pull request" page. Ensure that ``ghc-proposals/ghc-proposals`` is specifed as the "base fork" and that ``master`` is specified as the "base branch".
 5. Verify that the diff shown only contains your proposal document.
-4. Select the label ``discussion`` on the right hand side.
-5. In the "comment" box at the top of the page write a brief description of your proposal along with a link to the proposal document (link to the ``0000-$myproposal.rst`` file in your GitHub fork)
+6. Select the label ``discussion`` on the right hand side.
+7. In the "comment" box at the top of the page write a brief description of your proposal along with a link to the proposal document (link to the ``0000-$myproposal.rst`` file in your GitHub fork)
 
   .. code-block::
 
