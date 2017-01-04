@@ -127,11 +127,27 @@ Setting up your proposal fork
    a. You find the clone command after clicking on "Clone or Download" button.
    b. Open a terminal in the cloned directory.
 
-2. Create a new branch for your proposal (say, $myproposal). ``git branch $myproposal; git checkout $myproposal``
-3. Copy the template to a new file ``cd proposals;  cp 0000-template.rst 0000-$myproposal.rst``
-4. Add the new file to the repository ``git add 000-$myproposal.rst``
-5. Commit the file to your github ``git commit -a``
-6. Push your new branch to your github repository ``git push --set-upstream origin $myproposal``
+2. Create a new branch for your proposal (say, $myproposal). ::
+
+       git branch $myproposal
+       git checkout $myproposal
+
+3. Copy the template to a new file ::
+
+       cd proposals
+       cp 0000-template.rst 0000-$myproposal.rst
+
+4. Add the new file to the repository ::
+
+       git add 000-$myproposal.rst
+
+5. Commit the file to your GitHub ::
+
+       git commit -a
+
+6. Push your new branch to your github repository ::
+
+       git push --set-upstream origin $myproposal
 
 You only need to do this once. For all future edits to your proposal you only
 need to commit and push. e.g. ``git commit -a; git push``.
