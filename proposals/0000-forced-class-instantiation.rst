@@ -14,7 +14,7 @@ A declaration
 ::
   instance force Cls Ty
 
-instantiates any ``Cls a`` constraint encountered, including in error messages, otherwise ambiguos types.
+instantiates any ``Cls a`` constraint encountered, including in error messages, otherwise ambiguous types.
 
 Motivation
 ----------
@@ -23,7 +23,7 @@ I am teaching a Haskell class right now, and in the first few lectures, I had to
 
 .. _CodeWorld: http://code.world/haskell
 
-The students coped, but it would be better if the compiler did that for them. So the main motiviation is to tell them to include a line like
+The students coped, but it would be better if the compiler did that for them. So the main motivation is to tell them to include a line like
 ::
   instance force Foldable []
 
