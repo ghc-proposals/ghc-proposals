@@ -24,50 +24,50 @@ Motivation
 ------------
 Here are a few oddities caused by the current arrangement:
 
-  1. Type families::
-  
-         type family F a where
-           F Constraint = Int
-           F Type       = Bool
-           
-     Such a definition is accepted. Yet it allows a proof that ``Int ~ Bool`` in Core. It's unclear to me whether this can be used to implement ``unsafeCoerce``, but it should scare us all.
-     
-  2. Printing::
-  
-        main = do
-          print $ typeRep (Proxy :: Proxy Eq)
-          print $ typeOf (Proxy :: Proxy Eq)
-          
-    This prints ::
-    
-        Eq
-        Proxy (* -> *) Eq
-        
-    But of course ``Eq`` doesn't have kind ``* -> *``. It has kind ``* -> Constraint``! Except that Core can't tell the difference.
-    
-    
-  3. Order sensitivity::
-  
-        main = do
-          print $ typeOf (Proxy :: Proxy (Eq Int))
-          print $ typeOf (Proxy :: Proxy Eq)
-          
-    prints ::
-    
-        Proxy Constraint (Eq Int)
-        Proxy (Constraint -> Constraint) Eq
-        
-    but if you print them in the opposite order, you get ::
-    
-        Proxy (* -> *) Eq
-        Proxy * (Eq Int)
-        
-    Ew.
-    
-  4. The new ``Typeable`` plan (inspired by my `recent paper <http://cs.brynmawr.edu/~rae/papers/2016/dynamic/dynamic.pdf>`_
-     and fully described on the `wiki page <https://ghc.haskell.org/trac/ghc/wiki/Typeable/BenGamari>`_)
-     lays bare any and all shortcuts we have in the type system. It's unclear how to implement the plan without
-     sorting this out.
+1. Type families::
+
+       type family F a where
+         F Constraint = Int
+         F Type       = Bool
+
+   Such a definition is accepted. Yet it allows a proof that ``Int ~ Bool`` in Core. It's unclear to me whether this can be used to implement ``unsafeCoerce``, but it should scare us all.
+
+2. Printing::
+
+      main = do
+        print $ typeRep (Proxy :: Proxy Eq)
+        print $ typeOf (Proxy :: Proxy Eq)
+
+   This prints ::
+
+      Eq
+      Proxy (* -> *) Eq
+
+   But of course ``Eq`` doesn't have kind ``* -> *``. It has kind ``* -> Constraint``! Except that Core can't tell the difference.
+
+
+3. Order sensitivity::
+
+      main = do
+        print $ typeOf (Proxy :: Proxy (Eq Int))
+        print $ typeOf (Proxy :: Proxy Eq)
+
+   prints ::
+
+      Proxy Constraint (Eq Int)
+      Proxy (Constraint -> Constraint) Eq
+
+   but if you print them in the opposite order, you get ::
+
+      Proxy (* -> *) Eq
+      Proxy * (Eq Int)
+
+   Ew.
+
+4. The new ``Typeable`` plan (inspired by my `recent paper <http://cs.brynmawr.edu/~rae/papers/2016/dynamic/dynamic.pdf>`_
+   and fully described on the `wiki page <https://ghc.haskell.org/trac/ghc/wiki/Typeable/BenGamari>`_)
+   lays bare any and all shortcuts we have in the type system. It's unclear how to implement the plan without
+   sorting this out.
 
 Proposed Change Specification
 -----------------------------
@@ -89,7 +89,7 @@ One weird interaction is that we currently encode one-element classes as newtype
 
     class C a where
       def :: a
-      
+
 This yields a Core type defined like ``newtype C a = MkC { def :: a }``. The only problem is that ``C a :: Constraint``.
 Thus the newtype axiom that relates ``C a`` to ``a`` is *heterogeneous*. Clever machinations using the coercion
 forms as described `here <https://github.com/ghc/ghc/blob/master/docs/core-spec/core-spec.pdf>`_ could then prove
