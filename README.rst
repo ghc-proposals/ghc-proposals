@@ -32,7 +32,7 @@ Where can I find proposals currently under discussion?
 ------------------------------------------------------
 
 Proposal discussion occurs on GitHub pull requests. See the
-`Pull Requests list <https://github.com/ghc-proposals/ghc-proposals/pulls>`_ list for the list of
+`Pull Requests list <https://github.com/ghc-proposals/ghc-proposals/pulls>`_ for the list of
 active discussions. To see the text of the proposal click on the *Files Changed*
 tab on corresponding Pull Request page.
 
