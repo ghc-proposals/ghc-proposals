@@ -40,19 +40,22 @@ I propose to introduce a declaration
 ::
   instance force Cls Ty1 Ty2 …
   
-The declaration is valid if the mentioned instance exists (i.e. if the constraing ``Cls Ty1 Ty2`` can be completely solved). If not, as in ``instance force Eq [a]``, a usual error message (“Could not solve constraint Eq [a]: No instance [a]” or similar) is produced, and the program is rejected.
+The declaration is valid if the constraint ``Cls Ty1 Ty2`` can be solved from the empty context using any number of instances in scope. If not, as in ``instance force Eq [a]``, a usual error message (“Could not solve constraint Eq [a]: No instance [a]” or similar) is produced, and the program is rejected.
 
-The declaration has the effect that, within the scope of one module, the existance of the type class ``Cls`` is hidden from the user, by consistenly instantiationg it with the instance given in the declaration.
+The declaration has the effect that, within the scope of one module, the existance of the type class ``Cls`` is hidden from the user. In particular:
 
-The affects:
+* The user cannot use ``Cls`` in type signatures in this module (as it is out of scope).
+* Any function imported from outside the module (including the methods of ``Cls``) with a type ``Cls a b => T[a,b]`` constraint now has type ``T[Ty1,Ty2]``. More general, a function imported from outside the module with a type ``Cls Ty1' Ty2' => T`` constraint now has a type that results from simplifying ``(Ty1' ~ Ty1, Ty2' ~ Ty2) => T``.
+* If multiple ``force instance`` declarations are in scope, then first all of them are converted to ``~`` constraints, and then the resulting type is simplified. This can lead to an unusable type (``Int ~ Bool => …``). If the user tries to use such a function, then a helpful error message is provided.
+* The type of functions with occurrences of ``Cls`` that cannot be instantiated (e.g. ``foo :: (forall t. Foldable t => t () -> Bool) -> …``) are left in place, with the likely effect that they cannot be used in this module.
+
+This type change affects thus:
  
-* Inferred types.
 * Types printed with ``:print``, even for imported identifiers.
 * Types printed with ``:browse`` or ``:info`` (``:info`` might point out that the type is force-instantiated)
 * Type error messages.
-* Type inference: Ambiguities involving ``Cls`` should be resolved in favor of these types, (similar to but taking precedence over defaulting)
 
-Occurrences of ``Cls`` that cannot be instantiated (e.g. ``foo :: (forall t. Foldable t => t () -> Bool) -> …``) are left in place.
+If the type is changes for every imported function, then type inference is not affected. But it might be possible to achieve the same effect using a different  imlementation strategy that hooks into type inference.
 
 Examples
 --------
@@ -137,6 +140,8 @@ with judiuous use of allowing overlapping and incoherent instances, but would no
 Unresolved Questions
 --------------------
 
-Is there a better syntax?
+* Is there a better syntax?
+
+* What happens with multiple `force instance` declarations. Is that unambiguous?
 
 
