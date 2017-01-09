@@ -13,6 +13,8 @@
 Separate `Constraint` from `Type`
 =================================
 
+`GitHub pull request for discussion <https://github.com/ghc-proposals/ghc-proposals/pull/32>`_
+
 Since at least GHC 7.4, there has been an uneasy relationship between ``Constraint`` and ``Type`` (formerly known as ``*``). These
 kinds were considered distinct in Haskell but indistinguishable in Core. This strange arrangement causes oddities in the
 type system, as explained in `#11715 <https://ghc.haskell.org/trac/ghc/ticket/11715>`_.
