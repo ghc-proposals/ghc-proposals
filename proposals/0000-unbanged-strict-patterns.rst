@@ -48,6 +48,11 @@ trouble compiling strict patterns without a bang -- it's all about user expectat
 
 5. Change (B) is necessary to allow change (A) not to break code in the wild.
 
+By way of history: I did not set out to change this directly, but I hit upon the
+inconsistency between the implementation and the specification in other work. The code
+was quite tangled, and this is a cleaning-up of this whole area. But the cleaning-up
+has user-facing effects, leading to this proposal.
+   
 Proposed Change Specification
 -----------------------------
 
