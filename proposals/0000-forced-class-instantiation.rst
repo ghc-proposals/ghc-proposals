@@ -57,6 +57,8 @@ This type change affects thus:
 
 If the type is changes for every imported function, then type inference is not affected. But it might be possible to achieve the same effect using a different  imlementation strategy that hooks into type inference.
 
+If an imported function is re-exported using an explicit export list, it is exported with its original type. In other word, ``force instance`` does not affect re-exports in any way.
+
 Examples
 --------
 
