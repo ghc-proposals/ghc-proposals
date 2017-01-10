@@ -44,7 +44,7 @@ The declaration is valid if the constraint ``Cls Ty1 Ty2`` can be solved from th
 
 The declaration has the effect that, within the scope of one module, the existance of the type class ``Cls`` is hidden from the user. In particular:
 
-* The user cannot use ``Cls`` in type signatures in this module (as it is out of scope).
+* The user cannot use ``Cls`` in type signatures in this module, as it is out of scope. (The ``force instance`` declaration itself is exempt of this.)
 * Any function imported from outside the module (including the methods of ``Cls``) with a type ``Cls a b => T[a,b]`` constraint now has type ``T[Ty1,Ty2]``. More general, a function imported from outside the module with a type ``Cls Ty1' Ty2' => T`` constraint now has a type that results from simplifying ``(Ty1' ~ Ty1, Ty2' ~ Ty2) => T``.
 * If multiple ``force instance`` declarations are in scope, then first all of them are converted to ``~`` constraints, and then the resulting type is simplified. This can lead to an unusable type (``Int ~ Bool => …``). If the user tries to use such a function, then a helpful error message is provided.
 * The type of functions with occurrences of ``Cls`` that cannot be instantiated (e.g. ``foo :: (forall t. Foldable t => t () -> Bool) -> …``) are left in place, with the likely effect that they cannot be used in this module.
