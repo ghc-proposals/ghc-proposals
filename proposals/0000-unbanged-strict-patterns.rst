@@ -13,6 +13,8 @@
 Make unboxed tuple patterns lazy / warn on unbanged strict patterns
 ===================================================================
 
+`Pull request for discussion <https://github.com/ghc-proposals/ghc-proposals/pull/35>`_
+
 (Throughout this proposal, unboxed sums are treated identically to unboxed tuples. I refer only to unboxed tuples for simplicity.)
 
 Despite the fact that unboxed tuples are unlifted, the `manual <https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#unboxed-tuples>`_ says that unboxed tuple patterns can actually be *lazy*. This is not working
