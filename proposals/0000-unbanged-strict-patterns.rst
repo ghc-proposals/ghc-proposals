@@ -58,13 +58,18 @@ Define an "unlifted bind" to be any bind that binds an unlifted id. Note that ::
 
 is *not* an unlifted bind.
 
-Change (A) says that unlifted binds, and only unlifted binds, are strict by default. (Before Change (A), unboxed tuple patterns
+Change (A) says that unlifted binds, and only unlifted binds, are strict by default.
+
+Before Change (A), unboxed tuple patterns were considered as unlifted binds, regardless of whether
+or not a variable of unlifted type was bound.
 
 Change (B) says that strict patterns must have a bang. Otherwise a warning (``-Wunbanged-strict-patterns``) is issued.
 
  * Bare variables do not need a bang.
  * The bang may occur outside of or within an as-pattern.
  * Bare wildcards do not need a bang.
+
+Before Change (B), unboxed tuples patterns did not need a bang.
 
 Examples
 --------
@@ -115,7 +120,7 @@ Examples
         z = ()
           where I# x = 4
           
-     This code is rejected by GHC 8.0 with an error. Change (B) makes this error into a warning. The binding is strict.
+    This code is rejected by GHC 8.0 with an error. Change (B) makes this error into a warning. The binding is strict.
           
 Effect and Interactions
 -----------------------
