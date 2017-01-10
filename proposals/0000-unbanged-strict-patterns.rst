@@ -134,6 +134,14 @@ See the examples above for some brief discussion of the change in semantics.
 
 In general, this proposal is a *simplification* of our rules around unlifted bindings.
 
+Although not harped on in this proposal, unlifted patterns are subject to two further restrictions other than
+strictness: they must not be recursive, and they must not bind any variables that have a polymorphic type.
+Previously, this restriction applied also to unboxed tuple patterns, but change (A) removes this behavior.
+So, the following is rejected in GHC 8.0 but accepted under this proposal::
+
+    z = (f 'x', f True)
+      where (# f #) = (# id #)
+
 Costs and Drawbacks
 -------------------
 
