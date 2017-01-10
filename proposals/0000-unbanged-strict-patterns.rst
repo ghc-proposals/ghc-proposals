@@ -56,16 +56,16 @@ has user-facing effects, leading to this proposal.
 Proposed Change Specification
 -----------------------------
 
-Define an "unlifted bind" to be any bind that binds an unlifted id. Note that ::
+Define an "unlifted pattern" to be any pattern that binds variable with an unlifted type. Note that ::
 
     x :: Char
     (# True, x #) = blah
 
-is *not* an unlifted bind.
+is *not* an unlifted pattern.
 
-Change (A) says that unlifted binds, and only unlifted binds, are strict by default.
+Change (A) says that unlifted patterns, and only unlifted patterns, are strict by default.
 
-Before Change (A), unboxed tuple patterns were considered as unlifted binds, regardless of whether
+Before Change (A), unboxed tuple patterns were considered as unlifted patterns, regardless of whether
 or not a variable of unlifted type was bound.
 
 Change (B) says that strict patterns must have a bang. Otherwise a warning (``-Wunbanged-strict-patterns``) is issued.
@@ -116,7 +116,7 @@ Examples
         z = ()
           where 3# = 4#
           
-    Evaluating ``z`` results in ``()``. The ``3# = 4#`` bind is not an unlifted bind, according to the rules above. This is a change in the implementation compared to GHC 8.0, but the behavior described here seems more in keeping with the specification of lazy bindings in Haskell.
+    Evaluating ``z`` results in ``()``. The ``3#`` pattern is not an unlifted pattern, according to the rules above. This is a change in the implementation compared to GHC 8.0, but the behavior described here seems more in keeping with the specification of lazy bindings in Haskell.
     
 5.
 
