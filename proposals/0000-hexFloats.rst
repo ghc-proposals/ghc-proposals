@@ -17,15 +17,14 @@ p57-58 of: http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf
 The format is rather simple, unambiguous, and relatively easy to implement. And it's been around for
 about 10 years by now. Some examples are:
 
-   ```
-   0x1p+1
-   0x1p+8
-   0x1.b7p-1
-   0x1.fffffffffffffp+1023
-   0X1.921FB4D12D84AP-1
-   ```
+     * `0x1p+1`
+     * `0x1p+8`
+     * `0x1.b7p-1`
+     * `0x1.fffffffffffffp+1023`
+     * `0X1.921FB4D12D84AP-1`
 
-It would be nice if the Haskell standard was changed to include such literals. But in the meantime, perhaps GHC can support such literals via a pragma, such as `LANGUAGE HexadecimalFloats` or similar.
+It would be nice if the Haskell standard was changed to include such literals. But in the meantime,
+perhaps GHC can support such literals via a pragma, such as `LANGUAGE HexadecimalFloats` or similar.
 
 Eventually, the change should make it into the Haskell report.
 
