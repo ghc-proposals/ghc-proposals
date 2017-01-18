@@ -45,6 +45,7 @@ The changes are rather simple.
   * Follow the grammar given in http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf
   * Allow both upper-lower case hexadecimals
   * Provide the corresponding pretty-printer (`showHFloat`) in the `Numeric` package.
+  * `Read` instance for floats-doubles should be changed to support the new format.
 
 Effect and Interactions
 -----------------------
