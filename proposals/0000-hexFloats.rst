@@ -80,10 +80,11 @@ Unfortunately, the "library" solution is really not ideal:
    * It relies on the rather heavy mechanism for quasi-quotes
    * Usage requires importing a new module
    * Usage requires a pragma (``QuasiQuotes``)
-   * Most imporantly: Usage requires dependency of a hackage package
+   * Most imporantly: Usage requires dependency on a hackage package
 
-By this proposal, we will reduce the dependency to one pragma (``HexadecimalFloats``); and when the Haskell
-standeard catches up, even that will disappear.
+This is indeed a lot of requirements and heavy machinery to be able to write literals! With this proposal, we will
+reduce the dependency to one pragma (``HexadecimalFloats``); and when the Haskell standard catches up, even that 
+will become unnecessary.
 
 Unresolved questions
 --------------------
