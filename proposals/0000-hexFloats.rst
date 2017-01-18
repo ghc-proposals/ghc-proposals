@@ -96,7 +96,7 @@ The format allows for specifying numbers that are larger than what the underlyin
 a number like `0x1p5000` would not fit in a `Double` and thus would have the special value `Infinity`. (Similar to `1/0`).
 
 I think the right thing to do when the literal is too large is to print a warning, similar to what we already have for
-other literals:
+other literals::
 
     Prelude Data.Word> 200000::Word16
 
