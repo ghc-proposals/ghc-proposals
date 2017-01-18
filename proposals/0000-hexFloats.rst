@@ -80,12 +80,8 @@ Unfortunately, the "library" solution is really not ideal:
     
    * It relies on the rather heavy mechanism for quasi-quotes
    * It requires an extra library dependency
-   * Usage requires a pragma (`QuasiQuotes`)
+   * Usage requires a pragma (``QuasiQuotes``)
    * Usage requires import and dependency of a hackage package
-   * The library suffers from a bug in TH, as TH does not support double's natively; and insists
-     on storing them as Rationals. This is bad since there is no way to represent negative literals
-     this way. (See bug: http://ghc.haskell.org/trac/ghc/ticket/13124) This isn't a huge issue, but
-     would be nice not to have it!
 
 By this proposal, we will reduce the dependency to one pragma (``HexadecimalFloats``); and when the Haskell
 standeard catches up, even that will disappear.
