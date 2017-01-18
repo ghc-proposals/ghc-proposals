@@ -62,10 +62,11 @@ to have the type ``RealFloat a => a`` instead. This simplifies the story.
 
 The issue here is how to deal with overflow. Consider a literal such as ``0x1p5000``. The correct value to
 translate this to is ``Infinity``, but ``Fractional`` class really does not have any notion of ``Infinity``.
-Currently, this is already an issue as the expression ``toRational (1/0)`` returns a fractional value that
-would be converted to ``Infinity`` when interpreted as the underlying machines ``Float`` or ``Double`` type.
-This is why the ``RealFloat a => a`` type might be more appropriate for literals written in this notation,
-as they are really intended for floats, not fractionals.
+Currently, this is already an issue in Haskell: An expression like ``toRational (1/0)`` returns a fractional value that
+would be converted to ``Infinity`` when interpreted as the underlying machines ``Float`` or ``Double`` type. (It is a
+``Rational`` with a huge numerator.) This is rather unfortunate. That is why I'm thinking the ``RealFloat a => a``
+type might be more appropriate for literals written in this notation, as they are really intended for floats, not
+fractionals.
 
 However, if this proves to be problematic from an implementation point of view, we can also discuss
 the type ``Fractional a => a``. I don't think the implications will be too drastic in that case either.
