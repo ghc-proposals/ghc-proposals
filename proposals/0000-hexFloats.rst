@@ -61,7 +61,7 @@ Costs and Drawbacks
 This proposal should be fairly simple to implement. Perhaps half a day of coding and test cases. Also,
 some code reuse is possible as the idea is already implemented as a library. See below.
 
-Drawbacks: It was pointed out that the `Read` instance would break backwards compatibility. Consider::
+Drawbacks: It was pointed out that the ``Read`` instance would break backwards compatibility. Consider::
 
      Prelude> reads "0x1p3" :: [(Double, String)]
      [(1.0,"p3")]
