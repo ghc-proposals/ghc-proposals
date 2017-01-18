@@ -79,8 +79,10 @@ complexity to any part of the compiler anticipated.
 
 Costs and Drawbacks
 -------------------
-This proposal should be fairly simple to implement. Perhaps half a day of coding and test cases. Also,
-some code reuse is possible as the idea is already implemented as a library. See below.
+This proposal should be fairly simple to implement. Perhaps about a day of coding and test cases for someone familar
+with the code base. Even if it's tackled as an intern/summer-of-code idea, it should not take more than a few days
+to flesh it out at the worst case. Also, some code reuse is possible as the idea is already implemented
+as a library. See below.
 
 Drawbacks: It was pointed out that the ``Read`` instance would break backwards compatibility. Consider::
 
