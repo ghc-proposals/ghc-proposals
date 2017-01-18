@@ -12,7 +12,9 @@ Hexadecimal Floats in Haskell
 =============================
 
 Currently, Haskell only allows writing floating-point numbers in the decimal format. Unfortunately,
-writing floats in decimal/scientific format is not always the best option, due to loss of precision.
+writing floats in decimal/scientific format is not always the best option: To write finite floats precisely
+one might need an extraordinary number of decimal digits, for instance.
+
 As an alternative, there's the so called "hexadecimal floating point" format, described in
 p57-58 of: http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf
 
@@ -35,8 +37,9 @@ Note that there's already a feature request filed for GHC: http://ghc.haskell.or
 Motivation
 ------------
 Floating-point is always tricky, due to loss of precision during computation. This starts from
-the reading of such values, as decimal notation is not sufficient for expressing floats precisely.
-The hexadecimal notation makes it precise, and conforms to the new standards as implemented by gcc.
+the reading of such values, as decimal notation is not sufficient for expressing floats precisely anc concisely.
+The hexadecimal notation provides a concise notation without losing precision, and conforms to the
+new standards as implemented by gcc.
 
 Proposed Change Specification
 -----------------------------
