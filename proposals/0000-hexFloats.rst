@@ -93,7 +93,8 @@ standeard catches up, even that will disappear.
 Unresolved questions
 --------------------
 The format allows for specifying numbers that are larger than what the underlying type can represent. For instance
-a number like `0x1p5000` would not fit in a `Double` and thus would have the special value `Infinity`. (Similar to `1/0`).
+a number like ``0x1p5000`` would not fit in a ``Double`` and thus would have the special value ``Infinity``. 
+(Similar to ``1/0``).
 
 I think the right thing to do when the literal is too large is to print a warning, similar to what we already have for
 other literals::
@@ -104,7 +105,7 @@ other literals::
          Literal 200000 is out of the Word16 range 0..65535
     3392
     
-However, I'll note that GHC currently doesn't provide a similar warning for decimal floats (such as 2E20000), so perhaps
+However, I'll note that GHC currently doesn't provide a similar warning for decimal floats (such as ``2E20000``), so perhaps
 the hexadecimal floats should do the same. The warning would be useful, but this can be resolved at implementation time
 based on how the other floats behave.
 
