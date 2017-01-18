@@ -52,13 +52,24 @@ The changes are rather simple.
   
 Types
 -----
+(Thanks to Reid Barton for pointing this out!)
+
 Ordinarily, a literal such as ``2.5`` is overloaded in Haskell, and inhabits all ``Fractional`` values.
+It desugars to ``fromRational (25 % 10)``
 
 Due to the special nature of this notation, my recommendation is to have these numbers have the
 type ``RealFloat a => a`` instead. This simplifies the story.
 
+The issue here is how to deal with overflow. Consider a literal such as ``0x1p5000``. The correct value to
+translate this to is ``Infinity``, but ``Fractional`` class really does not have any notion of ``Infinity``.
+Currently, this is already an issue as the expression ``toRational (1/0)`` returns a fractional value that
+would be converted to ``Infinity`` when interpreted as the underlying machines ``Float`` or ``Double`` type.
+This is why the ``RealFloat a => a`` type might be more appropriate for literals written in this notation,
+as they are really intended for floats, not fractionals.
+
 However, if this proves to be problematic from an implementation point of view, we can also discuss
-the type ``Fractional a => a``. 
+the type ``Fractional a => a``. I don't think the implications will be too drastic in that case either.
+(However floating-point is always tricky; I'd appreciate further feedback on this matter.)
 
 Effect and Interactions
 -----------------------
