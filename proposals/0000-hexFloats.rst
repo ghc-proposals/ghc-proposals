@@ -55,10 +55,10 @@ Types
 (Thanks to Reid Barton for pointing this out!)
 
 Ordinarily, a literal such as ``2.5`` is overloaded in Haskell, and inhabits all ``Fractional`` values.
-It desugars to ``fromRational (25 % 10)``
+It desugars to ``fromRational (25 % 10)``.
 
-Due to the special nature of this notation, my recommendation is to have these numbers have the
-type ``RealFloat a => a`` instead. This simplifies the story.
+Due to the special nature of this notation, my recommendation is to have numbers written in the hexadecimal notation
+to have the type ``RealFloat a => a`` instead. This simplifies the story.
 
 The issue here is how to deal with overflow. Consider a literal such as ``0x1p5000``. The correct value to
 translate this to is ``Infinity``, but ``Fractional`` class really does not have any notion of ``Infinity``.
