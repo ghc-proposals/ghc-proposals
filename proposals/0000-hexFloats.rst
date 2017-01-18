@@ -28,7 +28,7 @@ about 10 years by now. Some examples are:
      * `0X1.921FB4D12D84AP-1`
 
 It would be nice if the Haskell standard was changed to include such literals. But in the meantime,
-perhaps GHC can support such literals via a pragma, such as `LANGUAGE HexadecimalFloats` or similar.
+perhaps GHC can support such literals via a pragma, such as ``LANGUAGE HexadecimalFloats`` or similar.
 
 Eventually, the change should make it into the Haskell report.
 
@@ -60,12 +60,12 @@ Costs and Drawbacks
 This proposal should be fairly simple to implement. Perhaps half a day of coding and test cases. Also,
 some code reuse is possible as the idea is already implemented as a library. See below.
 
-Drawbacks: It was pointed out that the `Read` instance would break backwards compatibility. Consider:
+Drawbacks: It was pointed out that the `Read` instance would break backwards compatibility. Consider::
 
      Prelude> reads "0x1p3" :: [(Double, String)]
      [(1.0,"p3")]
      
-With the new implementation, this would return: [(8.0, "")] instead. While this is a change in behavior, I think
+With the new implementation, this would return: ``[(8.0, "")]`` instead. While this is a change in behavior, I think
 it's an acceptable one given the new syntax for floats. The drawback here is that we cannot guard against this using
 a language pragma.
 
@@ -86,7 +86,7 @@ Unfortunately, the "library" solution is really not ideal:
      this way. (See bug: http://ghc.haskell.org/trac/ghc/ticket/13124) This isn't a huge issue, but
      would be nice not to have it!
 
-By this proposal, we will reduce the dependency to one pragma (`HexadecimalFloats`); and when the Haskell
+By this proposal, we will reduce the dependency to one pragma (``HexadecimalFloats``); and when the Haskell
 standeard catches up, even that will disappear.
 
 Unresolved questions
