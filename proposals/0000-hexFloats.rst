@@ -60,7 +60,14 @@ Costs and Drawbacks
 This proposal should be fairly simple to implement. Perhaps half a day of coding and test cases. Also,
 some code reuse is possible as the idea is already implemented as a library. See below.
 
-No drawbacks.
+Drawbacks: It was pointed out that the `Read` instance would break backwards compatibility. Consider:
+
+     Prelude> reads "0x1p3" :: [(Double, String)]
+     [(1.0,"p3")]
+     
+With the new implementation, this would return: [(8.0, "")] instead. While this is a change in behavior, I think
+it's an acceptable one given the new syntax for floats. The drawback here is that we cannot guard against this using
+a language pragma.
 
 Alternatives
 ------------
@@ -72,7 +79,7 @@ Unfortunately, the "library" solution is really not ideal:
     
    * It relies on the rather heavy mechanism for quasi-quotes
    * It requires an extra library dependency
-   * Usage requires a pragma (QuasiQuotes)
+   * Usage requires a pragma (`QuasiQuotes`)
    * Usage requires import and dependency of a hackage package
    * The library suffers from a bug in TH, as TH does not support double's natively; and insists
      on storing them as Rationals. This is bad since there is no way to represent negative literals
