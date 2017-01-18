@@ -78,9 +78,9 @@ printer: http://hackage.haskell.org/package/FloatingHex
 Unfortunately, the "library" solution is really not ideal:
     
    * It relies on the rather heavy mechanism for quasi-quotes
-   * It requires an extra library dependency
+   * Usage requires importing a new module
    * Usage requires a pragma (``QuasiQuotes``)
-   * Usage requires import and dependency of a hackage package
+   * Most imporantly: Usage requires dependency of a hackage package
 
 By this proposal, we will reduce the dependency to one pragma (``HexadecimalFloats``); and when the Haskell
 standeard catches up, even that will disappear.
