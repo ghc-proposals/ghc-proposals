@@ -49,6 +49,16 @@ The changes are rather simple.
   * Follow the grammar given in p57-58 of http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf
   * Provide the corresponding pretty-printer (`showHFloat`) in the `Numeric` package.
   * `Read` instance for floats-doubles should be changed to support the new format.
+  
+Types
+-----
+Ordinarily, a literal such as ``2.5`` is overloaded in Haskell, and inhabits all ``Fractional`` values.
+
+Due to the special nature of this notation, my recommendation is to have these numbers have the
+type ``RealFloat a => a`` instead. This simplifies the story.
+
+However, if this proves to be problematic from an implementation point of view, we can also discuss
+the type ``Fractional a => a``. 
 
 Effect and Interactions
 -----------------------
