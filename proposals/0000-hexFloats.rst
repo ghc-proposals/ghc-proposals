@@ -6,6 +6,8 @@
 
 .. highlight:: haskell
 
+This proposal is `under discussion <https://github.com/ghc-proposals/ghc-proposals/pull/37>`_.
+
 Hexadecimal Floats in Haskell
 =============================
 
