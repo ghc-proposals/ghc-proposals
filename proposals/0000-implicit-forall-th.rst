@@ -88,7 +88,7 @@ Alternatively, we could just fix the quoting bug and declare victory. However,
 this would come at a loss of information, since Template Haskell clients would
 no longer have convenient access to quoted types' implicit type variable
 binders. They could do a pass over the type to recalculate the implicitly
-quantified type variables themselved, this feels like introducing a needless
+quantified type variables themselved, but this might feel like an extra
 hoop to jump through.
 
 Unresolved questions
