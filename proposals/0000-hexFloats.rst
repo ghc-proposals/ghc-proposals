@@ -100,13 +100,14 @@ This is indeed a lot of requirements and heavy machinery to be able to write lit
 reduce the dependency to one pragma (``HexadecimalFloats``); and when the Haskell standard catches up, even that 
 will become unnecessary.
 
-Overflow
----------
-The format allows for specifying numbers that are larger than what the underlying type can represent. For instance
+Overflow/Underflow
+------------------
+The format allows for specifying numbers that are larger or smaller than what the underlying type can represent. For instance
 a number like ``0x1p5000`` would not fit in a ``Double`` and thus would have the special value ``Infinity``. 
-(Similar to ``1/0``).
+(Similar to ``1/0``). In the other direction, a number like ``0x1p-5000`` is too small to be represented, and would round to
+the correct value based on the rounding-mode, which is round-to-nearest-ties-to-even.
 
-I think the right thing to do when the literal is too large is to print a warning, similar to what we already have for
+I think the right thing to do when the literal is too large/small is to print a warning, similar to what we already have for
 other literals::
 
     Prelude Data.Word> 200000::Word16
@@ -127,7 +128,7 @@ I think GHC should follow the same practice, converting the value to `Infinity` 
 
 Unresolved Questions
 --------------------
-TBD
+None
 
 Implementation Plan
 -------------------
