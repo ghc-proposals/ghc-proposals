@@ -57,20 +57,10 @@ Types
 Ordinarily, a literal such as ``2.5`` is overloaded in Haskell, and inhabits all ``Fractional`` values.
 It desugars to ``fromRational (25 % 10)``.
 
-Due to the special nature of this notation, my recommendation is to have numbers written in the hexadecimal notation
-to have the type ``RealFloat a => a`` instead. This simplifies the story.
+I think we should keep the same here, and translate hex-floats similarly via the same construction.
 
-The issue here is how to deal with overflow. Consider a literal such as ``0x1p5000``. The correct value to
-translate this to is ``Infinity``, but ``Fractional`` class really does not have any notion of ``Infinity``.
-Currently, this is already an issue in Haskell: An expression like ``toRational (1/0)`` returns a fractional value that
-would be converted to ``Infinity`` when interpreted as the underlying machines ``Float`` or ``Double`` type. (It is a
-``Rational`` with a huge numerator.) This is rather unfortunate. That is why I'm thinking the ``RealFloat a => a``
-type might be more appropriate for literals written in this notation, as they are really intended for floats, not
-fractionals.
-
-However, if this proves to be problematic from an implementation point of view, we can also discuss
-the type ``Fractional a => a``. I don't think the implications will be too drastic in that case either.
-(However floating-point is always tricky; I'd appreciate further feedback on this matter.)
+An alternative might be to restrict to ``RealFloat`` class only, and have the type be ``RealFloat a => a`` instead;
+to emphasize the "floating-point" nature of such numbers. However, I think this diversion is not worth the trouble.
 
 Effect and Interactions
 -----------------------
@@ -110,8 +100,8 @@ This is indeed a lot of requirements and heavy machinery to be able to write lit
 reduce the dependency to one pragma (``HexadecimalFloats``); and when the Haskell standard catches up, even that 
 will become unnecessary.
 
-Unresolved questions
---------------------
+Overflow
+---------
 The format allows for specifying numbers that are larger than what the underlying type can represent. For instance
 a number like ``0x1p5000`` would not fit in a ``Double`` and thus would have the special value ``Infinity``. 
 (Similar to ``1/0``).
@@ -126,8 +116,18 @@ other literals::
     3392
     
 However, I'll note that GHC currently doesn't provide a similar warning for decimal floats (such as ``2E20000``), so perhaps
-the hexadecimal floats should do the same. The warning would be useful, but this can be resolved at implementation time
-based on how the other floats behave.
+the hexadecimal floats should do the same. The warning would be useful however. Indeed, the recommended practice section of
+http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf on page 58 says:
+
+     The implementation should produce a diagnostic message if a hexadecimal constant
+     cannot be represented exactly in its evaluation format; the implementation should then
+     proceed with the translation of the program.
+
+I think GHC should follow the same practice, converting the value to `Infinity` with the appropriate warning.
+
+Unresolved Questions
+--------------------
+TBD
 
 Implementation Plan
 -------------------
