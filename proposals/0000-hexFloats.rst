@@ -105,7 +105,8 @@ Overflow/Underflow
 The format allows for specifying numbers that are larger or smaller than what the underlying type can represent. For instance
 a number like ``0x1p5000`` would not fit in a ``Double`` and thus would have the special value ``Infinity``. 
 (Similar to ``1/0``). In the other direction, a number like ``0x1p-5000`` is too small to be represented, and would round to
-the correct value based on the rounding-mode, which is round-to-nearest-ties-to-even.
+the correct value based on the rounding-mode, which is by default round-to-nearest-ties-to-even in Haskell. This is really
+no different than how decimal floats are treated in Haskell today.
 
 I think the right thing to do when the literal is too large/small is to print a warning, similar to what we already have for
 other literals::
