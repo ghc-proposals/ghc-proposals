@@ -37,7 +37,7 @@ This is equivalent to
   foo progName Nothing  = Left $ progName ++ ": no number given"
   foo progName (Just i) = bar progName  i
   
-  bar :: progName -> Int -> Either String Int
+  bar :: String -> Int -> Either String Int
   bar progName  0 = Left $ progName ++ ": zero no good"
   bar progName n = Right $ n + 1
 
