@@ -162,7 +162,21 @@ Alternatives
 
   This can be automated using Template Haskell, as done in the `seal-module package <https://hackage.haskell.org/package/seal-module>`_, which is motivated in a `blog post <https://www.joachim-breitner.de/blog/443-A_Solution_to_the_Configuration_Problem_in_Haskell>`_.
 
-* A third alternative is using implicit parameters, which works fine as long as one does not want to write type signatures for the functions. With type signatures, the parameter still appears there everywhere.
+* A third alternative is using implicit parameters. This works fine as long as one does not want to write type signatures for the functions. With type signatures, the parameter still appears there everywhere. Although there is a trick to make that prettier::
+
+    {-# LANGUAGE TypeOperators, ImplicitParams, RankNTypes #-}
+
+    type a .:-> b = (?progName :: String) => a -> b
+
+    foo :: Maybe Int .:-> Either String Int
+    foo Nothing  = Left $ ?progName ++ ": no number given"
+    foo (Just i) = bar i
+
+    ... etc
+    
+  (by `WarDaft on reddit <https://www.reddit.com/r/haskell/comments/5p5jjq/moar_language_extensions_proposals_now/dcouoa3/>`)
+  
+  Some argue that implicit parameters were a mistake. Maybe this feature can replace them (in some cases)?
 
 * If the code is monadic anyways, or by turning it into a monad, the ``Reader`` monad can be used.
 
