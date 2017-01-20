@@ -184,36 +184,6 @@ scope of instances, doing so would expose representation details that
 should be hidden.
 
 
-Virtual record fields
-^^^^^^^^^^^^^^^^^^^^^
-
-Users may define their own instances of ``HasField``, provided they do
-not conflict with the built-in constraint solving behaviour.  This
-allows "virtual" record fields to be defined for datatypes that do not
-otherwise have them.  For example, an anonymous records library could
-provide ``HasField`` instances and thus be compatible with the
-polymorphic record selectors introduced by this proposal.  Since such
-libraries may support field labels represented using kinds other than
-``Symbol``, the ``HasField`` class is poly-kinded (even though this
-proposal uses it only at kind ``Symbol``).
-
-In order to avoid conflicting with the built-in constraint solving,
-the following user-defined ``HasField`` instances are prohibited (in
-addition to the usual rules, such as the prohibition on type
-families):
-
- * ``HasField _ r _`` where ``r`` is a variable;
-
- * ``HasField _ (T ...) _`` if ``T`` is a data family (because it
-   might have fields introduced later, using data instance declarations);
-
- * ``HasField x (T ...) _`` if ``x`` is a variable and ``T`` has any
-   fields at all (but this instance is permitted if ``T`` has no fields);
-
- * ``HasField "foo" (T ...) _`` if ``T`` has a field ``foo`` (but this
-   instance is permitted if it does not).
-
-
 Changes to OverloadedLabels extension
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -280,6 +250,77 @@ However, all the labels in the module are subject to the same
 translation, so it may not be very convenient to use two different
 libraries that rely on this option.  This is why ``OverloadedLabels``
 and the ``IsLabel`` class are retained.
+
+
+Virtual record fields
+~~~~~~~~~~~~~~~~~~~~~
+
+Users may define their own instances of ``HasField``, provided they do
+not conflict with the built-in constraint solving behaviour.  This
+allows "virtual" record fields to be defined for datatypes that do not
+otherwise have them.
+
+For example, this instance would make the ``name`` field of ``Person``
+accessible using ``#fullname`` as well:
+
+.. code-block:: haskell
+
+  instance HasField "fullname" Person String where
+    getField = name
+
+More substantially, an anonymous records library could provide
+``HasField`` instances for its anonymous records, and thus be
+compatible with the polymorphic record selectors introduced by this
+proposal.  For example, something like this makes it possible to use
+overloaded labels to access ``Record`` values with the appropriate
+string in the type-level list of fields:
+
+.. code-block:: haskell
+
+  data Record (xs :: [(k, Type)]) where
+    Nil  :: Record '[]
+    Cons :: Proxy x -> a -> Record xs -> Record ('(x, a) ': xs)
+
+  instance HasField x (Record ('(x, a) ': xs)) a where
+    getField (Cons _ v _) = v
+  instance HasField x (Record xs) a => HasField x (Record ('(y, b) ': xs)) a where
+    getField (Cons _ _ r) = getField @x r
+
+  r :: Record '[ '("personId", Int), '("name", String) ]
+  r = Cons Proxy 42 (Cons Proxy "R" Nil)
+
+  i = #personId r
+
+Since representations such as this can support field labels with kinds
+other than ``Symbol``, the ``HasField`` class is poly-kinded (even
+though ``IsLabel`` and the built-in constraint solving works only at
+kind ``Symbol``).  In particular, this allows users to declare scoped
+field labels such as in the following example:
+
+.. code-block:: haskell
+
+  data PersonFields = PersonId | Name
+
+  s :: Record '[ '(PersonId, Int), '(Name, String) ]
+  s = Cons Proxy 43 (Cons Proxy "S" Nil)
+
+  j = getField @PersonId s
+
+In order to avoid conflicting with the built-in constraint solving,
+the following user-defined ``HasField`` instances are prohibited (in
+addition to the usual rules, such as the prohibition on type
+families):
+
+ * ``HasField _ r _`` where ``r`` is a variable;
+
+ * ``HasField _ (T ...) _`` if ``T`` is a data family (because it
+   might have fields introduced later, using data instance declarations);
+
+ * ``HasField x (T ...) _`` if ``x`` is a variable and ``T`` has any
+   fields at all (but this instance is permitted if ``T`` has no fields);
+
+ * ``HasField "foo" (T ...) _`` if ``T`` has a field ``foo`` (but this
+   instance is permitted if it does not).
 
 
 Drawbacks
