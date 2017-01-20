@@ -85,7 +85,7 @@ The suggested new language feature would allow me to express this as follows::
 Note that:
 
 * Besides the indentation and replacing ``42`` by ``n``, I did not have to change any code.
-* It is very obvious to the reader that within the indented block, ``n`` is not changed.
+* It is obvious to the reader that within the indented block, ``n`` is not changed.
 * The type of ``foo`` is different within the scope of the ``context`` block: It is ``T -> S`` inside, but ``Int -> T -> S`` outside.
 
 Typical use cases of this might be
