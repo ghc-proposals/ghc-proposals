@@ -10,6 +10,8 @@
 
 .. highlight:: haskell
 
+This proposal is `under discussion <https://github.com/ghc-proposals/ghc-proposals/pull/38>`_.
+
 Multi-scrutinee case
 ====================
 
