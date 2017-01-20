@@ -91,7 +91,7 @@ Note that:
 Typical use cases of this might be
 
 * Abstracting some business logic over the configuration, which is typicall read once in the thin IO wrapper, but is static from the point of view of the actual code (the ”configuration problem”).
-* Abstracting a lexing ``parsec`` parser over the `Language <http://hackage.haskell.org/package/parsec-3.1.11/docs/Text-Parsec-Language.html>` used.
+* Abstracting a lexing ``parsec`` parser over the `Language <http://hackage.haskell.org/package/parsec-3.1.11/docs/Text-Parsec-Language.html>`_ used.
 * *Add your favorite example here.*
 
 See below for some existing ways of approximationg this feature.
@@ -101,14 +101,14 @@ Proposed Change Specification
 
 The grammar would be extended as follows::
 
-  topdecl → …
+  decl → …
           | context fixes apat { apat } in decls
           
 The names bound in the patterns (the “fixed names”) scope over the *decls*, which forms one recursive group.
 
 In scope at the top level of the module are the names defined by the *decls*, which they type of the fixed names prepended as arguments to the type of the declared function.
 
-Note that the grammar does not allow other kind of *topdecl* things in the scope, i.e. no types, classes, instances…
+Note that the grammar does not allow other kind of *topdecl* things in the scope of ``context``, i.e. no types, classes, instances…
 
 *It is clear to me what this does at this point, but not so much how and what to write here. So please ask for clarification at the pull request.*
 
