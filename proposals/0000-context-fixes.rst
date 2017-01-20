@@ -142,26 +142,30 @@ Learnability is not greatly affected. Code using the keywords seems to be unders
 
 Alternatives
 ------------
-One alternative was given above: Simply add the parameter to all functions involved.
+* One alternative was given above: Simply add the parameter to all functions involved.
 
-Another way of implementing this is to have a “generator function”::
+* Another way of implementing this is to have a “generator function”::
 
-  generator progName = (foo, bar)
-   where
-    foo :: Maybe Int -> Either String Int
-    foo Nothing  = Left $ progName ++ ": no number given"
-    foo (Just i) = bar i
-    
-    bar :: Int -> Either String Int
-    bar 0 = Left $ progName ++ ": zero no good"
-    bar n = Right $ n + 1
+    generator progName = (foo, bar)
+     where
+      foo :: Maybe Int -> Either String Int
+      foo Nothing  = Left $ progName ++ ": no number given"
+      foo (Just i) = bar i
 
-  foo progName = fst (generator progName)
-  bar progName = snd (generator progName)
-  
-This can be automated using Template Haskell, as done in the `seal-module package <https://hackage.haskell.org/package/seal-module>`_, which is motivated in a `blog post <https://www.joachim-breitner.de/blog/443-A_Solution_to_the_Configuration_Problem_in_Haskell>`_.
+      bar :: Int -> Either String Int
+      bar 0 = Left $ progName ++ ": zero no good"
+      bar n = Right $ n + 1
 
-A third alternative is using implicit parameters, which works fine as long as one does not want to write type signatures for the functions. With type signatures, the parameter still appears there everywhere.
+    foo progName = fst (generator progName)
+    bar progName = snd (generator progName)
+
+  This can be automated using Template Haskell, as done in the `seal-module package <https://hackage.haskell.org/package/seal-module>`_, which is motivated in a `blog post <https://www.joachim-breitner.de/blog/443-A_Solution_to_the_Configuration_Problem_in_Haskell>`_.
+
+* A third alternative is using implicit parameters, which works fine as long as one does not want to write type signatures for the functions. With type signatures, the parameter still appears there everywhere.
+
+* If the code is monadic anyways, or by turning it into a monad, the ``Reader`` monad can be used.
+
+* Using mutable references and some hacking with ``unsafePerformIO``…
 
 Unresolved questions
 --------------------
