@@ -85,12 +85,12 @@ The suggested new language feature would allow me to express this as follows::
 Note that:
 
 * Besides the indentation and replacing ``42`` by ``n``, I did not have to change any code.
-* It is very obvious to the reader that wihtin the indentet block, ``n`` is not changed.
+* It is very obvious to the reader that within the indented block, ``n`` is not changed.
 * The typo of ``foo`` is different within the scope of the ``context`` block: It is ``T -> S`` inside, but ``Int -> T -> S`` outside.
 
 Typical use cases of this might be
 
-* Abstracting some business logic over the configuration, which is read once at start up and then static. (The ”configuration problem”).
+* Abstracting some business logic over the configuration, which is typicall read once in the thin IO wrapper, but is static from the point of view of the actual code (the ”configuration problem”).
 * Abstracting a lexing ``parsec`` parser over the `Language <http://hackage.haskell.org/package/parsec-3.1.11/docs/Text-Parsec-Language.html>` used.
 * *Add your favorite example here.*
 
@@ -142,6 +142,7 @@ Learnability is not greatly affected. Code using the keywords seems to be unders
 
 Alternatives
 ------------
+
 * One alternative was given above: Simply add the parameter to all functions involved.
 
 * Another way of implementing this is to have a “generator function”::
@@ -166,6 +167,26 @@ Alternatives
 * If the code is monadic anyways, or by turning it into a monad, the ``Reader`` monad can be used.
 
 * Using mutable references and some hacking with ``unsafePerformIO``…
+
+Related work
+------------
+
+Other languages have this feature. For me it is inspired by Isabelle, where you can say
+
+::
+
+  locale withConfig
+    fixes theConfig :: Config
+  begin
+    fun a_fun :: "int => int" where "a_fun n = n + (incSetting config)"
+  end
+
+and now have a function ``withConfig.a_fun :: Config => int => int``. One can say ``interpret withConfig theActualConfig`` to get ``a_fun :: int => int`` into scope, where the ``theConfig`` parameter is instantiated with the argument ``theActualConfig``. One can also say ``context withConfig begin … end`` and work within (and extend) the context.
+
+Agda also has this concept in the form of `parametrised modules <http://wiki.portal.chalmers.se/agda/pmwiki.php?n=ReferenceManual.Modules#param>`_
+
+
+
 
 Unresolved questions
 --------------------
