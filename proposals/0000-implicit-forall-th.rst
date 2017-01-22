@@ -42,26 +42,15 @@ quoting made it explicitly quantified under the hood. (See also
 `GHC Trac #13018 <https://ghc.haskell.org/trac/ghc/ticket/13018>` for another
 example in a similar vein.)
 
+Note that this only happens in GHC 8.0, after `-XTypeInType` made it possible
+to quantify kind variables explicitly like this.
+
 Proposed Change Specification
 -----------------------------
 Change the behavior of Template Haskell quoting so that it does not put
 implicitly quantified type variable binders in a ``ForallT`` or a
-``ForallC``. Instead, introduce an ``ImplicitForallT`` constructor to ``Type``
-and an ``ImplicitForallC`` constructor to ``Con`` in
-``Language.Haskell.TH.Syntax``. The purpose of these will be to store any
-implicitly bound type variable binders so that they appear at the beginning
-of a quoted type signature, allowing Template Haskell users to easily inspect
-which type variables are implicitly quantified.
-
-If a type or constructor containing an ``ImplicitForallT`` or
-``ImplicitForallC`` is spliced into source code, Template Haskell's will simply
-ignore them and fall through to the underlying type or constructor. This is
-consistent with the fact that these ``Implicit-`` forms are indicative of
-something that the user did not write themselves. Similarly, the pretty printer
-in ``Language.Haskell.TH.Ppr`` will not print out any information for the
-``Implicit-`` forms, as doing so would be an unfaithful representation of
-what the user originally wrote. Reification is also unaffected, so reified
-types and constructors will never contain ``Implicit-`` forms.
+``ForallC``. That's it. This restores the way Template Haskell quoting worked
+before GHC 8.0.
 
 Effect and Interactions
 -----------------------
@@ -70,37 +59,68 @@ fact that ``k`` is implicitly quantified. In terms of a Template Haskell AST,
 it would look something like this: ::
 
   SigD idProxy
+    (ForallT [PlainTV proxy,KindedTV a (VarT k)] []
+    (AppT (AppT ArrowT (AppT (VarT proxy) (VarT a))) (AppT (VarT proxy) (VarT a))))
+
+Notice that ``VarT k`` _only_ appears in a kind, not as its own variable
+binder.
+
+Costs and Drawbacks
+-------------------
+In some sense, this proposal would cause quoting to "lose" information,
+since implicitly quantified type variables no longer appear at the front of
+``ForallT`` or ``ForallC``. But really, the only thing we'd be losing is a
+slight convenience, since it's always possible to compute the implicitly
+quantified variables in a ``Type`` by collecting its type variables and
+removing those which are bound by a ``ForallT`` or ``ForallC``.
+
+Alternatives
+------------
+Instead of leaving implicitly quantified variables out completely, we could
+instead introduce new ``ImplicitForallT`` and ``ImplicitForallC`` constructors
+whose role is precisely to indicate implicit quantification. As an example,
+``idProxy`` above would have this Template Haskell AST: ::
+
+  SigD idProxy
     (ImplicitForallT [PlainTV k]
     (ForallT [PlainTV proxy,KindedTV a (VarT k)] []
     (AppT (AppT ArrowT (AppT (VarT proxy) (VarT a))) (AppT (VarT proxy) (VarT a)))))
 
-Costs and Drawbacks
--------------------
-This proposal adds two data constructors to the ``Type`` and ``Con`` types,
-which are very widely used in Template Haskell code in production. It is
-inevitable that many libraries will need to be patched in order to peel
-beneath ``ImplicitForallT``s and ``ImplicitForallC``s.
+This has the disadvantage of being not very backwards-compatible, since it
+can't be retrofitted with pattern synonyms.
 
-Alternatives
-------------
-We do not have to introduce ``ImplicitForallT`` and ``ImplicitForallC``.
-Alternatively, we could just fix the quoting bug and declare victory. However,
-this would come at a loss of information, since Template Haskell clients would
-no longer have convenient access to quoted types' implicit type variable
-binders. They could do a pass over the type to recalculate the implicitly
-quantified type variables themselved, but this might feel like an extra
-hoop to jump through.
+Another alternative that @int-index proposed is to change ``TyVarBndr`` to
+include quantification information: ::
+
+  data BndrCls = BndrExplicit | BndrImplicit
+  
+  data TyVarBndr = PlainTV'  BndrCls Name        -- ^ @a@
+                 | KindedTV' BndrCls Name Kind   -- ^ @(a :: k)@
+  
+  pattern PlainTV name <- PlainTV' _ name where
+    PlainTV name = PlainTV' BndrExplicit name
+
+  pattern KindedTV name kind <- KindedTV' _ name kind where
+    KindedTV name kind = KindedTV' BndrExplicit name kind
+
+This would be more backwards-compatible than
+``ImplicitForallT``/``ImplicitForallC``.
+
+Both ideas, however, are questionable in the sense that they are adding more
+information than what users originally wrote in their quoted source code.
+And the gain that these API additions would provide is questionable in light
+of the fact that a ``Type``'s implicitly quantified variables can be computed
+with relative ease (see the Costs and Drawbacks section).
 
 Unresolved questions
 --------------------
-How many libraries in the wild would break from this change? On one hand,
-there's the issue of introducing yet more Template Haskell data constructors
-(which always need some patching to account for). There's also the issue of
-how many Template Haskell clients use TH to calculate implicitly quantified
-type variables. My guess is either "not many" or "none", given that this is
-a feature that didn't begin to work reliably until GHC 8.
+Are any Template Haskell users relying on this behavior to discover what the
+implicitly quantified type variables in a ``Type`` are?. My guess is either
+"not many" or "none", given that this is a feature that didn't begin to work
+reliably until GHC 8.0.
 
 Implementation Plan
 -------------------
-I volunteer to implement. I currently have a branch of GHC implementing the
-ideas above.
+I volunteer to implement. I currently have a
+`Phabricator Diff <https://phabricator.haskell.org/D2974>`
+implementing the ideas above.
