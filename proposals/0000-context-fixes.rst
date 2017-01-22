@@ -88,7 +88,7 @@ Note that:
 * It is obvious to the reader that within the indented block, ``n`` is not changed.
 * The type of ``foo`` is different within the scope of the ``context`` block: It is ``T -> S`` inside, but ``Int -> T -> S`` outside.
 
-Typical use cases of this might be
+One complete real-world application of this is at the end of the proposal. Generaly, typical use cases of this might be
 
 * Abstracting some business logic over the configuration, which is typicall read once in the thin IO wrapper, but is static from the point of view of the actual code (the ”configuration problem”).
 * Abstracting a lexing ``parsec`` parser over the `Language <http://hackage.haskell.org/package/parsec-3.1.11/docs/Text-Parsec-Language.html>`_ used.
@@ -209,3 +209,162 @@ Unresolved questions
 * Is the syntax good, and are the keywords well chosen?
 * If one wants to give a type signature to the fixed parameters, should there be a way that resembles a type signature of a function? (Right now one can use ``PatternSignatures``, which some may find insufficient). What would that syntax look like?
 
+Large real-world example
+------------------------
+
+Unrelated to this, I just wrote this code. The first half of the module would stay unmodified::
+
+  {-# LANGUAGE RecordWildCards, ViewPatterns #-}
+  module CodeWorld.Prediction
+      ( Timestamp, AnimationRate, StepFun, Future
+      , initFuture, currentTimePasses, currentState, addEvent
+      )
+      where
+
+  import Data.Foldable (toList)
+  import qualified Data.IntMap as IM
+  import qualified Data.Map as M
+  import Data.Bifunctor (second)
+  import Data.List (foldl')
+
+  type PlayerId = Int
+  type Timestamp = Double     -- in seconds, relative to some arbitrary starting point
+  type AnimationRate = Double -- in seconds, e.g. 0.1
+  type Event s = s -> s
+  type TState s = (Timestamp, s)
+  type TEvent s = (Timestamp, Event s)
+
+  type StepFun s = Double -> s -> s
+  type PendingEvents s = M.Map Timestamp (Event s)
+
+  data Future s = Future
+          { committed  :: TState s
+          , lastEvents :: IM.IntMap Timestamp
+          , pending    :: PendingEvents s
+          , current    :: TState s
+          }
+
+  initFuture :: s -> Int -> Future s
+  initFuture s numPlayers = Future
+      { committed   = (0, s)
+      , lastEvents  = IM.fromList [ (n,0) | n <-[0..numPlayers-1]]
+      , pending     = M.empty
+      , current     = (0, s)
+      }
+      
+But the second half of the module is verbose on the very uninteresting `StepFun s` and `AnimationRate` parameters::
+
+  timePassesBigStep :: StepFun s -> AnimationRate -> Timestamp -> TState s -> TState s
+  timePassesBigStep step rate target (now, s)
+      | now + rate < target
+      = timePasses step rate target (stepBy step rate (now, s))
+      | otherwise
+      = (now, s)
+  
+  stepBy :: StepFun s -> AnimationRate -> TState s -> TState s
+  stepBy step rate (now,s) = (now + rate, step rate s)
+
+  stepTo :: StepFun s -> Timestamp -> TState s -> TState s
+  stepTo step target (now, s)
+      = (target, step (target - now) s)
+
+  timePasses :: StepFun s -> AnimationRate -> Timestamp -> TState s -> TState s
+  timePasses step rate target
+      = stepTo step target . timePassesBigStep step rate target
+
+  handleNextEvent :: StepFun s -> AnimationRate -> TEvent s -> TState s -> TState s
+  handleNextEvent step rate (target, event)
+      = second event . timePasses step rate target
+
+  handleNextEvents :: StepFun s -> AnimationRate -> [TEvent s] -> TState s -> TState s
+  handleNextEvents step rate tevs ts
+    = foldl' (flip (handleNextEvent step rate)) ts tevs
+
+  currentState :: StepFun s -> AnimationRate -> Timestamp -> Future s -> s
+  currentState step rate target f = snd $ timePasses step rate target (current f)
+
+  currentTimePasses :: StepFun s -> AnimationRate -> Timestamp -> Future s -> Future s
+  currentTimePasses step rate target f
+   = f { current = timePassesBigStep step rate target $ current f }
+
+  addEvent :: StepFun s -> AnimationRate ->
+      PlayerId -> Timestamp -> Event s ->
+      Future s -> Future s
+  addEvent step rate player now event f
+    = advancePending step rate $
+      advanceCommitted step rate $
+      f { lastEvents = IM.insert player now $ lastEvents f
+        , pending    = M.insert now event $ pending f
+        }
+
+  advanceCommitted :: StepFun s -> AnimationRate -> Future s -> Future s
+  advanceCommitted step rate f
+      | null eventsToCommit = f -- do not bother
+      | otherwise = f { committed = committed', pending = pending' }
+    where
+      commitTime' = minimum $ IM.elems $ lastEvents f
+      canCommit (t,_e) = t <= commitTime'
+      (eventsToCommit, uncommitedEvents) = span canCommit $ M.toList (pending f)
+
+      pending' = M.fromAscList uncommitedEvents
+      committed' = handleNextEvents step rate eventsToCommit $ committed f
+
+  advancePending :: StepFun s -> AnimationRate -> Future s -> Future s
+  advancePending step rate f
+      = f { current = handleNextEvents step rate (M.toList (pending f)) $ committed f }
+
+I’d rather write the following::
+
+  context fixes (step :: StepFun s) (rate :: AnimationRate) in
+  
+    timePassesBigStep :: Timestamp -> TState s -> TState s
+    timePassesBigStep target (now, s)
+        | now + rate < target
+        = timePasses target (stepBy (now, s))
+        | otherwise
+        = (now, s)
+  
+    stepBy :: TState s -> TState s
+    stepBy (now,s) = (now + rate, step rate s)
+
+    stepTo :: Timestamp -> TState s -> TState s
+    stepTo target (now, s) = (target, step (target - now) s)
+
+    timePasses :: Timestamp -> TState s -> TState s
+    timePasses target = stepTo target . timePassesBigStep target
+
+    handleNextEvent :: TEvent s -> TState s -> TState s
+    handleNextEvent (target, event) = second event . timePasses target
+
+    handleNextEvents :: [TEvent s] -> TState s -> TState s
+    handleNextEvents tevs ts = foldl' (flip handleNextEvent) ts tevs
+
+    currentState :: Timestamp -> Future s -> s
+    currentState target f = snd $ timePasses target (current f)
+
+    currentTimePasses :: Timestamp -> Future s -> Future s
+    currentTimePasses target f = f { current = timePassesBigStep target $ current f }
+
+    addEvent :: PlayerId -> Timestamp -> Event s ->  Future s -> Future s
+    addEvent player now event f
+      = advancePending $ advanceCommitted $
+        f { lastEvents = IM.insert player now $ lastEvents f
+          , pending    = M.insert now event $ pending f
+          }
+
+    advanceCommitted :: Future s -> Future s
+    advanceCommitted f
+        | null eventsToCommit = f -- do not bother
+        | otherwise = f { committed = committed', pending = pending' }
+      where
+        commitTime' = minimum $ IM.elems $ lastEvents f
+        canCommit (t,_e) = t <= commitTime'
+        (eventsToCommit, uncommitedEvents) = span canCommit $ M.toList (pending f)
+
+        pending' = M.fromAscList uncommitedEvents
+        committed' = handleNextEvents eventsToCommit $ committed f
+
+    advancePending :: Future s -> Future s
+    advancePending f = f { current = handleNextEvents (M.toList (pending f)) $ committed f }
+    
+I find this so much nicer to write, to read and to reason about if I do not have to verbosely thread these parameters through everywhere.
