@@ -50,17 +50,14 @@ The changes are rather simple.
   * Provide the corresponding pretty-printer (`showHFloat`) in the `Numeric` package.
   * `Read` instance for floats-doubles should be changed to support the new format.
   
-Types
------
-(Thanks to Reid Barton for pointing this out!)
-
+Desugaring
+----------
 Ordinarily, a literal such as ``2.5`` is overloaded in Haskell, and inhabits all ``Fractional`` values.
 It desugars to ``fromRational (25 % 10)``.
 
-I think we should keep the same here, and translate hex-floats similarly via the same construction.
-
-An alternative might be to restrict to ``RealFloat`` class only, and have the type be ``RealFloat a => a`` instead;
-to emphasize the "floating-point" nature of such numbers. However, I think this diversion is not worth the trouble.
+The new notation makes no changes to this semantics. One thing to note, however, is that since precision is
+the primary motive for this notation, we should be more vigilant in issuing warnings for underflow/overflow cases.
+(See below.)
 
 Effect and Interactions
 -----------------------
@@ -117,15 +114,16 @@ other literals::
          Literal 200000 is out of the Word16 range 0..65535
     3392
     
-However, I'll note that GHC currently doesn't provide a similar warning for decimal floats (such as ``2E20000``), so perhaps
-the hexadecimal floats should do the same. The warning would be useful however. Indeed, the recommended practice section of
+However, I'll note that GHC **currently doesn't** provide a similar warning for decimal floats (such as ``2E20000``).
+Indeed, the recommended practice section of
 http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf on page 58 says:
 
      The implementation should produce a diagnostic message if a hexadecimal constant
      cannot be represented exactly in its evaluation format; the implementation should then
      proceed with the translation of the program.
 
-I think GHC should follow the same practice, converting the value to `Infinity` with the appropriate warning.
+I think GHC should follow the same practice, and issue warnings for all float values when the coversion would cause undeflow/overflow,
+controlled by the ``-Woverflowed-literals`` flag.
 
 Unresolved Questions
 --------------------
