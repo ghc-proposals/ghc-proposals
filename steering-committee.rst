@@ -38,6 +38,9 @@ Debate steps
    commentary) with the reasons for rejection. The proposer is welcome
    to revise and try again, but the document should retain this original
    rejection information.
+   
+   In the case that the the proposed change has already been implemented in
+   GHC, it will be reverted.
 
 -  If during the Debate, the need for substantial changes does arise, we
    reject the proposal in its current state and it can go back to
@@ -103,14 +106,6 @@ and any other relevant considerations appropriately.
    with other new features. In the common case the original implementor of
    a feature moves on to other things after a few years, and this
    maintenance burden falls on others.
-
-
-Matter-of-fact acceptance of proposals
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The proposal process is one way of getting changes implemented, but not the only one.
-In particular, GHC developers can just go ahead an implement a change on their own, the same way they did before the proposal process was created.
-If that happens to a change that is the topic of a proposal, then the proposal is closed without further deliberation by the committee, and marked with the label “``Already implemented``”.
 
 Membership
 ----------
