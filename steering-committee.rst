@@ -39,7 +39,7 @@ Debate steps
    to revise and try again, but the document should retain this original
    rejection information.
    
-   In the case that the the proposed change has already been implemented in
+   In the case that the proposed change has already been implemented in
    GHC, it will be reverted.
 
 -  If during the Debate, the need for substantial changes does arise, we
