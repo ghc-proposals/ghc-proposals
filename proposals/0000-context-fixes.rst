@@ -185,20 +185,23 @@ Alternatives
 Related work
 ------------
 
-Other languages have this feature. For me it is inspired by Isabelle, where you can say
+Other languages have this feature:
 
-::
+* For me it is inspired by Isabelle, where you can say
 
-  locale withConfig
-    fixes theConfig :: Config
-  begin
-    fun a_fun :: "int => int" where "a_fun n = n + (incSetting config)"
-  end
+  ::
 
-and now have a function ``withConfig.a_fun :: Config => int => int``. One can say ``interpret withConfig theActualConfig`` to get ``a_fun :: int => int`` into scope, where the ``theConfig`` parameter is instantiated with the argument ``theActualConfig``. One can also say ``context withConfig begin … end`` and work within (and extend) the context.
+    locale withConfig
+      fixes theConfig :: Config
+    begin
+      fun a_fun :: "int => int" where "a_fun n = n + (incSetting config)"
+    end
 
-Agda also has this concept in the form of `parametrised modules <http://wiki.portal.chalmers.se/agda/pmwiki.php?n=ReferenceManual.Modules#param>`_
+  and now have a function ``withConfig.a_fun :: Config => int => int``. One can say ``interpret withConfig theActualConfig`` to get ``a_fun :: int => int`` into scope, where the ``theConfig`` parameter is instantiated with the argument ``theActualConfig``. One can also say ``context withConfig begin … end`` and work within (and extend) the context.
 
+* Agda also has this concept in the form of `parametrised modules <http://wiki.portal.chalmers.se/agda/pmwiki.php?n=ReferenceManual.Modules#param>`_
+
+* Idris has this concept, here called `parametrised blocks <http://docs.idris-lang.org/en/latest/tutorial/modules.html#parameterised-blocks>`_.
 
 
 
