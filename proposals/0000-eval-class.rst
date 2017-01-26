@@ -19,8 +19,10 @@ state.
 Motivation
 ----------
 
-The main benefits would be to make Haskell fully parametric again, to make η-conversion and foldr-build optimization
-safe, and possibly to satisfy Bob Harper. Here is some background reading material that explains the existing problems:
+The main benefit, in the medium term, would be to make Haskell fully parametric again. In the longer term, we could aim
+to make η-conversion and foldr-build optimization safe, to reopen the possibility of unlifted products (*i.e.*,
+``newtype`` with multiple fields), and possibly to satisfy Bob Harper. Here is some background reading material that
+explains the existing problems:
   - `η-equivalence in Haskell <http://cstheory.stackexchange.com/questions/19165/is-eta-equivalence-for-functions-compatiable-with-haskells-seq-operation>`
   - `Haskell has no state monad <http://www.cse.chalmers.se/~nicsma/no-state-monad.html>`
   - `Hask is not a category <http://math.andrej.com/2016/08/06/hask-is-not-a-category/>`
@@ -39,15 +41,18 @@ method ``strict`` to its modern equivalent ``$!``
       seq     :: a -> b -> b
       f $! x  =  x `seq` f x
 
-Like ``Typeable``, the ``Eval`` class is implicitly derived for every data type and its instances cannot be explicitly
-defined.
+Like ``Typeable``, the ``Eval`` class is implicitly derived for every data type, including functions, and its instances
+cannot be explicitly defined.
 
 As a consequence of this change, the ``Eval`` class would start appearing in the inferred type context of expressions
 using ``seq``. For example, the inferred type of function ``f x = seq x x`` would become ``f :: forall a. Eval a => a ->
 a``.
 
 **Second**, add a new language option, namely ``-XNoUniversalEval`` together with its evil twin ``-XUniversalEval``. The
-latter option would be the default one.
+latter option would be the default one, and it would be equivalent to having the ``{-# INCOMPLETE_CONTEXTS Eval #-}``
+pragma specified. The effects of this pragma are described in another proposal:
+
+https://github.com/ghc-proposals/ghc-proposals/pull/34
 
 In any module compiled with ``-XUniversalEval``, the class ``Eval`` would be satisfied by every type of kind
 ``*``. Furthermore, every explicit type signature would be considered equivalent to the same signature with the context
@@ -57,16 +62,11 @@ if accompanied by an explicit type signature ``f :: forall a. a -> a``.
 In a module compiled with ``-XNoUniversalEval`` the class ``Eval`` would become a normal class, subject to the usual
 type equivalence rules. Any polymorphic use of ``seq`` would trigger a compilation error, including the above
 example. The same constraint would apply to bang patterns and the strict data bang, but monomorphic applications of
-``seq`` and bang would not be affected. GHC should be able to apply more aggressive optimizations in a
-``-XNoUniversalEval`` module.
+``seq`` and bang would not be affected.
 
 **Third**, add the ``Eval =>`` context to the type signatures of ``Data.List.foldl'`` and all other strict functions in
 the ``base`` library. That includes ``Data.Foldable.foldl'`` and other class methods whose instances are expected to be
 strict.
-
-**Fourth**, add the ``-WetaUnsafe`` option that warns about any polymorphic occurrence of ``seq``. In other words, the
-warning would be issued for any use of ``seq`` in every module compiled with ``-XUniversalEval`` that would trigger an
-error if ``-XNoUniversalEval`` was active instead. The warning would be off by default, but included in ``-Wall``.
 
 This proposal is orthogonal to all existing language extensions. This includes even ``StrictHaskell``, though the
 combination of this one with ``-XNoUniversalEval`` in the same module might prove impractical.
@@ -81,10 +81,6 @@ and all its polymorphic callers.
 
 Personally, that justification strikes me as strange. Haskell is not otherwise known for weakening the language
 properties in order to accommodate development procedures or tooling.
-
-To make another point, I have often wished I could avoid adding the ``Show a =>`` context for debugging
-purposes. Indeed, if the function ``show``, or at least ``traceShow`` should become polymorphic, that would greatly
-simplify printf-style debugging. I'm not aware of anybody asking for this.
 
 The main drawback to clamping down on ``seq`` today is the quantity of code that's using it unconstrained. Still, we
 have to start somewhere. My hope is that one day ``-XNoUniversalEval`` will become the default and the
@@ -105,14 +101,16 @@ This cunning plan would require virtually no change to GHC, but unfortunately it
 ``foldr'`` methods of the ``Foldable`` class. We can't simply export an alternative ``Foldable`` class from
 ``Data.Eval.Foldable`` because the two classes would be incompatible.
 
-The ``-WetaUnsafe`` part of the proposal is meant as a gentle nudge away from the polymorphic ``seq`` and toward the
-bright future. The current habits would probably continue without it. Stronger alternatives like turning the warning on
-by default can be imagined, but they would likely bring too many complaints.
+I considered adding yet another pair of language options, ``LiftedFunctions`` and ``UnliftedFunctions``. The former
+would be on by default. The latter option, where specified, would prevent the ``Eval`` class from being implicitly
+derived for function types. However, different designs are possible (should a function type ``Bool -> Int`` still be an
+instance of ``Eval``?) and I felt this was better left for a future proposal, if this one should take.
 
 I had also considered extending the *SafeHaskell* inference mechanism. It could infer a module *EtaSafe* if it's *Safe*
-or *Trustworthy*, all its imports are *EtaSafe*, and no ``seq`` use in the module is polymorphic. I dropped this idea
-mostly because it seemed wrong to conflate ``unsafePerformIO`` and polymorphic ``seq``; they are not unsafe in the same
-sense. Besides, I'm not convinced the *EtaSafe* certificate would attract much attention.
+or *Trustworthy*, all its imports are *EtaSafe*, and no ``seq`` use in the module is polymorphic nor applied to a
+function type. I dropped this idea mostly because it seemed wrong to conflate ``unsafePerformIO`` and polymorphic
+``seq``; they are not unsafe in the same sense. Besides, I'm not convinced the *EtaSafe* certificate would attract much
+attention.
 
 Unresolved Questions
 --------------------
