@@ -13,7 +13,7 @@ GHC proposals move through the following phases,
   discussion progresses. The discussion phase should typically last roughly one
   month.
 
-- *Committee decision*: The GHC Steering Committee will review your proposal
+- *Committee decision*: The `GHC Steering Committee`_ will review your proposal
   document and its ensuing debate and decide whether to accept or reject
   your proposal. If rejected you may amend and resubmit your proposal document
   at any time.
@@ -22,6 +22,7 @@ GHC proposals move through the following phases,
   for code review. In most cases, proposal authors will implement the
   change themselves, but there is no obligation to do so.
 
+.. _GHC Steering Committee: https://github.com/ghc-proposals/ghc-proposals/blob/master/steering-committee.rst
 
 Content of the Proposal Document
 --------------------------------
@@ -88,7 +89,7 @@ After you open your pull request, the community is invited to comment and
 debate. Feel free to improve your document to reflect the discussion. The goal
 is to make the strongest proposal possible and demonstrate that all alternatives
 have been considered. It is very likely that multiple iterations are necessary
-before the proposal is ready for consideration by the GHC Steering Committee.
+before the proposal is ready for consideration by the `GHC Steering Committee`_.
 
 When you feel that your proposal is ready,
 
@@ -163,8 +164,8 @@ In order to submit your proposal to the discussion phase,
 3. Click on "Compare & pull request" button
 4. You will be brought to the "Open a pull request" page. Ensure that ``ghc-proposals/ghc-proposals`` is specifed as the "base fork" and that ``master`` is specified as the "base branch".
 5. Verify that the diff shown only contains your proposal document.
-4. Select the label ``Under discussion`` on the right-hand side.
-5. In the "comment" box at the top of the page write a brief description of your proposal along with a link to the proposal document (link to the ``0000-$myproposal.rst`` file in your GitHub fork)
+6. Select the label ``Under discussion`` on the right-hand side.
+7. In the "comment" box at the top of the page write a brief description of your proposal along with a link to the proposal document (link to the ``0000-$myproposal.rst`` file in your GitHub fork)
 
   .. code-block::
 
