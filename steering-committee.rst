@@ -38,6 +38,9 @@ Debate steps
    commentary) with the reasons for rejection. The proposer is welcome
    to revise and try again, but the document should retain this original
    rejection information.
+   
+   In the case that the proposed change has already been implemented in
+   GHC, it will be reverted.
 
 -  If during the Debate, the need for substantial changes does arise, we
    reject the proposal in its current state and it can go back to
