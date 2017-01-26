@@ -10,9 +10,9 @@ GHC.
 Quick links
 -----------
 
- * `Active proposals list <https://github.com/ghc-proposals/ghc-proposals/pulls>`_
- * `Proposal submission process <./proposal-submission.rst>`_
- * `Steering committee description <./steering-committee.rst>`_
+* `Active proposals list <https://github.com/ghc-proposals/ghc-proposals/pulls>`_
+* `Proposal submission process <./proposal-submission.rst>`_
+* `Steering committee description <./steering-committee.rst>`_
 
 What is a proposal?
 -------------------
