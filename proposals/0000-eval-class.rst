@@ -104,7 +104,8 @@ This cunning plan would require virtually no change to GHC, but unfortunately it
 I considered adding yet another pair of language options, ``LiftedFunctions`` and ``UnliftedFunctions``. The former
 would be on by default. The latter option, where specified, would prevent the ``Eval`` class from being implicitly
 derived for function types. However, different designs are possible (should a function type ``Bool -> Int`` still be an
-instance of ``Eval``?) and I felt this was better left for a future proposal, if this one should take.
+instance of ``Eval``? how about a ``DataEval`` subclass of ``Eval``?) and I felt this was better left for a future
+proposal, if this one should take.
 
 I had also considered extending the *SafeHaskell* inference mechanism. It could infer a module *EtaSafe* if it's *Safe*
 or *Trustworthy*, all its imports are *EtaSafe*, and no ``seq`` use in the module is polymorphic nor applied to a
