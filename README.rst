@@ -3,9 +3,16 @@ GHC Proposals
 
 This repository contains specifications for proposed changes to the
 `Glasgow Haskell Compiler <https://www.haskell.org/ghc>`_.
-The purpose of the GHC `proposal process <./README.rst#Proposals>`_, and of the GHC
-Steering Committee, is to broaden the discussion of the evolution of GHC.
+The purpose of the GHC `proposal process <./proposal-submission.rst>`_, and of
+the GHC Steering Committee, is to broaden the discussion of the evolution of
+GHC.
 
+Quick links
+-----------
+
+ * `Active proposals list <https://github.com/ghc-proposals/ghc-proposals/pulls>`_
+ * `Proposal submission process <./proposal-submission.rst>`_
+ * `Steering committee description <./steering-committee.rst>`_
 
 What is a proposal?
 -------------------
