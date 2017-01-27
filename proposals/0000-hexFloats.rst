@@ -47,6 +47,7 @@ The changes are rather simple.
 
   * Introduce a new pragma ``LANGUAGE HexadecimalFloats`` or similar.
   * Follow the grammar given in p57-58 of http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf
+       * Exception: We do not need the suffix ``F`` or ``L`` as types would be enough to do the appropriate conversion.
   * Provide the corresponding pretty-printer (`showHFloat`) in the `Numeric` package.
   * `Read` instance for floats-doubles should be changed to support the new format.
   
