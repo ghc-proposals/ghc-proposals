@@ -65,7 +65,7 @@ Note that the ``.`` and ``p`` are both optional in the notation. If either exist
 If neither exists, then it's already a hexadecimal literal that desugars as usual via ``fromInteger``. Some examples:
 
    * ``0xAB``: No dots, no exponents: Regular literal. Desugars via ``fromInteger``.
-   * ``0x1.3``: Dot. Floating point literal: Desugars via ``fromRational``.
+   * ``0x1a.3``: Dot. Floating point literal: Desugars via ``fromRational``.
    * ``0x1p-4``: Exponent. Floating point literal: Desugars via ``fromRational``.
    * ``0x1.2p3``: Both dot and exponent. Floating point literal. Desugars via ``fromRational``.
 
