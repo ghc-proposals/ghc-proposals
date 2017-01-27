@@ -70,7 +70,7 @@ cases to consider:
    * ``0x1p-4``: No dot, exponent. Floating point literal: Desugars via ``fromRational``.
    * ``0x1.2p3``: Both dot and exponent. Floating point literal. Desugars via ``fromRational``.
    
-So, the rule is simple: If `.` or `p` is present: Desugar through ``fromRational`` otherwise use ``fromInteger``.
+So, the rule is simple: If ``.`` or ``p`` is present: Desugar through ``fromRational`` otherwise use ``fromInteger``.
 
 Effect and Interactions
 -----------------------
