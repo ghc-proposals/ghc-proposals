@@ -61,9 +61,14 @@ The new notation makes no changes to this semantics. One thing to note, however,
 the primary motive for this notation, we should be more vigilant in issuing warnings for underflow/overflow cases.
 (See below.)
 
-Note that the ``.`` and ``p`` are both optional in the notation. So, a literal like ``0x1p3`` would desugar
-through ``fromInteger`` and ``0x1.3`` would desugar through ``fromRational``, following the current convention
-in Haskell as it stands today.
+Note that the ``.`` and ``p`` are both optional in the notation. If either exist, we desugar through ``fromRational``.
+If neither exists, then it's already a hexadecimal literal that desugars as usual via ``fromInteger``.
+
+   * ``0xAB``: No dots, no exponents: Regular literal. Desugars via ``fromInteger``.
+   * ``0x1.3``: Dot. Floating point literal: Desugars via ``fromRational``.
+   * ``0x1p-4``: Exponent. Floating point literal: Desugars via ``fromRational``.
+   * ``0x1.2p3``: Both dot and exponent. Floating point literal. Desugars via ``fromRational``.
+
 
 Effect and Interactions
 -----------------------
