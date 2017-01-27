@@ -62,7 +62,7 @@ the primary motive for this notation, we should be more vigilant in issuing warn
 (See below.)
 
 Note that the ``.`` and ``p`` are both optional in the notation. If either exist, we desugar through ``fromRational``.
-If neither exists, then it's already a hexadecimal literal that desugars as usual via ``fromInteger``.
+If neither exists, then it's already a hexadecimal literal that desugars as usual via ``fromInteger``. Some examples:
 
    * ``0xAB``: No dots, no exponents: Regular literal. Desugars via ``fromInteger``.
    * ``0x1.3``: Dot. Floating point literal: Desugars via ``fromRational``.
@@ -133,7 +133,8 @@ http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf on page 58 says:
      cannot be represented exactly in its evaluation format; the implementation should then
      proceed with the translation of the program.
 
-I think GHC should follow the same practice, and issue warnings for all float values when the coversion would cause undeflow/overflow,
+I think GHC should follow the same practice, and issue warnings for all float values when the coversion
+would cause undeflow/overflow,
 controlled by the ``-Woverflowed-literals`` flag.
 
 Unresolved Questions
