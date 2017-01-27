@@ -19,8 +19,11 @@ Since at least GHC 7.4, there has been an uneasy relationship between ``Constrai
 kinds were considered distinct in Haskell but indistinguishable in Core. This strange arrangement causes oddities in the
 type system, as explained in `#11715 <https://ghc.haskell.org/trac/ghc/ticket/11715>`_.
 
-This proposal adds a new constructor of ``RuntimeRep`` (of levity-polymorphism fame), ``ConstraintRep``, and defines
-``type Constraint = TYPE 'ConstraintRep``. Doing so, ``Constraint`` and ``Type`` are fully different, all the way to Core.
+This proposal adds a new plain-old-vanilla datatype ::
+
+    data Visibility = Visible | Invisible
+    
+which is now the type of a parameter to ``TYPE`` (of levity-polymorphism fame). We now have ``type Constraint = TYPE Invisible LiftedRep``, making ``Constraint`` distinct from ``Type`` both in Haskell and in Core.
 
 Motivation
 ------------
@@ -71,21 +74,36 @@ Here are a few oddities caused by the current arrangement:
    lays bare any and all shortcuts we have in the type system. It's unclear how to implement the plan without
    sorting this out.
 
+5. As discussed on the `pull request <https://github.com/ghc-proposals/ghc-proposals/pull/32#issuecomment-271881898>`_, this
+   paves the way to having proper type inference to distinguish constraint tuples from ordinary ones. However, this proposal
+   does not specifically propose making this change.
+
 Proposed Change Specification
 -----------------------------
 
-Add a new constructor to ``GHC.Types.RuntimeRep``, named ``ConstraintRep`` and define ``type Constraint = TYPE 'ConstraintRep``.
-That's it!
+In ``GHC.Prim``::
+
+    TYPE :: Visibility -> RuntimeRep -> Type
+
+In ``GHC.Types``::
+
+    data Visibility = Visible | Invisible
+    data RuntimeRep = ...   -- as before
+    
+    type Constraint = TYPE Invisible LiftedRep
+    type Type       = TYPE Visible   LiftedRep
+    
+    type TYPEvis    = TYPE Visible   -- convenient synonym
 
 Effect and Interactions
 -----------------------
 The reason that ``Constraint`` and ``Type`` have been synonymous is that we need to be able to have
 ``Constraint``-kinded things to the left (and, more rarely, to the right) of arrows. But in our brave
-new levity-polymorphic world, the types on either side of an arrow can have kind ``TYPE blah`` for any ``blah``.
+new levity-polymorphic world, the types on either side of an arrow can have kind ``TYPE v r`` for any ``v`` and ``r``.
 Thus, the new ``Constraint`` fits in quite nicely.
 
 Users who don't poke around the internals of ``RuntimeRep`` should not notice this change at all. GHC will be
-taught to print ``Constraint`` whenever it is tempted to write ``TYPE 'ConstraintRep`` to the console.
+taught to print ``Constraint`` whenever it is tempted to write ``TYPE Invisible LiftedRep`` to the console.
 
 One weird interaction is that we currently encode one-element classes as newtypes. Here is an example::
 
@@ -95,7 +113,7 @@ One weird interaction is that we currently encode one-element classes as newtype
 This yields a Core type defined like ``newtype C a = MkC { def :: a }``. The only problem is that ``C a :: Constraint``.
 Thus the newtype axiom that relates ``C a`` to ``a`` is *heterogeneous*. Clever machinations using the coercion
 forms as described `here <https://github.com/ghc/ghc/blob/master/docs/core-spec/core-spec.pdf>`_ could then prove
-that ``ConstraintRep ~N LiftedRep``, which is a nominal equality between two distinct data constructors. Nightmares!
+that ``Visible ~N Invisible``, which is a nominal equality between two distinct data constructors. Nightmares!
 So this change will have to weaken the ``KindCo`` coercion ("Co_KindCo" in the linked specification, page 14) to
 require a *nominal* input coercion instead of any old input coercion. This change weakens the coercion language
 a tad, but I don't think anyone will notice. In order to see the lost expressiveness, you would need to have
@@ -112,10 +130,8 @@ This is a simplification to the current implementation, which must be quite care
 these functions become the same, allowing us to delete gobs of code. Similarly, we can delete abominations
 like ``coreViewOneStarKind``.
 
-The main drawback is that we are abusing ``RuntimeRep``. ``RuntimeRep`` is meant to represent the different
-ways a Haskell value can be represented at runtime. However, ``ConstraintRep`` will have the same representation as
-``LiftedRep``. This is a use ``RuntimeRep`` was not envisioned for, but it seems harmless. Are we starting
-down a slippery slope? I do not believe we are.
+The main drawback is that we are adding theoretical complication to an already-subtle aspect of GHC. This
+complication faces users, if they choose to play in the levity-polymorphism playground.
 
 Alternatives
 ------------
@@ -127,7 +143,24 @@ has since changed his mind on the idea. It's hard to summarize @int-index's argu
 proposal, but they are worthwhile reading if you're keen. The main drawbacks to the
 alternative proposal might be written by Edward Kmett `here <https://ghc.haskell.org/trac/ghc/ticket/11715#comment:31>`_.
 I confess I have not liked this idea much, but it's more from a language-design standpoint than from a type-safety
-standpoint (the alternative proposal appears type-safe to me).
+standpoint (the alternative proposal appears type-safe to me). (@int-index has since backed off this point of view,
+as seen on the pull request)
+
+The main alternative is a previous version of this proposal, where we would add a new constructor of ``RuntimeRep``
+called ``ConstraintRep``. We would then distinguish ``Type`` from ``Constraint`` via the choice of ``RuntimeRep``.
+However, this runs into a major problem: we have a hard time rejecting ``Eq a -> a -> Bool``. (Note the ``->`` instead
+of ``=>``.) Seeing ``Eq a -> a -> Bool``, GHC would happily accept, because any thing of the form ``TYPE r`` to the left
+of an arrow should be OK. We can only be sure something is wrong after zonking, and by then, we've lost the original
+Haskell AST that the user wrote, so we can't tell whether they wrote ``=>`` or ``->``. Of course, this problem could
+be avoided by engineering, but there is another wrinkle. Consider the type ``forall (r :: RuntimeRep) (a :: TYPE r). a -> a``.
+Forget for a moment that this is unimplementable. The problem is that the type is sensible only for *most* choices of ``r``,
+not *all* of them: choosing ``r`` to be ``ConstraintRep`` makes the type bogus. So something is really quite smelly
+with this design.
+
+Another axis for alternatives is in naming. Suggestions from the community have wanted ``Coherency`` where I have
+written ``Visibility``, but I prefer the latter. For example, ``(?x :: Int)`` is a ``Constraint`` even though
+it is not coherent. Also, the user might have specified ``-XIncoherentInstances``. On the other hand, visibility
+is always a correct notion to apply here.
 
 Regardless, the current proposal does not really bar the way to resolving the design challenges of the alternative
 proposal in the future. Implementing what I've proposed here will be *deleting* code, so there's no sunk cost
