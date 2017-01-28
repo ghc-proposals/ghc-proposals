@@ -149,4 +149,4 @@ None
 
 Implementation Plan
 -------------------
-TBD
+Iavor Diatchki (@yav) indicated he made a go at implementing the proposal; so might already have something to try soon.
