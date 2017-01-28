@@ -43,14 +43,18 @@ new standards as implemented by gcc.
 
 Proposed Change Specification
 -----------------------------
-The changes are rather simple.
+The changes are rather simple, and follows that of the other languages with some Haskell specific deviations:
 
   * Introduce a new pragma ``LANGUAGE HexadecimalFloats`` or similar.
   * Follow the grammar given in p57-58 of http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf
        * Exception: We do not need the suffix ``F`` or ``L`` as types would be enough to do the appropriate conversion.
        * Exception: We will make the exponent (the ``p...`` part) optional, just like the regular `e` is optional.
+       * Exception: If a literal contains a dot, then it must have some hex digits before and after it
   * Provide the corresponding pretty-printer (`showHFloat`) in the `Numeric` package.
   * `Read` instance for floats-doubles should be changed to support the new format.
+  
+Note that the original allows ``0x.Ap4`` as a literal, which we disallow in Haskell. This is similar to the case
+for ``.5`` or ``5.`` that is allowed by other languages, but not by Haskell.
   
 Desugaring
 ----------
