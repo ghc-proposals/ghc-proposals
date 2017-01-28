@@ -96,8 +96,14 @@ Proposed Change Specification
 Allow a type signature for the construction function in a bidirectional
 pattern synonym to appear within the same `where` clause.
 
-When the construction function has no signature, infer its type as usual
-for a top-level binding.
+When the construction function has no signature, there are several possible
+options, none of which is perfect.
+
+Option 1: Plain inference
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The simplest option is just to treat the construction functon like any other
+top-level binding and try to infer its type.
 
 .. code-block:: haskell
 
@@ -110,6 +116,49 @@ for a top-level binding.
     pattern Zero <- ((== 0) -> True) where
       Zero :: Num a => a -- optional
       Zero = 0
+
+Option 2: Assign a signature based on *provided* constraints
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Another simple option would be to implicitly give the construction
+function the same signature as the pattern, but using only *provides*
+constraints and ignoring *requires* ones. A construction synonym for
+`NF` would be mandatory in this case. It would be possible to avoid one
+for `Zero` by adding a redundant *provides* constraint, but that does not
+look like good style to me.
+
+.. code-block:: haskell
+
+    pattern Zero :: (Eq a, Num a) => Num a => a
+    pattern Zero <- ((== 0) -> True) where
+      Zero = 0
+
+Option 3: Assign a partial signature based on the *provided* constraints
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A third approach, which I am beginning to think might be the best of all,
+would be to give the construction function a partial signature
+based on *provides* constraints. That is, given
+
+.. code-block:: haskell
+
+    pattern P :: Req => Prov => E
+
+it would assign the constructor the type
+
+.. code-block:: haskell
+
+    P :: (Prov, _) => E
+
+Possible Extension: Offer special syntax to refer to the pattern signature
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We could imagine offering special syntax that can be used in the
+constructor signature to splice in (textually) one or more pieces of the
+pattern signature, allowing the user to offer a complete signature without
+copying and pasting. It's not entirely clear what this would look like,
+and stealing more syntax is expensive, so I don't know that it's really
+worth the trouble.
 
 Effect and Interactions
 -----------------------
@@ -129,33 +178,35 @@ without type signatures in a new and potentially incompatible way. I believe
 it is worth doing so for the simple reason that the current arrangement is
 fundamentally wrong and inconsistent with the rest of the language. Nowhere
 else is a potentially incorrect signature assigned in such a fashion. I
-predict that most current code will continue to work, albeit with warnings
-about missing type signatures.
+predict that most current code will continue to work, albeit perhaps with
+warnings about missing type signatures.
 
 Alternatives
 ------------
 
-I can think of four alternatives. The first three I greatly oppose. The
-fourth I think has significant merit, and the fifth might not be a
-terrible idea either.
+I don't like any of the below ideas at all.
 
-Bad
-~~~
+Alternative 1
+~~~~~~~~~~~~~
 
-An alternative I'd like to dismiss altogether would be to allow the user to
-give a third set of constraints in the pattern type signature, to be used for
-the construction function. Since having two sets of constraints is already
-quite confusing enough, I think a third has very little to recommend it.
+Allow the user give a third set of constraints in the pattern type signature,
+to be used for the construction function. Since having two sets of constraints
+is already quite confusing enough, I think a third has very little to recommend
+it.
 
-Another alternative I dislike would be to continue to use the current
-arrangement when a type signature is missing. This would maintain full
-backwards compatibility, but only by maintaining what I believe is a linguistic
-wart.
+Alternative 2
+~~~~~~~~~~~~~
 
-A third alternative I greatly dislike would be to require the pattern signature
-to be equivalent to the construction function signature with the exception of
-constraints. While it would not be a bad idea to *warn* about violations of
-such a rule, it has several downsides:
+Continue to use the current arrangement when a type signature is missing. This
+would maintain full backwards compatibility, but only by maintaining what I
+believe is a linguistic wart.
+
+Alternative 3
+~~~~~~~~~~~~~
+
+Require the pattern signature to be equivalent to the construction function
+signature with the exception of constraints. While it would not be a bad idea
+to *warn* about violations of such a rule, it has several downsides:
 
 a. It is not required for type safety, and I firmly believe that it's not the
    type checker's place to enforce good taste.
@@ -166,54 +217,6 @@ b. If a user *wants* to work around such a rule, I believe they can always
 
 c. There may be reasonable signatures that such a rule would complicate
    unnecessarily, forcing users to use explicit equality constraints.
-
-Good?
-~~~~~
-
-I think imposing something like my despised third alternative would be quite
-reasonable, and perhaps helpful, in the case of a missing construction
-signature. That is, if we had
-
-.. code-block:: haskell
-
-    pattern NF :: a -> NF a
-    pattern NF a <- UnsafeNF a where
-      NF a = a `deepseq` UnsafeNF a
-
-then it would implicitly insert a partial signature:
-
-.. code-block:: haskell
-
-    pattern NF :: a -> NF a
-    pattern NF a <- UnsafeNF a where
-      NF :: _ => a -> NF a
-      NF a = a `deepseq` UnsafeNF a
-
-This would probably help prevent mistakes, and perhaps improve inference, while
-allowing users to get whatever they want by just writing a signature.
-
-Another idea that might not be terrible would be to add syntax to refer to
-the post-constraint portion of the pattern signature from the constructor
-function signature. So we could write, e.g.,
-
-.. code-block:: haskell
-
-    pattern NF :: a -> NF a
-    pattern NF a <- UnsafeNF a where
-      NF :: NFData a => ...
-      NF a = a `deepseq` UnsafeNF a
-
-and have the `...` splice in `a -> NF a`, yielding a signature of `NF :: NFData
-a => a -> NF a`. In case a pattern has a long and complicated signature, this
-would be much more readable than naming the type involved:
-
-.. code-block:: haskell
-
-    type NFType a = a -> NF a
-    pattern NF :: NFType a
-    pattern NF a <- UnsafeNF a where
-      NF :: NFData a => NFType a
-      NF a = a `deepseq` UnsafeNF a
 
 Unresolved questions
 --------------------
