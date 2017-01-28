@@ -107,117 +107,30 @@ Or patterns can solve this problem like this
 Now we have code reuse, and we will get nice warnings next time a new
 constructor is added.
 
-Details
--------
-
-An or pattern can appear in anywhere that an ordinary pattern can appear.
-
-We extend `Haskell 2010 pattern grammar
-<https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-590003.17.1>`_
-with a new non-terminal:
-
-::
-
-    [new]
-    pats ->  pat `|` pats
-         |   pat
-
-    pat	->	lpat qconop pat	    (infix constructor)
-        |	lpat
-
-Type checking
-~~~~~~~~~~~~~
-
-A restriction is that patterns in `pats` need to bind exactly same identifiers.
-Since type checking happens before desugaring, this is checked by type checker.
-
-Type checker then type checks the RHS using one of the patterns. Using types
-inferred for the binders, rest of the patterns are then checked. If binders
-with same names in different patterns have different types, a type error is
-shown:
-
-::
-
-    * Binders in patterns have different types.
-
-        `x` in pattern `T1 x` has type `String`
-        `x` in pattern `T2 _ x` has type `Int`
-
-One improvement that would give us a better error messages would be to type
-check RHS using different patterns, until a pattern that makes RHS well-typed is
-found. Then rest of the patterns are compared against this pattern, considering
-binder types in this pattern as "expected" types.
-
-Desugaring
-~~~~~~~~~~
-
-RHS of a or pattern is abstracted as a function that takes variables bound by
-the patterns as arguments, and floated out to the same level with the case
-expression. Patterns are then desugared as if they're ordinary patterns.
-Example:
-
-::
-
-    f :: Either (Either Int Int) (Maybe Int) -> IO ()
-    f (Left (Right i) | Right (Just i)) = <expr_1>
-    f _ = <expr_2>
-
-First `<expr_1>` is abstracted as a function:
-
-::
-
-    f_rhs_1 i = <expr_1>
-
-Then the or pattern is expanded to ordinary patterns:
-
-::
-
-    f (Left (Right i)) = f_rhs_1 i
-    f (Right (Just i)) = f_rhs_1 i
-    f _ = <expr_2>
-
-This function is then desugared as usual.
-
-When patterns have multiple binders, function for RHS takes an unboxed tuple,
-instead of taking bound variables as multiple arguments. Example:
-
-::
-
-    f (X1 a b | X2 b a) = ...
-
-This is first desugared to:
-
-::
-
-    f_rhs_1 (# a, b #) = ...
-
-    f (X1 a b) = r_rhs_1 (# a, b #)
-    f (X2 b a) = r_rhs_1 (# a, b #)
-
 Proposed Change
 ---------------
 
-TODO
+TDB
 
 Drawbacks
 ---------
 
-TODO
+TDB
 
 Alternatives
 ------------
 
-TODO
+TDB
 
 Unresolved Questions
 --------------------
 
 - `As far as I can see
   <https://www.haskell.org/onlinereport/haskell2010/haskellch2.html#x7-180002.4>`_,
-  `|` is a reserved operator. So I think we can use it here, but need to make
-  sure.
+  `|` is a reserved operator. So I think we can use it here, but we need to
+  make sure.
 
-- Need to figure how this interacts with
+- We need to figure how this interacts with
 
   - GADTs
   - Pattern synonyms
