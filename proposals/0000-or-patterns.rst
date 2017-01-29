@@ -18,15 +18,15 @@ and can refer to the variables matched by the patterns.
 
 Main advantages of this extension are:
 
-1. With or patterns we can avoid `_` wildcard patterns which can
+1. With or patterns we can avoid ``_`` wildcard patterns which can
    unintentionally match constructors as types are being extended.
 
 2. It allows more code reuse as right hand sides can be shared by many
    patterns.
 
 An or pattern is an ordinary pattern and it can appear anywhere that a pattern
-can appear (top-level function argument positions, `LambdaCase` patterns,
-left-hand side of `<-` in guards etc.). To solve the ambiguity between a
+can appear (top-level function argument positions, ``LambdaCase`` patterns,
+left-hand side of ``<-`` in guards etc.). To solve the ambiguity between a
 pattern guard and an or pattern, we require parenthesis around or patterns.
 This makes this extension backwards-compatible even when it's enabled.
 
@@ -35,22 +35,22 @@ Motivation
 
 There are two motivations as summarised in the abstract.
 
-**First,** `_` patterns make code harder to maintain. They essentially mean "match
+**First,** ``_`` patterns make code harder to maintain. They essentially mean "match
 every other pattern", which also includes "patterns that may be enabled in the
 future" e.g. when a new constructor is added to a type.
 
 In my experience this is rarely the intention. Usually, when a new constructor
 is added, the programmer needs to revisit functions on the type and update them
-accordingly. But if functions use `_` patterns this is not easy as she won't be
+accordingly. But if functions use ``_`` patterns this is not easy as she won't be
 getting any compile time warnings about functions she needs to update.
 
 This is also against the Haskell way of refactoring programs. Haskell is well
 known for its features that make refactoring easier than most other languages
-[1]_, but `_` patterns actually make refactoring harder.
+[1]_, but ``_`` patterns actually make refactoring harder.
 
 As an example, GHC developers would know that adding a new constructor to an
 existing type means many compile-run-edit cycles, with no compile-time help,
-because of `_` patterns. Given that by default we don't get stack traces in
+because of ``_`` patterns. Given that by default we don't get stack traces in
 Haskell, and also GHC takes a lot of time to build, this wastes GHC developers'
 time.
 
@@ -75,8 +75,8 @@ Now suppose that some time later we add a new constructor:
 
     data T = T1 String | T2 | T3 | T4 String
 
-We need to update `stringOfT` but unfortunately we don't get a warning because
-we used a `_` pattern.
+We need to update ``stringOfT`` but unfortunately we don't get a warning because
+we used a ``_`` pattern.
 
 Or patterns solve the problem by allowing us to do this:
 
@@ -86,10 +86,10 @@ Or patterns solve the problem by allowing us to do this:
     stringOfT (T1 s)        = Just s
     stringOfT (T2{} | T3{}) = Nothing
 
-This function doesn't match `T4`, so we get our warning.
+This function doesn't match ``T4``, so we get our warning.
 
 **Second,** or patterns allow more code reuse. In our previous example, we might
-extend `stringOfT` to something like
+extend ``stringOfT`` to something like
 
 ::
 
@@ -133,7 +133,7 @@ Unresolved Questions
 
 - `As far as I can see
   <https://www.haskell.org/onlinereport/haskell2010/haskellch2.html#x7-180002.4>`_,
-  `|` is a reserved operator. So I think we can use it here, but we need to
+  ``|`` is a reserved operator. So I think we can use it here, but we need to
   make sure.
 
 - We need to figure how this interacts with
