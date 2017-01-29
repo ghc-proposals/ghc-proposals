@@ -24,6 +24,12 @@ Main advantages of this extension are:
 2. It allows more code reuse as right hand sides can be shared by many
    patterns.
 
+An or pattern is an ordinary pattern and it can appear anywhere that a pattern
+can appear (top-level function argument positions, `LambdaCase` patterns,
+left-hand side of `<-` in guards etc.). To solve the ambiguity between a
+pattern guard and an or pattern, we require parenthesis around or patterns.
+This makes this extension backwards-compatible even when it's enabled.
+
 Motivation
 ----------
 
@@ -110,17 +116,17 @@ constructor is added.
 Proposed Change
 ---------------
 
-TDB
+TBD
 
 Drawbacks
 ---------
 
-TDB
+TBD
 
 Alternatives
 ------------
 
-TDB
+TBD
 
 Unresolved Questions
 --------------------
