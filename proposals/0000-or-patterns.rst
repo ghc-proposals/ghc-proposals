@@ -113,6 +113,96 @@ Or patterns can solve this problem like this
 Now we have code reuse, and we will get nice warnings next time a new
 constructor is added.
 
+Real-world examples
+-------------------
+
+- GHC has lots of code like this: (this one taken from
+  ``compiler/hsSyn/HsPat.hs``, slightly simplified) ::
+
+    isIrrefutableHsPat pat
+      = go pat
+      where
+        go (L _ pat) = go1 pat
+
+        go1 (WildPat {})        = True
+        go1 (VarPat {})         = True
+        go1 (LazyPat {})        = True
+        go1 (BangPat pat)       = go pat
+        go1 (CoPat _ pat _)     = go1 pat
+        go1 (ParPat pat)        = go pat
+        go1 (AsPat _ pat)       = go pat
+        go1 (ViewPat _ pat _)   = go pat
+        go1 (SigPatIn pat _)    = go pat
+        go1 (SigPatOut pat _)   = go pat
+        go1 (TuplePat pats _ _) = all go pats
+        go1 (SumPat pat _ _  _) = go pat
+        go1 (ListPat {})        = False
+        go1 (PArrPat {})        = False
+        go1 (ConPatIn {})       = False
+        go1 (ConPatOut{ pat_con = L _ (RealDataCon con), pat_args = details }) = ...
+        go1 (ConPatOut{ pat_con = L _ (PatSynCon _pat) }) = ...
+        go1 (LitPat {})         = False
+        go1 (NPat {})           = False
+        go1 (NPlusKPat {})      = False
+        go1 (SplicePat {})      = urk pat
+
+        urk pat = pprPanic "isIrrefutableHsPat:" (ppr pat)
+
+  Using or patterns this code can be simplified to: ::
+
+    isIrrefutableHsPat pat
+      = go pat
+      where
+        go (L _ pat) = go1 pat
+
+        go1 (WildPat{} | VarPat{} | LazyPat{})
+          = True
+
+        go1 (BangPat pat     | ParPat pat     | AsPat _ pat |
+             ViewPat _ pat _ | SigPatIn pat _ | SigPatOut pat _ | SumPat pat _ _ _)
+          = go pat
+
+        go1 (PArrPat{} | ConPatIn{} | LitPat{} | NPat{} | NPlusKPat{} | ListPat {})
+          = False
+
+        go1 (CoPat _ pat _)     = go1 pat
+        go1 (TuplePat pats _ _) = all go pats
+        go1 (ConPatOut{ pat_con = L _ (RealDataCon con), pat_args = details }) = ...
+        go1 (ConPatOut{ pat_con = L _ (PatSynCon _pat) }) = ...
+        go1 (SplicePat {})      = urk pat
+
+        urk pat = pprPanic "isIrrefutableHsPat:" (ppr pat)
+
+- Even worse from the previous example is code like this (taken from the same
+  file): ::
+
+    collectEvVarsPat :: Pat id -> Bag EvVar
+    collectEvVarsPat pat =
+      case pat of
+        LazyPat  p        -> collectEvVarsLPat p
+        AsPat _  p        -> collectEvVarsLPat p
+        ParPat   p        -> collectEvVarsLPat p
+        BangPat  p        -> collectEvVarsLPat p
+        ListPat  ps _ _   -> unionManyBags $ map collectEvVarsLPat ps
+        TuplePat ps _ _   -> unionManyBags $ map collectEvVarsLPat ps
+        SumPat p _ _ _    -> collectEvVarsLPat p
+        PArrPat  ps _     -> unionManyBags $ map collectEvVarsLPat ps
+        ConPatOut {pat_dicts = dicts, pat_args  = args}
+                          -> unionBags (listToBag dicts)
+                                       $ unionManyBags
+                                       $ map collectEvVarsLPat
+                                       $ hsConPatArgs args
+        SigPatOut p _     -> collectEvVarsLPat p
+        CoPat _ p _       -> collectEvVarsPat  p
+        ConPatIn _  _     -> panic "foldMapPatBag: ConPatIn"
+        SigPatIn _ _      -> panic "foldMapPatBag: SigPatIn"
+        _other_pat        -> emptyBag
+
+  This has repeated cases like the previous example, and it also has a
+  wildcard, which means this function will probably break next time a new
+  constructor is added to ``Pat`` type (this happened many times during the
+  implementation of unboxed sums).
+
 Proposed Change
 ---------------
 
