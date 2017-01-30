@@ -184,6 +184,77 @@ scope of instances, doing so would expose representation details that
 should be hidden.
 
 
+Limitations on solving HasField constraints
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If a record field does not have a selector function because its type would allow
+an existential variable to escape, the corresponding ``HasField`` constraint
+will not be solved.  For example,
+
+.. code-block:: haskell
+
+  {-# LANGUAGE ExistentialQuantification #-}
+  data Exists t = forall x . MkExists { unExists :: t x }
+
+does not give rise to a selector ``unExists :: Exists t -> t x`` and we will not
+solve ``HasField "unExists" (Exists t) a`` automatically.
+
+If a record field has a polymorphic type (and hence the selector function is
+higher-rank), the corresponding ``HasField`` constraint will not be solved,
+because doing so would violate the functional dependency on ``HasField`` and/or
+require impredicativity.  For example,
+
+.. code-block:: haskell
+
+  {-# LANGUAGE RankNTypes #-}
+  data Higher = MkHigher { unHigher :: forall t . t -> t }
+
+gives rise to a selector ``unHigher :: Higher -> (forall t . t -> t)`` but does
+not lead to solution of the constraint ``HasField "unHigher" Higher a``.
+
+
+Interaction with GADTs
+^^^^^^^^^^^^^^^^^^^^^^
+
+A record GADT may have a restricted type for a selector function, which may lead
+to additional unification when solving ``HasField`` constraints.  For example,
+
+.. code-block:: haskell
+
+  {-# LANGUAGE GADTs #-}
+  data Gadt t where
+    MkGadt :: { unGadt :: Maybe v } -> Gadt [v]
+
+gives rise to a selector ``unGadt :: Gadt [v] -> Maybe v``, so the solver will reduce
+the constraint ``HasField "unGadt" (Gadt t) b`` by unifying ``t ~ [v]`` and
+``b ~ Maybe v`` for some fresh metavariable ``v``, rather as if we had an instance
+
+.. code-block:: haskell
+
+  instance (t ~ [v], b ~ Maybe v) => HasField "unGadt" (Gadt t) b
+
+
+Interaction with DatatypeContexts
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If a record type has an old-fashioned datatype context, the ``HasField``
+constraint will be reduced to solving the constraints from the context, rather
+like superclasses.  For example,
+
+.. code-block:: haskell
+
+  {-# LANGUAGE DatatypeContexts #-}
+  data Eq a => Silly a = MkSilly { unSilly :: a }
+
+gives rise to a selector ``unSilly :: Eq a => Silly a -> a``, so
+the solver will reduce the constraint ``HasField "unSilly" (Silly a) b`` to
+``Eq a`` (and unify ``a`` with ``b``), rather as if we had an instance
+
+.. code-block:: haskell
+
+  instance (Eq a, a ~ b) => HasField "unSilly" (Silly a) b
+
+
 Changes to OverloadedLabels extension
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -231,7 +302,7 @@ Template Haskell or Generics to define it in the meantime.
 
 
 Interaction with RebindableSyntax
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When ``RebindableSyntax`` is enabled in addition to ``OverloadedLabels``,
 a label ``#foo``
@@ -321,6 +392,11 @@ families):
 
  * ``HasField "foo" (T ...) _`` if ``T`` has a field ``foo`` (but this
    instance is permitted if it does not).
+
+If a field has a higher-rank or existential type, the corresponding ``HasField``
+constraint will not be solved automatically (as described above), but in the
+interests of simplicity we do not permit users to define their own instances
+either.
 
 
 Drawbacks
