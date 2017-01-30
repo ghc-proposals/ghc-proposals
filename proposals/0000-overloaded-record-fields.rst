@@ -570,3 +570,7 @@ to provide polymorphism over record updates (needed to interpret
 overloaded labels as lenses), nor does it discuss anonymous records.
 The exact design of such features still needs final specification.
 They should be compatible with the changes proposed here, however.
+
+Unlike record datatypes, record pattern synonyms do not currently lead to the
+automatic solution of ``HasField`` constraints.  In principle this is possible,
+but it needs careful specification, and is left for future work.
