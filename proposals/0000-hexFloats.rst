@@ -16,7 +16,10 @@ writing floats in decimal/scientific format is not always the best option: To wr
 one might need an extraordinary number of decimal digits, for instance.
 
 As an alternative, there's the so called "hexadecimal floating point" format, described in
-p57-58 of: http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf
+p57-58 of http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf
+
+Another source for the same format is the IEEE-754 spec itself: Section 5.12.3 of
+https://www.csee.umbc.edu/~tsimo1/CMSC455/IEEE-754-2008.pdf
 
 The format is rather simple, unambiguous, and relatively easy to implement. And it's been around for
 about 10 years by now. Some examples are:
