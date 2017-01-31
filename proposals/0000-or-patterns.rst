@@ -13,8 +13,8 @@ Or patterns
 
 We propose a new syntax extension for "or-patterns". An or pattern is
 essentially a list of patterns, where patterns match exactly the same set of
-variables of same types. The right hand side is shared by all these patterns,
-and can refer to the variables matched by the patterns.
+variables of same types [#]_. The right hand side is shared by all of these
+patterns, and can refer to the variables matched by the patterns.
 
 Main advantages of this extension are:
 
@@ -29,6 +29,13 @@ can appear (top-level function argument positions, ``LambdaCase`` patterns,
 left-hand side of ``<-`` in guards etc.). To solve the ambiguity between a
 pattern guard and an or pattern, we require parenthesis around or patterns.
 This makes this extension backwards-compatible even when it's enabled.
+
+.. [#] While in theory it may be possible to generalize this to type check
+       patterns that bind same variables of different types, in this first iteration
+       we want to keep things as simple as possible and only consider the case where
+       all patterns have same set of binders and binders have same types. In addition,
+       all patterns should bind same existentials and constraints. I think this
+       version already covers majority of use cases.
 
 Motivation
 ----------
@@ -46,7 +53,7 @@ getting any compile time warnings about functions she needs to update.
 
 This is also against the Haskell way of refactoring programs. Haskell is well
 known for its features that make refactoring easier than most other languages
-[1]_, but ``_`` patterns actually make refactoring harder.
+[#]_, but ``_`` patterns actually make refactoring harder.
 
 As an example, GHC developers would know that adding a new constructor to an
 existing type means many compile-run-edit cycles, with no compile-time help,
@@ -235,4 +242,4 @@ Unresolved Questions
   - BangPatterns
   - Irrefutable patterns
 
-.. [1] For a recent talk on this topic, see https://www.youtube.com/watch?v=_K6UAq4hjAs
+.. [#] For a recent talk on this topic, see https://www.youtube.com/watch?v=_K6UAq4hjAs
