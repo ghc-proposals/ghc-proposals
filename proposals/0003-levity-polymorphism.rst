@@ -1,4 +1,4 @@
-.. proposal-number:: 0002
+.. proposal-number:: 0003
 
 .. trac-ticket:: Leave blank. This will eventually be filled with the Trac
                  ticket number which will track the progress of the

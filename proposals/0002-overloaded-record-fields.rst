@@ -1,4 +1,4 @@
-.. proposal-number:: 0001
+.. proposal-number:: 0002
 
 .. implemented:: 8.2
 
