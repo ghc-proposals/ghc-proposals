@@ -11,6 +11,7 @@ Quick links
 -----------
 
 * `Active proposals list <https://github.com/ghc-proposals/ghc-proposals/pulls>`_
+* `All accepted proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3AAccepted>`_
 * `Proposal submission process <./proposal-submission.rst>`_
 * `Steering committee description <./steering-committee.rst>`_
 
