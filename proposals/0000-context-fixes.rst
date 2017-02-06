@@ -12,6 +12,8 @@
 
 This proposal is `discussed at this pull requst <https://github.com/ghc-proposals/ghc-proposals/pull/40>`_.
 
+.. contents::
+
 Context fixes.
 ==============
 
@@ -85,7 +87,7 @@ The suggested new language feature would allow me to express this as follows::
 Note that:
 
 * Besides the indentation and replacing ``42`` by ``n``, I did not have to change any code.
-* It is obvious to the reader that within the indented block, ``n`` is not changed.
+* It is obvious to the reader that within the indented block, ``n`` is not changed. This is a main advantage of this proposal, as it makes the code easier to read, understand and reason about.
 * The type of ``foo`` is different within the scope of the ``context`` block: It is ``T -> S`` inside, but ``Int -> T -> S`` outside.
 
 One complete real-world application of this is at the end of the proposal. Generaly, typical use cases of this might be
@@ -99,6 +101,8 @@ See below for some existing ways of approximationg this feature.
 Proposed Change Specification
 -----------------------------
 
+These changes would, as one expect, be guarded by a language pragma: `{-# LANGUAGE ContextFixes #-}`.
+
 The grammar would be extended as follows::
 
   decl → …
@@ -110,7 +114,7 @@ In scope at the top level of the module are the names defined by the *decls*, wh
 
 Note that the grammar does not allow other kind of *topdecl* things in the scope of ``context``, i.e. no types, classes, instances…
 
-*It is clear to me what this does at this point, but not so much how and what to write here. So please ask for clarification at the pull request.*
+*It is clear to me what this does at this point, but not so much how and what to write here. So please ask for clarification at the pull request, so that I can refine the specification.*
 
 Possible extension
 ------------------
@@ -182,6 +186,32 @@ Alternatives
 
 * Using mutable references and some hacking with ``unsafePerformIO``…
 
+
+Criticism (and rebuttals)
+-------------------------
+
+* ..
+
+    It is un-Haskelish to have a dependency on non-constant values without having them as arguments or in the type.
+
+  There is precedent. Within the context of one function, we have precisely that as can be seen in the ``x`` in the following example::
+    
+    foo x = e
+      where
+        bar :: Int -> Int
+        bar y = x + y
+
+  Understanding the body of a ``context fixes`` construct is no more difficult than understanding a larger ``where`` clause with functions.
+  
+* ..
+
+    It is un-Haskellish to have a declaration ``foo :: Int -> Int`` and then find that ``foo`` has a different type somewhere else.
+
+  While unusual, we also have that in two cases of the language: Record field types, and class declaration. In both cases, the actual function ``foo`` outside the construct has a different type::
+  
+    data Foo = Foo { foo :: Int -> Int } -- foo :: Foo -> Int -> Int
+    class Foo where foo :: Int -> Int    -- foo :: Foo => Int -> Int
+  
 Related work
 ------------
 
