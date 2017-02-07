@@ -215,7 +215,66 @@ Real-world examples
 Proposed Change
 ---------------
 
-TBD
+- Changes in the grammar:
+
+  We consider this as an extension to `Haskell 2010 grammar
+  <https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#x17-18000010.5>`_.
+  Relevant non-terminal is ``apat``: ::
+
+    apat    →    var [ @ apat]                     (as pattern)
+            |    gcon                              (arity gcon  =  0)
+            |    qcon { fpat1 , … , fpatk }        (labeled pattern, k ≥ 0)
+            |    literal
+            |    _                                 (wildcard)
+            |    ( pat )                           (parenthesized pattern)
+            |    ( pat1 , … , patk )               (tuple pattern, k ≥ 2)
+            |    [ pat1 , … , patk ]               (list pattern, k ≥ 1)
+            |    ~ apat
+
+  Or patterns extension adds one more production: ::
+
+            |    ( pat1 | … | patk )
+
+  This means that or patterns are not treated any different than any other
+  pattern during parsing.
+
+  Some examples that this new grammar produces: ::
+
+    -- in expression context
+    case e of
+      (T1 | T2{} | T3 _ _) -> ...
+
+    -- in expression context
+    let ([x] | (x : _ : _)) = e1 in e2
+
+    -- pattern guards in declarations
+    f x y
+      | x@(T1 | T2) <- e1
+      , guard x
+      = e2
+
+  Since extensions like `LambdaCase` and `MultiWayIf` (as patter guards) use
+  the same pattern syntax, or patterns are enabled in those too.
+
+  The new production doesn't add any ambiguities, because of the parentheses.
+
+  One alternative to this syntax is using ``/`` instead of ``|`` to avoid
+  parentheses in some cases (thanks to joe462 for the suggestion), but we can't
+  completely eliminate parentheses around or patterns, as the following example
+  demonstrates: ::
+
+    f T1{} / T2{} / T3 T4 = ...
+
+  This could mean one of these two: ::
+
+    -- a function with two arguments
+    f (T1{} / T2{} / T3) T4 = ...
+
+    -- a function with one argument
+    f (T1{} / T2{} / T3 T1) = ...
+
+    -- where the argument is defined like
+    data T = T1 | T2 | T3 T
 
 Drawbacks
 ---------
