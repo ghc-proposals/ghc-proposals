@@ -253,6 +253,10 @@ Proposed Change
       , guard x
       = e2
 
+    -- nested or patterns
+    case e1 of
+      (((T1 | T2) | T3) | T4) -> e2
+
   Since extensions like `LambdaCase` and `MultiWayIf` (as patter guards) use
   the same pattern syntax, or patterns are enabled in those too.
 
