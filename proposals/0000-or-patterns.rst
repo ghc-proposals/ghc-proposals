@@ -280,6 +280,89 @@ Proposed Change
     -- where the argument is defined like
     data T = T1 | T2 | T3 T
 
+Informal semantics of or pattern matching
+-----------------------------------------
+
+We define informal semantics as an extension to `Haskell 2010 chapter 3.17.2: Informal Semantics of Pattern Matching <https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-600003.17.2>`_
+
+- Matching the pattern ``con_1 pat1_1 ... pat1_n | ... | con_m patm_1 ...
+  patm_k`` where ``con_1 ... con_m`` are constructors defined by ``data``,
+  depends on the value:
+
+  - If the value is of the form ``con v1 ... vl`` where ``con`` is one of
+    ``con_1 ... con_m``, sub-patterns of the corrsponding pattern are matched
+    left-to-right against the components of the data value; the first to fail
+    or diverge causes the overall match to fail or diverge, respectively.
+
+  - If the value is of the form ``con v1 ... vl`` where ``con`` is none of
+    ``con_1 ... con_m``, the match fails.
+
+  - If the value is bottom, the match diverges.
+
+Here are some examples: ::
+
+    (\ (x | x) -> x) 0 => 0
+    (\ ([x] | (x : _ : _)) -> x) [1, 2, 3] => 1
+    (\ (Left x | Right x) -> x) (Left 1) => 1
+    (\ (Left x | Right x) -> x) (Right 1) => 1
+    (\ ((x, _) | (_, x)) -> x) (1, 2) => 1
+    (\ (([x] | [x, _]) | ([x, _, _] | [x, _, _, _])) -> x) [1, \bot, \bot, \bot] => 1
+    (\ (1 | 2 | 3) -> True) 3 => True
+
+Interaction with guards
+-----------------------
+
+Two different semantics are possible.
+
+In the absence of or patterns, guards are tried sequentially and only if all of
+the guards succeeded the corresponding RHS is evaluated. Example: ::
+
+    f :: Maybe Int -> Maybe Int -> Maybe Int
+    f (Just x) (Just y)                 -- first case
+      | even x                          -- guard 1
+      , even y                          -- guard 2
+      = Just (x + y)
+    f (Just x) _                        -- second case
+      | even x                          -- guard 3
+      = Just x
+    f _ _
+      = Nothing
+
+To evaluate ``f (Just 2) (Just 1)`` first two guards of the first case is
+tried. Because second guard fails, second case is tried and ``Just x`` is
+evaluated as a result.
+
+In the presence of or patterns, two different semantics is possible. Running
+example: ::
+
+    f :: (Int, Int) -> Bool
+    f ((x, _) | (_, x))
+      | even x
+      = True
+    f _
+      = False
+
+    main = print (f (1, 2))
+
+**First semantics** is called "single-match" or "non-backtracking" or "left
+priority". In this semantics guards are tried after a match in the or pattern.
+If any of the guards fail, the whole match fails.
+
+In this semantics the program above prints ``False``: matching the pattern
+``(x, _)`` succeeds and the guard is tried. Because the guard is failed, the
+match is considered as failed.
+
+**Second semantics** is called "multi-match" or "backtracking". In this semantics
+guards are tried for every succeeding pattern in an or pattern.
+
+In this semantics the program above prints ``True``: matching the pattern ``(x,
+_)`` succeeds and the guard is tried. Guard fails, so next pattern in the or
+pattern, ``(_, x)`` is tried. Match succeeds and the guard is tried. Guard also
+succeeds, so the corresponding expression ``True`` is evaluated.
+
+Reference: `Haskell 2010 Chapter 3.13: Case Expressions
+<https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-460003.13>`_
+
 Drawbacks
 ---------
 
