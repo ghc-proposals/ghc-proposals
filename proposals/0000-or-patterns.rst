@@ -312,8 +312,6 @@ Here are some examples: ::
 Interaction with guards
 -----------------------
 
-Two different semantics are possible.
-
 In the absence of or patterns, guards are tried sequentially and only if all of
 the guards succeeded the corresponding RHS is evaluated. Example: ::
 
