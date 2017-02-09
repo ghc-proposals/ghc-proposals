@@ -374,11 +374,6 @@ TBD
 Unresolved Questions
 --------------------
 
-- `As far as I can see
-  <https://www.haskell.org/onlinereport/haskell2010/haskellch2.html#x7-180002.4>`_,
-  ``|`` is a reserved operator. So I think we can use it here, but we need to
-  make sure.
-
 - We need to figure how this interacts with
 
   - GADTs
