@@ -371,6 +371,97 @@ Alternatives
 
 TBD
 
+Or patterns in other languages
+------------------------------
+
+**OCaml**
+
+From `OCaml manual <http://caml.inria.fr/pub/docs/manual-ocaml/patterns.html#sec108>`_:
+
+    The pattern ``pattern1 | pattern2`` represents the logical “or” of the two
+    patterns ``pattern1`` and ``pattern2``. A value matches ``pattern1 |
+    pattern2`` if it matches ``pattern1 or pattern2``. The two sub-patterns
+    ``pattern1`` and ``pattern2`` must bind exactly the same identifiers to
+    values having the same types. Matching is performed from left to right.
+    More precisely, in case some value v matches ``pattern1 | pattern2``, the
+    bindings performed are those of ``pattern1`` when v matches ``pattern1``.
+    Otherwise, value ``v`` matches ``pattern2`` whose bindings are performed.
+
+OCaml implements "single-match" semantics. `OCaml manual chapter on guards
+<http://caml.inria.fr/pub/docs/manual-ocaml/expr.html#sec123>`_ doesn't
+explicitly mention or patterns, but it can be inferred from the text that
+guards are tested once on a match.
+
+`Ambiguous pattern variables
+<http://gallium.inria.fr/~scherer/research/ambiguous_pattern_variables/ml_workshop_2016.abstract.pdf>`_
+explains how single-match semantics can be confusing to users, and explains
+design of the warning OCaml 4.03 prints when potentially confusing guard is used
+with an or pattern. The warning works like this:
+
+Suppose we have an or pattern ``p1 | p2 | p3 ... pN``, and a variable ``x`` used
+in patterns.
+
+- ``x`` is *stable* if in all of the patterns it's used in the same location.
+  The paper gives this example: ::
+
+    ((x, None, _) | (x, _, None))
+
+  Note that for this to hold the pattern must match a product type.
+
+- ``x`` is *stable* if none of the pattern can match at the same time. The
+  paper gives this example: ::
+
+    ((x, None, _) | (_, Some _, x))
+
+  Another example is when matching different constructors of a sum type: ::
+
+    (Left x | Right x)
+
+If a variable used in an or pattern is not *stable*, it's *ambiguous* and
+reported in a warning: ::
+
+    Warning 57: Ambiguous or-pattern variables under guard;
+    variable x may match different arguments. (See manual section 8.5)
+
+If we choose to implement the single-match semantics we should implement a
+similar warning.
+
+**Rust**
+
+Rust seems to support a simpler version of or patterns. `Relevant section in
+the language reference
+<https://doc.rust-lang.org/reference.html#match-expressions>`_ doesn't say much
+about it, but the implementation seems to support or patterns only at the top
+layer of patterns. These are fine: ::
+
+    match i {
+        Ok(1) | Ok(2) => {}
+        _ => {}
+    }
+
+    enum T {
+        T1(i32),
+        T2(i32),
+        T3(i32),
+    }
+
+    match x {
+        T::T1(a) | T::T2(a) | T::T3(a) => { println!("{:?}", a); }
+    }
+
+But this fails with a parse error: ::
+
+    match i {
+        Ok(1 | 2) => {}
+        _ => {}
+    }
+
+    error: expected one of `)`, `,`, `...`, or `..`, found `|`
+      --> pat.rs:24:14
+       |
+    24 |         Ok(1 | 2) => { println!("ok"); }
+       |              ^
+
 Unresolved Questions
 --------------------
 
