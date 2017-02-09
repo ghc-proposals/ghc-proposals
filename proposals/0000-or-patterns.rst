@@ -369,7 +369,44 @@ TBD
 Alternatives
 ------------
 
-TBD
+**Hiding constructors by providing destructor functions (eliminators)**
+
+One way to have some of the benefits of or patterns is to hide constructors of
+a type and provide constructor and destructor functions instead. Example: ::
+
+    module T (T, t1, t2, t3, matchT) where
+
+    data T a b = T1 | T2 a | T3 a b
+
+    t1 = T1
+    t2 = T2
+    t3 = T3
+
+    matchT :: T a b -> ret -> (a -> ret) -> (a -> b -> ret) -> ret
+    matchT t on_t1 on_t2 on_t3 =
+      case t of
+        T1     -> on_t1
+        T2 a   -> on_t2 a
+        T3 a b -> on_t3 a b
+
+This module gives no way to match on values of type ``T`` and case analysis
+have to be done using ``matchT``. When a new constructor is added, type of
+``matchT`` changes, and so all call sites generate a compile-time error.
+
+However, this isn't as flexible as having or patterns. Most importantly, nested
+patterns and guards can't be implemented as easily in this style. There're also
+other smaller problems, for example, there's no direct translation of this
+expression: ::
+
+    case (x :: T Int Int) of
+      T1 -> e1
+      (T2 a | T3 _ a) -> e2
+
+Closest expression to this is: ::
+
+    matchT x e1 (\a -> e2) (\_ a -> e2)
+
+which duplicates ``e2``.
 
 Or patterns in other languages
 ------------------------------
