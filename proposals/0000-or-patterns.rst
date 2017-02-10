@@ -599,7 +599,3 @@ Appendix A: Evaluation of the running example
 At this point we don't have any or patterns and substituting ``(1, 2)`` for
 ``v`` and further simplifications using identities from the manual reveals that
 this indeed implements non-backtracking semantics.
-
-Note that we could apply rule ``or_1`` before rule ``c`` and that'd give us the
-same answer. Non-backtracking semantics with ``or_1`` doesn't rely on any
-ordering of rules.
