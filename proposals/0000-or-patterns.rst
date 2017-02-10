@@ -361,6 +361,30 @@ succeeds, so the corresponding expression ``True`` is evaluated.
 Reference: `Haskell 2010 Chapter 3.13: Case Expressions
 <https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-460003.13>`_
 
+Formal semantics of or pattern matching
+---------------------------------------
+
+We give formal semantics of or patterns as a series of identities, in the style
+of `Haskell 2010 Report chapter 3.17.3
+<https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-610003.17.3>`_.
+We give rules for both "backtracking" and "non-backtracking" semantics.
+
+**Non-backtracking semantics**
+
+We add one rule to chapter 3.17.3 Figure 3.2: ::
+
+    (or_1) case v of { (p1 | … | pN) -> e; _ -> e' }
+           =
+           case v of { p1 -> e; …; pN -> e; _ -> e' }
+
+This rule is enough to define non-backtracking semantics. As an example
+evaluation of the running example from informal semantics section with this
+rule, see Appendix A.
+
+**Backtracking semantics**
+
+TODO
+
 Drawbacks
 ---------
 
@@ -512,3 +536,70 @@ Unresolved Questions
   - Irrefutable patterns
 
 .. [#] For a recent talk on this topic, see https://www.youtube.com/watch?v=_K6UAq4hjAs
+
+Appendix A: Evaluation of the running example
+---------------------------------------------
+
+**Non-backtracking semantics (rule or_1)** ::
+
+    (original expression)
+    case v of
+      ((x, _) | (_, x))
+        | even x
+        -> True
+      _ -> False
+
+    ==> (rule b)
+
+    case v of
+      ((x, _) | (_, x))
+        | even x
+        -> True
+      _ -> case v of
+             _ -> False
+
+    ==> (rule c)
+
+    case False of
+      y ->
+        case v of
+          ((x, _) | (_, x))
+            case () of
+              () | even x -> True
+              _ -> y
+          _ -> y
+    (y fresh)
+
+    ==> (rule v)
+
+    case False of
+      y ->
+        case v of
+          ((x, _) | (_, x)) -> if even x then True else y
+          _ -> y
+
+    ==> (rule or_1)
+
+    case False of
+      y -> case v of
+             (x, _) -> if even x then True else y
+             (_, x) -> if even x then True else y
+             _ -> y
+
+    ==> (rule b)
+
+    case False of
+      y -> case v of
+             (x, _) -> if even x then True else y
+             _ -> case v of
+                    (_, x) -> if even x then True else y
+                    _ -> case v of
+                           _ -> y
+
+At this point we don't have any or patterns and substituting ``(1, 2)`` for
+``v`` and further simplifications using identities from the manual reveals that
+this indeed implements non-backtracking semantics.
+
+Note that we could apply rule ``or_1`` before rule ``c`` and that'd give us the
+same answer. Non-backtracking semantics with ``or_1`` doesn't rely on any
+ordering of rules.
