@@ -285,19 +285,9 @@ Informal semantics of or pattern matching
 
 We define informal semantics as an extension to `Haskell 2010 chapter 3.17.2: Informal Semantics of Pattern Matching <https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-600003.17.2>`_
 
-- Matching the pattern ``con_1 pat1_1 ... pat1_n | ... | con_m patm_1 ...
-  patm_k`` where ``con_1 ... con_m`` are constructors defined by ``data``,
-  depends on the value:
-
-  - If the value is of the form ``con v1 ... vl`` where ``con`` is one of
-    ``con_1 ... con_m``, sub-patterns of the corrsponding pattern are matched
-    left-to-right against the components of the data value; the first to fail
-    or diverge causes the overall match to fail or diverge, respectively.
-
-  - If the value is of the form ``con v1 ... vl`` where ``con`` is none of
-    ``con_1 ... con_m``, the match fails.
-
-  - If the value is bottom, the match diverges.
+- Matching the pattern ``p1 | p2 | ... | pn`` against the value ``v`` is the
+  result of matching ``v`` against ``p1`` if it is not a failure, or the result
+  of matching ``p2 | .. | pn`` against ``v`` otherwise.
 
 Here are some examples: ::
 
