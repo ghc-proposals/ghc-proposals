@@ -287,7 +287,7 @@ of determining the explicit instantiations is called **mixin linking**.
 
 An indefinite library can be instantiated to various degrees.
 Compilation does not occur unless *all* required signatures are implemented,
-allowing a compiler can optimize as if Backpack was not present (*no
+allowing a compiler to optimize as if Backpack was not present (*no
 performance overhead.*)  An indefinite library can also be partially
 instantiated, or not instantiated at all.  If a required signature is not
 instantiated, it gets inherited by the user of the library::
