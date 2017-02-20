@@ -152,4 +152,6 @@ None
 
 Implementation Plan
 -------------------
-Iavor Diatchki (@yav) indicated he made a go at implementing the proposal; so might already have something to try soon.
+Iavor Diatchki (@yav) has a Phabricator patch that implements the proposal (https://phabricator.haskell.org/D3066). which
+requires minimal amount of work to be complete. (Essentially the ``read`` instance and the pretty-printer are missing;
+as of Feb 20 2017.)
