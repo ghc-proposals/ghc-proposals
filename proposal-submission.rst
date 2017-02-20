@@ -10,8 +10,7 @@ GHC proposals move through the following phases,
 
 - *Discussion*: The community will debate the pros and cons of your proposal
   as described by the document. You should revise your proposal document as
-  discussion progresses. The discussion phase should typically last roughly one
-  month.
+  discussion progresses. The discussion phase can last as long as it needs.
 
 - *Committee decision*: The `GHC Steering Committee`_ will review your proposal
   document and its ensuing debate and decide whether to accept or reject
