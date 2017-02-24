@@ -50,14 +50,14 @@ I propose adding following methods to ``RealFloat`` typeclass::
 Effect and Interactions
 -----------------------
 These functions can be used to improve the performance of ``Double``, ``Float`` 's ``Show``, ``Read`` instance,
-for some packages that rely on ``GHC.Float.floatToDigits`` (scientific for example), use ``decodeFloatDecimal`` will also
+for some packages that rely on ``GHC.Float.floatToDigits`` (scientific for example), ``decodeFloatDecimal`` will also
 be a better choice.
 
 
 
 Costs and Drawbacks
 -------------------
-A implementation of ``decodeFloatDecimal`` and ``encodeFloatDecimal`` in C can be found `here <https://github.com/dvidelabs/flatcc/tree/master/external/grisu3>`_. I have port part of it in `this patch <https://github.com/haskell/bytestring/pull/115>`_. It should be straightforward to port the rest of it.
+A implementation of ``decodeFloatDecimal`` and ``encodeFloatDecimal`` using Grisu3 in C can be found `here <https://github.com/dvidelabs/flatcc/tree/master/external/grisu3>`_. I have port part of it in `this patch <https://github.com/haskell/bytestring/pull/115>`_. It should be straightforward to port the rest of it.
 
 Current ``round`` implementation already provide the primitives that ``roundFloat`` need, we can easily add them.
 
