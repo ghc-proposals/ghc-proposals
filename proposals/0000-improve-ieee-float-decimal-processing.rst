@@ -14,7 +14,7 @@ This proposal is `discussed at this pull requst <https://github.com/ghc-proposal
 
 Improve ieee float decimal processing
 =====================================
-Recently i'm try to [optimzing IEEE float decimal formatting](https://www.reddit.com/r/haskell/comments/5uf060/faster_dtoa_for_haskell_using_grisu3_review_needed/), during that process i started to realize it's better to directly optimze current base's implementation instead of just bytestring. Alongaside formatting, there're some other things to be optimzed too. This proposal described my plan.
+Recently i'm trying to `optimzing IEEE float decimal formatting <https://www.reddit.com/r/haskell/comments/5uf060/faster_dtoa_for_haskell_using_grisu3_review_needed>`_, during that process i started to realize it's better to directly optimze current base's implementation instead of just bytestring. Alongaside formatting, there're some other things to be optimzed too. This proposal described my plan.
 
 
 Motivation
@@ -57,7 +57,7 @@ be a better choice.
 
 Costs and Drawbacks
 -------------------
-A implementation of ``decodeFloatDecimal`` and ``encodeFloatDecimal`` in C can be found [here](https://github.com/dvidelabs/flatcc/tree/master/external/grisu3). I have port part of it in [this patch](https://github.com/haskell/bytestring/pull/115). It should be straightforward to port the rest of it.
+A implementation of ``decodeFloatDecimal`` and ``encodeFloatDecimal`` in C can be found `here <https://github.com/dvidelabs/flatcc/tree/master/external/grisu3>`_. I have port part of it in `this patch <https://github.com/haskell/bytestring/pull/115>`_. It should be straightforward to port the rest of it.
 
 Current ``round`` implementation already provide the primitives that ``roundFloat`` need, we can easily add them.
 
