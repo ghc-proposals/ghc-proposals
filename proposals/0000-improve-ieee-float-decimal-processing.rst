@@ -12,8 +12,6 @@
 
 This proposal is `discussed at this pull requst <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_. **After creating the pull request, edit this file again, update the number in the link, and delete this bold sentence.**
 
-.. contents::
-
 Improve ieee float decimal processing
 =====================================
 Recently i'm try to [optimzing IEEE float decimal formatting](https://www.reddit.com/r/haskell/comments/5uf060/faster_dtoa_for_haskell_using_grisu3_review_needed/), during that process i started to realize it's better to directly optimze current base's implementation instead of just bytestring. Alongaside formatting, there're some other things to be optimzed too. This proposal described my plan.
@@ -52,7 +50,7 @@ I propose adding following methods to ``RealFloat`` typeclass::
 Effect and Interactions
 -----------------------
 These functions can be used to improve the performance of ``Double``, ``Float`` 's ``Show``, ``Read`` instance,
-for some packages that rely on 'GHC.floatToDigits' (scientific for example), use ``decodeFloatDecimal`` will also
+for some packages that rely on ``GHC.Float.floatToDigits`` (scientific for example), use ``decodeFloatDecimal`` will also
 be a better choice.
 
 
