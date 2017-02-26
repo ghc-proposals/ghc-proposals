@@ -41,7 +41,8 @@ I propose adding following methods to ``RealFloat`` typeclass::
         --
         encodeFloatDecimal :: [Word8] -> Int -> a
 
-        -- | 'roundFloat' will try to follow the rounding rules of 'round', but return result 
+        -- | 'roundFloat' return the integral value nearest to x rounding half-way 
+        -- cases to even following the rounding rules of 'round', but return result
         -- as an IEEE float.
         --
         roundFloat :: a -> a
