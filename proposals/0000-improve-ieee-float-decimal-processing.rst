@@ -20,7 +20,7 @@ Motivation
 ------------
 IEEE float(``Double``, ``Float``)s are represented in a way that it's not possible precisely converted into a floating number in decimal and back, and it can't be processed precisely in decimal either. There're many efforts on how we can do things with IEEE float as precisely as we can, and many mature algorithms have been invented, but haskell lacks serious support for these decimal operations, we often have to do inefficient things.
 
-Another problems is that we mixed IEEE float with some fixed point/rational representation types in `RealFrac` typeclass, for example we have ``round :: (Integral b, RealFrac a) => a -> b`` which force us return result as an Integral, but this makes all IEEE Float algorithms using round became inefficient because we have to convert these ``Integral`` s back and forth.
+Another problems is that we mixed IEEE float with some fixed point/rational representation types in ``RealFrac`` typeclass, for example we have ``round :: (Integral b, RealFrac a) => a -> b`` which force us return result as an Integral, but this makes all IEEE Float algorithms using round became inefficient because we have to convert these ``Integral`` s back and forth.
 
 Proposed Change Specification
 -----------------------------
