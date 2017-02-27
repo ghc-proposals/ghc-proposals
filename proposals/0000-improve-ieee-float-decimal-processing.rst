@@ -46,6 +46,13 @@ I propose adding following methods to ``RealFloat`` typeclass::
         -- as an IEEE float.
         --
         roundFloat :: a -> a
+        
+        -- | These functions follow the same idea with `round`, that is to provide
+        -- specific decimal processing methods to IEEE float to speed up computations.
+        --
+        ceilingFloat :: a -> a
+        floorFloat :: a -> a
+        truncateFloat :: a -> a
         ...
 
 Effect and Interactions
