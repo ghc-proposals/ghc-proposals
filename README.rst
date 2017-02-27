@@ -23,7 +23,7 @@ What is the timeline of a propsoal?
 
    `Discussion goals <#discussion-goals>`_ •
    `How to comment on a proposal? <#how-to-comment-on-a-proposal>`_ •
-   `List of proposals under discussion <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Under+discussion%22>`_
+   `List of proposals under discussion <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+no%3Alabel>`_
 
 4. Eventually *the proposal author* brings the proposal before the committee for review.
 
