@@ -355,7 +355,57 @@ rule, see Appendix A.
 Backtracking semantics
 ~~~~~~~~~~~~~~~~~~~~~~
 
-TODO
+Backtracking semantics requires changes in the existing rules. We distinguish
+these two types of patterns:
+
+- **Simple patterns** are patterns that are not themselves or patterns and do
+  not contain or patterns.
+
+- **Complex patterns** are either or patterns or other patterns that contain or
+  patterns.
+
+For simple patterns, existing rules apply.
+
+For complex patterns, we "float" or patterns to the outer level by duplicating
+the pattern surrounding the or pattern. For example: ::
+
+    C (p1 | p2) ==> (C p1 | C p2)
+
+We then modify rule ``c`` to add a side-condition: ::
+
+    case v of { p | gs1 -> e1 ; …
+                 | gsn -> en where { decls }
+                _     -> e′ }
+    = case e′ of { y ->
+       case v of {
+         p -> let { decls } in
+              case () of {
+                () | gs1 -> e1;
+                _ -> … case () of {
+                           () | gsn -> en;
+                           _  -> y } … }
+         _ -> y }}
+    where y is a new variable
+      and p is a simple pattern
+
+Finally we add a rule with a left-hand side similar to ``c`` but only works when
+pattern is an or pattern: ::
+
+    (or_2)
+    case v of { (p1 | … | pN)
+                 | gs1 -> e1 ; …
+                 | gsn -> en where { decls }
+                _     -> e′ }
+    = case v of {
+        p1 | gs1 -> e1 ; …
+           | gsn -> en where { decls }
+           _     -> … case v of {
+                        pN | gs1 -> e1 ; …
+                           | gsn -> en where { decls }
+                           | _   -> e' } … }
+
+As an example evaluation of the running example from informal semantics section
+with this rule, see Appendix A.
 
 Drawbacks
 ---------
@@ -536,7 +586,10 @@ Unresolved Questions
 Appendix A: Evaluation of the running example
 ---------------------------------------------
 
-**Non-backtracking semantics (rule or_1)** ::
+Non-backtracking semantics (rule or_1)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+::
 
     (original expression)
     case v of
@@ -595,3 +648,28 @@ Appendix A: Evaluation of the running example
 At this point we don't have any or patterns and substituting ``(1, 2)`` for
 ``v`` and further simplifications using identities from the manual reveals that
 this indeed implements non-backtracking semantics.
+
+Backtracking semantics (rule or_2)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+::
+
+    (original expression)
+    case v of
+      ((x, _) | (_, x))
+        | even x
+        -> True
+      _ -> False
+
+    ==> (or_2)
+
+    case v of
+      (x, _)
+        | even x -> True
+        | _ -> case v of
+                 (_, x)
+                   | even x -> True
+                   | _ -> False
+
+At this point we don't have any complex patterns and we apply original rules as
+usual. After substituting ``(1, 2)`` for ``v`` we get ``True`` as expected.
