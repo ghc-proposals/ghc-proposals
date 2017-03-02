@@ -212,73 +212,53 @@ Real-world examples
   constructor is added to ``Pat`` type (this happened many times during the
   implementation of unboxed sums).
 
-Proposed Change
----------------
+Changes in the grammar
+----------------------
 
-- Changes in the grammar:
+We consider this as an extension to `Haskell 2010 grammar
+<https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#x17-18000010.5>`_.
+Relevant non-terminal is ``apat``: ::
 
-  We consider this as an extension to `Haskell 2010 grammar
-  <https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#x17-18000010.5>`_.
-  Relevant non-terminal is ``apat``: ::
+  apat    →    var [ @ apat]                     (as pattern)
+          |    gcon                              (arity gcon  =  0)
+          |    qcon { fpat1 , … , fpatk }        (labeled pattern, k ≥ 0)
+          |    literal
+          |    _                                 (wildcard)
+          |    ( pat )                           (parenthesized pattern)
+          |    ( pat1 , … , patk )               (tuple pattern, k ≥ 2)
+          |    [ pat1 , … , patk ]               (list pattern, k ≥ 1)
+          |    ~ apat
 
-    apat    →    var [ @ apat]                     (as pattern)
-            |    gcon                              (arity gcon  =  0)
-            |    qcon { fpat1 , … , fpatk }        (labeled pattern, k ≥ 0)
-            |    literal
-            |    _                                 (wildcard)
-            |    ( pat )                           (parenthesized pattern)
-            |    ( pat1 , … , patk )               (tuple pattern, k ≥ 2)
-            |    [ pat1 , … , patk ]               (list pattern, k ≥ 1)
-            |    ~ apat
+Or patterns extension adds one more production: ::
 
-  Or patterns extension adds one more production: ::
+          |    ( pat1 | … | patk )
 
-            |    ( pat1 | … | patk )
+This means that or patterns are not treated any different than any other
+pattern during parsing.
 
-  This means that or patterns are not treated any different than any other
-  pattern during parsing.
+Some examples that this new grammar produces: ::
 
-  Some examples that this new grammar produces: ::
+  -- in expression context
+  case e of
+    (T1 | T2{} | T3 _ _) -> ...
 
-    -- in expression context
-    case e of
-      (T1 | T2{} | T3 _ _) -> ...
+  -- in expression context
+  let ([x] | (x : _ : _)) = e1 in e2
 
-    -- in expression context
-    let ([x] | (x : _ : _)) = e1 in e2
+  -- pattern guards in declarations
+  f x y
+    | x@(T1 | T2) <- e1
+    , guard x
+    = e2
 
-    -- pattern guards in declarations
-    f x y
-      | x@(T1 | T2) <- e1
-      , guard x
-      = e2
+  -- nested or patterns
+  case e1 of
+    (((T1 | T2) | T3) | T4) -> e2
 
-    -- nested or patterns
-    case e1 of
-      (((T1 | T2) | T3) | T4) -> e2
+Since extensions like `LambdaCase` and `MultiWayIf` (as patter guards) use
+the same pattern syntax, or patterns are enabled in those too.
 
-  Since extensions like `LambdaCase` and `MultiWayIf` (as patter guards) use
-  the same pattern syntax, or patterns are enabled in those too.
-
-  The new production doesn't add any ambiguities, because of the parentheses.
-
-  One alternative to this syntax is using ``/`` instead of ``|`` to avoid
-  parentheses in some cases (thanks to joe462 for the suggestion), but we can't
-  completely eliminate parentheses around or patterns, as the following example
-  demonstrates: ::
-
-    f T1{} / T2{} / T3 T4 = ...
-
-  This could mean one of these two: ::
-
-    -- a function with two arguments
-    f (T1{} / T2{} / T3) T4 = ...
-
-    -- a function with one argument
-    f (T1{} / T2{} / T3 T1) = ...
-
-    -- where the argument is defined like
-    data T = T1 | T2 | T3 T
+The new production doesn't add any ambiguities, because of the parentheses.
 
 Informal semantics of or pattern matching
 -----------------------------------------
@@ -359,7 +339,8 @@ of `Haskell 2010 Report chapter 3.17.3
 <https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-610003.17.3>`_.
 We give rules for both "backtracking" and "non-backtracking" semantics.
 
-**Non-backtracking semantics**
+Non-backtracking semantics
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We add one rule to chapter 3.17.3 Figure 3.2: ::
 
@@ -371,7 +352,8 @@ This rule is enough to define non-backtracking semantics. As an example
 evaluation of the running example from informal semantics section with this
 rule, see Appendix A.
 
-**Backtracking semantics**
+Backtracking semantics
+~~~~~~~~~~~~~~~~~~~~~~
 
 TODO
 
@@ -383,7 +365,29 @@ TBD
 Alternatives
 ------------
 
-**Hiding constructors by providing destructor functions (eliminators)**
+Alternative syntax
+~~~~~~~~~~~~~~~~~~
+
+One alternative to the proposed syntax is using ``/`` instead of ``|`` to avoid
+parentheses in some cases (thanks to joe462 for the suggestion). This can't
+completely eliminate parentheses around or patterns, as the following example
+demonstrates: ::
+
+  f T1{} / T2{} / T3 T4 = ...
+
+This could mean one of these two: ::
+
+  -- a function with two arguments
+  f (T1{} / T2{} / T3) T4 = ...
+
+  -- a function with one argument
+  f (T1{} / T2{} / T3 T1) = ...
+
+  -- where the argument is defined like
+  data T = T1 | T2 | T3 T
+
+Hiding constructors by providing destructor functions (eliminators)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 One way to have some of the benefits of or patterns is to hide constructors of
 a type and provide constructor and destructor functions instead. Example: ::
@@ -425,7 +429,8 @@ which duplicates ``e2``.
 Or patterns in other languages
 ------------------------------
 
-**OCaml**
+OCaml
+~~~~~
 
 From `OCaml manual <http://caml.inria.fr/pub/docs/manual-ocaml/patterns.html#sec108>`_:
 
@@ -477,7 +482,8 @@ reported in a warning: ::
 If we choose to implement the single-match semantics we should implement a
 similar warning.
 
-**Rust**
+Rust
+~~~~
 
 Rust seems to support a simpler version of or patterns. `Relevant section in
 the language reference
