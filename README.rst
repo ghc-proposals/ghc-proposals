@@ -41,7 +41,7 @@ What is the timeline of a propsoal?
    `List of accepted proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3AAccepted>`_
 
 Once a proposal is accepted, it still has to be implemented.  The author may do that, or someone else.
-Acceptance of the proposal implies that the implementation is will be accepted into GHC provided
+Acceptance of the proposal implies that the implementation will be accepted into GHC provided
 it is well-engineered, well-documented, and does not complicate the code-base too much. 
 
 Do not hesitate to `contact <#questions>`_ us if you have questions.
