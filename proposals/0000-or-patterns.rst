@@ -54,8 +54,8 @@ accordingly. But if functions use ``_`` patterns this is not easy as she won't b
 getting any compile time warnings about functions she needs to update.
 
 This is also against the Haskell way of refactoring programs. Haskell is well
-known for its features that make refactoring easier than most other languages
-[#]_, but ``_`` patterns actually make refactoring harder.
+known for its features that make refactoring easier than most other languages,
+but ``_`` patterns actually make refactoring harder.
 
 As an example, GHC developers would know that adding a new constructor to an
 existing type means many compile-run-edit cycles, with no compile-time help,
@@ -580,8 +580,6 @@ Unresolved Questions
   - ViewPatterns
   - BangPatterns
   - Irrefutable patterns
-
-.. [#] For a recent talk on this topic, see https://www.youtube.com/watch?v=_K6UAq4hjAs
 
 Appendix A: Evaluation of the running example
 ---------------------------------------------
