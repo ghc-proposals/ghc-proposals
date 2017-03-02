@@ -12,22 +12,22 @@ What is the timeline of a propsoal?
 
 1. A new proposal is drafted.
 
-   `What is a proposal? <#what-is-a-proposal>`_ • `How should a proposal look like? <#how-should-a-proposal-look-like>`_
+   `What is a proposal? <#what-is-a-proposal>`_ • `What should a proposal look like? <#what-should-a-proposal-look-like>`_
 
 2. The author submits the proposal for discussion as a pull request against this repository.
 
-   `How to submit a proposal? <#how-to-submit-a-proposal>`_
+   `How to submit a proposal <#how-to-submit-a-proposal>`_
 
 3. The wider community discusses the proposal in the commit section of the pull
    request, while the author refines the proposal. This phase lasts as long as necessary.
 
    `Discussion goals <#discussion-goals>`_ •
-   `How to comment on a proposal? <#how-to-comment-on-a-proposal>`_ •
+   `How to comment on a proposal <#how-to-comment-on-a-proposal>`_ •
    `List of proposals under discussion <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+no%3Alabel>`_
 
 4. Eventually *the proposal author* brings the proposal before the committee for review.
 
-   `How to bring a proposal before the committee? <#how-to-bring-a-proposal-before-the-committee>`_ •
+   `How to bring a proposal before the committee <#how-to-bring-a-proposal-before-the-committee>`_ •
    `Who is the committee? <#who-is-the-committee>`_
 
 5. One committee member steps up as a shephard and generates consensus within the commitee within four weeks or five weeks.
@@ -62,7 +62,7 @@ include,
   `type-indexed <https://ghc.haskell.org/trac/ghc/wiki/Typeable>`_
   ``Typeable`` representations)
 
-How should a proposal look like?
+What should a proposal look like?
 --------------------------------
 
 Each proposal document must follow the following outline. A template is provided in `proposal template <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.rst>`_.
@@ -93,7 +93,7 @@ expressiveness and ease of integration into other GHC infrastructure. See the
 <http://downloads.haskell.org/~ghc/latest/docs/html/users_guide/editing-guide.html>`_
 for a brief introduction to ReStructuredText.
 
-How to submit a proposal?
+How to submit a proposal
 -------------------------
 
 If you are unfamiliar with GitHub, see the `detailed instructions <detailed-instructions.rst>`_.
@@ -138,7 +138,7 @@ design are uncovered. We particularly encourage the following types of feedback,
 - Motivation: Is the motivation reasonable?
 
 
-How to comment on a proposal?
+How to comment on a proposal
 -----------------------------
 
 To comment on a proposal you need to be viewing the proposal's diff in "source
@@ -168,7 +168,7 @@ If you would like to register your approval or disapproval of a particular
 comment or proposal, feel free to use GitHub's "Reactions"
 `feature <https://help.github.com/articles/about-discussions-in-issues-and-pull-requests>`_.
 
-How to bring a proposal before the committee?
+How to bring a proposal before the committee
 ---------------------------------------------
 
 When the discussion has ebbed down and the author thinks the proposal is ready, he
