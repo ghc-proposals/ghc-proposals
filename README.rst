@@ -10,11 +10,11 @@ GHC.
 What is the timeline of a propsoal?
 -----------------------------------
 
-1. A new proposal is drafted.
+1. The author drafts a proposal.
 
    `What is a proposal? <#what-is-a-proposal>`_ • `What should a proposal look like? <#what-should-a-proposal-look-like>`_
 
-2. The author submits the proposal for discussion as a pull request against this repository.
+2. The author submits the proposal to the wider Haskell community for discussion, as a pull request against this repository.
 
    `How to submit a proposal <#how-to-submit-a-proposal>`_
 
@@ -30,7 +30,7 @@ What is the timeline of a propsoal?
    `How to bring a proposal before the committee <#how-to-bring-a-proposal-before-the-committee>`_ •
    `Who is the committee? <#who-is-the-committee>`_
 
-5. One committee member steps up as a shephard and generates consensus within the commitee within four weeks or five weeks.
+5. One committee member steps up as a shephard, and generates consensus within the commitee within four or five weeks.
 
    `Committee process <#committee-process>`_ •
    `Review criteria <#review-criteria>`_ •
@@ -39,6 +39,10 @@ What is the timeline of a propsoal?
 6. Eventually, the committee rejects a proposal, or passes it back to the author for review, or accepts it.
 
    `List of accepted proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3AAccepted>`_
+
+Once a proposal is accepted, it still has to be implemented.  The author may do that, or someone else.
+Acceptance of the proposal implies that the implementation is will be accepted into GHC provided
+it is well-engineered, well-documented, and does not complicate the code-base too much. 
 
 Do not hesitate to `contact <#questions>`_ us if you have questions.
 
