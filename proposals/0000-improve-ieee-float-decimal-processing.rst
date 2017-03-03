@@ -85,4 +85,6 @@ We use ``[Word8]`` in ``decodeFloatDecimal`` and ``encodeFloatDecimal`` for effi
 
 Implementation Plan
 -------------------
-I will implement it. In time for 8.2.
+I will try implement it in [ieee754](https://hackage.haskell.org/package/ieee754-0.8.0) package first, the proposed functions will be added under `IEEE a` class.
+
+I'll continue to discuss this on [ghc-proposals](https://github.com/ghc-proposals/ghc-proposals) at the meantime, to get a concrete answer to the question: how do we want to change the `Prelude`.
