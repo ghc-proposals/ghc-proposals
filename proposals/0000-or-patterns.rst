@@ -407,6 +407,24 @@ pattern is an or pattern: ::
 As an example evaluation of the running example from informal semantics section
 with this rule, see Appendix A.
 
+Interaction with other extensions
+---------------------------------
+
+Pattern synonyms
+~~~~~~~~~~~~~~~~
+
+Or patterns can be used in "unidirectional" or "explicitly bidirectional"
+pattern synonyms. For example ::
+
+    pattern Some x <- (Left x | Right x)
+
+defines a unidirectional pattern synonym, because expression meaning of ``Some
+x`` is not clear. It can be made bidirectional using the bidirectional pattern
+synonym syntax: ::
+
+    pattern Some x <- (Left x | Right x) where
+        Some x = Right x
+
 Drawbacks
 ---------
 
