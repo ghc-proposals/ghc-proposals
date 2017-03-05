@@ -23,12 +23,12 @@ The main benefit, in the medium term, would be to make Haskell fully parametric 
 to make η-conversion and foldr-build optimization safe, to reopen the possibility of unlifted products (*i.e.*,
 ``newtype`` with multiple fields), and possibly to satisfy Bob Harper. Here is some background reading material that
 explains the existing problems:
-  - `η-equivalence in Haskell <http://cstheory.stackexchange.com/questions/19165/is-eta-equivalence-for-functions-compatiable-with-haskells-seq-operation>`
-  - `Haskell has no state monad <http://www.cse.chalmers.se/~nicsma/no-state-monad.html>`
-  - `Hask is not a category <http://math.andrej.com/2016/08/06/hask-is-not-a-category/>`
-  - `Correctness of short cut fusion <https://wiki.haskell.org/Correctness_of_short_cut_fusion#In_the_absence_of_seq>`
+  - `η-equivalence in Haskell <http://cstheory.stackexchange.com/questions/19165/is-eta-equivalence-for-functions-compatiable-with-haskells-seq-operation>`_
+  - `Haskell has no state monad <http://www.cse.chalmers.se/~nicsma/no-state-monad.html>`_
+  - `Hask is not a category <http://math.andrej.com/2016/08/06/hask-is-not-a-category/>`_
+  - `Correctness of short cut fusion <https://wiki.haskell.org/Correctness_of_short_cut_fusion#In_the_absence_of_seq>`_
   - `Haskell is exceptionally unsafe
-    <https://existentialtype.wordpress.com/2012/08/14/haskell-is-exceptionally-unsafe/>`
+    <https://existentialtype.wordpress.com/2012/08/14/haskell-is-exceptionally-unsafe/>`_
 
 Proposed Change
 ---------------
@@ -122,7 +122,7 @@ Backward compatibility issues
 
 Most of the existing code would continue to work unless the ``-XNoUniversalEval`` option was used. There are some
 exceptions that this mechanism would not solve. In particular `(as suggested by Simon
-PJ)<https://github.com/ghc-proposals/ghc-proposals/pull/27#issuecomment-259913953>`, higher-rank types like
+PJ)<https://github.com/ghc-proposals/ghc-proposals/pull/27#issuecomment-259913953>`_, higher-rank types like
 ::
    data Rank2 (m :: (* -> *)) = MkRank2 (m Int)
    f :: forall (m :: * -> *). Rank2 m -> Int
@@ -140,7 +140,7 @@ and GADTs as in
 
 cause GHC to report a missing ``Eval`` instances on ``(m Int)`` and ``(m Bool)``, but with no accompanying suggestion on
 which type signatures to modify. I take this to mean that the
-`INCOMPLETE_CONTEXTS<https://github.com/ghc-proposals/ghc-proposals/pull/34>` implementation strategy could not provide
+`INCOMPLETE_CONTEXTS<https://github.com/ghc-proposals/ghc-proposals/pull/34>`_ implementation strategy could not provide
 an automatic recovery.
    
 Overall, the biggest problem would probably be presented by class instances like
