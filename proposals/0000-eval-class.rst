@@ -23,12 +23,12 @@ The main benefit, in the medium term, would be to make Haskell fully parametric 
 to make η-conversion and foldr-build optimization safe, to reopen the possibility of unlifted products (*i.e.*,
 ``newtype`` with multiple fields), and possibly to satisfy Bob Harper. Here is some background reading material that
 explains the existing problems:
-  - `η-equivalence in Haskell <http://cstheory.stackexchange.com/questions/19165/is-eta-equivalence-for-functions-compatiable-with-haskells-seq-operation>`_
-  - `Haskell has no state monad <http://www.cse.chalmers.se/~nicsma/no-state-monad.html>`_
-  - `Hask is not a category <http://math.andrej.com/2016/08/06/hask-is-not-a-category/>`_
-  - `Correctness of short cut fusion <https://wiki.haskell.org/Correctness_of_short_cut_fusion#In_the_absence_of_seq>`_
-  - `Haskell is exceptionally unsafe
-    <https://existentialtype.wordpress.com/2012/08/14/haskell-is-exceptionally-unsafe/>`_
+
+- `η-equivalence in Haskell <http://cstheory.stackexchange.com/questions/19165/is-eta-equivalence-for-functions-compatiable-with-haskells-seq-operation>`_
+- `Haskell has no state monad <http://www.cse.chalmers.se/~nicsma/no-state-monad.html>`_
+- `Hask is not a category <http://math.andrej.com/2016/08/06/hask-is-not-a-category/>`_
+- `Correctness of short cut fusion <https://wiki.haskell.org/Correctness_of_short_cut_fusion#In_the_absence_of_seq>`_
+- `Haskell is exceptionally unsafe <https://existentialtype.wordpress.com/2012/08/14/haskell-is-exceptionally-unsafe/>`_
 
 Proposed Change
 ---------------
@@ -164,9 +164,10 @@ the instance.
 This particular instance is breaking the ``Functor`` laws, but that is beside the point. There are other user-defined
 classes and data types with those classes' instances that may use ``seq`` in this way. For each of those cases, there
 would be three ways to make the instance compile again:
-  - remove the use of ``seq``, potentially losing the performance,
-  - add ``(Eval a)`` to the context of the type class method, or
-  - add ``(Eval a)`` to the context of the data type constructor.
+
+- remove the use of ``seq``, potentially losing the performance,
+- add ``(Eval a)`` to the context of the type class method, or
+- add ``(Eval a)`` to the context of the data type constructor.
 
 Potential solution
 ------------------
