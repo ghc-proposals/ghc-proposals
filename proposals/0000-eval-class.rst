@@ -174,20 +174,21 @@ Potential solution
   
 There is a relatively principled way to make GHC accept even these instances. First, let's think about how we could
 apply GHC's suggestion manually to the ``Functor`` class. We don't want to modify the ``fmap`` method signature and
-affect all well-behaved instances. We can instead add an evil-twin method ``fmap'`` with the required ``Eval`` context,
-with a default implementation:
+affect all well-behaved instances. We can instead add an evil-twin method ``fmap'`` with the required ``Eval`` context:
 ::
+   {-# LANGUAGE UniversalEval #-}
    class Functor f where
       fmap  ::                     (a -> b) -> f a -> f b
       fmap' :: (Eval a, Eval b) => (a -> b) -> f a -> f b
       fmap' = fmap
+      fmap  = fmap'
 
 Of course the ``Functor`` class is out of our reach by the time we encounter the bad instance, so we can't do this in
 retrospect. And we certainly don't want to do it manually. Rather, we want GHC to perform this magic for all class
-definitions in any module compiled with ``-XNoUniversalEval``. Somewhat more exactly, GHC would automatically shadow
-every method with free type variables with another method whose type signature adds an ``Eval`` constraint to each type
+definitions in any module compiled with ``-XUniversalEval``. Somewhat more exactly, GHC would automatically shadow every
+method with free type variables with another method whose type signature adds an ``Eval`` constraint to each type
 variable. The generated methods would be accessible only for the error-recovery purposes in class instances, and only in
-modules compiled with ``-XNoUniversalEval``.
+modules compiled with ``-XUniversalEval``.
 
 Note that this is an optional extension to the proposal. It's not clear if the instance backward compatibility problems
 will be severe enough to justify the complexity of the fix.
