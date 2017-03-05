@@ -78,7 +78,6 @@ All data types declared with ``data`` would have an automatically derived ``Eval
 constructor declared with strict fields would have ``Eval`` context for such fields, but that would not affect the
 type's ``Eval`` instance. The derived instance of a ``newtype``-declared type on the other hand would inherit the
 context of the ``Eval`` instance of its sole constructor field. Taking the following type declarations for example:
-
 ::
    data Foo a b  = Strict !a !b
                  | HalfStrict !a b
@@ -86,7 +85,6 @@ context of the ``Eval`` instance of its sole constructor field. Taking the follo
    newtype Bar a = Bar a
 
 the compiler would derive
-
 ::
    Strict     :: (Eval a, Eval b) => a -> b -> Foo a b
    HalfStrict :: Eval a => a -> b -> Foo a b
@@ -105,7 +103,6 @@ the compiler would derive
       
 The only effect of strict fields is on the type constructors, the corresponding patterns are not affected in any
 way. The patterns ``Strict a b``, ``NonStrict a`` or ``Bar a`` would behave the same way they do today.
-
 ::
    f :: Foo a b -> a
    f (Strict x _) = x
@@ -113,7 +110,6 @@ way. The patterns ``Strict a b``, ``NonStrict a`` or ``Bar a`` would behave the 
 If in the future we should introduce unlifted products in the form of multi-field ``newtype``, such as in ``newtype Pair
 a b = MkPair a b``, they would likely have no ``Eval`` instance. The reason is that the properties of the instance would
 require that
-
 ::
    MkPair ⊥ b `seq` x = b `seq` x
    MkPair a ⊥ `seq` x = a `seq` x
@@ -127,14 +123,12 @@ Backward compatibility issues
 Most of the existing code would continue to work unless the ``-XNoUniversalEval`` option was used. There are some
 exceptions that this mechanism would not solve. In particular `(as suggested by Simon
 PJ)<https://github.com/ghc-proposals/ghc-proposals/pull/27#issuecomment-259913953>`, higher-rank types like
-
 ::
    data Rank2 (m :: (* -> *)) = MkRank2 (m Int)
    f :: forall (m :: * -> *). Rank2 m -> Int
    f (MkRank2 x) = x `seq` 42
 
 and GADTs as in
-
 ::
    data T m where
      T1 :: m Int -> T m
@@ -150,7 +144,6 @@ which type signatures to modify. I take this to mean that the
 an automatic recovery.
    
 Overall, the biggest problem would probably be presented by class instances like
-
 ::
    data Foo a = MkFoo a
    instance Functor Foo where
@@ -158,7 +151,6 @@ Overall, the biggest problem would probably be presented by class instances like
 
 In this case, GHC 8.0.2 does helpfully suggest adding ``(Eval a)`` to the context of the type signature as a possible
 fix. In this case, unfortunately, the suggested context is wrong:
-
 ::
    Possible fix:
      add (Eval a) to the context of
@@ -183,7 +175,6 @@ There is a relatively principled way to make GHC accept even these instances. Fi
 apply GHC's suggestion manually to the ``Functor`` class. We don't want to modify the ``fmap`` method signature and
 affect all well-behaved instances. We can instead add an evil-twin method ``fmap'`` with the required ``Eval`` context,
 with a default implementation:
-
 ::
    class Functor f where
       fmap  ::                     (a -> b) -> f a -> f b
