@@ -122,7 +122,7 @@ Backward compatibility issues
 
 Most of the existing code would continue to work unless the ``-XNoUniversalEval`` option was used. There are some
 exceptions that this mechanism would not solve. In particular `(as suggested by Simon
-PJ)<https://github.com/ghc-proposals/ghc-proposals/pull/27#issuecomment-259913953>`_, higher-rank types like
+PJ) <https://github.com/ghc-proposals/ghc-proposals/pull/27#issuecomment-259913953>`_, higher-rank types like
 ::
    data Rank2 (m :: (* -> *)) = MkRank2 (m Int)
    f :: forall (m :: * -> *). Rank2 m -> Int
@@ -139,9 +139,9 @@ and GADTs as in
    f (T2 y) = y `seq` 5
 
 cause GHC to report a missing ``Eval`` instances on ``(m Int)`` and ``(m Bool)``, but with no accompanying suggestion on
-which type signatures to modify. I take this to mean that the
-`INCOMPLETE_CONTEXTS<https://github.com/ghc-proposals/ghc-proposals/pull/34>`_ implementation strategy could not provide
-an automatic recovery.
+which type signatures to modify. I take this to mean that the `INCOMPLETE_CONTEXTS
+<https://github.com/ghc-proposals/ghc-proposals/pull/34>`_ implementation strategy could not provide an automatic
+recovery.
    
 Overall, the biggest problem would probably be presented by class instances like
 ::
