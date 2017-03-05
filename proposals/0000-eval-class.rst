@@ -71,6 +71,135 @@ strict.
 This proposal is orthogonal to all existing language extensions. This includes even ``StrictHaskell``, though the
 combination of this one with ``-XNoUniversalEval`` in the same module might prove impractical.
 
+Details
+-------
+
+All data types declared with ``data`` would have an automatically derived ``Eval`` instance. The inferred type of any
+constructor declared with strict fields would have ``Eval`` context for such fields, but that would not affect the
+type's ``Eval`` instance. The derived instance of a ``newtype``-declared type on the other hand would inherit the
+context of the ``Eval`` instance of its sole constructor field. Taking the following type declarations for example:
+
+::
+   data Foo a b  = Strict !a !b
+                 | HalfStrict !a b
+                 | NonStrict a
+   newtype Bar a = Bar a
+
+the compiler would derive
+
+::
+   Strict     :: (Eval a, Eval b) => a -> b -> Foo a b
+   HalfStrict :: Eval a => a -> b -> Foo a b
+   NonStrict  :: a -> Foo a b
+   
+   instance Eval (Foo a b) where
+      Strict{}     `seq` x = x
+      HalfStrict{} `seq` x = x
+      NonStrict{}  `seq` x = x
+      
+   Bar :: a -> MkBar a
+   
+   instance Eval a => Eval (Bar a) where
+      MkBar a `seq` x = a `seq` x
+
+      
+The only effect of strict fields is on the type constructors, the corresponding patterns are not affected in any
+way. The patterns ``Strict a b``, ``NonStrict a`` or ``Bar a`` would behave the same way they do today.
+
+::
+   f :: Foo a b -> a
+   f (Strict x _) = x
+
+If in the future we should introduce unlifted products in the form of multi-field ``newtype``, such as in ``newtype Pair
+a b = MkPair a b``, they would likely have no ``Eval`` instance. The reason is that the properties of the instance would
+require that
+
+::
+   MkPair ⊥ b `seq` x = b `seq` x
+   MkPair a ⊥ `seq` x = a `seq` x
+   MkPair ⊥ ⊥ `seq` x = ⊥
+
+which could not be implemented without speculative concurrent evaluation of both *a* and *b*.
+
+Backward compatibility issues
+-----------------------------
+
+Most of the existing code would continue to work unless the ``-XNoUniversalEval`` option was used. There are some
+exceptions that this mechanism would not solve. In particular `(as suggested by Simon
+PJ)<https://github.com/ghc-proposals/ghc-proposals/pull/27#issuecomment-259913953>`, higher-rank types like
+
+::
+   data Rank2 (m :: (* -> *)) = MkRank2 (m Int)
+   f :: forall (m :: * -> *). Rank2 m -> Int
+   f (MkRank2 x) = x `seq` 42
+
+and GADTs as in
+
+::
+   data T m where
+     T1 :: m Int -> T m
+     T2 :: m Bool -> T m
+
+   f :: T m -> Int
+   f (T1 x) = x `seq` 3
+   f (T2 y) = y `seq` 5
+
+cause GHC to report a missing ``Eval`` instances on ``(m Int)`` and ``(m Bool)``, but with no accompanying suggestion on
+which type signatures to modify. I take this to mean that the
+`INCOMPLETE_CONTEXTS<https://github.com/ghc-proposals/ghc-proposals/pull/34>` implementation strategy could not provide
+an automatic recovery.
+   
+Overall, the biggest problem would probably be presented by class instances like
+
+::
+   data Foo a = MkFoo a
+   instance Functor Foo where
+      fmap f (MkFoo x) = x `seq` MkFoo (f x)
+
+In this case, GHC 8.0.2 does helpfully suggest adding ``(Eval a)`` to the context of the type signature as a possible
+fix. In this case, unfortunately, the suggested context is wrong:
+
+::
+   Possible fix:
+     add (Eval a) to the context of
+       the type signature for:
+         fmap :: (a -> b) -> Foo a -> Foo b
+
+A better suggestion would be to restrict the context of the constructor ``MkFoo``, except that would require the
+``ExistentialQuantification`` language extension. Besides, the data type declaration may not be in the same module as
+the instance.
+
+This particular instance is breaking the ``Functor`` laws, but that is beside the point. There are other user-defined
+classes and data types with those classes' instances that may use ``seq`` in this way. For each of those cases, there
+would be three ways to make the instance compile again:
+  - remove the use of ``seq``, potentially losing the performance,
+  - add ``(Eval a)`` to the context of the type class method, or
+  - add ``(Eval a)`` to the context of the data type constructor.
+
+Potential solution
+------------------
+  
+There is a relatively principled way to make GHC accept even these instances. First, let's think about how we could
+apply GHC's suggestion manually to the ``Functor`` class. We don't want to modify the ``fmap`` method signature and
+affect all well-behaved instances. We can instead add an evil-twin method ``fmap'`` with the required ``Eval`` context,
+with a default implementation:
+
+::
+   class Functor f where
+      fmap  ::                     (a -> b) -> f a -> f b
+      fmap' :: (Eval a, Eval b) => (a -> b) -> f a -> f b
+      fmap' = fmap
+
+Of course the ``Functor`` class is out of our reach by the time we encounter the bad instance, so we can't do this in
+retrospect. And we certainly don't want to do it manually. Rather, we want GHC to perform this magic for all class
+definitions in any module compiled with ``-XNoUniversalEval``. Somewhat more exactly, GHC would automatically shadow
+every method with free type variables with another method whose type signature adds an ``Eval`` constraint to each type
+variable. The generated methods would be accessible only for the error-recovery purposes in class instances, and only in
+modules compiled with ``-XNoUniversalEval``.
+
+Note that this is an optional extension to the proposal. It's not clear if the instance backward compatibility problems
+will be severe enough to justify the complexity of the fix.
+
 Drawbacks
 ---------
 
