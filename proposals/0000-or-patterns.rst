@@ -587,6 +587,81 @@ But this fails with a parse error: ::
     24 |         Ok(1 | 2) => { println!("ok"); }
        |              ^
 
+Implementation Plan
+-------------------
+
+Or patterns require changes in the parser, type checker, pattern checker and
+compiler (``match`` function). Lexer already generates ``|`` tokens so no
+changes needed. There are no changes in Core.
+
+A prototype implementation is currently in progress at
+https://github.com/osa1/ghc/tree/or_patterns.
+
+Parsing
+~~~~~~~
+
+Parsing is easily done by extending the production that generates (boxed or
+unboxed) tuple and unboxed sum patterns (`example implementation
+<https://github.com/osa1/ghc/commit/71831b4de5865529c819684d4215d0c02104679c#diff-72873ca71a4ec70caca296d4af035076>`_).
+
+Type checking
+~~~~~~~~~~~~~
+
+TODO
+
+Pattern checking
+~~~~~~~~~~~~~~~~
+
+TODO
+
+Desugaring to GHC Core (match function)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We take advantage of the recent join points work. When we see a match with an
+or pattern, we first generate a join point for the RHS: ::
+
+    case x of
+      (P1 y | P2 y) -> RHS1
+      P3            -> RHS2
+
+    ==>
+
+    join {
+        rhs1 :: ...
+        rhs1 y = RHS1 } in
+    case x of
+      P1 y -> rhs1 y
+      P2 y -> rhs1 y
+      P3   -> RHS2
+
+This is similar to how pattern errors for unhandled cases are compiled, except
+we mark ``rhs1`` as join point explicitly during desugaring, rather that
+relying on the optimizer to avoid accidentally generating slow code.
+
+An example with nested patterns: ::
+
+    -- Haskell expression
+    case x0 of
+      ((Left x | Right x), (Left y | Right y)) -> e1
+
+    ==>
+
+    -- GHC Core
+    case x0 of
+      (x0_1, x0_2) ->
+        join {
+            rhs1 x =
+              join {
+                  rhs2 y = e1
+              } in
+              case x0_2 of
+                Left  y -> rhs2 y
+                Right y -> rhs2 y
+        } in
+        case x0_1 of
+          Left  x -> rhs1 x
+          Right x -> rhs1 x
+
 Unresolved Questions
 --------------------
 
