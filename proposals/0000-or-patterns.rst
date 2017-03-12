@@ -636,7 +636,7 @@ or pattern, we first generate a join point for the RHS: ::
 
 This is similar to how pattern errors for unhandled cases are compiled, except
 we mark ``rhs1`` as join point explicitly during desugaring, rather that
-relying on the optimizer to avoid accidentally generating slow code.
+relying on the optimizer, to avoid accidentally generating slow code.
 
 An example with nested patterns: ::
 
