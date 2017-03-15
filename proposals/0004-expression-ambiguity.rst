@@ -24,7 +24,7 @@ and also to define the notion of resolved overloading.
 
 Instead of considering that a type is ambiguous --- namely, instead of
 considering that C⇒τ is ambiguous if there exists a type variable in
-the simple type τ tahat does not occur in the set of constraints C ---
+the set of constraints C that does not occur in the  simple type τ ---
 we propose to consider that:
 
  • overloading of a constraint π ∈ C in type C⇒τ is resolved if there
@@ -78,7 +78,7 @@ The proposal involves no change to the grammar, and no change to the
 semantics of any construct.
 
 The only change is related to the ambiguity rule:
- • instead of considering C⇒τ as ambiguous when ∃a ∈ tv(τ): a ∉ tv(C),
+ • instead of considering C⇒τ as ambiguous when ∃a ∈ tv(C): a ∉ tv(τ),
    where tv computes the set of type variables of its argument, consider:
     overloading is resolved for π ∈ C when ∃a ∈ tv(π): unreachable(a,tv(τ))
  • when overloading is resolved for a constraint π ∈ C, in a type C⇒τ, then
