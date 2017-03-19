@@ -28,7 +28,6 @@ we propose to consider that:
 ---
 
 
-------------
 Motivation
 ------------
 The reasons for this change are the following:
@@ -159,14 +158,20 @@ ambiguity, because overloading is not yet resolved.
 Example 4: variant 1
 
 {-# LANGUAGE MultiParamTypeClasses, FlexibleInstances #-}
+
 module PolyMonad where
+
 class (Monad m1, Monad m2) => Morph m1 m2 where
   morph :: m1 a -> m2 a
+
 class PolyMonad m1 m2 m3 where
   (|>>=|) :: m1 a -> (a -> m2 b) -> m3 b
+
 instance  (Morph m1 m2) => PolyMonad m1 m2 m2 where
   ma |>>=| fmb = morph ma >>= fmb
+
 f:: (PolyMonad m1 m2 m2, PolyMonad m2 m3 m3) => m1 a -> (a -> m2 b) -> (b -> m3 c) ->  m3 c
+
 f x g h = x |>>=| (\\ a -> g a |>>=| h)
 
 Example 4: variant 2
@@ -174,13 +179,18 @@ Example 4: variant 2
 {-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, UndecidableInstances #-}
 
 module PolyMonad where
+
 class (Monad m1, Monad m2) => Morph m1 m2 where
   morph :: m1 a -> m2 a
+
 class PolyMonad m1 m2 m3 where
   (|>>=|) :: m1 a -> (a -> m2 b) -> m3 b
+
 instance  (Morph m1 m3, Morph m2 m3) => PolyMonad m1 m2 m3 where
   ma |>>=| fmb = morph ma >>= morph . fmb
+
 f:: (PolyMonad m1 m2 m3, PolyMonad m3 m4 m5) => m1 a -> (a -> m2 b) -> (b -> m4 c) ->  m5 c
+
 f x g h = x |>>=| (\\ a -> g a |>>=| h)
 
 For more examples see e.g.:
