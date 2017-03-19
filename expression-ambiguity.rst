@@ -60,6 +60,7 @@ We present next some examples.
 Example 1
 
 {- ------------------------------------------- -}
+
 class ShowLike a where showLike:: a -> String
 
 class ReadLike a where readLike:: String -> a
