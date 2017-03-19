@@ -61,14 +61,11 @@ Example 1
 
 class ShowLike a where showLike:: a -> String
 
-class ReadLike a where 
-  readLike:: String -> a
+class ReadLike a where readLike:: String -> a
 
-instance ShowLike Bool where
-  showLike = show
+instance ShowLike Bool where showLike = show
 
-instance ReadLike Bool where
-  readLike = read
+instance ReadLike Bool where readLike = read
 
 sr = showLike . readLike
 
@@ -93,11 +90,12 @@ instance there is no ambiguity (the constraint can be removed).
 
 Example 2
 
-class Conv a b where
-  conv:: a -> b
+class Conv a b where conv:: a -> b
+
 instance Conv Char Bool where
   conv '0' = False
   conv _   = True
+  
 main = print (conv '1')
 
 
@@ -128,16 +126,13 @@ Example 3
 
 module Ex3 where
 
-class Sum a b c where
-  (<+>):: a->b->c
+class Sum a b c where (<+>):: a->b->c
 
-class NumLit a where
-  zero:: a
+class NumLit a where zero:: a
 
 data Nat = Zero | Suc Nat
 
-instance NumLit Nat where
-  zero = Zero
+instance NumLit Nat where zero = Zero
 
 instance Sum Nat Nat Nat where
   (<+>) Zero    b = b
@@ -173,11 +168,9 @@ Example 4: variant 1
 
 module PolyMonad where
 
-class (Monad m1, Monad m2) => Morph m1 m2 where
-  morph :: m1 a -> m2 a
+class (Monad m1, Monad m2) => Morph m1 m2 where morph :: m1 a -> m2 a
 
-class PolyMonad m1 m2 m3 where
-  (|>>=|) :: m1 a -> (a -> m2 b) -> m3 b
+class PolyMonad m1 m2 m3 where (|>>=|) :: m1 a -> (a -> m2 b) -> m3 b
 
 instance  (Morph m1 m2) => PolyMonad m1 m2 m2 where
   ma |>>=| fmb = morph ma >>= fmb
@@ -192,11 +185,9 @@ Example 4: variant 2
 
 module PolyMonad where
 
-class (Monad m1, Monad m2) => Morph m1 m2 where
-  morph :: m1 a -> m2 a
+class (Monad m1, Monad m2) => Morph m1 m2 where morph :: m1 a -> m2 a
 
-class PolyMonad m1 m2 m3 where
-  (|>>=|) :: m1 a -> (a -> m2 b) -> m3 b
+class PolyMonad m1 m2 m3 where (|>>=|) :: m1 a -> (a -> m2 b) -> m3 b
 
 instance  (Morph m1 m3, Morph m2 m3) => PolyMonad m1 m2 m3 where
   ma |>>=| fmb = morph ma >>= morph . fmb
