@@ -137,6 +137,7 @@ data Nat = Zero | Suc Nat
 instance NumLit Nat where zero = Zero
 
 instance Sum Nat Nat Nat where
+
   (<+>) Zero    b = b
 
   (<+>) (Suc n) b = Suc ((<+>) n b)
