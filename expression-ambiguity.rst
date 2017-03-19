@@ -59,7 +59,7 @@ We present next some examples.
 
 Example 1
 
------------------------------
+============================
 
 class ShowLike a where 
   showLike :: a -> String
@@ -77,7 +77,7 @@ instance ShowLike Bool where
 
  main = print $ sr "True"
  
- -----------------------------
+ ============================
 
 With expression ambiguity, this program is well-typed (does not cause
 an ambiguity error). I explain why next. The non-improved type of rs
