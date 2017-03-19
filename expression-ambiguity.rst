@@ -58,6 +58,7 @@ The reasons for this change are the following:
 We present next some examples.
 
 =========Example 1===========================
+
 class ShowLike a where showLike :: a -> String
 class ReadLike a where readLike :: String -> a
 
@@ -87,6 +88,7 @@ there exist unifying instances, and if there is only one unifying
 instance there is no ambiguity (the constraint can be removed).
 
 =========Example 2==========================
+
 class Conv a b where
   conv:: a -> b
 
@@ -121,6 +123,7 @@ becomes IO().
 
 
 =========Example 3==========================
+
 {-# LANGUAGE MultiParamTypeClasses #-}
 module Ex3 where
 
@@ -163,6 +166,7 @@ may not have ambiguity). Both variants compile ok with expression
 ambiguity, because overloading is not yet resolved.
 
 =========Example 4: variant 1============================
+
 {-# LANGUAGE MultiParamTypeClasses, FlexibleInstances #-}
 module PolyMonad where
 
@@ -180,6 +184,7 @@ f:: (PolyMonad m1 m2 m2, PolyMonad m2 m3 m3) =>
 f x g h = x |>>=| \a -> g a |>>=| \b -> h b
 
 =========Example 4: variant 2==================================================
+
 {-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, UndecidableInstances #-}
 
 module PolyMonad where
