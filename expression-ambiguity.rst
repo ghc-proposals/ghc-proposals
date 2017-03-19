@@ -59,25 +59,25 @@ We present next some examples.
 
 Example 1
 
-============================================
+-----------------------------
 
-  class ShowLike a where 
-    showLike :: a -> String
+class ShowLike a where 
+  showLike :: a -> String
 
-  class ReadLike a where 
-    readLike :: String -> a
+class ReadLike a where 
+  readLike :: String -> a
 
-  instance ShowLike Bool where
-    showLike = show
+instance ShowLike Bool where
+  showLike = show
 
-  instance ReadLike Bool where
-    readLike = read
+ instance ReadLike Bool where
+   readLike = read
 
-  sr = showLike . readLike
+ sr = showLike . readLike
 
-  main = print $ sr "True"
-
-=============================================
+ main = print $ sr "True"
+ 
+ -----------------------------
 
 With expression ambiguity, this program is well-typed (does not cause
 an ambiguity error). I explain why next. The non-improved type of rs
