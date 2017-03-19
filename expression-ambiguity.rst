@@ -60,14 +60,19 @@ We present next some examples.
 Example 1
 
 class ShowLike a where 
-  showLike :: a -> String
+  showLike:: a -> String
+
 class ReadLike a where 
-  readLike :: String -> a
+  readLike:: String -> a
+
 instance ShowLike Bool where
   showLike = show
+
 instance ReadLike Bool where
   readLike = read
+
 sr = showLike . readLike
+
 main = print $ sr "True"
  
 
