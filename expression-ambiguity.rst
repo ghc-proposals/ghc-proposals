@@ -153,6 +153,7 @@ instance NumLit Nat where
 
 instance Sum Nat Nat Nat where
   (<+>) Zero    b = b
+  
   (<+>) (Suc n) b = Suc ((<+>) n b)
 
 i = (<+>) Zero
@@ -197,8 +198,7 @@ class PolyMonad m1 m2 m3 where
 instance  (Morph m1 m2) => PolyMonad m1 m2 m2 where
   ma |>>=| fmb = morph ma >>= fmb
 
-f:: (PolyMonad m1 m2 m2, PolyMonad m2 m3 m3) =>
-    m1 a -> (a -> m2 b) -> (b -> m3 c) ->  m3 c
+f:: (PolyMonad m1 m2 m2, PolyMonad m2 m3 m3) => m1 a -> (a -> m2 b) -> (b -> m3 c) ->  m3 c
 f x g h = x |>>=| \a -> g a |>>=| \b -> h b
 
 Example 4: variant 2
@@ -218,8 +218,7 @@ class PolyMonad m1 m2 m3 where
 instance  (Morph m1 m3, Morph m2 m3) => PolyMonad m1 m2 m3 where
   ma |>>=| fmb = morph ma >>= morph . fmb
 
-f:: (PolyMonad m1 m2 m3, PolyMonad m3 m4 m5) =>
-    m1 a -> (a -> m2 b) -> (b -> m4 c) ->  m5 c
+f:: (PolyMonad m1 m2 m3, PolyMonad m3 m4 m5) => m1 a -> (a -> m2 b) -> (b -> m4 c) ->  m5 c
 f x g h = x |>>=| \a -> g a |>>=| \b -> h b
 
 ===============================================================================
