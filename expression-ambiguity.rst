@@ -1,4 +1,4 @@
-
+==============
 Expression Ambiguity
 ==============
 
@@ -29,6 +29,7 @@ we propose to consider that:
 ---
 
 
+------------
 Motivation
 ------------
 The reasons for this change are the following:
