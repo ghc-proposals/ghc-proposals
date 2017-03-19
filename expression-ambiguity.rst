@@ -93,7 +93,9 @@ Example 2
 class Conv a b where conv:: a -> b
 
 instance Conv Char Bool where
+
   conv '0' = False
+  
   conv _   = True
   
 main = print (conv '1')
