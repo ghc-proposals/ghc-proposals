@@ -126,17 +126,25 @@ becomes IO().
 Example 3
 
 {-# LANGUAGE MultiParamTypeClasses #-}
+
 module Ex3 where
+
 class Sum a b c where
   (<+>):: a->b->c
+
 class NumLit a where
   zero:: a
+
 data Nat = Zero | Suc Nat
+
 instance NumLit Nat where
   zero = Zero
+
 instance Sum Nat Nat Nat where
   (<+>) Zero    b = b
+
   (<+>) (Suc n) b = Suc ((<+>) n b)
+
 i = (<+>) Zero
 
 Similar situation here. The non-simplified type of i is:
