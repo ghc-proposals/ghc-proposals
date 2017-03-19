@@ -61,11 +61,15 @@ Example 1
 
 ============================================
 
-class ShowLike a where showLike :: a -> String
-class ReadLike a where readLike :: String -> a
+class ShowLike a where 
+  showLike :: a -> String
+class ReadLike a where 
+  readLike :: String -> a
 
-instance ShowLike Bool where showLike = show
-instance ReadLike Bool where readLike = read
+instance ShowLike Bool where
+  showLike = show
+instance ReadLike Bool where
+  readLike = read
 
 sr = showLike . readLike
 
