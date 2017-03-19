@@ -63,11 +63,13 @@ Example 1
 
 class ShowLike a where 
   showLike :: a -> String
+
 class ReadLike a where 
   readLike :: String -> a
 
 instance ShowLike Bool where
   showLike = show
+
 instance ReadLike Bool where
   readLike = read
 
@@ -102,6 +104,7 @@ class Conv a b where
 
 instance Conv Char Bool where
   conv '0' = False
+  
   conv _   = True
 
 main = print (conv '1')
