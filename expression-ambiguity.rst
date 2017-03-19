@@ -102,7 +102,7 @@ main = print (conv '1')
 
 
 A similar situation occurs here: with expression ambiguity, this
-program is well-typed (prints True), whereas currently in Haskell the
+program is well-typed (prints "True"), whereas currently in Haskell the
 program is not well-typed because of an "ambiguity" type error. An
 explanation follows.
 
@@ -118,8 +118,8 @@ The non-simplified type of (print (conv '1')) is
   (Show b, Conv Char b) => IO()
 
 Overloading of (Conv Char b) in this type is resolved. Since there is
-a single instance of (Conv Char b) visible, namely Conv Int String,
-then b is instantiated to String, and the type of (print (conv '1'))
+a single instance of (Conv Char b) visible, namely Conv Char Bool,
+then b is instantiated to Bool, and the type of (print (conv '1'))
 becomes IO().
 
 Example 3
