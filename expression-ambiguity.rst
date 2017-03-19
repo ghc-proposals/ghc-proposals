@@ -204,6 +204,7 @@ class (Monad m1, Monad m2) => Morph m1 m2 where morph :: m1 a -> m2 a
 class PolyMonad m1 m2 m3 where (|>>=|) :: m1 a -> (a -> m2 b) -> m3 b
 
 instance  (Morph m1 m3, Morph m2 m3) => PolyMonad m1 m2 m3 where
+
   ma |>>=| fmb = morph ma >>= morph . fmb
 
 f:: (PolyMonad m1 m2 m3, PolyMonad m3 m4 m5) => m1 a -> (a -> m2 b) -> (b -> m4 c) ->  m5 c
