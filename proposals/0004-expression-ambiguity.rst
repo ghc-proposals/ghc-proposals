@@ -74,22 +74,25 @@ The reasons for this change are the following:
 We present next some examples.
 
 =========Example 1===========================
-class ShowLike a where showLike :: a -> String
-class ReadLike a where readLike :: String -> a
 
-instance ShowLike Bool where showLike = show
-instance ReadLike Bool where readLike = read
+    class ShowLike a where showLike :: a -> String
+    class ReadLike a where readLike :: String -> a
 
-sr = showLike . readLike
+    instance ShowLike Bool where showLike = show
+    instance ReadLike Bool where readLike = read
 
-main = print $ sr "True"
+    sr = showLike . readLike
+
+    main = print $ sr "True"
 
 =============================================
 
 With expression ambiguity, this program is well-typed (does not cause
 an ambiguity error). I explain why next. The non-improved type of rs
 is: 
+
     (ShowLike a, ReadLike a) ⇒ String → String
+
 
 Constraints (ShowLike a) and (ReadLike a) are resolved in this
 type. It must be consider, then, for each constraint (ShowLike
@@ -103,14 +106,15 @@ there exist unifying instances, and if there is only one unifying
 instance there is no ambiguity (the constraint can be removed).
 
 =========Example 2==========================
-class Conv a b where
-  conv:: a -> b
 
-instance Conv Char Bool where
-  conv '0' = False
-  conv _   = True
+    class Conv a b where
+      conv:: a -> b
 
-main = print (conv '1')
+    instance Conv Char Bool where
+      conv '0' = False
+      conv _   = True
+
+    main = print (conv '1')
 
 =============================================
 
@@ -124,11 +128,11 @@ The type of (conv '1') is: Conv Char b ⇒ b
 Constraint (Conv Char b) in this type is not yet resolved. It becomes
 resolved in:
 
-   print (conv '1')
+     print (conv '1')
 
 The non-simplified type of (print (conv '1')) is
 
-  (Show b, Conv Char b) => IO()
+     (Show b, Conv Char b) => IO()
 
 Overloading of (Conv Char b) in this type is resolved. Since there is
 a single instance of (Conv Char b) visible, namely Conv Int String,
@@ -137,33 +141,36 @@ becomes IO().
 
 
 =========Example 3==========================
-{-# LANGUAGE MultiParamTypeClasses #-}
-module Ex3 where
 
-class Sum a b c where
-  (<+>):: a->b->c
+    {-# LANGUAGE MultiParamTypeClasses #-}
+    module Ex3 where
+
+    class Sum a b c where
+      (<+>):: a->b->c
     
-class NumLit a where
-  zero:: a
+    class NumLit a where
+      zero:: a
 
-data Nat = Zero | Suc Nat
+    data Nat = Zero | Suc Nat
 
-instance NumLit Nat where
-  zero = Zero
+    instance NumLit Nat where
+      zero = Zero
 
-instance Sum Nat Nat Nat where
-  (<+>) Zero    b = b
-  (<+>) (Suc n) b = Suc ((<+>) n b)
+    instance Sum Nat Nat Nat where
+      (<+>) Zero    b = b
+      (<+>) (Suc n) b = Suc ((<+>) n b)
 
-i = (<+>) Zero
+    i = (<+>) Zero
 
 =============================================
 
 Similar situation here. The non-simplified type of i is:
-   (Sum Nat b c, NumLit Nat) ⇒ b→c
+
+     (Sum Nat b c, NumLit Nat) ⇒ b→c
 
 which can be simplified to:
-   Sum Nat b c ⇒ b→c
+
+      Sum Nat b c ⇒ b→c
 
 Since overloading is not yet resolved for Sum Nat b c, no
 satisfiability checking is needed.
@@ -179,39 +186,41 @@ may not have ambiguity). Both variants compile ok with expression
 ambiguity, because overloading is not yet resolved.
 
 =========Example 4: variant 1============================
-{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances #-}
-module PolyMonad where
 
-class (Monad m1, Monad m2) => Morph m1 m2 where
-  morph :: m1 a -> m2 a
+     {-# LANGUAGE MultiParamTypeClasses, FlexibleInstances #-}
+     module PolyMonad where
 
-class PolyMonad m1 m2 m3 where
-  (|>>=|) :: m1 a -> (a -> m2 b) -> m3 b
+     class (Monad m1, Monad m2) => Morph m1 m2 where
+        morph :: m1 a -> m2 a
 
-instance  (Morph m1 m2) => PolyMonad m1 m2 m2 where
-  ma |>>=| fmb = morph ma >>= fmb
+     class PolyMonad m1 m2 m3 where
+        (|>>=|) :: m1 a -> (a -> m2 b) -> m3 b
 
-f:: (PolyMonad m1 m2 m2, PolyMonad m2 m3 m3) =>
-    m1 a -> (a -> m2 b) -> (b -> m3 c) ->  m3 c
-f x g h = x |>>=| \a -> g a |>>=| \b -> h b
+     instance  (Morph m1 m2) => PolyMonad m1 m2 m2 where
+        ma |>>=| fmb = morph ma >>= fmb
+
+     f:: (PolyMonad m1 m2 m2, PolyMonad m2 m3 m3) =>
+        m1 a -> (a -> m2 b) -> (b -> m3 c) ->  m3 c
+     f x g h = x |>>=| \a -> g a |>>=| \b -> h b
 
 =========Example 4: variant 2==================================================
-{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, UndecidableInstances #-}
 
-module PolyMonad where
+    {-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, UndecidableInstances #-}
 
-class (Monad m1, Monad m2) => Morph m1 m2 where
-  morph :: m1 a -> m2 a
+    module PolyMonad where
 
-class PolyMonad m1 m2 m3 where
-  (|>>=|) :: m1 a -> (a -> m2 b) -> m3 b
+    class (Monad m1, Monad m2) => Morph m1 m2 where
+       morph :: m1 a -> m2 a
 
-instance  (Morph m1 m3, Morph m2 m3) => PolyMonad m1 m2 m3 where
-  ma |>>=| fmb = morph ma >>= morph . fmb
+    class PolyMonad m1 m2 m3 where
+       (|>>=|) :: m1 a -> (a -> m2 b) -> m3 b
 
-f:: (PolyMonad m1 m2 m3, PolyMonad m3 m4 m5) =>
-    m1 a -> (a -> m2 b) -> (b -> m4 c) ->  m5 c
-f x g h = x |>>=| \a -> g a |>>=| \b -> h b
+    instance  (Morph m1 m3, Morph m2 m3) => PolyMonad m1 m2 m3 where
+       ma |>>=| fmb = morph ma >>= morph . fmb
+
+    f:: (PolyMonad m1 m2 m3, PolyMonad m3 m4 m5) =>
+       m1 a -> (a -> m2 b) -> (b -> m4 c) ->  m5 c
+    f x g h = x |>>=| \a -> g a |>>=| \b -> h b
 
 =============================================
 
