@@ -1,7 +1,5 @@
-Proposal title
-==============
-
 Expression Ambiguity
+==============
 
 This is a proposal for changing the concept of ambiguity in Haskell,
 and also to define the notion of resolved overloading.
