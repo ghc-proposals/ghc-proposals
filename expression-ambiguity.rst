@@ -57,7 +57,8 @@ The reasons for this change are the following:
 
 We present next some examples.
 
-=========Example 1===========================
+Example 1
+============================================
 
 class ShowLike a where showLike :: a -> String
 class ReadLike a where readLike :: String -> a
@@ -87,7 +88,8 @@ Summary: when a constrain is resolved, it must be checked whether
 there exist unifying instances, and if there is only one unifying
 instance there is no ambiguity (the constraint can be removed).
 
-=========Example 2==========================
+Example 3
+=============================================
 
 class Conv a b where
   conv:: a -> b
@@ -165,7 +167,8 @@ been resolved, i.e. even if it the variables in it are unreachable, we
 may not have ambiguity). Both variants compile ok with expression
 ambiguity, because overloading is not yet resolved.
 
-=========Example 4: variant 1============================
+Example 4: variant 1
+==========================================================
 
 {-# LANGUAGE MultiParamTypeClasses, FlexibleInstances #-}
 module PolyMonad where
@@ -183,7 +186,8 @@ f:: (PolyMonad m1 m2 m2, PolyMonad m2 m3 m3) =>
     m1 a -> (a -> m2 b) -> (b -> m3 c) ->  m3 c
 f x g h = x |>>=| \a -> g a |>>=| \b -> h b
 
-=========Example 4: variant 2==================================================
+Example 4: variant 2
+===============================================================================
 
 {-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, UndecidableInstances #-}
 
@@ -202,7 +206,7 @@ f:: (PolyMonad m1 m2 m3, PolyMonad m3 m4 m5) =>
     m1 a -> (a -> m2 b) -> (b -> m4 c) ->  m5 c
 f x g h = x |>>=| \a -> g a |>>=| \b -> h b
 
-=============================================
+===============================================================================
 
 For more examples see e.g.:
  [1] Ambiguity and Constrained Polymorphism, 
