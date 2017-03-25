@@ -71,6 +71,7 @@ I ran the tests on an Ubuntu 14.0.2 VM and GHC 8.0.2, and had the following resu
 Criterion output (descending/ascending results are for already sorted lists). I barely understand what Criterion does, and I am puzzled with the various "T" output - maybe there is a bug in my bench code:
 
 ::
+
     vagrant@vagrant-ubuntu-trusty-64:/vagrant$ stack exec ghc-sort
     benchmarking ascending ints/ghc
     TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTtime                 160.6 ms   (153.4 ms .. 167.8 ms)
