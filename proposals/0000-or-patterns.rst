@@ -663,6 +663,61 @@ An example with nested patterns: ::
           Left  x -> rhs1 x
           Right x -> rhs1 x
 
+Desugaring in the prototype implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The prototype implementation uses a pre-processing step for eliminating or
+patterns, leaving `match` unchanged.
+
+The trouble with changing `match` is
+
+- Every single pattern group (e.g. "literals", "data constructors") need to
+  handle or patterns. This requires quite invasive changes.
+
+- Match function operates in `DsM` monad and otherwise don't allow accumulating
+  new bindings during compilation (we need this to be able to introduce join
+  points for RHSs).
+
+A simpler alternative is to use a pre-processing step that eliminates or
+patterns before leaving compilation to `match`. This steps runs in
+`matchWrapper`. In summary, this pass does this:
+
+- Check if the equation has any or patterns.
+
+  - If it doesn't, nothing to do, just call `match`.
+
+  - Otherwise introduce a join point for the RHS. This join point takes, as
+    arguments, all of the binders in the equation. Then flatten the equation
+    (eliminate or patterns), using the same RHS that jumps to the join point for
+    all equations.
+
+    For example, given this equation: ::
+
+        [ (p1 | p2), (p3 | p4) ] -> RHS
+
+    we flatten it as ::
+
+        [ [ p1, p3 ] -> jump p1 bndrs
+        , [ p1, p4 ] -> jump p1 bndrs
+        , [ p2, p3 ] -> jump p1 bndrs
+        , [ p2, p4 ] -> jump p1 bndrs
+        ]
+
+    where `p1` is the joint point and `bndrs` is all of the binders in an
+    equation (remember that in an or pattern all alternatives bind exactly the
+    same set of variables of same types, so equations in this exapanded form
+    bind the same set of variables).
+
+Disadvantages of this approach:
+
+- Introducing a pre-processing step just for or patterns is ugly. The
+  pre-processing step runs on every pattern matching expression, and adds a
+  traversal cost in the best case (when equations don't have any or patterns).
+
+- Flattening step potentially introduces exponential number of new equations.
+  Unfortunately there's no way around that unless we change `Core` and `Stg` to
+  support or patterns.
+
 Unresolved Questions
 --------------------
 
