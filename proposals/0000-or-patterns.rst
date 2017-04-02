@@ -12,6 +12,7 @@ Or patterns
 ===========
 
 (`Discussion <https://github.com/ghc-proposals/ghc-proposals/pull/43>`_)
+(`Prototype implementation <https://github.com/osa1/ghc/tree/or_patterns>`_)
 
 We propose a new syntax extension for "or-patterns". An or pattern is
 essentially a list of patterns, where patterns match exactly the same set of
