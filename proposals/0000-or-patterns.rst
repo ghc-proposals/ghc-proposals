@@ -426,6 +426,78 @@ synonym syntax: ::
     pattern Some x <- (Left x | Right x) where
         Some x = Right x
 
+View patterns
+~~~~~~~~~~~~~
+`View patterns add one rule
+<https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#ghc-flag--XViewPatterns>`_
+to Haskell 2010 semantics of pattern matching: ::
+
+    case v of { (e -> p) -> e1 ; _ -> e2 }
+    =
+    case (e v) of { p -> e1 ; _ -> e2 }
+
+Here's an example function that uses view patterns and or patterns: ::
+
+    is_mm' :: (Int, Int) -> Bool
+    is_mm' ((even -> True, _) | (_, even -> True))
+      = True
+    is_mm' _
+      = False
+
+Here ``is_mm' (1, 2)`` should return ``True``. For this rules ``or_1`` and
+``or_2`` should apply before the view pattern rule.
+
+Another (somewhat superficial) example: ::
+
+    printConst :: Show a => a -> a
+    printConst a = trace (show a) a
+
+    is_mm'' :: Bool -> Bool
+    is_mm'' ((printConst -> x) | (printConst -> x))
+      | True <- x
+      = True
+    is_mm'' _
+      = False
+
+Under ``rule_2``, ``is_mm'' False`` should print ``False`` twice and finally
+return ``False``. Under ``rule_1`` it should print ``False`` once.
+
+Here are some example functions that work as expected in the prototype
+implementation: ::
+
+    -- is_mm' (1, 2) == True
+    is_mm' :: (Int, Int) -> Bool
+    is_mm' ((even -> True, _) | (_, even -> True))
+      = True
+    is_mm' _
+      = False
+
+    -- or_view_1 "1:" (Left 123) == "1:123"
+    -- or_view_1 "1:" (Right True) == "True"
+    or_view_1 :: String -> Either Int Bool -> String
+    or_view_1 pfx (Left (((pfx ++) . show) -> x) | Right (show -> x)) = x
+
+    -- or_view_2 1 == 1
+    -- or_view_2 2 == 2
+    or_view_2 :: Int -> Int
+    or_view_2 (toEither -> (Left x | Right x)) = x
+
+    toEither :: Int -> Either Int Int
+    toEither x
+      | odd x     = Left x
+      | otherwise = Right x
+
+    printConst :: Show a => a -> a
+    printConst a = trace (show a) a
+
+    -- is_mm'' False == False (prints False twice)
+    is_mm'' :: Bool -> Bool
+    is_mm'' ((printConst -> x) | (printConst -> x))
+      | True <- x
+      = True
+    is_mm'' _
+      = False
+
 Drawbacks
 ---------
 
@@ -726,7 +798,6 @@ Unresolved Questions
   - GADTs
   - Pattern synonyms
   - Existentials
-  - ViewPatterns
   - BangPatterns
   - Irrefutable patterns
 
