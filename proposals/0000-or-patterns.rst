@@ -796,7 +796,6 @@ Unresolved Questions
 - We need to figure how this interacts with
 
   - GADTs
-  - Pattern synonyms
   - Existentials
   - BangPatterns
   - Irrefutable patterns
