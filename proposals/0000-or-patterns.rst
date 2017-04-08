@@ -498,6 +498,38 @@ implementation: ::
     is_mm'' _
       = False
 
+Bang patterns
+~~~~~~~~~~~~~
+`Bang patterns extension
+<https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#dynamic-semantics-of-bang-patterns>`_
+adds one new identity rule to case expression semantics and two new desugaring
+rules for let bindings. None of these rules have any unexpected interactions
+with or patterns (or patterns are naturally supported in ``pat``s and ``p``s
+in the desugaring and identity rules for bang patterns).
+
+Some example programs that work as expected in the prototype implementation: ::
+
+    -- does not fail
+    main = do
+      let (Left x | Right x) = undefined
+      return ()
+
+    -- fails
+    main = do
+      let !(Left x | Right x) = undefined
+      return ()
+
+    -- does not fail
+    main = do
+      let e@(Left !x | Right x) = Right undefined
+      e `seq` return ()
+
+    -- fails
+    main = do
+      let e@(Left !x | Right x) = Left undefined
+      e `seq` return ()
+
+
 Drawbacks
 ---------
 
@@ -797,7 +829,6 @@ Unresolved Questions
 
   - GADTs
   - Existentials
-  - BangPatterns
   - Irrefutable patterns
 
 Appendix A: Evaluation of the running example
