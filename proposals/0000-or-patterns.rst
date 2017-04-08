@@ -529,6 +529,13 @@ Some example programs that work as expected in the prototype implementation: ::
       let e@(Left !x | Right x) = Left undefined
       e `seq` return ()
 
+Irrefutable patterns
+~~~~~~~~~~~~~~~~~~~~
+
+Similar to bang patterns, irrefutable patterns are naturally supported. An
+example that works as expected in the prototype implementation: ::
+
+    print ((\ ~(Left x | Right x) -> 0 :: Int) undefined) -- prints 0
 
 Drawbacks
 ---------
@@ -829,7 +836,6 @@ Unresolved Questions
 
   - GADTs
   - Existentials
-  - Irrefutable patterns
 
 Appendix A: Evaluation of the running example
 ---------------------------------------------
