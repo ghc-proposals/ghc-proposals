@@ -19,6 +19,8 @@ instantiates any ``Cls a`` constraint encountered, including in error messages, 
 Motivation
 ----------
 
+### Error messages
+
 I am teaching a Haskell class right now, and in the first few lectures, I had to tell them: „Whenever you see ``Foldable t => … t a …`` anywhere, just mentally replace this with ``… [a] …``.”. Similarly, when discussing ``IO`` before discussing `Monad`, I had to tell them the same for these two. Finally, the first few weeks (because of using CodeWorld_), we turned on ``OverloadedStrings``, but I really do not want want to see them `IsString a` and rather have them see ``Text`` in error messages.
 
 .. _CodeWorld: http://code.world/haskell
@@ -29,10 +31,14 @@ The students coped, but it would be better if the compiler did that for them. So
 
 in their file (students accept instructions to include stuff they do not understand yet, so this is fine) and get a lower entry level.
 
+### Remove polymorphism
+
 But it is useful not only for teaching. Especially
 ::
-  instance IsString Text
-is useful for anyone who does not want literals overloaded but really wants them to be monomorphically the desired ``Text`` type.
+  instance force IsString Text
+is useful for anyone who does not want literals overloaded but really wants them to be monomorphically the desired ``Text`` type. This would avoid ambiguity when a string literal is passed to an overloaded function, e.g.
+::
+  print "Hello"
 
 Proposed Change
 ---------------
