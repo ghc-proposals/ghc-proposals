@@ -82,8 +82,17 @@ is replaced by ::
     or in the form T(c1,...,cn), where c1...cn name pattern synonyms, data constructors,
     or record field selectors.
 
+In addition, the associated pattern synonyms should not be *visibly incompatible* (using terminology from `AssociatingSynonyms#Typing <https://ghc.haskell.org/trac/ghc/wiki/PatternSynonyms/AssociatingSynonyms#Typing>`_): ::
+
+    If unfolding type synonyms in a saturated application of T results in the shape
+        T t1 ... tn = S t1' ... tn'
+    where S is a data/newtype constructor, then c1,...,cn should be constructors of S, functions with
+    type of shape S t1' ... tn' -> t, or pattern synonyms P that are not visibly incompatible with S,
+    that is, if the type of P after unfolding type synonyms has shape ... -> S' t1' ... tn' for a
+    data/newtype constructor S', then S = S'.
+
 Note that `HR:5.3 <https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1010005.3>`_
-does not spell out any corresponding restriction.
+does not spell out any restriction on the imported entities.
 
 Semantics
 ^^^^^^^^^
@@ -123,11 +132,9 @@ Unresolved Questions
 --------------------
 
 * Should this be tied to some language extension?
-* Is there a sane way of checking whether ``c1`` to ``cn`` are actually associated with the type synonym ``T``?
-  It should be possible to adapt the approach taken for bundling with data types,
-  see `AssociatingSynonyms#Typing <https://ghc.haskell.org/trac/ghc/wiki/PatternSynonyms/AssociatingSynonyms#Typing>`_.
-  To make it work, the type synonym needs to be unfolded and given similar treatment.
-  (**TODO**: incorporate this into the specification)
+* Is there a better way of checking whether ``c1`` to ``cn`` are actually associated with the type synonym ``T``?
+  (the specification covers the simple case where the type synonym unfolds directly into a data type or newtype,
+  based on `AssociatingSynonyms#Typing <https://ghc.haskell.org/trac/ghc/wiki/PatternSynonyms/AssociatingSynonyms#Typing>`_.)
   
 Remarks
 -------
