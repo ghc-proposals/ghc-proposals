@@ -67,7 +67,7 @@ Pattern matching of function-kinded entities in type family RHS'es and typeclass
   foo :: F Maybe; foo = () -- good, 'Maybe' supertyped to (* ~> *)
   foo :: H Id; foo = () -- good
 
-Juxtaposition must operate at the `(->)` kind, so that both matchable and unmatchable functions can be applied at either term or type level.
+Juxtaposition must operate at the `(~>)` kind, so that both matchable and unmatchable functions can be applied at either term or type level.
 
 Flags
 ^^^^^
@@ -89,7 +89,7 @@ Full backwards compatibility with pre-`TypeInType` code. The `(~>)` arrow is nev
 
 Costs and Drawbacks
 -------------------
-As far as maintenance goes, this is in agreement with the Dependent Haskell paper, so it is possible that Dependent Haskell would  some day supersede this (still might be nice to have this extension around if you don't need the full wrath of dependent types).
+As far as maintenance goes, this is in agreement with the Dependent Haskell paper, so it is possible that Dependent Haskell would some day supersede this (still might be nice to have this extension around if you don't need the full wrath of dependent types).
 
 Alternatives
 ------------
