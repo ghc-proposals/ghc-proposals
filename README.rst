@@ -23,7 +23,7 @@ What is the timeline of a propsoal?
 
    `Discussion goals <#discussion-goals>`_ •
    `How to comment on a proposal <#how-to-comment-on-a-proposal>`_ •
-   `List of proposals under discussion <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+no%3Alabel>`_
+   `≡ List of proposals under discussion <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+no%3Alabel>`_
 
 4. Eventually *the proposal author* brings the proposal before the committee for review.
 
@@ -34,16 +34,16 @@ What is the timeline of a propsoal?
 
    `Committee process <#committee-process>`_ •
    `Review criteria <#review-criteria>`_ •
-   `List of proposals under review <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+committee+review%22>`_
+   `≡ List of proposals under review <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+committee+review%22>`_
 
 6. Eventually, the committee rejects a proposal, or passes it back to the author for review, or accepts it.
 
-   `List of accepted proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3AAccepted>`_
+   `≡ List of accepted proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3AAccepted>`_
 
 7. If a proposal sees no activity for along time, they are marked as “dormant”.
 
    `What is a dormant proposal <#what-is-a-dormant-proposal>`_ •
-   `List of dormant proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22dormant%22>`_
+   `≡ List of dormant proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22dormant%22>`_
 
 Once a proposal is accepted, it still has to be implemented.  The author may do that, or someone else.
 Acceptance of the proposal implies that the implementation will be accepted into GHC provided
@@ -196,7 +196,11 @@ within a day or two, please ping the secretary or the committee.)
 What is a dormant proposal
 --------------------------
 
-In order to keep better track of actively discussed proposal, proposals that see no activity for an extended period of time (a month or two) might be marked as “``dormant``”. At any time the proposor, or someone else can revive the proposal by picking up the discussion (and possibly asking `the secretary <#who-is-the-committee>`_ to remove the ``dormant`` tag).
+In order to keep better track of actively discussed proposals, proposals that
+see no activity for an extended period of time (a month or two) might be marked
+as “``dormant``”. At any time the proposor, or someone else can revive the
+proposal by picking up the discussion (and possibly asking `the secretary
+<#who-is-the-committee>`_ to remove the ``dormant`` tag).
 
 You can see the `list of dormant proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22dormant%22>`_.
 
