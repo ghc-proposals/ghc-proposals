@@ -40,9 +40,14 @@ What is the timeline of a propsoal?
 
    `List of accepted proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3AAccepted>`_
 
+7. If a proposal sees no activity for along time, they are marked as “dormant”.
+
+   `What is a dormant proposal <#what-is-a-dormant-proposal>`_ •
+   `List of dormant proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22dormant%22>`_
+
 Once a proposal is accepted, it still has to be implemented.  The author may do that, or someone else.
 Acceptance of the proposal implies that the implementation will be accepted into GHC provided
-it is well-engineered, well-documented, and does not complicate the code-base too much. 
+it is well-engineered, well-documented, and does not complicate the code-base too much.
 
 Do not hesitate to `contact <#questions>`_ us if you have questions.
 
@@ -187,6 +192,13 @@ When the discussion has ebbed down and the author thinks the proposal is ready, 
 `The secretary <#who-is-the-committee>`_, will then label the pull request with
 ``Pending committee review`` and notify the committee. (If this does not happen
 within a day or two, please ping the secretary or the committee.)
+
+What is a dormant proposal
+--------------------------
+
+In order to keep better track of actively discussed proposal, proposals that see no activity for an extended period of time (a month or two) might be marked as “``dormant``”. At any time the proposor, or someone else can revive the proposal by picking up the discussion (and possibly asking `the secretary <#who-is-the-committee>`_ to remove the ``dormant`` tag).
+
+You can see the `list of dormant proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22dormant%22>`_.
 
 Who is the committee
 --------------------
