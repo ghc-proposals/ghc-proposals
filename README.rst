@@ -206,17 +206,17 @@ Who is the committee
 The current members of the GHC steering committe, who you can reach
 by email at ghc-steering-committee@haskell.org, are:
 
-======================  ==================================================  =========
+======================  ====================================================  =========
 Christopher Allen       `@bitemyapp <https://github.com/bitemyapp>`_
+Joachim Breitner        `@nomeata <https://github.com/nomeata>`_              secretary
 Manuel M T Chakravarty  `@mchakravarty <https://github.com/mchakravarty>`_
-Simon Peyton-Jones      `@simonpj <https://github.com/simonpj>`_            co-chair
-Simon Marlow            `@simonmar <https://github.com/simonmar>`_          co-chair
-Atze Dijkstra           `@atzedijkstra <https://github.com/atzedijkstra>`_
-Richard Eisenberg       `@goldfirere <https://github.com/goldfirere>`_
 Iavor Diatchki          `@yav <https://github.com/yav>`_
-Joachim Breitner        `@nomeata <https://github.com/nomeata>`_            secretary
+Richard Eisenberg       `@goldfirere <https://github.com/goldfirere>`_
 Ben Gamari              `@bgamari <https://github.com/bgamari>`_
-======================  ==================================================  =========
+Roman Leshchinskiy      `@rleshchinskiy <https://github.com/rleshchinskiy>`_
+Simon Marlow            `@simonmar <https://github.com/simonmar>`_            co-chair
+Simon Peyton-Jones      `@simonpj <https://github.com/simonpj>`_              co-chair
+======================  ====================================================  =========
 
 Members have terms of 3, 4, and 5 years.
 
