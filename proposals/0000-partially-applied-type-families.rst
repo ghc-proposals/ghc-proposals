@@ -93,7 +93,7 @@ As far as maintenance goes, this is in agreement with the Dependent Haskell pape
 
 Alternatives
 ------------
-The `signletons package <https://hackage.haskell.org/package/singletons>`_ makes use of a custom function application type family and functions-as-tags, which leads to very unreadable code with a ton of boilerplate. 
+The `singletons package <https://hackage.haskell.org/package/singletons>`_ makes use of a custom function application type family and functions-as-tags, which leads to very unreadable code with a ton of boilerplate. 
 
 `Oleg's type functions <http://okmij.org/ftp/Haskell/TTypeable/TTypeable.hs>`_ used a similar approach, but there were no datakinds back then, which means that on top of the above, the said functions are unkinded.
 
