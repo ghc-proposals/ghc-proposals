@@ -56,19 +56,19 @@ has user-facing effects, leading to this proposal.
 Proposed Change Specification
 -----------------------------
 
-Define an "unlifted pattern" to be any pattern that binds variable with an unlifted type. Note that ::
+Define an "unlifted-var pattern" to be any pattern that binds a variable with an unlifted type. Note that ::
 
     x :: Char
     (# True, x #) = blah
 
-is *not* an unlifted pattern.
+is *not* an unlifted-var pattern.
 
-Change (A) says that unlifted patterns, and only unlifted patterns, are strict by default.
+Change (A) says that unlifted-var patterns, and only unlifted-var patterns, are strict by default.
 
-Before Change (A), unboxed tuple patterns were considered as unlifted patterns, regardless of whether
+Before Change (A), unboxed tuple patterns were considered as unlifted-var patterns, regardless of whether
 or not a variable of unlifted type was bound.
 
-Change (B) says that strict patterns must have a bang. Otherwise a warning (``-Wunbanged-strict-patterns``) is issued.
+Change (B) says that unlifted-var patterns must have a bang. Otherwise a warning (``-Wunbanged-strict-patterns``) is issued.
 
  * Bare variables do not need a bang.
  * The bang may occur outside of or within an as-pattern.
@@ -116,7 +116,7 @@ Examples
         z = ()
           where 3# = 4#
           
-    Evaluating ``z`` results in ``()``. The ``3#`` pattern is not an unlifted pattern, according to the rules above. This is a change in the implementation compared to GHC 8.0, but the behavior described here seems more in keeping with the specification of lazy bindings in Haskell.
+    Evaluating ``z`` results in ``()``. The ``3#`` pattern is not an unlifted-var pattern, according to the rules above. This is a change in the implementation compared to GHC 8.0, but the behavior described here seems more in keeping with the specification of lazy bindings in Haskell.
     
 5.
 
@@ -134,7 +134,7 @@ See the examples above for some brief discussion of the change in semantics.
 
 In general, this proposal is a *simplification* of our rules around unlifted bindings.
 
-Although not harped on in this proposal, unlifted patterns are subject to two further restrictions other than
+Although not harped on in this proposal, unlifted-var patterns are subject to two further restrictions other than
 strictness: they must not be recursive, and they must not bind any variables that have a polymorphic type.
 Previously, this restriction applied also to unboxed tuple patterns, but change (A) removes this behavior.
 So, the following is rejected in GHC 8.0 but accepted under this proposal::
@@ -151,6 +151,19 @@ The drawback is the change in semantics. As a simplification in previous behavio
 Alternatives
 ------------
 We do not have to do (A). It is easy enough to retain the existing behavior. But it is a special case, both in the code and in the manual.
+
+There is also a middle ground for (A) around unboxed tuples: we could pretend they always have a bang on them. That means that ::
+
+    z = ()
+      where (# x #) = undefined
+      
+would diverge because of the implicit bang on the unboxed-tuple pattern. This implicit bang could be surpressed with an explicit
+``~``::
+
+    z = ()
+      where ~(# x #) = undefined
+      
+would still evaluate to ``()``. This is still a change from existing behavior, where lazy unboxed tuple bindings are impossible to write, and unboxed tuples are subject to the other restrictions above. (In this "middle ground" proposal, an unboxed tuple binding would still be allowed to be recursive, say.)
 
 For (B), we could keep the error as is, which would mean (in concert with (A)) breaking code.
 
@@ -169,4 +182,4 @@ The choices are:
 
 Implementation Plan
 -------------------
-I will implement. In time for 8.2.
+This is already implemented, but it is easy enough to tweak the design.
