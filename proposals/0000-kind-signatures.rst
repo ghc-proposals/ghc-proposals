@@ -89,9 +89,9 @@ Proposed Change Specification
    a matchable type. This new type former has very limited use (for now): it may appear
    in
 
-     * top-level kind signatures
-     * the result kind of GADT-style datatype declarations, as well as type and data families
-     * data constructor types
+   * top-level kind signatures
+   * the result kind of GADT-style datatype declarations, as well as type and data families
+   * data constructor types
 
    Any other use is considered an error. (With partially applied type families, this type
    will become more useful.)
