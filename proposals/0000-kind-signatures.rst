@@ -160,6 +160,16 @@ Alternatives
 * Other transition plans are welcome. We could just abandon CUSKs entirely, asking the
   few users who play in this dark corner to use some CPP.
 
+* Instead of introducing wholly new syntax, we could just tell GHC when to look for a CUSK.
+  That is, we could have a new pragma ``{-# CUSK T #-}`` that tells GHC that ``T`` has a
+  CUSK. If the pragma is absent, ``T`` does not have a CUSK. (Or, we could have a
+  ``NO_CUSK`` pragma to countermand current behavior. This might have an easier transition
+  story.) If ``T`` is labeled as having a CUSK, but does not, reject.
+
+  This idea might be an improvement on my original proposal (it was inspired by a comment
+  made on the original), but it still means that types have a different treatment from
+  terms, which is aesthetically displeasing to me.
+
 
 Unresolved questions
 --------------------
