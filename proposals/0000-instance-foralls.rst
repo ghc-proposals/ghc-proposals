@@ -14,7 +14,7 @@ This proposal is `discussed at this pull requst <https://github.com/ghc-proposal
 
 .. contents::
 
-More explicit ``forall``s
+More explicit ``forall``\s
 =========================
 
 On type signatures, users can write ``forall ...`` to explicitly bind type/kind variables.
@@ -42,7 +42,7 @@ In contrast, the following constructs already allow user-written kinds for type 
 * standalone-deriving instances: Ditto.
 * values: The user can bring scoped type variables into scope via a type signature.
 * type signatures: The user can write an optional ``forall ...``.
-* pattern signatures: The user can write separate optional ``forall ...``s for both universal
+* pattern signatures: The user can write separate optional ``forall ...``\s for both universal
   and existential type variables.
 * ``SPECIALIZE`` pragmas: The user can write an optional ``forall ...`` in the type.
 * ``SPECIALIZE instance`` pragmas: The user can write an optional ``forall ...`` after the word ``instance``.
@@ -77,7 +77,7 @@ Proposed Change Specification
 3. Permit ``forall ...`` to bind type variables in equations in a ``RULES`` declaration. It would
    appear after the (optional) phase specifier and before the ``forall`` that introduces term-level
    variables. For an equation that introduces both type-level and term-level variables, there would
-   appear two ``forall``s. If only one ``forall`` appears in an equation, it binds *term-level* variables.
+   appear two ``forall``\s. If only one ``forall`` appears in an equation, it binds *term-level* variables.
    In the case where a user wants type-level variables but no term-level variables, the second ``forall``
    would have to be written but would be empty.
 
@@ -98,7 +98,7 @@ A particularly defensive programmer may enjoy this level of control. Similarly, 
 ever necessary for type variables if the user wishes to avoid it.
 
 Given that ``forall`` is a keyword in types with ``ExplicitForAll``, this change is fully backward-compatible.
-Note that any new ``forall`` in a ``RULES`` equation would require two ``forall``s, something not currently
+Note that any new ``forall`` in a ``RULES`` equation would require two ``forall``\s, something not currently
 permitted.
 
 Costs and Drawbacks
@@ -114,7 +114,7 @@ Alternatives
 I argue that maintaining the status quo is not a viable alternative, as the inability to specify
 the kinds of variables in these places inhibits the use of ``TypeInType`` features.
 
-There is no strict need for the all-or-nothing behavior of these new ``forall``s; that requirement
+There is no strict need for the all-or-nothing behavior of these new ``forall``\s; that requirement
 can be dropped.
 
 
