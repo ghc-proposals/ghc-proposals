@@ -101,6 +101,8 @@ Given that ``forall`` is a keyword in types with ``ExplicitForAll``, this change
 Note that any new ``forall`` in a ``RULES`` equation would require two ``forall``\s, something not currently
 permitted.
 
+This proposal will fix long-standing ticket `#2600 <https://ghc.haskell.org/trac/ghc/ticket/2600>`_.
+
 Costs and Drawbacks
 -------------------
 This complicates the concrete and abstract syntax of Haskell, adding a maintenance burden. The new
