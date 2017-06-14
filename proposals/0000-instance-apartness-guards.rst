@@ -76,7 +76,7 @@ In this case, ``module A`` with the class declaration and method calls baked in 
 
     instance C a Bool | a /~ Int where ...          -- body as before
 
-The guard ``a /~ Int`` says: to pick this instance, ``a`` must not be ``Int``. IOW, although the two instance heads overlap, the guard 'de-overlaps' them/forces them apart.
+The guard ``| a /~ Int`` says: to pick this instance, ``a`` must not be ``Int``. IOW, although the two instance heads overlap, the guard 'de-overlaps' them/forces them apart.
 
 This proposal is written to expect INSTANCEGUARDS are flagged per-class. Flagging them whole-module is liable to interact poorly with existing code using Overlapping Instances (module flag or pragmas).
 
@@ -138,8 +138,8 @@ Currently: Overlapping Instances: Undecidable
 We can get the class to compile like this::
 
   class D a b | a -> b where ...
-  instance D (Int, Bool) Char where ...
-  instance {-# OVERLAPPING #-}  (b ~ a'') => D (Int,  a'')   b where ...
+  instance                                   D (Int, Bool) Char where ...
+  instance {-# OVERLAPPING #-}  (b ~ a'') => D (Int,  a'')   b  where ...
   instance {-# OVERLAPPING #-}  (b ~ a')  => D (a',   a'')   b  where ...
 
 The first observation is that this is harder to read/understand: we must scan from instance head to constraints to understand what's going on. And in more realistic examples (such as within HList), there are stacked-up constraints, one calculating a result to plug into the next.
@@ -160,9 +160,9 @@ We can get better coherence using Closed Type Families to simulate the Functiona
     F (Int, a'')   = a''
     F (a',  a'')   = a'
 
-  instance D (Int, Bool) Char where ...
-  instance (F (Int, a'') ~ b) => D (Int, a'') a'' where ...
-  instance (F (a',  a'') ~ a) => D (a',  a'') a'  where ...
+  instance                       D (Int, Bool) Char where ...
+  instance (F (Int, a'') ~ b) => D (Int,  a'')  a'' where ...
+  instance (F (a',  a'') ~ a) => D (a',   a'')  a'  where ...
 
 First, again observe the difficulty of reading this: the type family equations are distant from the class instance. We'd ideally perhaps write those equations as Associated types within the instance (but can't, because they overlap so must be in a closed grouping). Note also the need to repeat the SuperClass constraint as an Instance constraint.
 
@@ -178,7 +178,7 @@ Proposal: Instance (Apartness) Guards for Type Classes
 Let's explicitly de-overlap these instances. For the FunDep version, that becomes::
 
   class {-# INSTANCEGUARDS #-} D a b | a -> b where ...
-  instance D (Int, Bool) Char where ...                   -- most specific instance as before
+  instance D (Int, Bool) Char                where ...    -- most specific instance as before
 
   instance D (Int, a'')   a'' | a'' /~ Bool  where ...    -- the /~ says: a'' must be apart from Bool
 
@@ -274,8 +274,8 @@ Is this expressive enough? Yes: it's a Boolean algebra with equality.
 * There's conjunction amongst the guards and patterns in the head.
 * The equality is expressed through patterns in the head. To make that more explicit we can use an equality guard::
 
-      instance C Int Bool where ...       -- translates to
-  ==> instance C a b | a ~ Int, b ~ Bool
+      instance C Int Bool                  where ...       -- translates to
+  ==> instance C a   b | a ~ Int, b ~ Bool where ...
 
 Negation is expressed through apartness guards. Negating a conjunction can be either direct::
 
@@ -424,7 +424,7 @@ First reduce all instances to canonical form of bare type vars and guards::
 
 Form the union of the guards, commoning up those which are merely ``~`` vs ``/~`` of the same comparands, and arrange in some canonical order. Then form the case-despatching constraint over the instance head with bare type vars; and the case branches::
 
- ==> instance (C_Case a b (TEqual a Int, TEqual b Bool)) => C a b
+  ==> instance (C_Case a b (TEqual a Int, TEqual b Bool)) => C a b
 
   ==> instance C_Case Int b  (True,  t') ...           -- } heads do not overlap
       instance C_Case a Bool (False, True) ...         -- }
@@ -475,7 +475,7 @@ Instance Guards to the rescue::
   instance               Add Zero     b b 
   instance (Add a b r) ⇒ Add (Succ a) b (Succ r) | b /~ (Succ r)
 
-The counterpart for an injective type family would be:
+The counterpart for an injective type family would be::
 
   type family {-# INSTANCEGUARDS #-}  AddTFG a b = r | r a -> b, r b -> a
   type instance AddTFG Zero     b                          = b
@@ -549,7 +549,7 @@ Instance Chains
 
 As with Closed Type Families, the reader needs to scan preceding instances in the chain to grasp the overlap logic. These are full class instances giving method overloadings, so can be verbose.
 
-Instance selection based on (possibly recursive) class membership ``if``s is not current Haskell behaviour.
+Instance selection based on (possibly recursive) class membership ``if`` is not current Haskell behaviour.
 
 Constrained Type Families/Closed Classes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -622,7 +622,7 @@ In explaining the semantics, the proposal has used an equality guard ``(~)``. It
 
 The bare ``(~)`` might be confused with an equality constraint.
 
-Under the proposed 'Partially applied Type Families' `here <https://github.com/mniip/ghc-proposals/blob/partiallyappliedtypefamilies/proposals/0000-partially-applied-type-families.rst>`_, repeated type vars might be problematic because one occurrence might be applied, the other not. Then an equality guard might be a more cogent implementation technique: first bind the type vars individually; later test for equality. that corresponds to term-level function equations being desugarred to nested ``case``s.
+Under the proposed 'Partially applied Type Families' `here <https://github.com/mniip/ghc-proposals/blob/partiallyappliedtypefamilies/proposals/0000-partially-applied-type-families.rst>`_, repeated type vars might be problematic because one occurrence might be applied, the other not. Then an equality guard might be a more cogent implementation technique: first bind the type vars individually; later test for equality. That corresponds to term-level function equations being desugarred to nested ``case``.
 
 Should instances be allowed with not just overlapping heads but *identical* heads (and differing guards)? This can't occur with only apartness guards, because that would still leave an overlap. If equality guards are allowed then this is possible::
 
