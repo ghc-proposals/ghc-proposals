@@ -225,17 +225,209 @@ Note that there's no need to repeat the Equality constraint on each instance, be
 
 Proposed Change Specification
 -----------------------------
-Specify the change in precise, comprehensive yet concise language. Avoid words like should or could. Strive for a complete definition. Your specification may include,
 
-* grammar and semantics of any new syntactic constructs
-* the types and semantics of any new library interfaces
-* how the proposed change addresses the original problem
-* how the proposed change might interact with existing language or compiler features
+Class or Type Family declaration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Note, however, that this section need not describe details of the
-implementation of the feature. The proposal is merely supposed to give a
-conceptual specification of the new feature and its behavior.
+There is to be a class-level or Type Family-level pragma ``{-# INSTANCEGUARDS #-}``. This is not global, but applies per-class or per-Type Family for backwards compatibility/co-existence with other classes using overlapping Instances or Closed Type Families. (So the ``{-# OVERLAPS #-}`` etc instance-level pragma cannot be used on guarded classes.)
 
+The ``INSTANCEGUARDS`` pragma means that all instances must be 'apart' (not unifiable), after taking guards into account. IOW:
+
+* Either the instance heads do not unify; or
+* If the instance heads unify, yielding a substitution, applying that substitution to the guards yields a contradiction for at least one of the instances; and
+* the "Instances inconsistent with Functional Dependencies" check is also to use the guards to validate apartness of the 'argument side' of FunDeps, see example above at 'Proposal: Instance (Apartness) Guards for Type Classes'.
+
+
+Instances -- type classes or Type Families
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Any guards are to appear immediately right of the instance head, separated by a ``|``.
+
+The guards are a comma-separated list of type comparisons. For example::
+
+  instance D a b | a /~ Int, b/~ Bool  where ...
+
+  type instance F a b | a /~ Int, b /~ Bool   = ...
+
+Instances can be validated incrementally for overlap:
+
+* Either the instance heads do not unify; or
+* If the the instance heads unify, yielding a substitution, applying that substitution to the result yields the same type; or
+* applying that substitution to the guards yields a contradiction for at least one of the instances.
+
+
+Guards: rules for comparands
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+#. The comparands must be same-kinded.
+#. Comparands can use Type constructors to arbitrary nesting.
+#. Can only use type vars from the head.<br>
+    (I.e. not introduce extra vars, which contexts can do.)
+#. Can use wildcard `_` as a type place-holder.
+#. No type functions -- (it would be a lovely-to-have,<br>
+   but too hard, and would need stringent Coverage conditions.<br>
+   Perhaps consider for 'phase 2' allowing ``UndecidableInstances``.)
+
+Is this expressive enough? Yes: it's a Boolean algebra with equality.
+
+* there's disjunction between instances. (Needs a little care here, because instances must be apart, so this is exclusive or.)
+* There's conjunction amongst the guards and patterns in the head.
+* The equality is expressed through patterns in the head. To make that more explicit we can use an equality guard::
+
+      instance C Int Bool where ...       -- translates to
+  ==> instance C a b | a ~ Int, b ~ Bool
+
+Negation is expressed through apartness guards. Negating a conjunction can be either direct::
+
+      instance C a b | (a, b) /~ (Int, Bool)
+
+Or via (the X-Or version of) deMorgan to Negation Normal Form::
+
+      instance C Int b   | b /~ Bool where ...
+      instance C a  Bool | a /~ Int where ...
+      instance C a b   | a /~ Int, b /~ Bool ...
+
+The logic can also be expressed in the Constraint Handling Rules framework of `Sulzmann & Stuckey 2002 <http://people.eng.unimelb.edu.au/pstuckey/papers/toplas3217.pdf>`_, section 8.1 ‘Overlapping Definitions’.
+
+Instance guards will work for all the examples in HList. Here's a particularly gnarly Closed Type Families example from `this discussion <https://typesandkinds.wordpress.com/2013/04/>`_ "Andy Adams-Moran's example" (which is possibly unrealistic)::
+
+  data T a
+  type family Equiv x y :: Bool where
+     Equiv a      a     = True        -- 1
+     Equiv (T b)  (T c) = True        -- 2
+     Equiv (t d)  (t e) = Equiv d e   -- 3
+     Equiv f      g     = False       -- 4
+
+Translating to guards::
+
+  type family {-# INSTANCEGUARDS #-} Equiv x y :: Bool
+  type instance Equiv a      a                                      = True
+  type instance Equiv (T b) (T c) | (T b) /~ (T c)                  = True
+  type instance Equiv (t d) (t e) | (t d) /~ (t e), (t d) /~ (T _)  = Equiv d e
+  type instance Equiv (t d)  g    | (t d) /~ g,     g /~ (t _)      = False    -- 4a
+  type instance Equiv  f     g    | f /~ g,         f /~ (_ _)      = False    -- 4b
+
+Equations 1 to 3 translate smoothly. Equation 1 is (potentially) overlapped by all others, but appears first in Closed sequence so needs no guards. All other equations have their first guard to push apart from equation 1. That's sufficient for Equation 2. Equation 3 wholly overlaps equation 2, so that's easily de-overlapped.
+
+Equation 4 is awkward: it wholly overlaps equations 1 and 3 (and therefore 2); but 1 and 3 only partially overlap. Equation 4a's second guard pushes apart from 3 (and actually makes the first guard superfluous). This catches ``Equiv (Maybe Int) (T Int)`` and ``Equiv (Maybe Int) Bool``; but leaves a 'gap', for example ``Equiv Bool (Maybe Int)``.  Translating therefore needs two de-overlapping instances. (There's various ways to express that. They all need (at least) two instances. I've chosen a way that applies an arbitrary asymmetry wrt the parameters.)
+
+Guards: possible stricter rules
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In the gnarly example above, for all of the comparisons, at least one comparand is a whole parameter from the instance head. Is that always possible? Consider::
+
+  instance C Int Bool where ...
+  instance {-# OVERLAPPING #-} C a   b     where ...
+
+The easiest way to express that second instance through guards is::
+
+  instance C a   b  | (a, b) /~ (Int, Bool)  where ...
+
+We could express that using only whole-params, but verbosely needing three instances, see this same example wrt the 'Boolean algebra' discussion above.
+
+Another possible rule is that at least one of the comparands be a bare type var.
+
+Instance Selection
+~~~~~~~~~~~~~~~~~~
+
+Because each instance has been validated pair-wise as apart from each other instance, the compiler can confidently select a matching instance at a usage site, after confirming any guards hold.
+
+#. First, match (unify) the usage site against the instance head, as currently.
+#. If the head is apart, then reject this instance.
+#. If they unify, this gives a substitution. 
+#. If no guards, select this instance. 
+#. Otherwise apply that substitution into the guards.
+#. If all guards come out true, select this instance.
+#. Otherwise (at least one of the guards yields a contradiction), reject.
+#. (Possible optimisation for Type Families: if after unifying the heads the substitution into the result is the same, no need to check the guards -- that is current behaviour which allows for ‘coincident overlap’.)
+
+Given instances [example from the User Guide/above]::
+
+  type family {-# INSTANCEGUARDS #-} G a
+  type instance G (a,    Int)           = [a]
+  type instance G (Char, b)  | b /~ Int = [b] 
+
+with a usage site wanting ``G (Char, Int)`` (the classic problem of partial overlap):
+
+* Wanted ``G (Char, Int)`` unifies with the head of the second instance, with substitution ``{ b ~ Int }``.
+* Apply that substitution to the guard, yielding ``Int /~ Int``.
+* Contradiction, so reject that instance.
+
+If the compiler tries a wanted ``G (Char, Int)`` against the first instance before trying the second; that unifies without contradiction; so can be safely selected, with no danger of overlap.
+
+At no time need the compiler search for instances and (nervously) pick the 'last one standing' à la IncoherentInstances.
+
+
+Instance constraints
+~~~~~~~~~~~~~~~~~~~~
+
+Guards have no effect on instance constraints.
+
+Associated type equations
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Must repeat the guards from the class instance heads. (Can this be relaxed?)
+
+Class methods
+~~~~~~~~~~~~~
+
+Guards have no effect on method bodies.
+
+??For bodies that call other methods, can we 'pass on' knowledge of apartness to help in selecting instances for those? Sounds fraught with danger. The inference rule would be::
+
+  a /~ b, b ~ c ==> a /~ c
+
+Imports/Exports
+~~~~~~~~~~~~~~~
+
+That a class or Type Family has ``INSTANCEGUARDS`` must be exported to all modules, in case they declare any instances for the class/TF. So it's quite possible for a class to declare itself guarded, even though no guards are used in its defining module.
+
+The guards for each instance must be exported, to control instance selection in those modules. (And to validate overlaps and FunDep consistency for any instances declared.)
+
+Semantics: Translation to Haskell 2010+MPTCs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To explain the intended semantics, examples of guards will be translated to:
+
+* Haskell 2010
+* with Multi-Parameter Type Classes (+ FlexibleInstances)
+* assuming a type-level type equality test
+* but otherwise not using Overlapping instances
+
+This is given as a proof of concept, not a proposed method of implementation.
+
+The type-level type equality test could be a Closed Type Family::
+
+  type family TEqual a b :: Bool  where
+    TEqual a a = True
+    TEqual a b = False
+
+(As easily, type equality could be defined via a type class with Functional Dependencies and strictly overlapping instances, as has been stable in GHC since at least 2004.)
+
+The translation might also need a type *equality* guard (which could be visible in the surface language). The most obvious purpose for equality guards is to express repeated type vars (which are not permitted under Haskell 2010)::
+
+      instance e (HCons e l) ...                     -- repeated `e` translated to
+  ==> instance e (HCons e' l) | e ~ e' ...           -- where `e'` is fresh
+
+Each class with ``INSTANCEGUARDS`` is to be implemented by a case-analysis class called in the context for each instance. The case-analysis class has an extra parameter (typically a tuple -- similar to constraints) to match the result from the Type Equality tests arising from the guard. Examples::
+
+      class C a b ...
+  ==> class C_Case a b t ...
+
+First reduce all instances to canonical form of bare type vars and guards::
+
+      instance C Int b ...                            -- source decl
+  ==> instance C a   b    | a ~ Int ...
+
+      instance C a   Bool | a /~ Int ...              -- source decl
+  ==> instance C a   b    | a /~ Int, b ~ Bool ...
+
+Form the union of the guards, commoning up those which are merely ``~`` vs ``/~`` of the same comparands, and arrange in some canonical order. Then form the case-despatching constraint over the instance head with bare type vars; and the case branches::
+
+ ==> instance (C_Case a b (TEqual a Int, TEqual b Bool)) => C a b
+
+  ==> instance C_Case Int b  (True, t') ...            -- } heads do not overlap
+      instance C_Case a Bool (False, True) ...         -- }
 
 
 
