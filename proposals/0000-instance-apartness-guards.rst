@@ -50,7 +50,7 @@ To take the standard example (adapted from the `User Guide section on Overlappin
     instance {-# OVERLAPPABLE #-} C a Bool where f _ _ = "C a Bool"
 
     y = f False True
-	   z = f (5 :: Int) True
+    z = f (5 :: Int) True
 
 Module A compiles happily with ``x == "C Int b"``. Module B compiles up to and including the equation for ``y`` with ``y == "C a Bool"``, because ``f False True`` only matches the ``instance C a Bool``. 
 
@@ -94,7 +94,7 @@ Consider these two instances (from the `User Guide section on Apartness of Type 
 There is no way to say with separate instances: in the overlapping case, use the first instance. With Instance Guards that’s expressed as::
 
   type family {-# INSTANCEGUARDS #-} G a
-  type instance G (a, Int)  = [a]
+  type instance G (a, Int)             = [a]
   type instance G (Char, b) | b /~ Int = [b]
 
 The guard ``| b /~ Int`` says: to select this instance, ``b`` must not be ``Int``. The reader and the compiler can now see these are apart.
@@ -104,15 +104,15 @@ And we could freely add other instances for ``G``, for other type constructors. 
 Or perhaps the programmer intends ``G`` should never be called on ``(Char, Int)``, then::
 
   type family {-# INSTANCEGUARDS #-} G a
-  type instance G (a, Int) | a /~ Char  = [a]
-  type instance G (Char, b) | b /~ Int = [b]
+  type instance G (a,    Int) | a /~ Char  = [a]
+  type instance G (Char, b)   | b /~ Int   = [b]
 
 The Closed Type Family equivalent would be::
 
   type family G a  where
     G (Char, Int)  = TypeError "(Char, Int) not supported"
-    G (a,   Int)   = [a]
-    G (Char, b) = [b]
+    G (a,    Int)  = [a]
+    G (Char, b)    = [b]
 
 (The reader must be careful to scan the sequence of equations. ``G (Char, b) = [b]`` does not mean what it would in a stand-alone instance. And again we couldn't freely add other equations.)
 
@@ -122,9 +122,9 @@ Currently: Functional Dependency coherence
 Consider this set of Instances under a Functional Dependency::
 
   class D a b | a -> b where ...
-  instance D (Int, Bool) Char where ...
-  instance D (Int, a'')   a'' where ...
-  instance D (a',   a'')   a'  where ...
+  instance D (Int, Bool)  Char where ...
+  instance D (Int, a'')   a''  where ...
+  instance D (a',  a'')   a'   where ...
 
 These heads overlap on the 'argument side' of the FunDep. They're well-behaved, in the sense: there is a strict substitution ordering. 
 
@@ -139,8 +139,8 @@ We can get the class to compile like this::
 
   class D a b | a -> b where ...
   instance D (Int, Bool) Char where ...
-  instance {-# OVERLAPPING #-}  (b ~ a'') => D (Int, a'')   b where ...
-  instance {-# OVERLAPPING #-}  (b ~ a') => D (a',   a'')   b  where ...
+  instance {-# OVERLAPPING #-}  (b ~ a'') => D (Int,  a'')   b where ...
+  instance {-# OVERLAPPING #-}  (b ~ a')  => D (a',   a'')   b  where ...
 
 The first observation is that this is harder to read/understand: we must scan from instance head to constraints to understand what's going on. And in more realistic examples (such as within HList), there are stacked-up constraints, one calculating a result to plug into the next.
 
@@ -156,13 +156,13 @@ We can get better coherence using Closed Type Families to simulate the Functiona
   class (F a ~ b) => D a b where ...
 
   type family F a where
-    F (Int, Bool) = Char
+    F (Int, Bool)  = Char
     F (Int, a'')   = a''
-    F (a', a'')    = a'
+    F (a',  a'')   = a'
 
   instance D (Int, Bool) Char where ...
   instance (F (Int, a'') ~ b) => D (Int, a'') a'' where ...
-  instance (F (a', a'')   ~ a) => D (a', a'')   a' where ...
+  instance (F (a',  a'') ~ a) => D (a',  a'') a'  where ...
 
 First, again observe the difficulty of reading this: the type family equations are distant from the class instance. We'd ideally perhaps write those equations as Associated types within the instance (but can't, because they overlap so must be in a closed grouping). Note also the need to repeat the SuperClass constraint as an Instance constraint.
 
@@ -178,11 +178,11 @@ Proposal: Instance (Apartness) Guards for Type Classes
 Let's explicitly de-overlap these instances. For the FunDep version, that becomes::
 
   class {-# INSTANCEGUARDS #-} D a b | a -> b where ...
-  instance D (Int, Bool) Char where ...                 -- most specific instance as before
+  instance D (Int, Bool) Char where ...                   -- most specific instance as before
 
-  instance D (Int, a'')   a'' | a'' /~ Bool  where ...      -- the /~ says: a'' must be apart from Bool
+  instance D (Int, a'')   a'' | a'' /~ Bool  where ...    -- the /~ says: a'' must be apart from Bool
 
-  instance D (a', a'')     a' | a' /~ Int  where ...           -- a' must be apart from Int
+  instance D (a',  a'')   a'  | a'  /~ Int   where ...    -- a' must be apart from Int
 
 Observe: these instances are direct, we can understand each instance (with guards) stand-alone and with no constraints to obscure the result type. The 'result sides' of the FunDep use type vars from the 'argument side', no Undecidable Instances.
 
@@ -208,13 +208,13 @@ The apartness guards are also to apply for Type Families, meaning we can usually
      ...
 
   instance D (Int, Bool) Char where
-    type F (Int, Bool) = Char
+    type   F (Int, Bool) = Char
      ...
   instance D (Int, a'') a'' | a'' /~ Bool where
-    type F (Int, a'') | a'' /~ Bool = a''
+    type   F (Int, a'')     | a'' /~ Bool  = a''
     ...
-  instance D (a', a'')   a' | a' /~ Int where
-    type F (a', a'') | a' /~ Int = a'
+  instance D (a',  a'') a'  | a' /~ Int where
+    type   F (a',  a'')     | a' /~ Int  = a'
      ...
 
 Note that there's no need to repeat the Equality constraint on each instance, because it's substantiated by the Associated type equation.
@@ -245,7 +245,7 @@ Any guards are to appear immediately right of the instance head, separated by a 
 
 The guards are a comma-separated list of type comparisons. For example::
 
-  instance D a b | a /~ Int, b/~ Bool  where ...
+  instance D a b      | a /~ Int, b/~ Bool  where ...
 
   type instance F a b | a /~ Int, b /~ Bool   = ...
 
@@ -261,11 +261,11 @@ Guards: rules for comparands
 
 #. The comparands must be same-kinded.
 #. Comparands can use Type constructors to arbitrary nesting.
-#. Can only use type vars from the head.<br>
+#. Can only use type vars from the head.
     (I.e. not introduce extra vars, which contexts can do.)
-#. Can use wildcard `_` as a type place-holder.
-#. No type functions -- (it would be a lovely-to-have,<br>
-   but too hard, and would need stringent Coverage conditions.<br>
+#. Can use wildcard ``_`` as a type place-holder.
+#. No type functions -- (it would be a lovely-to-have,
+   but too hard, and would need stringent Coverage conditions.
    Perhaps consider for 'phase 2' allowing ``UndecidableInstances``.)
 
 Is this expressive enough? Yes: it's a Boolean algebra with equality.
@@ -283,9 +283,9 @@ Negation is expressed through apartness guards. Negating a conjunction can be ei
 
 Or via (the X-Or version of) deMorgan to Negation Normal Form::
 
-      instance C Int b   | b /~ Bool where ...
-      instance C a  Bool | a /~ Int where ...
-      instance C a b   | a /~ Int, b /~ Bool ...
+      instance C Int b    | b /~ Bool           where ...
+      instance C a   Bool | a /~ Int            where ...
+      instance C a   b    | a /~ Int, b /~ Bool where ...
 
 The logic can also be expressed in the Constraint Handling Rules framework of `Sulzmann & Stuckey 2002 <http://people.eng.unimelb.edu.au/pstuckey/papers/toplas3217.pdf>`_, section 8.1 ‘Overlapping Definitions’.
 
