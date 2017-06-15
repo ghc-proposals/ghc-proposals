@@ -56,11 +56,12 @@ Module A compiles happily with ``x == "C Int b"``. Module B compiles up to and i
 
 Note that GHC accepts both instance declarations although they overlap. (Furthermore the pragmas have no effect whatsoever. The User Guide says "These potentially overlap, but GHC will not complain about the instance declarations themselves, regardless of flag settings.")
 
-But the equation for ``z``, despite being identical to ``x``, is not accepted: ``Overlapping instances for C Int Bool arising from a use of ‘f’``. You might hope with those specific pragmas, GHC would favour ``C Int b``, but no. 
+But the equation for ``z``, despite being identical to ``x``, is not accepted: ``Overlapping instances for C Int Bool arising from a use of ‘f’``. You might hope with those specific pragmas ``C Int b OVERLAPPING/C a Bool OVERLAPPABLE``, GHC would favour ``C Int b``, but no. 
 
 This does compile with INCOHERENTINSTANCES, which is liable to pick a 'random' instance; but there is currently no way for the programmer to express directly: in case of wanted ``C Int Bool``, select ``instance C Int b``. Furthermore if there are other overlapping instances declared (possibly through diamond imports) a different instance might be picked at random.
 
 With Instance Guards:
+
 * the programmer can express directly the behaviour in case of overlapping instance heads;
 * the compiler can verify purely by looking at the instance definitions one-by-one that they are together well-behaved -- that is, each apart; so
 * the programmer can be confident that subsequent imports will not introduce incoherence.
