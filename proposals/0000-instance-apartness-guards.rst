@@ -32,7 +32,7 @@ This needs no new semantics over current Haskell. (In fact, in many ways it's me
 Motivation
 ------------
 
-The perils from Overlapping Instances are well-known, particularly for instances from imported modules. The remedies are also well-known and embodied in 'folk' techniques. Overlapping is a clumsy tool: to work smoothly, it needs instances ordered in a strict substitution relationship; or a great deal of type-level programming, difficult to follow through instance contexts calling auxiliary classes.
+The perils from Overlapping Instances are `well-known <https://mail.haskell.org/pipermail/haskell-cafe/2010-July/080043.html>`_, particularly for instances from imported modules. The remedies are also well-known and embodied in 'folk' techniques. Overlapping is a clumsy tool: to work smoothly, it needs instances ordered in a strict substitution relationship; or a great deal of type-level programming, difficult to follow through instance contexts calling auxiliary classes.
 
 Currently: Overlapping class instances
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -58,7 +58,7 @@ Note that GHC accepts both instance declarations although they overlap. (Further
 
 But the equation for ``z``, despite being identical to ``x``, is not accepted: ``Overlapping instances for C Int Bool arising from a use of ‘f’``. You might hope with those specific pragmas ``C Int b OVERLAPPING/C a Bool OVERLAPPABLE``, GHC would favour ``C Int b``, but no. 
 
-This does compile with INCOHERENTINSTANCES, which is liable to pick a 'random' instance; but there is currently no way for the programmer to express directly: in case of wanted ``C Int Bool``, select ``instance C Int b``. Furthermore if there are other overlapping instances declared (possibly through diamond imports) a different instance might be picked at random.
+This does compile with ``INCOHERENTINSTANCES``, which is liable to pick a 'random' instance; but there is currently no way for the programmer to express directly: in case of wanted ``C Int Bool``, select ``instance C Int b``. Furthermore if there are other overlapping instances declared (possibly through diamond imports) a different instance might be picked at random.
 
 With Instance Guards:
 
@@ -272,7 +272,7 @@ Guards: rules for comparands
 Is this expressive enough? Yes: it's a Boolean algebra with equality.
 
 * there's disjunction between instances. (Needs a little care here, because instances must be apart, so this is exclusive or.)
-* There's conjunction amongst the guards and patterns in the head.
+* There's conjunction amongst the guards and with patterns in the head.
 * The equality is expressed through patterns in the head. To make that more explicit we can use an equality guard::
 
       instance C Int Bool                  where ...       -- translates to
@@ -534,12 +534,12 @@ So HList's TypeEqual test and despatch is using the same discipline as instance 
 Overlapping Instances
 ~~~~~~~~~~~~~~~~~~~~~
 
-See the discussion throughout the proposal, particularly under `Effects and Interactions`_ for the difference in behaviour. Guarded instances are validated eagerly for apartness, and that validation  applies incrementally. Eager validation means that once a set of guarded instances is accepted, instance selection applies instance-by-instance with no searching/comparing possibly overlapping instances, and no dangers of incoherence (especially from imports).
+See the discussion throughout the proposal, particularly under `Effect and Interactions`_ for the difference in behaviour. Guarded instances are validated eagerly for apartness, and that validation  applies incrementally. Eager validation means that once a set of guarded instances is accepted, instance selection applies instance-by-instance with no searching/comparing possibly overlapping instances, and no dangers of incoherence (especially from imports).
 
 Closed Type Families
 ~~~~~~~~~~~~~~~~~~~~
 
-CTFs are validated eagerly; the sequence of equations defines the overlap behaviour. See discussion and examples under 'Motivation' `Currently: Closed Type Families`_. As against CTFs, guarded Type Families' instances are stand-alone so can be distributed throughout the code, especially as Associated types. CTFs are closed, so it is only possible to add further equations by editting the whole TF sequence (which might be an import).
+CTFs are validated eagerly; the sequence of equations defines the overlap behaviour. See discussion and examples under 'Motivation' `Currently: Closed Type Families: Closed not Associated`_. As against CTFs, guarded Type Families' instances are stand-alone so can be distributed throughout the code, especially as Associated types. CTFs are closed, so it is only possible to add further equations by editting the whole TF sequence (which might be an import).
 
 To understand each equation, the reader needs to scan preceding equations to grasp the overlap logic.
 
