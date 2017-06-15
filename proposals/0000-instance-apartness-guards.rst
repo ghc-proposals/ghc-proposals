@@ -17,7 +17,7 @@ This proposal is `discussed at this pull requst <https://github.com/ghc-proposal
 Instance (Apartness) Guards
 ===========================
 
-This proposal tackles the thorny topic of Overlapping Instances, for both type classes and Type Families. **The basic idea** is to annotate Instance headers with type-level apartness Guards (similar to term-level disequality guards), such that Instances do not overlap (after taking their guards into account). The guards stipulate the 'apartness' (dis-equality) needed between type vars in the instance head. Then:
+This proposal tackles the thorny topic of Overlapping Instances, for both type classes and Type Families. **The basic idea** is to annotate Instance heads with type-level apartness Guards (similar to term-level disequality guards), such that Instances do not overlap (after taking their guards into account). The guards stipulate the 'apartness' (dis-equality) needed between type vars in the instance head. Then:
 
 * the human reader can understand each instance stand-alone, without needing to consider other potentially overlapping instances;
 * the compiler can validate each instance incrementally, without surveying the whole-of-program-with-imports set of instances (which GHC does not try to do);
