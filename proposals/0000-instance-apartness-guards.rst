@@ -185,7 +185,7 @@ Let's explicitly de-overlap these instances. For the FunDep version, that become
 
   instance D (a',  a'')   a'  | a'  /~ Int   where ...    -- a' must be apart from Int
 
-Observe: these instances are direct, we can understand each instance (with guards) stand-alone and with no constraints to obscure the result type. The 'result sides' of the FunDep use type vars from the 'argument side', no Undecidable Instances.
+Observe: these instances are direct, we can understand each instance (with guards) stand-alone and with no constraints to obscure the result type. The 'result sides' of the FunDep use type vars from the 'argument side', no ``Undecidable Instances``.
 
 These instances do not overlap (after taking guards into account) because:
 
@@ -236,7 +236,7 @@ The ``INSTANCEGUARDS`` pragma means that all instances must be 'apart' (not unif
 
 * Either the instance heads do not unify; or
 * If the instance heads unify, yielding a substitution, applying that substitution to the guards yields a contradiction for at least one of the instances; and
-* the "Instances inconsistent with Functional Dependencies" check is also to use the guards to validate apartness of the 'argument side' of FunDeps, see example above at 'Proposal: Instance (Apartness) Guards for Type Classes'.
+* the "Instances inconsistent with Functional Dependencies" check is also to use the guards to validate apartness of the 'argument side' of FunDeps, see example above at `Proposal: Instance (Apartness) Guards for Type Classes`_.
 
 
 Instances -- type classes or Type Families
@@ -264,7 +264,7 @@ Guards: rules for comparands
 #. Comparands can use Type constructors to arbitrary nesting.
 #. Can only use type vars from the head.
    (I.e. not introduce extra vars, which contexts can do.)
-#. Can use wildcard ``_`` as a type place-holder.
+#. Can use wildcard ``_`` (underscore) as a type place-holder.
 #. No type functions -- (it would be a lovely-to-have,
    but too hard, and would need stringent Coverage conditions.
    Perhaps consider for 'phase 2' allowing ``UndecidableInstances``.)
@@ -324,7 +324,7 @@ The easiest way to express that second instance through guards is::
 
   instance C a   b  | (a, b) /~ (Int, Bool)  where ...
 
-We could express that using only whole-params, but verbosely needing three instances, see this same example wrt the 'Boolean algebra' discussion above.
+We could express that using only whole-params, but verbosely needing three instances, see this same example wrt the `Boolean algebra`_ discussion above.
 
 Another possible rule is that at least one of the comparands be a bare type var.
 
@@ -442,7 +442,7 @@ With Overlapping Instances "Errors are reported *lazily* (when attempting to sol
 
 Because of this lazy approach, module imports of overlapping instances can silently change the behaviour of otherwise identical code. But with instance guards, an import can never introduce overlapping instances (after taking guards into account).
 
-Instance selection behaviour is also different: the compiler must ensure that a wanted equation satisfies guards before selecting an instance, *ipso facto* making it the only eligible instance. Whereas the compiler must entertain possibly several overlapping instances, trying to resolve which is the most specific for the wanted equation.
+Instance selection behaviour is also different: the compiler must ensure that a wanted equation satisfies guards before selecting an instance, *ipso facto* making it the only eligible instance. Whereas for overlapping instances the compiler must entertain possibly several instances, trying to resolve which is the most specific for the wanted equation.
 
 Potentially a 'well-behaved' set of overlapping instances could be translated to instance guards (in fact, that's a criterion for 'well-behavedness'). That would need analysing instances from whole-of-program-including-imports.
 
@@ -456,7 +456,7 @@ CTF validation and instance selection does not interact with Type Families with 
 Multiple/multi-directional Functional Dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-See the discussion under 'Injective Type Families'. Guards can de-overlap instance heads that would otherwise fall foul of "Instances inconsistent with Functional Dependencies" (and with no means for the programmer to rescue them).
+See the discussion under `Injective Type Families`_. Guards can de-overlap instance heads that would otherwise fall foul of "Instances inconsistent with Functional Dependencies" (and with no means for the programmer to rescue them).
 
 Injective Type Families
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -505,7 +505,7 @@ Alternatives
 HList 'case selection' style
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This proposal is essentially HList style generalised to all type instances, not just HLists; and supported with syntactic sugar. Consider a typical HList type class (using the style from the 2004 paper, as easier to read). Note there are no overlapping instances or repeated type vars -- that logic is hermetically sealed inside the ``TypeEqual`` test::
+This proposal is essentially HList style generalised to all type instances, not just HLists; and supported with syntactic sugar. Consider a typical HList type class (using the style from the `2004 paper <http://okmij.org/ftp/Haskell/HList-ext.pdf>`_, as easier to read). Note there are no overlapping instances or repeated type vars -- that logic is hermetically sealed inside the ``TypeEqual`` test::
 
   data HNil = HNil;   data HCons e l = HCons e l
   class HOccurs    e l        -- validates element e occurs in list l
@@ -534,19 +534,19 @@ So HList's TypeEqual test and despatch is using the same discipline as instance 
 Overlapping Instances
 ~~~~~~~~~~~~~~~~~~~~~
 
-See the discussion throughout the proposal, particularly under 'Effects and Interactions' for the difference in behaviour. Guarded instances are validated eagerly for apartness, and that validation  applies incrementally. Eager validation means that once a set of guarded instances is accepted, instance selection applies instance-by-instance with no searching/comparing possibly overlapping instances, and no dangers of incoherence (especially from imports).
+See the discussion throughout the proposal, particularly under `Effects and Interactions`_ for the difference in behaviour. Guarded instances are validated eagerly for apartness, and that validation  applies incrementally. Eager validation means that once a set of guarded instances is accepted, instance selection applies instance-by-instance with no searching/comparing possibly overlapping instances, and no dangers of incoherence (especially from imports).
 
 Closed Type Families
 ~~~~~~~~~~~~~~~~~~~~
 
-CTFs are validated eagerly; the sequence of equations defines the overlap behaviour. See discussion and examples under 'motivation'. As against CTFs, guarded Type Families' instances are stand-alone so can be distributed throughout the code, especially as Associated types. CTFs are closed, so it is only possible to add further equations by editting the whole TF sequence (which might be an import).
+CTFs are validated eagerly; the sequence of equations defines the overlap behaviour. See discussion and examples under 'Motivation' `Currently: Closed Type Families`_. As against CTFs, guarded Type Families' instances are stand-alone so can be distributed throughout the code, especially as Associated types. CTFs are closed, so it is only possible to add further equations by editting the whole TF sequence (which might be an import).
 
 To understand each equation, the reader needs to scan preceding equations to grasp the overlap logic.
 
 Instance Chains
 ~~~~~~~~~~~~~~~
 
-[J.G. Morris & M.P. Jones 2010] use sequences ("chains") of class instances to define overlap behaviour. The instances as well as conventional heads can also use class membership ``if``-clauses to control instance selection; and a ``fails`` clause to trigger search for other instances (which might be) chains.
+[J.G. Morris & M.P. Jones 2010] use sequences ("chains") of class instances to define overlap behaviour. The instances, as well as conventional heads, can also use class membership ``if``-clauses to control instance selection; and a ``fails`` clause to trigger search for other instances (which might be) chains.
 
 As with Closed Type Families, the reader needs to scan preceding instances in the chain to grasp the overlap logic. These are full class instances giving method overloadings, so can be verbose.
 
@@ -586,7 +586,7 @@ For Type Families (but not type classes), instance heads might overlap providing
   type instance Or a     True  = True       — overlaps both above
   type instance Or a     False = a          — also overlaps first two
 
-(These instances don’t actually need guards. I’m imagining a Haskell with (potential) guards everywhere.)
+(These instances don’t actually need guards. I’m imagining a Haskell with guards everywhere.)
 
 Contrast the class equivalent must use guards to de-overlap but ends up with impossible instances::
 
@@ -623,7 +623,7 @@ In explaining the semantics, the proposal has used an equality guard ``(~)``. It
 
 The bare ``(~)`` might be confused with an equality constraint.
 
-Under the proposed 'Partially applied Type Families' `here <https://github.com/mniip/ghc-proposals/blob/partiallyappliedtypefamilies/proposals/0000-partially-applied-type-families.rst>`_, repeated type vars might be problematic because one occurrence might be applied, the other not. Then an equality guard might be a more cogent implementation technique: first bind the type vars individually; later test for equality. That corresponds to term-level function equations being desugarred to nested ``case``.
+Under the proposed `Partially applied Type Families <https://github.com/mniip/ghc-proposals/blob/partiallyappliedtypefamilies/proposals/0000-partially-applied-type-families.rst>`_, repeated type vars might be problematic because one occurrence might be applied, the other not. Then an equality guard might be a more cogent implementation technique: first bind the type vars individually; later test for equality. That corresponds to term-level function equations being desugarred to nested ``case``.
 
 Should instances be allowed with not just overlapping heads but *identical* heads (and differing guards)? This can't occur with only apartness guards, because that would still leave an overlap. If equality guards are allowed then this is possible::
 
