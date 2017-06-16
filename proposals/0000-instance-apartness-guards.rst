@@ -484,7 +484,10 @@ The counterpart for an injective type family would be::
 
 That needs a Type Family application on one side of a guard. Too much to hope for (yet ;-).
 
+Template Haskell
+~~~~~~~~~~~~~~~~
 
+Template Haskell will need to be updated accordingly.
 
 
 Costs and Drawbacks
@@ -539,7 +542,7 @@ See the discussion throughout the proposal, particularly under `Effect and Inter
 Closed Type Families
 ~~~~~~~~~~~~~~~~~~~~
 
-CTFs are validated eagerly; the sequence of equations defines the overlap behaviour. See discussion and examples under 'Motivation' `Currently: Closed Type Families: Closed not Associated`_. As against CTFs, guarded Type Families' instances are stand-alone so can be distributed throughout the code, especially as Associated types. CTFs are closed, so it is only possible to add further equations by editting the whole TF sequence (which might be an import).
+CTFs are validated eagerly; the sequence of equations defines the overlap behaviour. See discussion and examples under 'Motivation' `Currently Closed Type Families Closed not Associated`_. As against CTFs, guarded Type Families' instances are stand-alone so can be distributed throughout the code, especially as Associated types. CTFs are closed, so it is only possible to add further equations by editting the whole TF sequence (which might be an import).
 
 To understand each equation, the reader needs to scan preceding equations to grasp the overlap logic.
 
