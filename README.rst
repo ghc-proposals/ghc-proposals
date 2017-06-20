@@ -16,7 +16,7 @@ What is the timeline of a propsoal?
 
 2. The author submits the proposal to the wider Haskell community for discussion, as a pull request against this repository.
 
-   `How to submit a proposal <#how-to-submit-a-proposal>`_
+   `How to submit a proposal <#how-to-start-a-new-proposal>`_
 
 3. The wider community discusses the proposal in the commit section of the pull
    request, while the author refines the proposal. This phase lasts as long as necessary.
@@ -102,19 +102,21 @@ expressiveness and ease of integration into other GHC infrastructure. See the
 <http://downloads.haskell.org/~ghc/latest/docs/html/users_guide/editing-guide.html>`_
 for a brief introduction to ReStructuredText.
 
-How to submit a proposal
--------------------------
+How to start a new proposal
+---------------------------
 
-If you are unfamiliar with GitHub, see the `detailed instructions <detailed-instructions.rst>`_.
+To start a proposal, creaue a pull request that adds your proposal as ``proposals/0000-proposal-name.rst``. Use ``proposals/0000-template.rst`` as a template.
 
-1. Fork the ``ghc-proposals`` repository
-2. Setup your fork,
+If you are unfamiliar with git and github, you can use the GitHub web interface to perform these steps:
 
-   a. Create a branch for your proposal
-   b. Start your proposal by copying ``proposals/0000-template.rst`` to a new file in the ``proposals/`` directory.
+1. `This link`__ loads the proposal template.
+2. Change the filename and edit the proposal.
+3. Press “Commit new file”
 
-3. Write the proposal document, commit, and push to your ``ghc-proposals`` fork
-4. Submit your proposal for discussion by opening a pull request for your branch against the ``master`` branch of ``ghc-proposals/ghc-proposals``.
+__ https://github.com/ghc-proposals/ghc-proposals/new/master/proposals/?filename=new-proposal.rst;message=Start%20new%20proposal;value=..%20proposal-number%3A%3A%20Leave%20blank.%20This%20will%20be%20filled%20in%20when%20the%20proposal%20is%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20accepted.%0A%0A..%20trac-ticket%3A%3A%20Leave%20blank.%20This%20will%20eventually%20be%20filled%20with%20the%20Trac%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20ticket%20number%20which%20will%20track%20the%20progress%20of%20the%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20implementation%20of%20the%20feature.%0A%0A..%20implemented%3A%3A%20Leave%20blank.%20This%20will%20be%20filled%20in%20with%20the%20first%20GHC%20version%20which%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20implements%20the%20described%20feature.%0A%0A..%20highlight%3A%3A%20haskell%0A%0AThis%20proposal%20is%20%60discussed%20at%20this%20pull%20requst%20%3Chttps%3A//github.com/ghc-proposals/ghc-proposals/pull/0%3E%60_.%20%2A%2AAfter%20creating%20the%20pull%20request%2C%20edit%20this%20file%20again%2C%20update%20the%20number%20in%20the%20link%2C%20and%20delete%20this%20bold%20sentence.%2A%2A%0A%0A..%20contents%3A%3A%0A%0AProposal%20title%0A%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%0A%0AHere%20you%20should%20write%20a%20short%20abstract%20motivating%20and%20briefly%20summarizing%20the%20proposed%20change.%0A%0A%0AMotivation%0A------------%0AGive%20a%20strong%20reason%20for%20why%20the%20community%20needs%20this%20change.%20Describe%20the%20use%20case%20as%20clearly%20as%20possible%20and%20give%20an%20example.%20Explain%20how%20the%20status%20quo%20is%20insufficient%20or%20not%20ideal.%0A%0A%0AProposed%20Change%20Specification%0A-----------------------------%0ASpecify%20the%20change%20in%20precise%2C%20comprehensive%20yet%20concise%20language.%20Avoid%20words%20like%20should%20or%20could.%20Strive%20for%20a%20complete%20definition.%20Your%20specification%20may%20include%2C%0A%0A%2A%20grammar%20and%20semantics%20of%20any%20new%20syntactic%20constructs%0A%2A%20the%20types%20and%20semantics%20of%20any%20new%20library%20interfaces%0A%2A%20how%20the%20proposed%20change%20addresses%20the%20original%20problem%0A%2A%20how%20the%20proposed%20change%20might%20interact%20with%20existing%20language%20or%20compiler%20features%0A%0ANote%2C%20however%2C%20that%20this%20section%20need%20not%20describe%20details%20of%20the%0Aimplementation%20of%20the%20feature.%20The%20proposal%20is%20merely%20supposed%20to%20give%20a%0Aconceptual%20specification%20of%20the%20new%20feature%20and%20its%20behavior.%0A%0A%0A%0A%0AEffect%20and%20Interactions%0A-----------------------%0ADetail%20how%20the%20proposed%20change%20addresses%20the%20original%20problem%20raised%20in%20the%20motivation.%20Detail%20how%20the%20proposed%20change%20interacts%20with%20existing%20language%20or%20compiler%20features%20and%20provide%20arguments%20why%20this%20is%20not%20going%20to%20pose%20problems.%0A%0A%0A%0ACosts%20and%20Drawbacks%0A-------------------%0AGive%20an%20estimate%20on%20development%20and%20maintenance%20costs.%20List%20how%20this%20effects%20learnability%20of%20the%20language%20for%20novice%20users.%20Define%20and%20list%20any%20remaining%20drawbacks%20that%20cannot%20be%20resolved.%0A%0A%0A%0AAlternatives%0A------------%0AList%20existing%20alternatives%20to%20your%20proposed%20change%20as%20they%20currently%20exist%20and%20discuss%20why%20they%20are%20insufficient.%0A%0A%0A%0AUnresolved%20questions%0A--------------------%0AExplicitly%20list%20any%20remaining%20issues%20that%20remain%20in%20the%20conceptual%20design%20and%20specification.%20Be%20upfront%20and%20trust%20that%20the%20community%20will%20help.%20Please%20do%20not%20list%20%2Aimplementation%2A%20issues.%0A%0AHopefully%20this%20section%20will%20be%20empty%20by%20the%20time%20the%20proposal%20is%20brought%20to%20the%20steering%20committee.%0A%0A%0A%0AImplementation%20Plan%0A-------------------%0A%28Optional%29%20If%20accepted%20who%20will%20implement%20the%20change%3F%20Which%20other%20ressources%20and%20prerequisites%20are%20required%20for%20implementation%3F%0A
+
+.. link generated with
+   python -c "import urllib;print 'https://github.com/ghc-proposals/ghc-proposals/new/master/proposals/?filename=new-proposal.rst;message=%s;value=%s' % (urllib.quote('Start new proposal'), urllib.quote(file('proposals/0000-template.rst').read()))"
 
 The pull request summary should include a brief description of your
 proposal, along with a link to the rendered view of proposal document
