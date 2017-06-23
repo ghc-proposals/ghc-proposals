@@ -279,7 +279,7 @@ Review criteria
 ---------------
 
 Below are some criteria that the committee and the supporting GHC
-community will genearlly use to evaluate a proposal. Note that this list
+community will generally use to evaluate a proposal. Note that this list
 is merely set of a guidelines; it is the committee's job to weigh these
 and any other relevant considerations appropriately.
 
