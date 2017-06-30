@@ -24,7 +24,7 @@ In addition, this proposal also motivates changing the constraint solving order 
 
 This proposal does *not* address whether this facility should be used at all by the libraries bundled with GHC. This might be the topic of another proposal in the future, if this one gets accepted.
 
-Further information (with a more academic flavor) is available in `this draft <http://www.staff.science.uu.nl/~f100183/type-errors-draft.pdf>`_.
+Further information (with a more academic flavor) is available in `this draft <http://www.staff.science.uu.nl/~f100183/type-errors-draft.pdf>`_ and this `presentation at Curry On! 2017 <https://www.youtube.com/watch?v=LuqSkWOcnSA>`_.
 
 
 Motivation
