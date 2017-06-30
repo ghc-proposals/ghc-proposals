@@ -6,14 +6,14 @@
 
 .. highlight:: haskell
 
-This proposal is `discussed at this pull requst <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_. **After creating the pull request, edit this file again, update the number in the link, and delete this bold sentence.**
+This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_. **After creating the pull request, edit this file again, update the number in the link, and delete this bold sentence.**
 
 .. contents::
 
 Custom type errors
 ==================
 
-This proposes the addition of two combinators over ``Constraint``s, namely ::
+This proposes the addition of two combinators over ``Constraint``, namely ::
 
     IfUndischarged :: Constraint -> ErrorMessage -> Constraint
     IfApart        :: Type -> Type -> Constraint -> Constraint -> Constraint
@@ -24,12 +24,14 @@ In addition, this proposal also motivates changing the constraint solving order 
 
 This proposal does *not* address whether this facility should be used at all by the libraries bundled with GHC. This might be the topic of another proposal in the future, if this one gets accepted.
 
+Further information (with a more academic flavor) is available in `this draft <http://www.staff.science.uu.nl/~f100183/type-errors-draft.pdf>`_.
+
 
 Motivation
 ------------
 Haskell is well-known for its ability to embed DSLs, and the usage of its strong type system to guarantee invariants in those languages. The main disdvantage is that type errors become unwidely long and complex, and in many cases expose internals of the implementation. In short, the "ultimate abstraction" offered by EDSLs is broken when the code is ill-typed.
 
-The community has already acknowledged this problem partially with the introduction of ``TypeError``. See `the original proposal <https://ghc.haskell.org/trac/ghc/wiki/Proposal/CustomTypeErrors>`_ and an `example package <https://github.com/turingjump/bookkeeper#readme>_`. But why should we stop here? There are many other error conditions we may want to customize. In this proposal we focus in other two.
+The community has already acknowledged this problem partially with the introduction of ``TypeError``. See `the original proposal <https://ghc.haskell.org/trac/ghc/wiki/Proposal/CustomTypeErrors>`_ and an `example package <https://github.com/turingjump/bookkeeper#readme>`_. But why should we stop here? There are many other error conditions we may want to customize. In this proposal we focus in other two.
 
 Undischarged constraints
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -73,7 +75,7 @@ If it turns out that ``(==)`` is applied to a type for which no ``Eq`` instance 
     Maybe you want to derive it using `deriving Eq`?
   * In the expression: ...
 
-The second combinator is ``IfApartUnsafe`` (the naming shall become clear later). In short, ``IfApartUnsafe a b no yes`` rewrites to ``no`` if ``a`` and ``b`` are apart *at that point in the solving process* and to ``yes`` otherwise. Note that this is *extremely unsafe*, since any knowledge about ``a`` and ``b`` is lost if the second branch is taken, and for that reason we should only expose ::
+The second combinator is ``IfApartUnsafe`` (the naming shall become clear later). In short, ``IfApartUnsafe a b no yes`` rewrites to ``no`` if ``a`` and ``b`` are apart *at that point in the solving process* and to ``yes`` otherwise. Note that this is *extremely unsafe*, since any knowledge about ``a`` and ``b`` is lost if the second branch is taken, and for that reason we should only expose the variant ::
 
     type IfApart a b no yes = IfApartUnsafe a b no (a ~ b, yes)
 
@@ -84,7 +86,7 @@ Using this synonym we can give a better type to ``(==)`` ::
               (IfUndischarged (Eq a) (ShowType a :<>: ...))
          => a -> b -> Bool
 
-One of the nice things about `IfUndischarged` and `IfApartUnsafe` being combinators is that we can abstract error patterns using type-level programming such as type families. See the following `prototype implementation <https://git.science.uu.nl/f100183/ghc/blob/wip/when-not/libraries/base/GHC/TypeErrors.hs>`_ of a proposed ``GHC.TypeErrors`` module. Using it we could write ::
+One of the nice things about ``IfUndischarged`` and ``IfApartUnsafe`` being combinators is that we can abstract error patterns using type-level programming such as type families. See the following `prototype implementation <https://git.science.uu.nl/f100183/ghc/blob/wip/when-not/libraries/base/GHC/TypeErrors.hs>`_ of a proposed ``GHC.TypeErrors`` module. Using it we could write ::
 
     (==) :: CustomErrors [ a :~/: b :=>: Text "== is applied to arguments of different types"
                          , Undischarged (Eq a) :=>: ShowType a :<>: Text " does not implement equality."]
@@ -148,7 +150,7 @@ Alternatives
 ------------
 In this proposal, ``IfUndischarged`` is associated to a constraint in each usage site. Another alternative is having the message attached to the type class itself. This is the route taken by Scala with their `implicitNotFound annotation <http://www.scala-lang.org/api/2.12.0/scala/annotation/implicitNotFound.html>`_
 
-That alternative, however, is less flexible than the current proposal, since you could always export a new constraint which includes the message:
+That alternative, however, is less flexible than the current proposal, since you could always export a new constraint which includes the message ::
 
     type Eq' a = IfUndischarged (Eq a) (Text "blah blah")
 
@@ -170,7 +172,7 @@ The same question should be asked about Haddock. Maybe the smallest, simplified 
 
 Generalization
 ~~~~~~~~~~~~~~
-What happens if we need to infer a type with a constraint which has an attached message? Do we at it using ``IfUndischarged``? This definitely seems like a wrong path, although it is also surprising that if I write:
+What happens if we need to infer a type with a constraint which has an attached message? Do we at it using ``IfUndischarged``? This definitely seems like a wrong path, although it is also surprising that if I write ::
 
     eq = myAnnotatedEq
 
