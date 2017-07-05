@@ -122,11 +122,11 @@ can be dropped.
 Resolved questions
 ------------------
 
-1. **Why have two ``forall``\s in a ``RULES`` declaration?** Because otherwise users would have a hard
+1. **Why have two** ``forall``\ **s in a** ``RULES`` **declaration?** Because otherwise users would have a hard
    time telling type variables from term variables. A syntactic analysis could sort this out, but that
    seems more confusing than having two ``forall``\s.
 
-2. **How will the two ``forall``\s work with Dependent Haskell?** Dependent Haskell would need to generalize
+2. **How will the two** ``forall``\ **s work with Dependent Haskell?** Dependent Haskell would need to generalize
    the syntax of ``RULES`` to allow an arbitrary number of uses of the ``forall`` keyword to be backward
    compatible with this proposal. This is in keeping with the use of ``forall`` in type signatures, where
    ``forall a b c. ...`` is an abbreviation for ``forall a. forall b. forall c. ...``. In short, I don't
