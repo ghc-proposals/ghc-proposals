@@ -23,11 +23,14 @@ This proposal adds a new plain-old-vanilla datatype ::
 
     data Visibility = Visible | Invisible
     
-which is now the type of a parameter to ``TYPE`` (of levity-polymorphism fame). We now have ``type Constraint = TYPE Invisible LiftedRep``, making ``Constraint`` distinct from ``Type`` both in Haskell and in Core.
+which is now the type of a parameter to ``TYPEV`` (renamed from ``TYPE`` of
+levity-polymorphism fame). We now have ``type Constraint = TYPEV Invisible
+LiftedRep``, making ``Constraint`` distinct from ``Type`` both in Haskell and
+in Core.
 
 Motivation
 ------------
-Here are a few oddities caused by the current arrangement:
+Here are a few oddities caused by the arrangement in GHC 8.0:
 
 1. Type families::
 
@@ -83,27 +86,30 @@ Proposed Change Specification
 
 In ``GHC.Prim``::
 
-    TYPE :: Visibility -> RuntimeRep -> Type
+    TYPEV :: Visibility -> RuntimeRep -> Type
 
 In ``GHC.Types``::
 
+    type TYPE = TYPEV Visible  -- convenient synonym
+  
     data Visibility = Visible | Invisible
     data RuntimeRep = ...   -- as before
     
-    type Constraint = TYPE Invisible LiftedRep
-    type Type       = TYPE Visible   LiftedRep
-    
-    type TYPEvis    = TYPE Visible   -- convenient synonym
+    type Constraint = TYPEV Invisible LiftedRep
+    type Type       = TYPE LiftedRep
 
+The Haskell ``(->)`` will be kind-checked to have kind ``TYPE r1 -> TYPE r2 -> Type`` (that is, both
+argument and result must be visible), even though the Core ``(->)`` has kind ``TYPEV v1 r1 -> TYPEV v2 r2 -> Type``.
+    
 Effect and Interactions
 -----------------------
 The reason that ``Constraint`` and ``Type`` have been synonymous is that we need to be able to have
 ``Constraint``-kinded things to the left (and, more rarely, to the right) of arrows. But in our brave
-new levity-polymorphic world, the types on either side of an arrow can have kind ``TYPE v r`` for any ``v`` and ``r``.
+new levity-polymorphic world, the types on either side of an arrow can have kind ``TYPEV v r`` for any ``v`` and ``r``.
 Thus, the new ``Constraint`` fits in quite nicely.
 
 Users who don't poke around the internals of ``RuntimeRep`` should not notice this change at all. GHC will be
-taught to print ``Constraint`` whenever it is tempted to write ``TYPE Invisible LiftedRep`` to the console.
+taught to print ``Constraint`` whenever it is tempted to write ``TYPEV Invisible LiftedRep`` to the console.
 
 One weird interaction is that we currently encode one-element classes as newtypes. Here is an example::
 
@@ -114,12 +120,38 @@ This yields a Core type defined like ``newtype C a = MkC { def :: a }``. The onl
 Thus the newtype axiom that relates ``C a`` to ``a`` is *heterogeneous*. Clever machinations using the coercion
 forms as described `here <https://github.com/ghc/ghc/blob/master/docs/core-spec/core-spec.pdf>`_ could then prove
 that ``Visible ~N Invisible``, which is a nominal equality between two distinct data constructors. Nightmares!
-So this change will have to weaken the ``KindCo`` coercion ("Co_KindCo" in the linked specification, page 14) to
-require a *nominal* input coercion instead of any old input coercion. This change weakens the coercion language
-a tad, but I don't think anyone will notice. In order to see the lost expressiveness, you would need to have
-a heterogeneous representational coercion. The user-accessible ``Coercible`` class is *homogeneous*, so creating
-one seems impossible in user code. (GHC certainly could internally. But it doesn't.) We don't have to worry
-about type safety with this change, because we are making equality weaker, which is always safe.
+
+An earlier version of this proposal then proposed to change ``KindCo``
+("Co_KindCo" in the linked specification, page 14) to avoid the nightmares
+(specifically: require its input coercion to be nominal, instead of any role).
+This change, however, is in deep irresolvable conflict with the recent change
+to make ``(->)`` take its role arguments in Core. See `#11714
+<https://ghc.haskell.org/trac/ghc/ticket/11714>`_ and its implementation
+`D2038 <https://phabricator.haskell.org/D2038>`_. In particular, `this comment
+<https://phabricator.haskell.org/D2038#inline-25457>`_ is where it all comes to a head.
+There is no way to weaken ``KindCo`` in the presence of the (necessary) work to generalize the kind of ``(->)``.
+
+Accordingly, this patch will indeed introduce the nightmares. That is, with this change, a motivated attacker may
+be able to break the type system. I say "may" because the attack may require writing Core directly; it's unclear
+if any Haskell code could tickle the type system infelicity. It will thus be imperative that we remove
+newtype-classes (classes that desugar to newtype definitions, instead of data definitions) after this patch
+is introduced. Of course, making this change is straightforward within GHC, but it has a nasty consequence: the
+widely-used ``reflection`` package will no longer work, as it relies on GHC's treatement of one-element classes.
+That package uses ``unsafeCoerce``, so GHC isn't techincally violating its contract with users with this change,
+but it's poor form to do it nonetheless. We thus must come up with a new way to do reflection. `This wiki
+page <https://ghc.haskell.org/trac/ghc/wiki/MagicalReflectionSupport>`_ suggests a way forward. I could incorporate
+that proposal into this one, but it seems that better debate will ensue keeping the proposals separate. We
+need to do *something* about ``reflection`` to keep type safety, but precisely *what* we do is orthogonal
+to this proposal.
+
+This proposal requires that we further generalize ``(->)`` to be ::
+
+    (->) :: forall (v1 :: Visibility) (r1 :: RuntimeRep) (v2 :: Visibility) (r2 :: RuntimeRep).
+            TYPEV v1 r1 -> TYPEV v2 r2 -> Type
+
+This change would be user-facing via the ``Typeable`` mechanism, even though the Haskell ``(->)`` would
+not be nearly so flexible. Perhaps an improvement would be to have different names for the Haskell ``(->)``
+and the Core ``(->)``.
 
 Note that this is orthogonal to proposal #29 and can be done with or without that change.
 
@@ -162,6 +194,9 @@ written ``Visibility``, but I prefer the latter. For example, ``(?x :: Int)`` is
 it is not coherent. Also, the user might have specified ``-XIncoherentInstances``. On the other hand, visibility
 is always a correct notion to apply here.
 
+Yet another alternative is proposed in `this comment <https://github.com/ghc-proposals/ghc-proposals/pull/32#issuecomment-276102333>`_, where @sweirich proposes to have ``(->)`` and ``(=>)`` in Core. This would mean more arrows floating around
+in Core that all get compiled to the same code later, but perhaps wouldn't cause further complication.
+
 Regardless, the current proposal does not really bar the way to resolving the design challenges of the alternative
 proposal in the future. Implementing what I've proposed here will be *deleting* code, so there's no sunk cost
 to worry about if we decide to change course later.
@@ -176,4 +211,4 @@ a mechanized proof of this all, but let's not wait for that future to arrive bef
 
 Implementation Plan
 -------------------
-I volunteer to implement. In time for GHC 8.2 even!
+I volunteer to implement.
