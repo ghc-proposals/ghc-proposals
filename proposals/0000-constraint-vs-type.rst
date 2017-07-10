@@ -168,34 +168,46 @@ complication faces users, if they choose to play in the levity-polymorphism play
 Alternatives
 ------------
 
-@int-index has argued very cogently and patiently for an alternative solution, whereby we allow ``Constraint ~ Type``
-in Haskell code, resolving the discrepancy between Haskell and Core in the opposite direction. This idea
-was originally proposed by Simon PJ `here <https://ghc.haskell.org/trac/ghc/ticket/11715#comment:9>`_, but he
-has since changed his mind on the idea. It's hard to summarize @int-index's arguments here beyond Simon's original
-proposal, but they are worthwhile reading if you're keen. The main drawbacks to the
-alternative proposal might be written by Edward Kmett `here <https://ghc.haskell.org/trac/ghc/ticket/11715#comment:31>`_.
-I confess I have not liked this idea much, but it's more from a language-design standpoint than from a type-safety
-standpoint (the alternative proposal appears type-safe to me). (@int-index has since backed off this point of view,
-as seen on the pull request)
+1. @int-index has argued very cogently and patiently for an alternative solution, whereby we allow ``Constraint ~ Type``
+   in Haskell code, resolving the discrepancy between Haskell and Core in the opposite direction. This idea
+   was originally proposed by Simon PJ `here <https://ghc.haskell.org/trac/ghc/ticket/11715#comment:9>`_, but he
+   has since changed his mind on the idea. It's hard to summarize @int-index's arguments here beyond Simon's original
+   proposal, but they are worthwhile reading if you're keen. The main drawbacks to the
+   alternative proposal might be written by Edward Kmett `here <https://ghc.haskell.org/trac/ghc/ticket/11715#comment:31>`_.
+   I confess I have not liked this idea much, but it's more from a language-design standpoint than from a type-safety
+   standpoint (the alternative proposal appears type-safe to me). (@int-index has since backed off this point of view,
+   as seen on the pull request)
 
-The main alternative is a previous version of this proposal, where we would add a new constructor of ``RuntimeRep``
-called ``ConstraintRep``. We would then distinguish ``Type`` from ``Constraint`` via the choice of ``RuntimeRep``.
-However, this runs into a major problem: we have a hard time rejecting ``Eq a -> a -> Bool``. (Note the ``->`` instead
-of ``=>``.) Seeing ``Eq a -> a -> Bool``, GHC would happily accept, because any thing of the form ``TYPE r`` to the left
-of an arrow should be OK. We can only be sure something is wrong after zonking, and by then, we've lost the original
-Haskell AST that the user wrote, so we can't tell whether they wrote ``=>`` or ``->``. Of course, this problem could
-be avoided by engineering, but there is another wrinkle. Consider the type ``forall (r :: RuntimeRep) (a :: TYPE r). a -> a``.
-Forget for a moment that this is unimplementable. The problem is that the type is sensible only for *most* choices of ``r``,
-not *all* of them: choosing ``r`` to be ``ConstraintRep`` makes the type bogus. So something is really quite smelly
-with this design.
+2. As described in a previous version of this proposal, where we could add a new constructor of ``RuntimeRep``
+   called ``ConstraintRep``. We would then distinguish ``Type`` from ``Constraint`` via the choice of ``RuntimeRep``.
+   However, this runs into a major problem: we have a hard time rejecting ``Eq a -> a -> Bool``. (Note the ``->`` instead
+   of ``=>``.) Seeing ``Eq a -> a -> Bool``, GHC would happily accept, because any thing of the form ``TYPE r`` to the left
+   of an arrow should be OK. We can only be sure something is wrong after zonking, and by then, we've lost the original
+   Haskell AST that the user wrote, so we can't tell whether they wrote ``=>`` or ``->``. Of course, this problem could
+   be avoided by engineering, but there is another wrinkle. Consider the type ``forall (r :: RuntimeRep) (a :: TYPE r). a -> a``.
+   Forget for a moment that this is unimplementable. The problem is that the type is sensible only for *most* choices of ``r``,
+   not *all* of them: choosing ``r`` to be ``ConstraintRep`` makes the type bogus. So something is really quite smelly
+   with this design.
+
+3. Some potential future will allow roles in kinds. This is in contrast to today, where all kind casts ``(ty |> co)`` use
+   a *nominal* coercion. (This is also in contrast to term-level casts ``(exp |> co)`` which use *representational*
+   coercions.) @sweirich and collaborators are working on the theory behind this currently. Once this theory is complete,
+   it seems we could introduce ``Constraint`` and have an axiom saying ``Constraint ~R Type``. Here, "representation"
+   is fairly meaningless, but here is the intuition: nominal equalities should be inferred by GHC. That is, Haskell types
+   that are nominally equal are considered interchangeable in a Haskell program. On the other hand, representational
+   equalities are never inferred; a programmer must include some annotation saying where to use them. Currently, these
+   annotations take the form of ``coerce``, a newtype constructor, or a newtype pattern-match. But it would also make sense
+   to have ``(=>)`` be an "annotation" saying to cast a ``Constraint`` into a ``Type`` usable by ``(->)``. If it weren't
+   for the fact that the theory isn't ready yet, this would seem to be the most appealing option.
+
+4. Have three separate arrows in Core: ``(->)``, ``(=>)`` and ``(==>)``, where that last one both takes and returns
+   a ``Constraint``. (It's used in qualified instance declarations.) In practice, this is quite similar to the proposal
+   here, but the cosmetics are different.
 
 Another axis for alternatives is in naming. Suggestions from the community have wanted ``Coherency`` where I have
 written ``Visibility``, but I prefer the latter. For example, ``(?x :: Int)`` is a ``Constraint`` even though
 it is not coherent. Also, the user might have specified ``-XIncoherentInstances``. On the other hand, visibility
 is always a correct notion to apply here.
-
-Yet another alternative is proposed in `this comment <https://github.com/ghc-proposals/ghc-proposals/pull/32#issuecomment-276102333>`_, where @sweirich proposes to have ``(->)`` and ``(=>)`` in Core. This would mean more arrows floating around
-in Core that all get compiled to the same code later, but perhaps wouldn't cause further complication.
 
 Regardless, the current proposal does not really bar the way to resolving the design challenges of the alternative
 proposal in the future. Implementing what I've proposed here will be *deleting* code, so there's no sunk cost
