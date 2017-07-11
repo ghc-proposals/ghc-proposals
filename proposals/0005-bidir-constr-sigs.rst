@@ -22,9 +22,10 @@ defined in bidirectional pattern synonyms.
 Motivation
 ----------
 
-This proposal grows out of an idea Dr. Érdi Gergő expressed in
+This proposal grows out of an idea Simon Peyton Jones expressed in
 `Pattern synonym used in an expression context could have different constraints
 to pattern used in a pattern context<https://ghc.haskell.org/trac/ghc/ticket/8581>`_.
+https://ghc.haskell.org/trac/ghc/ticket/8581#comment:10
 
     The two directions of an explicitly-bidirectional pattern might have utterly
     different class constraints. After all, the two directions are specified by
@@ -98,7 +99,7 @@ Proposed Change Specification
 -----------------------------
 
 Allow a type signature for the construction function in a bidirectional
-pattern synonym to appear within the same `where` clause. Whereas Dr. Érdi
+pattern synonym to appear within the same `where` clause. Whereas Peyton Jones
 suggests that the constraints provided by the pattern should be implied by the
 constraints on the constructor, we do not make such a demand; in rare cases
 it can be invaluable to defeat the type system by using `unsafeCoerce` in a
