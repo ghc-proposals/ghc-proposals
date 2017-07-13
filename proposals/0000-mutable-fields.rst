@@ -413,13 +413,7 @@ Don't do this :)
 Unresolved Questions
 --------------------
 
-* Should we provide a way to test for reference equality between
-  mutable constructors?
 * Can we add a way to include mutable arrays in a constructor?
 * It would be great to allow STM as an option in addition to IO and
   ST.  The constructor will need to store extra metadata, because
   TVar# is more complex than MutVar#.
-* We can declare a constructor with an ``IO`` result type even if it
-  doesn't have any mutable fields.  Why is that useful?  One reason is
-  that these constructors have identity, which means that things like
-  pointer equality and finalizers work more reliably.
