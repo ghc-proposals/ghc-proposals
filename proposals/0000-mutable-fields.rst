@@ -69,8 +69,8 @@ Note:
 - The new ``mutable`` keyword declares a mutable field
 - The return type is in ``IO``: a constructor with any ``mutable``
   fields *must* either
-  - have a return type that has one of the forms ``IO t``, ``ST
-    s t``, or ``State# s -> (# State# s, t #)``, where ``t`` takes the
+  - have a return type that has one of the forms ``IO t``, ``ST s t``,
+    or ``State# s -> (# State# s, t #)``, where ``t`` takes the
     form of the normal return type for the constructor, or
   - have a type of the form ``PrimMonad m => ... -> m t``,  declaring a
     constructor that works for any ``PrimMonad`` instance.
@@ -297,6 +297,12 @@ and::
 (``t``, ``u``, ``v`` and ``w`` are types, and ``xs`` is a set of type
 variables)
 
+When ``K`` is used in a pattern in a case alternative in Core, the
+types of its fields are ``x1....xn`` where::
+
+  xi = Ref# s w, if ui == mutable w
+     = ui,       otherwise
+
 Primitives
 ^^^^^^^^^^
 
@@ -329,16 +335,6 @@ instruction. Similarly ``writeRef#`` would compile to a primitive write
 instruction, but it would also need a memory barrier just like
 ``writeMutVar#``, and a GC write barrier (the equivalent of
 ``dirty_MUT_VAR()``).
-
-
-Case alternatives
-^^^^^^^^^^^^^^^^^
-
-When ``K`` is used in a pattern in a case alternative in Core, the
-types of its fields are ``x1....xn`` where::
-
-  xi = Ref# s w, if ui == mutable w
-     = ui,       otherwise
 
 
 Transformations
