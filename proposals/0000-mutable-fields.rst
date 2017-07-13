@@ -68,9 +68,12 @@ Note:
 
 - The new ``mutable`` keyword declares a mutable field
 - The return type is in ``IO``: a constructor with any ``mutable``
-  fields *must* have a return type that has one of the forms ``IO t``, ``ST
-  s t``, or ``State# s -> (# State# s, t #)``, where ``t`` takes the
-  form of the normal return type for the constructor.
+  fields *must* either
+  - have a return type that has one of the forms ``IO t``, ``ST
+    s t``, or ``State# s -> (# State# s, t #)``, where ``t`` takes the
+    form of the normal return type for the constructor, or
+  - have a type of the form ``PrimMonad m => ... -> m t``,  declaring a
+    constructor that works for any ``PrimMonad`` instance.
 
 Given this declaration, GHC will create a constructor ``MutPair`` that
 has the following type::
@@ -79,6 +82,11 @@ has the following type::
 
 The ``mutable`` annotation in the definition disappears in the
 constructor type.
+
+*Mutability is a property of an individual constructor, not the entire
+datatype*.  This means that it makes sense to have constructors with
+mutable fields that are in different monads, or even datatype where
+some constructors are mutable and others are not.
 
 Operations on mutable fields
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -151,47 +159,6 @@ representation* will be ``(# Any, Int# #)``, that is, an unboxed pair
 of the object that contains the mutable field and the offset of the
 mutable field.
 
-Core
-~~~~
-
-For each mutable data constructor ``K`` (where a "mutable data
-constructor" is one that is declared with at least one mutable
-field), we get a constructor worker function ``$wK``,
-whose type is::
-
-  $wK :: forall xs s . t1 -> ... -> tn -> State# s -> (# State# s, K v1...vn #)
-
-where ``K`` was defined to have the type::
-
-  K :: forall xs s . u1 -> ... -> un -> IO (K v1...vn)
-
-and::
-
-  ti = w,  if ui == mutable w
-     = ui, otherwise
-
-(``t``, ``u``, ``v`` and ``w`` are types, and ``xs`` is a set of type
-variables)
-
-When ``K`` is used in a pattern in a case alternative in Core, the
-types of its fields are ``x1....xn`` where::
-
-  xi = Ref# s w, if ui == mutable w
-     = ui,       otherwise
-
-Because the constructor worker for a mutable constructor is a stateful
-operation, GHC can no longer assume that an expression like ``$wK e1...en``
-has type ``K t1...tn`` when ``K`` is a mutable constructor.  This
-assumption is currently used in a couple of places:
-
-- In Worker-wrapper, we build an expression representing the re-packed
-  constructor.  Worker-wrapper would need to be either disabled
-  (easiest) or adapted for mutable constructors.
-- When simplifying a case expression like ``case x of y { C a b -> E
-  }``, GHC creates the mapping ``y -> C a b`` when simplifying ``E``.
-  We will have to avoid creating this mapping If ``C`` is a mutable
-  constructor.
-
 Unpacking constructors with mutable fields
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -260,9 +227,37 @@ However, we now need a family of primitives to work with these::
 
 and so on.
 
-Implementation
-~~~~~~~~~~~~~~
+Deriving
+~~~~~~~~
 
+A type with one or more mutable constructors can derive only ``Eq`` and
+`Typeable`.
+
+`Eq` is supported by using ``reallyUnsafePtrEquality#`` to compare
+mutable constructors, but we must ensure that the constructors are
+evaluated strictly in the same way as we do for ``dataToTag#``.
+
+
+Mutable keyword on constructors
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+We also propose to make it possible to declare a mutable constructor
+without any mutable fields, like this::
+
+ data IdPair :: * -> * -> * where
+     mutable IdPair :: a -> b -> IO (IdPair a b)
+
+This indicates that ``IdPair`` behaves as a mutable constructor, in
+that:
+
+- Its constructor is monadic, with the declared type
+- It has identity, and equality is implemented using pointer equality
+  (see "Deriving" above).
+
+
+Core
+~~~~
 
 Constructors
 ^^^^^^^^^^^^
@@ -271,16 +266,36 @@ As with ordinary constructors, we need a
 constructor *wrapper*, which is defined in terms of the constructor
 worker::
 
-  MutPair = \a b -> IO $ \s -> MutPair# a b s
+  MutPair = \a b -> IO $ \s -> $wMutPair# a b s
 
 where the primitive constructor ("worker") is::
 
-  MutPair# :: forall a b s. a -> b -> State# s -> (# State# s, MutPair a b #)
+  $wMutPair# :: forall a b s. a -> b -> State# s -> (# State# s, MutPair a b #)
 
 We would generate code for the primitive constructor just like we
 generate code for other constructors, taking care to add the Void
 argument for the ``State#``, and generating an info table with the
-correct information about the mutable fields.
+correct information about the mutable fields (see "Garbage Collection"
+below).
+
+Concretely, for each mutable data constructor ``K`` (where a "mutable data
+constructor" is one that is declared with at least one mutable
+field), we get a constructor worker function ``$wK``,
+whose type is::
+
+  $wK :: forall xs s . t1 -> ... -> tn -> State# s -> (# State# s, K v1...vn #)
+
+where ``K`` was defined to have the type::
+
+  K :: forall xs s . u1 -> ... -> un -> IO (K v1...vn)
+
+and::
+
+  ti = w,  if ui == mutable w
+     = ui, otherwise
+
+(``t``, ``u``, ``v`` and ``w`` are types, and ``xs`` is a set of type
+variables)
 
 Primitives
 ^^^^^^^^^^
@@ -315,6 +330,37 @@ instruction, but it would also need a memory barrier just like
 ``writeMutVar#``, and a GC write barrier (the equivalent of
 ``dirty_MUT_VAR()``).
 
+
+Case alternatives
+^^^^^^^^^^^^^^^^^
+
+When ``K`` is used in a pattern in a case alternative in Core, the
+types of its fields are ``x1....xn`` where::
+
+  xi = Ref# s w, if ui == mutable w
+     = ui,       otherwise
+
+
+Transformations
+^^^^^^^^^^^^^^^
+
+Because the constructor worker for a mutable constructor is a stateful
+operation, GHC can no longer assume that an expression like ``$wK e1...en``
+has type ``K t1...tn`` when ``K`` is a mutable constructor.  This
+assumption is currently used in a couple of places:
+
+- In Worker-wrapper, we build an expression representing the re-packed
+  constructor.  Worker-wrapper would need to be either disabled
+  (easiest) or adapted for mutable constructors.
+- When simplifying a case expression like ``case x of y { C a b -> E
+  }``, GHC creates the mapping ``y -> C a b`` when simplifying ``E``.
+  We will have to avoid creating this mapping If ``C`` is a mutable
+  constructor.
+
+
+
+Runtime System
+~~~~~~~~~~~~~~
 
 Garbage collection
 ^^^^^^^^^^^^^^^^^^
