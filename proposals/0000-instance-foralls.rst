@@ -88,6 +88,33 @@ in the construct, much like the all-or-nothing behavior of value-level type sign
 These new extensions would be enabled with the old extension ``ExplicitForAll``, as they are backward-compatible
 with that extension.
 
+Examples
+--------
+
+1. ::
+
+     data family F a
+     data instance forall (x :: Bool). F (Proxy x) = MkF
+
+     class C a where
+       type F a b
+
+     instance forall a. C [a] where
+       type forall b. F [a] b = Int
+
+2. ::
+
+     type family G a b where
+       forall x y. G [x] (Proxy y) = Double
+       forall z.   G z   z         = Bool
+
+3. ::
+
+     {-# RULES
+     "example"  forall a b. forall. map @a @b id = id
+     "example2" forall a. forall (x :: a). id x = x
+       #-}
+
 Effect and Interactions
 -----------------------
 Class instances have permitted a ``forall`` for some time. This just extends the idea to other, similar
