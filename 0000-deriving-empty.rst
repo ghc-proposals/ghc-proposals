@@ -26,56 +26,46 @@ Motivation
 ------------
 Currently, the behavior for deriving class instances for empty data types is unpredictable, and not as useful as it could be. Let's examine each of these three points in closer detail:
 
-1. Unpredictable. If you try deriving certain instances for an empty data type using a `deriving` clause, it will simply fail. For instance:
+1. Unpredictable. If you try deriving certain instances for an empty data type using a `deriving` clause, it will simply fail. For instance: ::
 
-   ```
-   λ> data Empty deriving Eq
-   
-   <interactive>:1:21: error:
-       • Can't make a derived instance of ‘Eq Empty’:
-           ‘Empty’ must have at least one data constructor
-           Possible fix: use a standalone deriving declaration instead
-       • In the data declaration for ‘Empty’
-   ```
+       λ> data Empty deriving Eq
+       
+       <interactive>:1:21: error:
+           • Can't make a derived instance of ‘Eq Empty’:
+               ‘Empty’ must have at least one data constructor
+               Possible fix: use a standalone deriving declaration instead
+           • In the data declaration for ‘Empty’
 
-   And yet, if one uses the `StandaloneDeriving` extension to derive `Eq`, it will work:
+   And yet, if one uses the `StandaloneDeriving` extension to derive `Eq`, it will work: ::
 
-   ```
-   λ> :set -XStandaloneDeriving
-   λ> data Empty
-   λ> deriving instance Eq Empty
-   ```
+       λ> :set -XStandaloneDeriving
+       λ> data Empty
+       λ> deriving instance Eq Empty
 
-   Even more mysteriously, this distinction doesn't apply for all derivable type classes. For instance, one can use a `deriving` clause to derive `Generic` without issue:
+   Even more mysteriously, this distinction doesn't apply for all derivable type classes. For instance, one can use a `deriving` clause to derive `Generic` without issue: ::
 
-   ```
-   λ> :set -XDeriveGeneric
-   λ> import GHC.Generics
-   λ> data Empty deriving Generic
-   ```
+       λ> :set -XDeriveGeneric
+       λ> import GHC.Generics
+       λ> data Empty deriving Generic
 
-   Nor does it apply to all deriving strategies, since one can use `DeriveAnyClass` on empty data types as well:
+   Nor does it apply to all deriving strategies, since one can use `DeriveAnyClass` on empty data types as well: ::
 
-   ```
-   λ> :set -XDeriveAnyClass
-   λ> class C a
-   λ> data Empty deriving C
-   ```
+       λ> :set -XDeriveAnyClass
+       λ> class C a
+       λ> data Empty deriving C
 
    Trying to remember all of these little rules and exceptions makes for an unpleasant GHC experience.
 
-2. Not as useful as it could be. If one examines the code that is actually emitted from derived instances (using the `-ddump-deriv` GHC option), one will discover that the derived code is less than ideal. For example, consider the following GHCi session (using GHC 8.0.2):
+2. Not as useful as it could be. If one examines the code that is actually emitted from derived instances (using the `-ddump-deriv` GHC option), one will discover that the derived code is less than ideal. For example, consider the following GHCi session (using GHC 8.0.2): ::
 
-   ```
-   λ> :set -XStandaloneDeriving -ddump-deriv
-   λ> data Empty
-   λ> deriving instance Show Empty
-   
-   ==================== Derived instances ====================
-   Derived instances:
-     instance GHC.Show.Show Ghci1.Empty where
-       GHC.Show.showsPrec = GHC.Err.error "Void showsPrec"
-   ```
+       λ> :set -XStandaloneDeriving -ddump-deriv
+       λ> data Empty
+       λ> deriving instance Show Empty
+       
+       ==================== Derived instances ====================
+       Derived instances:
+         instance GHC.Show.Show Ghci1.Empty where
+           GHC.Show.showsPrec = GHC.Err.error "Void showsPrec"
 
    This is a particularly bad way to implement `Show` for an empty data type. This implementation will _always_ `error`, regardless of whether its input is a divergent computation or a computation which throws an exception. Moreover, it will `error` even if it is partially applied, making it especially cumbersome to use.
 
@@ -96,88 +86,70 @@ with empty data types. Concretely, I propose:
 
   * Deriving `Eq`
 
-    Currently, this gives:
+    Currently, this gives: ::
 
-    ```haskell
-    instance Eq (Empty a) where
-      _ == _ = error "Void =="
-    ```
+        instance Eq (Empty a) where
+          _ == _ = error "Void =="
 
-    I propose:
+    I propose: ::
 
-    ```haskell
-    instance Eq (Empty a) where
-      _ == _ = True
-    ```
+        instance Eq (Empty a) where
+          _ == _ = True
 
     Note that I am deliberately making this instance as "defined as possible" (to borrow an Edward Kmett phrase from [here](https://mail.haskell.org/pipermail/libraries/2015-July/025965.html)) by making it maximally lazy. For more on this, refer to the Alternatives section.
 
   * Deriving `Ord`
 
-    Currently, this gives:
+    Currently, this gives: ::
 
-    ```haskell
-    instance Ord (Empty a) where
-      compare _ _ = error "Void compare"
-    ```
+        instance Ord (Empty a) where
+          compare _ _ = error "Void compare"
 
-    I propose:
+    I propose: ::
 
-    ```haskell
-    instance Ord (Empty a) where
-      compare _ _ = EQ
-    ```
+        instance Ord (Empty a) where
+          compare _ _ = EQ
 
     This instance is as "defined as possible" (see the Alternatives section).
 
   * Deriving 'Read`
 
-    Currently, this gives:
+    Currently, this gives: ::
 
-    ```haskell
-    instance Read (Empty a) where
-      readPrec = parens pfail
-    ```
+        instance Read (Empty a) where
+          readPrec = parens pfail
 
     This is one of the few derived instances that gets it right. I do not propose changing this behavior.
 
   * Deriving `Show`
 
-    Currently, this gives:
+    Currently, this gives: ::
 
-    ```haskell
-    instance Show (Empty a) where
-      showsPrec = "Void showsPrec"
-    ```
+        instance Show (Empty a) where
+          showsPrec = "Void showsPrec"
 
-    I propose:
+    I propose: ::
 
-    ```haskell
-    instance Show (Empty a) where
-      showsPrec _ x = case x of {}
-    ```
+        instance Show (Empty a) where
+          showsPrec _ x = case x of {}
 
     This uses the `EmptyCase` extension to inspect the argument `x`. Essentially, if `x` diverges, then so will `showsPrec`, and if `x` throws an exception, then `showsPrec` will throw the same exception. That is, it ["exchanges bottoms"](https://mail.haskell.org/pipermail/libraries/2017-January/027597.html).
 
   * Deriving `Functor`
 
-    Currently, this gives (in GHC HEAD):
+    Currently, this gives (in GHC HEAD): ::
 
-    ```haskell
-    instance Functor Empty where
-      fmap _ x = case x of {}
-    ```
+        instance Functor Empty where
+          fmap _ x = case x of {}
 
     This is one of the few derived instances that gets it right. I do not propose changing this behavior.
 
   * Deriving `Foldable`
 
-    Currently, this gives (in GHC HEAD):
+    Currently, this gives (in GHC HEAD): ::
 
-    ```haskell
-    instance Foldable Empty where
-      foldMap _ _ = mempty
-    ```
+        instance Foldable Empty where
+          foldMap _ _ = mempty
 
     This is one of the few derived instances that gets it right. I do not propose changing this behavior.
 
@@ -185,12 +157,10 @@ with empty data types. Concretely, I propose:
 
   * Deriving `Traversable`
 
-    Currently, this gives (in GHC HEAD):
+    Currently, this gives (in GHC HEAD): ::
 
-    ```haskell
-    instance Traversable Empty where
-      traverse _ x = pure (case x of {})
-    ```
+        instance Traversable Empty where
+          traverse _ x = pure (case x of {})
 
     This is one of the few derived instances that gets it right. I do not propose changing this behavior.
 
@@ -198,35 +168,29 @@ with empty data types. Concretely, I propose:
 
   * Deriving `Lift`
 
-    Currently, this gives:
+    Currently, this gives: ::
 
-    ```haskell
-    instance Lift (Empty a) where
-      lift _ = error "Can't lift value of empty datatype Empty"
-    ```
+        instance Lift (Empty a) where
+          lift _ = error "Can't lift value of empty datatype Empty"
 
-    I propose:
+    I propose: ::
 
-    ```haskell
-    instance Lift (Empty a) where
-      lift x = pure (case x of {})
-    ```
+        instance Lift (Empty a) where
+          lift x = pure (case x of {})
 
     This instance is as "defined as possible" (see the Alternatives section).
 
   * Deriving `Generic(1)`
 
-    Currently, this gives (in GHC HEAD):
+    Currently, this gives (in GHC HEAD): ::
 
-    ```haskell
-    instance Generic (Empty a) where
-      from x = M1 (case x of {})
-      to (M1 x) = case x of {}
-
-    instance Generic1 Empty where
-      from1 x = M1 (case x of {})
-      to1 (M1 x) = case x of {}
-    ```
+        instance Generic (Empty a) where
+          from x = M1 (case x of {})
+          to (M1 x) = case x of {}
+        
+        instance Generic1 Empty where
+          from1 x = M1 (case x of {})
+          to1 (M1 x) = case x of {}
 
     These are some of the few derived instances that get it right. I do not propose changing this behavior.
 
@@ -234,27 +198,23 @@ with empty data types. Concretely, I propose:
 
   * Deriving `Data`
 
-    Current, this gives:
+    Current, this gives: ::
 
-    ```haskell
-    instance Data a => Data (Empty a) where
-      gfoldl _ _ _ = error "Void gfoldl"
-      gunfold k z c = case constrIndex c of {}
-      toConstr _ = error "Void toConstr"
-      dataTypeOf _ = mkDataType "Empty" []
-      dataCast1 f = gcast1 f
-    ```
+        instance Data a => Data (Empty a) where
+          gfoldl _ _ _ = error "Void gfoldl"
+          gunfold k z c = case constrIndex c of {}
+          toConstr _ = error "Void toConstr"
+          dataTypeOf _ = mkDataType "Empty" []
+          dataCast1 f = gcast1 f
 
-    I propose:
+    I propose: ::
 
-    ```haskell
-    instance Data a => Data (Empty a) where
-      gfoldl _ x = case x of {}
-      gunfold k z c = case constrIndex c of {}
-      toConstr x = case x of {}
-      dataTypeOf _ = mkDataType "Empty" []
-      dataCast1 f = gcast1 f
-    ```
+        instance Data a => Data (Empty a) where
+          gfoldl _ x = case x of {}
+          gunfold k z c = case constrIndex c of {}
+          toConstr x = case x of {}
+          dataTypeOf _ = mkDataType "Empty" []
+          dataCast1 f = gcast1 f
 
 Effect and Interactions
 -----------------------
@@ -270,19 +230,15 @@ This would change the semantics of some current derived instances for empty data
 
 Alternatives
 ------------
-When deciding how to implement derived code for empty data types, I deliberately adopted the principle of making the instances as "defined as possible". For instance, I chose to derive `Eq` for `data Void` like so:
+When deciding how to implement derived code for empty data types, I deliberately adopted the principle of making the instances as "defined as possible". For instance, I chose to derive `Eq` for `data Void` like so: ::
 
-```haskell
-instance Eq Void where
-  _ == _ = True
-```
+    instance Eq Void where
+      _ == _ = True
 
-And _not_ like this:
+And not like this: ::
 
-```haskell
-instance Eq Void where
-  x == !_ = case x of {}
-```
+    instance Eq Void where
+      x == !_ = case x of {}
 
 While the latter implementation typechecks, I don't believe it is what we want for a derived instance. Edward Kmett puts his argument forth for the former behavior [here](https://mail.haskell.org/pipermail/libraries/2015-July/025965.html):
 
