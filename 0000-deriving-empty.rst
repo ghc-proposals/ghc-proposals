@@ -112,7 +112,7 @@ with empty data types. Concretely, I propose:
 
   This instance is as "defined as possible" (see the Alternatives section).
 
-* Deriving 'Read``
+* Deriving ``Read``
 
   Currently, this gives: ::
 
@@ -230,7 +230,7 @@ This proposed change wouldn't affect many other language features, as ``deriving
 
 Costs and Drawbacks
 -------------------
-This would change the semantics of some current derived instances for empty data types, but in a very slight (and benign way). Current code that derives instances for empty data types might no longer crash at runtime (e.g., derived ``Eq`` instances would now return ``True`` instead of ``error``ing) or begin to diverge instead of ``error``ing (e.g., derived ``Show`` instances). But this would be a very simple change to accommodate.
+This would change the semantics of some current derived instances for empty data types, but in a very slight (and benign way). Current code that derives instances for empty data types might no longer crash at runtime (e.g., derived ``Eq`` instances would now return ``True`` instead of calling ``error``) or begin to diverge instead of calling ``error`` (e.g., derived ``Show`` instances). But this would be a very simple change to accommodate.
 
 
 Alternatives
