@@ -10,11 +10,9 @@
 
 .. highlight:: haskell
 
-This proposal is `discussed at this pull requst <https://github.com/ghc-proposals/ghc-proposals/pull/63>`_.
-
 .. contents::
 
-This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/??>`_.
+This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/63>`_.
 
 Overhaul deriving instances for empty data types
 ================================================
