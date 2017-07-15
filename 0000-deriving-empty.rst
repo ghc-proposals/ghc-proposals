@@ -76,7 +76,7 @@ with empty data types. Concretely, I propose:
 
 1. Allow the use of ``deriving`` clauses for empty data types, provided that ``EmptyDataDecls`` is enabled. As noted in part 1 of the Motivation section, GHC has strange rules surrounding ``deriving`` clauses for empty data types. This is partly motivated by a `statement in the Haskell 98 Report <https://www.haskell.org/onlinereport/haskell2010/haskellch11.html#x18-18200011>`_:
 
-> If the data declaration has no constructors (i.e. when _n_ = 0), then no classes are derivable (i.e. _m_ = 0)
+       If the data declaration has no constructors (i.e. when _n_ = 0), then no classes are derivable (i.e. _m_ = 0)
 
    But happily, the Haskell 2010 Report `integrated EmptyDataDecls in the report <https://www.haskell.org/onlinereport/haskell2010/haskellch12.html>`_, which allows defining ``data Empty`` by default. I believe it's entirely reasonable to interpret ``EmptyDataDecls`` as allowing ``data Empty deriving Eq`` as well.
 
@@ -84,137 +84,137 @@ with empty data types. Concretely, I propose:
 
 2. Change the implementations of derived class instances for empty data types. For each stock derivable class, I will describe what currently gets derived for ``data Empty a``, and provide an example of how I want it to behave under this proposal:
 
-  * Deriving ``Eq``
+* Deriving ``Eq``
 
-    Currently, this gives: ::
+  Currently, this gives: ::
 
-        instance Eq (Empty a) where
-          _ == _ = error "Void =="
+      instance Eq (Empty a) where
+        _ == _ = error "Void =="
 
-    I propose: ::
+  I propose: ::
 
-        instance Eq (Empty a) where
-          _ == _ = True
+      instance Eq (Empty a) where
+        _ == _ = True
 
-    Note that I am deliberately making this instance as "defined as possible" (to borrow an Edward Kmett phrase from `here <https://mail.haskell.org/pipermail/libraries/2015-July/025965.html>`_) by making it maximally lazy. For more on this, refer to the Alternatives section.
+  Note that I am deliberately making this instance as "defined as possible" (to borrow an Edward Kmett phrase from `here <https://mail.haskell.org/pipermail/libraries/2015-July/025965.html>`_) by making it maximally lazy. For more on this, refer to the Alternatives section.
 
-  * Deriving ``Ord``
+* Deriving ``Ord``
 
-    Currently, this gives: ::
+  Currently, this gives: ::
 
-        instance Ord (Empty a) where
-          compare _ _ = error "Void compare"
+      instance Ord (Empty a) where
+        compare _ _ = error "Void compare"
 
-    I propose: ::
+  I propose: ::
 
-        instance Ord (Empty a) where
-          compare _ _ = EQ
+      instance Ord (Empty a) where
+        compare _ _ = EQ
 
-    This instance is as "defined as possible" (see the Alternatives section).
+  This instance is as "defined as possible" (see the Alternatives section).
 
-  * Deriving 'Read``
+* Deriving 'Read``
 
-    Currently, this gives: ::
+  Currently, this gives: ::
 
-        instance Read (Empty a) where
-          readPrec = parens pfail
+      instance Read (Empty a) where
+        readPrec = parens pfail
 
-    This is one of the few derived instances that gets it right. I do not propose changing this behavior.
+  This is one of the few derived instances that gets it right. I do not propose changing this behavior.
 
-  * Deriving ``Show``
+* Deriving ``Show``
 
-    Currently, this gives: ::
+  Currently, this gives: ::
 
-        instance Show (Empty a) where
-          showsPrec = "Void showsPrec"
+      instance Show (Empty a) where
+        showsPrec = "Void showsPrec"
 
-    I propose: ::
+  I propose: ::
 
-        instance Show (Empty a) where
-          showsPrec _ x = case x of {}
+      instance Show (Empty a) where
+        showsPrec _ x = case x of {}
 
-    This uses the ``EmptyCase`` extension to inspect the argument ``x``. Essentially, if ``x`` diverges, then so will ``showsPrec``, and if ``x`` throws an exception, then ``showsPrec`` will throw the same exception. That is, it `"exchanges bottoms" <https://mail.haskell.org/pipermail/libraries/2017-January/027597.html>`_.
+  This uses the ``EmptyCase`` extension to inspect the argument ``x``. Essentially, if ``x`` diverges, then so will ``showsPrec``, and if ``x`` throws an exception, then ``showsPrec`` will throw the same exception. That is, it `"exchanges bottoms" <https://mail.haskell.org/pipermail/libraries/2017-January/027597.html>`_.
 
-  * Deriving ``Functor``
+* Deriving ``Functor``
 
-    Currently, this gives (in GHC HEAD): ::
+  Currently, this gives (in GHC HEAD): ::
 
-        instance Functor Empty where
-          fmap _ x = case x of {}
+      instance Functor Empty where
+        fmap _ x = case x of {}
 
-    This is one of the few derived instances that gets it right. I do not propose changing this behavior.
+  This is one of the few derived instances that gets it right. I do not propose changing this behavior.
 
-  * Deriving ``Foldable``
+* Deriving ``Foldable``
 
-    Currently, this gives (in GHC HEAD): ::
+  Currently, this gives (in GHC HEAD): ::
 
-        instance Foldable Empty where
-          foldMap _ _ = mempty
+      instance Foldable Empty where
+        foldMap _ _ = mempty
 
-    This is one of the few derived instances that gets it right. I do not propose changing this behavior.
+  This is one of the few derived instances that gets it right. I do not propose changing this behavior.
 
-    This instance is as "defined as possible" (see the Alternatives section).
+  This instance is as "defined as possible" (see the Alternatives section).
 
-  * Deriving ``Traversable``
+* Deriving ``Traversable``
 
-    Currently, this gives (in GHC HEAD): ::
+  Currently, this gives (in GHC HEAD): ::
 
-        instance Traversable Empty where
-          traverse _ x = pure (case x of {})
+      instance Traversable Empty where
+        traverse _ x = pure (case x of {})
 
-    This is one of the few derived instances that gets it right. I do not propose changing this behavior.
+  This is one of the few derived instances that gets it right. I do not propose changing this behavior.
 
-    This instance is as "defined as possible" (see the Alternatives section).
+  This instance is as "defined as possible" (see the Alternatives section).
 
-  * Deriving ``Lift``
+* Deriving ``Lift``
 
-    Currently, this gives: ::
+  Currently, this gives: ::
 
-        instance Lift (Empty a) where
-          lift _ = error "Can't lift value of empty datatype Empty"
+      instance Lift (Empty a) where
+        lift _ = error "Can't lift value of empty datatype Empty"
 
-    I propose: ::
+  I propose: ::
 
-        instance Lift (Empty a) where
-          lift x = pure (case x of {})
+      instance Lift (Empty a) where
+        lift x = pure (case x of {})
 
-    This instance is as "defined as possible" (see the Alternatives section).
+  This instance is as "defined as possible" (see the Alternatives section).
 
-  * Deriving ``Generic(1)``
+* Deriving ``Generic(1)``
 
-    Currently, this gives (in GHC HEAD): ::
+  Currently, this gives (in GHC HEAD): ::
 
-        instance Generic (Empty a) where
-          from x = M1 (case x of {})
-          to (M1 x) = case x of {}
-        
-        instance Generic1 Empty where
-          from1 x = M1 (case x of {})
-          to1 (M1 x) = case x of {}
+      instance Generic (Empty a) where
+        from x = M1 (case x of {})
+        to (M1 x) = case x of {}
+      
+      instance Generic1 Empty where
+        from1 x = M1 (case x of {})
+        to1 (M1 x) = case x of {}
 
-    These are some of the few derived instances that get it right. I do not propose changing this behavior.
+  These are some of the few derived instances that get it right. I do not propose changing this behavior.
 
-    These instances are as "defined as possible" (see the Alternatives section).
+  These instances are as "defined as possible" (see the Alternatives section).
 
-  * Deriving ``Data``
+* Deriving ``Data``
 
-    Current, this gives: ::
+  Current, this gives: ::
 
-        instance Data a => Data (Empty a) where
-          gfoldl _ _ _ = error "Void gfoldl"
-          gunfold k z c = case constrIndex c of {}
-          toConstr _ = error "Void toConstr"
-          dataTypeOf _ = mkDataType "Empty" []
-          dataCast1 f = gcast1 f
+      instance Data a => Data (Empty a) where
+        gfoldl _ _ _ = error "Void gfoldl"
+        gunfold k z c = case constrIndex c of {}
+        toConstr _ = error "Void toConstr"
+        dataTypeOf _ = mkDataType "Empty" []
+        dataCast1 f = gcast1 f
 
-    I propose: ::
+  I propose: ::
 
-        instance Data a => Data (Empty a) where
-          gfoldl _ x = case x of {}
-          gunfold k z c = case constrIndex c of {}
-          toConstr x = case x of {}
-          dataTypeOf _ = mkDataType "Empty" []
-          dataCast1 f = gcast1 f
+      instance Data a => Data (Empty a) where
+        gfoldl _ x = case x of {}
+        gunfold k z c = case constrIndex c of {}
+        toConstr x = case x of {}
+        dataTypeOf _ = mkDataType "Empty" []
+        dataCast1 f = gcast1 f
 
 Effect and Interactions
 -----------------------
@@ -244,8 +244,7 @@ While the latter implementation typechecks, I don't believe it is what we want f
 
     We rather deliberately made them [the ``Eq`` and ``Ord`` instances for ``Void``] as "defined as possible" back in 2012 after a very long discussion in which the pendulum swung the other way using a few examples where folks tied knots with fixed points to get inhabitants of ``Void`` and it was less consistent to rule them out than it was to define equality on ``⊥`` to be ``True``.
     
-    I'd challenge that nothing is gained by making these combinators strict in
-their arguments.
+    I'd challenge that nothing is gained by making these combinators strict in their arguments.
 
 An additional viewpoint in favor of the former instance is put forth by Erik Hesselink:
 
