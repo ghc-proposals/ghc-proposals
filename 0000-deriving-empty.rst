@@ -17,16 +17,16 @@ This proposal is `discussed at this pull request <https://github.com/ghc-proposa
 Overhaul deriving instances for empty data types
 ================================================
 
-Currently, one can derive class instances for empty data types, i.e., data types that have no constructors, such as `data Empty`. However, there are a number of warts in GHC's implementation of this feature that make it cumbersome to use.
+Currently, one can derive class instances for empty data types, i.e., data types that have no constructors, such as ``data Empty``. However, there are a number of warts in GHC's implementation of this feature that make it cumbersome to use.
 
-There have been various discussions about changing GHC's behavior with respect to deriving instances for empty data types. These include several Trac tickets (see [Trac #7401](https://ghc.haskell.org/trac/ghc/ticket/7401), [#10577](https://ghc.haskell.org/trac/ghc/ticket/10577), and [#13117](https://ghc.haskell.org/trac/ghc/ticket/13177)) and mailing list discussions (see [here](https://mail.haskell.org/pipermail/libraries/2015-July/025959.html) and [here](https://mail.haskell.org/pipermail/libraries/2017-January/027590.html)). However, none of these discussions ever reached a consensus for a new design. I'm putting this proposal together in hopes of coming to an agreement on a comprehensive design for this feature and to bring a conclusion to this discussion.
+There have been various discussions about changing GHC's behavior with respect to deriving instances for empty data types. These include several Trac tickets (see `Trac #7401 <https://ghc.haskell.org/trac/ghc/ticket/7401>`, `#10577 <https://ghc.haskell.org/trac/ghc/ticket/10577>`, and `#13117 <https://ghc.haskell.org/trac/ghc/ticket/13177>`) and mailing list discussions (see `here <https://mail.haskell.org/pipermail/libraries/2015-July/025959.html>` and `here <https://mail.haskell.org/pipermail/libraries/2017-January/027590.html>`). However, none of these discussions ever reached a consensus for a new design. I'm putting this proposal together in hopes of coming to an agreement on a comprehensive design for this feature and to bring a conclusion to this discussion.
 
 
 Motivation
 ------------
 Currently, the behavior for deriving class instances for empty data types is unpredictable, and not as useful as it could be. Let's examine each of these three points in closer detail:
 
-1. Unpredictable. If you try deriving certain instances for an empty data type using a `deriving` clause, it will simply fail. For instance: ::
+1. Unpredictable. If you try deriving certain instances for an empty data type using a ``deriving`` clause, it will simply fail. For instance: ::
 
        λ> data Empty deriving Eq
        
@@ -36,19 +36,19 @@ Currently, the behavior for deriving class instances for empty data types is unp
                Possible fix: use a standalone deriving declaration instead
            • In the data declaration for ‘Empty’
 
-   And yet, if one uses the `StandaloneDeriving` extension to derive `Eq`, it will work: ::
+   And yet, if one uses the ``StandaloneDeriving`` extension to derive ``Eq``, it will work: ::
 
        λ> :set -XStandaloneDeriving
        λ> data Empty
        λ> deriving instance Eq Empty
 
-   Even more mysteriously, this distinction doesn't apply for all derivable type classes. For instance, one can use a `deriving` clause to derive `Generic` without issue: ::
+   Even more mysteriously, this distinction doesn't apply for all derivable type classes. For instance, one can use a ``deriving`` clause to derive ``Generic`` without issue: ::
 
        λ> :set -XDeriveGeneric
        λ> import GHC.Generics
        λ> data Empty deriving Generic
 
-   Nor does it apply to all deriving strategies, since one can use `DeriveAnyClass` on empty data types as well: ::
+   Nor does it apply to all deriving strategies, since one can use ``DeriveAnyClass`` on empty data types as well: ::
 
        λ> :set -XDeriveAnyClass
        λ> class C a
@@ -56,7 +56,7 @@ Currently, the behavior for deriving class instances for empty data types is unp
 
    Trying to remember all of these little rules and exceptions makes for an unpleasant GHC experience.
 
-2. Not as useful as it could be. If one examines the code that is actually emitted from derived instances (using the `-ddump-deriv` GHC option), one will discover that the derived code is less than ideal. For example, consider the following GHCi session (using GHC 8.0.2): ::
+2. Not as useful as it could be. If one examines the code that is actually emitted from derived instances (using the ``-ddump-deriv`` GHC option), one will discover that the derived code is less than ideal. For example, consider the following GHCi session (using GHC 8.0.2): ::
 
        λ> :set -XStandaloneDeriving -ddump-deriv
        λ> data Empty
@@ -67,24 +67,24 @@ Currently, the behavior for deriving class instances for empty data types is unp
          instance GHC.Show.Show Ghci1.Empty where
            GHC.Show.showsPrec = GHC.Err.error "Void showsPrec"
 
-   This is a particularly bad way to implement `Show` for an empty data type. This implementation will _always_ `error`, regardless of whether its input is a divergent computation or a computation which throws an exception. Moreover, it will `error` even if it is partially applied, making it especially cumbersome to use.
+   This is a particularly bad way to implement ``Show`` for an empty data type. This implementation will _always_ ``error``, regardless of whether its input is a divergent computation or a computation which throws an exception. Moreover, it will ``error`` even if it is partially applied, making it especially cumbersome to use.
 
 Proposed Change Specification
 -----------------------------
-To clean up this mess, I propose an overhaul of how GHC combines `deriving`
+To clean up this mess, I propose an overhaul of how GHC combines ``deriving``
 with empty data types. Concretely, I propose:
 
-1. Allow the use of `deriving` clauses for empty data types, provided that `EmptyDataDecls` is enabled. As noted in part 1 of the Motivation section, GHC has strange rules surrounding `deriving` clauses for empty data types. This is partly motivated by a [statement in the Haskell 98 Report](https://www.haskell.org/onlinereport/haskell2010/haskellch11.html#x18-18200011):
+1. Allow the use of ``deriving`` clauses for empty data types, provided that ``EmptyDataDecls`` is enabled. As noted in part 1 of the Motivation section, GHC has strange rules surrounding ``deriving`` clauses for empty data types. This is partly motivated by a `statement in the Haskell 98 Report <https://www.haskell.org/onlinereport/haskell2010/haskellch11.html#x18-18200011>`:
 
 > If the data declaration has no constructors (i.e. when _n_ = 0), then no classes are derivable (i.e. _m_ = 0)
 
-   But happily, the Haskell 2010 Report [integrated `EmptyDataDecls` in the report](https://www.haskell.org/onlinereport/haskell2010/haskellch12.html), which allows defining `data Empty` by default. I believe it's entirely reasonable to interpret `EmptyDataDecls` as allowing `data Empty deriving Eq` as well.
+   But happily, the Haskell 2010 Report `integrated EmptyDataDecls in the report <https://www.haskell.org/onlinereport/haskell2010/haskellch12.html>`, which allows defining ``data Empty`` by default. I believe it's entirely reasonable to interpret ``EmptyDataDecls`` as allowing ``data Empty deriving Eq`` as well.
 
-   Therefore, let's simply allow `data Empty deriving Eq`, provided that `EmptyDataDecls` is on. For most GHC users, this ability will come automatically, since `EmptyDataDecls` is enabled by default.
+   Therefore, let's simply allow ``data Empty deriving Eq``, provided that ``EmptyDataDecls`` is on. For most GHC users, this ability will come automatically, since ``EmptyDataDecls`` is enabled by default.
 
-2. Change the implementations of derived class instances for empty data types. For each stock derivable class, I will describe what currently gets derived for `data Empty a`, and provide an example of how I want it to behave under this proposal:
+2. Change the implementations of derived class instances for empty data types. For each stock derivable class, I will describe what currently gets derived for ``data Empty a``, and provide an example of how I want it to behave under this proposal:
 
-  * Deriving `Eq`
+  * Deriving ``Eq``
 
     Currently, this gives: ::
 
@@ -96,9 +96,9 @@ with empty data types. Concretely, I propose:
         instance Eq (Empty a) where
           _ == _ = True
 
-    Note that I am deliberately making this instance as "defined as possible" (to borrow an Edward Kmett phrase from [here](https://mail.haskell.org/pipermail/libraries/2015-July/025965.html)) by making it maximally lazy. For more on this, refer to the Alternatives section.
+    Note that I am deliberately making this instance as "defined as possible" (to borrow an Edward Kmett phrase from `here <https://mail.haskell.org/pipermail/libraries/2015-July/025965.html>`) by making it maximally lazy. For more on this, refer to the Alternatives section.
 
-  * Deriving `Ord`
+  * Deriving ``Ord``
 
     Currently, this gives: ::
 
@@ -112,7 +112,7 @@ with empty data types. Concretely, I propose:
 
     This instance is as "defined as possible" (see the Alternatives section).
 
-  * Deriving 'Read`
+  * Deriving 'Read``
 
     Currently, this gives: ::
 
@@ -121,7 +121,7 @@ with empty data types. Concretely, I propose:
 
     This is one of the few derived instances that gets it right. I do not propose changing this behavior.
 
-  * Deriving `Show`
+  * Deriving ``Show``
 
     Currently, this gives: ::
 
@@ -133,9 +133,9 @@ with empty data types. Concretely, I propose:
         instance Show (Empty a) where
           showsPrec _ x = case x of {}
 
-    This uses the `EmptyCase` extension to inspect the argument `x`. Essentially, if `x` diverges, then so will `showsPrec`, and if `x` throws an exception, then `showsPrec` will throw the same exception. That is, it ["exchanges bottoms"](https://mail.haskell.org/pipermail/libraries/2017-January/027597.html).
+    This uses the ``EmptyCase`` extension to inspect the argument ``x``. Essentially, if ``x`` diverges, then so will ``showsPrec``, and if ``x`` throws an exception, then ``showsPrec`` will throw the same exception. That is, it `"exchanges bottoms" <https://mail.haskell.org/pipermail/libraries/2017-January/027597.html>`.
 
-  * Deriving `Functor`
+  * Deriving ``Functor``
 
     Currently, this gives (in GHC HEAD): ::
 
@@ -144,7 +144,7 @@ with empty data types. Concretely, I propose:
 
     This is one of the few derived instances that gets it right. I do not propose changing this behavior.
 
-  * Deriving `Foldable`
+  * Deriving ``Foldable``
 
     Currently, this gives (in GHC HEAD): ::
 
@@ -155,7 +155,7 @@ with empty data types. Concretely, I propose:
 
     This instance is as "defined as possible" (see the Alternatives section).
 
-  * Deriving `Traversable`
+  * Deriving ``Traversable``
 
     Currently, this gives (in GHC HEAD): ::
 
@@ -166,7 +166,7 @@ with empty data types. Concretely, I propose:
 
     This instance is as "defined as possible" (see the Alternatives section).
 
-  * Deriving `Lift`
+  * Deriving ``Lift``
 
     Currently, this gives: ::
 
@@ -180,7 +180,7 @@ with empty data types. Concretely, I propose:
 
     This instance is as "defined as possible" (see the Alternatives section).
 
-  * Deriving `Generic(1)`
+  * Deriving ``Generic(1)``
 
     Currently, this gives (in GHC HEAD): ::
 
@@ -196,7 +196,7 @@ with empty data types. Concretely, I propose:
 
     These instances are as "defined as possible" (see the Alternatives section).
 
-  * Deriving `Data`
+  * Deriving ``Data``
 
     Current, this gives: ::
 
@@ -220,17 +220,17 @@ Effect and Interactions
 -----------------------
 These changes would provide a consistent, predicatable, and useful design for derived instances for empty data types.
 
-This proposed change wouldn't affect many other language features, as `deriving` is a somewhat isolated feature, being something which simply generates other code.
+This proposed change wouldn't affect many other language features, as ``deriving`` is a somewhat isolated feature, being something which simply generates other code.
 
 
 Costs and Drawbacks
 -------------------
-This would change the semantics of some current derived instances for empty data types, but in a very slight (and benign way). Current code that derives instances for empty data types might no longer crash at runtime (e.g., derived `Eq` instances would now return `True` instead of `error`ing) or begin to diverge instead of `error`ing (e.g., derived `Show` instances). But this would be a very simple change to accommodate.
+This would change the semantics of some current derived instances for empty data types, but in a very slight (and benign way). Current code that derives instances for empty data types might no longer crash at runtime (e.g., derived ``Eq`` instances would now return ``True`` instead of ``error``ing) or begin to diverge instead of ``error``ing (e.g., derived ``Show`` instances). But this would be a very simple change to accommodate.
 
 
 Alternatives
 ------------
-When deciding how to implement derived code for empty data types, I deliberately adopted the principle of making the instances as "defined as possible". For instance, I chose to derive `Eq` for `data Void` like so: ::
+When deciding how to implement derived code for empty data types, I deliberately adopted the principle of making the instances as "defined as possible". For instance, I chose to derive ``Eq`` for ``data Void`` like so: ::
 
     instance Eq Void where
       _ == _ = True
@@ -240,20 +240,20 @@ And not like this: ::
     instance Eq Void where
       x == !_ = case x of {}
 
-While the latter implementation typechecks, I don't believe it is what we want for a derived instance. Edward Kmett puts his argument forth for the former behavior [here](https://mail.haskell.org/pipermail/libraries/2015-July/025965.html):
+While the latter implementation typechecks, I don't believe it is what we want for a derived instance. Edward Kmett puts his argument forth for the former behavior `here <https://mail.haskell.org/pipermail/libraries/2015-July/025965.html>`:
 
-> We rather deliberately made them [the `Eq` and `Ord` instances for `Void`] as "defined as possible" back in 2012 after a very long discussion in which the pendulum swung the other way using a few examples where folks tied knots with fixed points to get inhabitants of `Void` and it was less consistent to rule them out than it was to define equality on `⊥` to be `True`.
+> We rather deliberately made them [the ``Eq`` and ``Ord`` instances for ``Void``] as "defined as possible" back in 2012 after a very long discussion in which the pendulum swung the other way using a few examples where folks tied knots with fixed points to get inhabitants of ``Void`` and it was less consistent to rule them out than it was to define equality on ``⊥`` to be ``True``.
 > 
 > I'd challenge that nothing is gained by making these combinators strict in
 their arguments.
 
 An additional viewpoint in favor of the former instance is put forth by Erik Hesselink:
 
-> The [former] `Eq Void` instance is very useful for structures with a type
-parameter instantiated to `Void`. You might still want to compare these
-for equality, but that needs an `Eq` instance for `Void`.
+> The [former] ``Eq Void`` instance is very useful for structures with a type
+parameter instantiated to ``Void``. You might still want to compare these
+for equality, but that needs an ``Eq`` instance for ``Void``.
 
-Therefore, I have adopted the same principle for other derived instances (for `Ord`, `Foldable`, `Traversable`, `Lift`, `Generic`, and `Generic1`). By being maximally lazy as in the former `Eq` instance, we allow more useful programs to be run, whereas they would diverge with the latter `Eq` instance.
+Therefore, I have adopted the same principle for other derived instances (for ``Ord``, ``Foldable``, ``Traversable``, ``Lift``, ``Generic``, and ``Generic1``). By being maximally lazy as in the former ``Eq`` instance, we allow more useful programs to be run, whereas they would diverge with the latter ``Eq`` instance.
 
 Unresolved questions
 --------------------
