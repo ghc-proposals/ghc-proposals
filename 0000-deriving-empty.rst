@@ -76,7 +76,7 @@ with empty data types. Concretely, I propose:
 
 1. Allow the use of ``deriving`` clauses for empty data types, provided that ``EmptyDataDecls`` is enabled. As noted in part 1 of the Motivation section, GHC has strange rules surrounding ``deriving`` clauses for empty data types. This is partly motivated by a `statement in the Haskell 98 Report <https://www.haskell.org/onlinereport/haskell2010/haskellch11.html#x18-18200011>`_:
 
-       If the data declaration has no constructors (i.e. when _n_ = 0), then no classes are derivable (i.e. _m_ = 0)
+       If the data declaration has no constructors (i.e. when n = 0), then no classes are derivable (i.e. m = 0)
 
    But happily, the Haskell 2010 Report `integrated EmptyDataDecls in the report <https://www.haskell.org/onlinereport/haskell2010/haskellch12.html>`_, which allows defining ``data Empty`` by default. I believe it's entirely reasonable to interpret ``EmptyDataDecls`` as allowing ``data Empty deriving Eq`` as well.
 
@@ -119,7 +119,12 @@ with empty data types. Concretely, I propose:
       instance Read (Empty a) where
         readPrec = parens pfail
 
-  This is one of the few derived instances that gets it right. I do not propose changing this behavior.
+  I propose: ::
+  
+      instance Read (Empty a) where
+        readPrec = pfail
+  
+  That is, reading an empty datatype should always just fail, without reading any input. Doing so makes this instance as "defined as possible" (see the Alternatives section), since it avoids forcing portions of the string that it doesn't need to.
 
 * Deriving ``Show``
 
@@ -252,7 +257,7 @@ An additional viewpoint in favor of the former instance is put forth by Erik Hes
 parameter instantiated to ``Void``. You might still want to compare these
 for equality, but that needs an ``Eq`` instance for ``Void``.
 
-Therefore, I have adopted the same principle for other derived instances (for ``Ord``, ``Foldable``, ``Traversable``, ``Lift``, ``Generic``, and ``Generic1``). By being maximally lazy as in the former ``Eq`` instance, we allow more useful programs to be run, whereas they would diverge with the latter ``Eq`` instance.
+Therefore, I have adopted the same principle for other derived instances (for ``Ord``, ``Read``, ``Foldable``, ``Traversable``, ``Lift``, ``Generic``, and ``Generic1``). By being maximally lazy as in the former ``Eq`` instance, we allow more useful programs to be run, whereas they would diverge with the latter ``Eq`` instance.
 
 Unresolved questions
 --------------------
