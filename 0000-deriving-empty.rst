@@ -242,14 +242,14 @@ And not like this: ::
 
 While the latter implementation typechecks, I don't believe it is what we want for a derived instance. Edward Kmett puts his argument forth for the former behavior `here <https://mail.haskell.org/pipermail/libraries/2015-July/025965.html>`_:
 
-> We rather deliberately made them [the ``Eq`` and ``Ord`` instances for ``Void``] as "defined as possible" back in 2012 after a very long discussion in which the pendulum swung the other way using a few examples where folks tied knots with fixed points to get inhabitants of ``Void`` and it was less consistent to rule them out than it was to define equality on ``⊥`` to be ``True``.
-> 
-> I'd challenge that nothing is gained by making these combinators strict in
+    We rather deliberately made them [the ``Eq`` and ``Ord`` instances for ``Void``] as "defined as possible" back in 2012 after a very long discussion in which the pendulum swung the other way using a few examples where folks tied knots with fixed points to get inhabitants of ``Void`` and it was less consistent to rule them out than it was to define equality on ``⊥`` to be ``True``.
+    
+    I'd challenge that nothing is gained by making these combinators strict in
 their arguments.
 
 An additional viewpoint in favor of the former instance is put forth by Erik Hesselink:
 
-> The [former] ``Eq Void`` instance is very useful for structures with a type
+    The [former] ``Eq Void`` instance is very useful for structures with a type
 parameter instantiated to ``Void``. You might still want to compare these
 for equality, but that needs an ``Eq`` instance for ``Void``.
 
