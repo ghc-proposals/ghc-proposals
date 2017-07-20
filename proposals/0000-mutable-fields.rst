@@ -74,6 +74,9 @@ Note:
     form of the normal return type for the constructor, or
   - have a type of the form ``PrimMonad m => ... -> m t``,  declaring a
     constructor that works for any ``PrimMonad`` instance.
+- mutable fields *must not* have a strictness annotation. (we
+  anticipate that support for strictness annotations on mutable fields
+  will be a future proposal).
 
 Given this declaration, GHC will create a constructor ``MutPair`` that
 has the following type::
@@ -243,15 +246,15 @@ Mutable keyword on constructors
 
 
 We also propose to make it possible to declare a mutable constructor
-without any mutable fields, like this::
+without any mutable fields, for example::
 
  data IdPair :: * -> * -> * where
-     mutable IdPair :: a -> b -> IO (IdPair a b)
+     IdPair :: a -> b -> IO (IdPair a b)
 
-This indicates that ``IdPair`` behaves as a mutable constructor, in
-that:
+The monadic return type indicates that ``IdPair`` behaves as a mutable
+constructor, in that:
 
-- Its constructor is monadic, with the declared type
+- Its constructor has the declared type
 - It has identity, and equality is implemented using pointer equality
   (see "Deriving" above).
 
@@ -417,3 +420,7 @@ Unresolved Questions
 * It would be great to allow STM as an option in addition to IO and
   ST.  The constructor will need to store extra metadata, because
   TVar# is more complex than MutVar#.
+* Can we allow strictness annotations on mutable fields?  One way to
+  do this would be to add a parameter to the `Ref#` type to indicate
+  if it is strict or not (or just use 2 different types), and then
+  overload `readRef` and `writeRef`.
