@@ -251,13 +251,13 @@ While the latter implementation typechecks, I don't believe it is what we want f
     
     I'd challenge that nothing is gained by making these combinators strict in their arguments.
 
-An additional viewpoint in favor of the former instance is put forth by Erik Hesselink:
+Indeed, this is what led to Edward adopting the former convention in his ``void`` library. This allows for checking boolean equality on fixed-point terms which would otherwise diverge if scrutinized.
 
-    The [former] ``Eq Void`` instance is very useful for structures with a type
-parameter instantiated to ``Void``. You might still want to compare these
-for equality, but that needs an ``Eq`` instance for ``Void``.
+One consequence of the former design is that ``(error "foo" :: Void) == (error "bar" :: Void)`` always returns ``True``. This is by design, because in well behaved pure code, there is no way to observe the difference between any two inhabitants of ``Void``. Therefore, we can shortcut the implementation to return ``True`` (and similarly, return ``EQ`` for ``Ord.compare``).
 
-Therefore, I have adopted the same principle for other derived instances (for ``Ord``, ``Read``, ``Foldable``, ``Traversable``, ``Lift``, ``Generic``, and ``Generic1``). By being maximally lazy as in the former ``Eq`` instance, we allow more useful programs to be run, whereas they would diverge with the latter ``Eq`` instance.
+Some might prefer the latter implementation as a matter of style, but the former implementation provides a reasonable default that should be suitable for 90% of uses (much like every other derived class).
+
+I have adopted the same principle for other derived instances (for ``Ord``, ``Read``, ``Foldable``, ``Traversable``, ``Lift``, ``Generic``, and ``Generic1``).
 
 Unresolved questions
 --------------------
