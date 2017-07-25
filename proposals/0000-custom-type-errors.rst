@@ -105,7 +105,7 @@ Take the last expression, ``[True] ++ "a"``, and let's write down the constraint
 
     5. lst2 ~ [Char]  > from the second argument
 
-Note that all constraints are equalities of the form ``variable ~ thing``, so as far as I know the solver will non-deterministically choose the order in which solve the constraints. The happy path is to start with 4 and 5, which replace ``lst1`` and ``lst2`` in constraints 1 and 2, respectively to obtain:
+Note that all constraints are equalities of the form ``variable ~ thing``, so as far as I know the solver will non-deterministically choose the order in which solve the constraints. The happy path is to start with 4 and 5, which replace ``lst1`` and ``lst2`` in constraints 1 and 2, respectively to obtain ::
 
     1'. [Bool] ~ [a]
     2'. [Char] ~ [b]
