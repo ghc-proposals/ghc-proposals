@@ -13,14 +13,11 @@ This proposal is `discussed at this pull request <https://github.com/ghc-proposa
 Custom type errors
 ==================
 
-This proposes the addition of two combinators over ``Constraint``, namely ::
+This proposes the addition of a combinator to decorarate a ``Constraint`` with a custom message, namely ::
 
-    IfUndischarged :: Constraint -> ErrorMessage -> Constraint
-    IfApart        :: Type -> Type -> Constraint -> Constraint -> Constraint
+    WithMessage :: Constraint -> ErrorMessage -> Constraint
 
-which enable library authors to provide custom error messages for their libraries.
-
-In addition, this proposal also motivates changing the constraint solving order to prioritize arguments to functions over the check of the application itself.
+In addition, this proposal also motivates fixing the solving of constraints in some degree to obtain the maximum gain from these error messages.
 
 This proposal does *not* address whether this facility should be used at all by the libraries bundled with GHC. This might be the topic of another proposal in the future, if this one gets accepted.
 
@@ -28,27 +25,18 @@ Further information (with a more academic flavor) is available in `this draft <h
 
 
 Motivation
-------------
+----------
 Haskell is well-known for its ability to embed DSLs, and the usage of its strong type system to guarantee invariants in those languages. The main disdvantage is that type errors become unwidely long and complex, and in many cases expose internals of the implementation. In short, the "ultimate abstraction" offered by EDSLs is broken when the code is ill-typed.
 
-The community has already acknowledged this problem partially with the introduction of ``TypeError``. See `the original proposal <https://ghc.haskell.org/trac/ghc/wiki/Proposal/CustomTypeErrors>`_ and an `example package <https://github.com/turingjump/bookkeeper#readme>`_. But why should we stop here? There are many other error conditions we may want to customize. In this proposal we focus in other two.
+The community has already acknowledged this problem partially with the introduction of ``TypeError``. See `the original proposal <https://ghc.haskell.org/trac/ghc/wiki/Proposal/CustomTypeErrors>`_ and an `example package <https://github.com/turingjump/bookkeeper#readme>`_. But why should we stop here? There are many other error conditions we may want to customize.
 
-Undischarged constraints
-~~~~~~~~~~~~~~~~~~~~~~~~
-These are error messages which are shown when a given constraint is left undischarged at the end of the solving process. The archetypal example is a type class instance constraint which is not satisfies. For example, if it turns out that ``(==)`` is applied to a type for which no ``Eq`` instance exists, the error message could become ::
+For example, if it turns out that ``(==)`` is applied to a type for which no ``Eq`` instance exists, the error message could become ::
 
   * X does not implement equality.
     Maybe you want to derive it using `deriving Eq`?
   * In the expression: ...
 
 We definitely could include a generic framework to hint auto-derivation of built-in classes such as ``Eq`` or ``Ord``. But in the current Haskell ecosystem some libraries use generic deriving, others Template Haskell, and so on, so a generic facility seems useful.
-
-Inequalities
-~~~~~~~~~~~~
-The ability to attach a custom error message whenever an equality constraint fails is helpful in a variety of scenarios. The simpler one is simply explaining that two arguments should coincide. For example, if ``(==)`` is applied to terms of different type, we could say ::
-
-  * == is applied to arguments of different types `Bool` and `Int`
-  * In the expression: ...
 
 Another possibility is to give a description of the involved types in domain-specific terms. Take for example the `diagrams library <https://hackage.haskell.org/package/diagrams-core-1.4/docs/Diagrams-Core.html#t:QDiagram>`_, it defines a ``QDiagram b v n m`` type indexed by back-end, vector space, number field and annotation types. If we try to combine two diagrams of different vector space, we get a message similar to ::
 
@@ -61,12 +49,10 @@ Instead, we could express this message in a more meaningful way ::
 
 Proposed Change Specification
 -----------------------------
-This proposal defines two new "constraint combinators" to express constraint behavior in the event of a type error.
+This proposal defines a constraint combinator which attaches a custom error message to a constraint. A simple example using ``Eq`` follows ::
 
-The first combinator is ``IfUndischarged``. In short, ``IfUndischarged c msg`` shows the message when the constraint ``c`` is left undischarged by the constraint solver. A simple example using ``Eq`` ::
-
-    (==) :: IfUndischarged (Eq a) (ShowType a :<>: Text " does not implement equality."
-                                  :$$: Text "Maybe you want to derive it using `deriving Eq`?")
+    (==) :: Eq a `WithMessage` ShowType a :<>: Text " does not implement equality."
+                                  :$$: Text "Maybe you want to derive it using `deriving Eq`?"
          => a -> a -> Bool
 
 If it turns out that ``(==)`` is applied to a type for which no ``Eq`` instance exists, the error message becomes ::
@@ -75,62 +61,93 @@ If it turns out that ``(==)`` is applied to a type for which no ``Eq`` instance 
     Maybe you want to derive it using `deriving Eq`?
   * In the expression: ...
 
-The second combinator is ``IfApartUnsafe`` (the naming shall become clear later). In short, ``IfApartUnsafe a b no yes`` rewrites to ``no`` if ``a`` and ``b`` are apart *at that point in the solving process* and to ``yes`` otherwise. Note that this is *extremely unsafe*, since any knowledge about ``a`` and ``b`` is lost if the second branch is taken, and for that reason we should only expose the variant ::
+The same constraint combinator can be applied to equality constraints ::
 
-    type IfApart a b no yes = IfApartUnsafe a b no (a ~ b, yes)
-
-Using this synonym we can give a better type to ``(==)`` ::
-
-    (==) :: IfApart a b
-              (TypeError (Text "== is applied to arguments of different types"))
-              (IfUndischarged (Eq a) (ShowType a :<>: ...))
+    (==) :: a ~ b `WithMessage` Text "== is applied to arguments of different types"
          => a -> b -> Bool
 
-One of the nice things about ``IfUndischarged`` and ``IfApartUnsafe`` being combinators is that we can abstract error patterns using type-level programming such as type families. See the following `prototype implementation <https://git.science.uu.nl/f100183/ghc/blob/wip/when-not/libraries/base/GHC/TypeErrors.hs>`_ of a proposed ``GHC.TypeErrors`` module. Using it we could write ::
+Inside GHC solver each constraint would come with an optional attached message. Whenever the solver finds a ``WithMessage c msg``, it emits the constraint ``c`` and records the message. This message has no influence on the rest of the solving process whatsoever, except in the case in which that constraint ought to be reported as an error. Indeed, we could see its definition as (note that ``UndecidableSuperClasses`` is required) ::
 
-    (==) :: CustomErrors [ a :~/: b :=>: Text "== is applied to arguments of different types"
-                         , Undischarged (Eq a) :=>: ShowType a :<>: Text " does not implement equality."]
-         => a -> b -> Bool
+    class c => WithMessage c msg
 
-You might have noticed that I have emphasized "at that point in the solving process" when describing ``IfApartUnsafe``. The reason is that we cannot defer indefinitely every apartness check, so sometimes we need to take the ``yes`` branch and continue. Thus, the order in which constraints are solved becomes quite important. I propose to change the default from "don't care" to an order in which constraints coming from arguments to a function are given priority with respect to those coming from the application itself.
 
-Updates to the solver
+Problems with equalities
+~~~~~~~~~~~~~~~~~~~~~~~~
+The idea is essentially the same as in section 4 of the linked draft paper, but let me describe a simpler scenario which shows the problem. Suppose we decorate the ``(++)`` function as follows ::
+
+    (++)
+      :: ( lst1 ~ [a] `WithMessage` Text "The first argument is not a list"
+         , lst2 ~ [b] `WithMessage` Text "The second argument is not a list"
+         , a ~ b `WithMessage` Text "The types of the lists do not coincide: "
+                                :$$: ShowType a :<>: Text " versus " :<>: ShowType b ()
+       => lst1 -> lst2 -> [a]
+
+I think this is the kind of custom errors we should expect DSL authors to write. And by writing those, the expected error messages produced by the compiler should be ::
+
+    > True ++ "a"
+    <interactive>: error:
+        * The first argument is not a list
+        * In ...
+
+    > [True] ++ "a"
+    <interactive>: error:
+        * The types of the lists do not coincide:
+          Bool versus Char
+        * In ...
+
+Take the last expression, ``[True] ++ "a"``, and let's write down the constraints generated by GHC ::
+
+    1. lst1 ~ [a]     |
+    2. lst2 ~ [b]     > from the function 
+    3. a    ~ b       |
+
+    4. lst1 ~ [Bool]  > from the first argument
+
+    5. lst2 ~ [Char]  > from the second argument
+
+Note that all constraints are equalities of the form ``variable ~ thing``, so as far as I know the solver will non-deterministically choose the order in which solve the constraints. The happy path is to start with 4 and 5, which replace ``lst1`` and ``lst2`` in constraints 1 and 2, respectively to obtain:
+
+    1'. [Bool] ~ [a]
+    2'. [Char] ~ [b]
+
+The next step is considering 1' and 2', which are simplified to ``a ~ Bool`` and ``b ~ Char`` respectively. Once those are substituted, constraint 4 has effectively become ``Bool ~ Char``, which is an error, and we report the message "The types of the lists do not coincide".
+
+Alas, there is another way to go. After getting 1' and 2', we could also consider constraint 4. This gives us the slightly different set of constraints ::
+
+    1''. [Bool] ~ [a]
+    2''. [Char] ~ [a]
+
+From 1'' we obtaint ``a ~ Bool``, which is then substituted in 2'' to get ``[Char] ~ [Bool]``. Boom! Here is the error! But the undischarged message is that from the initial second constraint, so the user sees the message "The second argument is not a list". This is clearly wrong!
+
+There are two problems to face to give a solution:
+
+1. We should not give the error "The second argument is not a list", even if this is the only left constraint. This is clearly not the intention of the DSL writer.
+2. We should try, as much as possible, to consider the constraint ``a ~ b`` at a later stage than ``lst1 ~ [a]`` and `lst2 ~ [b]`.
+
+Propagation of messages
+~~~~~~~~~~~~~~~~~~~~~~~
+The solution to problem (1) is to limit the propagation of error messages when a constraint is simplified. The rule is that for every constraint ``C`` which is simplified into a set of constraints ``D1, ..., Dn``
+
+1. If the constraint ``C`` is of the form ``f t1 ... tn ~ g s1 ... sn``, the constraint ``f ~ g`` (the constraint among heads) inherits the message, whereas all the ``t ~ s`` start blank.
+2. For any other constraint, the constraint is inherited if the simplification generates only one constraint. This covers the case where ``Eq [a]`` is simplified to ``Eq a``. My guess is that such a linear path of constraints still relate well to the original message.
+
+Constraint priorities
 ~~~~~~~~~~~~~~~~~~~~~
-Inside GHC solver each constraint would come with an optional attached message and a priority number. Whenever a new item has to be taken out of the work list, the ones with highest priority should come before. If more than one constraint have the same priority, then the choice is done as now -- first canonicalization, then interaction, and so on.
+The solution to (2) is an heuristic to prioritize some constraints among others, so that the maximum amount of error messages are reported. The rules are:
 
-Whenever the solver finds a ``IfUndischarged c msg``, it emits the constraint ``c`` with the additional message attached. This message has no influence on the rest of the solving process, but if it ends with errors and the constraint should be reported, the message is used. Indeed, we could see its definition as (note that ``UndecidableSuperClasses`` is required) ::
+1. A constraint ``a ~ t1`` must be considered before ``a ~ t2`` if ``t1`` contains a type constructor as its head and ``t2`` does not.
+2. A constraint ``a ~ t1`` must be considered before ``b ~ t2`` if ``t1`` contains ``b`` as free variable.
 
-    class c => IfUndischarged c msg
-
-Priorities and messages are inherited by constraints stemming from another one by solving. For example, if we have ``IfUndischarged (Eq [a]) msg``, we would end up with a constraint ``Eq a`` where the message ``msg`` is kept.
-
-Finally, the solver has to be updated with the following new rules for inequality checks ::
-
-    [G] IfApartUnsafe a b no yes ==> yes
-    [W] IfApartUnsafe a b no yes
-          | if a and b are apart ==> no
-          | otherwise            ==> yes
-
-Indeed, we could see `IfApartUnsafe` as defined whenever compilation is successful as (again, using ``UndecidableSuperClasses``) ::
-
-    class yes => IfApartUnsafe a b no yes
+Any other constraints are ordered as usual. In particular, this proposal does not say anything about constraints of the form ``F a ~ G b`` where ``F`` and ``G`` are type families.
 
 
 Effect and Interactions
 -----------------------
 In principle, there should be no effect for already-existing code. Right now people do not assume any specific ordering on the constraint solver, which means that we can change it as explained here.
 
-If implemented as-is, using ``(==)`` with the aforementioned type signature would impose a performance cost. Whereas before we just needed a ``Eq`` dictionary and a type application, now we need two of them and a complex proof of the big constraint. Luckily, this is easy to fix by using an ``INLINE`` pragma ::
-
-  {-# INLINE (==) #-}
-  (==) :: CustomErrors [ ... ] => a -> b -> Bool
-  (==) = eq
-
-where ``eq`` is the function with the simpler type signature. Preliminary research shows that this solves most of the problems, but no check has been done for interaction with other pragmas or optimizations.
-
 One problematic aspect of this way to encode custom errors is that the amount of type variables in a signature tends to grow (for ``(==)`` we have already duplicated it!). This might or might not be a problem, depending on who you ask.
 
-Finally, it seems that the approach we use for solving interacts in weird ways with ambiguity checking. In our prototype built over branch 8.3, with some complex usages of ``CustomErrors`` some signatures are marked as ambiguous (and thus require ``AllowAmbiguousTypes`` which are not). This might require improvements to the ambiguity checker, maybe making it aware of ``IfUndischarged`` and ``IfApart``.
+Finally, it remains to be seen whether ``WithMessage`` imposes any performance cost. In principle it should not be the case, since the run-time representation of ``C `WithMessage` m`` should be the same as ``C`` itself.
 
 
 Costs and Drawbacks
@@ -143,16 +160,16 @@ In principle, this extension should make libraries easier to learn. One problem 
 
 conveys much more meaning that the long signature. Whether we should show one or the other in the interactive environment is discussed as an unresolved questions.
 
-One drawback of this approach is that it requires library authors to use ``DataKinds`` whenever they want to use custom errors. As a side-effect, some of the type definitions in a module might be promoted to the kind level. Right now we do not have a way to control data type promotion, so this is unavoidable.
+There is a downside to the implementation. As far as I understand, once GHC chooses a constraint ``t1 ~ t2``, it unifies as much as possible. For example, ``[(Int,Bool)] ~ [(a,b)]`` will end up unifying ``a`` with ``Int`` and ``b`` with ``Bool``. But for this approach to work, it should instead put the constraints ``a ~ Int`` and ``b ~ Bool`` back in the bag of constraints, instead of performing unification directly, because maybe another constraint should be prioritized.
 
 
 Alternatives
 ------------
-In this proposal, ``IfUndischarged`` is associated to a constraint in each usage site. Another alternative is having the message attached to the type class itself. This is the route taken by Scala with their `implicitNotFound annotation <http://www.scala-lang.org/api/2.12.0/scala/annotation/implicitNotFound.html>`_
+In this proposal, ``WithMessage`` is associated to a constraint in each usage site. Another alternative for type classes is having the message attached to the class itself. This is the route taken by Scala with their `implicitNotFound annotation <http://www.scala-lang.org/api/2.12.0/scala/annotation/implicitNotFound.html>`_
 
 That alternative, however, is less flexible than the current proposal, since you could always export a new constraint which includes the message ::
 
-    type Eq' a = IfUndischarged (Eq a) (Text "blah blah")
+    type Eq' a = Eq a `WithMessage` Text "blah blah"
 
 Note, however, that this approach has the drawback of having different names for the annotated (``Eq'``) and original (``Eq``) type classes. The user has to remember that the latter should be used when writing a new instance, but the former when writing the signature of a function.
 
@@ -162,17 +179,17 @@ Unresolved questions
 
 Messages or hints?
 ~~~~~~~~~~~~~~~~~~
-In the description above, I have replaced the default error messages by custom ones completely. Maybe a better choice, especially for ``IfUndischarghed``, it to add the information as a *hint* or *suggestion*, in addition to the default message.
+In the description above, I have replaced the default error messages by custom ones completely. Maybe a better choice is to add the information as a *hint* or *suggestion*, in addition to the default message.
 
 How to print the annotated signature?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-In the current prototype, as a side-effect of the way in which GHCi computes the type to print, the signature of a function is always simplified. In this case, that means that no trace of ``IfUndischarged`` or ``IfApart`` is shown. Is this the right behavior? (I think it is)
+In the current prototype, as a side-effect of the way in which GHCi computes the type to print, the signature of a function is always simplified. In this case, that means that no trace of ``WithMessage``. Is this the right behavior? (I think it is)
 
 The same question should be asked about Haddock. Maybe the smallest, simplified signature should be the one in the main documentation, and the error information should get some specific markup. Of course, this means that now Haddock has to inspect the types of the documented values, something which is not done as of now.
 
 Generalization
 ~~~~~~~~~~~~~~
-What happens if we need to infer a type with a constraint which has an attached message? Do we at it using ``IfUndischarged``? This definitely seems like a wrong path, although it is also surprising that if I write ::
+What happens if we need to infer a type with a constraint which has an attached message? Do we at it using ``WithMessage``? This definitely seems like a wrong path, although it is also surprising that if I write ::
 
     eq = myAnnotatedEq
 
