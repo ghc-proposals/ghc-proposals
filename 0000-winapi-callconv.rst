@@ -26,6 +26,7 @@ Due to historical reasons people tend to think `stdcall` is the actual calling
 convention for both. On `x86_64` GHC would then generate the following warning
 
 ::
+
     * the 'stdcall' calling convention is unsupported on this platform,
       treating as ccall
     * When checking declaration:
@@ -41,12 +42,14 @@ calling convention. This `CPP` has to be repeated over and over and over again.
 Only looking at base we see this workaround is used:
 
 ::
+
     > git grep WINDOWS_CCONV | wc -l
     87
 
 and in `Win32`
 
 ::
+
     > git grep WINDOWS_CCONV | wc -l
     525
 
@@ -79,6 +82,7 @@ Alternatives
 The standard pattern used to work around this is usually
 
 ::
+
     #if defined(i386_HOST_ARCH)
     # define WINDOWS_CCONV stdcall
     #elif defined(x86_64_HOST_ARCH)
