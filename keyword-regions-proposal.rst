@@ -70,14 +70,11 @@ also::
 or even::
 
   import 
-    Magma  
-      (...) 
+    Magma (...) 
   import 
-    Monoid 
-      (...)
+    Monoid (...)
   import 
-    Group
-      (...)
+    Group (...)
 
 That is when, for terms and their type annotations, I have fragments like::
 
@@ -132,12 +129,9 @@ also::
 or even::
 
   import 
-    Magma  
-      (...) 
-    Monoid 
-      (...)
-    Group
-      (...)
+    Magma (...) 
+    Monoid (...)
+    Group (...)
   
 Less ink, and more clear: by looking at the region's heading, we know who's living in the block.
 
