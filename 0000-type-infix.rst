@@ -95,19 +95,19 @@ I propose a new form of fixity declaration:
 
 .. code-block:: haskell
 
-    type infixr 0 $
+    infixr 0 type $
 
-The grammar for this declaration is exactly the same as normal ``infix`` declarations, except with the ``type`` keyword prepended. The semantics of this declaration is to give ``$`` a fixity of ``infixr 0``, and moreover, it checks to see if ``$`` lives in the type namespace, giving an error if it does not. This declaration is only permitted if the ``TypeOperators`` extension is enabled.
+The grammar for this declaration is exactly the same as normal ``infix`` declarations, except with the ``type`` keyword inserted between the precedence and the comma-separated list of infix names. The semantics of this declaration is to give ``$`` a fixity of ``infixr 0``, and moreover, it checks to see if ``$`` lives in the type namespace, giving an error if it does not. This declaration is only permitted if the ``TypeOperators`` extension is enabled.
 
-``type infix{l,r}`` would be applicable to type families, type classes, data types, and type synonyms. One type-level construct that ``type infix{l,r}`` would not be applicable to is promoted data constructors, as promoted data constructors simply inherit the fixity of the original, unpromoted data constructor (at the value level).
+``infix{l,r} n type`` would be applicable to type families, type classes, data types, and type synonyms. One type-level construct that ``infix{l,r} n type`` would not be applicable to is promoted data constructors, as promoted data constructors simply inherit the fixity of the original, unpromoted data constructor (at the value level).
 
-The eventual goal is to make ``type infix{l,r}`` the only means by which one can specify the fixity of type-level names, and to make ``infix{l,r}`` declarations (without the ``type``) only applicable to value-level names. To this end, I propose following the `three-release policy <https://prime.haskell.org/wiki/Libraries/3-Release-Policy>`_:
+The eventual goal is to make ``infix{l,r} n type`` the only means by which one can specify the fixity of type-level names, and to make ``infix{l,r} n`` declarations (without the ``type``) only applicable to value-level names. To this end, I propose following the `three-release policy <https://prime.haskell.org/wiki/Libraries/3-Release-Policy>`_:
 
-* In the first version of GHC in which this proposal is implemented, introduce ``type infix{l,r}``, but retain ``infix{l,r}``'s ability to refer to both value-level and type-level names.
-* In the subsequent major release of GHC, have ``infix{l,r}`` emit a warning whenever it refers to a type-level name.
-* In the subsequent major release of GHC after that, have ``infix{l,r}`` error whenever it refers to a type-level name.
+* In the first version of GHC in which this proposal is implemented, introduce ``infix{l,r} n type``, but retain ``infix{l,r} n``'s ability to refer to both value-level and type-level names.
+* In the subsequent major release of GHC, have ``infix{l,r} n`` emit a warning whenever it refers to type-level names.
+* In the subsequent major release of GHC after that, have ``infix{l,r} n`` error whenever it refers to type-level names.
 
-Once ``type infix{l,r}`` is introduced, GHC will have an unambiguous way of specifying fixity declarations for names in both namespaces, and it will also work when quoted in Template Haskell, fixing Trac #14032.
+Once ``infix{l,r} n type`` is introduced, GHC will have an unambiguous way of specifying fixity declarations for names in both namespaces, and it will also work when quoted in Template Haskell, fixing Trac #14032.
 
 Effect and Interactions
 -----------------------
@@ -121,7 +121,9 @@ These changes will mildly complicate the parser, as this give the ``type`` keywo
 
 Alternatives
 ------------
-Instead of introducing a new ``type infix{l,r}`` syntax, we could change the renamer to be smarter about ``infix{l,r}`` declarations from Template Haskell quotes. But this only puts a band-aid over the wound, as there is no guarantee that the old ``infix{l,r}`` semantics won't break somewhere else. (I certainly wouldn't be surprised if there were more lurking bugs because of this.) Moreover, there'd still be the problem that users cannot assign different fixities to names that live at the value level and the type level in the same module.
+Instead of introducing a new ``infix{l,r} n type`` syntax, we could change the renamer to be smarter about ``infix{l,r} n`` declarations from Template Haskell quotes. But this only puts a band-aid over the wound, as there is no guarantee that the old ``infix{l,r} n`` semantics won't break somewhere else. (I certainly wouldn't be surprised if there were more lurking bugs because of this.) Moreover, there'd still be the problem that users cannot assign different fixities to names that live at the value level and the type level in the same module.
+
+There is some amount of bikeshedding to be had concerning the new syntax. One could alternatively envision the ``type`` keyword being placed in front (i.e., ``type infix{l,r} n``). However, I slightly prefer putting ``infix{l,r}`` first, since it makes it clearer that we're dealing with a fixity declaration.
 
 Instead of co-opting the ``TypeOperators`` keyword, we could invent a new ``LANGUAGE`` pragma for this purpose. I personally don't feel like this is necessary, since we're simply extending the capabilities of type-level operators (which is already a GHC extension), but others may feel differently.
 
