@@ -23,9 +23,9 @@ Here are a few oddities caused by the arrangement in GHC 8.0:
 
 1. Type families::
 
-       type family F a where
-         F Constraint = Int
-         F Type       = Bool
+       type family F a
+       type instance F Constraint = Int
+       type instance F Type       = Bool
 
    Such a definition is accepted. Yet it allows a proof that ``Int ~ Bool`` in Core. It's unclear to me whether this can be used to implement ``unsafeCoerce``, but it should scare us all.
 
@@ -61,17 +61,18 @@ Here are a few oddities caused by the arrangement in GHC 8.0:
 
    Ew.
 
-4. The new ``Typeable`` plan (inspired by my `recent paper <http://cs.brynmawr.edu/~rae/papers/2016/dynamic/dynamic.pdf>`_
-   and fully described on the `wiki page <https://ghc.haskell.org/trac/ghc/wiki/Typeable/BenGamari>`_)
-   lays bare any and all shortcuts we have in the type system. It's unclear how to implement the plan without
-   sorting this out.
-
-5. As discussed on the `pull request <https://github.com/ghc-proposals/ghc-proposals/pull/32#issuecomment-271881898>`_, this
-   paves the way to having proper type inference to distinguish constraint tuples from ordinary ones. However, this proposal
-   does not specifically propose making this change.
-
 Proposed Change Specification
 -----------------------------
+
+**User-facing changes**: The ``Typeable`` mechanism can tell the difference between ``Constraint`` and ``Type``.
+``(=>)`` becomes a first-class type.
+Users can reach into ``GHC.Exts`` to get ``(==>)`` and ``(-=>)``, but I can't imagine how these would be used
+correctly in Haskell. And that's it! This is really all quite internal!
+
+**Internal changes**:
+
+Any typing rules in here fit into the various typing judgments as presented
+`here <https://github.com/ghc/ghc/blob/master/docs/core-spec/core-spec.pdf>`_.
 
 1. In ``GHC.Prim``::
 
@@ -90,6 +91,12 @@ Proposed Change Specification
        instance Coercible ((-=>) @r) ((->) @r @LiftedRep)
          -- These instances are little white lies, as Coercible isn't a class. Really,
          -- we'll have axioms saying these are representationally equal.
+
+   The original two arrows, ``(->)`` and ``(=>)``, will remain as built-in syntax, always in scope.
+   The new arrows will not be built-in syntax, but will be exported from ``GHC.Exts``.
+
+   The "instances" above will be new axioms (``CoAxiom``\s) relating the three fancier arrows to ``(->)``.
+   Coercions between the arrows themselves will be built up using transitivity.
 
 2. In ``GHC.Types``::
 
@@ -127,7 +134,7 @@ Proposed Change Specification
    constructor) to make this work, because it's always possible to get the
    kinds of the types involved.
 
-4. We similarly need more rules for applications::
+4. We similarly need more rules for Core expression applications (only Core, not Haskell)::
 
        G |- e1 : t1 -> t2
        G |- e2 : t1
@@ -197,11 +204,26 @@ Proposed Change Specification
    Instead, we need this new beast::
 
        G |- co : arrow1 t1 t2 ~R arrow2 s1 s2
-       arrow1 is an arrow type, applied to all of its RuntimeRep args
-       arrow2 is an arrow type, applied to all of its RuntimeRep args
+       isArrowTy arrow1
+       isArrowTy arrow2
        -------------------------------- (ArrowNthCo)
        G |- ArrowNthCo i co : ti ~R si
-   
+
+
+   where ::
+     
+       ----------------------- (ArrowTyTy)
+       isArrowTy ((->) r1 r2)
+
+       ----------------------- (ArrowCtTy)
+       isArrowTy ((=>) r)
+
+       ----------------------- (ArrowCtCt)
+       isArrowTy (==>)
+
+       ----------------------- (ArrowTyCt)
+       isArrowTy ((-=>) r)
+       
    That works nicely. This differs from ``NthCo`` in two ways:
 
    1. It allows different tycons on the two sides of ``co``\'s kind.
@@ -272,7 +294,6 @@ The only missing step is to teach the solver to reduce ``C a`` to ``a`` (when
 we have ``class C a where meth :: a``). That's not part of this proposal, but it
 would be very easy to do once this proposal is fully implemented.
 
-
 Costs and Drawbacks
 -------------------
 This is both a simplification and a complication to the type system.
@@ -318,21 +339,100 @@ Alternatives
    to have ``(=>)`` be an "annotation" saying to cast a ``Constraint`` into a ``Type`` usable by ``(->)``. If it weren't
    for the fact that the theory isn't ready yet, this would seem to be the most appealing option.
 
-I think the last option above will be the final resting place for all this. But that requires lots more theory first,
+4. Do the minimal amount necessary to fix the problems in the Motivation section. A striking aspect of this proposal
+   is that it has almost no user-facing surface area. So should we even do this? Let's revisit the problems in our
+   motivation to see if there is another way forward. In all cases, we assume in this alternative that ``Type``
+   and ``Constraint`` remain equal in Core.
+
+   1. Motivator (1) addresses a key type-safety issue. But it can be mitigated by rejecting that pair of instances.
+      More generally, we could advertise that GHC considers ``Type`` and ``Constraint`` not to be *apart*. This
+      change in the definition of apartness would reject the instances in (1). Following this possibility a bit further,
+      let's consider ::
+
+	  type family IsEq a b where
+	    IsEq a a = True
+	    IsEq a b = False
+
+      What would happen to ``IsEq Type Constraint``? It would simply fail to reduce. They're not the same, so
+      the first equation doesn't apply. But they're not apart, so the second equation won't fire, either.
+
+      An alternative in this space is to go one step further and say that type families/data families/class
+      instances treat ``Type`` and
+      ``Constraint`` identically. In this sub-alternative, ``IsEq Type Constraint`` happily returns ``True``.
+      Note that this does not mean GHC could prove ``Type ~ Constraint`` (which would remain unsatisfiable).
+
+   2. Motivators (2)-(3) are all to do with ``Typeable``. We could fix this by teaching the ``Typeable`` solver
+      to offer up one ``TypeRep`` for ``Type`` and a different one for ``Constraint``. These ``TypeRep``\s would
+      compare as different. Indeed, in retrospect, I'm not sure why we haven't already done this.
+
+      Note that it's terrible to have the same ``TypeRep`` for two types that are distinct in Core but OK
+      to have two different ``TypeRep``\s for two types that are equal in Core.
+
+   3. A motivator on earlier versions of this proposal was about inferring the difference between
+      ``() :: Constraint`` and ``() :: Type``.
+      I've come to view this as a red herring. Some possible ways forward here would indeed make it easier
+      to implement better type inference around ``()``, but that shouldn't be a primary goal here. After all,
+      this is really about sorting out a mess in Core, and we shouldn't be overly swayed by type inference.
+      For example, it's perfectly possible to come up with a scheme where empty tuples are decorated with
+      some solvable parameter during type inference, only to have desugaring (after everything has been solved
+      for and/or defaulted) look at that parameter to select the right ``TyCon``.
+
+   So, we can fix all the problems that motivated us, with much less work than this proposal suggests. We're left
+   with a slightly weaker type system (in that the type-pattern mechanism fails to recognize the difference
+   between ``Constraint`` and ``Type``) and a slightly annoying implementation (having separate type-equality
+   functions in the type-checker as in Core). This alternative is a bit smelly, but it's worth considering not
+   moving forward with all the complication that this proposal would bring.
+
+I think option (3) last option above will be the final resting place for all this. But that requires lots more theory first,
 and would still require much of the baggage (in particular, ``ArrowNthCo``) that we see above.
 
 Unresolved questions
 --------------------
-Is this idea type safe? I don't know for sure. The challenge has to do with the interaction between roles and
-kind coercions, something yet to be studied in the literature. (My thesis cleverly avoids broaching the subject.)
-When I hesitated on this point in a recent interaction with Simon, he rightly pointed out that we don't have
-a proof for the status quo, so this new proposal doesn't make things any worse. My future hopefully holds
-a mechanized proof of this all, but let's not wait for that future to arrive before making progress here.
+
+1. Is ``ArrowNthCo`` necessary. At one point, Simon PJ thought we could mimic its behavior by using transitivity
+   and ``NthCo``. I initially agreed, but upon reflection have changed my mind. Here is the case at hand:
+
+   From ``co :: (t1 => t2) ~R (t3 -> t4)`` (where ``t1 :: Constraint`` and ``t2, t3, t4 :: Type``), we need to
+   derive ``co' :: t1 ~R t3``. Simon's suggestion was to build this as a first step: ``co0 = (sym axCtTy) <t1> <t2>``,
+   where ``axCtTy`` is the axiom proving that ``(=>) ~R (->)`` (let's ignore ``RuntimeRep`` arguments here; they're
+   not the problem). Thus, ``co0 :: (t1 -> t2) ~R (t1 => t2)`` and ``co0 ;; co`` (where ``;;`` denotes transitivity)
+   would prove ``(t1 -> t2) ~R (t3 -> t4)``. Now, just proceed using a standard ``NthCo``.
+
+   This process went wrong with the construction of ``co0``: it's not well-typed. Specifically, ``t1 -> t2`` is
+   ill-kinded, because ``t1 :: Constraint``. You might think that we can just cast ``t1`` to have kind ``Type``,
+   but we certainly don't have a coercion that proves ``Constraint ~N Type`` (we need a *nominal* coercion to
+   cast types), so we're a bit dead in the water. So I don't think this is possible and that we need ``ArrowNthCo``.
+   But perhaps I'm missing something.
+
+2. Is this whole idea type safe? I don't know for sure. The challenge has to do with the interaction between roles and
+   kind coercions, something yet to be studied in the literature. (My thesis cleverly avoids broaching the subject.)
+   When I hesitated on this point in a recent interaction with Simon, he rightly pointed out that we don't have
+   a proof for the status quo, so this new proposal doesn't make things any worse. My future hopefully holds
+   a mechanized proof of this all, but let's not wait for that future to arrive before making progress here.
 
 Implementation Plan
 -------------------
 I volunteer to implement.
 
+Some implementation thoughts:
+
+1. The existing ``FunTy`` constructor of ``Type`` will be used to represent
+   all four saturated arrow constructors, just like it works now to
+   represented a saturated ``(->)``. When decomposing (in, say, ``splitTyConApp``),
+   GHC will have to check the kinds of the arguments to determine the right
+   ``TyCon`` (and, perhaps, ``RuntimeRep`` arguments) to produce.
+
+2. The existing ``FunCo`` constructor of ``Coercion`` will be used to represent
+   coercions involving any of the four arrows. It's even possible that a ``FunCo``
+   will relate two different arrows. For example, if we have a newtype-class leading
+   to ``axC : C a ~R a`` (where ``C a :: Constraint``), then we can build
+   ``FunCo Representational axC <a> :: (C a => a) ~R (a -> a)``. This use of ``FunCo``
+   overlaps with the new axioms relating the arrow types, but that's OK; it's a
+   representation optimization. At one point, I was worried that this cross-arrow
+   ``FunCo`` would be problematic at a nominal role, but such a thing is impossible
+   to build, because we will never have ``ty1 ~N ty2`` where ``ty1 :: Type`` and
+   ``ty2 :: Constraint``. (At least, we won't if we're typesafe!)
+   
 .. proposal-number:: Leave blank. This will be filled in when the proposal is
                      accepted.
 
