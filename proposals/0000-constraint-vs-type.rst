@@ -1,13 +1,3 @@
-.. proposal-number:: Leave blank. This will be filled in when the proposal is
-                     accepted.
-
-.. trac-ticket:: Leave blank. This will eventually be filled with the Trac
-                 ticket number which will track the progress of the
-                 implementation of the feature.
-
-.. implemented:: Leave blank. This will be filled in with the first GHC version which
-                 implements the described feature.
-
 .. highlight:: haskell
 
 Separate `Constraint` from `Type`
@@ -214,7 +204,7 @@ Proposed Change Specification
    
    That works nicely. This differs from ``NthCo`` in two ways:
 
-   1. It allows different tycons on the two sides of ``co``\'s
+   1. It allows different tycons on the two sides of ``co``\'s kind.
 
    2. It ignores ``RuntimeRep`` arguments when counting. This is important, because
       otherwise, it would be impossible to relate ``t`` and ``t'`` in ``(->) r1 r2 t t2``
@@ -342,3 +332,13 @@ a mechanized proof of this all, but let's not wait for that future to arrive bef
 Implementation Plan
 -------------------
 I volunteer to implement.
+
+.. proposal-number:: Leave blank. This will be filled in when the proposal is
+                     accepted.
+
+.. trac-ticket:: Leave blank. This will eventually be filled with the Trac
+                 ticket number which will track the progress of the
+                 implementation of the feature.
+
+.. implemented:: Leave blank. This will be filled in with the first GHC version which
+                 implements the described feature.
