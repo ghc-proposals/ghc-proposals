@@ -63,6 +63,15 @@ It would simplify code, ease confusion and remove the need for `CPP` if we have
 a new pseudo calling convention `winapi` that is to be used specifically for calls
 to Windows API calls.
 
+Concretely I propose having the following:
+
+::
+
+   foreign import winapi "foo" c_foo :: IO ()
+   
+Where the compiler will determine the right calling convention to use for the
+target platform.
+
 I do not propose to change the warning, as for general code, `cdecl` is the right
 suggestion as native compilers will correctly reinterpret this to the x86_64 ABI
 calling convention.
@@ -97,4 +106,20 @@ for GHC to include `WINDOWS_CCONV`. This however means you still need to have
 
 Unresolved Questions
 --------------------
+
+What should happen with `foreign export` code.
+
+I propose to let
+
+.. code-block::haskell
+   foreign export winapi "foo" c_foo :: IO ()
+
+   
+have the same semantics as import for determining
+the calling convention but also generate a warning such as
+
+::
+
+    * the 'winapi' calling convention is not supported for exports,
+      treating as ccall
 
