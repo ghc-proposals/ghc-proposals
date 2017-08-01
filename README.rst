@@ -105,7 +105,7 @@ for a brief introduction to ReStructuredText.
 How to start a new proposal
 ---------------------------
 
-To start a proposal, creaue a pull request that adds your proposal as ``proposals/0000-proposal-name.rst``. Use ``proposals/0000-template.rst`` as a template.
+To start a proposal, create a pull request that adds your proposal as ``proposals/0000-proposal-name.rst``. Use ``proposals/0000-template.rst`` as a template.
 
 If you are unfamiliar with git and github, you can use the GitHub web interface to perform these steps:
 
