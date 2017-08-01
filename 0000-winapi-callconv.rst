@@ -111,7 +111,8 @@ What should happen with `foreign export` code.
 
 I propose to let
 
-.. code-block::haskell
+.. code-block::
+
    foreign export winapi "foo" c_foo :: IO ()
 
    
