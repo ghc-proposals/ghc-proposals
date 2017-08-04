@@ -95,8 +95,8 @@ Offer a new derivable class
 .. code-block:: haskell
 
   class Reflectable (c :: Constraint) where
-    type DictRep c :: *
-    reify# :: (c => r) -> DictRep c -> r
+    type MethodType c :: *
+    reify# :: (c => r) -> MethodType c -> r
 
 derivable for single-method classes without superclass constraints.
 
@@ -114,7 +114,7 @@ we would produce an instance
 .. code-block:: haskell
 
   instance Reflectable (TheClass a) where
-    type DictRep (TheClass a) = T
+    type MethodType (TheClass a) = T
     reify# = ...
 
 
@@ -184,15 +184,15 @@ Use a data family
 .. code-block:: haskell
 
   class Reflectable (s :: Symbol) (c :: Constraint) where
-    data DictRep s c :: *
-    reify# :: (c => r) -> DictRep s c -> r
+    data MethodType s c :: *
+    reify# :: (c => r) -> MethodType s c -> r
 
 In this version, the dictionary is represented by a data family
 instead of a type family. By using a data family, the newtype
 constructor on the argument to ``reify#`` determines the class we are
 reifying, avoiding the need to use explicit type application to
 specify the class. The ``Symbol`` allows the user to name the
-newtype constructor for the ``DictRep``. This all seems reasonably
+newtype constructor for the ``MethodType``. This all seems reasonably
 convenient, but I think it's probably actually overkill. Using
 a bit of explicit type application to fix the constraint doesn't
 seem like a huge price to pay for simplicity.
