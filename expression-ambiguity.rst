@@ -7,18 +7,19 @@ and also to define the notion of resolved overloading.
 Instead of considering that a type is ambiguous --- namely, instead of
 considering that C⇒τ is ambiguous if there exists a type variable in
 the set of constraints C that does not occur in the simple type τ ---
-we propose to consider that:
+the proposal is to consider that:
 
- • overloading of a constraint π ∈ C in type C⇒τ is resolved if there
-   exists a variable in π that is unreachable from the set of type
-   variables in τ.
+ • For each constraint π ∈ C in a type C⇒τ 
+   the existence of a variable in π that is unreachable from the set of type
+   variables in τ is an overloading resolution trigger condition.
 
    A variable is reachable from the set of type variables in τ if it
    occurs in τ or if occurs in a constraint where another reachable
    type variable occurs. For example c in constraint H c is reachable
-   from {a} if H c is a constraint on type (F a b, G b c, H c) ⇒ a .
+   from {a} if H c is a 
+.. code-block:: haskellconstraint on type (F a b, G b c, H c) ⇒ a .
 
- • When overloading of a constraint π is resolved, but only then, it
+ • Upon the overloading trigger condition, but only then, constraint π
    must be checked for satisfiability: it can be ambiguous if there
    exist two or more instances that entail π, unsatisfiable if there
    exist no instances that entail π, otherwise the constraint is
@@ -36,21 +37,21 @@ The reasons for this change are the following:
    language without the need of extra mechanisms for dealing with
    ambiguity problems that arise in the presence of MPTCs.
 
- • Define resolved overloading, via resolved constraint, by
+ • Define overloading resolution trigger condition, by
    considering not the syntactic property that type variables in a
    constraint π ∈ C do not occur in the simple type τ of a constrained
    type C⇒τ, but the property that type variables in a constraint π ∈
    C are unreachable from the set of type variables of τ.
 
-   When overloading is resolved, and only then, unifying instances
+   Upon the overloading trigger condition, and only then, unifying instances
    determine if resolved constraint π is ambiguous (if there are 2 or
    more instances that unify with π), unsatisfiable (if there is no
    unifying instance) or can be removed from the constrained type (if
    there is a single unifying instance).
 
    This is enough to solve the root cause of problems: first it must
-   be considered whether overloading is resolved or not (no ambiguity
-   can occur when overloading is not resolved), and only after
+   be considered whether overloading must be checked or not yet (no ambiguity
+   can occur when overloading must not yet be checked), and only after
    overloading is resolved, it must be checked whether there is
    ambiguity or not, unsatisfiability or not, or whether resolved
    constraints can be removed from the constrained type.
@@ -59,21 +60,19 @@ We present next some examples.
 
 Example 1
 
-{- ------------------------------------------- -}
+.. code-block:: haskell
 
-class ShowLike a where showLike:: a -> String
+  class ShowLike a where showLike:: a -> String
 
-class ReadLike a where readLike:: String -> a
+  class ReadLike a where readLike:: String -> a
 
-instance ShowLike Bool where showLike = show
+  instance ShowLike Bool where showLike = show
 
-instance ReadLike Bool where readLike = read
+  instance ReadLike Bool where readLike = read
 
-sr = showLike . readLike
+  sr = showLike . readLike
 
-main = print $ sr "True"
-
-{- ------------------------------------------- -}
+  main = print $ sr "True"
 
 With expression ambiguity, this program is well-typed (does not cause
 an ambiguity error). I explain why next. The non-improved type of rs
@@ -93,19 +92,18 @@ instance there is no ambiguity (the constraint can be removed).
 
 Example 2
 
-{- ------------------------------------------- -}
+.. code-block:: haskell
 
-class Conv a b where conv:: a -> b
+  class Conv a b where conv:: a -> b
 
-instance Conv Char Bool where
+  instance Conv Char Bool where
 
-  conv '0' = False
+    conv '0' = False
   
-  conv _   = True
+    conv _   = True
   
-main = print (conv '1')
+  main = print (conv '1')
 
-{- ------------------------------------------- -}
 
 A similar situation occurs here: with expression ambiguity, this
 program is well-typed (prints "True"), whereas currently in Haskell the
@@ -130,27 +128,28 @@ becomes IO().
 
 Example 3
 
-{-# LANGUAGE MultiParamTypeClasses #-}
+.. code-block:: haskell
 
-module Ex3 where
+  {-# LANGUAGE MultiParamTypeClasses #-}
 
-class Sum a b c where (<+>):: a->b->c
+  module Ex3 where
 
-class NumLit a where zero:: a
+  class Sum a b c where (<+>):: a->b->c
 
-data Nat = Zero | Suc Nat
+  class NumLit a where zero:: a
 
-instance NumLit Nat where zero = Zero
+  data Nat = Zero | Suc Nat
 
-instance Sum Nat Nat Nat where
+  instance NumLit Nat where zero = Zero
 
-  (<+>) Zero    b = b
+  instance Sum Nat Nat Nat where
 
-  (<+>) (Suc n) b = Suc ((<+>) n b)
+    (<+>) Zero    b = b
 
-i = (<+>) Zero
+    (<+>) (Suc n) b = Suc ((<+>) n b)
 
-{- ------------------------------------------- -}
+  i = (<+>) Zero
+
 
 Similar situation here. The non-simplified type of i is:
 
@@ -175,43 +174,45 @@ ambiguity, because overloading is not yet resolved.
 
 Example 4: variant 1
 
-{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances #-}
+.. code-block:: haskell
 
-module PolyMonad where
+  {-# LANGUAGE MultiParamTypeClasses, FlexibleInstances #-}
 
-class (Monad m1, Monad m2) => Morph m1 m2 where morph :: m1 a -> m2 a
+  module PolyMonad where
 
-class PolyMonad m1 m2 m3 where (|>>=|) :: m1 a -> (a -> m2 b) -> m3 b
+  class (Monad m1, Monad m2) => Morph m1 m2 where morph :: m1 a -> m2 a
 
-instance  (Morph m1 m2) => PolyMonad m1 m2 m2 where
+  class PolyMonad m1 m2 m3 where (|>>=|) :: m1 a -> (a -> m2 b) -> m3 b
 
-  ma |>>=| fmb = morph ma >>= fmb
+  instance  (Morph m1 m2) => PolyMonad m1 m2 m2 where
 
-f:: (PolyMonad m1 m2 m2, PolyMonad m2 m3 m3) => m1 a -> (a -> m2 b) -> (b -> m3 c) ->  m3 c
+    ma |>>=| fmb = morph ma >>= fmb
 
-f x g h = x |>>=| (\\ a -> g a |>>=| h)
+  f:: (PolyMonad m1 m2 m2, PolyMonad m2 m3 m3) => m1 a -> (a -> m2 b) -> (b -> m3 c) ->  m3 c
 
-{- ------------------------------------------- -}
+  f x g h = x |>>=| (\\ a -> g a |>>=| h)
+
 
 Example 4: variant 2
 
-{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, UndecidableInstances #-}
+.. code-block:: haskell
 
-module PolyMonad where
+  {-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, UndecidableInstances #-}
 
-class (Monad m1, Monad m2) => Morph m1 m2 where morph :: m1 a -> m2 a
+  module PolyMonad where
 
-class PolyMonad m1 m2 m3 where (|>>=|) :: m1 a -> (a -> m2 b) -> m3 b
+  class (Monad m1, Monad m2) => Morph m1 m2 where morph :: m1 a -> m2 a
 
-instance  (Morph m1 m3, Morph m2 m3) => PolyMonad m1 m2 m3 where
+  class PolyMonad m1 m2 m3 where (|>>=|) :: m1 a -> (a -> m2 b) -> m3 b
 
-  ma |>>=| fmb = morph ma >>= morph . fmb
+  instance  (Morph m1 m3, Morph m2 m3) => PolyMonad m1 m2 m3 where
 
-f:: (PolyMonad m1 m2 m3, PolyMonad m3 m4 m5) => m1 a -> (a -> m2 b) -> (b -> m4 c) ->  m5 c
+    ma |>>=| fmb = morph ma >>= morph . fmb
 
-f x g h = x |>>=| (\\ a -> g a |>>=| h)
+  f:: (PolyMonad m1 m2 m3, PolyMonad m3 m4 m5) => m1 a -> (a -> m2 b) -> (b -> m4 c) ->  m5 c
 
-{- ------------------------------------------- -}
+  f x g h = x |>>=| (\\ a -> g a |>>=| h)
+
 
 For more examples see e.g.:
  [1] Ambiguity and Constrained Polymorphism, 
@@ -229,10 +230,10 @@ The only change is related to the ambiguity rule:
 
  • instead of considering C⇒τ as ambiguous when ∃a ∈ tv(C): a ∉ tv(τ),
    where tv computes the set of type variables of its argument,
-   consider: overloading is resolved for π ∈ C when ∃a ∈ tv(π):
+   consider: overloading resolution trigger condition holds when π ∈ C when ∃a ∈ tv(π):
    unreachable(a,tv(τ))
 
- • when overloading is resolved for a constraint π ∈ C, in a type C⇒τ,
+ • when overloading resolution is triggered for a constraint π ∈ C, in a type C⇒τ,
    then check satisfiability of π:
 
    - if π is satisfiable by two or more instances, we have a type
@@ -249,24 +250,22 @@ Effect and Interactions
 
 Note that:
 
- 1. ambiguity can only occur if overloading is resolved and there
-    exists for the resolved constraint more than one unifying instance
-    for the resolved constraint.
+ 1. ambiguity can only occur if overloading resolution is triggered for a constraint π and there
+    exists more than one unifying instance for π.
    
-    When there exists a single unifying instance, the resolved
-    constraint can be removed: this fact can originate a compiler
-    warning, that: if another instance that entails the constraint is
+    When there exists a single unifying instance, π can be removed: this fact can originate a compiler
+    warning, that: if another instance that entails π is
     introduced the program will no longer be type correct. In this
     case, to prevent a module from becoming type-incorrect by the
-    insertion of an additional unifying instance for this resolved
-    constraint, a default clause should be introduced in the program
+    insertion of an additional unifying instance for π, a default clause should be introduced in the program
     (that needs defaulting to become more general than it is today in
     Haskell, allowing, for example, "default (Monad m) []"). 
    
  2. The situation that the introduction of a new instance causes a
     well-typed program to become type-incorrect (because of an
     ambiguity error) results from a program that would have been
-    considered, with the old ambiguity rule, not well typed before the
+    considered, with the old ambiguity rule, not 
+.. code-block:: haskellwell typed before the
     introduction of the new instance.
    
  3. The situation that the introduction of a new instance causes a
@@ -284,14 +283,13 @@ Development and maintenance costs are expected to be small.
 
 A drawback of the proposal is that Haskell programmers need to change
 their view on ambiguity. Firslty, they need to become aware of the
-fundamental notion of resolved overloading: a resolved constraint need
-not only variables that do not occur in the simple type, it need
+fundamental notion of overloading resolution trigger condition, which holds 
+not only for variables that do not occur in the simple type, but for
 unreachable variables (if there is a single reachable variable in a
-constraint, all its variables are reachable). Secondly, ambiguity can
-only occur for resolved constraints and means the existence of two or
-more unifying instances for the resolved constraint. A consequence is
-the fact that the number of instances that entail a resolved
-constraint is significant.
+constraint, all variables in the constraint are reachable). Secondly, ambiguity can
+only occur after the overloading resolution trigger condition and means the existence of two or
+more unifying instances for a constraint. A consequence is
+the fact that the number of instances that entail a constraint is significant.
 
 This view of ambiguity represents its common, natural
 understanding. Thus, learnability and usage of the language should be
@@ -301,9 +299,7 @@ Alternatives
 ------------
 
 Alternatives to the proposed change are the introduction of functional
-dependencies and/or type families to the language. In my view type
-families in particular can be useful, but for purposes other than
-dealing with ambiguity.
+dependencies and/or type families to the language.
 
 Unresolved questions
 --------------------
