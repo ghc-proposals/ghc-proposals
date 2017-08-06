@@ -111,12 +111,32 @@ Offer a new derivable class
 
 .. code-block:: haskell
 
-  class Reflectable (c :: Constraint) where
-    type MethodType c :: *
-    reify# :: (c => r) -> MethodType c -> r
+  class s ~ ConName c => Reflectable (s :: Symbol) (c :: Constraint) where
+    data Reflected c :: *
+    type ConName c :: Symbol
 
-derivable for single-method classes without superclass constraints
-whose method type does not quantify over any type variables.
+    reify## :: (c => r) -> Reflected c -> r
+
+derivable for literal symbols and single-method classes without
+superclass constraints.
+
+The ``Symbol`` parameter is used solely to name the newtype
+constructor for the ``Reflected`` data instance. The ``ConName``
+type family is then used to get the boring ``s`` type parameter out of
+the type of ``reify##``:
+
+.. code-block:: haskell
+
+  reify# :: forall c r.
+            Reflectable (ConName c) c
+         => (c => r) -> Reflected c -> r
+  reify# = reify##
+
+The main public interface would comprise ``Reflectable``, ``Reflected``,
+``reify#``, and perhaps ``reifyMono`` (see below). ``ConName`` and ``reify##``
+could be made available in a separate module to allow users to write instances
+by hand, or to write very general reflection functions (such as ``reifyMono``),
+but should not usually be needed.
 
 Given
 
@@ -125,34 +145,36 @@ Given
   class TheClass a where
     method :: T
 
-  deriving instance Reflectable (TheClass a)
+  deriving instance Reflectable "TheWrapper" (TheClass a)
 
 we would produce an instance
 
 .. code-block:: haskell
 
-  instance Reflectable (TheClass a) where
-    type MethodType (TheClass a) = T
-    reify# = ...
+  instance Reflectable "TheWrapper" (TheClass a) where
+    newtype Reflected (TheClass a) = TheWrapper T
+    type ConName (TheClass a) = "TheWrapper"
+    reify## = ...
 
-Operationally, ``reify# f x`` will package up ``x`` in a dictionary
-and pass that dictionary to ``f``. Currently, that means ``reify#``
-will actually just be a coercion. It could be implemented as a function today
+Operationally, ``reify## f x`` will package up ``x`` in a dictionary
+and pass that dictionary to ``f``. Currently, that means ``reify##``
+will actually just coerce ``f``. It could be implemented as a function today
 (perhaps disabling some optimizations, as ``Data.Reflection`` does):
+
 
 .. code-block:: haskell
 
   newtype Magic c a = Magic (c => a)
 
-  reify#default :: forall c r a . (c => r) -> a -> r
-  reify#default f = unsafeCoerce (Magic f :: Magic c r)
+  reify##default :: forall c r a . (c => r) -> a -> r
+  reify##default f = unsafeCoerce (Magic f :: Magic c r)
 
 That is, we take a function that expects a *dictionary* argument and coerce
 it to a function expecting a regular argument.
 
-As Simon Peyton Jones pointed out, making ``reify#default`` (with its entirely
+As Simon Peyton Jones pointed out, making ``reify##default`` (with its entirely
 over-general type) a primop would require giving it special typing rules. On
-the other hand, System FC is perfectly capable of handling a ``reify#`` function
+the other hand, System FC is perfectly capable of handling a ``reify##`` function
 for each single-method class.
 
 
@@ -165,16 +187,15 @@ We can implement what we want
 Singleton reflection
 """"""""""""""""""""
 
-The above-described mechanism can implement singleton reflection
-directly. We could simply write, for example,
+The above-described mechanism can implement singleton reflection directly. We
+could simply write, for example,
 
 .. code-block:: haskell
 
-  deriving instance Reflectable (SingI n)
+  deriving instance Reflectable "WrapSing" (SingI n)
 
   withSingI :: forall n r. (SingI n => r) -> Sing n -> r
-  withSingI = reify# @(SingI n)
-
+  withSingI f = reify# f . WrapSing
 
 Reify
 """""
@@ -184,14 +205,31 @@ needs to be done once.
 
 .. code-block:: haskell
 
-  deriving instance Reflectable (Reifies s a)
+  deriving instance Reflectable "Box" (Reifies s a)
 
   reify :: forall a r. (forall s. Reifies s a => Tagged s r) -> a -> r
-  reify f = unTagged #. (reify# @(Reifies s a) (f :: Tagged s r)
-                          :: forall s. a -> Tagged s r)
+  reify f = unTagged . (reify# f :: forall s. Reflected (Reifies s a) -> Tagged s r) . Box
 
 Neither ``withSingI`` nor ``reify`` actually does anything; they're just
-coercions.
+coercions [#coercions]_.
+
+This trick works whenever the method is monomorphic, as demonstrated
+by the following:
+
+.. code-block:: haskell
+
+  reifyMono :: forall (c :: Constraint) a r.
+                 (Coercible (Reflected c) a, Reflectable (ConName c) c)
+              => (c => r) -> a -> r
+  reifyMono f = coerce (reify# f :: Reflected c -> r)
+
+  reify f = unTagged . (reifyMono @(Reifies s a) f :: forall s. a -> Tagged s r)
+
+For polymorphic methods, the coercion trick won't work; ``reify#`` must always be
+fully applied.
+
+Note: ``reifyMono`` is very similar to the version of ``reify#`` in the type
+family alternative below.
 
 The optimizer has to be a bit careful
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -201,11 +239,11 @@ specialization in the ``reify`` case. Suppose we write
 
 .. code-block:: haskell
 
-  reify# f (A :: T)
+  reify f a
   ...
-  reify# f (B :: T)
+  reify f b
 
-Inlining ``reify#`` could lead to something like
+I imagine this could end up expanding to
 
 .. code-block:: haskell
 
@@ -256,82 +294,23 @@ I think they are probably right.
 Alternatives
 ------------
 
-Use a data family
-^^^^^^^^^^^^^^^^^
-
-A first draft of this approach looks like this:
+Use a type family instead of a data family
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: haskell
 
   class Reflectable (c :: Constraint) where
-    data MethodType c :: *
-    reify# :: (c => r) -> MethodType c -> r
+    type Reflected c :: *
+    reify# :: (c => r) -> Reflected c -> r
 
-In this version, the dictionary is represented by a data family instead of a
-type family. By using a data family, the data constructor on the argument to
-``reify#`` determines the class we are reifying, avoiding the need to use
-explicit type application to specify the class. This alternative has two
-benefits:
+This is certainly simpler. There's no need to deal with naming the
+newtype constructor and therefore no need to go to the trouble of
+making sure the naming mechanism doesn't get in the way when using
+``reify##``.
 
-1. We no longer need to prohibit the method type from quantifying
-   over type variables, as that quantification will be under
-   the newtype constructor. For example,
-
-   .. code-block:: haskell
-
-     class Foo a where
-       foo :: a -> b -> a
-
-     deriving instance Reflectable (Foo a)
-
-   would produce something like
-
-   .. code-block:: haskell
-
-     instance Reflectable (Foo a) where
-       newtype MethodType (Foo a) = FooCon (forall b. a -> b -> a)
-       reify# = ...
-
-2. The constraint in question is fixed by the newtype constructor,
-   so it does not have to be given using visible type application.
-
-The big difficulty is that we need to deal with *naming* the data constructor.
-A first-draft approach looks like this:
-
-.. code-block:: haskell
-
-  class Reflectable (s :: Symbol) (c :: Constraint) where
-    data MethodType s c :: *
-    reify# :: (c => r) -> MethodType s c -> r
-
-where the ``Symbol`` represents the desired name. A user could write
-
-.. code-block:: haskell
-
-  deriving instance Reflectable "MyWrapper" MyClass
-
-to derive
-
-.. code-block:: haskell
-
-  instance Reflectable "MyWrapper" MyClass where
-    data MethodType "MyWrapper" MyClass = MyWrapper T
-
-where ``T`` is the type of ``MyClass``'s method.
-
-Unfortunately, having ``s`` in the type of ``reify#`` is annoying—it's really
-only supposed to be used by the deriving mechanism! So the final draft (for
-now) of the data family version looks like this:
-
-.. code-block:: haskell
-
-  class s ~ ConName c => Reflectable (s :: Symbol) (c :: Constraint) where
-    data MethodData c :: *
-    type ConName c :: Symbol
-    reify# :: (c => r) -> MethodData c -> r
-
-This may actually be more usable.
-
+The main problem with the type family approach is that it won't work for
+a class whose method is polymorphic, because type families can't evaluate
+to quantified types.
 
 Build the constraint from the representation type
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -379,3 +358,9 @@ for that.
 
 Implementation Plan
 -------------------
+
+.. [#coercions] This is a bit of a white lie. To ensure they are actually
+   just coercions in higher-order code, the uses of ``(.)`` in the definitions
+   of these functions must be replaced by uses of ``(#.)`` or ``(.#)``
+   (as appropriate) from ``Data.Profunctors.Unsafe``. These details are
+   beyond the scope of this proposal.
