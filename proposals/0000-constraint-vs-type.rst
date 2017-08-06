@@ -288,7 +288,7 @@ of features that caused problems previously doesn't arise. (Essentially, the new
 ``ArrowNthCo`` fills the gap left by the missing functionality of ``KindCo``. It's
 a long story.)
 
-A happy consequence of this proposal is that, I believe, the ``reification`` library
+A happy consequence of this proposal is that, I believe, the ``reflection`` library
 will no longer have to use ``unsafeCoerce`` to get from ``C a => b`` to ``a -> b``.
 The only missing step is to teach the solver to reduce ``C a`` to ``a`` (when
 we have ``class C a where meth :: a``). That's not part of this proposal, but it
