@@ -269,6 +269,9 @@ one built from ``B`` and vice versa. I think the simplest way is probably to
 designate a stuck type family that the specializer knows about. If a type
 has the designated stuck type in it, then it will never specialize it.
 
+See "Use a separate class for ``reify``-style reflection", below,
+for an additional interface to automate this instantiation.
+
 
 Costs and Drawbacks
 -------------------
@@ -361,6 +364,45 @@ to implement ``withSingI``, we would need to write something like
 
 whereas with the proposed approach we can use an existing user-defined
 ``SingI`` class.
+
+Use a separate class for ``reify``-style reflection
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+It's a bit awkward to expose the issue of manually instantiating the
+quantified type variable when defining ``reify``, and perhaps needing
+them to instantiate it to a specific known type family. We could add
+a separate class for this style. The most general version that seems
+to work is
+
+.. code-block:: haskell
+
+  class name ~ ConName1 c => Reflectable1 (name :: Symbol) (c :: k -> Constraint) where
+    data Reflected1 c :: *
+    type ConName1 c :: Symbol
+    reify1# :: forall (q :: k). (forall s. c s => r s) -> Reflected1 c -> r q
+
+The type checker could instantiate ``s`` to the special type of its choice,
+rather than making the user do so manually.
+
+This easily supports a ``Reifies``-like class:
+
+.. code-block:: haskell
+
+  -- Poly-kinded Const
+  newtype Const a (s :: k) = Const a
+
+  class FlipReifies a s | s -> a where
+    flipReify :: Const a s
+
+  deriving instance Reflectable1 "FR" (FlipReifies a)
+
+  flipReify :: forall a r. (forall (s :: *). FlipReifies a s => Const r s) -> a -> r
+  flipReify f a = getConst $ reify1# f (FR a)
+
+Unfortunately, implementing ``reify`` itself with this mechanism is really
+quite ugly, requiring an auxiliary class to "flip" ``Reifies`` and a newtype
+to flip ``Tagged``. But the cleanliness may well be worth the inconvenience.
+
 
 Unresolved questions
 --------------------
