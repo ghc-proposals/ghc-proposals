@@ -111,14 +111,27 @@ Offer a new derivable class
 
 .. code-block:: haskell
 
+  Reflectable :: Symbol -> Constraint -> Constraint
+
+derivable for literal symbols and single-method classes without superclass
+constraints. Deriving this class would be enabled by a new
+``DeriveReflectable`` language extension, which would imply
+``StandaloneDeriving``, ``ConstraintKinds``, ``DataKinds``, and
+``MultiParamTypeClasses``.
+
+Unlike existing stock derived classes, the last parameter of ``Reflectable`` is
+a *class*.  Since class declarations do not have ``deriving`` clauses,
+``Reflectable`` could only be derived using ``StandaloneDeriving``.
+
+The ``Reflectable`` class would be defined thus:
+
+.. code-block:: haskell
+
   class s ~ ConName c => Reflectable (s :: Symbol) (c :: Constraint) where
     data Reflected c :: *
     type ConName c :: Symbol
 
     reify## :: (c => r) -> Reflected c -> r
-
-derivable for literal symbols and single-method classes without
-superclass constraints.
 
 The ``Symbol`` parameter is used solely to name the newtype
 constructor for the ``Reflected`` data instance. The ``ConName``
