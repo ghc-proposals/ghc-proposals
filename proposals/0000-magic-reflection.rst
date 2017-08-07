@@ -208,7 +208,7 @@ needs to be done once.
   deriving instance Reflectable "Box" (Reifies s a)
 
   reify :: forall a r. (forall s. Reifies s a => Tagged s r) -> a -> r
-  reify f = unTagged . (reify# f :: forall s. Reflected (Reifies s a) -> Tagged s r) . Box
+  reify f = unTagged . (reify# f :: Reflected (Reifies Any a) -> Tagged Any r) . Box
 
 Neither ``withSingI`` nor ``reify`` actually does anything; they're just
 coercions [#coercions]_.
@@ -223,7 +223,7 @@ by the following:
               => (c => r) -> a -> r
   reifyMono f = coerce (reify# f :: Reflected c -> r)
 
-  reify f = unTagged . (reifyMono @(Reifies s a) f :: forall s. a -> Tagged s r)
+  reify f = unTagged . (reifyMono @(Reifies Any a) f :: a -> Tagged Any r)
 
 For polymorphic methods, the coercion trick won't work; ``reify#`` must always be
 fully applied.
@@ -252,7 +252,9 @@ I imagine this could end up expanding to
 
 We need to recognize that there can be multiple *different* dictionaries of
 type ``Reifies Any T``, and avoid replacing the one built from ``A`` with the
-one built from ``B`` and vice versa.
+one built from ``B`` and vice versa. I think the simplest way is probably to
+designate a stuck type family that the specializer knows about. If a type
+has the designated stuck type in it, then it will never specialize it.
 
 
 Costs and Drawbacks
