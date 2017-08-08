@@ -7,7 +7,7 @@ The purpose of the GHC proposal process and of
 the GHC Steering Committee, is to broaden the discussion of the evolution of
 GHC.
 
-What is the timeline of a propsoal?
+What is the timeline of a proposal?
 -----------------------------------
 
 1. The author drafts a proposal.
