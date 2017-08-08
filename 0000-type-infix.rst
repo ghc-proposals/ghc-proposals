@@ -127,6 +127,7 @@ The eventual goal is to make ``infix{l,r} n type`` the only means by which one c
 
 * Introduce ``infix{l,r} n value`` and ``infix{l,r} n type`` in an upcoming GHC version. (Call this GHC 8.X). Retain ``infix{l,r} n``'s ability to refer to both value-level and type-level names.
 * In GHC 8.(X+4), have ``infix{l,r} n`` emit a warning whenever it refers to type-level names. Here is the plan for when to emit warnings:
+
   * If an ``infix{l,r} n`` declaration refers to exclusively to a type-level name (that is, either there is no value with the same name that is also declared, or there a value with the same name has its fixity declared separately with ``infix{l,r} n value``), warn that the user should change it to ``infix{l,r} n type``. This is a straightforward case, as this would become an error in GHC 8.(X+6).
   * If an ``infix{l,r} n`` declaration refers to both a value-level and type-level name (that is, there are no other ``infix{l,r} n value`` or ``infix{l,r} n type`` declarations referring to the same name), things are a bit trickier. There are two scenarios under which this could happen. One is when a user inadvertently assigned a fixity to a type-level name, such as in this example: ::
 
@@ -140,9 +141,9 @@ The eventual goal is to make ``infix{l,r} n type`` the only means by which one c
 
         type f $ x = f x
 
-  Here, the user only meant to assign a fixity to the value-level ``($)`` fixity, and doesn't care about the fixity of the type-level ``($)``. This situation could be addressed by converting the existing fixity declaration to ``infixr 0 value $``.
+    Here, the user only meant to assign a fixity to the value-level ``($)`` fixity, and doesn't care about the fixity of the type-level ``($)``. This situation could be addressed by converting the existing fixity declaration to ``infixr 0 value $``.
 
-  It should be noted, however, that the code above is not wrong, and would compile in GHC 8.(X+6). However, we still should warn when we see code like this, because of the other scenario: it is possible that the user really did mean to assign the type-level ``($)`` a fixity. Even worse, the place where the fixity matters might be in an entirely different module: ::
+    It should be noted, however, that the code above is not wrong, and would compile in GHC 8.(X+6). However, we still should warn when we see code like this, because of the other scenario: it is possible that the user really did mean to assign the type-level ``($)`` a fixity. Even worse, the place where the fixity matters might be in an entirely different module: ::
 
         {-# LANGUAGE TypeOperators #-}
         module B where
@@ -151,9 +152,9 @@ The eventual goal is to make ``infix{l,r} n type`` the only means by which one c
 
         type MaybeMaybeInt = Maybe $ Maybe $ Int
 
-  The code in module ``B`` will only compile if the type-level ``($)`` is right-associative. This means that the warning we emit when we see the code in module ``A`` should account for such a scenario.
+    The code in module ``B`` will only compile if the type-level ``($)`` is right-associative. This means that the warning we emit when we see the code in module ``A`` should account for such a scenario.
 
-  To encompass both use cases, I propose that the warning read approximately as follows: ::
+    To encompass both use cases, I propose that the warning read approximately as follows: ::
 
       warning:
         * 'infixr 0 $' refers to both a value-level and a type-level name '$'
