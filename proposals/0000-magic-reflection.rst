@@ -379,7 +379,7 @@ to work is
   class name ~ ConName1 c => Reflectable1 (name :: Symbol) (c :: k -> Constraint) where
     data Reflected1 c :: *
     type ConName1 c :: Symbol
-    reify1# :: forall (q :: k). (forall s. c s => r s) -> Reflected1 c -> r q
+    reify1## :: forall (q :: k). (forall s. c s => f s) -> (forall s. f s -> r) -> Reflected1 c -> r
 
 The type checker could instantiate ``s`` to the special type of its choice,
 rather than making the user do so manually.
@@ -397,7 +397,7 @@ This easily supports a ``Reifies``-like class:
   deriving instance Reflectable1 "FR" (FlipReifies a)
 
   flipReify :: forall a r. (forall (s :: *). FlipReifies a s => Const r s) -> a -> r
-  flipReify f a = getConst $ reify1# f (FR a)
+  flipReify f a = reify1## f getConst (FR a)
 
 Unfortunately, implementing ``reify`` itself with this mechanism is really
 quite ugly, requiring an auxiliary class to "flip" ``Reifies`` and a newtype
