@@ -17,9 +17,7 @@ This proposal is `discussed at this pull request <https://github.com/ghc-proposa
 Notes on reStructuredText - delete this section before submitting
 ==================================================================
 
-The proposals are submitted in reStructuredText format.  To get inline code, enclose
-text in double backticks, ``like this``.  To get block code, use a double colon and
-indent by at least one space
+The proposals are submitted in reStructuredText format.  To get inline code, enclose text in double backticks, ``like this``.  To get block code, use a double colon and indent by at least one space
 
 ::
 
@@ -28,8 +26,7 @@ indent by at least one space
 
  this too
 
-To get hyperlinks, use backticks, angle brackets, and an underscore
-`like this <http://www.haskell.org/>`_.   
+To get hyperlinks, use backticks, angle brackets, and an underscore `like this <http://www.haskell.org/>`_.   
 
 
 Proposal title
@@ -49,20 +46,16 @@ Specify the change in precise, comprehensive yet concise language. Avoid words l
 
 * grammar and semantics of any new syntactic constructs
 * the types and semantics of any new library interfaces
-* how the proposed change addresses the original problem
-* how the proposed change might interact with existing language or compiler features
+* how the proposed change interacts with existing language or compiler features, in case that is otherwise ambiguous
 
-Note, however, that this section need not describe details of the
-implementation of the feature. The proposal is merely supposed to give a
-conceptual specification of the new feature and its behavior.
-
-
+Note, however, that this section need not describe details of the implementation of the feature. The proposal is merely supposed to give a conceptual specification of the new feature and its behavior.
 
 
 Effect and Interactions
 -----------------------
-Detail how the proposed change addresses the original problem raised in the motivation. Detail how the proposed change interacts with existing language or compiler features and provide arguments why this is not going to pose problems.
+Detail how the proposed change addresses the original problem raised in the motivation.
 
+Discuss possibly contentious interactions with existing language or compiler features. 
 
 
 Costs and Drawbacks
@@ -70,11 +63,9 @@ Costs and Drawbacks
 Give an estimate on development and maintenance costs. List how this effects learnability of the language for novice users. Define and list any remaining drawbacks that cannot be resolved.
 
 
-
 Alternatives
 ------------
 List existing alternatives to your proposed change as they currently exist and discuss why they are insufficient.
-
 
 
 Unresolved questions
@@ -82,7 +73,6 @@ Unresolved questions
 Explicitly list any remaining issues that remain in the conceptual design and specification. Be upfront and trust that the community will help. Please do not list *implementation* issues.
 
 Hopefully this section will be empty by the time the proposal is brought to the steering committee.
-
 
 
 Implementation Plan
