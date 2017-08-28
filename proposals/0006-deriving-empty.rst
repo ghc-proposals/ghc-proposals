@@ -1,18 +1,14 @@
-.. proposal-number:: Leave blank. This will be filled in when the proposal is
-                     accepted.
+.. proposal-number:: 0006
 
-.. trac-ticket:: Leave blank. This will eventually be filled with the Trac
-                 ticket number which will track the progress of the
-                 implementation of the feature.
+.. trac-ticket:: none yet
 
-.. implemented:: Leave blank. This will be filled in with the first GHC version which
-                 implements the described feature.
+.. implemented:: not yet
 
 .. highlight:: haskell
 
 .. contents::
 
-This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/63>`_.
+This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/63>`_.
 
 Overhaul deriving instances for empty data types
 ================================================
