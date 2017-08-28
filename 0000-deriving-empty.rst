@@ -29,7 +29,7 @@ Currently, the behavior for deriving class instances for empty data types is unp
 1. Unpredictable. If you try deriving certain instances for an empty data type using a ``deriving`` clause, it will simply fail. For instance: ::
 
        λ> data Empty deriving Eq
-       
+
        <interactive>:1:21: error:
            • Can't make a derived instance of ‘Eq Empty’:
                ‘Empty’ must have at least one data constructor
@@ -61,7 +61,7 @@ Currently, the behavior for deriving class instances for empty data types is unp
        λ> :set -XStandaloneDeriving -ddump-deriv
        λ> data Empty
        λ> deriving instance Show Empty
-       
+
        ==================== Derived instances ====================
        Derived instances:
          instance GHC.Show.Show Ghci1.Empty where
@@ -74,13 +74,7 @@ Proposed Change Specification
 To clean up this mess, I propose an overhaul of how GHC combines ``deriving``
 with empty data types. Concretely, I propose:
 
-1. Allow the use of ``deriving`` clauses for empty data types, provided that ``EmptyDataDecls`` is enabled. As noted in part 1 of the Motivation section, GHC has strange rules surrounding ``deriving`` clauses for empty data types. This is partly motivated by a `statement in the Haskell 98 Report <https://www.haskell.org/onlinereport/haskell2010/haskellch11.html#x18-18200011>`_:
-
-       If the data declaration has no constructors (i.e. when n = 0), then no classes are derivable (i.e. m = 0)
-
-   But happily, the Haskell 2010 Report `integrated EmptyDataDecls in the report <https://www.haskell.org/onlinereport/haskell2010/haskellch12.html>`_, which allows defining ``data Empty`` by default. I believe it's entirely reasonable to interpret ``EmptyDataDecls`` as allowing ``data Empty deriving Eq`` as well.
-
-   Therefore, let's simply allow ``data Empty deriving Eq``, provided that ``EmptyDataDecls`` is on. For most GHC users, this ability will come automatically, since ``EmptyDataDecls`` is enabled by default.
+1. Allow the use of ``deriving`` clauses for empty data types. For standard type classes mentioned in the Haskell Report (``Eq``, ``Ord``, ``Read``, ``Show``, ``Ix``, ``Bounded``, and ``Enum``), this would require the use of a new language pragma, ``-XEmptyDataDeriving``. For non-standard type classes, enabling ``-XEmptyDataDeriving`` would not be required, since we require enabling separate language extensions to derive the non-standard type classes anyways. (Similarly, standalone deriving declarations would not require ``-XEmptyDataDeriving``, since they separately require ``-XStandaloneDeriving``.)
 
 2. Change the implementations of derived class instances for empty data types. For each stock derivable class, I will describe what currently gets derived for ``data Empty a``, and provide an example of how I want it to behave under this proposal:
 
@@ -120,10 +114,10 @@ with empty data types. Concretely, I propose:
         readPrec = parens pfail
 
   I propose: ::
-  
+
       instance Read (Empty a) where
         readPrec = pfail
-  
+
   That is, reading an empty datatype should always just fail, without reading any input. Doing so makes this instance as "defined as possible" (see the Alternatives section), since it avoids forcing portions of the string that it doesn't need to.
 
 * Deriving ``Show``
@@ -192,7 +186,7 @@ with empty data types. Concretely, I propose:
       instance Generic (Empty a) where
         from x = M1 (case x of {})
         to (M1 x) = case x of {}
-      
+
       instance Generic1 Empty where
         from1 x = M1 (case x of {})
         to1 (M1 x) = case x of {}
@@ -248,7 +242,7 @@ And not like this: ::
 While the latter implementation typechecks, I don't believe it is what we want for a derived instance. Edward Kmett puts his argument forth for the former behavior `here <https://mail.haskell.org/pipermail/libraries/2015-July/025965.html>`_:
 
     We rather deliberately made them [the ``Eq`` and ``Ord`` instances for ``Void``] as "defined as possible" back in 2012 after a very long discussion in which the pendulum swung the other way using a few examples where folks tied knots with fixed points to get inhabitants of ``Void`` and it was less consistent to rule them out than it was to define equality on ``⊥`` to be ``True``.
-    
+
     I'd challenge that nothing is gained by making these combinators strict in their arguments.
 
 Indeed, this is what led to Edward adopting the former convention in his ``void`` library. This allows for checking boolean equality on fixed-point terms which would otherwise diverge if scrutinized.
