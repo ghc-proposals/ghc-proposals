@@ -18,21 +18,28 @@ type-level declarations introduced with ``type``, ``data``, ``newtype``, or ``cl
 
 For example::
 
-  type MonoTagged :: Type ~> Type ~> Type
+  type MonoTagged :: Type -> Type -> Type
   data MonoTagged t x = MonoTagged x
 
   type Id :: forall k. k -> k
   type family Id x where
     Id x = x
 
-  type C :: (k ~> Type) ~> k ~> Constraint
+  type C :: (k -> Type) -> k -> Constraint
   class C a b where
     f :: a b
 
+  type TypeRep :: forall k. k -> Type
+  data TypeRep a where
+    TyInt   :: TypeRep Int
+    TyMaybe :: TypeRep Maybe
+    TyApp   :: TypeRep a -> TypeRep b -> TypeRep (a b)
+    
 Declarations that have a top-level kind signature (with no wildcards)
 can use polymorphic recursion; declarations
 without such signatures are understood to have inferred kinds, and polymorphic
-recursion is not available.
+recursion is not available. Note that the last example above, ``TypeRep``, uses
+polymorphic recursion and would be rejected without the top-level kind signature.
 
 This proposal replaces GHC's current notion of syntactic
 CUSKs_.
@@ -55,17 +62,6 @@ Even better, this proposal makes type-level polymorphic recursion have the same 
 as term-level polymorphic recursion: you *must* have a top-level signature (with no
 wildcards).
 
-The examples above include an unusual choice of syntax, using ``~>`` where one might
-expect ``->``. This is to support `partially applied type families <https://github.com/ghc-proposals/ghc-proposals/pull/52>`_, where a *matchable* arrow (which I'm spelling ``~>``) is
-distinct from the unmatchable arrow ``->``. Briefly, a matchable function is one that
-is generative and injective, so that pattern matching it makes good sense. Thus, data
-and type constructors are matchable, while ordinary functions (and, therefore, type
-families) are not. Currently, ``->`` is used in kinds, but its use there is always
-for *matchable* "functions", like type constructors or promoted data constructors.
-As part of enabling partially applied type families, it is necessary to introduce this
-second arrow. In keeping with the vastly more common use of ``->`` to denote ordinary
-term-level functions, I propose ``~>`` as the matchable arrow.
-
 Proposed Change Specification
 -----------------------------
 
@@ -85,39 +81,28 @@ Proposed Change Specification
    
    Top-level kind signatures are enabled with the extension ``-XTopLevelKinds``.
 
-2. Introduce a new kind former ``~>``, with parsing identical to ``->``, that denotes
-   a matchable type. This new type former has very limited use (for now): it may appear
-   in
-
-   * top-level kind signatures
-   * the result kind of GADT-style datatype declarations, as well as type and data families
-   * data constructor types
-
-   Any other use is considered an error. (With partially applied type families, this type
-   will become more useful.)
-
-   The meaning of ``~>`` will be identical to that of ``->`` in all contexts other than
-   top-level kind signatures.
-
-   In a top-level kind signature, the use of ``->`` will imply that the declaration is
-   for a type family. Any arguments to the left of ``->``s must be arguments to the
-   type family that must be saturated at every occurrence. All other top-level kind
-   signatures will use only ``~>``.
-
-3. Introduce a new extension ``-XCUSKs``, on by default, that detects CUSKs as they
+2. Introduce a new extension ``-XCUSKs``, on by default, that detects CUSKs as they
    currently exist. A CUSK will be treated identically to a top-level kind signature.
 
    When ``-XNoCUSKs`` is specified, only a top-level kind signature enables
    polymorphic recursion.
 
-4. Plan to turn ``-XCUSKs`` off by default in GHC 8.8 and to remove it sometime thereafter.
-
+3. Plan to turn ``-XCUSKs`` off by default in GHC 8.8 and to remove it sometime thereafter.
 
 Effect and Interactions
 -----------------------
 This is largely a simplification over the status quo, eventually eliminating the need for
 the fiddly definition and detection of CUSKs. It allows users to control whether they want
 inference or specification in a more conspicuous way than CUSKs do.
+
+Note that a top-level kind signature, by itself, is insufficient in describing a type-level
+construct in, say, an hs-boot file. The kind signature omits details like
+
+* whether the type is generative and/or injective
+
+* whether the type is open or closed
+
+* whether the type must be applied to a certain prefix of arguments
 
 I don't foresee intricate interactions with other features.
 
@@ -131,10 +116,9 @@ Parsing may be slightly complicated by the similarity to a type synonym, but I d
 will pose more than an hour's delay in implementation.
 
 Checking and generalizing the kind can be done by already-written code (in TcHsType).
-More checks will have to go in TcValidity to check for poor uses of ``~>``.
 
 The hardest part will be complicating the code in TcTyClsDecls, which is already somewhat
-involved; however, I don't think this change will be invasive, as it will just affec the
+involved; however, I don't think this change will be invasive, as it will just affect the
 code that currently checks for CUSKs.
 
 Alternatives
@@ -143,15 +127,19 @@ Alternatives
 * Don't do anything. I find the current situation to be confusing, though, generating
   several confused users yearly.
 
-* Don't add ``~>``, but otherwise keep this proposal. This choice is reasonable, but
-  it's not forward compatible and will cause pain down the road if we ever implement
-  partially applied type families.
-
+* A previous version of this proposal introduced a new type former ``~>``, which denoted
+  *matchable* functions. Using ``~>``, a top-level kind signature could differentiate
+  between the parameters of a type family that are required to be saturated and any others.
+  However, this particular choice of syntax was bound to create confusion and disagreement.
+  Furthermore, the particular way the syntax was designed was based on issues around
+  *future*\-compatibility, and so was likely to end up being wrong, regardless.
+  
 * We don't need the ``type`` keyword to introduce non-symbolic kind signatures, as the
   capital letter can tip GHC off. Perhaps omit.
   
-* The syntax for closed type families with a top-level signature is redundant. Perhaps
-  this could be simplified.
+* With top-level kind signatures, some aspects of type declarations are redundant.
+  (For example, the ``a b c`` in ``data T a b c where ...``.) One could imagine removing
+  these as an extension to this proposal.
   
 * I'm not particularly pleased with ``-XTopLevelKinds``. ``-XKindSignatures`` is the
   Right Answer, but that's taken. (That should really be ``-XKindAscriptions``, but
