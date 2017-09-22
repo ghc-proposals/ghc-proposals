@@ -1,8 +1,6 @@
 .. proposal-number:: 0007
 
-.. trac-ticket:: Leave blank. This will eventually be filled with the Trac
-                 ticket number which will track the progress of the
-                 implementation of the feature.
+.. trac-ticket:: 14268
 
 .. implemented:: Leave blank. This will be filled in with the first GHC version which
                  implements the described feature.
