@@ -14,8 +14,8 @@ This proposal is `discussed at this pull request <https://github.com/ghc-proposa
 
 .. contents::
 
-Add small primitive types, like ``Int8#/Word8#``
-================================================
+Add more fixed size primitive types, like ``Int8#/Word8#``
+==========================================================
 
 This proposes adding new primitive types to GHC:
 
@@ -24,6 +24,8 @@ This proposes adding new primitive types to GHC:
 - ``Int16#``/``Word16#``
 
 - ``Int32#``/``Word32#``
+
+- ``Int64#``/``Word64#``
 
 along with corresponding primitive operations.
 
@@ -159,7 +161,12 @@ if you know of any more places!):
 Additional context
 ------------------
 
-- `Initial discussion`_ on ``ghc-devs``
+- `Initial discussion`_ on ``ghc-devs`` about small primitives
+
+- Ticket about always exposing ``Word64#``/``Int64#``: `#11953`_
 
 
 .. _Initial discussion: https://mail.haskell.org/pipermail/ghc-devs/2017-August/014462.html
+
+.. _#11953: https://ghc.haskell.org/trac/ghc/ticket/11953
+
