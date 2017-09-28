@@ -1,6 +1,6 @@
 .. proposal-number:: 0006
 
-.. trac-ticket:: none yet
+.. trac-ticket:: 7401, 10577, 13117
 
 .. implemented:: not yet
 
@@ -15,7 +15,7 @@ Overhaul deriving instances for empty data types
 
 Currently, one can derive class instances for empty data types, i.e., data types that have no constructors, such as ``data Empty``. However, there are a number of warts in GHC's implementation of this feature that make it cumbersome to use.
 
-There have been various discussions about changing GHC's behavior with respect to deriving instances for empty data types. These include several Trac tickets (see `Trac #7401 <https://ghc.haskell.org/trac/ghc/ticket/7401>`_, `#10577 <https://ghc.haskell.org/trac/ghc/ticket/10577>`_, and `#13117 <https://ghc.haskell.org/trac/ghc/ticket/13177>`_) and mailing list discussions (see `here <https://mail.haskell.org/pipermail/libraries/2015-July/025959.html>`_ and `here <https://mail.haskell.org/pipermail/libraries/2017-January/027590.html>`_). However, none of these discussions ever reached a consensus for a new design. I'm putting this proposal together in hopes of coming to an agreement on a comprehensive design for this feature and to bring a conclusion to this discussion.
+There have been various discussions about changing GHC's behavior with respect to deriving instances for empty data types. These include several Trac tickets (see `Trac #7401 <https://ghc.haskell.org/trac/ghc/ticket/7401>`_, `#10577 <https://ghc.haskell.org/trac/ghc/ticket/10577>`_, and `#13117 <https://ghc.haskell.org/trac/ghc/ticket/13117>`_) and mailing list discussions (see `here <https://mail.haskell.org/pipermail/libraries/2015-July/025959.html>`_ and `here <https://mail.haskell.org/pipermail/libraries/2017-January/027590.html>`_). However, none of these discussions ever reached a consensus for a new design. I'm putting this proposal together in hopes of coming to an agreement on a comprehensive design for this feature and to bring a conclusion to this discussion.
 
 
 Motivation
