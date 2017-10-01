@@ -61,7 +61,8 @@ Current syntax:
     hexadecimal →  hexit{hexit}
     binary      →  binit{binit}
 
-New syntax (this proposal):
+New syntax (this proposal).
+When the ``NumericUnderscores`` language extension is enabled, syntax is changed as follows:
 
 .. code-block:: none
 
@@ -152,7 +153,7 @@ I believe that this proposal will improve the readability, quality and expressiv
 Costs and Drawbacks
 -------------------
 * Implementation costs are mostly related to lexers.
-* Maintenance costs are related to compatibility. Compatibility can be handled with language extension like ``NumericUnderscores``.
+* Maintenance costs are related to compatibility. Compatibility can be handled with language extension of ``NumericUnderscores``.
 * I think the user's learning curve is not a problem. They will soon get used to it.
 * Syntax highlighting for text editors and code browsers is affected.
 
