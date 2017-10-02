@@ -163,7 +163,7 @@ For example, these expressions are current alternatives:
 
 .. code-block:: none
 
-    x = 10 * 000 * 000 :: Int
+    x = 10 * 1000 * 1000 :: Int
     y = [0x3ff, 0xffff] :: [Int]
     z = "0001 0000 0000" :: String
 
