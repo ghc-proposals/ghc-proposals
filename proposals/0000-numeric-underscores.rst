@@ -61,15 +61,19 @@ Current syntax:
     hexadecimal →  hexit{hexit}
     binary      →  binit{binit}
 
+    exponent → (e | E) [+ | -] decimal
+
 New syntax (this proposal).
 When the ``NumericUnderscores`` language extension is enabled, syntax is changed as follows:
 
 .. code-block:: none
 
-    decimal     →  digit{[_ | digit]}
-    octal       →  octit{[_ | octit]}
-    hexadecimal →  hexit{[_ | hexit]}
-    binary      →  binit{[_ | binit]}
+    decimal     →  digit[{_ | digit} digit]
+    octal       →  octit[{_ | octit} octit]
+    hexadecimal →  hexit[{_ | hexit} hexit]
+    binary      →  binit[{_ | binit} binit]
+
+    exponent → [_] (e | E) [+ | -] decimal
 
     Underscores (_) in numeric literals are simply ignored.
 
