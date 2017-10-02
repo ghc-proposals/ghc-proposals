@@ -166,8 +166,9 @@ For example, these expressions are current alternatives:
     x = 10 * 1000 * 1000 :: Int
     y = [0x3ff, 0xffff] :: [Int]
     z = "0001 0000 0000" :: String
+    t = 5000000   -- five sec (inline comment)
 
-However, they cause increased description cost and performance degradation.
+However, they cause increased description cost or performance degradation.
 
 Unresolved questions
 --------------------
