@@ -118,6 +118,9 @@ Examples
 --------
 The followings are examples of this proposal:
 
+use case examples
+~~~~~~~~~~~~~~~~~
+
 .. code-block:: none
 
     -- decimal
@@ -149,6 +152,31 @@ The followings are examples of this proposal:
         | otherwise = x
 
     test8bit x = (0b01_0000_0000 .&. x) /= 0
+
+validity examples
+~~~~~~~~~~~~~~~~~
+
+.. code-block:: none
+
+    x0 = 1_000_000   -- valid
+    x1 = 1__000000   -- valid
+    x2 = 1000000_    -- invalid
+    x3 = _1000000    -- invalid
+
+    e0 = 0.0001      -- valid
+    e1 = 0.000_1     -- valid
+    e2 = 0_.0001     -- invalid
+    e3 = _0.0001     -- invalid
+    e4 = 0._0001     -- invalid
+    e5 = 0.0001_     -- invalid
+
+    f0 = 1e+23       -- valid
+    f1 = 1_e+23      -- valid
+    f2 = 1e_+23      -- invalid
+
+    g0 = 1e+23       -- valid
+    g1 = 1e+_23      -- invalid
+    g2 = 1e+23_      -- invalid
 
 Effect and Interactions
 -----------------------
