@@ -48,12 +48,16 @@ interfaces will be removed three major releases later.
 
 Effect and Interactions
 -----------------------
-This will allow us to remove the invariants implementation from the runtime system.
+This will allow us to remove the invariants implementation from the runtime
+system.
+
+Current users of the interface have a few options to adapt their code to
+manually call invariant their checks where necessary.
 
 
 Costs and Drawbacks
 -------------------
-The removal of the interfaces will break any users.
+The removal of the interfaces will break any existing users.
 
 Alternatives
 ------------
