@@ -37,7 +37,8 @@ enabled by the ``ApplicativeDo`` extension.
 Proposed Change Specification
 -----------------------------
 
-Two new type classes would be added to base,
+We propose adding a new extension, `-XGeneralizedDoNotation`. When this extension is enabled,
+two new type classes would be added to base,
 
 ::
 
@@ -93,6 +94,11 @@ A current alternative is to do this manually via template Haskell or by hand. Ho
 forces users to duplicate the work already implemented in ``ApplicativeDo`` for automatically making things
 ``Applicative``, and a potential source for errors.
 
+Another potential alternative is to use ``RebindableSyntax``. This however clobbers everything in scope,
+which might not be what the user wanted. Being able to do this on a case by case basis for each type
+would allow users to specify the syntax de-sugaring for their type in e.g. a library, without having to ask the user to
+use rebindable syntax in the entire file.
+
 Unresolved questions
 --------------------
 There is a question of what the operators and type classes themselves should be called. I'm inclined to call them ``Doable``
@@ -105,6 +111,9 @@ than presented here.
 
 Another point to consider is whether to overwrite do-notation, or whether to allow the user to select somehow which operations
 he wants to use when de-sugaring in each case. 
+
+The "default implementation" via an instance from Applicative will not work, due to the type inferencer not backtracking. However,
+we could possibly derive a ``Doable`` and a ``ApplicativeDoable`` instance automatically from ``Applicative`` and ``Monad`` classes, if the extension is enabled.
 
 Implementation Plan
 -------------------
