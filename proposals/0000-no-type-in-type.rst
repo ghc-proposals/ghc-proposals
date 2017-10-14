@@ -14,67 +14,68 @@ This proposal is `discussed at this pull request <https://github.com/ghc-proposa
 
 .. contents::
 
-Notes on reStructuredText - delete this section before submitting
-==================================================================
+Deprecate ``-XTypeInType``
+==========================
 
-The proposals are submitted in reStructuredText format.  To get inline code, enclose text in double backticks, ``like this``.  To get block code, use a double colon and indent by at least one space
+GHC 8.0 came with a new extension, ``-XTypeInType``. This extension activated several new features in GHC,
+including the ability to write kind-indexed GADTs (``data G (a :: k) where MkG1 :: G Maybe; MkG2 :: G Int``)
+explicit kind quantification (``foo :: forall k (a :: k). Proxy a -> ()``), kind families, and more.
+However, it is properly seen as a generalization of ``-XPolyKinds``. Currently, GHC has to go to some
+lengths to detect when users are accessing features unique to ``-XTypeInType`` but not ``-XPolyKinds``,
+only to tell those users to turn on ``-XTypeInType``.
 
-::
-
- like this
- and
-
- this too
-
-To get hyperlinks, use backticks, angle brackets, and an underscore `like this <http://www.haskell.org/>`_.   
-
-
-Proposal title
-==============
-
-Here you should write a short abstract motivating and briefly summarizing the proposed change.
+This proposal moves to deprecate ``-XTypeInType`` by expanding the meaning of ``-XPolyKinds`` to
+cover the new features of ``-XTypeInType``.
 
 
 Motivation
 ------------
-Give a strong reason for why the community needs this change. Describe the use case as clearly as possible and give an example. Explain how the status quo is insufficient or not ideal.
 
+* This is a simplification over the status quo, with two closely related extensions and an arbitrary
+  distinction between them.
 
+* In truth, GHC always has ``Type :: Type``, whether you say ``-XTypeInType`` or no. Thus, the real
+  extension name should be ``-XPolyKinds``, because it's kind polymorphism that the user wants, not
+  the always-true ``Type :: Type``.
+
+* The reason for a distinction between the extensions was because ``-XTypeInType`` started out as
+  rather buggy and experimental, whereas ``-XPolyKinds`` had settled down by GHC 8. There was the
+  possibility that ``-XTypeInType`` would allow you to shoot the gorillas (my suggestion for an
+  update of "launch the rockets"; the latter seems just a bit too poignant these days) while ``-XPolyKinds``
+  wouldn't. That possibility has not come to fruition (happily), and so the distinction isn't
+  really paying its way.
+
+Note that what we're doing here is very much like the merger between ``-XRankNTypes`` and ``-XRank2Types``.
+  
 Proposed Change Specification
 -----------------------------
-Specify the change in precise, comprehensive yet concise language. Avoid words like should or could. Strive for a complete definition. Your specification may include,
-
-* grammar and semantics of any new syntactic constructs
-* the types and semantics of any new library interfaces
-* how the proposed change interacts with existing language or compiler features, in case that is otherwise ambiguous
-
-Note, however, that this section need not describe details of the implementation of the feature. The proposal is merely supposed to give a conceptual specification of the new feature and its behavior.
-
+Make ``-XPolyKinds`` and ``-XTypeInType`` be synonyms (adopting the latter's current behavior).
+In time, deprecate the latter in favor of the former.
 
 Effect and Interactions
 -----------------------
-Detail how the proposed change addresses the original problem raised in the motivation.
-
-Discuss possibly contentious interactions with existing language or compiler features. 
-
+This will effectively create two different versions of ``-XPolyKinds``, which could be problematic
+for users who want tooling to choose compilers based on extension names. Is this a problem in practice?
+I don't know. Even without this change, ``-XPolyKinds`` evolved significantly during the GHC 7 releases,
+as do various other extensions, so users already have to resort to measures other that just looking
+at extensions when choosing a compiler version.
 
 Costs and Drawbacks
 -------------------
-Give an estimate on development and maintenance costs. List how this effects learnability of the language for novice users. Define and list any remaining drawbacks that cannot be resolved.
+This is a simplification to the implementation and description of GHC. Hooray!
 
 
 Alternatives
 ------------
-List existing alternatives to your proposed change as they currently exist and discuss why they are insufficient.
+Come up with a new extension name that encompasses both ``-XTypeInType`` and ``-XPolyKinds``. All
+three would be synonymous.
 
 
 Unresolved questions
 --------------------
-Explicitly list any remaining issues that remain in the conceptual design and specification. Be upfront and trust that the community will help. Please do not list *implementation* issues.
-
-Hopefully this section will be empty by the time the proposal is brought to the steering committee.
+None right now.
 
 
 Implementation Plan
 -------------------
-(Optional) If accepted who will implement the change? Which other ressources and prerequisites are required for implementation?
+I or a close collaborator volunteers to implement.
