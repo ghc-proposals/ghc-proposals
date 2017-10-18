@@ -30,7 +30,7 @@ This proposal suggests to remove the backward-compatibility features, embracing
 * Incorporate the features currently in ``-XTypeInType`` into the ``-XPolyKinds``
   extension.
 
-* Deprecate the ``-XTypeInType`` extension (as it would be a synonym for ``-XTypeInType``).
+* Deprecate the ``-XTypeInType`` extension (as it would be a synonym for ``-XPolyKinds``).
 
 * Use ``Type`` instead of ``*`` when referring to the kind of types with values (e.g.,
   the kind of ``Int``) in error messages.
