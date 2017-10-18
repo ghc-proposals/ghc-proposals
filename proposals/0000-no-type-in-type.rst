@@ -10,7 +10,7 @@
 
 .. highlight:: haskell
 
-This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/82>`_.
+This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/83>`_.
 
 .. contents::
 
