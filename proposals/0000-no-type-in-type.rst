@@ -14,28 +14,50 @@ This proposal is `discussed at this pull request <https://github.com/ghc-proposa
 
 .. contents::
 
-Deprecate ``-XTypeInType``
+Embrace ``Type :: Type``
 ==========================
 
-GHC 8.0 came with a new extension, ``-XTypeInType``. This extension activated
-several new features in GHC, including the ability to write kind-indexed GADTs
-(``data G (a :: k) where MkG1 :: G Maybe; MkG2 :: G Int``) explicit kind
-quantification (``foo :: forall k (a :: k). Proxy a -> ()``), kind families,
-and more. However, it is properly seen as a generalization of ``-XPolyKinds``.
-Currently, GHC has to go to some lengths to detect when users are accessing
-features unique to ``-XTypeInType`` but not ``-XPolyKinds``, only to tell
-those users to turn on ``-XTypeInType``.
+GHC 8.0 included a major change to GHC's type system: the ``Type :: Type`` axiom.
+Though casual users were protected from this by hiding its features behind the
+``-XTypeInType`` extension, all programs written in GHC 8+ have the axiom behind
+the scenes. In order to preserve backward compatibility, various legacy features
+were left unchanged. For example, with ``-XDataKinds`` but not ``-XTypeInType``,
+GADTs could not be used in types.
 
-This proposal moves to deprecate ``-XTypeInType`` by expanding the meaning of
-``-XPolyKinds`` to cover the new features of ``-XTypeInType``.
+This proposal suggests to remove the backward-compatibility features, embracing
+``Type :: Type``. Specifically:
 
+* Incorporate the features currently in ``-XTypeInType`` into the ``-XPolyKinds``
+  extension.
+
+* Deprecate the ``-XTypeInType`` extension (as it would be a synonym for ``-XTypeInType``).
+
+* Use ``Type`` instead of ``*`` when referring to the kind of types with values (e.g.,
+  the kind of ``Int``) in error messages.
+
+* Deprecate the use of ``*`` in code.
 
 Motivation
 ------------
 
 * This is a simplification over the status quo, with two closely related
-  extensions and an arbitrary distinction between them.
+  extensions and an arbitrary, historical distinction between them.
 
+* GHC's ability to handle ``*`` has a significant cost. It's the only symbolic
+  identifier that's handled like an alphanumeric one. (Note that ``T * Int`` normally
+  looks like an application of a binary operator ``*`` to ``T`` and ``Int``, but with
+  the kind ``*``, it's ``T`` applied to ``*`` and ``Int``.) Because ``*`` is sometimes
+  indeed a binary operator in types (see ``GHC.TypeLits``), we can disambiguate the
+  infix from the prefix case only in the renamer. This means that the parser has to
+  treat a type-level expression ``A B * C * E`` essentially as a list of names, only
+  to be rejigged by the renamer. (This rejigging is independent of the fixity-rejigging
+  the renamer also has to do, so there's no shared cost here.)
+  GHC also has to handle both ``*`` and its unicode
+  variant identically, adding to this cost.
+
+* If we plan to remove ``*`` from the language at some point, we should start updating
+  error messages sooner than later.
+  
 * In truth, GHC always has ``Type :: Type``, whether you say ``-XTypeInType``
   or no. Thus, the real extension name should be ``-XPolyKinds``, because it's
   kind polymorphism that the user wants, not the always-true ``Type :: Type``.
@@ -47,40 +69,108 @@ Motivation
   update of "launch the rockets"; the latter seems just a bit too poignant
   these days) while ``-XPolyKinds`` wouldn't. That possibility has not come to
   fruition (happily), and so the distinction isn't really paying its way.
-
-Note that what we're doing here is very much like the merger between ``-XRankNTypes`` and ``-XRank2Types``.
+  Note that what we're doing here is very much like the merger between ``-XRankNTypes`` and ``-XRank2Types``.
   
 Proposed Change Specification
 -----------------------------
-Make ``-XPolyKinds`` and ``-XTypeInType`` be synonyms (adopting the latter's current behavior).
-In time, deprecate the latter in favor of the former.
+
+1. Make ``-XPolyKinds`` and ``-XTypeInType`` be synonyms (adopting the
+   latter's current behavior). By scanning through GHC's source code, I was
+   able to find the places where GHC currently distinguishes between these
+   extensions (labeled for easy reference):
+
+   a. Any use of ``Type`` (or ``*``) in a program with ``-XTypeInType``
+      requires an import from ``Data.Kind``. This behavior would be preserved, and
+      so any program mentioning ``Type`` (even with just ``-XKindSignatures``) would
+      need to ``import Data.Kind``.
+
+   b. The meaning of CUSK is slightly different between ``-XPolyKinds`` and ``-XTypeInType``.
+      See the second bullet of `the CUSK section of the manual
+      <https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#complete-user-supplied-kind-signatures-and-polymorphic-recursion>`_. The ``-XTypeInType`` behavior
+      would be retained. Migrating from the ``-XPolyKinds`` behavior simply requires
+      adding an explicit ``forall k`` in some cases.
+
+   c. Type and kind vars can be freely mixed in ``-XTypeInType`` code. This change
+      is fully backward compatible; no migration would be necessary.
+
+   d. Various constructs can appear in kinds with ``-XTypeInType``, but not without.
+      These include promoted lists, ``forall``, among others. This change is fully
+      backward compatible; no migration would be necessary.
+
+   e. Any type can be used in a kind, including type families and type synonyms.
+      This change is fully backward compatible; no migration would be necessary.
+
+   f. With ``-XPolyKinds``, kind variables are assumed to have kind ``BOX`` (which
+      has become ``Type``). ``-XTypeInType``, on the other hand, makes no assumption
+      about the kind of a kind variable. This is a generalization over current
+      behavior, which can potentially lead to trouble. I am unable to come up with
+      an example, though.
+
+   g. Kind-indexed GADTs are allowed with ``-XTypeInType``. These would now be allowed
+      with ``-XGADTs -XPolyKinds`` only. This change is fully backward compatible;
+      no migration would be necessary.
+
+2. Two releases after this proposal is implemented, deprecate ``-XTypeInType``.
+      
+3. The pretty-printer will print ``Type`` instead of ``*`` in error messages.
+
+4. Deprecate ``*``. One release after this proposal is implemented, remove support
+   for parsing ``*``.
 
 Effect and Interactions
 -----------------------
 
-This will effectively create two different versions of ``-XPolyKinds``, which
-could be problematic for users who want tooling to choose compilers based on
-extension names. Is this a problem in practice? I don't know. Even without
-this change, ``-XPolyKinds`` evolved significantly during the GHC 7 releases,
-as do various other extensions, so users already have to resort to measures
-other that just looking at extensions when choosing a compiler version.
+* The biggest burden for users is that any program that uses ``*`` will need to
+  ``import Data.Kind`` (and will need to change ``*`` to ``Type`` to avoid deprecation
+  warnings). This is a significant cost, and I expect push-back on this proposal for
+  precisely this point. I do see this as a necessary step forward, but perhaps others
+  see alternate paths.
 
+* There are gobs of resources that use ``*``. These would all go out of date. This
+  fact makes me sad. However, just about everyone whom I've taught about kinds gets
+  very confused about the name ``*``, thinking that ``*`` is some kind of universal
+  kind that encompasses all other kinds. (Indeed, I thought this, too, once upon a
+  time.)
+
+* This will effectively create two different versions of ``-XPolyKinds``,
+  which could be problematic for users who want tooling to choose compilers
+  based on extension names. Is this a problem in practice? I don't know. Even
+  without this change, ``-XPolyKinds`` evolved significantly during the GHC 7
+  releases, as do various other extensions, so users already have to resort to
+  measures other that just looking at extensions when choosing a compiler
+  version.
+
+* Note that the design of this proposal conforms to the three-release policy,
+  in that users will not need to use CPP to avoid warnings. (In particular,
+  note that ``import Data.Kind`` is always a fine thing to do, even without
+  ``-XTypeInType``.)
+  
 Costs and Drawbacks
 -------------------
 
-This is a simplification to the implementation and description of GHC. Hooray!
+* This is a simplification to the implementation and description of GHC. Hooray!
 
+* Users may rebel. See first bullet of previous section.
 
 Alternatives
 ------------
 
-Come up with a new extension name that encompasses both ``-XTypeInType`` and
-``-XPolyKinds``. All three would be synonymous.
+* Come up with a new extension name that encompasses both ``-XTypeInType`` and
+  ``-XPolyKinds``. All three would be synonymous.
+
+* Continue to support ``*`` indefinitely.
+
+* Live with the status quo, with quite a bit of code in GHC to support it.
 
 Unresolved questions
 --------------------
-None right now.
 
+* Is this the right deprecation schedule? Is it moving too fast?
+
+* Is there a way to avoid all the ``import Data.Kind`` declarations?
+
+* Should we produce a tool that will add these ``import`` statements (and other
+  changes) automatically (perhaps with user review)?
 
 Implementation Plan
 -------------------
