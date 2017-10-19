@@ -24,7 +24,7 @@ We have a clear rule that GHC’s interpretation of plain Haskell (without langu
 Proposed Change Specification
 -----------------------------
 
-Every major release of GHC shall categorize its supported language extensions into two groups: **Experimental** and **Stable**. The user manual will clearly state the status and, for stable extensions, since when it is considered stable.
+Every major release of GHC shall categorize its supported language extensions into two groups: **Experimental** and **Stable**. The user manual will clearly state the status and, for stable extensions, since when it is considered stable. Initially, all language extensions are considered **experimental**.
 
 The rules for changes to a language extensions are then as follows:
 
@@ -53,9 +53,11 @@ Changing a language extension status
 
 Language extensions can be promoted from **experimental** to **stable**, using the existing GHC proposal process. The proposal document is expected to state
 
-* The language extensions.
+* The language extension to be considere stable.
 * Since which version of GHC the language extension has not changed.
 * A justification why this language extension is likely to not undergo further changes.
+
+One proposal can do this for multiple extensions (for example, if they are related, or for the initial set of stable extensions).
 
 If the proposal is accepted, the documentation is updated to reflect the new status, as well as the ``-Wexperimental-extension`` flag.
 
