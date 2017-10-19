@@ -35,7 +35,7 @@ This proposal suggests to remove the backward-compatibility features, embracing
 * Use ``Type`` instead of ``*`` when referring to the kind of types with values (e.g.,
   the kind of ``Int``) in error messages.
 
-* Deprecate the use of ``*`` in code.
+* Introduce a new extension ``-XStarIsType`` to control how to parse ``*`` in code.
 
 Motivation
 ------------
@@ -49,11 +49,14 @@ Motivation
   the kind ``*``, it's ``T`` applied to ``*`` and ``Int``.) Because ``*`` is sometimes
   indeed a binary operator in types (see ``GHC.TypeLits``), we can disambiguate the
   infix from the prefix case only in the renamer. This means that the parser has to
-  treat a type-level expression ``A B * C * E`` essentially as a list of names, only
+  treat a type-level expression ``A B * C * E`` essentially as a list of types, only
   to be rejigged by the renamer. (This rejigging is independent of the fixity-rejigging
   the renamer also has to do, so there's no shared cost here.)
   GHC also has to handle both ``*`` and its unicode
   variant identically, adding to this cost.
+
+  The new approach to handling ``*`` makes it obvious in the *parser* whether ``*`` is
+  infix or not, vastly simplifying matters.
 
 * If we plan to remove ``*`` from the language at some point, we should start updating
   error messages sooner than later.
@@ -79,34 +82,29 @@ Proposed Change Specification
    able to find the places where GHC currently distinguishes between these
    extensions (labeled for easy reference):
 
-   a. Any use of ``Type`` (or ``*``) in a program with ``-XTypeInType``
-      requires an import from ``Data.Kind``. This behavior would be preserved, and
-      so any program mentioning ``Type`` (even with just ``-XKindSignatures``) would
-      need to ``import Data.Kind``.
-
-   b. The meaning of CUSK is slightly different between ``-XPolyKinds`` and ``-XTypeInType``.
+   a. The meaning of CUSK is slightly different between ``-XPolyKinds`` and ``-XTypeInType``.
       See the second bullet of `the CUSK section of the manual
       <https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#complete-user-supplied-kind-signatures-and-polymorphic-recursion>`_. The ``-XTypeInType`` behavior
       would be retained. Migrating from the ``-XPolyKinds`` behavior simply requires
       adding an explicit ``forall k`` in some cases.
 
-   c. Type and kind vars can be freely mixed in ``-XTypeInType`` code. This change
+   b. Type and kind vars can be freely mixed in ``-XTypeInType`` code. This change
       is fully backward compatible; no migration would be necessary.
 
-   d. Various constructs can appear in kinds with ``-XTypeInType``, but not without.
+   c. Various constructs can appear in kinds with ``-XTypeInType``, but not without.
       These include promoted lists, ``forall``, among others. This change is fully
       backward compatible; no migration would be necessary.
 
-   e. Any type can be used in a kind, including type families and type synonyms.
+   d. Any type can be used in a kind, including type families and type synonyms.
       This change is fully backward compatible; no migration would be necessary.
 
-   f. With ``-XPolyKinds``, kind variables are assumed to have kind ``BOX`` (which
+   e. With ``-XPolyKinds``, kind variables are assumed to have kind ``BOX`` (which
       has become ``Type``). ``-XTypeInType``, on the other hand, makes no assumption
       about the kind of a kind variable. This is a generalization over current
       behavior, which can potentially lead to trouble. I am unable to come up with
       an example, though.
 
-   g. Kind-indexed GADTs are allowed with ``-XTypeInType``. These would now be allowed
+   f. Kind-indexed GADTs are allowed with ``-XTypeInType``. These would now be allowed
       with ``-XGADTs -XPolyKinds`` only. This change is fully backward compatible;
       no migration would be necessary.
 
@@ -114,17 +112,44 @@ Proposed Change Specification
       
 3. The pretty-printer will print ``Type`` instead of ``*`` in error messages.
 
-4. Deprecate ``*``. One release after this proposal is implemented, remove support
-   for parsing ``*``.
+4. Introduce a new language extension ``-XStarIsType``, with the following behavior:
+
+   a. ``-XStarIsType`` is on by default.
+
+   b. For two releases, ``-XTypeOperators`` will imply ``-XNoStarIsType``, to
+      provide a migration path for code that uses the binary operator ``*``. (After
+      two releases, this code can include ``-XNoStarIsType`` explicitly without
+      going against the three-release policy.) Users can re-enable ``-XStarIsType``
+      after ``-XTypeOperators`` is enabled if they wish.
+
+   c. When ``-XStarIsType`` is on, any occurrence of the symbol ``*`` in a type
+      is treated as the kind of types with values. It is parsed similarly to alphanumeric
+      identifiers, never as a binary operator.
+
+   d. When ``-XStarIsType`` is on, a user can use a binary operator ``*`` only
+      with a qualifying module name. For example, ``8 ~ 4 GHC.TypeLits.* 2``, or
+      ``8 ~ 4 L.* 2`` if we have ``import GHC.TypeLits as L``.
+
+   e. Without ``-XStarIsType``, there is no way to use the symbol ``*`` to refer
+      to the kind of types with values. Use ``Type`` instead. The symbol ``*`` will
+      refer to any type-level binary operator ``*`` in scope, according to the
+      normal scoping rules. (If ``-XTypeOperators`` is not in effect, use of ``*``
+      in a type will be an error.)
+
+   The ``-XStarIsType`` idea is due to David Feuer, @treeowl.
 
 Effect and Interactions
 -----------------------
 
-* The biggest burden for users is that any program that uses ``*`` will need to
-  ``import Data.Kind`` (and will need to change ``*`` to ``Type`` to avoid deprecation
-  warnings). This is a significant cost, and I expect push-back on this proposal for
-  precisely this point. I do see this as a necessary step forward, but perhaps others
-  see alternate paths.
+* Note that the design of this proposal conforms to the three-release policy,
+  in that users will not need to use CPP to avoid warnings. (In particular,
+  note that ``import Data.Kind`` is always a fine thing to do, even without
+  ``-XTypeInType``.)
+  
+Costs and Drawbacks
+-------------------
+
+* This is a simplification to the implementation and description of GHC. Hooray!
 
 * There are gobs of resources that use ``*``. These would all go out of date. This
   fact makes me sad. However, just about everyone whom I've taught about kinds gets
@@ -140,37 +165,52 @@ Effect and Interactions
   measures other that just looking at extensions when choosing a compiler
   version.
 
-* Note that the design of this proposal conforms to the three-release policy,
-  in that users will not need to use CPP to avoid warnings. (In particular,
-  note that ``import Data.Kind`` is always a fine thing to do, even without
-  ``-XTypeInType``.)
+* Modules that use ``*`` both as a binary operator and as the kind of types with
+  values will have to be updated to use ``Type`` instead, as imported from ``Data.Kind``.
+  This change is backward compatible to GHC 8.0. (Alternatively, they could
+  use ``-XStarIsType`` and fully-qualify their uses of the binary operator ``*``.)
   
-Costs and Drawbacks
--------------------
-
-* This is a simplification to the implementation and description of GHC. Hooray!
-
-* Users may rebel. See first bullet of previous section.
-
 Alternatives
 ------------
 
-* Come up with a new extension name that encompasses both ``-XTypeInType`` and
-  ``-XPolyKinds``. All three would be synonymous.
+1. Come up with a new extension name that encompasses both ``-XTypeInType`` and
+   ``-XPolyKinds``. All three would be synonymous.
 
-* Continue to support ``*`` indefinitely.
+2. Live with the status quo, with quite a bit of code in GHC to support it.
 
-* Live with the status quo, with quite a bit of code in GHC to support it.
+3. Do not support fully-qualified uses of the binary operator ``*`` when ``-XStarIsType``
+   is in effect. Under this alternative, users would have no workaround to access the
+   binary operator ``*`` with ``-XStarIsType``.
+
+4. Introduce a new extension ``-XTypeColonOperators``, which allows only
+   those type-level operators that begin with a ``:``, conveniently working with
+   ``Data.Type.Equality`` and ``GHC.Generics``. This new extension would not
+   disable ``-XStarIsType``, as the two don't conflict.
+
+   I personally do not think this addition is worth it, but it was suggested
+   on the pull request.
+
+5. Continue to output ``*`` in error messages when ``-XStarIsType`` is enabled.
+
+   This alternative has the very real benefit of conforming to existing educational
+   materials. However, my own experience is that the name ``*`` is confusing (leading
+   newer Haskellers to think it is some kind of wildcard). I would like to work toward
+   a future where ``*`` is removed from the language, and changing error messages
+   is one step in that direction.
 
 Unresolved questions
 --------------------
 
 * Is this the right deprecation schedule? Is it moving too fast?
 
-* Is there a way to avoid all the ``import Data.Kind`` declarations?
+* What is the educational impact of this proposal? I see problems along at least two
+  different dimensions:
 
-* Should we produce a tool that will add these ``import`` statements (and other
-  changes) automatically (perhaps with user review)?
+  a. ``-XPolyKinds`` is now bigger and harder to learn. On the other hand, the previous
+     implementation of ``-XPolyKinds`` has some restrictions that may not have been
+     obvious to users.
+
+  b. Moving away from ``*`` as the kind of types disagrees with educational literature.
 
 Implementation Plan
 -------------------
