@@ -19,7 +19,7 @@ Language extensions serve two purposes: As a test bed and playground for languag
 Motivation
 ------------
 
-We have a clear rule that GHC’s interpretation of plain Haskell (without language extensions) shall not change. But what about Haskell with language extensions? Some of the proposals that the GHC committee receives aspire to change the meaning of an extension, say ``Foo``. At this point, we have to conflicting desires: We want ``Foo`` to be better. But we also want to cater for users who use ``{-# LANGUAGE Foo #-}`` and might expect their code to work in all versions of GHC supporting ``Foo``.
+We have a clear rule that GHC’s interpretation of plain Haskell (without language extensions) shall not change. But what about Haskell with language extensions? Some of the proposals that the GHC committee receives aspire to change the meaning of an extension, say ``Foo``. At this point, we have two conflicting desires: We want ``Foo`` to be better. But we also want to cater for users who use ``{-# LANGUAGE Foo #-}`` and might expect their code to work in all versions of GHC supporting ``Foo``.
 
 Proposed Change Specification
 -----------------------------
@@ -46,14 +46,14 @@ A **stable** language extension shall not be changed, if that change can be reas
 
 Users can rely that the _stable_ version of a langage extension is, well, stable, and any version of GHC supporting the language extension as stable should accept the same programs.
 
-For users who want a safeguard agains accidentially using an unstable language extension (e.g. when using an earlier compiler), a ``-Wexperimental-extension`` warning is provided.
+For users who want a safeguard against accidentially using an unstable language extension (e.g. when using an earlier compiler), a ``-Wexperimental-extension`` warning is provided.
 
 Changing a language extension status
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Language extensions can be promoted from **experimental** to **stable**, using the existing GHC proposal process. The proposal document is expected to state
 
-* The language extension to be considere stable.
+* The language extension to be considered stable.
 * Since which version of GHC the language extension has not changed.
 * A justification why this language extension is likely to not undergo further changes.
 
@@ -65,7 +65,7 @@ In case released major GHC versions happen to implement the language extension i
 
 Costs and Drawbacks
 -------------------
-Besides a bit bookkeeping in GHC’s code, it is mostly an organizational cost: More proposals to manage.
+Besides a bit of bookkeeping in GHC’s code, it is mostly an organizational cost: More proposals to manage.
 
 There are two failure modes:
 
