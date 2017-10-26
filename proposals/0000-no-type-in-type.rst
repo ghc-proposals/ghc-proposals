@@ -28,9 +28,9 @@ This proposal suggests to remove the backward-compatibility features, embracing
 ``Type :: Type``. Specifically:
 
 * Incorporate the features currently in ``-XTypeInType`` into the ``-XPolyKinds``
-  extension.
+  and ``-XDataKinds`` extensions.
 
-* Deprecate the ``-XTypeInType`` extension (as it would be a synonym for ``-XPolyKinds``).
+* Deprecate the ``-XTypeInType`` extension (as it would be a synonym for ``-XPolyKinds -XDataKinds``).
 
 * Use ``Type`` instead of ``*`` when referring to the kind of types with values (e.g.,
   the kind of ``Int``) in error messages.
@@ -41,7 +41,8 @@ Motivation
 ------------
 
 * This is a simplification over the status quo, with two closely related
-  extensions and an arbitrary, historical distinction between them.
+  extensions (``-XPolyKinds`` and ``-XTypeInType``)
+  and an arbitrary, historical distinction between them.
 
 * GHC's ability to handle ``*`` has a significant cost. It's the only symbolic
   identifier that's handled like an alphanumeric one. (Note that ``T * Int`` normally
@@ -67,18 +68,18 @@ Motivation
 
 * The reason for a distinction between the extensions was because
   ``-XTypeInType`` started out as rather buggy and experimental, whereas
-  ``-XPolyKinds`` had settled down by GHC 8. There was the possibility that
+  ``-XPolyKinds`` and ``-XDataKinds`` had settled down by GHC 8. There was the possibility that
   ``-XTypeInType`` would allow you to shoot the gorillas (my suggestion for an
   update of "launch the rockets"; the latter seems just a bit too poignant
-  these days) while ``-XPolyKinds`` wouldn't. That possibility has not come to
+  these days) while ``-XPolyKinds -XDataKinds`` wouldn't. That possibility has not come to
   fruition (happily), and so the distinction isn't really paying its way.
   Note that what we're doing here is very much like the merger between ``-XRankNTypes`` and ``-XRank2Types``.
   
 Proposed Change Specification
 -----------------------------
 
-1. Make ``-XPolyKinds`` and ``-XTypeInType`` be synonyms (adopting the
-   latter's current behavior). By scanning through GHC's source code, I was
+1. Make ``-XPolyKinds`` incoporate the new features (other than expanded promotion of
+   types) of ``-XTypeInType``. By scanning through GHC's source code, I was
    able to find the places where GHC currently distinguishes between these
    extensions (labeled for easy reference):
 
@@ -95,9 +96,6 @@ Proposed Change Specification
       These include promoted lists, ``forall``, among others. This change is fully
       backward compatible; no migration would be necessary.
 
-   d. Any type can be used in a kind, including type families and type synonyms.
-      This change is fully backward compatible; no migration would be necessary.
-
    e. With ``-XPolyKinds``, kind variables are assumed to have kind ``BOX`` (which
       has become ``Type``). ``-XTypeInType``, on the other hand, makes no assumption
       about the kind of a kind variable. This is a generalization over current
@@ -108,11 +106,13 @@ Proposed Change Specification
       with ``-XGADTs -XPolyKinds`` only. This change is fully backward compatible;
       no migration would be necessary.
 
-2. Two releases after this proposal is implemented, deprecate ``-XTypeInType``.
+2. ``-XDataKinds`` would now promote GADTs and GADT constructors.
       
-3. The pretty-printer will print ``Type`` instead of ``*`` in error messages.
+3. Two releases after this proposal is implemented, deprecate ``-XTypeInType``.
+      
+4. The pretty-printer will print ``Type`` instead of ``*`` in error messages.
 
-4. Introduce a new language extension ``-XStarIsType``, with the following behavior:
+5. Introduce a new language extension ``-XStarIsType``, with the following behavior:
 
    a. ``-XStarIsType`` is on by default.
 
@@ -127,8 +127,8 @@ Proposed Change Specification
       identifiers, never as a binary operator.
 
    d. When ``-XStarIsType`` is on, a user can use a binary operator ``*`` only
-      with a qualifying module name. For example, ``8 ~ 4 GHC.TypeLits.* 2``, or
-      ``8 ~ 4 L.* 2`` if we have ``import GHC.TypeLits as L``.
+      with a qualifying module name. For example, ``8 ~ (4 GHC.TypeLits.* 2)``, or
+      ``8 ~ (4 L.* 2)`` if we have ``import GHC.TypeLits as L``.
 
    e. Without ``-XStarIsType``, there is no way to use the symbol ``*`` to refer
       to the kind of types with values. Use ``Type`` instead. The symbol ``*`` will
@@ -157,7 +157,7 @@ Costs and Drawbacks
   kind that encompasses all other kinds. (Indeed, I thought this, too, once upon a
   time.)
 
-* This will effectively create two different versions of ``-XPolyKinds``,
+* This will effectively create two different versions of ``-XPolyKinds`` and ``-XDataKinds``,
   which could be problematic for users who want tooling to choose compilers
   based on extension names. Is this a problem in practice? I don't know. Even
   without this change, ``-XPolyKinds`` evolved significantly during the GHC 7
