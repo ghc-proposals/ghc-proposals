@@ -21,10 +21,14 @@ Motivation
 
 We have a clear rule that GHC’s interpretation of plain Haskell (without language extensions) shall not change. But what about Haskell with language extensions? Some of the proposals that the GHC committee receives aspire to change the meaning of an extension, say ``Foo``. At this point, we have to conflicting desires: We want ``Foo`` to be better. But we also want to cater for users who use ``{-# LANGUAGE Foo #-}`` and might expect their code to work in all versions of GHC supporting ``Foo``.
 
+Users that want to only use stable extensions can declare that intent using `NoExperimentalExtensions`. This is optional and comparable to some optional discipine like `-Wall -Werror` or using only Haskell98 code.
+
 Proposed Change Specification
 -----------------------------
 
-Every major release of GHC shall categorize its supported language extensions into two groups: **Experimental** and **Stable**. The user manual will clearly state the status and, for stable extensions, since when it is considered stable. Initially, all language extensions are considered **experimental**.
+Every major release of GHC shall categorize its supported language extensions into two groups: **Experimental** and **Stable**. The user manual will clearly state the status and, for stable extensions, since when it is considered stable.
+
+Initially, all language extensions are considered **experimental**.
 
 The rules for changes to a language extensions are then as follows:
 
@@ -46,7 +50,10 @@ A **stable** language extension shall not be changed, if that change can be reas
 
 Users can rely that the _stable_ version of a langage extension is, well, stable, and any version of GHC supporting the language extension as stable should accept the same programs.
 
-For users who want a safeguard agains accidentially using an unstable language extension (e.g. when using an earlier compiler), a ``-Wexperimental-extension`` warning is provided.
+Pragma to disable experimental extensions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For users who want a safeguard against accidentially using an unstable language extension (e.g. when using an earlier compiler), we introduce a language extension `ExperimentalExtensions`. This extension is _enabled_ by default, but can be disabled with `NoExperimentalExtensions`, of course. Without this extension, GHC will not allow any experimental extension. 
 
 Changing a language extension status
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -59,9 +66,9 @@ Language extensions can be promoted from **experimental** to **stable**, using t
 
 One proposal can do this for multiple extensions (for example, if they are related, or for the initial set of stable extensions).
 
-If the proposal is accepted, the documentation is updated to reflect the new status, as well as the ``-Wexperimental-extension`` flag.
+If the proposal is accepted, the documentation is updated to reflect the new status, as well as the internal list consulted by the ``NoUnstableExtension`` extension.
 
-In case released major GHC versions happen to implement the language extension in its stable form _and_ a point update is released for these major versions, then the change to the documentation and ``-Wexperimental-extension`` is backported.
+In case released major GHC versions happen to implement the language extension in its stable form _and_ a point update is released for these major versions, then the change to the documentation and ``NoUnstableExtension`` is backported.
 
 Costs and Drawbacks
 -------------------
@@ -81,11 +88,11 @@ Alternatives
 
 Unresolved questions
 --------------------
-* Is the ``-Wexperimental-extension`` flag useful, even if it can “err” on the conservative side in older releases that happen to implement the stable semantics of a language extension before we decided it's stable?
+* Is the ``NoUnstableExtension`` extension useful, even if it can “err” on the conservative side in older releases that happen to implement the stable semantics of a language extension before we decided it's stable?
 
 Implementation Plan
 -------------------
 * Joachim will update the ghc-proposals procedural README to encompass this new variant of proposals.
 * Someone will have to include the description of what a stable extension is in the uses’s guide.
 * Someone will have to extend the user’s guide special mark-up for langauge extensions with new meta-data fields (status, and stable when).
-* Someone will have to implement ``-Wexperimental-extension``.
+* Someone will have to implement ``NoUnstableExtension``.
