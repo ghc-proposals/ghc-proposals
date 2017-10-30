@@ -23,7 +23,7 @@ Motivation
 ------------
 
 This proposal is initially motivated by `this Trac issue <https://ghc.haskell.org/trac/ghc/ticket/12389>`_, where extraneous warnings are generated for duplicate/redundant exports in the presence of CPP macros.
-The issue reported that in order to avoid warnings, every permutation of exports had to be defined:
+The issue reported that in order to avoid warnings, every permutation of exports had to be defined::
 
     module Foo (
     #ifdef TESTING
@@ -57,21 +57,21 @@ There is much less discussion of this online, as Haskell appears to be one of th
 
 Proposed Change Specification
 -----------------------------
-The grammar for export items is currently:
+The grammar for export items is currently::
 
     export -> qvar
             | qtycon[(..)|(cname_1, ..., cname_n)]  (n >= 0)
             | qtycls[(..)|(var_1, ..., var_n)]      (n >= 0)
             | module modid
 
-This proposal will change the sublists in the ``qtycon`` and ``qtycls`` to have this form:
+This proposal will change the sublists in the ``qtycon`` and ``qtycls`` to have this form::
 
     ([,]id_1, ..., id_n [,]) (n >= 0)
 
 Effect and Interactions
 -----------------------
 This proposal provides a solution for the initial issue as described in the motivation.
-The problem code is repeated:
+The problem code is repeated::
 
     module Foo (
     #ifdef TESTING
@@ -86,7 +86,7 @@ The problem code is repeated:
       Foo
     #endif
 
-Given trailing and leading commas, one could instead write:
+Given trailing and leading commas, one could instead write::
 
     module Foo (
       Foo(
