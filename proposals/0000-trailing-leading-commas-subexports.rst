@@ -25,19 +25,19 @@ Motivation
 This proposal is initially motivated by `this Trac issue <https://ghc.haskell.org/trac/ghc/ticket/12389>`_, where extraneous warnings are generated for duplicate/redundant exports in the presence of CPP macros.
 The issue reported that in order to avoid warnings, every permutation of exports had to be defined:
 
-::
- module Foo (
- #ifdef TESTING
- #ifdef USE_PATTERN_SYNONYMS
-   Foo (Foo, Pat1, Pat2)
- #else
-   Foo (Foo)
- #endif
- #elif USE_PATTERN_SYNONYMS
-   Foo (Pat1, Pat2)
- #else
-   Foo
- #endif
+.. code-block::
+  module Foo (
+  #ifdef TESTING
+  #ifdef USE_PATTERN_SYNONYMS
+    Foo (Foo, Pat1, Pat2)
+  #else
+    Foo (Foo)
+  #endif
+  #elif USE_PATTERN_SYNONYMS
+    Foo (Pat1, Pat2)
+  #else
+    Foo
+  #endif
 
 Trailing and leading commas would allow the code to reduce duplication and noise.
 
@@ -60,23 +60,23 @@ Proposed Change Specification
 -----------------------------
 The grammar for export items is currenty:
 
-::
- export -> qvar
-         | qtycon[(..)|(cname_1, ..., cname_n)]  (n >= 0)
-         | qtycls[(..)|(var_1, ..., var_n)]      (n >= 0)
-         | module modid
+.. code-block::
+  export -> qvar
+          | qtycon[(..)|(cname_1, ..., cname_n)]  (n >= 0)
+          | qtycls[(..)|(var_1, ..., var_n)]      (n >= 0)
+          | module modid
 
 This proposal will change the sublists in the ``qtycon`` and ``qtycls`` to have this form:
 
-::
- ([,]id_1, ..., id_n [,]) (n >= 0)
+.. code-block::
+  ([,]id_1, ..., id_n [,]) (n >= 0)
 
 Effect and Interactions
 -----------------------
 This proposal provides a solution for the initial issue as described in the motivation.
 The problem code is repeated:
 
-::
+.. code-block:: haskell
  module Foo (
  #ifdef TESTING
  #ifdef USE_PATTERN_SYNONYMS
@@ -92,17 +92,17 @@ The problem code is repeated:
 
 Given trailing and leading commas, one could instead write:
 
-::
- module Foo (
-   Foo(
- #ifdef TESTING
-     , Foo
- #endif
- #if USE_PATTERN_SYNONYMS
-     , Pat1
-     , Pat2
- #endif
- )
+.. code-block:: haskell
+  module Foo (
+    Foo(
+  #ifdef TESTING
+      , Foo
+  #endif
+  #if USE_PATTERN_SYNONYMS
+      , Pat1
+      , Pat2
+  #endif
+  )
 
 Costs and Drawbacks
 -------------------
