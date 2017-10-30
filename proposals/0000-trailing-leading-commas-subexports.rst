@@ -25,19 +25,18 @@ Motivation
 This proposal is initially motivated by `this Trac issue <https://ghc.haskell.org/trac/ghc/ticket/12389>`_, where extraneous warnings are generated for duplicate/redundant exports in the presence of CPP macros.
 The issue reported that in order to avoid warnings, every permutation of exports had to be defined:
 
-.. code-block::
-  module Foo (
-  #ifdef TESTING
-  #ifdef USE_PATTERN_SYNONYMS
-    Foo (Foo, Pat1, Pat2)
-  #else
-    Foo (Foo)
-  #endif
-  #elif USE_PATTERN_SYNONYMS
-    Foo (Pat1, Pat2)
-  #else
-    Foo
-  #endif
+    module Foo (
+    #ifdef TESTING
+    #ifdef USE_PATTERN_SYNONYMS
+      Foo (Foo, Pat1, Pat2)
+    #else
+      Foo (Foo)
+    #endif
+    #elif USE_PATTERN_SYNONYMS
+      Foo (Pat1, Pat2)
+    #else
+      Foo
+    #endif
 
 Trailing and leading commas would allow the code to reduce duplication and noise.
 
@@ -58,51 +57,47 @@ There is much less discussion of this online, as Haskell appears to be one of th
 
 Proposed Change Specification
 -----------------------------
-The grammar for export items is currenty:
+The grammar for export items is currently:
 
-.. code-block::
-  export -> qvar
-          | qtycon[(..)|(cname_1, ..., cname_n)]  (n >= 0)
-          | qtycls[(..)|(var_1, ..., var_n)]      (n >= 0)
-          | module modid
+    export -> qvar
+            | qtycon[(..)|(cname_1, ..., cname_n)]  (n >= 0)
+            | qtycls[(..)|(var_1, ..., var_n)]      (n >= 0)
+            | module modid
 
 This proposal will change the sublists in the ``qtycon`` and ``qtycls`` to have this form:
 
-.. code-block::
-  ([,]id_1, ..., id_n [,]) (n >= 0)
+    ([,]id_1, ..., id_n [,]) (n >= 0)
 
 Effect and Interactions
 -----------------------
 This proposal provides a solution for the initial issue as described in the motivation.
 The problem code is repeated:
 
-.. code-block:: haskell
- module Foo (
- #ifdef TESTING
- #ifdef USE_PATTERN_SYNONYMS
-   Foo (Foo, Pat1, Pat2)
- #else
-   Foo (Foo)
- #endif
- #elif USE_PATTERN_SYNONYMS
-   Foo (Pat1, Pat2)
- #else
-   Foo
- #endif
+    module Foo (
+    #ifdef TESTING
+    #ifdef USE_PATTERN_SYNONYMS
+      Foo (Foo, Pat1, Pat2)
+    #else
+      Foo (Foo)
+    #endif
+    #elif USE_PATTERN_SYNONYMS
+      Foo (Pat1, Pat2)
+    #else
+      Foo
+    #endif
 
 Given trailing and leading commas, one could instead write:
 
-.. code-block:: haskell
-  module Foo (
-    Foo(
-  #ifdef TESTING
-      , Foo
-  #endif
-  #if USE_PATTERN_SYNONYMS
-      , Pat1
-      , Pat2
-  #endif
-  )
+    module Foo (
+      Foo(
+    #ifdef TESTING
+        , Foo
+    #endif
+    #if USE_PATTERN_SYNONYMS
+        , Pat1
+        , Pat2
+    #endif
+    )
 
 Costs and Drawbacks
 -------------------
