@@ -110,15 +110,14 @@ Implementing this change is a small modification to the Haskell grammar and pars
 Many languages in common use support trailing commas in certain contexts, so this is unlikely to be confusing.
 
 However, people might wonder why they can use a trailing/leading comma in an export list, but not in a Haskell list or tuple, or a Haskell record declaration.
-If we support leading/trailing commas in one list form and not others, it imposes some mental overhead to know which is supported and which isn't.
-The current inconsistent state is limited to a single exception: the export list is the only place in the grammar that supports a trailing comma.
+Currently, trailing commas are permitted in the export list and `in import lists (but not import sub-lists) <https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1010005.3>`_.
 
 Alternatives
 ------------
 
 1. Only allow a trailing comma in the sub-export list.
    This is consistent with the main export list, but will mean that the original issue will need to use somewhat un-idiomatic trailing commas in the sub-export list.
-#. Extend this change to all export/import lists, for consistency.
+#. Extend this change to import sub-lists, for consistency.
 #. Extend this change to record declarations as well.
 #. Extend this change to value-level lists and tuples (this seems like it would be much more invasive, especially considering ``TupleSections``).
 
