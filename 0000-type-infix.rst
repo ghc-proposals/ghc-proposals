@@ -14,10 +14,10 @@ This proposal is `discussed at this pull requst <https://github.com/ghc-proposal
 
 .. contents::
 
-Require namespacing fixity declarations for type names
-======================================================
+Require namespacing fixity declarations for type names and ``WARNING``/``DEPRECATED`` pragmas
+=============================================================================================
 
-GHC allows infix names at the type level using the ``TypeOperators`` extension. However, GHC's mechanism for providing fixity declarations for such infix type names is rather deficient, as the same syntax is used for declare fixities for both value-level and type-level names. I propose to tighten up the implementation by allowing users to indicate that an fixity declaration should specifically be for a value or type name by typing out an explicit ``value`` or ``type`` namespace. I also propose deprecating the current, ambiguous mechanism for providing fixity declarations for type names and eventually requiring the use of the ``type`` namespace for all fixity declarations for type names in the future.
+GHC allows infix names at the type level using the ``TypeOperators`` extension. However, GHC's mechanism for providing fixity declarations for such infix type names—or to deprecate infix type names—is rather deficient. The same syntax is used for declare fixities and to deprecate names for both value-level and type-level names. I propose to tighten up the implementation by allowing users to indicate that an fixity declaration or a ``WARNING``/``DEPRECATED`` pragma should specifically be for a value or type name by typing out an explicit ``value`` or ``type`` namespace. I also propose deprecating the current, ambiguous mechanism for providing fixity declarations/``WARNING`` pragmas/``DEPRECATED`` pragmas for type names and eventually requiring the use of the ``type`` namespace for all fixity declarations/``WARNING`` pragmas/``DEPRECATED`` pragmas for type names in the future.
 
 
 Motivation
@@ -87,9 +87,11 @@ This strategy is unsatisfying for a couple of reasons, however.
 
    During splicing, Template Haskell will rename the quoted declarations, convert them to a Template Haskell AST, turn that back into Haskell surface syntax, and pass it through to the renamer (and the rest of the compilation pipeline). But recall that when ``infixr 0 $`` is renamed, it is effectively turned into ``infixr 0 $_1, $_2``. After going through the Template Haskell AST, the renamer sees the declaration ``infixr 0 $_1, $_2`` and rejects it, because it believes that ``$_1`` and ``$_2`` are duplicate names! (Recall that ``$_1`` and ``$_2`` both refer to the name ``$``, but with different internal uniques.) This is the subject of `GHC Trac #14032 <https://ghc.haskell.org/trac/ghc/ticket/14032>`_.
 
+   The exact same problems that afflict fixity declarations also afflict ``WARNING`` pragmas (as well as ``DEPRECATED`` pragmas, which accomplish the same thing, so I'll refer to them henceforth as just ``WARNING`` pragmas), as they have a similarly ambiguous semantics surrounding infix type names.
+
 Proposed Change Specification
 -----------------------------
-I propose two major changes: a modification to fixity declaration syntax to allow optional ``value`` and ``type`` namespaces, and a plan to phase out the old way of specifying fixities for infix type-level names (without the ``type`` namespace) in favor of the new syntax (where the ``type`` namespace would be required).
+I propose two major changes: a modification to the syntax to allow optional ``value`` and ``type`` namespaces in fixity declarations and ``WARNING`` pragmas, and a plan to phase out the old way of deprecating and specifying fixities for infix type-level names (without the ``type`` namespace) in favor of the new syntax (where the ``type`` namespace would be required).
 
 Syntax extension
 ~~~~~~~~~~~~~~~~
@@ -112,6 +114,19 @@ The only difference from the current syntax is the presence of a namespace keywo
 ``infix{l,r} n value`` would be applicable to all value-level names (top-level functions, class methods, data constructors, and pattern synonyms).
 
 ``infix{l,r} n type`` would be applicable to most type-level names (type families, type classes, data types, and type synonyms).
+
+I also propose a similar change to the existing ``WARNING`` pragma syntax:
+
+.. code-block:: haskell
+
+    -- Current syntax
+    {-# WARNING ($) "Es muy peligroso" #-}
+
+    -- New syntax, for value-level names
+    {-# WARNING value ($) "Es muy peligroso" #-}
+
+    -- New syntax, for type-level names
+    {-# WARNING type ($) "Es muy peligroso" #-}
 
 Aside: promoted data constructors (and other promoted things)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -166,6 +181,8 @@ The eventual goal is to make ``infix{l,r} n type`` the only means by which one c
 
 Once ``infix{l,r} n type`` is introduced, GHC will have an unambiguous way of specifying fixity declarations for names in both namespaces, and it will also work when quoted in Template Haskell, fixing Trac #14032.
 
+A similar warning mechanism/migration plan would need to be put in place for ``WARNING`` pragmas as well (ironically enough, we'd have to put warnings on ``WARNING``s!)
+
 Effect and Interactions
 -----------------------
 This proposal presents an opportunity to simplify code in the renamer, as there will no longer be a need to hackily rename, for instance, ``infixr 0 $`` to ``infixr 0 $_1, $_2``.
@@ -189,4 +206,3 @@ Unresolved questions
 
 Implementation Plan
 -------------------
-I volunteer to implement.
