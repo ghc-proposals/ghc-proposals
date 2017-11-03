@@ -2,7 +2,7 @@
 
 .. trac-ticket:: 7401, 10577, 13117
 
-.. implemented:: not yet
+.. implemented:: 8.4
 
 .. highlight:: haskell
 
