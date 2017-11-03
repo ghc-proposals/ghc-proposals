@@ -1,16 +1,12 @@
-.. proposal-number:: Leave blank. This will be filled in when the proposal is
-                     accepted.
+.. proposal-number:: 8
 
-.. trac-ticket:: Leave blank. This will eventually be filled with the Trac
-                 ticket number which will track the progress of the
-                 implementation of the feature.
+.. trac-ticket:: None yet
 
-.. implemented:: Leave blank. This will be filled in with the first GHC version which
-                 implements the described feature.
+.. implemented:: None yet
 
 .. highlight:: haskell
 
-This proposal is `discussed at this pull requst <https://github.com/ghc-proposals/ghc-proposals/pull/65>`_.
+This proposal was `discussed at this pull requst <https://github.com/ghc-proposals/ghc-proposals/pull/65>`_.
 
 .. contents::
 
