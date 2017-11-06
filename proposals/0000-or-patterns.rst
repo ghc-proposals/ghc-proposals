@@ -16,8 +16,9 @@ Or patterns
 
 We propose a new syntax extension for "or-patterns". An or pattern is
 essentially a list of patterns, where patterns match exactly the same set of
-variables of same types [#]_. The right hand side is shared by all of these
-patterns, and can refer to the variables matched by the patterns.
+variables of same types (and same set of existentials and type coercions in
+GADTs) [#]_. The right hand side is shared by all of these patterns, and can
+refer to the variables matched by the patterns.
 
 Main advantages of this extension are:
 
@@ -270,6 +271,10 @@ We define informal semantics as an extension to `Haskell 2010 chapter 3.17.2: In
   result of matching ``v`` against ``p1`` if it is not a failure, or the result
   of matching ``p2 | .. | pn`` against ``v`` otherwise.
 
+  All patterns in ``p1, p2, ... pn`` should bind same set of variables with
+  same types. In case of GADTs, all patterns should bind same set of
+  existentials and type constraints.
+
 Here are some examples: ::
 
     (\ (x | x) -> x) 0 => 0
@@ -426,117 +431,6 @@ synonym syntax: ::
     pattern Some x <- (Left x | Right x) where
         Some x = Right x
 
-View patterns
-~~~~~~~~~~~~~
-`View patterns add one rule
-<https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#ghc-flag--XViewPatterns>`_
-to Haskell 2010 semantics of pattern matching: ::
-
-    case v of { (e -> p) -> e1 ; _ -> e2 }
-    =
-    case (e v) of { p -> e1 ; _ -> e2 }
-
-Here's an example function that uses view patterns and or patterns: ::
-
-    is_mm' :: (Int, Int) -> Bool
-    is_mm' ((even -> True, _) | (_, even -> True))
-      = True
-    is_mm' _
-      = False
-
-Here ``is_mm' (1, 2)`` should return ``True``. For this rules ``or_1`` and
-``or_2`` should apply before the view pattern rule.
-
-Another (somewhat superficial) example: ::
-
-    printConst :: Show a => a -> a
-    printConst a = trace (show a) a
-
-    is_mm'' :: Bool -> Bool
-    is_mm'' ((printConst -> x) | (printConst -> x))
-      | True <- x
-      = True
-    is_mm'' _
-      = False
-
-Under ``rule_2``, ``is_mm'' False`` should print ``False`` twice and finally
-return ``False``. Under ``rule_1`` it should print ``False`` once.
-
-Here are some example functions that work as expected in the prototype
-implementation: ::
-
-    -- is_mm' (1, 2) == True
-    is_mm' :: (Int, Int) -> Bool
-    is_mm' ((even -> True, _) | (_, even -> True))
-      = True
-    is_mm' _
-      = False
-
-    -- or_view_1 "1:" (Left 123) == "1:123"
-    -- or_view_1 "1:" (Right True) == "True"
-    or_view_1 :: String -> Either Int Bool -> String
-    or_view_1 pfx (Left (((pfx ++) . show) -> x) | Right (show -> x)) = x
-
-    -- or_view_2 1 == 1
-    -- or_view_2 2 == 2
-    or_view_2 :: Int -> Int
-    or_view_2 (toEither -> (Left x | Right x)) = x
-
-    toEither :: Int -> Either Int Int
-    toEither x
-      | odd x     = Left x
-      | otherwise = Right x
-
-    printConst :: Show a => a -> a
-    printConst a = trace (show a) a
-
-    -- is_mm'' False == False (prints False twice)
-    is_mm'' :: Bool -> Bool
-    is_mm'' ((printConst -> x) | (printConst -> x))
-      | True <- x
-      = True
-    is_mm'' _
-      = False
-
-Bang patterns
-~~~~~~~~~~~~~
-`Bang patterns extension
-<https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#dynamic-semantics-of-bang-patterns>`_
-adds one new identity rule to case expression semantics and two new desugaring
-rules for let bindings. None of these rules have any unexpected interactions
-with or patterns (or patterns are naturally supported in ``pat``s and ``p``s
-in the desugaring and identity rules for bang patterns).
-
-Some example programs that work as expected in the prototype implementation: ::
-
-    -- does not fail
-    main = do
-      let (Left x | Right x) = undefined
-      return ()
-
-    -- fails
-    main = do
-      let !(Left x | Right x) = undefined
-      return ()
-
-    -- does not fail
-    main = do
-      let e@(Left !x | Right x) = Right undefined
-      e `seq` return ()
-
-    -- fails
-    main = do
-      let e@(Left !x | Right x) = Left undefined
-      e `seq` return ()
-
-Irrefutable patterns
-~~~~~~~~~~~~~~~~~~~~
-
-Similar to bang patterns, irrefutable patterns are naturally supported. An
-example that works as expected in the prototype implementation: ::
-
-    print ((\ ~(Left x | Right x) -> 0 :: Int) undefined) -- prints 0
-
 Existential quantification
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -623,6 +517,11 @@ expression, along with a new type argument for the type argument of ``Show``: ::
 First example is currently supported by the prototype implementation. Second
 and third examples are rejected.
 
+GADTs
+~~~~~
+
+TODO
+
 Drawbacks
 ---------
 
@@ -702,7 +601,7 @@ From `OCaml manual <http://caml.inria.fr/pub/docs/manual-ocaml/patterns.html#sec
 
     The pattern ``pattern1 | pattern2`` represents the logical “or” of the two
     patterns ``pattern1`` and ``pattern2``. A value matches ``pattern1 |
-    pattern2`` if it matches ``pattern1 or pattern2``. The two sub-patterns
+    pattern2`` if it matches ``pattern1`` or ``pattern2``. The two sub-patterns
     ``pattern1`` and ``pattern2`` must bind exactly the same identifiers to
     values having the same types. Matching is performed from left to right.
     More precisely, in case some value v matches ``pattern1 | pattern2``, the
