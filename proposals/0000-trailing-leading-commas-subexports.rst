@@ -42,7 +42,7 @@ Trailing and leading commas would allow the code to reduce duplication and noise
 
 More generally, permitting leading and trailing commas is helpful for providing cleaner diffs and more consistent syntax in multiline lists.
 
-When languages support trailing commas, they tend to show up as required or suggested in style guides:
+When languages support trailing commas, style guides tend to require or suggest them in enumerations spanning multiple lines:
 
 1. `Thoughtbot JavaScript style guide <https://github.com/thoughtbot/guides/tree/master/style/javascript>`_
 #. `Airbnb Ruby style guide <https://github.com/airbnb/ruby#multiline-hashes>`_
