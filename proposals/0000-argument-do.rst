@@ -13,7 +13,7 @@ This proposal is `discussed at this pull request <https://github.com/ghc-proposa
 ArgumentDo Extension
 ====================
 
-This document proposes the addition of an exension called ``ArgumentDo``. This is a syntactic extension that allows a ``do`` block, a lambda, and a few other syntactic constructs to be written directly as a function argument, without parentheses or a ``$``.
+This document proposes the addition of an extension called ``ArgumentDo``. This is a syntactic extension that allows a ``do`` block, a lambda, and a few other syntactic constructs to be written directly as a function argument, without parentheses or a ``$``.
 
 Motivation
 ----------
