@@ -52,17 +52,21 @@ What's not to like?
 Proposed Change Specification
 -----------------------------
 Allow as-patterns and n+k pattenns in unidirectional pattern synonyms.  For exmaple
-```
-patttern MP x y = x@(Just y)
-```
+
+::
+
+ patttern MP x y = x@(Just y)
+
+::
 Currently this is rejected.  Why?  Because (see Trac #9793) of worries about what this might mean:
-```
-f (MP (Just z) v) = e
-```
+
+::
+ f (MP (Just z) v) = e
+::
 With a "macro-espansion" model of pattern synonyms, that might be equivalent to
-```
-f (Just z)@(Just v) = e
-```
+::
+  f (Just z)@(Just v) = e
+::
 which is a jolly funny pattern.  But the semantics of pattern synonyms are NOT simply macro-expansion: see the paper Section 5.
 Rather, their semantics is given thus:
 
