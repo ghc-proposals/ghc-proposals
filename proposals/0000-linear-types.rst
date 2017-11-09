@@ -369,7 +369,7 @@ None of our examples use ``0``, however, ``0`` turns out to be useful
 for implementation of type-checking. Additionally, ``0`` has been used
 by `Conor McBride
 <https://link.springer.com/chapter/10.1007/978-3-319-30936-1_12>`_ to
-handle dependent types, which may matter for Dependent Haskell). In
+handle dependent types, which may matter for Dependent Haskell. In
 both cases, the use of ``0`` could be seen as an internal use, but
 there is no real reason to deny access to the programmer. Hence it is
 included in the syntax.
@@ -378,6 +378,7 @@ Here is the definition of sum, product and order for this proposal's
 multiplicities (in Haskell pseudo-syntax):
 
 ::
+
    0 + x = x
    x + 0 = x
    _ + _ = ω
@@ -397,11 +398,11 @@ all.
 
 Every variable in the environment is annotated with its multiplicity,
 which constrains how it can be used. A variable usage is said to be
-multiplicity ``p`` in a term ``u`` if:
+of multiplicity ``p`` in a term ``u`` if:
 
 - ``p=0`` and ``x`` is not free in ``u``
 - ``p=1`` and ``u = x``
-- ``p=p1+q*p2`` `` and ``u = u1 u2`` with ``u1 :: a :q-> b`` and the
+- ``p=p1+q*p2`` and ``u = u1 u2`` with ``u1 :: a :q-> b`` and the
   usage of ``x`` in ``u1`` is ``p1``, and in ``u2`` is ``p2``
 - ``u = λy. v`` and the usage of ``x`` in ``v`` is ``p``.
 
@@ -560,11 +561,12 @@ Which is not well-typed in particular since fst is not.
 So ``swap'`` must be given the type ``(a,b) -> (b,a)``.
 
 Unresolved questions:
+
 - It is unknown at this point whether view patterns can be linear
-- It is unknown at this point whether ``@`` pattern of the form ``x@C
-  _ _`` can be considered linear (it is as much a practical question
-  of whether there is a reasonable way to implemet such a check as a
-  theoretical question of whether we can justify it).
+- It is unknown at this point whether ``@`` pattern of the form
+  ``x@C _ _`` can be considered linear (it is as much a practical
+  question of whether there is a reasonable way to implemet such a
+  check as a theoretical question of whether we can justify it).
 
 
 Costs and Drawbacks
@@ -621,7 +623,7 @@ constructor be
 
 ::
 
-  ``ARROW :: Multiplicity -> * -> * -- ignoring levitiy
+  ARROW :: Multiplicity -> * -> * -- ignoring levitiy
 
 It would be very inconvenient to use a prefix notation for
 multiplicity parametric arrows: we wouldn't want the type of ``map``
@@ -915,6 +917,7 @@ linearity violation as ``y`` in a sense contains ``x`` (basically, you
 could define a function ``a ->. (a,a)`` generically with this).
 
 ::
+
   case_1 o as y of { Just x -> Just (x,y) }
 
 So we need a simple story (Core needs to stay fairly simple) for the
