@@ -1,4 +1,4 @@
-c.. proposal-number:: Leave blank. This will be filled in when the proposal is
+.. proposal-number:: Leave blank. This will be filled in when the proposal is
                      accepted.
 
 .. trac-ticket:: Leave blank. This will eventually be filled with the Trac
