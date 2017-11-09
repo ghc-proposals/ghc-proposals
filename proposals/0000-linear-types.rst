@@ -623,7 +623,7 @@ constructor be
 
 ::
 
-  ARROW :: Multiplicity -> * -> * -- ignoring levitiy
+  ARROW :: Multiplicity -> * -> * -- ignoring levity
 
 It would be very inconvenient to use a prefix notation for
 multiplicity parametric arrows: we wouldn't want the type of ``map``
