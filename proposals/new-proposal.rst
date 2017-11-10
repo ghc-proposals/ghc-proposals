@@ -69,6 +69,7 @@ There is a lack of infrastructure to manage language extensions:
 
       {-# LANGUAGE SomePrelude #-}
 * The language extensions ``Haskell98`` and ``Haskell2010`` could be declared in this way, e.g. in the ``ghc-prim`` package.
+* People have asked for it in the past: https://ghc.haskell.org/trac/ghc/ticket/9642
 
 Proposed Change Specification
 -----------------------------
