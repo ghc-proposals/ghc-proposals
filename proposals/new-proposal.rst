@@ -118,7 +118,3 @@ Unresolved questions
 * What will the precise format of langauge extensions in the package data base be.
 * Are there language extensions that should not be toggleable this way?
 * Which other flags should be legal there. I expect we want a whitelist, and starting with only ``-fplugin`` and ``-fplugin-opt`` is a good start.
-
-Implementation Plan
--------------------
-(Optional) If accepted who will implement the change? Which other ressources and prerequisites are required for implementation?
