@@ -48,71 +48,67 @@ Similar feature is introduced in some languages such as `Verilog-HDL <https://in
 Proposed Change Specification
 -----------------------------
 
-This proposal
-~~~~~~~~~~~~~
 I propose an extension to the existing syntax of numeric literals.
 
-Current syntax:
-
-.. code-block:: none
-
-    decimal     →  digit{digit}
-    octal       →  octit{octit}
-    hexadecimal →  hexit{hexit}
-    binary      →  binit{binit}
-
-    exponent → (e | E) [+ | -] decimal
-
-New syntax (this proposal).
+New syntax (this proposal)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 When the ``NumericUnderscores`` language extension is enabled, syntax is changed as follows:
 
 .. code-block:: none
 
-    decimal     →  digit[{_ | digit} digit]
-    octal       →  octit[{_ | octit} octit]
-    hexadecimal →  hexit[{_ | hexit} hexit]
-    binary      →  binit[{_ | binit} binit]
+    -- `numSpacer` is enabled with NumericUnderscores extension
+    numSpacer = _
 
-    exponent → [_] (e | E) [+ | -] decimal
+    decimal     →  digit[{numSpacer | digit} digit]
+    octal       →  octit[{numSpacer | octit} octit]
+    hexadecimal →  hexit[{numSpacer | hexit} hexit]
+    binary      →  binit[{numSpacer | binit} binit]
 
-    Underscores (_) in numeric literals are simply ignored.
+    integer →  decimal
+             | 0 (o | O) {numSpacer} octal
+             | 0 (x | X) {numSpacer} hexadecimal
+             | 0 (b | B) {numSpacer} binary
 
-Current specification of numeric literals
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Detail of current specification in `Haskell 2010 Language Report <https://www.haskell.org/onlinereport/haskell2010/haskellch2.html#x7-190002.5>`_, chapter 2:
+    float →  decimal . decimal [exponent]
+           | decimal exponent
+           | 0 (x | X) {numSpacer} hexadecimal . hexadecimal [bin_exponent]
+           | 0 (x | X) {numSpacer} hexadecimal bin_exponent
+
+    exponent     →  {numSpacer} (e | E) [+ | -] decimal
+    bin_exponent →  {numSpacer} (p | P) [+ | -] decimal
+
+    -- Underscores (_) in numeric literals are simply ignored.
+
+Current syntax
+~~~~~~~~~~~~~~
+Current specification in `Haskell 2010 Language Report, chapter 2 <https://www.haskell.org/onlinereport/haskell2010/haskellch2.html#x7-190002.5>`_ , `BinaryLiterals <https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html?highlight=binaryliterals#ghc-flag--XBinaryLiterals>`_ , and `HexFloatLiterals <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0004-hexFloats.rst>`_ language extension:
 
 .. code-block:: none
 
     decimal     →  digit{digit}
     octal       →  octit{octit}
     hexadecimal →  hexit{hexit}
+    binary      →  binit{binit}                                  -- BinaryLiterals
 
-    integer → decimal
-             | 0o octal | 0O octal
-             | 0x hexadecimal | 0X hexadecimal
+    integer →  decimal
+             | 0 (o | O) octal
+             | 0 (x | X) hexadecimal
+             | 0 (b | B) binary                                  -- BinaryLiterals
 
-    float → decimal . decimal [exponent]
+    float →  decimal . decimal [exponent]
            | decimal exponent
+           | 0 (x | X) hexadecimal . hexadecimal [bin_exponent]  -- HexFloatLiterals
+           | 0 (x | X) hexadecimal bin_exponent                  -- HexFloatLiterals
 
-    exponent → (e | E) [+ | -] decimal
+    exponent     →  (e | E) [+ | -] decimal
+    bin_exponent →  (p | P) [+ | -] decimal                      -- HexFloatLiterals
 
     digit    →  ascDigit | uniDigit
     ascDigit →  0 | 1 | … | 9
     uniDigit →  any Unicode decimal digit
     octit    →  0 | 1 | … | 7
     hexit    →  digit | A | … | F | a | … | f
-
-Detail of current specification in `BinaryLiterals <https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html?highlight=binaryliterals#ghc-flag--XBinaryLiterals>`_ language extension in my understanding:
-
-.. code-block:: none
-
-    binary      →  binit{binit}
-    binit       →  0 | 1
-
-    integer → decimal
-             | 0o octal | 0O octal
-             | 0x hexadecimal | 0X hexadecimal
-             | 0b binary | 0B binary
+    binit    →  0 | 1                                            -- BinaryLiterals
 
 Examples
 --------
@@ -172,11 +168,18 @@ validity examples
 
     f0 = 1e+23       -- valid
     f1 = 1_e+23      -- valid
-    f2 = 1e_+23      -- invalid
+    f2 = 1__e+23     -- valid
+    f3 = 1e_+23      -- invalid
 
     g0 = 1e+23       -- valid
     g1 = 1e+_23      -- invalid
     g2 = 1e+23_      -- invalid
+
+    h0 = 0xffff      -- valid
+    h1 = 0xff_ff     -- valid
+    h2 = 0x_ffff     -- valid
+    h3 = 0x__ffff    -- valid
+    h4 = _0xffff     -- invalid
 
 Effect and Interactions
 -----------------------
