@@ -221,6 +221,7 @@ Richard Eisenberg       `@goldfirere <https://github.com/goldfirere>`_
 Ben Gamari              `@bgamari <https://github.com/bgamari>`_
 Roman Leshchinskiy      `@rleshchinskiy <https://github.com/rleshchinskiy>`_
 Simon Marlow            `@simonmar <https://github.com/simonmar>`_            co-chair
+Ryan Newton             `@rrnewton <https://github.com/rrnewton>`_
 Simon Peyton-Jones      `@simonpj <https://github.com/simonpj>`_              co-chair
 ======================  ====================================================  =========
 
