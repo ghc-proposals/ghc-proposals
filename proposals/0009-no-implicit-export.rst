@@ -17,7 +17,7 @@ This proposal is `discussed at this pull request <https://github.com/ghc-proposa
 Proposal NoImplicitExport
 ==============
 
-Much of the community has settled around the idea that implicit exports are a misfeature. Disabling implicit exports is a cheap method of amending this situation. This feature pragma is intended to be used in ``default-extensions`` and applied project wide.
+Much of the community has settled around the idea that implicit exports are a misfeature. Disabling implicit exports is a cheap method of amending this situation. This feature is intended to be used in ``default-extensions`` and applied project wide.
 
 
 Motivation
