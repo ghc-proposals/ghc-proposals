@@ -28,7 +28,7 @@ Explicit exports allow GHC and other external tooling to identify dead code, eas
 
 Proposed Change Specification
 -----------------------------
-This proposal introduces a new language pragma ```NoImplicitExport```.
+This proposal introduces a new language pragma ``NoImplicitExport``.
 
 When enabled, open module exports are reinterpreted as empty.
 
@@ -65,7 +65,7 @@ This pragma presents very little cost for maintenance. It will shift the burden 
 
 Alternatives
 ------------
-External tooling like ```hlint``` could cover this case, but linting is often opt in and produces more complexity with CI.
+External tooling like ``hlint`` could cover this case, but linting is often opt in and produces more complexity with CI.
 
 
 Unresolved questions
