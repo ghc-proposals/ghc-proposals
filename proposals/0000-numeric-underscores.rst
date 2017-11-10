@@ -57,25 +57,25 @@ When the ``NumericUnderscores`` language extension is enabled, syntax is changed
 .. code-block:: none
 
     -- `numSpacer` is enabled with NumericUnderscores extension
-    numSpacer = _
+    numSpacer = {_}
 
-    decimal     →  digit[{numSpacer | digit} digit]
-    octal       →  octit[{numSpacer | octit} octit]
-    hexadecimal →  hexit[{numSpacer | hexit} hexit]
-    binary      →  binit[{numSpacer | binit} binit]
+    decimal     →  digit{numSpacer digit}
+    octal       →  octit{numSpacer octit}
+    hexadecimal →  hexit{numSpacer hexit}
+    binary      →  binit{numSpacer binit}
 
     integer →  decimal
-             | 0 (o | O) {numSpacer} octal
-             | 0 (x | X) {numSpacer} hexadecimal
-             | 0 (b | B) {numSpacer} binary
+             | 0 (o | O) numSpacer octal
+             | 0 (x | X) numSpacer hexadecimal
+             | 0 (b | B) numSpacer binary
 
     float →  decimal . decimal [exponent]
            | decimal exponent
-           | 0 (x | X) {numSpacer} hexadecimal . hexadecimal [bin_exponent]
-           | 0 (x | X) {numSpacer} hexadecimal bin_exponent
+           | 0 (x | X) numSpacer hexadecimal . hexadecimal [bin_exponent]
+           | 0 (x | X) numSpacer hexadecimal bin_exponent
 
-    exponent     →  {numSpacer} (e | E) [+ | -] decimal
-    bin_exponent →  {numSpacer} (p | P) [+ | -] decimal
+    exponent     →  numSpacer (e | E) [+ | -] decimal
+    bin_exponent →  numSpacer (p | P) [+ | -] decimal
 
     -- Underscores (_) in numeric literals are simply ignored.
 
