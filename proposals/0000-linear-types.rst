@@ -112,7 +112,7 @@ With linear types, we can write an interface to ``malloc`` and
 
   malloc :: Storable a => a ->. (Ptr a ->. Unrestricted b) ->. Unrestricted b
   read :: Storable a => Ptr a ->. (Ptr a, a)
-  free :: a ->. ()
+  free :: Ptr a ->. ()
 
 This interface is safe in the sense that users of this interface get
 two strong static guarantees:
