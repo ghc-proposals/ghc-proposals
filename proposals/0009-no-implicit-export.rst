@@ -65,7 +65,9 @@ This pragma presents very little cost for maintenance. It will shift the burden 
 
 Alternatives
 ------------
-External tooling like ``hlint`` could cover this case, but linting is often opt in and produces more complexity with CI.
+
+1. External tooling like ``hlint`` could cover this case, but linting is often opt in and produces more complexity with CI.
+2. `Purescript <https://github.com/purescript/purescript/issues/2012>` disabled implicit imports in version 0.9. This has some similar intent, but enables different improvements. Explicit imports reduce breakage from namespace pollution, but they do not enable the same optimization and dead code analysis that explicit exports do.
 
 
 Unresolved questions
