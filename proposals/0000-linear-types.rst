@@ -872,7 +872,7 @@ Inference
   can annotate them with a multiplicity, but it is generally clear from
   the context which multiplicity is meant. So the multiplicity
   annotation really ought to be inferred. The general idea is: if
-  their is any linear variable in the scrutiny, then the case must be
+  their is any linear variable in the scrutinee, then the case must be
   linear, and if there are only unrestricted variables, it can be
   unrestricted. Is it sound to always pick the highest possible value ?
   What if there are multiplicities with variable multiplicity ?
