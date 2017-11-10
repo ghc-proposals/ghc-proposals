@@ -55,9 +55,7 @@ Files that do not explicitly export produce a compiler warning:
 
 Effect and Interactions
 -----------------------
-Limiting the effect of this pragma to the given project should cause little concern for side effect, other than programmer surprise.
-
-This can be mitigated by a compiler warning.
+Limiting the effect of this pragma to the given project should cause little concern for side effect, other than programmer surprise. This can be mitigated by a compiler warning.
 
 
 Costs and Drawbacks
