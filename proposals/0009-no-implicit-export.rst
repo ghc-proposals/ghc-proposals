@@ -42,7 +42,7 @@ becomes:
 ::
  modules Foo () where
 
-This pragma is treated as syntactic extensions and only effects modules within the given project.
+This pragma is treated as a syntactic extension and only effects modules within the given project.
 
 Files that do not explicitly export produce a compiler warning:
 
