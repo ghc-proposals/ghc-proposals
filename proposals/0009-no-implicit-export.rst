@@ -28,9 +28,7 @@ Explicit exports allow GHC and other external tooling to identify dead code, eas
 
 Proposed Change Specification
 -----------------------------
-This proposal introduces a new language pragma ``NoImplicitExport``.
-
-When enabled, open module exports are reinterpreted as empty.
+This proposal introduces a new language pragma ``NoImplicitExport``. When enabled, open module exports are reinterpreted as empty.
 
 The following statement:
 
