@@ -174,6 +174,8 @@ Alternatives
 
 * Do nothing.
 
+* In argument positions, only allow ``do`` expressions, not any other expressions like lambdas. An argument for this alternative is that ``do`` expressions is clearly marked at their end (either with a curly brace or layout), whereas other expressions have less visible endings and can be visually confusing. A problem with this alternative is that it seems hard to justify the special-casing of ```do```. Users may end up having to remember one more arbitrary rule.
+
 Unresolved questions
 --------------------
 
