@@ -10,17 +10,17 @@ This proposal is `discussed at this pull request <https://github.com/ghc-proposa
 
 .. contents::
 
-ArgumentDo Extension
-====================
+BlockArgument Extension
+=======================
 
-This document proposes the addition of an extension called ``ArgumentDo``. This is a syntactic extension that allows a ``do`` block, a lambda, and a few other syntactic constructs to be written directly as a function argument, without parentheses or a ``$``.
+This document proposes the addition of an extension called ``BlockArgument``. This is a syntactic extension that allows a ``do`` block, a lambda, and a few other syntactic constructs to be written directly as a function argument, without parentheses or a ``$``.
 
 Motivation
 ----------
 
 In the Haskell grammar, there is a certain class of syntactic constructs that can be an argument to an operator, but not to a function. In Haskell 2010, This class includes lambda, ``do``, ``case``, ``if``, and ``let`` expressions. GHC Haskell adds a few more constructs to this category, such as ``mdo``, ``\case`` and ``proc`` blocks.
 
-However, threre seems to be no compelling reason that those types of expressions should not be allowed in function argument positions. Having them in function argument positions allows one to remove some awkward parentheses from the code, and more frequently, to reduce the use of the ``$`` operator. At the same time, the change arguably simplifies the grammar by removing an artificial restriction from it. The proposed ``ArgumentDo`` extension does precisely this.
+However, threre seems to be no compelling reason that those types of expressions should not be allowed in function argument positions. Having them in function argument positions allows one to remove some awkward parentheses from the code, and more frequently, to reduce the use of the ``$`` operator. At the same time, the change arguably simplifies the grammar by removing an artificial restriction from it. The proposed ``BlockArgument`` extension does precisely this.
 
 With this extension, instead of writing:
 
@@ -113,7 +113,7 @@ Effect and Interactions
 
 The proposed extension does not change the meaning of any valid program. It just accepts more programs.
 
-The following constructs that are added by other GHC extensions will also be allowed in function argument positions when ``ArgumentDo`` is enabled:
+The following constructs that are added by other GHC extensions will also be allowed in function argument positions when ``BlockArgument`` is enabled:
 
 * ``\case``
 
@@ -178,8 +178,6 @@ Alternatives
 
 Unresolved questions
 --------------------
-
-* The name ``ArgumentDo`` does not precisely describe what the extension does, because it affects many different syntactic constructs, not just ``do``.
 
 Implementation Plan
 -------------------
