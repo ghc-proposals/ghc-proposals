@@ -163,7 +163,7 @@ Costs and Drawbacks
 
 I have a `preliminary implementation <https://github.com/takano-akio/ghc/commits/argumentdo>`_ of this proposal, and I expect the remaining cost of implementation to be low (< 5 hours).
 
-Unless a special care is taken, an implementation will add a large number of shift-reduce conflicts to the parser, due to the reliance on the meta-rule mentioned above. I don't know how big a problem this is.
+Unless a special care is taken, an implementation will add a large number of shift-reduce conflicts to the parser, due to the reliance on the meta-rule mentioned above. The only problem I can see with this is some maintenance overhead (someone making a parser change and seeing an unexpected shift/reduce conflict may have harder time tracking it down). I don't know how big a problem this is.
 
 Since this is a syntactic extension, there is an inherent cost in terms of learnability and a potential cultural fragmentation within the community. I believe these costs to be minimal, because I expect that the meaning of practical code written using the proposed extension will be quite clear, even for those who do not know about the extension.
 
