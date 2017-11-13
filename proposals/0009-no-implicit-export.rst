@@ -30,25 +30,22 @@ Proposed Change Specification
 -----------------------------
 This proposal introduces a new language pragma ``ImplicitExports``. This pragma is enabled by default in ``DynFlags.hs``. When disabled, open module exports are reinterpreted as empty.
 
-The following statement:
+The following statement::
 
-::
- module Foo where
+    module Foo where
 
-becomes:
+becomes::
 
-::
- modules Foo () where
+    modules Foo () where
 
 This pragma is semantically treated as a syntactic extension and only effects modules where it has been applied.
 
-Files that do not explicitly export may produce a compilation warning:
+Files that do not explicitly export may produce a compilation warning::
 
-::
- Warning: module "Foo" does not produce any exports.
-
- module Foo where
-        ^^^
+    Warning: module "Foo" does not produce any exports.
+   
+    module Foo where
+           ^^^
 
 
 Effect and Interactions
@@ -80,32 +77,34 @@ There are two basic implementations with different properties.
 The first is to implement this as part of ``Parser.y``. We must replace the empty case of ``maybeexports``.
 
 ::
- maybeexports :: { (Maybe (Located [LIE GhcPs])) }
-       :  '(' exportlist ')'       {% ams (sLL $1 $> ()) [mop $1,mcp $3] >>
-                                      return (Just (sLL $1 $> (fromOL $2))) }
-       |  {- empty -}              {% maybeImplicitExports }
 
- maybeImplicitExports :: P (Maybe (Located [LIE GhcPs]))
- maybeImplicitExports = do
-   enabled <- (LangExt.ImplicitExports `extopt`) . options <$> getPState
-   if enabled
-     then pure Nothing
-     else pure . Just $ sL0 []
+    maybeexports :: { (Maybe (Located [LIE GhcPs])) }
+          :  '(' exportlist ')'       {% ams (sLL $1 $> ()) [mop $1,mcp $3] >>
+                                         return (Just (sLL $1 $> (fromOL $2))) }
+          |  {- empty -}              {% maybeImplicitExports }
+
+    maybeImplicitExports :: P (Maybe (Located [LIE GhcPs]))
+    maybeImplicitExports = do
+      enabled <- (LangExt.ImplicitExports `extopt`) . options <$> getPState
+      if enabled
+        then pure Nothing
+        else pure . Just $ sL0 []
 
 This implementation nips implicit exports at the bud, but does not provide opportunity for warning.
 
 The other is re-interpreting ``Nothing`` in ``TcRnExports``. This involves adjusting the ``Nothing`` case of  ``exports_from_avail``.
 
 ::
- exports_from_avail Nothing rdr_env _imports _this_mod
- = do
-   implicit_exports <- (LangExt.ImplicitExports `extopt`) . options <$> getPState
-   let avails =
-         -- likely incorrect :)
-         if implicit_exports
-           then map fix_faminst . gresToAvailInfo
-             . filter isLocalGRE . globalRdrEnvElts $ rdr_env
-           else []
-   return (Nothing, avails)
+
+    exports_from_avail Nothing rdr_env _imports _this_mod
+    = do
+     implicit_exports <- (LangExt.ImplicitExports `extopt`) . options <$> getPState
+      let avails =
+            -- likely incorrect :)
+            if implicit_exports
+              then map fix_faminst . gresToAvailInfo
+                . filter isLocalGRE . globalRdrEnvElts $ rdr_env
+              else []
+      return (Nothing, avails)
 
 In this implementation it is possible to throw a warning such as ``Opt_WarnDodgyExports``.
