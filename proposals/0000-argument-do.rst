@@ -178,6 +178,30 @@ Alternatives
 
 * In argument positions, only allow ``do`` expressions, not any other expressions like lambdas. An argument for this alternative is that ``do`` expressions is clearly marked at their end (either with a curly brace or layout), whereas other expressions have less visible endings and can be visually confusing. A problem with this alternative is that it seems hard to justify the special-casing of ```do```. Users may end up having to remember one more arbitrary rule.
 
+* Allow blocks in the RHS of the function application, but not in the LHS. This has the advantage of catching more errors in the parser (rather than in the typechecker), because such expression is most likely a mistake. This would involve changing the grammar to something like (note how we need a special rule for applying function to a block):
+
+::
+
+  lexp  →  fexp
+        | block                              (standalone block)
+
+  fexp  →  [fexp] aexp                       (function application)
+        |  fexp block                        (block application)
+
+  aexp  →  qvar                              (variable)
+        |  gcon                              (general constructor)
+        |  literal
+        |  ( exp )                           (parenthesized expression)
+        |  qcon { fbind1 … fbindn }          (labeled construction)
+        |  aexp { fbind1 … fbindn }          (labelled update)
+        |  …
+
+  block →  \ apat1 … apatn -> exp            (lambda abstraction, n ≥ 1)  *
+        |  let decls in exp                  (let expression)             *
+        |  if exp [;] then exp [;] else exp  (conditional)                *
+        |  case exp of { alts }              (case expression)            *
+        |  do { stmts }                      (do expression)              *
+
 Unresolved questions
 --------------------
 
