@@ -154,11 +154,11 @@ Second, it allows a ``do``-block etc. to act as a function that is applied to an
 
 will be equivalent to:
 
-If, one day, this extension becomes part of the Haskell standard, we may consider dropping the hack in the type checker, where it allows impredicative instantiations of the ``$`` operator.
-
 ::
 
   (f &&& g) x
+
+If, one day, this extension becomes part of the Haskell standard, we may consider dropping the hack in the type checker where it allows impredicative instantiations of the ``$`` operator.
 
 Costs and Drawbacks
 -------------------
