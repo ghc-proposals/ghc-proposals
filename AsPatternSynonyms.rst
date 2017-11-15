@@ -38,7 +38,7 @@ Proposed Change Specification
 -----------------------------
 There is only one change:
 
-* Allow as-patterns and n+k pattenns in unidirectional pattern synonyms.
+* Allow as-patterns and n+k patterns in unidirectional pattern synonyms.
 
 For example, this definition would become legal.
 
