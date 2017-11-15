@@ -14,34 +14,19 @@ This proposal is `discussed at this pull request <https://github.com/ghc-proposa
 
 .. contents::
 
-Notes on reStructuredText - delete this section before submitting
-==================================================================
-
-The proposals are submitted in reStructuredText format.  To get inline code, enclose text in double backticks, ``like this``.  To get block code, use a double colon and indent by at least one space
-
-::
-
- like this
- and
-
- this too
-
-To get hyperlinks, use backticks, angle brackets, and an underscore `like this <http://www.haskell.org/>`_.   
-
-
 As patterns in pattern synonyms
 ==============
 
-As-patterns and n+k patterns are currently disallowed in unidirectional in pattern synonyms.  There is no good reason for this.
+As-patterns and n+k patterns are currently disallowed in unidirectional pattern synonyms.  There is no good reason for this.
 I propose that we lift the restriction.
 
 Motivation
 ------------
 Why lift the restriction on as-patterns?  (I regard n+k patterns, which are deprectaed anyway, as a side issue, but they should be treated
-uniformly.
+uniformly.)
 
 * If the restriction is lifted, then *all* patterns become OK in unidirecitonal pattern synonyms. 
-  Having no exceptions is a prize.  In fact the user manual claims (falsely) that there are no such restrictions.
+  Having no exceptions is a prize.  In fact the user manual already claims (falsely) that there are no such restrictions.
 
 * A slab of code can simply be deleted from the compiler.
 
@@ -59,7 +44,7 @@ Allow as-patterns and n+k pattenns in unidirectional pattern synonyms.  For exma
 
 ::
 
-Currently this is rejected.  Why?  Because (see Trac #9793) of worries about what this might mean:
+Currently this is rejected.  Why?  Because of worries about what this might mean (see Trac #9793) :
 
 ::
 
@@ -84,34 +69,32 @@ Rather, their semantics is given thus:
 This description works perfectly for as-patterns. For example to match a value against `(MP (Just z) v)`,
 first match the value against `x@Just y)`, binding x and y; and then match `x` against `Just z` and `y` against `v`.
 
-In effect "as-patterns" are interpreted as "and-patterns".
+Side note: one could imagine extending the syntax of patterns, to include `pat1@pat2`, with matching semantics thus:
+
+* To match a pattern `p1@p2` aagainst a value `v`, match `p1` against `v` (binding some variables `x1..xn`), the match `p2` against `v` (binding some variables `y1..ym`).  If both matches succeed, the overall match succeeds, binding `x1..xn,y1..ym`.
+
+But I'm not actually proposing that change here.  End of side note.
+
 
 
 
 Effect and Interactions
 -----------------------
-Detail how the proposed change addresses the original problem raised in the motivation.
-
-Discuss possibly contentious interactions with existing language or compiler features. 
+None that I can see.  It just lifts a restriction. 
 
 
 Costs and Drawbacks
 -------------------
-Give an estimate on development and maintenance costs. List how this effects learnability of the language for novice users. Define and list any remaining drawbacks that cannot be resolved.
-
+Implementation is a matter of deleting code.
 
 Alternatives
 ------------
-List existing alternatives to your proposed change as they currently exist and discuss why they are insufficient.
-
+Status quo.
 
 Unresolved questions
 --------------------
-Explicitly list any remaining issues that remain in the conceptual design and specification. Be upfront and trust that the community will help. Please do not list *implementation* issues.
-
-Hopefully this section will be empty by the time the proposal is brought to the steering committee.
-
+None that I can see
 
 Implementation Plan
 -------------------
-(Optional) If accepted who will implement the change? Which other ressources and prerequisites are required for implementation?
+I can implement it.
