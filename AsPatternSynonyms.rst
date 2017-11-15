@@ -36,7 +36,11 @@ What's not to like?
 
 Proposed Change Specification
 -----------------------------
-Allow as-patterns and n+k pattenns in unidirectional pattern synonyms.  For exmaple
+There is only one change:
+
+* Allow as-patterns and n+k pattenns in unidirectional pattern synonyms.
+
+For example, this definition would become legal.
 
 ::
 
@@ -60,14 +64,14 @@ With a "macro-espansion" model of pattern synonyms, that might be equivalent to
   
 ::
 
-which is a jolly funny pattern.  But the semantics of pattern synonyms are NOT simply macro-expansion: see the paper Section 5.
+which is a jolly funny pattern.  But the semantics of pattern synonyms are NOT simply macro-expansion: see [the paper](https://www.microsoft.com/en-us/research/publication/pattern-synonyms/) Section 5.
 Rather, their semantics is given thus:
 
 * To match a pattern `(P p1 .. pn)`, where `P` is a pattern synonym defined by `P x1 ... xn <- p`, 
-  match the value aginst `p` (binding x1..xn); and then match the xi against pi.
+  match the value aginst `p` (binding x1..xn); and then match the `xi` against `pi`.
   
 This description works perfectly for as-patterns. For example to match a value against `(MP (Just z) v)`,
-first match the value against `x@Just y)`, binding x and y; and then match `x` against `Just z` and `y` against `v`.
+first match the value against `x@(Just y)`, binding x and y; and then match `x` against `Just z` and `y` against `v`.
 
 Side note: one could imagine extending the syntax of patterns, to include `pat1@pat2`, with matching semantics thus:
 
