@@ -137,8 +137,22 @@ Implementation Plan
 
 I would like to implement this (but might need some guidance :).
 
-AFAICS this would require changing the following pieces of GHC (please comment
-if you know of any more places!):
+I believe GHC's current calling convention would have to be slightly amended:
+for smaller primitives, the caller would widen the values to full register
+widths and callee narrow them back. This is essentially what ``ghccc``
+(`LLVM's calling convention for GHC`_) already does.
+
+This might require changing ``CmmCat`` (part of ``CmmType``) to differentiate
+between signed and unsigned values, so that we know whether we need to use sign-
+or zero-extend.
+
+An alternative would be to create a new calling convention to try to avoid the
+widening/narrowing, but so far all my attempts seemed overly complicated (due
+to, e.g., 32-bit x86 having the unfortunate limitation that not all registers
+have their lower 8-bits for use)
+
+Other than that, this proposal would require changing the following pieces of
+GHC (please comment if you know of any more places!):
 
 - Primops file (``compiler/prelude/primops.txt.pp``)
 
@@ -170,3 +184,4 @@ Additional context
 
 .. _#11953: https://ghc.haskell.org/trac/ghc/ticket/11953
 
+.. _LLVM's calling convention for GHC: https://github.com/llvm-project/llvm-project-20170507/blob/e11c49f6c12a9646ef77f8781acc626bbfcae9b5/llvm/lib/Target/X86/X86CallingConv.td#L648
