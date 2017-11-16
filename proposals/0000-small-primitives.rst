@@ -90,8 +90,10 @@ Effect and Interactions
 -----------------------
 
 Having the new primitives in GHC would allow us to redefine types like
-``Word{8,16,32}`` and ``Int{8,16,32}`` (but is not part of this proposal, I
-believe it should be a separate proposal to the libraries committee).
+``Word{8,16,32}`` and ``Int{8,16,32}`` as well as cleanup
+``Data.Int``/``Data.Word`` modules and get rid of ``narrow`` primitives (but
+note that this is not part of this proposal, I believe it should be a separate
+proposal to the libraries committee).
 
 There might be also interesting interactions with unpacked sums (note:
 ``UNPACK`` doesn't yet work on sum types yet). Consider:
