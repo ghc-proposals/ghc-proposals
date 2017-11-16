@@ -137,14 +137,11 @@ Implementation Plan
 
 I would like to implement this (but might need some guidance :).
 
-I believe GHC's current calling convention would have to be slightly amended:
-for smaller primitives, the caller would widen the values to full register
-widths and callee narrow them back. This is essentially what ``ghccc``
+I believe GHC's current calling convention would not have to change. For any
+parameters smaller than full register width, we will only use the bottom bits.
+From the implementation perspective, the caller might need to zero-extend the
+parameters and the callee to narrow them back.  I believe this is what ``ghccc``
 (`LLVM's calling convention for GHC`_) already does.
-
-This might require changing ``CmmCat`` (part of ``CmmType``) to differentiate
-between signed and unsigned values, so that we know whether we need to use sign-
-or zero-extend.
 
 An alternative would be to create a new calling convention to try to avoid the
 widening/narrowing, but so far all my attempts seemed overly complicated (due
