@@ -44,7 +44,7 @@ For example, this definition would become legal.
 
 ::
 
- patttern MP x y = x@(Just y)
+ patttern MP x y <- x@(Just y)
 
 ::
 
