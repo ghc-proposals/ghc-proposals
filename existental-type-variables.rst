@@ -18,13 +18,15 @@ Motivation
 ------------
 Data types in Haskell can introduce existential type variables. For example, the type a below does not appear in the result type of the data constructor, so it is considered an “existential”.
 
-:: 
+::
+
  data T where
  MkT :: forall a. Show a => a -> T
 
 In a pattern match, in order to bind the type variable, we need to use a type annotation.
 
 ::
+
  f :: T -> String
  f x = case x of
  MkT (y :: a) -> show y  -- binds a in RHS
@@ -40,6 +42,7 @@ With our proposed extension, a Haskell coder could use the syntax from visible t
 This is particularly important for ambiguous existential type variables. 
 
 :: 
+
    data U where
       MkU :: forall a. Typeable a => U
 
@@ -90,6 +93,7 @@ In this format, any type variable ``bj`` that appears, by itself, as an argument
 For example, 
 
 ::
+
   data T :: * -> * -> * where
     K1 :: forall a1 a2 b. b -> T a1 a2      
              -- a1 and a2 are universal, b is existential
@@ -193,6 +197,7 @@ Hopefully this section will be empty by the time the proposal is brought to the 
 - This proposal does not include binding “universal” variables outside of data constructors. The following examples would not be supported.
 
 ::
+
   foo :: forall a. a -> a
   foo @b x = (x :: b)
 
