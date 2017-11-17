@@ -85,6 +85,7 @@ This sort of scoped type variable binding only applies to the existential argume
 Consider a datatype declaration, where some data type ``T`` is parameterized by ``n`` type arguments (of kinds ``k1 .. kn``). Furthermore, each constructor ``Ki`` explicitly binds all type variables that appear in the constructor’s type (``b1 .. bm``), and the result type of ``Ki`` is ``T`` applied to ``n`` types, (``t1 .. tn``). (Data constructors Ki may also have a context and term arguments; these are not shown). 
 
 ::
+
     data T :: k1 -> … -> kn -> * where
        Ki :: forall b1 .. bm. … -> T t1 .. tn
 
@@ -121,6 +122,7 @@ Comments
 - For example, the following datatype definition is *not* allowed
 
 ::
+
   data T where
      K :: Int -> forall a. a -> T
 
@@ -129,6 +131,7 @@ Comments
 (This doesn’t disallow higher-rank arguments to data constructors.)
 
 2. Users can use @_ to avoid binding an existential.  For example, if we only wanted to bind the second existential above we could write
+
 ::
 
    f = case … of 
@@ -139,6 +142,7 @@ Comments
 4. This mechanism includes data constructor patterns found in case statements and function definitions. However, it does not include ``let`` declarations or ``where`` clauses because GHC does not allow existentials to be introduced at this point; allowing this would lead to skolem escape.
 
 5. If the data constructor does not include a forall in its type, listing the order of the existential variables, then we determine the order of the existentials using left-to-right ordering of how the variables appear in the type. (If any variables' kinds mention other variables, the variables will be reordered by a stable topological sort.) This ordering is stable because the programmer wrote the type of the constructor explicitly. (This is similar to what happens with explicit type applications.) 
+
 ::
  
  data T2 :: * -> * where
