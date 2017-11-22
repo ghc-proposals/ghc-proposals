@@ -160,7 +160,7 @@ to implement a ``Num`` instance for function arrows.
 
 Alternatives
 ------------
-At the moment, with ``-XNumDecimals`` enabled, a user may use expinent notation to specify metric multipliers. The binary scale
+At the moment, with ``-XNumDecimals`` enabled, a user may use exponent notation to specify metric multipliers. The binary scale
 multipliers can be simulated via simple multiplication. The extension is strictly not necessary.
 
 However, as with ``-XNumDecimals`` and the proposed ``-XNumericUnderscores`` extension, this extension serves to enrich the syntax
