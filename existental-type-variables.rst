@@ -104,7 +104,7 @@ For example,
              -- a and b are both existential
     K4 :: forall a b c. a -> T a a
 
-When we pattern match an argument of type T, we can bind a prefix of the existential variables (before binding all of the arguments of the constructor), in the order that they appear. 
+When we pattern match an argument of type T, we can bind a prefix of the existential variables in the order that they appear, before binding all of the arguments of the constructor and binding each existential variable as a var or an underscore.
 
 ::
 
@@ -117,7 +117,16 @@ When we pattern match an argument of type T, we can bind a prefix of the existen
 
 Comments
 
-1. Note that the current rules of GHC dictate that constructors must bind their existentials prenex.
+1. The compiler would issue the same "unused binding" warnings as it does for regular bindings of variables in a pattern match.
+         
+2. Users can use @_ to avoid binding an existential.  For example, if we only wanted to bind the second existential above we could write
+
+::
+
+   f = case … of 
+         K3 @_ @c -> ...
+
+3. Note that the current rules of GHC dictate that constructors must bind their existentials prenex.
 
 - For example, the following datatype definition is *not* allowed
 
@@ -130,18 +139,11 @@ Comments
 
 (This doesn’t disallow higher-rank arguments to data constructors.)
 
-2. Users can use @_ to avoid binding an existential.  For example, if we only wanted to bind the second existential above we could write
+4. Universal variables cannot be bound with this mechanism. 
 
-::
+5. This mechanism includes data constructor patterns found in case statements and function definitions. However, it does not include ``let`` declarations or ``where`` clauses because GHC does not allow existentials to be introduced at this point; allowing this would lead to skolem escape.
 
-   f = case … of 
-         K3 @_ @c -> ...
-
-3. Universal variables cannot be bound with this mechanism. 
-
-4. This mechanism includes data constructor patterns found in case statements and function definitions. However, it does not include ``let`` declarations or ``where`` clauses because GHC does not allow existentials to be introduced at this point; allowing this would lead to skolem escape.
-
-5. If the data constructor does not include a forall in its type, listing the order of the existential variables, then we determine the order of the existentials using left-to-right ordering of how the variables appear in the type. (If any variables' kinds mention other variables, the variables will be reordered by a stable topological sort.) This ordering is stable because the programmer wrote the type of the constructor explicitly. (This is similar to what happens with explicit type applications.) 
+6. If the data constructor does not include a forall in its type, listing the order of the existential variables, then we determine the order of the existentials using left-to-right ordering of how the variables appear in the type. (If any variables' kinds mention other variables, the variables will be reordered by a stable topological sort.) This ordering is stable because the programmer wrote the type of the constructor explicitly. (This is similar to what happens with explicit type applications.) 
 
 ::
  
@@ -152,7 +154,7 @@ Comments
        -- this would be interpreted as if the user wrote
        MKT2’ :: forall a b1 b2. a -> b1 -> b2 -> T a
 
-6. Old-style syntax
+7. Old-style syntax
 
 This proposal is compatible with the non-GADT syntax for existential variables. In that case, the existentials must be listed with an explicit forall (as always).
 
@@ -160,11 +162,11 @@ This proposal is compatible with the non-GADT syntax for existential variables. 
 
     data T3 a = forall b1 b2. MkT3 b1 b2    
 
-7. This extension should be enabled by a new ``ExistentialTypeVariables`` flag as it introduces another way that type variables can be brought into scope in the program. The flag would additionally enable the ``ScopedTypeVariables`` flag.
+8. This extension should be enabled by a new ``ExistentialTypeVariables`` flag as it introduces another way that type variables can be brought into scope in the program. The flag would additionally enable the ``ScopedTypeVariables`` flag.
 
-8. If the extension flag is not included, we will produce a warning at compile time asking the programmer if they meant to enable ``ExistentialTypeVariables`` if they were to write code that the extension would recognize as an attempt at binding an existential type variable.
+9. If the extension flag is not included, we will produce a warning at compile time asking the programmer if they meant to enable ``ExistentialTypeVariables`` if they were to write code that the extension would recognize as an attempt at binding an existential type variable.
 
-9. The pre-existing mechanism of binding existential variables through type annotations on data constructor arguments will still be available. 
+10. The pre-existing mechanism of binding existential variables through type annotations on data constructor arguments will still be available. 
 
 
 Effect and Interactions
