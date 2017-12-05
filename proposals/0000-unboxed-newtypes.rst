@@ -1,0 +1,227 @@
+.. proposal-number:: Leave blank. This will be filled in when the proposal is
+                     accepted.
+
+.. trac-ticket:: Leave blank. This will eventually be filled with the Trac
+                 ticket number which will track the progress of the
+                 implementation of the feature.
+
+.. implemented:: Leave blank. This will be filled in with the first GHC version which
+                 implements the described feature.
+
+.. highlight:: haskell
+
+This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/x>`_.
+
+.. contents::
+
+Unboxed Newtypes
+==========================
+
+GHC 8.0 introduced a more sane way to talk about the kind of unlifted types,
+levity polymorphism. Following this, the kind of unboxed tuples and sums was
+revised. Many of the unlifted kinds have a finite number of inhabitants. For
+example, ``TYPE 'IntRep`` is only inhabited by ``Int#``. This proposal provides 
+a way to create additional types that inhabit the unlifted kinds. With the
+``UnboxedNewtypes`` language pragma, the existing ``newtype`` construct would
+begin to accept types of unlifted kinds. GHC currently rejects the following
+definition::
+
+    newtype PersonId = PersonIdConstructor { getPersonId :: Int# }
+
+With ``UnboxedNewtypes``, this definition would be accepted. The kinds and types
+of the generated types and functions would be::
+
+    PersonId :: TYPE 'IntRep
+    PersonIdConstructor :: Int# -> PersonId
+    getPersonId :: PersonId -> Int#
+
+In GHC Core, the two function shown above would be implemented as casts,
+just as they currently are with lifted newtypes.
+
+Motivation: Fewer Allocations on Decode
+----------
+
+Consider a data type for representing an interval. It may look like this::
+
+    data Interval = Interval {-# UNPACK #-} !Int {-# UNPACK #-} !Int
+
+The first argument is the lower bound, and the second argument is the
+upper bound. An interval in which the lower bound is higher than
+the upper bound is meaningless. We may wish to make such intervals
+unrepresentable by hiding the data constructor and exporting functions
+guaranteed to preserve this invariant::
+
+    -- | The arguments of 'smartInterval' are ordered such that
+    --   the smaller one comes first in the interval.
+    smartInterval :: Int -> Int -> Interval
+    inInterval :: Interval -> Int -> Bool
+    translateIntervalByOne :: Interval -> Interval
+
+Assume that we have a ``ByteArray`` of packed ``Interval``. We will
+use a simple packing strategy in which each interval takes up two
+machine words, one for the lower bound and one for the upper bound. If we
+need to map over all the intervals, with ``translateInterval``, we
+have to pay a nursery allocation for each of these::
+
+    mapIntervals :: (Interval -> Interval) -> ByteArray -> ByteArray
+    shiftFive :: ByteArray -> ByteArray
+    shiftFive arr = mapIntervals translateIntervalByOne arr
+
+We could have avoided this by instead defining everything to work on
+the equivalent unboxed tuple of unboxed ints::
+
+    type Interval = (# Int#, Int# #)
+
+Now, ``mapIntervals`` can be called without paying an allocation for
+every element in the array. But since ``Interval`` is now a type alias,
+we are no longer able to hide its internals. Users can easily circumvent
+the guarantee the API was originally supposed to provide. With
+``UnboxedNewtypes``, we can get the best of both worlds. We can define
+``Interval`` as::
+
+    newtype Interval = Interval (# Int#, Int #)
+
+We can then hide the data constructor as we did in the first example.
+However, we can also have a non-allocating implementation of
+``mapIntervals``. This gives us the best of both worlds.
+
+Motivation: Nesting Mutable Maps in Unmanaged Heap
+----------
+
+The above example illustrated a problem that ``UnboxedNewtypes`` can
+help with, but it was ultimately a toy problem. This next example is
+more complicated but is a problem inspired by an applcation used
+in industry. Assume that we have a mutable map-like data type that
+stores values off-heap (probably a B-Tree but the actual data
+structure is irrelevant to this example)::
+
+    data Map k v
+    type IO# (a :: TYPE r) = State# RealWorld -> (# State# RealWorld, a #)
+    modify :: (Primitive k, Primitive v)
+      => Map k v
+      -> (v -> IO# (# _, _#))
+
+Work in progress...
+
+Motivation: Typed Unlifted Pointers
+----------
+
+Functions that allocate memory often take a callback argument that uses
+the pointer. Consider ``alloca`` from ``Foreign.Marshal.Alloc``::
+
+    alloca :: Storable a => (Ptr a -> IO b) -> IO b
+
+The callback takes a lifted argument. This means that if ``alloca``
+(or a similar function) is not inlined, the function passed to it
+will end up being given a boxed argument at runtime. Most functions
+that take a pointer as an argument are strict in that argument.
+Typically, such functions have the worker wrapper transformation
+applied to them, and the wrapper is inlined into the call site
+to eliminate the boxing. However, when the function is passed
+as an argument, this does not (and cannot) work.
+
+It would be more performant manually unbox the argument::
+
+    alloca :: Storable a => (Addr# -> IO b) -> IO b
+
+But now we have lost our phantom ``a`` type variable. With ``UnboxedNewtypes``,
+we could instead write::
+
+    newtype Ptr# a = Ptr# Addr#
+    alloca :: Storable a => (Ptr# a -> IO b) -> IO b
+
+And now we have a variant of ``alloca`` that preseves the phantom
+type variable without needlessly boxing the pointer.
+
+Motivation: Typed Unlifted Arrays as a Library
+----------
+
+Currently, ``ArrayArray#`` offers an unsafe interface that does not keep track
+of the element type. This problem, as well as a proposed solution, is described
+in greater detail on the GHC trac (See `this issue`_). Alternatively, the
+`primitive`_ package offers a typeclass-based solution. If we ignore the
+``PrimMonad`` machinery and specialize to ``ST``, the interface looks
+like this::
+
+    data UnliftedArray e
+    data MutableUnliftedArray s e
+
+    class PrimUnlifted a
+
+    instance PrimUnlifted ByteArray
+    instance PrimUnlifted (Array a)
+    instance PrimUnlifted (MutableByteArray s)
+    instance PrimUnlifted (MutableArray s a)
+
+    indexUnliftedArray :: PrimUnlifted a => UnliftedArray a -> Int -> a
+    readUnliftedArray :: PrimUnlifted a => MutableUnliftedArray s a -> Int -> ST s a
+    writeUnliftedArray :: PrimUnlifted a => MutableUnliftedArray s a -> Int -> a -> ST s ()
+
+.. _this issue: https://ghc.haskell.org/trac/ghc/ticket/14196
+.. _primitive: http://hackage.haskell.org/package/primitive-0.6.2.0/docs/Data-Primitive-UnliftedArray.html
+
+However, typeclasses are not guaranteed to specialize. Users working with a
+function built on top of these ``PrimUnlifted`` functions need to be
+careful to ensure that specialization happens. Consider a function
+like:: 
+
+    -- | The first array is a list of target indices as machine integers.
+    --   The length of the first argument must be the length of the second
+    --   argument times the size in bytes of a machine integer.
+    shuffleUnliftedArray :: PrimUnlifted a => ByteArray -> UnliftedArray a -> UnliftedArray a
+
+Maybe this function is defined in such a way that it can be inlined
+and subsequently specialized, or maybe we could add a ``SPECIALIZE`` pragma
+to it. But it's madness that we even have to worry about this. All of the
+``PrimUnlifted`` dictionaries are just ``unsafeCoerce`` (check the source
+code). Specializations of ``shuffleUnliftedArray`` are all going to end
+up being the same exact code. In this case, it isn't a big deal since
+the implementation of ``shuffleUnliftedArray`` is probably short, but
+if the function were larger, this would needlessly bloat the executable.
+
+The solution in the aforementioned GHC issue is a more strongly typed
+interface to arrays of unlifted things::
+
+    data UnliftedArray# (a :: TYPE 'UnliftedRep)
+    data MutableUnliftedArray# s (a :: TYPE 'UnliftedRep)
+    
+    indexUnliftedArray# :: forall (a :: TYPE 'UnliftedRep). UnliftedArray# a -> Int# -> a
+    writeUnliftedArray# :: forall (a :: TYPE 'UnliftedRep). MutableUnliftedArray# s a -> Int# -> a -> State# s -> State# s
+    readUnliftedArray# :: forall (a :: TYPE 'UnliftedRep). MutableUnliftedArray# s a -> Int# -> State# s -> (# State# s, a #)
+    unsafeFreezeUnliftedArray# :: forall (a :: TYPE 'UnliftedRep). MutableUnliftedArray# s a -> State# s -> (#State# s, UnliftedArray# a#)
+    newUnliftedArray# :: forall (a :: TYPE 'UnliftedRep). Int# -> a -> State# s -> (# State# s, MutableUnliftedArray# s a #)
+
+Notice that the type signature of ``shuffleUnliftedArray#`` under this scheme
+would not have any typeclass constraints:
+
+    shuffleUnliftedArray# :: forall (a :: TYPE 'UnliftedRep). ByteArray# -> UnliftedArray# a -> UnliftedArray# a
+
+However, adding these functions requires modifying GHC and adding
+more primops. With ``UnboxedNewtypes``, this interface can be implemented from
+the existing ``ArrayArray#`` interface without modifying GHC::
+
+    newtype UnliftedArray# (a :: TYPE 'UnliftedRep) = UnliftedArray# ArrayArray#
+    newtype MutableUnliftedArray# s (a :: TYPE 'UnliftedRep) = MutableUnliftedArray# (MutableArrayArray# s)
+
+    indexUnliftedArray# :: forall (a :: TYPE 'UnliftedRep). UnliftedArray# a -> Int# -> a
+    indexUnliftedArray# (UnliftedArray# a) i = unsafeCoerce# (indexArrayArrayArray# a i)
+
+The data constructors of ``UnliftedArray#`` and ``MutableUnliftedArray#`` could
+be hidden to prevent the user from unsafely casting elements. 
+
+Concerns
+----------------
+
+Currently, haddock does not indicate the kind of data types. For an unboxed
+newtype, this would be desirable. Otherwise, from a cursory scan of a library's
+docs, it would be easy to miss that a data type is unlifted (and consequently
+cannot be used in most polymorphic functions).
+
+Implementation
+--------------
+
+I do not have sufficient knowledge of GHC to implement this. I welcome anyone
+else to implement it, or if it's approved and enough time goes by, I may
+try to figure out how to implement it.
+
+
