@@ -85,24 +85,6 @@ We can then hide the data constructor as we did in the first example.
 However, we can also have a non-allocating implementation of
 ``mapIntervals``. This gives us the best of both worlds.
 
-Motivation: Nesting Mutable Maps in Unmanaged Heap
-----------
-
-The above example illustrated a problem that ``UnboxedNewtypes`` can
-help with, but it was ultimately a toy problem. This next example is
-more complicated but is a problem inspired by an applcation used
-in industry. Assume that we have a mutable map-like data type that
-stores values off-heap (probably a B-Tree but the actual data
-structure is irrelevant to this example)::
-
-    data Map k v
-    type IO# (a :: TYPE r) = State# RealWorld -> (# State# RealWorld, a #)
-    modify :: (Primitive k, Primitive v)
-      => Map k v
-      -> (v -> IO# (# _, _#))
-
-Work in progress...
-
 Motivation: Typed Unlifted Pointers
 ----------
 
