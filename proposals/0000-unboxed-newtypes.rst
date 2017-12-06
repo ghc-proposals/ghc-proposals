@@ -14,7 +14,7 @@ This proposal is `discussed at this pull request <https://github.com/ghc-proposa
 
 .. contents::
 
-Unboxed Newtypes
+Unlifted Newtypes
 ==========================
 
 GHC 8.0 introduced a more sane way to talk about the kind of unlifted types,
@@ -22,13 +22,13 @@ levity polymorphism. Following this, the kind of unboxed tuples and sums was
 revised. Many of the unlifted kinds have a finite number of inhabitants. For
 example, ``TYPE 'IntRep`` is only inhabited by ``Int#``. This proposal provides 
 a way to create additional types that inhabit the unlifted kinds. With the
-``UnboxedNewtypes`` language pragma, the existing ``newtype`` construct would
+``UnliftedNewtypes`` language pragma, the existing ``newtype`` construct would
 begin to accept types of unlifted kinds. GHC currently rejects the following
 definition::
 
     newtype PersonId = PersonIdConstructor { getPersonId :: Int# }
 
-With ``UnboxedNewtypes``, this definition would be accepted. The kinds and types
+With ``UnliftedNewtypes``, this definition would be accepted. The kinds and types
 of the generated types and functions would be::
 
     PersonId :: TYPE 'IntRep
@@ -76,7 +76,7 @@ Now, ``mapIntervals`` can be called without paying an allocation for
 every element in the array. But since ``Interval`` is now a type alias,
 we are no longer able to hide its internals. Users can easily circumvent
 the guarantee the API was originally supposed to provide. With
-``UnboxedNewtypes``, we can get the best of both worlds. We can define
+``UnliftedNewtypes``, we can get the best of both worlds. We can define
 ``Interval`` as::
 
     newtype Interval = Interval (# Int#, Int #)
@@ -106,7 +106,7 @@ It would be more performant manually unbox the argument::
 
     alloca :: Storable a => (Addr# -> IO b) -> IO b
 
-But now we have lost our phantom ``a`` type variable. With ``UnboxedNewtypes``,
+But now we have lost our phantom ``a`` type variable. With ``UnliftedNewtypes``,
 we could instead write::
 
     newtype Ptr# a = Ptr# Addr#
@@ -179,7 +179,7 @@ would not have any typeclass constraints:
     shuffleUnliftedArray# :: forall (a :: TYPE 'UnliftedRep). ByteArray# -> UnliftedArray# a -> UnliftedArray# a
 
 However, adding these functions requires modifying GHC and adding
-more primops. With ``UnboxedNewtypes``, this interface can be implemented from
+more primops. With ``UnliftedNewtypes``, this interface can be implemented from
 the existing ``ArrayArray#`` interface without modifying GHC::
 
     newtype UnliftedArray# (a :: TYPE 'UnliftedRep) = UnliftedArray# ArrayArray#
@@ -200,13 +200,57 @@ must kind something of kind ``TYPE (r :: RuntimeRep)``. This proposal
 does **not** include the ability for a ``newtype`` to wrap a ``Constraint``.
 This does not require any additions to the language's grammar.
 
+This proposal **would** allow a levity-polymorphic type variable to appear
+inside a newtype. Such appearances are currently forbidden (and would remain
+forbidden) in data constructors, since they violate the levity-polymorphism
+binder rule. However, **newtype** constructors and pattern matches become casts.
+Consider:: 
+
+    newtype Id# (r :: RuntimeRep) (a :: TYPE r) = IdC# a
+
+The calling convetion for the ``IdC#`` data constructor does not depend on
+``r``, so code generation is still possible. All other restrictions around
+levity polymorphism are still in place, so the following would be rejected::
+
+    bad :: forall (r :: RuntimeRep) (a :: TYPE r). (a -> a -> Bool) -> Id# r a -> Id# r a -> Bool
+    bad f (IdC# a) (IdC# b) = f a b
+
+However, this would be accepted::
+
+    good :: forall (a :: TYPE IntRep). (a -> a -> Bool) -> Id# IntRep a -> Id# IntRep a -> Bool
+    good f (IdC# a) (IdC# b) = f a b
+ 
+
 Effects and Interactions
 ------------------------
 
 **Generalized Newtype Deriving**: The interaction with GND is straigtforward.
 Since typeclasses (since GHC 8.0) can accept unlifted types (or even
-levity-polymorphic types), GND should work exactly for an unboxed newtype
+levity-polymorphic types), GND should work exactly for an unlifted newtype
 as it does on a lifted newtype.
+
+**Lazy unboxed tuples / Warn on unbanged strict patterns**: This proposal,
+currently still under discussion, suggests tweaking the strictness of unboxed
+tuple patterns. Regardless of whether that proposal is accepted, a variant of
+it is accepted, or it is rejected, there is a simple rule for determining
+the strictness of an unboxed newtype pattern. It
+should agree with the strictness of an equivalent unboxed one-tuple pattern.
+For example suppose we have::
+
+    bar = ()
+      where
+      foo :: Bool
+      (# (# 3#, foo #) #) = undefined
+
+    newtype Wrap = Wrap (# Int#, Bool #)
+
+    baz = ()
+      where
+      foo :: Bool
+      Wrap (# 3#, foo #) = undefined
+
+If ``bar`` throws an exception, then ``baz`` should too. If it doesn't,
+then neither should ``baz``.
 
 Costs and Drawbacks
 -------------------
