@@ -1,4 +1,4 @@
-.. proposal-number::
+.. proposal-number:: 10
 
 .. trac-ticket::
 
@@ -6,7 +6,7 @@
 
 .. highlight:: haskell
 
-This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/90>`_.
+This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/90>`_.
 
 .. contents::
 
