@@ -191,6 +191,50 @@ the existing ``ArrayArray#`` interface without modifying GHC::
 The data constructors of ``UnliftedArray#`` and ``MutableUnliftedArray#`` could
 be hidden to prevent the user from unsafely casting elements. 
 
+Proposal Change Specification
+----------
+
+The restriction that a ``newtype`` wrap a type of kind ``TYPE LiftedRep``
+would be dropped. It would be replaced by a restriction that the ``newtype``
+must kind something of kind ``TYPE (r :: RuntimeRep)``. This proposal
+does **not** include the ability for a ``newtype`` to wrap a ``Constraint``.
+This does not require any additions to the language's grammar.
+
+Effects and Interactions
+------------------------
+
+**Generalized Newtype Deriving**: The interaction with GND is straigtforward.
+Since typeclasses (since GHC 8.0) can accept unlifted types (or even
+levity-polymorphic types), GND should work exactly for an unboxed newtype
+as it does on a lifted newtype.
+
+Costs and Drawbacks
+-------------------
+
+Currently, all unlifted types have a hash appended to their name (``Array#``,
+``Int#``, etc.). This happened because (1) GHC adopted this naming
+convention and (2) no one had any way to define new unlifted types.
+Since this proposal eliminates (2), users lose their easy visual cue
+for knowing if a type is unlifted.
+
+To the author's understanding (which is not great), the implementation
+is not complicated and will be a comparitively small burden on maintainers.
+
+Alternatives
+------------
+
+Unlifted newtypes are briefly mentioned in the much further-reaching
+`unlifted data types`_ proposal. One alternative would be to wait for
+a full implementation of unlifted data types. Then a single ``LANGUAGE``
+pragma would enable both unlifted newtypes and unlifted data types.
+The drawback of this is that the design of unlifted data types is
+non-trivial, and their is no agreement on what they should actually
+look like. Additionally, the implementation would be more
+complicated than an implementation that only allowed unlifted
+newtypes.
+
+.. _unlifted data types: https://ghc.haskell.org/trac/ghc/wiki/UnliftedDataTypes
+
 Concerns
 ----------------
 
