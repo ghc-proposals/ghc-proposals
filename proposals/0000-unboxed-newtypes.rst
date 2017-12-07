@@ -229,6 +229,19 @@ Since typeclasses (since GHC 8.0) can accept unlifted types (or even
 levity-polymorphic types), GND should work exactly for an unlifted newtype
 as it does on a lifted newtype.
 
+**Data Families**: Data families currently do not allow unlifted return kinds.
+This means that the following is rejected by the compiler::
+
+    data family Foo (a :: Type) :: TYPE 'IntRep
+
+Under this proposal, this restriction would be lifted, not only in modules
+where ``UnliftedTuples`` is enabled, but everywhere. Although defining
+the data families itself would not require the extension, defining
+instances would. Instances could be defined with ``newtype instance``::
+
+    newtype instance Foo Bool = FooBoolConstructor Int#
+    newtype instance Foo (Maybe a) = FooIntConstructor (# Int#, a #)
+
 **Lazy unboxed tuples / Warn on unbanged strict patterns**: This proposal,
 currently still under discussion, suggests tweaking the strictness of unboxed
 tuple patterns. Regardless of whether that proposal is accepted, a variant of
