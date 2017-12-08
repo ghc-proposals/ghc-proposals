@@ -79,7 +79,7 @@ the guarantee the API was originally supposed to provide. With
 ``UnliftedNewtypes``, we can get the best of both worlds. We can define
 ``Interval`` as::
 
-    newtype Interval = Interval (# Int#, Int #)
+    newtype Interval = Interval (# Int#, Int# #)
 
 We can then hide the data constructor as we did in the first example.
 However, we can also have a non-allocating implementation of
