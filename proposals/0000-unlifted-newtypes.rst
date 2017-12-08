@@ -174,7 +174,7 @@ interface to arrays of unlifted things::
     newUnliftedArray# :: forall (a :: TYPE 'UnliftedRep). Int# -> a -> State# s -> (# State# s, MutableUnliftedArray# s a #)
 
 Notice that the type signature of ``shuffleUnliftedArray#`` under this scheme
-would not have any typeclass constraints:
+would not have any typeclass constraints::
 
     shuffleUnliftedArray# :: forall (a :: TYPE 'UnliftedRep). ByteArray# -> UnliftedArray# a -> UnliftedArray# a
 
