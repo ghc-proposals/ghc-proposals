@@ -220,6 +220,48 @@ However, this would be accepted::
     good :: forall (a :: TYPE IntRep). (a -> a -> Bool) -> Id# IntRep a -> Id# IntRep a -> Bool
     good f (IdC# a) (IdC# b) = f a b
  
+If the user does not specify the kind of an unlifted newtype with GADT syntax,
+the kind should be inferred. Newtype that are recursive or
+mutually recursive in a way that make them uninhabited will be inferred
+to have polymorphic runtime representation. For example::
+
+    newtype Foo = Foo Foo
+    newtype Baz = Baz Tor
+    newtype Tor = Tor Baz
+
+All three of the above types are currently happily accepted by GHC, and
+they will remain accepted, but with a more general inferred kind, when
+``UnliftedNewtypes`` is enabled. Here are the same three types defined
+using GADT syntax to illustrate what the inferred kind would be::
+
+    newtype Foo :: TYPE r where
+      Foo :: Foo -> Foo
+    newtype Baz :: TYPE r where
+      Baz :: Tor -> Baz
+    newtype Tor :: TYPE r where
+      Tor :: Baz -> Tor
+
+Recursion in the presence of a changing runtime representation should
+be rejected. For example::
+
+   newtype Recurse = Recurse (# Int#, Recurse #)
+   newtype Sneak = Sneak (# Sneak #)
+
+Both of these types are ill-kinded, as their kinds would involve an
+infinite nested of ``TupleRep``. This is only
+a problem when a recursion of unlifted types is involved. To illustrate
+the issue further::
+
+    newtype BadA = BadA (# Word#, BadB #)
+    newtype BadB = BadB (# Word#, BadA #)
+
+    newtype GoodA = GoodA (# Word#, GoodB #)
+    newtype GoodB = GoodB (Word#, GoodA)
+
+The types ``BadA`` and ``BadB`` and ill-kinded and should be rejected.
+However, ``GoodA`` and ``GoodB`` are well-kinded, and the kinds can
+be inferred. More generally, if an unlifted newtype is well-kinded, then its kind
+should **always** be inferrable.
 
 Effects and Interactions
 ------------------------
@@ -228,6 +270,26 @@ Effects and Interactions
 Since typeclasses (since GHC 8.0) can accept unlifted types (or even
 levity-polymorphic types), GND should work exactly for an unlifted newtype
 as it does on a lifted newtype.
+
+**GADT Syntax**: It is currently possible, although uncommon in practice, to
+use GADT syntax with newtypes. With newtypes, GADT-like analysis of the type variable
+is never allowed. The following is an example of a newtype using GADT syntax::
+
+    newtype Foo :: Type -> Type where
+      FooC :: a -> Foo a
+
+Unlifted newtypes should be allowed to use GADT syntax as well. The only way this
+differs from the status quo, is that kinds other than ``Type`` all now allowed
+to the right of the final arrow. All of the following should be accepted::
+
+    newtype PersonId :: TYPE 'IntRep where
+      PersonId :: Int# -> PersonId
+    newtype Id :: TYPE rep -> TYPE rep where
+      Id :: a -> Id a
+    newtype Pair# :: TYPE rep -> TYPE rep' -> TYPE (TupleRep '[rep, rep']) where
+      Pair# :: (# a, b #) -> Pair# a b
+    newtype Maybe# (a :: TYPE r) :: TYPE (SumRep '[r, TupleRep '[]]) where
+      Maybe# :: (# a | (# #) #) -> Maybe# a
 
 **Data Families**: Data families currently do not allow unlifted return kinds.
 This means that the following is rejected by the compiler::
