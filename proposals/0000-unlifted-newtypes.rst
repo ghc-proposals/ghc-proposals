@@ -291,6 +291,24 @@ to the right of the final arrow. All of the following should be accepted::
     newtype Maybe# (a :: TYPE r) :: TYPE (SumRep '[r, TupleRep '[]]) where
       Maybe# :: (# a | (# #) #) -> Maybe# a
 
+**Coercible**: The type variables taken by the ``Coercible`` typeclass are
+kinded ``TYPE LiftedRep``. This means that ``coerce`` cannot be used to cast
+from an unlifted newtype and its inner type. This proposal does not require
+that ``Coercible`` be change in any way. Such a change is left for a future
+proposal if the coercions are desired. At the least, to support this,
+``Coercible`` would need to be amended as follows::
+
+    class Coercible (a :: TYPE r) (b :: TYPE r)
+
+**Type Classes in Base**: This proposal does not change any type classes
+in ``base`` or in any of the core libraries. Making typeclasses like ``Num``
+levity-polymorphic would help a little with overloading, but no one has
+measure what the impact of such a change would be on error message clarity.
+Discussion of this issue is best had on the `Levity Polymorphic Type Classes`_
+proposal.
+
+.. _Levity Polymorphic Type Classes: https://github.com/ghc-proposals/ghc-proposals/pull/30
+
 **Data Families**: Data families currently do not allow unlifted return kinds.
 This means that the following is rejected by the compiler::
 
