@@ -223,23 +223,29 @@ However, this would be accepted::
 If the user does not specify the kind of an unlifted newtype with GADT syntax,
 the kind should be inferred. Newtype that are recursive or
 mutually recursive in a way that make them uninhabited will be inferred
-to have polymorphic runtime representation. For example::
+to have lifted runtime representation. For example::
 
     newtype Foo = Foo Foo
     newtype Baz = Baz Tor
     newtype Tor = Tor Baz
 
 All three of the above types are currently happily accepted by GHC, and
-they will remain accepted, but with a more general inferred kind, when
-``UnliftedNewtypes`` is enabled. Here are the same three types defined
+with ``UnliftedNewtypes``, they will remain accepted with the same kind
+that they already had. Here are the same three types defined
 using GADT syntax to illustrate what the inferred kind would be::
 
-    newtype Foo :: TYPE r where
+    newtype Foo :: TYPE 'LiftedRep where
       Foo :: Foo -> Foo
-    newtype Baz :: TYPE r where
+    newtype Baz :: TYPE 'LiftedRep where
       Baz :: Tor -> Baz
-    newtype Tor :: TYPE r where
+    newtype Tor :: TYPE 'LiftedRep where
       Tor :: Baz -> Tor
+
+If the user wanted the levity-polymorphic variant of the uninhabited
+newtype, they could write::
+
+    newtype Bar :: TYPE r where
+      Bar :: Bar -> Bar
 
 Recursion in the presence of a changing runtime representation should
 be rejected. For example::
@@ -248,7 +254,13 @@ be rejected. For example::
    newtype Sneak = Sneak (# Sneak #)
 
 Both of these types are ill-kinded, as their kinds would involve an
-infinite nested of ``TupleRep``. This is only
+infinite nested of ``TupleRep``. The inferred kinds would be:
+
+    Recurse :: TYPE (TupleRep [IntRep, TupleRep [IntRep, TupleRep ...]])
+    Sneak :: TYPE (TupleRep [TupleRep [TupleRep ...]])
+
+Just as terms cannot have infinite types, types cannot have infinite
+kinds. This is only
 a problem when a recursion of unlifted types is involved. To illustrate
 the issue further::
 
@@ -291,14 +303,10 @@ to the right of the final arrow. All of the following should be accepted::
     newtype Maybe# (a :: TYPE r) :: TYPE (SumRep '[r, TupleRep '[]]) where
       Maybe# :: (# a | (# #) #) -> Maybe# a
 
-**Coercible**: The type variables taken by the ``Coercible`` typeclass are
-kinded ``TYPE LiftedRep``. This means that ``coerce`` cannot be used to cast
-from an unlifted newtype and its inner type. This proposal does not require
-that ``Coercible`` be change in any way. Such a change is left for a future
-proposal if the coercions are desired. At the least, to support this,
-``Coercible`` would need to be amended as follows::
 
-    class Coercible (a :: TYPE r) (b :: TYPE r)
+**Coercible**: Both ``~R#`` and the ``Coercible`` typeclass are already
+levity polymorphic. However, the function ``coerce`` is not. This proposal
+requires that ``coerce`` become levity polymorphic.
 
 **Type Classes in Base**: This proposal does not change any type classes
 in ``base`` or in any of the core libraries. Making typeclasses like ``Num``
@@ -320,7 +328,7 @@ the data families itself would not require the extension, defining
 instances would. Instances could be defined with ``newtype instance``::
 
     newtype instance Foo Bool = FooBoolConstructor Int#
-    newtype instance Foo (Maybe a) = FooIntConstructor (# Int#, a #)
+    newtype instance Foo (Maybe a) = FooIntConstructor Int#
 
 **Lazy unboxed tuples / Warn on unbanged strict patterns**: This proposal,
 currently still under discussion, suggests tweaking the strictness of unboxed
