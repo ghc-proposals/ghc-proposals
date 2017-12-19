@@ -47,6 +47,29 @@ Allow visible type application in types as well as terms. In precisely
 the same way that it currently is used to reduce ``forall``s in terms,
 it will reduce ``forall``s in types.
 
+Specifically:
+
+1. Add new parsing rules to types allowing ``@`` to appear before a type argument.
+
+2. Currently, GHC tracks three *visibilities*: *required*, *specified*, and *inferred*.
+   A required argument must be applied at every call site. These are normal arguments,
+   like the ``a`` argument to ``Maybe a``. Specified arguments are arguments that are
+   normally omitted but can be supplied explicitly with the use of ``@``. For example,
+   the ``k`` in ``data Proxy :: forall k. k -> Type`` is specified. Inferred arguments
+   are not available for explicit application, like the kind of ``a`` in ``data Proxy2 a``.
+
+   With visible type application in types, users could provide explicit instantiations
+   of specified arguments.
+
+   In an extension to existing rules, a variable must be mentioned somewhere in the Haskell
+   source to be specified. A variable that is never written in the source is inferred.
+
+3. Promoted data constructor arguments have the same visibilities as the unpromoted data
+   constructor.
+
+4. GHC's current behavior of implicitly quantifying over type variables used in type
+   signatures is unaffected. If a type variable is mentioned only in a visible type
+   application, it is still implicitly quantified.
 
 Effect and Interactions
 -----------------------
@@ -55,10 +78,13 @@ I am not aware of any substantial interactions.
 
 Costs and Drawbacks
 -------------------
-I have no estimate of development or maintenance costs. As a user, I was
+As a user, I was
 quite surprised to find that this didn't work already, so I don't think
 the learning cost will be high.
 
+The development costs should be relatively low. Instantiation in types is
+already lazy, and so type application in types will be much easier to implement
+than type application in terms was.
 
 Alternatives
 ------------
@@ -67,12 +93,13 @@ I am not aware of any existing alternatives.
 
 Unresolved questions
 --------------------
-Explicitly list any remaining issues that remain in the conceptual design and specification. Be upfront and trust that the community will help. Please do not list *implementation* issues.
-
-Hopefully this section will be empty by the time the proposal is brought to the steering committee.
-
+Should we change the behavior of ``:kind`` to match that of ``:type``? Currently, the latter
+does instantiation while the former does not. This means that there is no screaming need
+to introduce a ``:kind +v``, because ``:kind`` is already analogous to ``:type +v``. Perhaps
+this is confusing though.
 
 
 Implementation Plan
 -------------------
-(Optional) If accepted who will implement the change? Which other ressources and prerequisites are required for implementation?
+Richard Eisenberg (@goldfirere) is happy to advise someone who wants to take this on. Or he
+will implement himself someday.
