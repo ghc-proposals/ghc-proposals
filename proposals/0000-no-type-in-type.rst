@@ -44,7 +44,7 @@ Motivation
   extensions (``-XPolyKinds`` and ``-XTypeInType``)
   and an arbitrary, historical distinction between them.
 
-* GHC's ability to handle ``*`` has a significant cost. It's the only symbolic
+* GHC's ability to parse ``*`` has a significant cost. It's the only symbolic
   identifier that's handled like an alphanumeric one. (Note that ``T * Int`` normally
   looks like an application of a binary operator ``*`` to ``T`` and ``Int``, but with
   the kind ``*``, it's ``T`` applied to ``*`` and ``Int``.) Because ``*`` is sometimes
@@ -106,7 +106,8 @@ Proposed Change Specification
       with ``-XGADTs -XPolyKinds`` only. This change is fully backward compatible;
       no migration would be necessary.
 
-2. ``-XDataKinds`` would now promote GADTs and GADT constructors.
+2. ``-XDataKinds`` would now promote GADTs and GADT constructors. This change is fully
+   backward compatible; no migration would be necessary.
       
 3. Two releases after this proposal is implemented, deprecate ``-XTypeInType``.
       
@@ -116,25 +117,25 @@ Proposed Change Specification
 
    a. ``-XStarIsType`` is on by default.
 
-   b. For two releases, ``-XTypeOperators`` will imply ``-XNoStarIsType``, to
-      provide a migration path for code that uses the binary operator ``*``. (After
-      two releases, this code can include ``-XNoStarIsType`` explicitly without
-      going against the three-release policy.) Users can re-enable ``-XStarIsType``
-      after ``-XTypeOperators`` is enabled if they wish.
-
-   c. When ``-XStarIsType`` is on, any occurrence of the symbol ``*`` in a type
+   b. When ``-XStarIsType`` is on, any occurrence of the symbol ``*`` in a type
       is treated as the kind of types with values. It is parsed similarly to alphanumeric
       identifiers, never as a binary operator.
 
-   d. When ``-XStarIsType`` is on, a user can use a binary operator ``*`` only
+   c. When ``-XStarIsType`` is on, a user can use a binary operator ``*`` only
       with a qualifying module name. For example, ``8 ~ (4 GHC.TypeLits.* 2)``, or
       ``8 ~ (4 L.* 2)`` if we have ``import GHC.TypeLits as L``.
 
-   e. Without ``-XStarIsType``, there is no way to use the symbol ``*`` to refer
+   d. Without ``-XStarIsType``, there is no way to use the symbol ``*`` to refer
       to the kind of types with values. Use ``Type`` instead. The symbol ``*`` will
       refer to any type-level binary operator ``*`` in scope, according to the
       normal scoping rules. (If ``-XTypeOperators`` is not in effect, use of ``*``
       in a type will be an error.)
+
+   e. For two releases, ``-XTypeOperators`` will imply ``-XNoStarIsType``, to
+      provide a migration path for code that uses the binary operator ``*``. (After
+      two releases, this code can include ``-XNoStarIsType`` explicitly without
+      going against the three-release policy.) Users can re-enable ``-XStarIsType``
+      after ``-XTypeOperators`` is enabled if they wish.
 
    The ``-XStarIsType`` idea is due to David Feuer, @treeowl.
 
@@ -145,6 +146,11 @@ Effect and Interactions
   in that users will not need to use CPP to avoid warnings. (In particular,
   note that ``import Data.Kind`` is always a fine thing to do, even without
   ``-XTypeInType``.)
+
+* This proposal paves the way for future proposals relating to type-level features.
+  Specifically, implementing this will make it possible to treat kind-variable
+  scoping the same way we do type-variable scoping. The proposal is yet to be
+  written, but I will update this paragraph when it's available.
   
 Costs and Drawbacks
 -------------------
@@ -156,6 +162,12 @@ Costs and Drawbacks
   very confused about the name ``*``, thinking that ``*`` is some kind of universal
   kind that encompasses all other kinds. (Indeed, I thought this, too, once upon a
   time.)
+
+* The Haskell Reports mention ``*`` by name. If error messages print ``Type`` instead
+  of ``*``, we'll be further from the behavior that the Report authors intended at the
+  time. However, as the Reports do not specify error message text, this change does
+  not bring us further from formal compliance to the letter of the Report. It would bring
+  us further from the spirit of the Report.
 
 * This will effectively create two different versions of ``-XPolyKinds`` and ``-XDataKinds``,
   which could be problematic for users who want tooling to choose compilers
@@ -210,7 +222,36 @@ Unresolved questions
      implementation of ``-XPolyKinds`` has some restrictions that may not have been
      obvious to users.
 
-  b. Moving away from ``*`` as the kind of types disagrees with educational literature.
+  b. Moving away from ``*`` as the kind of types disagrees with educational literature,
+     but I think ``Type`` is more descriptive than ``*``.
+
+* What do we want the long-term future of ``*`` to be? As you can see, I favor removing
+  it after a long time (> 5 years). But deciding now what we want to have in the distant
+  future can influence decisions made in the meantime. One particular decision: should
+  ``-Wcompat`` warn on uses of ``*`` as ``Type``? Relatedly, should there be a plan
+  to deprecate ``-XStarIsType``?
+
+* Regardless of the long-term future of ``*``, is the migration path described around
+  ``-XStarIsType`` the best possible path? Notably, the current migration path will cause
+  breakage in ``-XTypeOperators`` code that uses ``*`` as a kind, requiring users to
+  change all uses of ``*`` to ``Type`` when upgrading GHC. David Feuer has expressed unease
+  at the migration path detailed here, but his counter-suggestion remains unclear to me.
+  I am not without unease myself, but I don't see a better way.
+
+Summary of discussion
+---------------------
+Much (just about all, really) of the discussion surrounds the future of ``*``. I've made
+my case in the comments for eventually deprecating and removing it, though I've been
+convinced by the ``-XStarIsType`` plan (which grew out of the discussion) that supporting
+``*`` into perpetuity isn't so terrible, and that we should plan to keep it around for
+years more. One vocal participant, @AntC2, has strenuously objected to any move toward
+removing ``*``, but their points have not been echoed by anyone else in the discussion.
+In particular, @AntC2 is worried about rotting of educational resources, something I was
+perhaps too glib about in earlier versions of this proposal. I expect the committee will
+carry on this debate, and I'm happy to submit to the view of the committee on this matter.
+
+Other discussion concerns the details of the migration path and the ``-XStarIsType`` aspect
+of this proposal, briefly summarized in the last unresolved question, above.
 
 Implementation Plan
 -------------------
