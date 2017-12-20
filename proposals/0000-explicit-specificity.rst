@@ -120,10 +120,36 @@ argument "more invisible".
 
 Costs and Drawbacks
 -------------------
-This is yet another feature to implement and describe. The difference between inferred and specified
-is somewhat subtle, so this creates another corner for language learners to run into. The implementation
-costs should be modest.
+* This is yet another feature to implement and describe. The difference between inferred and specified
+  is somewhat subtle, so this creates another corner for language learners to run into. The implementation
+  costs should be modest.
 
+* @Ericson2314 commented that this syntax is not compatible with a hypothetical future extension to allow
+  type patterns in type variable binder positions. For example, we could imagine ::
+
+    f :: forall (Just a). Proxy a -> ()
+
+  to be an abbreviation for ::
+
+    f :: forall ma a. (ma ~ Just a) => Proxy a -> ()
+
+  in much the same way that we can abbreviate ::
+
+    g x = case x of Nothing -> True
+                    Just _  -> False
+
+  to ::
+
+    g Nothing  = True
+    g (Just _) = False
+
+  today. If we did this, then the full syntax of types *would* be available in type variable binder
+  positions, making the braces conflict with record notation. If you think the ``=`` in records would
+  disambiguate, that would no longer be true with record puns in play.
+
+  I agree that this is a potential exposed root to trip over, but the root belongs to a tree of an
+  as-yet-undiscovered species in a dark wood far away from any maintained paths. I don't think this
+  concern is worth changing the syntax, though I'm grateful that the problem has been pointed out.
 
 Alternatives
 ------------
