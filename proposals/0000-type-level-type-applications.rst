@@ -79,7 +79,7 @@ This new feature would work in pattern signatures (that is, a type signature asc
   data Ex where
     MkEx :: forall k (a :: k). Proxy (a :: k) -> Ex
     
-  foo (Ex (p :: Proxy @k a)) = ... k is in scope here ...
+  foo (MkEx (p :: Proxy @k a)) = ... k is in scope here (along with a) ...
   
 Costs and Drawbacks
 -------------------
