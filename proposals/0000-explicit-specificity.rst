@@ -90,8 +90,19 @@ Proposed Change Specification
   and be unavailable for specialization via visible type application, following all the current rules
   for inferred type variables.
 
+* Type variables brought into scope in braces are still available as scoped type variables. Example::
+
+    foo :: forall {k} (a :: k). ...
+    foo = ... both a and k are in scope here ...
+
+  The braces do not affect this feature at all.
+
 Effect and Interactions
 -----------------------
+
+Inferred variables (those brought into scope with braces) are not available for specialization
+with visible type application, exactly like inferred type variables today. Visible type application
+simply skips over these variables.
 
 GHC currently can *print* using the proposed syntax, if you turn ``-fprint-explicit-foralls`` on.
 This proposal extends the parser to be able to understand this syntax.
