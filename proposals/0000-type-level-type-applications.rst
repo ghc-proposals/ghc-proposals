@@ -73,9 +73,14 @@ Specifically:
 
 Effect and Interactions
 -----------------------
-I am not aware of any substantial interactions.
 
+This new feature would work in pattern signatures (that is, a type signature ascribing a type to a term-level pattern) and would have the capability of binding a scoped type variable. Viz::
 
+  data Ex where
+    MkEx :: forall k (a :: k). Proxy (a :: k) -> Ex
+    
+  foo (Ex (p :: Proxy @k a)) = ... k is in scope here ...
+  
 Costs and Drawbacks
 -------------------
 As a user, I was
