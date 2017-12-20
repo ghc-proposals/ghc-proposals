@@ -166,7 +166,20 @@ This proposal is compatible with the non-GADT syntax for existential variables. 
 
 9. If the extension flag is not included, we will produce a warning at compile time asking the programmer if they meant to enable ``ExistentialTypeVariables`` if they were to write code that the extension would recognize as an attempt at binding an existential type variable.
 
-10. The pre-existing mechanism of binding existential variables through type annotations on data constructor arguments will still be available. 
+10. The pre-existing mechanism of binding existential variables through type annotations on data constructor arguments will still be available.
+
+11. Pattern synonyms are treated the same way as data constructors. (The division between the existential and universal variables in a pattern synonym is exactly the same as the division in a data constructor.) Pattern synonyms can also bind existential variables during pattern matching.
+
+::
+
+  data T a where
+    MkT :: forall a b. (Show b) => a -> b -> T a
+    
+  pattern P1 :: (Num a, Eq a) => (Show b) => b -> T a
+  pattern x = MkT 42 x
+  
+  f :: T Int -> String
+  f (P1 @b x) = show (x :: b)
 
 
 Effect and Interactions
@@ -179,7 +192,6 @@ Discuss possibly contentious interactions with existing language or compiler fea
 This change makes the order that type variables are listed in a data constructor part of the interface to that data constructor. Client code that uses existential binding may break if library authors reorders the listing of existential variables in a forall.
 
 This extension is compatible with the current treatment of scoped type variables. However, it may be incompatible with any future extension that binds universal variables (more in ‘Unresolved questions’).
-
 
 Costs and Drawbacks
 -------------------
