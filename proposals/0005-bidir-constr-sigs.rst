@@ -23,9 +23,8 @@ Motivation
 ----------
 
 This proposal grows out of an idea Simon Peyton Jones expressed in
-`Pattern synonym used in an expression context could have different constraints
-to pattern used in a pattern context<https://ghc.haskell.org/trac/ghc/ticket/8581>`_.
-https://ghc.haskell.org/trac/ghc/ticket/8581#comment:10
+`Pattern synonym used in an expression context could have different constraints to pattern
+used in a pattern context <https://ghc.haskell.org/trac/ghc/ticket/8581#comment:10>`_.
 
     The two directions of an explicitly-bidirectional pattern might have utterly
     different class constraints. After all, the two directions are specified by
@@ -99,12 +98,36 @@ Proposed Change Specification
 -----------------------------
 
 Allow a type signature for the construction function in a bidirectional
-pattern synonym to appear within the same `where` clause. Whereas Peyton Jones
-suggests that the constraints provided by the pattern should be implied by the
-constraints on the constructor, we do not make such a demand; in rare cases
-it can be invaluable to defeat the type system by using `unsafeCoerce` in a
-pattern synonym. The type signature for the construction function must be the
-same as the pattern signature, except for its constraints.
+pattern synonym to appear within the same `where` clause:
+
+.. code-block:: haskell
+
+    pattern Zero :: (Num a, Eq a) => a
+    pattern Zero <- ((== 0) -> True)
+      where
+        Zero :: Num a => a
+        Zero = 0
+
+    pattern NF :: a -> NF a
+    pattern NF a <- UnsafeNF a where
+      NF :: NFData a => a -> NF a
+      NF a = a `deepseq` UnsafeNF a
+
+The type signature for the construction function must be the same as the
+pattern signature, except for its constraints. Whereas Peyton Jones suggested
+that the constraints provided by the pattern should be implied by the
+constraints on the constructor, we do not make such a demand; in rare cases it
+can be invaluable to violate it. For example, we could write
+
+.. code-block:: haskell
+
+    pattern TR :: () => Typeable a => TypeRep a -> SomeTypeRep
+    pattern TR t <- ... where
+      TR :: TypeRep a -> SomeTypeRep
+      TR t = ...
+
+using the ``withTypeable`` function to obtain the necessary ``Typeable``
+dictionary.
 
 When the construction function has no signature, there are several possible
 options, none of which is perfect. For the sake of compatibility with GHC 8.0
@@ -125,7 +148,28 @@ worth the trouble.
 Effect and Interactions
 -----------------------
 I do not anticipate any particularly notable effects on or interactions
-with other language features, except the compatibility issue noted below.
+with other language features.
+
+The GHCi `:info` command will report both types, unless they are the same, by
+abbreviating the pattern declaration:
+
+.. code-block:: haskell
+
+    pattern NF :: a -> NF a where
+      NF :: NFData a => a -> NF a
+
+Based on the plan outlined in
+`Trac #14478 <https://ghc.haskell.org/trac/ghc/ticket/14478>`_, we would allow
+similarly abbreviated signatures in `.hs-boot` and `.hsig` files:
+
+.. code-block:: haskell
+
+    pattern NF :: a -> NF a
+    pattern NF a <- .. where
+      NF :: NFData a => a -> NF a
+
+Indeed, we could use the more informative form for `:info` as well; that is
+largely orthogonal to this proposal.
 
 Costs and Drawbacks
 -------------------
@@ -134,14 +178,6 @@ checker handles the construction functions. I don't anticipate
 that these costs will be very high. I believe this change has minimal impact on
 learnability of the language, as new users are relatively unlikely to define
 pattern synonyms.
-
-The biggest drawback is that the proposal handles construction functions
-without type signatures in a new and potentially incompatible way. I believe
-it is worth doing so for the simple reason that the current arrangement is
-fundamentally wrong and inconsistent with the rest of the language. Nowhere
-else is a potentially incorrect signature assigned in such a fashion. I
-predict that most current code will continue to work, albeit perhaps with
-warnings about missing type signatures.
 
 Alternatives
 ------------
