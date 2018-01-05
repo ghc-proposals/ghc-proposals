@@ -158,6 +158,22 @@ Alternatives
 
 * Invent new concrete syntax. But I think the braces work quite nicely.
 
+* Allow functions to quantify type variables out of dependency order. The order that variables are
+  quantified affects how a client must instantiate them with visible type application. This proposal
+  describes a way to suppress variables from this list, when later variables are more useful to
+  instantiate than earlier ones. However, another way to achieve this is simply to allow type
+  variables to be introduced out of order. That is, make ``forall (a :: k) k. ...`` a valid
+  type, where the type ``a`` comes first and its kind ``k`` comes second. (In this scheme, the
+  type ``forall (a :: k). forall k. ...`` would be *invalid* because ``k`` would not be lexically
+  in scope at its occurrence site.) This was suggested by @Bj0rnen in the pull request.
+
+  I like
+  the idea overall, but implementing this would be a significant burden. GHC currently uses the
+  same types in Core as it does in Haskell. Types in Core need to be ordered with respect to
+  dependency; that's how the theory works, and Core must be based closely on the theory. So, if
+  Haskell wishes to relax the rule, then it would need to have its own types. It would all seem
+  to require major engineering.
+
 Unresolved questions
 --------------------
 None at this time.
