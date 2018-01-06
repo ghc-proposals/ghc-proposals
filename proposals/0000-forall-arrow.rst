@@ -51,20 +51,54 @@ Add a new bit of syntax for types (= kinds) that looks like this::
 
   'forall' tv_bndrs '->' ctype
 
-where ``ctype`` is the point within GHC's grammar (as implemented in its `parser <https://github.com/ghc/ghc/blob/master/compiler/parser/Parser.y>`_) where the current ``'forall' tv_bndrs '.' ctype`` rule lives.
-The meaning will be identical to that of the existing ``forall`` construct, except that the ``tv_bndrs``
-will be visible.
+where ``ctype`` is the point within GHC's grammar (as implemented in its
+`parser <https://github.com/ghc/ghc/blob/master/compiler/parser/Parser.y>`_)
+where the current ``'forall' tv_bndrs '.' ctype`` rule lives. The meaning will
+be identical to that of the existing ``forall`` construct, except that the
+``tv_bndrs`` will be visible.
 
 (NB: The ``'forall'`` construct in the parser also accepts ``∀``.)
 
-This new construct will be rejected in any context that is unambiguously a type for a term. (For example,
-it will be rejected in type signatures of terms, but allowed in type synonyms, which can be used in kinds.)
-No term-level definition can have a type that has a visible dependent quantifier.
+This new construct will be rejected in any context that is unambiguously a
+type for a term. (For example, it will be rejected in type signatures of
+terms, but allowed in type synonyms, which can be used in kinds.) No
+term-level definition can have a type that has a visible dependent quantifier.
+
+To wit, this new construct would be forbidden in the following places:
+
+* The type ascription of a ``forall``\-bound term variable in a ``RULE``
+  
+* The type of a foreign import/export
+  
+* A type signature for a term-level variable
+
+* The type in a ``SPECIALISE`` or ``SPECIALISE_INLINE`` or ``SPECIALISE instance`` pragma
+
+* An expression type ascription
+
+* A pattern synonym type signature
+
+* A type signature in a pattern
+
+A data constructor *can* use ``forall ... ->`` in its type (as given in
+GADT-syntax) or arguments, but any use of such a constructor in terms (as
+opposed to in a type) will be an error.
+
+Naturally, the new syntax is forbidden anywhere that ``forall`` is currently
+forbidden (for example, in an argument position of a type family).
 
 Effect and Interactions
 -----------------------
 Shouldn't be any untoward interactions. Template Haskell will have to be updated, and we'll have to
 make sure no terms can get these strange new types.
+
+Note that the new construct *can* be used in higher-rank scenarios::
+
+  data S :: (forall k -> k -> Type) -> Type
+
+will accept the ``T`` in the introduction as an argument, but it won't accept ``Data.Proxy``\'s
+``Proxy``, as ``Proxy`` takes its argument invisibly. Perhaps one day we can devise a way
+to coerce visibilities to allow ``S`` to take ``Proxy`` as an argument, but not today.
 
 Costs and Drawbacks
 -------------------
