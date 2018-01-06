@@ -17,127 +17,169 @@ This proposal is `discussed at this pull request <https://github.com/ghc-proposa
 ``pi``, and other quantifiers for Dependent Haskell
 ===================================================
 
-My thesis_ describes (page 59, section 4.2.5) 12
-quantifiers for Dependent Haskell. This proposal reserves syntax for these twelve and allows the use of the new ``pi`` quantifier in
-the one place it makes sense in today's Haskell: in type constructor kinds. It also allows the use of the matchable arrow
-in the places where it makes sense in today's Haskell: in type constructor kinds and data constructor types.
+My thesis_ describes (page 59, section 4.2.5) 12 quantifiers for Dependent
+Haskell. This proposal reserves syntax for these twelve and allows the use of
+the new ``pi`` quantifier in the one place it makes sense in today's Haskell:
+in type constructor kinds. It also allows the use of the matchable arrow in
+the places where it makes sense in today's Haskell: in type constructor kinds
+and data constructor types.
 
 .. _thesis: https://repository.brynmawr.edu/cgi/viewcontent.cgi?article=1074&context=compsci_pubs
 
 Motivation
 ------------
 
-The motivation for this proposal is as a step toward full dependent types. In order to retain the type inference and type erasure
-properties of Haskell, it is necessary to consider a variety of axes along which quantifiers may vary. My thesis_ (section 4.2) has
-all the details; that section is approachable without reading other parts of the thesis, and should be helpful to anyone considering
-this proposal. I summarize the main points here, however.
+The motivation for this proposal is as a step toward full dependent types. In
+order to retain the type inference and type erasure properties of Haskell, it
+is necessary to consider a variety of axes along which quantifiers may vary.
+My thesis_ (section 4.2) has all the details; that section is approachable
+without reading other parts of the thesis, and should be helpful to anyone
+considering this proposal. I summarize the main points here, however.
 
 There are four axes quantifiers may vary on:
 
-1. Dependency: Can later parts of a type *depend* on the quantified variable (henceforth, quantifiee). In the type ``forall a. a -> a``,
-   the ``a`` is quantified dependently; the visible argument (of type ``a``) is quantified non-dependently. (We don't say "independent".)
+1. Dependency: Can later parts of a type *depend* on the quantified variable
+   (henceforth, quantifiee). In the type ``forall a. a -> a``, the ``a`` is
+   quantified dependently; the visible argument (of type ``a``) is quantified
+   non-dependently. (We don't say "independent".)
 
-2. Relevance: Can the operation of a construct (function, datatype) use the quantified argument in a computation? This is closely related
-   both to parametricity and type erasure. Consider ``id :: forall a. a -> a``. That function has *two* quantifiers, the ``forall`` and the
-   ``->``; we say it has two arguments. The first argument is irrelevant: the operation of ``id`` can *not* change depending on the choice
-   of the type ``a`` is instantiated at. This is what allows type erasure to work; the choice of type is erased at runtime, because no
-   function can branch on this choice. In contrast the second argument of ``id`` is relevant, as it informs the return value of the function.
+2. Relevance: Can the operation of a construct (function, datatype) use the
+   quantified argument in a computation? This is closely related both to
+   parametricity and type erasure. Consider ``id :: forall a. a -> a``. That
+   function has *two* quantifiers, the ``forall`` and the ``->``; we say it
+   has two arguments. The first argument is irrelevant: the operation of
+   ``id`` can *not* change depending on the choice of the type ``a`` is
+   instantiated at. This is what allows type erasure to work; the choice of
+   type is erased at runtime, because no function can branch on this choice.
+   In contrast the second argument of ``id`` is relevant, as it informs the
+   return value of the function.
 
-   Note that relevance is not only type erasure. A type family argument can either be relevant or irrelevant, based on whether or not
-   the operation of the type family branches on the choice of argument. GHC currently allows only *relevant* quantification in type
-   families (if you write ``type family Id (x :: a) :: a``, then different equations for ``Id`` can check what the choice of ``a`` is),
-   but irrelevant quantification would also be useful, in order to enforce parametricity and avoid coding errors.
+   Note that relevance is not only type erasure. A type family argument can
+   either be relevant or irrelevant, based on whether or not the operation of
+   the type family branches on the choice of argument. GHC currently allows
+   only *relevant* quantification in type families (if you write
+   ``type family Id (x :: a) :: a``, then different equations for ``Id`` can
+   check what the choice of ``a`` is), but irrelevant quantification would
+   also be useful, in order to enforce parametricity and avoid coding errors.
 
-   Relevance also affects whether or not a data constructor stores its arguments. When we say ``Just :: forall a. a -> Maybe a``, we mean
-   that a ``Just`` cell contains only one argument, something of type ``a``. The ``Just`` cell does *not* contain the choice of ``a``
-   (``Int``, say). However, we could imagine storing type information explicitly in a way that could be branched on later; that would
-   be relevant quantification. (Today, we can do this with ``Typeable``; in effect, ``f :: forall a. Typeable a => a -> a`` quantifies
-   ``a`` relevantly.)
+   Relevance also affects whether or not a data constructor stores its
+   arguments. When we say ``Just :: forall a. a -> Maybe a``, we mean that a
+   ``Just`` cell contains only one argument, something of type ``a``. The
+   ``Just`` cell does *not* contain the choice of ``a`` (``Int``, say).
+   However, we could imagine storing type information explicitly in a way that
+   could be branched on later; that would be relevant quantification. (Today,
+   we can do this with ``Typeable``; in effect,
+   ``f :: forall a. Typeable a => a -> a`` quantifies ``a`` relevantly.)
 
-3. Visibility: Is the argument always supplied when the function is called? Currently, all type arguments are invisible. Term-level
-   arguments of kind ``Type`` are visible, which term-level arguments of kind ``Constraint`` are invisible. Proposal
-   `#81`_ describes adding a syntax for visible dependent quantification,
-   which is already allowed in datatype kinds, albeit indirectly. Visible type application provides a mechanism for overriding the
-   choice of invisible quantification.
+3. Visibility: Is the argument always supplied when the function is called?
+   Currently, all type arguments are invisible. Term-level arguments of kind
+   ``Type`` are visible, which term-level arguments of kind ``Constraint`` are
+   invisible. Proposal `#81`_ describes adding a syntax for visible dependent
+   quantification, which is already allowed in datatype kinds, albeit
+   indirectly. Visible type application provides a mechanism for overriding
+   the choice of invisible quantification.
 
 .. _`#81`: https://github.com/ghc-proposals/ghc-proposals/pull/81
 
-4. Matchability: If we know ``a b ~ c d``, can we deduce ``a ~ c`` and ``b ~ d``? If so, then both ``a`` and ``c`` are *matchable*.
-   (Matchable = injective and generative.) Datatypes and data constructors are matchable; ordinary functions and type families are
-   not. Note that matchability affects more than just types: the fact that data constructor arguments are matchable is what gives
-   meaning to pattern matching. Think of how silly it would be to pattern match on functions, and you'll get a better appreciation
-   for this. Indeed, the difference between data constructors and ordinary functions is precisely that the former are matchable.
+4. Matchability: If we know ``a b ~ c d``, can we deduce ``a ~ c`` and
+   ``b ~ d``? If so, then both ``a`` and ``c`` are *matchable*. (Matchable =
+   injective and generative.) Datatypes and data constructors are matchable;
+   ordinary functions and type families are not. Note that matchability
+   affects more than just types: the fact that data constructor arguments are
+   matchable is what gives meaning to pattern matching. Think of how silly it
+   would be to pattern match on functions, and you'll get a better
+   appreciation for this. Indeed, the difference between data constructors and
+   ordinary functions is precisely that the former are matchable.
 
-These all exist in Haskell today, albeit in ways that may be hard to disentangle. Just about all dependent quantification is both
-irrelevant and invisible. (Exceptions: see `#81`_ and in type families.) Matchability is all tied in with datatype declaration.
-Yet there's no reason we can't make these more flexible. In some sense, adding dependent types just means allowing dependent,
-relevant quantification -- that is, an argument that can be mentioned in a type and inspected at runtime. (Singletons allow
-us to simulate dependent types by linking a dependent, irrelevant argument (``forall a``) with a non-dependent, relevant one (``Sing a``).)
+These all exist in Haskell today, albeit in ways that may be hard to
+disentangle. Just about all dependent quantification is both irrelevant and
+invisible. (Exceptions: see `#81`_ and in type families.) Matchability is all
+tied in with datatype declaration. Yet there's no reason we can't make these
+more flexible. In some sense, adding dependent types just means allowing
+dependent, relevant quantification -- that is, an argument that can be
+mentioned in a type and inspected at runtime. (Singletons allow us to simulate
+dependent types by linking a dependent, irrelevant argument (``forall a``)
+with a non-dependent, relevant one (``Sing a``).)
 
-Visibility is solely about programmer convenience: we could live without invisible arguments, but surely it would be annoying to
-have to say ``id Int 5`` every time.
+Visibility is solely about programmer convenience: we could live without
+invisible arguments, but surely it would be annoying to have to say
+``id Int 5`` every time.
 
-Matchability is about type inference (mostly; see `GHC#7205
-<https://ghc.haskell.org/trac/ghc/ticket/7205>`_ which describes a feature
+Matchability is about type inference (mostly; see
+`GHC#7205 <https://ghc.haskell.org/trac/ghc/ticket/7205>`_ which describes a feature
 requiring matchability in Core). When we know, say, ``m a ~ Maybe Int``, can
 we conclude ``m ~ Maybe`` and ``a ~ Int``? This is essential for, say, monadic
 code to continue to be accepted. Having a first-class notion of matchability
 is needed in order to have partially-applied type-level operations, which in
-turn allow proper functional programming in types. See proposal `#52 <https://github.com/ghc-proposals/ghc-proposals/pull/52>`_
-for more discussion.
+turn allow proper functional programming in types. See proposal
+`#52 <https://github.com/ghc-proposals/ghc-proposals/pull/52>`_ for more discussion.
 
-All these axes are orthogonal. However, having something that's both irrelevant and non-dependent is useless, and so is not
-included in the plan.
+All these axes are orthogonal. However, having something that's both
+irrelevant and non-dependent is useless, and so is not included in the plan.
 
-Separately from reserving syntax for all the quantifiers, this proposal suggests using ``pi`` and ``'->`` to more accurately
-describe existing features:
+Separately from reserving syntax for all the quantifiers, this proposal
+suggests using ``pi`` and ``'->`` to more accurately describe existing
+features:
 
-1. Type constructors use *relevant* quantification for all their arguments. Consider ``data Proxy k (a :: k) = P``. Note that
-   the kind argument is visible here for easy reference. Is ``Proxy Type`` distinct from ``Proxy (Type -> Type)``? Could a type
-   family match on these and then compute based on the difference between ``Type`` and ``Type -> Type``? Surely, yes. That
-   means that the kind ``k`` is quantified *relevantly*. Accordingly, because ``pi`` is the relevant counterpart to ``forall``,
-   we really should use ``pi`` in type constructor kinds: ``data Proxy :: pi k -> k -> Type`` (or, if we want the kind to
-   be invisible, ``data ProxyInvis :: pi k. k -> Type``).
+1. Type constructors use *relevant* quantification for all their arguments.
+   Consider ``data Proxy k (a :: k) = P``. Note that the kind argument is
+   visible here for easy reference. Is ``Proxy Type`` distinct from
+   ``Proxy (Type -> Type)``? Could a type family match on these and then compute based
+   on the difference between ``Type`` and ``Type -> Type``? Surely, yes. That
+   means that the kind ``k`` is quantified *relevantly*. Accordingly, because
+   ``pi`` is the relevant counterpart to ``forall``, we really should use
+   ``pi`` in type constructor kinds: ``data Proxy :: pi k -> k -> Type`` (or,
+   if we want the kind to be invisible,
+   ``data ProxyInvis :: pi k. k -> Type``).
 
-2. As described above in the part introducing matchability data constructor arguments are matchable (as are type constructor
-   arguments). Thus, they should be able to use the matchable arrow ``'->``.
+2. As described above in the part introducing matchability data constructor
+   arguments are matchable (as are type constructor arguments). Thus, they
+   should be able to use the matchable arrow ``'->``.
 
 Proposed Change Specification
 -----------------------------
 
 **Extension:**
 
-Introduce a new GHC extension, ``-XDependentTypes``. This extension would be a catchall for the dependent features being
-proposed here and elsewhere. It will be expected that this extension is unstable for a few years, and we make no guarantees
-about backward compatibility. By introducing one new extension, we avoid the need for many extensions for different slices
-of the Dependent Haskell feature set.
+Introduce a new GHC extension, ``-XDependentTypes``. This extension would be a
+catchall for the dependent features being proposed here and elsewhere. It will
+be expected that this extension is unstable for a few years, and we make no
+guarantees about backward compatibility. By introducing one new extension, we
+avoid the need for many extensions for different slices of the Dependent
+Haskell feature set.
 
 **Lexical Syntax:**
 
-1. Introduce a new keyword ``pi``, syntactically identical in behavior to ``forall``. With ``-XUnicodeSyntax``, users
-   could write |pi| (Unicode U+220F) instead of ``pi``. Note that this character is not the Greek capital letter |greekpi|,
-   (Unicode U+3A0). This new keyword would exist only with ``-XDependentTypes``.
+1. Introduce a new keyword ``pi``, syntactically identical in behavior to
+   ``forall``. With ``-XUnicodeSyntax``, users could write |pi| (Unicode
+   U+220F) instead of ``pi``. Note that this character is not the Greek
+   capital letter |greekpi|, (Unicode U+3A0). This new keyword would exist
+   only with ``-XDependentTypes``.
 
 .. |pi| unicode:: U+220F .. \prod operator
 .. |greekpi| unicode:: U+3A0 .. Greek Π
 
-2. Introduce a new type-level operator ``'->``, syntactically identical in behavior (and fixity) to ``->``.
-   In keeping with current treatment of the ``'`` prefix, it is allowed (but discouraged)
-   to separate the ``'`` from the ``->`` with whitespace. This new operator would exist regardless of the ``-XDependentTypes``
-   extension.
+2. Introduce a new type-level operator ``'->``, syntactically identical in
+   behavior (and fixity) to ``->``. In keeping with current treatment of the
+   ``'`` prefix, it is allowed (but discouraged) to separate the ``'`` from
+   the ``->`` with whitespace. This new operator would exist regardless of the
+   ``-XDependentTypes`` extension.
 
 3. Introduce ``'=>`` with the same syntactic behavior as ``=>``.
 
-4. Allow ``'`` to be a prefix to the ``pi`` and ``forall`` quantifiers. Syntactically, ``'pi`` and ``'forall`` are
-   identical to ``pi`` and ``forall``.
+4. Allow ``'`` to be a prefix to the ``pi`` and ``forall`` quantifiers.
+   Syntactically, ``'pi`` and ``'forall`` are identical to ``pi`` and
+   ``forall``.
 
-5. Allow ``->`` in place of ``.`` after ``pi`` or ``forall``. (This is part of `#81`_.) The new syntax would be
-   enabled by ``-XDependentTypes``.
+5. Allow ``->`` in place of ``.`` after ``pi`` or ``forall``. (This is part of
+   `#81`_.) The new syntax would be enabled by ``-XDependentTypes``.
 
 **Semantics:**
 
-Note that the proposed semantics are not the full meaning of these constructs, as this proposal does *not* cover
-all of Dependent Haskell. Instead, the semantics are meant to allow the new syntax to be used with existing constructs.
+Note that the proposed semantics are not the full meaning of these constructs,
+as this proposal does *not* cover all of Dependent Haskell. Instead, the
+semantics are meant to allow the new syntax to be used with existing
+constructs.
 
 1. In type constructor kinds (e.g., ``data T :: <right here>``), allow the use
    of ``pi`` instead of ``forall``. That is ``data Proxy :: pi k. k -> Type``
@@ -150,35 +192,41 @@ all of Dependent Haskell. Instead, the semantics are meant to allow the new synt
 
 2. Any other use of the ``pi`` keyword is an error.
 
-3. The matchable arrows ``'->`` and ``'=>`` are allowed in type constructor kinds and GADT-style
-   data constructor types with ``-XDependentTypes``.
-   The meaning of these new constructs is identical to the meaning of the old ones. A new warning
-   flag ``-Wmatchable-arrows`` (not bundled in any warning group) would warn if an unmatchable arrow
-   ``->`` is used in either place (in a non-higher-order situation).
+3. The matchable arrows ``'->`` and ``'=>`` are allowed in type constructor
+   kinds and GADT-style data constructor types with ``-XDependentTypes``. The
+   meaning of these new constructs is identical to the meaning of the old
+   ones. A new warning flag ``-Wmatchable-arrows`` (not bundled in any warning
+   group) would warn if an unmatchable arrow ``->`` is used in either place
+   (in a non-higher-order situation).
 
-4. The matchable arrow ``'->`` is *required* (with ``-XDependentTypes``)
-   in kinds. It is allowed also with ``-XKindSignatures`` (but not required).
-   Thus, ``-XDependentTypes`` requires (and ``-XKindSignatures`` allows) ``return :: forall (m :: Type '-> Type) a. Monad m => a -> m a``
-   (if you are going to write the kind of ``m``, which of course can still be inferred).
-   Here, a "kind" is one that can be syntactically recognized as such, by appearing to
-   the right of a ``::`` in a type. The use of ``'->`` here reflects today's truth that
-   all kind-level operations are matchable. In the future, we might want unmatchable
-   kinds, meaning that ``forall (m :: Type '-> Type). ...`` and ``forall (m :: Type -> Type). ...`` will be different;
-   the former corresponds to what is written today.
+4. The matchable arrow ``'->`` is *required* (with ``-XDependentTypes``) in
+   kinds. It is allowed also with ``-XKindSignatures`` (but not required).
+   Thus, ``-XDependentTypes`` requires (and ``-XKindSignatures`` allows)
+   ``return :: forall (m :: Type '-> Type) a. Monad m => a -> m a`` (if you
+   are going to write the kind of ``m``, which of course can still be
+   inferred). Here, a "kind" is one that can be syntactically recognized as
+   such, by appearing to the right of a ``::`` in a type. The use of ``'->``
+   here reflects today's truth that all kind-level operations are matchable.
+   In the future, we might want unmatchable kinds, meaning that
+   ``forall (m :: Type '-> Type). ...`` and
+   ``forall (m :: Type -> Type). ...`` will be
+   different; the former corresponds to what is written today.
 
-5. ``-Wcompat`` and ``-XKindSignatures`` will warn if ``->`` is used in a way that would
-   be an error under ``-XDependentTypes``.
+5. ``-Wcompat`` and ``-XKindSignatures`` will warn if ``->`` is used in a way
+   that would be an error under ``-XDependentTypes``.
 
 6. Any other use of ``'->`` or ``'=>`` is an error.
 
-7. The rules requiring/allowing ``'`` with ``pi`` and ``forall`` are the same as those with ``->``. Thus
-   the ``'`` is optional in a non-higher-order situation in a type/data constructor kind/type but required
-   in kinds in other contexts.
+7. The rules requiring/allowing ``'`` with ``pi`` and ``forall`` are the same
+   as those with ``->``. Thus the ``'`` is optional in a non-higher-order
+   situation in a type/data constructor kind/type but required in kinds in
+   other contexts.
 
 8. The meaning of the ``->`` after ``pi`` or ``forall`` is given in `#81`_.
 
-9. With ``-XDependentTypes`` on, error messages will use ``pi`` and ``'->``, etc., as appropriate. Without
-   ``-XDependentTypes``, error messages will not change.
+9. With ``-XDependentTypes`` on, error messages will use ``pi`` and ``'->``,
+   etc., as appropriate. Without ``-XDependentTypes``, error messages will not
+   change.
 
 
 Effect and Interactions
@@ -186,43 +234,54 @@ Effect and Interactions
 
 This change is fully backward compatible.
 
-With ``-XDependentTypes`` enabled, code might not be backward compatible, as ``-XDependentTypes`` requires the correct labeling
-of matchable kinds (outside of type/data constructor types, where matchability is assumed for convenience). The ability
-to use ``'->`` with ``-XKindSignatures`` is to prepare for a future where ``->`` and ``'->`` can mix in types. This will
-have to be a breaking change (because ``->`` will line up with its term-level meaning of unmatchable instead of its kind-level
-meaning of matchable), and so we might as well prepare for it now.
+With ``-XDependentTypes`` enabled, code might not be backward compatible, as
+``-XDependentTypes`` requires the correct labeling of matchable kinds (outside
+of type/data constructor types, where matchability is assumed for
+convenience). The ability to use ``'->`` with ``-XKindSignatures`` is to
+prepare for a future where ``->`` and ``'->`` can mix in types. This will have
+to be a breaking change (because ``->`` will line up with its term-level
+meaning of unmatchable instead of its kind-level meaning of matchable), and so
+we might as well prepare for it now.
 
 
 Costs and Drawbacks
 -------------------
 
-This should be fairly easy to implement, as it's largely syntactical. Note that type inference is unaffected, as is Core.
+This should be fairly easy to implement, as it's largely syntactical. Note
+that type inference is unaffected, as is Core.
 
-This proposal increases the surface area of the language in strange ways. Users not looking for trouble won't find any,
-but all this will have to be documented and may be scary. Code written with ``-XDependentTypes`` shouldn't be shown
-to Haskell learners for a bit, so I don't think this will have immediate impact on education. However, there may be
-impacts down the road caused by dependent types.
+This proposal increases the surface area of the language in strange ways.
+Users not looking for trouble won't find any, but all this will have to be
+documented and may be scary. Code written with ``-XDependentTypes`` shouldn't
+be shown to Haskell learners for a bit, so I don't think this will have
+immediate impact on education. However, there may be impacts down the road
+caused by dependent types.
 
 Alternatives
 ------------
 
-* Concrete syntax always has alternatives. Suggest some. In particular, I'm not sure that ``'`` is the right way to denote
-  matchability. But it's nicely backward compatible.
+* Concrete syntax always has alternatives. Suggest some. In particular, I'm
+  not sure that ``'`` is the right way to denote matchability. But it's nicely
+  backward compatible.
 
 * We could reserve the syntax while making it an error to use any of it.
 
-* We could use a different extension name than ``-XDependentTypes``, which promises much more than it delivers. But I favor
-  making the extension now, so it has room to grow.
+* We could use a different extension name than ``-XDependentTypes``, which
+  promises much more than it delivers. But I favor making the extension now,
+  so it has room to grow.
 
-* Change behavior around ``-Wcompat`` to be less annoying. I'm pretty sure I see where all this is going (see my thesis_),
-  but I could well be wrong, and it would be a shame if ``-Wcompat`` told users to do the wrong thing. This is all bleeding
-  edge, after all.
+* Change behavior around ``-Wcompat`` to be less annoying. I'm pretty sure I
+  see where all this is going (see my thesis_), but I could well be wrong, and
+  it would be a shame if ``-Wcompat`` told users to do the wrong thing. This
+  is all bleeding edge, after all.
 
 Unresolved questions
 --------------------
 
+None to my knowledge.
 
 
 Implementation Plan
 -------------------
-(Optional) If accepted who will implement the change? Which other ressources and prerequisites are required for implementation?
+
+I or a close collaborator volunteer to implement. Offers for help are welcome.
