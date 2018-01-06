@@ -210,6 +210,17 @@ Alternatives
    a future where ``*`` is removed from the language, and changing error messages
    is one step in that direction.
 
+.. |star| unicode:: U+2605 .. unicode star
+   
+6. Currently, and in this proposal, both ``*`` and its unicode variant |star| are
+   treated identically. One way to have our cake and eat it too is to follow the plan
+   above for ``*`` but force |star| to always lex as an alphanumeric identifier
+   (the way ``*``\-as-``Type`` lexes now). That way, folks who are really wedded
+   to using a star can still do so. This would not be backwards compatible, because
+   anyone who uses |star| as a type-level infix operator would have to change the
+   name of their operator; there would be no way to use |star| infix (without
+   backquotes, as usual).
+
 Unresolved questions
 --------------------
 
