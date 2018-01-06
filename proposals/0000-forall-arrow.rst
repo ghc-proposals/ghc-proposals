@@ -33,6 +33,8 @@ this in terms.)
 The syntax ``forall k -> k -> *`` that is printed in GHCi for these kinds is not currently parsed.
 This proposal proposed to add this kind format to the language as a first-class kind.
 
+This proposal is viable on its own, but it may be best considered in the context of other
+quantifiers needed to support dependent types. See `#102 <https://github.com/goldfirere/ghc-proposals/blob/pi/proposals/0000-pi.rst>`_.
 
 Motivation
 ------------
