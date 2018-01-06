@@ -136,6 +136,44 @@ features:
    arguments are matchable (as are type constructor arguments). Thus, they
    should be able to use the matchable arrow ``'->``.
 
+The Quantifier Table
+--------------------
+
+This proposal includes syntax for distinguishing quantifiers. Here is the
+master table of the quantifiers. The specifics in this proposal are in the
+specification below this table.
+
++------------------+---------------+--------------+-------------------+--------------+
+|                  |               |              |                   |              |
+|Quantifier        | Dependence    | Relevance    | Visibility        | Matchability |
+|                  |               |              |                   |              |
++------------------+---------------+--------------+-------------------+--------------+
+| ``forall a.``    | dependent     | irrelevant   | invisible (unif)  | unmatchable  |
++------------------+---------------+--------------+-------------------+--------------+
+| ``'forall a.``   | dependent     | irrelevant   | invisible (unif)  | matchable    |
++------------------+---------------+--------------+-------------------+--------------+
+| ``forall a ->``  | dependent     | irrelevant   | visible           | unmatchable  |
++------------------+---------------+--------------+-------------------+--------------+
+| ``'forall a ->`` | dependent     | irrelevant   | visible           | matchable    |
++------------------+---------------+--------------+-------------------+--------------+
+| ``pi a.``        | dependent     | relevant     | invisible (unif)  | unmatchable  |
++------------------+---------------+--------------+-------------------+--------------+
+| ``'pi a.``       | dependent     | relevant     | invisible (unif)  | matchable    |
++------------------+---------------+--------------+-------------------+--------------+
+| ``pi a ->``      | dependent     | relevant     | visible           | unmatchable  |
++------------------+---------------+--------------+-------------------+--------------+
+| ``'pi a ->``     | dependent     | relevant     | visible           | matchable    |
++------------------+---------------+--------------+-------------------+--------------+
+| ``ty =>``        | non-dependent | relevant     | invisible (solve) | unmatchable  |
++------------------+---------------+--------------+-------------------+--------------+
+| ``ty '=>``       | non-dependent | relevant     | invisible (solve) | matchable    |
++------------------+---------------+--------------+-------------------+--------------+
+| ``ty ->``        | non-dependent | relevant     | visible           | unmatchable  |
++------------------+---------------+--------------+-------------------+--------------+
+| ``ty '->``       | non-dependent | relevant     | visible           | matchable    |
++------------------+---------------+--------------+-------------------+--------------+
+
+
 Proposed Change Specification
 -----------------------------
 
