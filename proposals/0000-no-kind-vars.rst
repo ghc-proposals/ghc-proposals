@@ -57,7 +57,7 @@ We will consider the following collection of type signatures::
 1. **The "forall-or-nothing" rule**
 
    Currently, all of the signatures above are accepted except ``h``. GHC has a rule I call the
-   "forall-or-nothing" rule: if you write an explicit ``forall`` in a type signature,
+   "forall-or-nothing" rule: if you begin a type signature with an explicit ``forall``,
    you must specify *all* the type variables brought into scope. The idea behind
    forall-or-nothing is that if a user is writing an explicit ``forall``, then they
    should be protected if they make an accidental misspelling of a variable later on.
