@@ -174,9 +174,58 @@ Alternatives
   Haskell wishes to relax the rule, then it would need to have its own types. It would all seem
   to require major engineering.
 
+* Some commentary on this proposal has pointed out that there is an asymmetry between the ability
+  to introduce inferred variables, but no way to instantiate them. One way to fix this would be
+  to label variables with a *specificity level*. To instantiate an argument at specificity level
+  *n*, use *n* ``@`` signs. When writing a ``forall``, use braces to increase the specificity
+  number of an argument. So, *required* arguments are at specificty 0, requiring no ``@`` signs.
+  Today's *specified* arguments are at specificity 1, requiring 1 ``@`` sign. If the user
+  writes ``f :: forall {a}. ...``, ``a`` would have specificity 2, and a caller could instantiate
+  ``a`` with ``f @@Int``. If the user writes ``g :: forall {{a}}. ...``, a call could instantiate
+  ``a`` with ``g @@@Bool``. A variable that GHC infers would have infinity specificity.
+  (Perhaps the label should be "inferredness", but "specificity" has the advantage of actually
+  being an English word.)
+
+  This resolves the asymmetry, but at the cost of making a corner of GHC's design yet more elaborate.
+  I personally don't like this, but I am sympathetic to the concerns that inspired it.
+
 Unresolved questions
 --------------------
-None at this time.
+
+.. _`#80`: https://github.com/treeowl/ghc-proposals/blob/type-level-type-app/proposals/0000-type-level-type-applications.rst
+
+How will this interact when we have visible type application in types
+(proposal `#80`_)? For example, consider ::
+
+  class C (a :: Proxy k) where ...
+
+I want ``C`` to have only one required argument, ``a``. But I also want an explicit binding
+site for ``k``, so I can choose ``k``\'s kind. One option would be to say ::
+
+  class C {k :: Maybe Bool} (a :: Proxy k) where ...
+
+where those braces mean that I don't want ``k`` to be a required argument of ``C``. However,
+here the braces change ``k`` to be *specified* instead of *required*; in contrast, this
+proposal suggests the brace syntax to change a variable from *specified* to *inferred*.
+Is this too confusing? There *is* a fairly simple rule here: braces make an argument less
+visible, and there are three steps of visibility.
+
+Of course, we might also like ``C`` to have an *inferred* argument. Would it be done
+like this? ::
+
+  class C {{k :: Maybe Bool}} (a :: Proxy k) where ...
+
+I suppose so. Does that mean that the syntax for an inferred argument in a normal ``forall``
+should have double braces, too? (Double braces would cleverly avoid the ambiguity with
+record puns mentioned in the drawbacks section.) I don't personally think so.
+
+A way of sidestepping this problem is not to introduce any of this syntax but instead
+require a top-level kind signature (proposal `#54`_) in order to pull this kind of
+trick off.
+
+Of all these options, I like the "braces make things more invisible" rule most, allowing
+``class C {k :: Maybe Bool} (a :: Proxy k)``. However, I do think we should consider
+this future-compatibility problem when designing the feature proposed here.
 
 Implementation Plan
 -------------------
