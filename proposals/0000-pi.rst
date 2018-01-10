@@ -305,6 +305,16 @@ Alternatives
   not sure that ``'`` is the right way to denote matchability. But it's nicely
   backward compatible.
 
+  * One suggestion (from @Saagar-A) is to put the ``'`` on the ``.`` or ``->``
+    in ``pi``\/``forall`` syntax. So, unmatchable ``pi`` and ``forall`` stays
+    as above, but matchable would look like ``pi a '.`` or ``pi a '->`` or
+    ``forall a '.`` or ``forall a '->``. This has a nice parallel with the
+    ``'->`` used for matchable non-dependent quantifiers. However, there is
+    potential confusion if the user writes, e.g., ``forall a'.`` Is that binding
+    ``a'`` unmatchably? Or is it binding ``a`` matchably? I think it would
+    mean the former, and thus the ``'.`` or ``'->`` syntax would require
+    preceding whitespace.
+
 * We could reserve the syntax while making it an error to use any of it.
 
 * We could use a different extension name than ``-XDependentTypes``, which
