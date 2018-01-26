@@ -221,6 +221,16 @@ Alternatives
    name of their operator; there would be no way to use |star| infix (without
    backquotes, as usual).
 
+7. Introduce a new way of writing ``Type``: ``type``. That is, the keyword ``type``
+   would be the kind of types with values. We could say ``class Monad (m :: type -> type)``.
+   This has the advantage that clients do not need to import anything, as we could
+   make ``type`` always in scope (as it is a keyword). Furthermore, existing tools
+   already apply syntax highlighting to ``type``, which I think is reasonable.
+   Disadvantages include the fact that ``type`` will look like a type variable without
+   syntax highlighting enabled, this is a new change to an area that has already undergone
+   some disruptive changes, and it has been mentioned previously and rejected. But I
+   still like it, so I'm mentioning it here.
+   
 Unresolved questions
 --------------------
 
