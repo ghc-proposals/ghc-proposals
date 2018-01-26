@@ -2,7 +2,7 @@
 
 .. trac-ticket:: https://ghc.haskell.org/trac/ghc/ticket/13126
 
-.. implemented:: No
+.. implemented:: 8.4.1
 
 .. highlight:: haskell
 

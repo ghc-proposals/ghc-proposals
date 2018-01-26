@@ -1,6 +1,6 @@
 .. proposal-number:: 0009
 .. trac-ticket:: 14473
-.. implemented:: not yet
+.. implemented:: 8.6.1
 .. highlight:: haskell
 
 This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/76>`_.
