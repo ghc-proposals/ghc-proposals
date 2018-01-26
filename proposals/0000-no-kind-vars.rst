@@ -84,14 +84,17 @@ We will consider the following collection of type signatures::
 Proposed Change Specification
 -----------------------------
 
-Type variables and kind variables will be treated identically in type signatures.
+Type variables and kind variables will be treated identically in types.
 Specifically:
 
 1. With ``-Wcompat``, warn if a kind variable is brought into scope implicitly in
-   a type signature with an explicit ``forall``.
-
+   a type with an explicit ``forall``. This applies to type signatures and to other
+   contexts that allow a ``forall`` with the forall-or-nothing rule in effect (for example,
+   class instances).
+   
 2. Two releases after `#83`_ is implemented, make it an error to bring a kind variable
-   into scope implicitly in a type signature with an explicit ``forall``.
+   into scope implicitly in a type with an explicit ``forall`` and where the forall-or-nothing
+   rule is in effect.
    
 Effect and Interactions
 -----------------------
