@@ -150,19 +150,19 @@ specification below this table.
 +------------------+----------------+---------------+-------------------+------------------+
 | ``forall a.``    | dependent      | irrelevant    | invisible (unif)  | unmatchable      |
 +------------------+----------------+---------------+-------------------+------------------+
-| ``'forall a.``   | dependent      | irrelevant    | invisible (unif)  | matchable        |
+| ``forall a '.``  | dependent      | irrelevant    | invisible (unif)  | matchable        |
 +------------------+----------------+---------------+-------------------+------------------+
 | ``forall a ->``  | dependent      | irrelevant    | visible           | unmatchable      |
 +------------------+----------------+---------------+-------------------+------------------+
-| ``'forall a ->`` | dependent      | irrelevant    | visible           | matchable        |
+| ``forall a '->`` | dependent      | irrelevant    | visible           | matchable        |
 +------------------+----------------+---------------+-------------------+------------------+
-| ``pi a.``        | dependent      | relevant      | invisible (unif)  | unmatchable      |
+| ``pi a '.``      | dependent      | relevant      | invisible (unif)  | unmatchable      |
 +------------------+----------------+---------------+-------------------+------------------+
-| ``'pi a.``       | dependent      | relevant      | invisible (unif)  | matchable        |
+| ``pi a '.``      | dependent      | relevant      | invisible (unif)  | matchable        |
 +------------------+----------------+---------------+-------------------+------------------+
-| ``pi a ->``      | dependent      | relevant      | visible           | unmatchable      |
+| ``pi a '->``     | dependent      | relevant      | visible           | unmatchable      |
 +------------------+----------------+---------------+-------------------+------------------+
-| ``'pi a ->``     | dependent      | relevant      | visible           | matchable        |
+| ``pi a '->``     | dependent      | relevant      | visible           | matchable        |
 +------------------+----------------+---------------+-------------------+------------------+
 | ``ty =>``        | non-dependent  | relevant      | invisible (solve) | unmatchable      |
 +------------------+----------------+---------------+-------------------+------------------+
@@ -208,12 +208,12 @@ Haskell feature set.
 
 3. Introduce ``'=>`` with the same syntactic behavior as ``=>``.
 
-4. Allow ``'`` to be a prefix to the ``pi`` and ``forall`` quantifiers.
-   Syntactically, ``'pi`` and ``'forall`` are identical to ``pi`` and
-   ``forall``.
-
-5. Allow ``->`` in place of ``.`` after ``pi`` or ``forall``. (This is part of
+4. Allow ``->`` in place of ``.`` after ``pi`` or ``forall``. (This is part of
    `#81`_.) The new syntax would be enabled by ``-XDependentTypes``.
+
+5. Allow ``'`` to be a prefix to the ``.`` or ``->`` used with ``pi`` and ``forall`` quantifiers.
+   Syntactically, ``'.`` and ``'->`` behave identically to ``.`` and ``->``.
+
 
 **Semantics:**
 
@@ -284,6 +284,12 @@ to be a breaking change (because ``->`` will line up with its term-level
 meaning of unmatchable instead of its kind-level meaning of matchable), and so
 we might as well prepare for it now.
 
+The use of the ``'`` prefix means that more whitespace may have to be used.
+For example, ``forall a'.`` would be ambiguous. Is that declaring a type variable
+``a'`` and quantifying it unmatchably? Or is it declaring a type variable ``a``
+and quantifying it matchably? It would be the former, but this is
+a small soft spot in the syntax.
+
 
 Costs and Drawbacks
 -------------------
@@ -305,16 +311,10 @@ Alternatives
   not sure that ``'`` is the right way to denote matchability. But it's nicely
   backward compatible.
 
-  * One suggestion (from @Saagar-A) is to put the ``'`` on the ``.`` or ``->``
-    in ``pi``\/``forall`` syntax. So, unmatchable ``pi`` and ``forall`` stays
-    as above, but matchable would look like ``pi a '.`` or ``pi a '->`` or
-    ``forall a '.`` or ``forall a '->``. This has a nice parallel with the
-    ``'->`` used for matchable non-dependent quantifiers. However, there is
-    potential confusion if the user writes, e.g., ``forall a'.`` Is that binding
-    ``a'`` unmatchably? Or is it binding ``a`` matchably? I think it would
-    mean the former, and thus the ``'.`` or ``'->`` syntax would require
-    preceding whitespace.
-
+  * An earlier version of this proposal put the ``'`` on matchable, dependent
+    quantification before the keyword (viz. ``'forall a. ...``). The syntax
+    proposed here came from the discussion and was warmly received.
+  
 * We could reserve the syntax while making it an error to use any of it.
 
 * We could use a different extension name than ``-XDependentTypes``, which
@@ -325,6 +325,23 @@ Alternatives
   see where all this is going (see my thesis_), but I could well be wrong, and
   it would be a shame if ``-Wcompat`` told users to do the wrong thing. This
   is all bleeding edge, after all.
+
+* This proposal envisions a future where writing ::
+
+    data Proxy :: pi k. k -> Type
+
+  is accepted. However, it would be more accurate to say ::
+
+    data Proxy :: pi k '. k '-> Type
+
+  because the quantification is really matchable. Both of these declarations are
+  allowed under this proposal, and it is my expectation where both would continue
+  to be accepted in the future. However, it might be better to error on the first
+  version, because the second one really is more accurate. My design decision to
+  allow the first is that most people won't care deeply about matchability, and
+  the matchable nature of a type constructor is an immutable fact (and thus can
+  always be inferred correctly). I would support ``-Wpedantic-matchability``, off
+  by default and not in ``-Wall``, that would warn about the first declaration.
 
 Unresolved questions
 --------------------
