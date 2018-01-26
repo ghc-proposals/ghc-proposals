@@ -194,38 +194,31 @@ Unresolved questions
 
 .. _`#80`: https://github.com/treeowl/ghc-proposals/blob/type-level-type-app/proposals/0000-type-level-type-applications.rst
 
+.. _`#54`: https://github.com/goldfirere/ghc-proposals/blob/kind-sigs/proposals/0000-kind-signatures.rst
+
 How will this interact when we have visible type application in types
 (proposal `#80`_)? For example, consider ::
 
   class C (a :: Proxy k) where ...
 
 I want ``C`` to have only one required argument, ``a``. But I also want an explicit binding
-site for ``k``, so I can choose ``k``\'s kind. One option would be to say ::
+site for ``k``, so I can choose ``k``\'s kind. A nice new piece of syntax would be ::
+
+  class C @(k :: Maybe Bool) (a :: Proxy k) where ...
+
+This was suggested by @Saagar-A in the commentary. What if the author wanted ``k`` to
+be *inferred*? Then they would have to use a top-level kind signature, as proposed
+in `#54`_. This last case should be rare enough that making it inconvenient should be OK.
+
+One alternative I originally considered was ::
 
   class C {k :: Maybe Bool} (a :: Proxy k) where ...
 
 where those braces mean that I don't want ``k`` to be a required argument of ``C``. However,
 here the braces change ``k`` to be *specified* instead of *required*; in contrast, this
 proposal suggests the brace syntax to change a variable from *specified* to *inferred*.
-Is this too confusing? There *is* a fairly simple rule here: braces make an argument less
-visible, and there are three steps of visibility.
-
-Of course, we might also like ``C`` to have an *inferred* argument. Would it be done
-like this? ::
-
-  class C {{k :: Maybe Bool}} (a :: Proxy k) where ...
-
-I suppose so. Does that mean that the syntax for an inferred argument in a normal ``forall``
-should have double braces, too? (Double braces would cleverly avoid the ambiguity with
-record puns mentioned in the drawbacks section.) I don't personally think so.
-
-A way of sidestepping this problem is not to introduce any of this syntax but instead
-require a top-level kind signature (proposal `#54`_) in order to pull this kind of
-trick off.
-
-Of all these options, I like the "braces make things more invisible" rule most, allowing
-``class C {k :: Maybe Bool} (a :: Proxy k)``. However, I do think we should consider
-this future-compatibility problem when designing the feature proposed here.
+But this was too confusing when considered in the context of this larger proposal, and
+so I wanted a better syntax. @Saagar-A came through with that better syntax.
 
 Implementation Plan
 -------------------
