@@ -156,11 +156,11 @@ specification below this table.
 +------------------+----------------+---------------+-------------------+------------------+
 | ``forall a '->`` | dependent      | irrelevant    | visible           | matchable        |
 +------------------+----------------+---------------+-------------------+------------------+
-| ``pi a '.``      | dependent      | relevant      | invisible (unif)  | unmatchable      |
+| ``pi a .``       | dependent      | relevant      | invisible (unif)  | unmatchable      |
 +------------------+----------------+---------------+-------------------+------------------+
 | ``pi a '.``      | dependent      | relevant      | invisible (unif)  | matchable        |
 +------------------+----------------+---------------+-------------------+------------------+
-| ``pi a '->``     | dependent      | relevant      | visible           | unmatchable      |
+| ``pi a ->``      | dependent      | relevant      | visible           | unmatchable      |
 +------------------+----------------+---------------+-------------------+------------------+
 | ``pi a '->``     | dependent      | relevant      | visible           | matchable        |
 +------------------+----------------+---------------+-------------------+------------------+
