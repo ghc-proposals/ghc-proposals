@@ -8,11 +8,9 @@ Define Kinds Withouth Promotion
 
 This proposal introduces a language construct for defining kinds without
 having to promote types.  For example, this is how we would
-define a new kind ``Universe``, with three members:
+define a new kind ``Universe``, with three members::
 
-```haskell
-data kind Universe = Character | Number | Boolean
-```
+  data kind Universe = Character | Number | Boolean
 
 Motivation
 ----------
@@ -46,6 +44,7 @@ we have to use different names in the GADT that defines the value-level
 representatives for the members of ``Universe``.
 
 Relevant links:
+
   - GHC trac ticket for the same idea: https://ghc.haskell.org/trac/ghc/ticket/6024
   - An older proposal for the same idea: https://ghc.haskell.org/trac/ghc/wiki/GhcKinds/KindsWithoutData
   - Example of real code where the clutter is a problem:
@@ -63,6 +62,7 @@ much like ``instance`` is in the context of a ``data instance``.
 
 Semantically, the new declaration should work in the same way as kinds
 introduced by promotion, with the following differences:
+
   - The name of the "promoted" constructors are not prefixed by ``'`` and match
     the names in the declaration exactly.
   - The declaration does not introduce any value-level constructors.
