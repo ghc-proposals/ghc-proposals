@@ -22,6 +22,7 @@ alleviates the need for duplicated declarations (e.g., ``Bool``), however,
 in many common cases using promotion leads to clutter.  Consider, for example,
 the following code pattern, which is very common when defining Haskell EDSLs::
 
+  {-# Language DataKinds, GADTs #-}
   data Universe   = Character | Number | Boolean
   
   type Character  = 'Character
@@ -70,6 +71,7 @@ introduced by promotion, with the following differences:
 This allows a much more direct declaration of the example from the
 motivation section::
 
+  {-# Language KindDecls, GADTs #-}
   data kind Universe = Character | Number | Boolean
   
   data Type u where
