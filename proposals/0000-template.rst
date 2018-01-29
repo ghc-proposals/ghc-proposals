@@ -48,7 +48,7 @@ Relevant links:
 - GHC trac ticket for the same idea: https://ghc.haskell.org/trac/ghc/ticket/6024
 - An older proposal for the same idea: https://ghc.haskell.org/trac/ghc/wiki/GhcKinds/KindsWithoutData
 - Example of real code where the clutter is a problem:
-  https://github.com/GaloisInc/crucible/blob/master/crucible/src/Lang/Crucible/Types.hs
+  https://github.com/GaloisInc/crucible/blob/master/crucible/src/Lang/Crucible/Types.hs#L351
 
 
 Proposed Change
