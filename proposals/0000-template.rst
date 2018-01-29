@@ -23,12 +23,13 @@ in many common cases using promotion leads to clutter.  Consider, for example,
 the following code pattern, which is very common when defining Haskell EDSLs::
 
   {-# Language DataKinds, GADTs #-}
+
   data Universe   = Character | Number | Boolean
-  
+
   type Character  = 'Character
   type Number     = 'Number
   type Boolean    = 'Boolean
-  
+
   data Type u where
     CharacterRepr :: Type Character
     NumberRepr    :: Type Number
@@ -72,8 +73,9 @@ This allows a much more direct declaration of the example from the
 motivation section::
 
   {-# Language KindDecls, GADTs #-}
+
   data kind Universe = Character | Number | Boolean
-  
+
   data Type u where
     Character :: Type Character
     Number    :: Type Number
