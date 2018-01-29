@@ -28,7 +28,7 @@ the following code pattern, which is very common when defining Haskell EDSLs::
   type Number     = 'Number
   type Boolean    = 'Boolean
   
-  data TypeRepr u where
+  data Type u where
     CharacterRepr :: Type Character
     NumberRepr    :: Type Number
     BooleanRepr   :: Type Boolean
@@ -72,7 +72,7 @@ motivation section::
 
   data kind Universe = Character | Number | Boolean
   
-  data TypeRepr u where
+  data Type u where
     Character :: Type Character
     Number    :: Type Number
     Boolean   :: Type Boolean
