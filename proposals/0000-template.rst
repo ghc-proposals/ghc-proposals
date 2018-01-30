@@ -35,10 +35,13 @@ the following code pattern, which is very common when defining Haskell EDSLs::
     NumberRepr    :: Type Number
     BooleanRepr   :: Type Boolean
 
-The first issue is that the names of the promoted constructors are
-derived from the declared constructors by prepending ``'``.
-To get the names we actually want, we have to use type synonyms,
-one per constructor.  These add nothing but clutter to the program.
+The first issue is the collection of type synonyms, one for each constructor.
+They provide proper names for the promoted types, which has a number of
+benefits:
+
+- we can refer to the types in export lists,
+- we get an ambiguity error if another module happens to define a type with the same name,
+- we can refer to the types from other modules without having to enable ``{-# DataKinds #-}``
 
 The second issue is that the value constructors introduced by ``Universe``
 are unused, but still clutter up the name space.  As a result,
@@ -81,15 +84,14 @@ motivation section::
     Number    :: Type Number
     Boolean   :: Type Boolean
 
-The following table summarizes the names introduces by the various
-`data` declaraionts, and which namespaces they inhabit:
+The following table summarizes the names introduces by normal
+`data` and `data kind` declarations.
 
 ================================= =============== ===============
         Declaration               Value Namespace Type Namespace
 ================================= =============== ===============
-``data      T = MkT``                ``MkT``      ``T``
-``data      T = MkT`` (promotion)    ``MkT``      ``T``, ``'MkT``
-``data kind T = MkT``                             ``T``,  ``MkT``
+``data T = MkT``                     ``MkT``      ``T``
+``data kind T = MkT``                (nothing)    ``T``,  ``MkT``
 ================================= =============== ===============
 
 Note that since in GHC types and kinds share the same namespace,
