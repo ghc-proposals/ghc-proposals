@@ -40,7 +40,7 @@ They provide proper names for the promoted types, which has a number of
 benefits:
 
 - we can refer to the types in export lists,
-- we get an ambiguity error if another module happens to define a type with the same name,
+- we get an ambiguity error if another module happens to define a type with the same name; this is not the case if using the name of a promoted type directly---"normal" types silently "win", and the promoted type is ignored without an error.
 - we can refer to the types from other modules without having to enable ``{-# DataKinds #-}``
 
 The second issue is that the value constructors introduced by ``Universe``
