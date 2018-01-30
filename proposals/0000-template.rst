@@ -81,10 +81,32 @@ motivation section::
     Number    :: Type Number
     Boolean   :: Type Boolean
 
+The following table summarizes the names introduces by the various
+`data` declaraionts, and which namespaces they inhabit:
+
+================================= =============== ===============
+        Declaration               Value Namespace Type Namespace
+================================= =============== ===============
+``data      T = MkT``                ``MkT``      ``T``
+``data      T = MkT`` (promotion)    ``MkT``      ``T``, ``'MkT``
+``data kind T = MkT``                             ``T``,  ``MkT``
+================================= =============== ===============
+
+Note that since in GHC types and kinds share the same namespace,
+the following declaration will be rejected::
+
+  data kind T = T     // Invalid
+
+Thus, when using a `data kind` the constructors must have different
+names from the kind on the left of the ``=`` sign.
+
+
+
+
+
 
 Drawbacks
 ---------
-
 There are currently no known draw-backs to this feature.
 
 Alternatives
