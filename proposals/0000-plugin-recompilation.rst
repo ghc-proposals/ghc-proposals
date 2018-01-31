@@ -56,18 +56,28 @@ for the module. It follows the same modular style as existing plugins.::
 
   pluginHash :: [CommandLineOption] -> IfG (Maybe Fingerprint)
 
-This function is then lifted appropriately to work as the other recompilation
-checking functions in ``MkIface``. A value of ``Nothing`` can be returned
-in order to indicate that a plugin should always trigger recompilation. This
-is intended to be used when a plugin acts impurely. Returning a constant hash
-indicates that unless the plugin source changes then the plugin shouldn't ever
-cause recompilation.
+If GHC would otherwise not recompile a module, then (we assume) the input
+passed by GHC to the plugin would be the same if it did recompile it. So the
+only reason to recompile would be if the plugin is impure (``pluginHash`` returns
+``Nothing``) or its input flags have changed (``pluginHash`` returns a differnet
+fingerprint to last time). So GHC checks that each plugin (applied to its
+flags) returns the same fingerprint as on the previous compilation. If the
+fingerprint differs, or returns Nothing, recompilation is triggered.
 
+
+This function is then lifted appropriately to work as the other recompilation
+checking functions in ``MkIface`` and run after the other recompilation checks.
 
 The default value of ``pluginHash`` can be the constant function returning ``Nothing``
 which will retain backwards compatibility with the existing behaviour.
 
-Users can use the same functions that GHC uses internally to computer fingerprints.
+Users can use the same functions that GHC uses internally to compute fingerprints.
+
+Specification of Purity
+-----------------------
+
+A plugin ``P`` is pure iff for modules ``M`` and ``N`` and a finger printing function
+``F``, ``F(M) = F(N) => P(M) = P(N)``.
 
 
 Drawbacks
@@ -80,7 +90,17 @@ recompilation, ``Nothing``. It could be desirable to provide some combinators
 for the more complicated cases.
 
 It is possible that an author specifies the incorrect recompilation behaviour
-but this is not the responsibility of GHC to enforce.
+but this is not the responsibility of GHC to enforce. Specifying correct
+recompilation behaviour could depend on knowing details about how the fingerprinting
+function is calculated but this is not disimiliar to a normal plugin  where you have
+to know the semantics of core or the constraint solver.
+
+There are also complicated hypothetical scenarios such as a plugin reading a certain
+file depending on which file is being compiled. Ideally, we want to computer the hash
+of this input file to work out whether it has changed but this is difficult to achieve
+without access to the source code. This seems over-elaborate, in order to maintain
+simplicity, if a user wants to write a plugin like this they should always trigger
+recompilation.
 
 
 Alternatives
@@ -103,6 +123,14 @@ There are two simpler alternatives which I can imagine.
    tracked which functions in ``CoreM`` acted impurely and ultimately decided
    whether the plugin was pure or not. However, we propose to shift this responsibility
    onto the plugin author to decide.
+
+It has been suggested that each plugin function returns a fingerprint itself,
+indicating what work it has done. However, this defeats the point of the proposal
+as you must then run the plugin in order to decide whether to run the plugin!
+
+There is also the possibility of having one hashing function for each
+plugin type.  This would allow the recompilation checker to give more accurate information
+about why recompilation was required.
 
 
 Unresolved Questions
