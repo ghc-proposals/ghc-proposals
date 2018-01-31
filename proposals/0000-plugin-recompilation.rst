@@ -13,10 +13,10 @@ Refining the plugin recompilation API
 
 Modules compiled with plugins are always recompiled even if the source file is
 unchanged. This most conservative option is taken due to the ability of plugins
-to perform abritary IO actions.
+to perform arbitrary IO actions.
 
 If the result of the plugin is a pure function of the source file
-then such recompilation is unecessary.  This proposal proposes a method for
+then such recompilation is unnecessary.  This proposal proposes a method for
 plugins to inform the compiler of its intentions and how it should affect
 recompilation avoidance.
 
@@ -56,7 +56,7 @@ for the module. It follows the same modular style as existing plugins.::
 
   pluginHash :: [CommandLineOption] -> IfG (Maybe Fingerprint)
 
-This function is then lifted appropiately to work as the other recompilation
+This function is then lifted appropriately to work as the other recompilation
 checking functions in ``MkIface``. A value of ``Nothing`` can be returned
 in order to indicate that a plugin should always trigger recompilation. This
 is intended to be used when a plugin acts impurely. Returning a constant hash
@@ -65,7 +65,7 @@ cause recompilation.
 
 
 The default value of ``pluginHash`` can be the constant function returning ``Nothing``
-which will retain backwards compatability with the existing behaviour.
+which will retain backwards compatibility with the existing behaviour.
 
 Users can use the same functions that GHC uses internally to computer fingerprints.
 
@@ -108,7 +108,7 @@ There are two simpler alternatives which I can imagine.
 Unresolved Questions
 --------------------
 
-It should be considered how complation avoidance compicates or simplifies the
+It should be considered how compilation avoidance complicates or simplifies the
 concurrent source plugin proposal (#107).
 
 
