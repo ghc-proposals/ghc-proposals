@@ -28,7 +28,7 @@ The type of a core to core plugin is::
 
   ModGuts -> CoreM ModGuts
 
-The `CoreM` monad gives the user access to the current state of the simplifier
+The ``CoreM`` monad gives the user access to the current state of the simplifier
 when the pass is run but also can perform any IO actions. As a result, it is impossible
 to conclude that the plugin acted purely and didn't consult the outside world
 impurely for information about how to perform the analysis.
@@ -49,35 +49,94 @@ should trigger recompilation.
 
 In case (1) we recompile the module.
 
-We handle case (2) and (3) by the same mechanism.
+We handle cases (2) and (3) by the same mechanism.
 
-We augment the plugin data type with an additional field for calculating a fingerprint
-for the module. It follows the same modular style as existing plugins.::
+We augment each plugin with an additional field for calculating a fingerprint
+for the current module. It follows the same modular style as existing plugins.::
 
-  pluginHash :: [CommandLineOption] -> IfG (Maybe Fingerprint)
+  pluginRecompile :: [CommandLineOption] -> IfG PluginRecompile
 
 If GHC would otherwise not recompile a module, then (we assume) the input
 passed by GHC to the plugin would be the same if it did recompile it. So the
-only reason to recompile would be if the plugin is impure (``pluginHash`` returns
-``Nothing``) or its input flags have changed (``pluginHash`` returns a differnet
+only reason to recompile would be if the plugin is impure (``pluginRecompile`` returns
+``ForceRecompile``) or its input flags have changed (``pluginRecompile`` returns a different
 fingerprint to last time). So GHC checks that each plugin (applied to its
 flags) returns the same fingerprint as on the previous compilation. If the
-fingerprint differs, or returns Nothing, recompilation is triggered.
-
+fingerprint differs, or returns ``ForceRecompile``, recompilation is triggered.
 
 This function is then lifted appropriately to work as the other recompilation
 checking functions in ``MkIface`` and run after the other recompilation checks.
 
-The default value of ``pluginHash`` can be the constant function returning ``Nothing``
-which will retain backwards compatibility with the existing behaviour.
+As we have a separate ``pluginRecompile`` function for each different type of plugin
+we can accurately report *why* recompilation was required.
 
-Users can use the same functions that GHC uses internally to compute fingerprints.
+Precise change to ``Plugin``
+----------------------------
+
+Each different field of ``Plugin`` is wrapped in a data type ::
+
+  data PluginPass t =
+        PluginPass { runPlugin :: t
+                   , pluginRecompile :: [CommandLineOption] -> IfG PluginRecompile
+                   }
+
+The ``PluginRecompile`` data type records the three different posibly purities of
+a plugin.::
+
+  data PluginRecompile = ForceRecompile | NoForceRecompile | MaybeRecompile Fingerprint
+
+A plugin which declares itself impure using ``ForceRecompile`` will always
+trigger a recompilation of the current module. ``NoForceRecompile`` is used
+for "pure" plugins which don't need to be rerun unless a module would ordinarily
+be recompiled. ``MaybeRecompile`` computes a ``Fingerprint`` and if this ``Fingerprint``
+is different to a previously computed ``Fingerprint`` for the plugin, then
+we recompile the module.
+
+The concrete modification to ``Plugin`` might look as follows::
+
+  data Plugin =
+    { installCoreToDos :: CorePlugin
+    , tcPlugin :: TcPlugin
+    }
+
+  type CorePlugin = PluginPass ([CommandLineOption] -> [CoreToDo] -> CoreM [CoreToDo])
+  type TcPlugin = PluginPass ([CommandLineOption] -> Maybe TcRnTypes.TcPlugin)
+
+For the common case of a pure plugin, we can provide a function which appropiately
+lifts a function to a ``PluginPass``.::
+
+  purePlugin :: t -> PluginPass t
+  purePlugin plugin = PluginPass t (const (return NoForceRecompile))
+
+The advantage of using ``NoForceRecompile`` rather than a constant ``MaybeRecompile``
+is that an end user doesn't have to concern themselves with the details of
+what a ``Fingerprint`` is or how to construct one. An alternative is to
+provide a smart constructor wrapping ``fingerprint0``.
+
+This will break every existing use of plugins but the API is described as
+"preminary and highly likely to change in the future".
 
 Specification of Purity
 -----------------------
 
 A plugin ``P`` is pure iff for modules ``M`` and ``N`` and a finger printing function
-``F``, ``F(M) = F(N) => P(M) = P(N)``.
+``F``, ``F(M) = F(N) => P(M) = P(N)``. This definition means that a user has
+to be aware of the fingerprinting algorithm ``F`` but if they want to be precise
+about when to recompile, this is somewhat necessary anyway.
+
+Calculating fingerprints
+------------------------
+
+Users can use the same functions that GHC uses internally to compute fingerprints.
+The `GHC.Fingerprint<https://hackage.haskell.org/package/base-4.10.1.0/docs/GHC-Fingerprint.html>`_ module provides useful functions for constructing fingerprints. For example, combining
+together ``fingerprintFingerprints`` and ``fingerprintString`` provides an easy to
+to naively fingerprint the arguments to a plugin.::
+
+  pluginFlagRecompile :: [CommandLineOption] -> IfG PluginRecompile
+  pluginFlagRecompile =
+    return . MaybeRecompile . fingerprintFingerprints . map fingerprintString . sort
+
+
 
 
 Drawbacks
@@ -86,7 +145,7 @@ Drawbacks
 A plugin author must carefully consider how their arguments should affect recompilation.
 However, the generality is not oppressive. In the simplest case where there
 are no arguments, an author can supply a constant ``Fingerprint``. If they need
-recompilation, ``Nothing``. It could be desirable to provide some combinators
+recompilation, ``ForceRecompile``. It could be desirable to provide some combinators
 for the more complicated cases.
 
 It is possible that an author specifies the incorrect recompilation behaviour
@@ -96,7 +155,7 @@ function is calculated but this is not disimiliar to a normal plugin  where you 
 to know the semantics of core or the constraint solver.
 
 There are also complicated hypothetical scenarios such as a plugin reading a certain
-file depending on which file is being compiled. Ideally, we want to computer the hash
+file depending on which file is being compiled. Ideally, we want to compute the hash
 of this input file to work out whether it has changed but this is difficult to achieve
 without access to the source code. This seems over-elaborate, in order to maintain
 simplicity, if a user wants to write a plugin like this they should always trigger
@@ -106,7 +165,7 @@ recompilation.
 Alternatives
 ------------
 
-There are two simpler alternatives which I can imagine.
+There are three simpler alternatives which I can imagine.
 
 1. We statically, at initialisation time say whether a plugin is pure or not.
    If it is pure, we never recompile because of it, if it is impure we always
@@ -128,9 +187,9 @@ It has been suggested that each plugin function returns a fingerprint itself,
 indicating what work it has done. However, this defeats the point of the proposal
 as you must then run the plugin in order to decide whether to run the plugin!
 
-There is also the possibility of having one hashing function for each
-plugin type.  This would allow the recompilation checker to give more accurate information
-about why recompilation was required.
+An earlier proposal proposed a single hashing function added as a field to the ``Plugin``
+data type. This has now been changed to this more fine-grained approach where each
+pass computes a suitable hash.
 
 
 Unresolved Questions
@@ -145,4 +204,5 @@ Additional Links
 
 * https://ghc.haskell.org/trac/ghc/ticket/7414
 * https://ghc.haskell.org/trac/ghc/ticket/12567
+
 
