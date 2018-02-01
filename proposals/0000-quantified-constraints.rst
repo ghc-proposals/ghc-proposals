@@ -6,23 +6,25 @@
 
 .. highlight:: haskell
 
-This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_. **After creating the pull request, edit this file again, update the number in the link, and delete this bold sentence.**
+..
+   This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_. **After creating the pull request, edit this file again, update the number in the link, and delete this bold sentence.**
 
 .. contents::
 
 Quantified Constraints
 ======================
 
-This proposal introduces quantified constraints, which have been proposed years ago,
+This proposal introduces quantified constraints, which have been proposed years ago
 to raise the expressive power of type classes to essentially first-order logic.
 These quantified class constraints enable instance declarations that are currently
-needlessly difficult or even impossible to express in Haskell.
+very difficult or even impossible to express in Haskell.
 
 
 Motivation
 ------------
-Introducing quantified constraints offer several important benefits.
+Introducing quantified constraints offers two main benefits:
 
+- Firstly, they enable terminating resolution where this was not possible before.
 Consider for instance the following instance declaration for the general rose datatype::
 
  data Rose f x = Rose x (f (Rose f x))
@@ -34,7 +36,8 @@ This extension allows to write constraints of the form ``forall b. Eq b => Eq (f
 which is needed to solve the ``Eq (f (Rose f x))`` constraint arising from the
 second usage of the ``(==)`` method.
 
-As a second example, consider the MTL type class for monad transformers::
+- Secondly, quantified constraints allow for more concise and precise specifications.
+As an example, consider the MTL type class for monad transformers::
 
  class Trans t where
    lift :: Monad m => m a -> (t m) a
@@ -53,8 +56,7 @@ then ``lift`` this again into ``t1 (t2 m)``.
 However, this second ``lift`` can only be accepted when ``(t2 m)`` is a monad
 and there is no way of establishing that this fact universally holds.
 
-Quantified constraints allow for more concise and precise specifications,
-enabling this requirement to be made explicit in the ``Trans``
+Quantified constraints enable this property to be made explicit in the ``Trans``
 class declaration::
 
  class (forall m. Monad m => Monad (t m)) => Trans t where
@@ -67,9 +69,10 @@ More motivating examples can be found in this paper :
 Proposed Change Specification
 -----------------------------
 We propose to add a new GHC extension called ``{-# QuantifiedConstraints #-}``.
-Currently, allows only simple class constraints in class and instance contexts.
+Currently, GHC allows only simple class constraints in class and instance contexts.
 When this extension is enabled, constraints can contain type quantifiers and
-implications in arbitrary nested positions.
+implications in arbitrarily nested positions.
+
 As an example, consider the declaration mentioned above, containing a quantified constraint::
 
  instance (Eq a, forall b. Eq b => Eq (f b)) => Eq (Rose f a) where
@@ -84,6 +87,7 @@ There are currently no known drawbacks to this feature.
 Alternatives
 ------------
 Several alternatives have already been considered.
+
 GHC currently supports a form a cycle-aware resolution,
 which enables writing the rose example mentioned above, without quantified constraints.
 Unfortunately, this approach is not generally applicable since the
