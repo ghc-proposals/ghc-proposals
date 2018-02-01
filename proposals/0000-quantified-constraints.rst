@@ -27,7 +27,7 @@ Introducing quantified constraints offers two main benefits:
 Consider for instance the following instance declaration for the general rose datatype::
 
  data Rose f x = Rose x (f (Rose f x))
-    
+
  instance (Eq a, forall b. Eq b => Eq (f b)) => Eq (Rose f a) where
    (Rose x1 rs1) == (Rose x2 rs2) = x1 == x2 && rs1 == rs2
 
