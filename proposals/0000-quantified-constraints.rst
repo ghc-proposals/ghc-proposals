@@ -23,9 +23,8 @@ Motivation
 ------------
 Introducing quantified constraints offer several important benefits.
 
-Consider for instance the following instance declaration for the general rose datatype:
+Consider for instance the following instance declaration for the general rose datatype::
 
-::
  data Rose f x = Rose x (f (Rose f x))
     
  instance (Eq a, forall b. Eq b => Eq (f b)) => Eq (Rose f a) where
@@ -35,17 +34,15 @@ This extension allows to write constraints of the form ``forall b. Eq b => Eq (f
 which is needed to solve the ``Eq (f (Rose f x))`` constraint arising from the
 second usage of the ``(==)`` method.
 
-As a second example, consider the MTL type class for monad transformers:
+As a second example, consider the MTL type class for monad transformers::
 
-::
  class Trans t where
    lift :: Monad m => m a -> (t m) a
 
 The developer knows that a monad transformer takes a monad ``m`` into a new monad ``t m``.
 But this is property is not formally specified in the above declaration.
-This omission becomes an issue when defining monad transformer composition:
+This omission becomes an issue when defining monad transformer composition::
 
-::
  newtype (t1 * t2) m a = C { runC :: t1 (t2 m) a }
 
  instance (Trans t1, Trans t2) => Trans (t1 * t2) where
@@ -58,9 +55,8 @@ and there is no way of establishing that this fact universally holds.
 
 Quantified constraints allow for more concise and precise specifications,
 enabling this requirement to be made explicit in the ``Trans``
-class declaration:
+class declaration::
 
-::
  class (forall m. Monad m => Monad (t m)) => Trans t where
    lift :: Monad m => m a -> (t m) a
 
@@ -74,9 +70,8 @@ We propose to add a new GHC extension called ``{-# QuantifiedConstraints #-}``.
 Currently, allows only simple class constraints in class and instance contexts.
 When this extension is enabled, constraints can contain type quantifiers and
 implications in arbitrary nested positions.
-As an example, consider the declaration mentioned above, containing a quantified constraint:
+As an example, consider the declaration mentioned above, containing a quantified constraint::
 
-::
  instance (Eq a, forall b. Eq b => Eq (f b)) => Eq (Rose f a) where
    (Rose x1 rs1) == (Rose x2 rs2) = x1 == x2 && rs1 == rs2
 
