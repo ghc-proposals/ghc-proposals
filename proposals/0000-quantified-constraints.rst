@@ -88,7 +88,7 @@ Alternatives
 ------------
 Several alternatives have already been considered.
 
-GHC currently supports a form a cycle-aware resolution,
+GHC currently supports a form of cycle-aware resolution,
 which enables writing the rose example mentioned above, without quantified constraints.
 Unfortunately, this approach is not generally applicable since the
 resolution process can diverge without cycling,
