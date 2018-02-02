@@ -57,7 +57,7 @@ The Plugin API is extended with the following fields:
 Effect and Interactions
 -----------------------
 
-By using the extended plugins API, tool developers can create 
+By using the extended plugins API, tool developers can create tools that can integrate into the already existing build toolchain of a project. By modifying the compiler flags, the user can set up the tool to work.
 
 Using the ``typeCheckResultAction`` it is now easy to implement the example used above as a plugin.
 
@@ -102,9 +102,9 @@ Alternatives
 
 - *Use frontend plugins and GHC hooks for accessing this information.*
   
-  `Frontend plugins <https://downloads.haskell.org/~ghc/master/users-guide/extending_ghc.html#frontend-plugins>` add a new programmable major mode to GHC. When the control is passed to the plugin, the plugin's writer receives all the compiler arguments and is able to do whatever is necessary. `GHC Hooks <https://ghc.haskell.org/trac/ghc/wiki/Ghc/Hooks>` are developed for altering how the compiler performs different compilation steps. GHC hooks are primarily meant to help writing different backends for GHC and they are not exposed to 
+  `Frontend plugins <https://downloads.haskell.org/~ghc/master/users-guide/extending_ghc.html#frontend-plugins>` add a new programmable major mode to GHC. When the control is passed to the plugin, the plugin's writer receives all the compiler arguments and is able to do whatever is necessary. `GHC Hooks <https://ghc.haskell.org/trac/ghc/wiki/Ghc/Hooks>` are developed for altering how the compiler performs different compilation steps. GHC hooks are primarily meant to help writing different backends for GHC and they are not exposed to the user directly.
    
-  It is important to see that frontend plugins are the most convenient if the developer want to do something else than running the compilation pipeline normally. Frontend plugins are not convenient for running the compiler normally and accesing the inner representations. I have to note that some of the issues can be solved by `creating a wrapper for GHC <http://blog.ezyang.com/2017/02/how-to-integrate-ghc-api-programs-with-cabal/>`
+  It is important to see that frontend plugins are the most convenient if the developer want to do something else than running the compilation pipeline normally. Frontend plugins are not convenient for running the compiler normally and accesing the inner representations. I have to note that some of the issues can be solved by `creating a wrapper for GHC <http://blog.ezyang.com/2017/02/how-to-integrate-ghc-api-programs-with-cabal/>`.
   
   It would be possible to define a frontend plugin that install a ``HscFrontendHook`` to access the type checked representation. However this method is insufficient to grant access to parsed and renamed syntax tree as well as splices and interfaces is.
  
