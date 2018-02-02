@@ -22,6 +22,7 @@ This proposal extends the existing ``-XPackageImports`` extension to also specif
 A) Allowing the ghc packagedb to store *provenance information*
 B) Extending the command-line options of ghc to allow *provenance aliases*
 C) Extending the syntax of package imports to allow *provenance specifications*
+D) Extending the syntax of cabal files to allow both aliases and specifications
 
 Other build-tooling, such as cabal-install and stack, would in turn need to follow suit to take advantage of these features, but the details of how they might do so are beyond the scope of this proposal. (Though it is in scope to ensure that it provides enough hooks that they can take such advantage).
 
@@ -31,12 +32,14 @@ Currently we assume that even though module names may clash between packages, pa
 
 This is a logical extension of existing principles, and will allow different repositories to exist for many purposes without need for any centralized naming authority.
 
+This proposal incidentally provides a uniform mechanism to specify dependencies on packages that are not hosted in package repositories or overlays but instead, e.g. on github, or elsewhere.
+
 Proposed Change Specification
 -----------------------------
 
 A) *Provenance Information*
 
-A new optional field, `source-origin` is added to the `InstalledPackageInfo <http://downloads.haskell.org/~ghc/latest/docs/html/users_guide/packages.html#installed-pkg-info>`_ file and in turn to ghc package databases. Tools which register packages to databases may also specify this field. The intended use of this field is to contain a url  that specifies the root of the package repository from which a package was sourced.
+A new optional field, `source-origin` is added to the `InstalledPackageInfo <http://downloads.haskell.org/~ghc/latest/docs/html/users_guide/packages.html#installed-pkg-info>`_ file and in turn to ghc package databases. Tools which register packages to databases may also specify this field. The intended use of this field is to contain a url  that specifies the origin of the package, typically the root of the package repository from which a package was sourced.
 
 B) *Provenance Aliases*
 
@@ -50,13 +53,21 @@ With ``-XPackageImports`` we can specify e.g.
 
 Under this proposal we can also specify
 
-``import "[REPO]:somepackage" Foo.Bar``
+``import "[REPO]+somepackage" Foo.Bar``
 
 Where repo is either the url of a repository root or an alias which maps to one.
 
+D) Cabal syntax
+
+Cabal files are extended in two ways.
+
+``source-origin-alises:`` is a top-level property consisting of a list of ``[ALIAS]=[URL]`` aliases. These aliases will be passed to all invocations of `ghc` in the course of a cabal build.
+
+``build-depends:`` fields now can take package names in the form of ``[REPO]+somepackage`` rather than just ``somepackage``.
+
 Effect and Interactions
 -----------------------
-I can think of no difficult interactions with existing features. There may need to be a fair amount of mechanical work to remove assumptions about uniqueness of package names throughout different portions of the codebase.
+I can think of no difficult interactions with existing features. There may need to be a fair amount of mechanical work to remove assumptions about uniqueness of package names throughout different portions of the codebase. I do not believe that there is any interaction with backpack, but it would be important to confirm this.
 
 Costs and Drawbacks
 -------------------
@@ -68,7 +79,13 @@ The only current choice when package names overlap is to fork and rename one of 
 
 Unresolved questions
 --------------------
-This proposal extends an existing flag rather than specifying a new ``-XProvenanceImports`` flag. In my opinion since this does not conflict with existing syntax or features, there is no need for a new flag. Rather, it just makes package imports better and more powerful. Others may disagree.
+1) This proposal extends an existing flag rather than specifying a new ``-XProvenanceImports`` flag. In my opinion since this does not conflict with existing syntax or features, there is no need for a new flag. Rather, it just makes package imports better and more powerful. Others may disagree.
+
+2) The syntax chosen to separate provenance information from a package name is the ``+`` character. This was chosen because ``/`` and ``:`` are present in too many urls (and the latter may be used for distinguishing subpackages as well, in the future). There may be other views as to the best syntax here.
+
+3) The question arises: should there be some global location for alias maps? At this point, I think we should not have this. In particular, the aim of the proposal is to allow genuine federation, without the need of any central authority. By introducing some global location by which names are assigned (outside of the mechanisms for assigning names that are common to the internet as a whole), we find ourselves with another version of the same problem. In the future, if we find it is too awkward for packages to each assign aliases, this can be revisited. (Also note -- it is expected that the use of these aliases is not going to be common, to begin with, and will generally not be for _central_ packages, but rather, for the most part, for proprietary code, and individual applications).
+
+4) The potential of different choices for what is placed into the `source-origin` field and their meaning to tools like ``cabal-install`` is left open at this point. This will need to be worked out in the future to allow _fetching_ from such specifications (i.e. when present in `cabal` files). A suggested heuristic would be as follows (in order of precedence): If the url is of a directory that contains a ``root.json`` it is assumed to be a package repository as defined in ``hackage-security``. If the url is of a ``.tar.gz`` file, it is a direct specification of a package tarball. If it terminates in ``.git``, it is assumed to be a git repo of a single package. (In this latter case, this leaves unresolved the question of a syntax for branches or tags, which would need to be determined). Because this proposal involves modifying the ``Cabal`` library, but not yet the ``cabal-install`` tool, we can afford to leave this not fully worked out for the time being.
 
 Implementation Plan
 -------------------
