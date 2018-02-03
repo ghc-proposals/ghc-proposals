@@ -1,8 +1,8 @@
 .. proposal-number:: 10
 
-.. trac-ticket::
+.. trac-ticket:: 10843
 
-.. implemented::
+.. implemented:: 8.6.1
 
 .. highlight:: haskell
 
