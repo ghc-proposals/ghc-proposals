@@ -1,14 +1,12 @@
-.. proposal-number:: Leave blank. This will be filled in when the proposal is
-                     accepted.
+.. proposal-number:: 11
 
 .. trac-ticket:: `#14324 <https://ghc.haskell.org/trac/ghc/ticket/14324>`_
 
-.. implemented:: Leave blank. This will be filled in with the first GHC version which
-                 implements the described feature.
+.. implemented:: Not yet
 
 .. highlight:: haskell
 
-This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/77>`_.
+This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/77>`_.
 
 .. contents::
 
