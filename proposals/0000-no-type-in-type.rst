@@ -230,6 +230,20 @@ Alternatives
    syntax highlighting enabled, this is a new change to an area that has already undergone
    some disruptive changes, and it has been mentioned previously and rejected. But I
    still like it, so I'm mentioning it here.
+
+   EDIT: After further discussion, I'm less enamored of this idea, for two reasons:
+
+   1. This ``type`` would simply be a type synonym for ``TYPE LiftedRep``, as it is
+      today. It's quite strange to have a keyword be an ordinary type synonym.
+
+   2. @nomeata pointed out (offline discussion) that currently, ``type`` is used in
+      export lists to denote a namespace. It's quite possible that its use as a
+      namespace selector might grow in the future, and using ``type`` to mean ``Type``
+      would preclude this.
+
+   I find both arguments compelling independently, and so I withdraw support for this
+   alternative. Nevertheless, I'm keeping it in the proposal in case someone wants to
+   argue in support of it.
    
 Unresolved questions
 --------------------
