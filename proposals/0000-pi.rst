@@ -14,12 +14,13 @@ This proposal is `discussed at this pull request <https://github.com/ghc-proposa
 
 .. contents::
 
-``pi``, and other quantifiers for Dependent Haskell
-===================================================
+Quantifiers for Dependent Haskell
+==================================
 
 My thesis_ describes (page 59, section 4.2.5) 12 quantifiers for Dependent
 Haskell. This proposal reserves syntax for these twelve and allows the use of
-the new ``pi`` quantifier in the one place it makes sense in today's Haskell:
+the new dependent quantifier (proposed to be spelled ``foreach``, not ``pi`` as has been
+previously mooted) in the one place it makes sense in today's Haskell:
 in type constructor kinds. It also allows the use of the matchable arrow in
 the places where it makes sense in today's Haskell: in type constructor kinds
 and data constructor types.
@@ -118,7 +119,7 @@ All these axes are orthogonal. However, having something that's both
 irrelevant and non-dependent is useless, and so is not included in the plan.
 
 Separately from reserving syntax for all the quantifiers, this proposal
-suggests using ``pi`` and ``'->`` to more accurately describe existing
+suggests using ``foreach`` and ``'->`` to more accurately describe existing
 features:
 
 1. Type constructors use *relevant* quantification for all their arguments.
@@ -127,10 +128,10 @@ features:
    ``Proxy (Type -> Type)``? Could a type family match on these and then compute based
    on the difference between ``Type`` and ``Type -> Type``? Surely, yes. That
    means that the kind ``k`` is quantified *relevantly*. Accordingly, because
-   ``pi`` is the relevant counterpart to ``forall``, we really should use
-   ``pi`` in type constructor kinds: ``data Proxy :: pi k -> k -> Type`` (or,
+   ``foreach`` is the relevant counterpart to ``forall``, we really should use
+   ``foreach`` in type constructor kinds: ``data Proxy :: foreach k -> k -> Type`` (or,
    if we want the kind to be invisible,
-   ``data ProxyInvis :: pi k. k -> Type``).
+   ``data ProxyInvis :: foreach k. k -> Type``).
 
 2. As described above in the part introducing matchability data constructor
    arguments are matchable (as are type constructor arguments). Thus, they
@@ -143,35 +144,35 @@ This proposal includes syntax for distinguishing quantifiers. Here is the
 master table of the quantifiers. The specifics in this proposal are in the
 specification below this table.
 
-+------------------+----------------+---------------+-------------------+------------------+
-|                  |                |               |                   |                  |
-| **Quantifier**   | **Dependence** | **Relevance** | **Visibility**    | **Matchability** |
-|                  |                |               |                   |                  |
-+------------------+----------------+---------------+-------------------+------------------+
-| ``forall a.``    | dependent      | irrelevant    | invisible (unif)  | unmatchable      |
-+------------------+----------------+---------------+-------------------+------------------+
-| ``forall a '.``  | dependent      | irrelevant    | invisible (unif)  | matchable        |
-+------------------+----------------+---------------+-------------------+------------------+
-| ``forall a ->``  | dependent      | irrelevant    | visible           | unmatchable      |
-+------------------+----------------+---------------+-------------------+------------------+
-| ``forall a '->`` | dependent      | irrelevant    | visible           | matchable        |
-+------------------+----------------+---------------+-------------------+------------------+
-| ``pi a .``       | dependent      | relevant      | invisible (unif)  | unmatchable      |
-+------------------+----------------+---------------+-------------------+------------------+
-| ``pi a '.``      | dependent      | relevant      | invisible (unif)  | matchable        |
-+------------------+----------------+---------------+-------------------+------------------+
-| ``pi a ->``      | dependent      | relevant      | visible           | unmatchable      |
-+------------------+----------------+---------------+-------------------+------------------+
-| ``pi a '->``     | dependent      | relevant      | visible           | matchable        |
-+------------------+----------------+---------------+-------------------+------------------+
-| ``ty =>``        | non-dependent  | relevant      | invisible (solve) | unmatchable      |
-+------------------+----------------+---------------+-------------------+------------------+
-| ``ty '=>``       | non-dependent  | relevant      | invisible (solve) | matchable        |
-+------------------+----------------+---------------+-------------------+------------------+
-| ``ty ->``        | non-dependent  | relevant      | visible           | unmatchable      |
-+------------------+----------------+---------------+-------------------+------------------+
-| ``ty '->``       | non-dependent  | relevant      | visible           | matchable        |
-+------------------+----------------+---------------+-------------------+------------------+
++-------------------+----------------+---------------+-------------------+------------------+
+|                   |                |               |                   |                  |
+|**Quantifier**     | **Dependence** | **Relevance** | **Visibility**    | **Matchability** |
+|                   |                |               |                   |                  |
++-------------------+----------------+---------------+-------------------+------------------+
+| ``forall a.``     | dependent      | irrelevant    | invisible (unif)  | unmatchable      |
++-------------------+----------------+---------------+-------------------+------------------+
+| ``forall a '.``   | dependent      | irrelevant    | invisible (unif)  | matchable        |
++-------------------+----------------+---------------+-------------------+------------------+
+| ``forall a ->``   | dependent      | irrelevant    | visible           | unmatchable      |
++-------------------+----------------+---------------+-------------------+------------------+
+| ``forall a '->``  | dependent      | irrelevant    | visible           | matchable        |
++-------------------+----------------+---------------+-------------------+------------------+
+| ``foreach a .``   | dependent      | relevant      | invisible (unif)  | unmatchable      |
++-------------------+----------------+---------------+-------------------+------------------+
+| ``foreach a '.``  | dependent      | relevant      | invisible (unif)  | matchable        |
++-------------------+----------------+---------------+-------------------+------------------+
+| ``foreach a ->``  | dependent      | relevant      | visible           | unmatchable      |
++-------------------+----------------+---------------+-------------------+------------------+
+| ``foreach a '->`` | dependent      | relevant      | visible           | matchable        |
++-------------------+----------------+---------------+-------------------+------------------+
+| ``ty =>``         | non-dependent  | relevant      | invisible (solve) | unmatchable      |
++-------------------+----------------+---------------+-------------------+------------------+
+| ``ty '=>``        | non-dependent  | relevant      | invisible (solve) | matchable        |
++-------------------+----------------+---------------+-------------------+------------------+
+| ``ty ->``         | non-dependent  | relevant      | visible           | unmatchable      |
++-------------------+----------------+---------------+-------------------+------------------+
+| ``ty '->``        | non-dependent  | relevant      | visible           | matchable        |
++-------------------+----------------+---------------+-------------------+------------------+
 
 The "(unif)" and "(solve)" notation above indicates how GHC infers invisible arguments.
 For dependent arguments, GHC can use unification. For non-dependent arguments, it
@@ -191,9 +192,9 @@ Haskell feature set.
 
 **Lexical Syntax:**
 
-1. Introduce a new keyword ``pi``, syntactically identical in behavior to
+1. Introduce a new keyword ``foreach``, syntactically identical in behavior to
    ``forall``. With ``-XUnicodeSyntax``, users could write |pi| (Unicode
-   U+220F) instead of ``pi``. Note that this character is not the Greek
+   U+220F) instead of ``foreach``. Note that this character is not the Greek
    capital letter |greekpi|, (Unicode U+3A0). This new keyword would exist
    only with ``-XDependentTypes``.
 
@@ -208,10 +209,10 @@ Haskell feature set.
 
 3. Introduce ``'=>`` with the same syntactic behavior as ``=>``.
 
-4. Allow ``->`` in place of ``.`` after ``pi`` or ``forall``. (This is part of
+4. Allow ``->`` in place of ``.`` after ``foreach`` or ``forall``. (This is part of
    `#81`_.) The new syntax would be enabled by ``-XDependentTypes``.
 
-5. Allow ``'`` to be a prefix to the ``.`` or ``->`` used with ``pi`` and ``forall`` quantifiers.
+5. Allow ``'`` to be a prefix to the ``.`` or ``->`` used with ``foreach`` and ``forall`` quantifiers.
    Syntactically, ``'.`` and ``'->`` behave identically to ``.`` and ``->``.
 
 
@@ -223,20 +224,20 @@ semantics are meant to allow the new syntax to be used with existing
 constructs.
 
 1. In type constructor kinds (e.g., ``data T :: <right here>``), allow the use
-   of ``pi`` instead of ``forall``. That is ``data Proxy :: pi k. k -> Type``
+   of ``foreach`` instead of ``forall``. That is ``data Proxy :: foreach k. k -> Type``
    would be accepted. With ``-Wcompat`` (and ``-XDependentTypes``), warn on
-   the use of ``forall`` in such a kind. Such ``pi``\-quantification is
-   allowed in a non-prenex position (``data (:~~:) :: pi a. a -> pi b. b ->
-   Type``), but not in a higher-rank position (``data T :: (pi k. k -> Type)
-   -> Type`` would be rejected). The static and dynamic semantics of ``pi``
+   the use of ``forall`` in such a kind. Such ``foreach``\-quantification is
+   allowed in a non-prenex position (``data (:~~:) :: foreach a. a -> foreach b. b ->
+   Type``), but not in a higher-rank position (``data T :: (foreach k. k -> Type)
+   -> Type`` would be rejected). The static and dynamic semantics of ``foreach``
    and ``forall`` would be identical.
 
-2. Any other use of the ``pi`` keyword is an error.
+2. Any other use of the ``foreach`` keyword is an error.
 
 3. The matchable arrows ``'->`` and ``'=>`` are allowed in type constructor
    kinds and GADT-style data constructor types with ``-XDependentTypes``. The
    meaning of these new constructs is identical to the meaning of the old
-   ones. A new warning flag ``-Wmatchable-arrows`` (not bundled in any warning
+   ones. A new warning flag ``-Wpedantic-matchability`` (not bundled in any warning
    group) would warn if an unmatchable arrow ``->`` is used in either place
    (in a non-higher-order situation).
 
@@ -258,14 +259,14 @@ constructs.
 
 6. Any other use of ``'->`` or ``'=>`` is an error.
 
-7. The rules requiring/allowing ``'`` with ``pi`` and ``forall`` are the same
+7. The rules requiring/allowing ``'`` with ``foreach`` and ``forall`` are the same
    as those with ``->``. Thus the ``'`` is optional in a non-higher-order
    situation in a type/data constructor kind/type but required in kinds in
    other contexts.
 
-8. The meaning of the ``->`` after ``pi`` or ``forall`` is given in `#81`_.
+8. The meaning of the ``->`` after ``foreach`` or ``forall`` is given in `#81`_.
 
-9. With ``-XDependentTypes`` on, error messages will use ``pi`` and ``'->``,
+9. With ``-XDependentTypes`` on, error messages will use ``foreach`` and ``'->``,
    etc., as appropriate. Without ``-XDependentTypes``, error messages will not
    change.
 
@@ -306,6 +307,24 @@ caused by dependent types.
 
 Alternatives
 ------------
+* For a long time, the keyword for relevant quantification has been thought to
+  be ``pi``. This is the symbol universally used in type theory for such a
+  construct. However, @glaebhoeri rightly points out that this choice of keyword
+  is non-sensical to anyone who is not a type theorist. Adding the keyword
+  to the language will make learners wonder what relevant quantification has
+  to do with the ratio between a circle's circumference and its diameter; when
+  they learn more about this choice, it will confirm their suspicion that Haskell
+  is only for folks with PhDs in programming language theory.
+
+  The suggestion of ``foreach`` (thanks to @int-index) works nicely here.
+  Something that's ``forall`` must work identically for all possible choices:
+  there's one property for all possibilities. Something that's ``foreach``
+  must work for all possible choices, but not identically: there's one
+  property for each possibility. Nothing's ever a perfect fit, but this
+  is pretty good, I think.
+
+  Note that type theorists can still turn on ``-XUnicodeSyntax`` and use
+  |pi|.
 
 * Concrete syntax always has alternatives. Suggest some. In particular, I'm
   not sure that ``'`` is the right way to denote matchability. But it's nicely
@@ -328,11 +347,11 @@ Alternatives
 
 * This proposal envisions a future where writing ::
 
-    data Proxy :: pi k. k -> Type
+    data Proxy :: foreach k. k -> Type
 
   is accepted. However, it would be more accurate to say ::
 
-    data Proxy :: pi k '. k '-> Type
+    data Proxy :: foreach k '. k '-> Type
 
   because the quantification is really matchable. Both of these declarations are
   allowed under this proposal, and it is my expectation where both would continue
