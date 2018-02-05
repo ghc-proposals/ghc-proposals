@@ -158,7 +158,11 @@ GHC (please comment if you know of any more places!):
 - GHC's wired-in types to expose the new types (``compiler/prelude/TysPrim.hs``,
   ``compiler/prelude/TysWiredIn.hs``)
 
-- Extend ``PrimRep`` to represent their width (``compiler/types/TyCon.hs``)
+- Extend ``TyCon.PrimRep`` (``compiler/types``) and `` ``GHC.Types.RuntimeRep``
+  (``ghc-prim``) to represent their width. We already have ``Int64``, so we
+  could add a new constructor for each of the new primitives. Alternatively, we
+  could have a single ``IntRep`` (``WordRep``) constructor parameterized by the
+  width (similarly to what ``VecRep`` does).
 
 - Constant folding to support evaluating the new primitive operations
   (``compiler/prelude/PrelRules.hs``)
