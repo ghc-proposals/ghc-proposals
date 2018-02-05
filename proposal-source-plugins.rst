@@ -44,14 +44,14 @@ The Plugin API is extended with the following fields:
  typeCheckResultAction :: [CommandLineOption] -> ModSummary -> TcGblEnv -> Hsc TcGblEnv
  spliceRunAction :: [CommandLineOption] -> LHsExpr GhcTc -> TcM (LHsExpr GhcTc)
  interfaceLoadAction :: forall lcl . [CommandLineOption] -> ModIface -> IfM lcl ModIface
- needsRenamedSyntax :: [CommandLineOption] -> ModSummary -> Hsc Bool
+ renamedResultAction :: Maybe([CommandLineOption] -> ModSummary -> RenamedSource -> Hsc ())
 
 
 - ``parsedResultAction`` is called during the compilation when the parser runs successfully. Its third argument is the parsed syntax tree. The result of the function application will be passed to later compilation stages.
+- ``renamedResultAction`` is a read-only optional pass that receives the renamed results if the type checker runs successfully. It is optional, because when not needed, the renamed results should not be kept. It is read-only, because changing the renamed results have no effect on the compilation since renaming and type checking is done in one pass.
 - ``typeCheckResultAction`` is called during the compilation when the type checker runs successfully. Its third argument is the type checked syntax tree. The result of the function application will be passed to later compilation stages.
 - ``spliceRunAction`` is called on Template Haskell splices and Quasi-Quotes that are about to be evaluated to generated code. This is useful for tools that analyze the source code, since these language elements are not present in the renamed and type checked syntax tree. The result of this function is used to generate code.
 - ``interfaceLoadAction`` is called every time the compiler loads an interface file. This functionality is useful for source manipulation tools, since they might analyze the environment of the code being compiled. Usually this means that they might know what definitions and instances are in scope in a given module.
-- ``needsRenamedSyntax`` is used to ask the plugin if it needs the renamed syntax tree. The renamed syntax tree is usually not kept, but since it contains some information that is not present in the typechecked representation, it is necessary for some tools.
 
 
 Effect and Interactions
