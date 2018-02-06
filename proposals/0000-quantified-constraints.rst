@@ -139,7 +139,79 @@ Typing changes
 
 See `the paper <http://i.cs.hku.hk/~bruno//papers/hs2017.pdf>`_.
 
-**ToDo**: stuff about overlap and backtracking.
+Overlap
+^^^^^^^
+
+Quantified constraints can potentially lead to overlapping local axioms.
+Consider for instance the following example::
+
+ class A a where {}
+ class B a where {}
+ class C a where {}
+ class (A a => C a) => D a where {}
+ class (B a => C a) => E a where {}
+
+ class C a => F a where {}
+ instance (B a, D a, E a) => F a where {}
+
+When type checking the instance declaration for ``F a``,
+we need to check that the superclass ``C`` of ``F`` holds.
+We thus try to entail the constraint ``C a`` under the theory containing:
+
+- All instance axioms : ``(B a, D a, E a) => F a``
+- The local axioms from the instance context : ``B a``, ``D a`` and ``E a``
+- The closure of the superclass relation over these local axioms : ``A a => C a`` and ``B a => C a``
+
+However, the ``A a => C a`` and ``B a => C a`` axioms both match the wanted constraint ``C a``.
+There are several possible approaches for handling these overlapping local axioms:
+
+- We can simply select the first matching axiom we encounter.
+  In the above example, this would be ``A a => C a``.
+  We'd then need to entail ``A a``, for which we have no matching axioms available, causing the above program to be rejected.
+
+  However, we can make a slight adjustment to the order of the instance context::
+
+   class A a where {}
+   class B a where {}
+   class C a where {}
+   class (A a => C a) => D a where {}
+   class (B a => C a) => E a where {}
+
+   class C a => F a where {}
+   instance (B a, E a, D a) => F a where {}
+
+  The first matching axiom we encounter while entailing ``C a``, is ``B a => C a``.
+  We have a local axiom ``B a`` available, so now the program is suddenly accepted.
+
+  This behaviour, where the ordering of an instance context determines
+  whether or not the program is accepted, seems rather confusing for the developer.
+
+- An alternative approach would be to check for overlapping axioms,
+  when entailing a constraint.
+  When multiple matching axioms are discovered, we reject the program.
+  This approach might be a bit conservative, in that it may reject working programs.
+  However, this does seem much more transparant towards the developer.
+  He can be presented with a clear message, explaining why the program is rejected,
+  so that he can make the necessary adjustments to his code.
+
+- Another option would be to check for overlapping axioms,
+  but instead of rejecting the program,
+  perform a basic heuristic to determine which of these axioms is more likely to succeed. 
+  This could result in more programs being accepted,
+  compared to simply selecting the first matching axiom we find.
+  However, this heuristic might add significant complexity to the compiler.
+  Furthermore, when the heuristic does fail and the program is rejected,
+  debugging this program could become very confusing indeed.
+
+- Lastly, a very simple form of backtracking could be introduced.
+  We simply select the first matching axiom we encounter and when the entailment fails,
+  we backtrack and look for other axioms that might match the wanted constraint.
+
+  This seems by far the most intuitive and transparent approach towards the developer,
+  who no longer needs to concern himself with the fact that his code might contain
+  overlapping axioms or with the ordering of his instance contexts. 
+  However, further investigation is needed to determine the impact of this on
+  the compiler performance.
 
 Issues
 ^^^^^^
