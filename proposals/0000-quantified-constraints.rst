@@ -127,7 +127,7 @@ Syntax changes
  class ::= qtycls tyvar
         |  qtycls (tyvar atype1 ... atypen)
 
-We propose to extend ``class`` with two extra forms, namely precisely what can appear in an instance declaration ::
+We propose to extend ``class`` (warning: this is a rather confusingly named non-terminal symbol) with two extra forms, namely precisely what can appear in an instance declaration ::
 
  class ::= ...
        | context => qtycls inst
@@ -138,9 +138,15 @@ That is the only syntactic change to the language.
 
 Notes:
 
-- Where GHC allows extensions instance declarations (specifically: multi-parameter type classes, and explicit foralls) we allow exactly the same extensions to this new form of ``class``. Indeed, an explicit ``forall`` is often absolutely essential. Consider the rose-tree example ::
+- Where GHC allows extensions instance declarations we allow exactly the same extensions to this new form of ``class``.  Specifically, with ``ExplicitForAll`` and ``MultiParameterTypeClasses`` the syntax becomes ::
 
-   instance (Eq a, forall b. Eq b => Eq (f b)) => Eq (Rose f a) where ...
+    class ::= ...
+           | [forall tyavrs .] context => qtycls inst1 ... instn
+           | [forall tyavrs .] context => tyvar inst1 ... instn
+
+  Note that an explicit ``forall`` is often absolutely essential. Consider the rose-tree example ::
+
+    instance (Eq a, forall b. Eq b => Eq (f b)) => Eq (Rose f a) where ...
 
   Without the ``forall b``, the type variable ``b`` would be quantified over the whole instance declaration, which is not what is intended.
 
@@ -290,6 +296,24 @@ How are those rules modified for quantified constraints? In two ways.
 Note that the second item only at the *head* of the quantified constraint, not its context.  Reason: the head is the new goal that has to be solved if we use the instance declaration.
 
 Of course, ``UndecidableInstances`` lifts the Paterson Conditions, as now.
+
+Coherence
+^^^^^^^^^
+
+Although quantified constraints are a little like local instance declarations, they differ
+in one big way: the local instances are written by the compiler, not the user, and hence
+cannot introduce incoherence.  Consider ::
+
+  f :: (forall a. Eq a => Eq (f a)) => f b -> f Bool
+  f x = ...rhs...
+
+In ``...rhs...`` there is, in effect a local instance for ``Eq (f a)`` for any ``a``.  But
+at a call site for ``f`` the compiler itself produces evidence to pass to ``f``. For example,
+if we called ``f Nothing``, then ``f`` is ``Maybe`` and the compiler must prove (at the
+call site) that ``forall a. Eq a => Eq (Maybe a)`` holds.  It can do this easily, by
+appealing to the existing instance declaration for ``Eq (Maybe a)``.
+
+In short, quantifed constraints do not introduce incoherence.
 
 Costs and Drawbacks
 -------------------
