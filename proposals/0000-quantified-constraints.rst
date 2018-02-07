@@ -8,7 +8,10 @@
 
    This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/109>`_.
 
+.. sectnum::
+
 .. contents::
+
 
 Quantified Constraints
 ======================
@@ -18,7 +21,7 @@ in  `Derivable type classes <https://www.microsoft.com/en-us/research/publicatio
 These quantified class constraints enable instance declarations that are currently
 very difficult or even impossible to express in Haskell.
 
-The classic motivating example is this::
+The classic motivating example is this ::
 
  data Rose f a = Branch a (f (Rose f a))
 
@@ -31,7 +34,7 @@ From the ``x1==x2`` we need ``Eq a``, which is fine.  From ``c1==c2`` we need ``
 is *not* fine in Haskell today; we have no way to solve such a constraint.
 
 This proposal offers a way to do so, by allowing **quantified constraints** to appear in
-instances, and indeed in any type signature.  In this case::
+instances, and indeed in any type signature.  In this case ::
 
  instance (Eq a, forall b. (Eq b) => Eq (f b))
         => Eq (Rose f a)
@@ -49,7 +52,7 @@ Motivation
 ----------
 Introducing quantified constraints offers two main benefits:
 
-- Firstly, they enable terminating resolution where this was not possible before.  Consider for instance the following instance declaration for the general rose datatype::
+- Firstly, they enable terminating resolution where this was not possible before.  Consider for instance the following instance declaration for the general rose datatype ::
 
    data Rose f x = Rose x (f (Rose f x))
 
@@ -87,7 +90,7 @@ Introducing quantified constraints offers two main benefits:
 
 Here is a list of other sources that have sought quantified constraints:
 
-- `Quantified class constraints <http://i.cs.hku.hk/~bruno//papers/hs2017.pdf>`_ is a Haskell 2017 paper that works out the idea in some detail, with examples.  Here is a `Reddit thread about it `<https://www.reddit.com/r/haskell/comments/6me3sv/quantified_class_constraints_pdf/>`_.
+- `Quantified class constraints <http://i.cs.hku.hk/~bruno//papers/hs2017.pdf>`_ is a Haskell 2017 paper that works out the idea in some detail, with examples.  Here is a `Reddit thread about it <https://www.reddit.com/r/haskell/comments/6me3sv/quantified_class_constraints_pdf/>`_.
 - `Adding join to Monad <https://ghc.haskell.org/trac/ghc/ticket/9123>`_: this ticket describes a real problem with GHC's role system, which currently prevents us adding ``join`` to ``Monad`` and still allowing ``deriving( Monad )``.  As `comment 29 <https://ghc.haskell.org/trac/ghc/ticket/9123#comment:29>`_ shows, quantified constraints can solve this problem.
 - `A blog post about higher-rank constraints <http://mainisusuallyafunction.blogspot.co.uk/2010/09/higher-rank-type-constraints.html>`_ -- slightly different terminology, but the same idea.
 - `A genuine use-case <https://ghc.haskell.org/trac/ghc/ticket/2893#comment:17>`_ taken from `How to twist pointers without breaking them <http://ozark.hendrix.edu/~yorgey/pub/twisted.pdf>`_.
@@ -116,28 +119,60 @@ We propose the extension name ``QuantifiedConstraints``.
 Syntax changes
 ^^^^^^^^^^^^^^
 
-`Haskell 2010 <https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#x17-18000010.5>`_ defines a ``context`` (the bit to the left of ``=>`` in a type) like this::
-  
+`Haskell 2010 <https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#x17-18000010.5>`_ defines a ``context`` (the bit to the left of ``=>`` in a type) like this ::
+
  context ::= class
          |   ( class1, ..., classn )
 
  class ::= qtycls tyvar
         |  qtycls (tyvar atype1 ... atypen)
 
-We propose to extend ``class`` with an extra form, namely precisely what can appear in an instance declaration::
-  
+We propose to extend ``class`` with two extra forms, namely precisely what can appear in an instance declaration ::
+
  class ::= ...
        | context => qtycls inst
+       | context => tyvar inst
 
-The definition of ``inst`` is unchanged from the Haskell Report.
-Where GHC allows extensions to istancce declarations (explicit foralls, multi-prarameter type classes) wea llow exactly the same extensions to this new form of ``class``.
-
+The definition of ``inst`` is unchanged from the Haskell Report (roughly, just a type).
 That is the only syntactic change to the language.
+
+Notes:
+
+- Where GHC allows extensions instance declarations (specifically: multi-parameter type classes, and explicit foralls) we allow exactly the same extensions to this new form of ``class``. Indeed, an explicit ``forall`` is often absolutely essential. Consider the rose-tree example ::
+
+   instance (Eq a, forall b. Eq b => Eq (f b)) => Eq (Rose f a) where ...
+
+  Without the ``forall b``, the type variable ``b`` would be quantified over the whole instance declaration, which is not what is intended.
+
+- One of these new quantified constraints can appear anywhere that any other constraint can, not just in instance declarations.  Notably, it can appear in a type signature for a value binding, data constructor, or expression.  For example ::
+
+   f :: (Eq a, forall b. Eq b => Eq (f b)) => Rose f a -> Rose f a -> Bool
+   f t1 t2 = not (t1 == t2)
+
+- The form with a type variable at the head allows this::
+
+   instance (forall xx. c (Free c xx)) => Monad (Free c) where
+       Free f >>= g = f g
+
+  See `Iceland Jack's summary <https://ghc.haskell.org/trac/ghc/ticket/14733#comment:6>`_.  The key point is that the bit to the right of the `=>` may be headed by a type *variable* (`c` in this case), rather than a class.  It should not be one of the forall'd variables, though.
+
+  (NB: this is an extension to what is described in the paper.)
+
 
 Typing changes
 ^^^^^^^^^^^^^^
 
 See `the paper <http://i.cs.hku.hk/~bruno//papers/hs2017.pdf>`_.
+
+Superclasses
+^^^^^^^^^^^^
+
+Suppose we have::
+
+     f :: forall m. (forall a. Ord a => Ord (m a)) => m Int -> Bool
+     f x = x == x
+
+From the ``x==x`` we need an ``Eq (m Int)`` constraint, but the context only gives us a way to figure out ``Ord (m a)`` constraints.  But from the given constraint ``forall a. Ord a => Ord (m a)`` we derive a second given constraint ``forall a. Ord a => Eq (m a)``, and from that we can readily solve ``Eq (m Int)``.  This process is very similar to the way that superclasses already work: given an ``Ord a`` constraint we derive a second given ``Eq a`` constraint.
 
 Overlap
 ^^^^^^^
@@ -165,7 +200,7 @@ We thus try to entail the constraint ``C a`` under the theory containing:
 However, the ``A a => C a`` and ``B a => C a`` axioms both match the wanted constraint ``C a``.
 There are several possible approaches for handling these overlapping local axioms:
 
-- We can simply select the **first matching axiom** we encounter.
+- **Pick first**.  We can simply select the **first matching axiom** we encounter.
   In the above example, this would be ``A a => C a``.
   We'd then need to entail ``A a``, for which we have no matching axioms available, causing the above program to be rejected.
 
@@ -186,53 +221,75 @@ There are several possible approaches for handling these overlapping local axiom
   This behaviour, where the ordering of an instance context determines
   whether or not the program is accepted, seems rather confusing for the developer.
 
-- An alternative approach would be to check for overlapping axioms,
+- **Reject if in doubt**.  An alternative approach would be to check for overlapping axioms,
   when entailing a constraint.
   When multiple matching axioms are discovered, we **reject the program**.
   This approach might be a bit conservative, in that it may reject working programs.
-  However, this does seem much more transparant towards the developer.
+  However, this does seem much more transparent towards the developer.
   He can be presented with a clear message, explaining why the program is rejected,
   so that he can make the necessary adjustments to his code.
 
-- Another option would be to check for overlapping axioms,
+- **Basic heuristic**.  Another option would be to check for overlapping axioms,
   but instead of rejecting the program,
-  perform a **basic heuristic** to determine which of these axioms is more likely to succeed. 
+  perform a **basic heuristic** to determine which of these axioms is more likely to succeed.
   This could result in more programs being accepted,
   compared to simply selecting the first matching axiom we find.
   However, this heuristic might add significant complexity to the compiler.
   Furthermore, when the heuristic does fail and the program is rejected,
   debugging this program would become very confusing indeed.
 
-- Lastly, a simple form of **backtracking** could be introduced.
+- **Backtracking**.  Lastly, a simple form of **backtracking** could be introduced.
   We simply select the first matching axiom we encounter and when the entailment fails,
   we backtrack and look for other axioms that might match the wanted constraint.
 
   This seems by far the most intuitive and transparent approach towards the developer,
   who no longer needs to concern himself with the fact that his code might contain
-  overlapping axioms or with the ordering of his instance contexts. 
+  overlapping axioms or with the ordering of his instance contexts.
   However, further investigation is needed to determine the impact of this on
   the compiler performance.
 
-Issues
-^^^^^^
+We propose to adopt **Reject if in doubt** for now.  We can see how painful it
+is in practice, and try something more ambitious if necessary.
 
-Quite a few interesting questions have arisen already from the prototype.  Here we list the main ones. Please identify any others.
+Instance lookup
+^^^^^^^^^^^^^^^
+In the light of the overlap decision, instance lookup works like this, when
+trying to solve a class constraint ``C t``
 
-- We'd like to allow this::
+1. First see if there is a given un-quantified constraint ``C t``.  If so, use it to solve the constraint.
 
-   instance (forall xx. c (Free c xx)) => Monad (Free c) where
-       Free f >>= g = f g
+2. If not, look at all the available given quantified constraints; if exactly one one matches ``C t``, choose it; if more than one matches, report an error.
 
-  See `Iceland Jack's summary <https://ghc.haskell.org/trac/ghc/ticket/14733#comment:6>`_.
+3. If no quantified constraints match, look up in the global instances precisely as now.
 
-  The key point is that the bit to the right of the `=>` may be headed by a type *variable*, rather than a class.  It should not be one of the forall'd variables, though.
+Termination
+^^^^^^^^^^^
+GHC uses the `Paterson Conditions <http://downloads.haskell.org/~ghc/master/users-guide/glasgow_exts.html#instance-termination-rules>`_ to ensure that instance resolution terminates:
 
-- Suppose we have::
+The Paterson Conditions are these:
 
-     f :: forall m. (forall a. Ord a => Ord (m a)) => m Int -> Bool
-     f x = x == x
+- The Paterson Conditions: for each class constraint ``(C t1 ... tn)``
+  in the context
 
-  From the ``x==x`` we need an ``Eq (m Int)`` constraint, but the context only gives us a way to figure out ``Ord (m a)`` constraints.  If we sought ``Ord (m Int)`` we'd succeed, and could then extract an ``Eq (m Int)`` dictionary from the ``Ord`` one.  But it's not clear how to make this work in general without introducing a pile of new complexity, even including backtracking.
+   1. No type variable has more occurrences in the constraint than in
+      the head
+
+   2. The constraint has fewer constructors and variables (taken
+      together and counting repetitions) than the head
+
+   3. The constraint mentions no type functions. A type function
+      application can in principle expand to a type of arbitrary size,
+      and so are rejected out of hand
+
+How are those rules modified for quantified constraints? In two ways.
+
+- Each quantified constraint, taken by itself, must satisfy the termination rules for an instance declaration.
+
+- After "for each class constraint ``(C t1 ... tn)``", add "or each quantified constraint ``(forall as. context => C t1 .. tn)``"
+
+Note that the second item only at the *head* of the quantified constraint, not its context.  Reason: the head is the new goal that has to be solved if we use the instance declaration.
+
+Of course, ``UndecidableInstances`` lifts the Paterson Conditions, as now.
 
 Costs and Drawbacks
 -------------------
