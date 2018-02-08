@@ -362,7 +362,7 @@ then neither should ``baz``.
       data Number :: TYPE Rep
       plus :: Number -> Number -> Number
 
-.. _type declarations with unlifted kinds: https://ghc.haskell.org/trac/ghc/ticket/13955
+.. _type declarations of unlifted kinds: https://ghc.haskell.org/trac/ghc/ticket/13955
 
 Currently, these type can only be implemented by a type synonym,
 not by a data declaration. Edward Yang discusses this in a `comment on the
