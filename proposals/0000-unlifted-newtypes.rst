@@ -398,6 +398,13 @@ newtypes.
 
 .. _unlifted data types: https://ghc.haskell.org/trac/ghc/wiki/UnliftedDataTypes
 
+Alternatively, we could take a step in the other direction and simplify
+this proposal. Disallowing levity-polymorphic newtypes might make this
+easier to implement. Most of what this proposal has to offer comes
+from the ability to work with an unlifted type whose data constructor
+is hidden, and restricting users to the realm of the levity-monomorphic
+does not take away from this.
+
 Concerns
 ----------------
 
@@ -412,5 +419,8 @@ Implementation
 I do not have sufficient knowledge of GHC to implement this. I welcome anyone
 else to implement it, or if it's approved and enough time goes by, I may
 try to figure out how to implement it.
+
+Richard Eisenburg has indicated that he might be interested in implementing
+the proposal.
 
 
