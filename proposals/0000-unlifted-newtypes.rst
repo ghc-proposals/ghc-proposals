@@ -353,6 +353,24 @@ For example suppose we have::
 If ``bar`` throws an exception, then ``baz`` should too. If it doesn't,
 then neither should ``baz``.
 
+**Backpack**: Since GHC 8.4, backpack allows module signatures with
+`type declarations of unlifted kinds`_. For example::
+
+    signature NumberUnknown where
+      import GHC.Types
+      data Rep :: RuntimeRep
+      data Number :: TYPE Rep
+      plus :: Number -> Number -> Number
+
+.. _type declarations with unlifted kinds: https://ghc.haskell.org/trac/ghc/ticket/13955
+
+Currently, these type can only be implemented by a type synonym,
+not by a data declaration. Edward Yang discusses this in a `comment on the
+aforementioned issue`_. This proposal would lift this restriction.
+
+.. _comment on the aforementioned issue: https://ghc.haskell.org/trac/ghc/ticket/13955#comment:5
+
+
 Costs and Drawbacks
 -------------------
 
