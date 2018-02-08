@@ -1,12 +1,12 @@
-.. proposal-number:: 
+.. proposal-number:: 12
 
-.. trac-ticket:: 
+.. trac-ticket::
 
 .. implemented::
 
 .. highlight:: haskell
 
-This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/71>`_.
+This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/71>`_.
 
 .. contents::
 
