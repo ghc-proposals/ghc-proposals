@@ -149,8 +149,9 @@ Effect and Interactions
 
 * This proposal paves the way for future proposals relating to type-level features.
   Specifically, implementing this will make it possible to treat kind-variable
-  scoping the same way we do type-variable scoping. The proposal is yet to be
-  written, but I will update this paragraph when it's available.
+  scoping the same way we do type-variable scoping, as proposed in `#103`_.
+
+.. _`#103`: https://github.com/ghc-proposals/ghc-proposals/pull/103
   
 Costs and Drawbacks
 -------------------
