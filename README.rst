@@ -71,6 +71,13 @@ include,
   `type-indexed <https://ghc.haskell.org/trac/ghc/wiki/Typeable>`_
   ``Typeable`` representations)
 
+Changes to the GHC API or the plugin API are not automatically within the scope
+of the committee, and can be contributed following the usual GHC workflow.
+Should the GHC maintainers deem a change significant or controversial enough to
+warrant that, they may, at their discretion, involve the committee and ask the
+contributor to write a formal proposal.
+
+
 What should a proposal look like?
 --------------------------------
 
