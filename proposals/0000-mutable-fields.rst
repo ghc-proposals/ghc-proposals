@@ -69,11 +69,14 @@ Note:
 - The new ``mutable`` keyword declares a mutable field
 - The return type is in ``IO``: a constructor with any ``mutable``
   fields *must* either
+
   - have a return type that has one of the forms ``IO t``, ``ST s t``,
     or ``State# s -> (# State# s, t #)``, where ``t`` takes the
     form of the normal return type for the constructor, or
+
   - have a type of the form ``PrimMonad m => ... -> m t``,  declaring a
     constructor that works for any ``PrimMonad`` instance.
+
 - mutable fields *must not* have a strictness annotation. (we
   anticipate that support for strictness annotations on mutable fields
   will be a future proposal).
