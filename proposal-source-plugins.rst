@@ -23,14 +23,14 @@ I will not argue on how good tool support can help Haskell developers, I think a
 
 When developing tools for the Haskell language that analyze or manipulate the source code, it is necessary to access some representation of the syntax tree. Depending on the actual purpose of the tool, it may require additional information (different representation, the environment of the compilation) to perform its tasks.
 
-Take for example, a development tool that analyses the source code to produces a call graph. The developer wants to build it using GHC as a backend, to guaratee that it keeps up-to date with the latest changes in the compiler. Lets say that it writes out the graph to a file. It's interface should rely on the typechecked representation:
+Take for example, a development tool that analyses the source code to produces a call graph. The developer wants to build it using GHC as a backend, to guarantee that it keeps up-to date with the latest changes in the compiler. Lets say that it writes out the graph to a file. It's interface should rely on the typechecked representation:
 
 ::
 
  analyze :: TypecheckedSource -> IO ()
  analyze tc = -- analysis of the typechecked source code to write out the nodes and links of the call graph
 
-However there is the problem of the method of accessing that ``TypecheckedSource``. It should be done in a way that is usable for large complex projects. It would be benefitial not to make assumptions about the build system where the tool will be used. The only restriction that the tool's author should make is that it should be compiled using GHC. If we don't want to change the build system of the project, nor make the tool understand and reproduce the build process to some extent, the tool should be integrated into the normal build process. And the most convenient way to do so is to use compiler flags as a way to integrate the tool into the build process. Plugin use is controlled by compiler flags so it is convenient to extend the already existing Plugin support for tooling.
+However there is the problem of the method of accessing that ``TypecheckedSource``. It should be done in a way that is usable for large complex projects. It would be beneficial not to make assumptions about the build system where the tool will be used. The only restriction that the tool's author should make is that it should be compiled using GHC. If we don't want to change the build system of the project, nor make the tool understand and reproduce the build process to some extent, the tool should be integrated into the normal build process. And the most convenient way to do so is to use compiler flags as a way to integrate the tool into the build process. Plugin use is controlled by compiler flags so it is convenient to extend the already existing Plugin support for tooling.
 
 
 Proposed Change Specification
@@ -83,7 +83,7 @@ Costs and Drawbacks
 
 The proposal does not change the language itself and should only affect users who choose to use tools that are developed using compiler plugins. No existing functionality is changed.
 
-Development and maintenance is cheap. The proposal only requres a few changes in the compiler. In fact I have an implementation for the basic version of this: `https://phabricator.haskell.org/D4342`.
+Development and maintenance is cheap. The proposal only requires a few changes in the compiler. In fact I have an implementation for the basic version of this: `https://phabricator.haskell.org/D4342`.
 
 Currently using plugins forces GHC to recompile every module when plugins are used. While this is not solved it limits the usability of the source plugins as well. For more information see the `ticket <https://ghc.haskell.org/trac/ghc/ticket/7414>` about that issue.
 
@@ -94,7 +94,7 @@ Alternatives
 
 - *Write tools that use third-party libraries for parsing and analyzing Haskell.*
   
-  The drawback of these solutions is that the third-party libraries might not keep up-to-date with GHC. GHC became a de-factor standard of Haskell, so it is important for the tools to keep up with GHC's development
+  The drawback of these solutions is that the third-party libraries might not keep up-to-date with GHC. GHC became a de-facto standard of Haskell, so it is important for the tools to keep up with GHC's development
  
 - *Implement tools using the public GHC API.*
 
@@ -104,7 +104,7 @@ Alternatives
   
   `Frontend plugins <https://downloads.haskell.org/~ghc/master/users-guide/extending_ghc.html#frontend-plugins>` add a new programmable major mode to GHC. When the control is passed to the plugin, the plugin's writer receives all the compiler arguments and is able to do whatever is necessary. `GHC Hooks <https://ghc.haskell.org/trac/ghc/wiki/Ghc/Hooks>` are developed for altering how the compiler performs different compilation steps. GHC hooks are primarily meant to help writing different backends for GHC and they are not exposed to the user directly.
    
-  It is important to see that frontend plugins are the most convenient if the developer want to do something else than running the compilation pipeline normally. Frontend plugins are not convenient for running the compiler normally and accesing the inner representations. I have to note that some of the issues can be solved by `creating a wrapper for GHC <http://blog.ezyang.com/2017/02/how-to-integrate-ghc-api-programs-with-cabal/>`.
+  It is important to see that frontend plugins are the most convenient if the developer want to do something else than running the compilation pipeline normally. Frontend plugins are not convenient for running the compiler normally and accessing the inner representations. I have to note that some of the issues can be solved by `creating a wrapper for GHC <http://blog.ezyang.com/2017/02/how-to-integrate-ghc-api-programs-with-cabal/>`.
   
   It would be possible to define a frontend plugin that install a ``HscFrontendHook`` to access the type checked representation. However this method is insufficient to grant access to parsed and renamed syntax tree as well as splices and interfaces is.
  
