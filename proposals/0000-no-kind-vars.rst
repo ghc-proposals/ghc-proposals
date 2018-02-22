@@ -120,6 +120,14 @@ Alternatives
 * Don't wait for two releases after `#83`_, given that the fix is compatible
   with three releases if ``-XTypeInType`` is enabled.
 
+* Treat the ``k`` in ``forall (a :: k). Proxy a -> ()`` specially, allowing
+  this syntax to bring ``k`` into scope. Specifically, any unbound variable
+  mentioned in a kind signature of a type variable binder could be brought
+  into scope. This was suggested on the GitHub thread, but I find it to be
+  an unnecessary special case, just to preserve a sliver of legacy behavior
+  that we needn't preserve. I'm listing it here as a viable, consistent alternative,
+  however.
+
 Unresolved questions
 --------------------
 None that I know of.
