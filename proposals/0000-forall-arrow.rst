@@ -66,21 +66,36 @@ type for a term. (For example, it will be rejected in type signatures of
 terms, but allowed in type synonyms, which can be used in kinds.) No
 term-level definition can have a type that has a visible dependent quantifier.
 
-To wit, this new construct would be forbidden in the following places:
+To wit, this new construct would be forbidden in the following places (with examples
+of rejected constructs):
 
-* The type ascription of a ``forall``\-bound term variable in a ``RULE``
+* The type ascription of a ``forall``\-bound term variable in a ``RULE``::
+
+    {-# RULES "blah" forall a -> id a = a #-}
   
-* The type of a foreign import/export
+* The type of a foreign import/export::
+
+    foreign export ccall freeStablePtr :: forall a -> StablePtr a -> IO ()
   
-* A type signature for a term-level variable
+* A type signature for a term-level variable::
 
-* The type in a ``SPECIALISE`` or ``SPECIALISE_INLINE`` or ``SPECIALISE instance`` pragma
+    id :: forall a -> a -> a
 
-* An expression type ascription
+* The type in a ``SPECIALISE`` or ``SPECIALISE_INLINE`` or ``SPECIALISE instance`` pragma::
 
-* A pattern synonym type signature
+    {-# SPECIALISE foldM :: forall a b -> (a -> b -> IO a) -> a -> [b] -> IO a #-}
 
-* A type signature in a pattern
+* An expression type ascription::
+
+    zipWith ((<>) :: forall a -> Maybe a -> Maybe a -> Maybe a) xs ys
+
+* A pattern synonym type signature::
+
+    pattern Nil :: forall a -> [a]
+
+* A type signature in a pattern::
+
+    isJust (x :: forall a -> Maybe a) = ...
 
 A data constructor *can* use ``forall ... ->`` in its type (as given in
 GADT-syntax) or arguments, but any use of such a constructor in terms (as
