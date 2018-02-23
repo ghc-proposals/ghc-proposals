@@ -47,6 +47,22 @@ was poor syntax, and I was reticent to add it to the language with ``-XTypeInTyp
 this proposals process is active, I'm happy to propose the new syntax where it can get debated in the
 open and perhaps refined.)
 
+A useful example of how this construct might be used is an alternative syntax for ``TypeRep``. We can
+imagine ::
+
+  TypeRepV :: forall k -> k -> Type   -- "V" for visible
+
+as a companion to ::
+
+  TypeRep :: forall k. k -> Type      -- we have this today
+
+Now, if someone wants to operate on
+a type representation for some type of kind ``Type -> Type``, they could say ::
+
+  foo :: TypeRepV (Type -> Type) a -> ...
+
+and GHC would easily infer that ``a`` should have kind ``Type -> Type``.  
+
 Proposed Change Specification
 -----------------------------
 Add a new bit of syntax for types (= kinds) that looks like this::
