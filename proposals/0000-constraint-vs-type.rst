@@ -9,13 +9,10 @@ Since at least GHC 7.4, there has been an uneasy relationship between ``Constrai
 kinds were considered distinct in Haskell but indistinguishable in Core. This strange arrangement causes oddities in the
 type system, as explained in `#11715 <https://ghc.haskell.org/trac/ghc/ticket/11715>`_.
 
-This proposal separates ``Constraint`` from ``Type`` in Core by defining these as separate
-datatypes. In order for the type system to hold together, we must have four different
-arrow types now, one for each possible combination of a function taking/returning types
-of kind ``Constraint`` and ``Type``. An advantage of this arrangement is that ``(=>)``
-becomes a first-class type. All the arrows are representationally equal to ``(->)``
-and can be coerced. This last bit has the further advantage that the idiom used
-in the ``reflection`` library can use ``coerce`` where it currently uses ``unsafeCoerce``.
+An earlier version of this proposal suggested a fix for this by separating ``Constraint`` and ``Type``.
+However, that solution is quite heavy (it is listed in the `Old proposal`_ section). So, this
+proposal now is simply to declare that ``Type`` and ``Constraint`` are not *apart* in Haskell.
+The other motivations (surrounding ``Typeable``) are basically bugs that do not need a proposal in order to fix.
 
 Motivation
 ------------
@@ -63,6 +60,112 @@ Here are a few oddities caused by the arrangement in GHC 8.0:
 
 Proposed Change Specification
 -----------------------------
+
+GHC uses a notion of *apartness* (as defined in the `Closed Type Families paper <https://repository.brynmawr.edu/cgi/viewcontent.cgi?article=1006&context=compsci_pubs>`_) to determine what open type family instances to accept and how to
+reduce closed type families. In brief, two types are *apart* if they can never represent
+the same type, even after type family reductions and variable instantiations. ``Int``
+and ``Bool`` are apart, while ``F Int`` and ``Bool`` are not (for a type family ``F``).
+
+Under this proposal, ``Type`` and ``Constraint`` would no longer be apart. And that's the
+only change!
+    
+Effect and Interactions
+-----------------------
+
+The effect of this would be that the following pairs of instances would be considered
+overlapping::
+
+  class C a where ...
+  instance C Type where ...
+  instance C Constraint where ...
+
+  type family F a
+  type instance F Type = Int
+  type instance F Constraint = Bool
+
+That is, the pair of instances would be rejected.
+
+In addition, suppose we had this type family::
+
+  type family Equals a b where
+    Equals a a = True
+    Equals a b = False
+
+If a user tested ``Equals Type Constraint``, that type family application would fail
+to reduce either to ``True`` or to ``False``. (``Equals Type Type`` and ``Equals Constraint Constraint``
+would still both remain ``True``.)
+
+Motivators (2)-(3) are all to do with ``Typeable``. We could fix this by teaching the ``Typeable`` solver
+to offer up one ``TypeRep`` for ``Type`` and a different one for ``Constraint``. These ``TypeRep``\s would
+compare as different. Indeed, in retrospect, I'm not sure why we haven't already done this.
+
+Note that it's terrible to have the same ``TypeRep`` for two types that are distinct in Core but OK
+to have two different ``TypeRep``\s for two types that are equal in Core.
+
+A motivator on earlier versions of this proposal was about inferring the difference between
+``() :: Constraint`` and ``() :: Type``.
+I've come to view this as a red herring. Some possible ways forward here would indeed make it easier
+to implement better type inference around ``()``, but that shouldn't be a primary goal here. After all,
+this is really about sorting out a mess in Core, and we shouldn't be overly swayed by type inference.
+For example, it's perfectly possible to come up with a scheme where empty tuples are decorated with
+some solvable parameter during type inference, only to have desugaring (after everything has been solved
+for and/or defaulted) look at that parameter to select the right ``TyCon``.
+
+Costs and Drawbacks
+-------------------
+
+This should be dead easy to implement.
+
+The drawback is that ``Constraint`` and ``Type`` really are distinct in Haskell, and so it's
+quite odd that these types not be *apart*. This would be counterintuitive to users, and could
+be explained only by discussing Haskell's elaboration to Core.
+
+Maintaining the distinction between ``Constraint`` and ``Type`` (while representing them internally
+as the same thing) adds some burden to the implementation. This is a burden we have been carrying
+for some time.
+
+Alternatives
+------------
+
+1. Instead of saying that ``Type`` and ``Constraint`` are not apart, we could have the instance
+   lookup machinery treat them interchangeably. That means that an ``instance C Type`` would match
+   a need for an ``instance C Constraint`` and that ``Equals Type Constraint`` would be ``True``.
+   Note that this would affect only instance-lookup. A user would still not be able to prove
+   ``Type ~ Constraint``, which goes via a different mechanism.
+
+2. Adopt one of the heavy solutions listed in `Old proposal`_. In particular, that describes an
+   Alternative (3) that seems much better than anything here. Unfortunately, it requires significant
+   amounts of type-theory research to sort out what roles in kinds might mean, so is inaccessible
+   for some time.
+
+Implementation Plan
+-------------------
+
+I or a close collaborator volunteers to implement. Offers of help are welcome.
+   
+.. proposal-number:: Leave blank. This will be filled in when the proposal is
+                     accepted.
+
+.. trac-ticket:: Leave blank. This will eventually be filled with the Trac
+                 ticket number which will track the progress of the
+                 implementation of the feature.
+
+.. implemented:: Leave blank. This will be filled in with the first GHC version which
+                 implements the described feature.
+
+Old proposal
+------------
+
+The (unedited) text below is from an older version of this proposal. In the end, this was
+deemed too heavy.
+
+This proposal separates ``Constraint`` from ``Type`` in Core by defining these as separate
+datatypes. In order for the type system to hold together, we must have four different
+arrow types now, one for each possible combination of a function taking/returning types
+of kind ``Constraint`` and ``Type``. An advantage of this arrangement is that ``(=>)``
+becomes a first-class type. All the arrows are representationally equal to ``(->)``
+and can be coerced. This last bit has the further advantage that the idiom used
+in the ``reflection`` library can use ``coerce`` where it currently uses ``unsafeCoerce``.
 
 **User-facing changes**: The ``Typeable`` mechanism can tell the difference between ``Constraint`` and ``Type``.
 ``(=>)`` becomes a first-class type.
@@ -256,9 +359,10 @@ Any typing rules in here fit into the various typing judgments as presented
 9. The constraint solver must be taught to be aware of the representational
    equalities among the different arrows. This will happen at the same time as newtype-unwrapping
    during canonicalizing representational equality constraints.
-    
+
 Effect and Interactions
 -----------------------
+
 This change should have no effect on 99% of Haskell code out there. It's mostly an internal
 reorganization, affecting only power users and type theorists. See the motivation for examples
 of where this comes up.
@@ -339,53 +443,6 @@ Alternatives
    to have ``(=>)`` be an "annotation" saying to cast a ``Constraint`` into a ``Type`` usable by ``(->)``. If it weren't
    for the fact that the theory isn't ready yet, this would seem to be the most appealing option.
 
-4. Do the minimal amount necessary to fix the problems in the Motivation section. A striking aspect of this proposal
-   is that it has almost no user-facing surface area. So should we even do this? Let's revisit the problems in our
-   motivation to see if there is another way forward. In all cases, we assume in this alternative that ``Type``
-   and ``Constraint`` remain equal in Core.
-
-   1. Motivator (1) addresses a key type-safety issue. But it can be mitigated by rejecting that pair of instances.
-      More generally, we could advertise that GHC considers ``Type`` and ``Constraint`` not to be *apart*. This
-      change in the definition of apartness would reject the instances in (1). Following this possibility a bit further,
-      let's consider ::
-
-	  type family IsEq a b where
-	    IsEq a a = True
-	    IsEq a b = False
-
-      What would happen to ``IsEq Type Constraint``? It would simply fail to reduce. They're not the same, so
-      the first equation doesn't apply. But they're not apart, so the second equation won't fire, either.
-
-      An alternative in this space is to go one step further and say that type families/data families/class
-      instances treat ``Type`` and
-      ``Constraint`` identically. In this sub-alternative, ``IsEq Type Constraint`` happily returns ``True``.
-      Note that this does not mean GHC could prove ``Type ~ Constraint`` (which would remain unsatisfiable).
-
-   2. Motivators (2)-(3) are all to do with ``Typeable``. We could fix this by teaching the ``Typeable`` solver
-      to offer up one ``TypeRep`` for ``Type`` and a different one for ``Constraint``. These ``TypeRep``\s would
-      compare as different. Indeed, in retrospect, I'm not sure why we haven't already done this.
-
-      Note that it's terrible to have the same ``TypeRep`` for two types that are distinct in Core but OK
-      to have two different ``TypeRep``\s for two types that are equal in Core.
-
-   3. A motivator on earlier versions of this proposal was about inferring the difference between
-      ``() :: Constraint`` and ``() :: Type``.
-      I've come to view this as a red herring. Some possible ways forward here would indeed make it easier
-      to implement better type inference around ``()``, but that shouldn't be a primary goal here. After all,
-      this is really about sorting out a mess in Core, and we shouldn't be overly swayed by type inference.
-      For example, it's perfectly possible to come up with a scheme where empty tuples are decorated with
-      some solvable parameter during type inference, only to have desugaring (after everything has been solved
-      for and/or defaulted) look at that parameter to select the right ``TyCon``.
-
-   So, we can fix all the problems that motivated us, with much less work than this proposal suggests. We're left
-   with a slightly weaker type system (in that the type-pattern mechanism fails to recognize the difference
-   between ``Constraint`` and ``Type``) and a slightly annoying implementation (having separate type-equality
-   functions in the type-checker as in Core). This alternative is a bit smelly, but it's worth considering not
-   moving forward with all the complication that this proposal would bring.
-
-I think option (3) last option above will be the final resting place for all this. But that requires lots more theory first,
-and would still require much of the baggage (in particular, ``ArrowNthCo``) that we see above.
-
 Unresolved questions
 --------------------
 
@@ -412,7 +469,6 @@ Unresolved questions
 
 Implementation Plan
 -------------------
-I volunteer to implement.
 
 Some implementation thoughts:
 
@@ -432,13 +488,3 @@ Some implementation thoughts:
    ``FunCo`` would be problematic at a nominal role, but such a thing is impossible
    to build, because we will never have ``ty1 ~N ty2`` where ``ty1 :: Type`` and
    ``ty2 :: Constraint``. (At least, we won't if we're typesafe!)
-   
-.. proposal-number:: Leave blank. This will be filled in when the proposal is
-                     accepted.
-
-.. trac-ticket:: Leave blank. This will eventually be filled with the Trac
-                 ticket number which will track the progress of the
-                 implementation of the feature.
-
-.. implemented:: Leave blank. This will be filled in with the first GHC version which
-                 implements the described feature.
