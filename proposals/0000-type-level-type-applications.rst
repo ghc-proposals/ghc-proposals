@@ -44,8 +44,9 @@ There are two major motivations:
 Proposed Change Specification
 -----------------------------
 Allow visible type application in types as well as terms. In precisely
-the same way that it currently is used to reduce ``forall``s in terms,
-it will reduce ``forall``s in types.
+the same way that it currently is used to reduce ``forall``\s in terms,
+it will reduce ``forall``\s in types. This new behavior will be controlled
+by the ``-XTypeApplications`` extension.
 
 Specifically:
 
