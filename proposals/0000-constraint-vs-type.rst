@@ -1,7 +1,7 @@
 .. highlight:: haskell
 
-Separate `Constraint` from `Type`
-=================================
+Declare ``Constraint`` is not apart from ``Type``
+=================================================
 
 `GitHub pull request for discussion <https://github.com/ghc-proposals/ghc-proposals/pull/32>`_
 
