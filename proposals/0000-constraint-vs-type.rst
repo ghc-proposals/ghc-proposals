@@ -12,51 +12,21 @@ type system, as explained in `#11715 <https://ghc.haskell.org/trac/ghc/ticket/11
 An earlier version of this proposal suggested a fix for this by separating ``Constraint`` and ``Type``.
 However, that solution is quite heavy (it is listed in the `Old proposal`_ section). So, this
 proposal now is simply to declare that ``Type`` and ``Constraint`` are not *apart* in Haskell.
-The other motivations (surrounding ``Typeable``) are basically bugs that do not need a proposal in order to fix.
 
 Motivation
 ------------
-Here are a few oddities caused by the arrangement in GHC 8.0:
-
-1. Type families::
+Consider ::
 
        type family F a
        type instance F Constraint = Int
        type instance F Type       = Bool
 
-   Such a definition is accepted. Yet it allows a proof that ``Int ~ Bool`` in Core. It's unclear to me whether this can be used to implement ``unsafeCoerce``, but it should scare us all.
+Such a definition is accepted. Yet it allows a proof that ``Int ~ Bool`` in Core.
+It's unclear to me whether this can be used to implement ``unsafeCoerce``, but it should scare us all.
 
-2. Printing::
-
-      main = do
-        print $ typeRep (Proxy :: Proxy Eq)
-        print $ typeOf (Proxy :: Proxy Eq)
-
-   This prints ::
-
-      Eq
-      Proxy (* -> *) Eq
-
-   But of course ``Eq`` doesn't have kind ``* -> *``. It has kind ``* -> Constraint``! Except that Core can't tell the difference.
-
-
-3. Order sensitivity::
-
-      main = do
-        print $ typeOf (Proxy :: Proxy (Eq Int))
-        print $ typeOf (Proxy :: Proxy Eq)
-
-   prints ::
-
-      Proxy Constraint (Eq Int)
-      Proxy (Constraint -> Constraint) Eq
-
-   but if you print them in the opposite order, you get ::
-
-      Proxy (* -> *) Eq
-      Proxy * (Eq Int)
-
-   Ew.
+(Earlier versions of this proposal mentioned other motivations around ``Typeable`` getting confused
+between ``Constraint`` and ``Type``. However, these are properly interpreted simply as bugs. I've
+moved them to the bottom of this document for posterity.)
 
 Proposed Change Specification
 -----------------------------
@@ -488,3 +458,39 @@ Some implementation thoughts:
    ``FunCo`` would be problematic at a nominal role, but such a thing is impossible
    to build, because we will never have ``ty1 ~N ty2`` where ``ty1 :: Type`` and
    ``ty2 :: Constraint``. (At least, we won't if we're typesafe!)
+
+Old ``Typeable`` motivators
+---------------------------
+
+2. Printing::
+
+      main = do
+        print $ typeRep (Proxy :: Proxy Eq)
+        print $ typeOf (Proxy :: Proxy Eq)
+
+   This prints ::
+
+      Eq
+      Proxy (* -> *) Eq
+
+   But of course ``Eq`` doesn't have kind ``* -> *``. It has kind ``* -> Constraint``! Except that Core can't tell the difference.
+
+
+3. Order sensitivity::
+
+      main = do
+        print $ typeOf (Proxy :: Proxy (Eq Int))
+        print $ typeOf (Proxy :: Proxy Eq)
+
+   prints ::
+
+      Proxy Constraint (Eq Int)
+      Proxy (Constraint -> Constraint) Eq
+
+   but if you print them in the opposite order, you get ::
+
+      Proxy (* -> *) Eq
+      Proxy * (Eq Int)
+
+   Ew.
+
