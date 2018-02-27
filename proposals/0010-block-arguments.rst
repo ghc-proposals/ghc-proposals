@@ -1,17 +1,13 @@
-.. proposal-number:: 10
-
-.. trac-ticket:: 10843
-
-.. implemented:: 8.6.1
-
-.. highlight:: haskell
-
-This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/90>`_.
-
-.. contents::
-
 BlockArguments Extension
 ========================
+
+.. proposal-number:: 10
+.. trac-ticket:: 10843
+.. implemented:: 8.6.1
+.. highlight:: haskell
+.. sectnum::
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/90>`_.
+.. contents::
 
 This document proposes the addition of an extension called ``BlockArguments``. This is a syntactic extension that allows a ``do`` block, a lambda, and a few other syntactic constructs to be written directly as a function argument, without parentheses or a ``$``.
 

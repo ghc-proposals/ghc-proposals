@@ -1,15 +1,14 @@
-.. proposal-number:: 0003
+Revise Levity Polymorphism
+==========================
 
+.. proposal-number:: 0003
 .. trac-ticket:: Leave blank. This will eventually be filled with the Trac
                  ticket number which will track the progress of the
                  implementation of the feature.
-
 .. implemented:: 8.2.1
-
 .. highlight:: haskell
-
-Revise Levity Polymorphism
-==========================
+.. sectnum::
+.. contents::
 
 GHC 8 introduced *levity polymorphism*, where a variable can be polymorphic in
 its representation. (This is also known as "representation polymorphism", but

@@ -1,17 +1,13 @@
-.. proposal-number:: 11
-
-.. trac-ticket:: `#14324 <https://ghc.haskell.org/trac/ghc/ticket/14324>`_
-
-.. implemented:: Not yet
-
-.. highlight:: haskell
-
-This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/77>`_.
-
-.. contents::
-
 Deprecating STM invariant mechanism
 ===================================
+
+.. proposal-number:: 11
+.. trac-ticket:: `#14324 <https://ghc.haskell.org/trac/ghc/ticket/14324>`_
+.. implemented:: Not yet
+.. highlight:: haskell
+.. sectnum::
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/77>`_.
+.. contents::
 
 The invariant-checking mechanism provided by GHC's ``stm`` library is buggy and
 appears to be largely unused. Let's remove it.

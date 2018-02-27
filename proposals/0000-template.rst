@@ -1,19 +1,3 @@
-.. proposal-number:: Leave blank. This will be filled in when the proposal is
-                     accepted.
-
-.. trac-ticket:: Leave blank. This will eventually be filled with the Trac
-                 ticket number which will track the progress of the
-                 implementation of the feature.
-
-.. implemented:: Leave blank. This will be filled in with the first GHC version which
-                 implements the described feature.
-
-.. highlight:: haskell
-
-This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_. **After creating the pull request, edit this file again, update the number in the link, and delete this bold sentence.**
-
-.. contents::
-
 Notes on reStructuredText - delete this section before submitting
 ==================================================================
 
@@ -26,11 +10,25 @@ The proposals are submitted in reStructuredText format.  To get inline code, enc
 
  this too
 
-To get hyperlinks, use backticks, angle brackets, and an underscore `like this <http://www.haskell.org/>`_.   
+To get hyperlinks, use backticks, angle brackets, and an underscore `like this <http://www.haskell.org/>`_.
 
 
 Proposal title
 ==============
+
+.. proposal-number:: Leave blank. This will be filled in when the proposal is
+                     accepted.
+.. trac-ticket:: Leave blank. This will eventually be filled with the Trac
+                 ticket number which will track the progress of the
+                 implementation of the feature.
+.. implemented:: Leave blank. This will be filled in with the first GHC version which
+                 implements the described feature.
+.. highlight:: haskell
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_.
+            **After creating the pull request, edit this file again, update the
+            number in the link, and delete this bold sentence.**
+.. sectnum::
+.. contents::
 
 Here you should write a short abstract motivating and briefly summarizing the proposed change.
 

@@ -1,17 +1,13 @@
-.. proposal-number:: 8
-
-.. trac-ticket:: None yet
-
-.. implemented:: None yet
-
-.. highlight:: haskell
-
-This proposal was `discussed at this pull requst <https://github.com/ghc-proposals/ghc-proposals/pull/65>`_.
-
-.. contents::
-
 Require namespacing fixity declarations for type names and ``WARNING``/``DEPRECATED`` pragmas
 =============================================================================================
+
+.. proposal-number:: 8
+.. trac-ticket:: None yet
+.. implemented:: None yet
+.. sectnum::
+.. highlight:: haskell
+.. header:: This proposal was `discussed at this pull requst <https://github.com/ghc-proposals/ghc-proposals/pull/65>`_.
+.. contents::
 
 GHC allows infix names at the type level using the ``TypeOperators`` extension. However, GHC's mechanism for providing fixity declarations for such infix type names—or to deprecate infix type names—is rather deficient. The same syntax is used for declare fixities and to deprecate names for both value-level and type-level names. I propose to tighten up the implementation by allowing users to indicate that an fixity declaration or a ``WARNING``/``DEPRECATED`` pragma should specifically be for a value or type name by typing out an explicit ``value`` or ``type`` namespace. I also propose deprecating the current, ambiguous mechanism for providing fixity declarations/``WARNING`` pragmas/``DEPRECATED`` pragmas for type names and eventually requiring the use of the ``type`` namespace for all fixity declarations/``WARNING`` pragmas/``DEPRECATED`` pragmas for type names in the future.
 

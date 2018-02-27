@@ -1,15 +1,13 @@
-.. proposal-number:: 0004
-
-.. trac-ticket:: https://ghc.haskell.org/trac/ghc/ticket/13126
-
-.. implemented:: 8.4.1
-
-.. highlight:: haskell
-
-This proposal was `under discussion <https://github.com/ghc-proposals/ghc-proposals/pull/37>`_.
-
 Hexadecimal Floats in Haskell
 =============================
+
+.. proposal-number:: 0004
+.. trac-ticket:: https://ghc.haskell.org/trac/ghc/ticket/13126
+.. implemented:: 8.4.1
+.. highlight:: haskell
+.. sectnum::
+.. header:: This proposal was `under discussion <https://github.com/ghc-proposals/ghc-proposals/pull/37>`_.
+.. contents::
 
 Currently, Haskell only allows writing floating-point numbers in the decimal format. Unfortunately,
 writing floats in decimal/scientific format is not always the best option: To write finite floats precisely

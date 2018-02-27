@@ -1,6 +1,7 @@
 A Proposal for Proposals
 ========================
 
+.. sectnum::
 .. contents::
 
 Recently there has been a growing feeling within the Haskell community that the

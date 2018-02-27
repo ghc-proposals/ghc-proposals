@@ -1,9 +1,10 @@
-.. proposal-number:: 0002
-
-.. implemented:: 8.2
-
 Overloaded Record Fields
 ========================
+
+.. proposal-number:: 0002
+.. implemented:: 8.2
+.. sectnum::
+.. contents::
 
 This is a proposal to introduce a new built-in typeclass,
 ``HasField``, to allow type-based resolution of field names and

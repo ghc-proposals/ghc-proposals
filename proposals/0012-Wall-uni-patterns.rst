@@ -1,17 +1,13 @@
-.. proposal-number:: 12
-
-.. trac-ticket::
-
-.. implemented::
-
-.. highlight:: haskell
-
-This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/71>`_.
-
-.. contents::
-
 Extend ``-Wall`` with ``incomplete-uni-patterns`` and ``incomplete-record-updates``
 ==============
+
+.. proposal-number:: 12
+.. trac-ticket::
+.. implemented::
+.. sectnum::
+.. highlight:: haskell
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/71>`_.
+.. contents::
 
 Extend ``-Wall`` with ``incomplete-uni-patterns`` and ``incomplete-record-updates``
 because they warn only about things that should typically not occur in well-written

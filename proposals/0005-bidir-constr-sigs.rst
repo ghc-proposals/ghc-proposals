@@ -1,20 +1,13 @@
-.. proposal-number:: 0005
-
-.. trac-ticket:: https://ghc.haskell.org/trac/ghc/ticket/14602
-
-.. implemented:: Not yet.
-
-.. highlight:: haskell
-
-.. role:: haskell(code)
-   :language: haskell
-
-.. default-role:: haskell
-
-This proposal was discussed at `this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/42>`_.
-
 Pattern synonym construction function signatures
 ================================================
+
+.. proposal-number:: 0005
+.. trac-ticket:: https://ghc.haskell.org/trac/ghc/ticket/14602
+.. implemented:: Not yet.
+.. highlight:: haskell
+.. sectnum::
+.. header:: This proposal was discussed at `this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/42>`_.
+.. contents::
 
 I propose to allow users to add type signatures to the constructor functions
 defined in bidirectional pattern synonyms.

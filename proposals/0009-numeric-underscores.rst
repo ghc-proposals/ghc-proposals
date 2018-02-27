@@ -1,14 +1,13 @@
+Underscores in Numeric Literals
+===============================
+
 .. proposal-number:: 0009
 .. trac-ticket:: 14473
 .. implemented:: 8.6.1
 .. highlight:: haskell
-
-This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/76>`_.
-
+.. sectnum::
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/76>`_.
 .. contents::
-
-Underscores in Numeric Literals
-===============================
 
 GHC supports various numeric literals such as decimal, octal, hexadecimal, binary, and floating point numbers.
 However, large numeric literals are hard to read.

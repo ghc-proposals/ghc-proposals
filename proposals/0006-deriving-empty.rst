@@ -1,17 +1,13 @@
-.. proposal-number:: 0006
-
-.. trac-ticket:: 7401, 10577, 13117
-
-.. implemented:: 8.4
-
-.. highlight:: haskell
-
-.. contents::
-
-This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/63>`_.
-
 Overhaul deriving instances for empty data types
 ================================================
+
+.. proposal-number:: 0006
+.. trac-ticket:: 7401, 10577, 13117
+.. implemented:: 8.4
+.. highlight:: haskell
+.. sectnum::
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/63>`_.
+.. contents::
 
 Currently, one can derive class instances for empty data types, i.e., data types that have no constructors, such as ``data Empty``. However, there are a number of warts in GHC's implementation of this feature that make it cumbersome to use.
 

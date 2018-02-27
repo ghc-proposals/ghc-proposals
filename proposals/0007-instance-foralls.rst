@@ -1,18 +1,13 @@
-.. proposal-number:: 0007
-
-.. trac-ticket:: 14268
-
-.. implemented:: Leave blank. This will be filled in with the first GHC version which
-                 implements the described feature.
-
-.. highlight:: haskell
-
-This proposal was `discussed at this pull requst <https://github.com/ghc-proposals/ghc-proposals/pull/55>`_.
-
-.. contents::
-
 More explicit ``forall``\s
-=========================
+==========================
+
+.. proposal-number:: 0007
+.. trac-ticket:: 14268
+.. implemented::
+.. sectnum::
+.. highlight:: haskell
+.. header:: This proposal was `discussed at this pull requst <https://github.com/ghc-proposals/ghc-proposals/pull/55>`_.
+.. contents::
 
 On type signatures, users can write ``forall ...`` to explicitly bind type/kind variables.
 This allows users to give the type variables explicit kinds. However, not all constructs that
