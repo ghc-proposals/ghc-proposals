@@ -466,8 +466,8 @@ These constructors can be used in an or pattern as long as
 Example 1, two constructors bind same number of existentials and dictionaries ::
 
     data Show' where
-      Show1 :: Show x => Show'
-      Show2 :: Show x => Show'
+      Show1 :: Show x => x -> Show'
+      Show2 :: Show x => x -> Show'
 
     f :: Show' -> String
     f (Show1 x | Show2 x) = show x
@@ -494,8 +494,8 @@ Example 2, constructors with same number of existentials and dictionaries.
 Dictionaries have different types, but they're not used: ::
 
     data E where
-      Eq :: Eq x => E
-      Ord :: Ord x => E
+      Eq  :: Eq x  => x -> E
+      Ord :: Ord x => x -> E
 
     f :: E -> String
     f (Eq _ | Ord _) = "f"
@@ -544,8 +544,8 @@ Example 4, because of different number of existentials in constructors, these
 can't be used in an or pattern: ::
 
     data T where
-      T1 :: a   -> (a -> Int)   -> T -- one existential argument
-      T2 :: [c] -> ([c] -> Int) -> T -- no existentials
+      T1 :: a    -> (a -> Int)    -> T -- one existential argument
+      T2 :: Bool -> (Bool -> Int) -> T -- no existentials
 
     -- this is rejected:
     f1 (T1 x g  |  T2 x g) = g x
