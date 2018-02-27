@@ -71,11 +71,11 @@ With a "macro-expansion" model of pattern synonyms, that might be equivalent to
 which is a jolly funny pattern.  But the semantics of pattern synonyms are NOT simply macro-expansion: see `the paper (Section 5) <https://www.microsoft.com/en-us/research/publication/pattern-synonyms/>`_.
 Rather, their semantics is given thus:
 
-* To match a pattern `(P p1 .. pn)`, where `P` is a pattern synonym defined by `P x1 ... xn <- p`,
-  match the value aginst `p` (binding x1..xn); and then match the `xi` against `pi`.
+* To match a pattern ``(P p1 .. pn)``, where ``P`` is a pattern synonym defined by ``P x1 ... xn <- p``,
+  match the value aginst ``p`` (binding x1..xn); and then match the ``xi`` against ``pi``.
 
-This description works perfectly for as-patterns. For example to match a value against `(MP (Just z) v)`,
-first match the value against `x@(Just y)`, binding x and y; and then match `x` against `Just z` and `y` against `v`.
+This description works perfectly for as-patterns. For example to match a value against ``(MP (Just z) v)``,
+first match the value against ``x@(Just y)``, binding x and y; and then match ``x`` against ``Just z`` and ``y`` against ``v``.
 
 
 
@@ -95,7 +95,7 @@ possible to write a pattern synonym that never matches using an as-pattern.  For
 
 ::
 
-According to the rules, we first match the argument `v` against the RHS of the pattern synonym `x@(Just y)`. Maybe that fails; if so the match fails. Maybe it succeeds, binding `x` to `Just v2` and `y` to `v2`. Now match the value of `x` (namely `Just v2`) against `Nothing`. That fails, so the overall match fails. So the rules say that this pattern will never match.
+According to the rules, we first match the argument ``v`` against the RHS of the pattern synonym ``x@(Just y)``. Maybe that fails; if so the match fails. Maybe it succeeds, binding ``x`` to ``Just v2`` and ``y`` to ``v2``. Now match the value of ``x`` (namely ``Just v2``) against ``Nothing``. That fails, so the overall match fails. So the rules say that this pattern will never match.
 
 There is nothing wrong with this; it is possible now, and it remains possible.  (GADT patterns can also be guaranteed to fail.)
 
@@ -105,11 +105,11 @@ Implementation is a matter of deleting code.
 
 Alternatives
 ------------
-One could imagine extending the syntax of patterns, to include `pat1@pat2`, with matching semantics thus:
+One could imagine extending the syntax of patterns, to include ``pat1@pat2``, with matching semantics thus:
 
-* To match a pattern `p1@p2` aagainst a value `v`, match `p1` against `v` (binding some variables `x1..xn`), the match `p2` against `v` (binding some variables `y1..ym`).  If both matches succeed, the overall match succeeds, binding `x1..xn,y1..ym`.
+* To match a pattern ``p1@p2`` aagainst a value ``v``, match ``p1`` against ``v`` (binding some variables ``x1..xn``), the match ``p2`` against ``v`` (binding some variables ``y1..ym``).  If both matches succeed, the overall match succeeds, binding ``x1..xn,y1..ym``.
 
-That would make a lot of sense: `p1@p2` would be an and-pattern, dual to the proposed or-patternns.  I'm not actually proposing that change here; it would be a very sensible follow-on.  But it the committee prefers, it could even be accepted right away.
+That would make a lot of sense: ``p1@p2`` would be an and-pattern, dual to the proposed or-patternns.  I'm not actually proposing that change here; it would be a very sensible follow-on.  But it the committee prefers, it could even be accepted right away.
 
 Indeed, via a pattern synonym you can get an and-pattern
 
@@ -118,7 +118,8 @@ Indeed, via a pattern synonym you can get an and-pattern
      pattern And x y <- x@y
 
 ::
-Now, according to the rules, `And p1 p2` will match only if both `p1` and `p2` match.
+
+Now, according to the rules, ``And p1 p2`` will match only if both ``p1`` and ``p2`` match.
 
 
 Unresolved questions
