@@ -35,8 +35,10 @@ Why lift the restriction on as-patterns?
 
 What's not to like?
 
-(I regard n+k patterns, which are deprecated anyway, as a side issue, but they should be treated
-uniformly.)
+I regard n+k patterns, which are deprecated anyway, as a side issue, but they should be treated
+uniformly.
+
+For bidirectional pattern synonyms, there are already many restrictions on what patterns you can write, and rightly so because a bidirectional pattern synonym must be used both to pattern match and to construct values.  I do not propose any change in the rules for bidirectional pattern synonyms.
 
 Proposed Change Specification
 -----------------------------
