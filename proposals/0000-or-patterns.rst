@@ -10,6 +10,8 @@
 
 .. sectnum::
 
+.. contents::
+
 Or patterns
 ===========
 
