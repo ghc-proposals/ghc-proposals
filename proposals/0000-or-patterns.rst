@@ -8,17 +8,18 @@
 .. implemented:: Leave blank. This will be filled in with the first GHC version which
                  implements the described feature.
 
+.. sectnum::
+
 Or patterns
 ===========
 
 (`Discussion <https://github.com/ghc-proposals/ghc-proposals/pull/43>`_)
 (`Prototype implementation <https://github.com/osa1/ghc/tree/or_patterns>`_)
 
-We propose a new syntax extension for "or-patterns". An or pattern is
+We propose a new syntax extension for "or patterns". An or pattern is
 essentially a list of patterns, where patterns match exactly the same set of
-variables of same types (and same set of existentials and type coercions in
-GADTs) [#]_. The right hand side is shared by all of these patterns, and can
-refer to the variables matched by the patterns.
+variables of same types. The right hand side is shared by all of these
+patterns, and can refer to the variables matched by the patterns.
 
 Main advantages of this extension are:
 
@@ -33,13 +34,6 @@ can appear (top-level function argument positions, ``LambdaCase`` patterns,
 left-hand side of ``<-`` in guards etc.). To solve the ambiguity between a
 pattern guard and an or pattern, we require parenthesis around or patterns.
 This makes this extension backwards-compatible even when it's enabled.
-
-.. [#] While in theory it may be possible to generalize this to type check
-       patterns that bind same variables of different types, in this first iteration
-       we want to keep things as simple as possible and only consider the case where
-       all patterns have same set of binders and binders have same types. In addition,
-       all patterns should bind same existentials and constraints. I think this
-       version already covers majority of use cases.
 
 Motivation
 ----------
@@ -257,7 +251,7 @@ Some examples that this new grammar produces: ::
   case e1 of
     (((T1 | T2) | T3) | T4) -> e2
 
-Since extensions like `LambdaCase` and `MultiWayIf` (as patter guards) use
+Since extensions like ``LambdaCase`` and ``MultiWayIf`` (in pattern guards) use
 the same pattern syntax, or patterns are enabled in those too.
 
 The new production doesn't add any ambiguities, because of the parentheses.
@@ -271,9 +265,9 @@ We define informal semantics as an extension to `Haskell 2010 chapter 3.17.2: In
   result of matching ``v`` against ``p1`` if it is not a failure, or the result
   of matching ``p2 | .. | pn`` against ``v`` otherwise.
 
-  All patterns in ``p1, p2, ... pn`` should bind same set of variables with
-  same types. In case of GADTs, all patterns should bind same set of
-  existentials and type constraints.
+  All patterns in ``p1, p2, ... pn`` should bind same set of variables of same
+  types. Patterns that bind existentials, dictionaries, or equalities are
+  rejected by the type checker.
 
 Here are some examples: ::
 
@@ -304,10 +298,11 @@ the guards succeeded the corresponding RHS is evaluated. Example: ::
 
 To evaluate ``f (Just 2) (Just 1)`` first two guards of the first case is
 tried. Because second guard fails, second case is tried and ``Just x`` is
-evaluated as a result.
+returned as the result.
 
-In the presence of or patterns, two different semantics is possible. Running
-example: ::
+In the presence of or patterns, guards are tried after a match in the or
+pattern. If any of the guards fail, the whole branch with or pattern fails.
+Example: ::
 
     f :: (Int, Int) -> Bool
     f ((x, _) | (_, x))
@@ -318,21 +313,12 @@ example: ::
 
     main = print (f (1, 2))
 
-**First semantics** is called "single-match" or "non-backtracking" or "left
-priority". In this semantics guards are tried after a match in the or pattern.
-If any of the guards fail, the whole match fails.
+The program above prints ``False``: matching the pattern ``(x, _)`` succeeds
+and the guard is tried. Because the guard fails, the match is considered as
+failed, and ``(_, x)`` is not tried.
 
-In this semantics the program above prints ``False``: matching the pattern
-``(x, _)`` succeeds and the guard is tried. Because the guard is failed, the
-match is considered as failed.
-
-**Second semantics** is called "multi-match" or "backtracking". In this semantics
-guards are tried for every succeeding pattern in an or pattern.
-
-In this semantics the program above prints ``True``: matching the pattern ``(x,
-_)`` succeeds and the guard is tried. Guard fails, so next pattern in the or
-pattern, ``(_, x)`` is tried. Match succeeds and the guard is tried. Guard also
-succeeds, so the corresponding expression ``True`` is evaluated.
+(see "Alternatives" section for an alternative semantics for or patterns with
+guards)
 
 Reference: `Haskell 2010 Chapter 3.13: Case Expressions
 <https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-460003.13>`_
@@ -340,78 +326,19 @@ Reference: `Haskell 2010 Chapter 3.13: Case Expressions
 Formal semantics of or pattern matching
 ---------------------------------------
 
-We give formal semantics of or patterns as a series of identities, in the style
-of `Haskell 2010 Report chapter 3.17.3
-<https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-610003.17.3>`_.
-We give rules for both "backtracking" and "non-backtracking" semantics.
+We add one more rule to `Haskell 2010 Report chapter 3.17.3
+<https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-610003.17.3>`_,
+figure 3.2:
 
-Non-backtracking semantics
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-We add one rule to chapter 3.17.3 Figure 3.2: ::
-
-    (or_1) case v of { (p1 | … | pN) -> e; _ -> e' }
-           =
-           case v of { p1 -> e; …; pN -> e; _ -> e' }
-
-This rule is enough to define non-backtracking semantics. As an example
-evaluation of the running example from informal semantics section with this
-rule, see Appendix A.
-
-Backtracking semantics
-~~~~~~~~~~~~~~~~~~~~~~
-
-Backtracking semantics requires changes in the existing rules. We distinguish
-these two types of patterns:
-
-- **Simple patterns** are patterns that are not themselves or patterns and do
-  not contain or patterns.
-
-- **Complex patterns** are either or patterns or other patterns that contain or
-  patterns.
-
-For simple patterns, existing rules apply.
-
-For complex patterns, we "float" or patterns to the outer level by duplicating
-the pattern surrounding the or pattern. For example: ::
-
-    C (p1 | p2) ==> (C p1 | C p2)
-
-We then modify rule ``c`` to add a side-condition: ::
-
-    case v of { p | gs1 -> e1 ; …
-                 | gsn -> en where { decls }
-                _     -> e′ }
-    = case e′ of { y ->
-       case v of {
-         p -> let { decls } in
-              case () of {
-                () | gs1 -> e1;
-                _ -> … case () of {
-                           () | gsn -> en;
-                           _  -> y } … }
-         _ -> y }}
-    where y is a new variable
-      and p is a simple pattern
-
-Finally we add a rule with a left-hand side similar to ``c`` but only works when
-pattern is an or pattern: ::
-
-    (or_2)
-    case v of { (p1 | … | pN)
-                 | gs1 -> e1 ; …
-                 | gsn -> en where { decls }
-                _     -> e′ }
-    = case v of {
-        p1 | gs1 -> e1 ; …
-           | gsn -> en where { decls }
-           _     -> … case v of {
-                        pN | gs1 -> e1 ; …
-                           | gsn -> en where { decls }
-                           | _   -> e' } … }
+    (or) case v of { (p1 | … | pN) -> e; _ -> e' }
+         =
+         case v of { p1 -> e; …; pN -> e; _ -> e' }
 
 As an example evaluation of the running example from informal semantics section
 with this rule, see Appendix A.
+
+(Note that in the implementation we don't actually duplicate right-hand side of
+an or pattern, see "desugaring" section below)
 
 Interaction with other extensions
 ---------------------------------
@@ -453,102 +380,14 @@ However with existential quanticiation and GADTs, patterns can also bind
   (``a`` in ``data Foo1 where Foo :: Default a => Foo`` or in existential ``data
   Foo = forall a . Default a => Foo``)
 
-These constructors can be used in an or pattern as long as
+In the current proposal or patterns cannot bind existentials, dictionaries, or
+equalities. Any such patterns in an or pattern is rejected by the type checker.
 
-- All alternatives of the or pattern bind exactly the same number of equality
-  constructors, dictionaries, and existential type variables.
-
-- RHS of the or pattern type checks against all of the alternatives in the or
-  pattern.
-
-(In the examples below we use GADT syntax as it subsumes existentials)
-
-Example 1, two constructors bind same number of existentials and dictionaries ::
-
-    data Show' where
-      Show1 :: Show x => x -> Show'
-      Show2 :: Show x => x -> Show'
-
-    f :: Show' -> String
-    f (Show1 x | Show2 x) = show x
-
-Desugared function (see "desugaring" section) gets a join point with arguments
-for the existential type and the dictionary in both constructors: ::
-
-    f :: Show' -> String
-    f = \ (ds_dzP :: Show') ->
-          let {
-            ds_dzR :: forall x. Show x => x -> String
-            ds_dzR
-              = \ (@ x_axJ) ($dShow_axK :: Show x_axJ) (x_aeN :: x_axJ) ->
-                  let {
-                    $dShow_axM :: Show x_axJ
-                    $dShow_axM = $dShow_axK } in
-                  show @ x_axJ $dShow_axM x_aeN } in
-          case ds_dzP of wild_00 {
-            Show1 @ x_axH $dShow_axI x_aeM -> ds_dzR @ x_axH $dShow_axI x_aeM;
-            Show2 @ x_axJ $dShow_axK x_aeN -> ds_dzR @ x_axJ $dShow_axK x_aeN
-          }
-
-Example 2, constructors with same number of existentials and dictionaries.
-Dictionaries have different types, but they're not used: ::
-
-    data E where
-      Eq  :: Eq x  => x -> E
-      Ord :: Ord x => x -> E
-
-    f :: E -> String
-    f (Eq _ | Ord _) = "f"
-
-Desugared: ::
-
-    f :: E -> String
-    f = \ (ds_d1f0 :: E) ->
-          let {
-            ds_d1f9 :: String
-            ds_d1f9 = GHC.CString.unpackCString# "f"# } in
-          case ds_d1f0 of wild_00 {
-            Eq @ x_a15H $dEq_a15I ds_d1fo -> ds_d1f9;
-            Ord @ x_a15J $dOrd_a15K ds_d1fp -> ds_d1f9
-          }
-
-Example 3, same number of existentials, second arguments have different types: ::
-
-    data E where
-      A :: a -> (a -> Bool) -> E
-      B :: a -> (a -> Int) -> E
-
-    f :: E -> String
-    f (A a f | B a f) = show (f a)
-
-Here the join point has to take a ``Show`` dictionary argument, and the desugarer
-should pass appropriate dictionary arguments in branches of the case
-expression, along with a new type argument for the type argument of ``Show``: ::
-
-    f :: E -> String
-    f = \ (ds_dzP :: E) ->
-          let {
-            ds_dzR :: forall x y . Show x => y -> (y -> x) -> String
-            ds_dzR
-              = \ (@ x_axJ) (@ y_axJ) ($dShow_axK :: Show x_axJ) (x_aeN :: y_axJ) (f :: y_axJ -> x_axJ)  ->
-                  let {
-                    $dShow_axM :: Show x_axJ
-                    $dShow_axM = $dShow_axK } in
-                  show @ x_axJ $dShow_axM (f x_aeN) } in
-          case ds_dzP of wild_00 {
-            A @ a b_a f_a -> ds_dzR @ Bool @ a $dShow_Bool b_a f_a;
-            B @ a b_a f_a -> ds_dzR @ Int  @ a $dShow_Int  b_a f_a
-          }
-
-Example 4, because of different number of existentials in constructors, these
-can't be used in an or pattern: ::
-
-    data T where
-      T1 :: a    -> (a -> Int)    -> T -- one existential argument
-      T2 :: Bool -> (Bool -> Int) -> T -- no existentials
-
-    -- this is rejected:
-    f1 (T1 x g  |  T2 x g) = g x
+Accepting or patterns that bind existentials, dictionaries, or equalities can be
+implemented as an extension in the future. Because this will make the extension
+accept strictly more programs and won't change semantics of existing programs
+with or patterns, it will be backwards compatible, and thus left out in this
+proposal.
 
 Alternatives
 ------------
@@ -614,6 +453,22 @@ Closest expression to this is: ::
 
 which duplicates ``e2``.
 
+Backtracking semantics for or patterns with guards
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The semantics described in "Interaction with guards" is called
+"non-backtracking" or "single-match" semantics. An alternative to this semantics
+is called "backtracking" or "multi-match" semantics. In backtracking semantics,
+when a guard of an or pattern fails, rest of the alternatives of the or pattern
+is tried. In this semantics result of the example program from "Interaction with
+guards" section is ``True``: matching the pattern ``(x, _)`` succeeds and the
+guard is tried. Guard fails, so next pattern in the or pattern, ``(_, x)`` is
+tried. Match succeeds and the guard is tried. Guard also succeeds, so the
+corresponding expression ``True`` is returned.
+
+To keep things as simple as possible in this proposal we choose to implement
+non-backtracking semantics.
+
 Or patterns in other languages
 ------------------------------
 
@@ -631,10 +486,11 @@ From `OCaml manual <http://caml.inria.fr/pub/docs/manual-ocaml/patterns.html#sec
     bindings performed are those of ``pattern1`` when v matches ``pattern1``.
     Otherwise, value ``v`` matches ``pattern2`` whose bindings are performed.
 
-OCaml implements "single-match" semantics. `OCaml manual chapter on guards
+OCaml implements "single-match" ("non-backtracking") semantics. `OCaml manual
+chapter on guards
 <http://caml.inria.fr/pub/docs/manual-ocaml/expr.html#sec123>`_ doesn't
-explicitly mention or patterns, but it can be inferred from the text that
-guards are tested once on a match.
+explicitly mention or patterns, but it can be inferred from the text that guards
+are tested once on a match.
 
 `Ambiguous pattern variables
 <http://gallium.inria.fr/~scherer/research/ambiguous_pattern_variables/ml_workshop_2016.abstract.pdf>`_
@@ -667,17 +523,17 @@ reported in a warning: ::
     Warning 57: Ambiguous or-pattern variables under guard;
     variable x may match different arguments. (See manual section 8.5)
 
-If we choose to implement the single-match semantics we should implement a
+Because we're also implementing non-backtracking semantics, we'll implement a
 similar warning.
 
 Rust
 ~~~~
 
-Rust seems to support a simpler version of or patterns. `Relevant section in
-the language reference
+Rust supports a simpler version of or patterns. `Relevant section in the
+language reference
 <https://doc.rust-lang.org/reference.html#match-expressions>`_ doesn't say much
-about it, but the implementation seems to support or patterns only at the top
-layer of patterns. These are fine: ::
+about it, but the implementation supports or patterns only at the top layer of
+patterns. These are fine: ::
 
     match i {
         Ok(1) | Ok(2) => {}
@@ -710,7 +566,7 @@ But this fails with a parse error: ::
 Implementation Plan
 -------------------
 
-Or patterns require changes in the parser, type checker, pattern checker and
+Or patterns requires changes in the parser, type checker, pattern checker and
 compiler (``match`` function). Lexer already generates ``|`` tokens so no
 changes needed. There are no changes in Core.
 
@@ -727,12 +583,14 @@ unboxed) tuple and unboxed sum patterns (`example implementation
 Type checking
 ~~~~~~~~~~~~~
 
-TODO
+Type checker checks that in or patterns each alternative binds exactly the same
+set of arguments with same types. The right hand side is then checked against
+one of the patterns in the or pattern.
 
 Pattern checking
 ~~~~~~~~~~~~~~~~
 
-TODO
+TBD
 
 Desugaring to GHC Core (match function)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -840,9 +698,6 @@ Disadvantages of this approach:
 Appendix A: Evaluation of the running example
 ---------------------------------------------
 
-Non-backtracking semantics (rule or_1)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 ::
 
     (original expression)
@@ -900,30 +755,5 @@ Non-backtracking semantics (rule or_1)
                            _ -> y
 
 At this point we don't have any or patterns and substituting ``(1, 2)`` for
-``v`` and further simplifications using identities from the manual reveals that
-this indeed implements non-backtracking semantics.
-
-Backtracking semantics (rule or_2)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-::
-
-    (original expression)
-    case v of
-      ((x, _) | (_, x))
-        | even x
-        -> True
-      _ -> False
-
-    ==> (or_2)
-
-    case v of
-      (x, _)
-        | even x -> True
-        | _ -> case v of
-                 (_, x)
-                   | even x -> True
-                   | _ -> False
-
-At this point we don't have any complex patterns and we apply original rules as
-usual. After substituting ``(1, 2)`` for ``v`` we get ``True`` as expected.
+``v`` and further simplifications using identities from the manual reduces this
+to ``False``.
