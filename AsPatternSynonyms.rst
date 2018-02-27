@@ -1,23 +1,17 @@
+As patterns in pattern synonyms
+==============
+
 .. proposal-number:: Leave blank. This will be filled in when the proposal is
                      accepted.
-
 .. trac-ticket:: Leave blank. This will eventually be filled with the Trac
                  ticket number which will track the progress of the
                  implementation of the feature.
-
 .. implemented:: Leave blank. This will be filled in with the first GHC version which
                  implements the described feature.
-
 .. highlight:: haskell
-
 .. sectnum::
-
-This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/94>`_.
-
+.. header :: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/94>`_.
 .. contents::
-
-As patterns in pattern synonyms
-==============
 
 As-patterns (and n+k patterns) are currently disallowed in unidirectional pattern synonyms.  There is no good reason for this.
 I propose that we lift the restriction.
