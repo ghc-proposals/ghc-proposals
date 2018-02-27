@@ -330,7 +330,7 @@ Formal semantics of or pattern matching
 
 We add one more rule to `Haskell 2010 Report chapter 3.17.3
 <https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-610003.17.3>`_,
-figure 3.2:
+figure 3.2: ::
 
     (or) case v of { (p1 | … | pN) -> e; _ -> e' }
          =
