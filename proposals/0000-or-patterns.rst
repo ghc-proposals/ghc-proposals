@@ -210,6 +210,18 @@ Real-world examples
   constructor is added to ``Pat`` type (this happened many times during the
   implementation of unboxed sums).
 
+- Finally, here's an example (taken from GHC's ``TmOracle.hs``) that reflects a
+  programmer's frustration with the lack of or patterns: ::
+
+    -- | Solve a complex equality.
+    solveComplexEq :: TmState -> ComplexEq -> Maybe TmState
+    solveComplexEq solver_state@(standby, (unhandled, env)) eq@(e1, e2) = case eq of
+      -- We cannot do a thing about these cases
+      (PmExprOther _,_)            -> Just (standby, (True, env))
+      (_,PmExprOther _)            -> Just (standby, (True, env))
+      ...
+      _ -> Just (standby, (True, env)) -- I HATE CATCH-ALLS
+
 Proposed change specification
 -----------------------------
 
@@ -264,15 +276,19 @@ The new production doesn't add any ambiguities, because of the parentheses.
 Informal semantics of or pattern matching
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We define informal semantics as an extension to `Haskell 2010 chapter 3.17.2: Informal Semantics of Pattern Matching <https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-600003.17.2>`_
+We define informal semantics as an extension to `Haskell 2010 chapter 3.17.2: Informal Semantics of Pattern Matching <https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-600003.17.2>`_:
 
 - Matching the pattern ``p1 | p2 | ... | pn`` against the value ``v`` is the
   result of matching ``v`` against ``p1`` if it is not a failure, or the result
   of matching ``p2 | .. | pn`` against ``v`` otherwise.
 
   All patterns in ``p1, p2, ... pn`` should bind same set of variables of same
-  types. Patterns that bind existentials, dictionaries, or equalities are
-  rejected by the type checker.
+  types. Or patterns **do not** bind existentials, dictionaries, or equalities.
+
+  This means constructors with existentials or GADT constructors can be used in
+  or patterns, but no variable bound by the patterns can have a type that
+  mentions existentials, and dictionaries and equalities won't be used in the
+  RHS.
 
 Here are some examples: ::
 
@@ -283,6 +299,39 @@ Here are some examples: ::
     (\ ((x, _) | (_, x)) -> x) (1, 2) => 1
     (\ (([x] | [x, _]) | ([x, _, _] | [x, _, _, _])) -> x) [1, \bot, \bot, \bot] => 1
     (\ (1 | 2 | 3) -> True) 3 => True
+
+Some examples with GADTs: ::
+
+    data T1 where
+      C1 :: a -> (a -> String) -> T1
+      C2 :: Int -> (Int -> String) -> T1
+      C3 :: Show a => a -> T1
+      C4 :: String -> T1
+
+    -- reject: first pattern mentions an existential
+    f1 (C1 x g | C2 x g) = g a
+
+    -- reject: `Show a` in C3 is not bound and can't be used in the RHS
+    f2 (C3 x | C4 x) = show x
+
+    data T2 a where
+      C5 :: Int  -> T2 Int
+      C6 :: Bool -> T2 Bool
+
+    -- reject: equalities are not bound and can't be used in the RHS
+    f3 :: T2 a -> a
+    f3 (C5 x | C5 x) = x
+
+    data T3 a where
+      C7 :: a -> (a -> String) -> T3 String
+      C8 :: Ord a => a -> T3 Int
+
+    -- accept: while these constructors have existentials, dictionaries, and
+    -- equalities, none of them are used in the RHS
+    f4 :: T3 a -> String
+    f4 (C7 _ _ | C8 _) = "f4"
+
+See also section 1.4.2 for more about GADTs and existentials.
 
 Formal semantics of or pattern matching
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -386,13 +435,14 @@ However with existential quanticiation and GADTs, patterns can also bind
   Foo = forall a . Default a => Foo``)
 
 In the current proposal or patterns cannot bind existentials, dictionaries, or
-equalities. Any such patterns in an or pattern is rejected by the type checker.
+equalities. RHSs that require one or more of these will be rejected by the type
+checker.
 
-Accepting or patterns that bind existentials, dictionaries, or equalities can be
-implemented as an extension in the future. Because this will make the extension
-accept strictly more programs and won't change semantics of existing programs
-with or patterns, it will be backwards compatible, and thus left out in this
-proposal.
+Type checking or patterns while binding existentials, dictionaries, or
+equalities can be implemented as an extension in the future. Because this will
+make the extension accept strictly more programs and won't change semantics of
+existing programs with or patterns, it will be backwards compatible, and thus
+left out in this proposal.
 
 Alternatives
 ------------
