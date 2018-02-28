@@ -47,9 +47,9 @@ every other pattern", which also includes "patterns that may be enabled in the
 future" e.g. when a new constructor is added to a type.
 
 In my experience this is rarely the intention. Usually, when a new constructor
-is added, the programmer needs to revisit functions on the type and update them
-accordingly. But if functions use ``_`` patterns this is not easy as she won't be
-getting any compile time warnings about functions she needs to update.
+is added, we need to revisit functions on the type and update them accordingly.
+But if functions use ``_`` patterns this is not easy as we won't be getting any
+compile time warnings about functions we need to update.
 
 This is also against the Haskell way of refactoring programs. Haskell is well
 known for its features that make refactoring easier than most other languages,
