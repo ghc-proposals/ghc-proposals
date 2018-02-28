@@ -197,8 +197,9 @@ Costs and Drawbacks
 -------------------
 Give an estimate on development and maintenance costs. List how this effects learnability of the language for novice users. Define and list any remaining drawbacks that cannot be resolved.
 
+This extension is potentially confusing for users as it only applies to “existential” type variables. Universal variables cannot be bound, but all of them must be listed in a “forall” when declaring the type of a data constructor.  
 
-This extension is potentially confusing for users as it only applies to “existential” type variables. Universal variables cannot be bound, but all of them must be listed in a “forall” when declaring the type of a data constructor.  An alternative is to require universals to be “bound” with @_, or their actual types @Int. But this seems even more confusing.
+Some suggestions have been to require universals to be “bound” with @_ (or perhaps with their actual types @Int) to avoid confusion. This is a valid point, but requiring them to be "bound" in this way could be argued to be confusing to a programmer as well. Since binding only existential variables avoids the clutter that requiring universal to be "bound" as well involves, the proposal only supports binding existential variables.
 
 Alternatives
 ------------
