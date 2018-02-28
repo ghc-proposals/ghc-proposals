@@ -210,8 +210,11 @@ Real-world examples
   constructor is added to ``Pat`` type (this happened many times during the
   implementation of unboxed sums).
 
+Proposed change specification
+-----------------------------
+
 Changes in the grammar
-----------------------
+~~~~~~~~~~~~~~~~~~~~~~
 
 We consider this as an extension to `Haskell 2010 grammar
 <https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#x17-18000010.5>`_.
@@ -259,7 +262,7 @@ the same pattern syntax, or patterns are enabled in those too.
 The new production doesn't add any ambiguities, because of the parentheses.
 
 Informal semantics of or pattern matching
------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We define informal semantics as an extension to `Haskell 2010 chapter 3.17.2: Informal Semantics of Pattern Matching <https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-600003.17.2>`_
 
@@ -281,8 +284,25 @@ Here are some examples: ::
     (\ (([x] | [x, _]) | ([x, _, _] | [x, _, _, _])) -> x) [1, \bot, \bot, \bot] => 1
     (\ (1 | 2 | 3) -> True) 3 => True
 
+Formal semantics of or pattern matching
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We add one more rule to `Haskell 2010 Report chapter 3.17.3
+<https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-610003.17.3>`_,
+figure 3.2: ::
+
+    (or) case v of { (p1 | … | pN) -> e; _ -> e' }
+         =
+         case v of { p1 -> e; …; pN -> e; _ -> e' }
+
+As an example evaluation of the running example from informal semantics section
+with this rule, see Appendix A.
+
+(Note that in the implementation we don't actually duplicate right-hand sides
+of or patterns, see "desugaring" section below)
+
 Interaction with guards
------------------------
+~~~~~~~~~~~~~~~~~~~~~~~
 
 In the absence of or patterns, guards are tried sequentially and only if all of
 the guards succeeded the corresponding RHS is evaluated. Example: ::
@@ -324,23 +344,6 @@ guards)
 
 Reference: `Haskell 2010 Chapter 3.13: Case Expressions
 <https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-460003.13>`_
-
-Formal semantics of or pattern matching
----------------------------------------
-
-We add one more rule to `Haskell 2010 Report chapter 3.17.3
-<https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-610003.17.3>`_,
-figure 3.2: ::
-
-    (or) case v of { (p1 | … | pN) -> e; _ -> e' }
-         =
-         case v of { p1 -> e; …; pN -> e; _ -> e' }
-
-As an example evaluation of the running example from informal semantics section
-with this rule, see Appendix A.
-
-(Note that in the implementation we don't actually duplicate right-hand side of
-an or pattern, see "desugaring" section below)
 
 Interaction with other extensions
 ---------------------------------
