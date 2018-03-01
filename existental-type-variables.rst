@@ -1,15 +1,12 @@
+Scoped Type variables for existentials
+======================================
 .. proposal-number::
 .. trac-ticket:: 
 .. implemented::
-
 .. highlight:: haskell
-
-This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/96>`_.
-
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/96>`_.
+.. sectnum::
 .. contents::
-
-Scoped Type variables for existentials
-======================================
 
 This extension allows users to bind existential variables to data constructors in patterns.
 
