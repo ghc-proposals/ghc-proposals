@@ -1,21 +1,14 @@
-.. proposal-number:: Leave blank. This will be filled in when the proposal is
-                     accepted.
-
-.. trac-ticket:: Leave blank. This will eventually be filled with the Trac
-                 ticket number which will track the progress of the
-                 implementation of the feature.
-
-.. implemented:: Leave blank. This will be filled in with the first GHC version which
-                 implements the described feature.
-
-.. highlight:: haskell
-
-This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/74>`_.
-
-.. contents::
 
 Add more fixed size primitive types, like ``Int8#/Word8#``
 ==========================================================
+
+.. proposal-number:: 14
+.. trac-ticket::
+.. implemented::
+.. highlight:: haskell
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/74>`_.
+.. sectnum::
+.. contents::
 
 This proposes adding new primitive types to GHC:
 
