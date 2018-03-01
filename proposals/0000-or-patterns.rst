@@ -244,10 +244,10 @@ Relevant non-terminal is ``apat``: ::
 
 Or patterns extension adds one more production: ::
 
-          |    ( pat1 | … | patk )
+          |    ( pat1 | pat2 )
 
-This means that or patterns are not treated any different than any other
-pattern during parsing.
+Or patterns are associative, so N-ary version ``( pat1 | … | patN )`` is also
+accepted.
 
 Some examples that this new grammar produces: ::
 
@@ -278,12 +278,12 @@ Informal semantics of or pattern matching
 
 We define informal semantics as an extension to `Haskell 2010 chapter 3.17.2: Informal Semantics of Pattern Matching <https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-600003.17.2>`_:
 
-- Matching the pattern ``p1 | p2 | ... | pn`` against the value ``v`` is the
-  result of matching ``v`` against ``p1`` if it is not a failure, or the result
-  of matching ``p2 | .. | pn`` against ``v`` otherwise.
+- Matching the pattern ``(p1 | p2)`` against the value ``v`` is the result of
+  matching ``v`` against ``p1`` if it is not a failure, or the result of
+  matching ``p2`` against ``v`` otherwise.
 
-  All patterns in ``p1, p2, ... pn`` should bind same set of variables of same
-  types. Or patterns **do not** bind existentials, dictionaries, or equalities.
+  ``p1`` and ``p2`` should bind same set of variables of same types. Or
+  patterns **do not** bind existentials, dictionaries, or equalities.
 
   This means constructors with existentials or GADT constructors can be used in
   or patterns, but no variable bound by the patterns can have a type that
@@ -340,9 +340,9 @@ We add one more rule to `Haskell 2010 Report chapter 3.17.3
 <https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-610003.17.3>`_,
 figure 3.2: ::
 
-    (or) case v of { (p1 | … | pN) -> e; _ -> e' }
+    (or) case v of { (p1 | p2) -> e; _ -> e' }
          =
-         case v of { p1 -> e; …; pN -> e; _ -> e' }
+         case v of { p1 -> e; p2 -> e; _ -> e' }
 
 As an example evaluation of the running example from informal semantics section
 with this rule, see Appendix A.
@@ -791,7 +791,7 @@ Appendix A: Evaluation of the running example
           ((x, _) | (_, x)) -> if even x then True else y
           _ -> y
 
-    ==> (rule or_1)
+    ==> (rule or)
 
     case False of
       y -> case v of
