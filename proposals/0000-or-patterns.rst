@@ -246,7 +246,8 @@ Or patterns extension adds one more production: ::
 
           |    ( pat1 | pat2 )
 
-Or patterns are associative, so N-ary version ``( pat1 | … | patN )`` is also
+The ``|`` between the parenthesis have lower precedence than anything else. Or
+patterns are associative, so N-ary version ``( pat1 | … | patN )`` is also
 accepted.
 
 Some examples that this new grammar produces: ::
