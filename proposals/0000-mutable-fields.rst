@@ -197,7 +197,7 @@ Can we get rid of ``MutVar#``?
 If we got rid of ``MutVar#`` and instead defined ``IORef`` like this::
 
   data IORef a where
-    IORef :: Mutable a -> (IORef a)
+    IORef :: mutable a -> IO (IORef a)
 
 then
 
