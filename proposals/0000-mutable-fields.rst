@@ -184,12 +184,9 @@ we'd want for including inner objects as value types, and (2) ruins
 the guarantee that ``UNPACK`` is a performance hint rather than
 semantically important.
 
-So, ``UNPACK`` cannot do anything when used on a type with mutable
-fields.  However, there's nothing preventing ``UNPACK`` from working
-as normal in a type definition with mutable fields.
-
-``UNPACK`` would be a no-op on a mutable field itself, just like it is
-for other primitive types.
+So, ``{-# UNPACK #-} !T`` cannot do anything if ``T`` is a type with
+mutable constructors.  However, ``UNPACK`` annotations can be used as
+normal on immutable fields in the definition of a mutable constructor.
 
 Can we get rid of ``MutVar#``?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
