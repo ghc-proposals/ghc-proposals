@@ -75,15 +75,10 @@ Note:
 
 - The new ``mutable`` keyword declares a mutable field
 - The return type is in ``IO``: a constructor with any ``mutable``
-  fields *must* either
-
-  - have a return type that has one of the forms ``IO t``, ``ST s t``,
-    or ``State# s -> (# State# s, t #)``, where ``t`` takes the
-    form of the normal return type for the constructor, or
-
-  - have a type of the form ``PrimMonad m => ... -> m t``,  declaring a
-    constructor that works for any ``PrimMonad`` instance.
-
+  fields *must* have a return type that has one of the forms ``IO t``,
+  ``ST s t``, or ``State# s -> (# State# s, t #)``, where ``t`` takes
+  the form of the normal return type for the constructor. In the
+  latter two cases, the type variable ``s`` must appear in ``t``.
 - mutable fields *must not* have a strictness annotation. (we
   anticipate that support for strictness annotations on mutable fields
   will be a future proposal).
@@ -130,9 +125,13 @@ We can pattern-match on the constructor to extract the mutable fields::
   readMutPair (MutPair aref bref) =
     (,) <$> readRef aref <*> readRef bref
 
-When we pattern-match on a constructor with mutable fields, the fields
-have type ``Mutable a``, and so we can use them with ``readRef`` and
-``writeRef``.
+When we pattern-match on a constructor with mutable fields, the
+mutable fields have type:
+
+- ``Data.Mutable.IO.Mutable a``, if the constructor has an ``IO``
+  return type
+- ``Data.Mutable.ST.Mutable s a``, if the constructor has an ``ST s``
+  return type, or a ``State# s -> (# State# s, t #)`` return type
 
 What about records?
 ~~~~~~~~~~~~~~~~~~~
@@ -253,8 +252,8 @@ mutable constructors, but we must ensure that the constructors are
 evaluated strictly in the same way as we do for ``dataToTag#``.
 
 
-Mutable keyword on constructors
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Mutable constructors with no mutable fields
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 We also propose to make it possible to declare a mutable constructor
