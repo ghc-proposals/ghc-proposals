@@ -49,6 +49,13 @@ structures in a type-safe way, where currently this can only be done
 by using ``unsafeCoerce`` tricks; see for example `the structs
 package <http://hackage.haskell.org/package/structs>`_.
 
+As a special case, this proposal also provides for the declaration of
+constructors with *identity*. That is, constructors that are created
+by an explicitly effectful operation, and that can be compared using
+pointer-equality.  Currently only a few built-in types like ``IORef``
+have identity, so we can currently simulate identity using an
+``IORef`` proxy, but this proposal allows constructors with identity
+to be defined natively.
 
 Proposed Change
 ---------------
