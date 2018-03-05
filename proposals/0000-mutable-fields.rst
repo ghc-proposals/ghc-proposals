@@ -94,6 +94,11 @@ datatype*.  This means that it makes sense to have constructors with
 mutable fields that are in different monads, or even datatype where
 some constructors are mutable and others are not.
 
+We will henceforth use the term *mutable constructor* to refer to a
+constructor defined in the above way.  Note that a mutable constructor
+does not necessarily have any mutable fields, see "Mutable constructors
+with no mutable fields" below.
+
 Operations on mutable fields
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
