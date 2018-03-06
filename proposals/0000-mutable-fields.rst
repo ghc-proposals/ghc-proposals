@@ -199,26 +199,47 @@ So, ``{-# UNPACK #-} !T`` cannot do anything if ``T`` is a type with
 mutable constructors.  However, ``UNPACK`` annotations can be used as
 normal on immutable fields in the definition of a mutable constructor.
 
-Can we get rid of ``MutVar#``?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Getting rid of ``MutVar#``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If we got rid of ``MutVar#`` and instead defined ``IORef`` like this::
+This proposal allows the deprecation and eventual removal of the
+``MutVar#`` type and its associated primitive operations.
+
+The ``IORef`` type is currently defined like this::
+
+  data IORef a where
+    IORef :: MutVar# a -> IORef a
+
+Using this proposal, ``IORef`` could be defined like this::
 
   data IORef a where
     IORef :: mutable a -> IO (IORef a)
 
-then
 
-- This ``IORef`` is faster and uses less memory,
-- but it cannot be UNPACKed. Memory-wise this new ``IORef`` is the
-  same as an UNPACKed old ``IORef``.  However, it is lifted where
-  ``MutVar#`` is unlifted, leading to some extra overhead to access it.
+This new ``IORef`` is faster and uses less memory.  For most uses of
+``IORef``, the new version will be faster.  In particular, ``IORef``s
+stored in lists or other data structures will now have one fewer layers
+of indirection.
 
-So the conclusion is:
+To reduce the overhead of the existing ``IORef``, a common technique
+is to use ``{-# UNPACK #-}`` annotations on ``IORef`` fields in
+constructors. We also rely on the strictness analyser to eliminate the
+``IORef`` box whenever possible.  Neither of these techniques would
+work with the new ``IORef``, which cannot be unpacked. However the new
+``IORef`` has the equivalent representation to an unboxed old
+``IORef``, so performance will usually be the same.
 
-- Provided we use ``Mutable`` wherever we currenty UNPACK ``IORef``,
-  then this ``IORef`` is an unambiguous improvement over the old
-  ``IORef``.
+There's one respect in which performance of the new ``IORef`` type
+might not be identical to that of an unpacked old ``IORef``
+(i.e. ``MutVar#``): ``IORef`` is lifted, whereas ``MutVar#`` is not;
+so a strict ``IORef`` may still need to be evaluated, depending on
+whether we can tell from the context that the ``IORef`` is already
+evaluated.  There's a way to mitigate this effect: we can provide::
+
+  ioRefMutable :: IORef a -> Mutable a
+
+the ``Mutable a`` doesn't need to be evaluated.
+
 
 Mutable unboxed fields
 ~~~~~~~~~~~~~~~~~~~~~~
