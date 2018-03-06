@@ -328,7 +328,7 @@ The easiest way to express that second instance through guards is::
 
 We could express that using only whole-params, but verbosely needing three instances, see this same example wrt the `Boolean algebra`_ discussion above.
 
-Another possible rule is that at least one of the comparands be a bare type var, of the form `a /~ ty`. Again that would lead to an at-least-linear growth in the number of equations.
+Another possible rule is that at least one of the comparands be a bare type var, so guards of the form ``a /~ ty``. Again that would lead to an at-least-linear growth in the number of equations.
 
 Instance Selection
 ~~~~~~~~~~~~~~~~~~
