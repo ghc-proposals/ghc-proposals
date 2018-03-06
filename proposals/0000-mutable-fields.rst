@@ -4,6 +4,10 @@
 
 .. implemented::
 
+.. sectnum::
+
+.. contents::
+
 Mutable Constructor Fields
 ==========================
 
