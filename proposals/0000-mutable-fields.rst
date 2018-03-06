@@ -269,6 +269,17 @@ constructor, in that:
 - It has identity, and equality is implemented using pointer equality
   (see "Deriving" above).
 
+The degenerate example is a nullary mutable constructor::
+
+ data Token where
+   Token :: IO Token
+   deriving Eq
+
+Each instance of ``Token`` must be unique, because the ``IO``
+operation creates a new one that should compare equal only to itself.
+Therefore the usual optimisation for nullary constructors whereby we
+share a single global copy of the constructor does *not* apply to
+mutable constructors, and we must always allocate them in the heap.
 
 Core
 ~~~~
