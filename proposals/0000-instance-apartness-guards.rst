@@ -1,3 +1,6 @@
+Instance (Apartness) Guards
+===========================
+
 .. proposal-number:: Leave blank. This will be filled in when the proposal is
                      accepted.
 
@@ -10,12 +13,11 @@
 
 .. highlight:: haskell
 
-This proposal is `discussed at this pull requst <https://github.com/ghc-proposals/ghc-proposals/pull/56>`_.
+.. sectnum::
+
+.. header:: This proposal is `discussed at this pull requst <https://github.com/ghc-proposals/ghc-proposals/pull/56>`_.
 
 .. contents::
-
-Instance (Apartness) Guards
-===========================
 
 This proposal tackles the thorny topic of Overlapping Instances, for both type classes and Type Families. **The basic idea** is to annotate Instance heads with type-level apartness Guards (similar to term-level disequality guards), such that Instances do not overlap (after taking their guards into account). The guards stipulate the 'apartness' (dis-equality) needed between type vars in the instance head. Then:
 
@@ -326,7 +328,7 @@ The easiest way to express that second instance through guards is::
 
 We could express that using only whole-params, but verbosely needing three instances, see this same example wrt the `Boolean algebra`_ discussion above.
 
-Another possible rule is that at least one of the comparands be a bare type var.
+Another possible rule is that at least one of the comparands be a bare type var, of the form `a /~ ty`. Again that would lead to an at-least-linear growth in the number of equations.
 
 Instance Selection
 ~~~~~~~~~~~~~~~~~~
