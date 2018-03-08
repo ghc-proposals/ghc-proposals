@@ -5,7 +5,7 @@ Decidable Instances
 .. trac-ticket::
 .. implemented:: 
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_.
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/114>`_.
 .. sectnum::
 .. contents::
 
