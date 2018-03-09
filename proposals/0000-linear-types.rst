@@ -1002,6 +1002,42 @@ a o``). ``-o`` does not convey the intuition that ``->.`` is just
 ``->`` for most intents and purposes (except for those advanced users
 who do care about the distinction).
 
+Unboxed data types
+~~~~~~~~~~~~~~~~~~
+
+Mixed-multiplicity via unary tuples
++++++++++++++++++++++++++++++++++++
+
+To alleviate the lack of syntax for unboxed data types with mixed
+multiplicity, we can leverage the fact that unboxed data types compose
+and introduce a single type constructor:
+
+::
+
+  Mult# :: forall k. Multiplicity -> TYPE k -> TYPE ('TupleRep '[k])
+  Mult# :: a :p->  Mult# p a
+
+of multiplicity-parametric unary tuples, together with the
+corresponding pattern.
+
+Compare with the regular ``(# x #)`` unary tuple, which is linear
+(hence equivalent to ``Mul# x :: Mult# 'One A``).
+
+Hence, we could use the type ``(# A, Mult# 'Omega C, C #)`` where we
+want a 3-tuple where the middle field is unrestricted and the other
+two linear. Due to the semantics of unboxed tuples, this doesn't incur
+any performance penalty, compared to a more native syntax.
+
+Syntax for native mixed-multiplicity unboxed data types
++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Alternatively, we can come up with a syntax for mixed-multiplicity
+native unboxed data types (either only for unboxed tuples, or for both
+unboxed tuples and unboxed sums).
+
+No syntax has been proposed yet.
+
+
 Other strategies when -XLinearTypes is turned off
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
