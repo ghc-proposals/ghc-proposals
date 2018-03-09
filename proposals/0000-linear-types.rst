@@ -1,3 +1,6 @@
+Linear Types
+============
+
 .. proposal-number:: Leave blank. This will be filled in when the proposal is
                      accepted.
 
@@ -16,9 +19,6 @@ This proposal is `discussed at this pull request <https://github.com/ghc-proposa
 It previously underwent a round of review `at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/91>`_.
 
 .. contents::
-
-Linear Types
-============
 
 This proposal introduces a notion of *linear function* to GHC. Linear
 functions are regular functions that guarantee that they will use
