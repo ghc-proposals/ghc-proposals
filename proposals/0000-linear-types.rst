@@ -193,7 +193,7 @@ Syntax
 *This section is only a proposal for a syntax for linear types. For
 other possibilities to consider, see the `Alternatives`_ section.*
 
-This proposal adds only one new syntactical construct:
+This proposal adds two new syntactical constructs:
 
 - The multiplicity annotated arrow, for polymorphism, is written
   ``a :p-> b`` (where ``a`` and ``b`` are types and ``p`` is a
@@ -212,6 +212,41 @@ This proposal adds only one new syntactical construct:
 
       type familly F (a :: *) :: Multiplicity
       f ::  forall (a :: *). Int  :(F a)-> a -> a
+- Binders can also be annotated with a multiplicity:
+
+  ::
+
+    \x ::('One) A -> x
+
+  is the identity function at type ``A ->. A``. This adds a new syntactic for binders:
+
+  ::
+
+    VAR ::( TYPE_EXPRESSION ) TYPE_EXPRESSION
+
+  where the first ``TYPE_EXPRESSION`` must be of kind ``Multiplicity``
+  (see below). This creates a new lexical token ``::(``, which does
+  not seem to be a problem.
+
+  This form is disallowed for:
+
+  - Type variables
+
+    ::
+
+      forall (a ::('One)). a -> Int -- rejected
+  - Top-level signatures (though, see `Toplevel binders`_)
+
+    ::
+
+      foo ::('One) A -> B -- rejected
+      foo x = …
+
+  The form is however permitted in records (see `Records`_ below)
+
+  ::
+
+    data R = R { unrestrictedField ::(Omega) A, linearField ::(One) B }
 
 In the fashion of levity polymorphism, the proposal introduces a data
 type ``Multiplicity`` which is treated specially by the type checker,
@@ -564,20 +599,45 @@ into a linear ``->.`` in an interface.
 Records and projections
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Records constructors are linear. That is. in
+.. _Records:
+
+Records constructors, with Haskell98 syntax, are linear. That is, in
 
 ::
 
    data R = R {f1 :: A1, … fn :: An}
 
-we have ``R :: A1 ->. … ->. An ->. R``. Projections
-take an *unrestricted* record as argument: ``f1 :: R -> A1`` (because
-otherwise the other fields would not be consumed). There is an
-exception to this rule: if all the other fields are unrestricted (in
-the current proposal, it means that ``f1`` is the *only* field, but
-see `Binders with multiplicity`_), then ``f1`` is made linear:
-``f1 :: R ->. A1``. This non-uniformity is justified by the standard
-``newtype`` idiom:
+we have ``R :: A1 ->. … ->. An ->. R``.
+
+Mixed-multiplicity records can be defined using the syntax for
+annotating binders with multiplicity
+
+::
+
+  data R' = R' { f1 ::('Omega) A1, f2 ::('One) A2, f3 :: A3 }
+
+Then ``R' :: A1 -> A2 ->. A3 ->. R`` (that is, fields with no explicit
+annotation are linear).
+
+Record patterns act like tuple patterns, but some fields can be
+omitted. A field can be omitted only if the resolved multiplicity for
+this field is ω.
+
+::
+
+  foo :: R' ->. A
+  foo {f2=x, f3=y} = … -- permitted as f1 has multiplicity ω
+  foo {f2=x} = … -- rejected as f3 is omitted and has multiplicity 1
+
+  foo :: R' -> A -- non-linear function!
+  foo {f2=x} = … -- permitted because the context has multiplicity ω,
+                 -- hence the resolved multiplicity of f3 is ω.
+
+Projections take an *unrestricted* record as argument: ``f1 :: R ->
+A1`` (because otherwise the other fields would not be consumed). There
+is an exception to this rule: if all the other fields are
+unrestricted, then ``f1`` is made linear: ``f1 :: R ->. A1``. This
+non-uniformity is justified by the standard ``newtype`` idiom:
 
 ::
 
@@ -1073,22 +1133,13 @@ problem, let us outline an alternative plan.
   ``-XLinearTypes`` turned on. When ``-XLinearTypes`` is on, a warning
   is emitted.
 
-Binders with multiplicity
-~~~~~~~~~~~~~~~~~~~~~~~~~
+Syntax of binders with multiplicity
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. _`Binders with multiplicity`:
 
-In the paper, we wrote ``λ x :₁ A. u`` for (unannotated) linear
-functions. We don't currently provide a corresponding syntax, for lack
-of good syntax.
-
-If a syntax is provided, we could also use this syntax to have records
-with different multiplicities.
-
-::
-
-  data R = R { unrestrictedField ::(Omega) A, linearField ::(One) B }
-
+No alternative syntax has been proposed for binders with multiplicity
+yet.
 
 Affine types instead of linear types
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1541,6 +1592,8 @@ Future extensions (not part of this proposal)
 
 Toplevel-linear binders
 +++++++++++++++++++++++
+
+.. _`Toplevel binders`:
 
 Something that hasn't been touched up by this proposal is the idea of
 declaring toplevel linear binders
