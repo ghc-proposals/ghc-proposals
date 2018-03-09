@@ -261,9 +261,9 @@ With the GADT syntax, multiplicity of the arrows is honoured:
 ::
 
   data Foo2 where
-    Bar2 :: A ->. B -> C
+    Bar2 :: A ->. B -> Foo2
 
-means that ``Bar2 :: A ->. B -> C``. This means that *data types
+means that ``Bar2 :: A ->. B -> Foo2``. This means that *data types
 written in GADT syntax with the ``(->)`` arrow are not the same as if
 they were defined with Haskell'98 syntax*.
 
