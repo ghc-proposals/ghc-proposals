@@ -126,6 +126,11 @@ each instance, it simply has to loop once over a larger set of rules and check t
 The downside of this is that we'd have to store the transitive closure somewhere, or recompute it, and if we recompute it, we
 lose asymptotically relative to the presented algorithm.
 
+As an alternative to adding a new extension, one option would be to simply extend the semantics of ``FunctionalDependencies`` to
+just work this way going forward. This seems like a slightly riskier plan in that if there turned out to be a major bug in the
+specification, this could blow up an entire compiler release, but would reduce the number of moving parts in the
+proposal, and ensure that it gets tested quite thoroughly.
+
 A more drastic alternative is to stop using functional dependencies. However, this hasn't proven popular with users where
 libraries like the ``mtl`` are concerned as the type family solutions are more verbose to use.
 
