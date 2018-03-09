@@ -131,7 +131,8 @@ specification are syntactically legal anywhere in a module if and only
 if ``-XLinearTypes`` is turned on.
 
 This proposal only introduces a new type for functions. It does not
-affect the runtime system, optimization passes or code generation.
+take advantage of these new types to perform new optimisations or
+better code generation.
 
 Definition
 ~~~~~~~~~~
