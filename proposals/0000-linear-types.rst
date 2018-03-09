@@ -77,7 +77,7 @@ proposal, we have worked out in detail several use cases for linear
 types. We argue that linear types have far ranging consequences for
 the language. Salient use cases from the paper include:
 
-- Safe mutable arrays with a safe *non-copying* `freeze` operation.
+- Safe mutable arrays with a safe *non-copying* ``freeze`` operation.
 - Off-heap memory that enables allocating, reading, writing and
   freeing memory safely, without use-after-free or double-free errors.
   This is an important use case for latency sensitive systems
@@ -175,7 +175,7 @@ polymorphic functions may have variable multiplicity (see also Syntax_), *e.g.*
 
   map :: (a :p-> b) -> [a] :p-> [b]
 
-Without polymorphism, we would need two implementations of `map` with
+Without polymorphism, we would need two implementations of ``map`` with
 the exact same code: one for ``p=1`` and one for ``p=ω``. Function
 composition is even worse: it takes two multiplicity parameters,
 hence, would require four identical implementations:
