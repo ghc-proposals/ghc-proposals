@@ -526,6 +526,14 @@ equivalent (``(,)`` and ``Either``, respectively, for these two
 examples): the constructors are linear (and case can have various
 multiplicities).
 
+There is no current proposed syntax for unboxed data types of mixed
+multiplicity, though the `Unlifted data types proposal
+<https://ghc.haskell.org/trac/ghc/wiki/UnliftedDataTypes>`_ (if
+extended to unboxed data types as well), could provide a
+solution. Mixed-multiplicity unboxed records are, however, required
+internally (see `The Core corner`_): they simply don't have a syntax
+yet.
+
 .. _Subtyping
 
 Subtyping
