@@ -1601,7 +1601,7 @@ declaring toplevel linear binders
 ::
 
   module Foo where
-  token ::('One) A  -- made up syntax
+  token ::('One) A
 
 Here ``token`` would have be consumed exactly once by the program,
 this property is a link-time property. This generalised the
