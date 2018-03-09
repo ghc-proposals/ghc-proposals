@@ -350,7 +350,7 @@ multiplicities (in Haskell pseudo-syntax):
    _ + _ = ω
 
    1 * x = x
-   x * 1 = 1
+   x * 1 = x
    ω * ω = ω
 
    _ ⩽ ω = True
@@ -1270,7 +1270,7 @@ follows:
    0 * _ = 0
    _ * 0 = 0
    1 * x = x
-   x * 1 = 1
+   x * 1 = x
    ω * ω = ω
 
    _ ⩽ ω = True
