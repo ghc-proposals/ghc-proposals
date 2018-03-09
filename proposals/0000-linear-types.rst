@@ -1659,7 +1659,7 @@ Below are the transformations which we have analysed so far:
 η-reduction
   Because the η-expansion of a linear function can be an unrestricted
   function, it is not, in general, safe, to η-reduce functions
-  (η-expasions are even added to the compiler: see Subtyping_). GHC
+  (η-expansions are even added to the compiler: see Subtyping_). GHC
   already does not perform η-reduction carelessly, so we need to add
   an extra condition for η-reduction to be successful.
 
