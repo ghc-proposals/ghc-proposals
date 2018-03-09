@@ -1726,28 +1726,28 @@ Case-binder optimisations:
      case_1 x of y {
        (p:ps) -> (case_1 x of …) (case_1 x of …)}
 
-   into
+  into
 
-   ::
+  ::
 
-     case_1 x of y {
-       (p:ps) -> let x_?? = y in (case x of …) (case x of …)}
+    case_1 x of y {
+      (p:ps) -> let x_?? = y in (case x of …) (case x of …)}
 
-   This transformation, similar to CSE, is valid only because we are
-   calling for a ``case_1`` of some unrestricted variable. This is
-   difficult for several reasons:
+  This transformation, similar to CSE, is valid only because we are
+  calling for a ``case_1`` of some unrestricted variable. This is
+  difficult for several reasons:
 
-   - Under the naive typing rule for case-binders proposed above, it
-     is not even correct to use ``y`` inside an alternative: it has
-     been consumed by being the scrutinee.
-   - Even if we have a more flexible typing rule for ``let`` (see
-     below), it remains that ``y`` has multiplicity ``1`` and that for
-     the right-hand side of the alternative to type-check, we actually
-     need ``let_ω x = y in …``, which is not well-typed.
+  - Under the naive typing rule for case-binders proposed above, it
+    is not even correct to use ``y`` inside an alternative: it has
+    been consumed by being the scrutinee.
+  - Even if we have a more flexible typing rule for ``let`` (see
+    below), it remains that ``y`` has multiplicity ``1`` and that for
+    the right-hand side of the alternative to type-check, we actually
+    need ``let_ω x = y in …``, which is not well-typed.
 
-   Like for CSE, we can either prevent this optimisation for linear
-   cases. Or we can try to promote the ``case_1`` to a ``case_ω``, and
-   perform the transformation only if it's successful.
+  Like for CSE, we can either prevent this optimisation for linear
+  cases. Or we can try to promote the ``case_1`` to a ``case_ω``, and
+  perform the transformation only if it's successful.
 
 Float-in & float-out
   These transformation move let-bindings inside or outside
