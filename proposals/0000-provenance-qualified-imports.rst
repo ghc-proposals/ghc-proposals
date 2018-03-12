@@ -24,7 +24,7 @@ B) Extending the command-line options of ghc to allow *provenance aliases*
 C) Extending the syntax of package imports to allow *provenance specifications*
 D) Extending the syntax of cabal files to allow both aliases and specifications
 
-Other build-tooling, such as cabal-install and stack, would in turn need to follow suit to take advantage of these features, but the details of how they might do so are beyond the scope of this proposal. (Though it is in scope to ensure that it provides enough hooks that they can take such advantage).
+Other build-tooling, such as cabal-install and stack, would in turn need to follow suit to take advantage of these features (and, in particular, to make use of the extended syntax of cabal files), but the details of how they might do so are beyond the scope of this proposal. (Though it is in scope to ensure that it provides enough hooks that they can take such advantage).
 
 Motivation
 ------------
@@ -33,6 +33,8 @@ Currently we assume that even though module names may clash between packages, pa
 This is a logical extension of existing principles, and will allow different repositories to exist for many purposes without need for any centralized naming authority.
 
 This proposal incidentally provides a uniform mechanism to specify dependencies on packages that are not hosted in package repositories or overlays but instead, e.g. on github, or elsewhere.
+
+To expand a bit: currently when one uses an overlay, it means that the packages from the overlay _in addition to_ the packages from the main repository are used. So if one specifies an package, and at least one overlay as well as a root repo, and versions of that package exist in the overlay(s) and the root repo both, then a choice of which package to install from which repo is made through some "search-path"-like functionality, though the exact semantics have not been fully pinned down and documented yet for cabal-install. But one use for an overlay may be an internal company repo. So say `foocorp` has an internal repo, provided within their intranet as an overlay. In that overlay is a package: `common-network-utils`. Then, sometime later, somebody uploads a totally different `common-network-utils` to hackage. Now, it may be that their build resolves to the wrong package! By providing provenance-qualification on package imports, this situation is prevented. One might say, "wouldn't specifying carefully the precedence of overlays and root repos fix this? Well, it would, if it was never the case that both packages (which share nothing but a name!) are never depended on at once. But it may be that some upstream dependency incurs a dependency on `hackage+common-network-utils`. By extending povenance qualification throughout namespacing, this proposal makes it possible to depend on both the `foocorp-internal+common-network-utils` package _and_ the `hackage+common-network-utils` package, without any worry of overlap. 
 
 Proposed Change Specification
 -----------------------------
