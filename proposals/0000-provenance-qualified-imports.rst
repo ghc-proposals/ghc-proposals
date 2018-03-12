@@ -10,7 +10,7 @@
 
 .. highlight:: haskell
 
-This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_. **After creating the pull request, edit this file again, update the number in the link, and delete this bold sentence.**
+This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/115>`_.
 
 .. contents::
 
@@ -35,6 +35,8 @@ This is a logical extension of existing principles, and will allow different rep
 This proposal incidentally provides a uniform mechanism to specify dependencies on packages that are not hosted in package repositories or overlays but instead, e.g. on github, or elsewhere.
 
 To expand further: currently when one uses an overlay, it means that the packages from the overlay *in addition to* the packages from the main repository are used. So if one specifies an package, and at least one overlay as well as a root repo, and versions of that package exist in the overlay(s) and the root repo both, then a choice of which package to install from which repo is made through some "search-path"-like functionality, though the exact semantics have not been fully pinned down and documented yet for cabal-install. But one use for an overlay may be an internal company repo. So say `foocorp` has an internal repo, provided within their intranet as an overlay. In that overlay is a package: ``common-network-utils``. Then, sometime later, somebody uploads a totally different ``common-network-utils`` to hackage. Now, it may be that their build resolves to the wrong package! By providing provenance-qualification on package imports, this situation is prevented. One might say, "wouldn't specifying carefully the precedence of overlays and root repos fix this? Well, it would, if it was never the case that both packages (which share nothing but a name!) are never depended on at once. But it may be that some upstream dependency incurs a dependency on ``hackage+common-network-utils``. By extending povenance qualification throughout namespacing, this proposal makes it possible to depend on both the ``foocorp-internal+common-network-utils`` package *and* the ``hackage+common-network-utils`` package, without any worry of overlap. 
+
+Additionally, this proposal allows depdencies on packages hosted outside of a repo or overlay -- such as github, just on the web more generally, or within a filesystem (such as on a shared drive). A use case here would be if I had a package undergoing a major rewrite, and which I did not yet want to release a new version of, but which I wanted to encourage others to take for a test-drive. Rather than asking users to install it directly, or clone and vendor it into their tree, I could now tell them how to use provenance qualification to depend on a particular snapshot of the source repo through altering a few lines in their cabal file.
 
 Proposed Change Specification
 -----------------------------
