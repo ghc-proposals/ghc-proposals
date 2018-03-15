@@ -582,6 +582,20 @@ reported in a warning: ::
 Because we're also implementing non-backtracking semantics, we'll implement a
 similar warning.
 
+Racket
+~~~~~~
+
+Racket also supports single-match or patterns. The following expression fails
+with a match error because the guard is not tried with the second pattern: ::
+
+    (match (list 1 2)
+      [(or (list x _) (list _ x)) #:when (even? x)
+       (printf "~a is even" x)])
+
+Output: ::
+
+    match: no matching clause for '(1 2)
+
 Rust
 ~~~~
 
