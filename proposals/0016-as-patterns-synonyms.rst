@@ -1,8 +1,7 @@
 As patterns in pattern synonyms
 ==============
 
-.. proposal-number:: Leave blank. This will be filled in when the proposal is
-                     accepted.
+.. proposal-number:: 16
 .. trac-ticket:: Leave blank. This will eventually be filled with the Trac
                  ticket number which will track the progress of the
                  implementation of the feature.
@@ -10,7 +9,7 @@ As patterns in pattern synonyms
                  implements the described feature.
 .. highlight:: haskell
 .. sectnum::
-.. header :: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/94>`_.
+.. header :: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/94>`_.
 .. contents::
 
 As-patterns (and n+k patterns) are currently disallowed in unidirectional pattern synonyms.  There is no good reason for this.
