@@ -5,8 +5,7 @@ As patterns in pattern synonyms
 .. trac-ticket:: Leave blank. This will eventually be filled with the Trac
                  ticket number which will track the progress of the
                  implementation of the feature.
-.. implemented:: Leave blank. This will be filled in with the first GHC version which
-                 implements the described feature.
+.. implemented:: 8.6 (commit `411a97e2 <https://github.com/ghc/ghc/commit/411a97e2c0083529b4259d0cad8f453bae110dee>`_)
 .. highlight:: haskell
 .. sectnum::
 .. header :: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/94>`_.
