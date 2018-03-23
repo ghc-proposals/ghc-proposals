@@ -448,10 +448,10 @@ Then ``xi`` has multiplicity annotation ``p*qi``. For instance
   bar (x,y) = … -- Since (,) :: a ->. b ->. (a,b), x and y have
                 -- multiplicity p
 
-.. _Patterns
+Deep patterns & multiple-argument equations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Deep patterns & multiple equations
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. _Patterns:
 
 Type-checking deep patterns naturally extends the simple patterns
 above. For instance in
