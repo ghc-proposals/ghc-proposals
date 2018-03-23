@@ -65,7 +65,11 @@ D) Cabal syntax
 
 Cabal files are extended in two ways.
 
-``source-origin-alises:`` is a top-level property consisting of a list of ``[ALIAS]=[URL]`` aliases. These aliases will be passed to all invocations of `ghc` in the course of a cabal build.
+``source-origin-alises:`` is a top-level property consisting of a list of aliases in the usual indented assignment style.  These aliases will be passed to all invocations of `ghc` in the course of a cabal build. Example syntax: ::
+
+    source-origin-aliases:
+       hackage: https://…
+       foobar: http://…
 
 ``build-depends:`` fields now can take package names in the form of ``[REPO]+somepackage`` rather than just ``somepackage``.
 
