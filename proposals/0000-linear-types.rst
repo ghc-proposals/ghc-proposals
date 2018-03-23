@@ -1,5 +1,6 @@
-Linear Types
-============
+==============
+ Linear Types
+==============
 
 .. proposal-number:: Leave blank. This will be filled in when the proposal is
                      accepted.
@@ -37,7 +38,7 @@ reviewed conference publication that will be presented at POPL'18. See
 the `extended version of the paper <https://arxiv.org/abs/1710.09756>`_.
 
 Motivation
-----------
+==========
 
 Type safety enforces that *well-typed programs do not go wrong*.
 Programs will sometimes crash, or fail to terminate, but they do not
@@ -122,7 +123,7 @@ captured with linear types. Here are a few more:
   but shared between two language runtimes.
 
 Proposed Change Specification
------------------------------
+=============================
 
 .. _Specification:
 
@@ -135,7 +136,7 @@ take advantage of these new types to perform new optimisations or
 better code generation.
 
 Definition
-~~~~~~~~~~
+----------
 
 We say that a function ``f`` is *linear* when ``f u`` is consumed
 exactly once implies that ``u`` is *consumed exactly once* (defined
@@ -161,7 +162,7 @@ still build safe programming interfaces, as explained in the
 Exceptions_ section below).
 
 Polymorphism
-~~~~~~~~~~~~
+------------
 
 In order for linear functions and unrestricted functions not to live
 in completely distinct worlds, to avoid code duplication, we
@@ -186,7 +187,7 @@ hence, would require four identical implementations:
   (.) :: (b :p-> c) -> (a :q-> b) -> a :(p ':* q)-> c
 
 Syntax
-~~~~~~
+------
 
 .. _Syntax:
 
@@ -276,7 +277,7 @@ The linear and unrestricted arrows are aliases:
   for ``(:'One ->)``
 
 Constructors & pattern-matching
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------
 
 Constructors of data types defined with the Haskell'98 syntax
 
@@ -323,7 +324,7 @@ An exception to this rule is ``newtype`` declarations in GADT syntax:
 below).
 
 Base
-~~~~
+----
 
 Because linear functions only strengthen the contract of unrestricted
 functions, a number of functions of ``base`` can get a more precise
@@ -365,7 +366,7 @@ will at least define the following data type:
 See the paper for intutions about the ``Unrestricted`` data type.
 
 Multiplicities
-~~~~~~~~~~~~~~
+--------------
 
 .. _Multiplicities:
 
@@ -449,7 +450,7 @@ Then ``xi`` has multiplicity annotation ``p*qi``. For instance
                 -- multiplicity p
 
 Deep patterns & multiple-argument equations
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------
 
 .. _Patterns:
 
@@ -480,7 +481,7 @@ the same multiplicity as the intermediate variable).
       (x, y) -> …
 
 Typechecking equations
-++++++++++++++++++++++
+~~~~~~~~~~~~~~~~~~~~~~
 
 In a definition with multiple equations, each equation is typechecked
 independently.
@@ -503,7 +504,7 @@ Let us consider a judgement $Γ ⊢ (b1 :(π1) A1) … (bn :(πn) An) → u : B$
 
 
 Unresolved questions
-++++++++++++++++++++
+~~~~~~~~~~~~~~~~~~~~
 
 *This section is being resolved. We now expect Core to allow for variable
 patterns and arbitrary sets of equations to be elaborated into
@@ -581,7 +582,7 @@ accepting the code below:
 It is not clear how to define such a criterion.
 
 Unboxed data types
-~~~~~~~~~~~~~~~~~~
+------------------
 
 GHC supports unboxed data types such as ``(#,#)`` (unboxed pair) and
 ``(#|#)`` (binary unboxed sum). The proposal treats them as their boxed
@@ -600,7 +601,7 @@ yet.
 .. _Subtyping
 
 Subtyping
-~~~~~~~~~
+---------
 
 The type ``A->.B`` is a strengthening of ``A->B``, but the type
 checker doesn't do subtyping. It relies on polymorphism
@@ -624,7 +625,7 @@ breaking change to strengthen a *first-order* regular arrow ``->``
 into a linear ``->.`` in an interface.
 
 Records and projections
-~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------
 
 .. _Records:
 
@@ -676,7 +677,7 @@ while a mere convenience, is desirable (see *e.g.* `here
 <https://github.com/tweag/linear-base/blob/e72d996b5d0600b2d5f2483b95b064d524c83e46/src/System/IO/Resource.hs#L59-L61>`_).
 
 Records in GADT syntax
-++++++++++++++++++++++
+~~~~~~~~~~~~~~~~~~~~~~
 
 Records can also be defined in GADT syntax:
 
@@ -714,7 +715,7 @@ With absence of annotation interpreted as annotating with ``'One``.
 
 
 Inference
-~~~~~~~~~
+---------
 
 .. _Inference:
 
@@ -754,7 +755,7 @@ questions`_ below for a more precise description of this issue).
 .. _Exceptions
 
 Non-termination, exceptions & catch
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------------------
 
 In the presence of non-termination or exceptions, linear functions may
 fail to fully consume their argument. We can think of it as: the
@@ -813,7 +814,7 @@ releasing resources in case of exception. The release in case of
 exception would be, however, less timely.
 
 Can ``RIO`` have a ``catch``?
------------------------------
+=============================
 
 It is possible to catch exceptions inside of ``RIO``. But in order to
 ensure resource safety, the type cannot be linear:
@@ -859,7 +860,7 @@ for ``catch``, or the absence of ``catch`` altogether, is a design
 question for the library that implements a monad such as ``RIO``.
 
 Can I throw linear exceptions?
-------------------------------
+==============================
 
 In the type of ``catchL`` above, the type of the handler is ``e -> RIO
 a``. Correspondingly, the type of the exception-throwing primitives are:
@@ -883,7 +884,7 @@ consider exceptions as only carrying unrestricted payloads in our
 library.
 
 Effect and Interactions
------------------------
+=======================
 
 .. _Interactions:
 
@@ -901,7 +902,7 @@ Linear data types are just regular Haskell types, which means it is
 cheap to interact with existing libraries.
 
 Rebindable Syntax
-~~~~~~~~~~~~~~~~~
+-----------------
 
 There is an unpleasant interaction with ``-XRebindableSyntax``: ``if
 u then t else e`` is interpreted as ``ifThenElse u t e``.
@@ -911,7 +912,7 @@ linearly typed programs might not type check with
 ``-XRebindableSyntax`` enabled.
 
 Unrestricted newtypes
-~~~~~~~~~~~~~~~~~~~~~
+---------------------
 
 The meta-theory of linear types in a lazy language fails if we allow
 unrestricted ``newtype``-s:
@@ -933,7 +934,7 @@ These are interpreted as linear ``newtype``-s and a
 warning is emitted (see Specification_ above).
 
 Pattern-matching
-~~~~~~~~~~~~~~~~
+----------------
 
 Lazy pattern-matching is only allowed for unrestricted (multiplicity
 ``ω``) patterns: lazy patterns are defined in terms of projections
@@ -970,7 +971,7 @@ Unresolved questions:
 - There is no account yet of linear pattern synonyms.
 
 Without -XLinearTypes
-~~~~~~~~~~~~~~~~~~~~~
+---------------------
 
 .. _`Without -XLinearTypes`:
 
@@ -1002,10 +1003,10 @@ in code without ``-XLinearTypes`` to be *linear*, despite the
 ostensible use of an unrestricted arrow.
 
 Costs and Drawbacks
--------------------
+===================
 
 Learnability
-~~~~~~~~~~~~
+------------
 
 This proposal tries hard to make the changes unintrusive to newcomers,
 or indeed to the existing language ecosystem as a whole. However, if
@@ -1015,7 +1016,7 @@ their existence. They can be safely ignored, but teachers of Haskell
 might still consider them distracting for their students.
 
 Development and maintenance
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------
 
 The arrow type constructor is constructed and destructed a lot in
 GHC's internals. So there are many places in the type checker where
@@ -1042,7 +1043,7 @@ a simplified fragment is better suited for our use-case that the full
 generality of AC.
 
 Alternatives
-------------
+============
 
 .. _Alternatives:
 
@@ -1050,7 +1051,7 @@ This section describes variants that could be considered for inclusion
 in the proposal.
 
 Syntax of the multiplicity-parametric arrow
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------
 
 The proposed mixfix ``a :p-> b`` syntax for the
 multiplicity-parametric arrow makes a potentially non-trivial addition
@@ -1082,7 +1083,7 @@ except to the left of an arrow. And ``WithMult a p -> b`` means
   map :: (a `WithMult` p -> b) -> [a] `WithMult` p -> [b]
 
 Syntax of multiplicity expression
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------------
 
 We proposed that, in ``a :p-> b``, ``p`` could be any expression, as
 long as it is of kind ``Multiplicity``. This is simpler in terms of
@@ -1103,7 +1104,7 @@ So we could decide to restrict ``p`` to the following grammar:
          | MULT :* MULT
 
 Lexical tokens of the multiplicity-parametric arrow
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------------------------------
 
 Assuming that the multiplicity polymorphic arrow deserves a full-blown
 mixfix syntax, here are other notations which have been floated:
@@ -1117,7 +1118,7 @@ mixfix syntax, here are other notations which have been floated:
   apply to ``(->_p)``.
 
 Lexical token of the linear arrow
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------------
 
 We propose ``(->.)`` as a notation for the linear arrow. An
 alternative, based on the resemblance with the Unicode notation
@@ -1133,7 +1134,7 @@ Another proposed alternative is ``(:->)`` based, on the ``(: p ->)``
 syntax for multiplicity-annotated arrows.
 
 Records in GADT syntax
-~~~~~~~~~~~~~~~~~~~~~~
+----------------------
 
 For record in GADT syntax, we proposed that the arrow symbol always be
 ``->``, but has no interpretation.
@@ -1163,10 +1164,10 @@ Which could be interpreted in one of two ways:
     R :: A :π-> B :π-> C -> R
 
 Unboxed data types
-~~~~~~~~~~~~~~~~~~
+------------------
 
 Mixed-multiplicity via unary tuples
-+++++++++++++++++++++++++++++++++++
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To alleviate the lack of syntax for unboxed data types with mixed
 multiplicity, we can leverage the fact that unboxed data types compose
@@ -1189,7 +1190,7 @@ two linear. Due to the semantics of unboxed tuples, this doesn't incur
 any performance penalty, compared to a more native syntax.
 
 Syntax for native mixed-multiplicity unboxed data types
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Alternatively, we can come up with a syntax for mixed-multiplicity
 native unboxed data types (either only for unboxed tuples, or for both
@@ -1199,7 +1200,7 @@ No syntax has been proposed yet.
 
 
 Other strategies when -XLinearTypes is turned off
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 The proposal holds that in absence of ``-XLinearTypes``, GADT-syntax
 type declarations are interpreted as linear declarations. This
@@ -1232,7 +1233,7 @@ problem, let us outline an alternative plan.
   is emitted.
 
 Syntax of binders with multiplicity
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------------------
 
 .. _`Binders with multiplicity`:
 
@@ -1240,7 +1241,7 @@ No alternative syntax has been proposed for binders with multiplicity
 yet.
 
 Affine types instead of linear types
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------
 
 .. _`Affine types`:
 
@@ -1348,7 +1349,7 @@ this proposal to focus first on the minimal system that adequately
 addresses the motivations.
 
 Remarks on the relation between affine and linear types
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 As noted by @rleshchinskiy, we can recover, in a limited case, the
 guarantees of linear types in system (2) via an encoding. The idea is
@@ -1394,7 +1395,7 @@ Therefore, despite the tantalising proximity, system (1) and (2) are
 different in practice.
 
 Subtyping instead of polymorphism
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------------
 
 Since ``A ->. B`` is a strengthening of ``A -> B``, it is tempting to
 make ``A ->. B`` a subtype of ``A -> B``. But subtyping and polymorphism
@@ -1439,7 +1440,7 @@ non-linear arguments:
   -- g x y z = f x y z
 
 Zero as a multiplicity
-~~~~~~~~~~~~~~~~~~~~~~
+----------------------
 
 The implementation, and the usage-based definition of linearity in the
 Multiplicities_ section, use a ``0``. It is currently kept out of the
@@ -1543,7 +1544,7 @@ creates a small complication. Which can be solved in a number of way:
   act on extended multiplicities.
 
 No annotation on case
-~~~~~~~~~~~~~~~~~~~~~
+---------------------
 
 .. _`No annotation on case`
 
@@ -1556,7 +1557,7 @@ types and unrestricted data types are one and the same. And sacrifices
 much code reuse.
 
 Uniqueness instead of linearity
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------
 
 Languages like Clean and Rust have a variant of linear types called
 uniqueness, or ownership, typing. This is a dual notion: instead of
@@ -1589,7 +1590,7 @@ specify and implement than linear types systems such as this
 proposal's.
 
 Linearity-in-kinds
-~~~~~~~~~~~~~~~~~~
+------------------
 
 Instead of adding a type for linear function, we could classify types
 in two kinds: one of unrestricted types and one of linear
@@ -1647,7 +1648,7 @@ presentations of dependent types with linearity-in-kinds disallow
 linear types as arguments of dependent functions.
 
 Additive conjunction
-~~~~~~~~~~~~~~~~~~~~
+--------------------
 
 There is a connective of linear logic which is not included in this
 proposal: the additive conjunction, typically written ``A&B``. It
@@ -1686,10 +1687,10 @@ So on balance, we didn't consider additive pairs to be useful enough
 to justify a dedicated implementation and syntax.
 
 Future extensions (not part of this proposal)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------------------------
 
 Toplevel-linear binders
-+++++++++++++++++++++++
+~~~~~~~~~~~~~~~~~~~~~~~
 
 .. _`Toplevel binders`:
 
@@ -1710,7 +1711,7 @@ This would allow libraries to abstract on ``main`` or to provide their
 own linearly-threaded token.
 
 More multiplicities
-+++++++++++++++++++
+~~~~~~~~~~~~~~~~~~~
 
 .. _`More multiplicities`
 
@@ -1736,7 +1737,7 @@ to make it possible for libraries to define new multiplicities.
 
 
 The Core corner
----------------
+===============
 
 .. _`The Core corner`:
 
@@ -1749,7 +1750,7 @@ The bulk of the modifications to Core is described in §3 of the `paper
 <https://arxiv.org/abs/1710.09756>`_.
 
 Changes to the type system
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------
 
 Here is a summary of the changes included in the paper:
 
@@ -1792,7 +1793,7 @@ Note: the constraint arrow ``=>`` is interpreted as an unrestricted
 arrow (*i.e.* of multiplicity ω).
 
 Effect on transformations and passes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------
 
 .. _`Core transformations`:
 
@@ -1909,7 +1910,7 @@ of multiplicity 1, but the same arguments works for any multiplicity
 which are not ω (in particular multiplicity variables).
 
 Advanced typing rule for ``let``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------
 
 There is no known account of a type-system which would account for the
 inlining transformation. Let alone of one which would not require too
@@ -1929,14 +1930,14 @@ again. But the case-binder does not have this property:
 computationally does not quite behave like a linear ``let``.
 
 Unresolved questions
---------------------
+====================
 
 .. _`Unresolved questions`:
 
 This section summarises the questions that have yet to be resolved.
 
 Inference
-~~~~~~~~~
+---------
 
 - There is no systematic account of type inference. Can it be made
   predictable when a type annotation is required? For compatibility
@@ -1967,7 +1968,7 @@ Inference
   What if there are multiplicities with variable multiplicity ?
 
 Patterns
-~~~~~~~~
+--------
 
 It is not clear yet how the following should be handled:
 
@@ -1989,7 +1990,7 @@ It is not clear yet how the following should be handled:
   defined. It is still unknown whether this problem is hard or easy.
 
 Syntax
-~~~~~~
+------
 
 Linear monads, like ``RIO`` in the socket motivating example will
 require the ``do`` notation to feel native and be comfortable to
@@ -2004,7 +2005,7 @@ is attempted in `this proposal
 <https://github.com/ghc-proposals/ghc-proposals/pull/78>`_.
 
 Core
-~~~~
+----
 
 In Core, ``case`` is of the form ``case u as x of { <alternatives> }``
 where ``x`` represents the head normal form of ``u``. It is used by
@@ -2055,7 +2056,7 @@ functions.
 See also the sections Patterns_ and `The Core corner`_.
 
 Implementation Plan
--------------------
+===================
 
 - @aspiwack will implement the proposal
 - @aspiwack will implement and release a library exporting standard
