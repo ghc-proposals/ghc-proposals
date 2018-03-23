@@ -191,7 +191,7 @@ Syntax
 .. _Syntax:
 
 *This section is only a proposal for a syntax for linear types. For
-other possibilities to consider, see the `Alternatives`_ section.*
+other possibilities to consider, see the Alternatives_ section.*
 
 This proposal adds two new syntactical constructs:
 
