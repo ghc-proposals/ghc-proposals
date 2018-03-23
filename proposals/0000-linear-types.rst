@@ -1444,10 +1444,10 @@ creates a small complication. Which can be solved in a number of way:
   with ``0``. Note that a different ``(:+)`` and ``(:*)`` would have to
   act on extended multiplicities.
 
-.. _`No annotation on case`
-
 No annotation on case
 ~~~~~~~~~~~~~~~~~~~~~
+
+.. _`No annotation on case`
 
 Instead of having ``case_p`` (see Multiplicities_) we could just have the
 regular ``case`` (which would correspond to ``case_1`` in this
@@ -1611,10 +1611,10 @@ this property is a link-time property. This generalised the
 This would allow libraries to abstract on ``main`` or to provide their
 own linearly-threaded token.
 
-.. _`More multiplicities`
-
 More multiplicities
 +++++++++++++++++++
+
+.. _`More multiplicities`
 
 One central aspect of the proposed system is that it is very easy to
 extend with new multiplicities: add a multiplicity to the
