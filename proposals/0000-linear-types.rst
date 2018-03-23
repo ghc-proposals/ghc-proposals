@@ -648,6 +648,44 @@ A``. Our practice of linear Haskell code indicates that this feature,
 while a mere convenience, is desirable (see *e.g.* `here
 <https://github.com/tweag/linear-base/blob/e72d996b5d0600b2d5f2483b95b064d524c83e46/src/System/IO/Resource.hs#L59-L61>`_).
 
+Records in GADT syntax
+++++++++++++++++++++++
+
+Records can also be defined in GADT syntax:
+
+::
+
+  data R where
+    R :: { f1 :: A, f2 :: B } -> R
+
+In this special form, only the standard arrow is allowed, even with
+``-XLinearTypes``. This arrow, however, is not to be interpreted as
+the unrestricted arrow, or to have any meaning: it is just a syntactic
+construct. The multiplicity of the fields is given by the annotation
+on the binders, as with regular records.
+
+That is, in the above example, ``R`` has type
+
+::
+
+  R :: A ->. B ->. R
+
+In general, in
+
+::
+
+  data R where
+    R :: { f1 ::(π) A, f2 ::(ρ) B } -> R
+
+We have
+
+::
+
+  R :: A :π-> B :ρ-> R
+
+With absence of annotation interpreted as annotating with ``'One``.
+
+
 Inference
 ~~~~~~~~~
 
@@ -1063,6 +1101,36 @@ a token in current GHC, and ``a-o`` is currently interpreted as ``(-)
 a o``). ``-o`` does not convey the intuition that ``->.`` is just
 ``->`` for most intents and purposes (except for those advanced users
 who do care about the distinction).
+
+Records in GADT syntax
+~~~~~~~~~~~~~~~~~~~~~~
+
+For record in GADT syntax, we proposed that the arrow symbol always be
+``->``, but has no interpretation.
+
+An alternative would be to allow an arbitrary arrow ``:π->`` as in
+
+::
+
+  data R where
+    R :: { f1 ::('One) A, f2 :: B, f3 ::('Omega) C } :π-> R
+
+Which could be interpreted in one of two ways:
+
+- ``π`` can act as a default multiplicity for the fields which don't
+  have a multiplicity annotation. In this case, the type of ``R``
+  would be
+
+  ::
+
+    R :: A ->. B :π-> C -> R
+
+- ``π`` can act as a multiplier on all the fields (unannotated field
+  are considered linear). In this case, the type of ``R`` would be
+
+  ::
+
+    R :: A :π-> B :π-> C -> R
 
 Unboxed data types
 ~~~~~~~~~~~~~~~~~~
