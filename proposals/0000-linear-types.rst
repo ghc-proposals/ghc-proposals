@@ -1102,6 +1102,9 @@ a o``). ``-o`` does not convey the intuition that ``->.`` is just
 ``->`` for most intents and purposes (except for those advanced users
 who do care about the distinction).
 
+Another proposed alternative is ``(:->)`` based, on the ``(: p ->)``
+syntax for multiplicity-annotated arrows.
+
 Records in GADT syntax
 ~~~~~~~~~~~~~~~~~~~~~~
 
