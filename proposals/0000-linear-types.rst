@@ -505,6 +505,10 @@ Let us consider a judgement $Γ ⊢ (b1 :(π1) A1) … (bn :(πn) An) → u : B$
 Unresolved questions
 ++++++++++++++++++++
 
+*This section is being resolved. We now expect Core to allow for variable
+patterns and arbitrary sets of equations to be elaborated into
+well-typed terms.*
+
 It is not currently clear whether we can accept wildcard patterns in
 linear patterns.
 
