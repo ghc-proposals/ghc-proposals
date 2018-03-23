@@ -479,6 +479,29 @@ the same multiplicity as the intermediate variable).
     Just xy -> case_1 xy of
       (x, y) -> …
 
+Typechecking equations
+++++++++++++++++++++++
+
+In a definition with multiple equations, each equation is typechecked
+independently.
+
+Let us see an equation as a list of (typed) binders (*i.e.* patterns)
+and a right-hand side. Each binder has a multiplicity, which is
+provided by the signature. If there is no signature, the initial
+multiplicity of each binder is ω instead.
+
+Let us consider a judgement $Γ ⊢ (b1 :(π1) A1) … (bn :(πn) An) → u : B$
+
+- ``Γ ⊢ u : B ⟹ Γ ⊢ → u : B``
+- ``Γ, x :(π) A ⊢ (b1 :(π1) A1) … (bn :(πn) An) → u : B ⟹ Γ ⊢ (x
+  :(π) A) (b1 :(π1) A1) … (bn :(πn) An) → u : B``
+- ``Γ ⊢ (p1 :(πρ1) C1) … (pn :(πρn) Cn) (b1 :(π1) A1) … → u : B ⟹ Γ ⊢ (c p1 …
+  pn :(π) D) (b1 :(π1) A1) … → u : B``, for ``c : C1 :ρ1-> … Cn :ρn->
+  D``, a constructor (notice how ``π`` flows down into the fields of ``c``)
+- ``Γ ⊢ (b1 :(π1) A1) … → u : B ⟹ Γ ⊢ (_ :(π) C) (b1 :(π1) A1) … → u :
+  B``, if ``π=ω``
+
+
 Unresolved questions
 ++++++++++++++++++++
 
