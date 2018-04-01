@@ -84,14 +84,19 @@ The remainder of the changes are in ``compiler/parser/Lexer.x``. Aside from a fe
   colonectomy (ITdcolon _) = ITcolon
   colonectomy token        = token
 
-This has implemented on a private branch of the latest GHC. With the above modifications to GHC the following example compiles correctly.
+This has been implemented on a private branch of the latest GHC. With the above modifications to GHC the following example compiles correctly. Note that list cons promoted to type level works fine.
 
 .. code-block:: haskell
 
+  {-# LANGUAGE GADTs, DataKinds, TypeOperators #-}
   {-# LANGUAGE Colonectomy #-}
 
   mycons : a -> [a] -> [a]
   mycons x xs = x :: xs
+
+  data HList : [*] -> * where
+    HNil  : HList '[]
+    HCons : a -> HList t -> HList (a ':: t)
 
 Display
 -------
@@ -135,13 +140,14 @@ Here is an example of the effect of the change (note that unicode and explicit f
 
 .. code-block:: haskell
 
-  *Main> :t mycons
-  mycons ∷ ∀ {a}. a → [a] → [a]
+  *Main> :t HCons
+  HCons ∷ ∀ {a} {t ∷ [★]}. a → HList t → HList ((':) ★ a t)
 
   *Main> :set -fprint-colonectomy
-  *Main> :t mycons
-  mycons : ∀ {a}. a → [a] → [a]
+  *Main> :t HCons
+  HCons : ∀ {a} {t : [★]}. a → HList t → HList ((':) ★ a t)
 
+Note that ``':`` should be printed as ``'::``. See `Unresolved Questions`_.
 
 Effect and Interactions
 =======================
@@ -165,21 +171,26 @@ There is also the issue that almost all existing written documentation of Haskel
   In the Haskell code, the conventions of the language are adhered to,
   with one notable exception: I have taken the liberty to typeset '::' as ':'....
 
-It is possible there would be a small performance penalty for checking the flags, but this should be negligible.  
+It is possible there would be a small performance penalty for checking the flags, but this should be negligible.
+
+Copying and pasting from older code, either on web pages or existing codebases that have not yet been converted, takes more time as the colon convention must be swapped. Again a tool could help with this.
+
+Third-party tools outside the Haskell ecosystem such as syntax highlighting would have to be updated, and as they may follow fairly primitive rules it may not be easy for them to distinguish files using OCC and NCC.
 
 Alternatives
 ============
 
-The main alternative is to simply do nothing and maintain the status quo. The question is simply whether or not we want to address this issue.
+The main alternative is to simply do nothing and maintain the status quo. The question is simply whether or not we want to address this issue. There are certainly short-term costs to doing something now, but I believe long-term gain of cleaner syntax which is consistent with other modern languages is worth it. In any case now seems a good time to at least make a decision.
 
 An intriguing alternative is to be flexible and allow either ``:`` or ``::`` in either the type signature or list cons context, since the two can be distinguished at the parser stage. In this case the lexer would pass the tokens as written and the parser would make the appropriate fixes if necessary. The advantage is that this requires no flag whatsoever for parsing (one would still want the flag ``-fprint-colonectomy`` for displayed output), but it defeats the purpose of moving Haskell toward the NCC as there would be no requirement to use that convention uniformly.
 
 
-Unresolved questions
+Unresolved Questions
 ====================
 
-1. In replacing ``::`` with ``:`` (converting list cons NCC to OCC to work with GHC's internal code), make sure the positions and length are updated correctly. Note that we can replace ``:`` with unicode ``∷`` and maintain character count, although perhaps this would cause problems on systems not supporting unicode (are there any at this point?).
-2. Why is ``-fprint-colonectomy`` not in the ``GHCi-specific dynamic flag settings`` section with the other flags there even though I defined it in the identical manner as the others using ``flagSpec``?
+1. I still need to add code to ensure that NCC list cons ``::`` and promoted list cons ``'::`` are displayed correctly.
+2. In replacing ``::`` with ``:`` (converting list cons NCC to OCC to work with GHC's internal code), make sure the positions and length are updated correctly. Note that we can replace ``:`` with unicode ``∷`` and maintain character count, although perhaps this would cause problems on systems not supporting unicode (are there any at this point?).
+3. Why is ``-fprint-colonectomy`` not in the ``GHCi-specific dynamic flag settings`` section with the other flags there even though I defined it in the identical manner as the others using ``flagSpec``?
 
 .. code-block:: haskell
    
