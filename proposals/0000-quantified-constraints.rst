@@ -1,4 +1,8 @@
-.. proposal-number::
+==============
+Quantified Constraints
+==============
+
+ .. proposal-number::
 
 .. trac-ticket::
 
@@ -13,8 +17,8 @@
 .. contents::
 
 
-Quantified Constraints
-======================
+Introduction
+==============
 
 This proposal introduces quantified constraints, which have been proposed years ago
 in  `Derivable type classes <https://www.microsoft.com/en-us/research/publication/derivable-type-classes/>`_ (Section 7), to raise the expressive power of type classes to essentially first-order logic.
@@ -49,7 +53,7 @@ The paper `Quantified class constraints <http://i.cs.hku.hk/~bruno//papers/hs201
 There is a prototype implementation already available in GHC's repository, on branch `wip/T2893`.
 
 Motivation
-----------
+==========
 Introducing quantified constraints offers two main benefits:
 
 - Firstly, they enable terminating resolution where this was not possible before.  Consider for instance the following instance declaration for the general rose datatype ::
@@ -101,7 +105,7 @@ Here is a list of other sources that have sought quantified constraints:
 - A bunch of other GHC tickets are listed on `the wiki page <https://ghc.haskell.org/trac/ghc/ticket/2893>`_.
 
 Proposed Change Specification
------------------------------
+==============================
 We propose to add a new GHC extension called ``{-# QuantifiedConstraints #-}``.
 Currently, GHC allows only simple class constraints in class and instance contexts.
 When this extension is enabled, constraints can contain type quantifiers and
@@ -113,12 +117,12 @@ As an example, consider the declaration mentioned above, containing a quantified
    (Rose x1 rs1) == (Rose x2 rs2) = x1 == x2 && rs1 == rs2
 
 Extension name
-^^^^^^^^^^^^^^
+----------------
 
 We propose the extension name ``QuantifiedConstraints``.
 
 Syntax changes
-^^^^^^^^^^^^^^
+----------------
 
 `Haskell 2010 <https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#x17-18000010.5>`_ defines a ``context`` (the bit to the left of ``=>`` in a type) like this ::
 
@@ -163,16 +167,16 @@ Notes:
 
   See `Iceland Jack's summary <https://ghc.haskell.org/trac/ghc/ticket/14733#comment:6>`_.  The key point is that the bit to the right of the `=>` may be headed by a type *variable* (`c` in this case), rather than a class.  It should not be one of the forall'd variables, though.
 
-  (NB: this is an extension to what is described in the paper.)
+  (NB: this goes beyond what is described in `the paper <http://i.cs.hku.hk/~bruno//papers/hs2017.pdf>`_, but does not seem to introduce any new technical difficulties.)
 
 
 Typing changes
-^^^^^^^^^^^^^^
+----------------
 
 See `the paper <http://i.cs.hku.hk/~bruno//papers/hs2017.pdf>`_.
 
 Superclasses
-^^^^^^^^^^^^
+----------------
 
 Suppose we have::
 
@@ -181,8 +185,10 @@ Suppose we have::
 
 From the ``x==x`` we need an ``Eq (m Int)`` constraint, but the context only gives us a way to figure out ``Ord (m a)`` constraints.  But from the given constraint ``forall a. Ord a => Ord (m a)`` we derive a second given constraint ``forall a. Ord a => Eq (m a)``, and from that we can readily solve ``Eq (m Int)``.  This process is very similar to the way that superclasses already work: given an ``Ord a`` constraint we derive a second given ``Eq a`` constraint.
 
+NB: This aspect of the proposal goes beyond `the paper <http://i.cs.hku.hk/~bruno//papers/hs2017.pdf>`_, but is specifically desired by users.
+
 Overlap
-^^^^^^^
+-------------
 
 Quantified constraints can potentially lead to overlapping local axioms.
 Consider for instance the following example::
@@ -259,7 +265,8 @@ We propose to adopt **Reject if in doubt** for now.  We can see how painful it
 is in practice, and try something more ambitious if necessary.
 
 Instance lookup
-^^^^^^^^^^^^^^^
+-------------------
+
 In the light of the overlap decision, instance lookup works like this, when
 trying to solve a class constraint ``C t``
 
@@ -270,7 +277,8 @@ trying to solve a class constraint ``C t``
 3. If no quantified constraints match, look up in the global instances precisely as now.
 
 Termination
-^^^^^^^^^^^
+---------------
+
 GHC uses the `Paterson Conditions <http://downloads.haskell.org/~ghc/master/users-guide/glasgow_exts.html#instance-termination-rules>`_ to ensure that instance resolution terminates:
 
 The Paterson Conditions are these:
@@ -299,7 +307,8 @@ Note that the second item only at the *head* of the quantified constraint, not i
 Of course, ``UndecidableInstances`` lifts the Paterson Conditions, as now.
 
 Coherence
-^^^^^^^^^
+-----------
+
 
 Although quantified constraints are a little like local instance declarations, they differ
 in one big way: the local instances are written by the compiler, not the user, and hence
@@ -317,12 +326,12 @@ appealing to the existing instance declaration for ``Eq (Maybe a)``.
 In short, quantifed constraints do not introduce incoherence.
 
 Costs and Drawbacks
--------------------
+=====================
 There are currently no known drawbacks to this feature.
 
 
 Alternatives
-------------
+==================
 Several alternatives have already been considered.
 
 GHC currently supports a form of cycle-aware resolution,
@@ -338,12 +347,12 @@ and none of these alternative encodings are generally applicable.
 
 
 Unresolved questions
---------------------
+====================
 
 
 Implementation Plan
--------------------
-`Phabricator <https://phabricator.haskell.org/D4353>`_
+=====================
+The feature is fully implemented in branch ``wip/T2893`` of the GHC repository.
 
 
 Additional Links
