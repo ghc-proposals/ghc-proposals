@@ -46,13 +46,15 @@ The Plugin API is extended with the following fields:
  interfaceLoadAction :: forall lcl . [CommandLineOption] -> ModIface -> IfM lcl ModIface
  renamedResultAction :: Maybe([CommandLineOption] -> ModSummary -> RenamedSource -> Hsc ())
 
-
 - ``parsedResultAction`` is called during the compilation when the parser runs successfully. Its third argument is the parsed syntax tree. The result of the function application will be passed to later compilation stages.
-- ``renamedResultAction`` is a read-only optional pass that receives the renamed results if the type checker runs successfully. It is optional, because when not needed, the renamed results should not be kept. It is read-only, because changing the renamed results have no effect on the compilation since renaming and type checking is done in one pass.
+- ``renamedResultAction`` is a read-only optional pass that receives the renamed results if the type checker runs successfully. It is optional, because when not needed, the renamed results are thrown away (for performance). It is read-only, because changing the renamed results have no effect on the compilation since renaming and type checking is done in one pass.
 - ``typeCheckResultAction`` is called during the compilation when the type checker runs successfully. Its third argument is the type checked syntax tree. The result of the function application will be passed to later compilation stages.
-- ``spliceRunAction`` is called on Template Haskell splices and Quasi-Quotes that are about to be evaluated to generated code. This is useful for tools that analyze the source code, since these language elements are not present in the renamed and type checked syntax tree. The result of this function is used to generate code.
+- ``spliceRunAction`` is called on Template Haskell splices and Quasi-Quotes that are about to be evaluated to generated code. This is useful for tools that analyze the source code, since these language elements are not present in the renamed and type checked syntax tree. The result of this function is used to generate code. It should be called for all evaluated metaprogramming elements of the Haskell module.
 - ``interfaceLoadAction`` is called every time the compiler loads an interface file. This functionality is useful for source manipulation tools, since they might analyze the environment of the code being compiled. Usually this means that they might know what definitions and instances are in scope in a given module.
 
+The options for the different plugin actions are passed as strings, similarly to existing plugin arguments. Flags are parsed by the plugin itself. Malformed flags could be ignored or could trigger a compilation error. Plugin flags could be given in the form of ``-fplugin-opt=module:args`` as described in the manual.
+
+Each action is performed in the monad that is used in the specific step where the action should be performed. This allows greater freed om for the writer of these plugin actions. This is the reason why some actions return their result in the ``Hsc``, ``TcM`` or ``IfM`` monad.
 
 Effect and Interactions
 -----------------------
