@@ -102,7 +102,7 @@ I expect the implementation cost to be small and consist of these steps:
 This proposal would break  only code that
  
 * Is using ``-XPatternSignatures`` to get scoped type variables and
-* has been ignoring the deprecation warning.
+* has been ignoring the deprecation warning (which has been in place since GHC 6.10!)
 
 Assuming people have followed the deprecation warning, then they are all already using
 ``PatternSignatures``, so no breakage occurs. Users who care about backward compatiblity 
