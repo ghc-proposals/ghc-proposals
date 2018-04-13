@@ -98,7 +98,6 @@ I expect the implementation cost to be small and consist of these steps:
   ``PatternSignatures`` or ``ScopedTypeVariables``, depending on whether a type variables
   is bound.
 
-
 This proposal would break  only code that
  
 * Is using ``-XPatternSignatures`` to get scoped type variables and
@@ -107,6 +106,10 @@ This proposal would break  only code that
 Assuming people have followed the deprecation warning, then they are all already using
 ``PatternSignatures``, so no breakage occurs. Users who care about backward compatiblity 
 can continue to use ``-XPatternSignatures``.
+
+One commenter pointed out that he currently concludes from the presence of pattern signatures
+(even if they do not mention type variables) that `ScopedTypeVariables` must be enabled; this
+(possibly trained and subconscious) reasoning would have be un-learned.
 
 Alternatives
 ------------
