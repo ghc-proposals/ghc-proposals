@@ -204,6 +204,35 @@ Is wholly equivalent to this: ::
     newtype Age = MkAge Int
       deriving Enum via Int
 
+Another feature that ``GeneralizedNewtypeDeriving`` supports, which is the
+ability to derive instances of classes with associated type families, is
+similarly generalized in `DerivingVia`. Given the following example: ::
+
+    class C a where
+      type T a
+
+    instance C Int where
+      type T Int = Bool
+
+    instance C (Sum a) where
+      type T (Sum a) = Sum (T a)
+
+Then a ``newtype``-derived instance of ``C`` would look like this: ::
+
+    newtype Age1 = MkAge1 Int
+      deriving newtype C
+    -- This generates:
+    instance C Age1 where
+      type T Age1 = T Int
+
+And a ``via``-derived instance of ``C`` would like this: ::
+
+    newtype Age2 = MkAge2 Int
+      deriving C via (Sum Int)
+    -- This generates:
+    instance C Age2 where
+      type T Age2 = T (Sum Int)
+
 Note that while ``GeneralizedNewtypeDeriving`` has a strict requirement that
 the data type for which we're deriving an instance must be a newtype, there
 is no such requirement for ``DerivingVia``. For example, this is a perfectly
