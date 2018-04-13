@@ -97,7 +97,7 @@ Aside from the paper itself, here is a list of other sources about this idea:
 
 Proposed Change Specification
 =============================
-We propse a new language extension, ``DerivingVia``. ``DerivingVia`` will imply
+We propose a new language extension, ``DerivingVia``. ``DerivingVia`` will imply
 ``DerivingStrategies``, as ``DerivingVia`` requires using deriving strategy
 syntax.
 
