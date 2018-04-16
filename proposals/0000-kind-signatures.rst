@@ -78,6 +78,9 @@ Proposed Change Specification
    signatures.
 
    Associated types may be given kind signatures within their classes.
+
+   Unlike type signatures, the type variables brought into scope in a type-level kind
+   signature do *not* scope over the type definition.
    
    Top-level kind signatures are enabled with the extension ``-XTopLevelKinds``.
 
