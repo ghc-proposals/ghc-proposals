@@ -108,6 +108,11 @@ I don't foresee intricate interactions with other features.
 
 Template Haskell will need to be updated accordingly.
 
+Note that this proposal depends on `#81`_, which adds a bit of syntax necessary
+to give, e.g., ``data ProxyVis k (a :: k)`` a kind signature.
+
+.. _`#81`: https://github.com/ghc-proposals/ghc-proposals/pull/81
+
 Costs and Drawbacks
 -------------------
 Implementation should be rather straightforward, as this is a new syntactic construct.
