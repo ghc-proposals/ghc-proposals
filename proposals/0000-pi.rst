@@ -305,6 +305,105 @@ be shown to Haskell learners for a bit, so I don't think this will have
 immediate impact on education. However, there may be impacts down the road
 caused by dependent types.
 
+In the debate about this proposal, I wanted to write down some of these
+drawbacks about full dependent types (though not, strictly, of the
+features proposed here.) Here are some:
+
+- The language becomes more complicated. Haskell already has a reputation of
+  being impossible to learn, and if dependent types appear everywhere, this
+  reputation will be reinforced, to the language's detriment. I am indeed
+  worried about this. Care will have to be taken by library authors to make
+  dependent types an opt-in experience.
+
+- Error messages might worsen. I'm actually not terribly worried about this,
+  as I believe clever engineering can avoid it. There was not a degradation in error messages from
+  ``-XTypeInType``. Errors still use the words "kind" and "type" to mean different
+  things! Even forgetting about dependent types, I think GHC's error messages
+  need an overhaul, basically to become more like Idris's. (That is,
+  interactive.) Especially if we have interactivity in error messages, then
+  there are even more ways to mitigate the potential trouble of dependent
+  types. Note that Haskell's tradition of language extensions help us here: if
+  a user makes a type error in simple code -- but that code might have a
+  meaning in a dependently typed setting -- then we can use the presence or
+  absence of language extensions to tailor the message. (In particular, we
+  might want to be conservative in recommending that the user enable
+  -XDependentTypes.)
+
+- The abstraction will sometimes leak. The most glaring example of this is
+  when the type of ``($)`` started muttering about levity polymorphism. That was
+  terrible! I do think that, with care, we can avoid this, by continuing to
+  use compiler flags to tailor output and/or adding interactivity to GHC's
+  output.
+
+- The implementation becomes more complicated. Well, yes, though perhaps we'll
+  lose some duplication once GHC no longer has separate Expr and Type types.
+
+Why 12 quantifiers?
+-------------------
+
+A particular pain point of this proposal is that it suggests using *twelve*
+quantifiers in place of Haskell's current three. This section discusses this
+design decision in detail.
+
+First off, to preserve type erasure, we need to distinguish between arguments
+needed at runtime and those that can be erased. Let's see some alternatives to
+the ``forall`` / ``foreach`` distinction proposed here:
+
+* Coq does this through its ``Set`` vs. ``Prop`` mechanism, where erased arguments live
+  in their own sort. Such a route is viable for Haskell, I think, but I've
+  never been much enamored of it, personally. For example, the ``Nat`` in a vector
+  type really can be erased, while ``Nat``\s in many other places can't be, and it
+  seems a shame to need two different ``Nat`` types to pull off this dichotomy.
+
+* Agda uses the term *irrelevant* to describe type indices that are ignored
+  during type equality checks. This is related to the type erasure property,
+  but it's not quite the same thing. It's unclear to me what types Agda can
+  erase, and I don't think Agda gives any solid guarantees as to erasure. (As
+  a language aiming for performance, Haskell needs to provide such a
+  guarantee.)
+
+* Idris does whole-program analysis to determine erasability. I can't imagine
+  this scales well.
+
+The choice I've made in the design of Dependent Haskell is to have the user
+choose whether to keep an argument or not, leading to the ``forall`` / ``foreach``
+distinction. This brings us from 3 quantifiers to 4. In truth, 4 is enough to
+power dependent types! But read on.
+
+All dependently typed languages give a facility for the user to control the
+visibility of arguments. If we want to do the same, we go from 4 quantifiers
+to 6. (We don't go to 8 because the original ``->`` and ``=>`` already differ in
+visibility.) Note, though, that Coq doesn't consider visibility as a feature
+of a type, instead using, essentially, pragmas to control visibility. This has
+some benefits (higher-order usages of functions can't fall over based on
+visibility), but it doesn't seem well-suited for Haskell.
+
+Quite separately, we also will likely want to allow currying in type-level
+operations. Partially-applied type families are currently forbidden because
+doing so would wreak havoc with type inference. The solution I've proposed
+here is a notion of *matchability*, described above and in Section 4.2.4 of my
+thesis_ (which can be read independently of the rest of it).
+It turns out that all previous 6 quantifiers are
+useful in both the matchable and unmatchable varieties, bringing us to 12.
+
+Note that other dependently typed languages don't have a notion of
+matchability. They generally also don't have injective type constructors (you
+can't derive ``a ~ b`` from ``Maybe a ~ Maybe b``) and don't have the guess-free
+type inference Haskell has. Instead, those languages generally rely on
+higher-order unification, which is a best-guess algorithm (as I understand
+it). GHC has stayed away from guessing. We might imagine a future for GHC that
+allows partially-applied type functions without using matchability, but I
+conjecture that any such future would also have to offer weaker guarantees for
+the predictability and stability of type inference. It might be a fruitful
+debate to see which is better -- stable type inference or fewer quantifiers.
+
+My bottom line: I don't like the 12 quantifiers either. And dependent types
+require really only 1 new one. Two more come along for the convenience of
+invisible arguments. And then we have to double for matchability. (Note that
+matchability can be considered quite orthogonally to dependent types -- it has
+even been proposed separately in #52.) Perhaps I've overshot in the design
+here and some healthy debate here can whittle the number down.
+
 Alternatives
 ------------
 * For a long time, the keyword for relevant quantification has been thought to
