@@ -32,10 +32,8 @@ This proposal suggests to remove the backward-compatibility features, embracing
 
 * Deprecate the ``-XTypeInType`` extension (as it would be a synonym for ``-XPolyKinds -XDataKinds``).
 
-* Use ``Type`` instead of ``*`` when referring to the kind of types with values (e.g.,
-  the kind of ``Int``) in error messages.
-
-* Introduce a new extension ``-XStarIsType`` to control how to parse ``*`` in code.
+* Introduce a new extension ``-XStarIsType`` to control how to parse ``*`` in code
+  and whether to print it in error messages.
 
 Motivation
 ------------
@@ -57,7 +55,9 @@ Motivation
   variant identically, adding to this cost.
 
   The new approach to handling ``*`` makes it obvious in the *parser* whether ``*`` is
-  infix or not, vastly simplifying matters.
+  infix or not, vastly simplifying matters. Also, by using an extension to specify
+  the handling of ``*``, it is straightforward also to have the same extension control
+  output in error messages.
 
 * If we plan to remove ``*`` from the language at some point, we should start updating
   error messages sooner than later.
@@ -74,6 +74,10 @@ Motivation
   these days) while ``-XPolyKinds -XDataKinds`` wouldn't. That possibility has not come to
   fruition (happily), and so the distinction isn't really paying its way.
   Note that what we're doing here is very much like the merger between ``-XRankNTypes`` and ``-XRank2Types``.
+
+  The one difference between ``-XPolyKinds`` and ``-XTypeInType`` that's worth preserving
+  is that the former allows easy access to the kind ``*``. The ``-XStarIsType`` extension
+  is meant to preserve this difference.
   
 Proposed Change Specification
 -----------------------------
@@ -111,9 +115,7 @@ Proposed Change Specification
       
 3. Two releases after this proposal is implemented, deprecate ``-XTypeInType``.
       
-4. The pretty-printer will print ``Type`` instead of ``*`` in error messages.
-
-5. Introduce a new language extension ``-XStarIsType``, with the following behavior:
+4. Introduce a new language extension ``-XStarIsType``, with the following behavior:
 
    a. ``-XStarIsType`` is on by default.
 
@@ -125,13 +127,16 @@ Proposed Change Specification
       with a qualifying module name. For example, ``8 ~ (4 GHC.TypeLits.* 2)``, or
       ``8 ~ (4 L.* 2)`` if we have ``import GHC.TypeLits as L``.
 
-   d. Without ``-XStarIsType``, there is no way to use the symbol ``*`` to refer
+   d. When ``-XStarIsType`` is on, the pretty-printer will print ``Type``
+      instead of ``*`` in error messages.
+
+   e. Without ``-XStarIsType``, there is no way to use the symbol ``*`` to refer
       to the kind of types with values. Use ``Type`` instead. The symbol ``*`` will
       refer to any type-level binary operator ``*`` in scope, according to the
       normal scoping rules. (If ``-XTypeOperators`` is not in effect, use of ``*``
       in a type will be an error.)
 
-   e. For two releases, ``-XTypeOperators`` will imply ``-XNoStarIsType``, to
+   f. For two releases, ``-XTypeOperators`` will imply ``-XNoStarIsType``, to
       provide a migration path for code that uses the binary operator ``*``. (After
       two releases, this code can include ``-XNoStarIsType`` explicitly without
       going against the three-release policy.) Users can re-enable ``-XStarIsType``
@@ -157,18 +162,6 @@ Costs and Drawbacks
 -------------------
 
 * This is a simplification to the implementation and description of GHC. Hooray!
-
-* There are gobs of resources that use ``*``. These would all go out of date. This
-  fact makes me sad. However, just about everyone whom I've taught about kinds gets
-  very confused about the name ``*``, thinking that ``*`` is some kind of universal
-  kind that encompasses all other kinds. (Indeed, I thought this, too, once upon a
-  time.)
-
-* The Haskell Reports mention ``*`` by name. If error messages print ``Type`` instead
-  of ``*``, we'll be further from the behavior that the Report authors intended at the
-  time. However, as the Reports do not specify error message text, this change does
-  not bring us further from formal compliance to the letter of the Report. It would bring
-  us further from the spirit of the Report.
 
 * This will effectively create two different versions of ``-XPolyKinds`` and ``-XDataKinds``,
   which could be problematic for users who want tooling to choose compilers
@@ -203,14 +196,23 @@ Alternatives
    I personally do not think this addition is worth it, but it was suggested
    on the pull request.
 
-5. Continue to output ``*`` in error messages when ``-XStarIsType`` is enabled.
+5. Report ``Type`` in error messages, regardless of whether ``-XStarIsType`` is enabled.
+   An advantage here is that I think ``Type`` is easier to understand than ``*``:
+   just about everyone whom I've taught about kinds gets
+   very confused about the name ``*``, thinking that ``*`` is some kind of universal
+   kind that encompasses all other kinds. (Indeed, I thought this, too, once upon a
+   time.)
 
-   This alternative has the very real benefit of conforming to existing educational
-   materials. However, my own experience is that the name ``*`` is confusing (leading
-   newer Haskellers to think it is some kind of wildcard). I would like to work toward
-   a future where ``*`` is removed from the language, and changing error messages
-   is one step in that direction.
+   This alternative has two noteworthy drawbacks:
 
+   * There are gobs of resources that use ``*``. These would all go out of date.
+
+   * The Haskell Reports mention ``*`` by name. If error messages print ``Type`` instead
+     of ``*``, we'll be further from the behavior that the Report authors intended at the
+     time. However, as the Reports do not specify error message text, this change does
+     not bring us further from formal compliance to the letter of the Report. It would bring
+     us further from the spirit of the Report.   
+   
 .. |star| unicode:: U+2605 .. unicode star
    
 6. Currently, and in this proposal, both ``*`` and its unicode variant |star| are
@@ -251,17 +253,12 @@ Unresolved questions
 
 * Is this the right deprecation schedule? Is it moving too fast?
 
-* What is the educational impact of this proposal? I see problems along at least two
-  different dimensions:
+* What is the educational impact of this proposal? Specifically,
+  ``-XPolyKinds`` is now bigger and harder to learn. On the other hand, the
+  previous implementation of ``-XPolyKinds`` has some restrictions that may
+  not have been obvious to users.
 
-  a. ``-XPolyKinds`` is now bigger and harder to learn. On the other hand, the previous
-     implementation of ``-XPolyKinds`` has some restrictions that may not have been
-     obvious to users.
-
-  b. Moving away from ``*`` as the kind of types disagrees with educational literature,
-     but I think ``Type`` is more descriptive than ``*``.
-
-* What do we want the long-term future of ``*`` to be? As you can see, I favor removing
+* What do we want the long-term future of ``*`` to be? I favor removing
   it after a long time (> 5 years). But deciding now what we want to have in the distant
   future can influence decisions made in the meantime. One particular decision: should
   ``-Wcompat`` warn on uses of ``*`` as ``Type``? Relatedly, should there be a plan
