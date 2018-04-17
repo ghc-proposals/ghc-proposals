@@ -1,8 +1,7 @@
 .. proposal-number:: Leave blank. This will be filled in when the proposal is
                      accepted.
-
-.. trac-ticket:: 12389
-
+.. trac-ticket:: Leave blank. This will eventually be filled with the Trac
+                 ticket number which will track the progress of the
 .. implemented:: Leave blank. This will be filled in with the first GHC version which
                  implements the described feature.
 
@@ -12,17 +11,17 @@ This proposal is `discussed at this pull request <https://github.com/ghc-proposa
 
 .. contents::
 
-Trailing and leading commas for subexport lists
+ExtraCommas
 ==============
 
 The `Haskell 2010 Report <https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1000005.2>`_ permits a trailing comma in the main export list.
 The subexport list, for data constructors of a type, does not permit a trailing or leading comma.
-This proposal extends GHC's syntax for subexport lists to allow leading and trailing commas.
+This proposal extends GHC's syntax to allow leading and trailing commas in delimited enumerations, including export lists, import lists, contraints, lists, etc.
 
 Motivation
 ------------
 
-This proposal is initially motivated by `this Trac issue <https://ghc.haskell.org/trac/ghc/ticket/12389>`_, where extraneous warnings are generated for duplicate/redundant exports in the presence of CPP macros.
+This proposal was initially motivated by `this Trac issue <https://ghc.haskell.org/trac/ghc/ticket/12389>`_, where extraneous warnings are generated for duplicate/redundant exports in the presence of CPP macros.
 The issue reported that in order to avoid warnings, every permutation of exports had to be defined::
 
     module Foo (
@@ -55,9 +54,28 @@ As the export list already supports trailing commas, it makes sense to allow sub
 For the most part, leading commas have the same arguments as trailing commas.
 There is much less discussion of this online, as Haskell appears to be one of the only languages that generally prefers leading commas for lists of any sort.
 
+Extending these changes to other uses of comma delimited lists confers the same benefits to these uses.
+
+An exception is made for tuple values.
+The syntax `(a, b,)` in a tuple would conflict with the `TupleSections` language extension.
+The type of a tuple depends on how many elements it contains, and hav
+
 Proposed Change Specification
 -----------------------------
-The grammar for export items is currently::
+
+For each of these:
+
+* record-like occurences (declarations, patterns, constructions, etc)
+* module export lists
+* module import lists
+* lists literals (i.e. [], both type-level & term-level)
+* fixity declarations
+* comma-separated enumerations in type-signatures (e.g. (Monad m, Monoid m) => ...)
+* (maybe) pattern guards
+
+Modify the grammar to accept a trailing and leading comma.
+
+As an example, the grammar for export items is currently::
 
     export -> qvar
             | qtycon[(..)|(cname_1, ..., cname_n)]  (n >= 0)
@@ -68,8 +86,11 @@ This proposal will change the sublists in the ``qtycon`` and ``qtycls`` to have 
 
     ([,]id_1, ..., id_n [,]) (n >= 0)
 
+Other syntaxes will follow the same model.
+
 Effect and Interactions
 -----------------------
+
 This proposal provides a solution for the initial issue as described in the motivation.
 The problem code is repeated::
 
@@ -99,35 +120,30 @@ Given trailing and leading commas, one could instead write::
     #endif
     )
 
+There is a potential interaction with `TupleSections`, if this change were allowed for tuple values.
+`TupleSections` will interpret `(a, b, )` as `(a, b, ) :: c -> (a, b, c)`, while `ExtraCommas` would interpret it as `(a, b, ) :: (a, b)`.
+
+
 Costs and Drawbacks
 -------------------
-Implementing this change is a small modification to the Haskell grammar and parser.
-Many languages in common use support trailing commas in certain contexts, so this is unlikely to be confusing.
 
-However, people might wonder why they can use a trailing/leading comma in an export list, but not in a Haskell list or tuple, or a Haskell record declaration.
-Currently, trailing commas are permitted in the export list and `in import lists (but not import sub-lists) <https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1010005.3>`_.
+Implementing this requires a change to the parser and the creation of a new language extension.
+Many languages in common use support trailing commas in certain contexts, so this is unlikely to be confusing for people coming from other language.
 
 Alternatives
 ------------
 
-1. Only allow a trailing comma in the sub-export list.
-   This is consistent with the main export list, but will mean that the original issue will need to use somewhat un-idiomatic trailing commas in the sub-export list.
-#. Extend this change to import sub-lists, for consistency.
-#. Extend this change to record declarations as well.
-#. Extend this change to value-level lists and tuples (this seems like it would be much more invasive, especially considering ``TupleSections``).
+1. Extend this change to value-level tuples (this seems like it would be much more invasive, especially considering ``TupleSections``).
 
 Unresolved questions
 --------------------
 Simon Peyton Jones posed the following questions:
 
-1. It should be consistent with exports lists themselves. 
-   Do they allow leading commas? If not, it'd make sense to add them. 
-   Thus ``module M( , f, g, ) where ...``
-#. Do we allow multiple leading or trailing commas?
+1. Do we allow multiple leading or trailing commas?
    What about repeated commas in the middle of a list?
-#. What about import lists? Should they not be consistent?
-#. Should we require a language extension flag?
 
 Implementation Plan
 -------------------
+
 A patch to the parser has been made in `this Phabricator diff <https://phabricator.haskell.org/D4134>`_ to implement trailing and leading commas in the subexport list.
+That work can be extended to include the other cases.
