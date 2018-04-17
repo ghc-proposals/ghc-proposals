@@ -139,8 +139,7 @@ Unresolved questions
 --------------------
 Simon Peyton Jones posed the following questions:
 
-1. Do we allow multiple leading or trailing commas?
-   What about repeated commas in the middle of a list?
+1. What about repeated commas in the middle of a list?
 
 Implementation Plan
 -------------------
