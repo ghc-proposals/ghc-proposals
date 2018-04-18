@@ -154,11 +154,13 @@ Effect and Interactions
   context means:
 
   1. If ``-XTypeInType`` is in effect:
+     
      a. If the use of ``*`` refers to ``Data.Kind.*``, then parse it as an
 	alphanumeric identifier; it means ``Type``.
      b. If ``*`` refers to some other type, it is a binary operator.
 
   2. If ``-XTypeInType`` is not in effect:
+     
      a. If the use of ``*`` is in a context that is syntactically understood
 	to be a kind, ``*`` is parsed as an alphanumeric identifier and means
 	``Type``.
