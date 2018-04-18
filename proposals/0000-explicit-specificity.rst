@@ -17,6 +17,10 @@ This proposal is `discussed at this pull request <https://github.com/ghc-proposa
 Explicit specificity in type variable binders
 =============================================
 
+This proposal introduces new syntax ``typeRep :: forall {k} (a :: k). ...`` (the
+braces are new) to allow a user to quantify a variable without affecting
+downstream users who might use visible type application.
+
 `Visible type application
 <https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#visible-type-application>`_
 brings with it the need to classify type variable arguments to functions as
@@ -97,6 +101,23 @@ Proposed Change Specification
 
   The braces do not affect this feature at all.
 
+* Braces would also be allowed around type variables introduced in a class declaration.
+  Braced variables would be *inferred* in the types of class methods. Example::
+
+    class C a {b} where
+      meth1 :: c -> a -> b
+      meth2 :: forall d {e}. a -> b -> d -> e
+
+  Then, we would have the following types of the methods::
+
+    meth1 :: forall a {b}. C a b => forall c. c -> a -> b
+    meth2 :: forall a {b}. C a b => forall d {e}. a -> b -> d -> e
+
+  Note that the braces do not affect the kind of ``C``, only the types of the methods.
+  Note also that this pattern of binding class variables, including the class constraint,
+  and then binding other type variables is not new to this proposal; this is how it is
+  today.
+    
 Effect and Interactions
 -----------------------
 
@@ -111,12 +132,14 @@ This change is fully backward-compatible.
 
 This change seems to be future-compatible as well: if we ever allow record syntax in types, that
 will not conflict with this new feature, as the change proposed here affects only type variable
-binder syntax, not the syntax of full-blooded types.
+binder syntax, not the syntax of full-blooded types. It is also compatible with 
+`visible type application in types <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0015-type-level-type-applications.rst>`_,
+though we would need to use `top-level kind signatures <https://github.com/ghc-proposals/ghc-proposals/pull/54>`_
+to indicate where we wanted inferred variables.
 
 This syntax echoes the use in other languages where braces are used to denote invisible arguments.
 In Haskell, however, type variables are invisible by default; the braces here serve to make the
 argument "more invisible".
-
 
 Costs and Drawbacks
 -------------------
