@@ -127,14 +127,15 @@ Proposed Change Specification
       with a qualifying module name. For example, ``8 ~ (4 GHC.TypeLits.* 2)``, or
       ``8 ~ (4 L.* 2)`` if we have ``import GHC.TypeLits as L``.
 
-   d. When ``-XStarIsType`` is on, the pretty-printer will print ``Type``
+   d. When ``-XStarIsType`` is not on, the pretty-printer will print ``Type``
       instead of ``*`` in error messages.
 
-   e. Without ``-XStarIsType``, there is no way to use the symbol ``*`` to refer
-      to the kind of types with values. Use ``Type`` instead. The symbol ``*`` will
-      refer to any type-level binary operator ``*`` in scope, according to the
-      normal scoping rules. (If ``-XTypeOperators`` is not in effect, use of ``*``
-      in a type will be an error.)
+   e. Without ``-XStarIsType``, there is no way to use the symbol ``*`` to
+      refer to the kind of types with values. Use ``Type`` (which can be
+      imported from ``Data.Kind``) instead. The symbol ``*`` will refer to any
+      type-level binary operator ``*`` in scope, according to the normal
+      scoping rules. (If ``-XTypeOperators`` is not in effect, use of ``*`` in
+      a type will be an error.)
 
    f. For two releases, ``-XTypeOperators`` will imply ``-XNoStarIsType``, to
       provide a migration path for code that uses the binary operator ``*``. (After
@@ -147,6 +148,30 @@ Proposed Change Specification
 Effect and Interactions
 -----------------------
 
+* One way to understand the changes to ``*`` is this:
+
+  Currently, GHC follows this process to determine what a ``*`` in a type-level
+  context means:
+
+  1. If ``-XTypeInType`` is in effect:
+     a. If the use of ``*`` refers to ``Data.Kind.*``, then parse it as an
+	alphanumeric identifier; it means ``Type``.
+     b. If ``*`` refers to some other type, it is a binary operator.
+
+  2. If ``-XTypeInType`` is not in effect:
+     a. If the use of ``*`` is in a context that is syntactically understood
+	to be a kind, ``*`` is parsed as an alphanumeric identifier and means
+	``Type``.
+     b. Otherwise, it is a binary operator.
+
+  Under this proposal, this is all simplified to this:
+
+  1. If ``-XStarIsType`` is in effect, ``*`` is parsed as an alphanumeric
+     identifier and means ``Type``.
+  2. Otherwise, ``*`` is a binary operator.
+
+  Much simpler!
+
 * Note that the design of this proposal conforms to the three-release policy,
   in that users will not need to use CPP to avoid warnings. (In particular,
   note that ``import Data.Kind`` is always a fine thing to do, even without
@@ -157,7 +182,25 @@ Effect and Interactions
   scoping the same way we do type-variable scoping, as proposed in `#103`_.
 
 .. _`#103`: https://github.com/ghc-proposals/ghc-proposals/pull/103
-  
+
+* Migration path: For most users, no migration will be necessary. The exception
+  will be those programs that have both
+
+    - ``-XTypeOperators`` enabled
+    - Use ``*`` as a kind
+
+  These modules will suddenly have ``-XNoStarIsType`` in effect, meaning that
+  their use of ``*`` will refer to a binary operator. These modules have a
+  choice of how to proceed. They can either:
+
+    1. Declare ``-XStarIsType``. If they ever
+       use ``*`` as a binary operator, those uses would have to be qualified
+       with a module prefix.
+
+    2. Import ``Type`` from ``Data.Kind`` and change uses of ``*`` to ``Type``.
+       If they already have a ``Type`` in scope, they may have to use qualified
+       imports, etc.
+
 Costs and Drawbacks
 -------------------
 
