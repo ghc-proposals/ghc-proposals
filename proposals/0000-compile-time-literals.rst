@@ -53,7 +53,7 @@ When this extension is enabled, the resolution of literals will be accomplished 
 
  class CompileList a where
      type Item a
-     compileList :: [Item a] -> a
+     compileList :: [Item a] -> Either String a
 
 To preserve backwards compatibility, a compiler-provided default instance will be provided for each class that falls back to the old behavior::
 
