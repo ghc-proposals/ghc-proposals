@@ -188,20 +188,20 @@ Effect and Interactions
 * Migration path: For most users, no migration will be necessary. The exception
   will be those programs that have both
 
-    - ``-XTypeOperators`` enabled
-    - Use ``*`` as a kind
+  - ``-XTypeOperators`` enabled
+  - Use ``*`` as a kind
 
   These modules will suddenly have ``-XNoStarIsType`` in effect, meaning that
   their use of ``*`` will refer to a binary operator. These modules have a
   choice of how to proceed. They can either:
 
-    1. Declare ``-XStarIsType``. If they ever
-       use ``*`` as a binary operator, those uses would have to be qualified
-       with a module prefix.
+  1. Declare ``-XStarIsType``. If they ever
+     use ``*`` as a binary operator, those uses would have to be qualified
+     with a module prefix.
 
-    2. Import ``Type`` from ``Data.Kind`` and change uses of ``*`` to ``Type``.
-       If they already have a ``Type`` in scope, they may have to use qualified
-       imports, etc.
+  2. Import ``Type`` from ``Data.Kind`` and change uses of ``*`` to ``Type``.
+     If they already have a ``Type`` in scope, they may have to use qualified
+     imports, etc.
 
 Costs and Drawbacks
 -------------------
