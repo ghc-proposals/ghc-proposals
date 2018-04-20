@@ -1050,6 +1050,85 @@ Alternatives
 This section describes variants that could be considered for inclusion
 in the proposal.
 
+Lexical tokens of the multiplicity-parametric arrow
+---------------------------------------------------
+
+Assuming that the multiplicity polymorphic arrow deserves a full-blown
+mixfix syntax, here are other notations which have been floated:
+
+- ``(-p->)``
+- ``(->_p)`` (using the ``_`` to represent the subscript from the
+  paper as in Latex)
+- ``(->:p)``. We've used this one a little, and found that it was
+  confusing, seeming to attach the multiplicity to the result, where
+  it ought to be thought as affecting the argument. The same probably
+  apply to ``(->_p)``.
+
+Lexical token of the linear arrow
+---------------------------------
+
+We propose ``(->.)`` as a notation for the linear arrow. An
+alternative, based on the resemblance with the Unicode notation
+``(⊸)`` would be ``(-o)``.
+
+We chose ``(->.)`` because it does not change the lexer (``-o`` is not
+a token in current GHC, and ``a-o`` is currently interpreted as ``(-)
+a o``). ``-o`` does not convey the intuition that ``->.`` is just
+``->`` for most intents and purposes (except for those advanced users
+who do care about the distinction).
+
+Another proposed alternative is ``(:->)`` based, on the ``(: p ->)``
+syntax for multiplicity-annotated arrows.
+
+Syntax of multiplicity expression
+---------------------------------
+
+Dedicated syntax
+~~~~~~~~~~~~~~~~
+
+We proposed that, in ``a :p-> b``, ``p`` could be any expression, as
+long as it is of kind ``Multiplicity``. This is simpler in terms of
+modifying the parser, but the error messages may be confusing for very
+little benefit: in practice we would expect to have polynomial
+expressions of multiplicity variables. Plus, any expression beyond
+this form is unlikely to be resolved by the type checker
+satisfactorily.
+
+So we could decide to restrict ``p`` to the following grammar:
+
+.. code:: bnf
+
+  MULT ::= 'One
+         | 'Omega
+         | VARIABLE
+         | MULT :+ MULT
+         | MULT :* MULT
+         | ( MULT )
+
+Constrained variables
+~~~~~~~~~~~~~~~~~~~~~
+
+Another simple variant on the syntax of ``a :p-> b`` is to restrict
+``p`` to be a variable, and when ``p`` needs to be a composed
+expression, use a constraint of the form ``p ~ q :* r``.
+
+This alternative is probably the simplest in terms of parsing. It has
+the drawback that composed multiplicity expression seem to appear
+mostly in result position. Such as in the composition function
+
+::
+
+  (.) :: (b :q-> c) ->. (a :p-> b) :q-> (a :(p :* q)-> c)
+
+which would become
+
+::
+
+  (.) :: (r ~ p :* q ) => (b :q-> c) ->. (a :p-> b) :q-> (a :r-> c)
+
+It does look a bit curious. But it's a possiblity worth considering.
+
+
 Syntax of the multiplicity-parametric arrow
 -------------------------------------------
 
@@ -1081,57 +1160,6 @@ except to the left of an arrow. And ``WithMult a p -> b`` means
 ::
 
   map :: (a `WithMult` p -> b) -> [a] `WithMult` p -> [b]
-
-Syntax of multiplicity expression
----------------------------------
-
-We proposed that, in ``a :p-> b``, ``p`` could be any expression, as
-long as it is of kind ``Multiplicity``. This is simpler in terms of
-modifying the parser, but the error messages may be confusing for very
-little benefit: in practice we would expect to have polynomial
-expressions of multiplicity variables. Plus, any expression beyond
-this form is unlikely to be resolved by the type checker
-satisfactorily.
-
-So we could decide to restrict ``p`` to the following grammar:
-
-.. code:: bnf
-
-  MULT ::= 'One
-         | 'Omega
-         | VARIABLE
-         | MULT :+ MULT
-         | MULT :* MULT
-
-Lexical tokens of the multiplicity-parametric arrow
----------------------------------------------------
-
-Assuming that the multiplicity polymorphic arrow deserves a full-blown
-mixfix syntax, here are other notations which have been floated:
-
-- ``(-p->)``
-- ``(->_p)`` (using the ``_`` to represent the subscript from the
-  paper as in Latex)
-- ``(->:p)``. We've used this one a little, and found that it was
-  confusing, seeming to attach the multiplicity to the result, where
-  it ought to be thought as affecting the argument. The same probably
-  apply to ``(->_p)``.
-
-Lexical token of the linear arrow
----------------------------------
-
-We propose ``(->.)`` as a notation for the linear arrow. An
-alternative, based on the resemblance with the Unicode notation
-``(⊸)`` would be ``(-o)``.
-
-We chose ``(->.)`` because it does not change the lexer (``-o`` is not
-a token in current GHC, and ``a-o`` is currently interpreted as ``(-)
-a o``). ``-o`` does not convey the intuition that ``->.`` is just
-``->`` for most intents and purposes (except for those advanced users
-who do care about the distinction).
-
-Another proposed alternative is ``(:->)`` based, on the ``(: p ->)``
-syntax for multiplicity-annotated arrows.
 
 Records in GADT syntax
 ----------------------
