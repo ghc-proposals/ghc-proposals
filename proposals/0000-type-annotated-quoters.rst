@@ -24,10 +24,10 @@ Motivation
 Proposed Change Specification
 -----------------------------
 
-Introduce a new data type ``data QuasiQuoterExp a = QuasiQuoterExp (String -> Q Exp)`` in ``Language.Haskell.TH.Quote`` module.
+Introduce a new data type ``data QuasiQuoterExp a = QuasiQuoterExp (String -> Q (TExp a))`` in ``Language.Haskell.TH.Quote`` module.
 
 * Allow ``quoter :: QuasiQuoterExp a`` to be spliced in the same way a ``QuasiQuoter`` which has ``quoteExp`` defined.
-* The spliced expression should be annotated with type ``a``, and this will be checked during type checking.
+* The spliced expression `TExp a` is be annotated with type ``a``, and this will be checked during type checking.
 * Add document on how ``QuasiQuoterExp a`` should be used to splice an `a` typed expression into user's code. 
 
 
