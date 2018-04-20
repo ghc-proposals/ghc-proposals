@@ -35,7 +35,7 @@ Effect and Interactions
 
 For expression quoter writers, adding ``TQuasiQuoter a`` mainly reduce the documentation burden since the result expression's type is already annotated. Users can spot the result type much more easily and become more confident in using these quoters. When beginners click through the ``TQuasiQuoter`` document link, they're supposed to get the basic knowledge on how to enable some language extensions and splice quoters into their code.
 
-`<@simonpj https://github.com/simonpj>`_ rise another point on how this proposal will improve error message, consider::
+`@simonpj <https://github.com/simonpj>`_ rise another point on how this proposal will improve error message, consider::
 
 
   qq :: TQuasiQuoter Char
