@@ -38,24 +38,37 @@ This proposal fills this gap, by allowing type applications in pattern syntax an
 Proposed Change Specification
 -----------------------------
 
+Preliminary remark 1: The intention of the following specification is that the following holds: For a constructor with type ``C :: forall a. a -> …`` the meaning of ``C @ty x`` should coincide with the existing form ``C (x :: ty)``. If that is not the case, then this is likely a bug in the specification.
+
+Preliminary remark 2: The ``ScopedTypeVariables`` is not very well specified. The following attempts to specify it, and may make more programs type check, but should not change the meaning of existing programs. If so, then that is likely a bug in the specification.
+
+
 When both ``TypeApplications`` and ``PatternSignatures`` are enabled, then type application syntax is
-available in patterns.
+available in patterns. 
 
-The meaning of ``C @_`` is simply ``C``, i.e. underscores in type applications in patterns are not treated as holes.
+If ``ScopedTypeVariables`` is enabled, then type applications and type signatures in pattern may mention type variables.
 
-For a constructor with type ``C :: forall a. a -> …`` the meaning of ``C @ty x`` is specified to
-coincide with the existing form ``C (x :: ty)``.
+A type variable mentioned in a pattern (in a type signature or a type application) that is not already in scope is brought into scope. The scope contains the pattern and the corresponding right-hand side.
 
-Equivalently, for a constructor with type ``C :: forall a. Proxy a -> …`` the meaning of ``C @ty x`` is specified to
-coincide with the existing form ``C (x :: Proxy ty)``.
+Consider a general data type and constructor::
 
-For a constructor with a type variable ``a`` that is not the type of any term argument, the meaning is 
-what it would be if it had corresponding proxy arguments.
+  data T a where MkT :: forall b, Ctx => ty1 -> T ty2
+  
+(using single variables and types as representatives for, in general, multiple variables and types) and the function definition::
 
-If ``ScopedTypeVariables`` is enabled, then ``ty`` may bring type variables into scope; the same rules
-as for ``ScopedTypeVariables`` apply.
+   foo :: T ty3 -> …
+   foo (MkT @ty4 (x :: ty5)) = e
 
-Further changes to ``ScopedTypeVariables`` will apply analogously to type applications in patterns.
+and assume that ``free_ty_vars(ty4, ty5) = {c}``. This pattern is well-typed if, for a fresh rigid variable ``b'``, there exists a type ``ty6`` (which may depend on ``b'``) such that type equations
+
+* ``ty2[b'/b] ~ ty3, Ctx => ty4[ty6/c] = b'`` and
+* ``ty2[b'/b] ~ ty3, Ctx => ty5[ty6/c] = ty1[b'/b]``
+
+hold. The right-hand-side ``e`` is then checked in a contex that contains the type variables  ``b'``, ``c``, the equality ``c ~ ty6`` and the typing judgement ``x :: ty1[b'/b]``.
+
+An underscore in a type signature or type application in a pattern is not treated as a hole.
+
+Further changes to ``ScopedTypeVariables`` should apply analogously to type applications in patterns.
 
 
 Effect and Interactions
@@ -94,6 +107,4 @@ existential and universal parameters) to the Haskell programmer.
 
 Unresolved questions
 --------------------
-The specification is a bit vague for constructors who have type variables that are neither the type of a term
-parameter, nor the argument to a proxy type in a the type of a term parameter. I hope the intent is still clear, 
-but I would appreciate help phrasing it in a more satisfying way.
+This is a very naive attempt at giving ``ScopedTypeVariables`` (and hence this feature) a formal specification, and I am happy to refine it.
