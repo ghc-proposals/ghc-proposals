@@ -191,8 +191,10 @@ Syntax
 
 .. _Syntax:
 
-*This section is only a proposal for a syntax for linear types. For
-other possibilities to consider, see the Alternatives_ section.*
+*This section is only a proposal for a syntax for linear types. We had
+to choose a syntax for the purpose of the proposal, but we are not
+particularly decided on it. We have listed all the alternatives in the
+Alternatives_ section.*
 
 This proposal adds two new syntactical constructs:
 
