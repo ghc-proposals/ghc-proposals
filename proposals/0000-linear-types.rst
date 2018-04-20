@@ -1053,10 +1053,17 @@ in the proposal.
 Lexical tokens of the multiplicity-parametric arrow
 ---------------------------------------------------
 
-Assuming that the multiplicity polymorphic arrow deserves a full-blown
-mixfix syntax, here are other notations which have been floated:
+Here are the potential notations for the multiplicity-parametric
+arrow:
 
+- ``(:p->)``. We use this one in the rest of the document, because we
+  had to make a choice. But it is not one that we feel particularly
+  about.
 - ``(-p->)``
+
+Here are other suggestions which have been floated, but we don't
+believe are very good:
+
 - ``(->_p)`` (using the ``_`` to represent the subscript from the
   paper as in Latex)
 - ``(->:p)``. We've used this one a little, and found that it was
@@ -1067,18 +1074,17 @@ mixfix syntax, here are other notations which have been floated:
 Lexical token of the linear arrow
 ---------------------------------
 
-We propose ``(->.)`` as a notation for the linear arrow. An
-alternative, based on the resemblance with the Unicode notation
-``(⊸)`` would be ``(-o)``.
+Here are the potential notations for the linear arrow:
 
-We chose ``(->.)`` because it does not change the lexer (``-o`` is not
-a token in current GHC, and ``a-o`` is currently interpreted as ``(-)
-a o``). ``-o`` does not convey the intuition that ``->.`` is just
-``->`` for most intents and purposes (except for those advanced users
-who do care about the distinction).
-
-Another proposed alternative is ``(:->)`` based, on the ``(: p ->)``
-syntax for multiplicity-annotated arrows.
+- ``(->.)`` the one we use in the proposal. The reasoning behind this
+  notation is that it conveys the intuition that the linear arrow is
+  just the same thing as ``(->)`` for most intents and purposes
+  (except for those advanced users who do care about the distinction).
+- ``(-o)`` is a natural ASCII representation of the Unicode notation
+  ``(⊸)``. But it requires changing the lexer (``-o`` is not a token
+  in current GHC, and ``a-o`` is currently interpreted as ``(-) a o``)
+- ``(:->)`` based on the notation ``(:p->)`` used for
+  multiplicity-parametric arrows.
 
 Syntax of multiplicity expression
 ---------------------------------
