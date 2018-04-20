@@ -18,7 +18,7 @@ Currently we use an uninformative ``QuasiQuoter`` type to handle all kinds of qu
 Motivation
 ------------
 
-``QuasiQuoter`` is a powerful tool to do compilation time code constrcution, but the type ``QuasiQuoter`` is rather uninformative, especially when it's an expression quoter. Those ``QuasiQuoter`` s appeared in documents on hackage not only didn't give users useful information, but also scared beginners away. If an expression quoter's type can carry spliced expression's type, these problem are relieved.
+``QuasiQuoter`` is a powerful tool to do compilation time code constrcution, but the type ``QuasiQuoter`` is rather uninformative, especially when it's an expression quoter. Those ``QuasiQuoter`` s appeared in documents on hackage not only didn't give users useful information, but also scared beginners away. If an expression quoter's type can carry spliced expression's type, these problems are relieved.
 
 
 Proposed Change Specification
@@ -27,9 +27,8 @@ Proposed Change Specification
 Introduce a new data type ``data TQuasiQuoter a = TQuasiQuoter (String -> Q (TExp a))`` in ``Language.Haskell.TH.Quote`` module.
 
 * Allow ``quoter :: TQuasiQuoter a`` to be spliced in the same way a ``QuasiQuoter`` which has ``quoteExp`` defined.
-* The spliced expression ``TExp a`` is be annotated with type ``a``, and this will be checked during type checking.
+* The spliced expression ``TExp a`` is annotated with type ``a``, and this will be checked during type checking.
 * Add document on how ``TQuasiQuoter a`` should be used to splice an `a` typed expression into user's code. 
-
 
 Effect and Interactions
 -----------------------
