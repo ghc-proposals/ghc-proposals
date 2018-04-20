@@ -13,7 +13,7 @@ Type annotated quoters
 .. sectnum::
 .. contents::
 
-Currently we use an uninformative ``QuasiQuoter`` type to handle all kinds of quoters, this bring troubles to expression quoter users. I propose adding ``QuasiQuoterExp a`` to handle expression quoters, where ``a`` denote the spliced expression's type.
+Currently we use an uninformative ``QuasiQuoter`` type to handle all kinds of quoters, this bring troubles to expression quoter users. I propose adding ``TQuasiQuoter a`` to handle expression quoters, where ``a`` denote the spliced expression's type.
 
 Motivation
 ------------
@@ -24,17 +24,27 @@ Motivation
 Proposed Change Specification
 -----------------------------
 
-Introduce a new data type ``data QuasiQuoterExp a = QuasiQuoterExp (String -> Q (TExp a))`` in ``Language.Haskell.TH.Quote`` module.
+Introduce a new data type ``data TQuasiQuoter a = TQuasiQuoter (String -> Q (TExp a))`` in ``Language.Haskell.TH.Quote`` module.
 
-* Allow ``quoter :: QuasiQuoterExp a`` to be spliced in the same way a ``QuasiQuoter`` which has ``quoteExp`` defined.
+* Allow ``quoter :: TQuasiQuoter a`` to be spliced in the same way a ``QuasiQuoter`` which has ``quoteExp`` defined.
 * The spliced expression ``TExp a`` is be annotated with type ``a``, and this will be checked during type checking.
-* Add document on how ``QuasiQuoterExp a`` should be used to splice an `a` typed expression into user's code. 
+* Add document on how ``TQuasiQuoter a`` should be used to splice an `a` typed expression into user's code. 
 
 
 Effect and Interactions
 -----------------------
 
-For expression quoter writers, adding ``QuasiQuoterExp a`` mainly reduce the documentation burden since the result expression's type is already annotated. Users can spot the result type much more easily and become more confident in using these quoters. When beginners click through the ``QuasiQuoterExp`` document link, they're supposed to get the basic knowledge on how to enable some language extensions and splice quoters into their code.
+For expression quoter writers, adding ``TQuasiQuoter a`` mainly reduce the documentation burden since the result expression's type is already annotated. Users can spot the result type much more easily and become more confident in using these quoters. When beginners click through the ``TQuasiQuoter`` document link, they're supposed to get the basic knowledge on how to enable some language extensions and splice quoters into their code.
+
+`<@simonpj https://github.com/simonpj>`_ rise another point on how this proposal will improve error message, consider::
+
+
+  qq :: TQuasiQuoter Char
+
+  blah = [|qq| unicode 78 |] && True
+
+
+With existing quasi-quote machinery we'd first have to run qq, splice in the resulting syntax tree, and then complain if it didn't typecheck. With a typed quasi-quoter we can complain right away: qq returns a ``TExp Char`` and that doesn't fit somewhere a Bool is needed.
 
 Costs and Drawbacks
 -------------------
