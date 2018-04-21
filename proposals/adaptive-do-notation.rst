@@ -13,7 +13,7 @@ Make ``>>=`` great again
 .. sectnum::
 .. contents::
 
-The ``Prelude.>>=`` combinator limit the return type as a ``m b``, which cause Monads not composable. In order to ease this restrictions, this proposal introduces another type class ``Dsl`` for do notation.
+The ``Prelude.>>=`` combinator limits the return type as a ``m b``, which cause Monads not composable. In order to ease this restrictions, this proposal introduces another type class ``Dsl`` for do notation.
 
 Motivation
 ----------
