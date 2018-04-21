@@ -1,5 +1,5 @@
-Make ``>>=`` great again
-========================
+Adaptive do notation
+====================
 
 .. proposal-number:: Leave blank. This will be filled in when the proposal is
                      accepted.
@@ -24,7 +24,7 @@ The state of art solution is `using only one monad <http://okmij.org/ftp/Haskell
 
 However, the ``Eff`` approach is heavy weight than ordinary monad. It's not very convenient to create an additional indirect layer for simple use cases.
 
-The ``Eff`` approach of bypassing ``>>=`` combinator is quite embarrassing. Since ``>>=`` settles on our logo, we should make it great again. This proposal aims to port the approach used in `Dsl.scala <https://github.com/ThoughtWorksInc/Dsl.scala>`_ to GHC. This approach improves the extensibility of `>>=`.
+The ``Eff`` approach of bypassing ``>>=`` combinator is quite embarrassing. Since ``>>=`` settles on our logo, In this proposal we present a new approach to enable multiple operations at once by improving ``>>=``. This proposal aims to port the approach used in `Dsl.scala <https://github.com/ThoughtWorksInc/Dsl.scala>`_ to GHC. This approach improves the extensibility of `>>=`.
 
 Proposed Change Specification
 -----------------------------
@@ -105,7 +105,7 @@ Alternatives
 
 Eff and mtl are known workarounds for this problem. Unfortunately, mtl is inefficient and Eff is too heavy-weight.
 
-``Dsl.>>=`` combinator can be used for do notation with the help of RebindableSyntax extension. However, RebindableSyntax does not make ``>>=`` great again by default.
+``Dsl.>>=`` combinator can be used for do notation with the help of RebindableSyntax extension. However, this proposal aims make ``Dsl.>>=`` be enabled by default.
 
 Unresolved questions
 --------------------
