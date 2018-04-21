@@ -61,14 +61,54 @@ Consider a general data type and constructor::
 
 and assume that ``free_ty_vars(ty4, ty5) = {c}``. This pattern is well-typed if, for a fresh rigid variable ``b'``, there exists a type ``ty6`` (which may depend on ``b'``) such that type equations
 
-* ``ty2[b'/b] ~ ty3, Ctx => ty4[ty6/c] = b'`` and
-* ``ty2[b'/b] ~ ty3, Ctx => ty5[ty6/c] = ty1[b'/b]``
+* ``ty2[b'/b] ~ ty3, Ctx[b'/b] => ty4[ty6/c] = b'`` and
+* ``ty2[b'/b] ~ ty3, Ctx[b'/b] => ty5[ty6/c] = ty1[b'/b]``
 
 hold. The right-hand-side ``e`` is then checked in a contex that contains the type variables  ``b'``, ``c``, the equality ``c ~ ty6`` and the typing judgement ``x :: ty1[b'/b]``.
 
 An underscore in a type signature or type application in a pattern is not treated as a hole.
 
 Further changes to ``ScopedTypeVariables`` should apply analogously to type applications in patterns.
+
+Examples
+--------
+
+Here is an example (taken from _#15050 <https://ghc.haskell.org/trac/ghc/ticket/15050#comment:10>_)::
+
+    type family F a where F Bool = Int
+    data T a where MkT :: forall b a. b ~ F a => b -> T a
+    foo :: T Bool -> ()
+    foo (MkT @Int _) = ()
+
+Lining this up with the specification, we have ``Ctx = b ~ F a``, ``ty1 = b``, ``ty2 = a``, ``ty3 = Bool``, ``ty4 = Int`` and ``ty5`` does not appear. This typechecks because the equation ```a ~ Bool, b' ~ F a => Int = b'`` holds. No type variables are bound here.
+
+A more complex example is this (also inspired by _#15050 <https://ghc.haskell.org/trac/ghc/ticket/15050>_)::
+
+    data T a where
+      MkT1 :: forall a.              T a
+      MkT2 :: forall a.              T (a,a)
+      MkT3 :: forall a b. b ~ Int => T a
+      MkT4 :: forall a b.            T a
+      MkT5 :: forall a b c. b ~ c => T a
+      
+    foo :: T (Int, Int) -> ()
+    foo (MkT1 @(Int,Int))  = ()
+    foo (MkT1 @(Int,x))    = (() :: x ~ Int => ())
+    foo (MkT1 @x)          = (() :: x ~ (Int,Int) => ())    
+    foo (MkT2 @x)          = (() :: x ~ Int => ())
+    foo (MkT3 @_ @Int)     = ()
+    foo (MkT4 @_ @x)       = (() :: x ~ x => ()) -- (these constraints here just to
+    foo (MkT5 @_ @x @x)    = (() :: x ~ x => ()) --  demonstrate that x is in scope)
+
+Why do these equations type-check? Let’s look at each of the 7 equations.
+
+1. We have ``Ctx = ()```, no ``ty1``, ``ty2 = a``, ``ty3 = (Int,Int)``, ``ty4 = (Int,Int)`` and no ``ty5``. This type checks because ``a' ~ (Int,Int) => (Int,Int) = a'`` holds.
+2. Here we bring a new type variable ``x`` into scope (this plays the role of ``c`` in the spec). We have ``Ctx = ()```, no ``ty1``, ``ty2 = a``, ``ty3 = (Int,Int)``, ``ty4 = (Int,x)`` and no ``ty5``. This type checks because ``a' ~ (Int,Int) => (Int,x) = a'`` if we assign ``x = Int``. The body of the function is type-checked with ``x ~ Int`` in scope.
+3. We bring a new type variable ``x`` into scope. We have ``Ctx = ()```, no ``ty1``, ``ty2 = a``, ``ty3 = (Int,Int)``, ``ty4 = x`` and no ``ty5``. This type checks because ``a' ~ (Int,Int) => x = a'`` if we assign ``x = (Int,Int)``. The body of the function is type-checked with ``x ~ (Int,Int)`` in scope.
+4. We bring a new type variable ``x`` into scope. We have ``Ctx = ()```, no ``ty1``, ``ty2 = (a,a)``, ``ty3 = (Int,Int)``, ``ty4 = x`` and no ``ty5``. This type checks because ``(a',a') ~ (Int,Int) => x = a'`` if we assign ``x = Int``. The body of the function is type-checked with ``x ~ Int`` in scope.
+5. We have ``Ctx = b ~ Int``, no ``ty1``, ``ty2 = a``, ``ty3 = (Int,Int)``, ``ty4₂ = Int`` and no ``ty5``. This type checks because ``a' ~ (Int,Int), b' = Int => Int = b'``.
+6.  We bring a new type variable ``x`` into scope. We have ``Ctx = ()``, no ``ty1``, ``ty2 = a``, ``ty3 = (Int,Int)``, ``ty4₂ = x`` and no ``ty5``. This type checks because ``a' ~ (Int,Int) => x = b'`` for ``x = b'`` The body of the function is type-checked with ``x ~ b'`` in scope (but ``b'`` is not visible to the user).
+7.  We bring a new type variable ``x`` into scope. We have ``Ctx = b ~ c``, no ``ty1``, ``ty2 = a``, ``ty3 = (Int,Int)``, ``ty4₂ = x``, ``ty4₃ = x`` and no ``ty5``. This type checks because ``a' ~ (Int,Int), b' ~ c' => x = b'`` and  ``a' ~ (Int,Int), b' ~ c' => x = c'`` hold with the assignemnt ``x = b'``. The body of the function is type-checked with ``x ~ b', b' ~ c'`` in scope.
 
 
 Effect and Interactions
