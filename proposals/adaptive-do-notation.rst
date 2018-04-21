@@ -86,7 +86,7 @@ Suppose you want to create a random number generator. The generated numbers shou
     do let tmp1 = seed ^ (shiftL seed 13)
        let tmp2 = tmp1 ^ (shiftR tmp1 17)
        let tmp3 = tmp2 ^ (shiftL tmp2 5)
-       Yield(tmp3)
+       Yield tmp3
        xorshiftRandomGenerator tmp3
 
 This ``Yield`` type should be similar to the ``yield`` keyword in C#, ECMAScript and Python. This is impossible for the ``<-`` desugared to ``Prelude.>>=`` because the return type ``[Int]`` and ``Yield Int`` are not match.
