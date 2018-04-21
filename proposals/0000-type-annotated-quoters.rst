@@ -40,7 +40,7 @@ For expression quoter writers, adding ``TQuasiQuoter a`` mainly reduce the docum
 
   qq :: TQuasiQuoter Char
 
-  blah = [|qq| unicode 78 |] && True
+  blah = [qq| unicode 78 |] && True
 
 
 With existing quasi-quote machinery we'd first have to run qq, splice in the resulting syntax tree, and then complain if it didn't typecheck. With a typed quasi-quoter we can complain right away: qq returns a ``TExp Char`` and that doesn't fit somewhere a Bool is needed.
