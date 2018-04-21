@@ -91,7 +91,7 @@ Suppose you want to create a random number generator. The generated numbers shou
 
 This ``Yield`` type should be similar to the ``yield`` keyword in C#, ECMAScript and Python. This is impossible for the ``<-`` desugared to ``Prelude.>>=`` because the return type ``[Int]`` and ``Yield Int`` are not match.
 
-See `Dsl.scala: creating library-defined keywords from ad-hoc polymorphic delimited continuations <https://thoughtworksinc.github.io/Dsl.scala/ldk.pdf>`_ for more use cases and benchmarks.
+See `examples in Dsl.scala <https://javadoc.io/page/com.thoughtworks.dsl/dsl_2.12/latest/com/thoughtworks/dsl/index.html>`_ for more use cases of ``Dsl.>>=``.
 
 The forwarder between ``Dsl`` and ``Monad`` should keep the backward compatibility to current behavior of do notation.
 
