@@ -89,11 +89,11 @@ Suppose you want to create a random number generator. The generated numbers shou
        Yield(tmp3)
        xorshiftRandomGenerator tmp3
 
-This ``Yield`` type should be similar to the ``yield`` keyword in C#, ECMAScript and Python. This is impossible for the current implementation of do notation because the return type ``[Int]`` and ``Yield Int`` are not match.
+This ``Yield`` type should be similar to the ``yield`` keyword in C#, ECMAScript and Python. This is impossible for the ``<-`` desugared to ``Prelude.>>=`` because the return type ``[Int]`` and ``Yield Int`` are not match.
 
 See `Dsl.scala: creating library-defined keywords from ad-hoc polymorphic delimited continuations <https://thoughtworksinc.github.io/Dsl.scala/ldk.pdf>`_ for more use cases and benchmarks.
 
-The forwarder to ``Monad`` should keep the backward compatibility to current implementation of do notation.
+The forwarder between ``Dsl`` and ``Monad`` should keep the backward compatibility to current behavior of do notation.
 
 Costs and Drawbacks
 -------------------
