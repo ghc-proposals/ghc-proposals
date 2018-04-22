@@ -17,7 +17,7 @@ Motivation
 
 ``TypeApplications`` are a convenient and natural way to specifying types of polymorphic functions. Consider::
 
- data Foo a where MkFoo :: forall a, a -> Foo a
+ data Foo a where MkFoo :: forall a. a -> Foo a
  
 With ``TypeApplications``, I can replace the somewhat clumsy ``MkFoo (x :: ty)`` with ``MkFoo @ty x``. Seen this way,
 explicit type applications are merely alternative syntax for type signatures.
@@ -52,7 +52,7 @@ A type variable mentioned in a pattern (in a type signature or a type applicatio
 
 Consider a general data type and constructor::
 
-  data T a where MkT :: forall b, Ctx => ty1 -> T ty2
+  data T a where MkT :: forall b. Ctx => ty1 -> T ty2
   
 (using single variables and types as representatives for, in general, multiple variables and types) and the function definition::
 
