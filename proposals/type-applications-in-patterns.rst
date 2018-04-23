@@ -38,7 +38,7 @@ This proposal fills this gap, by allowing type applications in pattern syntax an
 Proposed Change Specification
 -----------------------------
 
-Preliminary remark 1: The intention of the following specification is that the following holds: For a constructor with type ``C :: forall a. a -> …`` the meaning of ``C @ty x`` should coincide with the existing form ``C (x :: ty)``. If that is not the case, then this is likely a bug in the specification.
+Preliminary remark 1: The intention of the following specification is that the following holds: For a constructor with type ``C :: forall a. a -> …`` the meaning of ``C @ty x`` should coincide with the existing form ``C (x :: ty)``. If that is not the case, then this is likely a bug in the specification. In any case, this principle should answer most, if not all, questions about how this proposal should be interpreted.
 
 Preliminary remark 2: The ``ScopedTypeVariables`` is not very well specified. The following attempts to specify it, and may make more programs type check, but should not change the meaning of existing programs. If so, then that is likely a bug in the specification.
 
@@ -50,21 +50,7 @@ If ``ScopedTypeVariables`` is enabled, then type applications and type signature
 
 A type variable mentioned in a pattern (in a type signature or a type application) that is not already in scope is brought into scope. The scope contains the pattern and the corresponding right-hand side.
 
-Consider a general data type and constructor::
-
-  data T a where MkT :: forall b. Ctx => ty1 -> T ty2
-  
-(using single variables and types as representatives for, in general, multiple variables and types) and the function definition::
-
-   foo :: T ty3 -> …
-   foo (MkT @ty4 (x :: ty5)) = e
-
-and assume that ``free_ty_vars(ty4, ty5) = {c}``. This pattern is well-typed if, for a fresh rigid variable ``b'``, there exists a type ``ty6`` (which may depend on ``b'``) such that type equations
-
-* ``ty2[b'/b] ~ ty3, Ctx[b'/b] => ty4[ty6/c] = b'`` and
-* ``ty2[b'/b] ~ ty3, Ctx[b'/b] => ty5[ty6/c] = ty1[b'/b]``
-
-hold. The right-hand-side ``e`` is then checked in a contex that contains the type variables  ``b'``, ``c``, the equality ``c ~ ty6`` and the typing judgement ``x :: ty1[b'/b]``.
+The typing rule for (non-nested) case expressions is spelled out in <https://www.overleaf.com/15743151qmfpncmjfcks>, which uses the syntax of the `OutsideIn paper <https://www.microsoft.com/en-us/research/publication/outsideinx-modular-type-inference-with-local-assumptions/>`_.
 
 An underscore in a type signature or type application in a pattern is not treated as a hole.
 
