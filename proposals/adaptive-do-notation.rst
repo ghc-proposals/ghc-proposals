@@ -79,7 +79,7 @@ Suppose you want to create a random number generator. The generated numbers shou
   newtype Yield a = Yield { element :: a }
 
   instance Dsl Yield a [a] where
-    interpret (Yield a) handler = a : handler a
+    (>>=) (Yield a) handler = a : handler a
 
   xorshiftRandomGenerator :: Int -> [Int]
   xorshiftRandomGenerator seed =
