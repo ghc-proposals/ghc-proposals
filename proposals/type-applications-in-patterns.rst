@@ -42,19 +42,20 @@ Preliminary remark 1: The intention of the following specification is that the f
 
 Preliminary remark 2: The ``ScopedTypeVariables`` is not very well specified. The following attempts to specify it, and may make more programs type check, but should not change the meaning of existing programs. If so, then that is likely a bug in the specification.
 
-
 When both ``TypeApplications`` and ``PatternSignatures`` are enabled, then type application syntax is
 available in patterns. 
 
 If ``ScopedTypeVariables`` is enabled, then type applications and type signatures in pattern may mention type variables.
 
-A type variable mentioned in a pattern (in a type signature or a type application) that is not already in scope is brought into scope. The scope contains the pattern and the corresponding right-hand side.
+A type variable mentioned in a pattern (in a type signature or a type application) that is not already in scope is brought into scope. The scope spans the pattern and the corresponding right-hand side.
 
-The typing rule for (non-nested) case expressions is spelled out in <https://www.overleaf.com/15743151qmfpncmjfcks>, which uses the syntax of the `OutsideIn paper <https://www.microsoft.com/en-us/research/publication/outsideinx-modular-type-inference-with-local-assumptions/>`_.
+Typechecking a type application in a pattern follows the same rules as typechecking a pattern signature. This proposal does not propose any changes to the mechanism. In particular, type variables in type applications in patterns can only bind type variables, just as it is the case for type variables in pattern signatures.
+
+An attempt to formalize these rules is spelled out in <https://www.overleaf.com/15743151qmfpncmjfcks>, which uses the syntax of the `OutsideIn paper <https://www.microsoft.com/en-us/research/publication/outsideinx-modular-type-inference-with-local-assumptions/>`_. It gives type-checking rules for plain Haskell (with GADTs), Haskell+PatternSignatures, Haskell+PatternSignatures+TypeApplications (which is this proposal) and, just for reference, Haskell+PatternSignatures+TypeApplications+#15050.
 
 An underscore in a type signature or type application in a pattern is not treated as a hole.
 
-Further changes to ``ScopedTypeVariables`` should apply analogously to type applications in patterns.
+Further changes to ``ScopedTypeVariables`` (e.g. _#15050 <https://ghc.haskell.org/trac/ghc/ticket/15050#comment:10>_) should apply analogously to type applications in patterns.
 
 Examples
 --------
@@ -66,7 +67,11 @@ Here is an example (taken from _#15050 <https://ghc.haskell.org/trac/ghc/ticket/
     foo :: T Bool -> ()
     foo (MkT @Int _) = ()
 
-Lining this up with the specification, we have ``Ctx = b ~ F a``, ``ty1 = b``, ``ty2 = a``, ``ty3 = Bool``, ``ty4 = Int`` and ``ty5`` does not appear. This typechecks because the equation ```a ~ Bool, b' ~ F a => Int = b'`` holds. No type variables are bound here.
+This should type-check, because the following code does::
+
+    foo :: T Bool -> ()
+    foo (MkT (_ ::Int _)) = ()
+
 
 A more complex example is this (also inspired by _#15050 <https://ghc.haskell.org/trac/ghc/ticket/15050>_)::
 
@@ -79,23 +84,12 @@ A more complex example is this (also inspired by _#15050 <https://ghc.haskell.or
       
     foo :: T (Int, Int) -> ()
     foo (MkT1 @(Int,Int))  = ()
-    foo (MkT1 @(Int,x))    = (() :: x ~ Int => ())
-    foo (MkT1 @x)          = (() :: x ~ (Int,Int) => ())    
     foo (MkT2 @x)          = (() :: x ~ Int => ())
     foo (MkT3 @_ @Int)     = ()
     foo (MkT4 @_ @x)       = (() :: x ~ x => ()) -- (these constraints here just to
     foo (MkT5 @_ @x @x)    = (() :: x ~ x => ()) --  demonstrate that x is in scope)
 
-Why do these equations type-check? Let’s look at each of the 7 equations.
-
-1. We have ``Ctx = ()```, no ``ty1``, ``ty2 = a``, ``ty3 = (Int,Int)``, ``ty4 = (Int,Int)`` and no ``ty5``. This type checks because ``a' ~ (Int,Int) => (Int,Int) = a'`` holds.
-2. Here we bring a new type variable ``x`` into scope (this plays the role of ``c`` in the spec). We have ``Ctx = ()```, no ``ty1``, ``ty2 = a``, ``ty3 = (Int,Int)``, ``ty4 = (Int,x)`` and no ``ty5``. This type checks because ``a' ~ (Int,Int) => (Int,x) = a'`` if we assign ``x = Int``. The body of the function is type-checked with ``x ~ Int`` in scope.
-3. We bring a new type variable ``x`` into scope. We have ``Ctx = ()```, no ``ty1``, ``ty2 = a``, ``ty3 = (Int,Int)``, ``ty4 = x`` and no ``ty5``. This type checks because ``a' ~ (Int,Int) => x = a'`` if we assign ``x = (Int,Int)``. The body of the function is type-checked with ``x ~ (Int,Int)`` in scope.
-4. We bring a new type variable ``x`` into scope. We have ``Ctx = ()```, no ``ty1``, ``ty2 = (a,a)``, ``ty3 = (Int,Int)``, ``ty4 = x`` and no ``ty5``. This type checks because ``(a',a') ~ (Int,Int) => x = a'`` if we assign ``x = Int``. The body of the function is type-checked with ``x ~ Int`` in scope.
-5. We have ``Ctx = b ~ Int``, no ``ty1``, ``ty2 = a``, ``ty3 = (Int,Int)``, ``ty4₂ = Int`` and no ``ty5``. This type checks because ``a' ~ (Int,Int), b' = Int => Int = b'``.
-6.  We bring a new type variable ``x`` into scope. We have ``Ctx = ()``, no ``ty1``, ``ty2 = a``, ``ty3 = (Int,Int)``, ``ty4₂ = x`` and no ``ty5``. This type checks because ``a' ~ (Int,Int) => x = b'`` for ``x = b'`` The body of the function is type-checked with ``x ~ b'`` in scope (but ``b'`` is not visible to the user).
-7.  We bring a new type variable ``x`` into scope. We have ``Ctx = b ~ c``, no ``ty1``, ``ty2 = a``, ``ty3 = (Int,Int)``, ``ty4₂ = x``, ``ty4₃ = x`` and no ``ty5``. This type checks because ``a' ~ (Int,Int), b' ~ c' => x = b'`` and  ``a' ~ (Int,Int), b' ~ c' => x = c'`` hold with the assignemnt ``x = b'``. The body of the function is type-checked with ``x ~ b', b' ~ c'`` in scope.
-
+All of these equations type-check (just like they would if added value arguments of type ``a``, ``b``,... to the constructors and turned the type applications into type signatures).
 
 Effect and Interactions
 -----------------------
@@ -116,20 +110,21 @@ I believe that learners will benefit from the homogenousness that this proposals
 
 A drawback is that it piggy backs on ``ScopedTypeVariables``, which – to some people – has its warts and unprettiness.
 This is a fair concern that needs to be weighed against the cost of introducing a meaning for type applciations that does
-*not* matc the behaviour of type signatures.
+*not* match the behaviour of type signatures.
 
 For users who want this mainly to instantiate existential variables may find that they have to write ``C @_ @x`` to
 go past the universial variables, which is mildly inconvenient. It may be fixed in some cases by changing the order
-of the type variables of ``C``. This is unavoidable if we want to preserve the symmetry between terms and types, though.
+of the type variables of ``C``. This is unavoidable if we want to preserve the symmetry between terms and types, though. A mitigation for this is offerend in `proposal #99 (explicit specificity) <https://github.com/ghc-proposals/ghc-proposals/pull/99>`_.
 
 Alternatives
 ------------
-Proposal #96 proposes a variant where ``@x`` may only mention type variables and only existential type variables may be
+`Proposal #96 <https://github.com/ghc-proposals/ghc-proposals/pull/96>`_ proposes a variant where ``@x`` may only mention type variables and only existential type variables may be
 bound this way. See there for a in depth discussion; a summary of the main criticism that the proposal at hand tries
 to fixes preserving the symmetry between type applications in terms and patters, and preserving the analogy between
 type applications and type signatures. Furthermore, it does not introduce new concecpts (e.g. the distinction between
 existential and universal parameters) to the Haskell programmer.
 
+The existing restriction of ``ScopedTypeVariabes`` that type variables in pattern signatures may only be bound to type variables, and not types, carries over to type variables in type applications. One could discuss lifting this restriction, but this question is completely orthotogonal to the proposal at hand, and should be discussed elsewhere (e.g. in (e.g. _#15050 <https://ghc.haskell.org/trac/ghc/ticket/15050#comment:10>_).
 
 Unresolved questions
 --------------------
