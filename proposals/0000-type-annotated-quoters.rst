@@ -27,7 +27,7 @@ Proposed Change Specification
 Introduce a new data type ``data TQuasiQuoter a = TQuasiQuoter (String -> Q (TExp a))`` in ``Language.Haskell.TH.Quote`` module.
 
 * Allow ``quoter :: TQuasiQuoter a`` to be spliced in the same way a ``QuasiQuoter`` which has ``quoteExp`` defined.
-* The spliced expression AST node ``TExp a`` is annotated with type ``a``, and should be spliced in the type checker in the same way as a `TExp a` node does, and go through the same type checking process as a `TExp a` node does.
+* The spliced expression AST node ``TExp a`` is annotated with type ``a``, and should be spliced in the type checker in the same way as a ``TExp a`` node does, and go through the same type checking process as a ``TExp a`` node does.
 * Add document on how ``TQuasiQuoter a`` should be used to splice an `a` typed expression into user's code. 
 
 Effect and Interactions
