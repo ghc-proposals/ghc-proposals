@@ -182,9 +182,12 @@ The context of the derived instance is determined by taking the derived class,
 applying it to the representation type to obtain a context, and simplifying
 that context as much as possible. In the example above, this would entail
 simplifying the context ``Enum Int``. Since there is an ``Enum Int`` instance,
-this simplifies to just ``()``. In a more complicated example, like
-``newtype Z a = MkZ (Identity a) deriving Enum``, we would have a derived
-context of ``Enum a`` leftover after simplifying ``Enum (Identity a)``.
+this simplifies to just ``()``. In a more complicated example, like: ::
+
+    newtype Z a = MkZ (Identity a) deriving Enum
+
+We would have a derived context of ``Enum a`` leftover after simplifying
+``Enum (Identity a)``.
 
 This algorithm need only be tweaked slightly to describe how ``DerivingVia``
 generates code. In ``GeneralizedNewtypeDeriving``:
@@ -350,7 +353,7 @@ Not only must the kind of the argument to ``Eq`` unify with the kind of
 of the ``via`` type, ``Sum Int``. (``Sum Int :: Type``, so it passes that
 check.)
 
-It must also be the case that ``Age`` and ``Sum Int`` have the same runtime
+We must also have that ``Age`` and ``Sum Int`` have the same runtime
 representation. This is checked after the code for the instance itself has
 been generated (see the "Typechecking generated code" section).
 
@@ -372,6 +375,8 @@ Then the following must hold:
       newtype I a = MkI a
         deriving Functor via Identity
 
+   Wherein the derived instance, ``instance Functor I``, we have dropped the ``a``
+   from ``I a``.
    For more details on how this aspect works, refer to Section 3.1.2
    of `the paper <https://www.kosmikus.org/DerivingVia/deriving-via-paper.pdf>`_.
 
