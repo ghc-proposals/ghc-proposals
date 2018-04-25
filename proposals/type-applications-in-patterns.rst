@@ -49,7 +49,9 @@ If ``ScopedTypeVariables`` is enabled, then type applications and type signature
 
 A type variable mentioned in a pattern (in a type signature or a type application) that is not already in scope is brought into scope. The scope spans the pattern and the corresponding right-hand side.
 
-Typechecking a type application in a pattern follows the same rules as typechecking a pattern signature. This proposal does not propose any changes to the mechanism. In particular, type variables in type applications in patterns can only bind type variables, just as it is the case for type variables in pattern signatures.
+Typechecking a type application in a pattern follows the same rules as typechecking a pattern signature. This proposal does not propose any changes to the mechanism. In particular
+* type variables in type applications in patterns can only bind type variables, just as it is the case for type variables in pattern signatures (unless #128 gets accepted first).
+* patterns are type-checked from left to right. This means when type-checking the type application in a pattern ``(MkT @ty)``, type equatlities from matches further to the left, as well as the type equalities from the context of ``MkT`` itself are in scope, but not type equalities from constructors further to the right (see below for an example).
 
 An attempt to formalize these rules is spelled out in <https://www.overleaf.com/15743151qmfpncmjfcks>, which uses the syntax of the `OutsideIn paper <https://www.microsoft.com/en-us/research/publication/outsideinx-modular-type-inference-with-local-assumptions/>`_. It gives type-checking rules for plain Haskell (with GADTs), Haskell+PatternSignatures, Haskell+PatternSignatures+TypeApplications (which is this proposal) and, just for reference, Haskell+PatternSignatures+TypeApplications+#15050.
 
@@ -59,6 +61,7 @@ Further changes to ``ScopedTypeVariables`` (e.g. _#15050 <https://ghc.haskell.or
 
 Examples
 --------
+
 
 Here is an example (taken from _#15050 <https://ghc.haskell.org/trac/ghc/ticket/15050#comment:10>_)::
 
@@ -90,6 +93,54 @@ A more complex example is this (also inspired by _#15050 <https://ghc.haskell.or
     foo (MkT5 @_ @x @x)    = (() :: x ~ x => ()) --  demonstrate that x is in scope)
 
 All of these equations type-check (just like they would if added value arguments of type ``a``, ``b``,... to the constructors and turned the type applications into type signatures).
+
+This example demonstrated why we need to typecheck nested patterns left-to-right::
+
+ data T a where
+   T1 :: T Int
+   T2 :: T a
+
+ f :: Int -> Char -> Bool
+
+ g :: (a, Char, T a) -> blah
+ g (x :: Int, (f x -> True), T1) = ..
+
+``g`` must not be accepted: Until we match on ``T1`` we have no idea if ``a ~ Int``.
+And, with Haskell's left-to-right pattern matching we'll
+match the view pattern ``(f x -> True)`` first. It looks ok, because
+you can see that ``x :: Int``; but it will seg-fault in a call of
+``g`` involving ``T2`` and a first argument that is (say) a list.
+
+Scoping
+~~~~~~~
+
+The scoping works just like with ``ScopedTypeVariables``. Just for reference, here are some examples of how that feature works now::
+
+ f :: forall a b. ([a], b) -> INt
+ f (x :: [v], y) = ...
+
+brings ``v`` into scope, together with ``a`` and ``b``, which are already in scope.
+
+But the pattern in::
+
+ f :: forall a b. ([a], b) -> INt
+ f (x :: [b], y) = ...
+
+does not bring ``b`` into scope; here ``b`` refers to the ``b`` from the type signature.
+
+And the pattern in::
+ 
+ f :: forall a b. ([a], b) -> INt
+ f (x :: [v], y :: v) = ...
+
+brings one ``v`` into scope; the second occurence in the pattern does not shadow the first one, but rather refers to the same type (this would lead to a type error because ``v`` needs to be equal to both ``a`` and ``b``, but maybe they are not the same).
+
+The same rules apply for type applications, and similarly to the last example, the following should not type-check:
+
+ data T where
+   MkT :: a -> b -> T
+
+ f (MkT @p @p a b) = ...
 
 Effect and Interactions
 -----------------------
