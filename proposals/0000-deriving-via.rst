@@ -17,7 +17,16 @@ We propose ``DerivingVia``, a new
 `deriving strategy <https://downloads.haskell.org/~ghc/8.4.1/docs/html/users_guide/glasgow_exts.html#extension-DerivingStrategies>`_
 that significantly increases the expressive power of Haskell's ``deriving`` construct.
 
-One example of a use case for this is the following: ::
+One example of a use case for this is the following. Given the following
+``Sum`` newtype (taken from ``Data.Monoid``): ::
+
+    newtype Sum a = Sum a
+    instance Num a => Monoid (Sum a) where
+      Sum x `mappend` Sum y = Sum (x + y)
+      mempty = Sum 0
+
+Then we can leverage ``Sum`` to derive an instance for a *different* data type
+like so: ::
 
     newtype T = MkT Int
       deriving Monoid via (Sum Int)
@@ -169,16 +178,28 @@ the method in the ``Enum Int`` instance and coercing all occurrences of
 ``Int`` to ``Age`` using the ``coerce`` function from
 `Data.Coerce <http://hackage.haskell.org/package/base-4.11.0.0/docs/Data-Coerce.html>`_.
 
+The context of the derived instance is determined by taking the derived class,
+applying it to the representation type to obtain a context, and simplifying
+that context as much as possible. In the example above, this would entail
+simplifying the context ``Enum Int``. Since there is an ``Enum Int`` instance,
+this simplifies to just ``()``. In a more complicated example, like
+``newtype Z a = MkZ (Identity a) deriving Enum``, we would have a derived
+context of ``Enum a`` leftover after simplifying ``Enum (Identity a)``.
+
 This algorithm need only be tweaked slightly to describe how ``DerivingVia``
 generates code. In ``GeneralizedNewtypeDeriving``:
 
-1. We start with an instance for the representational type.
+1. We start with an instance for the representation type.
 2. GHC coerces it to an instance for the newtype.
+3. The derived context is obtained from simplyfing the class applied to the
+   representation type.
 
 In ``DerivingVia``, however:
 
 1. We start with an instance for a ``via`` type.
 2. GHC coerces it to an instance for the data type.
+3. The derived context is obtained from simplifying the class applied to the
+   ``via`` type.
 
 For instance, this earlier example: ::
 
@@ -329,13 +350,30 @@ Not only must the kind of the argument to ``Eq`` unify with the kind of
 of the ``via`` type, ``Sum Int``. (``Sum Int :: Type``, so it passes that
 check.)
 
-``DerivingVia`` also supports higher-kinded scenarios, such as: ::
+It must also be the case that ``Age`` and ``Sum Int`` have the same runtime
+representation. This is checked after the code for the instance itself has
+been generated (see the "Typechecking generated code" section).
 
-  newtype I a = MkI a
-    deriving Functor via Identity
+More formally, if the data declaration we have is: ::
 
-For more details on how this featurette works, refer to Section 3.1.2
-of `the paper <https://www.kosmikus.org/DerivingVia/deriving-via-paper.pdf>`_.
+  data D1 d1 ... dm
+    deriving (C c1 ... cn) via (V v1 ... vp)
+
+Then the following must hold:
+
+1. The type ``C c1 ... cn`` must be of kind ``(k1 -> ... -> kr -> *) -> Constraint``
+   for some kinds ``k1``, ..., ``kr``.
+2. The kind ``V v1 ... vp``, the kind ``D d1 ... di``, and the kind of the
+   argument to ``C c1 ... cn`` must all unify, where *i* is an index (less than or
+   equal to *m*) determined by dropping arguments from the end of ``D1 d1 ... dm``
+   according to the kind of ``C c1 ... cn``. The use of *i* here instead of *m*
+   is what allows us to support higher-kinded scenarios, such as: ::
+
+      newtype I a = MkI a
+        deriving Functor via Identity
+
+   For more details on how this aspect works, refer to Section 3.1.2
+   of `the paper <https://www.kosmikus.org/DerivingVia/deriving-via-paper.pdf>`_.
 
 Typechecking generated code
 ---------------------------
