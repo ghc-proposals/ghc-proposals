@@ -375,7 +375,7 @@ Then the following must hold:
       newtype I a = MkI a
         deriving Functor via Identity
 
-   Wherein the derived instance, ``instance Functor I``, we have dropped the ``a``
+   Wherein the generated instance, ``instance Functor I``, we have dropped the ``a``
    from ``I a``.
    For more details on how this aspect works, refer to Section 3.1.2
    of `the paper <https://www.kosmikus.org/DerivingVia/deriving-via-paper.pdf>`_.
@@ -435,6 +435,71 @@ that people have cooked up to "copy-and-paste" code patterns in various places,
 such as in Conal Elliott's
 `applicative-numbers <http://hackage.haskell.org/package/applicative-numbers>`_
 package. But this is far from a satisfying solution to the problem.
+
+The syntax for ``StandaloneDeriving`` we have chosen is slightly different from
+the syntax for ``deriving`` clauses in the sense that in ``StandaloneDeriving``: ::
+
+    deriving via B instance Foo A
+
+The ``via`` part comes before the derived class, whereas in a ``deriving`` clause: ::
+
+    data A
+      deriving Foo via B
+
+Thr ``via`` part comes *after* the derived class. One could conceivably put the
+``via`` at the end in ``StandaloneDeriving`` to regain some consistency, like in: ::
+
+    deriving instance Foo A via B
+
+However, this comes with a number of drawbacks:
+
+1. The position of ``via`` in ``StandaloneDeriving`` is somewhat fortunate in
+   that it might make it more extensible in the future. We have considered the
+   idea of generalizing ``StandaloneDeriving`` to allow deriving multiple
+   instances per deriving strategy, as in the following example: ::
+
+     deriving via A
+       instance Foo B
+       instance Foo C
+       ...
+       instance Foo Y
+       instance Foo Z
+
+   As this is a power that ``deriving`` clauses have, but ``StandaloneDeriving``
+   does not. However, if ``via`` were moved to the end, then this would instead
+   be: ::
+
+     deriving
+       instance Foo B
+       instance Foo C
+       ...
+       instance Foo Y
+       instance Foo Z
+         via A
+
+   This is not quite as pleasant visually, as the list of instances might be
+   quite long, so one would have to jump ahead to the end of the declaration
+   (possibly over many lines) to figure out what the deriving strategy is.
+   (With ``deriving`` clauses, this isn't usually a concern, since the derived
+   classes are often more compact due to the comma-separated list notation that
+   it uses.)
+
+2. This is significantly more difficult to implement. GHC will want to parse
+   ``Foo A via B`` as a single type, which means that ``via`` will have to be
+   made a special identifier in the ``inst_type`` production rule in GHC's
+   grammar. However, we do not want ``via`` to be a special identifier in other
+   type-related production rules, or else we would lose the ability to
+   write ``f :: via -> via; f = id``!
+
+   Currently, GHC's parser is not sophisticated enough to make identifiers
+   "locally special" as in the above example, so it would take a nontrivial
+   amount of engineering to allow this. This is not to say that we should let
+   the difficulty of implementation dictate the design of the feature, but
+   it is a cost worth considering.
+
+Moreover, the syntax for ``StandaloneDeriving`` is already different enough
+from ``deriving`` clauses (e.g., one can use an instance context in the former
+but not the latter) that perhaps that discrepancy isn't so important.
 
 Unresolved questions
 ====================
