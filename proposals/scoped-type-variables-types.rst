@@ -2,7 +2,7 @@ Allow ScopedTypeVariables to refer to types
 ===========================================
 
 .. proposal-number::
-.. trac-ticket:: [#15050](https://ghc.haskell.org/trac/ghc/ticket/15050)
+.. trac-ticket:: `#15050 <https://ghc.haskell.org/trac/ghc/ticket/15050>_
 .. implemented:: 
 .. highlight:: haskell
 .. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/128>`_.
@@ -16,7 +16,45 @@ full types. This proposal lifts this restriction.
 Motivation
 ------------
 
-Consider this code, with ``ScopedTypeVariables`` enabled. Can you tell which lines of ``foo`` typecheck::
+``-XScopedTypeVariables`` allows us to write code like this::
+
+    f :: Maybe a -> Int
+    f (Just (x :: b)) = <body>
+
+This is clearly fine.  ``b`` scopes over ``<body>``.   The variable `a` is not in scope at all (no explicit forall). We can also write::
+
+    f :: forall a. Maybe a -> Int
+    f (Just (x :: b)) = <body>
+
+Now both ``a`` and ``b`` are in scope in ``<body>``, as aliases. Great. So if that all works, isn't it strange to reject this::
+
+    f :: Maybe Int -> Int
+    f (Just (x :: a)) = <body>
+    
+If this was allowed ``a`` would have to be an alias for ``Int``.  Currently that is not allowed: a lexically scoped type variable can only be bound to a type *variable*.  The whole and sole point of the proposal is to lift that restriction.
+
+The restriction is documented as follows:
+
+  When a pattern type signature binds a type variable in this way, GHC insists that the type variable is bound to a rigid, or fully-known, type variable. This means that any user-written type signature always stands for a completely known type.
+  
+Simon explains the motivation behind this restriction:
+
+   I agree this is a questionable choice. At the time I was worried that it'd be confusing to have a type variable that was just an alias for ``Int``; that is not a type variable at all. But in these days of GADTs and type equalities we are all used to that. We'd make a different choice today. 
+
+Let’s do this!
+
+
+One reason for making the change is that it's not really clear what being "bound to a type variable" means in the presence of type equalities.  For example:
+
+    f1 :: (a ~ Int) => Maybe a -> Int
+    f1 (Just (x :: b)) = <body>
+
+    f2 :: (a ~ Int) => Maybe Int -> Int
+    f2 (Just (x :: a)) = <body>
+
+Which of these should be accepted under the current rules?   (SPJ says: “I don't even know; I'd have to try it.”)  An advantage of the proposal is that such questions become irrelevant.
+
+Here are more type-checking puzzles. Can you tell which lines of ``foo`` typecheck::
 
     P a = P
     data T1 a where
@@ -35,28 +73,19 @@ Consider this code, with ``ScopedTypeVariables`` enabled. Can you tell which lin
     foo 6 (MkT4 P (P::P b))          = ()
     foo 7 (MkT5 P (P::P b) (P::P b)) = ()
     
-All lines but line 2 and 3 typecheck. The reason is an restriction in ``ScopedTypeVariables``. The documentation says
-  
-  When a pattern type signature binds a type variable in this way, GHC insists that the type variable is bound to a rigid, or fully-known, type variable. This means that any user-written type signature always stands for a completely known type.
-  
-I found this rule always a bit opaque and confusing. Which type variables are there to be bound to? (It turns out, it’s the
-type variables mentioned in the type of the data constructor, for example.) Only recently, and helped by some reading
-of the type checker code, did I gain a more complete grasp of this restriction.
+All lines but line 2 and 3 typecheck, but arguably all could.
 
-Simon explains the motivation behind this restriction:
 
-   I agree this is a questionable choice. At the time I was worried that it'd be confusing to have a type variable that was just an alias for ``Int``; that is not a type variable at all. But in these days of GADTs and type equalities we are all used to that. We'd make a different choice today. 
+Another motivation for this proposal is to use ``ScopedTypeVariables`` as abbreviations for long types:
 
-So let’s do this!
+f :: ReallyReallyReallyReallyLongTypeName -> T
+f (x :: a) = … (read "" :: a) …
+-- Instead of f x = … (read "" :: ReallyReallyReallyReallyLongTypeName) …
 
 
 Proposed Change Specification
 -----------------------------
-The above sentence in the documentation for ``ScopedTypeVariables`` is repaced with
-
-  When a pattern type signature binds a type variable in this way, GHC insists that the type variable is bound to a rigid, or fully-known, type. This means that any user-written type signature always stands for a completely known type.
-
-(a one-word-deletion!)
+The above sentence in the documentation for ``ScopedTypeVariables`` is removed.
 
 No separate pragma is needed for this behaviour, as we are expanding the set of programs accepted by ``ScopedTypeVariables``, but do not change any behaviour with regard to Haskell2010.
 
@@ -66,6 +95,16 @@ With the restriction lifted, all lines of the function above typecheck.
 
 Proposal #126 has the same restriction for type applications in patterns. If we adopt this proposal, then the restriction
 ought to also be lifted for that feature.
+
+At the moment, a type variable may occur multiple times in multiple pattern signatures in the same pattern. These do not shadow each other, but rather refer to the same type. For example::
+
+  foo1 :: Int -> Bool -> ()
+  foo1 (_ :: a) (_ :: a) = () -- Type error, because a can not be both int and bool
+
+  foo2 :: Int -> Int -> ()
+  foo2 (_ :: a) (_ :: a) = () -- Ok, binds a to Int
+
+This behaviour is unchanged by the current proposal.
 
 
 Costs and Drawbacks
