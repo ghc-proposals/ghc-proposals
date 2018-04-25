@@ -451,40 +451,13 @@ Thr ``via`` part comes *after* the derived class. One could conceivably put the
 
     deriving instance Foo A via B
 
-However, this comes with a number of drawbacks:
+We have chosen not to, since:
 
-1. The position of ``via`` in ``StandaloneDeriving`` is somewhat fortunate in
-   that it might make it more extensible in the future. We have considered the
-   idea of generalizing ``StandaloneDeriving`` to allow deriving multiple
-   instances per deriving strategy, as in the following example: ::
-
-     deriving via A
-       instance Foo B
-       instance Foo C
-       ...
-       instance Foo Y
-       instance Foo Z
-
-   As this is a power that ``deriving`` clauses have, but ``StandaloneDeriving``
-   does not. However, if ``via`` were moved to the end, then this would instead
-   be: ::
-
-     deriving
-       instance Foo B
-       instance Foo C
-       ...
-       instance Foo Y
-       instance Foo Z
-         via A
-
-   This is not quite as pleasant visually, as the list of instances might be
-   quite long, so one would have to jump ahead to the end of the declaration
-   (possibly over many lines) to figure out what the deriving strategy is.
-   (With ``deriving`` clauses, this isn't usually a concern, since the derived
-   classes are often more compact due to the comma-separated list notation that
-   it uses.)
-
-2. This is significantly more difficult to implement. GHC will want to parse
+1. ``StandaloneDeriving`` syntax is always different enough from the syntax
+   for ``deriving`` clauses (the ``instance`` keyword, the presence of an
+   explicit instance context, etc.) that this additional slight deviation is
+   not so bad.
+2. It's significantly more difficult to implement. GHC will want to parse
    ``Foo A via B`` as a single type, which means that ``via`` will have to be
    made a special identifier in the ``inst_type`` production rule in GHC's
    grammar. However, we do not want ``via`` to be a special identifier in other
@@ -496,10 +469,6 @@ However, this comes with a number of drawbacks:
    amount of engineering to allow this. This is not to say that we should let
    the difficulty of implementation dictate the design of the feature, but
    it is a cost worth considering.
-
-Moreover, the syntax for ``StandaloneDeriving`` is already different enough
-from ``deriving`` clauses (e.g., one can use an instance context in the former
-but not the latter) that perhaps that discrepancy isn't so important.
 
 Unresolved questions
 ====================
