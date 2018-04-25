@@ -1,21 +1,14 @@
-.. proposal-number:: Leave blank. This will be filled in when the proposal is
-                     accepted.
-
-.. trac-ticket:: Leave blank. This will eventually be filled with the Trac
-                 ticket number which will track the progress of the
-                 implementation of the feature.
-
-.. implemented:: Leave blank. This will be filled in with the first GHC version which
-                 implements the described feature.
-
-.. highlight:: haskell
-
-This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/83>`_.
-
-.. contents::
-
 Embrace ``Type :: Type``
 ==========================
+
+.. proposal-number:: 20
+.. trac-ticket::
+.. implemented::
+.. highlight:: haskell
+.. header::
+   This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/83>`_.
+.. sectnum::
+.. contents::
 
 GHC 8.0 included a major change to GHC's type system: the ``Type :: Type`` axiom.
 Though casual users were protected from this by hiding its features behind the
