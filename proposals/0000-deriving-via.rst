@@ -419,6 +419,37 @@ As a result, ``DerivingVia`` has the nice property that it is orthogonal to
 other language features. No existing code will break because of
 ``DerivingVia``, as programmers must consciously choose to make use of it.
 
+It is worth noting that like all other forms of ``deriving``, a standalone
+``DerivingVia`` declaration only ever targets the *last* argument to a
+class. In other words, in the following code: ::
+
+    class Triple a b c where
+      triple :: (a, b, c)
+    instance Triple () () () where
+      triple = ((), (), ())
+
+    newtype A = A ()
+    newtype B = B ()
+    newtype C = C ()
+
+    deriving via () instance Triple A B C
+
+The generated instance would ``coerce`` through the ``Triple A B ()`` instance,
+instead of, say, the ``Triple () () ()`` instance. This is because the standalone
+instance above would be the same as if a user had written: ::
+
+    newtype C = C ()
+      deriving (Triple A B) via ()
+
+This makes it consistent, if not a bit limited, since there are other ways one could
+conceivably implement this ``Triple A B C`` instance. As noted in Section 6.2 of
+`the paper <https://www.kosmikus.org/DerivingVia/deriving-via-paper.pdf>`_,
+we do not attempt to generalize ``DerivingVia``'s interaction with multi-parameter
+type classes any further than this, since it would likely require devising a new
+syntax to say which combination of parameters to a class one would prefer to
+``coerce`` through. (For instance, in the ``Triple A B C`` instance above, there are
+seven different combinations to choose from!)
+
 Costs and Drawbacks
 ===================
 There are currently no known drawbacks to this feature. Implementing this
