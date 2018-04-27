@@ -1430,6 +1430,102 @@ type to ``catch``:
 Therefore, despite the tantalising proximity, system (1) and (2) are
 different in practice.
 
+η-expansion
+-----------
+
+In a previous version of this proposal we proposed that, despite the
+following not being well-typed according to core rules
+
+::
+
+  f :: A ->. B
+
+  g :: A -> B
+  g = f
+
+To implicitly η-expand ``f``. So that the above program is elaborated
+in the following, well-typed, one
+
+::
+
+  f :: A ->. B
+
+  g :: A -> B
+  g x = f x
+
+The main motivation for that was backwards compatibility: because
+constructors have been made linear by default, Haskell 98 code, such
+as
+
+::
+
+  app :: (a -> b) -> a -> b
+  app f x = f x
+
+  data Maybe a = Just a
+
+  app Just
+
+Display the same kind of mismatch, as ``Just`` is linear: ``Just :: a
+->. Maybe a``. Using η-expansion to resolve this mismatch solves the
+issue.
+
+This was not satisfactory. First because η-expansion is not
+semantics-preserving in Haskell: ``⊥` `seq` ()`` diverges, while ``(\x
+-> ⊥ x) `seq` ()`` never does. Furthermore, while GHC already does
+some η-expansion, the direction seems to be towards fewer η-expansion
+rather than more, as η-expansion causes problem in the approach to
+impredicative type checking from the `Guarded impredicative
+polymorphism
+<https://www.microsoft.com/en-us/research/uploads/prod/2017/07/impred-pldi18-submission.pdf>`_
+paper.
+
+But the real issue was that η-expansion is not sufficient to restore
+backwards compatibility. There are two issues:
+
+- We cannot η-expand under a functor. And the following was not
+  expanded, caused type errors despite being valid Haskell 98
+
+  ::
+
+     data Maybe a = Just a
+
+     data Identity a = Identity { runIdentity :: a }
+
+     foo :: Identity (a -> b) -> a -> b
+     foo = unIndentity
+
+     foo (Identity Just)
+
+  What happens is that ``Identity Just`` is inferred to have type
+  ``Identity (a ->. b)``, which is *not* compatible with type
+  ``Identity (a -> b)`` and cannot be mediated by an
+  η-expansion. It could have been that ``Just`` would be type-checked
+  at type ``a -> b`` so that ``Identity Just`` would have been
+  elaborated to ``Identity (\x -> Just x) :: a -> b``, but the type
+  information is not there in practice.
+- The other problem is about type classes on ``(->)``. Such as
+  ``Category``
+
+  ::
+
+     data Maybe a = Just a
+
+     class Category (arr :: * -> * -> *) where
+       (.) :: b `arr` c -> a `arr` b -> a `arr` c
+
+     instance Category (->) where
+       f . g = \x -> f (g x)
+
+     Just . Just
+
+  This is valid Haskell 98 code, but with ``Just`` turned into a
+  linear type, it doesn't type check anymore: ``Just :: a ->. Maybe
+  a``, and there is no instance of ``Category (->.)``.
+
+For all these reasons we removed η-expansion in favour of the solution
+based on making constructor polymorphic when they are applied.
+
 Subtyping instead of polymorphism
 ---------------------------------
 
@@ -1441,39 +1537,6 @@ solution.
 In general, subtyping and polymorphism are not comparable, and some
 examples will work better with one or the other. Therefore it makes
 sense to go for the simplest one.
-
-In this proposal
-
-::
-
-  f :: A ->. B
-
-  g :: A -> B
-  g = f
-
-is, in theory, ill-typed. But it would be a problem to reject this
-program (especially with all the constructors which have been
-converted to linear types). So the type inference mechanism elaborates
-this program to the well-typed η-expansion
-
-::
-
-  f :: A ->. B
-
-  g :: A -> B
-  g x = f x
-
-This also work at higher arity, including mixed of linear and
-non-linear arguments:
-
-::
-
-  f' :: A ->. B -> C ->. D
-
-  g :: A -> B -> C -> D
-  g = f
-  -- is interpreted as:
-  -- g x y z = f x y z
 
 Zero as a multiplicity
 ----------------------
@@ -1846,8 +1909,7 @@ Below are the transformations which we have analysed so far:
 
 η-reduction
   Because the η-expansion of a linear function can be an unrestricted
-  function, it is not, in general, safe, to η-reduce functions
-  (η-expansions are even added to the compiler: see Subtyping_). GHC
+  function, it is not, in general, safe, to η-reduce functions. GHC
   already does not perform η-reduction carelessly, so we need to add
   an extra condition for η-reduction to be successful.
 
