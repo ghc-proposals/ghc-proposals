@@ -171,5 +171,5 @@ Implementation Plan
 -------------------
 If accepted, I (isovector) who will implement the change. `There is already an
 existing implementation of it
-<https://github.com/isovector/ghc/tree/typelits2>.`_
+<https://github.com/isovector/ghc/tree/typelits2>`_ .
 
