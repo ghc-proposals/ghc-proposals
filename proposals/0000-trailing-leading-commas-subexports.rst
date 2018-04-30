@@ -58,7 +58,6 @@ Extending these changes to other uses of comma delimited lists confers the same 
 
 An exception is made for tuple values.
 The syntax `(a, b,)` in a tuple would conflict with the `TupleSections` language extension.
-The type of a tuple depends on how many elements it contains, and hav
 
 Proposed Change Specification
 -----------------------------
@@ -84,7 +83,10 @@ As an example, the grammar for export items is currently::
 
 This proposal will change the sublists in the ``qtycon`` and ``qtycls`` to have this form::
 
-    ([,]id_1, ..., id_n [,]) (n >= 0)
+    subList -> (, commaList)
+             | (commaList [,])
+                 
+    commaList -> id_1, ..., id_n (n >= 0)
 
 Other syntaxes will follow the same model.
 
@@ -137,9 +139,6 @@ Alternatives
 
 Unresolved questions
 --------------------
-Simon Peyton Jones posed the following questions:
-
-1. What about repeated commas in the middle of a list?
 
 Implementation Plan
 -------------------
