@@ -84,7 +84,7 @@ grammar will be desugared:
            | LIT_APP TY_APP
 
 such that the result is equivalent to ``fromLiteral (TY_APP...) LIT`` for an
-appropriate ``fromLiteral`` corresponding to ``LIT``. The ``TY_APP``s will be
+appropriate ``fromLiteral`` corresponding to ``LIT``. The ``TY_APP`` s will be
 applied in the same order after desugaring that they were before.
 
 This change in desugaring will apply to all overloaded literals (``Num``,
