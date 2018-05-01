@@ -67,8 +67,9 @@ just state that ``PatternSignatures``. Ergo:
 Proposed Change Specification
 -----------------------------
 
-The language extensions ``PatternSignatures`` is no longer deprecated. If enabled, it allows all signatures on patterns
-that do not bind type variables.
+The language extensions ``PatternSignatures`` is no longer deprecated. If enabled, it allows signatures on patterns.
+
+The pattern signature may contain type variables, but if ``ScopedTypeVariables`` is not enabled, the type variables are not in scope outside the pattern. They are also *not* abstracted over; instead they may unify with exiting (possibly internal) type variables, as specified by ``ScopedTypeVariables``.
 
 The extension ``ScopedTypeVariables`` is not affected, i.e. it still implies ``PatternSignatures``. 
 
@@ -89,7 +90,8 @@ With ``PatternSignatures``, but without ``ScopedTypeVariables``, this code::
 
     f (x :: [a]) = blah
 
-would cause an error, complaining that the pattern binds the type variable ``a``, and suggesting to enable ``ScopedTypeVariables``.
+would succeed if it would suceed with ``ScopedTypeVariables``. The only difference
+is that ``a`` is not brought into scope.
 
 Costs and Drawbacks
 -------------------
