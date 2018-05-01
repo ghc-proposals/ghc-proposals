@@ -85,6 +85,12 @@ With this change in place, I’d write::
      
 and be happy.
 
+With ``PatternSignatures``, but without ``ScopedTypeVariables``, this code::
+
+    f (x :: [a]) = blah
+
+would cause an error, complaining that the pattern binds the type variable ``a``, and suggesting to enable ``ScopedTypeVariables``.
+
 Costs and Drawbacks
 -------------------
 
