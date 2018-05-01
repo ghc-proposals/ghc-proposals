@@ -71,27 +71,21 @@ following examples:
   1 @a          desugars to   fromInteger @a        (1 :: Integer)
   2 @a @b       desugars to   fromInteger @a @b     (2 :: Integer)
   3 @a ... @z   desugars to   fromInteger @a ... @z (3 :: Integer)
-  (3) @a        desugars to   fromInteger           (4 :: Integer) @a
-  (4 @a) @b     desugars to   fromInteger @a        (5 :: Integer) @b
+  (((4))) @a    desugars to   fromInteger @a        (4 :: Integer)
+  (5 @a) @b     desugars to   fromInteger @a @b     (5 :: Integer)
 
-The first example is to support the everyday use-case of ``NoRebindableSyntax``.
-
-The other three become valuable in the presence of ``RebindableSyntax``, which
-instead desugars overloaded literals in terms of whatever ``fromInteger`` etc.
-is in scope. There are no guarantees that such a function has only a single
-type variable, and so for completeness we must be able to apply all of them.
-
-Furthermore, with ``RebindableSyntax`` enabled, we don't even have any
-guarantees that all types should be applied before the value-level arguments.
-Consider the following potential definition of ``fromInteger``:
+To be pedantic, every expression of the form ``LIT_APP`` in the following
+grammar will be desugared:
 
 ::
 
-  fromInteger :: Integer -> forall a. Foo a
+  LIT_APP := LIT
+           | '(' LIT_APP ')'
+           | LIT_APP TY_APP
 
-Without the fourth desugaring example, we are unable to type-apply ``a`` here,
-which poses the opposite (though admittedly less-egregious) problem to the
-current ``TypeApplications`` behavior.
+such that the result is equivalent to ``fromLiteral (TY_APP...) LIT`` for an
+appropriate ``fromLiteral`` corresponding to ``LIT``. The ``TY_APP``s will be
+applied in the same order after desugaring that they were before.
 
 This change in desugaring will apply to all overloaded literals (``Num``,
 ``Fractional``, ``IsString``, ``IsList``, ``IsLabel``).
@@ -131,9 +125,6 @@ Costs and Drawbacks
 The primary drawback of this change is the user-visible change in existing code
 described in `Effect and Interactions <#effect-and-interactions>`_.
 
-One subtle drawback of the proposal is that it makes left-associative
-parentheses meaningful; that ``5 @Int`` is not equal to ``(5) @Int``.
-
 The development cost of this proposal is minimal; I have a working
 implementation for the ``Num``, ``Fractional`` and ``String`` cases already,
 which is roughly 50 SLOC. Adding lists and labels to this is unlikely to be
@@ -158,11 +149,27 @@ and then perform desugaring in terms of ``integerLit`` rather than
 to the ``RebindableSyntax`` case.
 
 
+**Another alternative**  is `a previous draft
+<https://github.com/isovector/ghc-proposals/blob/a57f500cab6a7d3a71aaebfaf51b3ed5e757c966/proposals/0000-type-apply-literals.rst>`_
+of this proposal which suggested differentiating between `5 @Int` and `(5)
+@Int`. Feedback from the community suggested this to be more complicated than
+it was worth.
+
+
+**A third alternative**  is to completely bypass the issue, and write `id @Int
+5` intead of `5 @Int`. This works today, but is clearly the lowest-cost
+workaround to the motivating problem of this proposal.
+
+
 Unresolved questions
 --------------------
-Should this new behavior be hidden behind an opt-in flag so as to avoid
+**Question:** Should this new behavior be hidden behind an opt-in flag so as to avoid
 potential interference with existing users of both ``RebindableSyntax`` and
 ``TypeApplications`` who are already type applying their overloaded literals?
+
+**Answer:** `SPJ suggests
+<https://github.com/ghc-proposals/ghc-proposals/pull/129#issuecomment-385529471>`_
+that this rare enough to not worry about breaking, and I am inclined to agree.
 
 
 Implementation Plan
