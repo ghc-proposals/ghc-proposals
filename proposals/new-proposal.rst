@@ -67,9 +67,8 @@ just state that ``PatternSignatures``. Ergo:
 Proposed Change Specification
 -----------------------------
 
-The language extensions ``PatternSignatures`` is no longer deprecated. If enabled, it allows signatures on patterns.
-
-The pattern signature may contain type variables, but if ``ScopedTypeVariables`` is not enabled, the type variables are not in scope outside the pattern. They are also *not* abstracted over; instead they may unify with exiting (possibly internal) type variables, as specified by ``ScopedTypeVariables``.
+The language extensions ``PatternSignatures`` is no longer deprecated. If enabled, it allows all signatures on patterns
+that do not bind type variables.
 
 The extension ``ScopedTypeVariables`` is not affected, i.e. it still implies ``PatternSignatures``. 
 
@@ -90,8 +89,7 @@ With ``PatternSignatures``, but without ``ScopedTypeVariables``, this code::
 
     f (x :: [a]) = blah
 
-would succeed if it would suceed with ``ScopedTypeVariables``. The only difference
-is that ``a`` is not brought into scope.
+would cause an error, complaining that the pattern binds the type variable ``a``, and suggesting to enable ``ScopedTypeVariables``.
 
 Costs and Drawbacks
 -------------------
@@ -123,4 +121,18 @@ Alternatives
 ------------
 
 One could argue that ``ScopedTypeVariables`` need not imply ``PatternSignature`` (i.e. on its own, it could just
-apply to ``forall`’ed type variables), but that would cause more breakage.
+apply to ``forall``’ed type variables), but that would cause more breakage.
+
+
+One could argue that type variable should be allowed in pattern signatures, but not brought into scope. But
+for one target audience of this extensions (confused beginners who want to add type signatures to every subterm,
+whether left or right of the ``=``, to hunt down type error) the rules around type variables in patterns are 
+far too confusion. Also, it would be strange to forbid::
+
+   id :: a -> a
+   id x = (x :: a)
+
+but allow::
+
+   id :: a -> a
+   id (x :: a) = x
