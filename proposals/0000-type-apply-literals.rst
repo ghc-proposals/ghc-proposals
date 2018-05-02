@@ -83,11 +83,11 @@ literals:
   stringLit :: String -> forall a. IsString a => a
   stringLit = fromString
 
-  labelLit :: forall s a. IsLabel s a => a
-  labelLit = fromLabel @s @a
-
   listLit :: [i] -> forall a. (IsList a, i ~ Item a) => a
   listLit = fromList
+
+  listNLit :: Int -> [i] -> forall a. (IsList a, i ~ Item a) => a
+  listNLit = fromListN
 
 This desugaring rule will only apply when ``NoRebindableSyntax`` is enabled,
 because type applications work as expected when syntax is rebound.
@@ -108,8 +108,8 @@ Costs and Drawbacks
 As best I can tell, there are no drawbacks to this proposal.
 
 The development cost of this proposal is minimal; I have a working
-implementation for the ``Num``, ``Rational`` and ``String`` cases already,
-which is roughly 50 SLOC. Adding lists and labels to this is unlikely to be
+implementation for the ``Num``, ``Rational``, ``IsString`` and ``IsList`` cases
+already, which is roughly 50 SLOC. Adding labels to this is unlikely to be
 significantly more costly. The maintenance burden is likely to be
 correspondingly small.
 
@@ -132,7 +132,7 @@ workaround to the motivating problem of this proposal.
 
 Unresolved questions
 --------------------
-Is ``labelLit`` necessary?
+None.
 
 Implementation Plan
 -------------------
