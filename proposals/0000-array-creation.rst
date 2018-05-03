@@ -58,16 +58,132 @@ Proposed Change Specification
 -----------------------------
 There are two fairly obvious additions:
 
-1. thaw/clone variants that copy an arbitrary segment of an array into a
-   fresh array of arbitrary size, starting at an arbitrary offset. It would
-   take two values, one to fill in the beginning of the array and one to
-   fill in the end. This would be sufficient for ``cons`` and ``snoc``
-   operations, and any situation where an array needs to be extended generally.
+Copy a portion to an arbitrary offset in a new array
+====================================================
 
-2. Primops to copy segments of two (possibly) different arrays into a fresh
-   array, taking three values to fill in gaps in the beginning,
-   middle, and end. These would allow efficient implementations of ``insert``,
-   ``delete``, and ``append``.
+Copy an arbitrary segment of an array into a
+fresh array of arbitrary size, starting at an arbitrary offset. It would
+take two values, one to fill in the beginning of the array and one to
+fill in the end. This would be sufficient for ``cons`` and ``snoc``
+operations, and any situation where an array needs to be extended generally. ::
+
+ thawArrayInto#
+   :: Array# a -- ^ An existing array
+   -> Int#     -- ^ Offset into existing array
+   -> Int#     -- ^ Number of elements to copy
+   -> Int#     -- ^ Size of the new array
+   -> Int#     -- ^ Offset into the new array
+   -> a        -- ^ Filler for the beginning
+   -> a        -> ^ Filler for the end
+   -> State# s -> (# State# s, MutableArray# s a #)
+
+ cloneMutableArrayInto#
+   :: MutableArray# s a -- ^ An existing array
+   -> Int#     -- ^ Offset into existing array
+   -> Int#     -- ^ Number of elements to copy
+   -> Int#     -- ^ Size of the new array
+   -> Int#     -- ^ Offset into the new array
+   -> a        -- ^ Filler for the beginning
+   -> a        -> ^ Filler for the end
+   -> State# s -> (# State# s, MutableArray# s a #)
+
+ cloneArrayInto#
+   :: Array# a -- ^ An existing array
+   -> Int#     -- ^ Offset into existing array
+   -> Int#     -- ^ Number of elements to copy
+   -> Int#     -- ^ Size of the new array
+   -> Int#     -- ^ Offset into the new array
+   -> a        -- ^ Filler for the beginning
+   -> a        -> ^ Filler for the end
+   Array# a
+
+An example (in pseudocode): ::
+
+ cloneArrayInto [1..5] 1 3 6 2 100 200
+ -- ==>
+ [100, 100, 2, 3, 4, 200]
+
+Copy segments of two arrays into a new array
+============================================
+
+Copy segments of two (possibly) different arrays into a fresh
+array, taking three values to fill in gaps in the beginning,
+middle, and end. These would allow efficient implementations of ``insert``,
+``delete``, and ``append``.
+
+There are more possibilities here, because the first and second
+arrays can each be mutable or immutable. For all of these, the
+user must ensure that the targets do not overlap and that the
+target offset for the first array is no greater than the target
+offset for the second array.
+
+ thaw2ArraysInto#
+   :: Array# a -- ^ An existing array @xs@
+   -> Int#     -- ^ Offset into @xs@
+   -> Int#     -- ^ Number of elements to copy from @xs@
+   -> Int#     -- ^ Offset into the new array for @xs@
+
+   -> Array# a -- ^ An existing array @ys@
+   -> Int#     -- ^ Offset into @ys@
+   -> Int#     -- ^ Number of elements to copy from @ys@
+   -> Int#     -- ^ Offset into the new array for @ys@
+
+   -> Int#     -- ^ Size of the new array
+   -> a        -- ^ Filler for the beginning
+   -> a        -- ^ Filler for the middle
+   -> a        -> ^ Filler for the end
+   -> State# s -> (# State# s, MutableArray# s a #)
+
+ thawClone2ArraysInto#
+   :: Array# a -- ^ An existing array @xs@
+   -> Int#     -- ^ Offset into @xs@
+   -> Int#     -- ^ Number of elements to copy from @xs@
+   -> Int#     -- ^ Offset into the new array for @xs@
+
+   -> MutableArray# s a -- ^ An existing array @ys@
+   -> Int#     -- ^ Offset into @ys@
+   -> Int#     -- ^ Number of elements to copy from @ys@
+   -> Int#     -- ^ Offset into the new array for @ys@
+
+   -> Int#     -- ^ Size of the new array
+   -> a        -- ^ Filler for the beginning
+   -> a        -- ^ Filler for the middle
+   -> a        -> ^ Filler for the end
+   -> State# s -> (# State# s, MutableArray# s a #)
+
+ cloneThaw2ArraysInto#
+   :: MutableArray# s a -- ^ An existing array @xs@
+   -> Int#     -- ^ Offset into @xs@
+   -> Int#     -- ^ Number of elements to copy from @xs@
+   -> Int#     -- ^ Offset into the new array for @xs@
+
+   -> Array# s a -- ^ An existing array @ys@
+   -> Int#     -- ^ Offset into @ys@
+   -> Int#     -- ^ Number of elements to copy from @ys@
+   -> Int#     -- ^ Offset into the new array for @ys@
+
+   -> Int#     -- ^ Size of the new array
+   -> a        -- ^ Filler for the beginning
+   -> a        -- ^ Filler for the middle
+   -> a        -> ^ Filler for the end
+   -> State# s -> (# State# s, MutableArray# s a #)
+
+ clone2ArraysInto#
+   :: Array# a -- ^ An existing array @xs@
+   -> Int#     -- ^ Offset into @xs@
+   -> Int#     -- ^ Number of elements to copy from @xs@
+   -> Int#     -- ^ Offset into the new array for @xs@
+
+   -> Array# a -- ^ An existing array @ys@
+   -> Int#     -- ^ Offset into @ys@
+   -> Int#     -- ^ Number of elements to copy from @ys@
+   -> Int#     -- ^ Offset into the new array for @ys@
+
+   -> Int#     -- ^ Size of the new array
+   -> a        -- ^ Filler for the beginning
+   -> a        -- ^ Filler for the middle
+   -> a        -> ^ Filler for the end
+   -> Array# s
 
 A third operation, concatenating an array of arrays, would be possible, but I
 have no particular application in mind for it, so I don't know if it would
@@ -91,9 +207,16 @@ Alternatives
 1. Add multiple variants to pin down more precisely where gaps may or
    may not occur. That way we can only supply fill-in logic and arguments
    that will actually be used. I suspect this approach would be more
-   efficient, but it may be a bit hard to control the API size.
+   efficient, but it may be a bit hard to control the number of
+   implementations we have to create. On the other hand, it would probably
+   be possible to generate a good bit of the code involved, so maybe that
+   would be fine.
 
-2. The other alternative I can think of would require substantial research
+2. Only allow one filler value per operation. This would reduce the
+   number of arguments we might have to pass around a bit, but would
+   also limit flexibility.
+
+3. The last alternative I can think of would require substantial research
    and development: come up with a way for users to create their own primop-like
    operations whose total allocation can be calculated (or at least
    bounded) before any allocation occurs. The friendliest way would probably
