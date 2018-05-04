@@ -1946,7 +1946,8 @@ Inlining
   So, under the current typing rules, linear lets could be inlined at
   *every* site (this is a form of β-reduction) or none at all. But, of
   course, this inlining transformation does not change the meaning of
-  the program, so it is still valid. If th
+  the program, so it is still valid. Maybe we need a refined typing
+  rule for ``let``, in Core, akin to that of join points.
 
 Common Subexpression Elimination (CSE)
   When encountering an expression of the form
