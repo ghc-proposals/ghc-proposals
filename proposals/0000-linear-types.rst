@@ -1834,6 +1834,42 @@ Instead of trying to come up with a definite list of multiplicities
 which ought to be built in, we hope to be able to propose a solution
 to make it possible for libraries to define new multiplicities.
 
+Note that not all potential multiplicity are compatible with the rule
+to generalise the type of linear constructors to a
+multiplicity-polymorphic type. The affine multiplicity is fine, but a
+multiplicity ``2`` which would mean, for instance that an argument
+must be consumed exactly twice wouldn't. As the following would type
+check
+
+::
+
+  data T a = T a
+
+  -- This is obviously incorrect
+  wrong :: a :2-> a
+  wrong x = case T x of { T y -> y }
+
+If a multiplicity which is incompatible with ``1`` is desirable then
+we will have to add a constraint ``CompatibleWithOne :: Multiplicity ->
+Constraint``, and restrict the multiplicity variables in the type
+of constructors (when used as term) to be compatible with one. In the
+above example,
+
+::
+
+  T :: CompatibleWithOne p => a :p-> a
+
+So, ``wrong`` wouldn't typecheck: it would complain that
+``CompatibleWithOne 2`` doesn't hold.
+
+One way to introduce the ``CompatibleWithOne`` constraint, is to
+manifest the order of multiplicity as a constraints ``(⩽) ::
+Multiplicity -> Multiplicity -> Constraint``. In which case, we
+would define
+
+::
+
+  type CompatibleWithOne p = 1 ⩽ p
 
 The Core corner
 ===============
