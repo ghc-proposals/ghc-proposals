@@ -2093,8 +2093,8 @@ It is not clear yet how the following should be handled:
   matter more in linear types as there are usually no projections.
 - ``@``-patterns: The pattern ``x@(Just _) -> …`` could be seen as
   linear. After all, it is equivalent to ``Just y -> let x = Just y in
-  …``. It is not clear that we can make the linearity checking in Core
-  accept this sort of patterns (see also the `The Core corner`_ section above).
+  …``. This elaborates to a well-typed alternative in Core, but we
+  need to come up with a criterion in the surface language.
 - Pattern synonym: linear pattern synonyms have not been studied
   yet. In particular, how they ought to be type checked, when they are
   defined. It is still unknown whether this problem is hard or easy.
