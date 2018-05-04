@@ -325,6 +325,46 @@ An exception to this rule is ``newtype`` declarations in GADT syntax:
 ``newtype``-s' argument must be linear (see Interactions_
 below).
 
+Linear constructor and backward compatibility
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Consider the following Haskell98 code:
+
+::
+
+   data Maybe a
+     = Just a
+     | Nothing
+
+   f :: (Int -> Maybe Int) -> Int
+   f g = case g 0 of
+       Just n -> n
+       Nothing -> 0
+
+   _ = f Just
+
+Since ``Just`` has type ``a ->. Maybe a`` under the new
+implementation, and that ``(->.)`` is not compatible with ``(->)``
+(See also Subtyping_). Therefore *when using a linear constructor as a
+term*, we modify its type to make the above typecheck. When used in a
+pattern, linear constructors behave as described in the article.
+
+To be precise, every linear field of a constructor ``C`` is generalised,
+when ``C`` is used as a constructor to be of multiplicity ``p`` for a
+fresh ``p``. The non-linear fields are not affected. For instance
+
+* ``Just``, when used as a term, is given the type ``Just :: a :p-> Maybe  a``
+* ``(:)``, when used as a term, is given the type ``(:) :: a :p-> [a]
+  :q-> [a]``
+* With ``data U a where U :: a -> U a``, when ``U`` is used as a term, it
+  is given the type ``U :: a -> U a``
+* With ``data P a b where P :: a ->. b -> U a b``, when ``P`` is used
+  as a term, it is given the type ``P :: a :p-> b -> U a b``
+
+See also `η-expansion`_ for a conceptually simpler alternative which
+turns out not to be complete. See `More multiplicities`_ for
+considerations in a more general setting.
+
 Base
 ----
 
@@ -599,32 +639,6 @@ extended to unboxed data types as well), could provide a
 solution. Mixed-multiplicity unboxed records are, however, required
 internally (see `The Core corner`_): they simply don't have a syntax
 yet.
-
-.. _Subtyping
-
-Subtyping
----------
-
-The type ``A->.B`` is a strengthening of ``A->B``, but the type
-checker doesn't do subtyping. It relies on polymorphism
-instead. However, following the definition above, note that
-
-::
-
-  f :: A ->. B
-
-  g :: A -> B
-  g = f  -- should not be well-typed
-  g x = f x  -- is well-typed
-
-It would be unfortunate if this rule was actually enforced: for instance a linear function in a
-library could not be used with ``map`` from base. Which means that
-everybody would have to start caring about linearity. Worse: every use
-of ``map Just`` would now be untyped. Fortunately, this sort of
-opportunity is easily detected and the former definition of ``g`` is
-understood as the latter, well-typed, one. It means that is not a
-breaking change to strengthen a *first-order* regular arrow ``->``
-into a linear ``->.`` in an interface.
 
 Records and projections
 -----------------------
@@ -1430,6 +1444,8 @@ type to ``catch``:
 Therefore, despite the tantalising proximity, system (1) and (2) are
 different in practice.
 
+.. _`η-expansion`
+
 η-expansion
 -----------
 
@@ -1528,6 +1544,8 @@ based on making constructor polymorphic when they are applied.
 
 Subtyping instead of polymorphism
 ---------------------------------
+
+.. _Subtyping
 
 Since ``A ->. B`` is a strengthening of ``A -> B``, it is tempting to
 make ``A ->. B`` a subtype of ``A -> B``. But subtyping and polymorphism
