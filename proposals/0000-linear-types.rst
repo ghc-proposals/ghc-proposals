@@ -570,7 +570,7 @@ and a right-hand side. Each binder has a multiplicity, which is
 provided by the signature. If there is no signature, the initial
 multiplicity of each binder is ω instead.
 
-Let us consider a judgement $Γ ⊢ (b1 :(π1) A1) … (bn :(πn) An) → u : B$
+Let us consider a judgement ``Γ ⊢ (b1 :(π1) A1) … (bn :(πn) An) → u : B``
 
 - ``Γ ⊢ u : B ⟹ Γ ⊢ → u : B``
 - ``Γ, x :(π) A ⊢ (b1 :(π1) A1) … (bn :(πn) An) → u : B ⟹ Γ ⊢ (x
