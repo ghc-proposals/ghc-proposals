@@ -325,8 +325,10 @@ An exception to this rule is ``newtype`` declarations in GADT syntax:
 ``newtype``-s' argument must be linear (see Interactions_
 below).
 
-Linear constructor and backward compatibility
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Linear constructors and backward compatibility
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. _`Linear constructors`:
 
 Consider the following Haskell98 code:
 
@@ -364,6 +366,41 @@ fresh ``p``. The non-linear fields are not affected. For instance
 See also `η-expansion`_ for a conceptually simpler alternative which
 turns out not to be complete. See `More multiplicities`_ for
 considerations in a more general setting.
+
+Monomorphisation
+----------------
+
+.. _Monomorphisation:
+
+We want that code which doesn't use ``-XLinearTypes`` work as it did
+before. However, since constructors are now linear by default, and
+generalised due to the rule of `Linear constructors`_, we need to
+prevent multiplicity variables to be visible to the unsuspecting user.
+
+To that effect, much like is done for levity variables, wherever type
+variables would be generalised, remaining multiplicity variables are
+monomorphised to ``ω``. This way, ``f = Just`` is inferred to have
+type ``a -> Maybe a`` as before.
+
+This also address a more serious compatibility issue. Consider the
+following Haskell98 code
+
+::
+
+   class Category arr where
+     (.) :: b `arr` c -> a `arr` b -> a `arr` c
+
+   instance Category (->) where
+     f . g = \x -> f (g x)
+
+   f = Just . Just $ 1
+
+The type checker infers that ``Just . Just`` is of type ``a :p-> Maybe
+(Maybe a)`` for some ``p`` such that ``Category (:p->)``. However,
+there is no ``Category`` instance for an arbitrary ``p`` (nor for
+``p=1`` as would be the inferred type without the generalisation rule
+of the `Linear constructors`_ section). But monomorphising to ``p=ω``,
+lets the constraint solver pick the intended ``Category`` instance.
 
 Base
 ----
@@ -1545,7 +1582,7 @@ based on making constructor polymorphic when they are applied.
 Subtyping instead of polymorphism
 ---------------------------------
 
-.. _Subtyping
+.. _Subtyping:
 
 Since ``A ->. B`` is a strengthening of ``A -> B``, it is tempting to
 make ``A ->. B`` a subtype of ``A -> B``. But subtyping and polymorphism
