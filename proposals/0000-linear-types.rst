@@ -365,7 +365,7 @@ will at least define the following data type:
    data Unrestricted a where
      Unrestricted :: a -> Unrestricted a
 
-See the paper for intutions about the ``Unrestricted`` data type.
+See the paper for intuitions about the ``Unrestricted`` data type.
 
 Multiplicities
 --------------
