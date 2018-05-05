@@ -123,7 +123,7 @@ I also propose a similar change to the existing ``WARNING`` pragma syntax:
 Aside: promoted data constructors (and other promoted things)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-One type-level construct that ``infix{l,r} n type`` would not be applicable to is promoted data constructors. The reason is that promoted data constructor names shouldn't be thought of as separate from the original data constructor names, but rather the same names being used in a different context. For this reason, promoted data constructors simply inherit the fixity of the original, unpromoted data constructor (at the value level), so if a user specifies ``infixr 0 value Foo`, then both the constructor `Foo` and its promoted counterpart `'Foo` will be ``infixr 0``.
+One type-level construct that ``infix{l,r} n type`` would not be applicable to is promoted data constructors. The reason is that promoted data constructor names shouldn't be thought of as separate from the original data constructor names, but rather the same names being used in a different context. For this reason, promoted data constructors simply inherit the fixity of the original, unpromoted data constructor (at the value level), so if a user specifies ``infixr 0 value Foo``, then both the constructor ``Foo`` and its promoted counterpart ``'Foo`` will be ``infixr 0``.
 
 For the time being, data constructors are the only named construct in Haskell that can be used in multiple contexts like this. In the future (perhaps in work related to Dependent Haskell), it is conceivable that there will be other value-level constructs that can also be used at the type level. If this were to happen, I would advise following a similar principle of only allowing these constructs to have their fixity specified with ``infix{l,r} n value``, and to have uses of these constructs at the type level inherit their value-level fixities.
 
@@ -173,7 +173,7 @@ The eventual goal is to make ``infix{l,r} n type`` the only means by which one c
 
 Once ``infix{l,r} n type`` is introduced, GHC will have an unambiguous way of specifying fixity declarations for names in both namespaces, and it will also work when quoted in Template Haskell, fixing Trac #14032.
 
-A similar warning mechanism/migration plan would need to be put in place for ``WARNING`` pragmas as well (ironically enough, we'd have to put warnings on ``WARNING``s!)
+A similar warning mechanism/migration plan would need to be put in place for ``WARNING`` pragmas as well (ironically enough, we'd have to put warnings on ``WARNING`` pragmas!)
 
 Effect and Interactions
 -----------------------
