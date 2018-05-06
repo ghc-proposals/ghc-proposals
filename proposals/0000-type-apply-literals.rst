@@ -164,7 +164,7 @@ to overloaded literals.
   [5] :: (Num (GHC.Exts.Item l), GHC.Exts.IsList l) => l
 
   Prelude> :t [5] @[Int]
-  [5] @Int :: [Int]
+  [5] @[Int] :: [Int]
 
 
 This last example is to point out a possible "gotcha", that the type to apply
