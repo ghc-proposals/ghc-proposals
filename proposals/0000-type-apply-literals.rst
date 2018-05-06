@@ -107,7 +107,7 @@ The rules for desugaring work as follows:
 
 **Integers:** Expressions of the form ``1`` will be desugared into:
 
-1. ``integerLit (0 :: Integer)`` if ``fromInteger = Prelude.fromInteger``
+1. ``integerLit (1 :: Integer)`` if ``fromInteger = Prelude.fromInteger``
 2. ``fromInteger (1 :: Integer)`` otherwise
 
 where ``fromInteger = Prelude.fromInteger`` means either ``NoRebindableSyntax``
