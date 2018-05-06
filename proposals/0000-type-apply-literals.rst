@@ -155,7 +155,7 @@ to overloaded literals.
   Prelude> :t [5]
   [5] :: Num a => [a]
 
-  Prelude> :t [5] @[Int]
+  Prelude> :t [5] @Int
   [5] @Int :: [Int]
 
 
