@@ -68,6 +68,7 @@ where ``integerLit`` is defined as:
 
   integerLit :: Integer -> forall a. Num a => a
   integerLit = fromInteger
+  {-# INLINE integerLit #-}
 
 This desugaring's only purpose is to swizzle around the type variable so it can
 be applied after the ``Integer``.
@@ -79,18 +80,66 @@ literals:
 
   rationalLit :: Rational -> forall a. Fractional a => a
   rationalLit = fromRational
+  {-# INLINE rationalLit #-}
+
+  labelLit :: forall (x :: Symbol) a. IsLabel x a => a
+  labelLit = fromlabel @x @a
+  {-# INLINE labelLit #-}
 
   stringLit :: String -> forall a. IsString a => a
   stringLit = fromString
+  {-# INLINE stringLit #-}
 
-  listLit :: [i] -> forall a. (IsList a, i ~ Item a) => a
-  listLit = fromList
+  listLit :: [i] -> [i]
+  listLit a = a
+  {-# INLINE listLit #-}
 
-  listNLit :: Int -> [i] -> forall a. (IsList a, i ~ Item a) => a
-  listNLit = fromListN
+  overListLit :: [i] -> forall a. (IsList a, i ~ Item a) => a
+  overListLit = fromList
+  {-# INLINE overListLit #-}
 
-This desugaring rule will only apply when ``NoRebindableSyntax`` is enabled,
-because type applications work as expected when syntax is rebound.
+  overListNLit :: Int -> [i] -> forall a. (IsList a, i ~ Item a) => a
+  overListNLit = fromListN
+  {-# INLINE overListNLit #-}
+
+
+The rules for desugaring work as follows:
+
+**Integers:** Expressions of the form ``1`` will be desugared into:
+
+1. ``integerLit (0 :: Integer)`` if ``fromInteger = Prelude.fromInteger``
+2. ``fromInteger (1 :: Integer)`` otherwise
+
+where ``fromInteger = Prelude.fromInteger`` means either ``NoRebindableSyntax``
+OR ``RebindableSyntax`` and the ``fromInteger`` in scope is equal to
+``Prelude.fromInteger``.
+
+**Rationals**: Completely analogous to the integer case.
+
+**Labels**: Completely analogous to the integer case.
+
+**Strings**: Expressions of the form ``"hello"`` will be desugared into:
+
+1. ``stringLit ("hello" :: String)`` if ``OverloadedStrings`` and ``fromString
+   = GHC.Exts.fromString``
+2. ``fromString ("hello" :: String)`` if ``OverloadedStrings`` and ``fromString
+   /= GHC.Exts.fromString``
+3. ``"hello"`` (no desugaring) otherwise
+
+**Lists**: Expressions of the form ``[a, b]`` will be desugared into:
+
+1. ``listLit [a, b]`` if ``NoOverloadedLists``
+2. ``overListNLit (2 :: Int) [a, b]`` if ``OverloadedLists`` and ``fromListN
+   = GHC.Exts.fromListN``
+3. ``fromListN (2 :: Int) [a, b]`` otherwise
+
+Expressions of the form ``[a..b]`` will be desugared into:
+
+1. ``listLit [a..b]`` if ``NoOverloadedLists``
+2. ``overListLit [a..b]`` if ``OverloadedLists`` and ``fromList
+   = GHC.Exts.fromList``
+3. ``fromList [a..b]`` otherwise
+
 
 Effect and Interactions
 -----------------------
@@ -103,15 +152,35 @@ to overloaded literals.
   5 @Double :: Double
 
 
+  Prelude> :t [5]
+  [5] :: Num a => [a]
+
+  Prelude> :t [5] @[Int]
+  [5] @Int :: [Int]
+
+
+  Prelude> :set -XOverloadedLists
+  Prelude> :t [5]
+  [5] :: (Num (GHC.Exts.Item l), GHC.Exts.IsList l) => l
+
+  Prelude> :t [5] @[Int]
+  [5] @Int :: [Int]
+
+
+This last example is to point out a possible "gotcha", that the type to apply
+to a list is different depending on whether or not ``OverloadedLists`` is
+enabled.  However, such a difference is correctly described by the types.
+
+
 Costs and Drawbacks
 -------------------
-As best I can tell, there are no drawbacks to this proposal.
+As best I can tell, there are no drawbacks to this proposal. The new desugaring
+logic is invisible to users, and its implementation can draw heavily upon the
+existing logic for desugaring in terms of ``RebindableSyntax``.
 
-The development cost of this proposal is minimal; I have a working
-implementation for the ``Num``, ``Rational``, ``IsString`` and ``IsList`` cases
-already, which is roughly 50 SLOC. Adding labels to this is unlikely to be
-significantly more costly. The maintenance burden is likely to be
-correspondingly small.
+The development cost of this proposal is unlikely to be significant. I have
+a mostly-working implementation of it already which is roughly 50 SLOC. The
+maintenance burden is likely to be correspondingly small.
 
 
 Alternatives
@@ -122,12 +191,19 @@ Alternatives
 of this proposal which suggested special desugaring rules for type applied
 directly to overloaded literals, which would get reshuffled to the correct
 location on the ``fromInteger`` call. Feedback from the community suggested
-this to be more complicated than it was worth.
+this to be more complicated than it was worth. Furthermore this approach
+doesn't provide any immediate solutions for how to type-apply lists.
 
 
-**A second alternative**  is to completely bypass the issue, and write `id @Int
-5` intead of `5 @Int`. This works today, but is clearly the lowest-cost
-workaround to the motivating problem of this proposal.
+**A second alternative**  is to do nothing, and write `id @Int 5` intead of `5
+@Int`. This works today, but is clearly the lowest-cost workaround to the
+motivating problem of this proposal.
+
+
+**Another alternative** is to wait until #99, which allows giving
+``fromInteger`` and ``fromRational`` the correct types without desugaring,
+although doesn't seem to directly permit us to do so for other
+overloaded literals.
 
 
 Unresolved questions
