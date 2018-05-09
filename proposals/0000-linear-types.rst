@@ -727,10 +727,10 @@ or ``case`` in the surface syntax), we want to infer the multiplicity
 annotation. The process for this is not yet defined (see `Unresolved
 questions`_ below for a more precise description of this issue).
 
-.. _Exceptions
-
 Non-termination, exceptions & catch
 -----------------------------------
+
+.. _Exceptions:
 
 In the presence of non-termination or exceptions, linear functions may
 fail to fully consume their argument. We can think of it as: the
@@ -1403,10 +1403,10 @@ type to ``catch``:
 Therefore, despite the tantalising proximity, system (1) and (2) are
 different in practice.
 
-.. _`η-expansion`
-
 η-expansion
 -----------
+
+.. _`η-expansion`:
 
 In a previous version of this proposal we proposed that, despite the
 following not being well-typed according to core rules
