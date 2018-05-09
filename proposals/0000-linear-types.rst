@@ -37,6 +37,16 @@ The theory behind this proposal has been fully developed in a peer
 reviewed conference publication that will be presented at POPL'18. See
 the `extended version of the paper <https://arxiv.org/abs/1710.09756>`_.
 
+**Main differences between the proposal and the paper:**
+
+* The paper relies on η-expansion to make the proposed typing of
+  data constructors backwards compatible. It turns out to be
+  incomplete (see `η-expansion`_). Instead we make constructors more
+  polymorphic (see `Linear constructors`_).
+* There are non-trivial differences between Core and the calculus
+  presented in the paper. We describe the differences in a `companion
+  document <TODO LINK>`_
+
 Motivation
 ==========
 
