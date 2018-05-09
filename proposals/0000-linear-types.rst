@@ -2127,6 +2127,14 @@ is attempted in `this proposal
 Implementation Plan
 ===================
 
-- @aspiwack will implement the proposal
+- @aspiwack and @mpickering will implement the proposal. There is a
+  prototype implementation hosted `here
+  <https://github.com/tweag/ghc/tree/linear-types>`_. It currently
+  implements:
+  - Monomorphic multiplicities (no multiplicity variables yet)
+  - Interactions with most of Haskell98
+  - Core's linter
 - @aspiwack will implement and release a library exporting standard
   functions and types for linearly typed programs.
+  - A first iteration is hosted `here
+    <https://github.com/tweag/linear-base/>`_.
