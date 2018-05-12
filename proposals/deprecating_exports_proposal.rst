@@ -76,7 +76,23 @@ You can also remove the export altogether but the whole point of deprecation war
 
 Unresolved questions
 --------------------
-There are 2 different proposed designs (again, see: https://ghc.haskell.org/trac/ghc/ticket/4879).
+There are 2 different proposed designs: 
+
+1 ::
+
+    module Data.List
+    (  ...
+        {-# DEPRECATE lines "Exported from Data.String instead" #-}
+        , lines
+        ...
+    ) where
+    ...
+
+2 ::
+    
+    {-# DEPRECATE_EXPORT lines "Exported from Data.String instead" #-}
+
+
 I am leaning towards the first one as it readily shows next to an export that it is being deprecated but I am very open to any discussion regarding this.
 
 
