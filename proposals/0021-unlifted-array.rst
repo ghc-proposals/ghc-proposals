@@ -1,7 +1,7 @@
 UnliftedArray
 ==============
 
-.. proposal-number:: 17
+.. proposal-number:: 21
 .. trac-ticket::
 .. implemented::
 .. highlight:: haskell
