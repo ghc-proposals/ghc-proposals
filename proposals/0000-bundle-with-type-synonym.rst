@@ -104,6 +104,16 @@ An import of the form ``T(d1,...,dm)``, where ``T`` is a type synonym exported i
 
 An import of the form ``T(..)``, where ``T`` is a type synonym exported in the form ``T(c1,...,cn)`` will import ``T`` and ``c1`` to ``cn``.
 
+
+Is there a better way of checking whether ``c1`` to ``cn`` are actually
+associated with the type synonym ``T``?
+
+None have been proposed.
+
+The specification covers the simple case where the type synonym unfolds
+directly into a data type or newtype, based on
+`AssociatingSynonyms#Typing <https://ghc.haskell.org/trac/ghc/wiki/PatternSynonyms/AssociatingSynonyms#Typing>`_.
+
 Discussion
 ^^^^^^^^^^
 
@@ -116,6 +126,11 @@ the export list of the `State` module could be changed to ::
  ) where
 
 Then, importing ``State(..)`` from the ``State`` module would import the pattern and selector into another module.
+
+Should this be tied to some language extension?
+^^^^^^^^^^
+
+Bundling pattern synonyms isn't guarded by a language extension so it seems sensible that this isn't either.
 
 Drawbacks
 ---------
@@ -131,11 +146,8 @@ None so far.
 Unresolved Questions
 --------------------
 
-* Should this be tied to some language extension?
-* Is there a better way of checking whether ``c1`` to ``cn`` are actually associated with the type synonym ``T``?
-  (the specification covers the simple case where the type synonym unfolds directly into a data type or newtype,
-  based on `AssociatingSynonyms#Typing <https://ghc.haskell.org/trac/ghc/wiki/PatternSynonyms/AssociatingSynonyms#Typing>`_.)
-  
+None at the moment.
+
 Remarks
 -------
 
