@@ -130,7 +130,8 @@ Then, importing ``State(..)`` from the ``State`` module would import the pattern
 Should this be tied to some language extension?
 ^^^^^^^^^^
 
-Bundling pattern synonyms isn't guarded by a language extension so it seems sensible that this isn't either.
+Bundling pattern synonyms with type constructors isn't guarded by a language
+extension so it seems sensible that this isn't either.
 
 Drawbacks
 ---------
