@@ -105,8 +105,8 @@ An import of the form ``T(d1,...,dm)``, where ``T`` is a type synonym exported i
 An import of the form ``T(..)``, where ``T`` is a type synonym exported in the form ``T(c1,...,cn)`` will import ``T`` and ``c1`` to ``cn``.
 
 
-Is there a better way of checking whether ``c1`` to ``cn`` are actually
-associated with the type synonym ``T``?
+*Is there a better way of checking whether ``c1`` to ``cn`` are actually
+associated with the type synonym ``T``?*
 
 None have been proposed.
 
