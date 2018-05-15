@@ -10,7 +10,7 @@
 
 .. highlight:: haskell
 
-This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/134>`_.
+This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/135>`_.
 
 .. contents::
 
@@ -32,7 +32,7 @@ additionally to current
 .. code-block:: haskell
 
   "primitive"#           -- Addr# in utf8
-  "string                -- String or IsString a => a
+  "string"               -- String or IsString a => a
 
 Also ordinary ``String`` literals will use new (UTF-8) ``ByteArray#`` literals under the hood (instead of currently used problematic Modified-UTF8 ``Addr#``).
 
@@ -71,7 +71,7 @@ Currently, it's possible to create primitive ``Addr#`` string literals:
 
 These literals are ``[Word8]`` literals, *primitive string literal must contain only characters <= '\xFF'*.
 
-Ordinary strings, like ``"hello``, ``"Юникод"``, ``"\NUL"`` are then desugared as
+Ordinary strings, like ``"hello"``, ``"Юникод"``, ``"\NUL"`` are then desugared as
 
 .. code-block:: haskell
 
@@ -169,7 +169,7 @@ The current primitive string
 
 .. code-block:: haskell
 
-  "hello#
+  "hello"#
 
 will mean the same as
 
