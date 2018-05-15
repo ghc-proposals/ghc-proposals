@@ -1,15 +1,13 @@
-.. proposal-number:: Leave blank. This will be filled in when the proposal is
-                     accepted.
-
-.. trac-ticket:: Leave blank. This will eventually be filled with the Trac
-                 ticket number which will track the progress of the
-                 implementation of the feature.
-
-.. implemented:: Leave blank. This will be filled in with the first GHC version which
-                 implements the described feature.
-
 Refining the plugin recompilation API
 ==============
+
+.. proposal-number:: 22
+.. trac-ticket::
+.. implemented::
+.. highlight:: haskell
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/108>`_.
+.. sectnum::
+.. contents::
 
 Modules compiled with plugins are always recompiled even if the source file is
 unchanged. This most conservative option is taken due to the ability of plugins
