@@ -51,7 +51,7 @@ In case (1) we recompile the module.
 
 We handle cases (2) and (3) by the same mechanism.
 
-We augment each plugin with an additional field for calculating a fingerprint
+We augment the plugin data type with an additional field for calculating a fingerprint
 for the current module. It follows the same modular style as existing plugins.::
 
   pluginRecompile :: [CommandLineOption] -> IfG PluginRecompile
@@ -67,16 +67,13 @@ fingerprint differs, or returns ``ForceRecompile``, recompilation is triggered.
 This function is then lifted appropriately to work as the other recompilation
 checking functions in ``MkIface`` and run after the other recompilation checks.
 
-As we have a separate ``pluginRecompile`` function for each different type of plugin
-we can accurately report *why* recompilation was required.
-
 Precise change to ``Plugin``
 ----------------------------
 
-Each different field of ``Plugin`` is wrapped in a data type ::
+We add an additional field ``pluginRecompile`` to ``Plugin``. ::
 
-  data PluginPass t =
-        PluginPass { runPlugin :: t
+  data Plugin = Plugin {
+                   ....
                    , pluginRecompile :: [CommandLineOption] -> IfG PluginRecompile
                    }
 
@@ -92,29 +89,19 @@ be recompiled. ``MaybeRecompile`` computes a ``Fingerprint`` and if this ``Finge
 is different to a previously computed ``Fingerprint`` for the plugin, then
 we recompile the module.
 
-The concrete modification to ``Plugin`` might look as follows::
-
-  data Plugin =
-    { installCoreToDos :: CorePlugin
-    , tcPlugin :: TcPlugin
-    }
-
-  type CorePlugin = PluginPass ([CommandLineOption] -> [CoreToDo] -> CoreM [CoreToDo])
-  type TcPlugin = PluginPass ([CommandLineOption] -> Maybe TcRnTypes.TcPlugin)
-
 For the common case of a pure plugin, we can provide a function which appropiately
 lifts a function to a ``PluginPass``.::
 
-  purePlugin :: t -> PluginPass t
-  purePlugin plugin = PluginPass t (const (return NoForceRecompile))
+  purePlugin :: [CommandLineOption] -> IfG PluginRecompile
+  purePlugin args = return NoForceRecompile
 
 The advantage of using ``NoForceRecompile`` rather than a constant ``MaybeRecompile``
 is that an end user doesn't have to concern themselves with the details of
 what a ``Fingerprint`` is or how to construct one. An alternative is to
 provide a smart constructor wrapping ``fingerprint0``.
 
-This will break every existing use of plugins but the API is described as
-"preminary and highly likely to change in the future".
+By default, the field is initialised to always return ``ForceRecompile``
+in order to maintain backwards compatible behaviour.
 
 Specification of Purity
 -----------------------
@@ -189,7 +176,8 @@ as you must then run the plugin in order to decide whether to run the plugin!
 
 An earlier proposal proposed a single hashing function added as a field to the ``Plugin``
 data type. This has now been changed to this more fine-grained approach where each
-pass computes a suitable hash.
+pass computes a suitable hash. It was finally decided by the committee to revert
+ to the backwards compatible version.
 
 
 Unresolved Questions
