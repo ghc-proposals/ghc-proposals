@@ -2,12 +2,14 @@ Type-level type applications
 ============================
 
 .. proposal-number:: 15
-.. trac-ticket::
+.. trac-ticket:: `#12045`_
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/80>`_.
 .. sectnum::
 .. contents::
+
+.. _`#12045`: https://ghc.haskell.org/trac/ghc/ticket/12045
 
 Allow the use of type applications at the type level. For example,
 we could write::
