@@ -1,21 +1,14 @@
-.. proposal-number:: Leave blank. This will be filled in when the proposal is
-                     accepted.
-
-.. trac-ticket:: Leave blank. This will eventually be filled with the Trac
-                 ticket number which will track the progress of the
-                 implementation of the feature.
-
-.. implemented:: Leave blank. This will be filled in with the first GHC version which
-                 implements the described feature.
-
-.. highlight:: haskell
-
-This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/103>`_.
-
-.. contents::
-
 Treat kind variables and type variables identically in ``forall``
 =================================================================
+
+.. proposal-number:: 24
+.. trac-ticket::
+.. implemented::
+.. highlight:: haskell
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/103>`_.
+.. sectnum::
+.. contents::
+
 
 GHC has supported kind polymorphism since version 7.4. Kind polymorphism allows (among
 other features) users to specify *kind variables* in their declarations. When the
