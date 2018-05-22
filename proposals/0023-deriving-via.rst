@@ -2,7 +2,7 @@ Deriving Via
 ============
 
 .. proposal-number:: 23
-.. trac-ticket::
+.. trac-ticket:: 15178
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/120>`_.
