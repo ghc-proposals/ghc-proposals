@@ -29,11 +29,13 @@ The syntax would be as follows:
 
     module Data.List
     (  ...
-        {-# DEPRECATE lines "Exported from Data.String instead" #-}
-        , lines
+        {-# DEPRECATED "Exported from Data.String instead" #-}
+        lines, 
         ...t 
     ) where
     ...
+
+The deprecation pragma would have an effect on an export that immediately follows it, only top level exports would be considered. 
 
 The semantics are also described in the aforementioned ticket as follows: 
 
@@ -74,6 +76,8 @@ You can also remove the export altogether but the whole point of deprecation war
 
 Unresolved questions
 --------------------
+UPDATE: The proposed design now does not have an export identifier and so the question below is resolved.
+
 There are 2 different proposed designs: 
 
 1 ::
