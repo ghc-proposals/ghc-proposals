@@ -235,7 +235,7 @@ Proposed Change Specification
 | Proposed syntax changes                                 | Semantics, restrictions                                        |
 +=========================================================+================================================================+
 | ``{-# LANGUAGE  AllowInstanceGuards #-}``               | * No effect on its own; is for doco/build tools.               |
-|                                                         | * Neither implies not contradicts other pragmas;               |
+|                                                         | * Neither implies nor contradicts other pragmas;               |
 | * New extension.                                        |   so might also be ``OverlappingInstances``, etc.              |
 +---------------------------------------------------------+----------------------------------------------------------------+
 | ``class`` [ ``{-# INSTANCEGUARDS #-}`` ] ...            | * Enables guard syntax on instances.                           |
@@ -276,40 +276,17 @@ Proposed Change Specification
 |                                                         |   validate instances pairwise for consistency:                 |
 | * to be stricter, after taking guards into account.     |                                                                |
 |                                                         |   - If the argument sides of the instance heads unify,         |
-|                                                         |     giving substitution ``σ2``;                                |
-|                                                         |   - Apply ``σ2`` to the *iguardi*;                             |
-|                                                         |   - If any ``σ2``\(*type1*) == ``σ2``\(*type2*), accept the    |
+|                                                         |     giving substitution ``ϛ``;                                 |
+|                                                         |   - Apply ``ϛ`` to the *iguardi*;                              |
+|                                                         |   - If any ``ϛ``\(*type1*) == ``ϛ``\(*type2*), accept the      |
 |                                                         |     instance pairs as apart wrt that ``FunDep``.               |
-|                                                         |   - Otherwise apply ``σ2`` to the result sides.                |
+|                                                         |   - Otherwise apply ``ϛ`` to the result sides.                 |
 |                                                         |   - If *not* strictly equal, reject that instance pair         |
 |                                                         |     as not consistent wrt that ``FunDep``.                     |
 |                                                         |     **Note:** this is a stricter test than GHC currently,      |
 |                                                         |     which requires only the result sides be unifiable after    |
-|                                                         |     applying ``σ2``.                                           |
+|                                                         |     applying ``ϛ``.                                            |
 +---------------------------------------------------------+----------------------------------------------------------------+
-
-
-...
-
-+---------------------+--------------------------------------------+-------------------------------------------------------+
-| Haskell element     | Syntax changes                             | Semantics                                             |
-+=====================+============================================+=======================================================+
-| ``LANGUAGE`` pragma | new extension ``AllowInstanceGuards``      | * No effect as such; is for doco/build tools.         |
-|                     |                                            | * Neither implies nor contradicts other pragmas;      | 
-|                     |                                            |   so also might be ``OverlappingInstances``, etc.     |
-+---------------------+--------------------------------------------+-------------------------------------------------------+
-| ``class`` pragma    | *topdecl* -> ``class``                     | * enables guard syntax on instances.                  |
-|                     |    [ ``{-# INSTANCEGUARDS #-}`` ]          | * enforces strict/eager validation                    |
-|                     |    [*scontext* ``=>``] *tyclass* ...       |   against instance overlaps *for this class only*.    |
-+---------------------+--------------------------------------------+-------------------------------------------------------+
-| Functional          | (no change to syntax)                      | * enforces stricter ``FunDep`` consistency check,     |
-|   Dependencies      |                                            |   taking guards into account.                         |
-+---------------------+--------------------------------------------+-------------------------------------------------------+
-| ``type family`` head| ``type family``                            | * enables guard syntax on instances                   |
-|                     |   [ ``{-# INSTANCEGUARDS #-}`` ]           | * enforces strict/eager validation                    |
-|                     |                                            |   against instance overlaps.                          |
-|   Assoc types       | inherit the pragma from parent class       |                                                       |
-+---------------------+--------------------------------------------+-------------------------------------------------------+
 
 
 Class or Type Family declaration
