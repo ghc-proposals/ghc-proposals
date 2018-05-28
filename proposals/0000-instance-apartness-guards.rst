@@ -224,7 +224,63 @@ Note that there's no need to repeat the Equality constraint on each instance, be
 
 (Those Associated type instances are a little cluttered with the guards. A nice-to-have would be to automatically copy them from the class instance.)
 
+Longer-term: Explicit Apartness Logic underpins Type Improvement
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+Both ``FunctionalDependencies`` and ``InjectiveTypeFamilies`` (particularly with risks of infinite types) are currently hobbled because they don't/can't see instances globally to understand the type 'theory' of the whole program.
+
+``InstanceGuards`` doesn't propose any global logic as such. It enables just enough logic on a per-instance basis to:
+
+* Enforce a global consistency by validating instances pairwise (and eagerly).
+* In particular, detect when 'Orphan Instances' might introduce inconsistency.
+* Provide finer-scale control over which instance to select, and yet avoid a closed world.
+  (``ClosedTypeFamilies`` currently provides that fineness of control. Similar logic has been proposed for class instances.
+  But ``ClosedTypeFamilies``'s sequence of equations is an implicit logic, not visible for type improvement.)
+* Make that fine-scale logic visible for type improvement with ``FunctionalDependencies`` and ``InjectiveTypeFamilies``.
+* Reduce the need for ``UndecidableInstances``, which hide type improvement from the compiler.
+  (Such instances are often needed currently as a consequence of work-rounds for ``FunDep`` limitations.)
+
+By making ``InstanceGuards`` per-class or per-Type Family, the proposed design supports co-existing with ``Overlap``/``Incoherent``/``Undecidable``/``Injective`` and other overloading features. 
+Then ``InstanceGuards`` can sidle in as an underpinning mechanism to bring together and eventually replace those extensions, supporting the finer-scale logic for type improvement. Specifically:
+
+1. ``ClosedTypeFamilies`` under the hood relies on the same apartness and 'coincident overlap' logic as ``InstanceGuards`` makes explicit. They should share the same mechanism.
+2. This proposal introduces that same logic for stand-alone Type Family instances. In particular, that also makes it available for Associated Types, so the type improvement logic can appear within the class instance; and on an open world basis.
+3. ``InstanceGuards`` are at least as expressive as ``OverlappingInstances``, with finer control than the current per-instance pragmas.
+   Then they can be used in cases currently needing resort to ``INCOHERENT``.
+   Specifically, the guards express the boundaries of overlap, not just permissibility of overlap.
+   Therefore they anticipate other instances in other modules, avoiding 'Orphan Instances' headaches.
+4. ``InstanceGuards`` provide an underpinning mechanism for ensuring global consistency of type improvement
+   -- whether it be via ``FunctionalDependencies`` or ``TypeFamilies``, including ``Injectivity`` beyond current capability.
+   That is, ``Injectivity`` such as from result plus one argument to another argument -- which is already available with ``FunDeps``.
+   The difficulty currently with injectivity is ensuring consistency of type improvement.
+   Currently, too often the compiler complains of inconsistency where there is none -- but seeing that would require a global analysis of the overlap logic.
+   To ease that limitiation somewhat, GHC currently applies a 'bogus' consistency check, with several unfortunate consequences.
+   Instead ``InstanceGuards`` captures just enough of the global logic per-instance. Then the consistency check can apply precisely.
+   And type improvement can apply precisely, typically not needing ``UndecidableInstances`` (neither for class instances nor for Type Families).
+5. There are a number of long-outstanding GHC tickets with niggles or suggestions around overlaps and ``FunDeps`` (and their well-known work-rounds). ``InstanceGuards`` provides a more coherent mechanism to address them.
+
+As a specific case in point that brings together many of these interactions with injectivity and type improvement, consider from the `Injective Type Families 2015 paper <http://ics.p.lodz.pl/~stolarek/_media/pl:research:stolarek_peyton-jones_eisenberg_injectivity_extended.pdf>`_
+Section 4.1, **Awkward Case 3: infinite types** ::
+
+    type family Z a = r | r → a 
+    type instance Z [a] = (a, a)
+    type instance Z (Maybe b) = (b, [b])
+
+“Are there any types ``s`` and ``t`` for which ``Z [t] ∼ Z (Maybe s)``? Well, by reducing both sides of this equality that would require ``(t, t) ∼ (s, [s])``.”
+
+i.e. the infinite type ``[ t → s, s → [s] ]``
+
+Of course, the programmer doesn't want to apply ``Z`` to an infinite type; but there’s no way currently to tell GHC that.
+
+“As long as GHC accepts potentially non-terminating type families, the possibility of such a disaster is real, and we must guard against it.”
+
+So GHC rejects ``Z``. But with guards we _can_ “guard against” infinite types. Here’s a brutal guard::
+
+    type family Z2 a = r | r → a 
+    type instance Z2 [a] | a /~ [_] = (a, a)      -- the snd of the pair must not be a list
+    type instance Z2 (Maybe b) = (b, [b])         -- the snd of the pair must be a list
+
+Then the check for consistency of ``r → a`` across those instances cannot unify ``(t, t) ∼ (s, [s])`` because ``t`` arising from the ``Z2 [a]`` instance must not be a list. (If ``Z`` were a Closed Type Family, it might be possible to order the equations to trap cases that would trigger infinite types. There's a tension: an order that would suit the LHS might not suit the RHS. It gets harder with injectivity from result plus one argument to another argument. With ``InstanceGuards`` finer/less brutal control can be expressed.)
 
 Proposed Change Specification
 -----------------------------
