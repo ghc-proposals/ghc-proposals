@@ -229,6 +229,29 @@ Note that there's no need to repeat the Equality constraint on each instance, be
 Proposed Change Specification
 -----------------------------
 
+**Summary: syntax and semantics**
+
++---------------------+--------------------------------------------+-------------------------------------------------------+
+| Haskell element     | Syntax changes                             | Semantics                                             |
++=====================+============================================+=======================================================+
+| ``LANGUAGE`` pragma | new extension ``AllowInstanceGuards``      | * No effect as such, is for doco/build tools.         |
+|                     |                                            | * Neither implies nor contradicts other pragmas;      | 
+|                     |                                            |   so also might be ``OverlappingInstances``, etc.     |
++---------------------+--------------------------------------------+-------------------------------------------------------+
+| ``class`` pragma    | *topdecl* -> ``class``                     | * enables guard syntax on instances.                  |
+|                     |    [ ``{-# INSTANCEGUARDS #-}`` ]          | * enforces strict/eager validation                    |
+|                     |    [*scontext* ``=>``] *tyclass* ...       |   against instance overlaps *for this class only*.    |
++---------------------+--------------------------------------------+-------------------------------------------------------+
+| Functional          | (no change to syntax)                      | * enforces stricter ``FunDep`` consistency check,     |
+|   Dependencies      |                                            |   taking guards into account.                         |
++---------------------+--------------------------------------------+-------------------------------------------------------+
+| ``type family`` head| ``type family``                            | * enables guard syntax on instances                   |
+|                     |   [ ``{-# INSTANCEGUARDS #-}`` ]           | * enforces strict/eager validation                    |
+|                     |                                            |   against instance overlaps.                          |
+|   Assoc types       | inherit the pragma from parent class       |                                                       |
++---------------------+--------------------------------------------+-------------------------------------------------------+
+
+
 Class or Type Family declaration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
