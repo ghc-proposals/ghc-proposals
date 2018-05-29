@@ -2,7 +2,7 @@ Embrace ``Type :: Type``
 ==========================
 
 .. proposal-number:: 20
-.. trac-ticket::
+.. trac-ticket:: #15195
 .. implemented::
 .. highlight:: haskell
 .. header::
