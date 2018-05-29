@@ -257,6 +257,8 @@ Then ``InstanceGuards`` can sidle in as an underpinning mechanism to bring toget
    To ease that limitiation somewhat, GHC currently applies a 'bogus' consistency check, with several unfortunate consequences.
    Instead ``InstanceGuards`` captures just enough of the global logic per-instance. Then the consistency check can apply precisely.
    And type improvement can apply precisely, typically not needing ``UndecidableInstances`` (neither for class instances nor for Type Families).
+   This proposal would fit very neatly with the per-class ``DECIDABLE`` `proposal version <https://github.com/ghc-proposals/ghc-proposals/pull/114#issuecomment-374561689>`_,
+   but they are orthogonal proposals.
 5. There are a number of long-outstanding GHC tickets with niggles or suggestions around overlaps and ``FunDeps`` (and their well-known work-rounds). ``InstanceGuards`` provides a more coherent mechanism to address them.
 
 As a specific case in point that brings together many of these interactions with injectivity and type improvement, consider from the `Injective Type Families 2015 paper <http://ics.p.lodz.pl/~stolarek/_media/pl:research:stolarek_peyton-jones_eisenberg_injectivity_extended.pdf>`_
@@ -293,8 +295,11 @@ Proposed Change Specification
 | ``{-# LANGUAGE  AllowInstanceGuards #-}``               | * No effect on its own; is for doco/build tools.               |
 |                                                         | * Neither implies nor contradicts other pragmas;               |
 | * New extension.                                        |   so might also be ``OverlappingInstances``, etc.              |
+|                                                         | * Enables per-class ``INSTANCEGUARDS`` and guard syntax        |
+|                                                         |   for any instance for such a class -- irrespective of         |
+|                                                         |   whether ``AllowInstanceGuards`` set in the instance's module.|
 +---------------------------------------------------------+----------------------------------------------------------------+
-| ``class`` [ ``{-# INSTANCEGUARDS #-}`` ] ...            | * Enables guard syntax on instances.                           |
+| ``class`` [ ``{-# INSTANCEGUARDS #-}`` ] ...            | * Enables guard syntax on instances -- in any module.          |
 |                                                         | * Enforces strict/eager validation                             |
 | * New per-class pragma.                                 |   against instance overlaps *for this class only*.             |
 | * Functional Dependencies: no change to syntax.         | * Enforces stricter ``FunDep`` consistency check,              |
@@ -306,16 +311,18 @@ Proposed Change Specification
 |   from the parent class.                                |                                                                |
 +---------------------------------------------------------+----------------------------------------------------------------+
 | ``instance`` [ *scontext*] ``=>`` ] *qtycls* *inst*     | * No ``OVERLAP`` or ``INCOHERENT`` pragmas allowed             |
-|   [ ``|`` *iguards* ] [ ``where`` *idecls* ]            |   for classes marked ``INSTANCEGUARDS``.                       |
-|                                                         |   (So ignore module-level ``OVERLAP``/``INCOHERENT``.)         |  
-|                                                         | * *qtycls* *inst* (instance head) can overlap other instance   |
-| * ``|`` *iguards* is new option.                        |   heads, but not after taking *iguards* into account.          |
+| [ ``|`` *iguards* ] [ ``where`` *idecls* ]              |   for classes marked ``INSTANCEGUARDS``.                       |
+|                                                         |   (So ignore module-level ``Overlap``/``Incoherent``.)         |  
+|                                                         | * *qtycls* *inst* (instance head) must not overlap             |
+| * ``|`` *iguards* is new option.                        |   other instance heads, unless *iguards* explicitly            |
+|                                                         |   make them apart.                                             |
 +---------------------------------------------------------+----------------------------------------------------------------+
-| ``type instance`` *qtycon* *insts*                      | * *qtycon* *insts* (instance head) can overlap other instance  |
-|   [ ``|`` *iguards* ] ``=`` ...                         |   heads, but not after taking *iguards* into account.          |
+| ``type instance`` *qtycon* *insts*                      | * *qtycon* *insts* (instance head) must not overlap            |
+| [ ``|`` *iguards* ] ``=`` ...                           |   other instance heads, unless *iguards* explicitly            |
+|                                                         |   make them apart.                                             |
 | * ``|`` *iguards* is new option.                        |                                                                |
-| * Associated type instances: inherent *iguards*         |                                                                |
-|   from the parent instance.                             |                                                                |
+| * Associated type instances: inherit *iguards*          | * For Assoc type instances, optionally allow explicit guards.  |
+|   from the parent instance.                             |   They must be same as on the parent instance, modulo α-rename.|
 +---------------------------------------------------------+----------------------------------------------------------------+
 | *iguards* → *iguard1* ``,`` ... ``,`` *iguardn*         | * All *iguardi* must hold to select an instance.               |
 |                                                         |                                                                |
