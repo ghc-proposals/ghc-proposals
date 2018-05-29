@@ -307,7 +307,7 @@ Proposed Change Specification
 +---------------------------------------------------------+----------------------------------------------------------------+
 | ``type family`` [ ``{-# INSTANCEGUARDS #-}`` ] ...      | * Enables guard syntax on instances.                           |
 |                                                         | * Enforces strict/eager validation against instance overlaps.  |
-| * Associated types: inherit the pragma                  |                                                                |
+| * Associated types: inherit the pragma                  | * (Potentially) allows more expressive injective families.     |
 |   from the parent class.                                |                                                                |
 +---------------------------------------------------------+----------------------------------------------------------------+
 | ``instance`` [ *scontext*] ``=>`` ] *qtycls* *inst*     | * No ``OVERLAP`` or ``INCOHERENT`` pragmas allowed             |
@@ -326,14 +326,26 @@ Proposed Change Specification
 +---------------------------------------------------------+----------------------------------------------------------------+
 | *iguards* → *iguard1* ``,`` ... ``,`` *iguardn*         | * All *iguardi* must hold to select an instance.               |
 |                                                         |                                                                |
-| *iguard*  → *type1* ``/~`` *type2*                      | * To apply guards (after matching the instance head):          |
+| * *n* ≥ 1.                                              | * To apply guards (after matching the instance head):          |
 |                                                         |                                                                |
-| * *n* ≥ 1.                                              |   - unify types at the usage site with the head,               |
-| * *typei* can freely include *tycon*, *tyvar*           |     giving substitution ``σ``.                                 |
-|   but *tyvar* only from the instance head.              |   - Apply ``σ`` to the *iguardi*.                              |
-| * *typei* can include wildcard ``_``; must all appear   |   - If any ``σ``\(*type1*) == ``σ``\(*type2*), do not select   |
-|   on same side of ``/~``.                               |     the instance (strictly same type, not merely unifiable).   |
-|                                                         |   - Except *do* unify with wildcard ``_``.                     |
+| *iguard*  → *type1* ``/~`` *type2*                      |   - unify types at the usage site with the head,               |
+|                                                         |     giving substitution ``σ``;                                 |
+| * *typei* can freely include *tycon*, *tyvar*           |   - apply ``σ`` to the *iguardi*;                              |
+|   but *tyvar* only from the instance head.              |   - if any ``σ``\(*type1*) == ``σ``\(*type2*), do not select   |
+| * *typei* can include wildcard ``_``; must all appear   |     the instance (strictly same type, not merely unifiable);   |
+|   on same side of ``/~``.                               |   - except *do* unify with wildcard ``_``.                     |
+|                                                         |                                                                |
+|                                                         | * Validation for instance *qtycon* *insts* is to ensure the    |
+|                                                         |   above logic can select at most one instance:                 |
+|                                                         |                                                                |
+|                                                         |   - compare the instances pairwise;                            |
+|                                                         |   - if the heads are apart, accept OK;                         |
+|                                                         |   - if the heads overlap but no guards, reject;                |
+|                                                         |     (that is, must be guards on at least one of the instances);|
+|                                                         |   - otherwise, unify the heads giving substitution ``σ``.      |
+|                                                         |   - apply ``σ`` to the *iguardi*.                              |
+|                                                         |   - at least one of the guards must give a disequality, that is|
+|                                                         |     ``σ``\(*type1*) ≠ ``σ``\(*type2*).                         |
 +---------------------------------------------------------+----------------------------------------------------------------+
 | Functional Dependency instance consistency check        | * For each ``FunDep`` for the class,                           |
 |                                                         |   validate instances pairwise for consistency:                 |
