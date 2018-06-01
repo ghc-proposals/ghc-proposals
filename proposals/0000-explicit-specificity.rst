@@ -101,22 +101,28 @@ Proposed Change Specification
 
   The braces do not affect this feature at all.
 
-* Braces would also be allowed around type variables introduced in a class declaration.
-  Braced variables would be *inferred* in the types of class methods. Example::
+* The new form of type variable binder would be allowed only in the following places:
 
-    class C a {b} where
-      meth1 :: c -> a -> b
-      meth2 :: forall d {e}. a -> b -> d -> e
+  + Type signatures of functions / variables / class methods
+  + Expression type annotations
+  + GADT-syntax constructor declarations
+  + Haskell98-syntax existential variable quantification
+  + Pattern synonym signatures (for both universal and existential variables)
+  + Type synonym right-hand sides
+  + Type signatures on variables bound in ``RULES``
 
-  Then, we would have the following types of the methods::
+  It is *not* allowed in the following places:
 
-    meth1 :: forall a {b}. C a b => forall c. c -> a -> b
-    meth2 :: forall a {b}. C a b => forall d {e}. a -> b -> d -> e
+  + ``default`` type signatures for class methods
+  + instance declaration heads
+  + ``SPECIALISE`` pragmas
+  + Type instance right-hand sides (indeed, all ``forall``\s are banned here)
+  + Type declaration left-hand sides (for ``class``, ``data``, etc.)
 
-  Note that the braces do not affect the kind of ``C``, only the types of the methods.
-  Note also that this pattern of binding class variables, including the class constraint,
-  and then binding other type variables is not new to this proposal; this is how it is
-  today.
+  In most cases where the new form is allowed, we are declaring a new construct. The braces
+  indicate which variables in the type of the new construct are to be *inferred*. In the case
+  where braces are used in an expression type annotation, the braces indicate which type variables
+  in the expression's type are *inferred*.
     
 Effect and Interactions
 -----------------------
