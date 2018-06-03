@@ -55,7 +55,7 @@ Proposed Change Specification
 -----------------------------
 In the following, unidirectional pattern synonyms are those defined by ``<-`` without an expression form defined in a ``where`` clause. An explicitly bidirectional synonym is one defined with ``<-`` with an expression form defined in a ``where`` clause. An implicitly bidirectional synonym is one defined with ``=``. The phrase "bidirectional synonym", when unqualified, refers to both implicitly and explicitly bidirectional synonyms.
 
-Pattern synonyms already depend on the idea of "invertible patterns", or patterns that can also be interpreted as expressions. Invertible patterns occur on the RHS of an implicitly bidirectional pattern synonym. The following is a specification of invertible patterns:
+Pattern synonyms already depend on the idea of "invertible patterns", or patterns that can also be interpreted as expressions. Invertible patterns occur on the RHS of an implicitly bidirectional pattern synonym. They currently do not have a precise specification, so this proposal first defines them. There should be no changes to the existing behavior:
 
 * A pattern of the form ⟨gcon⟩ ⟨apat\ :subscript:`1`\⟩ ... ⟨apat\ :subscript:`k`\⟩ is invertible if ⟨gcon⟩ is either a data constructor or a bidirectional pattern synonym and every ⟨apat\ :subscript:`i`\⟩ is also an invertible pattern.
 * A pattern of the form ⟨lpat⟩ ⟨qconop⟩ ⟨pat⟩ is invertible if ⟨qconop⟩ is a data constructor or a bidirectional pattern synonym, and both ⟨lpat⟩ and ⟨pat⟩ are invertible patterns.
@@ -76,21 +76,25 @@ A function has a sequence of (potentially non-invertible) patterns on its LHS, a
 * ``pattern`` ⟨aexp⟩ ⟨qconop⟩ ⟨aexp⟩ ``<-`` ⟨pat⟩
 * ``pattern`` ⟨qcon⟩ ``{`` ⟨fbind\ :subscript:`1`\⟩ ... ⟨fbind\ :subscript:`k`\⟩ ``}`` ``<-`` ⟨pat⟩ for *k* ≥ 1.
 
+The difference from the current syntax is that, instead of just variable names, the LHS can contain arbitrary expressions.
+
 Bidirectional pattern synonyms combine functions with unidirectional pattern synonyms. Implicitly bidirectional synonyms do so by "taking the intersection": the LHS arguments and the RHS body must all be invertible. They look like one of
 
 * ``pattern`` ⟨qcon⟩ ⟨apat\ :subscript:`1`\⟩ ... ⟨apat\ :subscript:`k`\⟩ ``=`` ⟨pat\ :subscript:`r`\⟩ for *k* ≥ 0, where all of ⟨apat\ :subscript:`i`\⟩ and ⟨pat\ :subscript:`r`\⟩ are invertible.
 * ``pattern`` ⟨apat⟩ ⟨qconop⟩ ⟨apat⟩ ``<-`` ⟨pat\ :subscript:`r`\⟩, where both ⟨apat⟩s and ⟨pat\ :subscript:`r`\⟩ are invertible.
 * ``pattern`` ⟨qcon⟩ ``{`` ⟨fpat\ :subscript:`1`\⟩ ... ⟨fpat\ :subscript:`k`\⟩ ``}`` ``<-`` ⟨pat\ :subscript:`r`\⟩ for *k* ≥ 1, where ⟨pat\ :subscript:`r`\⟩ is invertible and every ⟨fpat\ :subscript:`i`\⟩ either has no pattern or an invertible pattern. Additionally, the LHS must be linear, in that no term variable is bound more than once. For compatibility, a ``-XNamedFieldPuns`` style binding is allowed even when the extension is disabled.
 
+Similarly, the difference from the current syntax is that the LHS may contain arbitrary invertible patterns instead of just variables. Since variables are invertible patterns (and thus expressions), these changes should not break existing code.
+
 Explicitly bidirectional synonyms are another way of combining unidirectional synonyms and functions. They consist of a unidirectional synonym and a function simply stuck together under one name. This proposal does not change the function part, and the synonym part changes in the same way as standalone unidirectional pattern synonyms.
 
-For a unidirectional pattern synonym, all of the variables bound on the RHS (both terms and types) are in scope for the LHS expressions. For an implicitly bidirectional synonym, every variable bound on one side must appear on the other.
+For a unidirectional pattern synonym, all of the variables bound on the RHS (both terms and types) are in scope for the LHS expressions. For an implicitly bidirectional synonym, every variable bound on one side must appear on the other. This is a simple generalization of the existing behavior.
 
-During a pattern match against a pattern synonym, the scrutinee is first matched against the synonym's RHS. If it suceeds, the expressions on the synonym's LHS (which may reference variables that were bound by the RHS) are matched against the corresponding patterns at the usage of the synonym.
+During a pattern match against a pattern synonym, the scrutinee is first matched against the synonym's RHS. If it suceeds, the expressions on the synonym's LHS (which may reference variables that were bound by the RHS) are matched against the corresponding patterns at the usage of the synonym. This is analagous to how pattern synonyms work currently, except the produced values may be expressions depending on the variables bound on the RHS instead of just the variables.
 
-For a pattern synonym record field access, the value being scrutinized is matched against the RHS of the synonym, and the value of the expression associated with the field in question is returned. For a pattern synonym record field update, all the fields involved must be belong to the same synonym, or it is a compile-time error. The value being updated is matched against the RHS of the synonym, and the LHS gives associations bewteen fields and their values. These associations are updated with the given record update, and the new set of associations is turned back into a value by using the pattern synonym as a record constructor.
+For a pattern synonym record field access, the value being scrutinized is matched against the RHS of the synonym, and the value of the expression associated with the field in question is returned. For a pattern synonym record field update, all the fields involved must be belong to the same synonym, or it is a compile-time error. The value being updated is matched against the RHS of the synonym, and the LHS gives associations bewteen fields and their values. These associations are updated with the given record update, and the new set of associations is turned back into a value by using the pattern synonym as a record constructor. Again, this is just how it works currently, except that the record fields are allowed to be associated with expressions instead of just being the bound variables.
 
-When an implicitly bidirectional synonym is used as an expression (that is, as a function), or when it is used as a record constructor, the incoming values are matched against the corresponding patterns on the LHS, and the result is the value of the RHS expression with the values matched by the LHS. There is no change to the behavior of explicitly bidirectional synonyms in this regard.
+When an implicitly bidirectional synonym is used as an expression (that is, as a function), or when it is used as a record constructor, the incoming values are matched against the corresponding patterns on the LHS, and the result is the value of the RHS expression with the values matched by the LHS. Currently, the values are substituted into the RHS directly, as the LHS cannot contain patterns. There is no change to the behavior of explicitly bidirectional synonyms in this regard.
 
 Effect and Interactions
 -----------------------
@@ -110,7 +114,7 @@ Just for example, when matching ``ZipList [1,2,3]`` against ``ZCons 1 ys``, the 
 
 When evaluating ``Inr (Sum Here 'a')``, everything proceeds as with a function. The value is matched against the LHS, producing ``tag = Here`` and ``x = 'a'``. The result is the RHS with the appropriate substiutions: ``Sum (There Here) x``.
 
-There are some interactions with record syntax and its extensions, which should all be covered above. ``-Wincomplete-patterns`` should warn if an implicitly bidirectional pattern synonym's LHS is not covering.
+There are some interactions with record syntax and its extensions, which should all be covered above. ``-Wincomplete-patterns`` will now warn if an implicitly bidirectional pattern synonym's LHS is not covering.
 
 Costs and Drawbacks
 -------------------
