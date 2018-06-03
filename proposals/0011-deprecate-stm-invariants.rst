@@ -3,7 +3,7 @@ Deprecating STM invariant mechanism
 
 .. proposal-number:: 11
 .. trac-ticket:: `#14324 <https://ghc.haskell.org/trac/ghc/ticket/14324>`_
-.. implemented:: Not yet
+.. implemented:: 8.6
 .. highlight:: haskell
 .. sectnum::
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/77>`_.
