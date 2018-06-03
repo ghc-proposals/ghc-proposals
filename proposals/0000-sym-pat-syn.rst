@@ -5,7 +5,7 @@ More Symmetrical Pattern Synonyms
 .. trac-ticket::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`__.
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/138>`__.
 .. sectnum::
 .. contents::
 
