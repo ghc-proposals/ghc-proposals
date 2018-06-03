@@ -53,6 +53,44 @@ You would get a deprecation warning:
     import Data.List
     import Data.String
     foo = lines
+    
+* However, in the above example, you would get a deprecation warning if you were to refer to the `lines` symbol by name ::
+
+    foo = Data.String.lines
+
+* It is also important that the warning is not triggered whenever a name is used within a hiding clause, i.e.: ::
+
+    module A ( {-# DEPRECATED "blah" #-} x ) where { x = True }
+    module B where { import A hiding (x) }
+
+* A symbol exported by a module is deprecated if all export specifiers for that symbol have a DEPRECATED pragma. It is an error if a symbol is exported multiple times with DEPRECATED pragmas where the deprecation messages differ ::
+    
+    -- only T(C) is deprecated
+    module M 
+      ( {-# DEPRECATED "don't use the constructor" #-} T(C)
+      , T(D)  -- or T, pattern D
+      ) where
+
+    data T = C ...
+    pattern D ...
+    
+    -- T is deprecated
+    module M 
+      ( {-# DEPRECATED "don't use the constructor" #-} T(C)
+      , {-# DEPRECATED "don't use the constructor" #-} T(D)  -- or T, pattern D
+      ) where
+
+    data T = C ...
+    pattern D ...
+    
+    -- error
+    module M 
+      ( {-# DEPRECATED "message1" #-} T(C)
+      , {-# DEPRECATED "message2" #-} T(D)  -- or T, pattern D
+      ) where
+
+    data T = C ...
+    pattern D ...
 
 
 Effect and Interactions
