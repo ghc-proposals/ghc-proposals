@@ -17,39 +17,39 @@ Currently, many pattern synonyms must be written using view patterns (extension 
 
 1. Adapted from `this StackOverflow answer <https://stackoverflow.com/a/49805742/5684257>`__
 
-  ::
+   ::
 
-    import Control.Applicative(ZipList(..))
-    pattern ZCons :: a -> ZipList a -> ZipList a
-    pattern ZCons x xs <- ZipList (x : (ZipList -> xs))
-      where ZCons x (ZipList xs) = ZipList $ x : xs
+     import Control.Applicative(ZipList(..))
+     pattern ZCons :: a -> ZipList a -> ZipList a
+     pattern ZCons x xs <- ZipList (x : (ZipList -> xs))
+       where ZCons x (ZipList xs) = ZipList $ x : xs
 
-  The purpose of this synonym is to work with ``ZipList``\s without accidentally using a typeclass instance for ``[]``, which is easy to do with a pattern like ``ZipList (x:xs)``. However, even though it is very simple, it must be written as an explicitly bidirectional synonym, and it requires a view pattern.
+   The purpose of this synonym is to work with ``ZipList``\s without accidentally using a typeclass instance for ``[]``, which is easy to do with a pattern like ``ZipList (x:xs)``. However, even though it is very simple, it must be written as an explicitly bidirectional synonym, and it requires a view pattern.
 
 2. Adapted from `this StackOverflow answer <https://stackoverflow.com/a/50548724/5684257>`__
 
-  ::
+   ::
 
-    -- type of numbers n such that xs !! n = x
-    data Elem (x :: k) (xs :: [k]) where
-      Here  :: Elem x (x : xs)
-      There :: Elem x xs -> Elem x (y : xs)
-    -- sum type represented by a value and a tag for which variant it is
-    data Sum :: [*] -> * where
-      Sum :: Elem t ts -> t -> Sum ts
+     -- type of numbers n such that xs !! n = x
+     data Elem (x :: k) (xs :: [k]) where
+       Here  :: Elem x (x : xs)
+       There :: Elem x xs -> Elem x (y : xs)
+     -- sum type represented by a value and a tag for which variant it is
+     data Sum :: [*] -> * where
+       Sum :: Elem t ts -> t -> Sum ts
 
-    -- Either-style Right
-    data Inr' ts = forall t ts'. (ts ~ (t : ts')) => Inr' (Sum ts')
-    _Inr :: Sum ts -> Maybe (Inr' ts)
-    _Inr (Sum Here _) = Nothing
-    _Inr (Sum (There tag) x) = Just $ Inr' $ Sum tag x
-    pattern Inr :: forall ts. () =>
-                   forall t ts'. (ts ~ (t : ts')) =>
-                   Sum ts' -> Sum ts
-    pattern Inr x <- (_Inr -> Just (Inr' x))
-      where Inr (Sum tag x) = Sum (There tag) x
+     -- Either-style Right
+     data Inr' ts = forall t ts'. (ts ~ (t : ts')) => Inr' (Sum ts')
+     _Inr :: Sum ts -> Maybe (Inr' ts)
+     _Inr (Sum Here _) = Nothing
+     _Inr (Sum (There tag) x) = Just $ Inr' $ Sum tag x
+     pattern Inr :: forall ts. () =>
+                    forall t ts'. (ts ~ (t : ts')) =>
+                    Sum ts' -> Sum ts
+     pattern Inr x <- (_Inr -> Just (Inr' x))
+       where Inr (Sum tag x) = Sum (There tag) x
 
-  This example is more arcane, but the pattern synonym ``Inr`` is even worse. It forces the creation of a whole new existential wrapper ``Inr'`` and of a preprocessing function ``_Inr`` (which must be total even though the pattern synonym won't be complete). This is entirely non-obvious to write, and is quite hard to read.
+   This example is more arcane, but the pattern synonym ``Inr`` is even worse. It forces the creation of a whole new existential wrapper ``Inr'`` and of a preprocessing function ``_Inr`` (which must be total even though the pattern synonym won't be complete). This is entirely non-obvious to write, and is quite hard to read.
 
 Proposed Change Specification
 -----------------------------
@@ -62,10 +62,12 @@ Pattern synonyms already depend on the idea of "invertible patterns", or pattern
 * A pattern of the form ⟨var⟩ is invertible.
 * "Constant" patterns, including ⟨literal⟩, negative literals, unboxed literals, etc. are invertible.
 * A pattern of the form ``(``\⟨pat⟩\ ``)`` (a parenthesized pattern) is invertible if ⟨pat⟩ is.
-* A pattern of the form ⟨qcon⟩ ``{`` ⟨fpat\ :subscript:`1`\⟩ ... ⟨fpat\ :subscript:`k`\⟩ ``}`` (a record pattern) is invertible if all of the following are true:
-   * ⟨qcon⟩ is either a data constructor or a bidirectional pattern synonym.
-   * Every ⟨fpat\ :subscript:`i`\⟩ has either no pattern (``-XNamedFieldPuns``) or an invertible pattern.
-   * Either every record field has an associated ⟨fpat\ :subscript:`i`\⟩ or there is a ``..`` at the end (``-XRecordWildcards``).
+* A pattern of the form ⟨qcon⟩ ``{`` ⟨fpat\ :subscript:`1`\⟩\ ``,`` ... ⟨fpat\ :subscript:`k`\⟩\ ``,`` [``..``] ``}`` (a record pattern) is invertible if all of the following are true:
+
+  * ⟨qcon⟩ is either a data constructor or a bidirectional pattern synonym.
+  * Every ⟨fpat\ :subscript:`i`\⟩ has either no pattern (``-XNamedFieldPuns``) or an invertible pattern.
+  * Either every record field has an associated ⟨fpat\ :subscript:`i`\⟩ or there is a ``..`` at the end (``-XRecordWildcards``).
+
 * A pattern of the form ⟨lpat⟩ ``::`` ⟨type⟩ is invertible if ⟨lpat⟩ is invertible.
 
 (NB: Things that are *not* invertible patterns include bang-patterns, irrefutable patterns, as-patterns, view patterns, unidirectional pattern synonyms, wildcards, and n+k patterns.) The expression interpretation of an invertible pattern is fairly obvious and will not be outlined.
@@ -100,17 +102,17 @@ Effect and Interactions
 -----------------------
 ``ZCons``, from above, becomes
 
-  ::
+::
 
-    pattern ZCons x (ZipList xs) = ZipList (x : xs)
+  pattern ZCons x (ZipList xs) = ZipList (x : xs)
 
 Just for example, when matching ``ZipList [1,2,3]`` against ``ZCons 1 ys``, the value is first matched against ``ZCons``'s RHS, causing ``x = 1`` and ``xs = [2,3]``. The expression ``x`` is matched against ``1``, which succeeds. The expression ``ZipList xs`` is matched against ``ys``, causing ``ys = ZipList [2,3]``.
 
 ``Inr``'s transformation is more drastic
 
-  ::
+::
 
-    pattern Inr (Sum tag x) = Sum (There tag) x
+  pattern Inr (Sum tag x) = Sum (There tag) x
 
 When evaluating ``Inr (Sum Here 'a')``, everything proceeds as with a function. The value is matched against the LHS, producing ``tag = Here`` and ``x = 'a'``. The result is the RHS with the appropriate substiutions: ``Sum (There Here) x``.
 
@@ -132,9 +134,9 @@ Unresolved questions
 --------------------
 * n+k patterns should also be invertible, but
 
-    ::
+  ::
 
-      pattern P a = a + 5
+    pattern P a = a + 5
 
   is already rejected, and it's probably not worth the effort.
 * Admitting as-patterns as invertible is possible but would require interesting contorsions of the scoping rules and is currently not accepted. Is it worth it?
