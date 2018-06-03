@@ -2,9 +2,7 @@ Unlifted Newtypes
 ==========================
 
 .. proposal-number:: 13
-.. trac-ticket:: Leave blank. This will eventually be filled with the Trac
-                 ticket number which will track the progress of the
-                 implementation of the feature.
+.. trac-ticket:: 15219
 .. implemented:: Leave blank. This will be filled in with the first GHC version which
                  implements the described feature.
 .. highlight:: haskell
