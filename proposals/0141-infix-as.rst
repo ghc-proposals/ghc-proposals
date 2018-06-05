@@ -83,7 +83,8 @@ Costs and Drawbacks
 -------------------
 
 The only cost I can see as of right now is the work to implement this.
-Admittedly I do not know how.
+Admittedly I do not know how, but I would be willing to do the work if given
+guidance.
 
 Alternatives
 ------------
