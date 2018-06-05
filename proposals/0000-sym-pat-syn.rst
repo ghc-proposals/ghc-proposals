@@ -72,6 +72,9 @@ Pattern synonyms already depend on the idea of "invertible patterns", or pattern
 
 (NB: Things that are *not* invertible patterns include bang-patterns, irrefutable patterns, as-patterns, view patterns, unidirectional pattern synonyms, wildcards, and n+k patterns.) The expression interpretation of an invertible pattern is fairly obvious and will not be outlined.
 
+Syntax
+~~~~~~
+
 A function has a sequence of (potentially non-invertible) patterns on its LHS, and a (potentially non-invertible) expression on its RHS. Unidirectional pattern synonyms are redefined to be the opposite: they have a sequence of expressions on the LHS and a single pattern on the RHS. A unidirectional pattern synonym definition can be of one these forms:
 
 * ``pattern`` ⟨qcon⟩ ⟨aexp\ :subscript:`1`\⟩ ... ⟨aexp\ :subscript:`k`\⟩ ``<-`` ⟨pat⟩ for *k* ≥ 0.
@@ -90,8 +93,29 @@ Similarly, the difference from the current syntax is that the LHS may contain ar
 
 Explicitly bidirectional synonyms are another way of combining unidirectional synonyms and functions. They consist of a unidirectional synonym and a function simply stuck together under one name. This proposal does not change the function part, and the synonym part changes in the same way as standalone unidirectional pattern synonyms.
 
-For a unidirectional pattern synonym, all of the variables bound on the RHS (both terms and types) are in scope for the LHS expressions. For an implicitly bidirectional synonym, every variable bound on one side must appear on the other. This is a simple generalization of the existing behavior.
+Typing
+~~~~~~
+Pattern synonyms have *pattern types*, which are of the form
 
+::
+
+  pattern P :: forall u1 ... un. -- universal type variables
+               (req) => -- required context; may refer to all ui but none of ei
+               forall e1 ... em. -- existential type variables
+               (prv) => -- provided context; may refer to all of ui and ei
+               a1 -> ... -> an -> -- matched values; may refer to all of ui and ei
+               r -- result type; may only refer to ui
+
+If a pattern synonym is not given a signature, its type is currently inferred as if it were written as a unidirectional pattern synonym. This is changed, so the whole synonym is considered. Type *checking*, of course, continues to consider everything.
+
+For a unidirectional patttern synonym, the result type ``r`` is the type of values that the RHS matches. The provided context ``prv`` is composed of the constraints provided by the matching of the RHS. The existentials are type variables that are provided by matching the RHS. The expressions on the LHS are typed with the variables (terms and types) and context matched from the RHS in scope. The types of the matched values ``ai`` are the types of the corresponding expressions. Any unsolved type variables on either side are added to the universal type variables. Any constraints required by the RHS must appear in the ``req`` constraints. Any constraints required by the LHS must either appear in the ``req`` constraints or must be matched from the RHS.
+
+Implicitly bidirectional synonyms are type checked in a similar way to unidirectional pattern synonyms. However, the handling of contexts is slightly different. If a constraint is provided by both the LHS and the RHS and required by neither, then it does not need to appear in either the required or provided contexts of the synonym.
+
+Explicitly bidirectional synonyms have their unidirectional synonym and function parts type checked separately. The whole synonym's type is formed by combining them. Every required constraint of the pattern synonym part must be in ``req``. Only the provided constraints can be in ``prv``. Any constraints required by the function part must appear in either ``req`` or ``prv``. The universal variables and the matched and result types are computed via unification of the unidirectional synonym's type and the function's type.
+
+Semantics
+~~~~~~~~~
 During a pattern match against a pattern synonym, the scrutinee is first matched against the synonym's RHS. If it suceeds, the expressions on the synonym's LHS (which may reference variables that were bound by the RHS) are matched against the corresponding patterns at the usage of the synonym. This is analagous to how pattern synonyms work currently, except the produced values may be expressions depending on the variables bound on the RHS instead of just the variables.
 
 For a pattern synonym record field access, the value being scrutinized is matched against the RHS of the synonym, and the value of the expression associated with the field in question is returned. For a pattern synonym record field update, all the fields involved must be belong to the same synonym, or it is a compile-time error. The value being updated is matched against the RHS of the synonym, and the LHS gives associations bewteen fields and their values. These associations are updated with the given record update, and the new set of associations is turned back into a value by using the pattern synonym as a record constructor. Again, this is just how it works currently, except that the record fields are allowed to be associated with expressions instead of just being the bound variables.
