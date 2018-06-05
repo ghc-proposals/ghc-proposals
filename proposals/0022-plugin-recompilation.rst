@@ -2,8 +2,8 @@ Refining the plugin recompilation API
 ==============
 
 .. proposal-number:: 22
-.. trac-ticket::
-.. implemented::
+.. trac-ticket:: #7414
+.. implemented:: 8.6
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/108>`_.
 .. sectnum::

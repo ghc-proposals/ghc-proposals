@@ -3,9 +3,9 @@ Quantified Constraints
 
 .. proposal-number:: 18
 
-.. trac-ticket::
+.. trac-ticket:: #2893
 
-.. implemented::
+.. implemented:: 8.6
 
 .. highlight:: haskell
 
