@@ -125,10 +125,11 @@ For a pattern synonym ``P`` with RHS ``r``, with variables ``x1``, ... ``xn``,  
        _ -> e'
   =
   case v of
-       [f1/x1]...[fn/xn]r -> let v1 = [f1/x1]...[fn/xn]l1
-                                 ...
-                                 vm = [f1/x1]...[fn/xn]lm
-                              in e
+       [f1/x1]...[fn/xn]r -> case [f1/x1]...[fn/xn]l1 of
+                                  v1 -> ... case [f1/x1]...[fn/fn]lm of
+                                                 vm -> e
+                                                 _ -> e'
+                                  _ -> e'
        _ -> e'
 
 where ``[a/b]`` denotes substituting ``a`` in place of ``b``, and all of ``fi`` are fresh variables. This equation also holds for all current pattern synonyms. The only difference now is that all of ``li`` can be expressions.
