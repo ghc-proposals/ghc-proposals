@@ -40,6 +40,7 @@ from the use of ``<>`` do not confusingly reference ``app``. The top-level bindi
 would look like this:
 
 .. code-block:: haskell
+  
   infixr 5 <>
 
   (<>) :: Semigroup a => a -> a -> a
