@@ -35,6 +35,16 @@ With this extension to the syntax, one could write the following:
   foo :: String
   foo = "Hello " <> "World!"
 
+This will actually generate a top-level binding, so that error messages arising
+from the use of ``<>`` do not confusingly reference ``app``. The top-level binding
+would look like this:
+
+.. code-block:: haskell
+  infixr 5 <>
+
+  (<>) :: Semigroup a => a -> a -> a
+  (<>) = app
+
 Another example:
 
 .. code-block:: haskell
