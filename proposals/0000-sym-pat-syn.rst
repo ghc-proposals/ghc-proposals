@@ -116,11 +116,40 @@ Explicitly bidirectional synonyms have their unidirectional synonym and function
 
 Semantics
 ~~~~~~~~~
-During a pattern match against a pattern synonym, the scrutinee is first matched against the synonym's RHS. If it suceeds, the expressions on the synonym's LHS (which may reference variables that were bound by the RHS) are matched against the corresponding patterns at the usage of the synonym. This is analagous to how pattern synonyms work currently, except the produced values may be expressions depending on the variables bound on the RHS instead of just the variables.
+For a pattern synonym ``P`` with RHS ``r``, with variables ``x1``, ... ``xn``,  and LHS expressions ``l1``, ... ``lm``, the following equation (in the style of the Haskell Report §3.17.3) holds:
 
-For a pattern synonym record field access, the value being scrutinized is matched against the RHS of the synonym, and the value of the expression associated with the field in question is returned. For a pattern synonym record field update, all the fields involved must be belong to the same synonym, or it is a compile-time error. The value being updated is matched against the RHS of the synonym, and the LHS gives associations bewteen fields and their values. These associations are updated with the given record update, and the new set of associations is turned back into a value by using the pattern synonym as a record constructor. Again, this is just how it works currently, except that the record fields are allowed to be associated with expressions instead of just being the bound variables.
+::
 
-When an implicitly bidirectional synonym is used as an expression (that is, as a function), or when it is used as a record constructor, the incoming values are matched against the corresponding patterns on the LHS, and the result is the value of the RHS expression with the values matched by the LHS. Currently, the values are substituted into the RHS directly, as the LHS cannot contain patterns. There is no change to the behavior of explicitly bidirectional synonyms in this regard.
+  case v of
+       P v1 ... vm -> e
+       _ -> e'
+  =
+  case v of
+       [f1/x1]...[fn/xn]r -> let v1 = [f1/x1]...[fn/xn]l1
+                                 ...
+                                 vm = [f1/x1]...[fn/xn]lm
+                              in e
+       _ -> e'
+
+where ``[a/b]`` denotes substituting ``a`` in place of ``b``, and all of ``fi`` are fresh variables. This equation also holds for all current pattern synonyms. The only difference now is that all of ``li`` can be expressions.
+
+If ``P`` is an explicitly bidirectional synonym, a function application to ``P`` simply goes to the function part of its definition. If it is an implicitly bidirectional synonym, then all of ``li`` are actually invertible patterns, and a function application acts as if ``P`` were a function defined by:
+
+::
+
+  P l1 ... lm = r
+
+Again, this is very similar to the current behavior, except ``P`` can now do pattern matching when used as a function.
+
+Pattern synonym record selectors are defined as follows, where ``fi`` is a field of the pattern synonym ``P`` with corresponding LHS expression ``li`` and with RHS ``r``:
+
+::
+
+  fi r = li
+
+(The current rule is ``fi r = fi``, where ``fi`` needs to be bound by ``r``. This obviously stops working here.)
+
+The definition of pattern synonym record updates and pattern synonym record constructions do not change, as they are defined in terms of simple desugarings to pattern matches and function applications.
 
 Effect and Interactions
 -----------------------
