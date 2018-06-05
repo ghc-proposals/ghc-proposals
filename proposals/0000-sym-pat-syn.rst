@@ -116,7 +116,15 @@ Explicitly bidirectional synonyms have their unidirectional synonym and function
 
 Semantics
 ~~~~~~~~~
-For a pattern synonym ``P`` with RHS ``r``, with variables ``x1``, ... ``xn``,  and LHS expressions ``l1``, ... ``lm``, the following equation (in the style of the Haskell Report §3.17.3) holds:
+To the informal semantics of pattern matching, outlined in the Haskell Report §3.17.2, add this rule:
+
+* Matching the pattern ⟨con⟩ ⟨pat\ :subscript:`1`\⟩ ... ⟨pat\ :subscript:`n`\⟩ against a value ``v``, where ⟨con⟩ is a pattern synonym with RHS ``r`` and LHS expressions ``l``\ :subscript:`1` ... ``l``\ :subscript:`n`, proceeds as follows:
+
+  1. The value ``v`` is matched against ``r``. If this fails or diverges, so does the whole match.
+  2. Match ⟨pat\ :subscript:`1`\⟩ with ``l``\ :subscript:`1` (which may refer to the previously bound variables), ... match ⟨pat\ :subscript:`n`\⟩ with ``l``\ :subscript:`n`. If any fail or diverge, so does the whole match.
+  3. If all of these matches succeed, so does the whole match, binding the variables bound by all the ⟨pat\ :subscript:`i`\⟩. Note that the variables bound by ``r`` are not bound by the whole match; they remain local to the pattern synonym.
+
+More formally, for a pattern synonym ``P`` with RHS ``r``, which binds variables ``x1``, ... ``xn``, and LHS expressions ``l1``, ... ``lm``, the following equation (in the style of the Haskell Report §3.17.3) holds:
 
 ::
 
