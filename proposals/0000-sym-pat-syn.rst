@@ -19,12 +19,15 @@ Currently, many pattern synonyms must be written using view patterns (extension 
 
    ::
 
-     import Control.Applicative(ZipList(..))
+     newtype ZipList a = ZipList [a] -- Like the one in Control.Applicative
+
+     pattern ZNil :: ZipList a
+     pattern ZNil = ZipList []
      pattern ZCons :: a -> ZipList a -> ZipList a
      pattern ZCons x xs <- ZipList (x : (ZipList -> xs))
        where ZCons x (ZipList xs) = ZipList $ x : xs
 
-   The purpose of this synonym is to work with ``ZipList``\s without accidentally using a typeclass instance for ``[]``, which is easy to do with a pattern like ``ZipList (x:xs)``. However, even though it is very simple, it must be written as an explicitly bidirectional synonym, and it requires a view pattern.
+   The purpose of these synonyms is to work with ``ZipList``\s without accidentally using a typeclass instance for ``[]``, which is easy to do with a pattern like ``ZipList (x:xs)``. ``ZNil``, as expected, is quite simple. However, even though it seems reasonable that ``ZCons`` would be similarly simple, it must be written as an explicitly bidirectional synonym, and it requires a view pattern.
 
 2. Adapted from `this StackOverflow answer <https://stackoverflow.com/a/50548724/5684257>`__
 
@@ -37,6 +40,12 @@ Currently, many pattern synonyms must be written using view patterns (extension 
      -- sum type represented by a value and a tag for which variant it is
      data Sum :: [*] -> * where
        Sum :: Elem t ts -> t -> Sum ts
+
+     -- Either-style Left
+     Inl :: forall ts. () =>
+            forall t ts'. (ts ~ (t : ts')) =>
+            t -> Sum ts
+     pattern Inl x = Sum Here x -- again, very simple
 
      -- Either-style Right
      data Inr' ts = forall t ts'. (ts ~ (t : ts')) => Inr' (Sum ts')
@@ -168,7 +177,36 @@ Effect and Interactions
 
   pattern ZCons x (ZipList xs) = ZipList (x : xs)
 
-Just for example, when matching ``ZipList [1,2,3]`` against ``ZCons 1 ys``, the value is first matched against ``ZCons``'s RHS, causing ``x = 1`` and ``xs = [2,3]``. The expression ``x`` is matched against ``1``, which succeeds. The expression ``ZipList xs`` is matched against ``ys``, causing ``ys = ZipList [2,3]``.
+An example usage may look like the following:
+
+::
+
+  f (ZCons x (ZCons _ xs)) = ZCons x (f xs)
+  f xs = xs
+
+This is equivalent to
+
+::
+
+  f arg = case arg of -- desugar argument pattern; manipulate a bit further
+               ZCons x (ZCons _ xs) -> ZCons x (f xs)
+               _ -> case arg of
+                         xs -> xs
+        = case arg of -- semantics of pattern synonym matches (taken literally; this produces a mess)
+               ZipList (fresh1:fresh2) -> case fresh1 of -- RHS of ZCons; now match the argument patterns (x, ZCons _ xs) with the LHS expressions (fresh1, ZipList fresh2)
+                                               x -> case ZipList fresh2 of
+                                                         ZipList (fresh3:fresh4) -> case fresh3 of -- RHS of ZCons; now match the argument patterns (_, xs) with the LHS expressions (fresh3, ZipList fresh4)
+                                                                                         _ -> case ZipList fresh4 of
+                                                                                                   xs -> ZCons x (f xs)
+                                                                                                   _ -> case arg of xs -> xs -- failure case gets duplicated a bunch; usually unreachable
+                                                                                         _ -> case arg of xs -> xs
+                                                         _ -> case arg of xs -> xs
+                                               _ -> case arg of xs -> xs
+               _ -> case arg of xs -> xs
+        = case arg of -- simplify
+               ZipList (x:_:xs) -> case f xs of -- inline ZCons (as a function)
+                                        ZipList xs -> ZipList (x : xs)
+               xs -> xs
 
 ``Inr``'s transformation is more drastic
 
@@ -176,7 +214,21 @@ Just for example, when matching ``ZipList [1,2,3]`` against ``ZCons 1 ys``, the 
 
   pattern Inr (Sum tag x) = Sum (There tag) x
 
-When evaluating ``Inr (Sum Here 'a')``, everything proceeds as with a function. The value is matched against the LHS, producing ``tag = Here`` and ``x = 'a'``. The result is the RHS with the appropriate substiutions: ``Sum (There Here) x``.
+  -- usage
+  double :: Sum [Int, Char, Float] -> Double
+  double (Inl i) = fromIntegral i
+  double (Inr (Inl c)) = fromIntegral $ fromEnum c
+  double (Inr (Inr (Inl f))) = float2Double f
+  -- equivalent
+  double (Sum Here i) = fromIntegral i
+  double (Sum (There free1) free2) = case Sum free1 free2 of -- Inr
+                                          Sum Here c -> fromIntegral $ fromEnum c
+                                          Sum (There free3) free4 -> case Sum free3 free4 of
+                                                                          Sum Here f -> float2Double f
+  -- or even
+  double (Sum Here i) = fromIntegral i
+  double (Sum (There Here) c) = fromIntegral $ fromEnum c
+  double (Sum (There (There Here)) f) = float2Double f
 
 There are some interactions with record syntax and its extensions, which should all be covered above. ``-Wincomplete-patterns`` will now warn if an implicitly bidirectional pattern synonym's LHS is not covering.
 
