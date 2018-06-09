@@ -29,7 +29,22 @@ Currently, many pattern synonyms must be written using view patterns (extension 
 
    The purpose of these synonyms is to work with ``ZipList``\s without accidentally using a typeclass instance for ``[]``, which is easy to do with a pattern like ``ZipList (x:xs)``. ``ZNil``, as expected, is quite simple. However, even though it seems reasonable that ``ZCons`` would be similarly simple, it must be written as an explicitly bidirectional synonym, and it requires a view pattern.
 
-2. Adapted from `this StackOverflow answer <https://stackoverflow.com/a/50548724/5684257>`__
+2.
+
+   ::
+
+     data D = D1 String Bool | D2 String Int | D3 Int
+
+     _DString :: D -> Maybe String
+     _DString (D1 s _) = Just s
+     _DString (D2 s _) = Just s
+     _DString _ = Nothing
+     pattern DString :: String -> D -- get the String, if possible
+     pattern DString s <- (_DString -> Just s)
+
+   It is impossible for a pattern synonym to cover multiple cases without using a view pattern. The function used by the view pattern must be total, or else the pattern synonym would diverge instead of just failing, so it uses ``Maybe``. However, this is not intuitive.
+
+3. Adapted from `this StackOverflow answer <https://stackoverflow.com/a/50548724/5684257>`__
 
    ::
 
@@ -84,23 +99,78 @@ Pattern synonyms already depend on the idea of "invertible patterns", or pattern
 Syntax
 ~~~~~~
 
-A function has a sequence of (potentially non-invertible) patterns on its LHS, and a (potentially non-invertible) expression on its RHS. Unidirectional pattern synonyms are redefined to be the opposite: they have a sequence of expressions on the LHS and a single pattern on the RHS. A unidirectional pattern synonym definition can be of one these forms:
+A function is defined by a sequence of equations, each of which has a sequence of (potentially non-invertible) patterns on its LHS and a (potentially non-invertible) expression on its RHS. Unidirectional pattern synonyms are redefined to be the opposite: they are made of a sequence of "equations", each with a sequence of expressions on the LHS and a single pattern on the RHS. A single unidirectional pattern synonym "equation" can be of one these forms ("equation" because there is no ``=``, just ``<-``, but it is conceptually similar):
 
 * ``pattern`` ⟨qcon⟩ ⟨aexp\ :subscript:`1`\⟩ ... ⟨aexp\ :subscript:`k`\⟩ ``<-`` ⟨pat⟩ for *k* ≥ 0.
 * ``pattern`` ⟨aexp⟩ ⟨qconop⟩ ⟨aexp⟩ ``<-`` ⟨pat⟩
 * ``pattern`` ⟨qcon⟩ ``{`` ⟨fbind\ :subscript:`1`\⟩ ... ⟨fbind\ :subscript:`k`\⟩ ``}`` ``<-`` ⟨pat⟩ for *k* ≥ 1.
 
-The difference from the current syntax is that, instead of just variable names, the LHS can contain arbitrary expressions.
+A full unidirectional pattern synonym declaration may consist of several of these. Like functions, the equations for a single synonym must be contiguous, and their order matters. Further, all of the equations must be of the same type: either all of them are of the first kind, all are of the second kind, or all of them are of the third kind. Each equation must have the same number of fields, and, if applicable, the record fields must be the same, and in the same order. The difference from the current syntax is that, instead of just variable names, the LHS can contain arbitrary expressions, and there can be more than one equation.
 
-Bidirectional pattern synonyms combine functions with unidirectional pattern synonyms. Implicitly bidirectional synonyms do so by "taking the intersection": the LHS arguments and the RHS body must all be invertible. They look like one of
+Bidirectional pattern synonyms combine functions with unidirectional pattern synonyms. Implicitly bidirectional synonyms do so by "taking the intersection": the LHS arguments and the RHS body must all be invertible. They, too, can now have multiple equations. A single equation looks like one of:
 
 * ``pattern`` ⟨qcon⟩ ⟨apat\ :subscript:`1`\⟩ ... ⟨apat\ :subscript:`k`\⟩ ``=`` ⟨pat\ :subscript:`r`\⟩ for *k* ≥ 0, where all of ⟨apat\ :subscript:`i`\⟩ and ⟨pat\ :subscript:`r`\⟩ are invertible.
 * ``pattern`` ⟨apat⟩ ⟨qconop⟩ ⟨apat⟩ ``<-`` ⟨pat\ :subscript:`r`\⟩, where both ⟨apat⟩s and ⟨pat\ :subscript:`r`\⟩ are invertible.
 * ``pattern`` ⟨qcon⟩ ``{`` ⟨fpat\ :subscript:`1`\⟩ ... ⟨fpat\ :subscript:`k`\⟩ ``}`` ``<-`` ⟨pat\ :subscript:`r`\⟩ for *k* ≥ 1, where ⟨pat\ :subscript:`r`\⟩ is invertible and every ⟨fpat\ :subscript:`i`\⟩ either has no pattern or an invertible pattern. Additionally, the LHS must be linear, in that no term variable is bound more than once. For compatibility, a ``-XNamedFieldPuns`` style binding is allowed even when the extension is disabled.
 
-Similarly, the difference from the current syntax is that the LHS may contain arbitrary invertible patterns instead of just variables. Since variables are invertible patterns (and thus expressions), these changes should not break existing code.
+For multiple equations, the restrictions are the same as those for unidirectional synonyms.
 
-Explicitly bidirectional synonyms are another way of combining unidirectional synonyms and functions. They consist of a unidirectional synonym and a function simply stuck together under one name. This proposal does not change the function part, and the synonym part changes in the same way as standalone unidirectional pattern synonyms.
+Explicitly bidirectional synonyms are another way of combining unidirectional synonyms and functions. They consist of a unidirectional synonym and a function simply stuck together under one name. This proposal does not change the function part, and the synonym part changes in the same way as standalone unidirectional pattern synonyms (this includes multiple equations).
+
+Since 1 equation is trivially a sequence of equations, and since variables are invertible patterns, all existing pattern synonyms should continue to work.
+
+Semantics
+~~~~~~~~~
+To the informal semantics of pattern matching, outlined in the Haskell Report §3.17.2, add this rule:
+
+* Matching the pattern ⟨con⟩ ⟨pat\ :subscript:`1`\⟩ ... ⟨pat\ :subscript:`n`\⟩ against a value ``v``, where ⟨con⟩ is a pattern synonym with RHSs ``r``\ :subscript:`1` ... ``r``\ :subscript:`m`, ordered from the first declared to the last, proceeds as follows:
+
+  1. The value ``v`` is matched against each ``r``\ :subscript:`i` in turn, until one of them succeeds. If one of them diverges before a success is found, the whole match diverges. If all of them fail, the whole match fails. The matching RHS's corresponding LHS expressions are now called ``l``\ :subscript:`1` ... ``l``\ :subscript:`n`. This match also binds some variables.
+  2. Match ⟨pat\ :subscript:`1`\⟩ with ``l``\ :subscript:`1` (which may refer to the previously bound variables) ... match ⟨pat\ :subscript:`n`\⟩ with ``l``\ :subscript:`n`. If any fail or diverge, so does the whole match.
+  3. If all of these matches succeed, so does the whole match, binding the variables bound by all the ⟨pat\ :subscript:`i`\⟩. Note that the variables bound by ``ri`` are not bound by the whole match; they remain local to the pattern synonym. Also note that the argument patterns do not affect which equation is chosen.
+
+More formally, for a pattern synonym ``P`` with RHSs ``r1`` ... ``rn``, where each ``ri`` binds variables ``xi1`` ... ``xim`` and has corresponding LHS expressions ``li1`` ... ``lil``, the following equation (in the style of the Haskell Report §3.17.3) holds:
+
+::
+
+  case v of
+       P v1 ... vl -> e
+       _ -> e'
+  =
+  case v of
+       [f11/x11]...[f1m/x1m]r1 -> case [f11/x11]...[f1m/x1m]l11 of
+                                        v1 -> ... case [f11/x11]...[f1m/f1m]l1l of
+                                                       vl -> e
+                                                       _ -> e'
+                                        _ -> e'
+       ... [fn1/xn1]...[fnm/xnm]rn -> case [fn1/xn1]...[fnm/xnm]ln1 of
+                                           v1 -> ... case [fn1/xn1]...[fnm/xnm]lnl of
+                                                     vl -> e
+                                                     _ -> e'
+                                           _ -> e'
+       _ -> e'
+
+where ``[a/b]`` denotes substituting ``a`` in place of ``b``, and all of ``fij`` are fresh variables. This equation also holds for all current pattern synonyms. The only difference now is that all of ``lij`` can be expressions, and there is the possibility of multiple equations.
+
+If ``P`` is an explicitly bidirectional synonym, a function application to ``P`` simply goes to the function part of its definition. If it is an implicitly bidirectional synonym, then all of ``li`` are actually invertible patterns, and a function application acts as if ``P`` were a function defined by:
+
+::
+
+  P l11 ... l1l = r1
+  ...
+  P ln1 ... lnl = rn
+
+Again, this is very similar to the current behavior, except ``P`` can now do pattern matching when used as a function, and can have multiple equations
+
+Pattern synonym record selectors are defined as follows, where ``fi`` is a field of the pattern synonym ``P`` with corresponding LHS expression ``li`` and with RHS ``r``:
+
+::
+
+  fi P {fi} = fi
+
+(The current rule is ``fi r = fi``, where ``fi`` needs to be bound by ``r``. This obviously stops working here.)
+
+The definition of pattern synonym record updates and pattern synonym record constructions do not change, as they are defined in terms of simple desugarings to pattern matches and function applications.
 
 Typing
 ~~~~~~
@@ -117,57 +187,11 @@ Pattern synonyms have *pattern types*, which are of the form
 
 If a pattern synonym is not given a signature, its type is currently inferred as if it were written as a unidirectional pattern synonym. This is changed, so the whole synonym is considered. Type *checking*, of course, continues to consider everything.
 
-For a unidirectional patttern synonym, the result type ``r`` is the type of values that the RHS matches. The provided context ``prv`` is composed of the constraints provided by the matching of the RHS. The existentials are type variables that are provided by matching the RHS. The expressions on the LHS are typed with the variables (terms and types) and context matched from the RHS in scope. The types of the matched values ``ai`` are the types of the corresponding expressions. Any unsolved type variables on either side are added to the universal type variables. Any constraints required by the RHS must appear in the ``req`` constraints. Any constraints required by the LHS must either appear in the ``req`` constraints or must be matched from the RHS.
+For a unidirectional patttern synonym, the result type ``r`` is the type of values that all of the RHSs match. The provided context ``prv`` is composed of the constraints provided by the matching of the RHSs. A constraint may only appear in ``prv`` if *every* RHS provides it. The existentials are type variables that are provided by matching the RHSs. Again, these are only those variables that are provided by *every* RHS. The expressions on the LHSs are typed with the variables (terms and types) and context matched from the corresponding RHS in scope. The types of the matched values ``ai`` are union of the types of the corresponding expressions. Any unsolved type variables on either side are added to the universal type variables. Any constraints required by any RHS must appear in the ``req`` constraints. Any constraints required by a LHS must either appear in the ``req`` constraints or must be matched from the corresponding RHS.
 
 Implicitly bidirectional synonyms are type checked in a similar way to unidirectional pattern synonyms. However, the handling of contexts is slightly different. If a constraint is provided by both the LHS and the RHS and required by neither, then it does not need to appear in either the required or provided contexts of the synonym.
 
 Explicitly bidirectional synonyms have their unidirectional synonym and function parts type checked separately. The whole synonym's type is formed by combining them. Every required constraint of the pattern synonym part must be in ``req``. Only the provided constraints can be in ``prv``. Any constraints required by the function part must appear in either ``req`` or ``prv``. The universal variables and the matched and result types are computed via unification of the unidirectional synonym's type and the function's type.
-
-Semantics
-~~~~~~~~~
-To the informal semantics of pattern matching, outlined in the Haskell Report §3.17.2, add this rule:
-
-* Matching the pattern ⟨con⟩ ⟨pat\ :subscript:`1`\⟩ ... ⟨pat\ :subscript:`n`\⟩ against a value ``v``, where ⟨con⟩ is a pattern synonym with RHS ``r`` and LHS expressions ``l``\ :subscript:`1` ... ``l``\ :subscript:`n`, proceeds as follows:
-
-  1. The value ``v`` is matched against ``r``. If this fails or diverges, so does the whole match.
-  2. Match ⟨pat\ :subscript:`1`\⟩ with ``l``\ :subscript:`1` (which may refer to the previously bound variables), ... match ⟨pat\ :subscript:`n`\⟩ with ``l``\ :subscript:`n`. If any fail or diverge, so does the whole match.
-  3. If all of these matches succeed, so does the whole match, binding the variables bound by all the ⟨pat\ :subscript:`i`\⟩. Note that the variables bound by ``r`` are not bound by the whole match; they remain local to the pattern synonym.
-
-More formally, for a pattern synonym ``P`` with RHS ``r``, which binds variables ``x1``, ... ``xn``, and LHS expressions ``l1``, ... ``lm``, the following equation (in the style of the Haskell Report §3.17.3) holds:
-
-::
-
-  case v of
-       P v1 ... vm -> e
-       _ -> e'
-  =
-  case v of
-       [f1/x1]...[fn/xn]r -> case [f1/x1]...[fn/xn]l1 of
-                                  v1 -> ... case [f1/x1]...[fn/fn]lm of
-                                                 vm -> e
-                                                 _ -> e'
-                                  _ -> e'
-       _ -> e'
-
-where ``[a/b]`` denotes substituting ``a`` in place of ``b``, and all of ``fi`` are fresh variables. This equation also holds for all current pattern synonyms. The only difference now is that all of ``li`` can be expressions.
-
-If ``P`` is an explicitly bidirectional synonym, a function application to ``P`` simply goes to the function part of its definition. If it is an implicitly bidirectional synonym, then all of ``li`` are actually invertible patterns, and a function application acts as if ``P`` were a function defined by:
-
-::
-
-  P l1 ... lm = r
-
-Again, this is very similar to the current behavior, except ``P`` can now do pattern matching when used as a function.
-
-Pattern synonym record selectors are defined as follows, where ``fi`` is a field of the pattern synonym ``P`` with corresponding LHS expression ``li`` and with RHS ``r``:
-
-::
-
-  fi r = li
-
-(The current rule is ``fi r = fi``, where ``fi`` needs to be bound by ``r``. This obviously stops working here.)
-
-The definition of pattern synonym record updates and pattern synonym record constructions do not change, as they are defined in terms of simple desugarings to pattern matches and function applications.
 
 Effect and Interactions
 -----------------------
@@ -208,6 +232,30 @@ This is equivalent to
                                         ZipList xs -> ZipList (x : xs)
                xs -> xs
 
+
+This is ``DString``, now
+
+::
+
+  pattern DString s <- D1 s _
+  pattern DString s <- D2 s _
+
+  -- usage
+  f (DString s) = s
+  f (D3 i) = show i
+  -- equivalent
+  f arg = case arg of
+               DString s -> s
+               _ -> case arg of D3 i -> show i
+        = case arg of
+               D1 s _ -> s
+               D2 s _ -> s
+               D3 i -> show i
+  -- or
+  f (D1 s _) = s
+  f (D2 s _) = s
+  f (D3 i) = show i
+
 ``Inr``'s transformation is more drastic
 
 ::
@@ -230,13 +278,22 @@ This is equivalent to
   double (Sum (There Here) c) = fromIntegral $ fromEnum c
   double (Sum (There (There Here)) f) = float2Double f
 
-There are some interactions with record syntax and its extensions, which should all be covered above. ``-Wincomplete-patterns`` will now warn if an implicitly bidirectional pattern synonym's LHS is not covering.
+There are some interactions with record syntax and its extensions, which should all be covered above. ``-Wincomplete-patterns`` will now warn if an implicitly bidirectional pattern synonym's LHSs are not covering. ``-Woverlapping-patterns`` will now warn if a unidirectional synonym's RHSs make an equation unreachable. It will also warn on implicitly bidirectional synonyms, but only if an equation is unreachable *both* in expression form and in pattern form. That is
+
+::
+
+  pattern P False = 0
+  pattern P True  = 1
+  pattern P False = 2
+
+will emit no warnings. The final equation is unreachable when ``P`` is used as a function, as ``P False`` triggers the first equation. However, it is not unreachable when ``P`` is used as a pattern; ``case 2 of P b -> b`` is ``False``.
+
 
 Costs and Drawbacks
 -------------------
 The learning curve for new users, if anything, is reduced, because the new syntax is more intuitive than the twistiness of view patterns. The nice symmetry with functions can only help.
 
-The current implementation of pattern synonyms actually seems quite amenable to these changes. They are currently implemented as pairs of functions: a matcher that takes a success continuation, a failure continuation, and a scrutinee, matches on the scrutinee, and calls either the success continuation with the bound variables or the failure continuation, and a builder, which is already an arbitrary function (because of explicitly bidirectional synonyms). This proposal should be implementable, after the required parsing changes, by giving implicitly bidirectional synonyms' builders the ability to pattern match, and giving all matchers the ability to modify the bound values before calling the success continuation. However, this is added complexity, so something may always go wrong.
+The current implementation of pattern synonyms actually seems quite amenable to these changes. They are currently implemented as pairs of functions: a matcher that takes a success continuation, a failure continuation, and a scrutinee, matches on the scrutinee, and calls either the success continuation with the bound variables or the failure continuation, and a builder, which is already an arbitrary function (because of explicitly bidirectional synonyms). This proposal should be implementable, after the required parsing changes, by giving implicitly bidirectional synonyms' builders the ability to pattern match, and giving all matchers the ability to have multiple cases and to modify the bound values before calling the success continuation. However, this is added complexity, so something may always go wrong.
 
 All existing pattern synonyms should continue to work, since they all have variables on the LHS, and variables are invertible patterns. It is a bug in this proposal if anything breaks.
 
