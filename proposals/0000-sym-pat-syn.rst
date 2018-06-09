@@ -179,15 +179,15 @@ Pattern synonyms have *pattern types*, which are of the form
 ::
 
   pattern P :: forall u1 ... un. -- universal type variables
-               (req) => -- required context; may refer to all ui but none of ei
+               (req) => -- required context; may refer to all ui but none of ej
                forall e1 ... em. -- existential type variables
-               (prv) => -- provided context; may refer to all of ui and ei
-               a1 -> ... -> an -> -- matched values; may refer to all of ui and ei
+               (prv) => -- provided context; may refer to all of ui and ej
+               a1 -> ... -> al -> -- matched values; may refer to all of ui and ej
                r -- result type; may only refer to ui
 
 If a pattern synonym is not given a signature, its type is currently inferred as if it were written as a unidirectional pattern synonym. This is changed, so the whole synonym is considered. Type *checking*, of course, continues to consider everything.
 
-For a unidirectional patttern synonym, the result type ``r`` is the type of values that all of the RHSs match. The provided context ``prv`` is composed of the constraints provided by the matching of the RHSs. A constraint may only appear in ``prv`` if *every* RHS provides it. The existentials are type variables that are provided by matching the RHSs. Again, these are only those variables that are provided by *every* RHS. The expressions on the LHSs are typed with the variables (terms and types) and context matched from the corresponding RHS in scope. The types of the matched values ``ai`` are union of the types of the corresponding expressions. Any unsolved type variables on either side are added to the universal type variables. Any constraints required by any RHS must appear in the ``req`` constraints. Any constraints required by a LHS must either appear in the ``req`` constraints or must be matched from the corresponding RHS.
+A unidirectional pattern synonym is typechecked similarly to a function. Assuming RHSs ``r``\ :subscript:`1` ... ``r``\ :subscript:`a`, where each ``r``\ :subscript:`i` has corresponding LHS expressions ``l``\ :subscript:`i,1` ... ``l``\ :subscript:`i,l`, the type of the pattern synonym is related to the type of a function ``f`` defined by ``a`` equations, each of the form ``f`` ``r``\ :subscript:`i` ``=`` ``(`` ``l``\ :subscript:`i,1`\ ``,`` ... ``l``\ :subscript:`i,l`\ ``)``. The result type ``r`` is the type of the argument to ``f``. ``f``'s universal type variables make up ``u1`` ... ``un``. The types of the matched values ``a1`` ... ``al`` correspond to the types that make up the tuple type in ``f``'s result. Any constraints that ``f`` requires must appear in ``req``. Any existential type variables that would otherwise escape their scope in ``f`` may instead appear as one of ``e1`` ... ``em``, but only if *every* equation of ``f`` is able to determine ``ei``. Any constraints that are matched in *every* equation in ``f`` may appear in ``prv``.
 
 Implicitly bidirectional synonyms are type checked in a similar way to unidirectional pattern synonyms. However, the handling of contexts is slightly different. If a constraint is provided by both the LHS and the RHS and required by neither, then it does not need to appear in either the required or provided contexts of the synonym.
 
@@ -310,7 +310,7 @@ Unresolved questions
     pattern P a = a + 5
 
   is already rejected, and it's probably not worth the effort.
-* Admitting as-patterns as invertible is possible but would require interesting contorsions of the scoping rules and is currently not accepted. Is it worth it?
+* Admitting as-patterns as invertible is possible but would require interesting contortions of the scoping rules and is currently not accepted. Is it worth it?
 
 Implementation Plan
 -------------------
