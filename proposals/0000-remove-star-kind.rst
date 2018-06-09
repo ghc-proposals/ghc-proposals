@@ -30,19 +30,19 @@ there:
 
 * We have to keep using words "type" or "kind" in error messages, so GHC
   continues to keep track of what level it is dealing with.
-* Kind variables and type variables are treated differently in ``forall`` -- this
+* Kind variables and type variables are treated differently in ``forall`` — this
   oddity is dealt with in an accepted proposal,
   `#24 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0024-no-kind-vars.rst>`_.
 * Parsing ``*`` is different in types and kinds: in types it is a regular binary
   operator, but in kinds it denotes inhabited types (unless ``-XTypeInType`` is
-  enabled and then it must be imported from ``Data.Kind``) -- this oddity is
+  enabled and then it must be imported from ``Data.Kind``) — this oddity is
   dealt with in an accepted proposal, `#20
   <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0020-no-type-in-type.rst>`_.
 * ... etc
 
 So, what is the deal with ``*`` here? Right now there are vile hacks in the
 parser and the renamer to support it, and at the time of submitting this
-proposal, @int-index is `happily dismantling
+proposal, `@int-index <https://github.com/int-index/>`_ is `happily dismantling
 <https://phabricator.haskell.org/D4748>`_ them in favor of a simpler solution
 proposed in ``#20``: an extension called ``-XStarIsType`` that controls whether
 ``*`` is used to denote the kind of inhabited types or not, regardless of the
