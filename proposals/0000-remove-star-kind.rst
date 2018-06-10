@@ -21,10 +21,9 @@ Motivation
 Before GHC 8.0, there used to be three completely separate syntactic categories:
 terms, types, and kinds. There also was a fourth layer (sometimes called
 "sorts") that classified kinds and it had only one thing in it, called ``BOX``.
-The addition of ``-XTypeInType`` brought us a great victory in the battle with
-The Enemy of All Human Endeavor and Programming in Particular, Complexity. The
-tower of types, kinds, and ``BOX`` collapsed, leaving us just with types. Of
-course, winning one battle does not mean the war is over, and even now we have
+The addition of ``-XTypeInType`` allowed us to significantly simplify the
+language by collapsing the tower of types, kinds, and ``BOX`` into just types.
+Unfortunately, there are
 little bits of complexity left over from the three layers showing up here and
 there:
 
@@ -40,7 +39,7 @@ there:
   <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0020-no-type-in-type.rst>`_.
 * ... etc
 
-So, what is the deal with ``*`` here? Right now there are vile hacks in the
+So, what is the deal with ``*`` here? Right now there are complicated workarounds in the
 parser and the renamer to support it, and at the time of submitting this
 proposal, `@int-index <https://github.com/int-index/>`_ is `happily dismantling
 <https://phabricator.haskell.org/D4748>`_ them in favor of a simpler solution
@@ -51,7 +50,7 @@ syntactic category (types/kinds) and scope (what is imported from
 be enabled by default.
 
 Firstly, the ``*`` syntax is unfortunate because it is confusing to some
-beginners. There are frequent cases where people familiar with regular
+beginners. There are cases where people familiar with regular
 expressions mistake ``*`` for a wildcard, assuming a subtyping (subkinding)
 relationship between ``*`` and other kinds (we actually used to have subkinding
 in the form of ``OpenKind``, but it was another beast entirely and is now
@@ -65,12 +64,12 @@ Bool``. At the same time, in types ``*`` *is* an infix operator, so we can write
 up either ``*`` as an infix operator (and that would be rather odd) or give up
 ``*`` as syntax for ``Data.Kind.Type``. Having an extension, ``-XStarIsType``,
 to alternate between these decisions, is a smart solution in the short term, but
-sort of schizophrenic if we decide to keep it.
+unnecessarily creates two incompatible language dialects if we decide to keep it.
 
 Thirdly, if we have any hope in merging the parsers for terms and types (which
 would be definitely a good thing for DependentHaskell), having ``-XStarIsType``
 on by default would mean that ``*`` would be no longer available even for
-term-level multiplication, which is slightly undesired and completely mad.
+term-level multiplication, which is hard to justify.
 
 Therefore, we have two groups of programmers, both of which would benefit from
 the removal of ``*``: beginners, trying to make sense of kinds, and experienced
