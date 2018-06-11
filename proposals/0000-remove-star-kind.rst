@@ -98,13 +98,14 @@ Proposed Change Specification
         in the future. Use ‘Type’ from ‘Data.Kind’ instead.
 
 * For two more releases, do nothing.
-* In the next release, add ``-fwarn-star-is-type`` to ``-Wall``.
+* In the next release (or 1.5 years in), add ``-fwarn-star-is-type`` to ``-Wall``.
 * For two more releases, do nothing.
-* In the next release, enable ``-fwarn-star-is-type`` by default.
+* In the next release (or 3 years in), enable ``-fwarn-star-is-type`` by default.
+* For seven more releases, do nothing.
+* In the next release (or 7 years in), disable ``-XStarIsType`` by default and deprecate it.
 * For two more releases, do nothing.
-* In the next release, disable ``-XStarIsType`` by default and deprecate it.
-* For six more releases, do nothing. Then remove ``-XStarIsType`` from GHC
-  to simplify the internals. Celebrate.
+* In the next release (or 8.5 years in), remove ``-XStarIsType`` from GHC
+  to simplify the internals.
 
 Effect and Interactions
 -----------------------
