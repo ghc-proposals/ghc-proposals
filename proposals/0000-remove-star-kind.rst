@@ -88,9 +88,8 @@ Proposed Change Specification
   by default, but disabled by ``-XTypeOperators``. We include a warning,
   ``-fwarn-star-is-type``, disabled by default but included in ``-Wcompat``.
   This warning is printed whenever ``*`` is used to denote the kind of inhabited
-  types:
+  types::
 
-  ::
     ghci> :k *
     <interactive>:1:1: warning: [-Wstar-is-type]
         Using ‘*’ (or its Unicode variant) to mean ‘Data.Kind.Type’
@@ -110,8 +109,7 @@ Proposed Change Specification
 Effect and Interactions
 -----------------------
 
-As it stands, we have the following plan in `#20
-  <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0020-no-type-in-type.rst>`_:
+As it stands, we have the following plan in `#20 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0020-no-type-in-type.rst>`_:
 
   For two releases, ``-XTypeOperators`` will imply ``-XNoStarIsType``
 
