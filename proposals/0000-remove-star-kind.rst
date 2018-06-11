@@ -110,8 +110,17 @@ Proposed Change Specification
 Effect and Interactions
 -----------------------
 
-None.
+As it stands, we have the following plan in `#20
+  <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0020-no-type-in-type.rst>`_:
 
+  For two releases, ``-XTypeOperators`` will imply ``-XNoStarIsType``
+
+this gets simplified to:
+
+  ``-XTypeOperators`` will imply ``-XNoStarIsType``
+
+as it is counter-productive to re-enable ``-XStarIsType`` in two releases if
+the end-goal is to remove it from the language.
 
 Costs and Drawbacks
 -------------------
