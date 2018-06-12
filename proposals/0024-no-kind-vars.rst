@@ -2,7 +2,7 @@ Treat kind variables and type variables identically in ``forall``
 =================================================================
 
 .. proposal-number:: 24
-.. trac-ticket::
+.. trac-ticket:: #15264
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/103>`_.
@@ -46,7 +46,7 @@ We will consider the following collection of type signatures::
   i :: Proxy (a :: k) -> ()
   j :: forall a. Proxy (a :: k) -> ()
 
-  
+
 1. **The "forall-or-nothing" rule**
 
    Currently, all of the signatures above are accepted except ``h``. GHC has a rule I call the
@@ -84,11 +84,11 @@ Specifically:
    a type with an explicit ``forall``. This applies to type signatures and to other
    contexts that allow a ``forall`` with the forall-or-nothing rule in effect (for example,
    class instances).
-   
+
 2. Two releases after `#83`_ is implemented, make it an error to bring a kind variable
    into scope implicitly in a type with an explicit ``forall`` and where the forall-or-nothing
    rule is in effect.
-   
+
 Effect and Interactions
 -----------------------
 This will not be backward compatible, because more explicit listing of kind variables
