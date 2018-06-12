@@ -109,6 +109,9 @@ Proposed Change Specification
 Effect and Interactions
 -----------------------
 
+We estimate that about 10% of packages published on Hackage will be affected
+by this breaking change (see the discussion for the methods used).
+
 As it stands, we have the following plan in `#20 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0020-no-type-in-type.rst>`_:
 
   For two releases, ``-XTypeOperators`` will imply ``-XNoStarIsType``
