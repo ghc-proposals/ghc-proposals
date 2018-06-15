@@ -39,14 +39,13 @@ there:
   <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0020-no-type-in-type.rst>`_.
 * ... etc
 
-So, what is the deal with ``*`` here? Right now there are complicated workarounds in the
-parser and the renamer to support it, and at the time of submitting this
-proposal, `@int-index <https://github.com/int-index/>`_ is `happily dismantling
-<https://phabricator.haskell.org/D4748>`_ them in favor of a simpler solution
-proposed in ``#20``: an extension called ``-XStarIsType`` that controls whether
+So, what is the deal with ``*`` here? Before GHC 8.6 there were complicated
+workarounds in the parser and the renamer to support it. At the time of
+submitting this proposal, we have a more principled solution, an extension
+called ``-XStarIsType`` that controls whether
 ``*`` is used to denote the kind of inhabited types or not, regardless of the
 syntactic category (types/kinds) and scope (what is imported from
-``Data.Kind``). However, the problem here is that ``-XStarIsType`` is going to
+``Data.Kind``): However, the problem here is that ``-XStarIsType`` is going to
 be enabled by default.
 
 Firstly, the ``*`` syntax is unfortunate because it is confusing to some
@@ -71,6 +70,18 @@ would be definitely a good thing for DependentHaskell), having ``-XStarIsType``
 on by default would mean that ``*`` would be no longer available even for
 term-level multiplication, which is hard to justify.
 
+Finally, ``-XStarIsType`` creates an unfortunate lexical inconsistency,
+demonstrated in the following example by @takenobu-hs::
+
+  {-# LANGUAGE TypeOperators, PolyKinds, DataKinds #-}
+
+  -- The `*` is a kind for lifted types.
+  data T1 :: Either * Bool -> *
+
+  -- The `+` is an infix type operator.
+  data T2 :: Either + Bool -> *
+  data a + b
+
 Therefore, we have two groups of programmers, both of which would benefit from
 the removal of ``*``: beginners, trying to make sense of kinds, and experienced
 programmers using type operators.
@@ -84,11 +95,10 @@ be able to get rid of ``*`` in 8 years.
 Proposed Change Specification
 -----------------------------
 
-* In the next release, GHC 8.6, the ``-XStarIsType`` extension will be enabled
-  by default, but disabled by ``-XTypeOperators``. We include a warning,
-  ``-fwarn-star-is-type``, disabled by default but included in ``-Wcompat``.
-  This warning is printed whenever ``*`` is used to denote the kind of inhabited
-  types::
+In GHC 8.6, the ``-XStarIsType`` extension is enabled by default, but disabled
+by ``-XTypeOperators``. There is a warning, ``-fwarn-star-is-type``, disabled
+by default. This warning is triggered whenever ``*`` is used to denote the
+kind of inhabited types::
 
     ghci> :k *
     <interactive>:1:1: warning: [-Wstar-is-type]
@@ -96,7 +106,14 @@ Proposed Change Specification
         relies on the StarIsType extension, which will be deprecated
         in the future. Use ‘Type’ from ‘Data.Kind’ instead.
 
-* For two more releases, do nothing.
+We specify the deprecation schedule in both release count and amount of time
+passed since GHC 8.6 has been released. In case releases are delayed, the
+time-based schedule takes precedence.
+
+* In the next release (or 0.5 years in), GHC 8.8, add ``-fwarn-star-is-type`` to ``-Wcompat``.
+* For one more release, do nothing. At this point, the warning has been
+  available for three releases (GHC 8.6, GHC 8.8, GHC 8.10), and included in
+  ``-Wcompat`` for the last two.
 * In the next release (or 1.5 years in), add ``-fwarn-star-is-type`` to ``-Wall``.
 * For two more releases, do nothing.
 * In the next release (or 3 years in), enable ``-fwarn-star-is-type`` by default.
@@ -109,7 +126,7 @@ Proposed Change Specification
 Effect and Interactions
 -----------------------
 
-We estimate that about 25% of packages published on Hackage will be affected
+We estimate that less than 25% of packages published on Hackage will be affected
 by this breaking change (see the discussion for the methods used).
 
 As it stands, we have the following plan in `#20 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0020-no-type-in-type.rst>`_:
