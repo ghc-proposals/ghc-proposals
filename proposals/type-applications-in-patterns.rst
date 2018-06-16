@@ -50,10 +50,11 @@ If ``ScopedTypeVariables`` is enabled, then type applications and type signature
 A type variable mentioned in a pattern (in a type signature or a type application) that is not already in scope is brought into scope. The scope spans the pattern and the corresponding right-hand side.
 
 Typechecking a type application in a pattern follows the same rules as typechecking a pattern signature. This proposal does not propose any changes to the mechanism. In particular
+
 * type variables in type applications in patterns can only bind type variables, just as it is the case for type variables in pattern signatures (unless #128 gets accepted first).
 * patterns are type-checked from left to right. This means when type-checking the type application in a pattern ``(MkT @ty)``, type equatlities from matches further to the left, as well as the type equalities from the context of ``MkT`` itself are in scope, but not type equalities from constructors further to the right (see below for an example).
 
-An attempt to formalize these rules is spelled out in <https://www.overleaf.com/15743151qmfpncmjfcks>, which uses the syntax of the `OutsideIn paper <https://www.microsoft.com/en-us/research/publication/outsideinx-modular-type-inference-with-local-assumptions/>`_. It gives type-checking rules for plain Haskell (with GADTs), Haskell+PatternSignatures, Haskell+PatternSignatures+TypeApplications (which is this proposal) and, just for reference, Haskell+PatternSignatures+TypeApplications+#15050.
+A more formal description of these rules can be found in “Type variable in pattern” by Richard Eisenberg, Joachim Breitner  and Simon Peyton Jones <https://arxiv.org/abs/1806.03476>_.
 
 An underscore in a type signature or type application in a pattern is not treated as a hole.
 
