@@ -9,7 +9,7 @@ Remove the * kind syntax
 .. sectnum::
 .. contents::
 
-The Haskell Report uses ``*`` to denote the kind of inhabited types. As we move
+The Haskell Report uses ``*`` to denote the kind of lifted types. As we move
 towards DependentHaskell, it is increasingly painful to support this historical
 choice of name. We propose to slowly and carefully remove this syntactic oddity
 from the language.
@@ -23,9 +23,7 @@ terms, types, and kinds. There also was a fourth layer (sometimes called
 "sorts") that classified kinds and it had only one thing in it, called ``BOX``.
 The addition of ``-XTypeInType`` allowed us to significantly simplify the
 language by collapsing the tower of types, kinds, and ``BOX`` into just types.
-Unfortunately, there are
-little bits of complexity left over from the three layers showing up here and
-there:
+Unfortunately, little bits of complexity remained. Here are a few examples:
 
 * We have to keep using words "type" or "kind" in error messages, so GHC
   continues to keep track of what level it is dealing with.
@@ -33,61 +31,105 @@ there:
   oddity is dealt with in an accepted proposal,
   `#24 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0024-no-kind-vars.rst>`_.
 * Parsing ``*`` is different in types and kinds: in types it is a regular binary
-  operator, but in kinds it denotes inhabited types (unless ``-XTypeInType`` is
+  operator, but in kinds it denotes the kind of lifted types (unless ``-XTypeInType`` is
   enabled and then it must be imported from ``Data.Kind``) — this oddity is
   dealt with in an accepted proposal, `#20
   <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0020-no-type-in-type.rst>`_.
-* ... etc
 
-So, what is the deal with ``*`` here? Before GHC 8.6 there were complicated
-workarounds in the parser and the renamer to support it. At the time of
-submitting this proposal, we have a more principled solution, an extension
-called ``-XStarIsType`` that controls whether
-``*`` is used to denote the kind of inhabited types or not, regardless of the
-syntactic category (types/kinds) and scope (what is imported from
-``Data.Kind``). The problem here is that ``-XStarIsType`` is going to
-be enabled by default.
+The point of interest for us is the ``*`` syntax. Before GHC 8.6 there were complicated
+workarounds in the parser and the renamer to support it. The proposal
+`#20 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0020-no-type-in-type.rst>`_,
+implemented in GHC 8.6, changed this: now we have a more principled solution, an extension
+called ``-XStarIsType`` that controls whether ``*`` is used to denote the kind
+of lifted types or not, regardless of the syntactic category (types/kinds) and
+scope (what is imported from ``Data.Kind``).
 
-* The ``*`` syntax may be confusing to some
-  beginners. There are cases where people familiar with regular
-  expressions mistake ``*`` for a wildcard, assuming a subtyping (subkinding)
-  relationship between ``*`` and other kinds (we actually used to have subkinding
-  in the form of ``OpenKind``, but it was another beast entirely and is now
-  replaced by runtime representation polymorphism).
+So here is the situation we are in:
 
-* ``*`` conflicts with ``-XTypeOperators``. We can have infix operators
-  like ``+`` or ``-`` in types and kinds, and yet ``*`` is not infix in kinds, so
-  ``Either * Bool`` actually parses as ``Either (*) Bool``, not as ``(*) Either
-  Bool``. At the same time, in types ``*`` *is* an infix operator, so we can write
-  ``type Ten = 2 * 5``. In order to truly unify types and kinds, we have to give
-  up either ``*`` as an infix operator (and that would be rather odd) or give up
-  ``*`` as syntax for ``Data.Kind.Type``. Having an extension, ``-XStarIsType``,
-  to alternate between these decisions, is a smart solution in the short term, but
-  unnecessarily creates two incompatible language dialects if we decide to keep it.
+* Before GHC 8.0: the only way to refer to the kind of lifted types was the
+  ``*`` syntax.
+* Since GHC 8.0, there is another way to call it: ``Type``. This is a regular
+  Haskell identifier and not special syntax, ``Type`` is exported from
+  ``Data.Kind``. The availability of the ``*`` syntax depends on the syntactic
+  category (types or kinds), enabled extensions (is ``-XTypeInType`` on or off?)
+  and scope (is ``type (*)`` imported from ``Data.Kind`` or not?).
+* Since GHC 8.6, the rules are simple: with ``-XStarIsType``, unqualified ``*``
+  is syntactic sugar for ``Data.Kind.Type``; with ``-XNoStarIsType``, it is a
+  regular type operator.
 
-* If we have any hope in merging the parsers for terms and types (which
-  would be definitely a good thing for DependentHaskell), having ``-XStarIsType``
-  on by default would mean that ``*`` would be no longer available even for
-  term-level multiplication, which is hard to justify.
+The problem here is that ``-XStarIsType`` is enabled by default:
 
-* ``-XStarIsType`` creates an unfortunate lexical inconsistency,
-  demonstrated in the following example by `@takenobu-hs <https://github.com/takenobu-hs>`_::
+a) it creates a lexical inconsistency
+b) it stands in the way of type/term unification
+c) it creates two language dialects
+d) it requires more background knowledge to read and understand
 
-    {-# LANGUAGE TypeOperators, PolyKinds, DataKinds #-}
+Let us now expand on each of these points.
 
-    -- The `*` is a kind for lifted types.
-    data T1 :: Either * Bool -> *
+a) The lexical inconsistency is demonstrated by the following example (courtesy of `@takenobu-hs <https://github.com/takenobu-hs>`_)::
 
-    -- The `+` is an infix type operator.
-    data T2 :: Either + Bool -> *
-    data a + b
+      {-# LANGUAGE TypeOperators, StarIsType, PolyKinds, DataKinds #-}
 
-Therefore, we have two groups of programmers, both of which would benefit from
-the removal of ``*``: beginners, trying to make sense of kinds, and experienced
-programmers using type operators.
+      data T1 :: Either * Bool -> *
 
-Sadly, we cannot simply pull the plug and remove the ``*`` kind from the
-language. The amount of code and literature that uses ``*`` is truly immense.
+      data T2 :: Either + Bool -> *
+      data a + b
+
+   To an untrained eye, ``Either * Bool`` and ``Either + Bool`` look quite similar.
+   However, ``Either * Bool`` is parsed as ``Either (*) Bool``; at the same time,
+   ``Either + Bool`` is parsed as ``(+) Either Bool``.
+
+   Furthermore, when ``-XTypeOperators`` and ``-XStarIsType`` are enabled at the
+   same time, it is not possible to define the ``*`` operator or use it
+   unqualified. This is problematic because even ``base`` defines ``*`` as
+   type-level multiplication of natural numbers in ``GHC.TypeNats``.
+
+b) Unification of terms and types is one of the goals of ``-XDependentHaskell``.
+   Dependently typed languages such as Agda, Idris, or Coq, can freely use terms in
+   their types. However, if we attempt to unify terms and types in Haskell, having
+   ``-XStarIsType`` on by default means that ``*`` would be no longer available for
+   multiplication on the term level (this is the same conflict as between
+   ``-XTypeOperators`` and ``-XStarIsType`` on the type level). Removing ``*`` as a
+   binary operator from the language would be a major breaking change, and one that
+   is hard to justify. Therefore, ``-XStarIsType`` creates a syntactic conflict
+   that holds back the development of a more important feature,
+   ``-XDependentHaskell``.
+
+c) The problem of two language dialects is summarized as follows. Code that
+   uses type-level features heavily is likely to prefer ``-XNoStarIsType`` for its
+   lack of conflict with ``-XTypeOperators`` and due to ``Type`` having precedent
+   in other languages like Idris. At the same time, literature and code that tries
+   to minimize the use of extensions will keep using ``*`` because it is the
+   default, perhaps also out of habit. The end result is that no one will be able
+   to tell how ``a * b`` parses in a particular module without looking at the
+   enabled extensions (which are not necessarily in the module header).
+
+d) The knowledge background point boils down to ``Type`` being a regular
+   English word and a regular Haskell identifier which is not subject to special
+   parsing rules. Without learning anything about it, an English-speaking person
+   can pronounce it correctly and mentally parse a Haskell expression that uses it.
+   With basic familiarity of Haskell syntax, anyone can deduce that if ``5 :: Int``
+   means that ``5`` is an ``Int``, then ``Int :: Type`` must mean that ``Int`` is a
+   ``Type`` (unlike ``Maybe``, which is not a type but a type constructor).
+
+   At the same time, reading ``*`` requires prior introduction to this syntax.
+   Novel syntax may be intimidating, and it does not help that in other contexts
+   ``*`` stands for wildcards (in regular expressions), bullet points (in
+   Markdown), multiplication (in arithmetic), and so on. It does take some time to
+   rewire the brain to read ``*`` as ``Type``. Several people in the discussion
+   thread of this proposal shared that their teaching and/or learning experience
+   could be improved if instead of ``*`` we had ``Type``.
+
+We therefore conclude that making ``-XStarIsType`` disabled by default and
+eventually removing it from the language would:
+
+a) make the language more lexically consistent
+b) unblock further development in the direction of advanced type-level programming
+c) avoid the mental overhead associated with having more language dialects
+d) make the language more approachable for some people
+
+Of course, there are costs we must consider.
+The amount of code and literature that uses ``*`` is truly immense.
 That is why we propose a slow migration on the timescale of a decade. Assuming
 two releases of GHC per year (which is the currently accepted schedule), we will
 be able to get rid of ``*`` in 8 years.
@@ -97,8 +139,7 @@ Proposed Change Specification
 
 In GHC 8.6, the ``-XStarIsType`` extension is enabled by default, but disabled
 by ``-XTypeOperators``. There is a warning, ``-fwarn-star-is-type``, disabled
-by default. This warning is triggered whenever ``*`` is used to denote the
-kind of inhabited types::
+by default. This warning is triggered whenever ``*`` is used to denote ``Type``::
 
     ghci> :k *
     <interactive>:1:1: warning: [-Wstar-is-type]
@@ -176,6 +217,6 @@ None.
 Implementation Plan
 -------------------
 
-Both ``-XStarIsType`` and ``-fwarn-star-is-type`` are already implemented and
-will hopefully land in GHC 8.6, the question is to when to enable or disable
+Both ``-XStarIsType`` and ``-fwarn-star-is-type`` are already implemented
+in GHC 8.6, the question is to when to enable or disable
 these, which requires no real implementation effort.
