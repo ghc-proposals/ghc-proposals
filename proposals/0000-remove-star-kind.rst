@@ -45,42 +45,42 @@ submitting this proposal, we have a more principled solution, an extension
 called ``-XStarIsType`` that controls whether
 ``*`` is used to denote the kind of inhabited types or not, regardless of the
 syntactic category (types/kinds) and scope (what is imported from
-``Data.Kind``): However, the problem here is that ``-XStarIsType`` is going to
+``Data.Kind``). The problem here is that ``-XStarIsType`` is going to
 be enabled by default.
 
-Firstly, the ``*`` syntax is unfortunate because it is confusing to some
-beginners. There are cases where people familiar with regular
-expressions mistake ``*`` for a wildcard, assuming a subtyping (subkinding)
-relationship between ``*`` and other kinds (we actually used to have subkinding
-in the form of ``OpenKind``, but it was another beast entirely and is now
-replaced by runtime representation polymorphism).
+* The ``*`` syntax may be confusing to some
+  beginners. There are cases where people familiar with regular
+  expressions mistake ``*`` for a wildcard, assuming a subtyping (subkinding)
+  relationship between ``*`` and other kinds (we actually used to have subkinding
+  in the form of ``OpenKind``, but it was another beast entirely and is now
+  replaced by runtime representation polymorphism).
 
-Secondly, ``*`` conflicts with ``-XTypeOperators``. We can have infix operators
-like ``+`` or ``-`` in types and kinds, and yet ``*`` is not infix in kinds, so
-``Either * Bool`` actually parses as ``Either (*) Bool``, not as ``(*) Either
-Bool``. At the same time, in types ``*`` *is* an infix operator, so we can write
-``type Ten = 2 * 5``. In order to truly unify types and kinds, we have to give
-up either ``*`` as an infix operator (and that would be rather odd) or give up
-``*`` as syntax for ``Data.Kind.Type``. Having an extension, ``-XStarIsType``,
-to alternate between these decisions, is a smart solution in the short term, but
-unnecessarily creates two incompatible language dialects if we decide to keep it.
+* ``*`` conflicts with ``-XTypeOperators``. We can have infix operators
+  like ``+`` or ``-`` in types and kinds, and yet ``*`` is not infix in kinds, so
+  ``Either * Bool`` actually parses as ``Either (*) Bool``, not as ``(*) Either
+  Bool``. At the same time, in types ``*`` *is* an infix operator, so we can write
+  ``type Ten = 2 * 5``. In order to truly unify types and kinds, we have to give
+  up either ``*`` as an infix operator (and that would be rather odd) or give up
+  ``*`` as syntax for ``Data.Kind.Type``. Having an extension, ``-XStarIsType``,
+  to alternate between these decisions, is a smart solution in the short term, but
+  unnecessarily creates two incompatible language dialects if we decide to keep it.
 
-Thirdly, if we have any hope in merging the parsers for terms and types (which
-would be definitely a good thing for DependentHaskell), having ``-XStarIsType``
-on by default would mean that ``*`` would be no longer available even for
-term-level multiplication, which is hard to justify.
+* If we have any hope in merging the parsers for terms and types (which
+  would be definitely a good thing for DependentHaskell), having ``-XStarIsType``
+  on by default would mean that ``*`` would be no longer available even for
+  term-level multiplication, which is hard to justify.
 
-Finally, ``-XStarIsType`` creates an unfortunate lexical inconsistency,
-demonstrated in the following example by @takenobu-hs::
+* ``-XStarIsType`` creates an unfortunate lexical inconsistency,
+  demonstrated in the following example by `@takenobu-hs <https://github.com/takenobu-hs>`_::
 
-  {-# LANGUAGE TypeOperators, PolyKinds, DataKinds #-}
+    {-# LANGUAGE TypeOperators, PolyKinds, DataKinds #-}
 
-  -- The `*` is a kind for lifted types.
-  data T1 :: Either * Bool -> *
+    -- The `*` is a kind for lifted types.
+    data T1 :: Either * Bool -> *
 
-  -- The `+` is an infix type operator.
-  data T2 :: Either + Bool -> *
-  data a + b
+    -- The `+` is an infix type operator.
+    data T2 :: Either + Bool -> *
+    data a + b
 
 Therefore, we have two groups of programmers, both of which would benefit from
 the removal of ``*``: beginners, trying to make sense of kinds, and experienced
@@ -126,8 +126,19 @@ time-based schedule takes precedence.
 Effect and Interactions
 -----------------------
 
+Breakage estimation
+^^^^^^^^^^^^^^^^^^^
+
 We estimate that less than 25% of packages published on Hackage will be affected
 by this breaking change (see the discussion for the methods used).
+
+* The breakage is not silent: the compiler will output error messages with useful hints.
+* There will be a point in time when packages can support the last 7 years of GHC releases
+  and all future releases without `-XCPP`. Packages that only support GHC 8.0 and higher can
+  migrate right away without any use of `-XCPP`.
+
+Adjustment to `#20 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0020-no-type-in-type.rst>`_
+^^^^^^^^^^^^^^^^^^
 
 As it stands, we have the following plan in `#20 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0020-no-type-in-type.rst>`_:
 
