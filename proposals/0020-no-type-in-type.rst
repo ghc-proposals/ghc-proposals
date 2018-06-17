@@ -3,7 +3,7 @@ Embrace ``Type :: Type``
 
 .. proposal-number:: 20
 .. trac-ticket:: #15195
-.. implemented::
+.. implemented:: 8.6
 .. highlight:: haskell
 .. header::
    This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/83>`_.
