@@ -54,7 +54,7 @@ Motivation
 
 * If we plan to remove ``*`` from the language at some point, we should start updating
   error messages sooner than later.
-  
+
 * In truth, GHC always has ``Type :: Type``, whether you say ``-XTypeInType``
   or no. Thus, the real extension name should be ``-XPolyKinds``, because it's
   kind polymorphism that the user wants, not the always-true ``Type :: Type``.
@@ -71,7 +71,7 @@ Motivation
   The one difference between ``-XPolyKinds`` and ``-XTypeInType`` that's worth preserving
   is that the former allows easy access to the kind ``*``. The ``-XStarIsType`` extension
   is meant to preserve this difference.
-  
+
 Proposed Change Specification
 -----------------------------
 
@@ -105,9 +105,9 @@ Proposed Change Specification
 
 2. ``-XDataKinds`` would now promote GADTs and GADT constructors. This change is fully
    backward compatible; no migration would be necessary.
-      
+
 3. Two releases after this proposal is implemented, deprecate ``-XTypeInType``.
-      
+
 4. Introduce a new language extension ``-XStarIsType``, with the following behavior:
 
    a. ``-XStarIsType`` is on by default.
@@ -141,13 +141,13 @@ Effect and Interactions
   context means:
 
   1. If ``-XTypeInType`` is in effect:
-     
+
      a. If the use of ``*`` refers to ``Data.Kind.*``, then parse it as an
 	alphanumeric identifier; it means ``Type``.
      b. If ``*`` refers to some other type, it is a binary operator.
 
   2. If ``-XTypeInType`` is not in effect:
-     
+
      a. If the use of ``*`` is in a context that is syntactically understood
 	to be a kind, ``*`` is parsed as an alphanumeric identifier and means
 	``Type``.
@@ -207,7 +207,7 @@ Costs and Drawbacks
   values will have to be updated to use ``Type`` instead, as imported from ``Data.Kind``.
   This change is backward compatible to GHC 8.0. (Alternatively, they could
   use ``-XStarIsType`` and fully-qualify their uses of the binary operator ``*``.)
-  
+
 Alternatives
 ------------
 
@@ -243,10 +243,10 @@ Alternatives
      of ``*``, we'll be further from the behavior that the Report authors intended at the
      time. However, as the Reports do not specify error message text, this change does
      not bring us further from formal compliance to the letter of the Report. It would bring
-     us further from the spirit of the Report.   
-   
+     us further from the spirit of the Report.
+
 .. |star| unicode:: U+2605 .. unicode star
-   
+
 6. Currently, and in this proposal, both ``*`` and its unicode variant |star| are
    treated identically. One way to have our cake and eat it too is to follow the plan
    above for ``*`` but force |star| to always lex as an alphanumeric identifier
@@ -279,7 +279,90 @@ Alternatives
    I find both arguments compelling independently, and so I withdraw support for this
    alternative. Nevertheless, I'm keeping it in the proposal in case someone wants to
    argue in support of it.
-   
+
+Implication TypeOperators to NoStarIsType
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+One alternative is to have additional *4.f* step in introduction of ``-XStarIsType``
+
+   f. For two releases, ``-XTypeOperators`` will imply ``-XNoStarIsType``, to
+      provide a migration path for code that uses the binary operator ``*``. (After
+      two releases, this code can include ``-XNoStarIsType`` explicitly without
+      going against the three-release policy.) Users can re-enable ``-XStarIsType``
+      after ``-XTypeOperators`` is enabled if they wish.
+
+This alternative is however problematic. It's intended to help migration,
+but implementation evidence shows it causes more trouble.
+
+For example code using generics (and therefore ``-XTypeOperators``) often
+enough define helper newtypes where ``ConstraintKinds`` is needed,
+with the clause it will be broken:
+
+::
+
+  Data/Hashable/Generic.hs:116:22: error:
+      Operator applied to too few arguments: *
+      With NoStarIsType (implied by TypeOperators), ‘*’ is treated as a regular type operator.
+      Did you mean to use ‘Type’ from Data.Kind instead?
+      |
+  116 | newtype Tagged (s :: * -> *) = Tagged {unTagged :: Int}
+      |
+
+
+Another example is simple declaration (from servant):
+
+::
+
+  {-# LANGUAGE PolyKinds, TypeOperators #-}
+
+  data (:>) (a :: k) (b :: *)
+
+There is an argument that the code should be rewritten using ``Type``,
+but in that case it would be better if ``-XTypeOperators`` implied
+``-XNoStarIsType`` indefinitely:
+
+::
+
+  {-# LANGUAGE CPP #-}
+  #if __GLASGOW_HASKELL__ >= 800
+  import Data.Kind (Type)
+  #else
+  #define Type *
+  #endif
+
+  newtype Tagged (s :: Type -> Type) = Tagged {unTagged :: Int}
+  data (:>) (a :: k) (b :: Type)
+
+Without the 4.f clause, some code using ``GHC.TypeLits.*`` will need to enable
+``-XNoStarIsType`` explicitly, like
+
+::
+
+  {-# LANGUAGE CPP, KindSignatures, DataKinds, TypeFamilies #-}
+  {-# LANGUAGE TypeOperators #-}
+  #if __GLASGOW_HASKELL__ >= 805
+  {-# LANGUAGE NoStarIsType #-}
+  #endif
+
+  -- Support GHC-7.8 and GHC-7.10
+  #if __GLASGOW_HASKELL__ >= 800
+  import Data.Kind (Type)
+  #else
+  #define Type *
+  #endif
+
+  import GHC.TypeLits
+  import Data.ByteString (ByteString)
+  import Data.Coerce (coerce)
+
+  newtype Block (n :: Nat) a = Block ByteString
+
+  -- Note: in GHC-7.8 - GHC-8.4 this works even with (a :: *)
+  type family ElemSize (a :: Type) :: Nat
+
+  cast :: ((n *  ElemSize a) ~ (m * ElemSize b)) => Block n a -> Block m b
+  cast = coerce
+
 Unresolved questions
 --------------------
 
