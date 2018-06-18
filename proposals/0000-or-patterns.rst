@@ -91,7 +91,7 @@ Or patterns solve the problem by allowing us to do this:
 
     stringOfT :: T -> Maybe String
     stringOfT (T1 s)        = Just s
-    stringOfT (T2{} | T3{}) = Nothing
+    stringOfT (T2{} ; T3{}) = Nothing
 
 This function doesn't match ``T4``, so we get our warning.
 
@@ -114,8 +114,8 @@ Or patterns can solve this problem like this
 ::
 
     stringOfT :: T -> Maybe String
-    stringOfT (T1 s | T4 s) = Just s
-    stringOfT (T2{} | T3{}) = Nothing
+    stringOfT (T1 s ; T4 s) = Just s
+    stringOfT (T2{} ; T3{}) = Nothing
 
 Now we have code reuse, and we will get nice warnings next time a new
 constructor is added.
@@ -162,14 +162,14 @@ Real-world examples
       where
         go (L _ pat) = go1 pat
 
-        go1 (WildPat{} | VarPat{} | LazyPat{})
+        go1 (WildPat{} ; VarPat{} ; LazyPat{})
           = True
 
-        go1 (BangPat pat     | ParPat pat     | AsPat _ pat |
-             ViewPat _ pat _ | SigPatIn pat _ | SigPatOut pat _ | SumPat pat _ _ _)
+        go1 (BangPat pat     ; ParPat pat     ; AsPat _ pat ;
+             ViewPat _ pat _ ; SigPatIn pat _ ; SigPatOut pat _ ; SumPat pat _ _ _)
           = go pat
 
-        go1 (PArrPat{} | ConPatIn{} | LitPat{} | NPat{} | NPlusKPat{} | ListPat {})
+        go1 (PArrPat{} ; ConPatIn{} ; LitPat{} ; NPat{} ; NPlusKPat{} ; ListPat {})
           = False
 
         go1 (CoPat _ pat _)     = go1 pat
@@ -244,30 +244,30 @@ Relevant non-terminal is ``apat``: ::
 
 Or patterns extension adds one more production: ::
 
-          |    ( pat1 | pat2 )
+          |    ( pat1 ; pat2 )
 
-The ``|`` between the parenthesis have lower precedence than anything else. Or
-patterns are associative, so N-ary version ``( pat1 | … | patN )`` is also
+The ``;`` between the parenthesis have lower precedence than anything else. Or
+patterns are associative, so N-ary version ``( pat1 ; … ; patN )`` is also
 accepted.
 
 Some examples that this new grammar produces: ::
 
   -- in expression context
   case e of
-    (T1 | T2{} | T3 _ _) -> ...
+    (T1 ; T2{} ; T3 _ _) -> ...
 
   -- in expression context
-  let ([x] | (x : _ : _)) = e1 in e2
+  let ([x] ; (x : _ : _)) = e1 in e2
 
   -- pattern guards in declarations
   f x y
-    | x@(T1 | T2) <- e1
+    | x@(T1 ; T2) <- e1
     , guard x
     = e2
 
   -- nested or patterns
   case e1 of
-    (((T1 | T2) | T3) | T4) -> e2
+    (((T1 ; T2) ; T3) ; T4) -> e2
 
 Since extensions like ``LambdaCase`` and ``MultiWayIf`` (in pattern guards) use
 the same pattern syntax, or patterns are enabled in those too.
@@ -279,7 +279,7 @@ Informal semantics of or pattern matching
 
 We define informal semantics as an extension to `Haskell 2010 chapter 3.17.2: Informal Semantics of Pattern Matching <https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-600003.17.2>`_:
 
-- Matching the pattern ``(p1 | p2)`` against the value ``v`` is the result of
+- Matching the pattern ``(p1 ; p2)`` against the value ``v`` is the result of
   matching ``v`` against ``p1`` if it is not a failure, or the result of
   matching ``p2`` against ``v`` otherwise.
 
@@ -293,13 +293,13 @@ We define informal semantics as an extension to `Haskell 2010 chapter 3.17.2: In
 
 Here are some examples: ::
 
-    (\ (x | x) -> x) 0 => 0
-    (\ ([x] | (x : _ : _)) -> x) [1, 2, 3] => 1
-    (\ (Left x | Right x) -> x) (Left 1) => 1
-    (\ (Left x | Right x) -> x) (Right 1) => 1
-    (\ ((x, _) | (_, x)) -> x) (1, 2) => 1
-    (\ (([x] | [x, _]) | ([x, _, _] | [x, _, _, _])) -> x) [1, \bot, \bot, \bot] => 1
-    (\ (1 | 2 | 3) -> True) 3 => True
+    (\ (x ; x) -> x) 0 => 0
+    (\ ([x] ; (x : _ : _)) -> x) [1, 2, 3] => 1
+    (\ (Left x ; Right x) -> x) (Left 1) => 1
+    (\ (Left x ; Right x) -> x) (Right 1) => 1
+    (\ ((x, _) ; (_, x)) -> x) (1, 2) => 1
+    (\ (([x] ; [x, _]) ; ([x, _, _] ; [x, _, _, _])) -> x) [1, \bot, \bot, \bot] => 1
+    (\ (1 ; 2 ; 3) -> True) 3 => True
 
 Some examples with GADTs: ::
 
@@ -310,10 +310,10 @@ Some examples with GADTs: ::
       C4 :: String -> T1
 
     -- reject: first pattern mentions an existential
-    f1 (C1 x g | C2 x g) = g a
+    f1 (C1 x g ; C2 x g) = g a
 
     -- reject: `Show a` in C3 is not bound and can't be used in the RHS
-    f2 (C3 x | C4 x) = show x
+    f2 (C3 x ; C4 x) = show x
 
     data T2 a where
       C5 :: Int  -> T2 Int
@@ -321,7 +321,7 @@ Some examples with GADTs: ::
 
     -- reject: equalities are not bound and can't be used in the RHS
     f3 :: T2 a -> a
-    f3 (C5 x | C5 x) = x
+    f3 (C5 x ; C5 x) = x
 
     data T3 a where
       C7 :: a -> (a -> String) -> T3 String
@@ -330,7 +330,7 @@ Some examples with GADTs: ::
     -- accept: while these constructors have existentials, dictionaries, and
     -- equalities, none of them are used in the RHS
     f4 :: T3 a -> String
-    f4 (C7 _ _ | C8 _) = "f4"
+    f4 (C7 _ _ ; C8 _) = "f4"
 
 See also section 1.4.2 for more about GADTs and existentials.
 
@@ -341,7 +341,7 @@ We add one more rule to `Haskell 2010 Report chapter 3.17.3
 <https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-610003.17.3>`_,
 figure 3.2: ::
 
-    (or) case v of { (p1 | p2) -> e; _ -> e' }
+    (or) case v of { (p1 ; p2) -> e; _ -> e' }
          =
          case v of { p1 -> e; p2 -> e; _ -> e' }
 
@@ -377,7 +377,7 @@ pattern. If any of the guards fail, the whole branch with or pattern fails.
 Example: ::
 
     f :: (Int, Int) -> Bool
-    f ((x, _) | (_, x))
+    f ((x, _) ; (_, x))
       | even x
       = True
     f _
@@ -404,13 +404,13 @@ Pattern synonyms
 Or patterns can be used in "unidirectional" or "explicitly bidirectional"
 pattern synonyms. For example ::
 
-    pattern Some x <- (Left x | Right x)
+    pattern Some x <- (Left x ; Right x)
 
 defines a unidirectional pattern synonym, because expression meaning of ``Some
 x`` is not clear. It can be made bidirectional using the bidirectional pattern
 synonym syntax: ::
 
-    pattern Some x <- (Left x | Right x) where
+    pattern Some x <- (Left x ; Right x) where
         Some x = Right x
 
 Existential quantification and GADTs
@@ -419,7 +419,7 @@ Existential quantification and GADTs
 A pattern on a Haskell 98 data constructor (aka. a "vanilla" or "boring"
 constructor) only binds values.
 
-However with existential quanticiation and GADTs, patterns can also bind
+However with existential quantification and GADTs, patterns can also bind
 
 - Equality constraints
 
@@ -451,10 +451,14 @@ Alternatives
 Alternative syntax
 ~~~~~~~~~~~~~~~~~~
 
-One alternative to the proposed syntax is using ``/`` instead of ``|`` to avoid
-parentheses in some cases (thanks to joe462 for the suggestion). This can't
-completely eliminate parentheses around or patterns, as the following example
-demonstrates: ::
+Previously this proposal suggested ``|`` for the separator. However, ``|`` is
+used for guards, so it's reserved for a future `proposal
+<https://ghc.haskell.org/trac/ghc/wiki/ViewPatternsAlternative>`_ that
+generalizes view patterns to allow guards inside patterns.
+
+One alternative to the originally proposed syntax is using ``/`` instead of
+``|`` to avoid parentheses in some cases. This can't completely eliminate
+parentheses around or patterns, as the following example demonstrates: ::
 
   f T1{} / T2{} / T3 T4 = ...
 
@@ -468,6 +472,17 @@ This could mean one of these two: ::
 
   -- where the argument is defined like
   data T = T1 | T2 | T3 T
+
+Another suggestion was to use curly braces around or patterns, instead of
+parens. However, this causes ambiguities in the syntax. Two examples: ::
+
+    -- Not clear if curly braces are for a do block or for a binding LHS
+    do { ... } <- ...
+
+    -- Not clear if curly braces are for a record pattern (where Foo is a record
+    -- constuctor) or for an or pattern (matching the argument of Foo)
+    case x of Foo { ... } -> ...
+
 
 Hiding constructors by providing destructor functions (eliminators)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -501,7 +516,7 @@ expression: ::
 
     case (x :: T Int Int) of
       T1 -> e1
-      (T2 a | T3 _ a) -> e2
+      (T2 a ; T3 _ a) -> e2
 
 Closest expression to this is: ::
 
@@ -554,24 +569,24 @@ explains how single-match semantics can be confusing to users, and explains
 design of the warning OCaml 4.03 prints when potentially confusing guard is used
 with an or pattern. The warning works like this:
 
-Suppose we have an or pattern ``p1 | p2 | p3 ... pN``, and a variable ``x`` used
+Suppose we have an or pattern ``p1 ; p2 ; p3 ... pN``, and a variable ``x`` used
 in patterns.
 
 - ``x`` is *stable* if in all of the patterns it's used in the same location.
   The paper gives this example: ::
 
-    ((x, None, _) | (x, _, None))
+    ((x, None, _) ; (x, _, None))
 
   Note that for this to hold the pattern must match a product type.
 
 - ``x`` is *stable* if none of the pattern can match at the same time. The
   paper gives this example: ::
 
-    ((x, None, _) | (_, Some _, x))
+    ((x, None, _) ; (_, Some _, x))
 
   Another example is when matching different constructors of a sum type: ::
 
-    (Left x | Right x)
+    (Left x ; Right x)
 
 If a variable used in an or pattern is not *stable*, it's *ambiguous* and
 reported in a warning: ::
@@ -637,7 +652,7 @@ Implementation Plan
 -------------------
 
 Or patterns requires changes in the parser, type checker, pattern checker and
-compiler (``match`` function). Lexer already generates ``|`` tokens so no
+compiler (``match`` function). Lexer already generates ``;`` tokens so no
 changes needed. There are no changes in Core.
 
 A prototype implementation is currently in progress at
@@ -669,7 +684,7 @@ We take advantage of the recent join points work. When we see a match with an
 or pattern, we first generate a join point for the RHS: ::
 
     case x of
-      (P1 y | P2 y) -> RHS1
+      (P1 y ; P2 y) -> RHS1
       P3            -> RHS2
 
     ==>
@@ -690,7 +705,7 @@ An example with nested patterns: ::
 
     -- Haskell expression
     case x0 of
-      ((Left x | Right x), (Left y | Right y)) -> e1
+      ((Left x ; Right x), (Left y ; Right y)) -> e1
 
     ==>
 
@@ -740,7 +755,7 @@ patterns before leaving compilation to `match`. This steps runs in
 
     For example, given this equation: ::
 
-        [ (p1 | p2), (p3 | p4) ] -> RHS
+        [ (p1 ; p2), (p3 ; p4) ] -> RHS
 
     we flatten it as ::
 
@@ -772,7 +787,7 @@ Appendix A: Evaluation of the running example
 
     (original expression)
     case v of
-      ((x, _) | (_, x))
+      ((x, _) ; (_, x))
         | even x
         -> True
       _ -> False
@@ -780,7 +795,7 @@ Appendix A: Evaluation of the running example
     ==> (rule b)
 
     case v of
-      ((x, _) | (_, x))
+      ((x, _) ; (_, x))
         | even x
         -> True
       _ -> case v of
@@ -791,9 +806,9 @@ Appendix A: Evaluation of the running example
     case False of
       y ->
         case v of
-          ((x, _) | (_, x))
+          ((x, _) ; (_, x))
             case () of
-              () | even x -> True
+              () ; even x -> True
               _ -> y
           _ -> y
     (y fresh)
@@ -803,7 +818,7 @@ Appendix A: Evaluation of the running example
     case False of
       y ->
         case v of
-          ((x, _) | (_, x)) -> if even x then True else y
+          ((x, _) ; (_, x)) -> if even x then True else y
           _ -> y
 
     ==> (rule or)
