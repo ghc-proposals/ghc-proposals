@@ -130,12 +130,6 @@ Proposed Change Specification
       scoping rules. (If ``-XTypeOperators`` is not in effect, use of ``*`` in
       a type will be an error.)
 
-   f. For two releases, ``-XTypeOperators`` will imply ``-XNoStarIsType``, to
-      provide a migration path for code that uses the binary operator ``*``. (After
-      two releases, this code can include ``-XNoStarIsType`` explicitly without
-      going against the three-release policy.) Users can re-enable ``-XStarIsType``
-      after ``-XTypeOperators`` is enabled if they wish.
-
    The ``-XStarIsType`` idea is due to David Feuer, @treeowl.
 
 Effect and Interactions
