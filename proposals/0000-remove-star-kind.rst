@@ -209,6 +209,11 @@ Alternatives
 * Keep ``-XStarIsType`` enabled by default forever, effectively maintaining two dialects
   of Haskell with different meaning of ``*``.
 
+* We can also reclassify ``★`` as an alphanumeric identifier. This will
+  sacrifice the point about "no background knowledge", but we still get "lexical
+  consistency", "no language dialects", and "no type/term conflicts". The
+  advantages of ``★`` are its brevity and precedence in literature.
+
 Unresolved questions
 --------------------
 
