@@ -173,7 +173,7 @@ Alternatives
 `Proposal #96 <https://github.com/ghc-proposals/ghc-proposals/pull/96>`_ proposes a variant where ``@x`` may only mention type variables and only existential type variables may be
 bound this way. See there for a in depth discussion; a summary of the main criticism that the proposal at hand tries
 to fixes preserving the symmetry between type applications in terms and patters, and preserving the analogy between
-type applications and type signatures. Furthermore, it does not introduce new concecpts (e.g. the distinction between
+type applications and type signatures. Furthermore, it does not introduce new concepts (e.g. the distinction between
 existential and universal parameters) to the Haskell programmer.
 
 The existing restriction of ``ScopedTypeVariabes`` that type variables in pattern signatures may only be bound to type variables, and not types, carries over to type variables in type applications. One could discuss lifting this restriction, but this question is completely orthotogonal to the proposal at hand, and should be discussed elsewhere (e.g. in (e.g. _#15050 <https://ghc.haskell.org/trac/ghc/ticket/15050#comment:10>_).
