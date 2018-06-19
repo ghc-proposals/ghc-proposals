@@ -172,23 +172,21 @@ Effect and Interactions
 
 .. _`#103`: https://github.com/ghc-proposals/ghc-proposals/pull/103
 
-* Migration path: For most users, no migration will be necessary. The exception
-  will be those programs that have both
+* Migration path: For most users, no migration will be necessary.
+  The exception will be those programs which define or use ``*`` as a type family.
+  Currently working code like:
 
-  - ``-XTypeOperators`` enabled
-  - Use ``*`` as a kind
+  ::
 
-  These modules will suddenly have ``-XNoStarIsType`` in effect, meaning that
-  their use of ``*`` will refer to a binary operator. These modules have a
-  choice of how to proceed. They can either:
+    {-# LANGUAGE KindSignatures, DataKinds, TypeOperators #-}
+    import Data.Proxy
+    import GHC.TypeLits
 
-  1. Declare ``-XStarIsType``. If they ever
-     use ``*`` as a binary operator, those uses would have to be qualified
-     with a module prefix.
+    mult :: forall (m :: Nat) (n :: Nat). Proxy m -> Proxy n -> Proxy (m * n)
+    mult _ _ = Proxy
 
-  2. Import ``Type`` from ``Data.Kind`` and change uses of ``*`` to ``Type``.
-     If they already have a ``Type`` in scope, they may have to use qualified
-     imports, etc.
+  will need to explicitly enable ``-XNoStarIsType``.
+  See `Implication TypeOperators to NoStarIsType`_ for the alternative.
 
 Costs and Drawbacks
 -------------------
@@ -283,7 +281,7 @@ Alternatives
 Implication TypeOperators to NoStarIsType
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-One alternative is to have additional *4.f* step in introduction of ``-XStarIsType``
+One alternative is to have an additional 4.f step in the Proposed Change Specification section:
 
    f. For two releases, ``-XTypeOperators`` will imply ``-XNoStarIsType``, to
       provide a migration path for code that uses the binary operator ``*``. (After
@@ -291,11 +289,17 @@ One alternative is to have additional *4.f* step in introduction of ``-XStarIsTy
       going against the three-release policy.) Users can re-enable ``-XStarIsType``
       after ``-XTypeOperators`` is enabled if they wish.
 
-This alternative is problematic. It's intended to help migration,
-but implementation evidence shows it causes more trouble. If we consider
-``-XTypeOperators`` as the only enabled extension, then 4.f will
-indeed help migration, but there are a lot of code in the wild
-also enabling ``-XKindSignatures`` where the clause changes semantics.
+This alternative is problematic. It's intended to help migration, but
+implementation evidence shows it causes more trouble.  If the code being
+migrated only enables ``-XTypeOperators``, then 4.f will indeed be helpful, but
+there is a lot of code which also enables ``-XKindSignatures`` in which
+``-XNoStarInType`` changes the semantics. For example code from ``hashable`` library
+
+::
+
+    newtype  Tagged  (s :: * -> *) = Tagged {unTagged :: Int}
+
+fails to compiler with the following error:
 
 ::
 
@@ -307,61 +311,23 @@ also enabling ``-XKindSignatures`` where the clause changes semantics.
   116 | newtype Tagged (s :: * -> *) = Tagged {unTagged :: Int}
       |
 
+Many other libraries in the wild simultaneously enable ``-XTypeOperators`` and use
+``*`` as a kind, including servant, aeson, cereal, cassava, and others, so
+including 4.f would break all of these libraries. While not having 4.f also
+results in some breakage, far fewer libraries in the wild break without 4.f
+than with 4.f, so this was ultimately decided against.
 
-Another example is simple declaration (from servant):
+These modules will suddenly have ``-XNoStarIsType`` in effect, meaning that
+their use of ``*`` will refer to a binary operator. These modules have a
+choice of how to proceed. They can either:
 
-::
+1. Declare ``-XStarIsType``. If they ever
+   use ``*`` as a binary operator, those uses would have to be qualified
+   with a module prefix.
 
-  {-# LANGUAGE PolyKinds, TypeOperators #-}
-
-  data (:>) (a :: k) (b :: *)
-
-There is an argument that the code should be rewritten using ``Type``,
-but in that case it would be better if ``-XTypeOperators`` implied
-``-XNoStarIsType`` indefinitely:
-
-::
-
-  {-# LANGUAGE CPP #-}
-  #if __GLASGOW_HASKELL__ >= 800
-  import Data.Kind (Type)
-  #else
-  #define Type *
-  #endif
-
-  newtype Tagged (s :: Type -> Type) = Tagged {unTagged :: Int}
-  data (:>) (a :: k) (b :: Type)
-
-Without the 4.f clause, some code using ``GHC.TypeLits.*`` will need to enable
-``-XNoStarIsType`` explicitly. ``-XNoStarIsType`` is required to make
-``* :: Nat -> Nat -> Nat`` usable in the definition of ``cast``.
-
-::
-
-  {-# LANGUAGE CPP, KindSignatures, DataKinds, TypeFamilies #-}
-  {-# LANGUAGE TypeOperators #-}
-  #if __GLASGOW_HASKELL__ >= 805
-  {-# LANGUAGE NoStarIsType #-}
-  #endif
-
-  -- Support GHC-7.8 and GHC-7.10
-  #if __GLASGOW_HASKELL__ >= 800
-  import Data.Kind (Type)
-  #else
-  #define Type *
-  #endif
-
-  import GHC.TypeLits
-  import Data.ByteString (ByteString)
-  import Data.Coerce (coerce)
-
-  newtype Block (n :: Nat) a = Block ByteString
-
-  -- Note: in GHC-7.8 - GHC-8.4 this works even with (a :: *)
-  type family ElemSize (a :: Type) :: Nat
-
-  cast :: ((n *  ElemSize a) ~ (m * ElemSize b)) => Block n a -> Block m b
-  cast = coerce
+2. Import ``Type`` from ``Data.Kind`` and change uses of ``*`` to ``Type``.
+   If they already have a ``Type`` in scope, they may have to use qualified
+   imports, etc.
 
 Unresolved questions
 --------------------
