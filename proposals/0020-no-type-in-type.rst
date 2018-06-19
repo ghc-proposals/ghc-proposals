@@ -291,12 +291,11 @@ One alternative is to have additional *4.f* step in introduction of ``-XStarIsTy
       going against the three-release policy.) Users can re-enable ``-XStarIsType``
       after ``-XTypeOperators`` is enabled if they wish.
 
-This alternative is however problematic. It's intended to help migration,
-but implementation evidence shows it causes more trouble.
-
-For example code using generics (and therefore ``-XTypeOperators``) often
-enough define helper newtypes where ``ConstraintKinds`` is needed,
-with the clause it will be broken:
+This alternative is problematic. It's intended to help migration,
+but implementation evidence shows it causes more trouble. If we consider
+``-XTypeOperators`` as the only enabled extension, then 4.f will
+indeed help migration, but there are a lot of code in the wild
+also enabling ``-XKindSignatures`` where the clause changes semantics.
 
 ::
 
@@ -334,7 +333,8 @@ but in that case it would be better if ``-XTypeOperators`` implied
   data (:>) (a :: k) (b :: Type)
 
 Without the 4.f clause, some code using ``GHC.TypeLits.*`` will need to enable
-``-XNoStarIsType`` explicitly, like
+``-XNoStarIsType`` explicitly. ``-XNoStarIsType`` is required to make
+``* :: Nat -> Nat -> Nat`` usable in the definition of ``cast``.
 
 ::
 
