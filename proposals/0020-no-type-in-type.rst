@@ -186,7 +186,7 @@ Effect and Interactions
     mult _ _ = Proxy
 
   will need to explicitly enable ``-XNoStarIsType``.
-  See `Implication TypeOperators to NoStarIsType`_ for the alternative.
+  See `Have TypeOperators imply NoStarIsType`_ for an alternative.
 
 Costs and Drawbacks
 -------------------
@@ -278,8 +278,8 @@ Alternatives
    alternative. Nevertheless, I'm keeping it in the proposal in case someone wants to
    argue in support of it.
 
-Implication TypeOperators to NoStarIsType
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Have TypeOperators imply NoStarIsType
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 One alternative is to have an additional 4.f step in the Proposed Change Specification section:
 
@@ -293,13 +293,14 @@ This alternative is problematic. It's intended to help migration, but
 implementation evidence shows it causes more trouble.  If the code being
 migrated only enables ``-XTypeOperators``, then 4.f will indeed be helpful, but
 there is a lot of code which also enables ``-XKindSignatures`` in which
-``-XNoStarInType`` changes the semantics. For example code from ``hashable`` library
+``-XNoStarInType`` changes the semantics. For example, this code from the
+``hashable`` library
 
 ::
 
     newtype  Tagged  (s :: * -> *) = Tagged {unTagged :: Int}
 
-fails to compiler with the following error:
+would fail to compile with the following error:
 
 ::
 
@@ -317,9 +318,9 @@ including 4.f would break all of these libraries. While not having 4.f also
 results in some breakage, far fewer libraries in the wild break without 4.f
 than with 4.f, so this was ultimately decided against.
 
-These modules will suddenly have ``-XNoStarIsType`` in effect, meaning that
-their use of ``*`` will refer to a binary operator. These modules have a
-choice of how to proceed. They can either:
+If ``-XTypeOperators`` were to imply ``-XNoStarIsType``, then any code which
+uses ``*`` as kind instead of a binary operator would have to migrate somehow.
+Two migration options are:
 
 1. Declare ``-XStarIsType``. If they ever
    use ``*`` as a binary operator, those uses would have to be qualified
