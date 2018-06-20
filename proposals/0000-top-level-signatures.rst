@@ -44,6 +44,7 @@ declarations (which would replace CUSKs).
 
 .. _`#54`: https://github.com/ghc-proposals/ghc-proposals/pull/54
 .. _`#129`: https://github.com/ghc-proposals/ghc-proposals/pull/129
+.. _`#99`: https://github.com/ghc-proposals/ghc-proposals/pull/99
 
 
 Motivation
@@ -99,7 +100,8 @@ under consideration by the committee.
 Effect and Interactions
 -----------------------
 This proposal increases the availability of visible type application by allowing users to customize
-the types of implicitly declared identifiers.
+the types of implicitly declared identifiers, including changing the specificity of some. This means
+that `#99`_ need not consider these implicitly declared identifiers.
 
 Accepting this proposal obviates the problems in `#129`_.
 
