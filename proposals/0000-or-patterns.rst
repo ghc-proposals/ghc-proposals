@@ -274,22 +274,18 @@ the same pattern syntax, or patterns are enabled in those too.
 
 The new production doesn't add any ambiguities, because of the parentheses.
 
-Informal semantics of or pattern matching
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Semantics of or pattern matching
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We define informal semantics as an extension to `Haskell 2010 chapter 3.17.2: Informal Semantics of Pattern Matching <https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-600003.17.2>`_:
+Informal semantics in the style of `Haskell 2010 chapter 3.17.2: Informal
+Semantics of Pattern Matching
+<https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-600003.17.2>`_:
 
 - Matching the pattern ``(p1 ; p2)`` against the value ``v`` is the result of
   matching ``v`` against ``p1`` if it is not a failure, or the result of
   matching ``p2`` against ``v`` otherwise.
 
-  ``p1`` and ``p2`` should bind same set of variables of same types. Or
-  patterns **do not** bind existentials, dictionaries, or equalities.
-
-  This means constructors with existentials or GADT constructors can be used in
-  or patterns, but no variable bound by the patterns can have a type that
-  mentions existentials, and dictionaries and equalities won't be used in the
-  RHS.
+  ``p1`` and ``p2`` should bind same set of variables of same types.
 
 Here are some examples: ::
 
@@ -301,7 +297,72 @@ Here are some examples: ::
     (\ (([x] ; [x, _]) ; ([x, _, _] ; [x, _, _, _])) -> x) [1, \bot, \bot, \bot] => 1
     (\ (1 ; 2 ; 3) -> True) 3 => True
 
+More formally, we define semantics of or patterns as a desugaring to view
+patterns. An or pattern type checks whenever the desugared pattern type checks.
+The desugaring rule is: ::
+
+    (p1; …; pn)
+    =
+    ((\x -> case x of p1 -> Just (x1, …, xn); …; pn -> Just (x1, …, xn); _ -> Nothing)
+        -> Just (x1, …, xn))
+
+where ``x`` is a fresh variable and ``x1`` … ``xn`` are variables bound by
+alternatives of the or pattern.
+
+Here are desugared versions of the examples above: ::
+
+    (\((\x' -> case x' of x -> Just x
+                          x -> Just x
+                          _ -> Nothing) -> Just x) -> x) 0 => 0
+
+    (\((\x' -> case x' of [x] -> Just x
+                          (x : _ : _) -> Just x
+                          _ -> Nothing) -> Just x) -> x) [1, 2, 3] => 1
+
+    (\((\x' -> case x' of Left x -> Just x
+                          Right x -> Just x
+                          _ -> Nothing) -> Just x) -> x) (Left 1) => 1
+
+    (\((\x' -> case x' of Left x -> Just x
+                          Right x -> Just x
+                          _ -> Nothing) -> Just x) -> x) (Right 1) => 1
+
+    (\((\x' -> case x' of (x, _) -> Just x
+                          (_, x) -> Just x
+                          _ -> Nothing) -> Just x) -> x) (1, 2) => 1
+
+    (\((\x' -> case x' of [x] -> Just x
+                          [x, _] -> Just x
+                          [x, _, _] -> Just x
+                          [x, _, _, _] -> Just x
+                          _ -> Nothing) -> Just x) -> x) [1, \bot, \bot, \bot] => 1
+
 Some examples with GADTs: ::
+
+    data T2 a where
+      C5 :: Int  -> T2 Int
+      C6 :: Bool -> T2 Bool
+
+    f3 :: T2 a -> a
+    f3 (C5 x ; C5 x) = x
+    -- desugared:
+    f3_ds :: T2 a -> a
+    f3_ds ((\x -> case x of C5 x -> Just x
+                            C6 x -> Just x
+                            _ -> Nothing) -> Just x) = x
+
+    data T3 a where
+      C7 :: a -> (a -> String) -> T3 String
+      C8 :: Ord a => a -> T3 Int
+
+    f4 :: T3 a -> String
+    f4 (C7 _ _ ; C8 _) = "f4"
+    -- desugared:
+    f4_ds :: T3 a -> String
+    f4_ds ((\x -> case x of C7 _ _ -> Just ()
+                            C8 _ -> Just ()) -> Just ()) = "f4"
+
+Some examples with GADTs that are rejected: ::
 
     data T1 where
       C1 :: a -> (a -> String) -> T1
@@ -309,47 +370,23 @@ Some examples with GADTs: ::
       C3 :: Show a => a -> T1
       C4 :: String -> T1
 
-    -- reject: first pattern mentions an existential
+    -- reject: desugared pattern does not type check
+    f1 :: T1 -> String
     f1 (C1 x g ; C2 x g) = g a
+    -- desugared:
+    f1_ds :: T1 -> String
+    f1_ds ((\x -> case x of C1 x g -> Just (x, g)
+                            C2 x g -> Just (x, g)
+                            _ -> Nothing) -> Just (x, g)) = g x
 
-    -- reject: `Show a` in C3 is not bound and can't be used in the RHS
+    -- reject: desugared pattern does not type check
+    f2 :: T1 -> String
     f2 (C3 x ; C4 x) = show x
-
-    data T2 a where
-      C5 :: Int  -> T2 Int
-      C6 :: Bool -> T2 Bool
-
-    -- reject: equalities are not bound and can't be used in the RHS
-    f3 :: T2 a -> a
-    f3 (C5 x ; C5 x) = x
-
-    data T3 a where
-      C7 :: a -> (a -> String) -> T3 String
-      C8 :: Ord a => a -> T3 Int
-
-    -- accept: while these constructors have existentials, dictionaries, and
-    -- equalities, none of them are used in the RHS
-    f4 :: T3 a -> String
-    f4 (C7 _ _ ; C8 _) = "f4"
-
-See also section 1.4.2 for more about GADTs and existentials.
-
-Formal semantics of or pattern matching
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-We add one more rule to `Haskell 2010 Report chapter 3.17.3
-<https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-610003.17.3>`_,
-figure 3.2: ::
-
-    (or) case v of { (p1 ; p2) -> e; _ -> e' }
-         =
-         case v of { p1 -> e; p2 -> e; _ -> e' }
-
-As an example evaluation of the running example from informal semantics section
-with this rule, see Appendix A.
-
-(Note that in the implementation we don't actually duplicate right-hand sides
-of or patterns, see "desugaring" section below)
+    -- desugared:
+    f2_ds :: T1 -> String
+    f2_ds ((\x -> case x of C3 x -> Just x
+                            C4 x -> Just x
+                            _ -> Nothing) -> Just x) = show x
 
 Interaction with guards
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -413,38 +450,6 @@ synonym syntax: ::
     pattern Some x <- (Left x ; Right x) where
         Some x = Right x
 
-Existential quantification and GADTs
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-A pattern on a Haskell 98 data constructor (aka. a "vanilla" or "boring"
-constructor) only binds values.
-
-However with existential quantification and GADTs, patterns can also bind
-
-- Equality constraints
-
-  (``a ~ Int`` in GADT ``data Foo a where FooInt :: Int -> Foo Int``)
-
-- Dictionaries
-
-  (``Show a`` in GADT ``data Foo a where Foo :: Show a => a -> Foo a`` or in
-  existential ``data Foo a = Show a => Foo a``)
-
-- Existential type variables
-
-  (``a`` in ``data Foo1 where Foo :: Default a => Foo`` or in existential ``data
-  Foo = forall a . Default a => Foo``)
-
-In the current proposal or patterns cannot bind existentials, dictionaries, or
-equalities. RHSs that require one or more of these will be rejected by the type
-checker.
-
-Type checking or patterns while binding existentials, dictionaries, or
-equalities can be implemented as an extension in the future. Because this will
-make the extension accept strictly more programs and won't change semantics of
-existing programs with or patterns, it will be backwards compatible, and thus
-left out in this proposal.
-
 Alternatives
 ------------
 
@@ -482,7 +487,6 @@ parens. However, this causes ambiguities in the syntax. Two examples: ::
     -- Not clear if curly braces are for a record pattern (where Foo is a record
     -- constuctor) or for an or pattern (matching the argument of Foo)
     case x of Foo { ... } -> ...
-
 
 Hiding constructors by providing destructor functions (eliminators)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -779,66 +783,3 @@ Disadvantages of this approach:
 - Flattening step potentially introduces exponential number of new equations.
   Unfortunately there's no way around that unless we change `Core` and `Stg` to
   support or patterns.
-
-Appendix A: Evaluation of the running example
----------------------------------------------
-
-::
-
-    (original expression)
-    case v of
-      ((x, _) ; (_, x))
-        | even x
-        -> True
-      _ -> False
-
-    ==> (rule b)
-
-    case v of
-      ((x, _) ; (_, x))
-        | even x
-        -> True
-      _ -> case v of
-             _ -> False
-
-    ==> (rule c)
-
-    case False of
-      y ->
-        case v of
-          ((x, _) ; (_, x))
-            case () of
-              () ; even x -> True
-              _ -> y
-          _ -> y
-    (y fresh)
-
-    ==> (rule v)
-
-    case False of
-      y ->
-        case v of
-          ((x, _) ; (_, x)) -> if even x then True else y
-          _ -> y
-
-    ==> (rule or)
-
-    case False of
-      y -> case v of
-             (x, _) -> if even x then True else y
-             (_, x) -> if even x then True else y
-             _ -> y
-
-    ==> (rule b)
-
-    case False of
-      y -> case v of
-             (x, _) -> if even x then True else y
-             _ -> case v of
-                    (_, x) -> if even x then True else y
-                    _ -> case v of
-                           _ -> y
-
-At this point we don't have any or patterns and substituting ``(1, 2)`` for
-``v`` and further simplifications using identities from the manual reduces this
-to ``False``.
