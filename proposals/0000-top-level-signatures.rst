@@ -110,7 +110,10 @@ Costs and Drawbacks
 -------------------
 This has a non-trivial implementation burden, supporting a new meaning of type signature
 and requiring a new type-equivalence check. The new types will probably also necessitate
-inventing new wrappers to swizzle the type.
+inventing new wrappers to swizzle the type. (That is, the new types would be assigned to
+new internal top-level definitions which would delegate to the real, original identifier.
+This would add to the implementation complexity but should be completely transparent to
+users.)
 
 Alternatives
 ------------
