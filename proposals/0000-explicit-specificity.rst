@@ -218,6 +218,66 @@ Alternatives
   This resolves the asymmetry, but at the cost of making a corner of GHC's design yet more elaborate.
   I personally don't like this, but I am sympathetic to the concerns that inspired it.
 
+Examples
+--------
+
+@yav has asked for clarification around these examples, which I include here:
+
+* If we type ::
+
+    data T1 a = C1 a
+
+  we get ::
+    
+    type T1 :: Type -> Type
+    C1 :: forall a. a -> T1 a
+
+* If we type ::
+
+    data T2 (a :: k) = C2 { f2 :: Proxy a }
+
+  we get ::
+    
+    type T2 :: forall k. k -> Type
+    C2 :: forall k (a :: k). Proxy a -> T2 a
+    f2 :: forall k (a :: k). T2 a -> Proxy a
+
+* If we type ::
+
+    data T3 a where C3 :: forall k (a::k). Proxy a -> T3 a
+
+  we get ::
+    
+    type T3 :: forall {k}. k -> Type
+    C3 :: forall k (a :: k). Proxy a -> T3 a
+
+* If we type ::
+    
+    data T4 a where C4 :: forall {k} (a::k). Proxy a -> T3 a
+
+  we get ::
+    
+    type T4 :: forall {k}. k -> Type
+    C4 :: forall {k} (a :: k). Proxy a -> T3 a
+
+* If we type ::
+    
+    data T5 k (a :: k) where C5 :: forall k (a::k). Proxy a -> T5 k a
+
+  we get ::
+
+    type T5 :: forall k -> k -> Type
+    C5 :: forall k (a :: k). Proxy a -> T5 k a
+
+* If we type ::
+    
+    data T6 k a where C6 :: forall {k} (a::k). Proxy a -> T6 k a
+
+  we get ::
+
+    type T6 :: forall k -> k -> Type
+    C6 :: forall {k} (a::k). Proxy a -> T6 k a
+  
 Unresolved questions
 --------------------
 
