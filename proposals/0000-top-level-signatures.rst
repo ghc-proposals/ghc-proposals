@@ -33,9 +33,12 @@ for the construct. Here are some examples::
     meth :: a -> b -> b
     meth2 :: a -> a
     meth3 :: a -> b -> b
+    meth4 :: b -> a
+    
   meth :: forall b a. C a => a -> b -> b               -- new: reorders type variables and constraint
   meth2 :: forall a. a -> a                            -- rejected: missing constraint C a
   meth3 :: forall a {b}. C a => a -> b -> b            -- new: with proposal #99, makes b *inferred*
+  meth4 :: C a => b -> a                               -- new: no forall required; this is redundant but allowed
 
 This proposal subsumes `#54`_, which proposes this feature, but only for type-level
 declarations (which would replace CUSKs).
@@ -82,9 +85,9 @@ Proposed Change Specification
 Top-level signatures, enabled by ``-XTopLevelSignatures``
 are allowed for the following term-level constructs:
 
- * Haskell98-syntax data constructors
+ * Haskell98-syntax data/newtype constructors
  * Class methods
- * Record selectors
+ * Record selectors (that are not duplicates)
 
 The type in the signature must be equivalent with respect to GHC's subtype relation
 to the one GHC would normally assign the construct. That is, the new type may shuffle
@@ -105,6 +108,28 @@ Accepting this proposal obviates the problems in `#129`_.
 
 If this proposal is accepted, both `#54`_ and these new features should be enabled by
 ``-XTopLevelSignatures`` (instead of the ``-XTopLevelKinds`` in `#54`_).
+
+This proposal interacts poorly with ``-XDuplicateRecordFields``, which allows you
+to declare multiple record selectors with the same name in the same module. The use
+of such a field at top-level would be ambiguous. Thus, this feature would not be
+available with duplicate record fields. Here is an example of a rejected program::
+
+  data T = MkT { x :: Int }
+  data S = MkS { x :: Bool }
+  x :: T -> Int
+
+Note that the ``data`` declarations by themselves would be fine with ``-XDuplicateRecordFields``.
+Note also that ``-XDuplicateRecordFields`` does not work with GHC's ``HasField`` mechanism;
+this fact is unchanged by this proposal.
+
+Note that this proposal does *not* affect the meaning of ``forall``: ``forall`` is not
+required in top-level signatures. In addition, this new proposal does not interact with
+``-XScopedTypeVariables``: the variables brought into scope in the top-level signatures
+(even with ``forall``) do *not* scope over any definitions. (Instead, the usual rules
+for getting type variables into scope still apply for implicitly declared identifiers.)
+
+There is no requirement that the type variables in a top-level signature match up with
+the names of the variables used in an identifier's declaration.
 
 Costs and Drawbacks
 -------------------
