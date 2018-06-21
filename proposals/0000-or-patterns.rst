@@ -465,9 +465,15 @@ used for guards, so it's reserved for a future `proposal
 <https://ghc.haskell.org/trac/ghc/wiki/ViewPatternsAlternative>`_ that
 generalizes view patterns to allow guards inside patterns.
 
-One alternative to the originally proposed syntax is using ``/`` instead of
-``|`` to avoid parentheses in some cases. This can't completely eliminate
-parentheses around or patterns, as the following example demonstrates: ::
+One nice thing about using ``;`` for the separator is that ``;`` is also used
+for separating case alternatives, so it looks familiar. Example: ::
+
+    case x of p1 -> e; p2 -> e
+    case x of (p1 ; p2) -> e
+
+An alternative to the originally proposed syntax is using ``/`` instead of ``|``
+to avoid parentheses in some cases. This can't completely eliminate parentheses
+around or patterns, as the following example demonstrates: ::
 
   f T1{} / T2{} / T3 T4 = ...
 
