@@ -392,50 +392,6 @@ Some examples with GADTs that are rejected: ::
                             C4 x -> Just x
                             _ -> Nothing) -> Just x) = show x
 
-Interaction with guards
-~~~~~~~~~~~~~~~~~~~~~~~
-
-In the absence of or patterns, guards are tried sequentially and only if all of
-the guards succeeded the corresponding RHS is evaluated. Example: ::
-
-    f :: Maybe Int -> Maybe Int -> Maybe Int
-    f (Just x) (Just y)                 -- first case
-      | even x                          -- guard 1
-      , even y                          -- guard 2
-      = Just (x + y)
-    f (Just x) _                        -- second case
-      | even x                          -- guard 3
-      = Just x
-    f _ _
-      = Nothing
-
-To evaluate ``f (Just 2) (Just 1)`` first two guards of the first case is
-tried. Because second guard fails, second case is tried and ``Just x`` is
-returned as the result.
-
-In the presence of or patterns, guards are tried after a match in the or
-pattern. If any of the guards fail, the whole branch with or pattern fails.
-Example: ::
-
-    f :: (Int, Int) -> Bool
-    f ((x, _) ; (_, x))
-      | even x
-      = True
-    f _
-      = False
-
-    main = print (f (1, 2))
-
-The program above prints ``False``: matching the pattern ``(x, _)`` succeeds
-and the guard is tried. Because the guard fails, the match is considered as
-failed, and ``(_, x)`` is not tried.
-
-(see "Alternatives" section for an alternative semantics for or patterns with
-guards)
-
-Reference: `Haskell 2010 Chapter 3.13: Case Expressions
-<https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-460003.13>`_
-
 Interaction with other extensions
 ---------------------------------
 
@@ -541,18 +497,49 @@ which duplicates ``e2``.
 Backtracking semantics for or patterns with guards
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The semantics described in "Interaction with guards" is called
-"non-backtracking" or "single-match" semantics. An alternative to this semantics
-is called "backtracking" or "multi-match" semantics. In backtracking semantics,
-when a guard of an or pattern fails, rest of the alternatives of the or pattern
-is tried. In this semantics result of the example program from "Interaction with
-guards" section is ``True``: matching the pattern ``(x, _)`` succeeds and the
-guard is tried. Guard fails, so next pattern in the or pattern, ``(_, x)`` is
-tried. Match succeeds and the guard is tried. Guard also succeeds, so the
-corresponding expression ``True`` is returned.
+In the absence of or patterns, guards are tried sequentially and only if all of
+the guards succeeded the corresponding RHS is evaluated. Example: ::
 
-To keep things as simple as possible in this proposal we choose to implement
-non-backtracking semantics.
+    f :: Maybe Int -> Maybe Int -> Maybe Int
+    f (Just x) (Just y)                 -- first case
+      | even x                          -- guard 1
+      , even y                          -- guard 2
+      = Just (x + y)
+    f (Just x) _                        -- second case
+      | even x                          -- guard 3
+      = Just x
+    f _ _
+      = Nothing
+
+To evaluate ``f (Just 2) (Just 1)`` first two guards of the first case is
+tried. Because second guard fails, second case is tried and ``Just x`` is
+returned as the result.
+
+In the presence of or patterns, guards are tried after a match in the or
+pattern. If any of the guards fail, the whole branch with or pattern fails.
+Example: ::
+
+    f :: (Int, Int) -> Bool
+    f ((x, _) ; (_, x))
+      | even x
+      = True
+    f _
+      = False
+
+    main = print (f (1, 2))
+
+The program above prints ``False``: matching the pattern ``(x, _)`` succeeds
+and the guard is tried. Because the guard fails, the match is considered as
+failed, and ``(_, x)`` is not tried.
+
+This semantics of or patterns with guards is called "non-backtracking" or
+"single-match". An alternative to this semantics is called "backtracking" or
+"multi-match" semantics. In backtracking semantics, when a guard of an or
+pattern fails, rest of the alternatives of the or pattern is tried. In this
+semantics result of the example program above is ``True``: matching the pattern
+``(x, _)`` succeeds and the guard is tried. Guard fails, so next pattern in the
+or pattern, ``(_, x)`` is tried. Match succeeds and the guard is tried. Guard
+also succeeds, so the result is ``True``.
 
 Or patterns in other languages
 ------------------------------
