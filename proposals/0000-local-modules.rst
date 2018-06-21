@@ -1,0 +1,429 @@
+Local Modules
+=============
+
+.. proposal-number:: Leave blank. This will be filled in when the proposal is
+                     accepted.
+.. trac-ticket:: Leave blank. This will eventually be filled with the Trac
+                 ticket number which will track the progress of the
+                 implementation of the feature.
+.. implemented:: Leave blank. This will be filled in with the first GHC version which
+                 implements the described feature.
+.. highlight:: haskell
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_.
+            **After creating the pull request, edit this file again, update the
+            number in the link, and delete this bold sentence.**
+.. sectnum::
+.. contents::
+
+Haskell currently has three related restrictions:
+
+ * *Modules*, a set of declarations that share a namespace and perhaps are
+   surrounded by an abstraction barrier, coincide with *source files*, the
+   `.hs` files on disk. This is limiting if one region of a source file has
+   local definitions that the programmer wishes to restrict. It is also
+   limiting if a user wants to declare multiple types with the same, e.g.,
+   constructors and record names in the same file.
+
+ * When a user declares an algebraic datatype or a class, all the
+   constructors, record selectors, methods, associated types, associated
+   datatype instance constructors, and associated datatype instance record
+   selectors get *bundled* with the type name, allowing you to export, e.g.,
+   ``T(..)``. Pattern synonyms allow for a small, ad-hoc extension to
+   bundling, but the user has no way to expand this feature. This is limiting
+   if a user wants to, say, change a class into a type family that returns a
+   constraint; downstream users have to change their import statements for
+   what was meant to be a local refactoring.
+   
+ * Despite common idioms like ``import qualified Data.Set as S``, if a user
+   wants to have ``Data.Set`` imported this way throughout their project, they
+   must repeat this line in every file. There is no way to abstract over this
+   idiom.
+
+This proposal describes a mechanism for *local modules* which lifts all the
+above restrictions through a backward-compatible generalization to the
+namespacing and import/export mechanism. This proposal is an alternative to
+`#205`_ (Structured module exports/imports), `#273`_ (local types) and
+provides a tempting way toward a resurrection of rejected proposal `#40`_
+("context fixes").
+
+.. _`#205`: https://github.com/ghc-proposals/ghc-proposals/pull/205
+.. _`#273`: https://github.com/ghc-proposals/ghc-proposals/pull/273
+.. _`#40`: https://github.com/ghc-proposals/ghc-proposals/blob/context-fixes/proposals/0000-context-fixes.rst
+.. _`#160`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0160-no-toplevel-field-selectors.rst
+
+Motivation
+----------
+1. It is common for a Haskell library to export several modules with the same
+   (or similar) sets of exported symbols, or for a library's defined names to
+   clash with those in the Prelude. For example, the commonly used libraries
+   ``bytestring``, ``containers``, and ``text`` all exhibit both of these
+   patterns. This means that users must write code like this::
+
+     import qualified Data.ByteString.Lazy as BL
+     import qualified Data.ByteString as BS
+     import Data.Set ( Set )
+     import qualified Data.Set as Set
+
+   In a library where these three types are in common use, these ``import``
+   statements must appear in every module: there is no way to write a custom
+   ``MyPrelude`` that exports *qualified* symbols. This is annoying.
+
+   With this proposal, the user will be able to write ::
+
+     module MyPrelude ( qualified module BL
+                      , qualified module BS
+                      , Set
+                      , qualified module Set ) where
+
+     import qualified Data.ByteString.Lazy as BL
+     import qualified Data.ByteString as BS
+     import Data.Set ( Set )
+     import qualified Data.Set as Set
+
+   Now, a module with ``import MyPrelude`` will gain access to the qualified
+   names.
+
+2. It is impossible to write multiple declarations in the same file that use
+   the same names. For example, I might want to have ::
+
+     data Nat = Zero | Succ Nat
+
+     data Fin :: Nat -> Type where
+       Zero :: Fin (Succ n)
+       Succ :: Fin n -> Fin (Succ n)
+
+     data Elem :: a -> [a] -> Type where
+       Zero :: Elem x (x : xs)
+       Succ :: Elem x xs -> Elem x (y : xs)
+
+   All three of these are, essentially, encodings of the natural numbers, and
+   thus the names ``Zero`` and ``Succ`` apply well to each. This is
+   impossible today, as the names clash.
+
+   With this proposal, these declarations would be accepted. The constructors
+   would be disambiguated with module prefixes, like ``Nat.Zero`` and
+   ``Elem.Succ``. (The ``Fin`` declaration would need to say ``Nat.Succ`` in
+   place of ``Succ``.) An unqualified use of a constructor would be an error.
+   Alternatively, the user could declare ``data qualified Fin ...`` and
+   ``data qualified Elem ...`` to make ``Nat``\'s constructors available in
+   the global scope but not the others.
+
+3. When a function ``f`` needs a helper ``h``, we can declare ``h`` in a
+   ``where`` clause. However, suppose both ``f`` and ``g`` need ``h``. Now,
+   ``h`` must be declared at the top level, meaning all the rest of the
+   definitions in the module can see ``h``, even if ``h`` is really very
+   specific to ``f`` and ``g``.
+
+   With this proposal, we can model this situation nicely::
+
+     import module _ (f, g) where
+       f :: ...
+       f = ...
+
+       g :: ...
+       g = ...
+
+       h :: ...
+       h = ...
+
+   Unfortunately, there is no way for ``h`` to access arguments passed to
+   ``f`` or ``g`` without declaring these as arguments to ``h`` and passing
+   them explicitly. Fixing this was the subject of `#40`_; see `Future Work`_.
+
+4. If a function or group of functions needs to work with a datatype or class
+   locally, there is no way to do this without polluting the namespace of the
+   entire file.
+
+   With this proposal, we can do this easily::
+
+     import module _ (f) where
+       f :: ...
+       f = ...
+
+       data SpecialDataType = ...
+
+       class LocalClass a b c where ...
+
+5. When we expect users to import our library qualified, we have no way of
+   signaling this beyond documentation; we also have no way of making it easy
+   to import the module qualified correctly.
+
+   With this proposal, we can do this easily::
+
+     -- top of file:
+     module Data.Set ( Set, qualified module Set ) where
+
+       import module Set ( Set )
+       module Set ( Set, fromList ) where
+         data Set = ...
+         fromList = ...
+
+   An importer who days ``import Data.Set`` will get access to ``Set`` (the
+   type) and ``Set.fromList``, the function. The fact that the module and type
+   have the same name is inconsequential here, but it is permitted.
+
+6. Suppose our library exports class ``C`` with method ``meth``. Our users
+   will frequently import ``C(..)`` and get ``meth`` in scope. Now I wish to
+   refactor ``C`` without changing my users' import behavior. There is no way
+   to do this currently.
+
+   With this proposal, we can do this::
+
+     -- top of file:
+     module MyLibrary ( module C(meth) ) where
+
+       class C a where ...
+
+       import module C where
+         meth :: ...
+
+   This example shows that modules may be *extended*. The ``class C``
+   declaration implicitly creates module ``C``, which is then extended below.
+
+   Import statements *do* have to change here: instead of ``C(..)``, they must
+   become ``import module C``. However, this new import statement is a drop-in
+   replacement for ``C(..)`` and may become preferable (as it is customizable
+   in the way demonstrated here).
+
+Proposed Change Specification
+-----------------------------
+
+1. Introduce a new extension ``-XLocalModules``.
+
+2. Introduce a new declaration form (allowed only at the top level of a
+   module) to declare new modules called *local modules*. Here is the BNF::
+
+     decl ::= ... | [ 'import' ] 'module' modname [ export_spec ] 'where' decls
+     modname ::= conid | '_'
+
+   Using ``_`` as the module name indicates an *anonymous local module*.
+
+   This declaration form is allowed only with ``-XLocalModules``.
+     
+3. All
+   declarations in scope at the declaration point of a local module (that is,
+   outside the module itself) are in scope for the entire local module.
+
+4. Definitions in a local module may be mutually recursive with definitions
+   in other local modules or outside of any local module. That is, local
+   modules influence scoping, but not type-checking or dependency.
+   
+5. A local module declaration brings into scope names listed in its export
+   list. These names are always brought into scope qualified by the local
+   module name, unless that module name is ``_``. If the declaration includes
+   the ``import`` keyword, the names are also brought into scope unqualified.
+
+6. It is an error to specify a non-empty export list, name a module ``_``, and
+   not include the ``import`` keyword. (Modules named ``_`` without an
+   non-empty export list but without the ``import`` keyword are still useful
+   as a way of declaring instances that use local definitions.)
+
+7. Every ``class``, ``data``, ``newtype``, ``data instance``, and ``newtype
+   instance`` declaration implicitly creates a new local module. The name of
+   the local module matches the name of the declared type. All entities (e.g.,
+   method names, constructors, record selectors) brought into scope within the
+   declaration, including the type itself, are put into this local module.
+   
+   If the pseudo-keyword ``qualified`` appears directly after the keyword(s)
+   that begin the declaration, these internal definitions are not brought into
+   the outer scope. Otherwise, they are (just like usual). Exception: the type
+   itself is always brought into scope unqualified. This feature is enabled
+   only when ``-XLocalModules`` is in effect.
+
+   Associated ``data`` and ``newtype`` instances create modules at the level
+   of the enclosing ``instance`` declaration: the ``data``\/\ ``newtype``
+   module is *not* nested within the class module.
+
+8. Local modules may be extended via the declaration of another local module
+   of the same name. If local modules with the same name are in scope at the
+   same time (either through importation or declaration) their contents are
+   simply merged. Individual identifiers that are multiply defined will be
+   an error if used ambiguously.
+
+9. A new declaration form is introduced with the following BNF::
+
+     decl ::= ... | 'import' 'module' conid [ import_spec ]
+
+   This declaration takes all entities (or those entities named in the
+   ``import_spec``) in scope with a *conid*\ ``.`` and brings them into scope
+   into the local context unqualified.
+
+   The declaration is allowed in ``let`` and ``where`` clauses.
+
+   Note that the declaration form includes the word ``module`` to distinguish
+   it from a normal ``import`` which induces a dependency on another file. An
+   ``import module`` declaration cannot induce a dependency.
+
+   This declaration form is allowed only with ``-XLocalModules``.
+
+10. Local modules may be imported with this import item::
+
+      import_item ::= ... | [ 'import' ] 'module' conid [ import_spec ]
+
+    This brings the local module named *conid* into scope. It is an error if
+    this import item appears in a list of imports from a module that does not
+    export the local module *conid*.
+
+    Also brought into scope are the entities listed in the *import_spec*;
+    these are brought into scope qualified with the *conid*\ ``.`` prefix. If
+    the *import_spec* is not provided, then all entities in *conid* are
+    brought into scope (qualified).
+
+    If the ``import`` keyword is included, then all entities brought into
+    scope qualified are also brought into scope unqualified.
+
+    This new form of import is allowed only with ``-XLocalModules``.
+
+11. Local modules may be exported with this export item::
+
+      export_item ::= ... | [ 'qualified' ] 'module' conid [ export_spec ]
+
+    The meaning of this export item depends on the presence of the ``qualified``
+    keyword in the export item.
+
+    With ``qualified``: This exports the local module *conid* and all entities
+    in scope with qualified with the *conid*\ ``.`` prefix. If no local module
+    *conid* exists but entities are in scope with the *conid*\ ``.`` prefix
+    (because a top-level module *conid* exists or *conid* is after the ``as`` in
+    a top-level module import declaration), then a local module *conid* is created
+    for export. In all cases, if an *export_spec* is specified, only those entities
+    are exported. Names in the *export_spec* can be written unqualified.
+
+    Without ``qualified``: This exports the local module *conid* (if one exists).
+    As specified in the `Haskell Report <https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1000005.2>`_,
+    point (5), this also exports (unqualified) all identifiers in scope both with
+    and without the *conid*\ ``.`` prefix. If an *export_spec* is included, then
+    only those identifiers are included. Note that, because this exports identifiers
+    unqualified, if this form is used with a local module, those identifiers become
+    both available unqualified and within the local module in importing modules
+    (depending on whether they import the local module).
+
+    The new behavior is allowed only with ``-XLocalModules``.
+
+Further Examples
+----------------
+
+::
+
+   module A ( module M1, module M2, qualified module M3, qualified module M4, module A ) where
+
+   import Import1 as M1
+   import qualified Import2 as M3
+
+   module M2 ( m2a, m2b ) where
+     m2a = ...
+     m2b = ...
+
+   import module M2 ( m2a )
+
+   import module M4 ( m4a, m4b ) where
+     m4a = ...
+     m4b = ...
+
+* The ``module M1`` exports all the identifiers from ``Import1``.
+
+* The ``module M2`` exports ``m2a``, ``M2`` (as a local module), ``M2.m2a``, and ``M2.m2b``.
+
+* The ``qualified module M3`` exports ``M3`` (as a local module) and all the identifiers from ``Import2``, qualified with ``M3.``.
+
+* The ``qualified module M4`` exports ``M4`` (as a local module), ``M4.m4a``, and ``M4.m4b``.
+
+* The ``module A`` exports ``M2`` (as a local module), ``m2a``, ``M4`` (as a local module), ``m4a``, and ``m4b``.
+
+::
+
+   module B where
+
+   import A ( module M2, import module M3, m4a )
+
+* The following identifiers will be available: ``M2`` (as a local module), ``M2.m2a``, ``M2.m2b``, ``M3`` (as a local module), all
+  the identifiers from ``Import2`` (which was exported as ``M3``) both qualified with ``M3.`` and unqualified, and ``m4a``.
+    
+Effect and Interactions
+-----------------------
+
+* Modules are now compositional.
+
+* The examples in the Motivation_ section are accepted.
+
+* There is a potential ambiguity between local modules and top-level modules. In particular, this might
+  happen between the implicit local module of a type declaration and a top-level module. For example::
+
+    -- top of file:
+    module A where
+
+    import qualified T ( x )
+
+    data T = MkT { x :: Int }
+
+    y = T.x
+
+  There will be two identifiers ``T.x`` in scope: both the one imported from ``T`` and the record selector
+  in the type ``T``. This situation will lead to an error, as do other sources of ambiguity.
+
+* The ability to detect dependencies of a module by parsing only a prefix of the module is retained.
+  Local modules are always imported only by ``import module``, never plain ``import``. Plain ``import``
+  statements remain at the top of the file.
+
+* Other than corner cases around ambiguity, this proposal is backward compatible; it is not "fork-like".
+
+* Proposal `#160`_ allows users to suppress field selectors, thus ameliorating a small part
+  of what has motivated this proposal.
+
+Costs and Drawbacks
+-------------------
+
+* This is a significant new bit of implementation and specification, and it should require the
+  requisite level of support from the community to be accepted.
+
+Alternatives
+------------
+
+There are many alternatives. The list below is shamelessly cribbed from `#205`_.
+
+* Proposal `#205`_. That proposal essentially tweaks the ``qualified`` feature to
+  become more flexible and exportable. It has proved hard to digest (from the commentary),
+  though, and solves fewer problems than this proposal. On the other hand, it is likely
+  easier to implement.
+
+  This proposal is inspired by some of the topics that came up in the conversation
+  for `#205`_, and I'm grateful for @deepfire's efforts on that proposal.
+
+* 2005 Coutts, ``as`` in export lists: `<https://mail.haskell.org/pipermail/libraries/2005-March/003390.html>`_ . Salient points:
+  letting modules export other modules' contents qualified with the module name`
+  
+* 2006 Wallace, explicit namespaces for module names: `<https://ghc.haskell.org/trac/ghc/wiki/Commentary/Packages/PackageNamespacesProposal>`_ . Salient points:
+  The declaration import namespace brings into availability the subset of the hierarchy of module names rooted in the package "foo-1.3", at the position ``Data.Foo``
+  
+* 2013 de Castro Lopo, qualified exports: `<https://wiki.haskell.org/GHC/QualifiedModuleExport>`_
+  ``qualified module T`` in export list and is essentially a subset of this proposal.
+
+Future Work
+-----------
+
+I see a few future directions along these lines, but I leave it to others to flesh these out.
+
+1. We can imagine *parameterized local modules*, where all the functions defined therein share
+   a sequence of parameters. This would resurrect the ideas behind `#40`_. This would bring
+   us close to ML-style functors.
+
+2. Haskell currently requires three distinct concepts to coincide: *compilation units* are the
+   chunks that go through the compiler all at once, *source files* are distinct files on disk,
+   and *modules* are groups of related definitions and can define an abstraction barrier.
+
+   This proposal allows modules to become smaller than these other two. By writing a module to
+   collect others, modules can also be larger than the other two (as is true today).
+
+   However, it would be nice to separate the treatment of compilation units and source files,
+   as well. This would allow, for example, the inliner and specializer to make decisions with
+   respect to more definitions (if the compilation unit is larger than the source file).
+
+Unresolved questions
+--------------------
+None at this time.
+
+
+Implementation Plan
+-------------------
+I do *not* volunteer to implement, but I wanted to write this down, as it seems like
+a nice way to solve these problems.
