@@ -285,7 +285,7 @@ Semantics of Pattern Matching
   matching ``v`` against ``p1`` if it is not a failure, or the result of
   matching ``p2`` against ``v`` otherwise.
 
-  ``p1`` and ``p2`` should bind same set of variables of same types.
+  ``p1`` and ``p2`` bind same set of variables.
 
 Here are some examples: ::
 
@@ -298,16 +298,20 @@ Here are some examples: ::
     (\ (1 ; 2 ; 3) -> True) 3 => True
 
 More formally, we define semantics of or patterns as a desugaring to view
-patterns. An or pattern type checks whenever the desugared pattern type checks.
-The desugaring rule is: ::
+patterns. The desugaring rule is: ::
 
-    (p1; …; pn)
+    (p1; p2)
     =
-    ((\x -> case x of p1 -> Just (x1, …, xn); …; pn -> Just (x1, …, xn); _ -> Nothing)
+    ((\x -> case x of p1 -> Just (x1, …, xn); …; p2 -> Just (x1, …, xn); _ -> Nothing)
         -> Just (x1, …, xn))
 
 where ``x`` is a fresh variable and ``x1`` … ``xn`` are variables bound by
-alternatives of the or pattern.
+``p1`` and ``p2``. Note that ``p1`` and ``p2`` bind same set of variables.
+
+The desugaring rule defines both static and dynamic semantics of or patterns. An
+or pattern type checks whenever the desugared pattern type checks. Dynamic
+semantics of an or pattern is the same as its dynamic semantics of its desugared
+pattern.
 
 Here are desugared versions of the examples above: ::
 
