@@ -61,7 +61,9 @@ But each of these solutions may lead to some extra work, and some of them
 will lead to additional allocation. Moreover, the implementation of
 ``atomicModifyMutVar#`` has extra allocation *built in* to support
 a lazy result value. When someone wants a result forced to WHNF, this
-is wasteful.
+is wasteful. To top off the troubles, these are all exercises in
+awkwardness and subtlety. We shouldn't have to bend over backwards
+to do such basic things.
 
 Proposed Change Specification
 -----------------------------
@@ -127,7 +129,12 @@ Costs and Drawbacks
 The development cost will be very low. I anticipate a low maintenance cost
 as well. The new primop implementation is essentially the same as the current
 one but with some parts removed: we just need to build two closures instead of
-three. I can't think of any real drawbacks.
+three.
+
+The only drawback I can think of is that if we actually use the result,
+but do so lazily, we'll perform two heap checks instead of one. I doubt
+this cost will ever be noticeable, whereas I imagine the reduced allocation
+in other situations may have a real impact for heavy users.
 
 Alternatives
 ------------
