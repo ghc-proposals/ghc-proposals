@@ -136,6 +136,8 @@ What are the best names for these things?
 
 Where should the compatibility wrapper live?
 
+Should the compatibility wrapper have the bogus type ``atomicModifyMutVar#``
+has now, or should it be restricted to pairs?
 
 Implementation Plan
 -------------------
