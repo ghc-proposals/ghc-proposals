@@ -139,5 +139,5 @@ Where should the compatibility wrapper live?
 
 Implementation Plan
 -------------------
-I'd be happy to give it a go myself, but someone more familiar with
-CMM would likely be able to do it more efficiently.
+I have drafted `an implementation <https://phabricator.haskell.org/D4884>`_
+which can be modified as needed.
