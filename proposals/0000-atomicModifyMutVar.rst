@@ -95,6 +95,10 @@ We can define ::
    (_, res) <- atomicModifyIORef_ ref f
    pure res
 
+ atomicWriteIORef ref x = do
+   !_ <- atomicModifyIORef_ ref (\_ -> (x, ()))
+   pure ()
+
 Finally, ``atomicModifyIORef_`` is useful by itself if the user wants to use
 the new ``IORef`` value for something else too!
 
@@ -120,15 +124,15 @@ I don't foresee any significant interactions.
 
 Costs and Drawbacks
 -------------------
-I anticipate a low development and maintenance cost. The new primop implementation
-should actually be a slight simplification of the current code: we just need to build
-two closures instead of three.
+The development cost will be very low. I anticipate a low maintenance cost
+as well. The new primop implementation is essentially the same as the current
+one but with some parts removed: we just need to build two closures instead of
+three. I can't think of any real drawbacks.
 
 Alternatives
 ------------
 We could change the primop without renaming it. I'd prefer not to break backwards
 compatibility that way, however.
-
 
 Unresolved questions
 --------------------
@@ -137,7 +141,8 @@ What are the best names for these things?
 Where should the compatibility wrapper live?
 
 Should the compatibility wrapper have the bogus type ``atomicModifyMutVar#``
-has now, or should it be restricted to pairs?
+has now, or should it be restricted to pairs? I don't know if people are
+currently taking advantage of the extra flexibility in the type.
 
 Implementation Plan
 -------------------
