@@ -87,7 +87,9 @@ it serves as a much better base on which to build stricter operations.
 
 We can define ::
 
- atomicModifyIORef ref f = snd <$> atomicModifyIORef_ ref f
+ atomicModifyIORef ref f = do
+   ~(_, res) <- atomicModifyIORef_ ref f
+   pure res
 
  atomicModifyIORef' ref f = do
    (!_, !res) <- atomicModifyIORef_ ref f
