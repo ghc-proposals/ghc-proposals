@@ -348,7 +348,7 @@ Some examples with GADTs: ::
       C6 :: Bool -> T2 Bool
 
     f3 :: T2 a -> a
-    f3 (C5 x ; C5 x) = x
+    f3 (C5 x ; C6 x) = x
     -- desugared:
     f3_ds :: T2 a -> a
     f3_ds ((\x -> case x of C5 x -> Just x
