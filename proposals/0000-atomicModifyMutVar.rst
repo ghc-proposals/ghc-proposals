@@ -62,34 +62,51 @@ will lead to additional allocation. Moreover, the implementation of
 ``atomicModifyMutVar#`` has extra allocation *built in* to support
 a lazy result value. When someone wants a result forced to WHNF, this
 is wasteful. To top off the troubles, these are all exercises in
-awkwardness and subtlety. We shouldn't have to bend over backwards
-to do such basic things.
+awkwardness and subtlety. We shouldn't have to go to so much trouble
+to do such simple things.
 
 Proposed Change Specification
 -----------------------------
 Replace ``atomicModifyMutVar#`` with ::
 
- atomicModifyMutVar_#
+ atomicModifyMutVar2#
    :: MutVar# s a
    -> (a -> (a, b))
-   -> State# s -> (# State# s, (a, b) #)
+   -> State# s -> (# State# s, a, (a, b) #)
 
 and add a user-facing wrapper ::
 
- atomicModifyIORef_
+ atomicModifyIORef2
    :: IORef a
    -> (a -> (a, b))
-   -> IO (a, b)
+   -> IO (a, (a, b))
 
-The new primop would return the full result of applying the passed function.
-Like ``atomicModifyMutVar``, the new primop would be completely lazy. But
-it serves as a much better base on which to build stricter operations.
+and a convenience function, ``atomicModifyIORef_``, detailed below.
+
+The new primop would return the previous value of the ``MutVar#`` as well as
+the full result of applying the passed function.  Like ``atomicModifyMutVar``,
+the new primop would be completely lazy. Semantically, ::
+
+ atomicModifyMutVar2 mv f =
+   atomicModifyMutVar mv $ \old ->
+     let f_old = f old
+     in (fst f_old, (old, f_old))
+
+However, ``atomicModifyMutVar2`` would serve as a much better base on which to
+build stricter operations.
 
 We can define ::
 
  atomicModifyIORef ref f = do
-   ~(_, res) <- atomicModifyIORef_ ref f
+   (_, ~(_, res)) <- atomicModifyIORef2 ref f
    pure res
+
+ -- A version that ignores the previous value and forces the result
+ -- of the function; the latter prevents space leaks in many cases.
+ atomicModifyIORef_ :: IORef a -> (a -> (a, b)) -> IO (a, b)
+ atomicModifyIORef_ ref f = do
+   (_, p@(_,_)) <- atomicModifyIORef2 ref f
+   return p
 
  atomicModifyIORef' ref f = do
    (!_, !res) <- atomicModifyIORef_ ref f
@@ -99,12 +116,17 @@ We can define ::
    (_, res) <- atomicModifyIORef_ ref f
    pure res
 
+ -- Caveat: there's actually an altogether better way to implement this
+ -- function; this is only an example.
  atomicWriteIORef ref x = do
-   !_ <- atomicModifyIORef_ ref (\_ -> (x, ()))
+   atomicModifyIORef_ ref (\_ -> (x, ()))
    pure ()
 
-Finally, ``atomicModifyIORef_`` is useful by itself if the user wants to use
-the new ``IORef`` value for something else too!
+All of these definitions strike me as much simpler and easier to reason about
+than the ones required by ``atomicModifyMutVar#``.
+
+Finally, ``atomicModifyIORef2`` is useful by itself if the user wants to use
+the old and/or new ``IORef`` values for something else too.
 
 For backwards compatibility, we can define ::
 
@@ -113,14 +135,13 @@ For backwards compatibility, we can define ::
    -> (a -> (a, b))
    -> State# s -> (# State# s, b #)
  atomicModifyMutVar# mv f s =
-   case atomicModifyMutVar_# mv f s of
-     (# s', ~(_, b) #) -> (# s', b #)
+   case atomicModifyMutVar2# mv f s of
+     (# s', _, ~(_, b) #) -> (# s', b #)
 
-which I expect to be just as efficient as the current ``atomicModifyMutVar#``
-and sometimes more so.
-
-All of these definitions strike me as much simpler and easier to reason about
-than the ones required by ``atomicModifyMutVar#``.
+which I expect to be at least as efficient as the current ``atomicModifyMutVar#``
+and very often more so. In particular, it will be better when demand analysis
+determines that ``b`` is used strictly or not used at all. In that case, the
+selector thunk simply won't be created at all.
 
 Effect and Interactions
 -----------------------
@@ -128,30 +149,58 @@ I don't foresee any significant interactions.
 
 Costs and Drawbacks
 -------------------
+
+Costs
+^^^^^
 The development cost will be very low. I anticipate a low maintenance cost
 as well. The new primop implementation is essentially the same as the current
 one but with some parts removed: we just need to build two closures instead of
 three.
 
-The only drawback I can think of is that if we actually use the result,
-but do so lazily, we'll perform two heap checks instead of one. I doubt
-this cost will ever be noticeable, whereas I imagine the reduced allocation
-in other situations may have a real impact for heavy users.
+Potential drawbacks
+^^^^^^^^^^^^^^^^^^^
+
+1. If we actually use the result, but do so lazily, we'll perform two heap
+   checks instead of one. I doubt this cost will ever be noticeable, whereas I
+   imagine the reduced allocation in other situations may have a real impact for
+   heavy users. Along with being very small, I predict that this cost will very
+   rarely be realized in practice.
+
+2. There is some history of the optimizer accidentally defeating the selector
+   thunk optimization in the GC. I don't know if that could be a problem for the
+   proposed reimplementation of ``atomicModifyIORef``, but if so it could
+   theoretically lead to space leaks in unusual situations. The GHC test suite
+   did not reveal any such problems, however; indeed, the only test deviation
+   was a reduction in allocations in one test.
 
 Alternatives
 ------------
-We could change the primop without renaming it. I'd prefer not to break backwards
-compatibility that way, however.
+
+1. We could change the primop without renaming it. I'd prefer not to break
+   backwards compatibility that way, however.
+
+2. We could refrain from returning the previous ``MutVar#`` contents; indeed,
+   the first draft of this proposal did so. But that is sometimes useful to
+   have and the cost of providing it is minimal.
+
+3. There is a large design space for library functions based around
+   ``atomicModifyIORef2``. I don't have very strong opinions about which
+   ones should be included; I'd even be okay with adding *only*
+   ``atomicModifyIORef2`` and letting library developers figure out what
+   else to add over time, if that would help move things along.
 
 Unresolved questions
 --------------------
-What are the best names for these things?
+1. What are the best names for the primop and wrappers?
 
-Where should the compatibility wrapper live?
+2. Where should the compatibility wrapper live?
 
-Should the compatibility wrapper have the bogus type ``atomicModifyMutVar#``
-has now, or should it be restricted to pairs? I don't know if people are
-currently taking advantage of the extra flexibility in the type.
+3. Should the compatibility wrapper have the bogus type ``atomicModifyMutVar#``
+   has now, or should it be restricted to pairs? I don't know if people are
+   currently taking advantage of the extra flexibility in the type. Someone
+   could, for example, use a two-component record type instead of an actual
+   tuple. If we want to support those uses of the wrapper, we'll need to
+   stick an ``unsafeCoerce`` inside.
 
 Implementation Plan
 -------------------
