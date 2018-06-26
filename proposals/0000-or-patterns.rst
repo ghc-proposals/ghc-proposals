@@ -714,9 +714,7 @@ unboxed) tuple and unboxed sum patterns (`example implementation
 Type checking
 ~~~~~~~~~~~~~
 
-Type checker checks that in or patterns each alternative binds exactly the same
-set of arguments with same types. The right hand side is then checked against
-one of the patterns in the or pattern.
+TBD
 
 Pattern checking
 ~~~~~~~~~~~~~~~~
