@@ -341,7 +341,39 @@ Here are desugared versions of the examples above: ::
                           [x, _, _, _] -> Just x
                           _ -> Nothing) -> Just x) -> x) [1, \bot, \bot, \bot] => 1
 
-Some examples with GADTs: ::
+Interaction with other extensions
+---------------------------------
+
+Existential quantification and GADTs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A pattern on a Haskell 98 data constructor (aka. a "vanilla" or "boring"
+constructor) only binds values.
+
+However with existential quanticiation and GADTs, patterns can also bind
+
+- Equality constraints
+
+  (``a ~ Int`` in GADT ``data Foo a where FooInt :: Int -> Foo Int``)
+
+- Dictionaries
+
+  (``Show a`` in GADT ``data Foo a where Foo :: Show a => a -> Foo a`` or in
+  existential ``data Foo a = Show a => Foo a``)
+
+- Existential type variables
+
+  (``a`` in ``data Foo1 where Foo :: Default a => Foo`` or in existential ``data
+  Foo = forall a . Default a => Foo``)
+
+The desugaring rule implies that none of the above can be bound by an or
+pattern. We thus support a limited form of pattern matching on GADT constructors
+and constructors with existentials.
+
+Below are some examples of accepted and rejected programs. Because GADTs subsume
+existentials, we only use GADT syntax.
+
+Accepted programs: ::
 
     data T2 a where
       C5 :: Int  -> T2 Int
@@ -366,7 +398,7 @@ Some examples with GADTs: ::
     f4_ds ((\x -> case x of C7 _ _ -> Just ()
                             C8 _ -> Just ()) -> Just ()) = "f4"
 
-Some examples with GADTs that are rejected: ::
+Rejected programs: ::
 
     data T1 where
       C1 :: a -> (a -> String) -> T1
@@ -374,7 +406,6 @@ Some examples with GADTs that are rejected: ::
       C3 :: Show a => a -> T1
       C4 :: String -> T1
 
-    -- reject: desugared pattern does not type check
     f1 :: T1 -> String
     f1 (C1 x g ; C2 x g) = g a
     -- desugared:
@@ -383,7 +414,6 @@ Some examples with GADTs that are rejected: ::
                             C2 x g -> Just (x, g)
                             _ -> Nothing) -> Just (x, g)) = g x
 
-    -- reject: desugared pattern does not type check
     f2 :: T1 -> String
     f2 (C3 x ; C4 x) = show x
     -- desugared:
@@ -392,8 +422,23 @@ Some examples with GADTs that are rejected: ::
                             C4 x -> Just x
                             _ -> Nothing) -> Just x) = show x
 
-Interaction with other extensions
----------------------------------
+Binding constraints, existentials, or dictionaries are not allowed even in
+simplest cases like: ::
+
+    data T1 where
+      C1 :: Show a => a -> T1
+      C2 :: Show a => a -> T1
+
+    f :: T1 -> String
+    f (C1 x ; C2 x) = show x
+    -- desugared:
+    f_ds :: T1 -> String
+    f ((\x -> case x of C1 x -> Just x
+                        C2 x -> Just x) -> Just x) = show x
+
+Even though both patterns bind a dictionary of same type, to keep things simple
+we currently reject this program. Pattern matching on GADTs in or patterns can
+be generalized in the future in a backwards compatible way.
 
 Pattern synonyms
 ~~~~~~~~~~~~~~~~
