@@ -662,7 +662,7 @@ Rust
 
 Rust supports a simpler version of or patterns. `Relevant section in the
 language reference
-<https://doc.rust-lang.org/reference.html#match-expressions>`_ doesn't say much
+<https://doc.rust-lang.org/reference/expressions/match-expr.html>`_ doesn't say much
 about it, but the implementation supports or patterns only at the top layer of
 patterns. These are fine: ::
 
