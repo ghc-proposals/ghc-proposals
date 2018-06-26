@@ -143,6 +143,48 @@ and very often more so. In particular, it will be better when demand analysis
 determines that ``b`` is used strictly or not used at all. In that case, the
 selector thunk simply won't be created at all.
 
+Extra power
+^^^^^^^^^^^
+
+The type given above for ``atomicModifyMutVar2#`` is a little bit of a lie.
+Because ``GHC.Prim`` doesn't have (boxed) tuple types, the type would actually
+look like ::
+
+ atomicModifyMutVar2#
+   :: MutVar# s a
+   -> (a -> c)
+   -> State# s -> (# State# s, a, c #)
+
+This type is of course rather dangerously wrong. But the *true* type lies
+between them: the result must be a (possibly newtype-wrapped)
+single-constructor datatype whose first field is lifted. We can get
+express the real type using generics ::
+
+ type family Leftmost (a :: Type -> Type) :: Type where
+   Leftmost (M1 i ('MetaData _ _ _ 'True) f) = Leftmost' f
+   Leftmost (M1 i ('MetaSel _ _ _ 'DecidedUnpack) f) = Leftmost' f
+     -- It would also be reasonable to error out in the unpacked case.
+   Leftmost (M1 i c f) = Leftmost f
+   Leftmost (f :*: g) = Leftmost f
+   Leftmost (K1 i c) = c
+ 
+   Leftmost (f :+: g) = TypeError ('Text "Sum types cannot be used with atomicModifyIORefG")
+   Leftmost U1 = TypeError ('Text "atomicModifyIORefG expects a record with at least one field")
+   Leftmost V1 = TypeError ('Text "atomicModifyIORefG expects a record with at least one field")
+ 
+ -- Dig through newtypes and unpacked things
+ type family Leftmost' (a :: Type -> Type) :: Type where
+   Leftmost' (M1 i c f) = Leftmost' f
+   Leftmost' (K1 i c) = Leftmost (Rep c)
+
+ atomicModifyIORefG :: a ~ Leftmost (Rep r) => IORef a -> (a -> r) -> IO (a, r)
+ atomicModifyIORefG (IORef (STRef ref)) f = IO $ \s ->
+   case atomicModifyMutVar2# ref f s of
+     (# s', old, new #) -> (# s', (old, new) #)
+
+This is safe as long as the ``Generic`` instances are derived or otherwise
+legitimate.
+
 Effect and Interactions
 -----------------------
 I don't foresee any significant interactions.
@@ -176,6 +218,10 @@ Potential drawbacks
 Alternatives
 ------------
 
+0. We could add a new primop without removing the old one. This would give
+   the best backwards compatibility, but I'm not sure it's really worth
+   the trouble.
+
 1. We could change the primop without renaming it. I'd prefer not to break
    backwards compatibility that way, however.
 
@@ -191,7 +237,10 @@ Alternatives
 
 Unresolved questions
 --------------------
-1. What are the best names for the primop and wrappers?
+1. What are the best names for the primop and wrappers? I feel
+   very strongly that ``atomicModifyMutVar_`` is *not* the right name
+   (indeed, I think that name is best taken by a *different* function!),
+   but I have no idea what to call the thing.
 
 2. Where should the compatibility wrapper live?
 
