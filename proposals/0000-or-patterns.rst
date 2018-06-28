@@ -302,7 +302,7 @@ patterns. The desugaring rule is: ::
 
     (p1; p2)
     =
-    ((\x -> case x of p1 -> Just (x1, …, xn); …; p2 -> Just (x1, …, xn); _ -> Nothing)
+    ((\x -> case x of p1 -> Just (x1, …, xn); p2 -> Just (x1, …, xn); _ -> Nothing)
         -> Just (x1, …, xn))
 
 where ``x`` is a fresh variable and ``x1`` … ``xn`` are variables bound by
