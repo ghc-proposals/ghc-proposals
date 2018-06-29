@@ -140,10 +140,56 @@ new internal top-level definitions which would delegate to the real, original id
 This would add to the implementation complexity but should be completely transparent to
 users.)
 
+The syntax requires duplication of types and the new signatures can appear arbitrarily
+far from the identifiers' definition sites. These drawbacks are real, but they exist
+with all type signatures today. Type signatures are still useful as a double-check and
+as documentation.
+
 Alternatives
 ------------
-Users are free to define their own top-level wrappers with user-written types. However, these
-will have different names than the original constructs.
+* Users are free to define their own top-level wrappers with user-written types. However, these
+  will have different names than the original constructs.
+
+* There have been a few comments in wondering about class method signatures: couldn't we do
+  this within the class declaration itself instead of outside? It's unclear to me what the
+  syntax for this could be.
+
+  + One suggestion was that signatures that start with a ``forall`` are top-level signatures
+    instead of normal method signatures (which do not quantify over class variables or the
+    class constraint). However, we can write ``forall`` on class method signatures today without
+    changing their interpretation, so this idea is not backward compatible.
+
+  + A refinement on this idea wsa that the new behavior could be triggered if the signature
+    quantifies over the class variable. For example::
+
+      class C a where
+        meth :: forall b a. C a => a -> a
+
+    Because this ``meth`` quantifies over the class variable, ``a``, it is treated as a
+    top-level signature.
+
+    I do not like this proposal overmuch: I would think that the ``a`` in ``meth``\'s signature
+    shadows the class variable instead of replaces it. It is also unclear how this would work
+    with multi-parameter type classes and functional dependencies. Note that the following
+    is accepted today::
+
+      class C2 a where
+        meth2 :: forall a. a -> a
+
+    The type of ``meth2`` is ``forall a. C2 a => forall a1. a1 -> a1``, renaming the inner
+    variable to avoid shadowing. The definition requires ``-XAllowAmbiguousTypes`` but is
+    otherwise sensible. (It is sensible, in that it has a meaning. It may or may not be
+    *useful*.)
+
+* We could omit treatment for Haskell98-syntax datatypes. After all, users can always use
+  GADT syntax.
+
+* For record selectors, we could require that the new signature be in a ``where`` clause
+  (and be available only with GADT syntax). For example::
+
+    data Rec a where
+      MkRec :: { sel :: forall b. b -> a } -> Rec a
+      sel :: forall b a. Rec a -> b -> a
 
 Unresolved questions
 --------------------
