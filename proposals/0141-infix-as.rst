@@ -14,30 +14,35 @@ This proposal is `discussed at this pull request <https://github.com/ghc-proposa
 
 .. contents::
 
-Extensions to Infix Syntax
+InfixAs Extension
 ==========================
 
-This is a proposal to extend Haskell's ``infix`` syntax to include a feature of PureScript's.
+This is a proposal for a language extension that provides some benefits to readability and conformity in the declaration of infix operators.
 
-Consider the following typeclass:
+Consider the following typeclass, and associated infix operator:
 
 .. code-block:: haskell
 
   class Semigroup a where
     app :: a -> a -> a
 
-With this extension to the syntax, one could write the following:
+  infixr 5 <>
+
+  (<>) :: Semigroup a => a -> a -> a
+  (<>) = app
+
+With -XInfixAs enabled, one <i>must</i> write the following instead:
 
 .. code-block:: haskell
   
+  class Semigroup a where
+    app :: a -> a -> a
+
   infixr 5 app as <>
 
-  foo :: String
-  foo = "Hello " <> "World!"
-
-This will actually generate a top-level binding, so that error messages arising
-from the use of ``<>`` do not confusingly reference ``app``. The top-level binding
-would look like this:
+For code generation, this will generate a top-level binding, so that error messages arising
+from the use of ``<>`` do not confusingly reference ``app`` (i.e., ``<>`` would not just be a function 'synonym' ala type synonyms).
+The top-level binding would look like this:
 
 .. code-block:: haskell
   
@@ -69,8 +74,7 @@ Another example:
 Motivation
 ------------
 
-This proposal makes it easier to define infix synonyms for binary operators/functions,
-a relatively common pattern employed by library authors.
+The point of this syntax is to ensure that there is no other way to define an operator, which guarantees by construction that all operators will have a corresponding function name, thus avoiding the situation in Haskell where it is sometimes unclear what the canonical pronunciation of an operator is. It also forces you to write a fixitiy declaration for every operator. Enabling this language extension would make operator definitions a compile-time error.
 
 Proposed Change Specification
 -----------------------------
@@ -78,14 +82,13 @@ Proposed Change Specification
 Effect and Interactions
 -----------------------
 
-I don't know of any interactions other than making it syntactically simpler to define infix functions.
+I don't currently know of any.
 
 Costs and Drawbacks
 -------------------
 
 The only cost I can see as of right now is the work to implement this.
-Admittedly I do not know how, but I would be willing to do the work if given
-guidance.
+Admittedly I do not know how, but I would be willing to do the work if given guidance.
 
 Alternatives
 ------------
