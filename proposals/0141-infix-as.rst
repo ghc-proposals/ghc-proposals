@@ -31,7 +31,7 @@ Consider the following typeclass, and associated infix operator:
   (<>) :: Semigroup a => a -> a -> a
   (<>) = app
 
-With -XInfixAs enabled, one <i>must</i> write the following instead:
+With -XInfixAs enabled, one must write the following instead:
 
 .. code-block:: haskell
   
