@@ -40,13 +40,28 @@ for the construct. Here are some examples::
   meth3 :: forall a {b}. C a => a -> b -> b            -- new: with proposal #99, makes b *inferred*
   meth4 :: C a => b -> a                               -- new: no forall required; this is redundant but allowed
 
+  data TypeRepOfKind k where  -- existential wrapper holding a TypeRep for a type of kind k
+    TROK :: TypeRep (t :: k) -> TypeRepOfKind k
+
+    -- a pattern synonym that extracts an arrow type from a TypeRepOfKind k
+  pattern IsFun :: forall k. ()
+                => forall (arg :: Type) (res :: Type). (k ~ Type)
+		=> TypeRep arg -> TypeRep res
+		-> TypeRepOfKind k
+  pattern IsFun a r <- TROK (App (App ((`eqTypeRep` typeRep @(->)) -> Just HRefl) a) r)
+    where IsFun a r = TROK (App (App (typeRep @(->)) a) r)
+    
+  IsFun :: forall (arg :: Type) (res :: Type) (k :: Type). (k ~ Type)
+        => TypeRep arg -> TypeRep res -> TypeRep Type
+    -- new: allows existentials to precede universals in a pattern synonym
+  
 This proposal subsumes `#54`_, which proposes this feature, but only for type-level
 declarations (which would replace CUSKs).
 
 .. _`#54`: https://github.com/ghc-proposals/ghc-proposals/pull/54
 .. _`#129`: https://github.com/ghc-proposals/ghc-proposals/pull/129
 .. _`#99`: https://github.com/ghc-proposals/ghc-proposals/pull/99
-
+.. _`#126`: https://github.com/ghc-proposals/ghc-proposals/pull/126
 
 Motivation
 ----------
@@ -78,6 +93,11 @@ it can sometimes be confusing to see ``data T = MkT { sel :: Int }``, which sugg
 ``sel`` has type ``Int``. when really ``sel`` has type ``T -> Int``. A top-level signature
 can make this clear.
 
+For patterns, in concert with `#126`_, we would normally like existential variables in a
+pattern synonym to come *before* universals. Pattern synonyms rigidly do not allow this,
+as they require a syntactic distinction between universals and existentials. However, under
+this proposal, we can specify a new ordering for the variables and constraints.
+
 For type-level signatures, I defer to `#54`_, which this proposal is a direct extension of.
 
 Proposed Change Specification
@@ -88,12 +108,18 @@ are allowed for the following term-level constructs:
  * Haskell98-syntax data/newtype constructors
  * Class methods
  * Record selectors (that are not duplicates)
+ * Pattern synonyms
 
 The type in the signature must be equivalent with respect to GHC's subtype relation
 to the one GHC would normally assign the construct. That is, the new type may shuffle
 the ordering, placement, and specificity of invisible parameters (type variables and
 constraints) only. All occurrences of the identifiers in question use the declared
 type in the top-level signature.
+
+For a pattern synonym, if the pattern synonym is explicitly bidirectional and has a
+type signature for its type as an expression (as detailed in `this accepted proposal
+ <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0005-bidir-constr-sigs.rst>`_),
+then the new signature affects only the pattern type, not the expression type.
 
 This proposal also subsumes and extends `#54`_, which I will not re-detail here, as it is already
 under consideration by the committee.
