@@ -127,6 +127,12 @@ Proposed Change Specification
 Effect and Interactions
 -----------------------
 
+Note that this proposal adds new syntax to the already-existent feature of inferred variables.
+Effectively, there are two different ``forall``\s: one for specified variables and one for inferred
+variables. This proposal changes nothing about that, but gives users access to quantifying over
+inferred variables. Accordingly, ``forall {a} b. a -> b`` is convertible to, say, ``forall b a. a -> b``
+via GHC's usual invisible-quantification-rearrangement rules.
+
 Inferred variables (those brought into scope with braces) are not available for specialization
 with visible type application, exactly like inferred type variables today. Visible type application
 simply skips over these variables.
