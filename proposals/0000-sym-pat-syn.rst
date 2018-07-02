@@ -30,7 +30,6 @@ Currently, many pattern synonyms must be written using view patterns (extension 
    The purpose of these synonyms is to work with ``ZipList``\s without accidentally using a typeclass instance for ``[]``, which is easy to do with a pattern like ``ZipList (x:xs)``. ``ZNil``, as expected, is quite simple. However, even though it seems reasonable that ``ZCons`` would be similarly simple, it must be written as an explicitly bidirectional synonym, and it requires a view pattern.
 
 2.
-
    ::
 
      data D = D1 String Bool | D2 String Int | D3 Int
@@ -288,6 +287,37 @@ There are some interactions with record syntax and its extensions, which should 
 
 will emit no warnings. The final equation is unreachable when ``P`` is used as a function, as ``P False`` triggers the first equation. However, it is not unreachable when ``P`` is used as a pattern; ``case 2 of P b -> b`` is ``False``.
 
+The typing rules are a bit labyrinthine, so here are a couple examples.
+
+*
+  ::
+
+    pattern WellOfLies undefined <- _
+    -- inferred
+    -- pattern WellOfLies :: forall {a} {b}. a -> b -- {var} denoting variables not available to type application, as usual
+
+  This is also the type of the synonym
+
+  ::
+
+    pattern WellOfLies' lie <- (const undefined -> lie)
+    -- inferred
+    -- pattern WellOfLies' :: forall {a} {b}. a -> b
+
+  which is possible today.
+
+*
+  ::
+
+    data Dict con = con => Dict
+    pattern IdentityWithExtraSteps :: forall con. Dict con -> Dict con
+    pattern IdentityWithExtraSteps Dict = Dict
+    -- inferred
+    -- pattern IdentityWithExtraSteps :: forall a b. a => b => Dict a -> Dict b
+
+  The first thing is to understand the inferred signature. Note that there is no reason for the ``Dict``\s on the LHS and RHS to be of the same constraint. Thus, the one on the left has type ``_a => Dict _a`` for a unification variable ``_a``, and the one on the left ``_b => Dict _b`` for another variable ``_b``. These get generalized, so the inferred signature has two universals and no existentials. Note how either side can introduce new universal variables. ``b`` is provided by the RHS, so it appears in the provided contraints. ``a`` is required to construct the ``Dict a``, so it appears in the required constraints.
+
+  Understanding why the supplied signature is legal takes a bit of thinking. First, instantiate ``a ~ b``. Then, rename them to ``con`` and shrink the provided contraints from ``con`` to ``()``. This leaves ``forall con. con => Dict con -> Dict con``. However, ``con`` is provided on both sides and is required on neither, so it can also be omitted from the required constraints, as when one side, acting as an expression, requires it, the other, as a pattern, provides it.
 
 Costs and Drawbacks
 -------------------
