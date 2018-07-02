@@ -15,10 +15,12 @@ Offer more array resizing primitives
 
 At present, we have ``shrinkMutableByteArray#`` and ``resizeMutableByteArray#``.
 We lack resizing primitives for other types of arrays: ``MutableArray#``,
-``SmallMutableArray#``, and ``MutableArrayArray#``.
+``SmallMutableArray#``, the soon-to-be-deprecated ``MutableArrayArray#``, and
+the soon-to-be-implemented ``UnliftedArray#`` (see
+`Proposal 21 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0021-unlifted-array.rst>`_).
 
-I propose we add them, along with analogues of ``getSizeofMutableByteArray#`` to
-match.
+I propose we add them (with the exception of the ``MutableArrayArray#``
+version), along with analogues of ``getSizeofMutableByteArray#`` to match.
 
 Motivation
 ------------
@@ -39,9 +41,9 @@ operation and let the garbage collector clean up the mess the next time it runs.
 
 Proposed Change Specification
 -----------------------------
-Add ``shrinkMutableArray#``, ``shrinkSmallMutableArray#``, ``shrinkMutableArrayArray#``,
+Add ``shrinkMutableArray#``, ``shrinkSmallMutableArray#``, ``shrinkUnliftedArray#``,
 ``getSizeofMutableArray#``, ``getSizeofSmallMutableArray#``, and
-``getSizeofMutableArrayArray#`` to match the ``ByteArray#`` versions.
+``getSizeofMutableUnliftedArray#`` to match the ``ByteArray#`` versions.
 
 Add a resizing operation for each array type. Unlike ``ByteArray#``, these
 can't simply fill with zeros. The simplest option, and I suspect the most
@@ -53,7 +55,7 @@ Effect and Interactions
 -----------------------
 
 The most obvious downside is that ``sizeofMutableArray#``, ``sizeofSmallMutableArray``,
-and ``sizeofMutableArrayArray#`` will cease to be reliable and we will have to add
+and ``sizeofMutableUnliftedArray#`` will cease to be reliable and we will have to add
 analogues of ``getSizeofMutableByteArray#`` to supplant them. This will break existing
 user code, but I doubt most of it will be very hard to fix.
 
