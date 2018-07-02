@@ -10,7 +10,7 @@ This proposal introduces a language construct for defining kinds without
 having to promote types.  For example, this is how we would
 define a new kind ``Universe``, with three members::
 
-  data kind Universe = Character | Number | Boolean
+  type data Universe = Character | Number | Boolean
 
 Motivation
 ----------
@@ -59,25 +59,25 @@ Relevant links:
 Proposed Change
 ---------------
 
-We propose to add a new GHC extension called ``{-# KindDecls #-}``.
+We propose to add a new GHC extension called ``{-# TypeData #-}``.
 When this extension is enabled, the ``data`` keyword in a data declaration
-may be followed by ``kind``, which signifies that this declaration introduces
-a new kind.  Syntactically, ``kind`` is treated specially only in this context,
-much like ``instance`` is in the context of a ``data instance``.
+may be preceeded by ``type``, which signifies that this declaration affects
+only the types:  the LHS introduces a new kind, and the RHS introduces type
+consctructors that belong to this kind.
 
 Semantically, the new declaration should work in the same way as kinds
 introduced by promotion, with the following differences:
 
-- The name of the "promoted" constructors are not prefixed by ``'`` and match
+- The names of the "promoted" constructors are not prefixed by ``'`` and match
   the names in the declaration exactly.
 - The declaration does not introduce any value-level constructors.
 
 This allows a much more direct declaration of the example from the
 motivation section::
 
-  {-# Language KindDecls, GADTs #-}
+  {-# Language TypeData, GADTs #-}
 
-  data kind Universe = Character | Number | Boolean
+  type data Universe = Character | Number | Boolean
 
   data Type u where
     Character :: Type Character
@@ -85,21 +85,21 @@ motivation section::
     Boolean   :: Type Boolean
 
 The following table summarizes the names introduces by normal
-`data` and `data kind` declarations.
+`data` and `type data` declarations.
 
 ================================= =============== ===============
         Declaration               Value Namespace Type Namespace
 ================================= =============== ===============
 ``data T = MkT``                     ``MkT``      ``T``
-``data kind T = MkT``                (nothing)    ``T``,  ``MkT``
+``type data T = MkT``                (nothing)    ``T``,  ``MkT``
 ================================= =============== ===============
 
 Note that since in GHC types and kinds share the same namespace,
 the following declaration will be rejected::
 
-  data kind T = T     // Invalid
+  type data T = T     // Invalid
 
-Thus, when using a `data kind` the constructors must have different
+Thus, when using a `type data` the constructors must have different
 names from the kind on the left of the ``=`` sign.
 
 
