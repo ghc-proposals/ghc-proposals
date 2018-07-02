@@ -162,13 +162,13 @@ If ``P`` is an explicitly bidirectional synonym, a function application to ``P``
 
 Again, this is very similar to the current behavior, except ``P`` can now do pattern matching when used as a function, and can have multiple equations
 
-Pattern synonym record selectors are defined as follows, where ``fi`` is a field of the pattern synonym ``P`` with corresponding LHS expression ``li`` and with RHS ``r``:
+Pattern synonym record selectors are defined as follows, where ``fi`` is a field of the pattern synonym ``P``:
 
 ::
 
-  fi P {fi} = fi
+  fi P {fi = fi} = fi
 
-(The current rule is ``fi r = fi``, where ``fi`` needs to be bound by ``r``. This obviously stops working here.)
+(The current rule is ``fi r = fi``, where ``fi`` needs to be bound by ``r``.)
 
 The definition of pattern synonym record updates and pattern synonym record constructions do not change, as they are defined in terms of simple desugarings to pattern matches and function applications.
 
