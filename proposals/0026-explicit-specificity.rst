@@ -1,21 +1,13 @@
-.. proposal-number:: Leave blank. This will be filled in when the proposal is
-                     accepted.
-
-.. trac-ticket:: Leave blank. This will eventually be filled with the Trac
-                 ticket number which will track the progress of the
-                 implementation of the feature.
-
-.. implemented:: Leave blank. This will be filled in with the first GHC version which
-                 implements the described feature.
-
-.. highlight:: haskell
-
-This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/99>`_.
-
-.. contents::
-
 Explicit specificity in type variable binders
 =============================================
+
+.. proposal-number:: 26
+.. trac-ticket::
+.. implemented::
+.. highlight:: haskell
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/99>`_.
+.. sectnum::
+.. contents::
 
 This proposal introduces new syntax ``typeRep :: forall {k} (a :: k). ...`` (the
 braces are new) to allow a user to quantify a variable without affecting
