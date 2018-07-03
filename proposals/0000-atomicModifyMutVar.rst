@@ -19,6 +19,13 @@ people have written various stricter versions. Unfortunately, these tend not
 to be as efficient as they could be. I believe the solution is to replace
 ``atomicModifyMutVar#`` with a new primop.
 
+Furthermore, there are situations where we want to modify an ``IORef``
+but don't need to return any additional information. In these
+cases we should be able to use a slightly lighter primop.
+
+Finally, ``atomicWriteIORef`` is currently implemented in terms of
+``atomicModifyIORef``, which is overkill to just get a write barrier. I believe
+we should add a primop specifically to support it.
 
 Motivation
 ------------
@@ -67,6 +74,10 @@ to do such simple things.
 
 Proposed Change Specification
 -----------------------------
+
+``atomicModifyMutVar#`` replacement
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 Replace ``atomicModifyMutVar#`` with ::
 
  atomicModifyMutVar2#
@@ -81,7 +92,7 @@ and add a user-facing wrapper ::
    -> (a -> (a, b))
    -> IO (a, (a, b))
 
-and a convenience function, ``atomicModifyIORef_``, detailed below.
+and a convenience function, ``atomicModifyIORefW``, detailed below.
 
 The new primop would return the previous value of the ``MutVar#`` as well as
 the full result of applying the passed function.  Like ``atomicModifyMutVar``,
@@ -103,23 +114,23 @@ We can define ::
 
  -- A version that ignores the previous value and forces the result
  -- of the function; the latter prevents space leaks in many cases.
- atomicModifyIORef_ :: IORef a -> (a -> (a, b)) -> IO (a, b)
- atomicModifyIORef_ ref f = do
+ atomicModifyIORefW :: IORef a -> (a -> (a, b)) -> IO (a, b)
+ atomicModifyIORefW ref f = do
    (_, p@(_,_)) <- atomicModifyIORef2 ref f
    return p
 
  atomicModifyIORef' ref f = do
-   (!_, !res) <- atomicModifyIORef_ ref f
+   (!_, !res) <- atomicModifyIORefW ref f
    pure res
 
  atomicModifyIORefP ref f = do
-   (_, res) <- atomicModifyIORef_ ref f
+   (_, res) <- atomicModifyIORefW ref f
    pure res
 
  -- Caveat: there's actually an altogether better way to implement this
  -- function; this is only an example.
  atomicWriteIORef ref x = do
-   atomicModifyIORef_ ref (\_ -> (x, ()))
+   atomicModifyIORefW ref (\_ -> (x, ()))
    pure ()
 
 All of these definitions strike me as much simpler and easier to reason about
@@ -144,7 +155,7 @@ determines that ``b`` is used strictly or not used at all. In that case, the
 selector thunk simply won't be created at all.
 
 Extra power
-^^^^^^^^^^^
+###########
 
 The type given above for ``atomicModifyMutVar2#`` is a little bit of a lie.
 Because ``GHC.Prim`` doesn't have (boxed) tuple types, the type would actually
@@ -184,6 +195,43 @@ express the real type using generics ::
 
 This is safe as long as the ``Generic`` instances are derived or otherwise
 legitimate.
+
+Version with no extra return information
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+I think we should add a primop ::
+
+ atomicModifyMutVar_#
+  :: MutVar# s a
+  -> (a -> a)
+  -> State# s
+  -> (# State# s, a, a #)
+
+and a wrapper ::
+
+ atomicModifyIORef_ :: IORef a -> (a -> a) -> IO (a, a)
+
+This would be useful for (particularly strictly) modifying the contents of an
+``IORef`` without producing additional information. It would
+return only the old value and the new one.
+
+Atomic swapping
+^^^^^^^^^^^^^^^
+
+Finally, I think we should add a primop ::
+
+ atomicSwapMutVar#
+   :: MutVar# s a
+   -> a
+   -> State# s
+   -> (# State# s, a #)
+
+and a wrapper ::
+
+ atomicSwapIORef :: IORef a -> a -> IO a
+
+This would just write a value to an ``IORef`` and return its old
+value; it would be used to reimplement ``atomicWriteIORef``.
 
 Effect and Interactions
 -----------------------
@@ -237,10 +285,9 @@ Alternatives
 
 Unresolved questions
 --------------------
-1. What are the best names for the primop and wrappers? I feel
-   very strongly that ``atomicModifyMutVar_`` is *not* the right name
-   (indeed, I think that name is best taken by a *different* function!),
-   but I have no idea what to call the thing.
+1. What are the best names for the primop and wrappers?
+   ``atomicModifyIORefW`` is an utterly terrible name, but I haven't
+   been able to think of a good one.
 
 2. Where should the compatibility wrapper live?
 
@@ -254,4 +301,4 @@ Unresolved questions
 Implementation Plan
 -------------------
 I have drafted `an implementation <https://phabricator.haskell.org/D4884>`_
-which can be modified as needed.
+of ``atomicModifyMutVar2#`` which can be modified as needed.
