@@ -91,26 +91,32 @@ and add a user-facing wrapper ::
    :: IORef a
    -> (a -> (a, b))
    -> IO (a, (a, b))
+ atomicModifyMutVar2 (IORef (STRef ref)) f = IO $ \s ->
+   case atomicModifyMutVar2# ref f s of
+     (# s', old, res #) = res `seq` (# s', (old, res) #)
 
-and a convenience function, ``atomicModifyIORefW``, detailed below.
+and a convenience function, ``atomicModifyIORefW``, detailed below. Note
+that ``atomicModifyIORef2`` is *strict* in the (pair) result of the function.
+Based on my experience reading code using atomic modification, I think
+this is almost always what people actually want.
 
 The new primop would return the previous value of the ``MutVar#`` as well as
 the full result of applying the passed function.  Like ``atomicModifyMutVar``,
 the new primop would be completely lazy. Semantically, ::
 
- atomicModifyMutVar2 mv f =
-   atomicModifyMutVar mv $ \old ->
+ atomicModifyMutVar2# mv f = unIO $
+   atomicModifyMutVar (IORef (STRef mv)) $ \old ->
      let f_old = f old
      in (fst f_old, (old, f_old))
 
-However, ``atomicModifyMutVar2`` would serve as a much better base on which to
+However, ``atomicModifyMutVar2#`` would serve as a much better base on which to
 build stricter operations.
 
 We can define ::
 
- atomicModifyIORef ref f = do
-   (_, ~(_, res)) <- atomicModifyIORef2 ref f
-   pure res
+ atomicModifyIORef (IORef (STRef ref)) f = IO $ \s ->
+   case atomicModifyMutVar2# ref f s of
+     (# s', _, ~(_, res) #) -> (# s', res #)
 
  -- A version that ignores the previous value and forces the result
  -- of the function; the latter prevents space leaks in many cases.
@@ -207,7 +213,7 @@ I think we should add a primop ::
   -> State# s
   -> (# State# s, a, a #)
 
-and a wrapper ::
+and a (result-strict) wrapper ::
 
  atomicModifyIORef_ :: IORef a -> (a -> a) -> IO (a, a)
 
