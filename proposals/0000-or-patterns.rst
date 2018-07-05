@@ -642,6 +642,10 @@ reported in a warning: ::
 Because we're also implementing non-backtracking semantics, we'll implement a
 similar warning.
 
+OCaml 4.06.1 doesn't allow GADTs in or patterns, but there is `ongoing work
+<https://github.com/ocaml/ocaml/pull/1675>`_ for limited GADT support in or
+patterns.
+
 Racket
 ~~~~~~
 
