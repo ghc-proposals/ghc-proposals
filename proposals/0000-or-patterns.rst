@@ -694,6 +694,42 @@ But this fails with a parse error: ::
     24 |         Ok(1 | 2) => { println!("ok"); }
        |              ^
 
+Revisions
+---------
+
+- The very first draft of this proposal suggested type checking an or pattern
+  RHS against both patterns in the or pattern separately. This way of type
+  checking is very flexible (accepting many programs that the final version
+  rejects) and desugaring is still possible to do without duplicating RHSs, but
+  it was quickly rejected as "It would add a huge amount of complexity to a
+  basically-simple feature".
+
+- The next iteration rejected any constructors with existentials, equalities, or
+  constraints. It's suggested that we don't have to be this strict -- simply not
+  binding any existentials, equalities, or constraints in or pattern
+  alternatives would still be simple enough and give us more flexible type
+  checking.
+
+- In the next iteration we allowed GADT constructors or constructors with
+  existentials in or patterns, but with the restriction: "Or patterns **do not**
+  bind existentials, dictionaries, or equalities".
+
+- At this point people asked about a more formal typing rule. Instead of giving
+  a formal typing rule we chose to give a desugaring rule for or patterns,
+  saying that both static and dynamic semantics of or patterns are defined by
+  this rule: ::
+
+    (p1; p2)
+    =
+    ((\x -> case x of p1 -> Just (x1, …, xn); p2 -> Just (x1, …, xn); _ -> Nothing)
+        -> Just (x1, …, xn))
+
+  So an or pattern type checks whenever the desugared pattern type checks, and
+  its dynamic semantics are the same as its desugared pattern's dynamic
+  semantics.
+
+- WIP: We'll be giving a typing rule instead of a desugaring rule.
+
 Implementation Plan
 -------------------
 
