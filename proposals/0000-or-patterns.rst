@@ -308,10 +308,10 @@ patterns. The desugaring rule is: ::
 where ``x`` is a fresh variable and ``x1`` … ``xn`` are variables bound by
 ``p1`` and ``p2``. Note that ``p1`` and ``p2`` bind same set of variables.
 
-The desugaring rule defines both static and dynamic semantics of or patterns. An
-or pattern type checks whenever the desugared pattern type checks. Dynamic
-semantics of an or pattern is the same as its dynamic semantics of its desugared
-pattern.
+The desugaring rule defines both static and dynamic semantics of or patterns.
+An or pattern type checks whenever the desugared pattern type checks. Dynamic
+semantics of an or pattern is the same as the dynamic semantics of its
+desugared pattern.
 
 Here are desugared versions of the examples above: ::
 
