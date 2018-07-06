@@ -26,19 +26,19 @@ Original error message:
 ::
      * Occurs check: cannot construct the infinite kind: k0 ~ k0 -> *
      * In the first argument of `a', namely `a'
-     In the type signature: case1 :: a a
+       In the type signature: case1 :: a a
     |
  13 | case1 :: a a
     |            ^
 
 New error message:
 ::
-           * Occurs check: cannot construct the infinite kind: k0 ~ k0 -> *
-           * In the first argument of `a', namely `a'
-             In the type signature: case1 :: a a
-     |
-  13 | case1 :: a a
-     |            ^
+     * Occurs check: cannot construct the infinite kind: k0 ~ k0 -> *
+     * In the first argument of `a', namely `a'
+       In the type signature: case1 :: a a
+    |
+ 13 | case1 :: a a
+    |            ^
 
 Proposed Change Specification
 -----------------------------
