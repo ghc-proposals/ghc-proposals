@@ -19,7 +19,8 @@ For the most part, GHC’s current type error messages are visually ineffective.
 
 **Example #1**
 
-Input code::
+Input code:
+::
  case1 :: a a
  case1 = undefined
 Original error message:
