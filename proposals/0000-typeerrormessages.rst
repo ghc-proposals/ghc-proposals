@@ -77,8 +77,8 @@ The implemented change would involve the following:
 The general format would look something like this for each error message:
 ::
  Expected something of type [E] but the expression below has type [A].
- [E] (insert expected type here, for example: [Char])
- [A] (insert actual type here, for example: Char)
+ [E] (expected type goes here, for example: [Char])
+ [A] (actual type goes here, for example: Char)
 
 **Notes:**
 •   Relevant bindings will be printed as usual.
