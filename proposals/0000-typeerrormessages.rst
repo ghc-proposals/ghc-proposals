@@ -45,14 +45,16 @@ New error message:
 Proposed Change Specification
 -----------------------------
 The implemented change would involve the following:
-1.) Removal of context phrases beginning with “In the…”
+
+**1.) Removal of context phrases beginning with “In the…”**
            Ex. “In the expression…”
            Ex. “In the equation…”
-2.) Reformatting and rewording of expected vs. actual phrases to use tags. The general format would look something like this for each error message:
+**2.) Reformatting and rewording of expected vs. actual phrases to use tags.** 
+      The general format would look something like this for each error message:
            Expected something of type [E] but the expression below has type [A].
            [E] (insert expected type here, for example: [Char])
            [A] (insert actual type here, for example: Char)
-Notes:
+**Notes:**
 •   Relevant bindings will be printed as usual.
 •   Expression in question will still be printed as usual at the bottom of the message.
 
