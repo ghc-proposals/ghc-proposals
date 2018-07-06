@@ -75,9 +75,10 @@ The implemented change would involve the following:
            Ex. “In the equation…”
 **2.) Reformatting and rewording of expected vs. actual phrases to use tags.** 
 The general format would look something like this for each error message:
-Expected something of type [E] but the expression below has type [A].
-[E] (insert expected type here, for example: [Char])
-[A] (insert actual type here, for example: Char)
+::
+ Expected something of type [E] but the expression below has type [A].
+ [E] (insert expected type here, for example: [Char])
+ [A] (insert actual type here, for example: Char)
 
 **Notes:**
 •   Relevant bindings will be printed as usual.
