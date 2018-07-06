@@ -85,8 +85,11 @@ The general format would look something like this for each error message:
 
 **Notes:**
 •   Relevant bindings will be printed as usual.
+
 •   Expression in question will still be printed as usual at the bottom of the message.
+
 •   "In the argument..." statements will not be removed
+
 •   "In the type signature..." statements will not be removed
 
 
