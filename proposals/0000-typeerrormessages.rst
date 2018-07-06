@@ -1,4 +1,4 @@
-More Effective Type Error Messages
+Improved Type Error Messages
 ==================================
 
 .. proposal-number:: 
