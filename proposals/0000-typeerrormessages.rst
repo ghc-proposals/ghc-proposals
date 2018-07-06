@@ -17,8 +17,9 @@ Motivation
 ------------
 For the most part, GHC’s current type error messages are visually ineffective. The messages are often too long and can be difficult for users to process, even when the problem at hand is actually a simple one. This is largely due to their inclusion of redundant information, and their overall structure. With some rewording, reformatting, and the removal of a few phrases, GHC’s type error messages will better facilitate the troubleshooting and overall development processes for users of all levels.
 
-Example 1
-Input code:
+**Example #1**
+
+Input code
 ::
  case1 :: a a
  case1 = undefined
@@ -30,15 +31,16 @@ Original error message:
     |
  13 | case1 :: a a
     |            ^
-
 New error message:
 ::
-     * Occurs check: cannot construct the infinite kind: k0 ~ k0 -> *
-     * In the first argument of `a', namely `a'
-       In the type signature: case1 :: a a
+     * Expected something of kind [E] but the expression below has kind [A].
+       [E] k0 -> *
+       [A] k0
     |
  13 | case1 :: a a
     |            ^
+     * I got stuck because k0 would be infinite for type checking to succeed.
+
 
 Proposed Change Specification
 -----------------------------
