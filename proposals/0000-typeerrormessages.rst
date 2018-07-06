@@ -43,7 +43,8 @@ New error message:
 
 **Example #2**
 
-Input code::
+Input code:
+::
  case2 :: IO Int#
  case2 = return 1#
 Original error message:
