@@ -19,12 +19,10 @@ For the most part, GHC’s current type error messages are visually ineffective.
 
 **Example #1**
 
-Input code
-::
+Input code::
  case1 :: a a
  case1 = undefined
-Original error message:
-::
+Original error message:::
      * Occurs check: cannot construct the infinite kind: k0 ~ k0 -> *
      * In the first argument of `a', namely `a'
        In the type signature: case1 :: a a
