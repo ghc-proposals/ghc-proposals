@@ -22,7 +22,8 @@ For the most part, GHC’s current type error messages are visually ineffective.
 Input code::
  case1 :: a a
  case1 = undefined
-Original error message:::
+Original error message:
+::
      * Occurs check: cannot construct the infinite kind: k0 ~ k0 -> *
      * In the first argument of `a', namely `a'
        In the type signature: case1 :: a a
@@ -39,6 +40,29 @@ New error message:
     |            ^
      * I got stuck because k0 would be infinite for type checking to succeed.
 
+**Example #2**
+
+Input code::
+ case2 :: IO Int#
+ case2 = return 1#
+Original error message:
+::
+     * Expecting a lifted type, but ‘Int#’ is unlifted
+     * In the first argument of ‘IO’, namely ‘Int#’
+       In the type signature: case2 :: IO Int#
+    |
+ 22 | case2 :: IO Int#
+    |             ^^^^
+New error message:
+::
+     * Expected a kind [E] but the expression below has a kind [A]
+       [E] 'LiftedRep
+       [A] 'IntRep
+     * In the first argument of ‘IO’, namely ‘Int#’
+       In the type signature: case2 :: IO Int#
+    |
+ 22 | case2 :: IO Int#
+    |             ^^^^
 
 Proposed Change Specification
 -----------------------------
