@@ -17,6 +17,8 @@ Motivation
 ------------
 For the most part, GHC’s current type error messages are visually ineffective. The messages are often too long and can be difficult for users to process, even when the problem at hand is actually a simple one. This is largely due to their inclusion of redundant information, and their overall structure. With some rewording, reformatting, and the removal of a few phrases, GHC’s type error messages will better facilitate the troubleshooting and overall development processes for users of all levels.
 
+--improve tool integration (tools may break, but can be fixed)
+
 **Example #1**
 
 Input code:
@@ -66,15 +68,49 @@ New error message:
  22 | case2 :: IO Int#
     |             ^^^^
 
-Proposed Change Specification
+**Example #3**
+
+Input code:
+::
+ data ExpectsUnlifted (a :: TYPE 'UnliftedRep) = ExpectsUnlifted
+ case3 :: ExpectsUnlifted Int
+ case3 = undefined
+
+ class ThisIsAClass (a :: TYPE 'UnliftedRep)  where
+     thisIsAMethod :: a -> Bool
+     case3b :: ThisIsAClass Int
+     case3b = "xx"
+     
+Original error message:
+::
+     * Expecting an unlifted type, but ‘Int’ is lifted
+     * In the first argument of ‘ExpectsUnlifted’, namely ‘Int’
+       In the type signature: case3 :: ExpectsUnlifted Int
+    |
+ 26 | case3 :: ExpectsUnlifted Int
+    |                          ^^^
+New error message:
+::
+     * Expected a kind [E] but the expression below has kind [A]
+       [E] ‘'UnliftedRep’
+       [A] ‘'LiftedRep’
+     * In the first argument of ‘IO’, namely ‘Int#’
+       In the type signature: case2 :: IO Int#
+    |
+ 26 | case3 :: ExpectsUnlifted Int
+    |                          ^^^
+
+Proposed Change Description
 -----------------------------
 The implemented change would involve the following:
 
-**1.) Removal of two types of context phrases beginning with “In the…”**
+**1.) Removal of context phrases beginning with “In the…”**
 
 •   Ex. “In the expression…”
 
 •   Ex. “In the equation…”
+
+•   Remove the occurs check
 **2.) Reformatting and rewording of expected vs. actual phrases to use tags.** 
 
 The general format would look something like this for each error message:
@@ -82,26 +118,25 @@ The general format would look something like this for each error message:
  Expected something of type [E] but the expression below has type [A].
  [E] (expected type goes here, for example: [Char])
  [A] (actual type goes here, for example: Char)
-
+unifying
 **Notes:**
 •   Relevant bindings will be printed as usual.
 
 •   Expression in question will still be printed as usual at the bottom of the message.
-
-•   "In the argument..." statements will not be removed
-
-•   "In the type signature..." statements will not be removed
 
 
 Effect and Interactions
 -----------------------
 The removal of the extra context phrases will significantly shorten the type error messages, making for more digestible feedback for GHC users. The new tagging format of the “expected vs. actual” phrases serves to establish a clearer distinction between the two mismatched types in question, allowing for easier debugging and tool integration.
 
+--removing the context functions will reduce the size of the code!!
+
 
 Costs and Drawbacks
 -------------------
 If anyone finds the "In the..." context phrases helpful or in general likes the current error messages as they are, they will probably be unhappy with this change. However, I believe that this change will greatly improve the learnability of haskell for beginners.
 
+-- users will need to get used to the new format and experience some disorientation
 
 Alternatives
 ------------
@@ -114,4 +149,4 @@ Unresolved questions
 
 Implementation Plan
 -------------------
-If approved, the change will be implemented by Nadine Adnane and Dorothy Feng, research students in Dr. Richard Eisenberg’s lab.
+If approved, the change will be implemented by Nadine Adnane and Dorothy Feng, research students in Richard Eisenberg’s lab.
