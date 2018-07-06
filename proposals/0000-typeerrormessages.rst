@@ -71,9 +71,12 @@ Proposed Change Specification
 The implemented change would involve the following:
 
 **1.) Removal of two types of context phrases beginning with “In the…”**
+
 •   Ex. “In the expression…”
+
 •   Ex. “In the equation…”
 **2.) Reformatting and rewording of expected vs. actual phrases to use tags.** 
+
 The general format would look something like this for each error message:
 ::
  Expected something of type [E] but the expression below has type [A].
