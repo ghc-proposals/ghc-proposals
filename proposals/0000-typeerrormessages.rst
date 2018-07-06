@@ -70,9 +70,9 @@ Proposed Change Specification
 -----------------------------
 The implemented change would involve the following:
 
-**1.) Removal of context phrases beginning with “In the…”**
-      Ex. “In the expression…”::
-      Ex. “In the equation…”
+**1.) Removal of two types of context phrases beginning with “In the…”**
+•   Ex. “In the expression…”
+•   Ex. “In the equation…”
 **2.) Reformatting and rewording of expected vs. actual phrases to use tags.** 
 The general format would look something like this for each error message:
 ::
@@ -83,6 +83,8 @@ The general format would look something like this for each error message:
 **Notes:**
 •   Relevant bindings will be printed as usual.
 •   Expression in question will still be printed as usual at the bottom of the message.
+•   "In the argument..." statements will not be removed
+•   "In the type signature..." statements will not be removed
 
 
 Effect and Interactions
