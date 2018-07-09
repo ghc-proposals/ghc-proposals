@@ -958,10 +958,12 @@ A staple of this proposal is:
 *it does not modify Haskell for those who don't want to use it, or
 don't know about linear types.*
 
-Even if an API exports linear types, they are easy to ignore: just
-pretend that the dotted arrows are regular arrows. It is always safe
-in all contexts to substitute something with a linear arrow where
-a regular arrow was expected.
+A library which exports function with top-level linear arrows (aka
+first-order linear arrows) only imposes a light burden on the library
+consumer: they have to η-expand the function to use it as an
+unrestricted function (linear arrows in negative position, on the
+other hand, express a requirement by the API, that the consumer pass a
+linear functions, and requires care on the part of the consumer).
 
 Linear data types are just regular Haskell types, which means it is
 cheap to interact with existing libraries.
