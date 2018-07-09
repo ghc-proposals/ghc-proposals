@@ -997,9 +997,6 @@ consumed. So ``newtype`` must not accept non-linear arrow with
 ``-XLinearTypes``: the above produces an error (see also `Without
 -XLinearTypes`_ below).
 
-These are interpreted as linear ``newtype``-s and a
-warning is emitted (see Specification_ above).
-
 Pattern-matching
 ----------------
 
