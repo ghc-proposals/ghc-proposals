@@ -276,8 +276,8 @@ to represent the multiplicities:
 
   ::
 
-    type family (:+) :: Multiplicity -> Multiplicity -> Multiplicity
-    type family (:*) :: Multiplicity -> Multiplicity -> Multiplicity
+    type family (:+) (p :: Multiplicity) (q :: Multiplicity) :: Multiplicity
+    type family (:*) (p :: Multiplicity) (q :: Multiplicity) :: Multiplicity
 
   Note: unification of
   multiplicities will be performed up to the semiring laws for
