@@ -359,9 +359,13 @@ With the GADT syntax, multiplicity of the arrows is honoured:
   data Foo2 where
     Bar2 :: A ->. B -> Foo2
 
-means that ``Bar2 :: A ->. B -> Foo2``. This means that *data types
-written in GADT syntax with the ``(->)`` arrow are not the same as if
-they were defined with Haskell'98 syntax*.
+means that ``Bar2 :: A ->. B -> Foo2``. This means that, with
+``-XLinearTypes`` on, *data types written in GADT syntax with the
+``(->)`` arrow are not the same as if they were defined with
+Haskell'98 syntax*. This only holds in modules with ``-XLinearTypes``
+turned on, however: see `Without -XLinearTypes`_, for the
+specification changes in modules where ``-XLinearTypes`` is not turned
+on.
 
 The definition of consuming a value in a data type exactly once must
 be refined to take the multiplicities of fields into account:
