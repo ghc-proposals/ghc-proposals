@@ -289,6 +289,52 @@ The linear and unrestricted arrows are aliases:
 - ``(->.)`` (ASCII syntax) and ``(⊸)`` (Unicode syntax) are aliases
   for ``(:'One ->)``
 
+Printing
+--------
+
+This proposal introduces a new compiler flag to control how
+multiplicities are printer: ``-fprint-explicit-multiplicities``. It is
+turned off by default.
+
+When ``-fprint-explicit-multiplicities`` is turned on, every arrows
+are printed in the form ``(: p ->)``. For instance, the type of the
+unrestricted ``fmap`` function from ``base`` will be printed as:
+
+::
+
+    fmap :: Functor f => (a :'Omega-> b) :'Omega-> f a :'Omega-> f b
+
+And a linearised ``List.map`` would be printed as:
+
+::
+
+    lmap :: (a :'One-> b) :'Omega-> [a] :'One-> [b]
+
+When ``-fprint-explicit-multiplicities`` is turned off (as is the
+default), the shorthands are used when available. The above examples
+are printed as
+
+::
+
+    fmap :: Functor f => (a -> b) -> f a -> f b
+    lmap :: (a ->. b) -> [a] ->. [b]
+
+Where no shorthand is available, as is the case for multiplicity
+polymorphic arrows, then the long form is used in both cases. So a
+multiplicity polymorphic ``List.map`` function would be printed as
+
+::
+
+    -- With -fprint-explicit-multiplicities on
+    pmap :: (a :p-> b) :'Omega-> [a] :p-> [b]
+
+    -- With -fprint-explicit-multiplicities off
+    pmap :: (a :p-> b) -> [a] :p-> [b]
+
+*Note on Core printing*: ``-fprint-explicit-multiplicities`` is used
+ to control the printing of arrows in Core (in particular in the
+ linter's error messages) in the same way.
+
 Constructors & pattern-matching
 -------------------------------
 
