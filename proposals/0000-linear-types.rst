@@ -338,6 +338,8 @@ multiplicity polymorphic ``List.map`` function would be printed as
 Constructors & pattern-matching
 -------------------------------
 
+.. _`Constructors & pattern-matching`
+
 Constructors of data types defined with the Haskell'98 syntax
 
 ::
@@ -999,6 +1001,19 @@ warning is emitted (see Specification_ above).
 Pattern-matching
 ----------------
 
+Constructor patterns
+~~~~~~~~~~~~~~~~~~~~
+
+See `Constructors & pattern-matching`_.
+
+Wildcard patterns
+~~~~~~~~~~~~~~~~~
+
+Linear wildcard patterns are disallowed.
+
+Lazy patterns
+~~~~~~~~~~~~~
+
 Lazy pattern-matching is only allowed for unrestricted (multiplicity
 ``ω``) patterns: lazy patterns are defined in terms of projections
 which only exist in the unrestricted case. For instance
@@ -1015,7 +1030,7 @@ Means
   swap' :: (a,b) ->. (b,a)
   swap' xy = (snd xy, fst xy)
 
-Which is not well-typed in particular since fst is not.
+Which is not well-typed since, in particular, ``fst`` is not linear.
 
 ::
 
@@ -1024,13 +1039,25 @@ Which is not well-typed in particular since fst is not.
 
 So ``swap'`` must be given the type ``(a,b) -> (b,a)``.
 
-Unresolved questions:
+Strict patterns
+~~~~~~~~~~~~~~~
+
+Strict patterns are linear, including when applied to a variable, so
+that
+
+::
+
+    ($!) :: (a :p-> b) ->. a :p-> b
+    f $! x = let !vx = x in f x
+
+Unresolved pattern forms
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 - It is unknown at this point whether view patterns can be linear
-- It is unknown at this point whether ``@`` pattern of the form
-  ``x@C _ _`` can be considered linear (it is as much a practical
-  question of whether there is a reasonable way to implement such a
-  check as a theoretical question of whether we can justify it).
+- It is unknown at this point whether ``@`` pattern of the form ``x@C
+  _ _`` can be considered linear (it is theoretically justified, but
+  it is not clear in practice whether there is a reasonable way to
+  implement check linearity of such a pattern).
 - There is no account yet of linear pattern synonyms.
 
 Without -XLinearTypes
