@@ -463,6 +463,32 @@ there is no ``Category`` instance for an arbitrary ``p`` (nor for
 of the `Linear constructors`_ section). But monomorphising to ``p=ω``,
 lets the constraint solver pick the intended ``Category`` instance.
 
+Strict & unpacked fields
+------------------------
+
+Strict fields, whether unpacked or not, are treated, for the purpose of linearity, just like
+regular fields, *e.g.*
+
+::
+
+    data S a = S !a (S a)
+
+    -- S :: a ->. S a ->. S a
+    --
+    -- Or, polymorphised when used as a term:
+    --
+    -- S :: forall p q. a :p->. S a :q-> S a
+
+::
+
+    data T a = T {-# UNPACK #-}!(a, a) a
+
+    -- T :: (a, a) ->. a ->. T a
+    --
+    -- Or, polymorphised when used as a term:
+    --
+    -- T :: forall p q. (a, a) :p->. a :q-> T a
+
 Base
 ----
 
