@@ -570,10 +570,11 @@ of multiplicity ``p``, or ``0``, in a term ``u`` if:
 - ``u = λy. v`` and the usage of ``x`` in ``v`` is ``p``.
 
 A variable's usage is correct if it is smaller than or equal to the
-multiplicity annotation of the variable. Incorrect usage results in
-a type error. This definition is close to the intended implementation
-of multiplicities. The `paper <https://arxiv.org/abs/1710.09756>`_ has
-a more declarative definition.
+multiplicity annotation of the variable (note that 0 is *not* smaller
+than one). Incorrect usage results in a type error. This definition is
+close to the intended implementation of multiplicities. The `paper
+<https://arxiv.org/abs/1710.09756>`_ has a more declarative
+definition.
 
 The multiplicity of a variable introduced by a λ-abstraction is taken
 from the surrounding typing information (typically a type annotation
