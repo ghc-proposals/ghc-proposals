@@ -1047,7 +1047,7 @@ that
 ::
 
     ($!) :: (a :p-> b) ->. a :p-> b
-    f $! x = let !vx = x in f x
+    f $! x = let !vx = x in f vx
 
 Unresolved pattern forms
 ~~~~~~~~~~~~~~~~~~~~~~~~
