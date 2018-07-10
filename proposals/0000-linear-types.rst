@@ -728,9 +728,10 @@ this field is ω.
 
 Projections take an *unrestricted* record as argument: ``f1 :: R ->
 A1`` (because otherwise the other fields would not be consumed). There
-is an exception to this rule: if all the other fields are
-unrestricted, then ``f1`` is made linear: ``f1 :: R ->. A1``. This
-non-uniformity is justified by the standard ``newtype`` idiom:
+is an exception to this rule: if a record type has a single
+constructor, and all the other fields are unrestricted, then ``f1`` is
+made linear: ``f1 :: R ->. A1``. This non-uniformity is justified by
+the standard ``newtype`` idiom:
 
 ::
 
@@ -1354,6 +1355,48 @@ problem, let us outline an alternative plan.
   unrestricted arrows in their definitions. Even with
   ``-XLinearTypes`` turned on. When ``-XLinearTypes`` is on, a warning
   is emitted.
+
+Linear projections of records
+-----------------------------
+
+Other strategies, compared to the one suggested in the Records_ section, could be
+deployed regarding the multiplicity of record projections.
+
+- We could make record always be unrestricted. This is simpler, but, in the idiom
+
+  ::
+
+    newtype Foo = Foo { unFoo :: A }
+
+  ``unFoo`` would be essentially useless in linearly typed
+  code. Experience with the prototype implementation indicates that
+  this would be surprising, and somewhat awkward, as it often ends up
+  being replaced by:
+
+  ::
+
+    newtype Foo = Foo A
+
+    unFoo :: Foo ->. A
+    unFoo (Foo a) = a
+
+  If the programmer is going to write it anyway, we might as well
+  generate this code for them.
+- We could only generate linear projections if there is a single
+  projection. This is a proper restriction of the design in the
+  Records_ Section. It isn't clear that it offers any real
+  simplification to the current proposal, either for the programmer or
+  for the code base. So it doesn't seem worth it.
+- A generalisation of the current proposal would be to allow linear
+  projections from a data type with several constructor. In this case,
+  the linear projection ``proj`` could be partial (*i.e.* not every
+  constructor need to feature a ``proj`` field), and every field, *in
+  every constructor* which is not a ``proj`` field must be
+  unrestricted.
+
+  This is a more complex specification. And there is no known use case
+  for such a generalisation yet.
+
 
 Syntax of binders with multiplicity
 -----------------------------------
