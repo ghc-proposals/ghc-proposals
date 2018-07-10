@@ -137,8 +137,8 @@ be able to get rid of ``*`` in 8 years.
 Proposed Change Specification
 -----------------------------
 
-In GHC 8.6, the ``-XStarIsType`` extension is enabled by default, but disabled
-by ``-XTypeOperators``. There is a warning, ``-fwarn-star-is-type``, disabled
+In GHC 8.6, the ``-XStarIsType`` extension is enabled by default.
+There is a warning, ``-fwarn-star-is-type``, disabled
 by default. This warning is triggered whenever ``*`` is used to denote ``Type``::
 
     ghci> :k *
@@ -177,20 +177,6 @@ by this breaking change (see the discussion for the methods used).
 * There will be a point in time when packages can support the last 7 years of GHC releases
   and all future releases without `-XCPP`. Packages that only support GHC 8.0 and higher can
   migrate right away without any use of `-XCPP`.
-
-Adjustment to `#20 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0020-no-type-in-type.rst>`_
-^^^^^^^^^^^^^^^^^^
-
-As it stands, we have the following plan in `#20 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0020-no-type-in-type.rst>`_:
-
-  For two releases, ``-XTypeOperators`` will imply ``-XNoStarIsType``
-
-this gets simplified to:
-
-  ``-XTypeOperators`` will imply ``-XNoStarIsType``
-
-as it is counter-productive to re-enable ``-XStarIsType`` in two releases if
-the end-goal is to remove it from the language.
 
 Costs and Drawbacks
 -------------------
