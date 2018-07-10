@@ -1150,6 +1150,8 @@ arrow:
   had to make a choice. But it is not one that we feel particularly
   about.
 - ``(-p->)``
+- ``(|p->)``. The following mnemonic has been proposed by @goldfirere:
+  it starts with a vertical *line* hence pertains to *line*-arity.
 
 Here are other suggestions which have been floated, but we don't
 believe are very good:
