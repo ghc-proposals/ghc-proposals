@@ -54,7 +54,7 @@ Motivation
 
 * If we plan to remove ``*`` from the language at some point, we should start updating
   error messages sooner than later.
-  
+
 * In truth, GHC always has ``Type :: Type``, whether you say ``-XTypeInType``
   or no. Thus, the real extension name should be ``-XPolyKinds``, because it's
   kind polymorphism that the user wants, not the always-true ``Type :: Type``.
@@ -71,7 +71,7 @@ Motivation
   The one difference between ``-XPolyKinds`` and ``-XTypeInType`` that's worth preserving
   is that the former allows easy access to the kind ``*``. The ``-XStarIsType`` extension
   is meant to preserve this difference.
-  
+
 Proposed Change Specification
 -----------------------------
 
@@ -105,9 +105,9 @@ Proposed Change Specification
 
 2. ``-XDataKinds`` would now promote GADTs and GADT constructors. This change is fully
    backward compatible; no migration would be necessary.
-      
+
 3. Two releases after this proposal is implemented, deprecate ``-XTypeInType``.
-      
+
 4. Introduce a new language extension ``-XStarIsType``, with the following behavior:
 
    a. ``-XStarIsType`` is on by default.
@@ -130,12 +130,6 @@ Proposed Change Specification
       scoping rules. (If ``-XTypeOperators`` is not in effect, use of ``*`` in
       a type will be an error.)
 
-   f. For two releases, ``-XTypeOperators`` will imply ``-XNoStarIsType``, to
-      provide a migration path for code that uses the binary operator ``*``. (After
-      two releases, this code can include ``-XNoStarIsType`` explicitly without
-      going against the three-release policy.) Users can re-enable ``-XStarIsType``
-      after ``-XTypeOperators`` is enabled if they wish.
-
    The ``-XStarIsType`` idea is due to David Feuer, @treeowl.
 
 Effect and Interactions
@@ -147,13 +141,13 @@ Effect and Interactions
   context means:
 
   1. If ``-XTypeInType`` is in effect:
-     
+
      a. If the use of ``*`` refers to ``Data.Kind.*``, then parse it as an
 	alphanumeric identifier; it means ``Type``.
      b. If ``*`` refers to some other type, it is a binary operator.
 
   2. If ``-XTypeInType`` is not in effect:
-     
+
      a. If the use of ``*`` is in a context that is syntactically understood
 	to be a kind, ``*`` is parsed as an alphanumeric identifier and means
 	``Type``.
@@ -178,23 +172,21 @@ Effect and Interactions
 
 .. _`#103`: https://github.com/ghc-proposals/ghc-proposals/pull/103
 
-* Migration path: For most users, no migration will be necessary. The exception
-  will be those programs that have both
+* Migration path: For most users, no migration will be necessary.
+  The exception will be those programs which define or use ``*`` as a type family.
+  Currently working code like:
 
-  - ``-XTypeOperators`` enabled
-  - Use ``*`` as a kind
+  ::
 
-  These modules will suddenly have ``-XNoStarIsType`` in effect, meaning that
-  their use of ``*`` will refer to a binary operator. These modules have a
-  choice of how to proceed. They can either:
+    {-# LANGUAGE KindSignatures, DataKinds, TypeOperators #-}
+    import Data.Proxy
+    import GHC.TypeLits
 
-  1. Declare ``-XStarIsType``. If they ever
-     use ``*`` as a binary operator, those uses would have to be qualified
-     with a module prefix.
+    mult :: forall (m :: Nat) (n :: Nat). Proxy m -> Proxy n -> Proxy (m * n)
+    mult _ _ = Proxy
 
-  2. Import ``Type`` from ``Data.Kind`` and change uses of ``*`` to ``Type``.
-     If they already have a ``Type`` in scope, they may have to use qualified
-     imports, etc.
+  will need to explicitly enable ``-XNoStarIsType``.
+  See `Have TypeOperators imply NoStarIsType`_ for an alternative.
 
 Costs and Drawbacks
 -------------------
@@ -213,7 +205,7 @@ Costs and Drawbacks
   values will have to be updated to use ``Type`` instead, as imported from ``Data.Kind``.
   This change is backward compatible to GHC 8.0. (Alternatively, they could
   use ``-XStarIsType`` and fully-qualify their uses of the binary operator ``*``.)
-  
+
 Alternatives
 ------------
 
@@ -249,10 +241,10 @@ Alternatives
      of ``*``, we'll be further from the behavior that the Report authors intended at the
      time. However, as the Reports do not specify error message text, this change does
      not bring us further from formal compliance to the letter of the Report. It would bring
-     us further from the spirit of the Report.   
-   
+     us further from the spirit of the Report.
+
 .. |star| unicode:: U+2605 .. unicode star
-   
+
 6. Currently, and in this proposal, both ``*`` and its unicode variant |star| are
    treated identically. One way to have our cake and eat it too is to follow the plan
    above for ``*`` but force |star| to always lex as an alphanumeric identifier
@@ -285,7 +277,59 @@ Alternatives
    I find both arguments compelling independently, and so I withdraw support for this
    alternative. Nevertheless, I'm keeping it in the proposal in case someone wants to
    argue in support of it.
-   
+
+Have TypeOperators imply NoStarIsType
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+One alternative is to have an additional 4.f step in the Proposed Change Specification section:
+
+   f. For two releases, ``-XTypeOperators`` will imply ``-XNoStarIsType``, to
+      provide a migration path for code that uses the binary operator ``*``. (After
+      two releases, this code can include ``-XNoStarIsType`` explicitly without
+      going against the three-release policy.) Users can re-enable ``-XStarIsType``
+      after ``-XTypeOperators`` is enabled if they wish.
+
+This alternative is problematic. It's intended to help migration, but
+implementation evidence shows it causes more trouble.  If the code being
+migrated only enables ``-XTypeOperators``, then 4.f will indeed be helpful, but
+there is a lot of code which also enables ``-XKindSignatures`` in which
+``-XNoStarInType`` changes the semantics. For example, this code from the
+``hashable`` library
+
+::
+
+    newtype  Tagged  (s :: * -> *) = Tagged {unTagged :: Int}
+
+would fail to compile with the following error:
+
+::
+
+  Data/Hashable/Generic.hs:116:22: error:
+      Operator applied to too few arguments: *
+      With NoStarIsType (implied by TypeOperators), ‘*’ is treated as a regular type operator.
+      Did you mean to use ‘Type’ from Data.Kind instead?
+      |
+  116 | newtype Tagged (s :: * -> *) = Tagged {unTagged :: Int}
+      |
+
+Many other libraries in the wild simultaneously enable ``-XTypeOperators`` and use
+``*`` as a kind, including servant, aeson, cereal, cassava, and others, so
+including 4.f would break all of these libraries. While not having 4.f also
+results in some breakage, far fewer libraries in the wild break without 4.f
+than with 4.f, so this was ultimately decided against.
+
+If ``-XTypeOperators`` were to imply ``-XNoStarIsType``, then any code which
+uses ``*`` as kind instead of a binary operator would have to migrate somehow.
+Two migration options are:
+
+1. Declare ``-XStarIsType``. If they ever
+   use ``*`` as a binary operator, those uses would have to be qualified
+   with a module prefix.
+
+2. Import ``Type`` from ``Data.Kind`` and change uses of ``*`` to ``Type``.
+   If they already have a ``Type`` in scope, they may have to use qualified
+   imports, etc.
+
 Unresolved questions
 --------------------
 
