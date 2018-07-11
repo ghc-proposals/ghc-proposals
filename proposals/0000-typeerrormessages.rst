@@ -118,6 +118,34 @@ New error message:
     |
  32 | case4 :: Maybe
     |          ^^^^^
+     
+     * Expecting one more argument to 'Maybe'
+     
+**Example #5**
+
+Input code:
+::
+ data HighKind :: (* -> *) -> *
+ case5 :: HighKind Either
+ case5 = undefined
+     
+Original error message:
+::
+     * Expecting one more argument to `Either'
+       Expected kind `* -> *', but `Either' has kind `* -> * -> *'
+     * In the first argument of `HighKind', namely `Either'
+       In the type signature: case5 :: HighKind Either
+    |
+ 36 | case5 :: HighKind Either
+    |                   ^^^^^^
+New error message:
+::
+     * Expected a kind [E] but the expression below has kind [A]
+       [E] *
+       [A] * -> *
+    |
+ 36 | case5 :: HighKind Either
+    |                   ^^^^^^
 
 Proposed Change Description
 -----------------------------
