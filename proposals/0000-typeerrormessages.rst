@@ -276,7 +276,7 @@ The implemented change would involve the following:
 
 **1.) Removal of context phrases beginning with “In the…”**
 
-•   Ex. “In the expression…” and “In the equation…”
+•   Ex. “In the expression…”, “In the equation…”, "In the argument...", "In the type signature...", "In the class declaration...", etc.
 
 **2.) Reformatting and rewording of all statements to use tags. This is meant to unify the many different types of messages.** 
 
