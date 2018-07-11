@@ -128,9 +128,7 @@ The general format would look something like this for each error message:
 
 Effect and Interactions
 -----------------------
-The removal of the extra context phrases will significantly shorten the type error messages, making for more digestible feedback for GHC users. The new tagging format of the “expected vs. actual” phrases serves to establish a clearer distinction between the two mismatched types in question, allowing for easier debugging and tool integration.
-
---removing the context functions will reduce the size of the code!!
+The removal of the extra context phrases will significantly shorten the type error messages, making for more digestible feedback for GHC users. The new tagging format of the “expected vs. actual” phrases serves to establish a clearer distinction between the two mismatched types in question, allowing for easier debugging and tool integration. Additionally, this change will shorten the compiler code by removing several functions currently involved in the printing of the "In the..." context expressions.
 
 
 Costs and Drawbacks
