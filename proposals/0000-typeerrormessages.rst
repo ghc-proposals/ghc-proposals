@@ -11,13 +11,11 @@ Improved Type Error Messages
 .. sectnum::
 .. contents::
 
-To improve GHC’s current type error messages by removing statements beginning with “In the …” and modifying the format of the current “expected vs. actual” statements for improved clarification.
+To improve the clarity of GHC’s current type error messages by modifying their structure and by completely removing statements beginning with “In the …”.
 
 Motivation
 ------------
-For the most part, GHC’s current type error messages are visually ineffective. The messages are often too long and can be difficult for users to process, even when the problem at hand is actually a simple one. This is largely due to their inclusion of redundant information, and their overall structure. With some rewording, reformatting, and the removal of a few phrases, GHC’s type error messages will better facilitate the troubleshooting and overall development processes for users of all levels.
-
---improve tool integration (tools may break, but can be fixed)
+For the most part, GHC’s current type error messages are visually ineffective. The messages are often too long and can be difficult for users to process, even when the problem at hand is actually a simple one. This is largely due to their inclusion of redundant information, and their overall structure. With some rewording, reformatting, and the removal of a few phrases, GHC’s type error messages will better facilitate the troubleshooting and overall development processes for users of all levels. This change also has the potential to improve tool integration.
 
 **Example #1**
 
@@ -106,19 +104,22 @@ The implemented change would involve the following:
 
 **1.) Removal of context phrases beginning with “In the…”**
 
-•   Ex. “In the expression…”
+•   Ex. “In the expression…” and “In the equation…”
 
-•   Ex. “In the equation…”
+**2.) Reformatting and rewording of all statements to use tags. This is meant to unify the many different types of messages.** 
 
-•   Remove the occurs check
-**2.) Reformatting and rewording of expected vs. actual phrases to use tags.** 
+•   Ex. “Expecting an unlifted type, but ‘Int’ is lifted”
 
 The general format would look something like this for each error message:
 ::
  Expected something of type [E] but the expression below has type [A].
  [E] (expected type goes here, for example: [Char])
  [A] (actual type goes here, for example: Char)
-unifying
+
+**2.) Removal of occurs check** 
+
+•   Ex. "Occurs check: cannot construct the infinite kind: k0 ~ k0 -> *"
+
 **Notes:**
 •   Relevant bindings will be printed as usual.
 
@@ -134,9 +135,7 @@ The removal of the extra context phrases will significantly shorten the type err
 
 Costs and Drawbacks
 -------------------
-If anyone finds the "In the..." context phrases helpful or in general likes the current error messages as they are, they will probably be unhappy with this change. However, I believe that this change will greatly improve the learnability of haskell for beginners.
-
--- users will need to get used to the new format and experience some disorientation
+If anyone finds the "In the..." context phrases helpful or in general likes the current error messages as they are, they will probably be unhappy with this change. However, I believe that this change will greatly improve the learnability of haskell for beginners, as well as the overall experience of using GHC for most users after the initial disorientation.
 
 Alternatives
 ------------
@@ -149,4 +148,4 @@ Unresolved questions
 
 Implementation Plan
 -------------------
-If approved, the change will be implemented by Nadine Adnane and Dorothy Feng, research students in Richard Eisenberg’s lab.
+If approved, the change will be implemented by Nadine Adnane, a research student in Richard Eisenberg’s lab.
