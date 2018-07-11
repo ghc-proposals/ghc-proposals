@@ -60,8 +60,6 @@ New error message:
      * Expected a kind [E] but the expression below has a kind [A]
        [E] 'LiftedRep
        [A] 'IntRep
-     * In the first argument of ‘IO’, namely ‘Int#’
-       In the type signature: case2 :: IO Int#
     |
  22 | case2 :: IO Int#
     |             ^^^^
@@ -74,29 +72,59 @@ Input code:
  case3 :: ExpectsUnlifted Int
  case3 = undefined
 
- class ThisIsAClass (a :: TYPE 'UnliftedRep)  where
+ class ExampleClass (a :: TYPE 'UnliftedRep)  where
      thisIsAMethod :: a -> Bool
-     case3b :: ThisIsAClass Int
+     case3b :: ExampleClass Int
      case3b = "xx"
      
 Original error message:
 ::
      * Expecting an unlifted type, but ‘Int’ is lifted
-     * In the first argument of ‘ExpectsUnlifted’, namely ‘Int’
+     * In the first argument of ‘ExampleClass’, namely ‘Int’
        In the type signature: case3 :: ExpectsUnlifted Int
+       In the class declaration for `ExampleClass`
     |
- 26 | case3 :: ExpectsUnlifted Int
-    |                          ^^^
+ 26 | case3 :: ExampleClass Int
+    |                       ^^^
 New error message:
 ::
      * Expected a kind [E] but the expression below has kind [A]
        [E] ‘'UnliftedRep’
        [A] ‘'LiftedRep’
-     * In the first argument of ‘IO’, namely ‘Int#’
-       In the type signature: case2 :: IO Int#
     |
- 26 | case3 :: ExpectsUnlifted Int
-    |                          ^^^
+ 26 | case3 :: ExampleClass Int
+    |                       ^^^
+
+**Example #4**
+
+Input code:
+::
+ data ExpectsUnlifted (a :: TYPE 'UnliftedRep) = ExpectsUnlifted
+ case3 :: ExpectsUnlifted Int
+ case3 = undefined
+
+ class ExampleClass (a :: TYPE 'UnliftedRep)  where
+     thisIsAMethod :: a -> Bool
+     case3b :: ExampleClass Int
+     case3b = "xx"
+     
+Original error message:
+::
+     * Expecting an unlifted type, but ‘Int’ is lifted
+     * In the first argument of ‘ExampleClass’, namely ‘Int’
+       In the type signature: case3 :: ExpectsUnlifted Int
+       In the class declaration for `ExampleClass`
+    |
+ 26 | case3 :: ExampleClass Int
+    |                       ^^^
+New error message:
+::
+     * Expected a kind [E] but the expression below has kind [A]
+       [E] ‘'UnliftedRep’
+       [A] ‘'LiftedRep’
+    |
+ 26 | case3 :: ExampleClass Int
+    |                       ^^^
 
 Proposed Change Description
 -----------------------------
