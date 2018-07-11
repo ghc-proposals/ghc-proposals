@@ -115,11 +115,11 @@ New error message:
      * Expected a kind [E] but the expression below has kind [A]
        [E] *
        [A] * -> *
+     
+     * Expecting one more argument to 'Maybe'
     |
  32 | case4 :: Maybe
     |          ^^^^^
-     
-     * Expecting one more argument to 'Maybe'
      
 **Example #5**
 
@@ -198,7 +198,9 @@ New error message:
      * Expected type [E] but the expression below has type [A]
        [E] (a, b)
        [A] a
-       
+       where `a' is a rigid type variable bound by
+         the type signature for:
+           case7 :: forall a b c. (a, b, c) -> (a, b)
      * Relevant bindings include
          y :: b
          x :: a
@@ -231,17 +233,42 @@ Original error message:
 New error message:
 ::
      * Expected type [E] but the expression below has type [A]
-       [E] (a, b)
-       [A] a
-       
+       [E] c
+       [A] [Char]
+       where `c' is a rigid type variable bound by
+         the type signature for:
+           case8 :: forall a b c. (a, b) -> (a, b, c)
      * Relevant bindings include
-         y :: b
-         x :: a
-         case7 :: (a, b, c) -> (a, b)
+         case8 :: (a, b) -> (a, b, c)
     |
  54 | case8 (x,y) = (x, y,"")
     |                     ^^
 
+**Example #9**
+
+Input code:
+::
+ case9 :: String -> String
+ case9 xs = True
+     
+Original error message:
+::
+     * Couldn't match type `Bool' with `[Char]'
+       Expected type: String
+         Actual type: Bool
+     * In the expression: True
+       In an equation for `case9': case9 xs = True
+    |
+ 57 | case9 xs = True
+    |            ^^^^
+New error message:
+::
+     * Expected type [E] but the expression below has type [A]
+       [E] String
+       [A] Bool
+    |
+ 57 | case9 xs = True
+    |            ^^^^
 
 Proposed Change Description
 -----------------------------
