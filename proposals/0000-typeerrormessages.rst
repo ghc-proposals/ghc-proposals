@@ -288,7 +288,7 @@ The general format would look something like this for each error message:
  [E] (expected type goes here, for example: [Char])
  [A] (actual type goes here, for example: Char)
 
-**2.) Removal of occurs check** 
+**2.) Removal of occurs check statements** 
 
 •   Ex. "Occurs check: cannot construct the infinite kind: k0 ~ k0 -> *"
 
