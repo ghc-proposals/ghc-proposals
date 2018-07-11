@@ -293,9 +293,9 @@ The general format would look something like this for each error message:
 •   Ex. "Occurs check: cannot construct the infinite kind: k0 ~ k0 -> *"
 
 **Notes:**
-•   Relevant bindings will be printed as usual.
+•   Relevant bindings will be printed as usual, including the "bound at... + PATH" statements.
 
-•   Expression in question will still be printed as usual at the bottom of the message.
+•   The expression in question will still be printed as usual at the bottom of the message.
 
 
 Effect and Interactions
