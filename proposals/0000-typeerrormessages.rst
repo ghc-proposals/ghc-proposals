@@ -274,7 +274,7 @@ Proposed Change Description
 -----------------------------
 The implemented change would involve the following:
 
-**1.) Removal of context phrases beginning with “In the…”**
+**1.) Removal of all context phrases beginning with “In the…”**
 
 •   Ex. “In the expression…”, “In the equation…”, "In the argument...", "In the type signature...", "In the class declaration...", etc.
 
