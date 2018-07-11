@@ -147,6 +147,68 @@ New error message:
  36 | case5 :: HighKind Either
     |                   ^^^^^^
 
+**Example #6**
+
+Input code:
+::
+ case6:: Int Bool
+ case6 = undefined
+     
+Original error message:
+::
+     * Expecting one fewer arguments to `Int'
+       Expected kind `* -> *', but `Int' has kind `*'
+     * In the type signature: case6 :: Int Bool
+    |
+ 40 | case6 :: Int Bool
+    |          ^^^^^^^^
+New error message:
+::
+     * Expected a kind [E] but the expression below has kind [A]
+       [E] * -> *
+       [A] *
+    |
+ 40 | case6 :: Int Bool
+    |          ^^^^^^^^
+
+**Example #7**
+
+Input code:
+::
+ case7 :: (a,b,c) -> (a,b)
+ case7 (x,y,z) = (x)
+     
+Original error message:
+::
+     * Couldn't match expected type `(a, b)' with actual type `a'
+       `a' is a rigid type variable bound by
+         the type signature for:
+           case7 :: forall a b c. (a, b, c) -> (a, b)
+     * In the expression: (x)
+       In an equation for `case7': case7 (x, y, z) = (x)
+     * Relevant bindings include
+         y :: b
+         x :: a
+         case7 :: (a, b, c) -> (a, b)
+    |
+ 44 | case7 (x,y,z) = (x)
+    |                  ^
+New error message:
+::
+     * Expected type [E] but the expression below has type [A]
+       [E] (a, b)
+       [A] a
+       
+     * Relevant bindings include
+         y :: b
+         x :: a
+         case7 :: (a, b, c) -> (a, b)
+    |
+ 44 | case7 (x,y,z) = (x)
+    |                  ^
+
+
+
 Proposed Change Description
 -----------------------------
 The implemented change would involve the following:
