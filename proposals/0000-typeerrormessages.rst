@@ -207,6 +207,40 @@ New error message:
  44 | case7 (x,y,z) = (x)
     |                  ^
 
+**Example #8**
+
+Input code:
+::
+ case8 :: (a,b) -> (a,b,c)
+ case8 (x,y) = (x, y,"")
+     
+Original error message:
+::
+     * Couldn't match expected type `c' with actual type `[Char]'
+       `c' is a rigid type variable bound by
+         the type signature for:
+           case8 :: forall a b c. (a, b) -> (a, b, c)
+     * In the expression: ""
+       In the expression: (x, y, "")
+       In an equation for `case8': case8 (x, y) = (x, y, "")
+     * Relevant bindings include
+         case8 :: (a, b) -> (a, b, c)
+    |
+ 54 | case8 (x,y) = (x, y,"")
+    |                     ^^
+New error message:
+::
+     * Expected type [E] but the expression below has type [A]
+       [E] (a, b)
+       [A] a
+       
+     * Relevant bindings include
+         y :: b
+         x :: a
+         case7 :: (a, b, c) -> (a, b)
+    |
+ 54 | case8 (x,y) = (x, y,"")
+    |                     ^^
 
 
 Proposed Change Description
