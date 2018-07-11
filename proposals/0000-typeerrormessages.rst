@@ -99,32 +99,25 @@ New error message:
 
 Input code:
 ::
- data ExpectsUnlifted (a :: TYPE 'UnliftedRep) = ExpectsUnlifted
- case3 :: ExpectsUnlifted Int
- case3 = undefined
-
- class ExampleClass (a :: TYPE 'UnliftedRep)  where
-     thisIsAMethod :: a -> Bool
-     case3b :: ExampleClass Int
-     case3b = "xx"
+ case4 :: Maybe
+ case4 xs = True
      
 Original error message:
 ::
-     * Expecting an unlifted type, but ‘Int’ is lifted
-     * In the first argument of ‘ExampleClass’, namely ‘Int’
-       In the type signature: case3 :: ExpectsUnlifted Int
-       In the class declaration for `ExampleClass`
+     * Expecting one more argument to `Maybe'
+       Expected a type, but `Maybe' has kind `* -> *'
+     * In the type signature: case4 :: Maybe
     |
- 26 | case3 :: ExampleClass Int
-    |                       ^^^
+ 32 | case4 :: Maybe
+    |          ^^^^^
 New error message:
 ::
      * Expected a kind [E] but the expression below has kind [A]
-       [E] ‘'UnliftedRep’
-       [A] ‘'LiftedRep’
+       [E] *
+       [A] * -> *
     |
- 26 | case3 :: ExampleClass Int
-    |                       ^^^
+ 32 | case4 :: Maybe
+    |          ^^^^^
 
 Proposed Change Description
 -----------------------------
