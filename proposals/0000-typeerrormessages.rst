@@ -14,7 +14,7 @@ Improved Type Error Messages
 To improve the clarity of GHC’s current type error messages by modifying their structure and by completely removing statements beginning with “In the …”.
 
 Motivation
-------------
+----------
 For the most part, GHC’s current type error messages are visually ineffective. The messages are often too long and can be difficult for users to process, even when the problem at hand is actually a simple one. This is largely due to their inclusion of redundant information, and their overall structure. With some rewording, reformatting, and the removal of a few phrases, GHC’s type error messages will better facilitate the troubleshooting and overall development processes for users of all levels. This change also has the potential to improve tool integration.
 
 **Example #9**
@@ -271,7 +271,7 @@ New error message:
     |                     ^^
 
 Proposed Change Description
------------------------------
+---------------------------
 The implemented change would involve the following:
 
 **1.) Removal of all context phrases beginning with “In the…”**
@@ -319,3 +319,6 @@ Unresolved questions
 Implementation Plan
 -------------------
 If approved, the change will be implemented by Nadine Adnane, a research student in Richard Eisenberg’s lab.
+
+Additional Examples
+-------------------
