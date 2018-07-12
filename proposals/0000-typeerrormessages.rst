@@ -17,6 +17,32 @@ Motivation
 ------------
 For the most part, GHC’s current type error messages are visually ineffective. The messages are often too long and can be difficult for users to process, even when the problem at hand is actually a simple one. This is largely due to their inclusion of redundant information, and their overall structure. With some rewording, reformatting, and the removal of a few phrases, GHC’s type error messages will better facilitate the troubleshooting and overall development processes for users of all levels. This change also has the potential to improve tool integration.
 
+**Example #9**
+
+Input code:
+::
+ case9 :: String -> String
+ case9 xs = True
+     
+Original error message:
+::
+     * Couldn't match type `Bool' with `[Char]'
+       Expected type: String
+         Actual type: Bool
+     * In the expression: True
+       In an equation for `case9': case9 xs = True
+    |
+ 57 | case9 xs = True
+    |            ^^^^
+New error message:
+::
+     * Expected type [E] but the expression below has type [A]
+       [E] String
+       [A] Bool
+    |
+ 57 | case9 xs = True
+    |            ^^^^
+
 **Example #1**
 
 Input code:
@@ -243,32 +269,6 @@ New error message:
     |
  54 | case8 (x,y) = (x, y,"")
     |                     ^^
-
-**Example #9**
-
-Input code:
-::
- case9 :: String -> String
- case9 xs = True
-     
-Original error message:
-::
-     * Couldn't match type `Bool' with `[Char]'
-       Expected type: String
-         Actual type: Bool
-     * In the expression: True
-       In an equation for `case9': case9 xs = True
-    |
- 57 | case9 xs = True
-    |            ^^^^
-New error message:
-::
-     * Expected type [E] but the expression below has type [A]
-       [E] String
-       [A] Bool
-    |
- 57 | case9 xs = True
-    |            ^^^^
 
 Proposed Change Description
 -----------------------------
