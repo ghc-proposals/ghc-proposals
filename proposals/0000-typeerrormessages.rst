@@ -59,7 +59,7 @@ Original error message:
     |            ^
 New error message:
 ::
-     * Expected something of kind [E] but the expression below has kind [A].
+     * Expected a kind [E] but the highlighted code below has kind [A].
        [E] k0 -> *
        [A] k0
     |
@@ -83,9 +83,9 @@ Original error message:
     |             ^^^^
 New error message:
 ::
-     * Expected a kind [E] but the expression below has a kind [A]
-       [E] 'LiftedRep
-       [A] 'IntRep
+     * Expected a kind [E] but the highlighted code below has a kind [A]
+       [E] *
+       [A] TYPE 'IntRep
     |
  22 | case2 :: IO Int#
     |             ^^^^
@@ -97,11 +97,6 @@ Input code:
  data ExpectsUnlifted (a :: TYPE 'UnliftedRep) = ExpectsUnlifted
  case3 :: ExpectsUnlifted Int
  case3 = undefined
-
- class ExampleClass (a :: TYPE 'UnliftedRep)  where
-     thisIsAMethod :: a -> Bool
-     case3b :: ExampleClass Int
-     case3b = "xx"
      
 Original error message:
 ::
@@ -114,9 +109,9 @@ Original error message:
     |                       ^^^
 New error message:
 ::
-     * Expected a kind [E] but the expression below has kind [A]
-       [E] ‘'UnliftedRep’
-       [A] ‘'LiftedRep’
+     * Expected a kind [E] but the highlighted code below has a kind [A]
+       [E] TYPE 'UnliftedRep
+       [A] *
     |
  26 | case3 :: ExampleClass Int
     |                       ^^^
@@ -140,7 +135,7 @@ New error message:
 ::
      * Expected a kind [E] but the expression below has kind [A]
        [E] *
-       [A] * -> *
+       [A] Constraint
      
      * Expecting one more argument to 'Maybe'
     |
