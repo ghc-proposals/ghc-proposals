@@ -1,11 +1,11 @@
 Deprecating Exports
 ===================
 
-.. proposal-number:: blank
-.. trac-ticket:: blank
-.. implemented:: blank
+.. proposal-number:: 28
+.. trac-ticket::
+.. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/134>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/134>`_.
 .. sectnum::
 .. contents::
 
