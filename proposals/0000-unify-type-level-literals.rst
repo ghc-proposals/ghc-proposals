@@ -39,22 +39,12 @@ Proposed Change Specification
 -----------------------------
 Grammar changes
 ^^^^^^^^^^^^^^^
-The lexical syntax would gain the following new case:
-
-::
-
-    signedint -> ['+'|'-'] integer
-
-The ``atype`` non-terminal would gain new cases as follows:
+The ``atype`` non-terminal would gain the following new case:
 
 ::
 
     atype -> ...
-           | string
-           | char
-           | integer
-           | signedint
-           | float
+           | literal
 
 This is relative to the specification, not the current effects of ``DataKinds``.
 
@@ -67,13 +57,19 @@ The kinds of type-level literals will be as follows:
     "foo" :: String
     'f' :: Char
     -123 :: Integer
-    +123 :: Integer
-    123 :: Natural
+    123 :: k -- Where 'k' can be either Integer or Rational
     3.14 :: Rational
 
 While the ``Rational`` literals are the most dubious, they require very minimal changes (since ``Ratio Integer`` will now work correctly "for free") and are needed to satisfy the original impetus for this change.
 
-The case of positive ``Integer`` literals is challenging. The syntax above is not great, but the obvious alternatives are a subkinding relation or an explicit conversion and I'd consider both of those to be worse.
+The case of positive ``Integer`` literals is challenging. I am concerned about cases where monomorphism is being relied upon, but I think this seems like the best option currently.
+
+The obvious alternatives are:
+
+* Use a syntactic tweak to show when a positive ``Integer`` rather than a ``Natural`` is desired. This is a poor option because it will mean that the term-level and type-level syntax will become *less* similar, not more. This goes against a key aim of the proposal.
+* Don't have pure syntax for integer literals, and instead have magical type families ``Positive (n :: Natural) :: Integer`` and ``Negative (n :: Natural) :: Integer`` to create them.
+
+More suggestions are welcome as this is one of the biggest discomfort points for the proposal as it stands.
 
 To handle the legacy case, ``Symbol`` and ``Nat`` will become aliases for ``String`` and ``Natural``, respectively.
 
