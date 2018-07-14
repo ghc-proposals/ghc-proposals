@@ -135,7 +135,7 @@ Costs and Drawbacks
 -------------------
 The development time will be fairly minimal, because the "new" functionality represents no novel codepaths or design challenges, merely adding additional parallel constructors and cases to code that already handles the existing type-level literals.
 
-One potential drawback is that type-level strings are currently efficiently represented as ``FastString``\s, but these changes require either a change to keeping them always as large, troublesome type-level lists of type-level ``Char``\s. The alternatives are either to (as I have implemented currently) keep ``Symbol``\s as they are but add a type family to convert them into promoted ``String``\s or to hack type-level pattern matching so that 
+One potential drawback is that type-level strings are currently efficiently represented as ``FastString``\s, but these changes require a change to keeping them always as large, troublesome type-level lists of type-level ``Char``\s. The alternatives are either to (as I have implemented currently) keep ``Symbol``\s as they are but add a type family to convert them into promoted ``String``\s or to hack type-level pattern matching so that they extensively seem to be ``[Char]`` but are actually still efficient.
 
 Alternatives
 ------------
