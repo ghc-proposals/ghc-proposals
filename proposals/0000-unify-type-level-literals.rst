@@ -91,7 +91,7 @@ A new type family will be added, ``Data.Type.Equality.Cmp``, to provide a unifor
 
 ::
 
-    type family Cmp (m :: a) (n :: a) :: Ordering
+    type family Compare (m :: a) (n :: a) :: Ordering
 
 Here, ``a`` is at least the five literal types, but there are many more implementations that could be added.
 
