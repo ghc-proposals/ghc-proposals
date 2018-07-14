@@ -44,7 +44,7 @@ Simon explains the motivation behind this restriction:
 Let’s do this!
 
 
-One reason for making the change is that it's not really clear what being "bound to a type variable" means in the presence of type equalities.  For example:
+One reason for making the change is that it's not really clear what being "bound to a type variable" means in the presence of type equalities.  For example::
 
     f1 :: (a ~ Int) => Maybe a -> Int
     f1 (Just (x :: b)) = <body>
@@ -76,11 +76,11 @@ Here are more type-checking puzzles. Can you tell which lines of ``foo`` typeche
 All lines but line 2 and 3 typecheck, but arguably all could.
 
 
-Another motivation for this proposal is to use ``ScopedTypeVariables`` as abbreviations for long types:
+Another motivation for this proposal is to use ``ScopedTypeVariables`` as abbreviations for long types::
 
-f :: ReallyReallyReallyReallyLongTypeName -> T
-f (x :: a) = … (read "" :: a) …
--- Instead of f x = … (read "" :: ReallyReallyReallyReallyLongTypeName) …
+    f :: ReallyReallyReallyReallyLongTypeName -> T
+    f (x :: a) = … (read "" :: a) …
+    -- Instead of f x = … (read "" :: ReallyReallyReallyReallyLongTypeName) …
 
 
 Proposed Change Specification
@@ -93,7 +93,7 @@ Effect and Interactions
 -----------------------
 With the restriction lifted, all lines of the function above typecheck.
 
-Proposal #126 has the same restriction for type applications in patterns. If we adopt this proposal, then the restriction
+Proposal `#126 <https://github.com/ghc-proposals/ghc-proposals/pull/126>`_ has the same restriction for type applications in patterns. If we adopt this proposal, then the restriction
 ought to also be lifted for that feature.
 
 At the moment, a type variable may occur multiple times in multiple pattern signatures in the same pattern. These do not shadow each other, but rather refer to the same type. For example::
