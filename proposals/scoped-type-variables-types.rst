@@ -2,7 +2,7 @@ Allow ScopedTypeVariables to refer to types
 ===========================================
 
 .. proposal-number::
-.. trac-ticket:: `#15050 <https://ghc.haskell.org/trac/ghc/ticket/15050>_
+.. trac-ticket:: #15050
 .. implemented:: 
 .. highlight:: haskell
 .. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/128>`_.
