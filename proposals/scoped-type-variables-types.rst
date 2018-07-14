@@ -110,6 +110,7 @@ At the moment, a type variable may occur multiple times in multiple pattern sign
 
 This behaviour is unchanged by the current proposal.
 
+The paper `Type variables in patterns <https://arxiv.org/abs/1806.03476>`_ (Haskell'18) has typing rules that describe this the proposed behaviour.
 
 Costs and Drawbacks
 -------------------
