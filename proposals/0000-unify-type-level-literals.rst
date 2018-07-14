@@ -37,8 +37,6 @@ This is largely motivated by the discussion on ghc-proposals/ghc-proposals#124 i
 
 Proposed Change Specification
 -----------------------------
-The following is relative to the current behavior of ``DataKinds``.
-
 Grammar changes
 ^^^^^^^^^^^^^^^
 The lexical syntax would gain the following new case:
