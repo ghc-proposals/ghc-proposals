@@ -83,31 +83,21 @@ All of the mathematical type families in ``GHC.TypeNats`` will be generalized to
 
 ::
 
-    type family Add a (m :: a) (n :: a) :: a
-    type family Mul a (m :: a) (n :: a) :: a
-    type family Exp a b (m :: a) (n :: b) :: a
-    type family Sub a (m :: a) (n :: a) :: a
-    type family DivI a (m :: a) (n :: a) :: a
-    type family ModI a (m :: a) (n :: a) :: a
-    type family Log2I b (m :: b) :: b
+    type family (m :: a) + (n :: a) :: a
+    type family (m :: a) * (n :: a) :: a
+    type family (m :: a) ^ (n :: b) :: a
+    type family (m :: a) - (n :: a) :: a
+    type family (m :: a) / (n :: a) :: a
+    type family (m :: a) % (n :: a) :: a
+    type family Div (m :: b) (n :: b) :: b
+    type family Mod (m :: b) (n :: b) :: b
+    type family Log2 (m :: b) :: b
 
-    type (m :: a) + (n :: a) = Add a m n
-    type (m :: a) * (n :: a) = Mul a m n
-    type (m :: a) ^ (n :: b) = Exp a b m n
-    type (m :: a) - (n :: a) = Sub a m n
-    type (m :: a) / (n :: a) = DivI a m n
-    type (m :: a) % (n :: a) = ModI a m n
-    type Div (m :: b) (n :: b) = DivI b m n
-    type Mod (m :: b) (n :: b) = ModI b m n
-    type Log2 (m :: b) = Log2I b m
-
-A new type family will be added, ``Data.Type.Equality.Cmp``, using a similar alias-wrapper trick to provide a uniform interface for comparisons.
+A new type family will be added, ``Data.Type.Equality.Cmp``, to provide a uniform interface for comparisons.
 
 ::
 
-    type family CmpI a (m :: a) (n :: a) :: Ordering
-
-    type Cmp (m :: a) (n :: a) = CmpI a m n
+    type family Cmp (m :: a) (n :: a) :: Ordering
 
 Here, ``a`` is at least the five literal types, but there are many more implementations that could be added.
 
@@ -121,7 +111,7 @@ For the specific example I used to motivate this change, the implementation of t
 
     type family AllValidChars (xs :: String) :: Constraint where
         AllValidChars (x:xs) = If (IsValidChar x) (AllValidChars xs) (TypeError (InvalidCharError x))
-        AllValidChars '[]    = True ~ True
+        AllValidChars '[]    = ()
 
     type IsValidChar c = CmpChar c '\256' == LT
     type InvalidCharError c = ShowType c :<>: Text " is not a single-byte character."
