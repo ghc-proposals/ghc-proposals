@@ -85,7 +85,11 @@ Another motivation for this proposal is to use ``ScopedTypeVariables`` as abbrev
 
 Proposed Change Specification
 -----------------------------
-The above sentence in the documentation for ``ScopedTypeVariables`` is removed.
+The sentence
+
+  When a pattern type signature binds a type variable in this way, GHC insists that the type variable is bound to a rigid, or fully-known, type variable. This means that any user-written type signature always stands for a completely known type.
+
+in the documentation for ``ScopedTypeVariables`` is removed.
 
 No separate pragma is needed for this behaviour, as we are expanding the set of programs accepted by ``ScopedTypeVariables``, but do not change any behaviour with regard to Haskell2010.
 
