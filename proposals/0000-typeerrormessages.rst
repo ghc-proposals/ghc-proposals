@@ -275,8 +275,6 @@ The implemented change would involve the following:
 
 **2.) Reformatting and rewording of all statements to use tags. This is meant to unify the many different types of messages.** 
 
-•   Ex. “Expecting an unlifted type, but ‘Int’ is lifted”
-
 The general format would look something like this for each error message:
 ::
  Expected something of type [E] but the expression below has type [A].
