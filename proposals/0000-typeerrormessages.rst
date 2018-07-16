@@ -238,9 +238,10 @@ The implemented change would involve the following:
 
 The general format would look something like this for each error message:
 ::
- Expected something of type [E] but the expression below has type [A].
- [E] (expected type goes here, for example: [Char])
- [A] (actual type goes here, for example: Char)
+ Expected type [E] but the underlined code below has type [A].
+ [E] (expected type goes here)
+ [A] (actual type goes here)
+ (print the line in question and its number here as usual)
 
 **2.) Removal of occurs check statements** 
 
