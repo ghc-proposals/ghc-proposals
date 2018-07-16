@@ -198,8 +198,8 @@ Original error message:
 New error message:
 ::
      * Expected kind [E] but the underlined code below has kind [A]
-       [E] *
-       [A] TYPE 'IntRep
+       [E] Type 'LiftedRep
+       [A] Type 'IntRep
     |
  22 | case2 :: IO Int#
     |             ^^^^
