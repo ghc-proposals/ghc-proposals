@@ -116,6 +116,8 @@ case above.
 This new behavior will be available whenever both ``-XTypeApplications`` and
 ``-XScopedTypeVariables`` are enabled.
 
+This change is specified in the appendix to the `Type variables in patterns <https://cs.brynmawr.edu/~rae/papers/2018/pat-tyvars/pat-tyvars.pdf>`_ paper.
+
 Effect and Interactions
 -----------------------
 
