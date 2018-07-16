@@ -307,6 +307,7 @@ GHC ticket #9173 discusses several possibilities for better type error messages.
 Unresolved questions
 --------------------
 1.) Does anyone find value in the expressions proposed for removal?
+
 2.) Are there words other than “expected” and “actual” that would be better for avoiding user confusion? 
 
 Implementation Plan
