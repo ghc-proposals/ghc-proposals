@@ -36,7 +36,7 @@ Original error message:
     |            ^^^^
 New error message:
 ::
-     * Expected type [E] but the underlined code below has type [A]
+     * Expected a type [E] but the underlined code below has a type [A]
        [E] String
        [A] Bool
     |
@@ -71,7 +71,7 @@ Original error message:
     |                  ^
 New error message:
 ::
-     * Expected type [E] but the underlined code below has type [A]
+     * Expected a type [E] but the underlined code below has a type [A]
        [E] (a, b)
        [A] a
        where `a' is a rigid type variable bound by
@@ -114,7 +114,7 @@ Original error message:
     |                     ^^
 New error message:
 ::
-     * Expected type [E] but the underlined code below has type [A]
+     * Expected a type [E] but the underlined code below has a type [A]
        [E] c
        [A] [Char]
        where `c' is a rigid type variable bound by
@@ -197,7 +197,7 @@ Original error message:
     |             ^^^^
 New error message:
 ::
-     * Expected kind [E] but the underlined code below has kind [A]
+     * Expected a kind [E] but the underlined code below has a kind [A]
        [E] Type 'LiftedRep
        [A] Type 'IntRep
     |
@@ -222,7 +222,7 @@ Original error message:
     |                          ^^^
 New error message:
 ::
-     * Expected kind [E] but the underlined code below has kind [A]
+     * Expected a kind [E] but the underlined code below has a kind [A]
        [E] TYPE 'UnliftedRep
        [A] *
     |
@@ -246,7 +246,7 @@ Original error message:
     |          ^^^^^
 New error message:
 ::
-     * Expected kind [E] but the underlined code below has kind [A]
+     * Expected a kind [E] but the underlined code below has a kind [A]
        [E] *
        [A] * -> *
      * Expecting one more argument to 'Maybe'
@@ -272,7 +272,7 @@ Original error message:
 New error message:
 ::
      * Expecting one fewer arguments to `Int'
-     * Expected kind [E] but the underlined code below has kind [A]
+     * Expected a kind [E] but the underlined code below has a kind [A]
        [E] * -> *
        [A] *
     |
@@ -298,7 +298,7 @@ Original error message:
     |                   ^^^^^^
 New error message:
 ::
-     * Expected kind [E] but the underlined code below has kind [A]
+     * Expected a kind [E] but the underlined code below has a kind [A]
        [E] * -> *
        [A] * -> * -> *
     |
@@ -321,7 +321,7 @@ Original error message:
     |            ^
 New error message:
 ::
-     * Expected kind [E] but the underlined code below has kind [A].
+     * Expected a kind [E] but the underlined code below has a kind [A].
        [E] k0 -> *
        [A] k0
     |
