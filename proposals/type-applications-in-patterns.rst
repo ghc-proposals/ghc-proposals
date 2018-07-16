@@ -52,7 +52,7 @@ Typechecking a type application in a pattern follows the same rules as typecheck
 * type variables in type applications in patterns can only bind type variables, just as it is the case for type variables in pattern signatures (unless `Proposal #128 <https://github.com/ghc-proposals/ghc-proposals/pull/128>`_ gets accepted first).
 * patterns are type-checked from left to right. This means when type-checking the type application in a pattern ``(MkT @ty)``, type equatlities from matches further to the left, as well as the type equalities from the context of ``MkT`` itself are in scope, but not type equalities from constructors further to the right (see below for an example).
 
-A more formal description of these rules can be found in `“Type variable in pattern” by Richard Eisenberg, Joachim Breitner  and Simon Peyton Jones <https://arxiv.org/abs/1806.03476>_.
+A more formal description of these rules can be found in `“Type variable in pattern” by Richard Eisenberg, Joachim Breitner  and Simon Peyton Jones <https://arxiv.org/abs/1806.03476>`_.
 
 An underscore in a type signature or type application in a pattern is not treated as a hole.
 
