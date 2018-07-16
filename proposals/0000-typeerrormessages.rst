@@ -133,6 +133,7 @@ Original error message:
     |          ^^^^^^^^
 New error message:
 ::
+     * Expecting one fewer arguments to `Int'
      * Expected kind [E] but the underlined code below has kind [A]
        [E] * -> *
        [A] *
