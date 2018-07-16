@@ -146,7 +146,7 @@ The general format would look something like this for each error message:
  [A] (actual type goes here)
  (print the line in question and its number here as usual)
 
-**2.) Removal of occurs check statements** 
+**3.) Removal of occurs check statements** 
 
 •   Ex. "Occurs check: cannot construct the infinite kind: k0 ~ k0 -> *"
 
