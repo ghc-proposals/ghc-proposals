@@ -36,7 +36,7 @@ Original error message:
     |            ^^^^
 New error message:
 ::
-     * Expected type [E] but the expression below has type [A]
+     * Expected type [E] but the underlined code below has type [A]
        [E] String
        [A] Bool
     |
@@ -59,7 +59,7 @@ Original error message:
     |            ^
 New error message:
 ::
-     * Expected a kind [E] but the highlighted code below has kind [A].
+     * Expected kind [E] but the underlined code below has kind [A].
        [E] k0 -> *
        [A] k0
     |
@@ -83,7 +83,7 @@ Original error message:
     |             ^^^^
 New error message:
 ::
-     * Expected a kind [E] but the highlighted code below has a kind [A]
+     * Expected kind [E] but the underlined code below has kind [A]
        [E] *
        [A] TYPE 'IntRep
     |
@@ -109,7 +109,7 @@ Original error message:
     |                       ^^^
 New error message:
 ::
-     * Expected a kind [E] but the highlighted code below has a kind [A]
+     * Expected kind [E] but the underlined code below has kind [A]
        [E] TYPE 'UnliftedRep
        [A] *
     |
@@ -133,7 +133,7 @@ Original error message:
     |          ^^^^^
 New error message:
 ::
-     * Expected a kind [E] but the expression below has kind [A]
+     * Expected kind [E] but the underlined code below has kind [A]
        [E] *
        [A] Constraint
      
@@ -161,7 +161,7 @@ Original error message:
     |                   ^^^^^^
 New error message:
 ::
-     * Expected a kind [E] but the expression below has kind [A]
+     * Expected kind [E] but the underlined code below has kind [A]
        [E] *
        [A] * -> *
     |
@@ -185,7 +185,7 @@ Original error message:
     |          ^^^^^^^^
 New error message:
 ::
-     * Expected a kind [E] but the expression below has kind [A]
+     * Expected kind [E] but the underlined code below has kind [A]
        [E] * -> *
        [A] *
     |
@@ -216,7 +216,7 @@ Original error message:
     |                  ^
 New error message:
 ::
-     * Expected type [E] but the expression below has type [A]
+     * Expected type [E] but the underlined code below has type [A]
        [E] (a, b)
        [A] a
        where `a' is a rigid type variable bound by
@@ -253,7 +253,7 @@ Original error message:
     |                     ^^
 New error message:
 ::
-     * Expected type [E] but the expression below has type [A]
+     * Expected type [E] but the underlined code below has type [A]
        [E] c
        [A] [Char]
        where `c' is a rigid type variable bound by
