@@ -75,8 +75,8 @@ Input code:
  case2 = return 1#
 Original error message:
 ::
-     * Expecting a lifted type, but ‘Int#’ is unlifted
-     * In the first argument of ‘IO’, namely ‘Int#’
+     * Expecting a lifted type, but `Int#’ is unlifted
+     * In the first argument of `IO’, namely `Int#’
        In the type signature: case2 :: IO Int#
     |
  22 | case2 :: IO Int#
@@ -101,20 +101,19 @@ Input code:
 Original error message:
 ::
      * Expecting an unlifted type, but ‘Int’ is lifted
-     * In the first argument of ‘ExampleClass’, namely ‘Int’
+     * In the first argument of ‘ExpectsUnlifted’, namely `Int’
        In the type signature: case3 :: ExpectsUnlifted Int
-       In the class declaration for `ExampleClass`
     |
- 26 | case3 :: ExampleClass Int
-    |                       ^^^
+ 26 | case3 :: ExpectsUnlifted Int
+    |                          ^^^
 New error message:
 ::
      * Expected kind [E] but the underlined code below has kind [A]
        [E] TYPE 'UnliftedRep
        [A] *
     |
- 26 | case3 :: ExampleClass Int
-    |                       ^^^
+ 26 | case3 :: ExpectsUnlifted Int
+    |                          ^^^
 
 **Example #4**
 
@@ -162,8 +161,8 @@ Original error message:
 New error message:
 ::
      * Expected kind [E] but the underlined code below has kind [A]
-       [E] *
-       [A] * -> *
+       [E] * -> *
+       [A] * -> * -> *
     |
  36 | case5 :: HighKind Either
     |                   ^^^^^^
@@ -205,12 +204,16 @@ Original error message:
        `a' is a rigid type variable bound by
          the type signature for:
            case7 :: forall a b c. (a, b, c) -> (a, b)
+         at C:\Users\Example\Documents\Examples.hs:42:1-25
      * In the expression: (x)
        In an equation for `case7': case7 (x, y, z) = (x)
      * Relevant bindings include
          y :: b
+           (bound at C:\Users\Example\Documents\Examples.hs:43:10)
          x :: a
+           (bound at C:\Users\Example\Documents\Examples.hs:43:8)
          case7 :: (a, b, c) -> (a, b)
+           (bound at C:\Users\Example\Documents\Examples.hs:43:1)
     |
  44 | case7 (x,y,z) = (x)
     |                  ^
@@ -222,10 +225,14 @@ New error message:
        where `a' is a rigid type variable bound by
          the type signature for:
            case7 :: forall a b c. (a, b, c) -> (a, b)
+         at C:\Users\Example\Documents\Examples.hs:42:1-25
      * Relevant bindings include
          y :: b
+           (bound at C:\Users\Example\Documents\Examples.hs:43:10)
          x :: a
+           (bound at C:\Users\Example\Documents\Examples.hs:43:8)
          case7 :: (a, b, c) -> (a, b)
+           (bound at C:\Users\Example\Documents\Examples.hs:43:1)
     |
  44 | case7 (x,y,z) = (x)
     |                  ^
@@ -243,11 +250,13 @@ Original error message:
        `c' is a rigid type variable bound by
          the type signature for:
            case8 :: forall a b c. (a, b) -> (a, b, c)
+         at C:\Users\Example\Documents\Examples.hs:60:1-25
      * In the expression: ""
        In the expression: (x, y, "")
        In an equation for `case8': case8 (x, y) = (x, y, "")
      * Relevant bindings include
          case8 :: (a, b) -> (a, b, c)
+           (bound at C:\Users\Example\Documents\Examples.hs:61:1)
     |
  54 | case8 (x,y) = (x, y,"")
     |                     ^^
@@ -259,8 +268,10 @@ New error message:
        where `c' is a rigid type variable bound by
          the type signature for:
            case8 :: forall a b c. (a, b) -> (a, b, c)
+         at C:\Users\Example\Documents\Examples.hs:60:1-25
      * Relevant bindings include
          case8 :: (a, b) -> (a, b, c)
+           (bound at C:\Users\Example\Documents\Examples.hs:61:1)
     |
  54 | case8 (x,y) = (x, y,"")
     |                     ^^
