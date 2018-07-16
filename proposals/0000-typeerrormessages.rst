@@ -135,7 +135,7 @@ New error message:
 ::
      * Expected kind [E] but the underlined code below has kind [A]
        [E] *
-       [A] Constraint
+       [A] * -> *
      
      * Expecting one more argument to 'Maybe'
     |
