@@ -66,29 +66,6 @@ New error message:
  13 | case1 :: a a
     |            ^
      * I got stuck because k0 would be infinite for type checking to succeed.
-
-**Example #2**
-
-Input code:
-::
- case2 :: IO Int#
- case2 = return 1#
-Original error message:
-::
-     * Expecting a lifted type, but `Int#’ is unlifted
-     * In the first argument of `IO’, namely `Int#’
-       In the type signature: case2 :: IO Int#
-    |
- 22 | case2 :: IO Int#
-    |             ^^^^
-New error message:
-::
-     * Expected kind [E] but the underlined code below has kind [A]
-       [E] *
-       [A] TYPE 'IntRep
-    |
- 22 | case2 :: IO Int#
-    |             ^^^^
      
 **Example #5**
 
@@ -282,6 +259,28 @@ Additional Examples
 
 Input code:
 ::
+ case2 :: IO Int#
+ case2 = return 1#
+Original error message:
+::
+     * Expecting a lifted type, but `Int#’ is unlifted
+     * In the first argument of `IO’, namely `Int#’
+       In the type signature: case2 :: IO Int#
+    |
+ 22 | case2 :: IO Int#
+    |             ^^^^
+New error message:
+::
+     * Expected kind [E] but the underlined code below has kind [A]
+       [E] *
+       [A] TYPE 'IntRep
+    |
+ 22 | case2 :: IO Int#
+    |             ^^^^
+**Extra Example #2**
+
+Input code:
+::
  data ExpectsUnlifted (a :: TYPE 'UnliftedRep) = ExpectsUnlifted
  case3 :: ExpectsUnlifted Int
  case3 = undefined
@@ -303,7 +302,7 @@ New error message:
  26 | case3 :: ExpectsUnlifted Int
     |                          ^^^
 
-**Extra Example #2**
+**Extra Example #3**
 
 Input code:
 ::
