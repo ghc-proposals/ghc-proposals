@@ -89,31 +89,6 @@ New error message:
     |
  22 | case2 :: IO Int#
     |             ^^^^
-
-**Example #4**
-
-Input code:
-::
- case4 :: Maybe
- case4 xs = True
-     
-Original error message:
-::
-     * Expecting one more argument to `Maybe'
-       Expected a type, but `Maybe' has kind `* -> *'
-     * In the type signature: case4 :: Maybe
-    |
- 32 | case4 :: Maybe
-    |          ^^^^^
-New error message:
-::
-     * Expected kind [E] but the underlined code below has kind [A]
-       [E] *
-       [A] * -> *
-     * Expecting one more argument to 'Maybe'
-    |
- 32 | case4 :: Maybe
-    |          ^^^^^
      
 **Example #5**
 
@@ -325,3 +300,28 @@ New error message:
     |
  26 | case3 :: ExpectsUnlifted Int
     |                          ^^^
+
+**Extra Example #2**
+
+Input code:
+::
+ case4 :: Maybe
+ case4 xs = True
+     
+Original error message:
+::
+     * Expecting one more argument to `Maybe'
+       Expected a type, but `Maybe' has kind `* -> *'
+     * In the type signature: case4 :: Maybe
+    |
+ 32 | case4 :: Maybe
+    |          ^^^^^
+New error message:
+::
+     * Expected kind [E] but the underlined code below has kind [A]
+       [E] *
+       [A] * -> *
+     * Expecting one more argument to 'Maybe'
+    |
+ 32 | case4 :: Maybe
+    |          ^^^^^
