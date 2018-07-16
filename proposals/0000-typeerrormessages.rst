@@ -167,7 +167,7 @@ If anyone finds the "In the..." context phrases helpful or in general likes the 
 
 Alternatives
 ------------
-GHC ticket #9173 discusses several possibilities for better type error messages. Most of the comments on this ticket mentioned simplifying the structure of the messages and rewording them to some degree, which is what this change aims to accomplish with the new tagged format and removal of repetitive statements.
+`GHC ticket #9173 <https://ghc.haskell.org/trac/ghc/ticket/9173>`_ discusses several possibilities for better type error messages. Most of the comments on this ticket mentioned simplifying the structure of the messages and rewording them to some degree, which is what this change aims to accomplish with the new tagged format and removal of repetitive statements.
 
 Unresolved questions
 --------------------
