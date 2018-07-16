@@ -35,12 +35,10 @@ but not::
 This proposal fills this gap, by allowing type applications in pattern syntax and specifying it to behave
 “just like type signatures”.
 
+The intention of the following specification is that the following holds: For a constructor with type ``C :: forall a. a -> …`` the meaning of ``C @ty x`` should coincide with the existing form ``C (x :: ty)``. 
+
 Proposed Change Specification
 -----------------------------
-
-Preliminary remark 1: The intention of the following specification is that the following holds: For a constructor with type ``C :: forall a. a -> …`` the meaning of ``C @ty x`` should coincide with the existing form ``C (x :: ty)``. If that is not the case, then this is likely a bug in the specification. In any case, this principle should answer most, if not all, questions about how this proposal should be interpreted.
-
-Preliminary remark 2: The ``ScopedTypeVariables`` is not very well specified. The following attempts to specify it, and may make more programs type check, but should not change the meaning of existing programs. If so, then that is likely a bug in the specification.
 
 When both ``TypeApplications`` and ``PatternSignatures`` are enabled, then type application syntax is
 available in patterns. 
@@ -51,18 +49,15 @@ A type variable mentioned in a pattern (in a type signature or a type applicatio
 
 Typechecking a type application in a pattern follows the same rules as typechecking a pattern signature. This proposal does not propose any changes to the mechanism. In particular
 
-* type variables in type applications in patterns can only bind type variables, just as it is the case for type variables in pattern signatures (unless #128 gets accepted first).
+* type variables in type applications in patterns can only bind type variables, just as it is the case for type variables in pattern signatures (unless `Proposal #128 <https://github.com/ghc-proposals/ghc-proposals/pull/128>`_ gets accepted first).
 * patterns are type-checked from left to right. This means when type-checking the type application in a pattern ``(MkT @ty)``, type equatlities from matches further to the left, as well as the type equalities from the context of ``MkT`` itself are in scope, but not type equalities from constructors further to the right (see below for an example).
 
-A more formal description of these rules can be found in “Type variable in pattern” by Richard Eisenberg, Joachim Breitner  and Simon Peyton Jones <https://arxiv.org/abs/1806.03476>_.
+A more formal description of these rules can be found in `“Type variable in pattern” by Richard Eisenberg, Joachim Breitner  and Simon Peyton Jones <https://arxiv.org/abs/1806.03476>_.
 
 An underscore in a type signature or type application in a pattern is not treated as a hole.
 
-Further changes to ``ScopedTypeVariables`` (e.g. _#15050 <https://ghc.haskell.org/trac/ghc/ticket/15050#comment:10>_) should apply analogously to type applications in patterns.
-
 Examples
 --------
-
 
 Here is an example (taken from _#15050 <https://ghc.haskell.org/trac/ghc/ticket/15050#comment:10>_)::
 
@@ -145,20 +140,16 @@ The same rules apply for type applications, and similarly to the last example, t
 
 Effect and Interactions
 -----------------------
-By reducing the question of “what should ``@ty`` mean in patterns” to an existing feature, we fill an obvious
-hole in the syntax in a way that is consistent with existing features: The analogy between type applications
-and type signatures will hold the same way in terms as it would in types.
+By motivation our answer the question of “what should ``@ty`` mean in patterns” with an existing feature (type signatures in patterns), we fill an obvious hole in the syntax in a way that is consistent with existing features: The analogy between type applications and type signatures will hold the same way in terms as it would in types.
 
-Furthermore, type application arguments to ``C`` refer to the same parameters in both terms and types (which
+Furthermore, type application arguments to ``C`` refer to the corresponding parameters in both terms and types (which
 is not the case for alternative proposals.)
 
-This proposals allows the binding of existential type variables of constructors, and hence subsumes #96.
+This proposals allows the binding of existential type variables of constructors, and hence subsumes `Proposal #96 <https://github.com/ghc-proposals/ghc-proposals/pull/96>`_.
 
 Costs and Drawbacks
 -------------------
-Given that we built upon an existing feature, I expect the implementation cost to be less than with other proposals.
-
-I believe that learners will benefit from the homogenousness that this proposals preserves.
+Given that the specification is inspired by an existing feature, I expect the implementation cost to be low; mostly work in the parser. I believe that learners will benefit from the homogenousness that this proposals preserves.
 
 A drawback is that it piggy backs on ``ScopedTypeVariables``, which – to some people – has its warts and unprettiness.
 This is a fair concern that needs to be weighed against the cost of introducing a meaning for type applciations that does
@@ -176,8 +167,4 @@ to fixes preserving the symmetry between type applications in terms and patters,
 type applications and type signatures. Furthermore, it does not introduce new concepts (e.g. the distinction between
 existential and universal parameters) to the Haskell programmer.
 
-The existing restriction of ``ScopedTypeVariabes`` that type variables in pattern signatures may only be bound to type variables, and not types, carries over to type variables in type applications. One could discuss lifting this restriction, but this question is completely orthotogonal to the proposal at hand, and should be discussed elsewhere (e.g. in (e.g. _#15050 <https://ghc.haskell.org/trac/ghc/ticket/15050#comment:10>_).
-
-Unresolved questions
---------------------
-This is a very naive attempt at giving ``ScopedTypeVariables`` (and hence this feature) a formal specification, and I am happy to refine it.
+The existing restriction of ``ScopedTypeVariabes`` that type variables in pattern signatures may only be bound to type variables, and not types, carries over to type variables in type applications. One could discuss lifting this restriction, but this question is completely orthotogonal to the proposal at hand, and should be discussed elsewhere (e.g. in `Proposal #128 <https://github.com/ghc-proposals/ghc-proposals/pull/128>`_ and `ticket _#15050 <https://ghc.haskell.org/trac/ghc/ticket/15050#comment:10>`_).
