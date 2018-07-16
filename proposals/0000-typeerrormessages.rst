@@ -128,31 +128,6 @@ New error message:
  54 | case8 (x,y) = (x, y,"")
     |                     ^^
      
-**Example #5**
-
-Input code:
-::
- data HighKind :: (* -> *) -> *
- case5 :: HighKind Either
- case5 = undefined
-     
-Original error message:
-::
-     * Expecting one more argument to `Either'
-       Expected kind `* -> *', but `Either' has kind `* -> * -> *'
-     * In the first argument of `HighKind', namely `Either'
-       In the type signature: case5 :: HighKind Either
-    |
- 36 | case5 :: HighKind Either
-    |                   ^^^^^^
-New error message:
-::
-     * Expected kind [E] but the underlined code below has kind [A]
-       [E] * -> *
-       [A] * -> * -> *
-    |
- 36 | case5 :: HighKind Either
-    |                   ^^^^^^
 
 Proposed Change Description
 ---------------------------
@@ -206,7 +181,7 @@ If approved, the change will be implemented by Nadine Adnane, a research student
 
 Additional Examples
 -------------------
-**Extra Example #1**
+**Kind Error Example #1**
 
 Input code:
 ::
@@ -228,7 +203,8 @@ New error message:
     |
  22 | case2 :: IO Int#
     |             ^^^^
-**Extra Example #2**
+
+**Kind Error Example #2**
 
 Input code:
 ::
@@ -253,7 +229,7 @@ New error message:
  26 | case3 :: ExpectsUnlifted Int
     |                          ^^^
 
-**Extra Example #3**
+**Kind Error Example #3**
 
 Input code:
 ::
@@ -277,7 +253,8 @@ New error message:
     |
  32 | case4 :: Maybe
     |          ^^^^^
-**Extra Example #4**
+
+**Kind Error Example #4**
 
 Input code:
 ::
@@ -301,6 +278,33 @@ New error message:
     |
  40 | case6 :: Int Bool
     |          ^^^^^^^^
+
+**Kind Error Example #5**
+
+Input code:
+::
+ data HighKind :: (* -> *) -> *
+ case5 :: HighKind Either
+ case5 = undefined
+     
+Original error message:
+::
+     * Expecting one more argument to `Either'
+       Expected kind `* -> *', but `Either' has kind `* -> * -> *'
+     * In the first argument of `HighKind', namely `Either'
+       In the type signature: case5 :: HighKind Either
+    |
+ 36 | case5 :: HighKind Either
+    |                   ^^^^^^
+New error message:
+::
+     * Expected kind [E] but the underlined code below has kind [A]
+       [E] * -> *
+       [A] * -> * -> *
+    |
+ 36 | case5 :: HighKind Either
+    |                   ^^^^^^
+
 **Occurs Check Example**
 
 Input code:
