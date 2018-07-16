@@ -93,31 +93,6 @@ New error message:
  36 | case5 :: HighKind Either
     |                   ^^^^^^
 
-**Example #6**
-
-Input code:
-::
- case6:: Int Bool
- case6 = undefined
-     
-Original error message:
-::
-     * Expecting one fewer arguments to `Int'
-       Expected kind `* -> *', but `Int' has kind `*'
-     * In the type signature: case6 :: Int Bool
-    |
- 40 | case6 :: Int Bool
-    |          ^^^^^^^^
-New error message:
-::
-     * Expecting one fewer arguments to `Int'
-     * Expected kind [E] but the underlined code below has kind [A]
-       [E] * -> *
-       [A] *
-    |
- 40 | case6 :: Int Bool
-    |          ^^^^^^^^
-
 **Example #7**
 
 Input code:
@@ -326,3 +301,27 @@ New error message:
     |
  32 | case4 :: Maybe
     |          ^^^^^
+**Extra Example #4**
+
+Input code:
+::
+ case6:: Int Bool
+ case6 = undefined
+     
+Original error message:
+::
+     * Expecting one fewer arguments to `Int'
+       Expected kind `* -> *', but `Int' has kind `*'
+     * In the type signature: case6 :: Int Bool
+    |
+ 40 | case6 :: Int Bool
+    |          ^^^^^^^^
+New error message:
+::
+     * Expecting one fewer arguments to `Int'
+     * Expected kind [E] but the underlined code below has kind [A]
+       [E] * -> *
+       [A] *
+    |
+ 40 | case6 :: Int Bool
+    |          ^^^^^^^^
