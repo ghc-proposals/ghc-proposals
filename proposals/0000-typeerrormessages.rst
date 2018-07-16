@@ -17,7 +17,7 @@ Motivation
 ----------
 For the most part, GHC’s current type error messages are visually ineffective. The messages are often too long and can be difficult for users to process, even when the problem at hand is actually a simple one. This is largely due to their inclusion of redundant information, and their overall structure. With some rewording, reformatting, and the removal of a few phrases, GHC’s type error messages will better facilitate the troubleshooting and overall development processes for users of all levels. This change also has the potential to improve tool integration.
 
-**Example #9**
+**Basic Example**
 
 Input code:
 ::
@@ -43,7 +43,7 @@ New error message:
  57 | case9 xs = True
     |            ^^^^
 
-**Example #1**
+**Occurs Check Example**
 
 Input code:
 ::
@@ -90,31 +90,6 @@ New error message:
  22 | case2 :: IO Int#
     |             ^^^^
 
-**Example #3**
-
-Input code:
-::
- data ExpectsUnlifted (a :: TYPE 'UnliftedRep) = ExpectsUnlifted
- case3 :: ExpectsUnlifted Int
- case3 = undefined
-     
-Original error message:
-::
-     * Expecting an unlifted type, but ‘Int’ is lifted
-     * In the first argument of ‘ExpectsUnlifted’, namely `Int’
-       In the type signature: case3 :: ExpectsUnlifted Int
-    |
- 26 | case3 :: ExpectsUnlifted Int
-    |                          ^^^
-New error message:
-::
-     * Expected kind [E] but the underlined code below has kind [A]
-       [E] TYPE 'UnliftedRep
-       [A] *
-    |
- 26 | case3 :: ExpectsUnlifted Int
-    |                          ^^^
-
 **Example #4**
 
 Input code:
@@ -135,7 +110,6 @@ New error message:
      * Expected kind [E] but the underlined code below has kind [A]
        [E] *
        [A] * -> *
-     
      * Expecting one more argument to 'Maybe'
     |
  32 | case4 :: Maybe
@@ -327,3 +301,27 @@ If approved, the change will be implemented by Nadine Adnane, a research student
 
 Additional Examples
 -------------------
+**Extra Example #1**
+
+Input code:
+::
+ data ExpectsUnlifted (a :: TYPE 'UnliftedRep) = ExpectsUnlifted
+ case3 :: ExpectsUnlifted Int
+ case3 = undefined
+     
+Original error message:
+::
+     * Expecting an unlifted type, but ‘Int’ is lifted
+     * In the first argument of ‘ExpectsUnlifted’, namely `Int’
+       In the type signature: case3 :: ExpectsUnlifted Int
+    |
+ 26 | case3 :: ExpectsUnlifted Int
+    |                          ^^^
+New error message:
+::
+     * Expected kind [E] but the underlined code below has kind [A]
+       [E] TYPE 'UnliftedRep
+       [A] *
+    |
+ 26 | case3 :: ExpectsUnlifted Int
+    |                          ^^^
