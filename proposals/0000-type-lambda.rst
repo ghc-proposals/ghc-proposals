@@ -107,10 +107,11 @@ Thus, the proposal boils down to one rule:
 That's it! Note that this specification assumes that the variable name in the lambda
 equals the variable name in the ``forall``. If the type begins with a ``forall``, this
 correspondence can always be made to happen because we can freely rename the bound
-type variable in a ``forall``.
+type variable in a ``forall``. (This "free renaming" is entirely internal; a user
+can write a different name in the type than in the pattern, always.)
 
 As usual, we can interpret a function defintion ``f <args> = body`` as
-``f = \ <args> = body``, and thus the function-definition case reduces to the lambda-expression
+``f = \ <args> -> body``, and thus the function-definition case reduces to the lambda-expression
 case above.
 
 This new behavior will be available whenever both ``-XTypeApplications`` and
@@ -159,7 +160,12 @@ We don't have to, of course, but then there will still be one area in GHC/Haskel
 
 Unresolved questions
 --------------------
-None at this time.
+Q: As brought up in the GitHub trail: should we consider changes to the extension structure?
+Specifically, do we want a way to enable this feature without also enabling the fact that
+a ``forall`` in a type signature binds a type variable in a definition.
+
+A: I say "no". I would prefer that world to the one we're currently in, but I simply don't
+think this small rejiggering is worth the transition costs.
 
 Implementation Plan
 -------------------
