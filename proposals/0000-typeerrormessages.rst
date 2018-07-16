@@ -17,7 +17,7 @@ Motivation
 ----------
 For the most part, GHC’s current type error messages are visually ineffective. The messages are often too long and can be difficult for users to process, even when the problem at hand is actually a simple one. This is largely due to their inclusion of redundant information, and their overall structure. With some rewording, reformatting, and the removal of a few phrases, GHC’s type error messages will better facilitate the troubleshooting and overall development processes for users of all levels. This change also has the potential to improve tool integration.
 
-**Basic Example**
+**Type Error Example #1**
 
 Input code:
 ::
@@ -43,57 +43,7 @@ New error message:
  57 | case9 xs = True
     |            ^^^^
 
-**Occurs Check Example**
-
-Input code:
-::
- case1 :: a a
- case1 = undefined
-Original error message:
-::
-     * Occurs check: cannot construct the infinite kind: k0 ~ k0 -> *
-     * In the first argument of `a', namely `a'
-       In the type signature: case1 :: a a
-    |
- 13 | case1 :: a a
-    |            ^
-New error message:
-::
-     * Expected kind [E] but the underlined code below has kind [A].
-       [E] k0 -> *
-       [A] k0
-    |
- 13 | case1 :: a a
-    |            ^
-     * I got stuck because k0 would be infinite for type checking to succeed.
-     
-**Example #5**
-
-Input code:
-::
- data HighKind :: (* -> *) -> *
- case5 :: HighKind Either
- case5 = undefined
-     
-Original error message:
-::
-     * Expecting one more argument to `Either'
-       Expected kind `* -> *', but `Either' has kind `* -> * -> *'
-     * In the first argument of `HighKind', namely `Either'
-       In the type signature: case5 :: HighKind Either
-    |
- 36 | case5 :: HighKind Either
-    |                   ^^^^^^
-New error message:
-::
-     * Expected kind [E] but the underlined code below has kind [A]
-       [E] * -> *
-       [A] * -> * -> *
-    |
- 36 | case5 :: HighKind Either
-    |                   ^^^^^^
-
-**Example #7**
+**Type Error Example #2**
 
 Input code:
 ::
@@ -139,7 +89,7 @@ New error message:
  44 | case7 (x,y,z) = (x)
     |                  ^
 
-**Example #8**
+**Type Error Example #3**
 
 Input code:
 ::
@@ -177,6 +127,32 @@ New error message:
     |
  54 | case8 (x,y) = (x, y,"")
     |                     ^^
+     
+**Example #5**
+
+Input code:
+::
+ data HighKind :: (* -> *) -> *
+ case5 :: HighKind Either
+ case5 = undefined
+     
+Original error message:
+::
+     * Expecting one more argument to `Either'
+       Expected kind `* -> *', but `Either' has kind `* -> * -> *'
+     * In the first argument of `HighKind', namely `Either'
+       In the type signature: case5 :: HighKind Either
+    |
+ 36 | case5 :: HighKind Either
+    |                   ^^^^^^
+New error message:
+::
+     * Expected kind [E] but the underlined code below has kind [A]
+       [E] * -> *
+       [A] * -> * -> *
+    |
+ 36 | case5 :: HighKind Either
+    |                   ^^^^^^
 
 Proposed Change Description
 ---------------------------
@@ -325,3 +301,26 @@ New error message:
     |
  40 | case6 :: Int Bool
     |          ^^^^^^^^
+**Occurs Check Example**
+
+Input code:
+::
+ case1 :: a a
+ case1 = undefined
+Original error message:
+::
+     * Occurs check: cannot construct the infinite kind: k0 ~ k0 -> *
+     * In the first argument of `a', namely `a'
+       In the type signature: case1 :: a a
+    |
+ 13 | case1 :: a a
+    |            ^
+New error message:
+::
+     * Expected kind [E] but the underlined code below has kind [A].
+       [E] k0 -> *
+       [A] k0
+    |
+ 13 | case1 :: a a
+    |            ^
+     * I got stuck because k0 would be infinite for type checking to succeed.
