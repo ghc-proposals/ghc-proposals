@@ -14,6 +14,7 @@ Binding type variables in lambda-expressions
 .. contents::
 
 .. _`#126`: https://github.com/ghc-proposals/ghc-proposals/pull/126
+.. _`#128`: https://github.com/ghc-proposals/ghc-proposals/pull/128
    
 Proposal `#126`_ allows us to bind scoped type variables in patterns using an ``@a`` syntax.
 However, the new syntax is allowed only in *constructor* patterns ``K @a @b x y``. This proposal
@@ -95,7 +96,8 @@ always know exactly what type is expected for a function definition or lambda ex
 
 As always, we can consider a nested lambda ``\ x y z -> ...`` to be an abbreviation for
 ``\ x -> \ y -> \ z ->``. This does not change if one of the bound variables is a type
-variable (preceded by ``@``).
+variable (preceded by ``@``). We do require, as usual, that we do not bind the same variable
+twice in a single lambda; this is true for type variables, too.
 
 Thus, the proposal boils down to one rule:
 
@@ -134,6 +136,10 @@ Effect and Interactions
   If you want to bind a type variable in a lambda, you must separate the ``\`` from the
   ``@``.
 
+* This proposal is meant to dovetail nicely with other recent proposals in this space
+  (`#126`_, `#128`_), but all the proposals are orthogonal. Any can usefully be accepted
+  without the others.
+  
 * (technical) The `Visible Type Applications`_ (VTA) paper defines the behavior about what to
   do when checking against a polytype: it says to deeply skolemize. However, eager deep
   skolemization will spell trouble for this extension, as we need the lambdas to see
