@@ -139,6 +139,14 @@ Effect and Interactions
 * This proposal is meant to dovetail nicely with other recent proposals in this space
   (`#126`_, `#128`_), but all the proposals are orthogonal. Any can usefully be accepted
   without the others.
+
+* Accepted proposal `26`_ (debated as `#99`_) introduces the possibility of user-written
+  specificity annotations (``forall {k} ...``). An *inferred* variable, including one
+  written by the programmer using this new notation, is not available for use with
+  any form of visible type application, including the one proposed here. If you have
+  a function ``f :: forall {k} (a :: k). ...``, you will have to rely on the old behavior
+  of ``-XScopedTypeVariables`` to bring ``k`` into scope in ``f``\'s definition. This is
+  regrettable but seems an inevitable consequence of the ``{k}`` notation.
   
 * (technical) The `Visible Type Applications`_ (VTA) paper defines the behavior about what to
   do when checking against a polytype: it says to deeply skolemize. However, eager deep
@@ -163,6 +171,11 @@ Alternatives
 If we want to bind type variables in lambda-expressions, I think this is the only way to do it.
 We don't have to, of course, but then there will still be one area in GHC/Haskell that requires
 ``Proxy``, and that's unfortunate.
+
+One alternative design would be to rearrange the extensions so that users could enable
+parts of today's ``ScopedTypeVariables`` without enabling the strange binding behavior of
+``forall``. I don't feel the need for this, myself, so I do not plan on working out this
+design, but I'm happy to accept contributions toward this end from the community.
 
 Unresolved questions
 --------------------
