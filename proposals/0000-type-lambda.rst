@@ -147,6 +147,9 @@ Effect and Interactions
   a function ``f :: forall {k} (a :: k). ...``, you will have to rely on the old behavior
   of ``-XScopedTypeVariables`` to bring ``k`` into scope in ``f``\'s definition. This is
   regrettable but seems an inevitable consequence of the ``{k}`` notation.
+
+.. _`26`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0026-explicit-specificity.rst
+.. _`#99`: https://github.com/ghc-proposals/ghc-proposals/pull/99
   
 * (technical) The `Visible Type Applications`_ (VTA) paper defines the behavior about what to
   do when checking against a polytype: it says to deeply skolemize. However, eager deep
