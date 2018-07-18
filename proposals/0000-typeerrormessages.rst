@@ -321,7 +321,7 @@ Original error message:
 ::
      * Occurs check: cannot construct the infinite kind: k0 ~ k0 -> *
      * In the first argument of `a', namely `a'
-       In the type signature: case1 :: a a
+       In the type signature: aexample6 :: a a
     |
  13 | aexample6 :: a a
     |                ^
