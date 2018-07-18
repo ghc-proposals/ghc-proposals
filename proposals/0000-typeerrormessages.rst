@@ -328,10 +328,10 @@ Original error message:
     |                ^
 New error message:
 ::
+     * I got stuck because k0 would be infinite for type checking to succeed.
      * Expected kind [E] but the underlined code below has kind [A].
        [E] k0 -> *
        [A] k0
     |
  13 | aexample6 :: a a
     |                ^
-     * I got stuck because k0 would be infinite for type checking to succeed.
