@@ -149,6 +149,10 @@ The general format would look something like this for each error message:
 
 •   Ex. Remove the occurs check statements. See additional example #6.
 
+**4.) Introduce the use of "I" in some error messages**
+
+•   Ex. See additional example #6.
+
 **Notes:**
 
 •   Relevant bindings will be printed as usual.
