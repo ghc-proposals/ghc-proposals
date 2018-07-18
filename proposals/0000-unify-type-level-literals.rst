@@ -54,10 +54,10 @@ The kinds of type-level literals will be as follows:
 
 ::
 
-    "foo" :: String
+    "foo" :: k1 -- Where 'k1' can be Symbol or String, if OverloadedStrings is enabled. Defaults to Symbol otherwise.
     'f' :: Char
     -123 :: Integer
-    123 :: k -- Where 'k' can be either Integer or Rational
+    123 :: k2 -- Where 'k2' can be Natural, Integer or Rational
     3.14 :: Rational
 
 While the ``Rational`` literals are the most dubious, they require very minimal changes (since ``Ratio Integer`` will now work correctly "for free") and are needed to satisfy the original impetus for this change.
@@ -68,6 +68,7 @@ The obvious alternatives are:
 
 * Use a syntactic tweak to show when a positive ``Integer`` rather than a ``Natural`` is desired. This is a poor option because it will mean that the term-level and type-level syntax will become *less* similar, not more. This goes against a key aim of the proposal.
 * Don't have pure syntax for integer literals, and instead have magical type families ``Positive (n :: Natural) :: Integer`` and ``Negative (n :: Natural) :: Integer`` to create them.
+* E*xtend things out to match how literals work at the term level, with ``FromInteger :: Natural -> a``, ``FromRational :: Rational -> a`` and ``IsString :: Symbol -> a`` type families allowing extension of these mechanisms. The latter, as implied above, would only be enabled if OverloadedStrings is used.
 
 More suggestions are welcome as this is one of the biggest discomfort points for the proposal as it stands.
 
