@@ -36,7 +36,7 @@ Original error message:
     |            ^^^^
 New error message:
 ::
-     * Expected a type [E] but the underlined code below has a type [A]
+     * Expected type [E] but the underlined code below has type [A]
        [E] String
        [A] Bool
     |
@@ -71,7 +71,7 @@ Original error message:
     |                  ^
 New error message:
 ::
-     * Expected a type [E] but the underlined code below has a type [A]
+     * Expected type [E] but the underlined code below has type [A]
        [E] (a, b)
        [A] a
        where `a' is a rigid type variable bound by
@@ -114,7 +114,7 @@ Original error message:
     |                     ^^
 New error message:
 ::
-     * Expected a type [E] but the underlined code below has a type [A]
+     * Expected type [E] but the underlined code below has type [A]
        [E] c
        [A] [Char]
        where `c' is a rigid type variable bound by
@@ -150,6 +150,12 @@ The general format would look something like this for each error message:
 
 •   Ex. "Occurs check: cannot construct the infinite kind: k0 ~ k0 -> *"
 
+**4.) Adjusting the grammar of some existing statements**
+
+•   Ex. "Expecting one fewer arguements..." should be "Expecting one fewer arguement..."
+
+**5.) **
+
 **Notes:**
 
 •   Relevant bindings will be printed as usual, including the "bound at... + PATH" statements.
@@ -176,6 +182,8 @@ Unresolved questions
 
 2.) Are there words other than “expected” and “actual” that would be better for avoiding user confusion? 
 
+3.) How do the majority of GHC users feel about the compiler presenting some (or parts of) error messages in the first person? (see additional example #6)
+
 Implementation Plan
 -------------------
 If approved, the change will be implemented by Nadine Adnane, a research student in Richard Eisenberg’s lab.
@@ -198,7 +206,7 @@ Original error message:
     |             ^^^^
 New error message:
 ::
-     * Expected a kind [E] but the underlined code below has a kind [A]
+     * Expected kind [E] but the underlined code below has kind [A]
        [E] *
        [A] TYPE 'IntRep
     |
@@ -223,7 +231,7 @@ Original error message:
     |                          ^^^
 New error message:
 ::
-     * Expected a kind [E] but the underlined code below has a kind [A]
+     * Expected kind [E] but the underlined code below has kind [A]
        [E] TYPE 'UnliftedRep
        [A] *
     |
@@ -247,7 +255,7 @@ Original error message:
     |          ^^^^^
 New error message:
 ::
-     * Expected a kind [E] but the underlined code below has a kind [A]
+     * Expected kind [E] but the underlined code below has kind [A]
        [E] *
        [A] * -> *
      * Expecting one more argument to 'Maybe'
@@ -272,13 +280,14 @@ Original error message:
     |          ^^^^^^^^
 New error message:
 ::
-     * Expecting one fewer arguments to `Int'
-     * Expected a kind [E] but the underlined code below has a kind [A]
+     * Expecting one fewer argument to `Int'
+     * Expected kind [E] but the underlined code below has kind [A]
        [E] * -> *
        [A] *
     |
  40 | case6 :: Int Bool
-    |          ^^^^^^^^
+    |          ^^^
+**NOTE: For those wondering why both Int and Bool are underlined in the original error message - it appears to be a bug, which will hopefully also be remedied by this change.
 
 **Kind Error Example #5**
 
@@ -299,14 +308,14 @@ Original error message:
     |                   ^^^^^^
 New error message:
 ::
-     * Expected a kind [E] but the underlined code below has a kind [A]
+     * Expected kind [E] but the underlined code below has kind [A]
        [E] * -> *
        [A] * -> * -> *
     |
  36 | case5 :: HighKind Either
     |                   ^^^^^^
 
-**Occurs Check Example**
+**Kind Error Example #6**
 
 Input code:
 ::
@@ -322,7 +331,7 @@ Original error message:
     |            ^
 New error message:
 ::
-     * Expected a kind [E] but the underlined code below has a kind [A].
+     * Expected kind [E] but the underlined code below has kind [A].
        [E] k0 -> *
        [A] k0
     |
