@@ -68,7 +68,7 @@ The obvious alternatives are:
 
 * Use a syntactic tweak to show when a positive ``Integer`` rather than a ``Natural`` is desired. This is a poor option because it will mean that the term-level and type-level syntax will become *less* similar, not more. This goes against a key aim of the proposal.
 * Don't have pure syntax for integer literals, and instead have magical type families ``Positive (n :: Natural) :: Integer`` and ``Negative (n :: Natural) :: Integer`` to create them.
-* Extend things out to match how literals work at the term level, with ``FromInteger :: Natural -> a``, ``FromRational :: Rational -> a`` and ``IsString :: Symbol -> a`` type families allowing extension of these mechanisms. The latter, as implied above, would only be enabled if OverloadedStrings is used.
+* Extend things out to match how literals work at the term level, with ``FromInteger :: Integer -> a``, ``FromRational :: Rational -> a`` and ``IsString :: Symbol -> a`` type families allowing extension of these mechanisms. The latter, as implied above, would only be enabled if OverloadedStrings is used.
 
 More suggestions are welcome as this is one of the biggest discomfort points for the proposal as it stands.
 
