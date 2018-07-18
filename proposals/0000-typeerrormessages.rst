@@ -131,6 +131,7 @@ New error message:
     |                        ^^
  
 **NOTE: Several additional examples can be found `here <https://github.com/NadineTheBean/ghc-proposals/blob/master/proposals/0000-typeerrormessages.rst#additional-examples>`_.**
+
 Proposed Change Description
 ---------------------------
 The implemented change would involve the following:
