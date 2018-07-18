@@ -72,7 +72,7 @@ The obvious alternatives are:
 
 More suggestions are welcome as this is one of the biggest discomfort points for the proposal as it stands.
 
-To handle the legacy case, ``Symbol`` and ``Nat`` will become aliases for ``String`` and ``Natural``, respectively.
+To handle the legacy case, ``Nat`` will become an alias for ``Natural``.
 
 All of the mathematical type families in ``GHC.TypeNats`` will be generalized to be poly-kinded so that they work for these new numeric kinds, with the exception of a ``Rational`` implementation for  ``Div``, ``Mod``, and ``Log2``. ``/`` and ``%`` will be added for ``Rational``. Put more explicitly, their interfaces will be as listed in the block below, where ``a`` means any of ``Integer``, ``Natural``, or ``Rational`` and ``b`` means either ``Integer`` or ``Rational``.
 
@@ -119,8 +119,6 @@ In general, this makes this already well-loved feature of GHC even better, allow
 Costs and Drawbacks
 -------------------
 The development time will be fairly minimal, because the "new" functionality represents no novel codepaths or design challenges, merely adding additional parallel constructors and cases to code that already handles the existing type-level literals.
-
-One potential drawback is that type-level strings are currently efficiently represented as ``FastString``\s, but these changes require a change to keeping them always as large, troublesome type-level lists of type-level ``Char``\s. The alternatives are either to (as I have implemented currently) keep ``Symbol``\s as they are but add a type family to convert them into promoted ``String``\s or to hack type-level pattern matching so that they extensively seem to be ``[Char]`` but are actually still efficient.
 
 Alternatives
 ------------
