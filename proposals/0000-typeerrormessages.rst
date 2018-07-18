@@ -87,7 +87,7 @@ New error message:
            (bound at C:\Users\Example\Documents\Examples.hs:43:1)
     |
  44 | example2 (x,y,z) = (x)
-    |                  ^
+    |                     ^
 
 **Type Error Example #3**
 
@@ -149,14 +149,9 @@ The general format would look something like this for each error message:
 
 •   Ex. Remove the occurs check statements. See additional example #6.
 
-**4.) Adjusting the grammar of some existing statements**
-
-•   Ex. "Expecting one fewer **arguements..." should be "Expecting one fewer arguement..."
-    See additional example #4.
-
 **Notes:**
 
-•   Relevant bindings will be printed as usual, including the "bound at... + PATH" statements.
+•   Relevant bindings will be printed as usual.
 
 •   The expression in question will still be printed as usual at the bottom of the error message.
 
@@ -251,10 +246,10 @@ Original error message:
     |              ^^^^^
 New error message:
 ::
+     * Expecting one more argument to 'Maybe'
      * Expected kind [E] but the underlined code below has kind [A]
        [E] *
        [A] * -> *
-     * Expecting one more argument to 'Maybe'
     |
  32 | aexample3 :: Maybe
     |              ^^^^^
