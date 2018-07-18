@@ -130,7 +130,7 @@ New error message:
  54 | example3 (x,y) = (x, y,"")
     |                        ^^
  
-**NOTE: Several additional examples can be found `here <#additional-examples>`_.**
+NOTE: Several additional examples can be found `here <#additional-examples>`_.
 
 Proposed Change Description
 ---------------------------
