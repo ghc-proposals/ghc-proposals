@@ -15,7 +15,8 @@ To improve the clarity of GHC’s current type error messages by modifying their
 
 Motivation
 ----------
-For the most part, GHC’s current type error messages are visually ineffective. The messages are often too long and can be difficult for users to process, even when the problem at hand is actually a simple one. This is largely due to their inclusion of redundant information, and their overall structure. With some rewording, reformatting, and the removal of a few phrases, GHC’s type error messages will better facilitate the troubleshooting and overall development processes for users of all levels. This change also has the potential to improve tool integration. To be clear, this proposal describes changes to GHC's error messages, not to the Haskell Language itself. It should also be noted that this proposal is intended primarily as a means of gathering feedback from the GHC community, and thus does not involve the same level of specificity as is standard in GHC proposals. 
+For the most part, GHC’s current type error messages are visually ineffective. The messages are often too long and can be difficult for users to process, even when the problem at hand is actually a simple one. This is largely due to their inclusion of redundant information, and their overall structure. To be clear, this proposal describes modifications to GHC's error messages, not to the Haskell Language itself. With some rewording, reformatting, and the removal of a few phrases, GHC’s type error messages will better facilitate the troubleshooting and overall development processes for users of all levels. This change also has the potential to improve tool integration. 
+It should be noted that this proposal is intended primarily as a means of gathering feedback from the GHC community, and thus does not exhibit the same level of specificity as is standard in GHC proposals. 
 
 **Type Error Example #1**
 
@@ -167,7 +168,7 @@ The removal of the extra context phrases will significantly shorten the type err
 
 Costs and Drawbacks
 -------------------
-If anyone finds the "In the..." context phrases helpful or in general likes the current error messages as they are, they will probably be unhappy with this change. However, I believe that this change will greatly improve the learnability of haskell for beginners, as well as the overall experience of using GHC for most users after the initial disorientation.
+If anyone finds the "In the..." context phrases helpful or in general likes the current error messages as they are, they will probably be unhappy with this change. However, I believe that this change will greatly improve the learnability of Haskell for beginners, as well as the overall experience of using GHC for most users after the initial disorientation.
 
 Alternatives
 ------------
