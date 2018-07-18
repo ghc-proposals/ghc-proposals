@@ -17,6 +17,8 @@ Motivation
 ----------
 For the most part, GHC’s current type error messages are visually ineffective. The messages are often too long and can be difficult for users to process, even when the problem at hand is actually a simple one. This is largely due to their inclusion of redundant information, and their overall structure. With some rewording, reformatting, and the removal of a few phrases, GHC’s type error messages will better facilitate the troubleshooting and overall development processes for users of all levels. This change also has the potential to improve tool integration.
 
+It should be noted that the 
+
 **Type Error Example #1**
 
 Input code:
@@ -127,7 +129,8 @@ New error message:
     |
  54 | example3 (x,y) = (x, y,"")
     |                        ^^
-     
+ 
+**NOTE: Several additional examples can be found `here <https://github.com/NadineTheBean/ghc-proposals/blob/master/proposals/0000-typeerrormessages.rst#additional-examples>`_.**
 Proposed Change Description
 ---------------------------
 The implemented change would involve the following:
