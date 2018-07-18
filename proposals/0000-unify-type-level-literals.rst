@@ -56,8 +56,8 @@ The kinds of type-level literals will be as follows:
 
     "foo" :: k1 -- Where 'k1' can be Symbol or String, if OverloadedStrings is enabled. Defaults to Symbol otherwise.
     'f' :: Char
-    -123 :: Integer
-    123 :: k2 -- Where 'k2' can be Natural, Integer or Rational
+    -123 :: k2 -- where 'k2' can be Integer or Rational
+    123 :: k3 -- Where 'k3' can be Natural, Integer or Rational
     3.14 :: Rational
 
 While the ``Rational`` literals are the most dubious, they require very minimal changes (since ``Ratio Integer`` will now work correctly "for free") and are needed to satisfy the original impetus for this change.
