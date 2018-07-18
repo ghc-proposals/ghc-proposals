@@ -40,7 +40,7 @@ extends this idea to lambda-expressions, allowing ``\ @a x -> ...``. Here are so
   higherRank :: (forall a. a -> a -> a) -> ...
   higherRank = ...
 
-  ex = higherRank (\@a x _y -> (x :: a))  -- it works in a higher-rank situation, too
+  ex = higherRank (\ @a x _y -> (x :: a)) -- it works in a higher-rank situation, too
 
   wrong @a x = x                          -- we can't do this without a type signature
 
