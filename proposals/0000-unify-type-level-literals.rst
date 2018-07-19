@@ -54,21 +54,21 @@ The kinds of type-level literals will be as follows:
 
 ::
 
-    "foo" :: k1 -- Where 'k1' can be Symbol or String, if OverloadedStrings is enabled. Defaults to Symbol otherwise.
+    "foo" :: Symbol
     'f' :: Char
-    -123 :: k2 -- where 'k2' can be Integer or Rational
-    123 :: k3 -- Where 'k3' can be Natural, Integer or Rational
+    -123 :: Integer
+    123 :: Integer
     3.14 :: Rational
 
 While the ``Rational`` literals are the most dubious, they require very minimal changes (since ``Ratio Integer`` will now work correctly "for free") and are needed to satisfy the original impetus for this change.
 
-The case of positive ``Integer`` literals is challenging. I am concerned about cases where monomorphism is being relied upon, but I think this seems like the best option currently.
+If the type of numeric literals is now ``Integer``, then how does one get access to ``Nat``s by default, as required for backwards compatability? This propoasl introduces three new type families, ``GHC.TypeNats.FromInteger :: Integer -> a``, ``GHC.TypeNats.FromRational :: Rational -> a`` and ``GHC.TypeLits.FromSymbol :: Symbol -> a`` that mirror how overloaded literals work at the type level, with similar desugaring. ``FromSymbol`` will only be used when OverloadedStrings is enabled. The asymmetry (Symbol as default rather than String) is to maintain compatability with existing programs that use ``Symbol``s but not ``OverloadedString``.
 
 The obvious alternatives are:
 
 * Use a syntactic tweak to show when a positive ``Integer`` rather than a ``Natural`` is desired. This is a poor option because it will mean that the term-level and type-level syntax will become *less* similar, not more. This goes against a key aim of the proposal.
 * Don't have pure syntax for integer literals, and instead have magical type families ``Positive (n :: Natural) :: Integer`` and ``Negative (n :: Natural) :: Integer`` to create them.
-* Extend things out to match how literals work at the term level, with ``FromInteger :: Integer -> a``, ``FromRational :: Rational -> a`` and ``IsString :: Symbol -> a`` type families allowing extension of these mechanisms. The latter, as implied above, would only be enabled if OverloadedStrings is used.
+* Make numeric (and with OverloadedStrings on, string) literals inherently polymorphic, but not in the extensible way that they are in the main proposal.
 
 More suggestions are welcome as this is one of the biggest discomfort points for the proposal as it stands.
 
