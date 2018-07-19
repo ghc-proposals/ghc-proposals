@@ -88,7 +88,7 @@ All of the mathematical type families in ``GHC.TypeNats`` will be generalized to
     type family Mod (m :: b) (n :: b) :: b
     type family Log2 (m :: b) :: b
 
-A new type family will be added, ``Data.Type.Equality.Cmp``, to provide a uniform interface for comparisons.
+A new type family will be added, ``Data.Type.Equality.Compare``, to provide a uniform interface for comparisons.
 
 ::
 
