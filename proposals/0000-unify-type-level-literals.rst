@@ -62,7 +62,7 @@ The kinds of type-level literals will be as follows:
 
 While the ``Rational`` literals are the most dubious, they require very minimal changes (since ``Ratio Integer`` will now work correctly "for free") and are needed to satisfy the original impetus for this change.
 
-If the type of numeric literals is now ``Integer``, then how does one get access to ``Nat``s by default, as required for backwards compatability? This propoasl introduces three new type families, ``GHC.TypeNats.FromInteger :: Integer -> a``, ``GHC.TypeNats.FromRational :: Rational -> a`` and ``GHC.TypeLits.FromSymbol :: Symbol -> a`` that mirror how overloaded literals work at the type level, with similar desugaring. ``FromSymbol`` will only be used when OverloadedStrings is enabled. The asymmetry (Symbol as default rather than String) is to maintain compatability with existing programs that use ``Symbol``s but not ``OverloadedString``.
+If the type of numeric literals is now ``Integer``, then how does one get access to ``Nat``\s by default, as required for backwards compatability? This propoasl introduces three new type families, ``GHC.TypeNats.FromInteger :: Integer -> a``, ``GHC.TypeNats.FromRational :: Rational -> a`` and ``GHC.TypeLits.FromSymbol :: Symbol -> a`` that mirror how overloaded literals work at the type level, with similar desugaring. ``FromSymbol`` will only be used when OverloadedStrings is enabled. The asymmetry (Symbol as default rather than String) is to maintain compatability with existing programs that use ``Symbol``s but not ``OverloadedString``.
 
 The obvious alternatives are:
 
