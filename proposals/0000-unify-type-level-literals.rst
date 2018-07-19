@@ -33,6 +33,8 @@ It is currently impossible to inspect the contents of a Symbol, because it is an
 
 Turning compile-time problems into compile-time errors is one of the main reasons that I use Haskell, and this value-transparency would allow that to be done cleanly in more cases, and the opacity of ``Symbol``\s is not the only restriction that is unfortunately limiting.
 
+In addition, it will greatly increase the number of types that can be promoted, making type-level Haskell cleaner and easier.
+
 This is largely motivated by the discussion on ghc-proposals/ghc-proposals#124 into a way to use type-level verification to make it safe to implement overloaded literals for the many types for which it is currently not possible, but I feel that this is both a substantial enough change and a potentially useful enough feature to be its own proposal rather than something added to a continuation of that work.
 
 Proposed Change Specification
