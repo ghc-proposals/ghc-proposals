@@ -104,7 +104,7 @@ For the specific example I used to motivate this change, the implementation of t
 
 ::
 
-    type ValidBS str = (KnownSymbol str, AllValidChars str) 
+    type ValidBS str = (KnownSymbol str, AllValidChars (SymbolToString str))
 
     type family AllValidChars (xs :: String) :: Constraint where
         AllValidChars (x:xs) = If (IsValidChar x) (AllValidChars xs) (TypeError (InvalidCharError x))
