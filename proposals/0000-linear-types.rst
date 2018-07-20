@@ -786,8 +786,8 @@ Inference
 .. _Inference:
 
 Because of backwards compatibility, we initially chose the following
-strategy: when the type of a function is not constrained by given
-constraints, we conservatively assume it to have multiplicity ω.
+strategy: when the type of a function is not constrained by a programmer-provided
+type, we conservatively assume it to have multiplicity ω.
 
 Experience shows that this sometimes yield very confusing error messages
 where perfectly valid code is rejected:
