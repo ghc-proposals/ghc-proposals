@@ -139,9 +139,9 @@ The implemented change would involve the following:
 
 •   Ex. “In the expression…”, “In the equation…”, "In the argument...", "In the type signature...", "In the class declaration...", etc.
 
-**2.) Reformatting and rewording of all statements to use tags. This is meant to unify the many different types of messages.** 
+**2.) Reformatting and rewording of "expected vs. actual" statements to use tags. This is meant to unify the many different types of messages.** 
 
-The general format would look something like this for each error message:
+The general format would look something like this for each "expected vs. actual" error message:
 ::
  Expected type [E] but the underlined code below has type [A].
  [E] (expected type goes here)
