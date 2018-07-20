@@ -880,7 +880,7 @@ releasing resources in case of exception. The release in case of
 exception would be, however, less timely.
 
 Can ``RIO`` have a ``catch``?
-=============================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 It is possible to catch exceptions inside of ``RIO``. But in order to
 ensure resource safety, the type cannot be linear:
@@ -926,7 +926,7 @@ for ``catch``, or the absence of ``catch`` altogether, is a design
 question for the library that implements a monad such as ``RIO``.
 
 Can I throw linear exceptions?
-==============================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In the type of ``catchL`` above, the type of the handler is ``e -> RIO
 a``. Correspondingly, the type of the exception-throwing primitives are:
