@@ -40,7 +40,16 @@ Proposed Change Specification
 -----------------------------
 
 When both ``TypeApplications`` and ``ScopedtypeVariables`` are enabled, then type application syntax is
-available in constructor patterns.
+available in constructor patterns. Concretely, the grammar for constructor pattern is extended from::
+
+  pat   → gcon apat1 … apatk --  (arity gcon  =  k, k ≥ 1) 
+        … 
+
+to::
+
+  pat   → gcon tyapp1 … tyappn  apat1 … apatk --  (arity gcon  =  k, k ≥ 1, n ≥ 0)
+        …
+  tyapp → @ atype
 
 A pattern ``C @a``, where ``C`` is a data constructor and ``a`` is a type variable that is not yet in scope, matches if ``C`` matches. It brings ``a`` into scope so that ``a`` stands for the corresponding type that was passed to ``C`` upon construction.
 
@@ -131,6 +140,13 @@ Furthermore, type application arguments to ``C`` refer to the corresponding para
 
 This proposals allows the binding of existential type variables of constructors, and hence subsumes `Proposal #96 <https://github.com/ghc-proposals/ghc-proposals/pull/96>`_.
 
+There is almost a syntactic ambiguity with as-patterns, but in fact there is not: The grammar of as-pattern is::
+
+  apat 	→ 	var [ @ apat] 	    (as pattern) 
+        …
+        
+so it always has a variable on its left, whereas a type application is always headed by a constructor.
+
 Costs and Drawbacks
 -------------------
 Given that the specification is inspired by an existing feature, I expect the implementation cost to be low; mostly work in the parser. I believe that learners will benefit from the homogenousness that this proposals preserves.
@@ -138,6 +154,8 @@ Given that the specification is inspired by an existing feature, I expect the im
 For users who want this mainly to instantiate existential variables may find that they have to write ``C @_ @x`` to
 go past the universial variables, which is mildly inconvenient. It may be fixed in some cases by changing the order
 of the type variables of ``C``. This is unavoidable if we want to preserve the symmetry between terms and types, though. A mitigation for this is offerend in `proposal #99 (explicit specificity) <https://github.com/ghc-proposals/ghc-proposals/pull/99>`_.
+
+A possible future proposal that extends as-patterns to allow patterns on both sides of the `@` would now introduce ambiguities, e.g. in `Nothing @ a`.
 
 Open Questions
 ------------
