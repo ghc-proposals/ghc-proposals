@@ -2261,16 +2261,20 @@ This section summarises the questions that have yet to be resolved.
 Inference
 ---------
 
-- There is no systematic account of type inference. Can it be made
-  predictable when a type annotation is required? For compatibility
-  reasons, we want to infer unrestricted arrows conservatively, but
-  experience shows that it can result in very surprising type
+- There is no systematic account of type inference. Unification up to
+  the theory of semi-ring being undecidable, there is no theoretically
+  obvious solution. We need to balance the requirement of discharging
+  as many instances as possible with needing type annotation only in
+  predictable locations. A naive approach, deployed in the prototype
+  implementation, simply infers unrestricted arrows whenever it isn't
+  immediately obvious that another kind of multiplicity is required,
+  but experience shows that it can result in very surprising type
   errors. See Inference_ for more details.
 
-- In the formalism, case expressions are indexed by a multiplicity:
-  ``case_p`` (and similarly ``let x::(p)``). In the surface language, we
-  can deduce the multiplicity in equations when there is a type
-  annotation.
+- In Core, case expressions are indexed by a multiplicity: ``case … of
+  x::(p) _ {…}`` (and similarly ``let x::(p)``). In the surface
+  language, we can deduce the multiplicity in equations when there is
+  a type annotation.
 
   ::
 
@@ -2280,14 +2284,25 @@ Inference
     swap :: (a,b) ->. (b,a)
     swap (a,b) = (b,a)   -- this is inferred as a case_1
 
-  But what of explicit ``case`` and ``let`` in the surface language? We
-  can annotate them with a multiplicity, but it is generally clear from
-  the context which multiplicity is meant. So the multiplicity
-  annotation really ought to be inferred. The general idea is: if
-  their is any linear variable in the scrutinee, then the case must be
-  linear, and if there are only unrestricted variables, it can be
-  unrestricted. Is it sound to always pick the highest possible value ?
-  What if there are multiplicities with variable multiplicity ?
+  But what of explicit ``case`` and ``let`` in the surface language?
+  We can syntactically annotate them with a multiplicity, but it is
+  generally clear from the context which multiplicity is meant. So the
+  multiplicity annotation really ought to be inferred.
+
+The fact that unification isn't decidable is not an obstacle. At an
+extreme end of the inference spectrum, we could gather all the
+constraints arising from the linearity checking (which take the form
+of equality and inequality constraints between multiplicity
+expressions), and only discharge them when they are ground. This
+would, of course, give absolutely horrendous types, and we would like
+to avoid this.
+
+The difficulty in designing the inference algorithm resides in finding
+a good middle ground, where most common constraints are correctly
+simplified or discharged. And where it is reasonably straightforward
+to specify why a constraint hasn't been discharged.
+
+This is work in progress.
 
 Patterns
 --------
