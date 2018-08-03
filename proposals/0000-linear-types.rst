@@ -1174,6 +1174,16 @@ arrow:
 - ``(-p->)``
 - ``(|p->)``. The following mnemonic has been proposed by @goldfirere:
   it starts with a vertical *line* hence pertains to *line*-arity.
+- ``(#p->)``, proposed by @davemenendez, the mnemonic is that ``#`` is
+  the number sign.
+  - This syntax proposal is accompanied by an alternative notation for
+    multiplicity with binder: ``\ x :: a # p -> …``; which also allows
+    omitting the type when giving a multiplicity annotation: ``\ x # p
+    -> …``. The syntax for binders would carry over to the syntax of record fields:
+    ``Rec { field :: t # p }``.
+  - This syntax proposal is also accompanied by a new non-GADT syntax
+    to annotate fields of data constructors with a multiplicity:
+    ``data Unrestricted a = Unrestricted (a # 'Omega)``.
 
 Here are other suggestions which have been floated, but we don't
 believe are very good:
