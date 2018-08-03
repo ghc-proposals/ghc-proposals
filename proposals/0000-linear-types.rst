@@ -154,8 +154,8 @@ exactly once implies that ``u`` is *consumed exactly once* (defined
 as follows).
 
 - Consuming a value of a data type exactly once means evaluating it to
-  head normal form exactly once, then consuming its fields exactly
-  once
+  head normal form exactly once, discriminate on its tag any number of
+  times, then consuming its fields exactly once
 - Consuming a function exactly once means applying it and consuming
   its result exactly once
 
