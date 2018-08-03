@@ -1026,7 +1026,27 @@ Pattern-matching
 Constructor patterns
 ~~~~~~~~~~~~~~~~~~~~
 
-See `Constructors & pattern-matching`_.
+The specification in `Constructors & pattern-matching`_ is extended as
+follows:
+
+- An existentially quantified multiplicity is introduced, by pattern
+  matching, as a rigid multiplicity variable (as any existential type
+  variable).
+
+  For instance, with the type
+
+  ::
+
+    data Foo a where
+      Foo :: forall p. a :p-> (a :p-> Bool) -> Foo a
+
+  in a branch
+
+  ::
+
+    Foo x f -> u
+
+  ``u`` can, essentially, only apply ``f`` to ``x``, in order to be well-typed.
 
 Wildcard patterns
 ~~~~~~~~~~~~~~~~~
