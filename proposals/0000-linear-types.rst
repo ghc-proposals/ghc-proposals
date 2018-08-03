@@ -671,14 +671,37 @@ Let us consider a judgement ``Γ ⊢ (b1 :(π1) A1) … (bn :(πn) An) → u : B
   B``, if ``π=ω``
 
 
-Unboxed data types
-------------------
+Unboxed and unlifted data types
+-------------------------------
 
 GHC supports unboxed data types such as ``(#,#)`` (unboxed pair) and
-``(#|#)`` (binary unboxed sum). The proposal treats them as their boxed
-equivalent (``(,)`` and ``Either``, respectively, for these two
-examples): the constructors are linear (and case can have various
-multiplicities).
+``(#|#)`` (binary unboxed sum), and (boxed) unlifted data types such
+as ``ByteArray#``. The definition of "consuming exactly once" must be
+extended for them. Unlifted data types are handled as regular, lifted,
+data types, except that the their evaluation in head normal form is
+skipped (as values, at these types, are already evaluated). Unboxed
+data types are a particular case of unlifted data types, and are not
+treated specially. Thus
+
+- Consuming a value of type ``(#,#)`` (resp. any arity) exactly once
+  means consuming each of its fields exactly once.
+- Consuming a value of type ``(#|#)`` (resp. any arity) exactly once
+  mean discriminating on its tag any number of time, and consume its
+  one field exactly once.
+- Consuming a value of type ``Int#`` (resp. any unboxed word-like
+  type) is always true (we see a value of type ``Int#`` as an unboxed
+  sum with 2⁶⁴ possible different tag).
+- Consuming a value whose type as kind ``TYPE UnliftedRep`` (such as
+  ``ByteArray#``, ``MutableArray# s a``, …) means discriminating on
+  its tag any number of times, and consuming each of its linear fields
+  exactly once.
+
+For the sake of typing, the proposal treats ``(#,#)`` and ``(#|#)`` as
+their boxed equivalent (``(,)`` and ``Either``, respectively): the
+constructors are linear (and case can have various
+multiplicities). More generally the typing rules do not distinguish
+unboxed or unlifted types from lifted ones, for the purpose of
+checking linearity.
 
 There is no current proposed syntax for unboxed data types of mixed
 multiplicity, though the `Unlifted data types proposal
