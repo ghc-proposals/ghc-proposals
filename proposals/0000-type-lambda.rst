@@ -121,6 +121,42 @@ This new behavior will be available whenever both ``-XTypeApplications`` and
 
 This change is specified in the appendix to the `Type variables in patterns <https://cs.brynmawr.edu/~rae/papers/2018/pat-tyvars/pat-tyvars.pdf>`_ paper.
 
+Examples
+--------
+
+Here are two real-world examples of how this will help, courtesy of @int-index:
+
+1. It would be useful to eliminate ``Proxy`` in this style of proof::
+
+     class WithSpine xs where
+       onSpine ::
+         forall r.
+         Proxy xs ->
+         ((xs ~ '[]) => r) ->
+         (forall y ys.
+           (xs ~ (y : ys)) =>
+           WithSpine ys =>
+           Proxy y ->
+           Proxy ys ->
+           r) ->
+         r
+
+   Code taken `from here <https://github.com/int-index/caps/blob/2f46fc6d5480bdef0a17f64359ad6eb29510dba4/src/Monad/Capabilities.hs#L273>`_.
+
+   Compare:
+
+   a. ``@``\-style: ``withSpine @xs (onNil ...) (\ @y @ys -> onCons ...)``
+   b. ``Proxy``\-style: ``withSpine (Proxy :: Proxy xs) (onNil ...) (\(Proxy :: Proxy y) (Proxy :: Proxy ys) -> onCons ...)``
+
+2. From ```reflection`` <https://hackage.haskell.org/package/reflection-2.1.4/docs/Data-Reflection.html#v:reify>`_::
+
+     reify :: forall a r. a -> (forall (s :: *). Reifies s a => Proxy s -> r) -> r
+
+   Compare:
+
+   a. ``@``\-style: ``reify (\ @s -> ...)``
+   b. ``Proxy``\-style: ``reify (\(Proxy :: Proxy s) -> ...)``
+
 Effect and Interactions
 -----------------------
 
