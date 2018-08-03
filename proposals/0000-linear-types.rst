@@ -590,22 +590,21 @@ on an equation). For instance
 The above takes care of the pure λ-calculus part of Haskell. We also
 need to consider ``let`` and ``case``.
 
-A ``let`` binding is considered to have an implicit multiplicity
-annotation (the annotation is inferred). The variables introduced by a
-``let`` bindings with annotation ``p`` all have multiplicity
-``p``. And the usage of ``x`` in ``let_p {y1 = u1; … ;yn = un} in v``
-(where the ``yi`` are variables) is ``p*q1 + … + p*qn + q`` where the
-usage of ``x`` in ``ui`` is ``qi`` and in ``v`` is ``q``.
+Every binding in a ``let`` block is considered to have an implicit
+multiplicity annotation (the annotation is inferred). The usage of
+``x`` in ``let {y1::(p1) _ = u1; … ;yn ::(pn) _ = un} in v`` (where
+the ``yi`` are variables) is ``p1*q1 + … + pn*qn + q`` where the usage
+of ``x`` in ``ui`` is ``qi`` and in ``v`` is ``q``.
 
-If a let has recursive binders, then ``p`` must be ``ω``.
+If a binder ``pi`` is recursively defined, then ``pi`` must be ``ω``.
 
-A ``case`` expression has an implicit multiplicity annotation, like
-``let`` binding. It if often inferred from the type annotation of an
-equation. The usage of ``x`` in ``case_p u of { … }``, where the usage
-of ``x`` in ``u`` is ``q`` is ``p*q`` plus the *join* of the usage of
-``x`` in each branch.  Note that, in usages, ``0 ≰ 1`` as arguments
-with multiplicity ``1`` are consumed exactly once, which doesn't
-include not being consumed at all.
+A ``case`` expression has an implicit multiplicity annotation. It if
+often inferred from the type annotation of an equation. The usage of
+``x`` in ``case_p u of { … }``, where the usage of ``x`` in ``u`` is
+``q`` is ``p*q`` plus the *join* of the usage of ``x`` in each branch.
+Note that, in usages, ``0 ≰ 1`` as arguments with multiplicity ``1``
+are consumed exactly once, which doesn't include not being consumed at
+all.
 
 The multiplicity annotation of variables introduced by a pattern depend
 on the constructor and on the implicit annotation of the
@@ -2089,14 +2088,14 @@ Inlining
 
   ::
 
-    let_1 x = u in if b then … x … else … x …
+    let x::(1) _ = u in if b then … x … else … x …
 
   GHC may try to line ``x`` at the some (but not necessarily all) of
   the use sites. For instance, GHC may try to reduce to
 
   ::
 
-    let_1 x = u in if b then … u … else … x …
+    let x::(1) _ = u in if b then … u … else … x …
 
   But this is not recognised as linear under the current typing rules
   (because, among other things ``u`` counts as having been used twice,
@@ -2123,21 +2122,21 @@ Common Subexpression Elimination (CSE)
 
   ::
 
-    let_1 x = u in e
+    let x::(1) _ = u in e
 
   There are several potential strategies:
 
   - Ignore linear lets for the purpose of CSE. After all, we are
     unlikely to find many occurrences of ``u`` if ``u`` is used in a
-    ``let_1``.
-  - Try and see if we can replace the ``let_1`` by a ``let_ω`` (that
+    ``let x::(1) _``.
+  - Try and see if we can replace the ``let x::(1)`` by a ``let x::(ω)`` (that
     is, if ``u`` only has unrestricted type variables). And continue
-    with ``u --> x`` if the ``let_1`` was successfully promoted to
-    ``let_ω``.
-  - Do not change the ``let_1`` immediately, but when an occurrence of
-    ``u`` is encountered, lazily promote the ``let_1`` to a ``let_ω``
+    with ``u --> x`` if the ``let x::(1)`` was successfully promoted to
+    ``let x::(ω)``.
+  - Do not change the ``let x::(1)`` immediately, but when an occurrence of
+    ``u`` is encountered, lazily promote the ``let x::(1)`` to a ``let x::(ω)``
     if needed (if we have resolved the issue with inlining, we may not
-    always need to promote the ``let_1``). It is not completely clear
+    always need to promote the ``let x::(1)``). It is not completely clear
     how to pursue this option.
 
 Case-binder optimisations:
@@ -2145,15 +2144,15 @@ Case-binder optimisations:
 
   ::
 
-     case_1 x of y {
-       (p:ps) -> (case_1 x of …) (case_1 x of …)}
+     case x of y::(1) _ {
+       (p:ps) -> (case x of z::(1) _ {…}) (case x of w::(1) _ {…})}
 
   into
 
   ::
 
-    case_1 x of y {
-      (p:ps) -> let x_?? = y in (case x of …) (case x of …)}
+    case x of y::(1) _ {
+      (p:ps) -> let x::(??) _ = y in (case x of …) (case x of …)}
 
   This transformation, similar to CSE, is valid only because we are
   calling for a ``case_1`` of some unrestricted variable. This is
@@ -2165,7 +2164,7 @@ Case-binder optimisations:
   - Even if we have a more flexible typing rule for ``let`` (see
     below), it remains that ``y`` has multiplicity ``1`` and that for
     the right-hand side of the alternative to type-check, we actually
-    need ``let_ω x = y in …``, which is not well-typed.
+    need ``let x::(ω) _ = y in …``, which is not well-typed.
 
   Like for CSE, we can either prevent this optimisation for linear
   cases. Or we can try to promote the ``case_1`` to a ``case_ω``, and
@@ -2216,8 +2215,8 @@ Inference
   errors. See Inference_ for more details.
 
 - In the formalism, case expressions are indexed by a multiplicity:
-  ``case_p`` (and similarly ``let_p``). In the surface language, we
-  can deduce the multiplicity in equations when their is a type
+  ``case_p`` (and similarly ``let x::(p)``). In the surface language, we
+  can deduce the multiplicity in equations when there is a type
   annotation.
 
   ::
