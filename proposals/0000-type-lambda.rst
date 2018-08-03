@@ -148,7 +148,7 @@ Here are two real-world examples of how this will help, courtesy of @int-index:
    a. ``@``\-style: ``withSpine @xs (onNil ...) (\ @y @ys -> onCons ...)``
    b. ``Proxy``\-style: ``withSpine (Proxy :: Proxy xs) (onNil ...) (\(Proxy :: Proxy y) (Proxy :: Proxy ys) -> onCons ...)``
 
-2. From ```reflection`` <https://hackage.haskell.org/package/reflection-2.1.4/docs/Data-Reflection.html#v:reify>`_::
+2. From `\ ``reflection`` <https://hackage.haskell.org/package/reflection-2.1.4/docs/Data-Reflection.html#v:reify>`_::
 
      reify :: forall a r. a -> (forall (s :: *). Reifies s a => Proxy s -> r) -> r
 
