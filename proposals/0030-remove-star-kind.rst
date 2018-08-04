@@ -1,7 +1,7 @@
 Remove the * kind syntax
 ========================
 
-.. proposal-number::
+.. proposal-number:: 30
 .. trac-ticket::
 .. implemented::
 .. highlight:: haskell
