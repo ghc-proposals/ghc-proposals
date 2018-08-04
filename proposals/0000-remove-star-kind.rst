@@ -161,8 +161,8 @@ time-based schedule takes precedence.
 * For seven more releases, do nothing.
 * In the next release (or 7 years in), disable ``-XStarIsType`` by default and deprecate it.
 * For two more releases, do nothing.
-* In the next release (or 8.5 years in), remove ``-XStarIsType`` from GHC
-  to simplify the internals.
+* In the next release (or 8.5 years in), the ``-XStarIsType`` extension may be
+  removed from GHC to simplify the internals.
 
 Effect and Interactions
 -----------------------
