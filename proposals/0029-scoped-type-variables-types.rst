@@ -1,7 +1,7 @@
 Allow ScopedTypeVariables to refer to types
 ===========================================
 
-.. proposal-number::
+.. proposal-number:: 29
 .. trac-ticket:: #15050
 .. implemented:: 
 .. highlight:: haskell
