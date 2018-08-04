@@ -5,7 +5,7 @@ Remove the * kind syntax
 .. trac-ticket::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/143>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/143>`_.
 .. sectnum::
 .. contents::
 
