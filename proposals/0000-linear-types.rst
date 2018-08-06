@@ -1684,7 +1684,7 @@ backwards compatibility. There are two issues:
      foo (Identity Just)
 
   What happens is that ``Identity Just`` is inferred to have type
-  ``Identity (a ->. b)``, which is *not* compatible with type
+  ``Identity (a ->. Maybe a)``, which is *not* compatible with type
   ``Identity (a -> b)`` and cannot be mediated by an
   η-expansion. It could have been that ``Just`` would be type-checked
   at type ``a -> b`` so that ``Identity Just`` would have been
