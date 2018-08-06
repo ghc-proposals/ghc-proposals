@@ -122,8 +122,8 @@ Given trailing and leading commas, one could instead write::
     #endif
     )
 
-There is a potential interaction with `TupleSections`, if this change were allowed for tuple values.
-`TupleSections` will interpret `(a, b, )` as `(a, b, ) :: c -> (a, b, c)`, while `ExtraCommas` would interpret it as `(a, b, ) :: (a, b)`.
+There is a potential interaction with ``TupleSections``, if this change were allowed for tuple values.
+``TupleSections`` will interpret ``(a, b, )`` as ``(a, b, ) :: c -> (a, b, c)``, while ``ExtraCommas`` would interpret it as ``(a, b, ) :: (a, b)``.
 
 
 Costs and Drawbacks
