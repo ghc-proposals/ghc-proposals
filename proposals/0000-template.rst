@@ -66,7 +66,7 @@ Alternatives
 List existing alternatives to your proposed change as they currently exist and discuss why they are insufficient.
 
 
-Unresolved questions
+Unresolved Questions
 --------------------
 Explicitly list any remaining issues that remain in the conceptual design and specification. Be upfront and trust that the community will help. Please do not list *implementation* issues.
 
