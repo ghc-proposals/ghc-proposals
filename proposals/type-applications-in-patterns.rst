@@ -155,7 +155,17 @@ For users who want this mainly to instantiate existential variables may find tha
 go past the universial variables, which is mildly inconvenient. It may be fixed in some cases by changing the order
 of the type variables of ``C``. This is unavoidable if we want to preserve the symmetry between terms and types, though. A mitigation for this is offerend in `proposal #99 (explicit specificity) <https://github.com/ghc-proposals/ghc-proposals/pull/99>`_.
 
-A possible future proposal that extends as-patterns to allow patterns on both sides of the `@` would now introduce ambiguities, e.g. in `Nothing @ a`.
+A possible future proposal that extends as-patterns to allow patterns on both sides of the `@` would now introduce ambiguities, e.g. in `Nothing @ a`, and will require disambiguation. This disambiguation could be
+
+* extra parenthesis: ``(Nothing) @ a`` is an as-pattern, vs. ``Nothing @ a`` is a type application.
+* using a helper pattern synonym::
+
+        pattern And p q = p@q
+
+        foo (Nothing `And` a) = …
+  
+  These questions will have to be resolve if and when such extended as-patterns are requested.
+
 
 Open Questions
 ------------
@@ -169,4 +179,4 @@ to fixes preserving the symmetry between type applications in terms and patters,
 type applications and type signatures, and also in Section 6.1 of `the paper <https://arxiv.org/abs/1806.03476>`_. Furthermore, it does not introduce new concepts (e.g. the distinction between
 existential and universal parameters) to the Haskell programmer.
 
-The existing restriction of ``ScopedTypeVariabes`` that type variables in pattern signatures may only be bound to type variables, and not types, carries over to type variables in type applications. One could discuss lifting this restriction, but this question is completely orthotogonal to the proposal at hand, and should be discussed elsewhere (e.g. in `Proposal #128 <https://github.com/ghc-proposals/ghc-proposals/pull/128>`_ and `ticket _#15050 <https://ghc.haskell.org/trac/ghc/ticket/15050#comment:10>`_).
+The existing restriction of ``ScopedTypeVariabes`` that type variables in pattern signatures may only be bound to type variables, and not types, carries over to type variables in type applications. One could discuss lifting this restriction, but this question is completely orthotogonal to the proposal at hand, and should be discussed elsewhere (e.g. in `Proposal #128 <https://github.com/ghc-proposals/ghc-proposals/pull/128>`_ and `ticket #15050 <https://ghc.haskell.org/trac/ghc/ticket/15050#comment:10>`_).
