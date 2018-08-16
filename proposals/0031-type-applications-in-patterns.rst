@@ -1,7 +1,7 @@
 Type Applications in Patterns
 =============================
 
-.. proposal-number::
+.. proposal-number:: 31
 .. trac-ticket::
 .. implemented::
 .. highlight:: haskell
