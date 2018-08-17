@@ -2,10 +2,10 @@ Type Applications in Patterns
 =============================
 
 .. proposal-number:: 31
-.. trac-ticket::
+.. trac-ticket:: 15530 
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/126>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/126>`_.
 .. sectnum::
 .. contents::
 
@@ -54,8 +54,6 @@ to::
 A pattern ``C @a``, where ``C`` is a data constructor and ``a`` is a type variable that is not yet in scope, matches if ``C`` matches. It brings ``a`` into scope so that ``a`` stands for the corresponding type that was passed to ``C`` upon construction.
 
 More complicated cases such as ``C @ty``, where ``ty`` is not just a plain type variable, are handled like `type signatures in patterns <https://downloads.haskell.org/~ghc/8.4.3/docs/html/users_guide/glasgow_exts.html#pattern-type-sigs>`_. A full and formal description of the scoping and typing rules for this feature can be found in `“Type variable in pattern” by Richard Eisenberg, Joachim Breitner and Simon Peyton Jones <https://arxiv.org/abs/1806.03476>`_.
-
-Like with type signatures in patterns, type variables in type applications in patterns can only bind type variables. If `Proposal #128 <https://github.com/ghc-proposals/ghc-proposals/pull/128>`_ get accepted, then this condition will be lifted also in type applications.
 
 An underscore in a type signature or type application in a pattern is allowed, does not bind any variables, and is not treated as a partial type signature (i.e. does not cause warnings with ``-Wpartial-type-signatures``).
 
