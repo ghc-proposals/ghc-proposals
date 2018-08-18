@@ -28,7 +28,7 @@ As a result, ``MkT`` has type ``Num a => a -> T a``. Pattern matching on ``MkT``
 
 has type ``Num a => T a -> a``. This dictionary is discarded and not used during construction nor during pattern matching.
 
-(This can be contrasted with GADT pattern matching: in ``data T2 a = Num a => MkT2 a``, pattern matching on ``MkT2`` provides the ``Num a`` constraint, so ``f2 (MkT2 x) = x + x`` has type ``MkT2 a -> a`` even though uses addition in the function body.)
+(This can be contrasted with GADT pattern matching: in ``data T2 a = Num a => MkT2 a``, pattern matching on ``MkT2`` provides the ``Num a`` constraint, so ``f2 (MkT2 x) = x + x`` has type ``T2 a -> a`` even though uses addition in the function body.)
 
 This extension is commonly described as a misfeature - it forces type signatures to have constraints without giving anything in return.
 
