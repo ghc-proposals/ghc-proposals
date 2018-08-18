@@ -57,7 +57,9 @@ This will be another deviation from the Haskell 2010 standard. Note that GHC alr
 
 Packages using DatatypeContexts will break. I downloaded the entire Hackage repository, used different regexes to search for usage and manually filtered out false positives. Out of 12907 hackage packages, I counted 181 in total using DatatypeContexts; out of those, 14 are deprecated, 120 didn't have an upload within the last 2 years, there are 47 remaining. `See details <https://gist.github.com/monoidal/77c6dd7490f7c9398db35b35273cc030>`_.
 
-In general, programs with `DatatypeContexts` can be updated just by removing the context. In rare cases, programs depending on type defaulting can `change semantics <https://prime.haskell.org/wiki/NoDatatypeContexts>`_. I don't expect this to occur in practice; worst-case, type defaulting can be detected with ``ghc -Wall``.
+In general, programs with `DatatypeContexts` can be updated just by removing the context, with two exceptions:
+* In rare cases, programs depending on type defaulting can `change semantics <https://prime.haskell.org/wiki/NoDatatypeContexts>`_. I don't expect this to occur in practice; worst-case, type defaulting can be detected with ``ghc -Wall``.
+* Datatype contexts can be used as a workaround to lack of kind signatures in Haskell 2010: ``data Monad m => Foo m a = Blah``. In modern GHC, this code can be written using ``KindSignatures``.
 
 
 Alternatives
