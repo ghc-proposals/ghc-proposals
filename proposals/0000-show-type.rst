@@ -105,7 +105,7 @@ of two ways:
       -> r
   showTypeName k =
     case someSymbolVal (show $ typeRep @a) of
-      SomeSymbol proxy -> f proxy
+      SomeSymbol proxy -> k proxy
 
 ``showTypeName`` is annoying to use; it exists at the term-level and relies on a
 continuation. Thus it cannot be used in a type family.
@@ -120,13 +120,12 @@ Alternatively, this can be provided via a ``Generic`` instance:
   type family TypeName (x :: Type) :: Symbol where
     TypeName x = RepName (Rep x)
 
-Thanks to `i-am-tom <https://github.com/i-am-tom>`_ for this alternative.
+(thanks to `i-am-tom <https://github.com/i-am-tom>`_ for this alternative)
 
 However this requires a ``Generic`` instance which might not have been derived,
 and doesn't show the type parameters without significantly more work.
 
-Neither ``showTypeName`` nor ``TypeName`` support things of kinds other than
-``Type``.
+Neither ``showTypeName`` nor ``TypeName`` support kinds other than ``Type``.
 
 
 Unresolved Questions
