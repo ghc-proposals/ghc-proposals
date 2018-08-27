@@ -116,10 +116,54 @@ As usual, we can interpret a function defintion ``f <args> = body`` as
 ``f = \ <args> -> body``, and thus the function-definition case reduces to the lambda-expression
 case above.
 
-This new behavior will be available whenever both ``-XTypeApplications`` and
-``-XScopedTypeVariables`` are enabled.
+This new behavior will be with ``-XTypeApplications``. Naturally, scoped type variables
+work only with 
+``-XScopedTypeVariables`` enabled, so using this feature without ``-XScopedTypeVariables``
+would enable only ``@_`` abstractions.
 
 This change is specified in the appendix to the `Type variables in patterns <https://cs.brynmawr.edu/~rae/papers/2018/pat-tyvars/pat-tyvars.pdf>`_ paper.
+
+Bidirectional type checking
+---------------------------
+
+While the specification above is (in my opinion) a complete specification of the proposed behavior with
+respect to the linked papers,
+I include here an expansion of the idea behind bidirectional type checking to aid understanding.
+
+**Motivation**: We need to restrict this feature to the *checking* mode of bidirectional type checking because
+it is unclear (to me) how to do better. Clearly, ``id @a x = x`` is problematic, because we don't know how to
+associate ``a`` with ``x``. But what about ``f @a (x :: a) @b (y :: b) = x == y``? That could indeed be well-typed
+at ``f :: forall a. a -> forall b. b -> (a ~ b, Eq a) => Bool``, but I don't wish to ask GHC to infer that. (Even
+without the wonky equality constraint would be hard.) Perhaps someone can sort this out and expand this feature,
+but there seems to be no need to handle the *checking* case now.
+
+The algorithm operates in *inference mode* when it does not know the type of an expression. If GHC does know
+the type in advance, it uses *checking* mode. Here are some
+examples::
+
+  f x = x 6 True  -- we do not know the type of the RHS, so we infer it
+
+  g (x :: Int) = x + 8   -- ditto here: we do not know the type of the RHS
+
+  h :: Int -> Int
+  h x = x + 8   -- this RHS is in *checking* mode, as we do know it to have type Int
+
+  j :: Bool -> Bool
+  j x = id not x   -- the expression (id not) is in *inference* mode, as we don't, a priori, know its type
+
+The new syntax is available only in expressions that are being *checked*, not *inferred*. In effect, this
+means that it is usable only when a function that has been given a type signature.
+
+In the context of the GHC implementation, we have these definitions::
+
+  data ExpType = Check TcType
+               | Infer !InferResult
+  tcExpr :: HsExpr GhcRn -> ExpType -> TcM (HsExpr GhcTcId)
+
+*Checking* mode is precisely when the ``ExpType`` passed to ``tcExpr`` is a ``Check``.
+*Inference* mode is precisely when the ``ExpType`` passed to ``tcExpr`` is an ``Infer``.
+  
+  
 
 Examples
 --------
@@ -214,7 +258,19 @@ We don't have to, of course, but then there will still be one area in GHC/Haskel
 One alternative design would be to rearrange the extensions so that users could enable
 parts of today's ``ScopedTypeVariables`` without enabling the strange binding behavior of
 ``forall``. I don't feel the need for this, myself, so I do not plan on working out this
-design, but I'm happy to accept contributions toward this end from the community.
+design, but I'm happy to accept contributions toward this end from the community. One such
+worked out design is in `this comment <https://github.com/ghc-proposals/ghc-proposals/pull/155#issuecomment-406024481>`_.
+I'm still not convinced the complication is worth it.
+
+One drawback of this proposal is that it rejects ``id @a (x :: a) = x`` if there is no
+type signature on ``id``. We could imagine extending this feature to pretend that such
+a definition comes with an implicit ``id :: forall a. a -> _`` partial type signature
+and proceeding accordingly. (The partial type signature is created from a quick syntactic
+analysis of the definition.) In this case, the definition of ``id`` would be accepted.
+However, I worry that this would be fragile as the partial-type-signature extraction would
+have to be purely syntactic. For example, would ``null @a ((_ :: a) : _) = False`` be treated
+identically to ``null @a ((_:_) :: [a]) = False`` and ``null @a (_:(_ :: [a]))``? It seems
+hard to ensure. Perhaps I'm just being pessimistic, thnough.
 
 Unresolved questions
 --------------------
