@@ -9,9 +9,7 @@ Remove an undocumented `StableName` guarantee
 .. implemented:: Leave blank. This will be filled in with the first GHC version which
                  implements the described feature.
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_.
-            **After creating the pull request, edit this file again, update the
-            number in the link, and delete this bold sentence.**
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/163>`_.
 .. sectnum::
 .. contents::
 
@@ -35,20 +33,16 @@ table per GC generation and a radically simpler garbage collection strategy.
 What the stable name table really lets us do is make an *undocumented*
 guarantee: if ``sn1`` and ``sn2`` are stable names, that are currently
 *live*, and ``hashStableName sn1 = hashStableName sn2``, then
-``sn1 = sn2``. As a consequence, we could implement a map from stable
-names to values like so: ::
-
- newtype SNMap k v = SNMap (IntMap (StableName k, v))
-
-where the ``IntMap`` keys are ``hashStableName`` values for their
-entries. Since the map keeps the stable names alive, there's no need
-to worry about collisions.
+``sn1 = sn2``.
 
 Proposed Change Specification
 -----------------------------
 
 Reimplement ``StableName``\s in a simpler, more efficient way that
-does not make the described de facto guarantee.
+does not make the described de facto guarantee. Collisions will remain
+quite rare (and will almost never happen on 64-bit architectures),
+but there will no longer be any way to guarantee that they absolutely
+will not occur.
 
 Effect and Interactions
 -----------------------
@@ -58,29 +52,59 @@ I don't foresee any significant interactions.
 Costs and Drawbacks
 -------------------
 
-Any code relying on the de facto guarantee will break, probably
-silently, and probably intermittently.
+* Any code relying on the de facto guarantee will break, probably
+  silently, and probably intermittently.
 
-Someone will actually have to write the simplified implementation.
-If I understand what's going on correctly, this shouldn't take more
-than a day or so for someone who's familiar with the GHC garbage
-collector, or somewhat longer for someone who's not.
+* Someone will actually have to write the simplified implementation.
+  If I understand what's going on correctly, this shouldn't take more
+  than a day or so for someone who's familiar with the GHC garbage
+  collector, or somewhat longer for someone who's not.
 
 Alternatives
 ------------
 
-The obvious alternative is to *document* the de facto guarantee.
+The obvious alternative is to *document* the de facto guarantee. This would
+allow some (very carefully written) code to be simpler and/or more efficient.
+For example, we could implement a map from stable names to values like so: ::
+
+ newtype SNMap k v = SNMap (IntMap (StableName k, v))
+
+ empty :: SNMap k v
+ empty = SNMap (IM.empty)
+
+ insert :: k -> v -> SNMap k v -> IO (SNMap k v)
+ insert k v (SNMap im) = do
+   snk <- makeStableName k
+   pure $! SNMap (IM.insert (hashStableName snk) (snk, v) im)
+
+ lookup :: k -> SNMap k v -> IO (Maybe v)
+ lookup k (SNMap im) = do
+   snk <- makeStableName k
+   case lookup (hashStableName snk) im of
+     Nothing -> pure Nothing
+     Just (sn, v) -> do
+       touch sn
+       touch snk
+       pure (Just v)
+
+We don't need to worry about hash collisions on lookup because
+we ensure that the stable names are both alive at the end of
+the operation, and therefore the equality of their hashes implies
+their equality.
+
+There is a clear trade-off here between complexity of code using
+stable names and complexity of the code implementing them. There's
+also a balance in where we pay performance prices. At the moment,
+we're getting the worst of both worlds, paying the price to implement
+conditional injectivity but not letting users reap any benefits.
+I think we should definitely do one or the other.
 
 Unresolved Questions
 --------------------
 
 Is anyone currently relying on the de facto guarantee?
 
-How does the performance of code relying on the de facto guarantee compare to
-its performance once it's modified not to rely on the de facto guarantee and
-the ``StableName`` implementation has been streamlined?
-
 Implementation Plan
 -------------------
 I'd be happy to work on it myself, but I'd need some help from the
-GC masters.
+GHC garbage collection experts.
