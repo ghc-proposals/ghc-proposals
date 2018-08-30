@@ -67,6 +67,10 @@ The obvious alternative is to *document* the de facto guarantee. This would
 allow some (very carefully written) code to be simpler and/or more efficient.
 For example, we could implement a map from stable names to values like so: ::
 
+ touchStableName :: StableName a -> IO ()
+ touchStableName (StableName sn) =
+   IO $ \s -> (# touch# sn s, () #)
+
  newtype SNMap k v = SNMap (IntMap (StableName k, v))
 
  empty :: SNMap k v
@@ -83,12 +87,12 @@ For example, we could implement a map from stable names to values like so: ::
    case lookup (hashStableName snk) im of
      Nothing -> pure Nothing
      Just (sn, v) -> do
-       touch sn
+       touchStableName sn
        pure (Just v)
 
 We don't need to worry about hash collisions on lookup because
-we ensure (using ``touch``) that ``sn`` is alive when ``snk``
-is created, and therefore the equality of their hashes implies
+we ensure (using ``touchStableName``) that ``sn`` was alive when ``snk``
+was created, and therefore the equality of their hashes implies
 their equality.
 
 There is a clear trade-off here between complexity of code using
