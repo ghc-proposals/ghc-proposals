@@ -31,9 +31,9 @@ a stable name table at all. We can, I believe, get away with just one hash
 table per GC generation and a radically simpler garbage collection strategy.
 
 What the stable name table really lets us do is make an *undocumented*
-guarantee: if ``sn1`` and ``sn2`` are stable names, that are currently
-*live*, and ``hashStableName sn1 = hashStableName sn2``, then
-``sn1 = sn2``.
+guarantee: if ``sn1`` and ``sn2`` are stable names, ``sn1`` was alive
+when ``sn2`` was created by ``makeStableName``, and
+``hashStableName sn1 = hashStableName sn2``, then ``sn1 = sn2``.
 
 Proposed Change Specification
 -----------------------------
@@ -84,12 +84,11 @@ For example, we could implement a map from stable names to values like so: ::
      Nothing -> pure Nothing
      Just (sn, v) -> do
        touch sn
-       touch snk
        pure (Just v)
 
 We don't need to worry about hash collisions on lookup because
-we ensure that the stable names are both alive at the end of
-the operation, and therefore the equality of their hashes implies
+we ensure (using ``touch``) that ``sn`` is alive when ``snk``
+is created, and therefore the equality of their hashes implies
 their equality.
 
 There is a clear trade-off here between complexity of code using
