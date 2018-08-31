@@ -13,8 +13,9 @@ Show Types as Symbols
 .. sectnum::
 .. contents::
 
-``ShowType`` has an annoyingly specific kind: ``k -> ErrorMessage``. If it were
-instead ``k -> Symbol``, we could use it in many more places.
+``ShowType`` has an annoyingly specific kind: ``k -> ErrorMessage``. If we had
+something similar whose kind  were instead ``k -> Symbol``, we could use it in
+many more places.
 
 
 Motivation
@@ -61,16 +62,112 @@ we can instead write ``typeName`` as:
 
 Proposed Change Specification
 -----------------------------
-The proposal is to introduce a new primitive type-family:
+The proposal is to introduce a new primitive type-family, and a helper:
 
 ::
 
-  type family ShowTypeSymbol (a :: k) :: Symbol
+  type family ShowTypeSymbolPrec (i :: Nat) (t :: k) :: Symbol
 
-which will expand to a ``Symbol`` for ``a`` equivalent to what ``ShowType``
-would emit today for its custom type error. In addition, it will emit a derived
-constraint ``KnownSymbol (ShowTypeSymbol a)`` ensuring this symbol can be moved
-to the term-level.
+  type family ShowTypeSymbol (t :: k) :: Symbol where
+    ShowTypeSymbol t = ShowTypeSymbolPrec 0 t
+
+
+which will expand to a ``Symbol`` for ``a`` at precedence ``i``. When ``i
+~ 0``, this is equivalent to the source-level name of ``t``. An exact
+specification is given below.
+
+* If ``t`` is stuck, ``ShowTypeSymbolPrec i t`` is also stuck.
+
+* If ``t`` is of kind ``Symbol``, return the symbol wrapped in quotes. For
+  example:
+
+  ::
+
+    type instance ShowTypeSymbolPrec i (a :: Symbol) =
+      AppendSymbol "\"" (AppendSymbol a "\"")
+
+* If ``t`` is of kind ``Nat``, return it as a symbol. For example:
+
+  ::
+
+    type instance ShowTypeSymbolPrec i 17 = "17"
+
+* If ``t`` is of kind ``[a]``, show it element-wise. For example:
+
+  ::
+
+    type instance ShowTypeSymbolPrec i '[a, b] =
+      AppendSymbol "'[" (
+        AppendSymbol (ShowTypeSymbolPrec 0 a) (
+          AppendSymbol ", " (
+            AppendSymbol (ShowTypeSymbolPrec 0 b) (
+              "]"
+
+* If ``t`` is a promoted tuple AND it is saturated, show it in tuple-form:
+
+  ::
+
+    type instance ShowTypeSymbolPrec i '(a, b) =
+      AppendSymbol "'(" (
+        AppendSymbol (ShowTypeSymbolPrec 0 a) (
+          AppendSymbol ", " (
+            AppendSymbol (ShowTypeSymbolPrec 0 b) (
+              ")"
+
+  Unsaturated promoted tuples are handled below by the more general rules for
+  constructors.
+
+* If ``t`` is a type constructor, return the name of the type constructor. For
+  example: ``type instance ShowTypeSymbolPrec i Either = "Either"``
+
+* If ``t`` is a promoted data constructor, return the name of the promoted data
+  constructor (including the leading tick.) For example: ``type instance
+  ShowTypeSymbolPrec i 'Left = "'Left"``
+
+* If ``t`` is of the form ``a `f` b`` where ``f`` is a type operator, expand as
+  follows:
+
+  ::
+
+    type instance ShowTypeSymbolPrec i (a `f` b) =
+      NeedsParens i (Precedence f) (
+        AppendSymbol (ShowTypeSymbolPrec (Precedence f + 1) a) (
+          AppendSymbol " " (
+            AppendSymbol (ShowTypeSymbolPrec 0 f) (
+              AppendSymbol " " (
+                ShowTypeSymbolPrec (Precedence f + 1) b)))))
+
+  where ``Precedence f`` comes from the precedence of the fixity declaration
+  for ``f``.
+
+* If ``t`` is of the form ``f a``, expand as follows:
+
+  ::
+
+    type instance ShowTypeSymbolPrec i (f a) =
+      NeedsParens i 0 (
+        AppendSymbol (ShowTypeSymbolPrec 0 f) (
+          AppendSymbol " " (
+            ShowTypeSymbolPrec 10 a)))
+
+
+For completeness, the following definitions are used in the above examples:
+
+::
+
+  type family ShowTypeSymbolPrec (i :: Nat) (t :: k) :: Symbol
+
+  type family ShowTypeSymbol (t :: k) :: Symbol where
+    ShowTypeSymbol t = ShowTypeSymbolPrec 0 t
+
+  type family NeedsParens (i :: Nat) (j :: Nat) (s :: Symbol) :: Symbol where
+    NeedsParens i j s = PrintParens (CmpNat i j) s
+
+  type family PrintParens (c :: Ordering) (s :: Symbol) :: Symbol where
+    PrintParens 'GT s = AppendSymbol "(" (AppendSymbol s ")")
+    PrintParens c   s = s
+
+  type family Precedence (f :: k1 -> k2 -> k3) :: Nat
 
 
 Effect and Interactions
@@ -82,8 +179,8 @@ This change won't interact with any other existing features.
 
 Costs and Drawbacks
 -------------------
-Development cost is likely tiny; after all, GHC already prints out the result of
-``ShowType`` for custom type errors.
+Development cost is likely tiny; after all, GHC already prints out types at
+their source-level representation.
 
 Maintenance cost is similarly small, this primitive would do little more than
 use existing machinery to build a ``Symbol``.
@@ -121,21 +218,14 @@ Alternatively, this can be provided via a ``Generic`` instance:
 (thanks to `i-am-tom <https://github.com/i-am-tom>`_ for this alternative)
 
 However this requires a ``Generic`` instance which might not have been derived,
-and doesn't show the type parameters without significantly more work.
+and doesn't show parameters without significantly more work.
 
 Neither ``showTypeName`` nor ``TypeName`` support kinds other than ``Type``.
 
 
 Unresolved Questions
 --------------------
-Should we redefine ``ShowType`` in terms of ``ShowTypeSymbol``?
-
-::
-
-  type ShowType a = Text (ShowTypeSymbol a)
-
-Possibly not, if ``ShowType`` wants to do context-sensitive pretty printing (eg.
-word wrapping and indenting.)
+None
 
 
 Implementation Plan
