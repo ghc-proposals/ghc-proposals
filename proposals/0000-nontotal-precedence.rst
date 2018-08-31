@@ -85,10 +85,7 @@ List existing alternatives to your proposed change as they currently exist and d
 
 Unresolved questions
 --------------------
-Explicitly list any remaining issues that remain in the conceptual design and specification. Be upfront and trust that the community will help. Please do not list *implementation* issues.
-
-Hopefully this section will be empty by the time the proposal is brought to the steering committee.
-
+Should we assume more? For example assuming it is a partial order (assume transitivity). Or should we go further and add prefix/postfix/possibly general mixfix in one go?
 
 Implementation Plan
 -------------------
