@@ -36,6 +36,7 @@ Possible Alternative Designs
 - namespaced lenses
 - overloaded-labels based accessors / lenses
 - row types
+- https://github.com/ghc-proposals/ghc-proposals/pull/158
 - ...
 
 Proposed Change Specification
@@ -123,9 +124,6 @@ None.
 
 Unresolved questions
 --------------------
-
-Should exporting ``Foo(..)`` also export functions based on the name of the
-field accessors?
 
 
 Implementation Plan
