@@ -79,6 +79,26 @@ If the language extension ``NoToplevelFieldSelectors`` is enabled for the module
 or ``Foo`` specifically, all of the above will be generated, except for the two
 functions ``bar`` and ``baz``.
 
+The following declarations would be equivalent:
+
+::
+
+    {-# LANGUAGE NoToplevelFieldSelectors #-}
+
+    data Foo = Foo { bar :: Int, baz :: String }
+
+::
+
+    {-# NoToplevelFieldSelectors #-}
+    data Foo = Foo { bar :: Int, baz :: String }
+
+::
+
+    data Foo = Foo { bar :: Int, baz :: String }
+    {-# NoToplevelFieldSelectors Foo #-}
+
+
+
 Wildcard exports will work as before, except for the two functions. Even if
 these functions are otherwise defined, the wildcard will not export them.
 Exporting the names for record construction now has to be specific to the
