@@ -28,8 +28,11 @@ toplevel function name for each field for selector purposes. This proposal
 intends to open the design space to this issue by removing the generation of
 these toplevel selector functions.
 
-Possible Alternative Designs
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Possible Alternative Use Cases for Record Names
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+After removing the toplevel selector names, the field names could be used as
+bindings for other values.
 
 - A `generic-lens` equivalent for toplevel lenses
 - namespaced accessors
