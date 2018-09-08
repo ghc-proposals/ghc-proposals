@@ -74,7 +74,8 @@ The primary costs for this feature are implementation time. Because it is a GHCi
 
 Alternatives
 ------------
-We don't implement this.
+
+Currently GHCi has an ``:info`` command which offers some information on instances. However, ``:info`` only works on single words, which means that ``:info Either String Int`` will return results for ``Either``, ``String``, and ``Int`` separately. This makes it a partial replacement at best for the ``:instances`` command.
 
 
 Unresolved Questions
