@@ -110,7 +110,9 @@ record. Without ambiguitiy, previously this was equivalent
 
 Because of the new semantics, these two export statements are now different. The
 first one will export the field ``baz``, but not the function ``baz``, while the
-second one will export the function ``baz``, but not the field ``baz``.
+second one will export the function ``baz``, but not the field ``baz``. Because
+of this change, writing out all selector functions by hand is still different,
+because they all have to be exported manually.
 
 Effect and Interactions
 -----------------------
