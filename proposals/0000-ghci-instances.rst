@@ -48,7 +48,7 @@ Proposed Change Specification
 
 This proposal adds a new command to GHCi called ``:instances`` which provides a listing of all valid instances for a given type. The command interprets everything after ``instances`` as a single type. It won't accept a typeclass as an argument, to list the instances of a class, users can already use the ``:info`` command.
 
-Additionally, besides taking a fully specified type, the command will accept partial type signatures, interpreting holes (``_``) as type variables. This allows ``:instances Either _ Int`` to return ``Eq a => Eq (Either a Int)`` as part of it's listing.
+Much like the ``kind`` command in GHCi, you can use either an explicit ``forall`` to name type variables within the provided type or you can use wildcards `_`.
 
 Effect and Interactions
 -----------------------
