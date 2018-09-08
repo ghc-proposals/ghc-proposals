@@ -46,15 +46,9 @@ It would provide a new tool for Haskell developers, both new and experienced tha
 Proposed Change Specification
 -----------------------------
 
-This proposal adds a new command to GHCi called `:instances` which provides a listing of all valid instances for a given type.
+This proposal adds a new command to GHCi called ``:instances`` which provides a listing of all valid instances for a given type. The command interprets everything after ``instances`` as a single type. It won't accept a typeclass as an argument, to list the instances of a class, users can already use the ``:info`` command.
 
-Additionally, besides taking a fully specified type, the command will accept partial type signatures, interpreting holes (``_``) as free variables. This allows ``:instances Either _ Int`` to return ``Eq a => Eq (Either a Int)`` as part of it's listing.
-
-The original `Trac ticket <https://ghc.haskell.org/trac/ghc/ticket/15610>`_ also suggests some further work. Notably:
-
-- **Negative Results**: a second command ``:noinstance`` would output a list of the unsatisfied constraints that prevent an instance from existing for a specific type.
-- **Multi-Parameter Type Classes**: I'm not sure yet what complications supporting multi-parameter typeclasses would entail but if it turns out to significantly complicate things then they could be pushed off to a further proposal.
-- **Trace Info**: Provide the source for every instance a type has.
+Additionally, besides taking a fully specified type, the command will accept partial type signatures, interpreting holes (``_``) as type variables. This allows ``:instances Either _ Int`` to return ``Eq a => Eq (Either a Int)`` as part of it's listing.
 
 Effect and Interactions
 -----------------------
@@ -81,6 +75,32 @@ Currently GHCi has an ``:info`` command which offers some information on instanc
 Unresolved Questions
 --------------------
 
+
+Future Work
+-----------
+
+The original `Trac ticket <https://ghc.haskell.org/trac/ghc/ticket/15610>`_ also suggests some further work. There are several improvements that could be proposed.
+
+Negative Results
+~~~~~~~~~~~~~~~~
+
+A second command ``:noinstance`` would output a list of the unsatisfied constraints that prevent an instance from being found for a specific type.
+
+Multi-Parameter Type Classes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Adding support for searching for multi-parameter type classes that include several specified types could be useful as well. It's unclear how to actually dilineate the multiple types that need to be provided.
+
+Trace Info
+~~~~~~~~~~
+
+We could annotate the specific location that each instance was provided from.
+
+.. code-block:: none
+  >> :instances Sum [] []
+  ..
+  Functor (Sum [] [])    -- (Functor f, Functor g) => Functor (Sum f g) -- Defined in ‘Data.Functor.Sum’
+  ..
 
 Implementation Plan
 -------------------
