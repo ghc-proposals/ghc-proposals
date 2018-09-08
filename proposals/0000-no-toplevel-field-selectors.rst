@@ -108,9 +108,9 @@ record. Without ambiguitiy, previously this was equivalent
 
     module A where (Foo(Foo, bar), baz)
 
-Because of the new semantics, these two export statements are now different.
-Maybe a wildcard export will export functions of the same name as well, this
-question isn't resolved yet.
+Because of the new semantics, these two export statements are now different. The
+first one will export the field ``baz``, but not the function ``baz``, while the
+second one will export the function ``baz``, but not the field ``baz``.
 
 Effect and Interactions
 -----------------------
