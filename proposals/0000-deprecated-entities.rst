@@ -11,7 +11,7 @@ Deprecated Entities
 .. sectnum::
 .. contents::
 
-This feature would allow to control what sort of entity a DEPRECATED pragma applies to.
+This feature would allow to control what sort of entity a ``DEPRECATED`` pragma applies to.
 
 Motivation
 ------------
@@ -31,7 +31,7 @@ Proposed Change Specification
 
 Effect and Interactions
 -----------------------
-An example of a use case for this is the following. Given the following module:
+An example of a use case for this is the following. Given the following module: ::
 
     module A where
 
@@ -44,7 +44,7 @@ An example of a use case for this is the following. Given the following module:
     data Baz = Baz
     {-# DEPRECATED data Baz "Don't use data constructor Baz" #-}
 
-When compiling the code which happens to use data constructor or type ``Foo``, we will see the following warnings:
+When compiling the code which happens to use data constructor or type ``Foo``, we will see the following warnings: ::
 
     Main.hs:5:8: warning: [-Wdeprecations (in -Wdefault)]
         In the use of type constructor or class ‘Foo’ (imported from A):
@@ -56,13 +56,13 @@ When compiling the code which happens to use data constructor or type ``Foo``, w
 
 In the same vein, if we use data constructor or type ``Bar``,
 we will be warned only when we use the type, but not constructor,
-since we specified which entity we want to deprecate in above mentioned module ``A``:
+since we specified which entity we want to deprecate in above mentioned module ``A``: ::
 
     Main.hs:8:8: warning: [-Wdeprecations (in -Wdefault)]
         In the use of type constructor or class ‘Bar’ (imported from A):
         Deprecated: "Don't use type Bar"
 
-Same logic applies to ``Baz``, we will be warned only when its data constructor is used:
+Same logic applies to ``Baz``, we will be warned only when its data constructor is used: ::
 
     Main.hs:12:7: warning: [-Wdeprecations (in -Wdefault)]
         In the use of data constructor ‘Baz’ (imported from A):
@@ -71,11 +71,11 @@ Same logic applies to ``Baz``, we will be warned only when its data constructor 
 
 When specifying several entities in one pragma,
 the sort of deprecated entity we've specified will apply to all listed entities.
-This will work - warn when these types are used(but not their constructors):
+This will work - warn when these types are used(but not their constructors): ::
 
     {-# DEPRECATED type Qux, Quux "Don't use this" #-}
 
-This will not work (parse error):
+This will not work (parse error): ::
 
     {-# DEPRECATED type Qux, constructor Quux "Don't use this" #-}
 
