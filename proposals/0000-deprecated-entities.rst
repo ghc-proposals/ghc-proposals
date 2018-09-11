@@ -87,25 +87,36 @@ There are currently no known drawbacks to this feature.
 
 Alternatives
 ------------
-The usual workaround would be to have a module that imports one but not the other.
+* The usual workaround would be to have a module that imports one but not the other.
 Unfortunately this workaround is limited as it would only work for types, but not for data constructors.
 Another option would be to refactor data constructor names, which is not backward compatible and inefficient.
+* Another alternative would be to try to utilize Haddock annotations. Example: ::
+
+    -- | DEPRECATE: This type is deprecated
+    data Foo =
+        -- | DEPRECATE: This constructor is deprecated
+        Foo x
 
 Unresolved Questions
 --------------------
 1) What specifier should be used for data constructors?
-`Initial feature request <https://ghc.haskell.org/trac/ghc/ticket/3427>`_ suggested to use `constructor` but
+`Initial feature request <https://ghc.haskell.org/trac/ghc/ticket/3427>`_ suggested to use ``constructor`` but
 using `specifiers from disambiguation in export list proposal <https://ghc.haskell.org/trac/ghc/wiki/Design/TypeNaming>`_
-seems better since it does not require new keywords to be introduced. Another disadvantage of using `constructor`
+seems better since it does not require new keywords to be introduced. Another disadvantage of using ``constructor``
 is that it is quite a widely used identifier so making it a keyword is bad for backward compatibility
 (for example, `hsc2hs uses it <https://github.com/haskell/hsc2hs/blob/master/CrossCodegen.hs#L470>`_ ).
+2) Although `DEPRECATED` pragma isn't often used with multiple entities specified,
+would it be nicer to have ``type``/``data`` qualifier specified for each entity,
+such that the following example is accepted? ::
+
+    {-# DEPRECATED type Qux, data Quux "Don't use this" #-}
 
 Implementation Plan
 -------------------
 * add new reserved keyword for disambiguating data constructors (?)
 * add new datatype to distinguish between different deprecated entities - ``DeprEntity``
 * extend ``WarningTxt`` type, namely ``DeprecatedTxt`` constructor with a field of type ``DeprEntity``
-* during the renaming phase, in `warnIfDeprecated` do extra check for the deprecated entity
+* during the renaming phase, in ``warnIfDeprecated`` do extra check for the deprecated entity
 * perform check against ``DeprEntity`` and ``Namespace``
 
 If accepted, I (`@nineonine <https://github.com/nineonine>`_) volunteer to implement this change.
