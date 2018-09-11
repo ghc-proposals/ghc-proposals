@@ -18,14 +18,15 @@ Motivation
 It is a very common idiom to have a type and an identically named data constructor.
 Sometimes one would want to deprecate the use of constructor
 (for example, when using smart constructors) with a help of ``DEPRECATED`` pragma.
-However, according to the user guide, there is currently no way to deprecate one thing without the other.
+However, according to the user guide, `there is currently no way to deprecate one thing without the other.
+<https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#warning-deprecated-pragma>`_
 The usual workaround would be to have a module that imports one but not the other,
 however while that's possible for the type it's not possible for the constructor.
 
 Proposed Change Specification
 -----------------------------
 
-* extend DEPRECATED pragma with a disambiguating specifier: ``data`` for data constructors and ``type`` for types.
+* extend ``DEPRECATED`` pragma with a disambiguating specifier: ``data`` for data constructors and ``type`` for types.
 * the unqualified case would mean deprecating both entities as it does now.
 
 
@@ -55,14 +56,14 @@ When compiling the code which happens to use data constructor or type ``Foo``, w
         Deprecated: "Don't use type and data constructor Foo"
 
 In the same vein, if we use data constructor or type ``Bar``,
-we will be warned only when we use the type, but not constructor,
-since we specified which entity we want to deprecate in above mentioned module ``A``: ::
+we will be warned **only when we use the type**, but not the constructor,
+since we specified which entity we want to deprecate in the above mentioned module ``A``: ::
 
     Main.hs:8:8: warning: [-Wdeprecations (in -Wdefault)]
         In the use of type constructor or class ‘Bar’ (imported from A):
         Deprecated: "Don't use type Bar"
 
-Same logic applies to ``Baz``, we will be warned only when its data constructor is used: ::
+Same logic applies to ``Baz``, we will be warned **only when its data constructor** is used(but not its type): ::
 
     Main.hs:12:7: warning: [-Wdeprecations (in -Wdefault)]
         In the use of data constructor ‘Baz’ (imported from A):
@@ -79,7 +80,7 @@ This will not work (parse error): ::
 
     {-# DEPRECATED type Qux, constructor Quux "Don't use this" #-}
 
-This feature does not work on ``module`` level since it does not make sense.
+This feature does not work on ``module`` level.
 Module level deprecation already implies the entity - the module itself.
 
 Costs and Drawbacks
@@ -109,5 +110,5 @@ Implementation Plan
 * during the renaming phase, in `warnIfDeprecated` do extra check for the deprecated entity
 * perform check against ``DeprEntity`` and ``Namespace``
 
-If accepted, I (`@nineonine <https://github.com/ninonine>`_) volunteer to implement this change.
+If accepted, I (`@nineonine <https://github.com/nineonine>`_) volunteer to implement this change.
 `Phab Diff <https://phabricator.haskell.org/D5126>`_
