@@ -90,6 +90,7 @@ Alternatives
 * The usual workaround would be to have a module that imports one but not the other.
 Unfortunately this workaround is limited as it would only work for types, but not for data constructors.
 Another option would be to refactor data constructor names, which is not backward compatible and inefficient.
+
 * Another alternative would be to try to utilize Haddock annotations. Example: ::
 
     -- | DEPRECATE: This type is deprecated
@@ -105,6 +106,7 @@ using `specifiers from disambiguation in export list proposal <https://ghc.haske
 seems better since it does not require new keywords to be introduced. Another disadvantage of using ``constructor``
 is that it is quite a widely used identifier so making it a keyword is bad for backward compatibility
 (for example, `hsc2hs uses it <https://github.com/haskell/hsc2hs/blob/master/CrossCodegen.hs#L470>`_ ).
+
 2) Although `DEPRECATED` pragma isn't often used with multiple entities specified,
 would it be nicer to have ``type``/``data`` qualifier specified for each entity,
 such that the following example is accepted? ::
