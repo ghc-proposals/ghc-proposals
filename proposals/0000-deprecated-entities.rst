@@ -98,8 +98,8 @@ Unresolved Questions
 1) What specifier should be used for data constructors?
 `Initial feature request <https://ghc.haskell.org/trac/ghc/ticket/3427>`_ suggested to use `constructor` but
 using `specifiers from disambiguation in export list proposal <https://ghc.haskell.org/trac/ghc/wiki/Design/TypeNaming>`_
-seems better since it does not require new keywords to be introduced. Another disadvantage of using `constructor` is
-is that it is quite a widely used identifier which is bad for bakward compatibility
+seems better since it does not require new keywords to be introduced. Another disadvantage of using `constructor`
+is that it is quite a widely used identifier which is bad for backward compatibility
 (for example, `hsc2hs uses it <https://github.com/haskell/hsc2hs/blob/master/CrossCodegen.hs#L470>`_ )
 
 Implementation Plan
