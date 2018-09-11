@@ -94,14 +94,35 @@ The following table summarizes the names introduces by normal
 ``type data T = MkT``                (nothing)    ``T``,  ``MkT``
 ================================= =============== ===============
 
-Note that since in GHC types and kinds share the same namespace,
-the following declaration will be rejected::
 
-  type data T = T     // Invalid
+Differences From Ordinary Data Declarations
+-------------------------------------------
 
-Thus, when using a `type data` the constructors must have different
-names from the kind on the left of the ``=`` sign.
+The `type data` declarations described in this proposal correspond
+to a restricted form of `data` declaration.   In particular, here
+are some restrictions:
 
+  * **No Constructor Name Shadowing**
+    Since in GHC types and kinds share the same namespace,
+    the following declaration will be rejected::
+
+      type data T = T     // Invalid
+
+    Thus, when using a `type data` the constructors must have different
+    names from the kind on the left of the ``=`` sign.
+
+  * **No Record Selectors**
+    Record selectors are not supported.  One could imagine
+    adding some support for that (e.g., by generating selector / updater type functions)
+    but at the momengt it is not clear that it is neccessary, or what the right design
+    shoud be, so we leave it out of this proposal.
+
+  * **No Quantifiers**
+    Existential and universal quantifiers in data declarations are not supported at the moment,
+    as we don't know how they might work.
+
+  * **No Strictness Annotations and UNPACK pragmas**
+    These don't really make sense at the type level.
 
 
 
