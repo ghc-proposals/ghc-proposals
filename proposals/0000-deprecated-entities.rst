@@ -5,9 +5,7 @@ Deprecated Entities
 .. trac-ticket:: 3427
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_.
-            **After creating the pull request, edit this file again, update the
-            number in the link, and delete this bold sentence.**
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/167>`_.
 .. sectnum::
 .. contents::
 
@@ -99,8 +97,8 @@ Unresolved Questions
 `Initial feature request <https://ghc.haskell.org/trac/ghc/ticket/3427>`_ suggested to use `constructor` but
 using `specifiers from disambiguation in export list proposal <https://ghc.haskell.org/trac/ghc/wiki/Design/TypeNaming>`_
 seems better since it does not require new keywords to be introduced. Another disadvantage of using `constructor`
-is that it is quite a widely used identifier which is bad for backward compatibility
-(for example, `hsc2hs uses it <https://github.com/haskell/hsc2hs/blob/master/CrossCodegen.hs#L470>`_ )
+is that it is quite a widely used identifier so making it a keyword is bad for backward compatibility
+(for example, `hsc2hs uses it <https://github.com/haskell/hsc2hs/blob/master/CrossCodegen.hs#L470>`_ ).
 
 Implementation Plan
 -------------------
