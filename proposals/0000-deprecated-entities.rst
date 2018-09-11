@@ -76,7 +76,7 @@ This will work - warn when these types are used(but not their constructors): ::
 
 This will not work (parse error): ::
 
-    {-# DEPRECATED type Qux, constructor Quux "Don't use this" #-}
+    {-# DEPRECATED type Qux, data Quux "Don't use this" #-}
 
 This feature does not work on ``module`` level.
 Module level deprecation already implies the entity - the module itself.
