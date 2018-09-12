@@ -1,7 +1,10 @@
-.. proposal-number::
+.. proposal-number:: 32
 .. trac-ticket::
 .. implemented::
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/106>`_.
 .. highlight:: haskell
+.. sectnum::
+.. contents::
 
 Define Kinds Without Promotion
 ==============================
@@ -110,7 +113,7 @@ are some restrictions:
 
   Thus, when using a `type data` the constructors must have different
   names from the kind on the left of the ``=`` sign.
-  
+
 * **No Record Selectors**
   Record selectors are not supported.  One could imagine
   adding some support for that (e.g., by generating selector / updater type functions)
@@ -123,10 +126,6 @@ are some restrictions:
 
 * **No Strictness Annotations and UNPACK pragmas**
   These don't really make sense at the type level.
-
-
-
-
 
 Drawbacks
 ---------
