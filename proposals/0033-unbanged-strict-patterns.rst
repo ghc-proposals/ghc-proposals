@@ -1,19 +1,13 @@
-.. proposal-number:: Leave blank. This will be filled in when the proposal is
-                     accepted.
-
-.. trac-ticket:: Leave blank. This will eventually be filled with the Trac
-                 ticket number which will track the progress of the
-                 implementation of the feature.
-
-.. implemented:: Leave blank. This will be filled in with the first GHC version which
-                 implements the described feature.
-
-.. highlight:: haskell
-
 Make unboxed tuple patterns lazy / warn on unbanged strict patterns
 ===================================================================
 
-`Pull request for discussion <https://github.com/ghc-proposals/ghc-proposals/pull/35>`_
+.. proposal-number:: 33
+.. trac-ticket::
+.. implemented::
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/35>`_.
+.. highlight:: haskell
+.. sectnum::
+.. contents::
 
 (Throughout this proposal, unboxed sums are treated identically to unboxed tuples. I refer only to unboxed tuples for simplicity.)
 
