@@ -1,3 +1,6 @@
+Define Kinds Without Promotion
+==============================
+
 .. proposal-number:: 32
 .. trac-ticket::
 .. implemented::
@@ -6,8 +9,6 @@
 .. sectnum::
 .. contents::
 
-Define Kinds Without Promotion
-==============================
 
 This proposal introduces a language construct for defining kinds without
 having to promote types.  For example, this is how we would
