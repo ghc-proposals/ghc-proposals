@@ -113,6 +113,23 @@ such that the following example is accepted? ::
 
     {-# DEPRECATED type Qux, data Quux "Don't use this" #-}
 
+3) Current proposal is limited in scope to disambiguating prefix type constructors from prefix data constructors.
+But what about the following scenario? ::
+
+    module A where
+
+    type a <+> b = ...
+
+    (<+>) :: Int -> Int -> Int
+    a <+> b = ...
+
+    {-# DEPRECATED (<+>) "Don't use (<+>)" #-}
+
+It's unclear which (<+>) we are referring to.
+In this case it might be a good idea to have more fine-grained "deprecation" control at term-level.
+One of the ways to achieve this would be to introduce another disambiguating qualifier.
+Another option would be to have more inclusive term-level qualifier (for example, ``value``).
+
 Implementation Plan
 -------------------
 * add new reserved keyword for disambiguating data constructors (?)
