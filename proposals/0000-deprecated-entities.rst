@@ -14,7 +14,7 @@ This feature would allow to control what sort of entity a ``DEPRECATED`` pragma 
 Motivation
 ------------
 It is a very common idiom to have a type and an identically named data constructor.
-Sometimes one would want to deprecate the use of constructor
+Sometimes one would want to deprecate the use of constructor.
 (for example, when using smart constructors) with a help of ``DEPRECATED`` pragma.
 However, according to the user guide, `there is currently no way to deprecate one thing without the other.
 <https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#warning-deprecated-pragma>`_
@@ -24,7 +24,9 @@ however while that's possible for the type it's not possible for the constructor
 Proposed Change Specification
 -----------------------------
 
-* extend ``DEPRECATED`` pragma with a disambiguating specifier: ``data`` for data constructors and ``type`` for types.
+* extend ``DEPRECATED`` pragma with a disambiguating specifiers:
+** ``value`` for value-level things;
+** ``type`` for types;
 * the unqualified case would mean deprecating both entities as it does now.
 
 
@@ -41,7 +43,7 @@ An example of a use case for this is the following. Given the following module: 
     {-# DEPRECATED type Bar "Don't use type Bar" #-}
 
     data Baz = Baz
-    {-# DEPRECATED data Baz "Don't use data constructor Baz" #-}
+    {-# DEPRECATED value Baz "Don't use data constructor Baz" #-}
 
 When compiling the code which happens to use data constructor or type ``Foo``, we will see the following warnings: ::
 
@@ -76,7 +78,7 @@ This will work - warn when these types are used(but not their constructors): ::
 
 This will not work (parse error): ::
 
-    {-# DEPRECATED type Qux, data Quux "Don't use this" #-}
+    {-# DEPRECATED type Qux, value Quux "Don't use this" #-}
 
 This feature does not work on ``module`` level.
 Module level deprecation already implies the entity - the module itself.
@@ -100,39 +102,16 @@ Another option would be to refactor data constructor names, which is not backwar
 
 Unresolved Questions
 --------------------
-1) What specifier should be used for data constructors?
-`Initial feature request <https://ghc.haskell.org/trac/ghc/ticket/3427>`_ suggested to use ``constructor`` but
-using `specifiers from disambiguation in export list proposal <https://ghc.haskell.org/trac/ghc/wiki/Design/TypeNaming>`_
-seems better since it does not require new keywords to be introduced. Another disadvantage of using ``constructor``
-is that it is quite a widely used identifier so making it a keyword is bad for backward compatibility
-(for example, `hsc2hs uses it <https://github.com/haskell/hsc2hs/blob/master/CrossCodegen.hs#L470>`_ ).
 
-2) Although `DEPRECATED` pragma isn't often used with multiple entities specified,
-would it be nicer to have ``type``/``data`` qualifier specified for each entity,
+1) Although `DEPRECATED` pragma isn't often used with multiple entities specified,
+would it be nicer to have ``type``/``value`` qualifier specified for each entity,
 such that the following example is accepted? ::
 
-    {-# DEPRECATED type Qux, data Quux "Don't use this" #-}
-
-3) Current proposal is limited in scope to disambiguating prefix type constructors from prefix data constructors.
-But what about the following scenario? ::
-
-    module A where
-
-    type a <+> b = ...
-
-    (<+>) :: Int -> Int -> Int
-    a <+> b = ...
-
-    {-# DEPRECATED (<+>) "Don't use (<+>)" #-}
-
-It's unclear which (<+>) we are referring to.
-In this case it might be a good idea to have more fine-grained "deprecation" control at term-level.
-One of the ways to achieve this would be to introduce another disambiguating qualifier.
-Another option would be to have more inclusive term-level qualifier (for example, ``value``).
+    {-# DEPRECATED type Qux, value Quux "Don't use this" #-}
 
 Implementation Plan
 -------------------
-* add new reserved keyword for disambiguating data constructors (?)
+* add new reserved keyword (``value``)
 * add new datatype to distinguish between different deprecated entities - ``DeprEntity``
 * extend ``WarningTxt`` type, namely ``DeprecatedTxt`` constructor with a field of type ``DeprEntity``
 * during the renaming phase, in ``warnIfDeprecated`` do extra check for the deprecated entity
