@@ -25,8 +25,8 @@ Proposed Change Specification
 -----------------------------
 
 * extend ``DEPRECATED`` pragma with a disambiguating specifiers:
-** ``value`` for value-level things;
-** ``type`` for types;
+  ``value`` - for value-level things,
+  ``type`` - for types.
 * the unqualified case would mean deprecating both entities as it does now.
 
 
