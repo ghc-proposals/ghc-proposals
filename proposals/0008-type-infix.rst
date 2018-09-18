@@ -2,7 +2,7 @@ Require namespacing fixity declarations for type names and ``WARNING``/``DEPRECA
 =============================================================================================
 
 .. proposal-number:: 8
-.. trac-ticket:: None yet
+.. trac-ticket:: 14032
 .. implemented:: None yet
 .. sectnum::
 .. highlight:: haskell

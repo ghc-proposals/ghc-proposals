@@ -2,7 +2,7 @@ Extend ``-Wall`` with ``incomplete-uni-patterns`` and ``incomplete-record-update
 ==============
 
 .. proposal-number:: 12
-.. trac-ticket::
+.. trac-ticket:: 15656
 .. implemented::
 .. sectnum::
 .. highlight:: haskell
