@@ -5,7 +5,7 @@ Uppercase Overloaded Labels
 .. trac-ticket:: 11671
 .. implemented::
 .. highlight:: haskell
-.. header::
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/170>`_
 .. sectnum::
 .. contents::
 
