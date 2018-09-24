@@ -67,7 +67,7 @@ We propose to add a new GHC extension called ``{-# TypeData #-}``.
 When this extension is enabled, the ``data`` keyword in a data declaration
 may be preceeded by ``type``, which signifies that this declaration affects
 only the types:  the LHS introduces a new kind, and the RHS introduces type
-consctructors that belong to this kind.
+constructors that belong to this kind.
 
 Semantically, the new declaration should work in the same way as kinds
 introduced by promotion, with the following differences:
@@ -88,7 +88,7 @@ motivation section::
     Number    :: Type Number
     Boolean   :: Type Boolean
 
-The following table summarizes the names introduces by normal
+The following table summarizes the names introduced by normal
 `data` and `type data` declarations.
 
 ================================= =============== ===============
@@ -118,8 +118,8 @@ are some restrictions:
 * **No Record Selectors**
   Record selectors are not supported.  One could imagine
   adding some support for that (e.g., by generating selector / updater type functions)
-  but at the momengt it is not clear that it is neccessary, or what the right design
-  shoud be, so we leave it out of this proposal.
+  but at the moment it is not clear that it is neccessary, or what the right design
+  should be, so we leave it out of this proposal.
 
 * **No Quantifiers**
   Existential and universal quantifiers in data declarations are not supported at the moment,
@@ -140,4 +140,4 @@ Don't do this, and just keep using data promotion.
 Unresolved Questions
 --------------------
 
-There are currently no known unresolved questinos.
+There are currently no known unresolved questions.
