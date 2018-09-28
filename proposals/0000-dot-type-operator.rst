@@ -53,6 +53,27 @@ We can achieve this by changing a single production in ``Parser.y``, namely
   +   | '`' tyvarid '`'  { sLL $1 $> $ TyElOpr (unLoc $2) }
   +   | '.'              { sL1 $1 $ TyElOpr (mkUnqual tcClsName (fsLit ".")) }
 
+Note that the actual implementation will be more complex to provide decent
+error messages, keep `annotations
+<https://ghc.haskell.org/trac/ghc/wiki/ApiAnnotations>`_ working, etc.
+
+We can use whitespace to disambiguate between uses of the dot as a type
+operator and as a part of a qualified name. The situation is the same as in
+terms, demonstrated by this table (courtesy of `@mstksg
+<https://github.com/mstksg>`_)::
+
+  foo . bar -- term level: (.) foo bar
+            -- type level: (.) foo bar (currently disallowed)
+
+  foo.bar   -- term level: (.) foo bar
+            -- type level: (.) foo bar (currently disallowed)
+
+  Foo . Bar -- term level: (.) Foo Bar
+            -- type level: (.) Foo Bar (currently disallowed)
+
+  Foo.Bar   -- term level: Bar imported from module Foo
+            -- type level: Bar imported from module Foo
+
 Proposed Change Specification
 -----------------------------
 
