@@ -19,7 +19,7 @@ defined functions should have ``fromString`` applied. The only
 instance of such GHC generated strings we are aware of is via
 ``fail``, so we propose to fix that case. Concretely, for monadic
 pattern match failures in the presence of the extensions
-``RebindableSyntax`` and ``OverloadedStrings``, we desugar to ``fail``
+``RebindableSyntax`` and ``OverloadedStrings``, we desugar to ``fail
 (fromString "error")`` instead of ``fail "error"`` .
 
 Motivation
