@@ -12,7 +12,7 @@ Lower precedence for {-# UNPACK #-}
 The ``{-# UNPACK #-}`` pragma is not valid inside a type but binds more
 tightly than function application. This is suboptimal because it contradicts
 user expectations (`Trac #14761
-<https://ghc.haskell.org/trac/ghc/ticket/14761>`_) and forces unecessary
+<https://ghc.haskell.org/trac/ghc/ticket/14761>`_) and forces unnecessary
 parenthesization of types. We propose to lower the precedence of ``{-# UNPACK
 #-}``.
 
