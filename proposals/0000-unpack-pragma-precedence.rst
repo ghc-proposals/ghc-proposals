@@ -5,11 +5,11 @@ Lower precedence for {-# UNPACK #-}
 .. trac-ticket::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_.
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/174>`_.
 .. sectnum::
 .. contents::
 
-The ``{-# UNPACK #-}`` pragma is not valid inside a type, but binds more
+The ``{-# UNPACK #-}`` pragma is not valid inside a type but binds more
 tightly than function application. This is suboptimal because it contradicts
 user expectations (`Trac #14761
 <https://ghc.haskell.org/trac/ghc/ticket/14761>`_) and forces unecessary
@@ -63,7 +63,9 @@ Alternatives
 ------------
 
 A similar argument can be made for ``!`` and ``~`` when they are used as
-strictress/laziness annotations, but Simon Peyton Jones argues that it would "look wrong":
+strictress/laziness annotations, but Simon Peyton Jones `argues
+<https://ghc.haskell.org/trac/ghc/ticket/14761#comment:7>`_ that it would "look
+wrong":
 
     Both ``{-# UNPACK #-}`` and ``!`` only make sense at the outer level of a type
     in a data constructor field. But in GADT-style declarations, they can
@@ -84,4 +86,4 @@ Implementation Plan
 -------------------
 
 I (Vladislav Zavialov) will implement this change. Most of the work is already
-done in `Phab:D5180 <https://phabricator.haskell.org/D5180>`_ 
+done in `Phab:D5180 <https://phabricator.haskell.org/D5180>`_.
