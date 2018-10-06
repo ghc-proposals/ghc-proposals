@@ -74,6 +74,21 @@ terms, demonstrated by this table (courtesy of `@mstksg
   Foo.Bar   -- term level: Bar imported from module Foo
             -- type level: Bar imported from module Foo
 
+In the ``singletons`` library, there is a `special case
+<https://github.com/goldfirere/singletons/blob/a9db6ff634d00a11a74595187e4ed935715f6626/src/Data/Singletons/Names.hs#L355-L361>`_
+for promotion of ``(.)`` and ``(!)``::
+
+    Note [Special cases for (.) and (!)]
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Almost every infix value name can be promoted trivially. For example, (+)
+    works both at the value- and type-level. The two exceptions to this rule
+    are (.) and (!), which we promote to the special type names (:.) and (:!),
+    respectively.  This is necessary since one cannot define or apply (.) or
+    (!) at the type level -- they simply won't parse. Bummer.
+
+The issue with ``(!)`` has been fixed in the upcoming GHC 8.8, but the problem
+of ``(.)`` remains.
+
 Proposed Change Specification
 -----------------------------
 
