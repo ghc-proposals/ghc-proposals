@@ -663,39 +663,11 @@ Output: ::
 Rust
 ~~~~
 
-Rust supports a simpler version of or patterns. `Relevant section in the
-language reference
-<https://doc.rust-lang.org/reference/expressions/match-expr.html>`_ doesn't say much
-about it, but the implementation supports or patterns only at the top layer of
-patterns. These are fine: ::
-
-    match i {
-        Ok(1) | Ok(2) => {}
-        _ => {}
-    }
-
-    enum T {
-        T1(i32),
-        T2(i32),
-        T3(i32),
-    }
-
-    match x {
-        T::T1(a) | T::T2(a) | T::T3(a) => { println!("{:?}", a); }
-    }
-
-But this fails with a parse error: ::
-
-    match i {
-        Ok(1 | 2) => {}
-        _ => {}
-    }
-
-    error: expected one of `)`, `,`, `...`, or `..`, found `|`
-      --> pat.rs:24:14
-       |
-    24 |         Ok(1 | 2) => { println!("ok"); }
-       |              ^
+Rust used to support a simpler version of or patterns that only allowed or
+patterns at the top-level (e.g. using or patterns inside a constructor pattern
+was not allowed). However `a new RFC
+<https://github.com/rust-lang/rfcs/pull/2535>`_ has been recently accepted to
+allow or patterns inside other patterns.
 
 Revisions
 ---------
