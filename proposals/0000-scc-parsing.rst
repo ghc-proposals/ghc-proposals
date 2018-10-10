@@ -5,7 +5,7 @@ Meaning-preserving parsing rules for SCC annotations
 .. trac-ticket::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_.
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/176>`_.
 .. sectnum::
 .. contents::
 
@@ -33,8 +33,8 @@ programmer might have:
 3. Adding an annotation does not affect the structure or meaning of an
    expression in ways other than adding an annotation to a subexpression.
 
-1. Lowest precedence
-====================
+Lowest precedence
+~~~~~~~~~~~~~~~~~
 
 The first expectation that annotations have the lowest precedence can be
 demonstrated with the following example::
@@ -60,19 +60,19 @@ The same reasoning applies to expressions that involve operators::
   {-# SCC ann #-} (f a x + g b y + h c z) -- ... is parsed like this,
   {-# SCC ann #-} (f a x) + g b y + h c z -- ... not like this.
 
-2. Arbitrary placement
-======================
+Arbitrary placement
+~~~~~~~~~~~~~~~~~~~
 
 The second expectation that annotations can be inserted anywhere in an
 expression without parentheses can be demonstrated by the following example::
 
-  1 + f a b                -- without annotation
-  1 + {-# SCC f #-} f a b  -- with annotation
+  x = 1 + f a b                -- without annotation
+  x = 1 + {-# SCC f #-} f a b  -- with annotation
 
 We want to be able to place the annotation even in the middle of the
 expression, and it appears unnecessary to require parentheses in this case::
 
-  1 + ({-# SCC f #-} f a b)
+  x = 1 + ({-# SCC f #-} f a b)
 
 Note that as of today, GHC does not fully fulfil this expectation and there are
 places where annotations cannot be inserted::
@@ -80,8 +80,8 @@ places where annotations cannot be inserted::
   ghci> f {-# SCC ann #-} a b
   <interactive>:3:3: error: parse error on input ‘{-# SCC’
 
-3. Structure preservation
-=========================
+Structure preservation
+~~~~~~~~~~~~~~~~~~~~~~
 
 The third expectation that adding an annotation does not affect the structure
 or meaning of an expression in ways other than adding an annotation to a
@@ -110,7 +110,7 @@ This is the result of current parsing rules::
   1 / {-# SCC ann #-} 2 / 2   ==   1 / (2 / 2)
 
 Fundamental conflict
-====================
+~~~~~~~~~~~~~~~~~~~~
 
 Lowest precedence, arbitrary placement, structure preservation – pick two.
 
@@ -156,8 +156,9 @@ We argue that the best choice is to sacrifice arbitrary placement:
   annotation either results in an error or applies to an entire expression.
 
 * From the implementor's standpoint, this is the easiest route. This statement
-  comes from the experience of implementing the another option (Phabricator
-  Diff [D5218] sacrificies lowest precedence).
+  comes from the experience of implementing the other option (Phabricator Diff
+  `D5218 <https://phabricator.haskell.org/D5218>`_ sacrificies lowest
+  precedence).
 
 Therefore, we propose to disallow ``SCC``, ``GENERATED``, and ``CORE``
 annotations in positions where they may affect the structure of an expression.
