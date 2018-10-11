@@ -85,7 +85,8 @@ Structure preservation
 
 The third expectation that adding an annotation does not affect the structure
 or meaning of an expression in ways other than adding an annotation to a
-subexpression follows both from they way they are used and from their name.
+subexpression follows from they way they are used, from their name, and from
+their syntax.
 
 1. Annotations are often added and removed during development (for instance,
    ``SCC`` during profiling). The programmer is likely to expect that adding or
@@ -95,6 +96,10 @@ subexpression follows both from they way they are used and from their name.
    construct that could change the structure of an expression in fundamental
    ways – instead, it must *annotate* a subexpression and leave the rest of the
    program intact.
+
+3. The syntax of annotations mimics the syntax of comments, reusing ``{-`` and
+   ``-}``, so it is natural to expect that they inherit syntactic properties of
+   comments and have no effect on expression structure.
 
 Unfortunately, with today's GHC, adding an annotation can have unexpected
 effects on expressions::
