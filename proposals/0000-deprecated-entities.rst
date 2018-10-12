@@ -25,10 +25,12 @@ Proposed Change Specification
 -----------------------------
 
 * extend ``DEPRECATED`` pragma with a disambiguating specifiers:
-  ``value`` - for value-level things,
+  ``pattern`` - for value-level things,
   ``type`` - for types.
 * the unqualified case would mean deprecating both entities as it does now.
 
+Although, ``pattern`` seems like a weird choice, we are using it deliberately to be consistent
+with other language features(for example, `PatternSynonyms<https://downloads.haskell.org/~ghc/master/users-guide/glasgow_exts.html#patsyn-impexp>`_).
 
 Effect and Interactions
 -----------------------
@@ -43,7 +45,7 @@ An example of a use case for this is the following. Given the following module: 
     {-# DEPRECATED type Bar "Don't use type Bar" #-}
 
     data Baz = Baz
-    {-# DEPRECATED value Baz "Don't use data constructor Baz" #-}
+    {-# DEPRECATED pattern Baz "Don't use data constructor Baz" #-}
 
 When compiling the code which happens to use data constructor or type ``Foo``, we will see the following warnings: ::
 
@@ -69,16 +71,10 @@ Same logic applies to ``Baz``, we will be warned **only when its data constructo
         In the use of data constructor ‘Baz’ (imported from A):
         Deprecated: "Don't use data constructor Baz"
 
+When having several entities in one pragma, specifiers can be supplied per entity.
+This will work: ::
 
-When specifying several entities in one pragma,
-the sort of deprecated entity we've specified will apply to all listed entities.
-This will work - warn when these types are used(but not their constructors): ::
-
-    {-# DEPRECATED type Qux, Quux "Don't use this" #-}
-
-This will not work (parse error): ::
-
-    {-# DEPRECATED type Qux, value Quux "Don't use this" #-}
+    {-# DEPRECATED type Qux, pattern Quux "Don't use this" #-}
 
 This feature does not work on ``module`` level.
 Module level deprecation already implies the entity - the module itself.
@@ -103,19 +99,9 @@ Another option would be to refactor data constructor names, which is not backwar
 Unresolved Questions
 --------------------
 
-1) Although `DEPRECATED` pragma isn't often used with multiple entities specified,
-would it be nicer to have ``type``/``value`` qualifier specified for each entity,
-such that the following example is accepted? ::
-
-    {-# DEPRECATED type Qux, value Quux "Don't use this" #-}
 
 Implementation Plan
 -------------------
-* add new reserved keyword (``value``)
-* add new datatype to distinguish between different deprecated entities - ``DeprEntity``
-* extend ``WarningTxt`` type, namely ``DeprecatedTxt`` constructor with a field of type ``DeprEntity``
-* during the renaming phase, in ``warnIfDeprecated`` do extra check for the deprecated entity
-* perform check against ``DeprEntity`` and ``Namespace``
 
 If accepted, I (`@nineonine <https://github.com/nineonine>`_) volunteer to implement this change.
 `Phab Diff <https://phabricator.haskell.org/D5126>`_
