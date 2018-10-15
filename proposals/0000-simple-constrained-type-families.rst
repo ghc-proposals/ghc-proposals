@@ -13,7 +13,7 @@ Simple Constrained Type Families
 .. sectnum::
 .. contents::
 
-Constrained Type Families allow the amelioration of a key deficit with the current implementation of type families, which is the assumption of totality. The problems with this assumption are `well documented<https://arxiv.org/abs/1706.09715>`_ by Richard Eisenberg (@goldfirere) and J. Garrett Morris (@jgbm).  
+Constrained Type Families allow the amelioration of a key deficit with the current implementation of type families, which is the assumption of totality. The problems with this assumption are `well documented <https://arxiv.org/abs/1706.09715>`_ by Richard Eisenberg (@goldfirere) and J. Garrett Morris (@jgbm).  
 
 It would be lovely, of course, if we had a way to represent something that looks like a function and has a limited domain relative to what the signature would imply. Thankfully, Haskell provides an excellent mechanism for this sort of constrained polymorphism, typeclasses. Typeclasses can already contain type families, but this currently doesn't do much to impact the type family included, and it isn't an error to apply an associated type family to a type that isn't an instance of the type class in question.
 
@@ -22,7 +22,7 @@ At the outset, I would like to thank Vladislav Zavialov (@int-index) for the hel
 Motivation
 ------------
 
-A lack of constrained type families leaves many "obviously injective" type families unable to be declared as such, and leaves other families open to misuse. For an example of each, we will use a `Pred` family for inductive type level natural numbers and polymorphic arithmetic on type level numbers. For more examples of the former case, see § 4.1 in `the paper introducing injective type families<http://ics.p.lodz.pl/~stolarek/_media/pl:research:stolarek_peyton-jones_eisenberg_injectivity.pdf>`_.
+A lack of constrained type families leaves many "obviously injective" type families unable to be declared as such, and leaves other families open to misuse. For an example of each, we will use a `Pred` family for inductive type level natural numbers and polymorphic arithmetic on type level numbers. For more examples of the former case, see § 4.1 in `the paper introducing injective type families <http://ics.p.lodz.pl/~stolarek/_media/pl:research:stolarek_peyton-jones_eisenberg_injectivity.pdf>`_.
 
 ::
 
