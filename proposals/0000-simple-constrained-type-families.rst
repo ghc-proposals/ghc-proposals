@@ -71,8 +71,8 @@ Proposed Change Specification
 
 There is a very simple way to reuse the currently existing mechanisms to give the desired behavior, with two changes to current behavior:
 
-Change 1: Promote Typeclass Dictionaries
-++++++++++++++++++++++++++++++++++++++++
+Promote Typeclass Dictionaries
+++++++++++++++++++++++++++++++
 
 Currently, typeclass instances are desugared into the creation of constant values in a special namespace with a "secret" dictionary type that shares the name of the typeclass that contains fields for each value-level member of the typeclass, or for typeclasses without any value-level members, as a unit type. For example, using the ``TNum k`` example and ``-ddump-simpl``, it can be seen that we generate the following dictionary for a declaration of ``TNum Int``.
 
@@ -102,8 +102,8 @@ There is one further wrinkle of how typeclass instances work that must be addres
 
 ``C:TIntegral``, once promoted, will have kind ``forall (k :: Type). TNum k -> TIntegral k``.
 
-Change 2: For Associated Type Families, Require Promoted Dictionaries to Reduce
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+For Associated Type Families, Require Promoted Dictionaries to Reduce
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 Let us return to the ``TNum k`` class above. What does the kind of ``(+)`` look like?
 
