@@ -194,7 +194,7 @@ Costs and Drawbacks
 The Backwards Compatibility Story
 +++++++++++++++++++++++++++++++++
 
-I think avoiding an extension flag would be best, since I don't know how GHC would handle something that would actively change the kinds and types of exposed things depending on if an extension is turned on or off, outside of requiring every single dependency to be recompiled, which would be a mess involving separate versions of core libraries.
+It seems as if this behavior is going to break enough existing code that the sensible thing to do is to gate it behind an extension. However, this is the wrong way to go, because if it can be turned off, it would require a separate version of any library that uses associated type/data families for use with and without the extension enabled. There is another way to ensure backwards compatibility without simply turning off the feature completely, as will be explained in the remainder of this section.
 
 GHC can infer the constraint we'd expect if one uses an associated type family without an appropriate one. To find the constraint we need, it should be possible to just take the same variables given as an argument to the associated type and line them up with the class that contains it. GHC will emit a warning every time it has to do this.
 
@@ -212,7 +212,7 @@ Let us now consider an actual example:
 
 ``foo`` is in a very real sense incorrect, because it is given a type signature that implies constraints that are not listed. To operationalize this correctness check, each time GHC sees an associated type used in a type, it generates the constraint required for the use by looking up the class that defines the associated type and instantiating a constraint from it using the parameters given for the associated type. If this constraint (or a constraint that subsumes it) is either given directly or otherwise known (such as from a GADT pattern match), the use of the associated type is lawful. If no such constraint is known, the type is unlawful.
 
-While it may be natural to think that the correct solution is to error out and leave fixing it to the programmer, we already have a way to find the constraint we need and such code was previously correct. Assuming that the code is in reality correct, it is safe for GHC to emit a warning and then *adds the inferred constraint to the type specified by the programmer*. However, if an error arises involving this constraint or any of the types that are mentioned inside of it, we give a modified error that gives the inferred constraint, the follow-on error from it, and the associated type that lead it to be generated.
+While it may be natural to think that the correct solution is to error out and leave fixing it to the programmer, we already have a way to find the constraint we need to keep such previously correct code compiling. Assuming that the code is in reality correct, it is safe for GHC to emit a warning and then *adds the inferred constraint to the type specified by the programmer*. However, if an error arises involving this constraint or any of the types that are mentioned inside of it, we give a modified error that gives the inferred constraint, the follow-on error from it, and the associated type that lead it to be generated.
 
 Here's how it would work in practice:
 
