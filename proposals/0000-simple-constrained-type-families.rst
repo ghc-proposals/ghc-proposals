@@ -52,7 +52,7 @@ This is preferable to the second type of error, where meaningless code can be we
         type (a :: k) * (b :: k) :: k
         type FromInteger (a :: Integer) :: k
 
-This is accepted by GHC, but it provides an interface that leaves much to be desired. While it is not possible to write an instance for any of these type families outside of an instance of ``TNum k``, but there is nothing stopping the programmer for creating nonsensical uses of it.
+This is accepted by GHC, but it provides an interface that leaves much to be desired. While it is not possible to write an instance for any of these type families independently of an instance for TNum k, there is nothing stopping the programmer from using these type families nonsensically.
 
 ::
 
@@ -64,7 +64,7 @@ This is accepted by GHC, but it provides an interface that leaves much to be des
     what :: Const (Integer * String) (Integer, String)
     what = pairWithProduct 42 "foo"
 
-What is the meaning of ``Integer * String``? There are arguable definitions that could be used, but it is unlikely to actually be what the programmer would like to express, at least if they haven't provided an explanation for what doing arithmetic with arbitrary types is supposed to mean. 
+What is the meaning of ``Integer * String``? There are arguable definitions that could be used, but it is unlikely to actually be what the programmer would like to express, at least if they haven't provided an explanation for what doing arithmetic with arbitrary types is supposed to mean by writing an instance ``TNum Type``.
 
 Proposed Change Specification
 -----------------------------
@@ -116,6 +116,16 @@ This is about what we would expect, and it functions exactly the same way that a
 
 As a minor note, for obvious reasons of symmetry, the same requirement is present for instantiation of associated data families.
 
+::
+
+    class C2 (a :: k) where
+        data D (a :: k)
+
+    instance C2 a => C2 (Maybe a) where
+        data D (Maybe a) = DMaybe (D a)
+
+``D`` now has kind ``D :: forall (a :: k) -> C2 a => D a`` and ``DMaybe`` now has type ``DMaybe :: (C2 a) => D a -> D (Maybe a)``.
+
 Effect and Interactions
 -----------------------
 It is obvious that this solves the issue raised by example 2, because it creates a kind that expresses the constraint that is intended and allows the type system to provide the same guarantees that we provide to term level functions to type families.
@@ -126,11 +136,32 @@ By itself, however, it does nothing to resolve the issue with example 1. For tha
 
     data Nat = Zero | Succ Nat
 
-    class NatPred nat where
-        type Pred (nat :: k) = (pred :: k) | pred -> nat
+    class NatPred (nat :: Nat) where
+        type Pred (nat :: Nat) = (pred :: Nat) | pred -> nat
 
     instance NatPred (Succ nat) where
         type Pred (Succ nat) = nat
+
+``Pred`` would now have the kind ``forall (nat :: Nat) -> NatPred nat => Nat``, which is an example of visible dependent quantification. There is an existing GHC proposal to add this syntax to the source language, but this feature has existed in the compiler since GHC 8.0.
+
+The other reliance on accepted-yet-unimplemented functionality is to allow type families and other similar contextless syntax forms to use constrained type families.
+
+::
+
+    class C a where
+        type T a
+
+    type family S a where
+        S a = T a
+
+As implemented now, if this proposal were to be accepted, it would not be possible to write ``S``, because there is no way of stating the ``C a`` constraint. Top-level kind signatures solve this issue handily.
+
+::
+
+    type S :: forall (a :: Type) -> C a => Type
+    type family S a where
+        S a = T a
+
 
 There are no substantial conflicts with other compiler features, because it is a simple extension of existing functionality with fairly minimal potential for conflict.
 
