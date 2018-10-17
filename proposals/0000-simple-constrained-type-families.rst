@@ -169,7 +169,9 @@ Costs and Drawbacks
 -------------------
 It is true that we can conceive of code that will be broken by these changes, but that's the whole point! I would proffer that the amount of actual code that would be harmed by these changes is fairly minimal, because how often does the use of an associated type family not either require other use of the typeclass? I'd be especially skeptical that correct code is ever using a type family at a type that has no instance.
 
-I don't have a rigorous test for this, but it seems unlikely that much correct code will be dinged, and when it is made erroneous it is a very minimal and entirely backwards compatible change to make it work correctly with the new feature. 
+I don't have a rigorous test for this, but it seems unlikely that much correct code will be dinged, and when it is made erroneous it is a very minimal and entirely backwards compatible change to make it work correctly with the new feature.
+
+Still, I believe that it is reasonable to take the approach for inferring the needed constraint laid out in § 7.1 of the Eisenberg and Morris paper.
 
 If anything, it makes the language easier to learn, especially when it comes to learning new libraries, since it will make it so it is obvious where an associated type family is "coming from" and prevents a class of error that is currently possible.
 
