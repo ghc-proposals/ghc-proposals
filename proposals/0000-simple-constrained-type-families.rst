@@ -114,17 +114,41 @@ Let us return to the ``TNum k`` class above. What does the kind of ``(+)`` look 
 
 This is about what we would expect, and it functions exactly the same way that a constrained term level function works. As the code is simplified, ``=>`` still degrades into ``->``, and an implicit argument (now of **kind** ``TNum k``) is supplied. If there is no such implicit dictionary in scope, this is a type error.
 
-As a minor note, for obvious reasons of symmetry, the same requirement is present for instantiation of associated data families.
+For obvious reasons of symmetry, the same requirement is present for instantiation of associated data families.
 
 ::
 
+    class C1 (a :: k) where
+        data D1 (a :: k)
+
+    instance C1 Int where
+        data D1 Int = D1Int Int
+
     class C2 (a :: k) where
-        data D (a :: k)
+        data D2 (a :: k)
+
+    instance C1 a => C2 [a] where
+        data D2 [a] = D2List [D1 a]
 
     instance C2 a => C2 (Maybe a) where
-        data D (Maybe a) = DMaybe (D a)
+        data D2 (Maybe a) = D2Maybe (D2 a)
 
-``D`` now has kind ``D :: forall (a :: k) -> C2 a => D a`` and ``DMaybe`` now has type ``DMaybe :: (C2 a) => D a -> D (Maybe a)``.
+``D2`` now has kind ``D2 :: forall (a :: k) -> C2 a => D2 a`` and ``D2Maybe`` now has type ``D2Maybe :: (C2 a) => D2 a -> D2 (Maybe a)``. This is not limited to the same class, and is simply based on the instance's givens.
+
+Pattern matching on an associated data instance will now provide as givens the givens for the typeclass instance.
+
+:: 
+
+    dataFamilyDemo :: (C2 a) => D2 a -> D2 a
+
+    dataFamilyDemo (D2List xs) = D2List (reverse xs)
+    -- ^ Here it is known that `xs :: (C1 a) => [a]`
+        
+    dataFamilyDemo (D2Maybe x) = x
+    -- ^ Here it is known that `x :: (C2 a) => a`
+        
+        
+
 
 Effect and Interactions
 -----------------------
