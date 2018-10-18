@@ -80,6 +80,34 @@ Alternatives
 
 Currently GHCi has an ``:info`` command which offers some information on instances. However, ``:info`` only works on single words, which means that ``:info Either String Int`` will return results for ``Either``, ``String``, and ``Int`` separately. This makes it a partial replacement at best for the ``:instances`` command.
 
+Examples
+--------
+
+
+.. code-block: none
+
+  >> :instances Sum f f
+  Functor f => Functor (Sum f f)
+  Foldable f => Foldable (Sum f f) ..
+
+Basic instance lookup:
+
+.. code-block: none
+  >> :instances [_]
+
+  Show _ => Show [_]
+  Eq _ => Eq [_]
+  ....
+
+Often when dealing with monad stacks, it can be useful to figure out exactly which instances are available for a given type:
+
+.. code-block: none
+  >> :instances StateT _s (ReaderT _r IO)
+  MonadIO (StateT _s (ReaderT _r IO))
+  Functor (StateT _s (ReaderT _r IO))
+  MonadState (StateT _s (ReaderT _r IO))
+  MonadReader (StateT _s (ReaderT _r IO))
+  ...
 
 Unresolved Questions
 --------------------
