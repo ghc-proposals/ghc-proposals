@@ -49,12 +49,12 @@ Proposed Change Specification
 This proposal adds a new command to GHCi called ``:instances`` which provides a listing of all valid instances for a given type.
 
 Syntax
-======
+~~~~~~
 
 Valid queries to ``instances`` are types, if anything other than a type is provided as an argument, the command will return an error explaining the intended usage. The command interprets everything after ``instances`` as a single type, this means there is no way to specify multiple types to lookup instances of MPTCs. Holes can be used to represent free variables in the argument type, for example: ``Either _ _``. To express relations between multiple holes, named holes can be used, for example:: ``Either _a _a``.
 
 Execution
-=========
+~~~~~~~~~
 
 Provided with a valid type, ``instances`` will attempt to match it against the heads of all visible class instances and satisfy all the implied constraints. The output will consist of a formatted listing of all matching and satisfiable instances. Each instance should be simplified as much as possible, meaning that if an instance: ``(c ~ Bool) => C c`` were found it would be presented as ``C Bool``.
 
@@ -108,6 +108,7 @@ Often when dealing with monad stacks, it can be useful to figure out exactly whi
   MonadState (StateT _s (ReaderT _r IO))
   MonadReader (StateT _s (ReaderT _r IO))
   ...
+
 
 Unresolved Questions
 --------------------
