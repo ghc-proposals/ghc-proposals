@@ -46,9 +46,18 @@ It would provide a new tool for Haskell developers, both new and experienced tha
 Proposed Change Specification
 -----------------------------
 
-This proposal adds a new command to GHCi called ``:instances`` which provides a listing of all valid instances for a given type. The command interprets everything after ``instances`` as a single type. It won't accept a typeclass as an argument, to list the instances of a class, users can already use the ``:info`` command.
+This proposal adds a new command to GHCi called ``:instances`` which provides a listing of all valid instances for a given type.
 
-Much like the ``kind`` command in GHCi, you can use either an explicit ``forall`` to name type variables within the provided type or you can use wildcards `_`.
+Syntax
+======
+
+Valid queries to ``instances`` are types, if anything other than a type is provided as an argument, the command will return an error explaining the intended usage. The command interprets everything after ``instances`` as a single type, this means there is no way to specify multiple types to lookup instances of MPTCs. Holes can be used to represent free variables in the argument type, for example: ``Either _ _``. To express relations between multiple holes, named holes can be used, for example:: ``Either _a _a``.
+
+Execution
+=========
+
+Provided with a valid type, ``instances`` will attempt to match it against the heads of all visible class instances and satisfy all the implied constraints. The output will consist of a formatted listing of all matching and satisfiable instances. Each instance should be simplified as much as possible, meaning that if an instance: ``(c ~ Bool) => C c`` were found it would be presented as ``C Bool``.
+
 
 Effect and Interactions
 -----------------------
@@ -79,7 +88,7 @@ Unresolved Questions
 Future Work
 -----------
 
-The original `Trac ticket <https://ghc.haskell.org/trac/ghc/ticket/15610>`_ also suggests some further work. There are several improvements that could be proposed.
+The original `Trac ticket <https://ghc.haskell.org/trac/ghc/ticket/15610>`_ also suggests some further work. There are several improvements that could be proposed. These are meant as ideas that could be fleshed out in a future proposal.
 
 Negative Results
 ~~~~~~~~~~~~~~~~
