@@ -171,8 +171,10 @@ annotations in positions where they may affect the structure of an expression.
 Proposed Change Specification
 -----------------------------
 
-Disallow ``SCC``, ``GENERATED``, and ``CORE`` annotations in positions where
-they may affect the structure of an expression.
+``SCC``, ``GENERATED``, and ``CORE`` annotations have the same precedence as
+lambda abstractions, let expressions, and conditionals, and also are right
+associative. Additionally, none may not appear in a position where it would
+change the grouping of subexpressions.
 
 Establish a policy that if any new annotations are added, they must adhere to
 the same principles.
