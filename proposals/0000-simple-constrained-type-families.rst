@@ -223,6 +223,8 @@ Here's how it would work in practice:
 
 In my ideal world, this would only stand for a time, perhaps governed by an extension that is initially on by default when type families are enabled and would be disabled after a few GHC major versions, turning the warning into an error.
 
+Because this backwards compatibility system is somewhat complicated and does something somewhat unexpected (changing a programmer-supplied type signature) it may be wise to implement the feature with the warning as an error, and only enable/add the fix-up if the amount of code to be broken is substantial enough.
+
 If anything, it makes the language easier to learn, especially when it comes to learning new libraries, since it will make it so it is obvious where an associated type family is "coming from" and prevents a class of error that is currently possible.
 
 Alternatives
