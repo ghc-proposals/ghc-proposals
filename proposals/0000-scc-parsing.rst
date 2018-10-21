@@ -173,7 +173,7 @@ Proposed Change Specification
 
 ``SCC``, ``GENERATED``, and ``CORE`` annotations have the same precedence as
 lambda abstractions, let expressions, and conditionals, and also are right
-associative. Additionally, none may not appear in a position where it would
+associative. Additionally, none may appear in a position where it would
 change the grouping of subexpressions.
 
 Establish a policy that if any new annotations are added, they must adhere to
