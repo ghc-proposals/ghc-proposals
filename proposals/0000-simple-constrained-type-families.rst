@@ -225,7 +225,37 @@ In my ideal world, this would only stand for a time, perhaps governed by an exte
 
 Because this backwards compatibility system is somewhat complicated and does something somewhat unexpected (changing a programmer-supplied type signature) it may be wise to implement the feature with the warning as an error, and only enable/add the fix-up if the amount of code to be broken is substantial enough.
 
-If anything, it makes the language easier to learn, especially when it comes to learning new libraries, since it will make it so it is obvious where an associated type family is "coming from" and prevents a class of error that is currently possible.
+The Performance Story
++++++++++++++++++++++
+
+The performance implications do not seems significant. In fact, the only case where there appears to be the possibility of a regression is as follows.
+
+::
+
+    class C a where
+        type F a
+
+    data FPack a where
+        FPack :: F a -> FPack a
+
+This is currently valid code, but with these changes, ``FPack`` (the data constructor) would no longer typecheck. Instead, the programmer would be required to write:
+
+::
+
+    data FPack a where
+        FPack :: C a => F a -> FPack a
+
+Which now adds a dictionary's burden. This is unlikely to matter in practice, because the optimizer is likely able to drop the unused parameters. Even in cases where it does not, any regression from this change will be undone once dependent quantifiers are implemented, because that will bring with it the ability to discuss relevancy in types, allowing the erasure of the constraint if it is written as:
+
+::
+
+    data FPack a where
+        FPack :: forall (_ :: C) => F a -> FPack a
+
+The New Haskeller Story
++++++++++++++++++++++++
+
+If anything, it makes the language easier to learn, especially when it comes to learning new libraries, since it will make it so it is obvious where an associated type family is "coming from" and prevents a class of error that is currently possible. Perhaps not likely to have much effect on those who are entirely new to the language, but even at the level I'm at now, I find myself using typeclasses as a way to "explore" libraries when they expose that type of interface, and bringing this to the type level would therefore help increase discoverability.
 
 Alternatives
 ------------
