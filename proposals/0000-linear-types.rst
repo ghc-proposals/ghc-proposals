@@ -224,7 +224,7 @@ This proposal adds two new syntactical constructs:
 
     ::
 
-      type familly F (a :: *) :: Multiplicity
+      type family F (a :: *) :: Multiplicity
       f ::  forall (a :: *). Int  :(F a)-> a -> a
 - Binders can also be annotated with a multiplicity:
 
