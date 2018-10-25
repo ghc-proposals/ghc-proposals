@@ -56,7 +56,7 @@ Valid queries to ``instances`` are types, if anything other than a type is provi
 Execution
 ~~~~~~~~~
 
-Provided with a valid type, ``instances`` will attempt to match it against the heads of all visible class instances and satisfy all the implied constraints. The output will consist of a formatted listing of all matching and satisfiable instances. Each instance should be simplified as much as possible, meaning that if an instance: ``(c ~ Bool) => C c`` were found it would be presented as ``C Bool``.
+Provided with a valid type, ``instances`` will attempt to match it against the heads of all visible class instances and reduce constraints until only those mentioning holes in the type remain. The output will consist of a formatted listing of all matching instances that satisfy the stated condition on constraints. Each instance should be simplified as much as possible, meaning that if an instance: ``(c ~ Bool) => C c`` were found it would be presented as ``C Bool``.
 
 
 Effect and Interactions
