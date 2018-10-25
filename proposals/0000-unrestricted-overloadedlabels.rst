@@ -24,7 +24,7 @@ Immediately following a ``#``, with no intervening whitespace, allow any nonempt
 | *labelChar* → *small* | *large* | *digit* | ``'`` | ``.``
 | *label* → ``#``\ (*string* | *labelChar* {*labelChar*})
 
-The existing translation scheme is extended in the obvious way. This is a table of some example labels and their translations.
+A "quoted" label ``#``\ ⟨string⟩ translates to ``fromLabel @``\ ⟨string⟩, and a "bare" label ``#``\ ⟨labelChars⟩ translates to ``fromLabel @"``\ ⟨labelChars⟩\ ``"``. This is a table of some example labels and their translations.
 
 ========================== ==================================== ============
 Label syntax               Translation                          Works today?
