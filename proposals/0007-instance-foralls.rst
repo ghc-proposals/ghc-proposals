@@ -2,8 +2,8 @@ More explicit ``forall``\s
 ==========================
 
 .. proposal-number:: 0007
-.. trac-ticket:: 14268
-.. implemented::
+.. trac-ticket:: 2600, 14268
+.. implemented:: 8.8
 .. sectnum::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull requst <https://github.com/ghc-proposals/ghc-proposals/pull/55>`_.
