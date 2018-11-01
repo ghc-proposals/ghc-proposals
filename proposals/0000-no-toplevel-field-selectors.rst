@@ -59,6 +59,10 @@ A function for Template Haskell to go from a record field name to a selector for
 that field will be provided, because it's not possible anymore to go from field
 name directly to selector.
 
+A new `TH` function is added which takes two `Name` and returns an `Exp` which
+is equivalent to `a -> b`, where `a` is the record type specified by the second
+argument, and `b` the contents of the field specified by the first argument.
+
 Example
 ^^^^^^^
 
@@ -153,8 +157,7 @@ Unresolved questions
 --------------------
 
 - How exactly should the implementation look like?
-- How should the differentiation on TH work? There now needs to be a different
-  function to look up a selector function and a regular function via `Name`.
+- Which order of arguments in the new TH function?
 
 
 Implementation Plan
