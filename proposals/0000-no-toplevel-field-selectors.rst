@@ -15,8 +15,7 @@ NoToplevelFieldSelectors
 
 Enabling this Language Extension removes the default of Haskell data
 declarations to generate toplevel field accessor functions for records, such
-that the user can define their own, either via OverloadedRecordFields, or via
-Generic.
+that the user can define their own via Generic or positional extraction.
 
 Motivation
 ------------
@@ -117,6 +116,9 @@ because they all have to be exported manually.
 Effect and Interactions
 -----------------------
 
+`HasField` will work as before, if the corresponding field has been exported. It
+doesn't need to be exported as function.
+
 Breakage estimation
 ^^^^^^^^^^^^^^^^^^^
 
@@ -149,6 +151,10 @@ None.
 
 Unresolved questions
 --------------------
+
+- How exactly should the implementation look like?
+- How should the differentiation on TH work? There now needs to be a different
+  function to look up a selector function and a regular function via `Name`.
 
 
 Implementation Plan
