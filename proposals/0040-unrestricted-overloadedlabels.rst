@@ -1,11 +1,11 @@
 Unrestricted Overloaded Labels
 ==============================
 
-.. proposal-number:: 
+.. proposal-number:: 40
 .. trac-ticket:: 11671
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/170>`_
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/170>`_
 .. sectnum::
 .. contents::
 
