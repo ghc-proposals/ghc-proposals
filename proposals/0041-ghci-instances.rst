@@ -1,17 +1,14 @@
-.. proposal-number:: Leave blank. This will be filled in when the proposal is
-                     accepted.
-.. trac-ticket:: Leave blank. This will eventually be filled with the Trac
-                 ticket number which will track the progress of the
-                 implementation of the feature.
-.. implemented:: Leave blank. This will be filled in with the first GHC version which
-                 implements the described feature.
+List instances for a type in GHCi
+==============
+
+.. proposal-number:: 41
+.. trac-ticket::
+.. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/166>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/166>`_
 .. sectnum::
 .. contents::
 
-List instances for a type in GHCi
-==============
 
 There is currently no mechanism to get the instances for a specific type in GHCi, `:info` command allow specifying more than a top-level constructor. This proposal suggests a new GHCi command that would allow programmers to query GHC for valid instances matching a type.
 
