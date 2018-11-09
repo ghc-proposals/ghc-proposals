@@ -42,7 +42,7 @@ There were already multiple discussions about adding polymorphic record types to
 
 There are mainly two reasons why I open this proposal now:
 
-- It exists a widely used lamanynguage that is very similar to Haskell that has successfully implemented Rows and extensible Records (`PureScript <http://www.purescript.org/>`_)
+- It exists a widely used language that is very similar to Haskell that has successfully implemented Rows and extensible Records (`PureScript <http://www.purescript.org/>`_)
 - There is no central place (like this repository) where opinions about this topic are collected and discussed
 
 Proposed Change Specification
@@ -68,7 +68,7 @@ Pseudo grammar of rows:
 
 .. code-block:: haskell
 
-  row ::= '(' [rowFields] ['|' typeVar] ')'
+  row ::= '(' [rowFields] ['|' (typeVar | row)] ')'
   rowFields ::= label '::' type [',' rowFields]
 
 
@@ -90,6 +90,41 @@ The second part of this propsal is to change the Record syntax to by syntactic s
 
   -- pseudo typeclass, in reality builtin constraint
   class RowCons (s :: Symbol) (ty :: k) (r1 :: Row k) (r2 :: Row k) | s ty r1 -> r2, s r2 -> ty r1
+
+This means, that ``(foo :: Int, bar :: Y)`` has kind ``Row Type`` (or ``Row *``), ``Record (foo :: Int, bar Y)`` has kind ``Type`` (or ``*``) and ``{ foo :: Int, bar :: Y }`` is syntactic sugar for ``Record (foo :: Int, bar :: Y)`` so it also has kind ``Type`` (or ``*``).
+
+The desugaring of types in the form ``{ foo :: Foo, bar :: Bar | r}`` would work like this - note that those types are desugared after type family expansion
+
+.. code-block:: haskell
+
+  type family WithId (r :: Row Type) :: Type where
+      WithId r = { id :: Int | r }
+
+  f :: { | r } -> WithId r
+  -- desugaring steps
+  f :: { | r } -> { id :: Int | r }
+  f :: forall r. { | r } -> { id :: Int | r }
+  f :: forall r. Record ( | r ) -> Record (id :: Int | r)
+  f :: forall r. Record r -> Record (id :: Int | r)
+  f :: forall r r0. RowCons "id" Int r r0 => Record r -> Record ( | r0)
+  f :: forall r r0. RowCons "id" Int r r0 => Record r -> Record r0
+
+The newly introduced type variables and constraints will always be added to the ``forall`` that quantifies the variable of the open row, so for a higher kinded and a RankN type:
+
+.. code-block:: haskell
+
+  f :: Maybe { name :: String | r } -> String
+  -- desugaring steps
+  f :: forall r. Maybe { name :: String | r } -> String
+  f :: forall r. Maybe (Record (name :: String | r)) -> String
+  f :: forall r r0. RowCons "name" String r r0 => Maybe (Record ( | r0)) -> String
+  f :: forall r r0. RowCons "name" String r r0 => Maybe (Record r0) -> String
+
+  g :: Int -> (forall r. { id :: Int | r } -> Int) -> Int
+  -- desugaring steps
+  g :: Int -> (forall r. Record (id :: Int | r) -> Int) -> Int
+  g :: Int -> (forall r r0. RowCons "id" Int r r0 => Record ( | r0) -> Int) -> Int
+  g :: Int -> (forall r r0. RowCons "id" Int r r0 => Record r0 -> Int) -> Int
 
 Effect and Interactions
 -----------------------
@@ -117,11 +152,13 @@ The other alternative is obviously doing nothing.
 
 Unresolved Questions
 --------------------
-The syntax for Rows is currently taken from PureScript. It however looks a bit like KindSignatures (single element Rows) but the two can never be at the same place (not ambigous). It might be a bit confusing for newcomers though.
+The syntax for Rows is currently taken from PureScript. It however looks a bit like KindSignatures (single element Rows) but the two can never be at the same place (not ambigous). It might be a bit confusing for newcomers though. It may also be confused for type level tuples.
 
 Also if there should be a timeframe for deprecating the current record syntax in favor of polymorphic records based on rows. This timeframe has to be very long obviously, but it might be worth discussing.
 
 Should the Row implementation be in the compiler or in ``base`` or some sort of hybrid that does live in the standard library, but has special-cased optimizations in the compiler to avoid ``O(n)`` or ``O(n²)`` expansions in type families.
+
+How do records interact with the ``UNPACK`` pragma?
 
 Implementation Plan
 -------------------
