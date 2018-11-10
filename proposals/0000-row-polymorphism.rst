@@ -64,6 +64,8 @@ The semantics of this propsal are from `this paper <https://www.microsoft.com/en
 - Rows can contain a label multiple times, the order of those is important
 - Rows can be extended by a type variable of kind ``Row k`` where the base row's and the extending row's ``k`` have to be the same
 
+This means that a row behaves like a type level ``Map Symbol [k]``, in that one label can have multiple types whose order is important (to be interpreted as duplicated lables), but order of different symbols is not garantueed.
+
 Pseudo grammar of rows:
 
 .. code-block:: haskell
@@ -83,7 +85,8 @@ The second part of this propsal is to change the Record syntax to by syntactic s
   printName { name } = putStrLn name
   -- equivalent to
   printName2 :: RowCons "name" String r r0 => Record r0 -> IO ()
-  printName2 r = putStrLn (r @. (Proxy :: Proxy "name"))
+  printName2 r = let name = get #name r
+                 in putStrLn name
 
   -- defined in Data.Record
   (@.) :: RowCons s ty _ r => Record r -> Proxy s -> ty
@@ -148,6 +151,8 @@ Alternatives
 
 As an experiment I implemented all of the semantics `as a library <https://github.com/jvanbruegge/Megarecord>`_, this would mean that the only changes to the compiler would be syntactic sugar (also see the `motivation example <https://github.com/jvanbruegge/Megarecord/blob/master/app/Main.hs>`_). This approach would work and would even allow users that are not satisfied with the semantics of the standard rows/records to use ``RebindableSyntax`` to use their own, but the big problem is compile times. For type equality it is required that the type level data structure that represents the row has a "normal form", so that ``forall orig label type. Has label type orig => Insert label type (Delete label (orig)) === orig``. The data structure also has to act like a ``Map Symbol [k]``. Originally I wanted to use a type-level red-black tree for this, but a binary search tree does not have such a normal form, so I had to use a sorted cons list. This means the type families used to implement lookup etc have to do ``O(n)`` expansions and not ``O(log(n))``.
 
+As a performance optimization it would be possible to built a type level ``Map`` kind into the compiler with builtin type families for insertion/lookup/etc, that are optimized. One important aspect would be that this Map implements type equality such that the property in the first alternative about deletion and insertion still holds.
+
 The other alternative is obviously doing nothing.
 
 Unresolved Questions
@@ -158,7 +163,9 @@ Also if there should be a timeframe for deprecating the current record syntax in
 
 Should the Row implementation be in the compiler or in ``base`` or some sort of hybrid that does live in the standard library, but has special-cased optimizations in the compiler to avoid ``O(n)`` or ``O(n²)`` expansions in type families.
 
-How do records interact with the ``UNPACK`` pragma?
+How do records interact with the ``UNPACK`` pragma and strictness?
+
+Should accessing elements of a record be possible with the standard dot notation found in most languages? This would make a similar distiction from function composition like qualified module members (no spaces). Should this syntax allow to work though newtypes? For example with a syntax similar to ``p.Point.x``?
 
 Implementation Plan
 -------------------
