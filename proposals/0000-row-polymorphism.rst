@@ -48,7 +48,18 @@ There are mainly two reasons why I open this proposal now:
 Proposed Change Specification
 -----------------------------
 
-This proposal consists of two parts. The first part adds a new kind ``Row k`` that takes another kind as argument together with some syntax to construct types of this kind:
+The semantics of this propsal are from `this paper <https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/scopedlabels.pdf>`_. These are the same semantics that PureScript also implements currently.
+
+1. Rows:
+
+A row is a new kind ``Row k`` (ie is a kind constructor). A row of types is used to associate labels with types. The proposed syntax to construct such a type is (pseudo grammar):
+
+.. code-block:: haskell
+
+  row ::= '(' [rowFields] ['|' (typeVar | row)] ')'
+  rowFields ::= label '::' type [',' rowFields]
+
+A few examples for this syntax:
 
 .. code-block:: haskell
 
@@ -56,78 +67,165 @@ This proposal consists of two parts. The first part adds a new kind ``Row k`` th
 
   type MyOpenRow r = (foo :: Int, bar :: String | r) -- kind `Row Type`; r inferred as kind `Row Type`
 
-  type TypeLevelOnly = (foo :: 6, bar :: 7) -- kind `Row Nat`
+  type NatRow = (foo :: 6, bar :: 7) -- kind `Row Nat`
 
-The semantics of this propsal are from `this paper <https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/scopedlabels.pdf>`_. The most important points:
+The second example shows the extension of a Row with another. For this, they have to be the same kind, so the ``k`` of both rows has to match.
 
-- Rows are unordered, meaning ``(foo :: Int, bar :: Int)`` is the same as ``(bar :: Int, foo :: Int)``
-- Rows can contain a label multiple times, the order of those is important
-- Rows can be extended by a type variable of kind ``Row k`` where the base row's and the extending row's ``k`` have to be the same
+A ``Row k`` behaves like a type level ``Map Symbol [k]``. This means:
+- The order of types with different labels is irrelevant, this means ``(foo :: Foo, bar :: Bar) ~ (bar :: Bar, foo :: Foo)``
+- If a row contains duplicated labels, the order of the types appearing the row is remembered, so ``(foo :: Int, foo :: Foo)`` is not equal to ``(foo :: Foo, foo :: Int)``
 
-This means that a row behaves like a type level ``Map Symbol [k]``, in that one label can have multiple types whose order is important (to be interpreted as duplicated lables), but order of different symbols is not garantueed.
+Duplicated labels in rows have several advantages:
+- You can always extend a row ``r`` to ``(foo :: t | r)``, no matter what ``r`` is
+- Reverting the extension always returns the same ``r`` as before
 
-Pseudo grammar of rows:
-
-.. code-block:: haskell
-
-  row ::= '(' [rowFields] ['|' (typeVar | row)] ')'
-  rowFields ::= label '::' type [',' rowFields]
-
-
-The second part of this propsal is to change the Record syntax to by syntactic sugar for the (then newly) builtin Record datatype based on rows:
+A practical example for using duplicate labels is the library  `purescript-checked-exceptions <https://github.com/natefaubion/purescript-checked-exceptions>`_. It is using variants to implement checked exceptions. The need to allow duplicate labels arise from the ability to rethrow exceptions from handlers, possibly with a different type. A variant's ``on`` function matches on the label and removes it from the row indexing the variant type (basically like ``(myError :: String | r) -> r``. Now, if you want to rethrow errors from those handlers, the variable ``r`` has to be instanciated with ``(myError :: SomeType | r2)``, resulting in duplicated labels:
 
 .. code-block:: haskell
 
-  type MyRecord a = { foo :: Int, bar :: a } -- is equivalent to this:
-  type MyRecord2 a = Record (foo :: Int, bar :: a)
+  (myError :: String | r) -> r
+  (myError :: String | (myError :: SomeType | r2)) -> (myError :: SomeType | r2)
+  (myError :: String, myError :: SomeType | r2) -> (myError :: SomeType | r2)
 
-  printName :: { name :: String | r } -> IO ()
-  printName { name } = putStrLn name
+
+Rows define a bunch of constraints that can be used to manipulate them, that work like a trivial type classes:
+
+.. code-block:: haskell
+
+  --| Either looks up the type of a label in the row
+  --  returning it together with the rest of the row
+  --  or allows us to get the row that would be created
+  --  when extending a row with a label-type pair
+  class RowCons label ty tail row | label row -> ty tail, label ty tail -> row
+
+
+  --| Asserts that the row lacks the label
+  class RowLacks label row
+
+  --| Removes duplicate labels from the row
+  class RowNub original nubbed | original -> nubbed
+
+  --| Merges two rows (left-biased), includes duplicated labels
+  class RowUnion left right union
+        | left right -> union, right union -> left, left union -> right
+
+2. Records
+
+As a second step, a new type for records is introduced:
+
+2.1 Syntax
+
+.. code-block:: haskell
+
+  data Record (r :: Row Type) = Record (SmallArray# Any)
+
+The type level syntax of a record is very similar to rows:
+
+.. code-block:: haskell
+
+  recordType ::= '{' [rowFields] ['|' (typeVar | row)] '}'
+
+This is just syntactic sugar for the record type and its row:
+
+.. code-block:: haskell
+
+  { foo :: Foo, bar :: Bar | r } ~ Record (foo :: Foo, bar :: Bar | r)
+
+The value level syntax is similar to the current syntax for records and the syntax in other languages:
+
+.. code-block:: haskell
+
+  record ::= '{' [recordFields] '}'
+  recordFields ::= label '=' expression [',' recordFields]
+
+Records can also be used for pattern matching similar to the ``NamedFieldPuns`` extension in Haskell:
+
+.. code-block:: haskell
+
+  recordPun ::= '{' [punLabels] '}'
+  punLabels ::= label [',' punLabels]
+
+For a function definition this would look like this:
+
+.. code-block:: haskell
+
+  f { x, y } = x + y
+
+
+2.2 Semantics
+
+The standard libary provides a few functions for dealing with records. The types of those are:
+
+.. code-block:: haskell
+
+  get :: forall r r' l a. RowCons l a r' r => Proxy l -> Record r -> a
+
+  modify :: forall r1 r2 r l a b. RowCons l a r r1 => RowCons l b r r2 =>
+         Proxy l -> (a -> b) -> Record r1 -> Record r2
+
+  insert :: forall r1 r2 l a. RowLacks l r1 => RowCons l a r1 r2 =>
+         Proxy l -> a -> Record r1 -> Record r2
+
+  delete :: forall r1 r2 l a. RowLacks l r1 => RowCons l a r1 r2 =>
+         Proxy l -> Record r2 -> Record r1
+
+The constraints on these functions mean that a record can only have each label once. A record expression is semantically equivalent to repeated ``insert``:
+
+.. code-block:: haskell
+
+  { foo: "foo", bar: "bar" } == insert #foo "foo" $ insert #bar "bar" {}
+
+This also means, that while the row of a record may have duplicate types, we will never be able to construct such a type:
+
+.. code-block:: haskell
+
+  type MyRec = Record (foo :: Int, foo :: String)
+
+  val :: MyRec
+  val = { foo: 4, foo: "Hello" } -- type error, because:
   -- equivalent to
-  printName2 :: RowCons "name" String r r0 => Record r0 -> IO ()
-  printName2 r = let name = get #name r
-                 in putStrLn name
+  val = insert #foo 4 $ { foo: "Hello" } -- insert has `RowLacks` constraint
 
-  -- defined in Data.Record
-  (@.) :: RowCons s ty _ r => Record r -> Proxy s -> ty
-
-  -- pseudo typeclass, in reality builtin constraint
-  class RowCons (s :: Symbol) (ty :: k) (r1 :: Row k) (r2 :: Row k) | s ty r1 -> r2, s r2 -> ty r1
-
-This means, that ``(foo :: Int, bar :: Y)`` has kind ``Row Type`` (or ``Row *``), ``Record (foo :: Int, bar Y)`` has kind ``Type`` (or ``*``) and ``{ foo :: Int, bar :: Y }`` is syntactic sugar for ``Record (foo :: Int, bar :: Y)`` so it also has kind ``Type`` (or ``*``).
-
-The desugaring of types in the form ``{ foo :: Foo, bar :: Bar | r}`` would work like this - note that those types are desugared after type family expansion
+This proposal allows open records, those are internally implemented via the ``RowCons`` constraint. As records are internally represented as array and thus need an index to return the value, the constraint is also used to carry the index of the label:
 
 .. code-block:: haskell
 
-  type family WithId (r :: Row Type) :: Type where
-      WithId r = { id :: Int | r }
+  f :: { x :: Int, y :: Int | r } -> Int
+  -- "desugars" to (step by step)
+  f :: forall r. { x :: Int, y :: Int | r } -> Int
+  f :: forall r. Record ( x :: Int, y :: Int | r ) -> Int
+  f :: forall r r0. RowCons "x" Int r r0 => Record ( y :: Int | r0 ) -> Int
+  f :: forall r r0 r1. RowCons "x" Int r r0 => RowCons "y" Int r0 r1 => Record ( | r1 ) -> Int
+  f :: forall r r0 r1. RowCons "x" Int r r0 => RowCons "y" Int r0 r1 => Record r1 -> Int
 
-  f :: { | r } -> WithId r
-  -- desugaring steps
-  f :: { | r } -> { id :: Int | r }
-  f :: forall r. { | r } -> { id :: Int | r }
-  f :: forall r. Record ( | r ) -> Record (id :: Int | r)
-  f :: forall r. Record r -> Record (id :: Int | r)
-  f :: forall r r0. RowCons "id" Int r r0 => Record r -> Record ( | r0)
-  f :: forall r r0. RowCons "id" Int r r0 => Record r -> Record r0
+The newly introduced type variables and the constriants always go to the ``forall`` that quantifies ``r`` (be it implicit or explicit, e.g. with ``RankNTypes``).
 
-The newly introduced type variables and constraints will always be added to the ``forall`` that quantifies the variable of the open row, so for a higher kinded and a RankN type:
+Type aliases and families only substitute record types, they get replaced by the constraints after expansion:
 
 .. code-block:: haskell
 
-  f :: Maybe { name :: String | r } -> String
-  -- desugaring steps
-  f :: forall r. Maybe { name :: String | r } -> String
-  f :: forall r. Maybe (Record (name :: String | r)) -> String
-  f :: forall r r0. RowCons "name" String r r0 => Maybe (Record ( | r0)) -> String
-  f :: forall r r0. RowCons "name" String r r0 => Maybe (Record r0) -> String
+  type family MyFamily (r :: Row Type) :: Type where
+      WithId r = Maybe { id :: Int | r }
 
-  g :: Int -> (forall r. { id :: Int | r } -> Int) -> Int
+  f :: { | r } -> MyFamily r
   -- desugaring steps
-  g :: Int -> (forall r. Record (id :: Int | r) -> Int) -> Int
-  g :: Int -> (forall r r0. RowCons "id" Int r r0 => Record ( | r0) -> Int) -> Int
-  g :: Int -> (forall r r0. RowCons "id" Int r r0 => Record r0 -> Int) -> Int
+  f :: { | r } -> Maybe { id :: Int | r }
+  f :: forall r. { | r } -> Maybe { id :: Int | r }
+  f :: forall r. Record ( | r ) -> Maybe (Record (id :: Int | r))
+  f :: forall r. Record r -> Maybe (Record (id :: Int | r))
+  f :: forall r r0. RowCons "id" Int r r0 => Record r -> Maybe (Record ( | r0))
+  f :: forall r r0. RowCons "id" Int r r0 => Record r -> Maybe (Record r0)
+
+Record puns are semanticly equivalent to the ``get`` function:
+
+.. code-block:: haskell
+
+  f :: { x :: Int, y :: Int | r } -> Int
+  f { x, y } = x + y
+  -- equivalent to
+  f rec = let x = get #x rec
+              y = get #y rec
+          in x + y
 
 Effect and Interactions
 -----------------------
