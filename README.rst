@@ -30,7 +30,7 @@ What is the timeline of a proposal?
    `How to bring a proposal before the committee <#how-to-bring-a-proposal-before-the-committee>`_ •
    `Who is the committee? <#who-is-the-committee>`_
 
-5. One committee member steps up as a shephard, and generates consensus within the commitee within four or five weeks.
+5. One committee member steps up as a shepherd, and generates consensus within the committee within four or five weeks.
 
    `Committee process <#committee-process>`_ •
    `Review criteria <#review-criteria>`_ •
@@ -208,7 +208,7 @@ What is a dormant proposal
 
 In order to keep better track of actively discussed proposals, proposals that
 see no activity for an extended period of time (a month or two) might be marked
-as “``dormant``”. At any time the proposor, or someone else can revive the
+as “``dormant``”. At any time the proposer, or someone else can revive the
 proposal by picking up the discussion (and possibly asking `the secretary
 <#who-is-the-committee>`_ to remove the ``dormant`` tag).
 
@@ -217,7 +217,7 @@ You can see the `list of dormant proposals <https://github.com/ghc-proposals/ghc
 Who is the committee
 --------------------
 
-The current members of the GHC steering committe, who you can reach
+The current members of the GHC steering committee, who you can reach
 by email at ghc-steering-committee@haskell.org, are:
 
 ======================  ====================================================  =========
@@ -247,7 +247,7 @@ Committee process
 -----------------
 
 The committee process starts once the committee has been notified that a
-proposal is ready for decistion, and takes place on the
+proposal is ready for decision, and takes place on the
 `ghc-steering-committee <https://mail.haskell.org/cgi-bin/mailman/listinfo/>`_
 mailing list. All interested parties are invited to follow the discussion.
 
@@ -258,8 +258,8 @@ mailing list. All interested parties are invited to follow the discussion.
    makes a recommendation as to whether the proposal ought to be accepted,
    rejected or returned for revision.
 
--  Discussion among the committee ensues on the mailiing list.
-   Silence is undestood as agreement with the shepherds recommendation.
+-  Discussion among the committee ensues on the mailing list.
+   Silence is understood as agreement with the shepherds recommendation.
 
 -  Ideally, the committee reaches consensus, as determined by the secretary or
    the shepherd.  If consensus is elusive, then we vote, with the Simons
@@ -288,7 +288,7 @@ mailing list. All interested parties are invited to follow the discussion.
 
    *  **If we say yes:**
       The shepherd or the secretary announces this on the pull request
-      and lables it as
+      and labels it as
       `Accepted <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3AAccepted>`_.
       The secretary merges the pull request and assigns the final proposal
       number.
@@ -298,7 +298,7 @@ mailing list. All interested parties are invited to follow the discussion.
       oversee implementation, attract implementors, etc.
 
       The proposal authors or other implementors are encouraged to update the
-      propsoal with the implementation status (i.e. trac ticket number and the
+      proposal with the implementation status (i.e. trac ticket number and the
       first version of GHC implementing it.)
 
 
@@ -317,7 +317,7 @@ and any other relevant considerations appropriately.
    ideally offer evidence of some form.
 
 -  *Elegant and principled*. Haskell is a beautiful and principled
-   langauge. It is tempting to pile feature upon feature (and GHC
+   language. It is tempting to pile feature upon feature (and GHC
    Haskell has quite a bit of that), but we should constantly and
    consciously strive for simplicity and elegance.
 
