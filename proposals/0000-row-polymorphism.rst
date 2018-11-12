@@ -48,9 +48,11 @@ There are mainly two reasons why I open this proposal now:
 Proposed Change Specification
 -----------------------------
 
-The semantics of this propsal are from `this paper <https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/scopedlabels.pdf>`_. These are the same semantics that PureScript also implements currently.
+The semantics of rows are taken from `this paper <https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/scopedlabels.pdf>`_. These are the same semantics that PureScript also implements currently. Note that the semantics of Records differ from the paper!
 
 1. Rows:
+
+The first part of the proposal is to add a new language extension ``-XRowPolymorphism`` that allows to use a new syntax to construct types of a new kind ``Row``.
 
 A row is a new kind ``Row k`` (ie is a kind constructor). A row of types is used to associate labels with types. The proposed syntax to construct such a type is (pseudo grammar):
 
@@ -79,13 +81,13 @@ Duplicated labels in rows have several advantages:
 - You can always extend a row ``r`` to ``(foo :: t | r)``, no matter what ``r`` is
 - Reverting the extension always returns the same ``r`` as before
 
-A practical example for using duplicate labels is the library  `purescript-checked-exceptions <https://github.com/natefaubion/purescript-checked-exceptions>`_. It is using variants to implement checked exceptions. The need to allow duplicate labels arise from the ability to rethrow exceptions from handlers, possibly with a different type. A variant's ``on`` function matches on the label and removes it from the row indexing the variant type (basically like ``(myError :: String | r) -> r``. Now, if you want to rethrow errors from those handlers, the variable ``r`` has to be instanciated with ``(myError :: SomeType | r2)``, resulting in duplicated labels:
+A practical example for using duplicate labels is the library  `purescript-checked-exceptions <https://github.com/natefaubion/purescript-checked-exceptions>`_. It is using variants to implement checked exceptions. The need to allow duplicate labels arise from the ability to rethrow exceptions from handlers, possibly with a different type. A variant's ``on`` function matches on the label and removes it from the row indexing the variant type (basically like ``Variant (myError :: String | r) -> Variant r``. Now, if you want to rethrow errors from those handlers, the variable ``r`` has to be instanciated with ``(myError :: SomeType | r2)``, resulting in duplicated labels:
 
 .. code-block:: haskell
 
-  (myError :: String | r) -> r
-  (myError :: String | (myError :: SomeType | r2)) -> (myError :: SomeType | r2)
-  (myError :: String, myError :: SomeType | r2) -> (myError :: SomeType | r2)
+  Variant (myError :: String | r) -> Variant r
+  Variant (myError :: String | (myError :: SomeType | r2)) -> Variant (myError :: SomeType | r2)
+  Variant (myError :: String, myError :: SomeType | r2) -> Variant (myError :: SomeType | r2)
 
 
 Rows define a bunch of constraints that can be used to manipulate them, that work like a trivial type classes:
@@ -111,7 +113,7 @@ Rows define a bunch of constraints that can be used to manipulate them, that wor
 
 2. Records
 
-As a second step, a new type for records is introduced:
+As a second step, a new type for records is introduced. This type is added to the ``base`` library. The syntax sugar to create those records is overwriting the current syntax and is enabled with a second language extension ``-XPolymorphicRecords`` that implies ``-XRowPolymorphism``.
 
 2.1 Syntax
 
@@ -136,7 +138,14 @@ The value level syntax is similar to the current syntax for records and the synt
 .. code-block:: haskell
 
   record ::= '{' [recordFields] '}'
-  recordFields ::= label '=' expression [',' recordFields]
+  recordFields ::= label ':' expression [',' recordFields]
+
+Records can be updated with a new record update syntax:
+
+.. code-block:: haskell
+
+  recordUpdate ::= '{' [updateFields] '}'
+  updateFields ::= label '=' expression [',' updateFields]
 
 Records can also be used for pattern matching similar to the ``NamedFieldPuns`` extension in Haskell:
 
@@ -155,6 +164,8 @@ For a function definition this would look like this:
 2.2 Semantics
 
 The standard libary provides a few functions for dealing with records. The types of those are:
+
+In all of the following code snippets, syntax like ``#foo`` is using the ``-XOverloadedLabels`` extension.
 
 .. code-block:: haskell
 
@@ -216,6 +227,14 @@ Type aliases and families only substitute record types, they get replaced by the
   f :: forall r r0. RowCons "id" Int r r0 => Record r -> Maybe (Record ( | r0))
   f :: forall r r0. RowCons "id" Int r r0 => Record r -> Maybe (Record r0)
 
+Record updates are semanticly equivalent to the ``modify`` function:
+
+.. code-block:: haskell
+
+  rec = { a: "Hello" } { a = "foo" }
+  -- equivalent to
+  rec = modify #a (const "foo") { a: "Hello" }
+
 Record puns are semanticly equivalent to the ``get`` function:
 
 .. code-block:: haskell
@@ -234,7 +253,7 @@ The first part of the propsal allows to define a Record datatype that uses a pha
 
 The second part is a massive breaking change to the Record syntax, a widely used feature of Haskell. Activating ``-XPolymorphicRecords`` will change the types of Records defined in the file.
 
-The extension would also either imply or do something similar to `NoToplevelFieldSelectors <https://github.com/ghc-proposals/ghc-proposals/pull/160>`_.
+Fields of records would no longer pollude the global namespace, making extensions like ``DuplicateRecordFields`` unnecessary. So the extension would also either imply or do something similar to `NoToplevelFieldSelectors <https://github.com/ghc-proposals/ghc-proposals/pull/160>`_.
 
 Both parts should support ``-XPolyKinds`` (the ``Row`` kind takes a second kind as argument and the Record phantom type is of kind ``Row Type``). This allows for Rows that live exclusively on type level (e.g. ``Row Symbol`` or ``Row Nat``)
 
@@ -264,6 +283,10 @@ Should the Row implementation be in the compiler or in ``base`` or some sort of 
 How do records interact with the ``UNPACK`` pragma and strictness?
 
 Should accessing elements of a record be possible with the standard dot notation found in most languages? This would make a similar distiction from function composition like qualified module members (no spaces). Should this syntax allow to work though newtypes? For example with a syntax similar to ``p.Point.x``?
+
+Should records allow for duplicated fields?
+
+Should records allow for other kinds than ``Symbol`` as labels?
 
 Implementation Plan
 -------------------
