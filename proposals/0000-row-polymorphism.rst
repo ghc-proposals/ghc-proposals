@@ -61,6 +61,13 @@ A row is a new kind ``Row k`` (ie is a kind constructor). A row of types is used
   row ::= '(' [rowFields] ['|' (typeVar | row)] ')'
   rowFields ::= label '::' type [',' rowFields]
 
+**NOTE**: This syntax does indeed collide with ``-XKindAnnotations`` with ``-XDataKinds``, mentioned by [@lspitzner](https://github.com/ghc-proposals/ghc-proposals/pull/180#issuecomment-437715806):
+
+.. code-block:: haskell
+
+  type Foo a = (a :: Bool) -- Row of label a and type Bool, with phantom parameter
+                           -- or a kind annotation?
+
 A few examples for this syntax:
 
 .. code-block:: haskell
