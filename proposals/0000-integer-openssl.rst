@@ -39,16 +39,16 @@ implementation of the ``GHC.Integer`` interface and is `BSD3
 slow and infeasible for contexts where big integer multiplication / division are
 in fact required, e.g. public key cryptography.
 
-So, the goal is to have a fast (enough), BSD3-licensed alternative for the
+So, the **goal** is to have a fast (enough), BSD3-licensed alternative for the
 ``Integer`` data type available in GHC.
 
 After looking for a BSD-licensed library, ``openssl`` came to mind, which
 implements arbitrary size integer arithmetic in it's `BIGNUM
-<https://github.com/openssl/openssl/tree/master/crypto/bn`_ library incorporated
+<https://github.com/openssl/openssl/tree/master/crypto/bn>`_ library incorporated
 into ``libcrypto``. It seems to ticks all boxes:
 
 * BSD-licensed: The OpenSSL license is a `BSD-style license
-  <https://tldrlegal.com/license/openssl-license-(openssl)`_.
+  <https://tldrlegal.com/license/openssl-license-(openssl)>`_.
 
 * Complete / correct: Documentation and source seems to cover all major
   operations on big integers - so only a thin layer / wrapper is suitable.
@@ -114,6 +114,8 @@ past and were discussed or prototypically implemented so far.
   `https://github.com/erikd/haskell-big-integer-experiment`
 * Wiki page about replacing GMP
   `https://ghc.haskell.org/trac/ghc/wiki/ReplacingGMPNotes`
+* Performance Measurements of other Multi-Precision Libraries
+  `https://ghc.haskell.org/trac/ghc/wiki/ReplacingGMPNotes/PerformanceMeasurements`
 
 
 Unresolved questions
@@ -125,7 +127,6 @@ and even ``GHC.Integer.Logarithms.Internals``.
 
 Implementation Plan
 -------------------
-(Optional) If accepted who will implement the change? Which other ressources and prerequisites are required for implementation?
 
 1) Implement the "portable" ``GHC.Integer`` interface for 32bit and 64bit in a
    library, where implementation is tested and benchmarked against the builtin
