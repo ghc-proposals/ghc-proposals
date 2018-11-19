@@ -9,7 +9,9 @@ Add integer-openssl as BSD-licensed alternative for integer-gmp
 .. implemented:: Leave blank. This will be filled in with the first GHC version which
                  implements the described feature.
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/183>`_.
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`__.
+            **After creating the pull request, edit this file again, update the
+            number in the link, and delete this bold sentence.**
 .. sectnum::
 .. contents::
 
@@ -24,8 +26,8 @@ Motivation
 
 By default, GHC uses ``integer-gmp`` as implementation for the ``GHC.Integer``
 interface. The GNU MP Bignum Library is distributed dual licensed under `LGPLv3
-<https://www.gnu.org/licenses/lgpl.html>` and `GPLv2
-<https://www.gnu.org/licenses/gpl-2.0.html>`. Although being fast and available
+<https://www.gnu.org/licenses/lgpl.html>`_ and `GPLv2
+<https://www.gnu.org/licenses/gpl-2.0.html>`_. Although being fast and available
 on many platforms, these licenses are sometimes undesirable:
 
 * when statically linking (e.g. on Windows)
@@ -33,21 +35,41 @@ on many platforms, these licenses are sometimes undesirable:
 
 The only available alternative is ``integer-simple``, which is a pure haskell
 implementation of the ``GHC.Integer`` interface and is `BSD3
-<https://opensource.org/licenses/BSD-3-Clause>` licensed. However, it is quite
+<https://opensource.org/licenses/BSD-3-Clause>`_ licensed. However, it is quite
 slow and infeasible for contexts where big integer multiplication / division are
 in fact required, e.g. public key cryptography.
 
 So, the goal is to have a fast (enough), BSD3-licensed alternative for the
 ``Integer`` data type available in GHC.
 
+After looking for a BSD-licensed library, ``openssl`` came to mind, which
+implements arbitrary size integer arithmetic in it's `BIGNUM
+<https://github.com/openssl/openssl/tree/master/crypto/bn`_ library incorporated
+into ``libcrypto``. It seems to ticks all boxes:
+
+* BSD-licensed: The OpenSSL license is a `BSD-style license
+  <https://tldrlegal.com/license/openssl-license-(openssl)`_.
+
+* Complete / correct: Documentation and source seems to cover all major
+  operations on big integers - so only a thin layer / wrapper is suitable.
+
+* Fast enough (tm): Early results show a 10-20% worse than `integer-gmp
+  <https://ch1bo.github.io/integer-openssl/openssl-vs-gmp.html>`_ but up to
+  1000% better than `integer-simple
+  <https://ch1bo.github.io/integer-openssl/openssl-vs-simple.html>`_
+  performance.
+
+* Available: ``libcrypto`` is already installed on a lot of systems. Static
+  linking it should be also possiblen and allowed, as with any BSD licensed
+  library.
+
 Proposed Change Specification
 -----------------------------
 
-A new integer library ``integer-openssl`` is added to GHC source tree as
-submodule and selectable via both (Makefile and hadrian) build systems.
-``integer-gmp`` should remain the default integer library, but instructions and
-documentation is updated to allow GHC users to build the compiler using
-``integer-openssl``.
+New integer library ``integer-openssl`` is added to GHC source tree as submodule
+and selectable via both (Makefile and hadrian) build systems. ``integer-gmp``
+should remain the default integer library, but instructions and documentation is
+updated to allow GHC users to build the compiler using ``integer-openssl``.
 
 ``integer-openssl`` will implement the portable interface of ``GHC.Integer``
 (and ``GHC.Integer.Logarithms`` and ``GHC.Integer.Logarithms.Internals`` if
@@ -77,9 +99,10 @@ interface before, they will be able to do as well with ``integer-openssl``.
 Costs and Drawbacks
 -------------------
 
-Cost for maintaining another integer library is of course existing, as it is now
-with ``integer-simple``. It depends on how stable the ``GHC.Integer`` interface
-is (feedback on any planned changes welcome!).
+Cost for maintaining another integer library do of course exist, as it is now
+with ``integer-simple``. It depends however on how stable the ``GHC.Integer``
+interface is. Interface changes of relevant ``openssl`` / ``libcrypto``
+functions is unlikely as the library is very stable and in wide use.
 
 Alternatives
 ------------
