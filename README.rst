@@ -228,7 +228,6 @@ Manuel M T Chakravarty  `@mchakravarty <https://github.com/mchakravarty>`_
 Iavor Diatchki          `@yav <https://github.com/yav>`_
 Richard Eisenberg       `@goldfirere <https://github.com/goldfirere>`_
 Ben Gamari              `@bgamari <https://github.com/bgamari>`_
-Roman Leshchinskiy      `@rleshchinskiy <https://github.com/rleshchinskiy>`_
 Simon Marlow            `@simonmar <https://github.com/simonmar>`_            co-chair
 Simon Peyton-Jones      `@simonpj <https://github.com/simonpj>`_              co-chair
 Eric Seidel             `@gridaphobe <https://github.com/gridaphobe>`_
@@ -238,9 +237,10 @@ Members have terms of 3, 4, and 5 years.
 
 We would also like to thank our former members
 
-======================  ====================================================  =========
+======================  ==================================================== 
 Ryan Newton             `@rrnewton <https://github.com/rrnewton>`_
-======================  ====================================================  =========
+Roman Leshchinskiy      `@rleshchinskiy <https://github.com/rleshchinskiy>`_
+======================  ==================================================== 
 
 
 Committee process
