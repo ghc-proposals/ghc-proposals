@@ -36,7 +36,12 @@ What is the timeline of a proposal?
    `Review criteria <#review-criteria>`_ •
    `≡ List of proposals under review <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+committee+review%22>`_
 
-6. Eventually, the committee rejects a proposal, or passes it back to the author for review, or accepts it.
+6. Eventually, the committee rejects a proposal, or passes it back to the
+   author for review, or accepts it.
+
+   Acceptance of the proposal implies that the implementation will be accepted
+   into GHC provided it is well-engineered, well-documented, and does not
+   complicate the code-base too much.
 
    `≡ List of accepted proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3AAccepted>`_
 
@@ -45,9 +50,13 @@ What is the timeline of a proposal?
    `What is a dormant proposal <#what-is-a-dormant-proposal>`_ •
    `≡ List of dormant proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22dormant%22>`_
 
-Once a proposal is accepted, it still has to be implemented.  The author may do that, or someone else.
-Acceptance of the proposal implies that the implementation will be accepted into GHC provided
-it is well-engineered, well-documented, and does not complicate the code-base too much.
+
+8. Once a proposal is accepted, it still has to be implemented.  The author
+   may do that, or someone else. We mark the proposal as “implemented” (and we
+   are happy to be nudged to do so by email or GitHub issue).
+
+
+   `≡ List of implemented proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22implemented%22>`_
 
 Do not hesitate to `contact <#questions>`_ us if you have questions.
 
