@@ -117,8 +117,59 @@ The check looks like
 1. Collect a set ``PartialLabels`` of record labels in sum types.
 2. For any usage of a label in ``PartialLabels``, issue a warning if it used in an unsafe manner.
 
+An unsafe use of a partial flag is one which may fail at runtime. These are listed here.
+
+* Accessor function
+* Record update syntax
+
+Safe uses can't fail at runtime. These are:
+
+* Pattern matching (including ``RecordWildCards``, ``NamedFieldPuns``)
+* Record creation syntax
+
 This requires the least amount of work to enable for a project -- it is a compile-time warning flag that can easily be added into a project configuration file.
 It works for every single definition that fits the case, without additional boilerplate.
+
+An example for all behavior is given below
+
+::
+   {-# OPTIONS_GHC -fwarn-unsafe-field-uses #-}
+
+   data X 
+      = A { a :: Int, same :: String }
+      | B { b :: Char, same :: String }
+
+   pass :: IO ()
+   pass = pure ()
+
+   main = do
+      -- 1.
+      let r1 = A { a = 3, same = "hello" }
+      -- 2.
+      let r2 = r1 { same = "goodbye" }
+      -- 3.
+      let r3 = r1 { a = 4 }
+      -- 4.
+      let r4 = r1 { b = 'c', a = 3 }
+      
+      -- 5.
+      case r1 of
+         A { a, same } -> pass
+         B { b, same } -> pass
+
+      -- 6.
+      print (a r1)
+
+      -- 7.
+      putStrLn (same r1)
+
+1. Safe: Record creation syntax is safe, as it currently is.
+2. Safe: Update syntax is safe iff the field is present in every constructor for the type. ``same`` is present in both constructors, so this is safe.
+3. Warning: The field ``a`` is not present in all constructors, so this may fail at runtime. The warning would also trigger for an update on ``b``.
+4. Error: GHC correctly errors on this currently.
+5. Safe: Pattern matching is always safe, so no warnings are issued.
+6. Warning: Partial accessor functions may fail at runtime, so this warns.
+7. Safe: Because ``same`` is defined on every constructor, it is not partial.
 
 Effect and Interactions
 -----------------------
@@ -147,10 +198,11 @@ You can live with never using record field labels.
 Unresolved Questions
 --------------------
 
+Are there other uses for record fields than what is given in 2.2? How should they be addressed?
+
 Should we even allow this at all? 
 
 Which solution is preferred?
-
 
 Implementation Plan
 -------------------
