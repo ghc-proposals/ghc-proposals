@@ -57,7 +57,7 @@ What is the timeline of a proposal?
    email or GitHub issue).
 
 
-   `≡ List of implemented proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22implemented%22>`_
+   `≡ List of implemented proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`_
 
 Do not hesitate to `contact <#questions>`_ us if you have questions.
 
