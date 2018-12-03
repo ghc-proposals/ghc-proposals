@@ -52,8 +52,9 @@ What is the timeline of a proposal?
 
 
 8. Once a proposal is accepted, it still has to be implemented.  The author
-   may do that, or someone else. We mark the proposal as “implemented” (and we
-   are happy to be nudged to do so by email or GitHub issue).
+   may do that, or someone else. We mark the proposal as “implemented” once it
+   hits GHC’s ``master`` branch (and we are happy to be nudged to do so by
+   email or GitHub issue).
 
 
    `≡ List of implemented proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22implemented%22>`_
