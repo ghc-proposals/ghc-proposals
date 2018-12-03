@@ -90,10 +90,18 @@ With the proposed fix, I would expect to see the following behavior.
 Proposed Change Specification
 -----------------------------
 
-This "want" has a few possible strategies.
+This problem has a few possible strategies that might solve it.
+I propose these two alternatives so people can discuss their preferences on how they'd want this feature.
+The solutions are sufficiently different that both might be desirable, but only one could suffice as well.
 
 * A new pragma for partial sum types.
 * A new warning flag that triggers on any unsafe usage of a partial record field.
+
+I can see how both of the following strategies would work, and they operate at different levels of coarseness.
+The first solution is finer grained, and allows the developer to opt in on a datatype-by-datatype basis.
+The *definition* of the datatype determines who recieves warnings for this.
+
+The second solution operates on a module-by-module basis, and the *user* determines whether or not they'll recieve warnings for unsafe use in a given module.
 
 New Pragma
 ++++++++++
@@ -188,6 +196,8 @@ I do not expect that it will have any effect on the difficulty of learning the l
 
 Alternatives
 ------------
+
+One or both of these solutions may be implemented.
 
 You can live with the possibility of a runtime error, unchecked by the compiler.
 
