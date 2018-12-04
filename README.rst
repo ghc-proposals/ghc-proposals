@@ -245,6 +245,8 @@ Eric Seidel             `@gridaphobe <https://github.com/gridaphobe>`_
 
 Members have terms of 3, 4, and 5 years.
 
+The committee members have committed to adhere to the `Haskell committee guidelines for respectful communication <GRC.rst>`_.
+
 We would also like to thank our former members
 
 ======================  ==================================================== 
