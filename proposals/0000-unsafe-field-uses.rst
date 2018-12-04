@@ -15,7 +15,8 @@ Warning flag for unsafe use of partial fields
 
 Currently, a `WARNING` or `DEPRECATED` pragma on a record field label triggers for any use of a field label -- accessing a value, creating a record, record update, pattern matches, and named field puns.
 I propose that GHC add a mechanism whereby *unsafe* usages of record labels trigger warnings, and safe usages do not.
-Safe usages include record creation, record pattern matches, ``NamedFieldPuns``, and ``RecordWildCards``.
+Safe usages are record creation and record pattern matches (either via the standard syntax or ``NamedFieldPuns`` and ``RecordWildCards``).
+Unsafe uses are record update and accessor functions.
 
 Motivation
 ------------
@@ -90,6 +91,18 @@ With the proposed fix, I would expect to see the following behavior.
 Proposed Change Specification
 -----------------------------
 
+An unsafe use of a partial field is one which may fail at runtime. These are listed here.
+
+* Accessor function
+* Record update syntax
+
+Safe uses can't fail at runtime. These are
+
+* Pattern matching (including ``RecordWildCards``, ``NamedFieldPuns``)
+* Record creation syntax
+
+The goal is to allow users to opt-in to warnings on unsafe uses, while permitting safe uses.
+
 This problem has a few possible strategies that might solve it.
 I propose these two alternatives so people can discuss their preferences on how they'd want this feature.
 The solutions are sufficiently different that both might be desirable, but only one could suffice as well.
@@ -125,22 +138,13 @@ The check looks like
 1. Collect a set ``PartialLabels`` of record labels in sum types.
 2. For any usage of a label in ``PartialLabels``, issue a warning if it used in an unsafe manner.
 
-An unsafe use of a partial flag is one which may fail at runtime. These are listed here.
-
-* Accessor function
-* Record update syntax
-
-Safe uses can't fail at runtime. These are:
-
-* Pattern matching (including ``RecordWildCards``, ``NamedFieldPuns``)
-* Record creation syntax
-
 This requires the least amount of work to enable for a project -- it is a compile-time warning flag that can easily be added into a project configuration file.
 It works for every single definition that fits the case, without additional boilerplate.
 
 An example for all behavior is given below
 
 ::
+
    {-# OPTIONS_GHC -fwarn-unsafe-field-uses #-}
 
    data X 
