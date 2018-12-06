@@ -88,7 +88,7 @@ conducts and diversity statements as our inspiration, including these:
 * In our own community, Michael Snoyman has recently (2018) started a process
   for a `Stack code of conduct
   <https://www.snoyman.com/blog/2018/11/proposal-stack-coc>`_, with similar
-  motivations ours.
+  motivations to ours.
 * The `GNU Kind Communication Guidelines
   <https://www.gnu.org/philosophy/kind-communication.html>`_, published in
   October 2018, also express the positive tone we seek; `Stallman’s post
