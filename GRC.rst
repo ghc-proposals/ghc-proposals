@@ -85,7 +85,7 @@ Acknowledgements
 We'd like to thank the communities and projects that established code of
 conducts and diversity statements as our inspiration, including these:
 
-* One month before this document was first published, Michael Snoyman proposed
+* A month before this document was first published, Michael Snoyman proposed
   a `Stack code of conduct
   <https://www.snoyman.com/blog/2018/11/proposal-stack-coc>`_ with a
   motivation similar to ours.
