@@ -93,6 +93,7 @@ conducts and diversity statements as our inspiration, including these:
   <https://www.gnu.org/philosophy/kind-communication.html>`_, published in
   October 2018, also express the positive tone we seek; `Stallman’s post
   <https://lwn.net/Articles/769167/>`_ explains the intent.
+* The `Snowdrift community code of conduct <https://wiki.snowdrift.coop/community/conduct>`_ also has a companion `Guidelines for healthy communication <https://wiki.snowdrift.coop/community/honor-users>`_.
 * `Open code of conduct <https://github.com/todogroup/opencodeofconduct/blob/gh-pages/index.md>`_
 * `Pycon code of conduct <https://github.com/python/pycon-code-of-conduct/blob/master/code_of_conduct.md>`_
 * `Rust code of conduct <https://www.rust-lang.org/en-US/conduct.html>`_
