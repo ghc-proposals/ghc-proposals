@@ -15,7 +15,8 @@ standard, in the hope that others may voluntarily follow suit.
 Motivation
 ----------
 
-We are motivated to adopt an explicit code of conduct for several reasons
+We are motivated to adopt a set of guidelines for respectful communication for 
+several reasons
 
 * Diversity and inclusion.  We recognize that the Haskell community, echoing
   the technology industry more generally, skews white and male. We see it as our
