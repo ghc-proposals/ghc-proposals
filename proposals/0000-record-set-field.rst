@@ -13,9 +13,10 @@ Add ``setField`` to ``HasField``
 .. sectnum::
 .. contents::
 
-This is a proposal to add the function `setField` to the built-in typeclass
-``HasField``, allowing type-based resolution of field names in record update functions.
-It *does not* introduce any new extensions.
+This is a proposal to adjust the built-in typeclass ``HasField``, removing ``getField``
+and adding ``hasField`` (which is powerful enough to get, set and modify a field).
+The result would allow type-based resolution of field names in functions that update
+records. It *does not* introduce any new extensions.
 
 Motivation
 ----------
@@ -38,10 +39,8 @@ polymorphism over record selectors. The class ``HasField`` is currently defined 
 .. code-block:: haskell
 
   -- | Constraint representing the fact that the field @x@ belongs to
-  -- the record type @r@ and has field type @a@.  This will be solved
-  -- automatically, but manual instances may be provided as well.
+  -- the record type @r@ and has field type @a@.
   class HasField (x :: k) r a | x r -> a where
-    -- | Selector function to extract the field from the record.
     getField :: r -> a
 
 While this class provides a way to get a field, it provides no way to set a field.
@@ -55,41 +54,50 @@ Such a proposal to deal with record updates would clearly be desirable.
 Proposed Change Specification
 -----------------------------
 
-We propose to rename the ``HasField`` class to ``GetField``.
-
-We propose to add a ``SetField`` class to ``GHC.Records`` with the contents:
+We propose to adjust ``HasField`` in ``GHC.Records`` to become:
 
 .. code-block:: haskell
 
-  -- | Constraint representing the fact that the field @x@ can be set on
-  --   the record type @r@ and has field type @a@.  This will be solved
+  -- | Constraint representing the fact that the field @x@ can be get and set on
+  --   the record type @r@ and has field type @a@.  This constraint will be solved
   --   automatically, but manual instances may be provided as well.
   --
-  --   Where both 'GetField' and 'SetField' are provided they should satisfy
-  --   the invariant:
+  --   The function should satisfy the invariant:
   --
-  -- > getField @lbl (setField @lbl a s) = a
-  class SetField (x :: k) r a | x r -> a where
-    -- | Update function to set a field in the record.
-    setField :: a -> r -> r
+  -- > let (v, wrap) = hasField @x r in r == wrap v
+  class HasField (x :: k) r a | x r -> a where
+    -- | Function to get and set a field in a record.
+    hasField :: r -> (a, a -> r)
 
-We propose to have GHC automatically solve ``SetField`` constraints exactly the same
+We propose to have GHC automatically solve new ``HasField`` constraints the same
 way it does for the existing ``HasField`` constraints.
+
+To enhance reverse compatibility and make it easier to use the ``hasField`` function,
+we propose also adding to ``GHC.Records``:
+
+.. code-block:: haskell
+
+  getField :: HasField x r a => r -> a
+  getField = fst . hasField
+
+  setField :: HasField x r a => r -> a -> r
+  setField = snd . hasField
 
 This proposal *does not* change how record updates are desugared.
 
 Effect and Interactions
 -----------------------
 
-Using this additional function it is possible to write a function:
+Using ``hasField`` it is possible to write a function:
 
 .. code-block:: haskell
 
-  mkLens :: forall lbl r a . (GetField lbl r a, SetField lbl r a) => Lens' r a
-  mkLens = lens (getField @lbl) (flip (setField @lbl))
+  mkLens :: forall x r a . HasField x r a => Lens' r a
+  mkLens f r = wrap <$> f v
+      where (v, wrap) = hasField @x r
 
 And thus allow generating lenses from the field classes. The function
-``setField`` is also useful in its own right, complementing the ``getField``
+``setField`` is also useful in its own right, complementing the existing ``getField``
 method and providing the ability to modify records by field name.
 
 Costs and Drawbacks
@@ -100,77 +108,38 @@ More code in the compiler.
 Alternatives
 ------------
 
-Not renaming ``HasField``
-~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We could leave the ``HasField`` name unchanged, thus avoiding breaking compatibility.
-We consider changing the name feasible because ``HasField`` is not widely used, and naming
-it ``GetField`` makes the distinction between the pieces clearer.
+Separate ``getField`` and ``setField`` methods
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Relationship between ``GetField`` and ``SetField``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+An alternative is to provide two separate methods, rather than the combined ``hasField``.
+The separate methods are both simpler, but to implement any fields that perform computation
+(e.g. delving into a ``Map``) would require performing that computation twice in a field
+modification. By combining the two functions that extra cost can be eliminated.
 
-It is possible to merge ``GetField`` and ``SetField`` into a single typeclass, or make one
-a supertype of the other. We prefer to disentangle the concerns, providing the minimal
-primitive building blocks that have to go into the compiler.
-Libraries that build on top of these classes may well define a single class, e.g.:
+Separate methods would also avoid breaking compatibility for people who have already defined
+``HasField``. However, a search of Hackage has not identified anyone defining ``HasField``,
+so the breakage is minor.
 
-.. code-block:: haskell
-
-  class (GetField x r a, SetField x r a) => HasField x r a where
-    -- simple van Laarhoven lens, e.g. view field @"foo" bar ...
-    field :: Lens' r a
-    default field :: (GetField lbl r a, SetField lbl r a) => Lens' r a
-
-We leave this design space to libraries, allowing choice of which lens flavour to use,
-how they compose/generalise etc.
-
-Polymorphic ``setField``
-~~~~~~~~~~~~~~~~~~~~~~~~
+Polymorphic updates
+~~~~~~~~~~~~~~~~~~~
 
 A *type-changing update* is one where the type ``r`` is higher-kinded and the field
 ``x`` is the only member of that type. As an example, given a value of type ``(Int, Bool)``,
 the selector pointing to the first component, and a new value of type ``Double`` we can
 produce ``(Double, Bool)``. The design space for type-changing updates is large, and almost
-certainly requires an additional type class. In contrast, the design space for type-preserving
+certainly requires additional complexity. In contrast, the design space for type-preserving
 updates is small and it can be easily incorporated into the existing design. The addition
 of type-preserving updates in no way constrains the design space for future type-changing
 updates, but is useful in its own right.
 
-Adding ``updateField``
-~~~~~~~~~~~~~~~~~~~~~~
+Read-only fields
+~~~~~~~~~~~~~~~~
 
-An alternative to ``setField`` is:
-
-.. code-block:: haskell
-
-  -- | Update function to set a field in the record.
-  updateField :: (a -> a) -> r -> r
-
-The function ``updateField`` can be recovered using ``setField`` and ``getField``, but
-``setField`` is simpler, so we prefer it.
-
-Order of arguments to ``setField``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-We can pick either of:
-
-.. code-block:: haskell
-
-  setField :: a -> r -> r
-  setField :: r -> a -> r
-
-We consider the former to be cleaner, and allows for better composition when updating many fields,
-e.g. you can see the equivalence between:
-
-.. code-block:: haskell
-
-  foo{x = 1, y = 2}
-  foo & (setField @"x" 1 . setField @"y" 2)
-
-This order is different to the ``lens`` function in ``Control.Lens``, whose order was chosen to
-aid implementation, at the slight cost of direct usability, as
-`mentioned here <https://www.reddit.com/r/haskell/comments/91wtze/signature_of_lens_combinator/e31d8gy/>`_.
+By splitting the type class we could support read-only fields. However, read-only fields
+are essentially just functions, and we already have good support for functions throughout
+Haskell. In addition, it would likely be necessary to have a decision procedure for whether
+a field was read-only, which would quickly become unweildy.
 
 Unresolved Questions
 --------------------
