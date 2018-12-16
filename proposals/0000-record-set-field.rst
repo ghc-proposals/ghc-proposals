@@ -64,10 +64,10 @@ We propose to adjust ``HasField`` in ``GHC.Records`` to become:
   --
   --   The function should satisfy the invariant:
   --
-  -- > let (v, wrap) = hasField @x r in r == wrap v
-  class HasField (x :: k) r a | x r -> a where
+  -- > uncurry ($) (hasField @x r) == r
+  class HasField x r a | x r -> a where
     -- | Function to get and set a field in a record.
-    hasField :: r -> (a, a -> r)
+    hasField :: r -> (a -> r, a)
 
 We propose to have GHC automatically solve new ``HasField`` constraints the same
 way it does for the existing ``HasField`` constraints.
@@ -77,11 +77,11 @@ we propose also adding to ``GHC.Records``:
 
 .. code-block:: haskell
 
-  getField :: HasField x r a => r -> a
-  getField = fst . hasField
+  getField :: forall x r a . HasField x r a => r -> a
+  getField = snd . hasField @x
 
-  setField :: HasField x r a => r -> a -> r
-  setField = snd . hasField
+  setField :: forall x r a . HasField x r a => r -> a -> r
+  setField = fst . hasField @x
 
 This proposal *does not* change how record updates are desugared.
 
@@ -94,7 +94,7 @@ Using ``hasField`` it is possible to write a function:
 
   mkLens :: forall x r a . HasField x r a => Lens' r a
   mkLens f r = wrap <$> f v
-      where (v, wrap) = hasField @x r
+      where (wrap, v) = hasField @x r
 
 And thus allow generating lenses from the field classes. The function
 ``setField`` is also useful in its own right, complementing the existing ``getField``
