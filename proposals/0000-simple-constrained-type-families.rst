@@ -171,7 +171,31 @@ These promoted dictionaries are kept in type synonyms analogous to the dictionar
 
 Attempting to use an associated type/data family in any way without the appropriate class constraint (that is, if GHC does not have the appropriate promoted dictionary in scope) is an error. This is true even if it does not need to be reduced, because the dictionary is an argument to the Core level representation of a constrained type family.
 
-At the Core level, just as with term-level typeclass methods, `=>` degrades into `->` and the promoted dictionary created above is given to satisfy this newly required visible argument.
+Explicitly, a typeclass's associated type family would be kinded as follows:
+
+::
+
+    -- Typeclass
+    class TypeLevel (a :: Type) where
+        type AType a :: Type
+    
+    -- old:
+    AType :: Type -> Type
+    -- new:
+    AType :: forall (a :: Type) -> TypeLevel a => Type
+
+    -- Kindclass
+    class KindLevel k where
+        type ATypeK (a :: k) :: k
+
+    -- old:
+    ATypeK :: k -> k
+    -- new:
+    ATypeK :: (KindLevel k) => k -> k
+
+The distinction rests on if the variables of the class appear in the kind that the type family would have without these changes.
+
+At the Core level, just as with term-level typeclass methods, ``=>`` degrades into ``->`` and the promoted dictionary created above is given to satisfy this newly required visible argument.
 
 ::
 
