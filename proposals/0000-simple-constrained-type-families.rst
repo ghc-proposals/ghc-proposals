@@ -102,6 +102,8 @@ There is one further wrinkle of how typeclass instances work that must be addres
 
 ``C:TIntegral``, once promoted, will have kind ``forall (k :: Type). TNum k -> TIntegral k``.
 
+In summary, typeclass dictionaries are promoted to the type level, but ignoring their members, either as a unit type or as a type that simply contains promoted dictionaries for the superclass.
+
 For Associated Type Families, Require Promoted Dictionaries to Reduce
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -146,9 +148,59 @@ Pattern matching on an associated data instance will now provide as givens the g
         
     dataFamilyDemo (D2Maybe x) = x
     -- ^ Here it is known that `x :: (C2 a) => a`
-        
-        
 
+Formal Description   
+++++++++++++++++++
+
+The above is a series of illustrative examples, but a proper specification for this new feature is clearly required:
+
+1. Promote typeclass dictionaries
+
+Typeclass dictionary constructors are promoted into types, ignoring any term-level members other than superclasses.
+
+These promoted dictionaries are kept in type synonyms analogous to the dictionary variables generated at the term level.
+
+::
+
+    $fTNumInt :: TNum Int
+    $fTNumInt = C:TNum @ Int
+
+    type $FTNumInt = ('TNum :: TNum Int)
+
+2. Associated type and data families now have required constraints, as pattern synonyms
+
+Attempting to use an associated type/data family in any way without the appropriate class constraint (that is, if GHC does not have the appropriate promoted dictionary in scope) is an error. This is true even if it does not need to be reduced, because the dictionary is an argument to the Core level representation of a constrained type family.
+
+At the Core level, just as with term-level typeclass methods, `=>` degrades into `->` and the promoted dictionary created above is given to satisfy this newly required visible argument.
+
+::
+    -- Current term level +, in Haskell
+    increment :: (Num a) => a -> a
+    increment a = a + 1
+
+    usage :: Int
+    usage = increment (3 :: Int)
+
+    -- Current term level +, in Core
+    increment :: forall a -> Num a -> a -> a
+    increment = \(@ a) ($dNum :: Num a) (a :: a) -> + @a $dNum a (fromInteger @a $dNum 1)
+
+    usage :: Int
+    usage = increment @Int $fNumInt (I# 3#)
+
+    -- New type level +, in Haskell (notional syntax)
+    type Increment :: TNum k => k -> k
+    type Increment a = a + 1
+
+    type Usage :: Nat
+    type Usage = Increment 3
+
+    -- New type level +, in Core (notional syntax)
+    type Increment :: forall k -> TNum k -> k -> k
+    type Increment k ($dTNum :: TNum k) (a :: k) = + k $dTNum a (FromInteger k $dTNum 1)
+
+    type Usage :: Nat
+    type Usage = Increment Nat $FTNumNat (3 :: Nat)
 
 Effect and Interactions
 -----------------------
@@ -212,7 +264,7 @@ Let us now consider an actual example:
 
 ``foo`` is in a very real sense incorrect, because it is given a type signature that implies constraints that are not listed. To operationalize this correctness check, each time GHC sees an associated type used in a type, it generates the constraint required for the use by looking up the class that defines the associated type and instantiating a constraint from it using the parameters given for the associated type. If this constraint (or a constraint that subsumes it) is either given directly or otherwise known (such as from a GADT pattern match), the use of the associated type is lawful. If no such constraint is known, the type is unlawful.
 
-While it may be natural to think that the correct solution is to error out and leave fixing it to the programmer, we already have a way to find the constraint we need to keep such previously correct code compiling. Assuming that the code is in reality correct, it is safe for GHC to emit a warning and then *adds the inferred constraint to the type specified by the programmer*. However, if an error arises involving this constraint or any of the types that are mentioned inside of it, we give a modified error that gives the inferred constraint, the follow-on error from it, and the associated type that lead it to be generated.
+While it may be natural to think that the correct solution is to error out and leave fixing it to the programmer, we already have a way to find the constraint we need to keep such previously correct code compiling. Assuming that the code is in reality correct, it is safe for GHC to emit a warning and then *add the inferred constraint to the type specified by the programmer*. However, if an error arises involving this constraint or any of the types that are mentioned inside of it, we give a modified error that gives the inferred constraint, the follow-on error from it, and the associated type that lead it to be generated.
 
 Here's how it would work in practice:
 
@@ -245,12 +297,21 @@ This is currently valid code, but with these changes, ``FPack`` (the data constr
     data FPack a where
         FPack :: C a => F a -> FPack a
 
-Which now adds a dictionary's burden. This is unlikely to matter in practice, because the optimizer is likely able to drop the unused parameters. Even in cases where it does not, any regression from this change will be undone once dependent quantifiers are implemented, because that will bring with it the ability to discuss relevancy in types, allowing the erasure of the constraint if it is written as:
+Which now adds a dictionary's burden. While this may have performance implications, any regression from this change will be undone once dependent quantifiers are implemented: that will bring with it the ability to discuss relevancy in types, allowing the erasure of the constraint if it is written as:
 
 ::
 
     data FPack a where
         FPack :: forall (_ :: C) => F a -> FPack a
+
+Another, simpler solution would be to change how datatype contexts work, giving them the required constraint semantics that are truly desired here. Then, it can be written simply as:
+
+::
+
+    data (C a) => FPack a where
+        FPack :: F a -> FPack a
+
+Still, this is a major enough change that it is being neglected here.
 
 The New Haskeller Story
 +++++++++++++++++++++++
@@ -267,6 +328,7 @@ Unresolved questions
 --------------------
 - What is lost relative to implementing the full CTF paper system in GHC?
 - How much existing code is actually going to be broken by these changes?
+    - This is likely unknowable until an implementation exists.
 - Are there any hidden asymmetries between the type and term level that make the duplication of the term-level system not provide the same level of soundness?
 
 Implementation Plan
