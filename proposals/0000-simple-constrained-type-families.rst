@@ -174,6 +174,7 @@ Attempting to use an associated type/data family in any way without the appropri
 At the Core level, just as with term-level typeclass methods, `=>` degrades into `->` and the promoted dictionary created above is given to satisfy this newly required visible argument.
 
 ::
+
     -- Current term level +, in Haskell
     increment :: (Num a) => a -> a
     increment a = a + 1
