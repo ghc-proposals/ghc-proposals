@@ -27,9 +27,6 @@ To import a qualified module you must specify ``qualified`` in prepositive posit
  import           B
  import           C
 
-
-
-
 We propose to also allow ``qualified`` to appear in postpositive position : ``import M qualified``. In that case, one could write:
 
 ::
