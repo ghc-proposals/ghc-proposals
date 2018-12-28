@@ -19,7 +19,7 @@ We propose to allow the syntax ``import M qualified`` to solve hanging indents i
 
 Motivation
 ----------
-To import a qualified module you must specify ``qualified`` in prepositive position : ``import qualified M``. This often leads to a "hanging indent" (which is automatically inserted by `some autoformatters <https://github.com/commercialhaskell/hindent/blob/master/src/HIndent.hs>`_ and `common <https://github.com/owickstrom/gi-gtk-declarative/blob/master/gi-gtk-declarative/src/GI/Gtk/Declarative/Container/Class.hs>`_ `in <https://github.com/commercialhaskell/intero/blob/master/src/GhciFind.hs>`_ `many <https://github.com/aristidb/aws/blob/master/Aws/Iam/Core.hs>`_  `code <https://github.com/input-output-hk/cardano-sl/blob/develop/explorer/src/Pos/Explorer/DB.hs>`_ `bases <https://github.com/PostgREST/postgrest/blob/master/src/PostgREST/Error.hs>`_). For example:
+To import a qualified module you must specify ``qualified`` in prepositive position : ``import qualified M``. This often leads to a "hanging indent" (which is automatically inserted by some `autoformatters <https://github.com/commercialhaskell/hindent/blob/master/src/HIndent.hs>`_ and `common <https://github.com/owickstrom/gi-gtk-declarative/blob/master/gi-gtk-declarative/src/GI/Gtk/Declarative/Container/Class.hs>`_ `in <https://github.com/commercialhaskell/intero/blob/master/src/GhciFind.hs>`_ `many <https://github.com/aristidb/aws/blob/master/Aws/Iam/Core.hs>`_  `code <https://github.com/input-output-hk/cardano-sl/blob/develop/explorer/src/Pos/Explorer/DB.hs>`_ `bases <https://github.com/PostgREST/postgrest/blob/master/src/PostgREST/Error.hs>`_). For example:
 
 ::
 
