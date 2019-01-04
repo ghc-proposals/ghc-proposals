@@ -135,19 +135,7 @@ For obvious reasons of symmetry, the same requirement is present for instantiati
     instance C2 a => C2 (Maybe a) where
         data D2 (Maybe a) = D2Maybe (D2 a)
 
-``D2`` now has kind ``D2 :: forall (a :: k) -> C2 a => D2 a`` and ``D2Maybe`` now has type ``D2Maybe :: (C2 a) => D2 a -> D2 (Maybe a)``. This is not limited to the same class, and is simply based on the instance's givens.
-
-Pattern matching on an associated data instance will now provide as givens the givens for the typeclass instance.
-
-:: 
-
-    dataFamilyDemo :: (C2 a) => D2 a -> D2 a
-
-    dataFamilyDemo (D2List xs) = D2List (reverse xs)
-    -- ^ Here it is known that `xs :: (C1 a) => [a]`
-        
-    dataFamilyDemo (D2Maybe x) = x
-    -- ^ Here it is known that `x :: (C2 a) => a`
+``D2`` now has kind ``D2 :: forall (a :: k) -> C2 a => Type`` and ``D2Maybe`` now has type ``D2Maybe :: (C2 a) => D2 a -> D2 (Maybe a)``. This is not limited to the same class, and is simply based on the instance's givens.
 
 Formal Description   
 ++++++++++++++++++
@@ -156,18 +144,11 @@ The above is a series of illustrative examples, but a proper specification for t
 
 1. Promote typeclass dictionaries
 
-Typeclass dictionary constructors are promoted into types, ignoring any term-level members other than superclasses.
+For every class declaration `(C1 a, C2 b) => C a b c`, a new type-level data constructor is introduced `CDict :: C1 a -> C2 b -> C a b c`. That is, the type-level data constructor produces a type of kind `C a b c`, taking dictionaries of any superclasses as arguments. Nothing changes if `C` does or does not have methods.
+ 
+For every instance declaration `C Nat Bool (Maybe a)`, a new type synonym is introduced `type CDictNatBoolMaybea = (CDict C1DictNat C2DictBool :: C Nat Bool (Maybe a))`.
 
-These promoted dictionaries are kept in type synonyms analogous to the dictionary variables generated at the term level.
-
-::
-
-    $fTNumInt :: TNum Int
-    $fTNumInt = C:TNum @ Int
-
-    type $FTNumInt = ('TNum :: TNum Int)
-
-2. Associated type and data families now have required constraints, as pattern synonyms
+2. Associated type and data families now have required constraints:
 
 Attempting to use an associated type/data family in any way without the appropriate class constraint (that is, if GHC does not have the appropriate promoted dictionary in scope) is an error. This is true even if it does not need to be reduced, because the dictionary is an argument to the Core level representation of a constrained type family.
 
