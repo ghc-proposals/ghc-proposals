@@ -144,9 +144,9 @@ The above is a series of illustrative examples, but a proper specification for t
 
 1. Promote typeclass dictionaries
 
-For every class declaration `(C1 a, C2 b) => C a b c`, a new type-level data constructor is introduced `CDict :: C1 a -> C2 b -> C a b c`. That is, the type-level data constructor produces a type of kind `C a b c`, taking dictionaries of any superclasses as arguments. Nothing changes if `C` does or does not have methods.
+For every class declaration ``(C1 a, C2 b) => C a b c``, a new type-level data constructor is introduced ``CDict :: C1 a -> C2 b -> C a b c``. That is, the type-level data constructor produces a type of kind ``C a b c``, taking dictionaries of any superclasses as arguments. Nothing changes if ``C`` does or does not have methods.
  
-For every instance declaration `C Nat Bool (Maybe a)`, a new type synonym is introduced `type CDictNatBoolMaybea = (CDict C1DictNat C2DictBool :: C Nat Bool (Maybe a))`.
+For every instance declaration ``C Nat Bool (Maybe a)``, a new type synonym is introduced ``type CDictNatBoolMaybea = (CDict C1DictNat C2DictBool :: C Nat Bool (Maybe a))``.
 
 2. Associated type and data families now have required constraints:
 
@@ -206,7 +206,7 @@ At the Core level, just as with term-level typeclass methods, ``=>`` degrades in
     type Increment k ($dTNum :: TNum k) (a :: k) = + k $dTNum a (FromInteger k $dTNum 1)
 
     type Usage :: Nat
-    type Usage = Increment Nat $FTNumNat (3 :: Nat)
+    type Usage = Increment Nat TNumDictNat (3 :: Nat)
 
 Effect and Interactions
 -----------------------
@@ -286,7 +286,7 @@ Because this backwards compatibility system is somewhat complicated and does som
 The Performance Story
 +++++++++++++++++++++
 
-The performance implications do not seems significant. In fact, the only case where there appears to be the possibility of a regression is as follows.
+The performance implications do not seem significant. In fact, the only case where there appears to be the possibility of a regression is as follows.
 
 ::
 
