@@ -326,7 +326,7 @@ If anything, it makes the language easier to learn, especially when it comes to 
 
 Alternatives
 ------------
-The most prominent alternative is to implement the full system proposed in the Closed Type Families paper by Eisenberg and Morris, but it is unclear what substantial benefits it offers that we are losing by using this simple extension of current functionality. Even if it is lacking in some way, it seems to be entirely forwards compatible with the system that is proposed in that paper.
+The most prominent alternative is to implement the full system proposed in the Constrained Type Families paper by Eisenberg and Morris, but it is unclear what substantial benefits it offers that we are losing by using this simple extension of current functionality. Even if it is lacking in some way, it seems to be entirely forwards compatible with the system that is proposed in that paper.
 
 Additionally, there's always the option to do nothing, with the obvious tradeoff of being "free" (from an effort perspective) but not resolving the issue.
 
