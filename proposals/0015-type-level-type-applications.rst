@@ -3,7 +3,7 @@ Type-level type applications
 
 .. proposal-number:: 15
 .. trac-ticket:: #12045
-.. implemented::
+.. implemented:: 8.8
 .. highlight:: haskell
 .. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/80>`_.
 .. sectnum::
