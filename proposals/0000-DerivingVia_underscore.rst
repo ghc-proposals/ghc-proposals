@@ -33,7 +33,7 @@ Is there a way to write
   via
    (Wrap _)
 
-so that its meaning is `via (Wrap Boolean)`? Similarly (`that's where the idea started <`like this <http://www.haskell.org/>`_/>`_)
+so that its meaning is `via (Wrap Boolean)`? Similarly (`that's where the idea started <http://www.haskell.org/>`_)
 
 ::
 
