@@ -19,7 +19,7 @@ Is there a way to write
 
 ::
 
- newtype X a = X a
+ newtype XX a = X a
 
  instance Show (X a) where
   show :: X a -> String
@@ -29,9 +29,9 @@ Is there a way to write
   deriving
    Show
   via
-   (Wrap _)
+   (X _)
 
-so that its meaning is `via (Wrap Boolean)`? Similarly (`that's where the idea started <http://www.haskell.org/>`_)
+so that its meaning is `via (X Boolean)`? Similarly (`that's where the idea started <http://www.haskell.org/>`_)
 
 ::
 
