@@ -19,7 +19,7 @@ Is there a way to write
 
 ::
 
- newtype XX a = X a
+ newtype X a = X a
 
  instance Show (X a) where
   show :: X a -> String
