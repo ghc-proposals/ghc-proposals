@@ -154,7 +154,7 @@ exactly once implies that ``u`` is *consumed exactly once* (defined
 as follows).
 
 - Consuming a value of a data type exactly once means evaluating it to
-  head normal form exactly once, discriminate on its tag any number of
+  head normal form exactly once, discriminating on its tag any number of
   times, then consuming its fields exactly once
 - Consuming a function exactly once means applying it and consuming
   its result exactly once
@@ -426,6 +426,12 @@ fresh ``p``. The non-linear fields are not affected. For instance
 * With ``data P a b where P :: a ->. b -> U a b``, when ``P`` is used
   as a term, it is given the type ``P :: a :p-> b -> U a b``
 
+All these extra multiplicity arguments are *inferred* (GHC classifies
+type arguments as either *inferred* or *visible*, the latter can be
+specified by type application, while the former are always determined
+by the type-checker). This way the extra type variables do not
+interfere with visible type applications.
+
 See also `η-expansion`_ for a conceptually simpler alternative which
 turns out not to be complete. See `More multiplicities`_ for
 considerations in a more general setting.
@@ -442,11 +448,11 @@ prevent multiplicity variables to be visible to the unsuspecting user.
 
 To that effect, much like is done for levity variables, wherever type
 variables would be generalised, remaining multiplicity variables are
-monomorphised to ``ω``. This way, ``f = Just`` is inferred to have
+defaulted to ``ω``. This way, ``f = Just`` is inferred to have
 type ``a -> Maybe a`` as before.
 
 This also address a more serious compatibility issue. Consider the
-following Haskell98 code
+following (essentially) Haskell98 code
 
 ::
 
@@ -462,7 +468,7 @@ The type checker infers that ``Just . Just`` is of type ``a :p-> Maybe
 (Maybe a)`` for some ``p`` such that ``Category (:p->)``. However,
 there is no ``Category`` instance for an arbitrary ``p`` (nor for
 ``p=1`` as would be the inferred type without the generalisation rule
-of the `Linear constructors`_ section). But monomorphising to ``p=ω``,
+of the `Linear constructors`_ section). But defaulting to ``p=ω``,
 lets the constraint solver pick the intended ``Category`` instance.
 
 Strict & unpacked fields
@@ -479,7 +485,7 @@ regular fields, *e.g.*
     --
     -- Or, polymorphised when used as a term:
     --
-    -- S :: forall p q. a :p->. S a :q-> S a
+    -- S :: forall p q a. a :p->. S a :q-> S a
 
 ::
 
@@ -489,7 +495,7 @@ regular fields, *e.g.*
     --
     -- Or, polymorphised when used as a term:
     --
-    -- T :: forall p q. (a, a) :p->. a :q-> T a
+    -- T :: forall p q a. (a, a) :p->. a :q-> T a
 
 Base
 ----
@@ -915,7 +921,7 @@ If no exception occurs, then all resources have been released by the
 program. In case an exception occurs, the program jumps to the handler
 installed by ``runRIO``, which releases the leftover resources.
 
-An alternative strategy would be to add terminators on every resources
+An alternative strategy would be to add terminators on every resource
 acquired in ``RIO``. Release in the non-exceptional case would still
 be performed by the program, and the GC would be responsible for
 releasing resources in case of exception. The release in case of
@@ -1705,7 +1711,7 @@ backwards compatibility. There are two issues:
 
      Just . Just
 
-  This is valid Haskell 98 code, but with ``Just`` turned into a
+  This is valid (essentially) Haskell 98 code, but with ``Just`` turned into a
   linear type, it doesn't type check anymore: ``Just :: a ->. Maybe
   a``, and there is no instance of ``Category (->.)``.
 
