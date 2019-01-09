@@ -840,6 +840,26 @@ or ``case`` in the surface syntax), we want to infer the multiplicity
 annotation. The process for this is not yet defined (see `Unresolved
 questions`_ below for a more precise description of this issue).
 
+Effect and Interactions
+=======================
+
+.. _Interactions:
+
+A staple of this proposal is:
+
+*it does not modify Haskell for those who don't want to use it, or
+don't know about linear types.*
+
+A library which exports function with top-level linear arrows (aka
+first-order linear arrows) only imposes a light burden on the library
+consumer: they have to η-expand the function to use it as an
+unrestricted function (linear arrows in negative position, on the
+other hand, express a requirement by the API, that the consumer pass a
+linear functions, and requires care on the part of the consumer).
+
+Linear data types are just regular Haskell types, which means it is
+cheap to interact with existing libraries.
+
 Non-termination, exceptions & catch
 -----------------------------------
 
@@ -970,26 +990,6 @@ compromise such abstractions.
 To be conservative, and avoid potential such issue, we currently
 consider exceptions as only carrying unrestricted payloads in our
 library.
-
-Effect and Interactions
-=======================
-
-.. _Interactions:
-
-A staple of this proposal is:
-
-*it does not modify Haskell for those who don't want to use it, or
-don't know about linear types.*
-
-A library which exports function with top-level linear arrows (aka
-first-order linear arrows) only imposes a light burden on the library
-consumer: they have to η-expand the function to use it as an
-unrestricted function (linear arrows in negative position, on the
-other hand, express a requirement by the API, that the consumer pass a
-linear functions, and requires care on the part of the consumer).
-
-Linear data types are just regular Haskell types, which means it is
-cheap to interact with existing libraries.
 
 Rebindable Syntax
 -----------------
