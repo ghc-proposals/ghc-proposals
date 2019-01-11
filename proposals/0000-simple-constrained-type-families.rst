@@ -69,20 +69,23 @@ What is the meaning of ``Integer * String``? There are arguable definitions that
 Proposed Change Specification
 -----------------------------
 
-There is a very simple way to reuse the currently existing mechanisms to give the desired behavior, with two changes to current behavior:
+Formal Specification
+++++++++++++++++++++
 
-Promote Typeclass Dictionaries
-++++++++++++++++++++++++++++++
+There is a very simple way to reuse the currently existing mechanisms to give the desired behavior, with four changes to current behavior:
 
-1. Promote typeclass dictionary constructors
+Promote typeclass dictionary constructors
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For every class declaration ``(C1 a, C2 b) => C a b c``, a new type-level data constructor is introduced ``CDict :: C1 a -> C2 b -> C a b c``. That is, the type-level data constructor produces a type of kind ``C a b c``, taking dictionaries of any superclasses as arguments. Nothing changes if ``C`` does or does not have methods.
 
-2. Generate type-level dictionaries at every instance declaration.
+Generate type-level dictionaries at every instance declaration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For every instance declaration ``C Nat Bool (Maybe a)``, a new type synonym is introduced ``type CDictNatBoolMaybea = (CDict C1DictNat C2DictBool :: C Nat Bool (Maybe a))``.
 
-3. Associated type and data families now have required constraints:
+Associated type and data family usage now emits constraints
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Attempting to use an associated type/data family in any way without the appropriate class constraint (that is, if GHC does not have the appropriate promoted dictionary in scope) is an error. This is true even if it does not need to be reduced, because the dictionary is an argument to the Core level representation of a constrained type family.
 
@@ -154,7 +157,8 @@ At the Core level, just as with term-level typeclass methods, ``=>`` degrades in
     type Usage :: Nat
     type Usage = Increment Nat TNumDictNat (3 :: Nat)
 
-4. Backwards Compatibility
+Backwards Compatibility
+~~~~~~~~~~~~~~~~~~~~~~~
 
 It seems as if this behavior is going to break enough existing code that the sensible thing to do is to gate it behind an extension. However, this is the wrong way to go, because if it can be turned off, it would require a separate version of any library that uses associated type/data families for use with and without the extension enabled. There is another way to ensure backwards compatibility without simply turning off the feature completely, as will be explained in the remainder of this section.
 
@@ -194,6 +198,9 @@ Further Exposition
 
 This section is not part of the formal specification, and if there are any differences between the formal specification and this section, the formal specification wins.
 
+Promote Typeclass Dictionaries
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Currently, typeclass instances are desugared into the creation of constant values in a special namespace with a "secret" dictionary type that shares the name of the typeclass that contains fields for each value-level member of the typeclass, or for typeclasses without any value-level members, as a unit type. For example, using the ``TNum k`` example and ``-ddump-simpl``, it can be seen that we generate the following dictionary for a declaration of ``TNum Int``.
 
 ::
@@ -225,7 +232,7 @@ There is one further wrinkle of how typeclass instances work that must be addres
 In summary, typeclass dictionaries are promoted to the type level, but ignoring their members, either as a unit type or as a type that simply contains promoted dictionaries for the superclass.
 
 For Associated Type Families, Require Promoted Dictionaries to Reduce
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Let us return to the ``TNum k`` class above. What does the kind of ``(+)`` look like?
 
