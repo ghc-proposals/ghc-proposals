@@ -74,6 +74,126 @@ There is a very simple way to reuse the currently existing mechanisms to give th
 Promote Typeclass Dictionaries
 ++++++++++++++++++++++++++++++
 
+1. Promote typeclass dictionary constructors
+
+For every class declaration ``(C1 a, C2 b) => C a b c``, a new type-level data constructor is introduced ``CDict :: C1 a -> C2 b -> C a b c``. That is, the type-level data constructor produces a type of kind ``C a b c``, taking dictionaries of any superclasses as arguments. Nothing changes if ``C`` does or does not have methods.
+
+2. Generate type-level dictionaries at every instance declaration.
+
+For every instance declaration ``C Nat Bool (Maybe a)``, a new type synonym is introduced ``type CDictNatBoolMaybea = (CDict C1DictNat C2DictBool :: C Nat Bool (Maybe a))``.
+
+3. Associated type and data families now have required constraints:
+
+Attempting to use an associated type/data family in any way without the appropriate class constraint (that is, if GHC does not have the appropriate promoted dictionary in scope) is an error. This is true even if it does not need to be reduced, because the dictionary is an argument to the Core level representation of a constrained type family.
+
+Explicitly, a typeclass's associated type family would be kinded as follows:
+
+::
+
+    -- Typeclass
+    class TypeLevel (a :: Type) where
+        type AType a :: Type
+    
+    -- old:
+    AType :: Type -> Type
+    -- new:
+    AType :: forall (a :: Type) -> TypeLevel a => Type
+
+    -- Kindclass
+    class KindLevel k where
+        type ATypeK (a :: k) :: k
+
+    -- old:
+    ATypeK :: k -> k
+    -- new:
+    ATypeK :: (KindLevel k) => k -> k
+
+The distinction rests on if the variables of the class appear in the kind that the type family would have without these changes.
+
+Associated data family data constructors also gain the constraints for the instance. For example:
+
+::
+
+    class C2 (a :: k) where
+        data D (a :: k)
+
+    instance C2 a => C2 (Maybe a) where
+        data D (Maybe a) = DMaybe (D a)
+
+    -- DMaybe :: (C2 a) => D a -> D (Maybe a)
+
+At the Core level, just as with term-level typeclass methods, ``=>`` degrades into ``->`` and the promoted dictionary created above is given to satisfy this newly required visible argument.
+
+::
+
+    -- Current term level +, in Haskell
+    increment :: (Num a) => a -> a
+    increment a = a + 1
+
+    usage :: Int
+    usage = increment (3 :: Int)
+
+    -- Current term level +, in Core
+    increment :: forall a -> Num a -> a -> a
+    increment = \(@ a) ($dNum :: Num a) (a :: a) -> + @a $dNum a (fromInteger @a $dNum 1)
+
+    usage :: Int
+    usage = increment @Int $fNumInt (I# 3#)
+
+    -- New type level +, in Haskell (notional syntax)
+    type Increment :: TNum k => k -> k
+    type Increment a = a + 1
+
+    type Usage :: Nat
+    type Usage = Increment 3
+
+    -- New type level +, in Core (notional syntax)
+    type Increment :: forall k -> TNum k -> k -> k
+    type Increment k ($dTNum :: TNum k) (a :: k) = + k $dTNum a (FromInteger k $dTNum 1)
+
+    type Usage :: Nat
+    type Usage = Increment Nat TNumDictNat (3 :: Nat)
+
+4. Backwards Compatibility
+
+It seems as if this behavior is going to break enough existing code that the sensible thing to do is to gate it behind an extension. However, this is the wrong way to go, because if it can be turned off, it would require a separate version of any library that uses associated type/data families for use with and without the extension enabled. There is another way to ensure backwards compatibility without simply turning off the feature completely, as will be explained in the remainder of this section.
+
+GHC can infer the constraint we'd expect if one uses an associated type family without an appropriate one. To find the constraint we need, it should be possible to just take the same variables given as an argument to the associated type and line them up with the class that contains it. GHC will emit a warning every time it has to do this.
+
+Let us now consider an actual example:
+
+::
+
+    class Collection c where
+        type Elem c
+    instance Collection [a] where
+        type Elem [a] = a
+
+    foo :: a -> Elem a
+    foo = undefined
+
+``foo`` is in a very real sense incorrect, because it is given a type signature that implies constraints that are not listed. To operationalize this correctness check, each time GHC sees an associated type used in a type, it generates the constraint required for the use by looking up the class that defines the associated type and instantiating a constraint from it using the parameters given for the associated type. If this constraint (or a constraint that subsumes it) is either given directly or otherwise known (such as from a GADT pattern match), the use of the associated type is lawful. If no such constraint is known, the type is unlawful.
+
+While it may be natural to think that the correct solution is to error out and leave fixing it to the programmer, we already have a way to find the constraint we need to keep such previously correct code compiling. Assuming that the code is in reality correct, it is safe for GHC to emit a warning and then *add the inferred constraint to the type specified by the programmer*. However, if an error arises involving this constraint or any of the types that are mentioned inside of it, we give a modified error that gives the inferred constraint, the follow-on error from it, and the associated type that lead it to be generated.
+
+Here's how it would work in practice:
+
+1. GHC sees that ``foo`` references an associated type family, ``Elem``.
+2. GHC looks up the class that contains ``Elem``, then instantiates it with the same type given as a parameter to ``Elem``, creating the constraint ``Collection a``. If the class had more parameters than the ones for the associated type, new free type variables would be generated and used to fill the empty space.
+3. GHC checks to see if this constraint is either part of ``foo``'s type or ambiently known.
+4. Because it is not, GHC adds it to the provided type for ``foo``, making it ``foo :: (Collection a) => a -> Elem a``. GHC then prints a warning referencing the associated type that caused GHC to infer a new constraint and the constraint it inferred, with a suggestion that it be added to the file.
+
+In my ideal world, this would only stand for a time, perhaps governed by an extension that is initially on by default when type families are enabled and would be disabled after a few GHC major versions, turning the warning into an error.
+
+Because this backwards compatibility system is somewhat complicated and does something somewhat unexpected (changing a programmer-supplied type signature) it may be wise to implement the feature with the warning as an error, and only enable/add the fix-up if the amount of code to be broken is substantial enough.
+
+Indeed, if I am the one to implement this, I will initially be implementing this as an error, and will look at how much code will break based on the changes before implementing the "warn and fix" behavior.
+
+Further Exposition
+++++++++++++++++++
+
+This section is not part of the formal specification, and if there are any differences between the formal specification and this section, the formal specification wins.
+
 Currently, typeclass instances are desugared into the creation of constant values in a special namespace with a "secret" dictionary type that shares the name of the typeclass that contains fields for each value-level member of the typeclass, or for typeclasses without any value-level members, as a unit type. For example, using the ``TNum k`` example and ``-ddump-simpl``, it can be seen that we generate the following dictionary for a declaration of ``TNum Int``.
 
 ::
@@ -137,77 +257,6 @@ For obvious reasons of symmetry, the same requirement is present for instantiati
 
 ``D2`` now has kind ``D2 :: forall (a :: k) -> C2 a => Type`` and ``D2Maybe`` now has type ``D2Maybe :: (C2 a) => D2 a -> D2 (Maybe a)``. This is not limited to the same class, and is simply based on the instance's givens.
 
-Formal Description   
-++++++++++++++++++
-
-The above is a series of illustrative examples, but a proper specification for this new feature is clearly required:
-
-1. Promote typeclass dictionaries
-
-For every class declaration ``(C1 a, C2 b) => C a b c``, a new type-level data constructor is introduced ``CDict :: C1 a -> C2 b -> C a b c``. That is, the type-level data constructor produces a type of kind ``C a b c``, taking dictionaries of any superclasses as arguments. Nothing changes if ``C`` does or does not have methods.
- 
-For every instance declaration ``C Nat Bool (Maybe a)``, a new type synonym is introduced ``type CDictNatBoolMaybea = (CDict C1DictNat C2DictBool :: C Nat Bool (Maybe a))``.
-
-2. Associated type and data families now have required constraints:
-
-Attempting to use an associated type/data family in any way without the appropriate class constraint (that is, if GHC does not have the appropriate promoted dictionary in scope) is an error. This is true even if it does not need to be reduced, because the dictionary is an argument to the Core level representation of a constrained type family.
-
-Explicitly, a typeclass's associated type family would be kinded as follows:
-
-::
-
-    -- Typeclass
-    class TypeLevel (a :: Type) where
-        type AType a :: Type
-    
-    -- old:
-    AType :: Type -> Type
-    -- new:
-    AType :: forall (a :: Type) -> TypeLevel a => Type
-
-    -- Kindclass
-    class KindLevel k where
-        type ATypeK (a :: k) :: k
-
-    -- old:
-    ATypeK :: k -> k
-    -- new:
-    ATypeK :: (KindLevel k) => k -> k
-
-The distinction rests on if the variables of the class appear in the kind that the type family would have without these changes.
-
-At the Core level, just as with term-level typeclass methods, ``=>`` degrades into ``->`` and the promoted dictionary created above is given to satisfy this newly required visible argument.
-
-::
-
-    -- Current term level +, in Haskell
-    increment :: (Num a) => a -> a
-    increment a = a + 1
-
-    usage :: Int
-    usage = increment (3 :: Int)
-
-    -- Current term level +, in Core
-    increment :: forall a -> Num a -> a -> a
-    increment = \(@ a) ($dNum :: Num a) (a :: a) -> + @a $dNum a (fromInteger @a $dNum 1)
-
-    usage :: Int
-    usage = increment @Int $fNumInt (I# 3#)
-
-    -- New type level +, in Haskell (notional syntax)
-    type Increment :: TNum k => k -> k
-    type Increment a = a + 1
-
-    type Usage :: Nat
-    type Usage = Increment 3
-
-    -- New type level +, in Core (notional syntax)
-    type Increment :: forall k -> TNum k -> k -> k
-    type Increment k ($dTNum :: TNum k) (a :: k) = + k $dTNum a (FromInteger k $dTNum 1)
-
-    type Usage :: Nat
-    type Usage = Increment Nat TNumDictNat (3 :: Nat)
-
 Effect and Interactions
 -----------------------
 It is obvious that this solves the issue raised by example 2, because it creates a kind that expresses the constraint that is intended and allows the type system to provide the same guarantees that we provide to term level functions to type families.
@@ -249,40 +298,6 @@ There are no substantial conflicts with other compiler features, because it is a
 
 Costs and Drawbacks
 -------------------
-The Backwards Compatibility Story
-+++++++++++++++++++++++++++++++++
-
-It seems as if this behavior is going to break enough existing code that the sensible thing to do is to gate it behind an extension. However, this is the wrong way to go, because if it can be turned off, it would require a separate version of any library that uses associated type/data families for use with and without the extension enabled. There is another way to ensure backwards compatibility without simply turning off the feature completely, as will be explained in the remainder of this section.
-
-GHC can infer the constraint we'd expect if one uses an associated type family without an appropriate one. To find the constraint we need, it should be possible to just take the same variables given as an argument to the associated type and line them up with the class that contains it. GHC will emit a warning every time it has to do this.
-
-Let us now consider an actual example:
-
-::
-
-    class Collection c where
-        type Elem c
-    instance Collection [a] where
-        type Elem [a] = a
-
-    foo :: a -> Elem a
-    foo = undefined
-
-``foo`` is in a very real sense incorrect, because it is given a type signature that implies constraints that are not listed. To operationalize this correctness check, each time GHC sees an associated type used in a type, it generates the constraint required for the use by looking up the class that defines the associated type and instantiating a constraint from it using the parameters given for the associated type. If this constraint (or a constraint that subsumes it) is either given directly or otherwise known (such as from a GADT pattern match), the use of the associated type is lawful. If no such constraint is known, the type is unlawful.
-
-While it may be natural to think that the correct solution is to error out and leave fixing it to the programmer, we already have a way to find the constraint we need to keep such previously correct code compiling. Assuming that the code is in reality correct, it is safe for GHC to emit a warning and then *add the inferred constraint to the type specified by the programmer*. However, if an error arises involving this constraint or any of the types that are mentioned inside of it, we give a modified error that gives the inferred constraint, the follow-on error from it, and the associated type that lead it to be generated.
-
-Here's how it would work in practice:
-
-1. GHC sees that ``foo`` references an associated type family, ``Elem``.
-2. GHC looks up the class that contains ``Elem``, then instantiates it with the same type given as a parameter to ``Elem``, creating the constraint ``Collection a``. If the class had more parameters than the ones for the associated type, new free type variables would be generated and used to fill the empty space.
-3. GHC checks to see if this constraint is either part of ``foo``'s type or ambiently known.
-4. Because it is not, GHC adds it to the provided type for ``foo``, making it ``foo :: (Collection a) => a -> Elem a``. GHC then prints a warning referencing the associated type that caused GHC to infer a new constraint and the constraint it inferred, with a suggestion that it be added to the file.
-
-In my ideal world, this would only stand for a time, perhaps governed by an extension that is initially on by default when type families are enabled and would be disabled after a few GHC major versions, turning the warning into an error.
-
-Because this backwards compatibility system is somewhat complicated and does something somewhat unexpected (changing a programmer-supplied type signature) it may be wise to implement the feature with the warning as an error, and only enable/add the fix-up if the amount of code to be broken is substantial enough.
-
 The Performance Story
 +++++++++++++++++++++
 
@@ -317,7 +332,7 @@ Another, simpler solution would be to change how datatype contexts work, giving 
     data (C a) => FPack a where
         FPack :: F a -> FPack a
 
-Still, this is a major enough change that it is being neglected here.
+However, I am trying to keep this non-controversial and simple, so I will not directly suggest undeprecating ``-XDatatypeContexts``.
 
 The New Haskeller Story
 +++++++++++++++++++++++
@@ -326,7 +341,7 @@ If anything, it makes the language easier to learn, especially when it comes to 
 
 Alternatives
 ------------
-The most prominent alternative is to implement the full system proposed in the Constrained Type Families paper by Eisenberg and Morris, but it is unclear what substantial benefits it offers that we are losing by using this simple extension of current functionality. Even if it is lacking in some way, it seems to be entirely forwards compatible with the system that is proposed in that paper.
+The most prominent alternative is to implement the full system proposed in the Constrained Type Families paper by Eisenberg and Morris, but it is unclear what substantial benefits it offers that we are losing by using this simple extension of current functionality, other than closed type classes (which are fairly orthogonal) and constraining top-level type/data families, which would be easy to add if this works well in practice. Even if it is lacking in some way, it seems to be entirely forwards compatible with the system that is proposed in that paper.
 
 Additionally, there's always the option to do nothing, with the obvious tradeoff of being "free" (from an effort perspective) but not resolving the issue.
 
@@ -335,7 +350,6 @@ Unresolved questions
 - What is lost relative to implementing the full CTF paper system in GHC?
 - How much existing code is actually going to be broken by these changes?
     - This is likely unknowable until an implementation exists.
-- Are there any hidden asymmetries between the type and term level that make the duplication of the term-level system not provide the same level of soundness?
 
 Implementation Plan
 -------------------
