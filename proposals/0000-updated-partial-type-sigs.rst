@@ -1,0 +1,324 @@
+Update design of partial type signatures
+========================================
+
+.. proposal-number:: Leave blank. This will be filled in when the proposal is
+                     accepted.
+.. trac-ticket:: Leave blank. This will eventually be filled with the Trac
+                 ticket number which will track the progress of the
+                 implementation of the feature.
+.. implemented:: Leave blank. This will be filled in with the first GHC version which
+                 implements the described feature.
+.. highlight:: haskell
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_.
+            **After creating the pull request, edit this file again, update the
+            number in the link, and delete this bold sentence.**
+.. sectnum::
+.. contents::
+
+There are a number of points of confusion and lack of user control around the partial type signatures feature.
+These are explained in more detail in the Motivation_ section. This proposal describes an update to this feature.
+It is *not* backward-compatible, but the expectation is that partial type signatures are a tool to use during
+development, not something that should remain in a codebase for releases (though this proposal makes it easier to
+do so, if you wish).
+
+Motivation
+------------
+There are a number of infelicities around partial type signatures, described here in no particular order (but
+numbered for back-reference).
+
+1. Underscores may mean many different things.
+
+   a. In patterns, a ``_`` means a part of a pattern that matches anything, but is otherwise immaterial. Examples::
+
+        const x _ = x
+        type instance IsJust (Just _) = True   -- happens in types, too!
+
+      I will call these underscores "blanks".
+
+   b. In expressions, a ``_`` means a part of an expression for which you want GHC to print its type. Example::
+
+        tuple :: (Int, Double, Bool, Char, Float, ShowS)
+        tuple = (5, 3.14, False, _, _, _)   -- oops: I lost count, and then I forgot what ShowS meant
+
+      Note that this can be useful in types, too::
+
+        foo :: SomeMajorTypeFamily Nat Bool (_ 5) -> Bool  -- I forget: should I use 'Just or 'Left there??
+
+      There is no way to get this behavior in types today.
+
+      I will call these underscores "holes".
+
+   c. In type signature declarations, a ``_`` means a part of a type for which you want GHC to infer its value using
+      the definition of the variable being declared. Example::
+
+        addOne :: _ -> Int
+        addOne x = x + 1
+
+      Here, we want GHC to use the definition of ``addOne`` to infer that the ``_`` stands for ``Int``. This works
+      also for contraints::
+
+        addOnePoly :: _ => a -> a
+        addOnePoly x = x + 1
+
+      GHC will infer that the ``_`` stands for ``Num a``.
+
+      In all cases, GHC reports to the user what it figured out. GHC normally rejects such programs, but it will
+      accept them with ``-XPartialTypeSignatures`` enabled. GHC still reports its deductions for the wildcards
+      (these underscores are called "wildcards"), unless ``-Wno-partial-type-signatures`` is specified.
+
+      Wildcards naturally are disallowed in places where there is no expression nearby, such as in class method types
+      or instance heads.
+
+      The existence of a wildcard in a type signature drastically changes the algorithm GHC
+      uses during type-checking. As one example of this, if a declaration has a wildcard in its type, it may
+      not use polymorphic recursion, which requires a complete type signature and an utter absence of type inference.
+      Another example is that GHC defers kind-generalization until *after* checking the expression; this can
+      affect whether or not a program is accepted.
+
+   d. In visible type applications, a ``_`` means a part of a type for which you want GHC to infer its value using
+      context. Example::
+
+        x = id @_ True
+
+      GHC will infer that the ``_`` stands for ``Bool``. This form is most useful if you have multiple type
+      parameters and want to skip some. For example, we have ``const :: forall a b. a -> b -> a`` and we
+      might say ``const @_ @Bool 'x'`` to get a constant function of type ``Bool -> Char``. Note that the
+      choice for ``a`` is easily inferrable to be ``Char`` here.
+
+      I will call these underscores "elisions". These occur in visible type applications. They never
+      cause GHC to reject a program or print out further information.
+
+.. _`visible kind application`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0015-type-level-type-applications.rst
+      
+2. Visible kind applications don't fit well with partial type signatures. As recently merged into HEAD,
+   the `visible kind application`_ implementation treats underscores as a combination of wildcard and elision:
+   the existence of an underscore in a visible kind application has GHC treat a type signature as partial,
+   even though GHC does not stop compilation or emit warnings for such underscores. Furthermore, the value
+   of an underscore in a visible kind application (e.g., in ``Proxy @_ True``) can often be inferred from
+   context, not from an expression. This design was chosen because it's close to the treatment for visible
+   type applications, but it's an unhappy compromise.
+
+   Visible kind application (even an innocuous usage like the example in the previous paragraph) with underscores is not allowed
+   where wildcards are not allowed, such as in data constructor declarations and in instance heads.
+
+3. Named wildcards act like wildcards but are named. This allows two niceties: the user can specify that
+   the same wildcard is used twice, and output is clarified by giving a name to the wildcard (instead of
+   just ``_``). Here is an example::
+
+     foo :: _w -> _w -> _w
+     foo x 'z' = x
+
+   GHC will infer that ``foo :: Char -> Char -> Char`` (and that ``_w`` stands
+   for ``Char``), knowing that the second argument must be a ``Char`` and that
+   both arguments and the return type must be the same. This feature is
+   enabled with ``-XNamedWildCards``.
+
+   The feature is undiscoverable. If I write the code above in a module without ``-XNamedWildCards``, I get a type
+   error. This is because ``_w`` is a legal type variable name in standard Haskell. No error message in GHC suggests enabling this
+   extension.
+
+4. The current design of partial type signatures treats type generalization and constraint generalization differently.
+   Consider these examples::
+
+     ex1 :: _ -> _
+     ex1 x = x
+
+     ex2 :: _ -> _
+     ex2 x = x + 1
+
+     ex3 :: _ -> _
+     ex3 x = not x
+
+   With ``-XPartialTypeSignatures`` enabled, ``ex1`` and ``ex3`` are accepted, but ``ex2`` is rejected. (Actually, ``ex2``
+   is accepted because of type defaulting. Say ``default ()`` to disable type defaulting, and you will observe that it
+   is rejected. Avoiding this twist in the narrative would complicate the example unnecessarily.) In ``ex1``, GHC discovers
+   that ``_`` stands for an unconstrained type variable ``t``, generalizes, and gets ``ex1 :: t -> t``. In ``ex3``, GHC
+   discovers that ``_`` standards for ``Bool``. In ``ex2``, GHC discovers that ``_`` stands for ``t`` where ``Num t`` must
+   hold; however, it rejects the declaration because no context was specified. In order to accept ``ex2``, we need to
+   write ::
+
+     ex2 :: _ => _ -> _
+
+   With the possibility of a constraint, then ``ex2`` is accepted, with type ``Num t => t -> t``.
+
+   What's awkward here is that the examples are given in order of increasing specificity; each example's type is more
+   specific than the previous. Yet GHC's behavior wibbles and wobbles between them.
+
+Proposed Change Specification
+-----------------------------
+
+1. Outside of patterns, treat ``_`` as an elision everywhere. This means that ``_`` means "I don't care".
+
+   - In types, a ``_`` is treated as a fresh unification variable. This means that ``foo :: _ -> _`` is the same as
+     ``foo :: a -> b``, while ``Proxy @_ True`` is the same as ``Proxy @Bool True``. You're instructing GHC that
+     you want it to fill in the ``_`` with what is necessary for the type to kind-check. Once GHC is finished processing
+     the type, however, any opportunity to solve for ``_`` has been taken; at that point, if it is still unconstrained,
+     GHC generalizes over it, like it would a fresh normal type variable.
+
+     Elisions can appear anywhere a type can be written. They do not cause diagnostics to be printed.
+
+   - In expressions, a ``_`` is a part of the expression the author did not care to write. Currently, this means
+     that ``_`` will be replaced with ``error "elided expression"``. In this case, an error will be printed,
+     stating the inferred type of the ``_`` and suggesting to enable ``-XElidedExpressions`` if the user
+     wants to keep the ``error``\ing behavior. With ``-XElidedExpressions``, GHC will still warn; this can
+     be suppressed with ``-Wno-elided-expressions``.
+
+     In the future, GHC may support the possibility of inferring expressions. An elided expression may then
+     be filled in, not with a call to ``error``, but a correct expression. For example, we might imagine
+     that ::
+
+       id :: a -> a
+       id x = _
+
+     has its elision filled in with the only possible non-bottom value, ``x``. Any such behavior will
+     have to be specified separately and would likely be guarded by an extension flag and possible diagnostic
+     output.
+
+2. Outside of patterns, treat an unbound identifier beginning with an underscore as a named wildcard. A named wildcard
+   induces GHC to print an error with the wildcard's type and a suggested value.
+
+   - In a type signature, a named wildcard behaves much as one does today, though its kind will be printed
+     in the diagnostic along with the other information. Just like today, a suggestion will be included
+     to enable ``-XPartialTypeSignatures``.
+
+   - In a type outside a type signature (e.g., in an instance declaration or a data constructor type),
+     a named wildcard will induce a diagnostic including the wildcard's kind and any information GHC
+     can figure out about its value.
+
+   - In an expression, a named wildcard will induce a diagnostic including the
+     wildcard's type and any information GHC can figure out about its value,
+     including suggested replacements. In this way, an expression named
+     wildcard will behave like holes have.
+
+   Named wildcards will behave as such by default. This means that the ``-XNamedWildCards`` extension
+   will be on by default. Specifying ``-XNoNamedWildCards`` means that identifiers that begin with
+   underscores are treated the same as other identifiers.
+
+3. Enabling ``-XPartialTypeSignatures`` is necessary in order for GHC to accept a program with
+   named wildcards in type signatures. These signatures must also be written using the new
+   separator ``::?`` instead of the typical ``::``. That is, we would now write ::
+
+     quux ::? _w -> Bool
+     quux x = not x
+
+   The new separator would be a loud indication that the signature is *partial*. It induces GHC
+   to use its partial-type-signature algorithm instead of its typical type-checking algorithm.
+
+   Partial type signatures would work with elisions, too, allowing ::
+
+     wurble ::? _ -> _
+     wurble x = not x
+
+   Named wildcards would induce diagnostics; elisions would not.
+
+   Partial type signatures would be generalized *after* checking the function body. This would
+   allow something like the following to be accepted::
+
+     silly ::? Proxy a -> ()
+     silly (_ :: Proxy @Bool _) = ()
+
+   Note that the expression would be more specific than its type signature, if we generalized
+   the signature *before* processing the expression.
+
+   Partial type signatures forbid polymorphic recursion, as they do today.
+
+4. Partial type signatures would generalize fresh variables only when an *extra-variables* wildcard
+   is in the type. That is, the last item in the list of variables after the word ``forall`` can
+   now be an elision ``_`` or a named wildcard ``_w`` (but only in a partial type signature).
+   In either case, this means that GHC can
+   generalize over more variables than have been written in the type signature. As usual, an elision
+   produces no diagnostic, while a named wildcard does. Here are two examples::
+
+     ex4 ::? _ -> _
+     ex4 x = x
+
+     ex5 ::? forall _. _ -> _
+     ex5 x = x
+
+   Here, ``ex4`` is rejected, because we do not know what type ``x`` should have and we cannot
+   generalize. On the other hand ``ex5`` is accepted. The extension ``-XPartialTypeSignatures``
+   would have to be enabled, but there would otherwise be no diagnostic.
+
+   The use of an extra-variables wildcard anywhere other than a top-level ``forall`` in a
+   partial type signature is disallowed, must like the extra-constraints wildcard previously.
+     
+Effect and Interactions
+-----------------------
+* The new design combines the roles of holes and wildcards in the Motivation_. This means that
+  we have only 3 uses of underscores to consider.
+
+* The new design allows the user to control whether they want an elision or a wildcard, using
+  a convenient naming convention.
+
+* The new design gives users fine control over generalization, through the use of ``::?`` to
+  suppress kind generalization and the use of ``forall a b c _.`` to explicitly enable type
+  generalization.
+
+* Visible kind application now fits in nicely. Users can control whether they want elisions
+  or wildcards.
+
+* Partial type signatures have become louder, through the addition of ``::?``. This makes it
+  more sensible to keep partial type signatures in released code.
+  
+Costs and Drawbacks
+-------------------
+* Partial type signatures have proved hard to implement and with many corner cases. The new
+  design seems no simpler nor more complicated than the current, but it will take a fair amount
+  of work to re-engineer.
+
+* The new design does not adequately treat patterns. It is conceivable that a user would want
+  a wildcard (with diagnostic information) in a pattern, and this is no more achievable with this
+  proposal than it was previously.
+
+* This proposal is not backward compatible. However, migration would be straightforward, and I
+  do not expect much released code to be using partial type signatures.
+
+* This proposal rejects the Haskell98 program ::
+
+    id :: _w -> _w
+    id x = x
+
+  as accepting that would require ``-XPartialTypeSignatures``, a change from ``::`` to ``::?``,
+  and the introduction of ``forall _.``. Or, the user could just drop the underscore. Note that
+  this rejection happens even with no extensions enabled, meaning this proposal moves GHC away
+  from the standard (but only for type variables that begin with an underscore).
+
+* This proposal introduces new, wild syntax ``::?``. With two far-flung exception, this new
+  syntax does not replace any existing syntax, as ``::?`` cannot be the name of a function: it
+  starts with a ``:`` and is thus data-constructor-like. Thus, a line like ``x ::? ty`` cannot
+  be mistaken for a top-level Template Haskell declaration splice, as it would have the wrong
+  type.
+
+  Exception 1: It is conceivable to define a pattern synonym named ``::?`` that would have the
+  right type to be a top-level Template Haskell declaration splice.
+
+  Exception 2: It is conceivable to have ``::?`` as a data constructor pattern-matched against
+  as the left-hand argument to another infix operator::
+
+    data PleaseDon't a b = a ::? b
+    a ::? b /\ _ = (a, b)
+
+  In theory, this is disambiguated by the ``=`` (or guard, I suppose), but it would be hard
+  to parse.
+
+Alternatives
+------------
+* Instead of having ``::?``, we could have ``:: {-# PARTIAL #-}`` or similar. A quick grep
+  of all of Hackage (as it was last summer) finds no usage, at all, of the lexeme ``::?``.
+
+* I would welcome new syntax dealing with patterns in this framework.
+
+* Though specification parts (1) and (2) are tightly linked, the others are not, and could be
+  usefully removed from this proposal while not losing other parts.
+
+* Though there is no burning fire here (and thus "do nothing" isn't
+  unreasonable), the design of visible kind application is really quite
+  awkward. If we choose to walk away from this more comprehensive proposal, it
+  would be great to have a concrete design for underscores in visible kind
+  application, at least.
+
+Unresolved Questions
+--------------------
+* Is this really the best syntax? I am uncomfortable at stealing both underscored-idenfitiers and ``::?``.
+  How painful is it to do so?
+
