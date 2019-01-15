@@ -281,7 +281,7 @@ Costs and Drawbacks
   this rejection happens even with no extensions enabled, meaning this proposal moves GHC away
   from the standard (but only for type variables that begin with an underscore).
 
-* This proposal introduces new, wild syntax ``::?``. With two far-flung exception, this new
+* This proposal introduces new, wild syntax ``::?``. With two far-flung exceptions, this new
   syntax does not replace any existing syntax, as ``::?`` cannot be the name of a function: it
   starts with a ``:`` and is thus data-constructor-like. Thus, a line like ``x ::? ty`` cannot
   be mistaken for a top-level Template Haskell declaration splice, as it would have the wrong
