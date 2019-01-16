@@ -1108,6 +1108,21 @@ Unresolved pattern forms
   implement check linearity of such a pattern).
 - There is no account yet of linear pattern synonyms.
 
+Kinds
+-----
+
+With or without ``-XDataKinds``, this proposal does not allow for
+linear type-level functions (in other words, there is no ``(->.)`` in
+kinds).
+
+Attempts to use non-unrestricted arrows in a kind will result in an
+error (the syntax permits it as types and kinds are parsed the same
+way).
+
+The reasoning is simply that it is easier to implement, and that there
+is no compelling motivation at the moment for linear type-level
+functions.
+
 Without -XLinearTypes
 ---------------------
 
