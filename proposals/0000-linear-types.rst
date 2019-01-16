@@ -909,8 +909,19 @@ function
 
   runRIO :: RIO (Unrestricted a) -> IO a
 
+Conversely, it is possible to inject an ``IO`` computation into an
+``RIO`` computation. But it is absolutely essential that this ``IO``
+computation does not capture a linear resource. Because resources are
+always held in linear variables, this can be achieved by making the
+``IO`` computation an unrestricted argument
+
+::
+
+  liftIO :: IO a -> RIO a -- notice the unrestricted arrow
+
 In order to achieve resource safety in presence of exception, ``runRIO``
-is tasked with releasing any live resource in case of exception.
+is tasked with releasing any live resource in case of
+exception.
 
 To implement this, ``RIO`` keeps a table of release actions, to be used
 in case of exceptions. Each resource implemented in the ``RIO``
@@ -948,7 +959,8 @@ linear resources are isolated. To implement ``catchL``, we simply give
 it its own release action table, so that in case of exceptions all the
 local resources are released by ``catchL``, as ``runRIO`` does, before
 the handler is called. The original release action table is then
-reinstated.
+reinstated. (Note: this version of ``catchL`` can be implemented in
+terms of ``liftIO``)
 
 With this implementation, it is clear that capturing linear resources
 from the outside scope would compromise timely release, and returning
