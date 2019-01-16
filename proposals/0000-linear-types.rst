@@ -962,6 +962,18 @@ the handler is called. The original release action table is then
 reinstated. (Note: this version of ``catchL`` can be implemented in
 terms of ``liftIO``)
 
+Note that if the body or the exception handler, in ``catchL`` were
+linear arguments, ``catchL`` could capture linear resources which were
+previously allocated, and it would be possible for that resource to
+never be released.
+
+Dually, if ``catchL`` could return linear resources (that is, if we
+didn't restrict its return type to ``Unrestricted a``), we could
+return a linear resource allocated within the ``catchL`` scope. It
+would then be in no release action table! Therefore, an exception
+after ``catchL`` return would make it so the resource is never
+released.
+
 With this implementation, it is clear that capturing linear resources
 from the outside scope would compromise timely release, and returning
 locally acquired resources would leak resources if an exception
@@ -984,6 +996,19 @@ mechanism for linear resources, such as the ``EitherT`` monad.
 The choice between these two types (and corresponding implementation)
 for ``catch``, or the absence of ``catch`` altogether, is a design
 question for the library that implements a monad such as ``RIO``.
+
+In summary:
+
+* It is not possible to use resources allocated before ``catchL`` in a
+  ``catchL`` scope.
+* It is possible to return resources allocated within a ``catchL``
+  scope from that ``catchL`` scope.
+* If an exception occurs during a ``catchL`` body, the all the
+  resources allocated there will be released, and the control switches
+  to the handler.
+* If an exception occurs after a ``catchL`` body returns, all
+  resources (including the resources returned by the ``catchL`` body)
+  are released
 
 Can I throw linear exceptions?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
