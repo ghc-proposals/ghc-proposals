@@ -153,7 +153,10 @@ Proposed Change Specification
      the type, however, any opportunity to solve for ``_`` has been taken; at that point, if it is still unconstrained,
      GHC generalizes over it, like it would a fresh normal type variable.
 
-     Elisions can appear anywhere a type can be written. They do not cause diagnostics to be printed.
+     Elisions can appear anywhere a type can be written, but they cannot
+     appear as a constraint in a complete type signature. They do not cause
+     diagnostics to be printed. The existence of an elision does *not* cause a
+     signature to be treated as partial.
 
    - In expressions, a ``_`` is a part of the expression the author did not care to write. Currently, this means
      that ``_`` will be replaced with ``error "elided expression"``. In this case, an error will be printed,
@@ -173,7 +176,8 @@ Proposed Change Specification
      output.
 
 2. Outside of patterns, treat an unbound identifier beginning with an underscore as a named wildcard. A named wildcard
-   induces GHC to print an error with the wildcard's type and a suggested value.
+   induces GHC to print an error with the wildcard's type and a suggested value. This behavior is
+   controlled by the ``-XNamedWildCards`` extension.
 
    - In a type signature, a named wildcard behaves much as one does today, though its kind will be printed
      in the diagnostic along with the other information. Just like today, a suggestion will be included
@@ -188,11 +192,11 @@ Proposed Change Specification
      including suggested replacements. In this way, an expression named
      wildcard will behave like holes have.
 
-   Named wildcards will behave as such by default. This means that the ``-XNamedWildCards`` extension
-   will be on by default. Specifying ``-XNoNamedWildCards`` means that identifiers that begin with
-   underscores are treated the same as other identifiers.
-
-3. Enabling ``-XPartialTypeSignatures`` is necessary in order for GHC to accept a program with
+3. The use of a type variable that begins with an underscore will induce a warning
+   that it looks like an attempt to write a named wildcard. This warning will be
+   controlled by ``-Wpossible-named-wildcards``, on by default.
+     
+4. Enabling ``-XPartialTypeSignatures`` is necessary in order for GHC to accept a program with
    named wildcards in type signatures. These signatures must also be written using the new
    separator ``::?`` instead of the typical ``::``. That is, we would now write ::
 
@@ -209,28 +213,30 @@ Proposed Change Specification
 
    Named wildcards would induce diagnostics; elisions would not.
 
-   Partial type signatures would be generalized *after* checking the function body. This would
+   Partial type signatures would be kind-generalized *after* checking the function body. This would
    allow something like the following to be accepted::
 
      silly ::? Proxy a -> ()
      silly (_ :: Proxy @Bool _) = ()
 
-   Note that the expression would be more specific than its type signature, if we generalized
+   Note that the expression would be more specific than its type signature, if we kind-generalized
    the signature *before* processing the expression.
+
+   This example is further explained below_.
 
    Partial type signatures forbid polymorphic recursion, as they do today.
 
-4. Partial type signatures would generalize fresh variables only when an *extra-variables* wildcard
+5. Partial type signatures would generalize fresh variables only when an *extra-variables* wildcard
    is in the type. That is, the last item in the list of variables after the word ``forall`` can
    now be an elision ``_`` or a named wildcard ``_w`` (but only in a partial type signature).
    In either case, this means that GHC can
    generalize over more variables than have been written in the type signature. As usual, an elision
    produces no diagnostic, while a named wildcard does. Here are two examples::
 
-     ex4 ::? _ -> _
+     ex4 ::? _w -> _w
      ex4 x = x
 
-     ex5 ::? forall _. _ -> _
+     ex5 ::? forall _. _w -> _w
      ex5 x = x
 
    Here, ``ex4`` is rejected, because we do not know what type ``x`` should have and we cannot
@@ -239,6 +245,18 @@ Proposed Change Specification
 
    The use of an extra-variables wildcard anywhere other than a top-level ``forall`` in a
    partial type signature is disallowed, must like the extra-constraints wildcard previously.
+
+   Note that any ordinary type variables mentioned in a type are generalized as usual. Thus, ::
+
+     ex6 ::? _w -> a
+     ex6 x = x
+
+   is accepted, as the ``a`` is already a quantified type variable. On the other hand, ::
+
+     ex7 ::? _w -> a -> a
+     ex7 _ x = x
+
+   is rejected, as we have no type for the first argument of ``ex7``.
      
 Effect and Interactions
 -----------------------
@@ -256,7 +274,17 @@ Effect and Interactions
   or wildcards.
 
 * Partial type signatures have become louder, through the addition of ``::?``. This makes it
-  more sensible to keep partial type signatures in released code.
+  more sensible to keep partial type signatures in released code. The new syntax also
+  allows users to write elisions in type signatures without causing the signature to
+  become partial.
+
+* Wildcards might look like definitions in lens-heavy code; that is, a misspelled ``_field``
+  would now be a wildcard. I don't think the ensuing error message would pose a challenge
+  to a programmer in figuring out what happened. We can continue to suggest possible misspellings
+  in such error messages.
+
+* The specification above describes behavior outside of patterns. No change is made to
+  the way patterns behave. Note that type signatures in patterns are not patterns.
   
 Costs and Drawbacks
 -------------------
@@ -271,16 +299,14 @@ Costs and Drawbacks
 * This proposal is not backward compatible. However, migration would be straightforward, and I
   do not expect much released code to be using partial type signatures.
 
-* This proposal rejects the Haskell98 program ::
+* This proposal warns on the Haskell98 program ::
 
     id :: _w -> _w
     id x = x
 
-  as accepting that would require ``-XPartialTypeSignatures``, a change from ``::`` to ``::?``,
-  and the introduction of ``forall _.``. Or, the user could just drop the underscore. Note that
-  this rejection happens even with no extensions enabled, meaning this proposal moves GHC away
-  from the standard (but only for type variables that begin with an underscore).
-
+  Thus, this standards-conforming program would now cause GHC to bleat (but still accept,
+  with its original meaning).
+  
 * This proposal introduces new, wild syntax ``::?``. With two far-flung exceptions, this new
   syntax does not replace any existing syntax, as ``::?`` cannot be the name of a function: it
   starts with a ``:`` and is thus data-constructor-like. Thus, a line like ``x ::? ty`` cannot
@@ -306,7 +332,7 @@ Alternatives
 
 * I would welcome new syntax dealing with patterns in this framework.
 
-* Though specification parts (1) and (2) are tightly linked, the others are not, and could be
+* Though specification parts (1), (2), and (3) are tightly linked, the others are not, and could be
   usefully removed from this proposal while not losing other parts.
 
 * Though there is no burning fire here (and thus "do nothing" isn't
@@ -320,3 +346,73 @@ Unresolved Questions
 * Is this really the best syntax? I am uncomfortable at stealing both underscored-idenfitiers and ``::?``.
   How painful is it to do so?
 
+* Is this design too elaborate? I have a tendency to build elaborate but expressive edifices. Perhaps
+  there is a sweet spot closer to the ground here.
+  
+.. _below:
+  
+Further examples
+----------------
+
+* Let's dive deeper into this example::
+
+    silly ::? Proxy a -> ()
+    silly (_ :: Proxy @Bool _) = ()
+
+  Actually, let's first consider something very closely related::
+
+    sillier :: Proxy a -> ()
+    sillier (_ :: Proxy @Bool _) = ()
+
+  This definition of ``sillier`` is rejected. That's because GHC processes its type signature in isolation.
+  GHC sees that we wish to quantify over ``a``. After kind-checking, the kind of ``a`` is utterly unconstrained.
+  Thus, GHC infers ``sillier :: forall {k} (a :: k). Proxy @k a -> ()``. All of this has happened *without*
+  looking at the definition of ``sillier``. When GHC does look at that definition, it is rejected, as
+  the argument to ``sillier`` has type ``Proxy @k a``, not ``Proxy @Bool a``. This is the kind-level
+  equivalent of something like ::
+
+    silliest :: a -> a
+    silliest True = False
+
+  In both ``sillier`` and ``silliest``, the type signature is *more general* than the definition. It's
+  just that ``sillier`` is harder to see that.
+
+  Returning to ``silly``, with the partial type signature marker ``::?``, GHC will *not* kind-generalize
+  the type. It will effectively infer ``silly ::? forall (a :: _k). Proxy @_k a -> ()``, where ``_k``
+  behaves like a named wildcard. (I say "behaves like" because named wildcards become unification variables
+  internally; in this case, the kind of ``a`` really would just be a unification variable.) Now, when
+  checking the definition of ``silly``, GHC is free to discover that ``_k`` should be ``Bool``, and all is
+  well.
+
+  Note that I did *not* mean to write ``silly ::? Proxy _a -> ()``. I want ``a`` to be a skolem here. It's
+  ``a``\s *kind* that I want not to be a skolem.
+
+  Thus, ``silly`` is silly only because it is contrived, not because it is wrong.
+
+* Here are some examples around the use of elisions:
+
+  1. ::
+
+       f :: _ -> _
+
+     This would mean the same as ``f :: a -> b``.
+
+  2. ::
+
+       f :: forall a. a -> _
+
+     This would mean the same as ``f :: forall a. forall b. a -> b`` (the second ``forall`` prevents
+     ``b`` from being in scope in the defined term). I'm sure you now ask: "Why the unrequested
+     generalization?" Because this is a complete type signature, not a partial one. The new
+     generalization behavior affects only *partial* type signatures. So, ::
+
+       f ::? forall a. a -> _
+
+     would use the definition for ``f`` to determine the result type, but that type could not
+     mention a type variable other than ``a`` (assuming we're at top-level).
+
+  3. ::
+
+       f :: forall a _. a -> _
+
+     This is rejected, as it contains an extra-variables wildcard in a non-partial type signature.
