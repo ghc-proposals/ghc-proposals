@@ -1264,7 +1264,11 @@ arrow:
     ``data Unrestricted a = Unrestricted (a # 'Omega)``.
 - ``(->{p})``, proposed by @niobium0
 - A meta-proposal is any of the above, but using `->.` (or whatever
-  the linear )
+  the linear arrow ends up being). This was proposed by @monoidal. The
+  reasoning is that, then ``a # p ->. b`` means the same as ``Mult p a
+  ->. b`` (where ``data Mult p a where Mult :: a # p -> Mult p
+  a``). There is more symmetry here than if the notation was ``a # p
+  -> b``.
 
 Here are other suggestions which have been floated, but we don't
 believe are very good:
