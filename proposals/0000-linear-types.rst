@@ -1291,6 +1291,15 @@ Here are the potential notations for the linear arrow:
 - ``(:->)`` based on the notation ``(:p->)`` used for
   multiplicity-parametric arrows.
 
+Name of the multiplicity
+------------------------
+
+The proposal names the two multiplicities ``One`` and ``Omega``. An
+alternative, proposed by @jeltsch, would be ``One`` and ``Many``. The
+crux of the argument is that ``Omega`` is mathematical jargon which is
+meaningless to most programmers. Instead ``Many`` is named after the
+``many`` function from ``Control.Applicative`` which is more familiar.
+
 Name of the extension
 ---------------------
 
