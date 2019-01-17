@@ -1262,6 +1262,9 @@ arrow:
   - This syntax proposal is also accompanied by a new non-GADT syntax
     to annotate fields of data constructors with a multiplicity:
     ``data Unrestricted a = Unrestricted (a # 'Omega)``.
+- ``(->{p})``, proposed by @niobium0
+- A meta-proposal is any of the above, but using `->.` (or whatever
+  the linear )
 
 Here are other suggestions which have been floated, but we don't
 believe are very good:
@@ -1271,7 +1274,7 @@ believe are very good:
 - ``(->:p)``. We've used this one a little, and found that it was
   confusing, seeming to attach the multiplicity to the result, where
   it ought to be thought as affecting the argument. The same probably
-  apply to ``(->_p)``.
+  applies to ``(->_p)``.
 
 Lexical token of the linear arrow
 ---------------------------------
@@ -1287,6 +1290,30 @@ Here are the potential notations for the linear arrow:
   in current GHC, and ``a-o`` is currently interpreted as ``(-) a o``)
 - ``(:->)`` based on the notation ``(:p->)`` used for
   multiplicity-parametric arrows.
+
+Name of the extension
+---------------------
+
+This proposal uses ``-XLinearTypes`` as the name for the extension it
+introduces. We believe it is the most appropriate name for this
+extension. Nevertheless, other names have been proposed
+
+- ``-XLinearArrows`` (which didn't garner much support because of the
+  confusion with the ``Arrow`` type class)
+- ``-XLinearFunctions``
+- ``-XLinearFunctionTypes`` (to avoid confusion with the use of
+  “linear functions” in linear algebra)
+
+The reasoning, proposed by @christiaanb, is that ``LinearTypes``
+should be reserved for a notional future extensions where types are
+classified, by their kinds, on whether their value are to be used
+linearly or not (as opposed to this proposal, where linearity is a
+property of function).
+
+We'd argue that “linear types” describe the type system having a
+notion of linearity, rather than types being classified as linear or
+not. The notional future extension, if it comes to exist, could in
+this context be named ``LinearityKind`` or something to that effect.
 
 Syntax of multiplicity expression
 ---------------------------------
