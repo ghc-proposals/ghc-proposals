@@ -15,7 +15,7 @@ Proposal title
 .. sectnum::
 .. contents::
 
-Exten type application syntax with record field update syntax.
+Extend type application syntax with record field update syntax.
 
 
 Motivation
@@ -88,11 +88,11 @@ Unresolved questions
   g :: forall list len . ...
   g = f @{len}
 
-Leaning yes for consistency and least surprise.
+Leaning **yes** for consistency and least surprise.
 
-2. Does this need to hide separate extension?
+2. Does this need to hide behind a separate extension?
 
-Leaning no because this is backwards compatible change.
+Leaning **no** because this is backwards compatible change.
 
 Implementation Plan
 -------------------
