@@ -1,18 +1,3 @@
-Notes on reStructuredText - delete this section before submitting
-==================================================================
-
-The proposals are submitted in reStructuredText format.  To get inline code, enclose text in double backticks, ``like this``.  To get block code, use a double colon and indent by at least one space
-
-::
-
- like this
- and
-
- this too
-
-To get hyperlinks, use backticks, angle brackets, and an underscore `like this <http://www.haskell.org/>`_.
-
-
 Proposal title
 ==============
 
@@ -37,31 +22,31 @@ Motivation
 ------------
 GHC and Haskell ecosystem have been on track to rely more and more on type-level programming. We have TypeInType today and are on the course to have full dependent types in the future. Perhaps the most useful ergonomics extension that GHC got in this domain in the recent years is TypeApplication. It allows to have more readable, succinct code. That being said, type application syntax can be improved by a modest amount in the light of functions with many (say 3+) type parameters. Because Haskell still does and will continue to do a lot of type inference there are situations where one needs to apply a type argument that is not in the first position. Currently it is done as follows
 
-```
-f :: forall m n a . ...
-g = f @_ @_ @Int
-```
+::
+  f :: forall m n a . ...
+  g = f @_ @_ @Int
 
 This is:
 1. Cumbersome.
 2. Unclear without context.
-3. Susceptible to breakage when signature of @f@ changes.
+3. Susceptible to breakage when signature of ``f`` changes.
 4. Produces arcane kind errors on missteps.
 
 
 Proposed Change Specification
 -----------------------------
 
-Extend record update syntax to type applications. I.e. allow to implement @g@ from above as
+Extend record update syntax to type applications. I.e. allow to implement ``g`` from above as
 
-```
-g = f @{a = Int}
-```
+::
+  g = f @{a = Int}
+
 
 Effect and Interactions
 -----------------------
 
 The new version is:
+
 1. Less cumbersome: length of code is linear in number of given arguments, not number of type variables.
 2. More informative without context.
   * Immediately useful because the Haskell programmers have created an ecosystem where even single-letter names of types communicate information about its nature (e.g. `f` is something like a Functor, `m` is something like a monad, etc).
@@ -73,9 +58,11 @@ Costs and Drawbacks
 -------------------
 
 Development and maintenance cost: seems low.
+
 Learnability: very low because this is a generalization of currently existing behavior. It runs at a small risk of confusing the users into believing that a similar feature exists for term-level application. This of course is not trivial to design because arguments on term-level functions often lack names i.e. the latter are defined using pattern matching.
 
 We need to consider visual collisions with future extensions. The only examples I'm aware of that come close are:
+
 * Example by Richard Eisenberg: `data Proxy @{k} (a :: k)` for explicitly inferred type variables.
 * Row polymorphism.
 * Record field updates on type level.
@@ -84,7 +71,8 @@ To me these examples seem to be sufficiently different either in terms of contex
 
 Alternatives
 ------------
-* Don't do this.
+
+Don't do this.
 
 Unresolved questions
 --------------------
