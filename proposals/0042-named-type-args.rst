@@ -15,7 +15,7 @@ Proposal title
 .. sectnum::
 .. contents::
 
-Here you should write a short abstract motivating and briefly summarizing the proposed change.
+Exten type application syntax with record field update syntax.
 
 
 Motivation
@@ -28,6 +28,7 @@ GHC and Haskell ecosystem have been on track to rely more and more on type-level
   g = f @_ @_ @Int
 
 This is:
+
 1. Cumbersome.
 2. Unclear without context.
 3. Susceptible to breakage when signature of ``f`` changes.
@@ -51,7 +52,7 @@ The new version is:
 
 1. Less cumbersome: length of code is linear in number of given arguments, not number of type variables.
 2. More informative without context.
-  * Immediately useful because the Haskell programmers have created an ecosystem where even single-letter names of types communicate information about its nature (e.g. `f` is something like a Functor, `m` is something like a monad, etc).
+  * Immediately useful because the Haskell programmers have created an ecosystem where even single-letter names of types communicate information about their nature (e.g. `f` is something like a Functor, `m` is something like a monad, etc).
   * It enables programmers to use longer, more descriptive type variable names.
 3. More stable with respect to changes in the signature because type variable names changes happen more rarely compared to the addition of new type variables.
 4. Produces more obvious error messages: pinpoints exactly the type variable that causes the type checking error.
@@ -65,7 +66,7 @@ Learnability: very low because this is a generalization of currently existing be
 
 We need to consider visual collisions with future extensions. The only examples I'm aware of that come close are:
 
-* Example by Richard Eisenberg: `data Proxy @{k} (a :: k)` for explicitly inferred type variables.
+* Example by Richard Eisenberg: ``data Proxy @{k} (a :: k)`` for explicitly inferred type variables.
 * Row polymorphism.
 * Record field updates on type level.
 
