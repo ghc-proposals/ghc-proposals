@@ -23,6 +23,7 @@ Motivation
 GHC and Haskell ecosystem have been on track to rely more and more on type-level programming. We have TypeInType today and are on the course to have full dependent types in the future. Perhaps the most useful ergonomics extension that GHC got in this domain in the recent years is TypeApplication. It allows to have more readable, succinct code. That being said, type application syntax can be improved by a modest amount in the light of functions with many (say 3+) type parameters. Because Haskell still does and will continue to do a lot of type inference there are situations where one needs to apply a type argument that is not in the first position. Currently it is done as follows
 
 ::
+
   f :: forall m n a . ...
   g = f @_ @_ @Int
 
@@ -39,6 +40,7 @@ Proposed Change Specification
 Extend record update syntax to type applications. I.e. allow to implement ``g`` from above as
 
 ::
+
   g = f @{a = Int}
 
 
@@ -79,9 +81,11 @@ Unresolved questions
 
 1. Interaction with NamedFieldPuns. Should this be legal?
 
-f :: forall len . ...
-g :: forall list len . ...
-g = f @{len}
+::
+
+  f :: forall len . ...
+  g :: forall list len . ...
+  g = f @{len}
 
 Leaning yes for consistency and least surprise.
 
