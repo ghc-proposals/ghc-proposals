@@ -1,18 +1,3 @@
-Notes on reStructuredText - delete this section before submitting
-==================================================================
-
-The proposals are submitted in reStructuredText format.  To get inline code, enclose text in double backticks, ``like this``.  To get block code, use a double colon and indent by at least one space
-
-::
-
- like this
- and
-
- this too
-
-To get hyperlinks, use backticks, angle brackets, and an underscore `like this <http://www.haskell.org/>`_.
-
-
 ``infixr ::`` 
 ==============
 
@@ -20,13 +5,11 @@ To get hyperlinks, use backticks, angle brackets, and an underscore `like this <
 .. trac-ticket:: 
 .. implemented:: 
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_.
-            **After creating the pull request, edit this file again, update the
-            number in the link, and delete this bold sentence.**
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/197>`_.
 .. sectnum::
 .. contents::
 
-I apologize for the proposal name ``infixr`` colons, but I don't know what to call this. Code like
+I apologize for the proposal name ``infixr`` colons but that's what we get. Code like
 
 ::
 
