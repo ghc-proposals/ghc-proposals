@@ -30,7 +30,7 @@ Proposed Change Specification
 * the unqualified case would mean deprecating both entities as it does now.
 
 Although, ``pattern`` seems like a weird choice, we are using it deliberately to be consistent
-with other language features(for example, `PatternSynonyms<https://downloads.haskell.org/~ghc/master/users-guide/glasgow_exts.html#patsyn-impexp>`_).
+with other language features(for example, `PatternSynonyms <https://downloads.haskell.org/~ghc/master/users-guide/glasgow_exts.html#patsyn-impexp>`_).
 
 Effect and Interactions
 -----------------------
