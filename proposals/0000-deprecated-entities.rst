@@ -86,8 +86,8 @@ There are currently no known drawbacks to this feature.
 Alternatives
 ------------
 * The usual workaround would be to have a module that imports one but not the other.
-Unfortunately this workaround is limited as it would only work for types, but not for data constructors.
-Another option would be to refactor data constructor names, which is not backward compatible and inefficient.
+  Unfortunately this workaround is limited as it would only work for types, but not for data constructors.
+  Another option would be to refactor data constructor names, which is not backward compatible and inefficient.
 
 * Another alternative would be to try to utilize Haddock annotations. Example: ::
 
