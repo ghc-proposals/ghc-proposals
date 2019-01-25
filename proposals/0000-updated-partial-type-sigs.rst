@@ -26,14 +26,14 @@ numbered for back-reference).
 
 1. Underscores may mean many different things.
 
-   a. In patterns, a ``_`` means a part of a pattern that matches anything, but is otherwise immaterial. Examples::
+   a. **Blanks**: In patterns, a ``_`` means a part of a pattern that matches anything, but is otherwise immaterial. Examples::
 
         const x _ = x
         type instance IsJust (Just _) = True   -- happens in types, too!
 
       I will call these underscores "blanks".
 
-   b. In expressions, a ``_`` means a part of an expression for which you want GHC to print its type. Example::
+   b. **Holes**: In expressions, a ``_`` means a part of an expression for which you want GHC to print its type. Example::
 
         tuple :: (Int, Double, Bool, Char, Float, ShowS)
         tuple = (5, 3.14, False, _, _, _)   -- oops: I lost count, and then I forgot what ShowS meant
@@ -46,7 +46,7 @@ numbered for back-reference).
 
       I will call these underscores "holes".
 
-   c. In type signature declarations, a ``_`` means a part of a type for which you want GHC to infer its value using
+   c. **Wildcards**: In type signature declarations, a ``_`` means a part of a type for which you want GHC to infer its value using
       the definition of the variable being declared. Example::
 
         addOne :: _ -> Int
@@ -73,7 +73,7 @@ numbered for back-reference).
       Another example is that GHC defers kind-generalization until *after* checking the expression; this can
       affect whether or not a program is accepted.
 
-   d. In visible type applications, a ``_`` means a part of a type for which you want GHC to infer its value using
+   d. **Elisions**: In visible type applications, a ``_`` means a part of a type for which you want GHC to infer its value using
       context. Example::
 
         x = id @_ True
@@ -147,7 +147,7 @@ Proposed Change Specification
 
 1. Outside of patterns, treat ``_`` as an elision everywhere. This means that ``_`` means "I don't care".
 
-   - In types, a ``_`` is treated as a fresh unification variable. This means that ``foo :: _ -> _`` is the same as
+   - In types (with ``-XElidedTypes``), a ``_`` is treated as a fresh unification variable. This means that ``foo :: _ -> _`` is the same as
      ``foo :: a -> b``, while ``Proxy @_ True`` is the same as ``Proxy @Bool True``. You're instructing GHC that
      you want it to fill in the ``_`` with what is necessary for the type to kind-check. Once GHC is finished processing
      the type, however, any opportunity to solve for ``_`` has been taken; at that point, if it is still unconstrained,
@@ -158,8 +158,12 @@ Proposed Change Specification
      diagnostics to be printed. The existence of an elision does *not* cause a
      signature to be treated as partial.
 
+     Without ``-XElidedTypes``, an underscore in a type is an error; the error message would suggest
+     either using a named wildcard to get a diagnostic or enabling ``-XElidedTypes`` to accept the
+     elision.
+
    - In expressions, a ``_`` is a part of the expression the author did not care to write. Currently, this means
-     that ``_`` will be replaced with ``error "elided expression"``. In this case, an error will be printed,
+     that ``_`` will be replaced with ``error "elision at <line>:<col>"``. In this case, an error will be printed,
      stating the inferred type of the ``_`` and suggesting to enable ``-XElidedExpressions`` if the user
      wants to keep the ``error``\ing behavior. With ``-XElidedExpressions``, GHC will still warn; this can
      be suppressed with ``-Wno-elided-expressions``.
@@ -192,7 +196,7 @@ Proposed Change Specification
      including suggested replacements. In this way, an expression named
      wildcard will behave like holes have.
 
-3. The use of a type variable that begins with an underscore will induce a warning
+3. In the absence of ``-XNamedWildCards``, the use of a type variable that begins with an underscore will induce a warning
    that it looks like an attempt to write a named wildcard. This warning will be
    controlled by ``-Wpossible-named-wildcards``, on by default.
      
@@ -257,14 +261,71 @@ Proposed Change Specification
      ex7 _ x = x
 
    is rejected, as we have no type for the first argument of ``ex7``.
-     
+
+Here is a summary:
+
++----------------------------+------------------------+----------------------------+
+|                            |elision                 |named wildcard (assume      |
+|                            |                        |``-XNamedWildCards``)       |
++----------------------------+------------------------+----------------------------+
+|in complete type signature  |GHC uses unification to |GHC treats the signature as |
+|                            |fill in elision; no     |if it were partial, if      |
+|                            |diagnostic. If          |possible. GHC uses the      |
+|                            |unification does not    |definition of the identifier|
+|                            |find a value for the    |to solve for the wildcard.  |
+|                            |elision, generalize.    |The diagnostic prints both  |
+|                            |Needs ``-XElidedTypes``.|the value GHC has discovered|
+|                            |                        |for the wildcard and its    |
+|                            |                        |kind. Compilation is aborted|
+|                            |                        |always.                     |
+|                            |                        |                            |
+|                            |                        |                            |
+|                            |                        |                            |
++----------------------------+------------------------+----------------------------+
+|in partial type signature   |same as above, but      |same as above, but          |
+|(assume                     |information from the    |compilation is not          |
+|``-XPartialTypeSignatures``)|definition can be taken |aborted (i.e., the          |
+|                            |into account            |diagnostic is a warning)    |
++----------------------------+------------------------+----------------------------+
+|in a visible type           |same as above, but no   |same behavior as an elision,|
+|application                 |generalization. If      |but printing a diagnostic.  |
+|                            |GHC is unable to        |The diagnostic is an error  |
+|                            |figure out what an      |without                     |
+|                            |elision should be,      |``-XPartialTypeSignatures`` |
+|                            |use ``Any``.            |and is a warning with the   |
+|                            |                        |extension                   |
++----------------------------+------------------------+----------------------------+
+|in another type (e.g., data |same as in a complete   |Not allowed; issue an error |
+|constructor signature,      |type signature          |with the kind of the        |
+|instance head, etc.)        |                        |wildcard and any information|
+|                            |                        |GHC can figure out about the|
+|                            |                        |content of the wildcard.    |
+|                            |                        |                            |
+|                            |                        |                            |
++----------------------------+------------------------+----------------------------+
+|in an expression            |GHC replaces the        |Same behavior as today's    |
+|                            |underscore with ``error |holes: a diagnostic is      |
+|                            |"elision at             |printed with the hole's type|
+|                            |<line>:<col>"``. No     |and suggestions for what it |
+|                            |diagnostic is printed.  |might be filled in with.    |
+|                            |Needs                   |This behavior dies **not**  |
+|                            |``-XElidedExpressions``.|require an extension.       |
+|                            |In the future, perhaps  |                            |
+|                            |GHC can be cleverer (for|                            |
+|                            |example: ``f :: a -> a; |                            |
+|                            |f = _``.                |                            |
++----------------------------+------------------------+----------------------------+
+						  
+
 Effect and Interactions
 -----------------------
 * The new design combines the roles of holes and wildcards in the Motivation_. This means that
   we have only 3 uses of underscores to consider.
 
-* The new design allows the user to control whether they want an elision or a wildcard, using
+* The new design allows the user to control whether they want an elision or a named wildcard, using
   a convenient naming convention.
+
+* This proposal removes the existence of anonymous wildcards.
 
 * The new design gives users fine control over generalization, through the use of ``::?`` to
   suppress kind generalization and the use of ``forall a b c _.`` to explicitly enable type
@@ -325,6 +386,10 @@ Costs and Drawbacks
   In theory, this is disambiguated by the ``=`` (or guard, I suppose), but it would be hard
   to parse.
 
+* It's unclear how to generalize this syntax to places without a ``::`` marker. For example,
+  perhaps we want to allow wildcards in the context of an instance declaration, asking GHC
+  to infer the context. There would be no obvious syntactic generalization to that scenario.
+
 Alternatives
 ------------
 * Instead of having ``::?``, we could have ``:: {-# PARTIAL #-}`` or similar. A quick grep
@@ -341,6 +406,17 @@ Alternatives
   would be great to have a concrete design for underscores in visible kind
   application, at least.
 
+Resolved Questions
+------------------
+* Q: "Aha! So what you really mean is that ``_`` is univeral in complete type signatures
+  and existential in partial ones."
+
+  A: Not quite. If we have ``data Prox k (a :: k)``, then ``f :: Prox _ True`` is perfectly
+  fine; GHC would discover that ``_`` stands for ``Bool``. This is *not* universal quantification.
+  The elision is just a spot about which we don't care, and want GHC to do its best.
+  In ``g ::? forall _. _ -> _; g x = x``, we actually generalize over the elision, so it's not
+  exactly existential quantification. (Without the ``forall _``, it would be.)
+
 Unresolved Questions
 --------------------
 * Is this really the best syntax? I am uncomfortable at stealing both underscored-idenfitiers and ``::?``.
@@ -349,10 +425,11 @@ Unresolved Questions
 * Is this design too elaborate? I have a tendency to build elaborate but expressive edifices. Perhaps
   there is a sweet spot closer to the ground here.
   
-.. _below:
-  
 Further examples
 ----------------
+
+.. _below:
+  
 
 * Let's dive deeper into this example::
 
