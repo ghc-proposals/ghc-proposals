@@ -96,9 +96,28 @@ Alternatives
         -- | DEPRECATE: This constructor is deprecated
         Foo x
 
+* Another idea is to make ``DEPRECATED`` positional. One says ::
+
+    module M {-# DEPRECATED "blah" #-} where ...
+
+  One could do the same for data constructors, thus ::
+
+    data Baz = Baz {-# DEPRECATED "blah" #-}
+             | Boo
+             | Bim {-# DEPRECATED "blah" #-} Int
+
+  Or in GADT syntax ::
+
+    data Baz where
+      Baz :: Int -> Baz
+      Boo :: Baz
+      Bim :: Baz
+      {-# DEPRECATED Bim, Baz "blah" #-}
+
+  This positional story works well when the deprecation is attached to the definition of the thing. If you want to import something, deprecate it, and re-export it, it would not work so well. But (SPJ thinks) it is not possible to do that anyway today.
+
 Unresolved Questions
 --------------------
-
 
 Implementation Plan
 -------------------
