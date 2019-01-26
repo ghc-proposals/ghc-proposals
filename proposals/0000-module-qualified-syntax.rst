@@ -43,7 +43,7 @@ The ``importdecl`` production is updated like so:
    importdecl :: { LImportDecl GhcPs }
         : 'import' maybe_src maybe_safe optqualified maybe_pkg modid optqualified maybeas maybeimpspec
 
-A new warning ``-Wprepositive-qualified-module`` is introduced that when set, warns on prepositive syntax:
+A new language extension `QualifiedImportsPostpositive` is introduced. When enabled, `qualified` will be accepted in postpositive positition and a new warning ``-Wprepositive-qualified-module`` introduced that when set, warns on prepositive syntax:
 
 ::
 
