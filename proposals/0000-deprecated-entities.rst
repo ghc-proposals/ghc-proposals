@@ -118,6 +118,8 @@ Alternatives
 
 Unresolved Questions
 --------------------
+* Would it be useful to be able to deprecate class instances too?
+  https://ghc.haskell.org/trac/ghc/ticket/12014
 
 Implementation Plan
 -------------------
