@@ -33,21 +33,23 @@ We propose to also allow ``qualified`` to appear in postpositive position : ``im
    import B
    import C
 
+While a small change, this annoyance is a significant issue in many large codebases, where programmers are forced to "pick a style" - chosing to add redundant whitespace to have modules align, or to make scanning import lists harder. Additionally, the location of `qualified` makes sorting imports harder.
+
 Proposed Change Specification
 -----------------------------
 
-The ``importdecl`` production is updated like so:
+A new language extension ``QualifiedImportsPostpositive`` is introduced. When enabled, ``qualified`` will be accepted in postpositive position, by updating the ``importdecl`` production like so:
 
 ::
 
    importdecl :: { LImportDecl GhcPs }
         : 'import' maybe_src maybe_safe optqualified maybe_pkg modid optqualified maybeas maybeimpspec
 
-A new language extension ``QualifiedImportsPostpositive`` is introduced. When enabled, ``qualified`` will be accepted in postpositive positition and a new warning ``-Wprepositive-qualified-module`` introduced that when set, warns on prepositive syntax:
+A new warning ``-Wprepositive-qualified-module`` (off by default) will be introduced that warns on prepositive syntax:
 
 ::
 
-  /Users/shaynefletcher/Preposition.hs:5:8: warning: [-Wprepositive-qualified-module]
+  Preposition.hs:5:8: warning: [-Wprepositive-qualified-module]
       Found ‘qualified’ in prepositive position
       Suggested fix: place  ‘qualified’ after the module name instead.
     |
@@ -56,7 +58,9 @@ A new language extension ``QualifiedImportsPostpositive`` is introduced. When en
 
 Effect and Interactions
 -----------------------
-The proposed change adds the ability to specify a qualified import by placing ``qualified`` either before or after the module name (or both). A warning may be optionally enabled that alerts usages of ``qualified`` in prepositive position. There should be no other interactions with any existing language or compiler features.
+The proposed change adds the ability to specify a qualified import by placing ``qualified`` either before or after the module name. The position of the ``qualified`` does not change the semantics, and is independent from any other import features (e.g. package imports or safe annotations).  As an example, both ``import qualified D as E`` and ``import D qualified as E`` are permitted and equivalent.
+
+There should be no other interactions with any existing language or compiler features.
 
 Costs and Drawbacks
 -------------------
