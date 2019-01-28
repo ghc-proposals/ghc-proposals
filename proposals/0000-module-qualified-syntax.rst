@@ -77,6 +77,7 @@ The second alternative solves the motivating hanging indent issue but in our opi
 Unresolved Questions
 --------------------
 (1) Perhaps the proposed warning is uneccessary and under ``QualifiedImportsPostpositive`` the prepositive form should be a syntax error?
+(2) What precisely should happen if under ``QualifiedImportsPostpositive``, ``qualified`` is encountered in both pre- and post-positive position? For example, ``import qualified Data.Map qualified as M`?
 
 Implementation Plan
 -------------------
