@@ -76,7 +76,7 @@ The second alternative solves the motivating hanging indent issue but in our opi
 
 Unresolved Questions
 --------------------
-There are no unresolved questions at this time.
+(1) Perhaps the proposed warning is uneccessary and under ``QualifiedImportsPostpositive`` the prepositive form should be a syntax error?
 
 Implementation Plan
 -------------------
