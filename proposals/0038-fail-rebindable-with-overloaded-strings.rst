@@ -3,7 +3,7 @@ Make rebindable ``fail`` work with overloaded strings
 
 .. proposal-number:: 38
 .. trac-ticket:: 15645
-.. implemented::
+.. implemented:: 8.8
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request
             <https://github.com/ghc-proposals/ghc-proposals/pull/168>`_.
