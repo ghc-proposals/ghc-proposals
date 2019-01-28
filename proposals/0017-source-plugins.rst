@@ -3,7 +3,7 @@ Source plugins
 
 .. proposal-number:: 17
 .. trac-ticket:: 14709
-.. implemented::
+.. implemented:: 8.6
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/107>`_.
 .. contents::
