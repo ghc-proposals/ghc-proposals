@@ -3,7 +3,7 @@ Lower precedence for {-# UNPACK #-}
 
 .. proposal-number:: 37
 .. trac-ticket:: 14761
-.. implemented::
+.. implemented:: 8.8
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/174>`_.
 .. sectnum::
