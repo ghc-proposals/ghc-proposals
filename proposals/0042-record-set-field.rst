@@ -2,7 +2,7 @@ Add ``setField`` to ``HasField``
 ================================
 
 .. proposal-number:: 42
-.. trac-ticket::
+.. trac-ticket:: 16232
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/158>`_.
