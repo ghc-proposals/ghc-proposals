@@ -128,10 +128,35 @@ hack in place that gives representation-polymorphic kinds to type variables
 starting with ``o``.
 
 This proposal does not loosen any of the restrictions around where
-representation polymorphism can be used. Consequently, all of the
+representation polymorphism can be used. From the
+`levity polymorphism paper`_, the fundamental rule is:
+
+    Never move or store a levity-polymorphic value.
+
+The two restrictions that enforce this rule are:
+
+    1. Disallow levity-polymorphic binders. Every bound term variable
+    in a Haskell program must have a type whose kind is fixed
+    and free of any type variables...
+    2. Disallow levity-polymorphic function arguments. Arguments
+    are passed to functions in registers. During compilation, we
+    need to know what size register to use.
+
+Neither of these are changed. That is, every bound term variable
+must still have a type whose kind is fixed (that is, no ``RuntimeRep``
+variables or ``Levity`` variables are permitted to show up in
+the kind of the type of a bound variable). It is
+`possible to loosen the binder restriction`_, but this proposal does
+include such a change since it would make implementation more
+difficult.
+
+Consequently, all of the
 functions dealing with levity-polymorphic arguments are marked as
 having a compulsory unfolding. It is left for a future proposal to
-loosen these restrictions, making the compulsory unfoldings unneeded.
+loosen the binder restriction, making the compulsory unfoldings unneeded.
+
+.. _levity polymorphism paper: https://cs.brynmawr.edu/~rae/papers/2017/levity/levity-extended.pdf
+.. _possible to loosen the binder restriction: https://ghc.haskell.org/trac/ghc/ticket/15532
 
 The ``ArrayArray#`` type and its functions are shimmed out in
 ``GHC.Exts``. This strategy was discussed in the Unlifted Array
@@ -148,7 +173,8 @@ nonsense construction.
 
 Costs and Drawbacks
 -------------------
-The type signatures of primops become a little harder to read.
+The type signatures of primops become a little harder to read. All code using
+``LiftedRep`` or ``UnliftedRep`` will break.
 
 
 Alternatives
