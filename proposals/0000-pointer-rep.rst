@@ -171,8 +171,26 @@ nonsense construction.
 
 Costs and Drawbacks
 -------------------
-The type signatures of primops become a little harder to read. All code using
-``LiftedRep`` or ``UnliftedRep`` will break.
+The type signatures of primops become a little harder to read. Users of
+``'LiftedRep`` and ``'UnliftedRep`` would be required to changed these
+to ``'PtrRep 'Lifted`` and ``'PtrRep 'Unlifted`` respectively. It is
+possible for a backwards-compatibility package to introduce::
+
+    type LiftedRep = 'PtrRep 'Lifted
+    type UnliftedRep = 'PtrRep 'Unlifted
+
+However, this only half-way work. GHC encourages user (with warning
+messages) to tick promoted data constructors, and these type synonyms
+can only be used without ticks. Backward compatible code using these
+is guaranteed to emit warnings when build on older GHCs with ``-Wall``.
+For this reason, this proposal recommends that these type synonyms
+not be included with ``base`` or ``ghc-prim``.
+
+All code using ``'LiftedRep`` or ``'UnliftedRep`` will break. This
+includes the ``primitive`` library, which explicitly mentions
+``UnliftedRep`` in ``Data.Primitive.UnliftedArray``. It is trivial to
+patch with ``CPP``, and there is already some ``CPP`` in there for the
+``RuntimeRep`` data constructor rename between GHC 8.0 and GHC 8.2.
 
 
 Alternatives
