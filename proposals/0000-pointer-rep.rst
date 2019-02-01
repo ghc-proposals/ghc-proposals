@@ -101,23 +101,27 @@ The following primitive types are given new kinds::
     data MutVar# :: forall (v :: Levity). Type -> TYPE ('PtrRep v) -> Type
     data TVar# :: forall (v :: Levity). Type -> TYPE ('PtrRep v) -> Type
     data MVar# :: forall (v :: Levity). Type -> TYPE ('PtrRep v) -> Type
+    data Weak# :: forall (v :: Levity). TYPE ('PtrRep v) -> Type
+    data StableName# :: forall (v :: Levity). TYPE ('PtrRep v) -> Type
+    data StablePtr# :: forall (v :: Levity). TYPE ('PtrRep v) -> Type
 
 Functions operating on the aforementioned types are given new kinds. The ``Levity``
 argument is marked as inferred. For example::
 
     readArray# :: forall {v :: Levity} (s :: Type) (u :: TYPE ('PtrRep v)). MutableArray# s u -> Int# -> State# s -> (#State# s, u#)
+    makeStableName# :: forall {v :: Levity} (a :: TYPE ('PtrRep v)). a -> State# RealWorld -> (#State# RealWorld, StableName# a#)
 
-Additionally, the functions ``mkWeak#``, ``mkWeakNoFinalizer#``,
-``touch#``, and ``with#`` are given more accurate, more constrained,
-types::
+The functions ``mkWeak#``, ``mkWeakNoFinalizer#``,
+``touch#``, and ``with#`` are more constrained in a type argument that was
+previously accepted types of any representation (``ua`` and ``u`` below)::
 
-    mkWeak# :: forall {v :: Levity} (u :: TYPE ('PtrRep v)) (b :: Type) (c :: Type).
-      u -> b -> (State# RealWorld -> (#State# RealWorld, c#)) -> State# RealWorld -> (#State# RealWorld, Weak# b#)
-    mkWeakNoFinalizer# :: forall {v :: Levity} (u :: TYPE ('PtrRep v)) (b :: Type).
-      u -> b -> State# RealWorld -> (#State# RealWorld, Weak# b#)
+    mkWeak# :: forall {va :: Levity} {vb :: Levity} (ua :: TYPE ('PtrRep va)) (ub :: ('PtrRep vb)) (c :: Type).
+      ua -> ub -> (State# RealWorld -> (#State# RealWorld, c#)) -> State# RealWorld -> (#State# RealWorld, Weak# ub#)
+    mkWeakNoFinalizer# :: forall {va :: Levity} {vb :: Levity} (ua :: TYPE ('PtrRep v)) (ub :: TYPE ('PtrRep v)).
+      ua -> ub -> State# RealWorld -> (#State# RealWorld, Weak# ub#)
     touch# :: forall {v :: Levity} (u :: TYPE ('PtrRep v)).
       u -> State# RealWorld -> State# RealWorld
-    with# :: forall {v :: Levity} (u :: TYPE ('PtrRep v)) (s :: Type) (r :: Type).
+    with# :: forall {v :: Levity} {rep :: RuntimeRep} (u :: TYPE ('PtrRep v)) (s :: Type) (r :: TYPE rep).
       u -> (State# s -> (# State s, r #)) -> State# s -> (# State# s, r #)
 
 The parser for ``primops.txt.pp`` is tweaked to assigned levity-polymorphic
@@ -201,9 +205,7 @@ of monomorphism. This leads to more types and more functions.
 
 Unresolved Questions
 --------------------
-Can we do this for ``Weak#``, ``StablePtr#``, and ``StableName#``. Probably
-yes, but I do not understand how the runtime treats these, so I'm not sure.
-
+None.
 
 Implementation Plan
 -------------------
