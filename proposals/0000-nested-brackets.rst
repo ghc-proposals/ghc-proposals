@@ -22,13 +22,13 @@ Motivation
 ------------
 
 The quotation form turns an expression into it's representation. For example
-quoting `1 + 2` (`[| 1 + 2 |]`) gives us the syntax tree for `1 + 2` as an
+quoting ``1 + 2`` (``[| 1 + 2 |]``) gives us the syntax tree for ``1 + 2`` as an
 expression in the host language. However, not all expressions can be quoted, one
 particular omission are quotations themselves. This proposal is about removing
 this restriction and thus making quotation act in a more uniform manner.
 
-For example, writing `[| [| 5 |] |]` should return the syntax for a quotation
-which represent the number `5`. `[| [| [| 5 |] |] |]` should evaluate to the
+For example, writing ``[| [| 5 |] |]`` should return the syntax for a quotation
+which represent the number ``5``. ``[| [| [| 5 |] |] |]`` should evaluate to the
 representation of a quotation containing a quotation of 5 and so on.
 
 Removing this restriction makes Template Haskell into a proper multi-stage
@@ -40,16 +40,16 @@ Proposed Change Specification
 
 There are two aspects which need to be modified to support quoting quotations.
 
-1. Implement a representation of a quotation in the `template-haskell` library.
+1. Implement a representation of a quotation in the ``template-haskell`` library.
 
-2. Generalise the cross-stage persistence machinery to work for `n` levels.
+2. Generalise the cross-stage persistence machinery to work for ``n`` levels.
 
 In order to implement the first point, we need to add a new constructor to
-the `Exp` data type to represent quotations. This is main crux of the proposal,
+the ``Exp`` data type to represent quotations. This is main crux of the proposal,
 what it means to represent a quotation. To answer this, we remember that
-an `Exp` is a representation of a renamed expression.
+an ``Exp`` is a representation of a renamed expression.
 
-We first might try to represent a bracket as just `BrackE Exp` which works
+We first might try to represent a bracket as just ``BrackE Exp`` which works
 fine for simple quotations but doesn't account for splices. How can we represent
 splices as well? One option is to add a new constructor for splices as well
 but we remember that
@@ -59,8 +59,8 @@ and inserted into an environment for the quotation. ::
 
    [| $(foo x) |] ==> [| x' |]_{x' = foo x}
 
-This environment tells us that `x'` in the quotation refers to the result
-of evaluating `foo x`. So, the representation is an expression and an environment.::
+This environment tells us that ``x'`` in the quotation refers to the result
+of evaluating ``foo x``. So, the representation is an expression and an environment.::
 
    data Exp = ... | BrackE Exp [(Name, Exp)] | ...
 
@@ -72,19 +72,19 @@ variable from level 0 to level 1. ::
 
    foo x = [| x |]
 
-This is implemented by desugaring the usage of `x` into a splice and lift. ::
+This is implemented by desugaring the usage of ``x`` into a splice and lift. ::
 
    foo x = [| $(lift x) |]
 
-The splice decreases the level by one so now `x` is used at the level it is bound.
+The splice decreases the level by one so now ``x`` is used at the level it is bound.
 
 With nested brackets, it is necessary to generalises this idea to work with
 n levels. ::
 
    foo2 x = [| [| x |] |]
 
-Now `x` is bound at level 0 and used at level 2. This means we have to decrease
-the level of `x` twice by inserting two splices and two lifts.::
+Now ``x`` is bound at level 0 and used at level 2. This means we have to decrease
+the level of ``x`` twice by inserting two splices and two lifts.::
 
    foo2 x = [| [| $($(lift (lift x))) |] |]
 
@@ -97,8 +97,8 @@ one splice and one lift. ::
 
    foo3 = [| \x -> [| $(lift x) |] |]
 
-In general, we desugar a variable bound at level i and used at level j into
-`j - i` lifts follows by `j - i` splices.
+In general, we desugar a variable bound at level ``i`` and used at level ``j`` into
+``j - i`` lifts follows by ``j - i`` splices.
 
 
 
@@ -134,4 +134,4 @@ Unresolved Questions
 Implementation Plan
 -------------------
 
-* I have already [implemented this proposal](https://gitlab.haskell.org/ghc/ghc/merge_requests/259)
+* I have already `implemented this proposal<https://gitlab.haskell.org/ghc/ghc/merge_requests/259)>`.
