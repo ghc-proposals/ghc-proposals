@@ -83,6 +83,8 @@ Unresolved questions
 
 2. The ``aliases`` keyword, while reusing a customary term which appears quite appropriate, misses the larger point of us introducing structure to the import/export language.  Perhaps a better name for this semantic is worth thinking of.
 
+3. It might be worth extending the ``as`` export part with export-side name set restriction, similar to the narrowing available to normal module re-export syntax -- if only just for consistency.
+
 Implementation Plan
 -------------------
 1. ``HscTypes.ModIface`` will have to be extended to allow a shallowly hierarchical structure, possibly at the ``mi_exports`` field.
