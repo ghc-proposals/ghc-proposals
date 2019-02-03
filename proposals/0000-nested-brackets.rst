@@ -134,4 +134,4 @@ Unresolved Questions
 Implementation Plan
 -------------------
 
-* I have already `implemented this proposal<https://gitlab.haskell.org/ghc/ghc/merge_requests/259)>`.
+* I have already `implemented this proposal<https://gitlab.haskell.org/ghc/ghc/merge_requests/259)>`_.
