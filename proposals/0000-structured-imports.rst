@@ -1,8 +1,8 @@
 Structured module exports/imports
 =================================
 
-.. proposal-number:: 
-.. trac-ticket:: 
+.. proposal-number::
+.. trac-ticket::
 .. implemented:: Not yet
 .. highlight:: haskell
 .. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/205>`_.
@@ -24,7 +24,27 @@ This centralisation, however, is deficient in that it precludes any form of impo
 * for the reader, there are no commons to learn and refer to -- every module is a potential snowflake regarding the structure of its namespace (in the alias part)
 * for the writer, growing the program and splitting it into modules brings super-linear expenditures for the namespace maintenance aspect (again, in the alias part)
 
-Providing the package author with some controlled way to define a common core of importable module aliases would allow to address both of those problems.
+Providing the package author with some controlled way to define a common core of importable module aliases would allow to address both of those problems:
+
+  * defining module::
+
+      module LocalPrelude
+        ( module Data.Text       as T  -- the entire module will be available via the alias
+        , module Data.Text.Lazy  as TL -- only the names specified below will be available via the alias
+        )
+      where
+      import Data.Text
+      import Data.Text.Lazy (Text, pack, unpack, fromStrict)
+
+  * user module::
+
+      module User
+      where
+
+      import LocalPrelude aliases      -- add '(T, TL)' for explicit imported module alias specification
+
+      someFn :: T.Text -> TL.Text
+      ...
 
 Proposed Change Specification
 -----------------------------
