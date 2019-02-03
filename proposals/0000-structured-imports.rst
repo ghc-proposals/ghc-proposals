@@ -19,7 +19,7 @@ Preludes (meaning, broadly, all modules with reexports) allow us to (partially) 
 * compressing the total set of import statements in the overarching program
 * providing authoritative decisions on the direct availability of names -- essentially providing a common language
 
-This centralisation, however, is deficient in that it precludes any form of imported *module alias sharing*, forcing every module to define their own, *local* aliases, which unnecessarily increases costs of module abstraction.
+This centralisation, however, is deficient in that it precludes any form of imported *module alias sharing*, forcing every module to define their own, *local* aliases (essentially, re-create namespace structure), which unnecessarily increases costs of module abstraction.
 
 * for the reader, there are no commons to learn and refer to -- every module is a potential snowflake regarding the structure of its namespace (in the alias part)
 * for the writer, growing the program and splitting it into modules brings super-linear expenditures for the namespace maintenance aspect (again, in the alias part)
@@ -50,7 +50,10 @@ Proposed Change Specification
 -----------------------------
 1. Semantics of module interface files need to be extended from the current status-quo of a flat set of (regular, *level-0*) names, to allow a single level of nesting, to describe the subsets of names available through *exported module aliases*, aka *level-1 names*.  Note, that the possibility and potential applications of deeper nesting are out of scope of this proposal.
 
-2. The export list entries for modules (`clause 5 in section 5.2 "Export Lists" of the Haskell 2010 report <https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1000005.2>`_) should allow an ``as`` qualifier to mean that the particular subset of *level-0* names associated with the partially re-exported module (that would otherwise normally be appended to the flat set of the exports of the module being defined), shall instead be available in the importing module through the alias directly following the ``as`` qualifier (essentially mimicking the syntax of the import statement). Modules with export lists *not posessing* any module exports with ``as`` qualifiers are considered as having empty *exported module alias sets* (sets of *level-1* names, alternatively speaking).
+2. The export list entries for modules (`clause 5 in section 5.2 "Export Lists" of the Haskell 2010 report <https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1000005.2>`_) should allow an ``as`` qualifier to mean that the particular subset of *level-0* names associated with the partially re-exported module (that would otherwise normally be appended to the flat set of the exports of the module being defined), shall instead be available in the importing module through the alias directly following the ``as`` qualifier (essentially mimicking the syntax of the import statement). Further:
+
+   1. Modules with export lists *not posessing* any module exports with ``as`` qualifiers are considered as having empty *exported module alias sets* (sets of *level-1* names, alternatively speaking).
+   2. It should be entirely possible to have two modules' exports to contribute to the set of names exported through a given alias -- syntactically, by having two more re-exports with the same alias, with a seemingly straightforward accompanying operational representation.
 
 3. The ``import`` statement should be extended with ways to opt into the structural exports:
 
@@ -76,7 +79,7 @@ It could be that the user might opt to implicitly (and potentially confusingly f
 
   1. the feature is strictly opt-in, on both import and export sides,
   2. the language user community is already prepared to deal with a similar problem in context of regular unrestricted imports,
-  3. we provide an option for restricting the structured imports, in case the individual user perceives it concerning.
+  3. we provide an option for restricting the structured imports, for cases where a particular situation makes it concerning.
 
 No known interactions with other features.
 
