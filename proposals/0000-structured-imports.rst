@@ -30,7 +30,8 @@ Providing the package author with some controlled way to define a common core of
 
       module LocalPrelude
         ( module Data.Text       as T  -- the entire module will be available via the alias
-        , module Data.Text.Lazy  as TL -- only the names specified below will be available via the alias
+        , module Data.Text.Lazy  as TL (Text, fromStrict)
+                                       -- only the two names specified will be available
         )
       where
       import Data.Text
@@ -50,10 +51,11 @@ Proposed Change Specification
 -----------------------------
 1. Semantics of module interface files need to be extended from the current status-quo of a flat set of (regular, *level-0*) names, to allow a single level of nesting, to describe the subsets of names available through *exported module aliases*, aka *level-1 names*.  Note, that the possibility and potential applications of deeper nesting are out of scope of this proposal.
 
-2. The export list entries for modules (`clause 5 in section 5.2 "Export Lists" of the Haskell 2010 report <https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1000005.2>`_) should allow an ``as`` qualifier to mean that the particular subset of *level-0* names associated with the partially re-exported module (that would otherwise normally be appended to the flat set of the exports of the module being defined), shall instead be available in the importing module through the alias directly following the ``as`` qualifier (essentially mimicking the syntax of the import statement). Further:
+2. The export list entries for modules (`clause 5 in section 5.2 "Export Lists" of the Haskell 2010 report <https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1000005.2>`_) should allow an ``as`` keyword to mean that the particular subset of *level-0* names associated with the partially re-exported module (that would otherwise normally be appended to the flat set of the exports of the module being defined), shall instead be available in the importing module through the alias directly following the ``as`` keyword (essentially mimicking the syntax of the import statement). Further:
 
    1. Modules with export lists *not posessing* any module exports with ``as`` qualifiers are considered as having empty *exported module alias sets* (sets of *level-1* names, alternatively speaking).
    2. It should be entirely possible to have two modules' exports to contribute to the set of names exported through a given alias -- syntactically, by having two more re-exports with the same alias, with a seemingly straightforward accompanying operational representation.
+   3. The alias identifier can be optionally followed by a name list further narrowing down the set of names available through the alias.  This again mirrors semantics of the import statement on the export side.
 
 3. The ``import`` statement should be extended with ways to opt into the structural exports:
 
@@ -105,8 +107,6 @@ Unresolved questions
 1. It could be that we might assign some useful meaning to hierarchies deeper than 0 and 1, but that currently lacks obvious motivation.
 
 2. The ``aliases`` keyword, while reusing a customary term which appears quite appropriate, misses the larger point of us introducing structure to the import/export language.  Perhaps a better name for this semantic is worth thinking of.
-
-3. It might be worth extending the ``as`` export part with export-side name set restriction, similar to the narrowing available to normal module re-export syntax -- if only just for consistency.
 
 Implementation Plan
 -------------------
