@@ -29,10 +29,12 @@ Providing the package author with some controlled way to define a common core of
   * defining module::
 
       module LocalPrelude
-        ( module Data.Text       as T           -- the entire module will be available via the alias
-        , module Data.Text.Lazy  as TL (Text, fromStrict)
-                                                -- only the two names specified will be available
-        , module SOPPrelude (SOP) aliases (SOP) -- re-export SOP-the-alias _and_ SOP-the-constructor
+        ( module Data.Text      () as T         -- The entire module will be available via the alias
+                                                -- ..but only through the alias (level-0 names suppressed)
+        , module Data.Text.Lazy    as TL (Text, fromStrict)
+                                                -- Only the two names specified will be available via
+                                                -- the alias, but everything will be available directly.
+        , module SOPPrelude (SOP) aliases (SOP) -- Re-export SOP-the-alias _and_ SOP-the-constructor
         )
       where
       import Data.Text
@@ -42,9 +44,9 @@ Providing the package author with some controlled way to define a common core of
   * re-exportable module::
 
       module SOPPrelude
-        ( module Generics.SOP    as SOP  -- Combining structure..
-        , module Generics.SOP.NP as SOP  -- ..into a single level-1 name.
-        , SOP, POP, NP, NS, (:.:)        -- Making level-0 names also available.
+        ( module Generics.SOP    () as SOP  -- Combining structure into a single level-1 name,
+        , module Generics.SOP.NP () as SOP  -- ..while suppressing the level-0 names.
+        , SOP, POP, NP, NS, (:.:)           -- Making level-0 names also available.
         )
       where
       import Generics.SOP
@@ -69,6 +71,7 @@ Proposed Change Specification
    1. Modules with export lists *not possessing* any module exports with ``as`` qualifiers are considered as having empty *exported module alias sets* (sets of *level-1* names, alternatively speaking).
    2. It should be entirely possible to have two modules' exports to contribute to the set of names exported through a given alias -- syntactically, by having two more re-exports with the same alias, with a seemingly straightforward accompanying operational representation.
    3. The alias identifier can be optionally followed by a name list further narrowing down the set of names available through the alias.  This again mirrors semantics of the import statement on the export side.
+   4. The extended *level-1* export specification is entirely orthogonal to the normal *level-0* export specification, (as per clause 5 in section 5.2 of Haskell 2010).
 
 3. The ``import`` statement should be extended with ways to opt into the structural exports:
 
