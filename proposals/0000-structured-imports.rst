@@ -29,22 +29,35 @@ Providing the package author with some controlled way to define a common core of
   * defining module::
 
       module LocalPrelude
-        ( module Data.Text       as T  -- the entire module will be available via the alias
+        ( module Data.Text       as T           -- the entire module will be available via the alias
         , module Data.Text.Lazy  as TL (Text, fromStrict)
-                                       -- only the two names specified will be available
+                                                -- only the two names specified will be available
+        , module SOPPrelude (SOP) aliases (SOP) -- re-export SOP-the-alias _and_ SOP-the-constructor
         )
       where
       import Data.Text
       import Data.Text.Lazy (Text, pack, unpack, fromStrict)
+      import SOPPrelude aliases
+
+  * re-exportable module::
+
+      module SOPPrelude
+        ( module Generics.SOP    as SOP  -- Combining structure..
+        , module Generics.SOP.NP as SOP  -- ..into a single level-1 name.
+        , SOP, POP, NP, NS, (:.:)        -- Making level-0 names also available.
+        )
+      where
+      import Generics.SOP
+      import Generics.SOP.NP
 
   * user module::
 
       module User
       where
 
-      import LocalPrelude aliases      -- add '(T, TL)' for explicit imported module alias specification
+      import LocalPrelude ((:.:)) aliases -- add '(T, TL, SOP)' to restrict imported aliases
 
-      someFn :: T.Text -> TL.Text
+      someFn :: T.Text -> (IO :.: []) TL.Text
       ...
 
 Proposed Change Specification
@@ -53,7 +66,7 @@ Proposed Change Specification
 
 2. The export list entries for modules (`clause 5 in section 5.2 "Export Lists" of the Haskell 2010 report <https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1000005.2>`_) should allow an ``as`` keyword to mean that the particular subset of *level-0* names associated with the partially re-exported module (that would otherwise normally be appended to the flat set of the exports of the module being defined), shall instead be available in the importing module through the alias directly following the ``as`` keyword (essentially mimicking the syntax of the import statement). Further:
 
-   1. Modules with export lists *not posessing* any module exports with ``as`` qualifiers are considered as having empty *exported module alias sets* (sets of *level-1* names, alternatively speaking).
+   1. Modules with export lists *not possessing* any module exports with ``as`` qualifiers are considered as having empty *exported module alias sets* (sets of *level-1* names, alternatively speaking).
    2. It should be entirely possible to have two modules' exports to contribute to the set of names exported through a given alias -- syntactically, by having two more re-exports with the same alias, with a seemingly straightforward accompanying operational representation.
    3. The alias identifier can be optionally followed by a name list further narrowing down the set of names available through the alias.  This again mirrors semantics of the import statement on the export side.
 
@@ -69,7 +82,9 @@ Proposed Change Specification
    2. ..to specify an additional, *local* alias for module carrying these names, using the normal ``as`` keyword,
    3. ..to restrict the imports for non-alias names to only their ``qualified`` form.
 
-4. All of the above to be guarded, naturally by a language pragma, such as ``StructuredImports``, or ``SmugglingAliases``.
+4. In a similar vein, the export list entries shall be *additionally* extended to allow ``aliases`` and ``aliases-hiding`` keywords to signify a request to re-export a subset of aliases previously imported from another module. The keyword is (optionally, in cases of ``aliases``) followed by a name subset specification list.  This extension allows for a controlled, but non-obstructed flow of level-1 names across modules.
+
+5. All of the above to be guarded, naturally by a language pragma, such as ``StructuredImports``, or ``SmugglingAliases``.
 
 Effect and Interactions
 -----------------------
@@ -91,7 +106,7 @@ One unavoidable downside is the necessary complication in the module interface m
 
 There appear to be no semantic costs for the non-users (``StructuredImports`` not enabled in either module will result in simple, predictable, customary behavior).
 
-There appears to be no runtime cost whatsoever associated with handling of the modules compiled without the extension enabled.
+There appears to be no cost whatsoever associated with handling of the modules compiled without the extension enabled.
 
 The costs regarding processing of modules with the extension enabled should be:
 
@@ -100,7 +115,7 @@ The costs regarding processing of modules with the extension enabled should be:
 
 Alternatives
 ------------
-A widely used alternative is disciplined copy-pasting of module import statements across modules.  But that is specifically part of the problem we're trying to solve.
+A widely used alternative is disciplined copy-pasting of locally-aliased module imports between modules.  But avoiding reliance on human perfection is specifically part of our goal.
 
 Unresolved questions
 --------------------
