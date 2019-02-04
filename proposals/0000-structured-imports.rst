@@ -111,6 +111,8 @@ There appear to be no semantic costs for the non-users (``StructuredImports`` no
 
 There appears to be no cost whatsoever associated with handling of the modules compiled without the extension enabled.
 
+Introduction of the new stolen keywords (``aliases`` and ``aliases-hiding``) is an opt-in cost for new users of the extensions.
+
 The costs regarding processing of modules with the extension enabled should be:
 
 1. Constrained to the module processing (compilation/linking) time,
