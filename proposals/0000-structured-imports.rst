@@ -111,7 +111,9 @@ There appear to be no semantic costs for the non-users (``StructuredImports`` no
 
 There appears to be no cost whatsoever associated with handling of the modules compiled without the extension enabled.
 
-Introduction of the new stolen keywords (``aliases`` and ``aliases_hiding``) is an opt-in cost for new users of the extensions.
+Introduction the introduced keywords (``aliases`` and ``aliases_hiding``) have meaning only locally to the import/export declarations and are not stolen from the overall syntax, similar to how it's handled in Haskell2010 (section 5.3)::
+
+  Lexically, the terminal symbols “as”, “qualified” and “hiding” are each a varid rather than a reservedid. They have special significance only in the context of an import declaration; they may also be used as variables.
 
 The costs regarding processing of modules with the extension enabled should be:
 
