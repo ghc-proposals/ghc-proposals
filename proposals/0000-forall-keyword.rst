@@ -78,6 +78,11 @@ Effect and Interactions
 * Error messages would improve with this change, as GHC would be able to unambiguously detect when
   the user wants quantification.
 
+* This proposal does *not* interact meaningfully with the ``-XExplicitForAll``. It does *not* turn
+  the extension on automatically. It simply reserves the lexeme ``forall``. This means that any
+  program with the lexeme ``forall`` appearing in a type will be in error if ``-XExplicitForAll``
+  is not enabled.
+
 Costs and Drawbacks
 -------------------
 * The major drawback is that it moves us further from the standard. However, this particular deviation
