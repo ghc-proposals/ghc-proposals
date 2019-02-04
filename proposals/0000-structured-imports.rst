@@ -77,7 +77,7 @@ Proposed Change Specification
 
    1. ``import Module.Name aliases``, for a blanket import of all aliases exported by the module, intended for a more Prelude-like semantic.
    2. ``import Module.Name aliases (..module-alias-explicit-list..)``, for a selective module alias import.  Explicit import of an alias not exported by the module being imported is a compile-time error.
-   3. ``import Module.Name aliases-hiding (..module-alias-hide-list..)``, same, as previous, but negated.
+   3. ``import Module.Name aliases_hiding (..module-alias-hide-list..)``, same, as previous, but negated.
 
    Note, that specifying the ``aliases`` keyword is orthogonal to the regular (*level-0*) imported names, and should not affect the regular abilities:
 
@@ -85,7 +85,7 @@ Proposed Change Specification
    2. ..to specify an additional, *local* alias for module carrying these names, using the normal ``as`` keyword,
    3. ..to restrict the imports for non-alias names to only their ``qualified`` form.
 
-4. In a similar vein, the export list entries shall be *additionally* extended to allow ``aliases`` and ``aliases-hiding`` keywords to signify a request to re-export a subset of aliases previously imported from another module. The keyword is (optionally, in cases of ``aliases``) followed by a name subset specification list.  This extension allows for a controlled, but non-obstructed flow of level-1 names across modules.
+4. In a similar vein, the export list entries shall be *additionally* extended to allow ``aliases`` and ``aliases_hiding`` keywords to signify a request to re-export a subset of aliases previously imported from another module. The keyword is (optionally, in cases of ``aliases``) followed by a name subset specification list.  This extension allows for a controlled, but non-obstructed flow of level-1 names across modules.
 
 5. All of the above to be guarded, naturally by a language pragma, such as ``StructuredImports``, or ``SmugglingAliases``.
 
@@ -111,7 +111,7 @@ There appear to be no semantic costs for the non-users (``StructuredImports`` no
 
 There appears to be no cost whatsoever associated with handling of the modules compiled without the extension enabled.
 
-Introduction of the new stolen keywords (``aliases`` and ``aliases-hiding``) is an opt-in cost for new users of the extensions.
+Introduction of the new stolen keywords (``aliases`` and ``aliases_hiding``) is an opt-in cost for new users of the extensions.
 
 The costs regarding processing of modules with the extension enabled should be:
 
@@ -126,7 +126,9 @@ Unresolved questions
 --------------------
 1. It could be that we might assign some useful meaning to hierarchies deeper than 0 and 1, but that currently lacks obvious motivation.
 
-2. The ``aliases`` keyword, while reusing a customary term which appears quite appropriate, misses the larger point of us introducing structure to the import/export language.  Perhaps a better name for this semantic is worth thinking of.
+2. The ``aliases`` and derived ``aliases_hiding`` keywords, while reusing a customary term which appears quite appropriate, misses the larger point of us introducing structure to the import/export language.  Perhaps a better name for this semantic is worth thinking of.
+
+3. The ``aliases_hiding`` keyword is a bit ugly.
 
 Implementation Plan
 -------------------
