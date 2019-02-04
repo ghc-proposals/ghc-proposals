@@ -19,7 +19,7 @@ Preludes (meaning, broadly, all modules with reexports) allow us to (partially) 
 * compressing the total set of import statements in the overarching program
 * providing authoritative decisions on the direct availability of names -- essentially providing a common language
 
-This centralisation, however, is deficient in that it precludes any form of imported *module alias sharing*, forcing every module to define their own, *local* aliases (essentially, re-create namespace structure), which unnecessarily increases costs of module abstraction.
+This centralisation, however, is deficient in that it precludes any form of imported *module alias sharing*, forcing every module to define their own, *local* aliases (essentially, forcing them to repeatedly re-create any desired namespace structure), which unnecessarily increases costs of module abstraction.
 
 * for the reader, there are no commons to learn and refer to -- every module is a potential snowflake regarding the structure of its namespace (in the alias part)
 * for the writer, growing the program and splitting it into modules brings super-linear expenditures for the namespace maintenance aspect (again, in the alias part)
