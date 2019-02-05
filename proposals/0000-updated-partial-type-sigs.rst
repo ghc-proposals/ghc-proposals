@@ -394,6 +394,8 @@ Alternatives
 ------------
 * Instead of having ``::?``, we could have ``:: {-# PARTIAL #-}`` or similar. A quick grep
   of all of Hackage (as it was last summer) finds no usage, at all, of the lexeme ``::?``.
+  We could also keep both. This would allow us to label types as ``{-# PARTIAL #-}`` even
+  when there is no ``::`` nearby.
 
 * I would welcome new syntax dealing with patterns in this framework.
 
