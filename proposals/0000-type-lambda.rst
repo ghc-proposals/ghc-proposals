@@ -135,7 +135,7 @@ it is unclear (to me) how to do better. Clearly, ``id @a x = x`` is problematic,
 associate ``a`` with ``x``. But what about ``f @a (x :: a) @b (y :: b) = x == y``? That could indeed be well-typed
 at ``f :: forall a. a -> forall b. b -> (a ~ b, Eq a) => Bool``, but I don't wish to ask GHC to infer that. (Even
 without the wonky equality constraint would be hard.) Perhaps someone can sort this out and expand this feature,
-but there seems to be no need to handle the *checking* case now.
+but there seems to be no need to handle the *inference* case now.
 
 The algorithm operates in *inference mode* when it does not know the type of an expression. If GHC does know
 the type in advance, it uses *checking* mode. Here are some
@@ -270,7 +270,7 @@ analysis of the definition.) In this case, the definition of ``id`` would be acc
 However, I worry that this would be fragile as the partial-type-signature extraction would
 have to be purely syntactic. For example, would ``null @a ((_ :: a) : _) = False`` be treated
 identically to ``null @a ((_:_) :: [a]) = False`` and ``null @a (_:(_ :: [a]))``? It seems
-hard to ensure. Perhaps I'm just being pessimistic, thnough.
+hard to ensure. Perhaps I'm just being pessimistic, though.
 
 Unresolved questions
 --------------------
