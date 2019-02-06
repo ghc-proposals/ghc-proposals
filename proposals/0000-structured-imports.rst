@@ -29,9 +29,9 @@ Providing the package author with some controlled way to define a common core of
   * interface module::
 
       module B
-        ( module E.F.G as EFG        -- The entire set if E.F.G's names in scope will be available for import via the alias.
+        ( module E.F.G as EFG        -- The entire set if E.F.G's names in scope will be available for import, to be brought into scope under the alias.
 
-        , module H.I.J as HIJ (hijA) -- Only the specified name will be available for import via the alias.
+        , module H.I.J as HIJ (hijA) -- Only the specified name will be available for import, to be brought into scope under the alias.
 
         , module C     aliases       -- Re-export of all of the names available through all of the aliases available from C,
                                      -- to be made available for import via the respective aliases.
@@ -62,11 +62,13 @@ Providing the package author with some controlled way to define a common core of
       module A
       where
 
-      import B aliases               -- Bring all aliases initially exported by C into scope (R and N).
+      import B aliases               -- Bring all aliases initially exported by C into scope (R, N, EFG, HIJ).
 
       import B aliases (R)           -- Only bring the R alias into scope.
 
-      import B aliases_hiding (R)    -- Only bring the N alias into scope.
+      import B aliases_hiding (R)    -- Only bring the (R, EFG, HIJ) aliases into scope.
+
+      userDefn = HIJ.hijA
 
 Proposed Change Specification
 -----------------------------
