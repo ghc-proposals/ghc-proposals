@@ -26,41 +26,47 @@ This centralisation, however, is deficient in that it precludes any form of impo
 
 Providing the package author with some controlled way to define a common core of importable module aliases would allow to address both of those problems:
 
-  * defining module::
+  * interface module::
 
-      module LocalPrelude
-        ( module Data.Text      () as T         -- The entire module will be available via the alias
-                                                -- ..but only through the alias (level-0 names suppressed)
-        , module Data.Text.Lazy    as TL (Text, fromStrict)
-                                                -- Only the two names specified will be available via
-                                                -- the alias, but everything will be available directly.
-        , module SOPPrelude (SOP) aliases (SOP) -- Re-export SOP-the-alias _and_ SOP-the-constructor
+      module B
+        ( module E.F.G as EFG        -- The entire set if E.F.G's names in scope will be available for import via the alias.
+
+        , module H.I.J as HIJ (hijA) -- Only the specified name will be available for import via the alias.
+
+        , module C     aliases       -- Re-export of all of the names available through all of the aliases available from C,
+                                     -- to be made available for import via the respective aliases.
+                                     -- Basically forward the entire structure exposed by C -- both the R and N aliases.
+
+        , module C     aliases (R)   -- Same as above, but restricted to a single alias:
+                                     -- re-export of the names available from C under R.
         )
       where
-      import Data.Text
-      import Data.Text.Lazy (Text, pack, unpack, fromStrict)
-      import SOPPrelude aliases
+      import E.F.G
+      import H.I.J (hijA, hijB, hijC)
+      import C aliases
 
   * re-exportable module::
 
-      module SOPPrelude
-        ( module Generics.SOP    () as SOP  -- Combining structure into a single level-1 name,
-        , module Generics.SOP.NP () as SOP  -- ..while suppressing the level-0 names.
-        , SOP, POP, NP, NS, (:.:)           -- Making level-0 names also available.
+      module C
+        ( module Z.Y.X.R as R        -- Combining structure into a single level-1 name:
+        , module Z.W     as R        -- make the total sum of names exported by Z.Y.X.R and Z.W under the R alias.
+
+        , module Z.W     as N        -- Make the names exported by Z.W also available under the N alias.
         )
       where
-      import Generics.SOP
-      import Generics.SOP.NP
+      import Z.Y.X.R
+      import Z.W
 
   * user module::
 
-      module User
+      module A
       where
 
-      import LocalPrelude ((:.:)) aliases -- add '(T, TL, SOP)' to restrict imported aliases
+      import B aliases               -- Bring all aliases initially exported by C into scope (R and N).
 
-      someFn :: T.Text -> (IO :.: []) TL.Text
-      ...
+      import B aliases (R)           -- Only bring the R alias into scope.
+
+      import B aliases_hiding (R)    -- Only bring the N alias into scope.
 
 Proposed Change Specification
 -----------------------------
