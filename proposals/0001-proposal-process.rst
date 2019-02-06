@@ -1,7 +1,9 @@
 A Proposal for Proposals
 ========================
 
+
 .. sectnum::
+   :start: 1
 .. contents::
 
 Recently there has been a growing feeling within the Haskell community that the
@@ -109,7 +111,7 @@ Each proposal goes through the following stages:
    Due to GitHub's in-place editing feature (the pencil icon visible when viewing
    a file on GitHub), proposals can be made quickly without manual forking
    or cloning.
-   
+
 2. Community members (including members of the proposal committee) will discuss
    the proposal. The submitter is responsible for amending the specification to
    account for collected comments. It should be expected that the proposal will
@@ -132,7 +134,7 @@ Each proposal goes through the following stages:
 5. When the proposal is accepted the pull request will be merged and the
    document will be preserved in the proposals repository as a permanent
    specification for the feature.
-   
+
 6. The author will create a Trac ticket linking to the proposal to
    provide a place track the progress of the implementation.
 
@@ -153,7 +155,7 @@ GHC Committee
 
 The process involves forming a small group which is responsible for
 deciding whether proposed changes should be accepted after discussion
-within the community. 
+within the community.
 
 The committee should be large enough to reflect the diversity of GHC's
 contributor- and user-base but small enough to ensure a sense of individual

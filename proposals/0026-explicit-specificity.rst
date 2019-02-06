@@ -7,6 +7,7 @@ Explicit specificity in type variable binders
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/99>`_.
 .. sectnum::
+   :start: 26
 .. contents::
 
 This proposal introduces new syntax ``typeRep :: forall {k} (a :: k). ...`` (the
@@ -115,7 +116,7 @@ Proposed Change Specification
   indicate which variables in the type of the new construct are to be *inferred*. In the case
   where braces are used in an expression type annotation, the braces indicate which type variables
   in the expression's type are *inferred*.
-    
+
 Effect and Interactions
 -----------------------
 
@@ -136,7 +137,7 @@ This change is fully backward-compatible.
 
 This change seems to be future-compatible as well: if we ever allow record syntax in types, that
 will not conflict with this new feature, as the change proposed here affects only type variable
-binder syntax, not the syntax of full-blooded types. It is also compatible with 
+binder syntax, not the syntax of full-blooded types. It is also compatible with
 `visible type application in types <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0015-type-level-type-applications.rst>`_,
 though we would need to use `top-level kind signatures <https://github.com/ghc-proposals/ghc-proposals/pull/54>`_
 to indicate where we wanted inferred variables.
@@ -226,7 +227,7 @@ Examples
     data T1 a = C1 a
 
   we get ::
-    
+
     type T1 :: Type -> Type
     C1 :: forall a. a -> T1 a
 
@@ -235,7 +236,7 @@ Examples
     data T2 (a :: k) = C2 { f2 :: Proxy a }
 
   we get ::
-    
+
     type T2 :: forall k. k -> Type
     C2 :: forall k (a :: k). Proxy a -> T2 a
     f2 :: forall k (a :: k). T2 a -> Proxy a
@@ -245,21 +246,21 @@ Examples
     data T3 a where C3 :: forall k (a::k). Proxy a -> T3 a
 
   we get ::
-    
+
     type T3 :: forall {k}. k -> Type
     C3 :: forall k (a :: k). Proxy a -> T3 a
 
 * If we type ::
-    
+
     data T4 a where C4 :: forall {k} (a::k). Proxy a -> T3 a
 
   we get ::
-    
+
     type T4 :: forall {k}. k -> Type
     C4 :: forall {k} (a :: k). Proxy a -> T3 a
 
 * If we type ::
-    
+
     data T5 k (a :: k) where C5 :: forall k (a::k). Proxy a -> T5 k a
 
   we get ::
@@ -268,14 +269,14 @@ Examples
     C5 :: forall k (a :: k). Proxy a -> T5 k a
 
 * If we type ::
-    
+
     data T6 k a where C6 :: forall {k} (a::k). Proxy a -> T6 k a
 
   we get ::
 
     type T6 :: forall k -> k -> Type
     C6 :: forall {k} (a::k). Proxy a -> T6 k a
-  
+
 Unresolved questions
 --------------------
 

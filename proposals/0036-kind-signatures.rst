@@ -7,6 +7,7 @@ Top-level kind signatures
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/54>`_.
 .. sectnum::
+   :start: 36
 .. contents::
 
 
@@ -31,7 +32,7 @@ For example::
     TyInt   :: TypeRep Int
     TyMaybe :: TypeRep Maybe
     TyApp   :: TypeRep a -> TypeRep b -> TypeRep (a b)
-    
+
 Declarations that have a top-level kind signature (with no wildcards)
 can use polymorphic recursion; declarations
 without such signatures are understood to have inferred kinds, and polymorphic
@@ -43,7 +44,7 @@ CUSKs_.
 
 .. _CUSKs: https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#complete-user-supplied-kind-signatures-and-polymorphic-recursion
 
-    
+
 Motivation
 ------------
 This is a simplification over the current story around CUSKs, which are fiddly and
@@ -64,7 +65,7 @@ Proposed Change Specification
 
 1. Introduce a new top-level declaration form ::
 
-     type <name> :: <kind> 
+     type <name> :: <kind>
 
    It is distinguishable from a type synonym by the lack of an ``=`` on the line. A
    type-level declaration with a top-level kind signature may use polymorphic recursion;
@@ -78,7 +79,7 @@ Proposed Change Specification
 
    Unlike type signatures, the type variables brought into scope in a type-level kind
    signature do *not* scope over the type definition.
-   
+
    Top-level kind signatures are enabled with the extension ``-XTopLevelKinds``.
 
 2. Introduce a new extension ``-XCUSKs``, on by default, that detects CUSKs as they
@@ -138,14 +139,14 @@ Alternatives
   However, this particular choice of syntax was bound to create confusion and disagreement.
   Furthermore, the particular way the syntax was designed was based on issues around
   *future*\-compatibility, and so was likely to end up being wrong, regardless.
-  
+
 * We don't need the ``type`` keyword to introduce non-symbolic kind signatures, as the
   capital letter can tip GHC off. Perhaps omit.
-  
+
 * With top-level kind signatures, some aspects of type declarations are redundant.
   (For example, the ``a b c`` in ``data T a b c where ...``.) One could imagine removing
   these as an extension to this proposal.
-  
+
 * I'm not particularly pleased with ``-XTopLevelKinds``. ``-XKindSignatures`` is the
   Right Answer, but that's taken. (That should really be ``-XKindAscriptions``, but
   that's another story.)

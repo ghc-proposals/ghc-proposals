@@ -5,6 +5,7 @@ More explicit ``forall``\s
 .. trac-ticket:: 2600, 14268
 .. implemented:: 8.8
 .. sectnum::
+   :start: 7
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull requst <https://github.com/ghc-proposals/ghc-proposals/pull/55>`_.
 .. contents::

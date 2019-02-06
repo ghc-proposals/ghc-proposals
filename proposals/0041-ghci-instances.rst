@@ -7,6 +7,7 @@ List instances for a type in GHCi
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/166>`_
 .. sectnum::
+   :start: 41
 .. contents::
 
 

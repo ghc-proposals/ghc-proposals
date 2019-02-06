@@ -7,6 +7,7 @@ Add ``setField`` to ``HasField``
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/158>`_.
 .. sectnum::
+   :start: 42
 .. contents::
 
 This is a proposal to adjust the built-in typeclass ``HasField``, removing ``getField``

@@ -7,6 +7,7 @@ Replace the ``atomicModifyMutVar#`` primop
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/149>`_.
 .. sectnum::
+   :start: 27
 .. contents::
 
 ``atomicModifyIORef``, a thin wrapper around the ``atomicModifyMutVar#`` primop,
@@ -180,11 +181,11 @@ express the real type using generics ::
    Leftmost (M1 i c f) = Leftmost f
    Leftmost (f :*: g) = Leftmost f
    Leftmost (K1 i c) = c
- 
+
    Leftmost (f :+: g) = TypeError ('Text "Sum types cannot be used with atomicModifyIORefG")
    Leftmost U1 = TypeError ('Text "atomicModifyIORefG expects a record with at least one field")
    Leftmost V1 = TypeError ('Text "atomicModifyIORefG expects a record with at least one field")
- 
+
  -- Dig through newtypes and unpacked things
  type family Leftmost' (a :: Type -> Type) :: Type where
    Leftmost' (M1 i c f) = Leftmost' f

@@ -13,6 +13,7 @@ Quantified Constraints
    This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/109>`_.
 
 .. sectnum::
+   :start: 18
 
 .. contents::
 

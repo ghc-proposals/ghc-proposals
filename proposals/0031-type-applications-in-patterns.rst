@@ -2,11 +2,12 @@ Type Applications in Patterns
 =============================
 
 .. proposal-number:: 31
-.. trac-ticket:: 15530 
+.. trac-ticket:: 15530
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/126>`_.
 .. sectnum::
+   :start: 31
 .. contents::
 
 We have ``TypeApplications`` in terms. This proposal brings them to patterns in a way that preserves analogy to type signatures.
@@ -18,7 +19,7 @@ Motivation
 ``TypeApplications`` are a convenient and natural way to specifying types of polymorphic functions. Consider::
 
  data Foo a where MkFoo :: forall a. a -> Foo a
- 
+
 With ``TypeApplications``, I can replace the somewhat clumsy ``MkFoo (x :: ty)`` with ``MkFoo @ty x``. Seen this way,
 explicit type applications are merely an alternative syntax for type signatures.
 
@@ -27,14 +28,14 @@ At the moment, this only works in terms, but not in patterns: We can use type si
 relation between these syntactic forms, this is odd – why can I write::
 
     foo (MkFoo (x :: ty)) = …
-   
+
 but not::
 
     foo (MkFoo @ty x) = …
 
 This proposal fills this gap: It allows type applications in patterns, and specifies them to behave “just like type signatures”.
 
-The intention of the following specification is that the following holds: For a constructor with type like ``C :: forall a. a -> …`` the meaning of ``C @ty x`` should coincide with the existing form ``C (x :: ty)``. 
+The intention of the following specification is that the following holds: For a constructor with type like ``C :: forall a. a -> …`` the meaning of ``C @ty x`` should coincide with the existing form ``C (x :: ty)``.
 
 Proposed Change Specification
 -----------------------------
@@ -42,8 +43,8 @@ Proposed Change Specification
 When both ``TypeApplications`` and ``ScopedtypeVariables`` are enabled, then type application syntax is
 available in constructor patterns. Concretely, the grammar for constructor pattern is extended from::
 
-  pat   → gcon apat1 … apatk --  (arity gcon  =  k, k ≥ 1) 
-        … 
+  pat   → gcon apat1 … apatk --  (arity gcon  =  k, k ≥ 1)
+        …
 
 to::
 
@@ -82,14 +83,14 @@ A more complex example is this (also inspired by `#15050 <https://ghc.haskell.or
       MkT3 :: forall a b.            T a
       MkT4 :: forall a b. b ~ Int => T a
       MkT5 :: forall a b c. b ~ c => T a
-      
+
     foo :: T (Int, Int) -> ()
     foo (MkT1 @(Int,Int))  = ()
     foo (MkT2 @x)          = (() :: x ~ Int => ())
     foo (MkT3 @_ @x)       = (() :: x ~ x => ()) -- nb: x is in scope
     foo (MkT4 @_ @x)       = (() :: x ~ Int => ())
     foo (MkT4 @_ @Int)     = ()
-    foo (MkT5 @_ @x @x)    = (() :: x ~ x => ()) 
+    foo (MkT5 @_ @x @x)    = (() :: x ~ x => ())
 
 All of these equations type-check (just like they would if added value arguments of type ``a``, ``b``,... to the constructors and turned the type applications into type signatures).
 
@@ -115,7 +116,7 @@ But the pattern in::
 does not bring ``a`` into scope; here ``b`` refers to the ``b`` from the type signature. This leads to an type error, because in general ``a`` and ``b`` do not refer to the same types.
 
 And the pattern in::
- 
+
  f3 :: forall a b. ([a], b) -> Int
  f3 (x :: [c], y :: c) = ...
 
@@ -140,9 +141,9 @@ This proposals allows the binding of existential type variables of constructors,
 
 There is almost a syntactic ambiguity with as-patterns, but in fact there is not: The grammar of as-pattern is::
 
-  apat 	→ 	var [ @ apat] 	    (as pattern) 
+  apat 	→ 	var [ @ apat] 	    (as pattern)
         …
-        
+
 so it always has a variable on its left, whereas a type application is always headed by a constructor.
 
 Costs and Drawbacks
@@ -161,7 +162,7 @@ A possible future proposal that extends as-patterns to allow patterns on both si
         pattern And p q = p@q
 
         foo (Nothing `And` a) = …
-  
+
   These questions will have to be resolve if and when such extended as-patterns are requested.
 
 

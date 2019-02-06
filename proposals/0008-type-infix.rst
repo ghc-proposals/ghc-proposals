@@ -1,10 +1,11 @@
 Require namespacing fixity declarations for type names and ``WARNING``/``DEPRECATED`` pragmas
 =============================================================================================
 
-.. proposal-number:: 8
+.. proposal-number:: 0008
 .. trac-ticket:: 14032
 .. implemented:: None yet
 .. sectnum::
+   :start: 8
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull requst <https://github.com/ghc-proposals/ghc-proposals/pull/65>`_.
 .. contents::

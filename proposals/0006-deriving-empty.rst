@@ -6,6 +6,7 @@ Overhaul deriving instances for empty data types
 .. implemented:: 8.4
 .. highlight:: haskell
 .. sectnum::
+   :start: 6
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/63>`_.
 .. contents::
 

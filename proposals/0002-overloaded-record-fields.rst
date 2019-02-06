@@ -4,6 +4,7 @@ Overloaded Record Fields
 .. proposal-number:: 0002
 .. implemented:: 8.2
 .. sectnum::
+   :start: 2
 .. contents::
 
 This is a proposal to introduce a new built-in typeclass,

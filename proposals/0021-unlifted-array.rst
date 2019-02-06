@@ -7,6 +7,7 @@ UnliftedArray
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/112>`_.
 .. sectnum::
+   :start: 21
 .. contents::
 
 GHC provides an unlifted type ``ArrayArray#``. Similar to how ``Array#`` is an unlifted array
@@ -39,7 +40,7 @@ are four variants::
     readMutableArrayArrayArray# :: MutableArrayArray# s -> Int# -> State# s -> (#State# s, MutableArrayArray# s#)
 
 Under the hood, all four of these have the exact same implementation. The GHC `source code`_ makes
-this clear:: 
+this clear::
 
     emitPrimOp _      [res] ReadArrayArrayOp_ByteArray          [obj,ix]   = doReadPtrArrayOp res obj ix
     emitPrimOp _      [res] ReadArrayArrayOp_MutableByteArray   [obj,ix]   = doReadPtrArrayOp res obj ix
@@ -48,8 +49,8 @@ this clear::
 
 .. _source code: https://github.com/ghc/ghc/blob/8ae263ceb3566a7c82336400b09cb8f381217405/compiler/codeGen/StgCmmPrim.hs#L407-L416
 
-Despite the all the duplication, this interface still only captures a fraction of what ``ArrayArray#`` can 
-really offer. The end user must explicitly use ``unsafeCoerce#`` to do a store many things (``MVar#``, ``Array#``, etc.), 
+Despite the all the duplication, this interface still only captures a fraction of what ``ArrayArray#`` can
+really offer. The end user must explicitly use ``unsafeCoerce#`` to do a store many things (``MVar#``, ``Array#``, etc.),
 and even when they want a ``ByteArray#`` (which the interface does safely allow), they must **implicitly** perform an
 unsafe coercion on every access (read/write/index) because the type system doesn't check what's in an ``ArrayArray#``.
 In the primitive package, there is a `lot of unsafeCoerce`_ that is required to make it work:
@@ -75,7 +76,7 @@ The proposed primitives are::
 
     data UnliftedArray# :: TYPE 'UnliftedRep -> TYPE 'UnliftedRep
     data MutableUnliftedArray# :: TYPE 'LiftedRep -> TYPE 'UnliftedRep -> TYPE 'UnliftedRep
-    
+
     indexUnliftedArray# :: forall (a :: TYPE 'UnliftedRep). UnliftedArray# a -> Int# -> a
     writeUnliftedArray# :: forall (a :: TYPE 'UnliftedRep). MutableUnliftedArray# s a -> Int# -> a -> State# s -> State# s
     readUnliftedArray# :: forall (a :: TYPE 'UnliftedRep). MutableUnliftedArray# s a -> Int# -> State# s -> (# State# s, a #)
@@ -106,10 +107,10 @@ reimplemented (this requires the ``UnliftedNewtypes`` extension to be implemente
 
     indexByteArrayArray# :: ArrayArray# -> Int# -> ByteArray#
     indexByteArrayArray# (ArrayArray# u) i = unsafeCoerceUnlifted (indexUnliftedArray# u i)
-    
+
     indexArrayArrayArray# :: ArrayArray# -> Int# -> ArrayArray#
     indexArrayArrayArray# (ArrayArray# u) i = unsafeCoerceUnlifted (indexUnliftedArray# u i)
-    
+
     readByteArrayArray# :: MutableArrayArray# s -> Int# -> State# s -> (# State# s, ByteArray# #)
     readByteArrayArray# (MutableByteArray# u) i s = case readUnliftedArray# u i s of
       (# s', e #) -> (# s', unsafeCoerceUnlifted e #)

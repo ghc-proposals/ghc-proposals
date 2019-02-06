@@ -8,6 +8,7 @@ Declare ``Constraint`` is not apart from ``Type``
 .. header::
    This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/32>`_.
 .. sectnum::
+   :start: 19
 .. contents::
 
 Since at least GHC 7.4, there has been an uneasy relationship between ``Constraint`` and ``Type`` (formerly known as ``*``). These
@@ -43,7 +44,7 @@ and ``Bool`` are apart, while ``F Int`` and ``Bool`` are not (for a type family 
 
 Under this proposal, ``Type`` and ``Constraint`` would no longer be apart. And that's the
 only change!
-    
+
 Effect and Interactions
 -----------------------
 
@@ -117,7 +118,7 @@ Implementation Plan
 -------------------
 
 I or a close collaborator volunteers to implement. Offers of help are welcome.
-   
+
 .. proposal-number:: Leave blank. This will be filled in when the proposal is
                      accepted.
 
@@ -160,7 +161,7 @@ Any typing rules in here fit into the various typing judgments as presented
           -- internal, used in dfun types
        data (-=>) :: forall (r :: RuntimeRep). TYPE r -> Constraint -> Constraint
           -- internal, used in dfun data constructors
-          
+
          -- these last two are never seen in normal Haskell or in error messages,
          -- but I suppose they wouldn't hurt anyone to have exported from GHC.Prim
 
@@ -235,7 +236,7 @@ Any typing rules in here fit into the various typing judgments as presented
        G |- e1 e2 : t2
 
    These changes shouldn't affect ``exprType`` but will affect Lint.
-       
+
 5. We need to allow term variables whose type has kind constraint (in addition to a
    similar rule about ``TYPE r``)::
 
@@ -289,7 +290,7 @@ Any typing rules in here fit into the various typing judgments as presented
 
 
    where ::
-     
+
        ----------------------- (ArrowTyTy)
        isArrowTy ((->) r1 r2)
 
@@ -301,7 +302,7 @@ Any typing rules in here fit into the various typing judgments as presented
 
        ----------------------- (ArrowTyCt)
        isArrowTy ((-=>) r)
-       
+
    That works nicely. This differs from ``NthCo`` in two ways:
 
    1. It allows different tycons on the two sides of ``co``\'s kind.
@@ -406,7 +407,7 @@ Alternatives
    I confess I have not liked this idea much, but it's more from a language-design standpoint than from a type-safety
    standpoint (the alternative proposal appears type-safe to me). (@int-index has since backed off this point of view,
    as seen on the pull request)
-   
+
 3. Some potential future will allow roles in kinds. This is in contrast to today, where all kind casts ``(ty |> co)`` use
    a *nominal* coercion. (This is also in contrast to term-level casts ``(exp |> co)`` which use *representational*
    coercions.) @sweirich and collaborators are working on the theory behind this currently. Once this theory is complete,

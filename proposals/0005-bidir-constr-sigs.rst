@@ -6,6 +6,7 @@ Pattern synonym construction function signatures
 .. implemented:: Not yet.
 .. highlight:: haskell
 .. sectnum::
+   :start: 5
 .. header:: This proposal was discussed at `this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/42>`_.
 .. contents::
 

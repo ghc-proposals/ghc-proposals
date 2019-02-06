@@ -8,6 +8,7 @@ Embrace ``Type :: Type``
 .. header::
    This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/83>`_.
 .. sectnum::
+   :start: 20
 .. contents::
 
 GHC 8.0 included a major change to GHC's type system: the ``Type :: Type`` axiom.

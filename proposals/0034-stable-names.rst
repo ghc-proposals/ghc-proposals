@@ -7,6 +7,7 @@ Remove an undocumented `StableName` guarantee
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/163>`_.
 .. sectnum::
+   :start: 34
 .. contents::
 
 The ``hashStableName`` function in ``System.Mem.Weak`` is explicitly

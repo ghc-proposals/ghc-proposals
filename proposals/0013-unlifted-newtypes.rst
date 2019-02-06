@@ -1,5 +1,5 @@
 Unlifted Newtypes
-==========================
+=================
 
 .. proposal-number:: 13
 .. trac-ticket:: 15219
@@ -8,12 +8,13 @@ Unlifted Newtypes
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/98>`_.
 .. sectnum::
+   :start: 13
 .. contents::
 
 GHC 8.0 introduced a more sane way to talk about the kind of unlifted types,
 levity polymorphism. Following this, the kind of unboxed tuples and sums was
 revised. Many of the unlifted kinds have a finite number of inhabitants. For
-example, ``TYPE 'IntRep`` is only inhabited by ``Int#``. This proposal provides 
+example, ``TYPE 'IntRep`` is only inhabited by ``Int#``. This proposal provides
 a way to create additional types that inhabit the unlifted kinds. With the
 ``UnliftedNewtypes`` language pragma, the existing ``newtype`` construct would
 begin to accept types of unlifted kinds. GHC currently rejects the following
@@ -138,7 +139,7 @@ like this::
 However, typeclasses are not guaranteed to specialize. Users working with a
 function built on top of these ``PrimUnlifted`` functions need to be
 careful to ensure that specialization happens. Consider a function
-like:: 
+like::
 
     -- | The first array is a list of target indices as machine integers.
     --   The length of the first argument must be the length of the second
@@ -159,7 +160,7 @@ interface to arrays of unlifted things::
 
     data UnliftedArray# (a :: TYPE 'UnliftedRep)
     data MutableUnliftedArray# s (a :: TYPE 'UnliftedRep)
-    
+
     indexUnliftedArray# :: forall (a :: TYPE 'UnliftedRep). UnliftedArray# a -> Int# -> a
     writeUnliftedArray# :: forall (a :: TYPE 'UnliftedRep). MutableUnliftedArray# s a -> Int# -> a -> State# s -> State# s
     readUnliftedArray# :: forall (a :: TYPE 'UnliftedRep). MutableUnliftedArray# s a -> Int# -> State# s -> (# State# s, a #)
@@ -182,7 +183,7 @@ the existing ``ArrayArray#`` interface without modifying GHC::
     indexUnliftedArray# (UnliftedArray# a) i = unsafeCoerce# (indexArrayArrayArray# a i)
 
 The data constructors of ``UnliftedArray#`` and ``MutableUnliftedArray#`` could
-be hidden to prevent the user from unsafely casting elements. 
+be hidden to prevent the user from unsafely casting elements.
 
 Proposal Change Specification
 ----------
@@ -197,7 +198,7 @@ This proposal **would** allow a levity-polymorphic type variable to appear
 inside a newtype. Such appearances are currently forbidden (and would remain
 forbidden) in data constructors, since they violate the levity-polymorphism
 binder rule. However, **newtype** constructors and pattern matches become casts.
-Consider:: 
+Consider::
 
     newtype Id# (r :: RuntimeRep) (a :: TYPE r) = IdC# a
 
@@ -212,7 +213,7 @@ However, this would be accepted::
 
     good :: forall (a :: TYPE IntRep). (a -> a -> Bool) -> Id# IntRep a -> Id# IntRep a -> Bool
     good f (IdC# a) (IdC# b) = f a b
- 
+
 If the user does not specify the kind of an unlifted newtype with GADT syntax,
 the kind should be inferred. Newtype that are recursive or
 mutually recursive in a way that make them uninhabited will be inferred
