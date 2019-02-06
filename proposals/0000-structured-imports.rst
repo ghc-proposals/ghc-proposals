@@ -170,11 +170,11 @@ Imports
      - ``import           Z.Y.X``
      - Append all of ``Z.Y.X``'s export set to the top level of the namespace, and also under ``Z.Y.X``
    * - 2
-     - ``import           Z.Y.X        (adds..)``
+     - ``import           Z.Y.X        (pos..)``
      - Append the specified subset of ``Z.Y.X``'s export set to the top level of the namespace, and also under ``Z.Y.X``
    * - 3
-     - ``import           Z.Y.X hiding (subs..)``
-     - Append the ``Z.Y.X``'s export set, with ``subs`` subtracted, to the top level of the namespace, and also under ``Z.Y.X``
+     - ``import           Z.Y.X hiding (neg..)``
+     - Append the ``Z.Y.X``'s export set, with names in ``neg`` subtracted, to the top level of the namespace, and also under ``Z.Y.X``
    * - 4
      - ``import qualified Z.Y.X``
      - Append all of ``Z.Y.X``'s export set under ``Z.Y.X``
@@ -185,14 +185,18 @@ Imports
      - ``import           Z.Y.X          as W``
      - Append all of ``Z.Y.X``'s export set to the top-level, and also under ``W``
    * - 7
-     - ``import           Z.Y.X (adds..) as W``
+     - ``import           Z.Y.X (pos..) as W``
      - Append the specified subset of ``Z.Y.X``'s export set to the top-level, and also under ``W``
 
 Subsetting imports
     Note that in interests of brevity, we only illustrated import subsetting (with ``(adds..)`` and  ``hiding (subs..)``) for the unqualified/unaliased case -- while it unambiguously extends to the rest of the cases.
 
 Semantics of the ``qualified`` keyword
-    It's worth underscoring the effect of the ``qualified`` keyword in the non-extended language -- it is strictly negative, as it suppresses population of the top level of the namespace.  With this understanding, one could (hypothetically) say that:
+    It's worth underscoring the effect of the ``qualified`` keyword in the non-extended language -- it is strictly negative, as it suppresses population of the top level of the local namespace. Quoting *Section 5.3.2 of Haskell2010*:
+
+      If the import declaration used the *qualified* keyword, only the qualified name of the entity is brought into scope. If the *qualified* keyword is omitted, then both the qualified and unqualified name of the entity is brought into scope.
+
+    With this understanding, one could (hypothetically) say that:
 
     1. it's a misnomer, and should be called ``qualified-only`` instead, and
     2. a more consistent name for the ``as`` keyword could be ``qualified-as``.
@@ -205,7 +209,7 @@ Level-0 names
   Intra-module names (regardless of introduction), which reside at the top level of its structured namespace, and which therefore cannot be subject to the *"dot operator"* of the module system.  The only names that used to be able to travel across module boundaries.
 
 Level-1 names
-  Intra-module names (regardless of introduction), that have a single component (no dots), and carry a set of `level-0 names`_, that are individually accessible by the *"dot operator"* of the module system.  It is these names that we propose allow travelling across module boundaries, along with their associated content.
+  Intra-module names (regardless of introduction), that have a single component (no dots), and carry a set of `level-0 names`_, which are individually accessible by the *"dot operator"* of the module system.  It is these names that we propose allow travelling across module boundaries, along with their associated content.
 
 Higher-level names
   Intra-module names (regardless of introduction), that carry non-level-0 names accessible by the dot syntax.  Note that while the heading section of Chapter 5 of the *Haskell 2010 Language Report* says:
