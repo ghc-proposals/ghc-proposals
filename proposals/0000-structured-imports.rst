@@ -26,49 +26,61 @@ This centralisation, however, is deficient in that it precludes any form of impo
 
 Providing the package author with some controlled way to define a common core of importable module aliases would allow to address both of those problems:
 
-  * interface module::
+* interface module::
 
-      module B
-        ( module E.F.G as EFG        -- The entire set if E.F.G's names in scope will be available for import, to be brought into scope under the alias.
+    module B
+      ( module E.F.G as EFG        -- The entire set if E.F.G's names in scope will be available for
+                                   -- import, to be brought into scope under the alias.
 
-        , module H.I.J as HIJ (hijA) -- Only the specified name will be available for import, to be brought into scope under the alias.
+      , module H.I.J as HIJ (hijA) -- Only the specified name will be available for import,
+                                   -- to be brought into scope under the alias.
 
-        , module C     aliases       -- Re-export of all of the names available through all of the aliases available from C,
-                                     -- to be made available for import via the respective aliases.
-                                     -- Basically forward the entire structure exposed by C -- both the R and N aliases.
+      , module C     aliases       -- Re-export of all of the names available through all of the aliases
+                                   -- available from C, to be made available for bringing into scope
+                                   -- qualified, via the respective aliases.
+                                   -- Basically brings the entire alias structure exposed by C --
+                                   -- both the R and N aliases.
 
-        , module C     aliases (R)   -- Same as above, but restricted to a single alias:
-                                     -- re-export of the names available from C under R.
-        )
-      where
-      import E.F.G
-      import H.I.J (hijA, hijB, hijC)
-      import C aliases
+      , module C     aliases (R)   -- Same as above, but restricted to a single alias:
+                                   -- re-export of the names available from C under R.
 
-  * re-exportable module::
+      , module B                   -- Regular exports for x and y (at *level-0*).
+      )
+    where
+    import E.F.G
+    import H.I.J (hijA, hijB, hijC)
+    import C aliases
+    
+    (,) x y = (,) 1 2
 
-      module C
-        ( module Z.Y.X.R as R        -- Combining structure into a single level-1 name:
-        , module Z.W     as R        -- make the total sum of names exported by Z.Y.X.R and Z.W under the R alias.
+* re-exportable module::
 
-        , module Z.W     as N        -- Make the names exported by Z.W also available under the N alias.
-        )
-      where
-      import Z.Y.X.R
-      import Z.W
+    module C
+      ( module Z.Y.X.R as R        -- Combining structure into a single *level-1* name:
+      , module Z.W     as R        -- make the sum of names exported by Z.Y.X.R and Z.W under alias R.
 
-  * user module::
+      , module Z.W     as N        -- Make the names exported by Z.W also available under the N alias.
+      )
+    where
+    import Z.Y.X.R
+    import Z.W
 
-      module A
-      where
+* user module::
 
-      import B aliases               -- Bring all aliases initially exported by C into scope (R, N, EFG, HIJ).
+    module A
+    where
 
-      import B aliases (R)           -- Only bring the R alias into scope.
+    import B aliases               -- Bring all aliases exported by B into scope:  R, N, EFG, HIJ.
 
-      import B aliases_hiding (R)    -- Only bring the (R, EFG, HIJ) aliases into scope.
+    import B aliases (R)           -- Only bring the R alias into scope.
 
-      userDefn = HIJ.hijA
+    import B aliases_hiding (R)    -- Only bring the (R, EFG, HIJ) aliases into scope.
+
+    import B                       -- Bring all (*level-0*) names exported by B into scope:  x, y
+
+    userDefn = HIJ.hijA
+
+For some potential additions/tweaks to this proposal, please see the `Additional extensions`_ section.
 
 Proposed Change Specification
 -----------------------------
@@ -141,8 +153,7 @@ Exports
      - ``module M`` (no dots in ``M``)
      - of the set of names composed under the single-component module name ``M``, append all to ``Z.Y.X``'s export set
 
-.. sidebar:: Composed single-component module names
-
+Composed single-component module names
    Due to the mechanics of imports discussed later, the single-component module names are different from multi-component module names in that they can contain a sum of exports from different modules.
 
    This fact, though, does change nothing in our calculations.
@@ -181,7 +192,10 @@ Subsetting imports
     Note that in interests of brevity, we only illustrated import subsetting (with ``(adds..)`` and  ``hiding (subs..)``) for the unqualified/unaliased case -- while it unambiguously extends to the rest of the cases.
 
 Semantics of the ``qualified`` keyword
-    It's worth underscoring the effect of the ``qualified`` keyword -- it is strictly negative, as it suppresses population of the top level of the namespace.
+    It's worth underscoring the effect of the ``qualified`` keyword in the non-extended language -- it is strictly negative, as it suppresses population of the top level of the namespace.  With this understanding, one could (hypothetically) say that:
+
+    1. it's a misnomer, and should be called ``qualified-only`` instead, and
+    2. a more consistent name for the ``as`` keyword could be ``qualified-as``.
 
 Proposed change
 ^^^^^^^^^^^^^^^
@@ -320,7 +334,14 @@ Additional extensions
 ^^^^^^^^^^^^^^^^^^^^^
 During discussion of this proposal various further suggestions for extension came up:
 
-1. ``import A.B.C aliases (D(..))`` to splice the set (or a subset) of *level-0* names exported by ``A.B.C`` under the ``D`` name into the top level of the local namespace.
+1. Simultaneous imports at both *level-0* and *level-1* (since the current proposal would necessitate having two separate imports declarations to bring in the entire scope of a given module):
+* ``import A.B.C               aliases``               a full import of ``A.B.C``'s exports, at both name levels (instead of the just-*level-1* interpretation under the current proposal).
+* ``import A.B.C        (ns..) aliases        (as..)`` a version restricting both imports.
+* ``import A.B.C hiding (ns..) aliases_hiding (as..)`` a version restricting both imports, both via substraction from respective export sets.
+
+2. Splicing of the set (or a subset) of *level-0* names from a given *level-1*'s export set into the top level:
+
+* ``import A.B.C               aliases (D(..))``       splice the *level-0* names available in ``A.B.C`` under the ``D`` *level-1 name* into the top level of the local namespace.
 
 On those, further discussion is needed to gauge the potential interest of the wider community.
 
