@@ -6,6 +6,7 @@ Deprecating STM invariant mechanism
 .. implemented:: 8.6
 .. highlight:: haskell
 .. sectnum::
+   :start: 11
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/77>`_.
 .. contents::
 

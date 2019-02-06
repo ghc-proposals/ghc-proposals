@@ -8,6 +8,7 @@ Revise Levity Polymorphism
 .. implemented:: 8.2.1
 .. highlight:: haskell
 .. sectnum::
+   :start: 3
 .. contents::
 
 GHC 8 introduced *levity polymorphism*, where a variable can be polymorphic in
@@ -39,7 +40,7 @@ work. For example, GHC accepts this nonsense::
     type family F a where
       F Int  = (# Int, Bool #)
       F Bool = (# Int# #)
-      
+
 It's nonsense because the two return types actually have different
 representations! With the changes proposed here, such a type family would be
 safe.
@@ -59,7 +60,7 @@ Here is the current state of affairs::
                     | UnboxedTupleRep
                     | UnboxedSumRep
     type Type = TYPE PtrRepLifted
-    
+
 With these definitions, all "normal" types have type ``TYPE PtrRepLifted``
 (that is, ``Type``). Unboxed types are kinded similarly, with
 ``Int# :: TYPE IntRep`` and ``Array# :: Type -> TYPE PtrRepUnlifted``.
@@ -80,7 +81,7 @@ I propose changing this to become::
              	    | TupleRep [RuntimeRep]
              	    | SumRep [RuntimeRep]
     type Type = TYPE LiftedRep
-    
+
 Note the name changes and the new parameters to ``TupleRep`` and ``SumRep``.
 These parameters mean that different unboxed tuples/sums have *different*
 kinds. Hooray!
@@ -110,7 +111,7 @@ what is proposed here, and it would allow, for example ::
 
     foo :: forall (a :: TYPE '[IntRep, FloatRep]). a -> a
     foo x = x
-    
+
 to be instantiated, say, at both ``(# Int#, Float# #)`` and
 ``(# Int#, (# (# #), Float# #) #)``,
 because these both have the same representation. This is

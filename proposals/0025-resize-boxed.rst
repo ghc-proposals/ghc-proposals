@@ -7,6 +7,7 @@ Offer more array resizing primitives
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/121>`_.
 .. sectnum::
+   :start: 25
 .. contents::
 
 At present, we have ``shrinkMutableByteArray#`` and ``resizeMutableByteArray#``.

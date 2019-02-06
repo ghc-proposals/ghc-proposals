@@ -7,6 +7,7 @@ Allow ScopedTypeVariables to refer to types
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/128>`_.
 .. sectnum::
+   :start: 29
 .. contents::
 
 The ``ScopedTypeVariables`` extension has a restriction that type variables in patterns can only refer to type variables, not
@@ -30,16 +31,16 @@ Now both ``a`` and ``b`` are in scope in ``<body>``, as aliases. Great. So if th
 
     f :: Maybe Int -> Int
     f (Just (x :: a)) = <body>
-    
+
 If this was allowed ``a`` would have to be an alias for ``Int``.  Currently that is not allowed: a lexically scoped type variable can only be bound to a type *variable*.  The whole and sole point of the proposal is to lift that restriction.
 
 The restriction is documented as follows:
 
   When a pattern type signature binds a type variable in this way, GHC insists that the type variable is bound to a rigid, or fully-known, type variable. This means that any user-written type signature always stands for a completely known type.
-  
+
 Simon explains the motivation behind this restriction:
 
-   I agree this is a questionable choice. At the time I was worried that it'd be confusing to have a type variable that was just an alias for ``Int``; that is not a type variable at all. But in these days of GADTs and type equalities we are all used to that. We'd make a different choice today. 
+   I agree this is a questionable choice. At the time I was worried that it'd be confusing to have a type variable that was just an alias for ``Int``; that is not a type variable at all. But in these days of GADTs and type equalities we are all used to that. We'd make a different choice today.
 
 Let’s do this!
 
@@ -72,7 +73,7 @@ Here are more type-checking puzzles. Can you tell which lines of ``foo`` typeche
     foo 5 (MkT3 P (P::P Int))        = ()
     foo 6 (MkT4 P (P::P b))          = ()
     foo 7 (MkT5 P (P::P b) (P::P b)) = ()
-    
+
 All lines but line 2 and 3 typecheck, but arguably all could.
 
 

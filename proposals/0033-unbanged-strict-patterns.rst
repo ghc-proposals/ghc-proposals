@@ -7,6 +7,7 @@ Make unboxed tuple patterns lazy / warn on unbanged strict patterns
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/35>`_.
 .. highlight:: haskell
 .. sectnum::
+   :start: 33
 .. contents::
 
 (Throughout this proposal, unboxed sums are treated identically to unboxed tuples. I refer only to unboxed tuples for simplicity.)
@@ -46,7 +47,7 @@ By way of history: I did not set out to change this directly, but I hit upon the
 inconsistency between the implementation and the specification in other work. The code
 was quite tangled, and this is a cleaning-up of this whole area. But the cleaning-up
 has user-facing effects, leading to this proposal.
-   
+
 Proposed Change Specification
 -----------------------------
 
@@ -73,16 +74,16 @@ Before Change (B), unboxed tuples patterns did not need a bang.
 Examples
 --------
 
-1. 
+1.
 
     ::
 
         z = ()
           where x :: Bool
                 (# x #) = undefined
-            
+
     Evaluating ``z`` throws an error in GHC 8.0, but will result in ``()`` under this proposal. This change in semantics will make strictly more programs terminate, but it could introduce hitherto-unexpected laziness.
-            
+
 2.
 
     ::
@@ -90,9 +91,9 @@ Examples
         z = ()
           where x :: Int#
                 !(# x #) = undefined
-                
+
     Evaluating ``z`` throws an exception, both before and after this proposal. This proposal requires the presence of the bang.
-    
+
 3.
 
     ::
@@ -100,27 +101,27 @@ Examples
         z = ()
           where x :: Bool
                 (# 3#, x #) = (# 4#, undefined #)
-                
+
     Evaluating ``z`` results in ``()``. This is another example of the semantics change.
-    
+
 4.
 
     ::
-    
+
         z = ()
           where 3# = 4#
-          
+
     Evaluating ``z`` results in ``()``. The ``3#`` pattern is not an unlifted-var pattern, according to the rules above. This is a change in the implementation compared to GHC 8.0, but the behavior described here seems more in keeping with the specification of lazy bindings in Haskell.
-    
+
 5.
 
     ::
-    
+
         z = ()
           where I# x = 4
-          
+
     This code is rejected by GHC 8.0 with an error. Change (B) makes this error into a warning. The binding is strict.
-          
+
 Effect and Interactions
 -----------------------
 
@@ -150,13 +151,13 @@ There is also a middle ground for (A) around unboxed tuples: we could pretend th
 
     z = ()
       where (# x #) = undefined
-      
+
 would diverge because of the implicit bang on the unboxed-tuple pattern. This implicit bang could be surpressed with an explicit
 ``~``::
 
     z = ()
       where ~(# x #) = undefined
-      
+
 would still evaluate to ``()``. This is still a change from existing behavior, where lazy unboxed tuple bindings are impossible to write, and unboxed tuples are subject to the other restrictions above. (In this "middle ground" proposal, an unboxed tuple binding would still be allowed to be recursive, say.)
 
 For (B), we could keep the error as is, which would mean (in concert with (A)) breaking code.

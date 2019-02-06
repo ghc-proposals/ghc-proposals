@@ -6,6 +6,7 @@ Hexadecimal Floats in Haskell
 .. implemented:: 8.4.1
 .. highlight:: haskell
 .. sectnum::
+   :start: 4
 .. header:: This proposal was `under discussion <https://github.com/ghc-proposals/ghc-proposals/pull/37>`_.
 .. contents::
 
@@ -53,10 +54,10 @@ The changes are rather simple, and follows that of the other languages with some
        * Exception: If a literal contains a dot, then it must have some hex digits before and after it
   * Provide the corresponding pretty-printer (`showHFloat`) in the `Numeric` package.
   * `Read` instance for floats-doubles should be changed to support the new format.
-  
+
 Note that the original allows ``0x.Ap4`` as a literal, which we disallow in Haskell. This is similar to the case
 for ``.5`` or ``5.`` that is allowed by other languages, but not by Haskell.
-  
+
 Desugaring
 ----------
 Ordinarily, a literal such as ``2.5`` is overloaded in Haskell, and inhabits all ``Fractional`` values.
@@ -74,7 +75,7 @@ cases to consider:
    * ``0x1a.3``: Dot, no exponent. Floating point literal: Desugars via ``fromRational``.
    * ``0x1p-4``: No dot, exponent. Floating point literal: Desugars via ``fromRational``.
    * ``0x1.2p3``: Both dot and exponent. Floating point literal. Desugars via ``fromRational``.
-   
+
 So, the rule is simple: If ``.`` or ``p`` is present: Desugar through ``fromRational``. Otherwise use ``fromInteger``.
 
 Effect and Interactions
@@ -93,7 +94,7 @@ Drawbacks: It was pointed out that the ``Read`` instance would break backwards c
 
      Prelude> reads "0x1p3" :: [(Double, String)]
      [(1.0,"p3")]
-     
+
 With the new implementation, this would return: ``[(8.0, "")]`` instead. While this is a change in behavior, I think
 it's an acceptable one given the new syntax for floats. The drawback here is that we cannot guard against this using
 a language pragma.
@@ -105,20 +106,20 @@ already a hackage package that implements this as a quasi-quoter, together with 
 printer: http://hackage.haskell.org/package/FloatingHex
 
 Unfortunately, the "library" solution is really not ideal:
-    
+
    * It relies on the rather heavy mechanism for quasi-quotes
    * Usage requires importing a new module
    * Usage requires a pragma (``QuasiQuotes``)
    * Most imporantly: Usage requires dependency on a hackage package
 
 This is indeed a lot of requirements and heavy machinery to be able to write literals! With this proposal, we will
-reduce the dependency to one pragma (``HexadecimalFloats``); and when the Haskell standard catches up, even that 
+reduce the dependency to one pragma (``HexadecimalFloats``); and when the Haskell standard catches up, even that
 will become unnecessary.
 
 Overflow/Underflow
 ------------------
 The format allows for specifying numbers that are larger or smaller than what the underlying type can represent. For instance
-a number like ``0x1p5000`` would not fit in a ``Double`` and thus would have the special value ``Infinity``. 
+a number like ``0x1p5000`` would not fit in a ``Double`` and thus would have the special value ``Infinity``.
 (Similar to ``1/0``). In the other direction, a number like ``0x1p-5000`` is too small to be represented, and would round to
 the correct value based on the rounding-mode, which is by default round-to-nearest-ties-to-even in Haskell. This is really
 no different than how decimal floats are treated in Haskell today.
@@ -131,7 +132,7 @@ other literals::
     <interactive>:3:1: warning: [-Woverflowed-literals]
          Literal 200000 is out of the Word16 range 0..65535
     3392
-    
+
 However, I'll note that GHC **currently doesn't** provide a similar warning for decimal floats (such as ``2E20000``).
 Indeed, the recommended practice section of
 http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf on page 58 says:

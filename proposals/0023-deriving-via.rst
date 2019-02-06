@@ -7,6 +7,7 @@ Deriving Via
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/120>`_.
 .. sectnum::
+   :start: 23
 .. contents::
 
 We propose ``DerivingVia``, a new
@@ -39,7 +40,8 @@ An implementation is already available in our GHC fork
 `here <https://github.com/RyanGlScott/ghc/tree/deriving-via-8.5>`_.
 
 Motivation
-==========
+----------
+
 Broadly speaking, the purpose of ``DerivingVia`` is to facilitate the ability
 to capture programming patterns that often arise in type class instances and
 reuse them. As one example, the ``Monoid`` instances for ``IO`` and ``ST``
@@ -101,7 +103,7 @@ Aside from the paper itself, here is a list of other sources about this idea:
 * A `Reddit post <https://www.reddit.com/r/haskell/comments/8aa81q/deriving_via_or_how_to_turn_handwritten_instances/>`_ discussing the paper.
 
 Proposed Change Specification
-=============================
+-----------------------------
 We propose a new language extension, ``DerivingVia``. ``DerivingVia`` will imply
 ``DerivingStrategies``, as ``DerivingVia`` requires using deriving strategy
 syntax.
@@ -310,9 +312,9 @@ following example: ::
 This would generate the following instance: ::
 
   instance Eq Quux where
-    (==) = coerce @(Quux         -> Quux         -> Bool)
+    (--) = coerce @(Quux         -> Quux         -> Bool)
                   @(Const a Quux -> Const a Quux -> Bool)
-                  (==)
+                  (--)
     ...
 
 This instance is ill-formed, as the ``a`` in ``Const a Quux`` is unbound! One
@@ -402,7 +404,7 @@ involving ``coerce`` easy to understand, so ``DerivingVia`` benefits from this
 as well.
 
 Effect and Interactions
-=======================
+-----------------------
 Other ``deriving``-related language extensions, such as
 ``GeneralizedNewtypeDeriving`` and ``DeriveAnyClass``, are selected
 automatically in certain cases, even without the use of explicit ``newtype``
@@ -447,7 +449,7 @@ syntax to say which combination of parameters to a class one would prefer to
 seven different combinations to choose from!)
 
 Costs and Drawbacks
-===================
+-------------------
 There are currently no known drawbacks to this feature. Implementing this
 feature was a straightforward extension of the machinery already in place
 to support ``deriving``, so it will not impose significant maintenance costs.
@@ -456,7 +458,7 @@ to support ``deriving``, so it will not impose significant maintenance costs.
 much of the code for ``DerivingVia``.)
 
 Alternatives
-============
+------------
 The closest existing alternatives to this feature are various preprocessor hacks
 that people have cooked up to "copy-and-paste" code patterns in various places,
 such as in Conal Elliott's
@@ -498,10 +500,10 @@ We have chosen not to, since:
    it is a cost worth considering.
 
 Unresolved questions
-====================
+--------------------
 
 Implementation Plan
-===================
+-------------------
 There is feature is fully implemented in our GHC fork
 `here <https://github.com/RyanGlScott/ghc/tree/deriving-via-8.5>`_. I
 (`@RyanGlScott <https://github.com/RyanGlScott>`_) volunteer to work to get

@@ -7,6 +7,7 @@ Unrestricted Overloaded Labels
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/170>`_
 .. sectnum::
+   :start: 40
 .. contents::
 
 ``OverloadedLabels`` are a useful feature, but they have somewhat unexpected syntax restrictions on what is a valid label. This proposal exists to alleviate this.

@@ -7,6 +7,7 @@ Define Kinds Without Promotion
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/106>`_.
 .. highlight:: haskell
 .. sectnum::
+   :start: 32
 .. contents::
 
 

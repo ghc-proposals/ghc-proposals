@@ -7,6 +7,7 @@ Type-level type applications
 .. highlight:: haskell
 .. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/80>`_.
 .. sectnum::
+   :start: 15
 .. contents::
 
 .. _`#12045`: https://ghc.haskell.org/trac/ghc/ticket/12045
@@ -73,9 +74,9 @@ This new feature would work in pattern signatures (that is, a type signature asc
 
   data Ex where
     MkEx :: forall k (a :: k). Proxy (a :: k) -> Ex
-    
+
   foo (MkEx (p :: Proxy @k a)) = ... k is in scope here (along with a) ...
-  
+
 Costs and Drawbacks
 -------------------
 As a user, I was

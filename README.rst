@@ -89,7 +89,7 @@ contributor to write a formal proposal.
 
 
 What should a proposal look like?
---------------------------------
+---------------------------------
 
 Each proposal document must follow the following outline. A template is provided in `proposal template <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.rst>`_.
 
@@ -139,7 +139,7 @@ The pull request summary should include a brief description of your
 proposal, along with a link to the rendered view of proposal document
 in your branch. For instance,
 
-.. code-block::
+.. code-block:: md
 
     This is a proposal augmenting our existing `Typeable` mechanism with a
     variant, `Type.Reflection`, which provides a more strongly typed variant as
@@ -249,10 +249,10 @@ The committee members have committed to adhere to the `Haskell committee guideli
 
 We would also like to thank our former members
 
-======================  ==================================================== 
+======================  ====================================================
 Ryan Newton             `@rrnewton <https://github.com/rrnewton>`_
 Roman Leshchinskiy      `@rleshchinskiy <https://github.com/rleshchinskiy>`_
-======================  ==================================================== 
+======================  ====================================================
 
 
 Committee process
@@ -361,6 +361,17 @@ and any other relevant considerations appropriately.
    with other new features. In the common case the original implementor of
    a feature moves on to other things after a few years, and this
    maintenance burden falls on others.
+
+How to build the proposals?
+---------------------------
+
+The proposals can be rendered by running::
+
+   nix-shell shell.nix --run "make html"
+
+this will then create a directory ``_build`` which will contain an ``index.html``
+file and the other rendered proposals. This is useful when developing a proposal
+to ensure that your file is syntax correct.
 
 
 Questions?
