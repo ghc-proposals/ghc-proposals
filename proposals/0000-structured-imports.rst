@@ -193,7 +193,7 @@ Note: Subsetting imports
     Note that in interests of brevity, we only illustrated import subsetting (with ``(adds..)`` and  ``hiding (subs..)``) for the unqualified/unaliased case -- while it unambiguously extends to the rest of the cases.
 
 Note: Semantics of the ``qualified`` keyword
-    It's worth underscoring the effect of the ``qualified`` keyword in the non-extended language -- it is strictly negative, as it suppresses population of the top level of the local namespace. Quoting *Section 5.3.2 of Haskell2010*:
+    It's worth underscoring the effect of the ``qualified`` keyword in the non-extended language -- it is strictly negative, as it suppresses unqualified population of the top level of the local namespace. Quoting *Section 5.3.2 of Haskell2010*:
 
       If the import declaration used the *qualified* keyword, only the qualified name of the entity is brought into scope. If the *qualified* keyword is omitted, then both the qualified and unqualified name of the entity are brought into scope.
 
@@ -224,7 +224,7 @@ Higher-level names
   It is indeed this *"thought of"* angle that we're referring to here -- the structure of higher-level names has no effect on semantics, but merely gives us a chance to establish a hopefully more enlightening terminology.
 
 Level-n names
-  Individual elements of the name hierarchy of the module system, not containing a dot themselves.
+  Individual elements of the name hierarchy of the module system, not containing dots themselves.
 
 Module name
   A non-empty sequence of *level-n* names interspersed with dots, with ``n`` growing by ``1`` from right to left, starting from ``1``.
@@ -270,7 +270,7 @@ Note: Role of the ``module`` keyword
         The form “module M” names the set of all entities that are in scope with both an unqualified name “e” and a qualified name “M.e”. 
 
 Note: Role of the ``qualified`` keyword
-    As mentioned in the *status quo* section, the ``qualified`` keyword has strictly negative semantics in the non-extended semantics: it prevents *level-0* names from being made available at the top level of the local namespace.  In this light, a natural meaning for this keyword in the context of *level-1* name introduction does not appear to exist.
+    As mentioned in the *status quo* section, the ``qualified`` keyword has strictly negative semantics in the non-extended semantics: it prevents *level-0* names from being made available unqualified, at the top level of the local namespace.  In this light, a natural meaning for this keyword in the context of *level-1* name introduction does not appear to exist.
 
 New syntax summary: imports
 ***************************
