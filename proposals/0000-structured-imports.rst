@@ -38,7 +38,7 @@ Providing the package author with some controlled way to define a common core of
       , module C     aliases       -- Re-export of all of the names available through all of the aliases
                                    -- available from C, to be made available for bringing into scope
                                    -- qualified, via the respective aliases.
-                                   -- Basically brings the entire alias structure exposed by C --
+                                   -- Basically re-exports the entire alias structure exposed by C --
                                    -- both the R and N aliases.
 
       , module C     aliases (R)   -- Same as above, but restricted to a single alias:
@@ -90,8 +90,6 @@ To establish a compact mental model of the inter-module name flow *status quo*, 
 
 Exports are mediated by a flat set
 *************************************
-The inter-module name flow is not only affected by the various combinations of import and export statements, but is also instrumentally limited by what the serialised module interface can express, as represented by ``.hi`` files and the ``HscTypes.ModIface`` type.  While the latter needs not *necessarily* directly correspond to anything at language semantics level, it does have a pretty direct correspondence to the notions of the inter-module name flow.
-
 To establish that, one simply needs to make the following observations regarding the namespace due for export by a module:
 
 1. The namespace due for export is a flat set (which is our problem), which is established by *Section 5.2 of Haskell2010*:
@@ -101,16 +99,19 @@ To establish that, one simply needs to make the following observations regarding
        The *unqualified* names of the entities exported by a module must all be distinct (within their respective namespace).
 
 2. This flat set is essentially serialised into the module interface as the ``mi_exports`` field of ``HscTypes.ModIface``, which is a list.
-3. Requirements of separate compilation necessitate that the inbound name flow is entirely defined by the information available from this serialised module interface.
 
-Furthermore, *Section 5.2 of Haskell2010* underscores that:
+   The inter-module name flow is not only controlled by the various combinations of import and export statements, but is also instrumentally limited by what the serialised module interface can express, as represented by ``.hi`` files and the ``HscTypes.ModIface`` type.  While the latter, being an implementation detail, needs not *necessarily* directly correspond to anything at language semantics level, it does have a pretty direct correspondence to the effective notions of the inter-module name flow.
 
-   It makes no difference to an importing module how an entity was exported. For example, a field name f from data type T may be exported individually (f, item (1) above); or as an explicitly-named member of its data type (T(f), item (2)); or as an implicitly-named member (T(..), item(2)); or by exporting an entire module (module M, item (5)).
+3. Requirements of separate compilation necessitate that the name flow inbound to the importing module is perfectly constrained by the information available from this serialised module interface, which reinforces the impossibility of recovering from the imported module anything but a flat set.
+
+   Furthermore, *Section 5.2 of Haskell2010* underscores that:
+
+       It makes no difference to an importing module how an entity was exported. For example, a field name f from data type T may be exported individually (f, item (1) above); or as an explicitly-named member of its data type (T(f), item (2)); or as an implicitly-named member (T(..), item(2)); or by exporting an entire module (module M, item (5)).
 
 As a result, we are free not to care during import, how exactly the names were exported by the module being imported.  The entirety of relevant information is the *flat export set*.
 
-Name grouping
-    Note, however, that it is also true that the exported names still retain natural *grouping*:
+Note: Name grouping
+    It is also true that the exported names still retain natural *grouping* (``IEThing*``):
 
     * methods and associated types within type classes
     * constructors and field names within ADTs
@@ -153,8 +154,8 @@ Exports
      - ``module M`` (no dots in ``M``)
      - of the set of names composed under the single-component module name ``M``, append all to ``Z.Y.X``'s export set
 
-Composed single-component module names
-   Due to the mechanics of imports discussed later, the single-component module names are different from multi-component module names in that they can contain a sum of exports from different modules.
+Note: Composed single-component module names
+   Due to the mechanics of imports discussed later, the single-component module names are different from multi-component module names in that they can contain a sum of imports from different modules.
 
    This fact, though, does change nothing in our calculations.
 
@@ -188,13 +189,13 @@ Imports
      - ``import           Z.Y.X (pos..) as W``
      - Append the specified subset of ``Z.Y.X``'s export set to the top-level, and also under ``W``
 
-Subsetting imports
+Note: Subsetting imports
     Note that in interests of brevity, we only illustrated import subsetting (with ``(adds..)`` and  ``hiding (subs..)``) for the unqualified/unaliased case -- while it unambiguously extends to the rest of the cases.
 
-Semantics of the ``qualified`` keyword
+Note: Semantics of the ``qualified`` keyword
     It's worth underscoring the effect of the ``qualified`` keyword in the non-extended language -- it is strictly negative, as it suppresses population of the top level of the local namespace. Quoting *Section 5.3.2 of Haskell2010*:
 
-      If the import declaration used the *qualified* keyword, only the qualified name of the entity is brought into scope. If the *qualified* keyword is omitted, then both the qualified and unqualified name of the entity is brought into scope.
+      If the import declaration used the *qualified* keyword, only the qualified name of the entity is brought into scope. If the *qualified* keyword is omitted, then both the qualified and unqualified name of the entity are brought into scope.
 
     With this understanding, one could (hypothetically) say that:
 
@@ -206,13 +207,13 @@ Proposed change
 Terminology
 ***********
 Level-0 names
-  Intra-module names (regardless of introduction), which reside at the top level of its structured namespace, and which therefore cannot be subject to the *"dot operator"* of the module system.  The only names that used to be able to travel across module boundaries.
+  Intra-module names (regardless of introduction), which reside at the top level of its structured namespace, and which therefore cannot be subject to the *"dot operator"* of the module system.  The only names that were allowed to travel across module boundaries.
 
 Level-1 names
-  Intra-module names (regardless of introduction), that have a single component (no dots), and carry a set of `level-0 names`_, which are individually accessible by the *"dot operator"* of the module system.  It is these names that we propose allow travelling across module boundaries, along with their associated content.
+  Intra-module names (regardless of introduction), that have no sub-structure other than the associated set of *level-0 names*, the latter being individually accessible by the *"dot operator"* of the module system.  It is these names that we propose allow travelling across module boundaries, along with their associated *level-0* content.
 
 Higher-level names
-  Intra-module names (regardless of introduction), that carry non-level-0 names accessible by the dot syntax.  Note that while the heading section of Chapter 5 of the *Haskell 2010 Language Report* says:
+  Intra-module names (regardless of introduction), that carry non-*level-0* names accessible by the dot syntax.  Note that while the heading section of *Chapter 5 of Haskell2010* says:
 
     Module names can be thought of as being arranged in a hierarchy in which appending a new component creates a child of the original module name. For example, the module Control.Monad.ST is a child of the Control.Monad sub-hierarchy.
 
@@ -221,6 +222,12 @@ Higher-level names
     This is purely a convention, however, and not part of the language definition; in this report a modid is treated as a single identifier occupying a flat namespace.
 
   It is indeed this *"thought of"* angle that we're referring to here -- the structure of higher-level names has no effect on semantics, but merely gives us a chance to establish a hopefully more enlightening terminology.
+
+Level-n names
+  Individual elements of the name hierarchy of the module system, not containing a dot themselves.
+
+Module name
+  A non-empty sequence of *level-n* names interspersed with dots, with ``n`` growing by ``1`` from right to left, starting from ``1``.
 
 New syntax summary: exports
 ***************************
@@ -241,21 +248,28 @@ New syntax summary: exports
      - Append the set of *level-0* names available in the scope through the local namespace entry ``A.B.C``, with ``subs`` subtracted, to the set under the ``D`` alias (*level-1 name*) in the ``Z.Y.X``'s structured export namespace.
    * - 4
      - ``module A.B.C aliases``..
-     - Append all *level-1 names* carried by the structured export namespace of the ``A.B.C`` module as *level-1 names* in the ``Z.Y.X``'s structured export namespace.
+     - Append all *level-1 names* carried by the local namespace entry ``A.B.C`` as *level-1 names* in the ``Z.Y.X``'s structured export namespace.
    * - 5
      - ``module A.B.C aliases        (adds..)``..
-     - Append the specified subset of *level-1 names* carried by the structured export namespace of the ``A.B.C`` module as *level-1 names* in the ``Z.Y.X``'s structured export namespace.
+     - Append the specified subset of *level-1 names* carried by the local namespace entry ``A.B.C`` as *level-1 names* in the ``Z.Y.X``'s structured export namespace.
    * - 6
      - ``module A.B.C aliases_hiding (subs..)``..
-     - Append all *level-1 names* carried by the structured export namespace of the ``A.B.C`` module, with the ``subs`` set subtracted, as *level-1 names* in the ``Z.Y.X``'s structured export namespace.
+     - Append all *level-1 names* carried by the local namespace entry ``A.B.C``, with the ``subs`` set subtracted, as *level-1 names* in the ``Z.Y.X``'s structured export namespace.
 
-Export ``as`` targets
-    The *level-1* name (alias) following the ``as`` keyword must have a single component under this proposal.  Multi-component *level-1* names are explicitly out of scope.
+Note: Export ``as`` targets
+    The ``as`` keyword must be followed by a *level-1* name (alias).  Multi-component module names, while interesting, are out of scope of this proposal.
 
-Export ``as`` sources
-    While we used a multi-component module name in the example of the ``as`` export source, it doesn't matter, in principle, and a single-component module name would do as well.  What matters is that it is brought into scope by an import declaration as a non-level-0 name.
+Note: Export ``as`` sources
+    While we used a multi-component local namespace entry in the example of the ``as`` export source, it doesn't matter, in principle, and a single-component module name would do as well.  What matters is that it is brought into scope by an import declaration as a non-*level-0* name.
 
-Role of the ``qualified`` keyword
+Note: Role of the ``module`` keyword
+    Even without the proposal under discussion, the ``module`` keyword should be considered misleading, since it suggests that it refers not to the local module namespace, but to the namespaces of imported modules -- which is not true.
+
+    To establish this, consider that it could refer to a locally-introduced alias, which could be carrying a sum of exports from different modules.  Quoting *clause 5 in Section 5.2 of Haskell2010*:
+
+        The form “module M” names the set of all entities that are in scope with both an unqualified name “e” and a qualified name “M.e”. 
+
+Note: Role of the ``qualified`` keyword
     As mentioned in the *status quo* section, the ``qualified`` keyword has strictly negative semantics in the non-extended semantics: it prevents *level-0* names from being made available at the top level of the local namespace.  In this light, a natural meaning for this keyword in the context of *level-1* name introduction does not appear to exist.
 
 New syntax summary: imports
@@ -278,13 +292,13 @@ New syntax summary: imports
 
 Changes to the operational semantics
 ************************************
-Semantics of module interface files need to be extended from only allowing the current status-quo of a flat set of (regular, *level-0*) exported names, to allow a introduction of recording *level-1 names*, along with their associated *level-0* content.
+Semantics of module interface files need to be extended from only allowing the current status-quo of a flat set of (regular, *level-0*) exported names, to allow recording of *level-1 names*, along with their associated *level-0* content.
 
 More specifically, in the ``mi_exports`` field of ``HscTypes.ModIface`` we're going from ``[IfaceExport]`` to something like ``Map ModuleName IfaceExport`` (while also enforcing that ``ModuleName`` corresponds to a *level-1* name, i.e. has no dots).
 
-NOTE, implementation options
-  1. Keeping the type and semantics of the ``mi_exports`` field as-is, and adding the new semantics to a new field, such as ``mi_exports_level1`` -- which would be less disruptive, but also less clean in the long run.
-  2. Changing the semantics as described above.
+Note: Implementation options
+  1. Changing ``mi_exports`` to carry a map, as described above.
+  2. Keeping the type and semantics of the ``mi_exports`` field as-is, and adding the new semantics to a new field, such as ``mi_exports_level1`` -- which would be less disruptive, but also less clean in the long run.
 
 Gating the functionality
 ************************
@@ -292,7 +306,7 @@ The new semantics are to be guarded by a language pragma, such as ``StructuredIm
 
 Effect and Interactions
 -----------------------
-Package author will be have an option of conveniently setting up coherent namespaces for their entire packages (or their desired subsets), by potentially specifying the entire shared namespace structure in a single file.
+Package author will gain an option of conveniently setting up coherent namespaces for their entire packages (or their desired subsets), by potentially specifying the entire shared namespace structure in a single file.
 
 The natural divergences and ambiguities of things like ``T`` meaning ``Data.Text`` or ``Data.Text.Lazy``, ``Map`` meaning ``Data.Map`` or ``Data.Map.Strict`` -- all those will have a concise and effective way of being addressed by a policy that will become expressible.
 
@@ -315,7 +329,7 @@ There appear to be no language-level costs for the non-users: ``StructuredImport
 
 There appears to be no compile-time cost whatsoever associated with handling of the modules compiled without the extension enabled.
 
-The newly introduced keywords (``aliases`` and ``aliases_hiding``) are only assigned meaning locally to the import/export declarations and are not stolen from the overall syntax, similar to how it's handled in Haskell2010 (section 5.3):
+The newly introduced keywords (``aliases`` and ``aliases_hiding``) are only assigned meaning locally to the import/export declarations and are not stolen from the overall syntax, similar to how it's handled in *Section 5.3 of Haskell2010*:
 
    Lexically, the terminal symbols “as”, “qualified” and “hiding” are each a varid rather than a reservedid. They have special significance only in the context of an import declaration; they may also be used as variables.
 
@@ -339,6 +353,7 @@ Additional extensions
 During discussion of this proposal various further suggestions for extension came up:
 
 1. Simultaneous imports at both *level-0* and *level-1* (since the current proposal would necessitate having two separate imports declarations to bring in the entire scope of a given module):
+
 * ``import A.B.C               aliases``               a full import of ``A.B.C``'s exports, at both name levels (instead of the just-*level-1* interpretation under the current proposal).
 * ``import A.B.C        (ns..) aliases        (as..)`` a version restricting both imports.
 * ``import A.B.C hiding (ns..) aliases_hiding (as..)`` a version restricting both imports, both via substraction from respective export sets.
