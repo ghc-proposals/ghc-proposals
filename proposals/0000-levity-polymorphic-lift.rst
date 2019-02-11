@@ -108,7 +108,7 @@ Modify ``-XDeriveLift`` to generate typed and untyped splices (for ``liftTyped``
 Effect and Interactions
 -----------------------
 The proposed change would make it possible to lift values of unlifted kinds and would make it
-(officially) possibly for `TExp` to represent expressions of unlifted kinds.
+(officially) possibly for ``TExp`` to represent expressions of unlifted kinds.
 
 Costs and Drawbacks
 -------------------
