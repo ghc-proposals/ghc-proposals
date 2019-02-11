@@ -383,6 +383,8 @@ Unresolved questions
 
 Implementation Plan
 -------------------
+I (Serge Kosyrev) will try to implement this proposal.
+
 1. ``HscTypes.ModIface`` will have to be extended to allow a shallowly hierarchical structure, possibly at the ``mi_exports`` field.
 2. It's unclear what, but some internal types (those tracking module composition before it gets serialised) will also need to be changed.
 3. Parser changes are inevitable.
