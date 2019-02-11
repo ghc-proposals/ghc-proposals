@@ -81,37 +81,80 @@ Proposed Change Specification
 -----------------------------
 1. Whenever printing variables quantified in a ``forall``, print inferred variables with braces.
 
-2. If the expression passed to ``:type`` is a single identifier (including symbolic identifiers in
-   parentheses), do not instantiate. Instead, treat ``:type`` just like ``:type +v`` in this case.
+2. Maximally instantiate any *inferred* or dictionary arguments (class constraints) to expressions
+   passed to ``:type``.
+   
+3. Remove ``:type +v``.
 
 Effect and Interactions
 -----------------------
-This change will fix the two infelicities described in the motivation.
+* Proposed change (1) fixes motivation (1) handily.
+
+* Proposed change (2) means to instantiate any *inferred* type variables and try to solve
+  any class constraints in the type of an expression passed to ``:type``, as long as there
+  are no intervening visible or *specified* arguments. Here are some examples to illustrate::
+
+    foo :: forall a. (a ~ Int) => a -> a
+    bar :: forall a b. (a ~ Int) => a -> b -> a
+
+    > :type foo
+    foo :: (a ~ Int) => a -> a
+    > :type foo @Int
+    foo @Int :: Int -> Int
+    > :type foo @Bool
+    **TYPE ERROR**
+    > :type bar
+    bar :: (a ~ Int) => a -> b -> a
+    > :type bar @Int
+    bar @Int :: (Int ~ Int) => Int -> b -> Int
+    > :set -fprint-explicit-foralls
+    > :type bar @Int
+    bar @Int :: forall b. (Int ~ Int) => Int -> b -> Int
+    > :type bar @Int @Bool
+    bar @Int @Bool :: Int -> Bool -> Int
+    > :type (+) @Int
+    (+) @Int :: Int -> Int -> Int
+
+  As we can see here, the new behavior for ``:type`` combines the advantages of the old
+  ``:type`` (it does some intantiating and constraint-solving) and the old ``:type +v``
+  (it doesn't fiddle with specified variables). The new ``:type`` isn't perfect, though:
+  it still reports ``Int ~ Int`` in the type of ``bar @Int``; it does this because
+  there is an intervening specified variable, ``b``.
+
+* Now that ``:type`` doesn't fiddle with specified variables, ``:type +v`` seems redundant.
+  Note that it is not *entirely* redundant, as suggested to me by @int-index. For example,
+  suppose we have ::
+
+    quux :: Arbitrary T => T -> T
+
+  for some concrete type ``T``. This is allowed with suitable extensions, and is useful
+  when the ``Arbitrary T`` instance is defined in a testing module as an orphan. Yet,
+  any use of ``:type quux`` will yield a type error. Of course, users can use ``:info quux``
+  in this case and get the result they want.
+
+* Note that this proposal is all about GHCi and printing. It does *not* change the language
+  that GHC compiles.
 
 Costs and Drawbacks
 -------------------
-Both changes are trivial to implement.
+* The drawback to change (1) is that it means GHC is printing more fancy widgets in types. Without
+  ``-XTypeApplications``, users do not care about the inferred/specified distinction and may be
+  unfamiliar with the new notation.
 
-The drawback to change (1) is that it means GHC is printing more fancy widgets in types. Without
-``-XTypeApplications``, users do not care about the inferred/specified distinction and may be
-unfamiliar with the new notation.
+* The drawback of change (2) is that users might see more unsolved constraints with ``:type``,
+  but these should appear only with ``-XTypeApplications``.
 
-The drawback to change (2) is that it requires a special case, and users might stumble over the
-special case. For example, if we define ::
-
-  constMap :: x -> (a -> b) -> [a] -> [b]
-  constMap _ = map
-
-and then ask ``:type constMap undefined``, we'll get a different printed type than we would from ``:type map``;
-the latter would be the special case while the former wouldn't be. However, this drawback seems
-smaller than the drawback of the status quo, where one might reasonably not be aware of the importance of
-using ``:type +v`` when doing visible type application.
+* The drawback of change (3) is that users might be surprised to see ``:type +v`` dropped. It would
+  be easy to have GHCi produce an error stating that the feature has been removed because ``:type``
+  has been improved for a few releases.
 
 Alternatives
 ------------
-These are free design decisions. No specific alternatives come to mind, but there's a wide array of
-possibilities here.
+* These are free design decisions, and the sky is the limit.
 
+* Previously, this proposal suggested special-casing ``:type`` to behave like ``:type +v`` when
+  the expression is just a single name. However, like all special cases, this could lead
+  to unexpected behavior. This new formulation seems better.
 
 Unresolved Questions
 --------------------
@@ -120,4 +163,9 @@ None at this time.
 
 Implementation Plan
 -------------------
-This is all great stuff for a newcomer if you'd like to try your hand.
+
+(Note mainly for self.)
+We think that (2) could be implemented easily by setting ``ir_inst`` to ``False`` when processing
+a ``:type`` invocation, and then doing ``topInstantiateInferred`` at the top of ``tcArgs``. While
+in town, have ``topInstantiateInferred`` be a bit faster when ``inst_all`` is ``False``, a common
+case.
