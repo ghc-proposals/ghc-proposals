@@ -5,7 +5,7 @@ Levity-polymorphic `Lift`
 .. trac-ticket::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/208>`_.
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/209>`_.
 .. sectnum::
 .. contents::
 
