@@ -110,6 +110,12 @@ Effect and Interactions
 The proposed change would make it possible to lift values of unlifted kinds and would make it
 (officially) possibly for ``TExp`` to represent expressions of unlifted kinds.
 
+This proposal would also provide a means for trying out levity polymorphism in typeclasses (see
+sections 7.3 and 8.1 of the `Levity Polymorphism paper <https://www.microsoft.com/en-us/research/wp-content/uploads/2016/11/levity-pldi17.pdf>`_).
+Although there are `many classes which could benefit from this treatment <https://ghc.haskell.org/trac/ghc/ticket/12708#comment:29>`_,
+``Lift`` is a good first candidate because it isn't too widely used and ``template-haskell``
+isn't expected to be as stable and free of breakage as ``base``. There is already `a proposal <https://github.com/ghc-proposals/ghc-proposals/pull/30>`_ which aims to make typeclasses in ``base`` levity-polymorphic.
+
 Costs and Drawbacks
 -------------------
 The main drawback is that uses of ``lift``, ``TExp``, ``unType``, ``unTypeQ``, and ``unsafeTExpCoerce`` which
