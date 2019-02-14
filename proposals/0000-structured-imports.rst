@@ -149,7 +149,7 @@ Exports
      - append the specified set of names to ``Z.Y.X``'s export set
    * - 2
      - ``module A.B.C``
-     - of the potentially restricted set of names under the multi-component module name ``A.B.C``, append all to ``Z.Y.X``'s export set
+     - of the potentially restricted (see the *Module re-export restriction* aside) set of names under the multi-component module name ``A.B.C``, append all to ``Z.Y.X``'s export set
    * - 3
      - ``module M`` (no dots in ``M``)
      - of the set of names composed under the single-component module name ``M``, append all to ``Z.Y.X``'s export set
@@ -158,6 +158,11 @@ Note: Composed single-component module names
    Due to the mechanics of imports discussed later, the single-component module names are different from multi-component module names in that they can contain a sum of imports from different modules.
 
    This fact, though, does change nothing in our calculations.
+
+Note: Module re-export restriction
+   Clause 5.2 specifies the mechanism of narrowing the set of names re-exported from a module (*locally-structured namespace element*, really):
+
+     The form “module M” names the set of all entities that are in scope with both an unqualified name “e” and a qualified name “M.e”.
 
 Imports
 *******
@@ -271,6 +276,11 @@ Note: Role of the ``module`` keyword
 
 Note: Role of the ``qualified`` keyword
     As mentioned in the *status quo* section, the ``qualified`` keyword has strictly negative semantics in the non-extended semantics: it prevents *level-0* names from being made available unqualified, at the top level of the local namespace.  In this light, a natural meaning for this keyword in the context of *level-1* name introduction does not appear to exist.
+
+Note: Ignoring the module re-export restriction
+    As mentioned previously in the *Module re-export restriction* note, Haskell2010 specifies a mechanism that narrows the set of exported names to the intersection available both qualified and unqualified.
+
+    In our proposal, we're consciously opting out of this decision, because it seems arbitrary.
 
 New syntax summary: imports
 ***************************
