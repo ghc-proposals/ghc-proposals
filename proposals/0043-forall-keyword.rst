@@ -3,10 +3,9 @@ Make ``forall`` a keyword
 
 .. proposal-number:: 43
 .. trac-ticket:: !363
-.. implemented:: Leave blank. This will be filled in with the first GHC version which
-                 implements the described feature.
+.. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/193>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/193>`_.
 .. sectnum::
 .. contents::
 
