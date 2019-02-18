@@ -24,10 +24,10 @@ Motivation
 I was recently quite confused about an error message from GHC, originating from code like this::
 
  class X a where
- foo :: a
+   foo :: a
 
- {-# MINIMAL foo #-}
- foo = undefined
+   {-# MINIMAL foo #-}
+   foo = undefined
 
  instance X Int
 
