@@ -57,8 +57,8 @@ is defined, with a message of the form::
 
   You made `foo` MINIMAL, but also gave an explicit definition for it.
   
-Per usual GHC strategy, this can be tied to a flag named ``-Wminimal-redundant-methods`` or similar. (Exact wording
-of the warning text and the flag name can be determined by the implementor.)
+Per usual GHC strategy, this can be tied to a flag named ``-Wminimal-redundant-methods`` or similar. This flag should be
+on by default.(Exact wording of the warning text and the flag name can be determined by the implementor.)
 
 I have filed this as a feature request: https://ghc.haskell.org/trac/ghc/ticket/16314. Simon PJ asked me to
 create a proposal so it can gather feedback.
@@ -105,7 +105,7 @@ If ``E`` is not empty, then GHC should emit a warning saying the methods in ``E`
 the ``MINIMAL`` pragma but also are given a default definition. If ``E`` is empty, no warning is generated.
 
 As per usual GHC strategy, this warning should be tied to a flag. I propose: ``-Wminimal-redundant-methods``,
-though the implementor can choose something more appropriate.
+though the implementor can choose something more appropriate. The flag should be on by default.
 
 Simon PJ comments: The ``MINIMAL`` definition requires that every method ``m`` in ``R`` 
 is defined in the instance declaration. Giving a default method for ``m``, in the class declaration, is
