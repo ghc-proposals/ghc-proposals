@@ -58,7 +58,7 @@ is defined, with a message of the form::
   You made `foo` MINIMAL, but also gave an explicit definition for it.
   
 Per usual GHC strategy, this can be tied to a flag named ``-Wminimal-redundant-methods`` or similar. This flag should be
-on by default.(Exact wording of the warning text and the flag name can be determined by the implementor.)
+on by default. (Exact wording of the warning text and the flag name can be determined by the implementor.)
 
 I have filed this as a feature request: https://ghc.haskell.org/trac/ghc/ticket/16314. Simon PJ asked me to
 create a proposal so it can gather feedback.
