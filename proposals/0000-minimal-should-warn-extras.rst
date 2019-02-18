@@ -49,10 +49,10 @@ definition should not skip it. But that's very confusing: because I know I just 
 course, the mistake I made was that I forgot to remove it from the ``MINIMAL`` pragma; but I was not warned about that.
 
 The important point is that the warning comes at the instantiation site instead of
-the class definition, which can be miles apart! (Imagine class coming from a library, and the instantiation
-from a user code: Even worse!)
+the class definition, which can be miles apart. Even worse: The class might be coming from a library and the library
+author was never warned about this obvious mistake.
 
-This proposal suggests that GHC should warn about this discrepancy right at the point where the `class X`
+This proposal suggests that GHC should warn about this discrepancy right at the point where the ``class X``
 is defined, with a message of the form::
 
   You made `foo` MINIMAL, but also gave an explicit definition for it.
