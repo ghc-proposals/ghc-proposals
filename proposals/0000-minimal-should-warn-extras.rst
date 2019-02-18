@@ -44,7 +44,7 @@ For this, GHC says::
  7 | instance X Int
    |       
 
-This is arguably correct, but not helpful. Since I made foo part of `MINIMAL``, GHC rightly complains the instance
+This is arguably correct, but not helpful. Since I made ``foo`` part of ``MINIMAL``, GHC rightly complains the instance
 definition should not skip it. But that's very confusing: because I know I just added a default definition for it. Of
 course, the mistake I made was that I forgot to remove it from the ``MINIMAL`` pragma; but I was not warned about that.
 
