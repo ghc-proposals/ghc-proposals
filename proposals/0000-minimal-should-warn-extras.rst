@@ -8,9 +8,8 @@ MINIMAL should warn about extra definitions
 .. implemented:: 
                  
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_.
-            **After creating the pull request, edit this file again, update the
-            number in the link, and delete this bold sentence.**
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/210>`_.
+            
 
 .. sectnum::
 
