@@ -395,7 +395,17 @@ Implementation Plan
 -------------------
 I (Serge Kosyrev) will try to implement this proposal.
 
-1. ``HscTypes.ModIface`` will have to be extended to allow a shallowly hierarchical structure, possibly at the ``mi_exports`` field.
-2. It's unclear what, but some internal types (those tracking module composition before it gets serialised) will also need to be changed.
-3. Parser changes are inevitable.
-4. Something else?
+Status Quo
+^^^^^^^^^^
+The key elements that determine the *exports* -> *local namespace* -> *exports* flow are:
+
+0.  ``ModIface.mi_exports`` :: ``[AvailInfo]``
+1. ``filterImports``        :~: ``ModIface → [IE GhcPs] → ([IE GhcRn], [GlobalRdrElt])``
+2. ``exports_from_avail``   :~: ``[IE] → GlobalRdrEnv → ImportAvails → [AvailInfo]``
+3. ``mkIface_``             :~: ``[AvailInfo] → [IfaceExport] → ModIface``
+
+The #1 determines the GlobalRdrEnv that represents the local structured namespace.
+
+The #2 takes an export list and queries the local structured namespaces to compose the flat export list.
+
+The #3 constrains the ModIface to be constructed from a flat export list.
