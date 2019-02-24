@@ -115,7 +115,7 @@ or to adjust the ``MINIMAL`` pragma.
 Effect and Interactions
 -----------------------
 
-If a method as a definition via the ``default signatures`` extension, then that definition should
+If a method has a definition via the ``default signatures`` extension, then that definition should
 not be added to the set ``D`` as defined above. While adding it would be a strict check, I think it
 is likely to increase the false-positives. Though feedback is welcome on the impact of this.
 
