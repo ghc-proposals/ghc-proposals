@@ -103,12 +103,17 @@ For each class declaration with a ``MINIMAL`` pragma, compute::
 If ``E`` is not empty, then GHC should emit a warning saying the methods in ``E`` are required by
 the ``MINIMAL`` pragma but also are given a default definition. If ``E`` is empty, no warning is generated.
 
+Note that ``D`` should not contain definitions that have ``default signatures``, see below.
+
 Effect and Interactions
 -----------------------
 
 If a method as a definition via the ``default signatures`` extension, then that definition should
-not be added to the set ``D`` as defined above. While adding it would be a strict check, I think it
-is likely to increase the false-positives. Though feedback is welcome on the impact of this.
+not be added to the set ``D`` as defined above. The motivation for this is that the author of
+the library provided a weaker definition (in the sense of the type) than required by the class for
+that particular method, and is free to mention that in the ``MINIMAL`` pragma without getting a warning.
+The presence of a definition with a default signature should be something that's checked at the
+instantiation site of this class, not at the definition, for violating the ``MINIMAL`` requirements.
 
 Costs and Drawbacks
 -------------------
