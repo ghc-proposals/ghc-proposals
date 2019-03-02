@@ -97,11 +97,12 @@ expression to a set of names::
 
 For each class declaration with a ``MINIMAL`` pragma, compute::
 
-  D = set of all methods with default definitions (except those with default signatures)
+  D = set of all methods with default definitions
   R = the required set, as defined above
   E = D `Set.difference` R
 
-Note that ``D`` should not contain definitions that have ``default signatures``, see below in
+Note that ``D`` should not contain definitions that have ``default signatures``, i.e., those
+with a default-definition only at a more specific type with extra constraints. See below in
 the "Effects and Interactions" section for the motivation on this.
 
 If ``E`` is not empty, then GHC should emit a warning saying the methods in ``E`` are required by
