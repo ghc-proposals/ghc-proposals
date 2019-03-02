@@ -2,8 +2,8 @@ A syntax for visible dependent quantification
 =============================================
 
 .. proposal-number:: 35
-.. trac-ticket::
-.. implemented::
+.. trac-ticket:: #16326
+.. implemented:: 8.10
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/81>`_.
 .. sectnum::

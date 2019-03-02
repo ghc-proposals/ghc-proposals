@@ -3,7 +3,7 @@ Make ``forall`` a keyword
 
 .. proposal-number:: 43
 .. trac-ticket:: !363
-.. implemented::
+.. implemented:: 8.8
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/193>`_.
 .. sectnum::
@@ -44,7 +44,7 @@ What do they mean? It depends on what extensions are in force.
 What's troublesome here is that a user might write one of these signatures, intending for quantification,
 but forgetting to enable ``-XExplicitForAll``. Instead of getting a helpful error message asking that
 they enable ``-XExplicitForAll``, they would get obscure type errors.
-  
+
 Proposed Change Specification
 -----------------------------
 The lexeme ``forall`` is understood to be a keyword in types, always. Similarly, the unicode variant

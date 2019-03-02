@@ -3,7 +3,7 @@ The dot type operator
 
 .. proposal-number:: 39
 .. trac-ticket::
-.. implemented::
+.. implemented:: 8.8
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/173>`_.
 .. sectnum::
