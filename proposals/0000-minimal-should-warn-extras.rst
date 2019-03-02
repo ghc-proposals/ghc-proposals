@@ -122,9 +122,11 @@ Effect and Interactions
 If a method as a definition via the ``default signatures`` extension, then that definition should
 not be added to the set ``D`` as defined above. The motivation for this is that the author of
 the library provided a weaker definition (in the sense of the type) than required by the class for
-that particular method, and is free to mention that in the ``MINIMAL`` pragma without getting a warning.
+that particular method, and thus the author should be free to mention that method
+in the ``MINIMAL`` pragma without getting a warning.
+
 The presence of a definition with a default signature should be something that's checked at the
-instantiation site of this class, not at the definition, for violating the ``MINIMAL`` requirements.
+instantiation site of this class, not at the definition site, for violations of the ``MINIMAL`` requirements.
 
 Costs and Drawbacks
 -------------------
