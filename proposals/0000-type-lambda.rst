@@ -81,6 +81,8 @@ There are several motivating factors for this addition:
    from intuitive. Using this new syntax, all the action happens in the function
    definition.
 
+4. See crowd-sourced example `here <https://github.com/ghc-proposals/ghc-proposals/pull/155#issuecomment-459430140>`_.
+
 Proposed Change Specification
 -----------------------------
 GHC's type system is *bidirectional*, meaning that it sometimes is *inferring* a type
@@ -101,7 +103,7 @@ twice in a single lambda; this is true for type variables, too.
 
 Thus, the proposal boils down to one rule:
 
-* ``\ @a -> body``, being checked against the type ``forall a. ty``, binds the type
+* ``\ @a -> body``, being checked against the type ``forall a. ty`` (where the ``a`` is *specified*), binds the type
   variable ``a`` and then checks ``body`` against the type ``ty``. Checking an
   expression ``\ @a -> body`` against a type that does not begin with a ``forall``
   is an error. The token after the ``@`` must be a type variable name or ``_``.
@@ -215,6 +217,9 @@ Effect and Interactions
   ``\@`` is a valid name for a user-defined operator. This proposal does not change that.
   If you want to bind a type variable in a lambda, you must separate the ``\`` from the
   ``@``.
+
+* This proposal makes abstracting over type variables the dual of applying types with
+  visible type application.
 
 * This proposal is meant to dovetail nicely with other recent proposals in this space
   (`#126`_, `#128`_), but all the proposals are orthogonal. Any can usefully be accepted
