@@ -1,7 +1,7 @@
 MINIMAL should warn about extra definitions
 ===========================================
 
-.. proposal-number::
+.. proposal-number:: 44
 .. trac-ticket::  <https://ghc.haskell.org/trac/ghc/ticket/16314>.
 .. implemented::
 .. highlight:: haskell
