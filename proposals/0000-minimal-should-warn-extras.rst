@@ -1,18 +1,12 @@
 MINIMAL should warn about extra definitions
-==============
+===========================================
 
-.. proposal-number:: 
-
+.. proposal-number::
 .. trac-ticket::  <https://ghc.haskell.org/trac/ghc/ticket/16314>.
-
-.. implemented:: 
-                 
+.. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/210>`_.
-            
-
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/210>`_.
 .. sectnum::
-
 .. contents::
 
 Currently, GHC issues no warnings if a class has a ``MINIMAL`` pragma requiring ``foo``, and yet you also
@@ -42,7 +36,7 @@ For this, GHC says::
      • In the instance declaration for ‘X Int’
    |
  7 | instance X Int
-   |       
+   |
 
 This is arguably correct, but not helpful. Since I made ``foo`` part of ``MINIMAL``, GHC rightly complains the instance
 definition should not skip it. But that's very confusing: because I know I just added a default definition for it. Of
@@ -56,8 +50,8 @@ This proposal suggests that GHC should warn about this discrepancy right at the 
 is defined, with a message of the form::
 
   You made `foo` MINIMAL, but also gave an explicit definition for it.
-  
-Per usual GHC strategy, this can be tied to a flag named ``-Wminimal-redundant-methods`` or similar. This flag should be
+
+Per usual GHC strategy, this can be tied to a flag named ``-Wredundant-minimal-methods`` or similar. This flag should be
 on by default. (Exact wording of the warning text and the flag name can be determined by the implementor.)
 
 I have filed this as a feature request: https://ghc.haskell.org/trac/ghc/ticket/16314. Simon PJ asked me to
@@ -108,10 +102,10 @@ the "Effects and Interactions" section for the motivation on this.
 If ``E`` is not empty, then GHC should emit a warning saying the methods in ``E`` are required by
 the ``MINIMAL`` pragma but also are given a default definition. If ``E`` is empty, no warning is generated.
 
-As per usual GHC strategy, this warning should be tied to a flag. I propose: ``-Wminimal-redundant-methods``,
+As per usual GHC strategy, this warning should be tied to a flag, ``-Wredundant-minimal-methods``,
 though the implementor can choose something more appropriate. The flag should be on by default.
 
-Simon PJ comments: The ``MINIMAL`` definition requires that every method ``m`` in ``R`` 
+Simon PJ comments: The ``MINIMAL`` definition requires that every method ``m`` in ``R``
 is defined in the instance declaration. Giving a default method for ``m``, in the class declaration, is
 therefore redundant. The warning encourages the programmer either to remove the default definition
 or to adjust the ``MINIMAL`` pragma.
