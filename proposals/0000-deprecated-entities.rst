@@ -24,13 +24,10 @@ however while that's possible for the type it's not possible for the constructor
 Proposed Change Specification
 -----------------------------
 
-* extend ``DEPRECATED`` pragma with a disambiguating specifiers:
-  ``pattern`` - for value-level things,
+* extend ``DEPRECATED`` pragma with disambiguating specifiers:
+  ``value`` - for value-level things,
   ``type`` - for types.
 * the unqualified case would mean deprecating both entities as it does now.
-
-Although, ``pattern`` seems like a weird choice, we are using it deliberately to be consistent
-with other language features(for example, `PatternSynonyms <https://downloads.haskell.org/~ghc/master/users-guide/glasgow_exts.html#patsyn-impexp>`_).
 
 Effect and Interactions
 -----------------------
@@ -45,7 +42,7 @@ An example of a use case for this is the following. Given the following module: 
     {-# DEPRECATED type Bar "Don't use type Bar" #-}
 
     data Baz = Baz
-    {-# DEPRECATED pattern Baz "Don't use data constructor Baz" #-}
+    {-# DEPRECATED value Baz "Don't use data constructor Baz" #-}
 
 When compiling the code which happens to use data constructor or type ``Foo``, we will see the following warnings: ::
 
@@ -74,9 +71,9 @@ Same logic applies to ``Baz``, we will be warned **only when its data constructo
 When having several entities in one pragma, specifiers can be supplied per entity.
 This will work: ::
 
-    {-# DEPRECATED type Qux, pattern Quux "Don't use this" #-}
+    {-# DEPRECATED type Qux, value Quux "Don't use this" #-}
 
-This feature does not work on ``module`` level.
+This feature does not work at ``module`` level.
 Module level deprecation already implies the entity - the module itself.
 
 Costs and Drawbacks
