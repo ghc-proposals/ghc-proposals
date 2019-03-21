@@ -281,13 +281,15 @@ Proposed Change Specification
 4. Namespace specifiers affect names in Template Haskell quotes.
    Note that the ``module`` namespace specifier makes sense here, too.
 
-5. ``-Wcompat`` warns on uses of ``pattern`` and ``'`` as namespace specifiers.
-   ``-Wcompat`` also warns on uses of ``''`` to denote a type-level Template Haskell
-   name quote.
+5. ``-Wcompat`` warns when:
+
+   * ``pattern`` is used as a namespace specifier.
+   * ``''`` is used to denote a type-level Template Haskell quote.
+   * ``type`` is used without a ``.`` as a namespace specifier (in an import/export list).
+   * ``'`` is used as a namespace specifier.
   
-6. Two releases after this proposal is implemented, it becomes an error to use
-   ``pattern`` as a namespace specifier in import/export lists. It similarly
-   becomes an error to use ``''`` to quote a type-level name.
+6. Two releases after this proposal is implemented, the first three bullets above
+   (``pattern``, ``''`` for TH, and ``type`` without a ``.``) become errors.
    (In contrast,
    the ``'`` syntax will not have a planned phase-out.)
 
@@ -318,6 +320,9 @@ Here are some examples with the proposed syntax::
 
   import My.Library ( type.C, type.T, data.MkT )   -- the two "type"s are redundant but harmless
 
+  module Foo ( type.C, data.T, module.X, module Y ) where ...
+    -- NB: module.X is a synonym for module X.
+
   {-# ANN module.This.Module "Something #-}        -- The "This.Module" is new; no other module may be specified
 
   false = data.not (data.True)    -- "data"s redundant but harmless
@@ -331,6 +336,9 @@ Effect and Interactions
   the oft-referred `proposal`_) are replaced by ``data``.
 
 * Disambiguation is now uniform: use ``type`` or ``data`` anywhere to disambiguate.
+
+* In export lists, the use of ``module.X`` will now work, just like ``module X``. The ``module X``
+  syntax will be retained in order to keep to the standard.
 
 * Note that the ``'`` in ``'[True, False]`` is not exactly the same ``'`` as the
   one in ``'Succ``. The latter modifies a *name*; the former doesn't have a name
