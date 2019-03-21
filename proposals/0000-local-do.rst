@@ -15,7 +15,7 @@ Proposal title
 .. sectnum::
 .. contents::
 
-This proposal introduces a new extension ``-XLocalDo`` which makes it possible to overload the meaning of a do-notation expression *on a case-by-case basis* (as opposed to the global effect of ``-XRebindableSyntax``), by writing ``do @builder``. The design is inspired by F#'s [computational expressions](https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/computation-expressions).
+This proposal introduces a new extension ``-XLocalDo`` which makes it possible to overload the meaning of a do-notation expression *on a case-by-case basis* (as opposed to the global effect of ``-XRebindableSyntax``), by writing ``do @builder``. The design is inspired by F#'s  `computational expressions <https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/computation-expressions>`_.
 
 
 Motivation
@@ -48,6 +48,7 @@ This proposal creates a new language extension ``-XLocalDo``.
 When ``-XLocalDo`` is activated, the syntax of the ``do`` notation is changed to
 
 ::
+
   <lexp> ⟶ do [@<aexp>]
 
 (``aexp`` means that the notation after the ``@`` is parsed as a variable, unless there are parentheses)
@@ -153,3 +154,5 @@ None.
 
 Implementation Plan
 -------------------
+
+The implementation shouldn't require too much effort. Matthías Páll (`@tritlo <https://github.com/Tritlo>`_) volunteers himself for the attempt, in collaboration with Arnaud (`@aspiwack <https://github.com/aspiwack>`_).
