@@ -17,8 +17,8 @@ GHC currently maintains several different namespaces. This proposal describes an
 mechanism for giving the user control over which namespace an identifier is meant to
 come from.
 
-In brief: use ``type`` to refer to the type-level namespace, ``data`` to the term-level
-namespace, and ``module`` to refer to the module namespace. (Spoiler: this last idea
+In brief: use ``type.`` to refer to the type-level namespace, ``data.`` to the term-level
+namespace, and ``module.`` to refer to the module namespace. (Spoiler: this last idea
 doesn't yet have a practical application, but perhaps it will someday.)
 
 In the near future, ideas here can be used to clean up the current state
@@ -41,7 +41,7 @@ As the introduction states, we are currently in a sorry state of affairs.
   synonyms (its original application) and for data constructors (but not for term-level functions).
 
 * Furthermore, the new pseudo-keyword ``value`` is used for the same purpose but in different
-  contexts in a recent accepted `proposal`_.
+  contexts in a recently accepted `proposal`_.
 
 .. _`visible dependent quantification`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0035-forall-arrow.rst
   
@@ -247,54 +247,179 @@ prefixes can occur in many contexts and will not be listed as exceptions below.
      
 This is a mess!
 
-Proposed Change Specification (1)
----------------------------------
+Proposed Change Specification
+-----------------------------
 
 1. All features are controlled by the ``-XExplicitNamespaces`` extension.
 
 2. Let keywords ``type``, ``data``, and ``module`` be *namespace specifiers*.
 
-3. A namespace specifier may prefix a name any place a name can occur. It states
-   what namespace the name belongs to. (Namespace specifiers may *not* be used
-   where a name is bound. Occurrences only.)
+3. A namespace specifier may be used as the prefix of a ``modid`` from the `Haskell Report`_.
+   Currently, we have these productions in the Report::
 
-4. In terms and types, namespace specifiers bind as tightly as function application.
-   A namespace specifier describes the namespace for all names used in its scope.
-   (This scope may contain multiple names if a ``(`` follows the namespace specifier.)
-   That is, a namespace specifier is parsed just like any other name in an expression;
-   the namespace selection is in effect in its "argument" when considering the namespace
-   specifier as a function. It is a parse error to use a namespace specifier as an argument
-   to another function, as in the type ``Wrong data Zero``; use ``Right (data Zero)`` instead.
+     qvarid -> [modid .] varid
+     qconid -> [modid .] conid
+     ...
 
-5. Namespace specifiers affect names in Template Haskell quotes.
+   We see that ``modid`` is a module identifier. It is defined by ::
+
+     modid -> {conid .} conid
+
+   This proposal modifies this to be ::
+
+     modid -> [namespace_specifier .] {conid .} conid
+           |  namespace_specifier
+
+   In addition, a ``namespace_specifier .`` prefix is allowed wherever an
+   unqualified name occurrence can appear. (This effectively changes productions like
+   that for ``tyvar`` to ``[namespace_specifier .] varid``.) Binding sites
+   may not have a namespace specifier.
+
+   Because qualified names are defined in Haskell's *lexical* syntax, there can
+   be no spaces between the namespace specifier and the ``.``.
+
+4. Namespace specifiers affect names in Template Haskell quotes.
    Note that the ``module`` namespace specifier makes sense here, too.
 
-6. ``-Wcompat`` warns on uses of ``pattern`` and ``'`` as namespace specifiers.
+5. ``-Wcompat`` warns on uses of ``pattern`` and ``'`` as namespace specifiers.
    ``-Wcompat`` also warns on uses of ``''`` to denote a type-level Template Haskell
    name quote.
   
-7. Two releases after this proposal is implemented, it becomes an error to use
+6. Two releases after this proposal is implemented, it becomes an error to use
    ``pattern`` as a namespace specifier in import/export lists. It similarly
    becomes an error to use ``''`` to quote a type-level name.
    (In contrast,
    the ``'`` syntax will not have a planned phase-out.)
 
-8. If this is accepted before the fixities `proposal`_ is implemented, then that
+7. If this is accepted before the fixities `proposal`_ is implemented, then that
    proposal is to be amended to use ``data`` instead of ``value``.
 
-9. It is an error to use a name in a context that does not expect that kind of name.
+8. It is an error to use a name in a context that does not expect that kind of name.
    For example, the use of a type name in a term will be an error, and the use
    of a module name anywhere they cannot already be used is an error.
 
-10. Namespace specifiers are not allowed as the first lexeme at top-level.
+9. ``ANN`` pragmas for modules may now mention the module name. Omitting the
+   module name will become an error in two releases.
 
-11. ``ANN`` pragmas for modules may now mention the module name. Omitting the
-    module name will become an error in two releases.
+Examples
+--------
 
-Proposed Change Specification (2)
----------------------------------
+Here are some examples with the proposed syntax::
 
-This second proposed change specification is, essentially, an annex to the
+  oneElement :: Vec Char (data.Succ data.Zero)) -- if Succ and Zero are unambiguous, the "data" is redundant
+
+  someNames :: [Language.Haskell.TH.Name]
+  someNames = [ 'True, 'data.False, 'type.Int, 'type.Bool, 'type.Either ]
+    -- The "data" there is redundant
+
+  num :: type.Int                 -- the "type" is redundant but harmless
+
+  empty :: type.Vec type.Bool type.Zero   -- error: Zero is not in the type namespace
+
+  import My.Library ( type.C, type.T, data.MkT )   -- the two "type"s are redundant but harmless
+
+  {-# ANN module.This.Module "Something #-}        -- The "This.Module" is new; no other module may be specified
+
+  false = data.not (data.True)    -- "data"s redundant but harmless
+
+  true = data.True :: data.Bool   -- error: no Bool in data namespace
+
+Effect and Interactions
+-----------------------
+
+* Pseudo-keywords ``pattern`` (as used in import/export lists) and ``value`` (as written in
+  the oft-referred `proposal`_) are replaced by ``data``.
+
+* Disambiguation is now uniform: use ``type`` or ``data`` anywhere to disambiguate.
+
+* Note that the ``'`` in ``'[True, False]`` is not exactly the same ``'`` as the
+  one in ``'Succ``. The latter modifies a *name*; the former doesn't have a name
+  to modify. Accordingly, the syntax ``'[True, False]`` remains. (But see an Alternative
+  below for more discussion.)
+
+* The varying defaults of different contexts are not changed, as doing so would be
+  disastrous for backward compatibility. No current programs are newly rejected
+  except those that use ``pattern`` or ``''`` (the TH quote) for namespace selection
+  after two releases.
+
+* The inclusion of ``module`` in this framework is because it fits so nicely. It is not
+  yet useful, but it is my hope that this idea may spur on a proposal for first-class
+  modules.
+
+* Use of `visible dependent quantification`_ in types of terms may still require adding
+  the type level as a secondary namespace in terms. Otherwise, every type mentioned in
+  a term will have to have ``type`` nearby. This detail is left to the proposal for
+  visible dependent quantification in types of terms, which is not covered directly by
+  this proposal.
+
+Costs and Drawbacks
+-------------------
+* There is a backward compatibility annoyance around the removal of ``pattern`` as a
+  namespace specifier, but I do not think anyone will be too put out.
+
+* ``type`` and ``data`` are certainly noisy, especially if we consider ``data`` as
+  a replacement for ``'``.
+
+* Calling a function, such as ``(+)`` a ``data`` is awkward. Yet it is simply too
+  tempting to use ``data`` here, due to its status as a keyword.
+
+* I do not expect this to be all that difficult to implement.
+
+Alternatives
+------------
+* We could just drop the bit about ``module``.
+
+* We could use ``value`` as the namespace specifier for data-level variables. However,
+  we could not then use it in contexts like terms and types; it could never replace
+  ``'``, for instance.
+
+* A previous version of this proposal did not consider a namespace specifier like a module
+  identifier, but more like a function applied to its argument. This old version is `available <https://github.com/goldfirere/ghc-proposals/blob/97b625aa85f7b77b282546003522ca71b8bb0d7b/proposals/0000-namespaces.rst>`_ in the history. I like this new version more. The old version allowed
+  syntax like ``Vec Char (data (Succ Zero))`` which is quieter than the current proposal's
+  equivalent, but I think the `future work`_ section below has an idea that's even better.
+
+* We could also deprecate the current ``'`` syntax in types? There are two significant
+  stumbling blocks here: promoted lists and tuples. If I say ``[Int]`` is that ``[] Int``
+  or ``Int : <<nil>>`` (where ``<<nil>>`` unambiguously means the empty list)? Currently,
+  we write ``'[Int]`` for the latter. If we drop ``'``, then it would have to be
+  ``data [type Int]``, which is gross. If we don't allow namespace specifiers to work
+  over more than one name at a time, then it would be ``data [Int]``, which isn't terrible.
+  Similarly, do we have ``(Int, Bool) :: Type`` or ``(Int, Bool) :: (Type, Type)``. To get
+  the latter meaning (the data constructor for tuples), we currently use ``'(Int, Bool)``.
+
+  I think the use of lists and tuples is common enough that we can have special syntax
+  for these cases. The quote-mark is well-established enough. However, it does conflict
+  with ``'[]`` and ``'()`` as Template Haskell name quotes. There's no conflict when
+  there are elements in the list/tuple, so we only have to worry about four names:
+  the list type constructor, the nil data constructor, the unit type constructor, and
+  the unit data constructor. These names could just be exported by, say,
+  ``Language.Haskell.TH.Syntax``; we would advertise that these names cannot be quoted.
+
+Unresolved Questions
+--------------------
+
+None at this time.
+
+Future Work
+-----------
+
+It would be nice to be able to import names from one namespace to another wholesale.
+For example, ::
+
+  import Prelude as type as data
+
+might be new syntax to import the Prelude, but making all names available in all
+namespaces. This could cause clashes. Should these be reported? Should clashes silently
+be resolved? We leave these details for another proposal. This one stands without it,
+but allowing these kinds of cross-namespace imports would help with the noisiness
+of using ``data.`` lots in types in code where many data constructors are used in types.
+The new syntax would also be useful to import names from one namespace into the other
+within one module.
+
+Annex
+=====
+
+This is an annex to the
 proposal. It is a vision for a more expressive future. Accepting this proposal
 *does not* accept this annex. Accepting this proposal *does not* commit us to
 accepting this annex in the future. Instead, it is included here so that we
@@ -337,114 +462,9 @@ discussion and committee process.
 8. As usual, the use of ``default`` as a namespace specifier is controlled by
    the ``-XExplicitNamespaces`` extension.
 
-Examples
---------
-
-Here are some examples with the proposed syntax::
-
-  oneElement :: Vec Char (data (Succ Zero))   -- if Succ and Zero are unambiguous, the "data" is redundant
-
-  someNames :: [Language.Haskell.TH.Name]
-  someNames = [ 'True, data 'False, type 'Int ] ++ type [ 'Bool, 'Either ]
-    -- The "data" there is redundant
-
-  num :: type Int                 -- the "type" is redundant but harmless
-
-  empty :: type (Vec Bool Zero)   -- error: Zero is not in the type namespace
-
-  import My.Library ( type C, type T, data MkT )   -- the two "type"s are redundant but harmless
-
-  {-# ANN module This.Module "Something #-}        -- The "This.Module" is new; no other module may be specified
-
-  false = data not (data True)    -- "data"s redundant but harmless
-
-  true = data (True :: Bool)      -- OK; namespace specifiers do not affect names in a different context
-
-  true2 = data True :: data Bool  -- error: no Bool in data namespace
-
-Effect and Interactions
------------------------
-This considers only the primary proposal, not the annex.
-
-* Pseudo-keywords ``pattern`` (as used in import/export lists) and ``value`` (as written in
-  the oft-referred `proposal`_) are replaced by ``data``.
-
-* Namespace specifiers can now scope over a region of code, for convenience. For example,
-  if we have ``idVis :: forall a -> a -> a``, then we can write
-  ``idVis (type (Either Int Bool)) (Right True)``.
-
-* Disambiguation is now uniform: use ``type`` or ``data`` anywhere to disambiguate.
-
-* Note that the ``'`` in ``'[True, False]`` is not exactly the same ``'`` as the
-  one in ``'Succ``. The latter modifies a *name*; the former doesn't have a name
-  to modify. Accordingly, the syntax ``'[True, False]`` remains. (But see an Alternative
-  below for more discussion.)
-
-* The varying defaults of different contexts are not changed, as doing so would be
-  disastrous for backward compatibility. No current programs are newly rejected
-  except those that use ``pattern`` or ``''`` (the TH quote) for namespace selection
-  after two releases.
-
-* The inclusion of ``module`` in this framework is because it fits so nicely. It is not
-  yet useful, but it is my hope that this idea may spur on a proposal for first-class
-  modules.
-
-* As is sometimes the case, the new syntax leaves open the possibility of ambiguity.
-  Consider this::
-
-    data X a = Y a
-
-  Is this a datatype declaration for ``X``? Or perhaps it is a pattern-match, binding
-  data-level variable ``a`` as the contents of data constructor ``X``, where we have
-  disambiguated ``X`` by using the namespace specifier ``data``. To eliminate this
-  ambiguity, I have said that namespace specifiers cannot be the first lexeme at top-level.
-
-* Use of `visible dependent quantification`_ in types of terms may still require adding
-  the type level as a secondary namespace in terms. Otherwise, every type mentioned in
-  a term will have to have ``type`` nearby. This detail is left to the proposal for
-  visible dependent quantification in types of terms, which is not covered directly by
-  this proposal.
-
-Costs and Drawbacks
--------------------
-* There is a backward compatibility annoyance around the removal of ``pattern`` as a
-  namespace specifier, but I do not think anyone will be too put out.
-
-* ``type`` and ``data`` are certainly noisy, especially if we consider ``data`` as
-  a replacement for ``'``.
-
-* Calling a function, such as ``(+)`` a ``data`` is awkward. Yet it is simply too
-  tempting to use ``data`` here, due to its status as a keyword.
-
-* I do not expect this to be all that difficult to implement.
-
-Alternatives
-------------
-* We could just drop the bit about ``module``.
-
-* We could use ``value`` as the namespace specifier for data-level variables. However,
-  we could not then use it in contexts like terms and types; it could never replace
-  ``'``, for instance.
-
-* We could not allow namespace specifiers to work over more than one name at a time.
-
-* We could also deprecate the current ``'`` syntax in types? There are two significant
-  stumbling blocks here: promoted lists and tuples. If I say ``[Int]`` is that ``[] Int``
-  or ``Int : <<nil>>`` (where ``<<nil>>`` unambiguously means the empty list)? Currently,
-  we write ``'[Int]`` for the latter. If we drop ``'``, then it would have to be
-  ``data [type Int]``, which is gross. If we don't allow namespace specifiers to work
-  over more than one name at a time, then it would be ``data [Int]``, which isn't terrible.
-  Similarly, do we have ``(Int, Bool) :: Type`` or ``(Int, Bool) :: (Type, Type)``. To get
-  the latter meaning (the data constructor for tuples), we currently use ``'(Int, Bool)``.
-
-  I think the use of lists and tuples is common enough that we can have special syntax
-  for these cases. The quote-mark is well-established enough. However, it does conflict
-  with ``'[]`` and ``'()`` as Template Haskell name quotes. There's no conflict when
-  there are elements in the list/tuple, so we only have to worry about four names:
-  the list type constructor, the nil data constructor, the unit type constructor, and
-  the unit data constructor. These names could just be exported by, say,
-  ``Language.Haskell.TH.Syntax``; we would advertise that these names cannot be quoted.
-
-Unresolved Questions
+Alternative to annex
 --------------------
 
+See `@int-index's idea
+https://github.com/ghc-proposals/ghc-proposals/pull/214#issuecomment-473196114`_
+for an alternative approach.
