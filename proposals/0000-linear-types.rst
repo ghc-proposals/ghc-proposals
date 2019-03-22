@@ -186,7 +186,7 @@ polymorphic functions may have variable multiplicity (see also Syntax_), *e.g.*
 
 ::
 
-  map :: (a :p-> b) -> [a] :p-> [b]
+  map :: (a #p-> b) -> [a] #p-> [b]
 
 Without polymorphism, we would need two implementations of ``map`` with
 the exact same code: one for ``p=1`` and one for ``p=ω``. Function
@@ -195,7 +195,7 @@ hence, would require four identical implementations:
 
 ::
 
-  (.) :: (b :p-> c) -> (a :q-> b) -> a :(p ':* q)-> c
+  (.) :: (b #p-> c) -> (a #q-> b) -> a :(p ':* q)-> c
 
 Syntax
 ------
@@ -209,16 +209,12 @@ Alternatives_ section.*
 
 This proposal adds two new syntactical constructs:
 
-- The multiplicity annotated arrow, for polymorphism, is written
-  ``a :p-> b`` (where ``a`` and ``b`` are types and ``p`` is a
-  multiplicity). To avoid introducing a new notion of "mixfix"
-  operators, we introduce a familly of (infix) type constructors:
-  ``(:p->)`` for each multiplicity ``p``. This technically steals
-  syntax as ``(:)`` is a valid type operator under the discouraged
-  ``-XDataKinds`` syntax. But this should not be a problem in
-  practice.
+- The multiplicity annotated arrow, for polymorphism, is written ``a
+  #p-> b`` (where ``a`` and ``b`` are types and ``p`` is a
+  multiplicity). This steals syntax as ``(#)`` is a valid
+  type operator.
 
-  - In ``(:p->)``, ``p`` can be any type expression of kind
+  - In ``a #p-> b``, ``p`` can be any type expression of kind
     ``Multiplicity`` (see below). So that the following is legal
     (though see Alternatives_):
 
@@ -230,17 +226,24 @@ This proposal adds two new syntactical constructs:
 
   ::
 
-    \x ::('One) A -> x
+    \x :: A # 'One -> x
 
-  is the identity function at type ``A ->. A``. This adds a new syntactic for binders:
+  is the identity function at type ``A ->. A``. A binder can be
+  annotated with a multiplicity without a type like this
 
   ::
 
-    VAR ::( TYPE_EXPRESSION ) TYPE_EXPRESSION
+    \x # 'One -> x
 
-  where the first ``TYPE_EXPRESSION`` must be of kind ``Multiplicity``
-  (see below). This creates a new lexical token ``::(``, which does
-  not seem to be a problem.
+  This adds two new syntactic constructions for binders:
+
+  ::
+
+    VAR :: TYPE_EXPRESSION # TYPE_EXPRESSION
+    VAR # TYPE_EXPRESSION
+
+  where the ``TYPE_EXPRESSION`` after the ``#`` must be of kind ``Multiplicity``
+  (see below).
 
   This form is disallowed for:
 
@@ -248,19 +251,19 @@ This proposal adds two new syntactical constructs:
 
     ::
 
-      forall (a ::('One)). a -> Int -- rejected
+      forall (a # 'One). a -> Int -- rejected
   - Top-level signatures (though, see `Toplevel binders`_)
 
     ::
 
-      foo ::('One) A -> B -- rejected
+      foo :: A -> B # 'One-- rejected
       foo x = …
 
   The form is however permitted in records (see `Records`_ below)
 
   ::
 
-    data R = R { unrestrictedField ::(Omega) A, linearField ::(One) B }
+    data R = R { unrestrictedField :: A # 'Omega, linearField :: B # 'One }
 
 In the fashion of levity polymorphism, the proposal introduces a data
 type ``Multiplicity`` which is treated specially by the type checker,
@@ -283,11 +286,19 @@ to represent the multiplicities:
   multiplicities will be performed up to the semiring laws for
   ``(:+)`` and ``(:*)`` (see Specification_).
 
+A new type constructor is added
+
+  ::
+
+    FUN :: Multiplicity -> forall (r1 r2 :: RuntimeRep). TYPE r1 -> TYPE r2
+
+``FUN`` is such that ``FUN p a b ~ a #p-> b``.
+
 The linear and unrestricted arrows are aliases:
 
-- ``(->)`` is an alias for ``(:'Omega ->)``
+- ``(->)`` is an alias for ``(#'Omega ->)``
 - ``(->.)`` (ASCII syntax) and ``(⊸)`` (Unicode syntax) are aliases
-  for ``(:'One ->)``
+  for ``(#'One ->)``
 
 Printing
 --------
@@ -297,18 +308,18 @@ multiplicities are printer: ``-fprint-explicit-multiplicities``. It is
 turned off by default.
 
 When ``-fprint-explicit-multiplicities`` is turned on, every arrows
-are printed in the form ``(: p ->)``. For instance, the type of the
+are printed in the form ``#p->``. For instance, the type of the
 unrestricted ``fmap`` function from ``base`` will be printed as:
 
 ::
 
-    fmap :: Functor f => (a :'Omega-> b) :'Omega-> f a :'Omega-> f b
+    fmap :: Functor f => (a #'Omega-> b) #'Omega-> f a #'Omega-> f b
 
 And a linearised ``List.map`` would be printed as:
 
 ::
 
-    lmap :: (a :'One-> b) :'Omega-> [a] :'One-> [b]
+    lmap :: (a #'One-> b) #'Omega-> [a] #'One-> [b]
 
 When ``-fprint-explicit-multiplicities`` is turned off (as is the
 default), the shorthands are used when available. The above examples
@@ -326,10 +337,10 @@ multiplicity polymorphic ``List.map`` function would be printed as
 ::
 
     -- With -fprint-explicit-multiplicities on
-    pmap :: (a :p-> b) :'Omega-> [a] :p-> [b]
+    pmap :: (a #p-> b) #'Omega-> [a] #p-> [b]
 
     -- With -fprint-explicit-multiplicities off
-    pmap :: (a :p-> b) -> [a] :p-> [b]
+    pmap :: (a #p-> b) -> [a] #p-> [b]
 
 *Note on Core printing*: ``-fprint-explicit-multiplicities`` is used
  to control the printing of arrows in Core (in particular in the
@@ -418,13 +429,13 @@ To be precise, every linear field of a constructor ``C`` is generalised,
 when ``C`` is used as a constructor to be of multiplicity ``p`` for a
 fresh ``p``. The non-linear fields are not affected. For instance
 
-* ``Just``, when used as a term, is given the type ``Just :: a :p-> Maybe  a``
-* ``(:)``, when used as a term, is given the type ``(:) :: a :p-> [a]
-  :q-> [a]``
+* ``Just``, when used as a term, is given the type ``Just :: a #p-> Maybe  a``
+* ``(:)``, when used as a term, is given the type ``(:) :: a #p-> [a]
+  #q-> [a]``
 * With ``data U a where U :: a -> U a``, when ``U`` is used as a term, it
   is given the type ``U :: a -> U a``
 * With ``data P a b where P :: a ->. b -> U a b``, when ``P`` is used
-  as a term, it is given the type ``P :: a :p-> b -> U a b``
+  as a term, it is given the type ``P :: a #p-> b -> U a b``
 
 All these extra multiplicity arguments are *inferred* (GHC classifies
 type arguments as either *inferred* or *visible*, the latter can be
@@ -464,8 +475,8 @@ following (essentially) Haskell98 code
 
    f = Just . Just $ 1
 
-The type checker infers that ``Just . Just`` is of type ``a :p-> Maybe
-(Maybe a)`` for some ``p`` such that ``Category (:p->)``. However,
+The type checker infers that ``Just . Just`` is of type ``a #p-> Maybe
+(Maybe a)`` for some ``p`` such that ``Category (#p->)``. However,
 there is no ``Category`` instance for an arbitrary ``p`` (nor for
 ``p=1`` as would be the inferred type without the generalisation rule
 of the `Linear constructors`_ section). But defaulting to ``p=ω``,
@@ -485,7 +496,7 @@ regular fields, *e.g.*
     --
     -- Or, polymorphised when used as a term:
     --
-    -- S :: forall p q a. a :p->. S a :q-> S a
+    -- S :: forall p q a. a #p->. S a #q-> S a
 
 ::
 
@@ -495,7 +506,7 @@ regular fields, *e.g.*
     --
     -- Or, polymorphised when used as a term:
     --
-    -- T :: forall p q a. (a, a) :p->. a :q-> T a
+    -- T :: forall p q a. (a, a) #p->. a #q-> T a
 
 Base
 ----
@@ -524,7 +535,7 @@ levity and higher-rank polymorphism in the typing rule, the type
 
 ::
 
-  ($) :: (a :p-> b) ⊸ a :p-> b
+  ($) :: (a #p-> b) ⊸ a #p-> b
 
 Defining a linear variant of ``base`` is out of scope of this
 proposal. Possible future standardisation of the library content is
@@ -573,7 +584,7 @@ of multiplicity ``p``, or ``0``, in a term ``u`` if:
 
 - ``p=0`` and ``x`` is not free in ``u``
 - ``p=1`` and ``u = x``
-- ``p=p1+q*p2`` and ``u = u1 u2`` with ``u1 :: a :q-> b`` and the
+- ``p=p1+q*p2`` and ``u = u1 u2`` with ``u1 :: a #q-> b`` and the
   usage of ``x`` in ``u1`` is ``p1``, and in ``u2`` is ``p2``
 - ``u = λy. v`` and the usage of ``x`` in ``v`` is ``p``.
 
@@ -590,7 +601,7 @@ on an equation). For instance
 
 ::
 
-  foo :: A :p-> B
+  foo :: A #p-> B
   foo x = …  -- x has multiplicity p
 
 The above takes care of the pure λ-calculus part of Haskell. We also
@@ -614,12 +625,12 @@ all.
 
 The multiplicity annotation of variables introduced by a pattern depend
 on the constructor and on the implicit annotation of the
-``case``. Specifically in ``case_p u of {…; C x1 … xn -> …; …}`` Where ``C :: a1 :q1-> … an :qn-> A``,
+``case``. Specifically in ``case_p u of {…; C x1 … xn -> …; …}`` Where ``C :: a1 #q1-> … an #qn-> A``,
 Then ``xi`` has multiplicity annotation ``p*qi``. For instance
 
 ::
 
-  bar :: (a,b) :p-> c
+  bar :: (a,b) #p-> c
   bar (x,y) = … -- Since (,) :: a ->. b ->. (a,b), x and y have
                 -- multiplicity p
 
@@ -665,15 +676,15 @@ and a right-hand side. Each binder has a multiplicity, which is
 provided by the signature. If there is no signature, the initial
 multiplicity of each binder is ω instead.
 
-Let us consider a judgement ``Γ ⊢ (b1 :(π1) A1) … (bn :(πn) An) → u : B``
+Let us consider a judgement ``Γ ⊢ (b1 : A1 # π1) … (bn : An # πn) → u : B``
 
 - ``Γ ⊢ u : B ⟹ Γ ⊢ → u : B``
-- ``Γ, x :(π) A ⊢ (b1 :(π1) A1) … (bn :(πn) An) → u : B ⟹ Γ ⊢ (x
-  :(π) A) (b1 :(π1) A1) … (bn :(πn) An) → u : B``
-- ``Γ ⊢ (p1 :(πρ1) C1) … (pn :(πρn) Cn) (b1 :(π1) A1) … → u : B ⟹ Γ ⊢ (c p1 …
-  pn :(π) D) (b1 :(π1) A1) … → u : B``, for ``c : C1 :ρ1-> … Cn :ρn->
+- ``Γ, x : A # π ⊢ (b1 : A1 # π1) … (bn : An # πn) → u : B ⟹ Γ ⊢ (x :
+  A # π) (b1 : A1 # π1) … (bn : An # πn) → u : B``
+- ``Γ ⊢ (p1 : C1 # πρ1) … (pn : Cn # πρn) (b1 : A1 # π1) … → u : B ⟹ Γ ⊢ (c p1 …
+  pn : D # π) (b1 : A1 # π1) … → u : B``, for ``c : C1 :ρ1-> … Cn :ρn->
   D``, a constructor (notice how ``π`` flows down into the fields of ``c``)
-- ``Γ ⊢ (b1 :(π1) A1) … → u : B ⟹ Γ ⊢ (_ :(π) C) (b1 :(π1) A1) … → u :
+- ``Γ ⊢ (b1 : A1 # π1) … → u : B ⟹ Γ ⊢ (_ : C # π) (b1 : A1 # π1) … → u :
   B``, if ``π=ω``
 
 
@@ -735,7 +746,7 @@ annotating binders with multiplicity
 
 ::
 
-  data R' = R' { f1 ::('Omega) A1, f2 ::('One) A2, f3 :: A3 }
+  data R' = R' { f1 :: A1 # 'Omega, f2 :: A2 # 'One, f3 :: A3 }
 
 Then ``R' :: A1 -> A2 ->. A3 ->. R`` (that is, fields with no explicit
 annotation are linear).
@@ -797,13 +808,13 @@ In general, in
 ::
 
   data R where
-    R :: { f1 ::(π) A, f2 ::(ρ) B } -> R
+    R :: { f1 :: A # π, f2 :: B # (ρ) } -> R
 
 We have
 
 ::
 
-  R :: A :π-> B :ρ-> R
+  R :: A #π-> B #ρ-> R
 
 With absence of annotation interpreted as annotating with ``'One``.
 
@@ -1081,7 +1092,7 @@ follows:
   ::
 
     data Foo a where
-      Foo :: forall p. a :p-> (a :p-> Bool) -> Foo a
+      Foo :: forall p. a #p-> (a #p-> Bool) -> Foo a
 
   in a branch
 
@@ -1132,7 +1143,7 @@ that
 
 ::
 
-    ($!) :: (a :p-> b) ->. a :p-> b
+    ($!) :: (a #p-> b) ->. a #p-> b
     f $! x = let !vx = x in f vx
 
 Unresolved pattern forms
@@ -1246,14 +1257,12 @@ Lexical tokens of the multiplicity-parametric arrow
 Here are the potential notations for the multiplicity-parametric
 arrow:
 
-- ``(:p->)``. We use this one in the rest of the document, because we
-  had to make a choice. But it is not one that we feel particularly
-  about.
-- ``(-p->)``
-- ``(|p->)``. The following mnemonic has been proposed by @goldfirere:
+- ``:p->``. This was the version originally used in the document
+- ``-p->``
+- ``|p->``. The following mnemonic has been proposed by @goldfirere:
   it starts with a vertical *line* hence pertains to *line*-arity.
-- ``(#p->)``, proposed by @davemenendez, the mnemonic is that ``#`` is
-  the number sign.
+- ``#p->``, proposed by @davemenendez, the mnemonic is that ``#`` is
+  the number sign. This is the syntax used by the proposal.
   - This syntax proposal is accompanied by an alternative notation for
     multiplicity with binder: ``\ x :: a # p -> …``; which also allows
     omitting the type when giving a multiplicity annotation: ``\ x # p
@@ -1262,7 +1271,7 @@ arrow:
   - This syntax proposal is also accompanied by a new non-GADT syntax
     to annotate fields of data constructors with a multiplicity:
     ``data Unrestricted a = Unrestricted (a # 'Omega)``.
-- ``(->{p})``, proposed by @niobium0
+- ``->{p}``, proposed by @niobium0
 - A meta-proposal is any of the above, but using `->.` (or whatever
   the linear arrow ends up being). This was proposed by @monoidal. The
   reasoning is that, then ``a # p ->. b`` means the same as ``Mult p a
@@ -1273,9 +1282,9 @@ arrow:
 Here are other suggestions which have been floated, but we don't
 believe are very good:
 
-- ``(->_p)`` (using the ``_`` to represent the subscript from the
+- ``->_p`` (using the ``_`` to represent the subscript from the
   paper as in Latex)
-- ``(->:p)``. We've used this one a little, and found that it was
+- ``->:p``. We've used this one a little, and found that it was
   confusing, seeming to attach the multiplicity to the result, where
   it ought to be thought as affecting the argument. The same probably
   applies to ``(->_p)``.
@@ -1292,7 +1301,7 @@ Here are the potential notations for the linear arrow:
 - ``(-o)`` is a natural ASCII representation of the Unicode notation
   ``(⊸)``. But it requires changing the lexer (``-o`` is not a token
   in current GHC, and ``a-o`` is currently interpreted as ``(-) a o``)
-- ``(:->)`` based on the notation ``(:p->)`` used for
+- ``(#->)`` based on the notation ``(#p->)`` used for
   multiplicity-parametric arrows.
 
 Name of the multiplicity
@@ -1334,7 +1343,7 @@ Syntax of multiplicity expression
 Dedicated syntax
 ~~~~~~~~~~~~~~~~
 
-We proposed that, in ``a :p-> b``, ``p`` could be any expression, as
+We proposed that, in ``a #p-> b``, ``p`` could be any expression, as
 long as it is of kind ``Multiplicity``. This is simpler in terms of
 modifying the parser, but the error messages may be confusing for very
 little benefit: in practice we would expect to have polynomial
@@ -1356,7 +1365,7 @@ So we could decide to restrict ``p`` to the following grammar:
 Constrained variables
 ~~~~~~~~~~~~~~~~~~~~~
 
-Another simple variant on the syntax of ``a :p-> b`` is to restrict
+Another simple variant on the syntax of ``a #p-> b`` is to restrict
 ``p`` to be a variable, and when ``p`` needs to be a composed
 expression, use a constraint of the form ``p ~ q :* r``.
 
@@ -1366,48 +1375,16 @@ mostly in result position. Such as in the composition function
 
 ::
 
-  (.) :: (b :q-> c) ->. (a :p-> b) :q-> (a :(p :* q)-> c)
+  (.) :: (b #q-> c) ->. (a #p-> b) #q-> (a :(p :* q)-> c)
 
 which would become
 
 ::
 
-  (.) :: (r ~ p :* q ) => (b :q-> c) ->. (a :p-> b) :q-> (a :r-> c)
+  (.) :: (r ~ p :* q ) => (b #q-> c) ->. (a #p-> b) #q-> (a :r-> c)
 
 It does look a bit curious. But it's a possiblity worth considering.
 
-
-Syntax of the multiplicity-parametric arrow
--------------------------------------------
-
-The proposed mixfix ``a :p-> b`` syntax for the
-multiplicity-parametric arrow makes a potentially non-trivial addition
-to the parser. So does the proposed type constructor indexed by a
-multiplicity ``(:p->)``.
-
-A way to simplify the changes to the parser would be to have the type
-constructor be
-
-::
-
-  ARROW :: Multiplicity -> * -> * -- ignoring levity
-
-It would be very inconvenient to use a prefix notation for
-multiplicity parametric arrows: we wouldn't want the type of ``map``
-to read
-
-::
-
-  map :: ARROW 'Omega (ARROW p a b) (ARROW p [a] [b])
-
-So we introduce a binary type construction ``WithMult`` (or some
-operator syntax). It is a syntax error to use ``WithMult`` anywhere
-except to the left of an arrow. And ``WithMult a p -> b`` means
-``ARROW p a b``. So that the type of ``map`` becomes:
-
-::
-
-  map :: (a `WithMult` p -> b) -> [a] `WithMult` p -> [b]
 
 Records in GADT syntax
 ----------------------
@@ -1415,12 +1392,12 @@ Records in GADT syntax
 For record in GADT syntax, we proposed that the arrow symbol always be
 ``->``, but has no interpretation.
 
-An alternative would be to allow an arbitrary arrow ``:π->`` as in
+An alternative would be to allow an arbitrary arrow ``#π->`` as in
 
 ::
 
   data R where
-    R :: { f1 ::('One) A, f2 :: B, f3 ::('Omega) C } :π-> R
+    R :: { f1 :: A # 'One, f2 :: B, f3 :: C # 'Omega} #π-> R
 
 Which could be interpreted in one of two ways:
 
@@ -1430,14 +1407,14 @@ Which could be interpreted in one of two ways:
 
   ::
 
-    R :: A ->. B :π-> C -> R
+    R :: A ->. B #π-> C -> R
 
 - ``π`` can act as a multiplier on all the fields (unannotated field
   are considered linear). In this case, the type of ``R`` would be
 
   ::
 
-    R :: A :π-> B :π-> C -> R
+    R :: A #π-> B #π-> C -> R
 
 Unboxed data types
 ------------------
@@ -1452,7 +1429,7 @@ and introduce a single type constructor:
 ::
 
   Mult# :: forall k. Multiplicity -> TYPE k -> TYPE ('TupleRep '[k])
-  Mult# :: a :p->  Mult# p a
+  Mult# :: a #p->  Mult# p a
 
 of multiplicity-parametric unary tuples, together with the
 corresponding pattern.
@@ -1646,7 +1623,7 @@ multiplicity):
 
 ::
 
-  catch :: Exception e => RIO a :'A-> (e -> RIO a) :'A-> RIO a
+  catch :: Exception e => RIO a #'A-> (e -> RIO a) #'A-> RIO a
 
 So affine mutable arrays could be free variables in the body of
 a ``catch``. It's not clear yet that this finer type for ``catch``
@@ -1681,7 +1658,7 @@ example:
   data Socket (n :: *) (s :: State)
   data Closed (n :: *)
 
-  newSocket :: RIO (forall n. Socket n 'Unbound :'A-> RIO (Unrestricted a, Closed s)) :'A -> RIO (Unrestricted a)
+  newSocket :: RIO (forall n. Socket n 'Unbound #'A-> RIO (Unrestricted a, Closed s)) #'A -> RIO (Unrestricted a)
   […]
   close :: Socket n s -> RIO (Closed s)
 
@@ -1898,7 +1875,7 @@ creates a small complication. Which can be solved in a number of way:
 
   ::
 
-     map :: forall p a b q. (p ~ q :+ 'One) => (a :'One-> b) -> [a] :p-> [b]
+     map :: forall p a b q. (p ~ q :+ 'One) => (a #'One-> b) -> [a] #p-> [b]
 
   In order to play more nicely, for instance, with explicit type
   applications.
@@ -1918,7 +1895,7 @@ creates a small complication. Which can be solved in a number of way:
 
   ::
 
-    map :: (CaseCompatible p) => (a :p-> b) -> [a] :p-> [b]
+    map :: (CaseCompatible p) => (a #p-> b) -> [a] #p-> [b]
 
   This is harder to implement than just reusing ``p~q:+'One`` as a
   constraint, but is more resistant to having more multiplicities than
@@ -2085,7 +2062,7 @@ declaring toplevel linear binders
 ::
 
   module Foo where
-  token ::('One) A
+  token :: A # 'One
 
 Here ``token`` would have be consumed exactly once by the program,
 this property is a link-time property. This generalised the
@@ -2143,7 +2120,7 @@ above example,
 
 ::
 
-  T :: CompatibleWithOne p => a :p-> a
+  T :: CompatibleWithOne p => a #p-> a
 
 So, ``wrong`` wouldn't typecheck: it would complain that
 ``CompatibleWithOne 2`` doesn't hold.
@@ -2182,7 +2159,7 @@ Here is a summary of the changes included in the paper:
   attached type)
 - Type variables can be of kind ``Multiplicity``
 - The arrow type constructor has an additional argument (the
-  multiplicity ``p`` in ``(:p->)``)
+  multiplicity ``p`` in ``a #p-> b``)
 - Data constructors have multiplicities attached to their fields
 
 Here are the changes and interactions which were omitted in the paper:
@@ -2239,14 +2216,14 @@ Inlining
 
   ::
 
-    let x::(1) _ = u in if b then … x … else … x …
+    let x # 1 = u in if b then … x … else … x …
 
   GHC may try to line ``x`` at the some (but not necessarily all) of
   the use sites. For instance, GHC may try to reduce to
 
   ::
 
-    let x::(1) _ = u in if b then … u … else … x …
+    let x # 1 = u in if b then … u … else … x …
 
   But this is not recognised as linear under the current typing rules
   (because, among other things ``u`` counts as having been used twice,
@@ -2273,19 +2250,19 @@ Common Subexpression Elimination (CSE)
 
   ::
 
-    let x::(1) _ = u in e
+    let x # 1 = u in e
 
   There are several potential strategies:
 
   - Ignore linear lets for the purpose of CSE. After all, we are
     unlikely to find many occurrences of ``u`` if ``u`` is used in a
-    ``let x::(1) _``.
-  - Try and see if we can replace the ``let x::(1)`` by a ``let x::(ω)`` (that
+    ``let x # 1``.
+  - Try and see if we can replace the ``let x # 1`` by a ``let x # ω`` (that
     is, if ``u`` only has unrestricted type variables). And continue
-    with ``u --> x`` if the ``let x::(1)`` was successfully promoted to
-    ``let x::(ω)``.
-  - Do not change the ``let x::(1)`` immediately, but when an occurrence of
-    ``u`` is encountered, lazily promote the ``let x::(1)`` to a ``let x::(ω)``
+    with ``u --> x`` if the ``let x # 1`` was successfully promoted to
+    ``let x # ω``.
+  - Do not change the ``let x # 1`` immediately, but when an occurrence of
+    ``u`` is encountered, lazily promote the ``let x # 1`` to a ``let x # ω``
     if needed (if we have resolved the issue with inlining, we may not
     always need to promote the ``let x::(1)``). It is not completely clear
     how to pursue this option.
@@ -2295,15 +2272,15 @@ Case-binder optimisations:
 
   ::
 
-     case x of y::(1) _ {
-       (p:ps) -> (case x of z::(1) _ {…}) (case x of w::(1) _ {…})}
+     case x of y # 1 {
+       (p:ps) -> (case x of z # 1 {…}) (case x of w # 1 {…})}
 
   into
 
   ::
 
-    case x of y::(1) _ {
-      (p:ps) -> let x::(??) _ = y in (case x of …) (case x of …)}
+    case x of y # 1 {
+      (p:ps) -> let x # ?? = y in (case x of …) (case x of …)}
 
   This transformation, similar to CSE, is valid only because we are
   calling for a ``case_1`` of some unrestricted variable. This is
@@ -2315,7 +2292,7 @@ Case-binder optimisations:
   - Even if we have a more flexible typing rule for ``let`` (see
     below), it remains that ``y`` has multiplicity ``1`` and that for
     the right-hand side of the alternative to type-check, we actually
-    need ``let x::(ω) _ = y in …``, which is not well-typed.
+    need ``let x # ω = y in …``, which is not well-typed.
 
   Like for CSE, we can either prevent this optimisation for linear
   cases. Or we can try to promote the ``case_1`` to a ``case_ω``, and
@@ -2370,7 +2347,7 @@ Inference
   errors. See Inference_ for more details.
 
 - In Core, case expressions are indexed by a multiplicity: ``case … of
-  x::(p) _ {…}`` (and similarly ``let x::(p)``). In the surface
+  x # p {…}`` (and similarly ``let x # p``). In the surface
   language, we can deduce the multiplicity in equations when there is
   a type annotation.
 
