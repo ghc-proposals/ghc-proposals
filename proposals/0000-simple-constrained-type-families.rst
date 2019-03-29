@@ -50,28 +50,28 @@ This is the equivalent of GHC accepting ``"a" + "b"`` without an instance for ``
 
 In the future, with some major changes (but still less than the original Constrained Type Families paper), this system is a start towards recovering its results but with more minor changes to the compiler.
 
-This would require adding support for closed type families (whether exposed or not) and essentially turning 
+This would require adding support for closed type classes (whether exposed or not) and essentially turning 
 
 ::
 
     type family Pred :: Nat -> Nat where
-        Eq (S n) = n
+        Pred (S n) = n
 
 into syntactic sugar for something morally equivalent to
 
 ::
 
-    class Eq (n :: Nat) where
-        type Eq n :: Nat
+    class Pred (n :: Nat) where
+        type Pred n :: Nat
 
-    instance Eq (S n) where
-        type Eq (S n) = n
+    instance Pred (S n) where
+        type Pred (S n) = n
 
 (and the equivalent closed type class definition for closed type families, once such support is written).
 
 Once all (non-total) type families are constrained, we can eliminate the assumption of totality and thus the requirement for infiniary unification, which will allow closed type families to use a less restrictive apartness check and make type families in general more closely match the intuition of them as potentially partial type-level functions. 
 
-Determining totality is a difficult but well-understood problem, and a rubicon that GHC will have to cross at some point as it moves towards being a dependently typed language.
+Determining totality is a difficult (indeed, unsolvable) but well-understood problem, and a rubicon that GHC will have to cross at some point as it moves towards being a dependently typed language.
 
 In addition, this will allow the restrictions on injectivity to be relaxed by considering only the actual domain of a type family and not require that every type family be injective over every type argument that will kind-check.
 
