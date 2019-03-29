@@ -22,27 +22,7 @@ At the outset, I would like to thank Vladislav Zavialov (@int-index) for the hel
 Motivation
 ------------
 
-A lack of constrained type families leaves many "obviously injective" type families unable to be declared as such, and leaves other families open to misuse. For an example of each, we will use a `Pred` family for inductive type level natural numbers and polymorphic arithmetic on type level numbers. For more examples of the former case, see § 4.1 in `the paper introducing injective type families <http://ics.p.lodz.pl/~stolarek/_media/pl:research:stolarek_peyton-jones_eisenberg_injectivity.pdf>`_.
-
-::
-
-    data Nat = Zero | Succ Nat
-
-    type family Pred nat = pred | pred -> nat where
-        Pred (Succ nat) = nat
-
-Currently, this is an error, because even for a closed type family, GHC is unable to recognize that a type family can have a partial domain. 
-
-:: 
-
-    • Type family equation violates injectivity annotation.
-      RHS of injective type family equation is a bare type variable
-      but these LHS type and kind patterns are not bare variables: ‘'Succ nat’
-        Pred ('Succ nat) = nat -- Defined at <interactive>:4:9
-    • In the equations for closed type family ‘Pred’
-      In the type family declaration for ‘Pred’
-
-This is preferable to the second type of error, where meaningless code can be well-typed.
+Currently, we accept a level of sloppiness at the type level that would be an immediate, stop-the-presses bug if it snuck in at the value level: Meaningless code can be well-typed.
 
 ::
 
@@ -65,6 +45,61 @@ This is accepted by GHC, but it provides an interface that leaves much to be des
     what = pairWithProduct 42 "foo"
 
 What is the meaning of ``Integer * String``? There are arguable definitions that could be used, but it is unlikely to actually be what the programmer would like to express, at least if they haven't provided an explanation for what doing arithmetic with arbitrary types is supposed to mean by writing an instance ``TNum Type``.
+
+This is the equivalent of GHC accepting ``"a" + "b"`` without an instance for ``Num String`` and simply producing an error at runtime.
+
+In the future, with some major changes (but still less than the original Constrained Type Families paper), this system is a start towards recovering its results but with more minor changes to the compiler.
+
+This would require adding support for closed type families (whether exposed or not) and essentially turning 
+
+::
+
+    type family Pred :: Nat -> Nat where
+        Eq (S n) = n
+
+into syntactic sugar for something morally equivalent to
+
+::
+
+    class Eq (n :: Nat) where
+        type Eq n :: Nat
+
+    instance Eq (S n) where
+        type Eq (S n) = n
+
+(and the equivalent closed type class definition for closed type families, once such support is written).
+
+Once all (non-total) type families are constrained, we can eliminate the assumption of totality and thus the requirement for infiniary unification, which will allow closed type families to use a less restrictive apartness check and make type families in general more closely match the intuition of them as potentially partial type-level functions. 
+
+Determining totality is a difficult but well-understood problem, and a rubicon that GHC will have to cross at some point as it moves towards being a dependently typed language.
+
+In addition, this will allow the restrictions on injectivity to be relaxed by considering only the actual domain of a type family and not require that every type family be injective over every type argument that will kind-check.
+
+Consider the simple type family ``ListElems`` drawn from the Constrained Type Families paper (§ 3.3). For more examples, see § 4.1 in `the paper introducing injective type families <http://ics.p.lodz.pl/~stolarek/_media/pl:research:stolarek_peyton-jones_eisenberg_injectivity.pdf>`_.
+
+::
+
+    type family ListElems a = b | b -> a where
+        ListElems [a] = a
+
+Currently, this is an error, because even for a closed type family, GHC is unable to recognize that a type family can have a partial domain. 
+
+:: 
+
+    • Type family equation violates injectivity annotation.
+      RHS of injective type family equation is a bare type variable
+      but these LHS type and kind patterns are not bare variables: ‘[a]’
+        ListElems [a] = a -- Defined at <interactive>:4:9
+    • In the equations for closed type family ‘ListItems’
+      In the type family declaration for ‘ListItems’
+
+This is because ``ListElems [ListElems Int] ~ ListElems Int`` by the declaration given, and by injectivity as defined in the Injective Type Families paper (Definition 1)
+
+    Definition 1 (Injectivity). A type family F is n-injective (i.e. injective in its nth argument) iff ∀σ,τ : F σ ∼ F τ ⇒ σ n ∼ τ n
+
+we recover the equation ``[ListElems Int] ~ Int``. This is not an issue with constrained type families, as this impossible supposed equality is guarded safely behind a forever-unsatisfiable ``ListElems Int`` constraint. It is clear that the pairwise-injectivity constraint is sufficient to ensure that such an instance can never exist.
+
+Similarly, the case of infinite type families is obviated because any such infinite family would be guarded by an infinite constraint, which is clearly unsatisfiable. This allows the special case introduced to handle these infinite families (see § 4.2.3 of the injective type family paper for details) to be removed, and for the injectivity checker to use a more standard form of unification that preserves the occurs check.
 
 Proposed Change Specification
 -----------------------------
@@ -339,7 +374,8 @@ Another, simpler solution would be to change how datatype contexts work, giving 
     data (C a) => FPack a where
         FPack :: F a -> FPack a
 
-However, I am trying to keep this non-controversial and simple, so I will not directly suggest undeprecating ``-XDatatypeContexts``.
+Some have proposed undeprecating ``-XDatatypeContexts`` with the addendum that such constraints are available when kind checking. Since constraints where never previously relevant at the kind level, this is not a breaking change, but I do not expect the idea of undeprecating this largely regretted extension to be popular, and therefore will only give it this brief treatment.
+
 
 The New Haskeller Story
 +++++++++++++++++++++++
