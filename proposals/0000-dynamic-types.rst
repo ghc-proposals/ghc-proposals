@@ -132,3 +132,8 @@ Unresolved Questions
   perhaps we can get by simply by ignoring the input string once we have such an error up
   until the next line that begins at column 0. With this approach, if an infrequently-used
   function has a parsing error, the application will still build and be useful.
+
+Unacknowledgments
+-----------------
+
+This proposal bears striking similarity to content available `here <https://www.reddit.com/r/haskell/comments/b7p4xg/finally_dynamically_typed_programming_in_haskell/>`_, but was developed independently.
