@@ -212,7 +212,13 @@ This proposal adds two new syntactical constructs:
 - The multiplicity annotated arrow, for polymorphism, is written ``a
   #p-> b`` (where ``a`` and ``b`` are types and ``p`` is a
   multiplicity). This steals syntax as ``(#)`` is a valid
-  type operator.
+  type operator. That is the syntax entry for types becomes:
+
+  ::
+
+    type -> btype [[# atype] -> type]
+
+
 
   - In ``a #p-> b``, ``p`` can be any type expression of kind
     ``Multiplicity`` (see below). So that the following is legal
@@ -222,7 +228,7 @@ This proposal adds two new syntactical constructs:
 
       type family F (a :: *) :: Multiplicity
       f ::  forall (a :: *). Int  :(F a)-> a -> a
-- Binders can also be annotated with a multiplicity:
+- When ``-XScopedTypeVariables`` is switched on, binders can also be annotated with a multiplicity:
 
   ::
 
@@ -235,14 +241,14 @@ This proposal adds two new syntactical constructs:
 
     \x # 'One -> x
 
-  This adds two new syntactic constructions for binders:
+  This modifies the syntax entry for pattern with signature annotation
+  as follows as follows
 
   ::
 
-    VAR :: TYPE_EXPRESSION # TYPE_EXPRESSION
-    VAR # TYPE_EXPRESSION
+    pat -> pat [:: type] [# atype]
 
-  where the ``TYPE_EXPRESSION`` after the ``#`` must be of kind ``Multiplicity``
+  where the ``type`` after the ``#`` must be of kind ``Multiplicity``
   (see below).
 
   This form is disallowed for:
@@ -264,6 +270,12 @@ This proposal adds two new syntactical constructs:
   ::
 
     data R = R { unrestrictedField :: A # 'Omega, linearField :: B # 'One }
+
+  This modifies the field declaration syntax to
+
+  ::
+
+    fielddecl -> vars :: (type | ! atype) [# atype]
 
 In the fashion of levity polymorphism, the proposal introduces a data
 type ``Multiplicity`` which is treated specially by the type checker,
