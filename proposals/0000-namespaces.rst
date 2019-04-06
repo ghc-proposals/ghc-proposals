@@ -303,6 +303,12 @@ Proposed Change Specification
 9. ``ANN`` pragmas for modules may now mention the module name. Omitting the
    module name will become an error in two releases.
 
+10. `Top-level kind signatures <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0036-kind-signatures.rst>`_ are amended. Instead of using the keyword ``type``
+    to signal a top-level kind signature, we use the fact that the name to the left
+    of the ``::`` is a (capitalized) type-level name. In effect, this replaces ``type T :: ...``
+    with ``type.T :: ...``. Note the dot.
+
+
 Examples
 --------
 
@@ -360,6 +366,16 @@ Effect and Interactions
   visible dependent quantification in types of terms, which is not covered directly by
   this proposal.
 
+* The change to top-level kind signatures is in anticipation of a future where
+  a function definition ``f x y = x + y`` is semantically similar to a datatype
+  definition ``data T a = MkT Int a``. That is, both have optional type signatures
+  ``f :: Int -> Int -> Int`` and ``type.T :: Type -> Type`` and both give a meaning
+  to an identifier. Under this proposal, the type-level namespace and the data-level
+  namespace remain separate -- meaning that type-level type signatures can be
+  compiled differently from term-level type signatures -- but that restriction may
+  be relaxed in the future. See `this comment <https://github.com/ghc-proposals/ghc-proposals/pull/214#issuecomment-478996527>`_ for some musings about some consequences of living
+  in that future.
+
 Costs and Drawbacks
 -------------------
 * There is a backward compatibility annoyance around the removal of ``pattern`` as a
@@ -376,6 +392,8 @@ Costs and Drawbacks
 Alternatives
 ------------
 * We could just drop the bit about ``module``.
+
+* There is no concrete need 
 
 * We could use ``value`` as the namespace specifier for data-level variables. However,
   we could not then use it in contexts like terms and types; it could never replace
@@ -411,18 +429,26 @@ None at this time.
 Future Work
 -----------
 
-It would be nice to be able to import names from one namespace to another wholesale.
-For example, ::
+*  It would be nice to be able to import names from one namespace to another wholesale.
+   For example, ::
 
-  import Prelude as type as data
+     import Prelude as type as data
 
-might be new syntax to import the Prelude, but making all names available in all
-namespaces. This could cause clashes. Should these be reported? Should clashes silently
-be resolved? We leave these details for another proposal. This one stands without it,
-but allowing these kinds of cross-namespace imports would help with the noisiness
-of using ``data.`` lots in types in code where many data constructors are used in types.
-The new syntax would also be useful to import names from one namespace into the other
-within one module.
+   might be new syntax to import the Prelude, but making all names available in all
+   namespaces. This could cause clashes. Should these be reported? Should clashes silently
+   be resolved? We leave these details for another proposal. This one stands without it,
+   but allowing these kinds of cross-namespace imports would help with the noisiness
+   of using ``data.`` lots in types in code where many data constructors are used in types.
+   The new syntax would also be useful to import names from one namespace into the other
+   within one module.
+
+* Introduce a new proposal for ``-XRequiredForAll`` that disables GHC's habit of
+  implicit lexical generalization in types. This means that ``f :: a -> a`` would
+  be rejected, in favor of ``f :: forall a. a -> a``. With ``-XRequiredForAll``,
+  programmers gain the ability to reason locally about where type variables are
+  brought into scope. This proposal would never suggest to turn on this extension
+  by default, instead making it available for programmers who want this local
+  reasoning ability.
 
 Annex
 =====
