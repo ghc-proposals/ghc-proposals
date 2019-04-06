@@ -393,7 +393,8 @@ Alternatives
 ------------
 * We could just drop the bit about ``module``.
 
-* There is no concrete need 
+* There is no concrete need to change ``type T ::`` to ``type.T ::``, but it does
+  seem like it will create a more regular future.
 
 * We could use ``value`` as the namespace specifier for data-level variables. However,
   we could not then use it in contexts like terms and types; it could never replace
