@@ -83,14 +83,18 @@ Change ``TExp``, ``Lift``, ``unTypeQ``, and ``unsafeTExpCoerce`` to take advanta
       lift = unTypeQ . liftTyped
       
       liftTyped :: t -> Q (TExp t)
-      default liftTyped :: (r ~ 'LiftedRep) => t -> Q (TExp t)
-      liftTyped = unsafeTExpCoerce . lift
 
-      {-# MINIMAL lift | liftTyped #-}
+Two importannt observations:
 
-NB: The ``r ~ 'LiftedRep`` is needed because GHC doesn't know how to handle levity polymorphic binders.
-It does mean that instances of ``Lift`` over unlifted types will need to manually implement both ``lift``
-and ``liftTyped``.
+  1. The ``r ~ 'LiftedRep`` is needed because GHC doesn't know how to handle levity polymorphic
+     binders. It does mean that instances of ``Lift`` over unlifted types will need to manually
+     implement both ``lift`` and ``liftTyped``.
+
+  2. By not providing a default implementation of ``liftTyped``, any existing empty instances of
+     ``Lift`` will crash as opposed to loop. This does have the unpleasant side effect that there
+     will be no way to write a CPP-free and backwards-compatible manual instance of ``Lift``.
+     However, since the vast majority of instances can (and should!) be derived with
+     ``-XDeriveLift``, which *is* backwards compatible, this is not a significant problem.
 
 Add to ``Language.Haskell.TH.Syntax`` a handful of new instances of ``Lift`` which are now valid:
 
@@ -140,8 +144,8 @@ In terms of development and maintainability, the cost is small: the prototype pa
 this functionality ends up removing more lines from the compiler than it adds.
 
 The only other drawback is that beginners browsing the documentation for Template Haskell are more
-likely to be confused by the complex signature for the default implementations of the ``lift`` and
-``liftTyped`` methods.
+likely to be confused by the complex signature for the default implementations of the ``lift``
+method.
 
 Alternatives
 ------------
