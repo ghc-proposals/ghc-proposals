@@ -84,7 +84,7 @@ Change ``TExp``, ``Lift``, ``unTypeQ``, and ``unsafeTExpCoerce`` to take advanta
       
       liftTyped :: t -> Q (TExp t)
 
-Two importannt observations:
+Two important observations:
 
   1. The ``r ~ 'LiftedRep`` is needed because GHC doesn't know how to handle levity polymorphic
      binders. It does mean that instances of ``Lift`` over unlifted types will need to manually
