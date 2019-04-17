@@ -1,11 +1,11 @@
 Meaning-preserving parsing rules for SCC annotations
 ====================================================
 
-.. proposal-number::
+.. proposal-number:: 46
 .. trac-ticket::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/176>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/176>`_.
 .. sectnum::
 .. contents::
 
