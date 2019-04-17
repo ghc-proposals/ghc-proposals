@@ -1,11 +1,11 @@
 Levity-polymorphic `Lift`
 =========================
 
-.. proposal-number::
+.. proposal-number:: 47
 .. trac-ticket::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/209>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/209>`_.
 .. sectnum::
 .. contents::
 
