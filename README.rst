@@ -271,8 +271,8 @@ mailing list. All interested parties are invited to follow the discussion.
    revision.
    
 -  If the shephard thinks the proposal ought to be rejected, they post their
-   justifications on the GitHub thread, and invites the authors to respond with
-   a rebuttal and/or refine the proposal. This continues until the either
+   justifications on the GitHub thread, and invite the authors to respond with
+   a rebuttal and/or refine the proposal. This continues until either
     
    * the shepherd changes their mind and supports the proposal now,
    * the authors withdraw their proposal,
@@ -284,7 +284,7 @@ mailing list. All interested parties are invited to follow the discussion.
 
 -  Now the shepherd proposes acceptance or rejectance, by email to the mailing
    list. Discussion among the committee ensues on the mailing list, and 
-   silence is understood as agreement with the shepherds recommendation.
+   silence is understood as agreement with the shepherd's recommendation.
 
 -  Ideally, the committee reaches consensus, as determined by the secretary or
    the shepherd. If consensus is elusive, then we vote, with the Simons
