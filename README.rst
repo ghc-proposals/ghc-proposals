@@ -269,11 +269,11 @@ mailing list. All interested parties are invited to follow the discussion.
 -  Based on the proposal text (but not the GitHub commentary), the shepherd
    decides whether the proposal ought to be accepted or rejected or returned for
    revision.
-   
+
 -  If the shephard thinks the proposal ought to be rejected, they post their
    justifications on the GitHub thread, and invite the authors to respond with
    a rebuttal and/or refine the proposal. This continues until either
-    
+
    * the shepherd changes their mind and supports the proposal now,
    * the authors withdraw their proposal,
    * the authors indicate that they will revise the proposal to address the shepherds
@@ -283,19 +283,19 @@ mailing list. All interested parties are invited to follow the discussion.
      positions, even if they disagree on the conclusion.
 
 -  Now the shepherd proposes acceptance or rejectance, by email to the mailing
-   list. Discussion among the committee ensues on the mailing list, and 
+   list. Discussion among the committee ensues on the mailing list, and
    silence is understood as agreement with the shepherd's recommendation.
 
 -  Ideally, the committee reaches consensus, as determined by the secretary or
    the shepherd. If consensus is elusive, then we vote, with the Simons
    retaining veto power.
 
--  The decision is announced, by the shepherd to the mailing.
+-  The decision is announced, by the shepherd to the mailing list.
 
 -  The secretary tags the pull request accordingly, and either merges or closes it.
    In particular
-  
-   *  **If we say no:** 
+
+   *  **If we say no:**
       The pull request will be closed and labeled
       `Rejected <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3Arejected>`_.
 
@@ -306,9 +306,9 @@ mailing list. All interested parties are invited to follow the discussion.
       GHC, it will be reverted.
 
    *  **If we say yes:**
-       The pull request will be merged, numbered and labeled
+      The pull request will be merged, numbered and labeled
       `Accepted <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3AAccepted>`_.
-      
+
       At this point, the proposal process is technically
       complete. It is outside the purview of the committee to implement,
       oversee implementation, attract implementors, etc.
