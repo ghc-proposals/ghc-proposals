@@ -2,7 +2,7 @@ The dot type operator
 =====================
 
 .. proposal-number:: 39
-.. trac-ticket::
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/merge_requests/363
 .. implemented:: 8.8
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/173>`_.
@@ -56,7 +56,7 @@ We can achieve this by changing a single production in ``Parser.y``, namely
 
 Note that the actual implementation will be more complex to provide decent
 error messages, keep `annotations
-<https://ghc.haskell.org/trac/ghc/wiki/ApiAnnotations>`_ working, etc.
+<https://gitlab.haskell.org/ghc/ghc/wikis/api-annotations>`_ working, etc.
 
 We can use whitespace to disambiguate between uses of the dot as a type
 operator and as a part of a qualified name. The situation is the same as in

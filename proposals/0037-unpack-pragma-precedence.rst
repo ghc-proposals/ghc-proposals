@@ -2,7 +2,7 @@ Lower precedence for {-# UNPACK #-}
 ===================================
 
 .. proposal-number:: 37
-.. trac-ticket:: 14761
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/14761
 .. implemented:: 8.8
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/174>`_.
@@ -12,8 +12,8 @@ Lower precedence for {-# UNPACK #-}
 
 The ``{-# UNPACK #-}`` pragma is not valid inside a type but binds more
 tightly than function application. This is suboptimal because it contradicts
-user expectations (`Trac #14761
-<https://ghc.haskell.org/trac/ghc/ticket/14761>`_) and forces unnecessary
+user expectations (`#14761
+<https://gitlab.haskell.org/ghc/ghc/issues/14761>`_) and forces unnecessary
 parenthesization of types. We propose to lower the precedence of ``{-# UNPACK
 #-}``.
 
@@ -65,7 +65,7 @@ Alternatives
 
 A similar argument can be made for ``!`` and ``~`` when they are used as
 strictress/laziness annotations, but Simon Peyton Jones `argues
-<https://ghc.haskell.org/trac/ghc/ticket/14761#comment:7>`_ that it would "look
+<https://gitlab.haskell.org/ghc/ghc/issues/14761#note_148688>`_ that it would "look
 wrong":
 
     Both ``{-# UNPACK #-}`` and ``!`` only make sense at the outer level of a type

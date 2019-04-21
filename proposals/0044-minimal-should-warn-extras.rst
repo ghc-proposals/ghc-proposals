@@ -2,7 +2,7 @@ MINIMAL should warn about extra definitions
 ===========================================
 
 .. proposal-number:: 44
-.. trac-ticket::  <https://ghc.haskell.org/trac/ghc/ticket/16314>.
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/16314
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/210>`_.
@@ -54,7 +54,7 @@ is defined, with a message of the form::
 Per usual GHC strategy, this can be tied to a flag named ``-Wredundant-minimal-methods`` or similar. This flag should be
 on by default. (Exact wording of the warning text and the flag name can be determined by the implementor.)
 
-I have filed this as a feature request: https://ghc.haskell.org/trac/ghc/ticket/16314. Simon PJ asked me to
+I have filed this as a feature request: https://gitlab.haskell.org/ghc/ghc/issues/16314. Simon PJ asked me to
 create a proposal so it can gather feedback.
 
 Proposed Change Specification

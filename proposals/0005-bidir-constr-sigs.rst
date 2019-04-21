@@ -2,7 +2,7 @@ Pattern synonym construction function signatures
 ================================================
 
 .. proposal-number:: 0005
-.. trac-ticket:: https://ghc.haskell.org/trac/ghc/ticket/14602
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/14602
 .. implemented:: Not yet.
 .. highlight:: haskell
 .. sectnum::
@@ -18,7 +18,7 @@ Motivation
 
 This proposal grows out of an idea Simon Peyton Jones expressed in
 `Pattern synonym used in an expression context could have different constraints to pattern
-used in a pattern context <https://ghc.haskell.org/trac/ghc/ticket/8581#comment:10>`_.
+used in a pattern context <https://gitlab.haskell.org/ghc/ghc/issues/8581#note_87372>`_.
 
     The two directions of an explicitly-bidirectional pattern might have utterly
     different class constraints. After all, the two directions are specified by
@@ -153,7 +153,7 @@ abbreviating the pattern declaration:
       NF :: NFData a => a -> NF a
 
 Based on the plan outlined in
-`Trac #14478 <https://ghc.haskell.org/trac/ghc/ticket/14478>`_, we would allow
+`#14478 <https://gitlab.haskell.org/ghc/ghc/issues/14478>`_, we would allow
 similarly abbreviated signatures in `.hs-boot` and `.hsig` files:
 
 .. code-block:: haskell

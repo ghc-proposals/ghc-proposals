@@ -2,7 +2,7 @@ Declare ``Constraint`` is not apart from ``Type``
 =================================================
 
 .. proposal-number:: 19
-.. trac-ticket::
+.. ticket-url::
 .. implemented::
 .. highlight:: haskell
 .. header::
@@ -13,7 +13,7 @@ Declare ``Constraint`` is not apart from ``Type``
 
 Since at least GHC 7.4, there has been an uneasy relationship between ``Constraint`` and ``Type`` (formerly known as ``*``). These
 kinds were considered distinct in Haskell but indistinguishable in Core. This strange arrangement causes oddities in the
-type system, as explained in `#11715 <https://ghc.haskell.org/trac/ghc/ticket/11715>`_.
+type system, as explained in `#11715 <https://gitlab.haskell.org/ghc/ghc/issues/11715>`_.
 
 An earlier version of this proposal suggested a fix for this by separating ``Constraint`` and ``Type``.
 However, that solution is quite heavy (it is listed in the `Old proposal`_ section). So, this
@@ -122,9 +122,9 @@ I or a close collaborator volunteers to implement. Offers of help are welcome.
 .. proposal-number:: Leave blank. This will be filled in when the proposal is
                      accepted.
 
-.. trac-ticket:: Leave blank. This will eventually be filled with the Trac
-                 ticket number which will track the progress of the
-                 implementation of the feature.
+.. ticket-url:: Leave blank. This will eventually be filled with the
+                ticket URL which will track the progress of the
+                implementation of the feature.
 
 .. implemented:: Leave blank. This will be filled in with the first GHC version which
                  implements the described feature.
@@ -400,10 +400,10 @@ Alternatives
 
 2. @int-index has argued very cogently and patiently for an alternative solution, whereby we allow ``Constraint ~ Type``
    in Haskell code, resolving the discrepancy between Haskell and Core in the opposite direction. This idea
-   was originally proposed by Simon PJ `here <https://ghc.haskell.org/trac/ghc/ticket/11715#comment:9>`_, but he
+   was originally proposed by Simon PJ `here <https://gitlab.haskell.org/ghc/ghc/issues/11715#note_117916>`_, but he
    has since changed his mind on the idea. It's hard to summarize @int-index's arguments here beyond Simon's original
    proposal, but they are worthwhile reading if you're keen. The main drawbacks to the
-   alternative proposal might be written by Edward Kmett `here <https://ghc.haskell.org/trac/ghc/ticket/11715#comment:31>`_.
+   alternative proposal might be written by Edward Kmett `here <https://gitlab.haskell.org/ghc/ghc/issues/11715#note_123424>`_.
    I confess I have not liked this idea much, but it's more from a language-design standpoint than from a type-safety
    standpoint (the alternative proposal appears type-safe to me). (@int-index has since backed off this point of view,
    as seen on the pull request)

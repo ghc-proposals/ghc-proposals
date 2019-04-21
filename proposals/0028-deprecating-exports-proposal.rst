@@ -2,7 +2,7 @@ Deprecating Exports
 ===================
 
 .. proposal-number:: 28
-.. trac-ticket::
+.. ticket-url::
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/134>`_.
@@ -18,11 +18,11 @@ easily specify, which exports from a module are to be deprecated.
 
 Motivation
 ------------
-As described in the ticket https://ghc.haskell.org/trac/ghc/ticket/4879 there is sometimes a need to deprecate certain exports from a module.
+As described in the ticket https://gitlab.haskell.org/ghc/ghc/issues/4879 there is sometimes a need to deprecate certain exports from a module.
 
 Proposed Change Specification
 -----------------------------
-The changes proposed are based on the first design option from the ticket https://ghc.haskell.org/trac/ghc/ticket/4879
+The changes proposed are based on the first design option from the ticket https://gitlab.haskell.org/ghc/ghc/issues/4879
 
 The syntax would be as follows:
 

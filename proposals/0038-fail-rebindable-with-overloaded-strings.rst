@@ -2,7 +2,7 @@ Make rebindable ``fail`` work with overloaded strings
 =====================================================
 
 .. proposal-number:: 38
-.. trac-ticket:: 15645
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/15645
 .. implemented:: 8.8
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request
@@ -81,7 +81,7 @@ without having to retain it as the input type to ``fail``.
 
 We view this change primarily as a bug fix, which simplifies an
 unexpected corner. This proposal originally started out as
-https://ghc.haskell.org/trac/ghc/ticket/15645.
+https://gitlab.haskell.org/ghc/ghc/issues/15645.
 
 Costs and Drawbacks
 -------------------

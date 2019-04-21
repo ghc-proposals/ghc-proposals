@@ -2,7 +2,7 @@ A syntax for visible dependent quantification
 =============================================
 
 .. proposal-number:: 35
-.. trac-ticket:: #16326
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/16326
 .. implemented:: 8.10
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/81>`_.

@@ -2,7 +2,7 @@ Pointer Rep
 ==============
 
 .. proposal-number:: 45
-.. trac-ticket::
+.. ticket-url::
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/203>`_.
@@ -58,7 +58,7 @@ a discussion of the deficiencies of ``ArrayArray#``.
 What else do we get? In the discussion of the Unlifted Array proposal,
 David Feuer and Michal Terepeta `expressed interest`_ in a variant of
 ``SmalArray#`` that could hold unlifted values. That proposal was
-accepted without the addition, but this proposal gives us the ability 
+accepted without the addition, but this proposal gives us the ability
 to express this. Furthermore, it does this without adding any new
 primitive types. Elsewhere, David has `suggested an UnliftedRef type`_.
 This proposal gives us a way to express that without ``unsafeCoerce#``.
@@ -154,7 +154,7 @@ having a compulsory unfolding. It is left for a future proposal to
 loosen the binder restriction, making the compulsory unfoldings unneeded.
 
 .. _levity polymorphism paper: https://cs.brynmawr.edu/~rae/papers/2017/levity/levity-extended.pdf
-.. _possible to loosen the binder restriction: https://ghc.haskell.org/trac/ghc/ticket/15532
+.. _possible to loosen the binder restriction: https://gitlab.haskell.org/ghc/ghc/issues/15532
 
 The ``ArrayArray#`` type and its functions are shimmed out in
 ``GHC.Exts``. This strategy was discussed in the Unlifted Array

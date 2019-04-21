@@ -2,7 +2,7 @@ Make unboxed tuple patterns lazy / warn on unbanged strict patterns
 ===================================================================
 
 .. proposal-number:: 33
-.. trac-ticket::
+.. ticket-url:: https://phabricator.haskell.org/D2842
 .. implemented::
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/35>`_.
 .. highlight:: haskell

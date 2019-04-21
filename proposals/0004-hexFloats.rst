@@ -2,7 +2,7 @@ Hexadecimal Floats in Haskell
 =============================
 
 .. proposal-number:: 0004
-.. trac-ticket:: https://ghc.haskell.org/trac/ghc/ticket/13126
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/13126
 .. implemented:: 8.4.1
 .. highlight:: haskell
 .. sectnum::
@@ -34,7 +34,7 @@ perhaps GHC can support such literals via a pragma, such as ``LANGUAGE Hexadecim
 
 Eventually, the change should make it into the Haskell report.
 
-Note that there's already a feature request filed for GHC: http://ghc.haskell.org/trac/ghc/ticket/13126
+Note that there's already a feature request filed for GHC: https://gitlab.haskell.org/ghc/ghc/issues/13126
 
 Motivation
 ------------

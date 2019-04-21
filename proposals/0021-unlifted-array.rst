@@ -2,7 +2,7 @@ UnliftedArray
 ==============
 
 .. proposal-number:: 21
-.. trac-ticket::
+.. ticket-url::
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/112>`_.

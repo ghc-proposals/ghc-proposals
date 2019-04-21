@@ -2,7 +2,7 @@ Top-level kind signatures
 =========================
 
 .. proposal-number:: 36
-.. trac-ticket::
+.. ticket-url::
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/54>`_.
@@ -50,10 +50,10 @@ Motivation
 This is a simplification over the current story around CUSKs, which are fiddly and
 unpredictable. For example, here_ are_ some_ tickets_ borne of confusion around CUSKs.
 
-.. _here: https://ghc.haskell.org/trac/ghc/ticket/12928
-.. _are: https://ghc.haskell.org/trac/ghc/ticket/10141
-.. _some: https://ghc.haskell.org/trac/ghc/ticket/13109
-.. _tickets: https://ghc.haskell.org/trac/ghc/ticket/13761
+.. _here: https://gitlab.haskell.org/ghc/ghc/issues/12928
+.. _are: https://gitlab.haskell.org/ghc/ghc/issues/10141
+.. _some: https://gitlab.haskell.org/ghc/ghc/issues/13109
+.. _tickets: https://gitlab.haskell.org/ghc/ghc/issues/13761
 
 This new proposal makes the choice of whether or not to infer a kind much simpler.
 Even better, this proposal makes type-level polymorphic recursion have the same rules

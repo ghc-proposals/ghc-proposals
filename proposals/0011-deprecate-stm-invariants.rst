@@ -2,7 +2,7 @@ Deprecating STM invariant mechanism
 ===================================
 
 .. proposal-number:: 11
-.. trac-ticket:: `#14324 <https://ghc.haskell.org/trac/ghc/ticket/14324>`_
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/14324
 .. implemented:: 8.6
 .. highlight:: haskell
 .. sectnum::
@@ -23,13 +23,13 @@ checks when committing transactions, embodied by the ``always`` and
 
 However, if Hackage is any indication this feature has seen very little
 use of the past ten years. In fact, it has very likely been quite broken
-(see `#14310 <https://ghc.haskell.org/trac/ghc/ticket/14310>`_) for this entire
+(see `#14310 <https://gitlab.haskell.org/ghc/ghc/issues/14310>`_) for this entire
 duration yet no one noticed. Moreover, the
 mechanism is likely mediocre at achieving its goal of catching broken
 invariants due to odd interleavings of transactions as its
 implementation is extremely sychronization-heavy. Additionally, the
 mechanism currently fails to handle some corner-cases correctly
-(`#7930 <https://ghc.haskell.org/trac/ghc/ticket/7930>`_).
+(`#7930 <https://gitlab.haskell.org/ghc/ghc/issues/7930>`_).
 
 In short, the feature is complex, buggy, and not pulling its weight.
 

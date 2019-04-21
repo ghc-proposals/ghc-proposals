@@ -2,7 +2,7 @@ Offer more array resizing primitives
 ====================================
 
 .. proposal-number:: 25
-.. trac-ticket::
+.. ticket-url::
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/121>`_.

@@ -2,7 +2,7 @@ Levity-polymorphic `Lift`
 =========================
 
 .. proposal-number:: 47
-.. trac-ticket:: !789
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/merge_requests/789
 .. implemented:: 8.10
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/209>`_.
@@ -81,7 +81,7 @@ Change ``TExp``, ``Lift``, ``unTypeQ``, and ``unsafeTExpCoerce`` to take advanta
       lift :: t -> Q Exp
       default lift :: (r ~ 'LiftedRep) => t -> Q Exp
       lift = unTypeQ . liftTyped
-      
+
       liftTyped :: t -> Q (TExp t)
 
 Two important observations:
@@ -116,7 +116,7 @@ The proposed change would make it possible to lift values of unlifted kinds and 
 
 This proposal would also provide a means for trying out levity polymorphism in typeclasses (see
 sections 7.3 and 8.1 of the `Levity Polymorphism paper <https://www.microsoft.com/en-us/research/wp-content/uploads/2016/11/levity-pldi17.pdf>`_).
-Although there are `many classes which could benefit from this treatment <https://ghc.haskell.org/trac/ghc/ticket/12708#comment:29>`_,
+Although there are `many classes which could benefit from this treatment <https://gitlab.haskell.org/ghc/ghc/issues/12708#note_131157>`_,
 ``Lift`` is a good first candidate because it isn't too widely used and ``template-haskell``
 isn't expected to be as stable and free of breakage as ``base``. There is already `a proposal <https://github.com/ghc-proposals/ghc-proposals/pull/30>`_ which aims to make typeclasses in ``base`` levity-polymorphic.
 
@@ -129,7 +129,7 @@ runtime rep). Here is an example:
 ::
 
     ghci> let rationalOne = lift @Rational 1    -- no longer works
-    
+
     <interactive>: error:
         • Expected kind ‘GHC.Types.RuntimeRep’, but ‘Rational’ has kind ‘*’
         • In the type ‘Rational’

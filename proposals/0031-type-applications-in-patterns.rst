@@ -2,7 +2,7 @@ Type Applications in Patterns
 =============================
 
 .. proposal-number:: 31
-.. trac-ticket:: 15530
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/15530
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/126>`_.
@@ -61,7 +61,7 @@ An underscore in a type signature or type application in a pattern is allowed, d
 Examples
 --------
 
-Here is an example (taken from _#15050 <https://ghc.haskell.org/trac/ghc/ticket/15050#comment:10>_)::
+Here is an example (taken from _#15050 <https://gitlab.haskell.org/ghc/ghc/issues/15050#note_152286>_)::
 
     type family F a where F Bool = Int
     data T a where MkT :: forall b a. b ~ F a => b -> T a
@@ -75,7 +75,7 @@ This should type-check, because the following code does::
 
 Note that the data constructor expects up-to two type arguments (``forall b a.…``), but we are passing only one type argument, which then corresponds to the *first* type argument of of the data constructor.
 
-A more complex example is this (also inspired by `#15050 <https://ghc.haskell.org/trac/ghc/ticket/15050>`_)::
+A more complex example is this (also inspired by `#15050 <https://gitlab.haskell.org/ghc/ghc/issues/15050>`_)::
 
     data T a where
       MkT1 :: forall a.              T a
@@ -178,4 +178,4 @@ to fixes preserving the symmetry between type applications in terms and patters,
 type applications and type signatures, and also in Section 6.1 of `the paper <https://arxiv.org/abs/1806.03476>`_. Furthermore, it does not introduce new concepts (e.g. the distinction between
 existential and universal parameters) to the Haskell programmer.
 
-The existing restriction of ``ScopedTypeVariabes`` that type variables in pattern signatures may only be bound to type variables, and not types, carries over to type variables in type applications. One could discuss lifting this restriction, but this question is completely orthotogonal to the proposal at hand, and should be discussed elsewhere (e.g. in `Proposal #128 <https://github.com/ghc-proposals/ghc-proposals/pull/128>`_ and `ticket #15050 <https://ghc.haskell.org/trac/ghc/ticket/15050#comment:10>`_).
+The existing restriction of ``ScopedTypeVariabes`` that type variables in pattern signatures may only be bound to type variables, and not types, carries over to type variables in type applications. One could discuss lifting this restriction, but this question is completely orthotogonal to the proposal at hand, and should be discussed elsewhere (e.g. in `Proposal #128 <https://github.com/ghc-proposals/ghc-proposals/pull/128>`_ and `ticket #15050 <https://gitlab.haskell.org/ghc/ghc/issues/15050#note_152286>`_).

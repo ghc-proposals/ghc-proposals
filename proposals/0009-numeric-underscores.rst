@@ -2,7 +2,7 @@ Underscores in Numeric Literals
 ===============================
 
 .. proposal-number:: 0009
-.. trac-ticket:: 14473
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/14473
 .. implemented:: 8.6.1
 .. highlight:: haskell
 .. sectnum::

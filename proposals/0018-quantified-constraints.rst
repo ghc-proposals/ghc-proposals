@@ -3,7 +3,7 @@ Quantified Constraints
 
 .. proposal-number:: 18
 
-.. trac-ticket:: #2893
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/2893
 
 .. implemented:: 8.6
 
@@ -96,15 +96,15 @@ Introducing quantified constraints offers two main benefits:
 
 Here is a list of other sources that have sought quantified constraints:
 
-- `GHC's ticket about quantified constraints <https://ghc.haskell.org/trac/ghc/ticket/2893>`_, and `GHC's wiki page about quantified constraints <https://ghc.haskell.org/trac/ghc/wiki/QuantifiedConstraints>`_.  The ticket dates back nine years.  The wiki page has a list of open tickets about quantified constraints, many of them in response to this proposal and prototype implementation.
+- `GHC's ticket about quantified constraints <https://gitlab.haskell.org/ghc/ghc/issues/2893>`_, and `GHC's wiki page about quantified constraints <https://gitlab.haskell.org/ghc/ghc/wikis/quantified-constraints>`_.  The ticket dates back nine years.  The wiki page has a list of open tickets about quantified constraints, many of them in response to this proposal and prototype implementation.
 - `How to derive Generic for (some) GADTs using QuantifiedConstraints <https://ryanglscott.github.io/2018/02/11/how-to-derive-generic-for-some-gadts/>`_, a blog post by Ryan Scott, Feb 2018.
 - `Quantified class constraints <http://i.cs.hku.hk/~bruno//papers/hs2017.pdf>`_ is a Haskell 2017 paper that works out the idea in some detail, with examples.  Here is a `Reddit thread about it <https://www.reddit.com/r/haskell/comments/6me3sv/quantified_class_constraints_pdf/>`_.
-- `Adding join to Monad <https://ghc.haskell.org/trac/ghc/ticket/9123>`_: this ticket describes a real problem with GHC's role system, which currently prevents us adding ``join`` to ``Monad`` and still allowing ``deriving( Monad )``.  As `comment 29 <https://ghc.haskell.org/trac/ghc/ticket/9123#comment:29>`_ shows, quantified constraints can solve this problem.   And `this blog post from Ryan Scott <https://ryanglscott.github.io/2018/03/04/how-quantifiedconstraints-can-let-us-put-join-back-in-monad/>`_ explains exactly how.
+- `Adding join to Monad <https://gitlab.haskell.org/ghc/ghc/issues/9123>`_: this ticket describes a real problem with GHC's role system, which currently prevents us adding ``join`` to ``Monad`` and still allowing ``deriving( Monad )``.  As `comment 29 <https://gitlab.haskell.org/ghc/ghc/issues/9123#note_92871>`_ shows, quantified constraints can solve this problem.   And `this blog post from Ryan Scott <https://ryanglscott.github.io/2018/03/04/how-quantifiedconstraints-can-let-us-put-join-back-in-monad/>`_ explains exactly how.
 - `A blog post about higher-rank constraints <http://mainisusuallyafunction.blogspot.co.uk/2010/09/higher-rank-type-constraints.html>`_ -- slightly different terminology, but the same idea.
-- `A genuine use-case <https://ghc.haskell.org/trac/ghc/ticket/2893#comment:17>`_ taken from `How to twist pointers without breaking them <http://ozark.hendrix.edu/~yorgey/pub/twisted.pdf>`_.
+- `A genuine use-case <https://gitlab.haskell.org/ghc/ghc/issues/2893#note_123363>`_ taken from `How to twist pointers without breaking them <http://ozark.hendrix.edu/~yorgey/pub/twisted.pdf>`_.
 - `A Hakell libraries mailing list thread <https://mail.haskell.org/pipermail/libraries/2017-December/028377.html>`_ about quantified constraints.
 - A `Reddit thread <https://np.reddit.com/r/haskell/comments/7toutl/now_there_is_a_branch_to_play_with/>`_ about the quantified-constraints prototype.
-- A bunch of other GHC tickets are listed on `the wiki page <https://ghc.haskell.org/trac/ghc/ticket/2893>`_.
+- A bunch of other GHC tickets are listed on `the wiki page <https://gitlab.haskell.org/ghc/ghc/issues/2893>`_.
 
 Proposed Change Specification
 ------------------------------
@@ -167,7 +167,7 @@ Notes:
    instance (forall xx. c (Free c xx)) => Monad (Free c) where
        Free f >>= g = f g
 
-  See `Iceland Jack's summary <https://ghc.haskell.org/trac/ghc/ticket/14733#comment:6>`_.  The key point is that the bit to the right of the `=>` may be headed by a type *variable* (`c` in this case), rather than a class.  It should not be one of the forall'd variables, though.
+  See `Iceland Jack's summary <https://gitlab.haskell.org/ghc/ghc/issues/14733#note_148352>`_.  The key point is that the bit to the right of the `=>` may be headed by a type *variable* (`c` in this case), rather than a class.  It should not be one of the forall'd variables, though.
 
   (NB: this goes beyond what is described in `the paper <http://i.cs.hku.hk/~bruno//papers/hs2017.pdf>`_, but does not seem to introduce any new technical difficulties.)
 
@@ -354,5 +354,5 @@ The feature is fully implemented in branch ``wip/T2893`` of the GHC repository.
 
 Additional Links
 ----------------
-- `Quantified Constraints wiki <https://ghc.haskell.org/trac/ghc/wiki/QuantifiedConstraints>`_
-- `Quantified Constraints ticket <https://ghc.haskell.org/trac/ghc/ticket/2893>`_
+- `Quantified Constraints wiki <https://gitlab.haskell.org/ghc/ghc/wikis/quantified-constraints>`_
+- `Quantified Constraints ticket <https://gitlab.haskell.org/ghc/ghc/issues/2893>`_
