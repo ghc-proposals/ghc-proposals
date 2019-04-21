@@ -2,7 +2,7 @@ Unrestricted Overloaded Labels
 ==============================
 
 .. proposal-number:: 40
-.. trac-ticket:: 11671
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/11671
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/170>`_
@@ -16,7 +16,7 @@ Motivation
 ------------
 ``#foo`` is a valid expression with ``-XOverloadedLabels``, but ``#Foo`` is not. This is somewhat surprising, as ``#foo`` is only syntax for ``fromLabel @"foo"``. This can mean anything, so it doesn't make sense to enforce a case distinction as done for constructors and functions. Similarly, ``#3`` is not valid, nor is any other number. There isn't much reason against this, either.
 
-There are real world cases in the Trac ticket, usually because libraries want to define the syntax ``#Foo`` to do something constructor related.
+There are real world cases in the ticket, usually because libraries want to define the syntax ``#Foo`` to do something constructor related.
 
 Proposed Change Specification
 -----------------------------

@@ -2,12 +2,12 @@ More explicit ``forall``\s
 ==========================
 
 .. proposal-number:: 0007
-.. trac-ticket:: 2600, 14268
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/2600, https://gitlab.haskell.org/ghc/ghc/issues/14268
 .. implemented:: 8.8
 .. sectnum::
    :start: 7
 .. highlight:: haskell
-.. header:: This proposal was `discussed at this pull requst <https://github.com/ghc-proposals/ghc-proposals/pull/55>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/55>`_.
 .. contents::
 
 On type signatures, users can write ``forall ...`` to explicitly bind type/kind variables.
@@ -121,7 +121,7 @@ Given that ``forall`` is a keyword in types with ``ExplicitForAll``, this change
 Note that any new ``forall`` in a ``RULES`` equation would require two ``forall``\s, something not currently
 permitted.
 
-This proposal will fix long-standing ticket `#2600 <https://ghc.haskell.org/trac/ghc/ticket/2600>`_.
+This proposal will fix long-standing ticket `#2600 <https://gitlab.haskell.org/ghc/ghc/issues/2600>`_.
 
 Costs and Drawbacks
 -------------------

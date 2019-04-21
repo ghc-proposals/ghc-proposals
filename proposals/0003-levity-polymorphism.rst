@@ -2,9 +2,7 @@ Revise Levity Polymorphism
 ==========================
 
 .. proposal-number:: 0003
-.. trac-ticket:: Leave blank. This will eventually be filled with the Trac
-                 ticket number which will track the progress of the
-                 implementation of the feature.
+.. ticket-url:: https://phabricator.haskell.org/D2842
 .. implemented:: 8.2.1
 .. highlight:: haskell
 .. sectnum::
@@ -28,7 +26,7 @@ simplifying type inference a good deal, with the abolishment of sub-kinding.
 As @Iceland_jack has pointed out, levity polymorphism also allows us to
 overload operations like ``+`` over unlifted types. (See `this bug report`_.)
 
-.. _this bug report: https://ghc.haskell.org/trac/ghc/ticket/12708
+.. _this bug report: https://gitlab.haskell.org/ghc/ghc/issues/12708
 
 Further motivation is available in Simon and my `paper on the subject`_.
 

@@ -2,9 +2,9 @@ As patterns in pattern synonyms
 ==============
 
 .. proposal-number:: 16
-.. trac-ticket:: Leave blank. This will eventually be filled with the Trac
-                 ticket number which will track the progress of the
-                 implementation of the feature.
+.. ticket-url:: Leave blank. This will eventually be filled with the
+                ticket URL which will track the progress of the
+                implementation of the feature.
 .. implemented:: 8.6
 .. highlight:: haskell
 .. sectnum::
@@ -47,7 +47,7 @@ For example, this definition would become legal.
 
 ::
 
-Currently this is rejected.  Why?  Because of worries about what this might mean (see Trac #9793) :
+Currently this is rejected.  Why?  Because of worries about what this might mean (see #9793) :
 
 ::
 

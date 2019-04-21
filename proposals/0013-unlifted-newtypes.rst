@@ -2,7 +2,7 @@ Unlifted Newtypes
 =================
 
 .. proposal-number:: 13
-.. trac-ticket:: 15219
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/15219
 .. implemented:: Leave blank. This will be filled in with the first GHC version which
                  implements the described feature.
 .. highlight:: haskell
@@ -114,7 +114,7 @@ Motivation: Typed Unlifted Arrays as a Library
 
 Currently, ``ArrayArray#`` offers an unsafe interface that does not keep track
 of the element type. This problem, as well as a proposed solution, is described
-in greater detail on the GHC trac (See `this issue`_). Alternatively, the
+in greater detail on the GHC issue tracker (See `this issue`_). Alternatively, the
 `primitive`_ package offers a typeclass-based solution. If we ignore the
 ``PrimMonad`` machinery and specialize to ``ST``, the interface looks
 like this::
@@ -133,7 +133,7 @@ like this::
     readUnliftedArray :: PrimUnlifted a => MutableUnliftedArray s a -> Int -> ST s a
     writeUnliftedArray :: PrimUnlifted a => MutableUnliftedArray s a -> Int -> a -> ST s ()
 
-.. _this issue: https://ghc.haskell.org/trac/ghc/ticket/14196
+.. _this issue: https://gitlab.haskell.org/ghc/ghc/issues/14196
 .. _primitive: http://hackage.haskell.org/package/primitive-0.6.2.0/docs/Data-Primitive-UnliftedArray.html
 
 However, typeclasses are not guaranteed to specialize. Users working with a
@@ -356,13 +356,13 @@ then neither should ``baz``.
       data Number :: TYPE Rep
       plus :: Number -> Number -> Number
 
-.. _type declarations of unlifted kinds: https://ghc.haskell.org/trac/ghc/ticket/13955
+.. _type declarations of unlifted kinds: https://gitlab.haskell.org/ghc/ghc/issues/13955
 
 Currently, these type can only be implemented by a type synonym,
 not by a data declaration. Edward Yang discusses this in a `comment on the
 aforementioned issue`_. This proposal would lift this restriction.
 
-.. _comment on the aforementioned issue: https://ghc.haskell.org/trac/ghc/ticket/13955#comment:5
+.. _comment on the aforementioned issue: https://gitlab.haskell.org/ghc/ghc/issues/13955#note_139218
 
 
 Costs and Drawbacks
@@ -390,7 +390,7 @@ look like. Additionally, the implementation would be more
 complicated than an implementation that only allowed unlifted
 newtypes.
 
-.. _unlifted data types: https://ghc.haskell.org/trac/ghc/wiki/UnliftedDataTypes
+.. _unlifted data types: https://gitlab.haskell.org/ghc/ghc/wikis/unlifted-data-types
 
 Alternatively, we could take a step in the other direction and simplify
 this proposal. Disallowing levity-polymorphic newtypes might make this

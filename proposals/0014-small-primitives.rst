@@ -3,7 +3,7 @@ Add more fixed size primitive types, like ``Int8#/Word8#``
 ==========================================================
 
 .. proposal-number:: 14
-.. trac-ticket::
+.. ticket-url:: https://phabricator.haskell.org/D5006, https://phabricator.haskell.org/D5258
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/74>`_.
@@ -179,6 +179,6 @@ Additional context
 
 .. _Initial discussion: https://mail.haskell.org/pipermail/ghc-devs/2017-August/014462.html
 
-.. _#11953: https://ghc.haskell.org/trac/ghc/ticket/11953
+.. _#11953: https://gitlab.haskell.org/ghc/ghc/issues/11953
 
 .. _LLVM's calling convention for GHC: https://github.com/llvm-project/llvm-project-20170507/blob/e11c49f6c12a9646ef77f8781acc626bbfcae9b5/llvm/lib/Target/X86/X86CallingConv.td#L648

@@ -18,9 +18,9 @@ Proposal title
 
 .. proposal-number:: Leave blank. This will be filled in when the proposal is
                      accepted.
-.. trac-ticket:: Leave blank. This will eventually be filled with the Trac
-                 ticket number which will track the progress of the
-                 implementation of the feature.
+.. ticket-url:: Leave blank. This will eventually be filled with the
+                ticket URL which will track the progress of the
+                implementation of the feature.
 .. implemented:: Leave blank. This will be filled in with the first GHC version which
                  implements the described feature.
 .. highlight:: haskell
@@ -53,7 +53,7 @@ Effect and Interactions
 -----------------------
 Detail how the proposed change addresses the original problem raised in the motivation.
 
-Discuss possibly contentious interactions with existing language or compiler features. 
+Discuss possibly contentious interactions with existing language or compiler features.
 
 
 Costs and Drawbacks

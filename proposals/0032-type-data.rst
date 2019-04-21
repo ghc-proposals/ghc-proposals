@@ -2,7 +2,7 @@ Define Kinds Without Promotion
 ==============================
 
 .. proposal-number:: 32
-.. trac-ticket::
+.. ticket-url::
 .. implemented::
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/106>`_.
 .. highlight:: haskell
@@ -55,8 +55,8 @@ representatives for the members of ``Universe``.
 
 Relevant links:
 
-- GHC trac ticket for the same idea: https://ghc.haskell.org/trac/ghc/ticket/6024
-- An older proposal for the same idea: https://ghc.haskell.org/trac/ghc/wiki/GhcKinds/KindsWithoutData
+- GHC ticket for the same idea: https://gitlab.haskell.org/ghc/ghc/issues/6024
+- An older proposal for the same idea: https://gitlab.haskell.org/ghc/ghc/wikis/ghc-kinds/kinds-without-data
 - Example of real code where the clutter is a problem:
   https://github.com/GaloisInc/crucible/blob/master/crucible/src/Lang/Crucible/Types.hs#L351
 

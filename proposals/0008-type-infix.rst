@@ -2,7 +2,7 @@ Require namespacing fixity declarations for type names and ``WARNING``/``DEPRECA
 =============================================================================================
 
 .. proposal-number:: 0008
-.. trac-ticket:: 14032
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/14032
 .. implemented:: None yet
 .. sectnum::
    :start: 8
@@ -78,7 +78,7 @@ This strategy is unsatisfying for a couple of reasons, however.
              infixr 0 $
            |])
 
-   During splicing, Template Haskell will rename the quoted declarations, convert them to a Template Haskell AST, turn that back into Haskell surface syntax, and pass it through to the renamer (and the rest of the compilation pipeline). But recall that when ``infixr 0 $`` is renamed, it is effectively turned into ``infixr 0 $_1, $_2``. After going through the Template Haskell AST, the renamer sees the declaration ``infixr 0 $_1, $_2`` and rejects it, because it believes that ``$_1`` and ``$_2`` are duplicate names! (Recall that ``$_1`` and ``$_2`` both refer to the name ``$``, but with different internal uniques.) This is the subject of `GHC Trac #14032 <https://ghc.haskell.org/trac/ghc/ticket/14032>`_.
+   During splicing, Template Haskell will rename the quoted declarations, convert them to a Template Haskell AST, turn that back into Haskell surface syntax, and pass it through to the renamer (and the rest of the compilation pipeline). But recall that when ``infixr 0 $`` is renamed, it is effectively turned into ``infixr 0 $_1, $_2``. After going through the Template Haskell AST, the renamer sees the declaration ``infixr 0 $_1, $_2`` and rejects it, because it believes that ``$_1`` and ``$_2`` are duplicate names! (Recall that ``$_1`` and ``$_2`` both refer to the name ``$``, but with different internal uniques.) This is the subject of `GHC #14032 <https://gitlab.haskell.org/ghc/ghc/issues/14032>`_.
 
    The exact same problems that afflict fixity declarations also afflict ``WARNING`` pragmas (as well as ``DEPRECATED`` pragmas, which accomplish the same thing, so I'll refer to them henceforth as just ``WARNING`` pragmas), as they have a similarly ambiguous semantics surrounding infix type names.
 
@@ -172,7 +172,7 @@ The eventual goal is to make ``infix{l,r} n type`` the only means by which one c
 
 * In GHC 8.(X+6) have ``infix{l,r} n`` error whenever it refers exclusively to a type-level name.
 
-Once ``infix{l,r} n type`` is introduced, GHC will have an unambiguous way of specifying fixity declarations for names in both namespaces, and it will also work when quoted in Template Haskell, fixing Trac #14032.
+Once ``infix{l,r} n type`` is introduced, GHC will have an unambiguous way of specifying fixity declarations for names in both namespaces, and it will also work when quoted in Template Haskell, fixing #14032.
 
 A similar warning mechanism/migration plan would need to be put in place for ``WARNING`` pragmas as well (ironically enough, we'd have to put warnings on ``WARNING`` pragmas!)
 

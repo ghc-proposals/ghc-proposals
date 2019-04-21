@@ -2,7 +2,7 @@ Embrace ``Type :: Type``
 ==========================
 
 .. proposal-number:: 20
-.. trac-ticket:: #15195
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/15195
 .. implemented:: 8.6
 .. highlight:: haskell
 .. header::

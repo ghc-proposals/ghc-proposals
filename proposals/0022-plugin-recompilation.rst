@@ -2,7 +2,7 @@ Refining the plugin recompilation API
 ==============
 
 .. proposal-number:: 22
-.. trac-ticket:: #7414
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/7414
 .. implemented:: 8.6
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/108>`_.
@@ -189,7 +189,7 @@ concurrent source plugin proposal (#107).
 Additional Links
 ----------------
 
-* https://ghc.haskell.org/trac/ghc/ticket/7414
-* https://ghc.haskell.org/trac/ghc/ticket/12567
+* https://gitlab.haskell.org/ghc/ghc/issues/7414
+* https://gitlab.haskell.org/ghc/ghc/issues/12567
 
 

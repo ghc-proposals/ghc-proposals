@@ -2,7 +2,7 @@ Clean up printing of foralls
 ============================
 
 .. proposal-number:: 48
-.. trac-ticket::
+.. ticket-url::
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/179>`_.
@@ -41,7 +41,7 @@ There are two problems with the status quo:
      Prelude> import Type.Reflection
      Prelude Type.Reflection> :t +v typeRep
      typeRep :: forall k (a :: k). Typeable a => TypeRep a
-     
+
      Prelude Type.Reflection> :set -fprint-explicit-foralls
      Prelude Type.Reflection> :t +v typeRep
      typeRep :: forall {k} (a :: k). Typeable a => TypeRep a
@@ -72,14 +72,14 @@ There are two problems with the status quo:
 
      Prelude Type.Reflection> :t +v map
      map :: forall a b. (a -> b) -> [a] -> [b]
-     
+
 Proposed Change Specification
 -----------------------------
 1. Whenever printing variables quantified in a ``forall``, print inferred variables with braces.
 
 2. Maximally instantiate any *inferred* or dictionary arguments (class constraints) to expressions
    passed to ``:type``.
-   
+
 3. Remove ``:type +v``.
 
 Effect and Interactions

@@ -72,7 +72,7 @@ However, the following are rejected:
   \ (p :: Person) -> personId p  -- type of argument not used, even if obvious
   personId (Person 1 "Me")       -- again, argument is not an explicit signature
 
-See `Trac #11343 <https://ghc.haskell.org/trac/ghc/ticket/11343>`_ for
+See `#11343 <https://gitlab.haskell.org/ghc/ghc/issues/11343>`_ for
 discussion of this aspect of ``DuplicateRecordFields``.  We may wish
 to make changes to the rules for ``DuplicateRecordFields`` in the
 future, but doing so is outside the scope of this proposal.
@@ -303,8 +303,8 @@ Interaction with RebindableSyntax
 When ``RebindableSyntax`` is enabled in addition to ``OverloadedLabels``,
 a label ``#foo``
 is translated to ``fromLabel @"foo"`` using whatever ``fromLabel`` is
-in scope (see `Trac #12243
-<https://ghc.haskell.org/trac/ghc/ticket/12243>`_ for a request for
+in scope (see `#12243
+<https://gitlab.haskell.org/ghc/ghc/issues/12243>`_ for a request for
 this feature).
 
 This allows alternative interpretations of labels that cannot be
