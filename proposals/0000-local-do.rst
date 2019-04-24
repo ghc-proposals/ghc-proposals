@@ -25,7 +25,11 @@ There are many kinds of monad-like things out there:
 * indexed monads
 * graded monads
 * relative monads
-* linear variants of all the above once `linear types <https://github.com/ghc-proposals/ghc-proposals/pull/111>`_
+* linear variants of all the above once `linear types
+  <https://github.com/ghc-proposals/ghc-proposals/pull/111>`_
+  * in particular, the linear IO monad from the `Linear Haskell paper
+    <https://arxiv.org/abs/1710.09756>`_ is an example of a linear
+    graded monad
 * …
 
 All of these are theoretically compatible with the do-notation. And, in fact, really want the do-notation to work for them. After all, the entire existence of the do-notation can be ascribed to: “it's really annoying to program with ``(>>=)`` all the time”.
