@@ -93,22 +93,32 @@ The semantics of ``do`` notation statements is given as follows (using
 
   ::
 
-    do @b { (x1 <- u1 | … | xn <- un); return e }  =  case b of { (<*>) ; <$> } ->
+    do @b { (x1 <- u1 | … | xn <- un); return e }  =  case b of { (<*>) ; (<$>) } ->
       (\x1 … xn -> e) <$> u1 <*> … <*> un
 
-    do @b { (x1 <- u1 | … | xn <- un); stmts }  =  case b of { (<*>) ; <$> ; join } ->
+    do @b { (x1 <- u1 | … | xn <- un); stmts }  =  case b of { (<*>) ; (<$>) ; join } ->
       join (\x1 … xn -> do @b { stmts }) <$> u1 <*> … <*> un
 
-  (cases with nested statements are the same, *mutatis mutandis*)
 
   Note that a ``join`` field is only needed if the final expression is
   not identifiably a ``return``.
+
+  When the applicative statements contain nested statement (see the
+  `wiki page
+  <https://gitlab.haskell.org/ghc/ghc/wikis/applicative-do>`_ for a
+  complete description of applicative-do statements), we also need a
+  ``return`` field. *e.g.*
+
+  ::
+
+    do @b { ({stmt1; …; stmtn} {x1; …; xn} | y <- u) ; return e }  =  case b of { (<*>) ; (<$>) ; return } ->
+      (\(x1,…,xn) y -> e) <$> (do @b { stmt1; …; stmtn; return (x1, …, xn)}) <*> u
 
 *  With ``-XRecursiveDo``, ``rec`` blocks use the ``mfix`` and ``return`` fields of the builder:
 
    ::
 
-     do @b { { x1 <- u1; … ; xn <- un }; stmts }  =  case b of { mfix; return} ->
+     do @b { rec { x1 <- u1; … ; xn <- un }; stmts }  =  case b of { mfix; return} ->
        do @b
        { (x1, …, xn) <- mfix (\~(x1, …, xn) -> do @b { x1 <- u1; …; xn <- un; return (x1, …, xn)})
        ; stmts
