@@ -26,7 +26,8 @@ There are many kinds of monad-like things out there:
 * graded monads
 * relative monads
 * linear variants of all the above once `linear types
-  <https://github.com/ghc-proposals/ghc-proposals/pull/111>`_
+  <https://github.com/ghc-proposals/ghc-proposals/pull/111>`_ are
+  implemented
   * in particular, the linear IO monad from the `Linear Haskell paper
     <https://arxiv.org/abs/1710.09756>`_ is an example of a linear
     graded monad
