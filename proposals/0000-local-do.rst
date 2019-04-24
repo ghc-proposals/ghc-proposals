@@ -106,7 +106,7 @@ The semantics of ``do`` notation statements is given as follows (using
 
 It is, crucially, not required that the record projections be in scope unqualified (otherwise projections of various builders would shadow one-another).
 
-If a field is required by the desugaring process (and only if it's required!) but the builder's type doesn't have such a type, an error message is produced:
+If a field is required by the desugaring process (and only if it's required!) but the builder's type doesn't have such a field, an error message is produced:
 
 * “Desugaring statement <stmt> requires <field name> but builder <builder name> doesn't provide it”
 
