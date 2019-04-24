@@ -104,6 +104,16 @@ The semantics of ``do`` notation statements is given as follows (using
   Note that a ``join`` field is only needed if the final expression is
   not identifiably a ``return``.
 
+*  With ``-XRecursiveDo``, ``rec`` blocks use the ``mfix`` and ``return`` fields of the builder:
+
+   ::
+
+     do @b { { x1 <- u1; … ; xn <- un }; stmts }  =  case b of { mfix; return} ->
+       do @b
+       { (x1, …, xn) <- mfix (\~(x1, …, xn) -> do @b { x1 <- u1; …; xn <- un; return (x1, …, xn)})
+       ; stmts
+       }
+
 It is, crucially, not required that the record projections be in scope unqualified (otherwise projections of various builders would shadow one-another).
 
 If a field is required by the desugaring process (and only if it's required!) but the builder's type doesn't have such a field, an error message is produced:
@@ -123,12 +133,14 @@ A standard builder is added to ``Control.Monad`` and re-exported in the ``Prelud
   data StandardBuilder = StandardBuilder
     { (>>=) :: Monad m => m a -> (a -> m b) -> m b
     , (>>) :: Monad m => m a -> m b -> m b
+    , return :: Monad m => m a -> m b -> m b
     , fail :: MonadFail m => m a
     , (<*>) :: Applicative f => f (a -> b) -> f a -> f b
+    , mfix :: MonadFix m => (a -> m a) -> m a
     }
 
   builder :: StandardBuilder
-  builder = StandardBuilder (>>=) (>>) fail (<*>)
+  builder = StandardBuilder (>>=) (>>) return fail (<*>) mfix
 
 Effect and Interactions
 -----------------------
