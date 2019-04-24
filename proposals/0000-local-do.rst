@@ -58,12 +58,51 @@ When ``-XLocalDo`` is activated, the syntax of the ``do`` notation is changed to
 
 The additional expression is called the *builder* of the do-expression. A builder's type must be a record, other than that the type is immaterial.
 
-Desugaring is then performed as follows:
+The semantics of ``do`` notation statements is given as follows (using
+``-XNamedFieldsPuns`` and ``-XLambdaCase`` notations):
 
-* Desugaring a ``x <- u`` statement uses the ``(>>=)`` field of the builder
-* Desugaring a ``u`` statement uses ``(>>)`` field of the builder
-* Desugaring a ``pat <- u`` statement uses ``fail`` field of the builder
-* ``-XApplicativeDo`` uses the ``(<*>)`` field of the builder
+* The ``x <- u`` statement uses the ``(>>=)`` field of the builder
+
+  ::
+
+    do @b { x <- u; stmts }  =  case b of { >>= } -> (>>=) u $ \x -> do @b { stmts }
+* The ``u`` statement uses ``(>>)`` field of the builder
+
+  ::
+
+    do @b { u; stmts }  =  case b of { >> } -> (>>) u $ do @b { stmts }
+
+* The a ``pat <- u`` statement uses ``fail`` field of the builder for
+  the failing case, if such a case is needed
+
+  ::
+
+    do @b { pat <- u; stmts }  =  case b of { >>=; fail } -> (>>=) u $ \case
+      { pat -> do @b { stmts }
+      ; _ -> fail
+      }
+
+  If the pattern cannot fail, then we don't need a ``fail`` field in the builder.
+
+  ::
+
+    do @b { pat <- u; stmts }  =  case b of { >>= } -> (>>=) u $ \case pat -> do @b { stmts }
+
+* ``-XApplicativeDo`` uses the ``(<*>)`` field of the builder (this
+  assumes that the applicative-do grouping has been performed)
+
+  ::
+
+    do @b { (x1 <- u1 | … | xn <- un); return e }  =  case b of { (<*>) ; <$> } ->
+      (\x1 … xn -> e) <$> u1 <*> … <*> un
+
+    do @b { (x1 <- u1 | … | xn <- un); stmts }  =  case b of { (<*>) ; <$> ; join } ->
+      join (\x1 … xn -> do @b { stmts }) <$> u1 <*> … <*> un
+
+  (cases with nested statements are the same, *mutatis mutandis*)
+
+  Note that a ``join`` field is only needed if the final expression is
+  not identifiably a ``return``.
 
 It is, crucially, not required that the record projections be in scope unqualified (otherwise projections of various builders would shadow one-another).
 
