@@ -216,7 +216,7 @@ This proposal adds two new syntactical constructs:
 
   ::
 
-    type -> btype [[# atype] -> type]
+    type -> btype [[# btype] -> type]
 
 
 
@@ -246,9 +246,9 @@ This proposal adds two new syntactical constructs:
 
   ::
 
-    pat -> pat [:: type] [# atype]
+    pat -> pat [# btype] [:: type]
 
-  where the ``type`` after the ``#`` must be of kind ``Multiplicity``
+  where the ``btype`` after the ``#`` must be of kind ``Multiplicity``
   (see below).
 
   This form is disallowed for:
@@ -262,20 +262,20 @@ This proposal adds two new syntactical constructs:
 
     ::
 
-      foo :: A -> B # 'One-- rejected
+      foo # 'One :: A -> B -- rejected
       foo x = …
 
   The form is however permitted in records (see `Records`_ below)
 
   ::
 
-    data R = R { unrestrictedField :: A # 'Omega, linearField :: B # 'One }
+    data R = R { unrestrictedField # 'Omega :: A, linearField # 'One :: B }
 
   This modifies the field declaration syntax to
 
   ::
 
-    fielddecl -> vars :: (type | ! atype) [# atype]
+    fielddecl -> vars [# btype] :: (type | ! atype)
 
 In the fashion of levity polymorphism, the proposal introduces a data
 type ``Multiplicity`` which is treated specially by the type checker,
@@ -758,7 +758,7 @@ annotating binders with multiplicity
 
 ::
 
-  data R' = R' { f1 :: A1 # 'Omega, f2 :: A2 # 'One, f3 :: A3 }
+  data R' = R' { f1 # 'Omega :: A1, f2 # 'On :: A2e, f3 :: A3 }
 
 Then ``R' :: A1 -> A2 ->. A3 ->. R`` (that is, fields with no explicit
 annotation are linear).
@@ -820,7 +820,7 @@ In general, in
 ::
 
   data R where
-    R :: { f1 :: A # π, f2 :: B # (ρ) } -> R
+    R :: { f1 # π :: A, f2 # ρ :: B } -> R
 
 We have
 
@@ -1409,7 +1409,7 @@ An alternative would be to allow an arbitrary arrow ``#π->`` as in
 ::
 
   data R where
-    R :: { f1 :: A # 'One, f2 :: B, f3 :: C # 'Omega} #π-> R
+    R :: { f1 # 'One :: A, f2 :: B, f3 # 'Omega :: C} #π-> R
 
 Which could be interpreted in one of two ways:
 
