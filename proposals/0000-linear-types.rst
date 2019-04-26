@@ -195,7 +195,7 @@ hence, would require four identical implementations:
 
 ::
 
-  (.) :: (b #p-> c) -> (a #q-> b) -> a :(p ':* q)-> c
+  (.) :: (b #p-> c) -> (a #q-> b) -> a #(p ':* q)-> c
 
 Syntax
 ------
@@ -308,9 +308,9 @@ A new type constructor is added
 
 The linear and unrestricted arrows are aliases:
 
-- ``(->)`` is an alias for ``(#'Omega ->)``
+- ``(->)`` is an alias for ``FUN 'Omega``
 - ``(->.)`` (ASCII syntax) and ``(⊸)`` (Unicode syntax) are aliases
-  for ``(#'One ->)``
+  for ``FUN 'One``
 
 Printing
 --------
