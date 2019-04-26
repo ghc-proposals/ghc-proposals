@@ -209,9 +209,9 @@ When the discussion has ebbed down and the author thinks the proposal is ready, 
    ``@nomeata``).
 
 `The secretary <#who-is-the-committee>`_ will then label the pull request with
-``Pending committee review`` and start the `committee process <#committee-process>`_.
-(If this does not happen within a day or two, please ping the secretary or the
-committee.)
+``Pending shepherd recommendation`` and start the `committee process
+<#committee-process>`_.  (If this does not happen within a day or two, please
+ping the secretary or the committee.)
 
 What is a dormant proposal
 --------------------------
@@ -258,13 +258,16 @@ Roman Leshchinskiy      `@rleshchinskiy <https://github.com/rleshchinskiy>`_
 Committee process
 -----------------
 
-The committee process starts once the committee has been notified that a
-proposal is ready for decision, and takes place on the
-`ghc-steering-committee <https://mail.haskell.org/cgi-bin/mailman/listinfo/>`_
-mailing list. All interested parties are invited to follow the discussion.
+The committee process starts once the secretray has been notified that a
+proposal is ready for decision.
 
 -  The secretary nominates a member of the committee, the *shepherd*, to oversee
-   the discussion.
+   the discussion. The secretary
+
+   * labels the proposal as ``Pending shepherd recommendation``,
+   * assigns the proposal to the shepherd,
+   * drops a short mail on the mailing list, informing the committee about the
+     status change.
 
 -  Based on the proposal text (but not the GitHub commentary), the shepherd
    decides whether the proposal ought to be accepted or rejected or returned for
@@ -282,17 +285,27 @@ mailing list. All interested parties are invited to follow the discussion.
    * the authors and the shepherd fully understand each other’s differing
      positions, even if they disagree on the conclusion.
 
--  Now the shepherd proposes acceptance or rejectance, by email to the mailing
-   list. Discussion among the committee ensues on the mailing list, and
-   silence is understood as agreement with the shepherd's recommendation.
+-  Now the shepherd proposes to accept or reject the proposal. To do so, they
 
--  Ideally, the committee reaches consensus, as determined by the secretary or
+   * post their recommendation, with a rationale, on the GitHub discussion thread,
+   * label the pull request as ``Pending committee review``,
+   * notify the committe by mentioning ``@ghc-proposals/ghc-steering-committee``,
+   * inlude the sentence “This proposal will now be discussed by the committee.
+     We welcome all authors to join the discussion, but kindly ask others to
+     refrain from posting.” in the comment
+   * drop a short mail to the mailing list informing the committee that
+     discussion has started.
+
+-  Discussion among the committee ensues on the discussion thread.
+   Silence is understood as agreement with the shepherd's recommendation.
+   Ideally, the committee reaches consensus, as determined by the secretary or
    the shepherd. If consensus is elusive, then we vote, with the Simons
    retaining veto power.
 
--  The decision is announced, by the shepherd to the mailing list.
+-  The decision is announced, by the shepherd or the secretary, on the Github
+   thread and the mailing list.
 
--  The secretary tags the pull request accordingly, and either merges or closes it.
+   The secretary tags the pull request accordingly, and either merges or closes it.
    In particular
 
    *  **If we say no:**
