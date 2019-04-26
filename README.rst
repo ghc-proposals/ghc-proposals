@@ -258,7 +258,7 @@ Roman Leshchinskiy      `@rleshchinskiy <https://github.com/rleshchinskiy>`_
 Committee process
 -----------------
 
-The committee process starts once the secretray has been notified that a
+The committee process starts once the secretary has been notified that a
 proposal is ready for decision.
 
 -  The secretary nominates a member of the committee, the *shepherd*, to oversee
@@ -273,7 +273,7 @@ proposal is ready for decision.
    decides whether the proposal ought to be accepted or rejected or returned for
    revision.
 
--  If the shephard thinks the proposal ought to be rejected, they post their
+-  If the shepherd thinks the proposal ought to be rejected, they post their
    justifications on the GitHub thread, and invite the authors to respond with
    a rebuttal and/or refine the proposal. This continues until either
 
@@ -289,8 +289,8 @@ proposal is ready for decision.
 
    * post their recommendation, with a rationale, on the GitHub discussion thread,
    * label the pull request as ``Pending committee review``,
-   * notify the committe by mentioning ``@ghc-proposals/ghc-steering-committee``,
-   * inlude the sentence “This proposal will now be discussed by the committee.
+   * notify the committee by mentioning ``@ghc-proposals/ghc-steering-committee``,
+   * include the sentence “This proposal will now be discussed by the committee.
      We welcome all authors to join the discussion, but kindly ask others to
      refrain from posting.” in the comment
    * drop a short mail to the mailing list informing the committee that
