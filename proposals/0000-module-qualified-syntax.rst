@@ -37,8 +37,7 @@ While a small change, this annoyance is a significant issue in many large codeba
 
 Proposed Change Specification
 -----------------------------
-
-A new language extension ``QualifiedImportsPostpositive`` is introduced. When enabled, ``qualified`` will be accepted in postpositive position, by updating the ``importdecl`` production like so:
+A new language extension ``ImportQualifiedPost`` is introduced. When enabled, ``qualified`` will be accepted in postpositive position, by updating the ``importdecl`` production like so:
 
 ::
 
@@ -58,13 +57,15 @@ A new warning ``-Wprepositive-qualified-module`` (off by default) will be introd
 
 Effect and Interactions
 -----------------------
-The proposed change adds the ability to specify a qualified import by placing ``qualified`` either before or after the module name. The position of the ``qualified`` does not change the semantics, and is independent from any other import features (e.g. package imports or safe annotations).  As an example, both ``import qualified D as E`` and ``import D qualified as E`` are permitted and equivalent.
+The proposed change adds the ability to specify a qualified import by placing ``qualified`` either before or after the module name. Under ``ImportQualifiedPost``, ``qualified`` will be permitted in either pre- or post-positive positions (but not both). If in the future we decide to deprecate the pre-positive syntax, we would make an extension flag for that and allow it to be turned off.
+
+The position of the ``qualified`` does not change the semantics, and is independent from any other import features (e.g. package imports or safe annotations).  As an example, both ``import qualified D as E`` and ``import D qualified as E`` are permitted and equivalent.
 
 There should be no other interactions with any existing language or compiler features.
 
 Costs and Drawbacks
 -------------------
-The implementation of the change is but a few lines (``Parser.y`` for the grammar and ``RdrHsSyn.hs`` for the warning). The increased flexibility comes with no discernible drawbacks.
+The implementation of the change is but a few lines (``Parser.y`` for the grammar and ``RdrHsSyn.hs`` for warnings/errors). The increased flexibility comes with no discernible drawbacks.
 
 Alternatives
 ------------
@@ -76,8 +77,7 @@ The second alternative solves the motivating hanging indent issue but in our opi
 
 Unresolved Questions
 --------------------
-(1) Perhaps the proposed warning is unneccessary and under ``QualifiedImportsPostpositive`` the prepositive form should be a syntax error?
-(2) What precisely should happen if under ``QualifiedImportsPostpositive``, ``qualified`` is encountered in both pre- and post-positive position? For example, ``import qualified Data.Map qualified as M``?
+There are no remaining unresolved questions.
 
 Implementation Plan
 -------------------
