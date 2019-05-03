@@ -107,7 +107,7 @@ Add to ``Language.Haskell.TH.Syntax`` a handful of new instances of ``Lift`` whi
     instance Lift Char# where ...
     instance Lift Addr# where ...
 
-Modify ``-XDeriveLift`` to generate typed and untyped splices (for ``liftTyped`` and ``lift`` respectively).
+Modify ``-XDeriveLift`` to generate typed and untyped quotes (for ``liftTyped`` and ``lift`` respectively).
 
 Effect and Interactions
 -----------------------
