@@ -267,8 +267,8 @@ Proposed Change Specification
 
    This proposal modifies this to be ::
 
-     modid -> [namespace_specifier .] {conid .} conid
-           |  namespace_specifier
+     modid -> {conid .} conid
+           |  {conid .} namespace_specifier
 
    In addition, a ``namespace_specifier .`` prefix is allowed wherever an
    unqualified name occurrence can appear. (This effectively changes productions like
@@ -396,9 +396,11 @@ Alternatives
 * There is no concrete need to change ``type T ::`` to ``type.T ::``, but it does
   seem like it will create a more regular future.
 
-* We could use ``value`` as the namespace specifier for data-level variables. However,
-  we could not then use it in contexts like terms and types; it could never replace
-  ``'``, for instance.
+* We could use ``value`` as the namespace specifier for data-level variables. In a
+  previous version of this proposal, it looked like doing so would steal a common
+  variable name. However, if namespace specifiers are always used with ``.``\s, this
+  concern is much less striking. I still favor ``data``, but not nearly as strongly
+  as I did before.
 
 * A previous version of this proposal did not consider a namespace specifier like a module
   identifier, but more like a function applied to its argument. This old version is `available <https://github.com/goldfirere/ghc-proposals/blob/97b625aa85f7b77b282546003522ca71b8bb0d7b/proposals/0000-namespaces.rst>`_ in the history. I like this new version more. The old version allowed
