@@ -75,7 +75,7 @@ Proposed Change Specification
    is done before ever examining the full declaration, just like how GHC treats type
    signatures.
 
-   Associated types may be given kind signatures within their classes.
+   Associated types may be given kind signatures outside their classes.
 
    Unlike type signatures, the type variables brought into scope in a type-level kind
    signature do *not* scope over the type definition.
@@ -164,6 +164,9 @@ Alternatives
   made on the original), but it still means that types have a different treatment from
   terms, which is aesthetically displeasing to me.
 
+* Put associated-type signatures inside their classes. Doing so has unfortunate consequences
+  with respect to the scoping of class variables (do they scope over the kind signature or
+  not?).
 
 Unresolved questions
 --------------------
