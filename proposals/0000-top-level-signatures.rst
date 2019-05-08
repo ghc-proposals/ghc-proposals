@@ -13,54 +13,24 @@ Top-level signatures
 .. sectnum::
 .. contents::
 
-Many constructs in Haskell define a new symbol without allowing the user to give
+Several constructs in Haskell define a new symbol without allowing the user to give
 its full type. This proposal recommends a new extension ``-XTopLevelSignatures``
 that will allow users to write type signatures for these constructs, defining
 their full type. The signature must be inter-compatible with GHC's inferred type
 for the construct. Here are some examples::
 
-  data T1 a = forall b. MkT1 b (b -> a)                -- implicitly declares MkT1
-  MkT1 :: forall b a. b -> (b -> a) -> T1 a            -- new: signature reorders the b and a variables
-  type T1 :: Type -> Type                              -- new: signature gives a kind to T1
-
-  data T2 = MkT2 { unT2 :: Int }
-  unT2 :: T2 -> Int                                    -- new: we can see the full type for unT2
-
-  data P a = MkP
-  type P :: (Type -> Type) -> Type                     -- new: specifies kind of a phantom parameter
-
   class C a where
-    meth :: a -> b -> b
-    meth2 :: a -> a
-    meth3 :: a -> b -> b
-    meth4 :: b -> a
+    toplevel meth  :: forall b a. C a => a -> b -> b     -- reorders type variables and constraint
+    toplevel meth2 :: forall a. a -> a                   -- rejected: missing constraint C a
+    toplevel meth3 :: forall a {b}. C a => a -> b -> b   -- with accepted proposal #26, makes b *inferred*
+    toplevel meth4 :: C a => b -> a                      -- no forall required; this is redundant but allowed
     
-  meth :: forall b a. C a => a -> b -> b               -- new: reorders type variables and constraint
-  meth2 :: forall a. a -> a                            -- rejected: missing constraint C a
-  meth3 :: forall a {b}. C a => a -> b -> b            -- new: with proposal #99, makes b *inferred*
-  meth4 :: C a => b -> a                               -- new: no forall required; this is redundant but allowed
+  data Rec a b where
+    Mk :: { field :: forall c. c -> c } -> Rec a b
+    field :: forall c a b. Rec a b -> c -> c             -- new: type variables are reordered
 
-  data TypeRepOfKind k where  -- existential wrapper holding a TypeRep for a type of kind k
-    TROK :: TypeRep (t :: k) -> TypeRepOfKind k
-
-    -- a pattern synonym that extracts an arrow type from a TypeRepOfKind k
-  pattern IsFun :: forall k. ()
-                => forall (arg :: Type) (res :: Type). (k ~ Type)
-		=> TypeRep arg -> TypeRep res
-		-> TypeRepOfKind k
-  pattern IsFun a r <- TROK (App (App ((`eqTypeRep` typeRep @(->)) -> Just HRefl) a) r)
-    where IsFun a r = TROK (App (App (typeRep @(->)) a) r)
-    
-  IsFun :: forall (arg :: Type) (res :: Type) (k :: Type). (k ~ Type)
-        => TypeRep arg -> TypeRep res -> TypeRep Type
-    -- new: allows existentials to precede universals in a pattern synonym
   
-This proposal subsumes `#54`_, which proposes this feature, but only for type-level
-declarations (which would replace CUSKs).
-
-.. _`#54`: https://github.com/ghc-proposals/ghc-proposals/pull/54
 .. _`#129`: https://github.com/ghc-proposals/ghc-proposals/pull/129
-.. _`#99`: https://github.com/ghc-proposals/ghc-proposals/pull/99
 .. _`#126`: https://github.com/ghc-proposals/ghc-proposals/pull/126
 
 Motivation
@@ -69,13 +39,12 @@ New features of the type system have made available more and more choices for th
 of constructs. For implicitly-declared identifiers, there is sometimes little or no flexibility
 around these choices. By allowing a top-level signature, we can override the defaults.
 
-Along with providing the ability to write the examples above, this feature would subsume `#129`_,
+Along with providing the ability to write the examples above, this feature would subsume (the rejected) `#129`_,
 which proposes mechanisms for allowing visible type application to instantiate overloaded literals,
 as in ``3 @Int``. Here is how::
 
   class Num a where
-    fromInteger :: Integer -> a
-  fromInteger :: Integer -> forall a. Num a => a
+    toplevel fromInteger :: Integer -> forall a. Num a => a
 
 In `#129`_, it is explained that the problem is that ``3`` expands to ``fromInteger 3``. Thus,
 ``3 @Int`` would expand to ``fromInteger 3 @Int``. Sadly, this last expression is ill-typed with
@@ -98,64 +67,94 @@ pattern synonym to come *before* universals. Pattern synonyms rigidly do not all
 as they require a syntactic distinction between universals and existentials. However, under
 this proposal, we can specify a new ordering for the variables and constraints.
 
-For type-level signatures, I defer to `#54`_, which this proposal is a direct extension of.
-
 Proposed Change Specification
 -----------------------------
-Top-level signatures, enabled by ``-XTopLevelSignatures``
-are allowed for the following term-level constructs:
+**Definition:** A type ``ty1`` is a **subtype** of a type ``ty2`` if ``ty1`` is more general
+than ``ty2``. (In other words, ``ty1`` is a subtype of ``ty2`` if, when ``x`` has type ``ty1``,
+``y :: ty2; y = x`` is accepted.) The **subtype** relation is reflexive.
 
- * Haskell98-syntax data/newtype constructors
- * Class methods
- * Record selectors (that are not duplicates)
- * Pattern synonyms
+**Definition:** A type ``ty1`` is **equivalent** to a type ``ty2`` if ``ty1`` is a subtype of
+``ty2`` and ``ty2`` is a subtype of ``ty1``.
 
-The type in the signature must be equivalent with respect to GHC's subtype relation
-to the one GHC would normally assign the construct. That is, the new type may shuffle
-the ordering, placement, and specificity of invisible parameters (type variables and
-constraints) only. All occurrences of the identifiers in question use the declared
-type in the top-level signature.
+Top-level signatures, enabled by ``-XTopLevelSignatures`` are allowed for the following constructs:
 
-For a pattern synonym, if the pattern synonym is explicitly bidirectional and has a
-type signature for its type as an expression (as detailed in `this accepted proposal
- <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0005-bidir-constr-sigs.rst>`_),
-then the new signature affects only the pattern type, not the expression type.
+1. **Class methods:** A class method declaration may now be prefixed with the new pseudo-keyword
+   ``toplevel``, with the following rules:
 
-This proposal also subsumes and extends `#54`_, which I will not re-detail here, as it is already
-under consideration by the committee.
+   A. A ``toplevel`` method declaration is parsed just like a normal method declaration.
+
+   B. The type must bring the class variables into scope for the result type of the signature.
+      (See examples below.)
+
+   C. The set of constraints on the result type of the signature must imply the enclosing class constraint.
+      (See examples below.)
+
+2. **Record field selectors:** A GADT-syntax datatype declaration may now include top-level types
+   for field selectors.
+
+   A. A field declaration signature may be included in the ``where`` clause of a GADT-syntax datatype
+      definition. A field declaration signature is parsed just like an ordinary type signature; no ``toplevel``
+      keyword is necessary. The distinguishing feature of a field declaration signature is that field
+      names begin with a lower-case letter (or a symbol other than a ``:``), in opposition to data constructors.
+
+   B. The field name must be used as a field name in one or more constructors of the type.
+
+   C. The inferred type of the field selector (using the normal mechanism for inferring types of field selectors)
+      must be equivalent to the type signature of the field selector.
+
+The signatures given for the constructs are definitive: these are the types for those constructs in all occurrences
+(including, in the case of class methods, in instance declarations).
+
+In addition, `top-level kind signatures <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0036-kind-signatures.rst>`_
+are updated to use ``-XTopLevelSignatures`` instead of ``-XTopLevelKinds``.
+
+Examples
+--------
+
+Here are some examples of the rules for top-level signatures::
+
+  class C a b where
+    toplevel m1 :: a -> b                      -- rejected: no class constraint
+    toplevel m2 :: a -> forall b. C a b => b   -- accepted: the return type has "a" and "b" in scope
+    toplevel m3 :: D a b => a -> b             -- accepted: D a b implies C a b
+    toplevel m4 :: C c d => c -> d             -- rejected: must use "a" and "b"
+    toplevel m5 :: forall c d. C c d => c -> d -- still rejected
+    toplevel m6 :: (forall a b. C a b => a -> b) -> ()                -- rejected: "a" and "b" not in scope in return type
+    toplevel m7 :: (forall a b. C a b => a -> b) -> C a b => a -> b   -- accepted; "a" and "b" are shadowed in higher-rank type but are in scope at the end
+
+  class C a b => D a b
+
+  data T a b where
+    MkT :: { field :: forall c. c -> c } -> T a b
+    field :: T a b -> forall c. c -> c          -- accepted but redundant
+    field :: forall c a b. T a b -> c -> c      -- accepted: variable order has changed
+    field :: forall c {a} {b}. T a b -> c -> c  -- accepted: variable order and specificity has changed
+    field :: T a b -> Int -> Int                -- rejected: type not equivalent
+    other :: T a b -> Int                       -- rejected: other is not a field name
+
+Note that only one signature for ``field`` above would be accepted.
 
 Effect and Interactions
 -----------------------
-This proposal increases the availability of visible type application by allowing users to customize
-the types of implicitly declared identifiers, including changing the specificity of some. This means
-that `#99`_ need not consider these implicitly declared identifiers.
+* This proposal increases the availability of visible type application by allowing users to customize
+  the types of implicitly declared identifiers, including changing the specificity of some.
 
-Accepting this proposal obviates the problems in `#129`_.
+* Accepting this proposal obviates the problems in `#129`_.
 
-If this proposal is accepted, both `#54`_ and these new features should be enabled by
-``-XTopLevelSignatures`` (instead of the ``-XTopLevelKinds`` in `#54`_).
+* It is a bit regrettable that the ``forall`` in a class-method top-level signature isn't really bringing
+  a fresh variable into scope -- or, rather, that we cannot alpha-vary the signature. But any design
+  that allows that becomes more painful.
 
-This proposal interacts poorly with ``-XDuplicateRecordFields``, which allows you
-to declare multiple record selectors with the same name in the same module. The use
-of such a field at top-level would be ambiguous. Thus, this feature would not be
-available with duplicate record fields. Here is an example of a rejected program::
+* This proposal does not allow for the use of top-level signatures for Haskell98 data constructors
+  or field accessors. This restriction came about as a result of discussion, and the fact that GADT syntax
+  was a viable workaround.
 
-  data T = MkT { x :: Int }
-  data S = MkS { x :: Bool }
-  x :: T -> Int
+* This proposal does not address pattern synonyms, which would benefit from top-level signatures but
+  are a hard nut to crack (syntactically).
 
-Note that the ``data`` declarations by themselves would be fine with ``-XDuplicateRecordFields``.
-Note also that ``-XDuplicateRecordFields`` does not work with GHC's ``HasField`` mechanism;
-this fact is unchanged by this proposal.
+* This proposal has no meaningful interactions with ``-XDuplicateRecordFields``.
 
-Note that this proposal does *not* affect the meaning of ``forall``: ``forall`` is not
-required in top-level signatures. In addition, this new proposal does not interact with
-``-XScopedTypeVariables``: the variables brought into scope in the top-level signatures
-(even with ``forall``) do *not* scope over any definitions. (Instead, the usual rules
-for getting type variables into scope still apply for implicitly declared identifiers.)
-
-There is no requirement that the type variables in a top-level signature match up with
-the names of the variables used in an identifier's declaration.
+* This proposal has no meaningful interactions with ``-XDefaultSignatures``.
 
 Costs and Drawbacks
 -------------------
@@ -166,64 +165,15 @@ new internal top-level definitions which would delegate to the real, original id
 This would add to the implementation complexity but should be completely transparent to
 users.)
 
-The syntax requires duplication of types and the new signatures can appear arbitrarily
-far from the identifiers' definition sites. These drawbacks are real, but they exist
-with all type signatures today. Type signatures are still useful as a double-check and
-as documentation.
-
 Alternatives
 ------------
 * Users are free to define their own top-level wrappers with user-written types. However, these
   will have different names than the original constructs.
 
-* There have been a few comments in wondering about class method signatures: couldn't we do
-  this within the class declaration itself instead of outside? It's unclear to me what the
-  syntax for this could be.
-
-  + One suggestion was that signatures that start with a ``forall`` are top-level signatures
-    instead of normal method signatures (which do not quantify over class variables or the
-    class constraint). However, we can write ``forall`` on class method signatures today without
-    changing their interpretation, so this idea is not backward compatible.
-
-  + A refinement on this idea wsa that the new behavior could be triggered if the signature
-    quantifies over the class variable. For example::
-
-      class C a where
-        meth :: forall b a. C a => a -> a
-
-    Because this ``meth`` quantifies over the class variable, ``a``, it is treated as a
-    top-level signature.
-
-    I do not like this proposal overmuch: I would think that the ``a`` in ``meth``\'s signature
-    shadows the class variable instead of replaces it. It is also unclear how this would work
-    with multi-parameter type classes and functional dependencies. Note that the following
-    is accepted today::
-
-      class C2 a where
-        meth2 :: forall a. a -> a
-
-    The type of ``meth2`` is ``forall a. C2 a => forall a1. a1 -> a1``, renaming the inner
-    variable to avoid shadowing. The definition requires ``-XAllowAmbiguousTypes`` but is
-    otherwise sensible. (It is sensible, in that it has a meaning. It may or may not be
-    *useful*.)
-
-* We could omit treatment for Haskell98-syntax datatypes. After all, users can always use
-  GADT syntax.
-
-* For record selectors, we could require that the new signature be in a ``where`` clause
-  (and be available only with GADT syntax). For example::
-
-    data Rec a where
-      MkRec :: { sel :: forall b. b -> a } -> Rec a
-      sel :: forall b a. Rec a -> b -> a
+* A previous version of the proposal had the new signatures appear outside the class/datatype
+  definitions, and had a few other syntactic oddities. I think this new version is superior.
 
 Unresolved questions
 --------------------
 None at this time.
 
-
-Implementation Plan
--------------------
-Though I'd be happy to advise someone who wants to implement, I do not plan on implementing
-this myself. It would make a decent project for someone who wants to get into GHC and wants
-a challenge.
