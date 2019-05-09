@@ -179,6 +179,12 @@ extended with a result type.
 **Semantics.** The result type signature is unified with the inferred type of
 the function body. It does not enable polymorphic recursion.
 
+Result type signatures behave just like pattern signatures, as in ``\ (x ::
+a->a) -> ...``. That is: there is no implicit quantification; it is a binding
+site for ``a`` (in this example); and the ``a`` might be bound to any type, e.g
+``Int``. The details of pattern signatures are worked out in the paper
+`Type Variables in Patterns <https://www.microsoft.com/en-us/research/publication/type-variables-patterns/>`_.
+
 
 Costs and Drawbacks
 -------------------
