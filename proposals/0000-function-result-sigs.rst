@@ -114,7 +114,7 @@ Let us take a closer look at each of these points.
       qf = not :: a -> a  -- Couldn't match type ‘a’ with ‘Bool’
 
     ``uf`` may unify ``a`` with another type, so ``uf`` may be defined as any function where
-    the monaid is equal to the codomain::
+    the domain is equal to the codomain::
 
       uf :: a -> a = id       -- OK
       uf :: a -> a = not      -- OK, a ~ Bool
