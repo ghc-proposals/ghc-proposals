@@ -137,7 +137,7 @@ Let us take a closer look at each of these points.
     With the recently accepted proposal about top-level kind signatures, one
     may write a top-level kind annotation::
 
-      data Vec :: Type -> Nat -> Type
+      type Vec :: Type -> Nat -> Type
       data Vec a b where <defn>
 
     Therefore, in types we have:
