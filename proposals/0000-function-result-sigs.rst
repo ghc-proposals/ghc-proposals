@@ -57,7 +57,7 @@ Let us take a closer look at each of these points.
     Both styles have their merit. Haskell has good support for the former,
     while the latter would benefit from moving the annotation to the left-hand
     side. For one thing, it is what Scala, F#, OCaml, and some other languages
-    do, so we would better accomodate users coming from these languages by
+    do, so we would better accommodate users coming from these languages by
     allowing this style::
 
       def fib(n: Int): Int = ...        -- Scala
