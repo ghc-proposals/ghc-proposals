@@ -1,21 +1,17 @@
 Binding type variables in lambda-expressions
 ============================================
 
-.. proposal-number:: Leave blank. This will be filled in when the proposal is
-                     accepted.
-.. trac-ticket:: Leave blank. This will eventually be filled with the Trac
-                 ticket number which will track the progress of the
-                 implementation of the feature.
-.. implemented:: Leave blank. This will be filled in with the first GHC version which
-                 implements the described feature.
+.. proposal-number:: 50
+.. trac-ticket::
+.. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/155>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/155>`_.
 .. sectnum::
 .. contents::
 
 .. _`#126`: https://github.com/ghc-proposals/ghc-proposals/pull/126
 .. _`#128`: https://github.com/ghc-proposals/ghc-proposals/pull/128
-   
+
 Proposal `#126`_ allows us to bind scoped type variables in patterns using an ``@a`` syntax.
 However, the new syntax is allowed only in *constructor* patterns ``K @a @b x y``. This proposal
 extends this idea to lambda-expressions, allowing ``\ @a x -> ...``. Here are some examples::
