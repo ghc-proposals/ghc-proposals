@@ -20,8 +20,8 @@
 # -- Project information -----------------------------------------------------
 
 project = u'ghc-proposals'
-copyright = u'2019, GHC'
-author = u'GHC'
+copyright = u'2019, The GHC Steering Committee'
+author = u'The GHC Steering Committee'
 
 # The short X.Y version
 version = u''
@@ -128,7 +128,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'ghc-proposals.tex', u'ghc-proposals Documentation',
+    (master_doc, 'ghc-proposals.tex', u'GHC Proposals',
      u'GHC', 'manual'),
 ]
 
@@ -138,7 +138,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'ghc-proposals', u'ghc-proposals Documentation',
+    (master_doc, 'ghc-proposals', u'GHC Proposals',
      [author], 1)
 ]
 
@@ -149,7 +149,7 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'ghc-proposals', u'ghc-proposals Documentation',
+    (master_doc, 'ghc-proposals', u'GHC Proposals',
      author, 'ghc-proposals', 'One line description of project.',
      'Miscellaneous'),
 ]
