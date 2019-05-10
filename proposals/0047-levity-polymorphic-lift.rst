@@ -7,6 +7,7 @@ Levity-polymorphic `Lift`
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/209>`_.
 .. sectnum::
+   :start: 47
 .. contents::
 
 The ``Lift`` typeclass lets us lift values into typed or untyped Template Haskell expressions.

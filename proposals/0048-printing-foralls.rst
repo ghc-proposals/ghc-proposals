@@ -7,6 +7,7 @@ Clean up printing of foralls
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/179>`_.
 .. sectnum::
+   :start: 48
 .. contents::
 
 GHC has two infelicities around the way it prints ``forall`` types around visible type application.

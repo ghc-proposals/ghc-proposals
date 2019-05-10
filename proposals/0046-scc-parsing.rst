@@ -7,6 +7,7 @@ Meaning-preserving parsing rules for SCC annotations
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/176>`_.
 .. sectnum::
+   :start: 46
 .. contents::
 
 In today's Haskell adding an ``SCC`` annotation can change the semantics of an
