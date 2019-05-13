@@ -87,13 +87,20 @@ Effect and Interactions
 -----------------------
 
 It is a slight deviation from the standard which dictates the following to be
-interpreted as an irrefutable patterns::
+interpreted as irrefutable patterns::
 
   f ~ a ~ b = <rhs>
 
 The migration strategy is to remove unnecessary whitespace::
 
   f ~a ~b = <rhs>
+
+
+The users also regain the ability to define infix ``(!)`` even when
+``-XBangPatterns`` are enabled::
+
+  {-# LANGUAGE BangPatterns #-}
+  a ! b = <rhs>   -- works as expected now
 
 Costs and Drawbacks
 -------------------
