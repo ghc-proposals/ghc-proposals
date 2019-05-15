@@ -82,6 +82,7 @@ Proposed Change Specification
   as a strictness annotation in types.
 * An infix occurence is treated as an infix operator in terms, or an infix type
   operator in types.
+* For the purposes of these rules, comments are considered whitespace.
 
 Effect and Interactions
 -----------------------
