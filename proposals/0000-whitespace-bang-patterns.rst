@@ -87,17 +87,7 @@ Proposed Change Specification
 Effect and Interactions
 -----------------------
 
-It is a slight deviation from the standard which dictates the following to be
-interpreted as irrefutable patterns::
-
-  f ~ a ~ b = <rhs>
-
-The migration strategy is to remove unnecessary whitespace::
-
-  f ~a ~b = <rhs>
-
-
-The users also regain the ability to define infix ``(!)`` even when
+The users regain the ability to define infix ``(!)`` even when
 ``-XBangPatterns`` are enabled::
 
   {-# LANGUAGE BangPatterns #-}
@@ -105,6 +95,19 @@ The users also regain the ability to define infix ``(!)`` even when
 
 Costs and Drawbacks
 -------------------
+
+It is a slight deviation from the standard which dictates the following to be
+accepted::
+
+  f ~ a ~ b = <rhs>     -- standard interpretation: lazy (irrefutable) patterns
+  x !y = x == y         -- standard interpretation: infix operator (!)
+  data T = MkT ! Int    -- standard interpretation: strict field !Int
+
+The migration strategy is to adjust whitespace::
+
+  f ~a ~b = <rhs>
+  x ! y = x == y
+  data T = MkT !Int
 
 This already matches the style of most Haskell users and will simplify the
 implementation.
