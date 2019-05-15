@@ -103,7 +103,8 @@ accepted::
   x !y = x == y         -- standard interpretation: infix operator (!)
   data T = MkT ! Int    -- standard interpretation: strict field !Int
 
-The migration strategy is to adjust whitespace::
+This may break existing programs. The migration strategy is to adjust
+whitespace::
 
   f ~a ~b = <rhs>
   x ! y = x == y
