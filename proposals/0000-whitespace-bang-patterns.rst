@@ -78,10 +78,10 @@ Proposed Change Specification
 
 * When ``!`` or ``~`` is preceded by whitespace and not followed by
   whitespace, consider it a prefix occurrence, otherwise an infix occurrence.
-* A prefix occurence is treated as bang/lazy pattern in term-level patterns, or
-  as a strictness annotation in types.
-* An infix occurence is treated as an infix operator in terms, or an infix type
-  operator in types.
+* A prefix occurrence is treated as bang/lazy pattern in term-level patterns,
+  or as a strictness annotation in types.
+* An infix occurrence is treated as an infix operator in terms, or an infix
+  type operator in types.
 * For the purposes of these rules, comments are considered whitespace.
 
 Effect and Interactions
