@@ -76,13 +76,18 @@ as-patterns, and it works remarkably well in practice.
 Proposed Change Specification
 -----------------------------
 
-* When ``!`` or ``~`` is preceded by whitespace and not followed by
-  whitespace, consider it a prefix occurrence, otherwise an infix occurrence.
+* A starting character is an ``$idchar`` (a digit, a letter, or an underscore
+  ``_``), an opening bracket ``(``, ``[``, ``{``, or a quotation mark ``"``,
+  ``'``.
+* In the lexer, when ``!`` or ``~`` is preceded by whitespace or a comment, and
+  followed by a starting character but not a comment, consider it a prefix
+  occurrence, otherwise an infix occurrence.
 * A prefix occurrence is treated as bang/lazy pattern in term-level patterns,
   or as a strictness annotation in types.
 * An infix occurrence is treated as an infix operator in terms, or an infix
   type operator in types.
-* For the purposes of these rules, comments are considered whitespace.
+* In the grammar, a bang/lazy pattern must be followed by ``aexp1``, a
+  strictness annotation must be followed by ``atype``.
 
 Effect and Interactions
 -----------------------
@@ -122,6 +127,13 @@ state machine, which is hard to extend and maintain. This state machine will
 not be able to handle some corner cases which whitespace-based disambiguation
 handles easily.
 
+Unresolved Questions
+--------------------
+
+Under the proposed rules, we parse both ``f !C{x=a} = <rhs>`` and ``f !C {x=a}
+= <rhs>`` as a bang pattern on a record pattern match. While the former is
+desirable, the latter is questionable. It is not clear how to allow one but
+disallow the other.
 
 Implementation Plan
 -------------------
