@@ -10,7 +10,7 @@
 .. sectnum::
 .. contents::
 
-We introduce two new functions in `Data.IORef`, `atomicModifyIORef_, atomicModifyIORef'_ :: IORef a -> (a -> a) -> IO`.
+We introduce two new functions in :code:`Data.IORef`, :code:`atomicModifyIORef_, atomicModifyIORef'_ :: IORef a -> (a -> a) -> IO`.
 The latter is strict in the value stored in `IORef`.
 
 These are straightforward convenience functions mirroring the `modifyIORef` API.
