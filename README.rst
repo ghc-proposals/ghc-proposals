@@ -34,6 +34,7 @@ What is the timeline of a proposal?
 
    `Committee process <#committee-process>`_ •
    `Review criteria <#review-criteria>`_ •
+   `≡ List of proposals waiting for shepherd <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+shepherd+recommendation%22>`_ •
    `≡ List of proposals under review <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+committee+review%22>`_
 
 6. Eventually, the committee rejects a proposal, or passes it back to the
