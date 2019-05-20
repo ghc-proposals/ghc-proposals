@@ -209,9 +209,9 @@ When the discussion has ebbed down and the author thinks the proposal is ready, 
    ``@nomeata``).
 
 `The secretary <#who-is-the-committee>`_ will then label the pull request with
-``Pending committee review`` and start the `committee process <#committee-process>`_.
-(If this does not happen within a day or two, please ping the secretary or the
-committee.)
+``Pending shepherd recommendation`` and start the `committee process
+<#committee-process>`_.  (If this does not happen within a day or two, please
+ping the secretary or the committee.)
 
 What is a dormant proposal
 --------------------------
@@ -258,32 +258,58 @@ Roman Leshchinskiy      `@rleshchinskiy <https://github.com/rleshchinskiy>`_
 Committee process
 -----------------
 
-The committee process starts once the committee has been notified that a
-proposal is ready for decision, and takes place on the
-`ghc-steering-committee <https://mail.haskell.org/cgi-bin/mailman/listinfo/>`_
-mailing list. All interested parties are invited to follow the discussion.
+The committee process starts once the secretary has been notified that a
+proposal is ready for decision.
 
 -  The secretary nominates a member of the committee, the *shepherd*, to oversee
-   the discussion.
+   the discussion. The secretary
+
+   * labels the proposal as ``Pending shepherd recommendation``,
+   * assigns the proposal to the shepherd,
+   * drops a short mail on the mailing list, informing the committee about the
+     status change.
 
 -  Based on the proposal text (but not the GitHub commentary), the shepherd
-   makes a recommendation as to whether the proposal ought to be accepted,
-   rejected or returned for revision.
+   decides whether the proposal ought to be accepted or rejected or returned for
+   revision.
 
--  Discussion among the committee ensues on the mailing list.
-   Silence is understood as agreement with the shepherds recommendation.
+-  If the shepherd thinks the proposal ought to be rejected, they post their
+   justifications on the GitHub thread, and invite the authors to respond with
+   a rebuttal and/or refine the proposal. This continues until either
 
--  Ideally, the committee reaches consensus, as determined by the secretary or
-   the shepherd.  If consensus is elusive, then we vote, with the Simons
+   * the shepherd changes their mind and supports the proposal now,
+   * the authors withdraw their proposal,
+   * the authors indicate that they will revise the proposal to address the shepherds
+     point. The shepherd will label the pull request as
+     `Needs Revision <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A"Needs+revision">`_.
+   * the authors and the shepherd fully understand each other’s differing
+     positions, even if they disagree on the conclusion.
+
+-  Now the shepherd proposes to accept or reject the proposal. To do so, they
+
+   * post their recommendation, with a rationale, on the GitHub discussion thread,
+   * label the pull request as ``Pending committee review``,
+   * notify the committee by mentioning ``@ghc-proposals/ghc-steering-committee``,
+   * include the sentence “This proposal will now be discussed by the committee.
+     We welcome all authors to join the discussion, but kindly ask others to
+     refrain from posting.” in the comment
+   * drop a short mail to the mailing list informing the committee that
+     discussion has started.
+
+-  Discussion among the committee ensues on the discussion thread.
+   Silence is understood as agreement with the shepherd's recommendation.
+   Ideally, the committee reaches consensus, as determined by the secretary or
+   the shepherd. If consensus is elusive, then we vote, with the Simons
    retaining veto power.
 
--  The decision is announced, by the shepherd or the secretary, to the mailing
-   list and the pull request commentary. In particular:
+-  The decision is announced, by the shepherd or the secretary, on the Github
+   thread and the mailing list.
 
-   *  **If we say no:** The shepherd comments on the GitHub pull request with the
-      reasons for rejection.
-      The pull request will be closed, by the shepherd or the secretary, with
-      label
+   The secretary tags the pull request accordingly, and either merges or closes it.
+   In particular
+
+   *  **If we say no:**
+      The pull request will be closed and labeled
       `Rejected <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3Arejected>`_.
 
       If the proposer wants to revise and try again, the new proposal should
@@ -292,18 +318,9 @@ mailing list. All interested parties are invited to follow the discussion.
       In the case that the proposed change has already been implemented in
       GHC, it will be reverted.
 
-   *  **If we return for revision:** If during the debate, the need for
-      substantial changes does arise, then the shepherd summarizes the
-      issues on the GitHub pull request and labels it
-      `Needs Revision <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A"Needs+revision">`_.
-      The author is encouraged to address the issues and re-submit.
-
    *  **If we say yes:**
-      The shepherd or the secretary announces this on the pull request
-      and labels it as
+      The pull request will be merged, numbered and labeled
       `Accepted <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3AAccepted>`_.
-      The secretary merges the pull request and assigns the final proposal
-      number.
 
       At this point, the proposal process is technically
       complete. It is outside the purview of the committee to implement,
