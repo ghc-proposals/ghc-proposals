@@ -11,19 +11,10 @@ Ambiguous Type per-signature pragma
 .. implemented:: Leave blank. This will be filled in with the first GHC version which
                  implements the described feature.
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_.
-            **After creating the pull request, edit this file again, update the
-            number in the link, and delete this bold sentence.**
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/232>`_.
 .. sectnum::
 .. contents::
 
-.. Text for pull request [move there when PR created]:
-
-Per-signature pragma ``{-# AMBIGUOUS #-}`` to allow that signature's type to be ambiguous; instead of the module-wide ``-XAllowAmbiguousTypes``, which dangerously lifts ambiguity checking on all signatures.
-
-Also tweak the error reporting to avoid recklessly suggesting users turn on ``-XAllowAmbiguousTypes``; and provide a flag ``-Wallowed-ambiguous-types`` that shows the ambiguity message as a warning.
-
-.. Here you should write a short abstract motivating and briefly summarizing the proposed change.
 
 Provide a per-signature ``{-# AMBIGUOUS #-}`` pragma, to precision-control which signatures are allowed/intended to be ambiguous. This to be instead of the module-wide ``LANGUAGE AllowAmbiguousTypes`` setting. Because ambiguous signatures (at definition sites) for functions/methods are more likely to be an error than be intended -- even for code written to combine with ``-XTypeApplications`` at usage sites. Currently the ``-XAllowAmbiguousTypes`` lifts the ambiguity check indiscriminately for all signatures in a module.
 
