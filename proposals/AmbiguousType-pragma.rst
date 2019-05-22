@@ -91,7 +91,7 @@ Proposed Change Specification
 
 4. The error reporting from the ambiguity check that currently suggests ``To defer the ambiguity check to use sites, enable AllowAmbiguousTypes`` must make clear this is likely to entail using ``TypeApplications`` at usage sites, and that there are several possible approaches to avoid ambiguous type variables.
 
- Precise wording to be arrived at in discussion of this PR. (Prefer not mentioning ``AllowAmbiguousTypes`` at all.) Starting bikeshed::
+   Precise wording to be arrived at in discussion of this PR. (Prefer not mentioning ``AllowAmbiguousTypes`` at all.) Starting bikeshed::
  
      The ambiguity might be resolvable through TypeApplications at use sites. Then mark this signature as AMBIGUOUS
  
