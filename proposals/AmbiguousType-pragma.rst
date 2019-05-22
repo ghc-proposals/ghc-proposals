@@ -1,20 +1,7 @@
-Notes on reStructuredText - delete this section before submitting
-==================================================================
-
-The proposals are submitted in reStructuredText format.  To get inline code, enclose text in double backticks, ``like this``.  To get block code, use a double colon and indent by at least one space
-
-::
-
- like this
- and
-
- this too
-
-To get hyperlinks, use backticks, angle brackets, and an underscore `like this <http://www.haskell.org/>`_.
 
 
-Proposal title
-==============
+Ambiguous Type per-signature pragma
+===================================
 
 .. proposal-number:: Leave blank. This will be filled in when the proposal is
                      accepted.
@@ -46,7 +33,7 @@ This proposal is a residue from discussions around 'Top-level signatures' #148. 
 
 Motivation
 ------------
-.. Give a strong reason for why the community needs this change. Describe the use case as clearly as possible and give an example. Explain how the status quo is insufficient or not ideal.
+
 
 Ambiguous types/signatures at definition sites combine powerfully with ``TypeApplications`` at usage sites for fancy type trickery. This is an 'advanced' feature that should be opt-in. Currently ``LANGUAGE AllowAmbiguousTypes`` is a module-wide setting that abandons checking for ambiguity, whether or not the user intends to use some function/method with ``TypeApplications``.
 
@@ -107,7 +94,7 @@ Proposed Change Specification
     class Sized a  where
       sizeOf :: {-# AMBIGUOUS #-} Integer
 
-2. Types marked ``AMBIGUOUS`` are to be validated as if ``-XAllowAmbiguousTypes`` is set, for that signature only. (If that is already set module-wide, the pragma has no further effect.)
+2. Signatures marked ``AMBIGUOUS`` are to be validated as if ``-XAllowAmbiguousTypes`` is set, for that signature only. (If that is already set module-wide, the pragma has no further effect.)
 
 3. This does not change the validation for ambiguous types/type variables at usage sites.
 
@@ -115,7 +102,7 @@ Proposed Change Specification
 
  Precise wording to be arrived at in discussion of this PR. (Prefer not mentioning ``AllowAmbiguousTypes`` at all.) Starting bikeshed::
  
-     The ambiguity might be resolved through TypeApplications at use sites. Then mark this signature as AMBIGUOUS
+     The ambiguity might be resolvable through TypeApplications at use sites. Then mark this signature as AMBIGUOUS
  
 5. There is to be a flag ``-Wallowed-ambiguous-types`` controlling whether a warning is raised for ambiguous types -- allowed either from the ``AMBIGUOUS`` pragma or ``-XAllowAmbiguousTypes``.
 
@@ -139,7 +126,6 @@ Existing code using ``AllowAmbiguousTypes`` is not affected. That is, ambiguitie
 
 Costs and Drawbacks
 -------------------
-.. Give an estimate on development and maintenance costs. List how this effects learnability of the language for novice users. Define and list any remaining drawbacks that cannot be resolved.
 
 The proposal is for superficial tweaks to error reporting/warnings. There is no deep impact on type checking or inference.
 
