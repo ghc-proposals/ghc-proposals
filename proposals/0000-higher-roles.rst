@@ -48,9 +48,8 @@ Int``. This is sad, though, because we don't want to export the constructor of
 ``GList``, which is necessary in order to make those representational
 equalities. And it's also sad that we need a newtype here.
 
-This issue was directly inspired by a need in real software. (I'm not sure if
-the original reporter to me [in person] wishes to be identified. But that person
-is real and writes Haskell for a company you have heard of.)
+This issue was directly inspired by a need in real software, as reported by
+Lennart Augustsson of Google Research.
 
 Proposed Change Specification
 -----------------------------
