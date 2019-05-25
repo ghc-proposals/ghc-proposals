@@ -111,7 +111,9 @@ Places for ``OPTIONS_LOCAL`` pragma:
  - declaration
  - types
 
-The pragma uses `meaning-preserving parsing rules for SCC annotationssuppress <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0046-scc-parsing.rst>`_ for expressions and types. As for declarations - it applies to the following declaration.
+The pragma uses `meaning-preserving parsing rules <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0046-scc-parsing.rst>`_ for expressions and types. As for declarations - it applies to the following declaration.
+
+If ``OPTIONS_LOCAL`` doesn't make sense compiler gives a warning.
 
 Costs and Drawbacks
 -------------------
@@ -122,7 +124,7 @@ Every compiler flag can require individual way to collaborate with ``OPTIONS_LOC
 
 2) **Influence to learnability of the language**
 
-``OPTIONS_LOCAL`` pragma is optional pragma and is non-essential for basic users of the language. The area of using intersects with `OPTIONS_GHC` pragma and as a result it does not require any more learning after the OPTIONS_GHC pragma. There is only one distinction - you need to learn where and how to place it inside the file (somewhat like the SCC pragma).
+``OPTIONS_LOCAL`` pragma is optional pragma and is non-essential for basic users of the language. The area of using intersects with ``OPTIONS_GHC`` pragma and as a result it does not require any more learning after the ``OPTIONS_GHC`` pragma. There is only one distinction - you need to learn where and how to place it inside the file (somewhat like the ``SCC`` pragma).
 
 3) **Remaining drawbacks**
 
