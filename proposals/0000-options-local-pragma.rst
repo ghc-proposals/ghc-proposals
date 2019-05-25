@@ -106,11 +106,12 @@ Proposed Change Specification
 
 GHC already support the ``OPTIONS_GHC`` pragma for configuring options for the file as a whole. We propose to create a similar pragma ``OPTIONS_LOCAL`` which will do the same things but locally. You can see what it looks like in the *Motivation section*.
 
-Places for OPTIONS_LOCAL pragma:
+Places for ``OPTIONS_LOCAL`` pragma:
  - expression
  - declaration
  - types
 
+The pragma uses `meaning-preserving parsing rules for SCC annotationssuppress <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0046-scc-parsing.rst>`_ for expressions and types. As for declarations - it applies to the following declaration.
 
 Costs and Drawbacks
 -------------------
