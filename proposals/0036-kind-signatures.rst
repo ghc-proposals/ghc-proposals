@@ -80,7 +80,7 @@ Proposed Change Specification
    Unlike type signatures, the type variables brought into scope in a type-level kind
    signature do *not* scope over the type definition.
 
-   Top-level kind signatures are enabled with the extension ``-XTopLevelKinds``.
+   Top-level kind signatures are enabled with the extension ``-XTopLevelKindSignatures``.
 
 2. Introduce a new extension ``-XCUSKs``, on by default, that detects CUSKs as they
    currently exist. A CUSK will be treated identically to a top-level kind signature.
@@ -146,10 +146,6 @@ Alternatives
 * With top-level kind signatures, some aspects of type declarations are redundant.
   (For example, the ``a b c`` in ``data T a b c where ...``.) One could imagine removing
   these as an extension to this proposal.
-
-* I'm not particularly pleased with ``-XTopLevelKinds``. ``-XKindSignatures`` is the
-  Right Answer, but that's taken. (That should really be ``-XKindAscriptions``, but
-  that's another story.)
 
 * Other transition plans are welcome. We could just abandon CUSKs entirely, asking the
   few users who play in this dark corner to use some CPP.
