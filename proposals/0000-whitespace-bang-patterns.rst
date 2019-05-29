@@ -76,12 +76,15 @@ as-patterns, and it works remarkably well in practice.
 Proposed Change Specification
 -----------------------------
 
-* A starting character is an ``$idchar`` (a digit, a letter, or an underscore
+* An opening character is an ``$idchar`` (a digit, a letter, or an underscore
   ``_``), an opening bracket ``(``, ``[``, ``{``, or a quotation mark ``"``,
-  ``'``.
-* In the lexer, when ``!`` or ``~`` is preceded by whitespace or a comment, and
-  followed by a starting character but not a comment, consider it a prefix
-  occurrence, otherwise an infix occurrence.
+  ``'``, excluding the occurrences of ``{`` that start a comment or a pragma.
+* An closing character is an ``$idchar`` (a digit, a letter, or an underscore
+  ``_``), a closing bracket ``)``, ``]``, ``}``, or a quotation mark ``"``,
+  ``'``, excluding the occurrences of ``}`` that end a comment or a pragma.
+* In the lexer, when ``!`` or ``~`` is not preceded by a closing character, and
+  is followed by an opening character, consider it a prefix occurrence,
+  otherwise an infix occurrence.
 * A prefix occurrence is treated as bang/lazy pattern in term-level patterns,
   or as a strictness annotation in types.
 * An infix occurrence is treated as an infix operator in terms, or an infix
@@ -141,3 +144,70 @@ Implementation Plan
 I (Vladislav Zavialov) will implement this change. The idea is to add tokens
 ``BANG`` and ``TILDE`` in addition to ``'!'``, ``'~'``, akin to ``TYPEAPP`` vs
 ``'@'``.
+
+Appendix A: Extended Proposed Change Specification
+--------------------------------------------------
+
+As a basis for a future proposal, here's an outline of a more general
+whitespace-based parsing framework for other operators. Accepting the main
+proposal does not entail accepting this appendix.
+
+* Operator occurrences are classified into four groups, based on preceding and
+  following characters::
+
+    a . b   -- a loose infix occurrence
+    a.b     -- a tight infix occurrence
+    a .b    -- a prefix occurrence
+    a. b    -- a suffix occurrence
+
+  ``a`` and ``b`` stand for closing and opening characters respectively,
+  whitespace stands for all other characters.
+
+* A loose infix occurrence should always be considered an operator. Other types
+  of occurrences may be assigned a special per-operator *meaning override*:
+
+  +-------------------+---------------------+--------------------------------------------+
+  | Operator          | Occurrence          | Meaning override                           |
+  +===================+=====================+============================================+
+  | ``!``, ``~``      | prefix              | strictness annotation in types,            |
+  |                   |                     | bang/lazy pattern in term-level patterns   |
+  +-------------------+---------------------+--------------------------------------------+
+  | ``$``, ``$$``     | prefix              | untyped/typed Template Haskell splice      |
+  +-------------------+---------------------+--------------------------------------------+
+  | ``@``             | prefix              | type application                           |
+  +-------------------+---------------------+--------------------------------------------+
+  | ``@``             | tight infix, suffix | as-pattern                                 |
+  +-------------------+---------------------+--------------------------------------------+
+  | ``-``             | prefix              | negation                                   |
+  +-------------------+---------------------+--------------------------------------------+
+
+  This wouldn't be a backward compatible change in every corner case, but the
+  migration path does not require ``-XCPP``.
+
+* As a consequence of these rules, ``@`` (loose infix) and ``~`` (suffix, loose
+  infix, tight infix) are now proper infix operators.
+
+* As a consequence of these rules, ``(- x)`` is now an operator section,
+  ``(-x)`` is infix negation. This change is to be guarded behind a new
+  language extension ``-XPrefixNegation``.
+
+* Add a new warning, ``-Woperator-whitespace``, disabled by default, that warns
+  on prefix, suffix, and tight infix uses of operators that do not have a
+  meaning override at the moment. Users who desire forward compatibility may
+  enable this warning in case we create new operator meaning overrides in the
+  future.
+
+* The operator meaning override system has lower precedence than other lexical
+  rules that steal operator syntax:
+
+  * ``#`` under ``-XMagicHash`` or ``-XOverloadedLabels``
+  * ``?`` under ``-XImplicitParams``
+  * ``.`` as module qualification
+
+  We choose not to handle these cases under the new framework because their
+  rules do not apply to arbitrary subexpressions:
+
+  * ``(f x)#`` is not a proper use of magic hash
+  * ``(f x).id`` is not proper module qualification
+  * ``?(f x)`` is not an implicit parameter
+  * ``#(f x)`` is not an overloaded label
