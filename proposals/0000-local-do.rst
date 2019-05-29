@@ -132,9 +132,12 @@ If a field is required by the desugaring process (and only if it's required!) bu
 
 The fields of a builder are subject to the same type restrictions as their counterparts with ``-XRebindableSyntax``.
 
-When the ``@<aexp>`` annotation is omitted, the builder is taken to be whatever is named ``builder`` in scope.
+When the ``@<aexp>`` annotation is omitted, then
 
-A standard builder is added to ``Control.Monad`` and re-exported in the ``Prelude``:
+- If ``-XRebindableSyntax`` is *not* set, then ``do { … }`` has the default behaviour of using methods of the monad type classes from the prelude.
+- If ``-XRebindableSyntax`` is set, the builder is taken to be whatever is named ``builder`` in scope.
+
+A standard builder is added to ``Control.Monad``:
 
 ::
 
@@ -210,11 +213,20 @@ Both points can be addressed
     do @(builder @MonadType)
       <do block>
 
-  where ``builder`` is the default builder from ``Control.Monad`` (in the discussion of the pull request, this ``builder`` was also referred to as ``withMonad``).
+  where ``builder`` is the standard builder from ``Control.Monad`` (in the discussion of the pull request, this ``builder`` was also referred to as ``withMonad``).
 
 Nevertheless an alternative syntax has been proposed:
 
 - ``do via <aexpr>``. It is modelled after the ``deriving via`` construction. The implications on the parser are less clear then ``@<aexpr>``, however.
+
+Semantics variations
+~~~~~~~~~~~~~~~~~~~~
+
+A previous version of the proposal made it so that ``do {…}``, without an ``@…`` notation, would always use, as its builder, the variable named ``builder`` in scope. This had the dual advantage of being uniform (with ``-XLocalDo``, the ``do`` notation always uses a builder), and to let programmers affect the behaviour of their ``do`` block for a whole module without having to resort to ``-XRebindableSyntax``. For instance, with the future ``-XLinearTypes``, ``-XRebindableSyntax`` makes it impossible to write linear expressions.
+
+On the other hand, a number of commenters pointed out that this would be a very surprising behaviour, as this sort of rebinding is exceptional without ``-XRebindableSyntax``. This is a fatal flaw.
+
+This also required that the standard builder for monads be exported in the ``Prelude``, which could be dropped without remorse in this version.
 
 Related work
 ~~~~~~~~~~~~
