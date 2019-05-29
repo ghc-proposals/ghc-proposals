@@ -234,6 +234,29 @@ Related work
 
 * An alternative to the ``@<aexpr>`` notation would be to use implicit parameters, somehow. But it's unclear how exactly it would look.
 
+Extensions
+~~~~~~~~~~
+
+Comprehension
++++++++++++++
+
+A possible extension which has been floated but not fully explored is to extend the same idea to list comprehension, in which case we can (and should!) extend the proposal to handle parallel list comprehension.
+
+The following syntax has been proposed
+
+- ``[ @builder x | x <- xs, isEven x ]``
+
+It seems that GHC uses a custom-crafter n-ary ``zip`` function in list comprehension, which would be impossible to replicate in a builder, but in monad comprehension desugaring, an iterated binary ``zip`` function is used
+
+::
+
+  mzip :: MonadZip m => m a -> m b -> m (a, b)
+  munzip :: MonadZip m => m (a, b) -> (m a, m b)
+
+So builders could contain an ``mzip`` and an ``munzip`` field for parallel comprehension. The default builder would include ``mzip`` and ``munzip`` fields for ``MonadZip``.
+
+We could set ``-XLocalDo`` to affect comprehension whenever ``-XMonadComprehensions`` is also set.
+
 Unresolved Questions
 --------------------
 
