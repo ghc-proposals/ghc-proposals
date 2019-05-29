@@ -195,6 +195,30 @@ The do-expression store, during type-checking, which expression they will use fo
 Alternatives
 ------------
 
+Syntax variations
+~~~~~~~~~~~~~~~~~
+
+In the pull request discussion some concerns were raised about the use of the syntax ``do @builder``, as ``builder`` is not a type (``@`` is typically followed by a type) and because a competing idea would be to have ``do @MonadType`` be the regular ``do`` on monads, but with the monad specified.
+
+Both points can be addressed
+
+- ``@`` is better understood as something which makes an *invisible* argument visible. As it happens, invisible arguments in current Haskell are always types, but it may be best to consider it a coincidence. Especially as Haskell is moving towards more type dependency and more control over the visibility of arguments.
+- It is possible, within the changes of this proposal, to specify the monad type:
+
+  ::
+
+    do @(builder @MonadType)
+      <do block>
+
+  where ``builder`` is the default builder from ``Control.Monad`` (in the discussion of the pull request, this ``builder`` was also referred to as ``withMonad``).
+
+Nevertheless an alternative syntax has been proposed:
+
+- ``do via <aexpr>``. It is modelled after the ``deriving via`` construction. The implications on the parser are less clear then ``@<aexpr>``, however.
+
+Related work
+~~~~~~~~~~~~
+
 * One could use ``-XRebindableSyntax`` and use a very general type class which encompasses all monads
 
   * This was the essence of the `OverloadedDo proposal <https://github.com/ghc-proposals/ghc-proposals/pull/78>`_, though type inference was never solved for this
