@@ -172,9 +172,21 @@ Proposed Change Specification
 
 Allow function result type signatures on the left-hand side.
 
-**Syntax.** These signatures are already a part of the grammar, and a
-validation step rejects them. This check will be removed, and ``FunBind``
-extended with a result type.
+**Syntax.** Take the Haskell 2010 function left-hand side grammar as the
+starting point::
+
+  funlhs -> var apat {apat}
+          | pat varop pat
+          | ( funlhs ) apat {apat}
+
+The change is to remove the mandatory ``apat`` from the first rule and add to
+an optional type annotation::
+
+  funlhs -> var {apat}
+          | pat varop pat
+          | ( funlhs ) apat {apat}
+
+  funlhs' -> funlhs :: [context =>] type
 
 **Semantics.** The result type signature is unified with the inferred type of
 the function body. It does not enable polymorphic recursion.
@@ -207,6 +219,10 @@ allow scoped type variables::
 
   x :: [a] -> [a] = reverse    -- accepted as FunBind
 
+This is the result of this grammar change::
+
+  - funlhs -> var apat {apat}
+  + funlhs -> var {apat}
 
 Costs and Drawbacks
 -------------------
@@ -246,7 +262,7 @@ In general, the situation with parenthesization in bindings is quite elaborate::
   (f a)   = ...  -- parse error
   (f a) b = ...  -- FunBind
 
-A possible solution is change this parsing rule in the Haskell Report::
+A possible solution is change this parsing rule::
 
   funlhs ->
     ...
@@ -262,3 +278,7 @@ Implementation Plan
 -------------------
 
 I (Vladislav Zavialov) will (attempt to) implement.
+
+The function result signatures are already a part of the ``Parser.y`` grammar,
+and a validation step rejects them. This check will be removed, and ``FunBind``
+extended with a result type.
