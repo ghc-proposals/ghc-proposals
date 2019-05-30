@@ -185,6 +185,28 @@ site for ``a`` (in this example); and the ``a`` might be bound to any type, e.g
 ``Int``. The details of pattern signatures are worked out in the paper
 `Type Variables in Patterns <https://www.microsoft.com/en-us/research/publication/type-variables-patterns/>`_.
 
+Effect and Interactions
+-----------------------
+
+At the moment, a binding with no parameters and a signature is parsed as a
+pattern binding::
+
+  x :: String -> String = reverse    -- accepted as PatBind
+
+The consequence of this is that we reject scoped type variables::
+
+  x :: [a] -> [a] = reverse    -- rejected with an error:
+  -------------------------------------------------------
+    • You cannot bind scoped type variable ‘a’
+        in a pattern binding signature
+    • In the pattern: x :: [a] -> [a]
+      In a pattern binding: x :: [a] -> [a] = reverse
+
+Under this proposal, we reclassify this construct as a function binding and
+allow scoped type variables::
+
+  x :: [a] -> [a] = reverse    -- accepted as FunBind
+
 
 Costs and Drawbacks
 -------------------
