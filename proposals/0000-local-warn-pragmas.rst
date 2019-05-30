@@ -98,7 +98,7 @@ We disable ``-Worphans`` warning for ``instance ApplyFunc Box`` but warning for 
 
 Suppose you want to use temporary value or function for debug and you don't want define any signature for it. At the same time you want to track missing signature in the remaining part.
 
-In this example you get warning ``-Wmissing-signatures`` for ``x`` but not for ``y``.
+In this example the ``-Wmissing-signatures`` flag will warn about ``x`` but not ``y``.
 ::
  {-# OPTIONS_GHC -Wmissing-signatures #-}
 
@@ -160,7 +160,6 @@ Here some warnings which are proposed to be added in ...
  - ``-Wduplicate-exports``, ``-Wmissing-export-lists``
  - ``-Whi-shadowing``, ``-Wmissing-home-modules``
  - ``-Wimplicit-prelude``
- - ``-Wmissing-import-lists``, ``-Wunused-imports``
  - ``-Wtabs``
  - ``-Wunsupported-llvm-version``
  - ``-Wcpp-undef``
@@ -179,6 +178,7 @@ Here some warnings which are proposed to be added in ...
  - ``-Wincomplete-patterns``, ``-Wincomplete-uni-patterns``
  - ``-Wincomplete-record-updates``
  - ``-Wmissing-fields``
+ - ``-Wmissing-import-lists``, ``-Wunused-imports``
  - ``-Wmissing-signatures``, ``-Wmissing-exported-signatures``, ``-Wmissing-local-signatures``, ``-Wmissing-pattern-synonym-signatures``
  - ``-Woverlapping-patterns``, ``-Winline-rule-shadowing``
  - ``-Worphans``
