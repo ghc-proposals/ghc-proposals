@@ -179,7 +179,7 @@ starting point::
           | pat varop pat
           | ( funlhs ) apat {apat}
 
-The change is to remove the mandatory ``apat`` from the first rule and add to
+The change is to remove the mandatory ``apat`` from the first rule and to add
 an optional type annotation::
 
   funlhs -> var {apat}
@@ -243,9 +243,8 @@ Alternatives
 Unresolved Questions
 --------------------
 
-What treatment do we give to the following example?
+What treatment do we give to the following example? ::
 
-::
   (x :: [a] -> [a]) = reverse
 
 At the moment, it is parsed as a ``PatBind`` and rejected because scoped type
