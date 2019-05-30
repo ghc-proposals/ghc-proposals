@@ -182,11 +182,14 @@ starting point::
 The change is to remove the mandatory ``apat`` from the first rule and to add
 an optional type annotation::
 
-  funlhs -> var {apat}
-          | pat varop pat
-          | ( funlhs ) apat {apat}
+  funlhs' -> var {apat}
+           | pat varop pat
+           | ( funlhs' ) apat {apat}
 
-  funlhs' -> funlhs :: [context =>] type
+  funlhs -> funlhs' :: [context =>] type
+
+This results in an ambiguity with pattern bindings, which is resolved in favor
+of function bindings.
 
 **Semantics.** The result type signature is unified with the inferred type of
 the function body. It does not enable polymorphic recursion.
@@ -221,8 +224,8 @@ allow scoped type variables::
 
 This is the result of this grammar change::
 
-  - funlhs -> var apat {apat}
-  + funlhs -> var {apat}
+  - funlhs  -> var apat {apat}
+  + funlhs' -> var {apat}
 
 Costs and Drawbacks
 -------------------
@@ -263,15 +266,15 @@ In general, the situation with parenthesization in bindings is quite elaborate::
 
 A possible solution is change this parsing rule::
 
-  funlhs ->
+  funlhs' ->
     ...
-    | ( funlhs ) apat {apat}
+    | ( funlhs' ) apat {apat}
 
 We can treat all of the examples above as ``FunBind`` by removing the mandatory ``apat``::
 
-  funlhs ->
+  funlhs' ->
     ...
-    | ( funlhs ) {apat}
+    | ( funlhs' ) {apat}
 
 Implementation Plan
 -------------------
