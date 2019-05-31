@@ -77,15 +77,22 @@ Then this proposal firstly aims to avoid users blundering blindly into ambiguous
 Proposed Change Specification
 -----------------------------
 
-1. There is to be a pragma ``{-# AMBIGUOUS #-}``, to appear immediately after the ``::`` of a function or method definition's signature (so before the type). Not applicable for term type annotations beginning ``::``, nor for pattern signatures. Examples
+1. There is to be a pragma ``{-# AMBIGUOUS #-}``, to appear immediately after the ``::`` (so before the type), in principle wherever ``::`` can appear. That is a function or method definition's signature; term type annotations beginning ``::``; pattern signatures (and pattern synonyms). The "in principle" would also include ``::`` introducing kind signatures (type of types); and possibly places ready for not-yet-developed usages of type ``@`` applications. Examples
 ::
 
     f :: {-# AMBIGUOUS #-} C a => Int
 
     class Sized a  where
       sizeOf :: {-# AMBIGUOUS #-} Integer
+      
+    apply (x :: {-# AMBIGUOUS #-} forall a. (Read a, Show a) => String -> String) = x @Int "01"
+    
+    norm :: {-# AMBIGUOUS #-} forall a. (Read a, Show a) => String -> String
+    norm = show @a . read                                     -- needs type-lambda #155
+    
+    data T :: {-# AMBIGUOUS #-} F a -> Type                   -- ambiguous kind signature
 
-2. Signatures marked ``AMBIGUOUS`` are to be validated as if ``-XAllowAmbiguousTypes`` is set, for that signature only. (If that is already set module-wide, the pragma has no further effect.)
+2. Signatures marked ``AMBIGUOUS`` are to be validated as if ``-XAllowAmbiguousTypes`` is set, for that signature only. (If that is already set module-wide, the pragma has the effect of suppressing the ``-Wambiguous-type`` warning, see 5.)
 
 3. This does not change the validation for ambiguous types/type variables at usage sites.
 
@@ -95,24 +102,36 @@ Proposed Change Specification
  
      The ambiguity might be resolvable through TypeApplications at use sites. Then mark this signature as AMBIGUOUS
  
-5. There is to be a flag ``-Wallowed-ambiguous-types`` controlling whether a warning is raised for ambiguous types -- allowed either from the ``AMBIGUOUS`` pragma or ``-XAllowAmbiguousTypes``.
+5. There is to be a flag ``-Wambiguous-types`` controlling whether a warning is raised for ambiguous types -- as allowed by ``-XAllowAmbiguousTypes``. If the signature is also marked ``{-# AMBIGUOUS #-}``, then don't issue the warning (see "migration path" below). If a signature marked ``{-# AMBIGUOUS #-}`` is not in fact ambiguous, ignore.
 
+6. The pragma can only appear with an explicit ``::`` signature; not for terms where the inferred signature is ambiguous such as toplevel functions or instances::
+
+    data Option a
+    class C a
+    instance C (F b) => C (Option a)
+    
+   For those cases, the user must contrive an explicit signature (with ``-XInstanceSigs`` if necessary).
 
 
 
 Effect and Interactions
 -----------------------
+
 By lifting the ambiguity check only for signatures deliberately flagged, this ensures ambiguity checking does apply for the bulk of the signatures in the program *at the definition site*. Then ambiguity is less likely to manifest at *usage* sites, where it is more difficult to diagnose -- particularly if that is in a separate module.
 
 The proposed behaviour affects only validation and error/warning messages, not type checking rules or type inference.
 
 Existing code using ``AllowAmbiguousTypes`` is not affected. That is, ambiguities are not checked. The migration path is:
 
-* Switch on ``-Wallowed-ambiguous-types``; compile the module to examine signatures that are currently ambiguous.
+* Switch on ``-Wambiguous-types``; compile the module to examine signatures that are currently ambiguous.
 
-* If their ambiguity is expected and understood; mark as ``{-# AMBIGUOUS #-}``. Otherwise diagnose and correct.
+* If their ambiguity is expected and understood; mark as ``{-# AMBIGUOUS #-}`` (and that will suppress the warning). Otherwise diagnose and correct.
 
 * Remove the ``LANGUAGE AllowAmbiguousTypes`` setting and recompile.
+
+* In due course (not within scope of this proposal), deprecate the ``AllowAmbiguousTypes`` extension. (Same idea as introducing the ``OVERLAPPABLE`` and friends pragmas; then deprecating ``OverlappingInstances``/``IncoherentInstances``.)
+
+* Discussion on this proposal is going on in parallel with #234 'Local Warning Pragmas'. Because ``{-# AMBIGUOUS #-}`` is a language extension (an alternative to ``-XAllowAmbiguousTypes``), not merely controlling warnings, I see this as outside the scope that #234 has evolved to. (The ``-Wambiguous-types`` point 5. warning might fall within the 'Local Warning' in the sense of #234, but note that ``{-# AMBIGUOUS #-}`` in effect is a local suppression of that warning.)
 
 
 Costs and Drawbacks
@@ -140,7 +159,9 @@ Unresolved questions
 
 * Re pragmas that change semantics (such as the ``{-# OVERLAPPABLE #-}`` series), there has been comment they're difficult for source tooling utilities to observe. As well as the ``AMBIGUOUS`` pragma per signature, should there be a module-wide ``LANGUAGE`` setting? ``-XAllowAmbiguousTypesPragma``.
 
-* For modules containing more ambiguous types than not, so with ``AllowAmbiguousTypes`` switched on, should there be a per-signature pragma ``{-# NOAMBIGUOUS #-}`` that *does* apply the ambiguity check?
+* From discussion, decide against this: For modules containing more ambiguous types than not, so with ``AllowAmbiguousTypes`` switched on, should there be a per-signature pragma ``{-# NOAMBIGUOUS #-}`` that *does* apply the ambiguity check? That would prevent in future deprecating ``AllowAmbiguousTypes``.
+
+* If a signature marked ``{-# AMBIGUOUS #-}`` is not in fact ambiguous ...? A comment suggested warning of the non-ambiguity. Leave that to the implementer's judgment.
 
 
 Implementation Plan
