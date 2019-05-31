@@ -188,7 +188,7 @@ proposal does not entail accepting this appendix.
   infix, tight infix) are now proper infix operators.
 
 * As a consequence of these rules, ``(- x)`` is now an operator section,
-  ``(-x)`` is infix negation. This change is to be guarded behind a new
+  ``(-x)`` is prefix negation. This change is to be guarded behind a new
   language extension ``-XPrefixNegation``.
 
 * Add a new warning, ``-Woperator-whitespace``, disabled by default, that warns
