@@ -105,14 +105,15 @@ Interaction with Lift
 The main breakage from this patch comes from modifying the type signature for
 ``lift``.
 
-Instances defined using ``DeriveLift`` will continue to work.
+Instances defined using ``DeriveLift`` will continue to work because they are
+defined in terms of quotation brackets.
 
 Instances written in terms of the combinators from ``Language.Haskell.TH.Lib`` will
-continue to work.
+continue to work because these combinators will be generalised.
 
-Instances written in terms of ``Q`` will no longer work. For user's to migrate
+Instances written in terms of ``Q`` will no longer work. For users to migrate
 an additional class ``LiftQ`` could be defined which has the old interface. This
-would mean user's need to explicitly lift but there are likely only a few instances
+would mean users need to explicitly lift but there are likely only a few instances
 which fall into this category if any at all.
 
 Interaction with Typed Template Haskell
