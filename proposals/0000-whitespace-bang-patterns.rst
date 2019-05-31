@@ -195,7 +195,7 @@ proposal does not entail accepting this appendix.
   on prefix, suffix, and tight infix uses of operators that do not have a
   meaning override at the moment. Users who desire forward compatibility may
   enable this warning in case we create new operator meaning overrides in the
-  future.
+  future. Enabled by ``-Weverything`` but not ``-Wall`` or ``-Wcompat``.
 
 * The operator meaning override system has lower precedence than other lexical
   rules that steal operator syntax:
