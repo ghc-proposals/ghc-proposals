@@ -89,45 +89,45 @@ In more detail:
 Examples
 --------
 
-*Example 1*, ``Storable``. Definition site::
+* **Example 1**, ``Storable``. Definition site::
 
-  class Storable a where
-    sizeOf :: Int
-    alignmentOf :: Int
+    class Storable a where
+      sizeOf :: Int
+      alignmentOf :: Int
 
-  sizeOf, aligmentOf :: forall a -> Storable a => Int
+    sizeOf, aligmentOf :: forall a -> Storable a => Int
 
-Use site::
+  Use site::
 
-  ghci> sizeOf Int
-  8
-  ghci> sizeOf Bool
-  4
+    ghci> sizeOf Int
+    8
+    ghci> sizeOf Bool
+    4
 
-*Example 2*, tagged accessor class ``HasLens``. Definition site::
+* **Example 2**, tagged accessor class ``HasLens``. Definition site::
 
-  class HasLens tag s a | tag s -> a where
-    lensOf :: Lens' s a
+    class HasLens tag s a | tag s -> a where
+      lensOf :: Lens' s a
 
-  lensOf :: forall tag -> forall s a. HasLens tag s a => Lens' s a
+    lensOf :: forall tag -> forall s a. HasLens tag s a => Lens' s a
 
-Use site::
+  Use site::
 
-  ghci> struct ^. lensOf UserInfo . lensOf UserName
-  "Jack Sparrow"
+    ghci> struct ^. lensOf UserInfo . lensOf UserName
+    "Jack Sparrow"
 
-*Example 3*, ``MonadReader`` in the style of ``monads-tf``. Definition site::
+* **Example 3**, ``MonadReader`` in the style of ``monads-tf``. Definition site::
 
-  class MonadReader m where
-    type Env :: Type
-    ask :: m (Env m)
+    class MonadReader m where
+      type Env :: Type
+      ask :: m (Env m)
 
-  type Env :: forall m -> MonadReader m => Type
-  ask :: forall m. MonadReader m => m (Env m)
+    type Env :: forall m -> MonadReader m => Type
+    ask :: forall m. MonadReader m => m (Env m)
 
-Use site::
+  Use site::
 
-  doStuff :: Env AppM -> AppM r -> IO r
+    doStuff :: Env AppM -> AppM r -> IO r
 
 
 Motivation
