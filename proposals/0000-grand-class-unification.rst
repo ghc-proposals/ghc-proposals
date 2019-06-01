@@ -158,3 +158,10 @@ Unresolved Questions
 --------------------
 
 TBD.
+
+Implementation Plan
+-------------------
+
+I (Vladislav Zavialov) will write proposals for specific features of this plan,
+and implement them, as long as I manage to reach consensus with the community
+and the committee about the proposed changes.
