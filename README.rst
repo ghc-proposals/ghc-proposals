@@ -102,6 +102,8 @@ b. *Proposed Change Specification*: Specify the change in precise and comprehens
    - the types and semantics of any new library interfaces
    - how the proposed change addresses the original problem (perhaps referring back to the example)
 
+  The change should be phrased relative to the Haskell report and/or the GHC user manual. Do not assume familiarity with the implementation, and avoid referncing the implementation.
+
 c. *Effect and Interactions*. Detail how the proposed change addresses the original problem raised in the motivation. Detail how the proposed change interacts with existing language or compiler features. Think about what surprising or problematic interactions may occur.
 
 d. *Costs and Drawbacks*. What are the drawbacks and costs to the community should this change be implemented? For example, does this make Haskell harder to learn for novice users?  Does it make Haskell code harder to read or reason about? Will the implementation be complex or invasive?
@@ -111,6 +113,8 @@ e. *Alternatives*: List alternatives to your proposed change and discuss why the
 f. *Unresolved questions*: Explicitly list any remaining issues that remain in the conceptual design and specification. Be upfront and trust that the community will help. Please do not list *implementation* issues.
 
 g. *Implementation Plan* (Optional): If accepted who will implement the change? It's quite okay to say "unknown" if you don't feel willing or able to carry out the implementation yourself.
+
+  This is also a good section to outline the changes to the implementation, or otherwise include insights that assume familiarity with the implementation.
 
 
 Note that proposals are written in `ReStructuredText
