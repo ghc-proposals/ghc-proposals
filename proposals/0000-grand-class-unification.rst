@@ -42,9 +42,9 @@ types and class methods. The reasoning goes like this:
   quantification in terms, which is a milestone towards Dependent Haskell and
   is mentioned briefy in `#102
   <https://github.com/ghc-proposals/ghc-proposals/pull/102>`_.
-* Visible dependent quantification in terms allow us to mix and match terms
+* Visible dependent quantification in terms allows us to mix and match terms
   with types, and this entails changes to parsing and namespace resolution.
-  Based on `214 <https://github.com/ghc-proposals/ghc-proposals/pull/214>`_, we
+  Based on `#214 <https://github.com/ghc-proposals/ghc-proposals/pull/214>`_, we
   describe a new namespace resolution strategy, ``-XDefaultNamespace`` and
   namespace-qualified imports.
 * Under ``-XDefaultNamespace``, the ``type`` prefix of top-level kind
@@ -82,12 +82,12 @@ At this point, we end up with the following set of features:
   override ``@`` at use sites. This example entails a change to namespace lookup
   rules:
 
-    * in a type position (to the right of ``::`` or in type applications
-      ``@``), look in the type namespace first; if the lookup fails, look in
-      the data namespace;
+  * In a type position (to the right of ``::`` or in type applications
+    ``@``), look in the type namespace first; if the lookup fails, look in
+    the data namespace.
 
-    * in a term position (to the right of ``=``), look in the data namespace
-      first; if the lookup fails, look in the type namespace;
+  * In a term position (to the right of ``=``), look in the data namespace
+    first; if the lookup fails, look in the type namespace.
 
   Guarded by ``-XVDQ``.
 
@@ -106,19 +106,19 @@ At this point, we end up with the following set of features:
   The namespace lookup rules of ``-XVDQ`` (outlined in the previous bullet) do
   not allow to specify a namespace explicitly. We solve this with an extended set of rules:
 
-    * In a module with ``-XDefaultNamespace``, all declarations and variables
-      are in a single namespace. It is an error to use the same name for a
-      type-level entity and a term-level entity. Therefore, there is no
-      ambiguity at use sites.
+  * In a module with ``-XDefaultNamespace``, all declarations and variables
+    are in a single namespace. It is an error to use the same name for a
+    type-level entity and a term-level entity. Therefore, there is no
+    ambiguity at use sites.
 
-    * In a module with ``-XDefaultNamespace``, entities imported from other
-      modules must not result in an ambiguity at use sites. For example, using
-      ``Proxy`` is an error, as this name is present in both the type namespace
-      and the data namespace.
+  * In a module with ``-XDefaultNamespace``, entities imported from other
+    modules must not result in an ambiguity at use sites. For example, using
+    ``Proxy`` is an error, as this name is present in both the type namespace
+    and the data namespace.
 
-    * To allow the use of existing code that exports entities in different
-      namespaces with the same name, we introduce namespace-qualified imports,
-      ``type qualified as`` and ``data qualified as``.
+  * To allow the use of existing code that exports entities in different
+    namespaces with the same name, we introduce namespace-qualified imports,
+    ``type qualified as`` and ``data qualified as``.
 
   Guarded by ``-XDefaultNamespace``.
 
@@ -143,7 +143,7 @@ At this point, we end up with the following set of features:
 * Add syntax for ``-XTypeFamilyDependencies`` in top-level kind signatures and
   signatures for associated types::
 
-    type H :: forall (a :: Type) :-> Type | H a -> a
+    type H :: forall (a :: Type) -> Type | H a -> a
     type family H a where { ... }
 
     class C a b where
