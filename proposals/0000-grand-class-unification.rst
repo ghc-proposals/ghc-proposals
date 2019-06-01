@@ -132,15 +132,7 @@ At this point, we end up with the following set of features:
 
   Guarded by ``-XDefaultNamespace``.
 
-* Add syntax for matchable quantifiers::
-
-    class C a where
-      type F :: Type  -> Type   -- arity = 1
-      type G :: Type :-> Type   -- arity = 0
-
-  Guarded by ``-XMatchableQuantifiers``.
-
-* Add syntax for ``-XTypeFamilyDependencies`` in top-level kind signatures::
+* Syntax for ``-XTypeFamilyDependencies`` in top-level kind signatures::
 
     type H :: forall (a :: Type) -> Type | H a -> a
     type family H a where { ... }
@@ -172,6 +164,19 @@ At this point, we end up with the following set of features:
     Item :: forall c -> Container c => Type
 
   Note that we use the same "quantify visibly if ambiguous" rule.
+
+* Syntax for matchable quantifiers::
+
+    C :: Type -> Constraint
+    class C a where
+      type F :: Bool  -> Bool
+      type G :: Bool :-> Bool
+
+    F :: forall a -> C a => Bool  -> Bool    -- arity = 3
+    G :: forall a -> C a => Bool :-> Bool    -- arity = 2
+
+  Guarded by ``-XMatchableQuantifiers``.
+
 
 Examples
 --------
