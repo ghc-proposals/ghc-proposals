@@ -5,7 +5,7 @@ The Grand Plan for Unification of Class Methods and Associated Types
 .. ticket-url::
 .. implemented::
 .. highlight::
-.. header::
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/236>`_.
 .. sectnum::
 .. contents::
 
