@@ -140,14 +140,14 @@ At this point, we end up with the following set of features:
 
   Guarded by ``-XMatchableQuantifiers``.
 
-* Add syntax for ``-XTypeFamilyDependencies`` in top-level kind signatures and
-  signatures for associated types::
+* Add syntax for ``-XTypeFamilyDependencies`` in top-level kind signatures::
 
     type H :: forall (a :: Type) -> Type | H a -> a
     type family H a where { ... }
 
+    type K :: forall a b -> Type | K a b -> a
     class C a b where
-      type K :: forall (a :: Type) -> forall (b :: Type) -> Type | K a b -> a
+      type K :: Type
 
 * Quantify class variables visibly when ambiguous::
 
