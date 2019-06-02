@@ -153,7 +153,7 @@ At this point, we end up with the following set of features:
   Note that the programmer may give a top-level signature to the methods, so the
   readers of the code need not figure out which class variables are ambiguous.
 
-  Guarded by ``-XVDQ``.
+  Guarded by ``-XVisibleClassVariables``.
 
 * Constrain the domain of associated types by the class::
 
