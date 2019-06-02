@@ -134,13 +134,21 @@ None.
 Unresolved questions
 --------------------
 
-- How exactly should the implementation look like?
 - Which order of arguments in the new TH function?
 
 
 Implementation Plan
 -------------------
 
-For deriving the Generic instances, either ``Record.fieldName``,
-``OverloadedRecordFields`` or an anonymous function which generates the
-corresponding selector in core will be used. (to be clarified)
+I'm currently on the way of implementing this extension. It's roughly as
+follows:
+
+- Add new `NameSpace` to `OccName`: `RecordSelector String`
+- Remove `flSelector` from `FieldLabel`, add an flag which denotes if it should
+  be found as `VarName`
+- Remove `FlParent`
+- Change any field lookup code to look for new `OccName`
+- Implement `ToplevelFieldSelector` flag to look for selectors if you're looking
+  for `VarName`
+- Adjust `Generic` instances
+- Add new `TH` function to access record selectors
