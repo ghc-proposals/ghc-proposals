@@ -134,10 +134,10 @@ At this point, we end up with the following set of features:
 
 * Syntax for ``-XTypeFamilyDependencies`` in top-level kind signatures::
 
-    type H :: forall (a :: Type) -> Type | H a -> a
+    H :: forall (a :: Type) -> Type | H a -> a
     type family H a where { ... }
 
-    type K :: forall a b -> Type | K a b -> a
+    K :: forall a b -> Type | K a b -> a
     class C a b where
       type K :: Type
 
