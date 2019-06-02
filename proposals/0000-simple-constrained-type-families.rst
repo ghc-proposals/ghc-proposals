@@ -76,6 +76,7 @@ To demonstrate, let us consider the ``TNum`` example above. This is the value le
 The promoted dictionary would be much the same:
 
 ::
+
     type $FTNumInt :: TNum Int
     type $FTNumInt = 'C:TNum @ Int
 
@@ -260,8 +261,7 @@ This is an obvious problem, but constrained type families provide a solution. Th
 To get the maximum improvement, there are several follow-on changes that would need to be made:
 
 * Add support for closed type classes (whether exposed or not) 
-* Change top-level type families into syntactic sugar for (constrained) associated types, including changing closed type families into closed typeclasses:  
-
+* Change top-level type families into syntactic sugar for (constrained) associated types, including changing closed type families into closed typeclasses:
     This would effectively change this
 
     ::
@@ -278,7 +278,6 @@ To get the maximum improvement, there are several follow-on changes that would n
 
             instance Pred (S n) where
                 type Pred (S n) = n
-
 * Once all (non-total) type families are constrained, we can eliminate the assumption of totality.
     * This means we no longer need to use infiniary unification for the closed type family apartness check, because any infinite type family would require satisfying an infinite constraint (something in the form ``Loop => Loop``), which is plainly impossible.
     * This will make type families in general more closely match the intuition of them as potentially partial type-level functions.
@@ -350,10 +349,10 @@ Additionally, there's always the option to do nothing, with the obvious tradeoff
 
 Unresolved questions
 --------------------
-- What is lost relative to implementing the full CTF paper system in GHC?
-- How much existing code is actually going to be broken by these changes?
-    - This is likely unknowable until an implementation exists.
-- Should we use ``-XDatatypeContexts`` to resolve the performance implications without waiting for matchability?
+* What is lost relative to implementing the full CTF paper system in GHC?
+* How much existing code is actually going to be broken by these changes?
+    * This is likely unknowable until an implementation exists.
+* Should we use ``-XDatatypeContexts`` to resolve the performance implications without waiting for matchability?
     Another, simpler way to remove the new dictionary burden on records that contain associated-typed values would be to change how datatype contexts work, giving them the required constraint semantics that are truly desired here. Then, it can be written simply as:
 
     ::
