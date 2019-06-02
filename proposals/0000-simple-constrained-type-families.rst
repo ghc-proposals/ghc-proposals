@@ -48,79 +48,50 @@ What is the meaning of ``Integer * String``? There are arguable definitions that
 
 This is the equivalent of GHC accepting ``"a" + "b"`` without an instance for ``Num String`` and simply producing an error at runtime.
 
-In the future, with some major changes (but still less than the original Constrained Type Families paper), this system is a start towards recovering its results but with more minor changes to the compiler.
-
-This would require adding support for closed type classes (whether exposed or not) and essentially turning 
-
-::
-
-    type family Pred :: Nat -> Nat where
-        Pred (S n) = n
-
-into syntactic sugar for something morally equivalent to
-
-::
-
-    class Pred (n :: Nat) where
-        type Pred n :: Nat
-
-    instance Pred (S n) where
-        type Pred (S n) = n
-
-(and the equivalent closed type class definition for closed type families, once such support is written).
-
-Once all (non-total) type families are constrained, we can eliminate the assumption of totality and thus the requirement for infiniary unification, which will allow closed type families to use a less restrictive apartness check and make type families in general more closely match the intuition of them as potentially partial type-level functions. 
-
-Determining totality is a difficult (indeed, unsolvable) but well-understood problem, and a rubicon that GHC will have to cross at some point as it moves towards being a dependently typed language.
-
-In addition, this will allow the restrictions on injectivity to be relaxed by considering only the actual domain of a type family and not require that every type family be injective over every type argument that will kind-check.
-
-Consider the simple type family ``ListElems`` drawn from the Constrained Type Families paper (§ 3.3). For more examples, see § 4.1 in `the paper introducing injective type families <http://ics.p.lodz.pl/~stolarek/_media/pl:research:stolarek_peyton-jones_eisenberg_injectivity.pdf>`_.
-
-::
-
-    type family ListElems a = b | b -> a where
-        ListElems [a] = a
-
-Currently, this is an error, because even for a closed type family, GHC is unable to recognize that a type family can have a partial domain. 
-
-:: 
-
-    • Type family equation violates injectivity annotation.
-      RHS of injective type family equation is a bare type variable
-      but these LHS type and kind patterns are not bare variables: ‘[a]’
-        ListElems [a] = a -- Defined at <interactive>:4:9
-    • In the equations for closed type family ‘ListItems’
-      In the type family declaration for ‘ListItems’
-
-This is because ``ListElems [ListElems Int] ~ ListElems Int`` by the declaration given, and by injectivity as defined in the Injective Type Families paper (Definition 1)
-
-    Definition 1 (Injectivity). A type family F is n-injective (i.e. injective in its nth argument) iff ∀σ,τ : F σ ∼ F τ ⇒ σ n ∼ τ n
-
-we recover the equation ``[ListElems Int] ~ Int``. This is not an issue with constrained type families, as this impossible supposed equality is guarded safely behind a forever-unsatisfiable ``ListElems Int`` constraint. It is clear that the pairwise-injectivity constraint is sufficient to ensure that such an instance can never exist.
-
-Similarly, the case of infinite type families is obviated because any such infinite family would be guarded by an infinite constraint, which is clearly unsatisfiable. This allows the special case introduced to handle these infinite families (see § 4.2.3 of the injective type family paper for details) to be removed, and for the injectivity checker to use a more standard form of unification that preserves the occurs check.
+In the future, with some major changes (but still less than the original Constrained Type Families paper), this system is a start towards recovering its results but with more minor changes to the compiler. This proposal only makes the compiler able to reject bad programs of the family (pardon the pun) described above, however. More information on this future path of development is in the Effects and Interactions section.
 
 Proposed Change Specification
 -----------------------------
 
-Formal Specification
-++++++++++++++++++++
-
-There is a very simple way to reuse the currently existing mechanisms to give the desired behavior, with four changes to current behavior:
+Admittedly, this specification does go somewhat deep into what would normally be considered implementation details, but this is done to show that the results claimed are possible without any changes to Core; indeed, not changing Core is the entire reason this proposal exists.
 
 Promote typeclass dictionary constructors
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
++++++++++++++++++++++++++++++++++++++++++
 
 For every class declaration ``(C1 a, C2 b) => C a b c``, a new type-level data constructor is introduced ``CDict :: C1 a -> C2 b -> C a b c``. That is, the type-level data constructor produces a type of kind ``C a b c``, taking dictionaries of any superclasses as arguments. Nothing changes if ``C`` does or does not have methods.
 
+
 Generate type-level dictionaries at every instance declaration
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 For every instance declaration ``C Nat Bool (Maybe a)``, a new type synonym is introduced ``type CDictNatBoolMaybea = (CDict C1DictNat C2DictBool :: C Nat Bool (Maybe a))``.
 
+To demonstrate, let us consider the ``TNum`` example above. This is the value level dictionary for an instance of ``TNum``:
+
+::
+
+    $fTNumInt :: TNum Int
+    $fTNumInt = C:TNum @ Int
+
+The promoted dictionary would be much the same:
+
+::
+    type $FTNumInt :: TNum Int
+    type $FTNumInt = 'C:TNum @ Int
+
+Additionally, superclass dictionaries are given as argument to the dictionary constructor, just as with value-level dictionaries. Consider the following ``TIntegral`` class:
+
+::
+
+    class (TNum k) => TIntegral k where
+        -- ...
+
+    -- Promoted dictionary generated for `TIntegral Int`:
+    type $FTIntegralInt :: TIntegral Int
+    type $FTIntegralInt = 'C:TIntegral @ Int $FTNumInt
+
 Associated type and data family usage now emits constraints
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 Attempting to use an associated type/data family in any way without the appropriate class constraint (that is, if GHC does not have the appropriate promoted dictionary in scope) is an error. This is true even if it does not need to be reduced, because the dictionary is an argument to the Core level representation of a constrained type family.
 
@@ -148,17 +119,39 @@ Explicitly, a typeclass's associated type family would be kinded as follows:
 
 The distinction rests on if the variables of the class appear in the kind that the type family would have without these changes.
 
+An important issue arises here: an associated type family currently may not provide sufficient information to unambiguously refer to a required instance. Consider the following example:
+
+::
+
+    class Vague (a :: j) (b :: k) where
+        type Underspecified (b :: k)
+
+Currently, ``Underspecified :: k -> Type``. If we try to constrain this in the obvious way, we get ``Underspecified :: forall (a :: j). forall (b :: k) -> Vague a b => Type`` which is not only a lot more complicated, but is also going to be ambiguous unless the programmer adds type applications to set ``a``!
+
+Thus, we now require that the variables used in an associated type declaration must cover all of the class variables, in that choices for the associated type arguments must uniquely determine the choice of class instance. This might be done via, e.g., functional dependencies or superclass equality constraints. This will lead to code breakage, but in almost all cases, there is an implicit dependency between the variables that can be made explicit. In the few cases where no such dependency exists, the associated type may be factored out into a superclass over only the relevant variables.
+
 Associated data family data constructors also gain the constraints for the instance. For example:
 
 ::
 
+    class C1 (a :: k) where
+        data D1 (a :: k)
+
+    instance C1 Int where
+        -- D1Int :: Int -> D1 Int
+        data D1 Int = D1Int Int
+
     class C2 (a :: k) where
-        data D (a :: k)
+        data D2 (a :: k)
+
+    instance C1 a => C2 [a] where
+        -- D2List :: (C1 a) => [D1 a] -> D2 [a]
+        data D2 [a] = D2List [D1 a]
 
     instance C2 a => C2 (Maybe a) where
-        data D (Maybe a) = DMaybe (D a)
+        -- D2Maybe :: (C2 a) => D a -> D (Maybe a)
+        data D2 (Maybe a) = D2Maybe (D2 a)
 
-    -- DMaybe :: (C2 a) => D a -> D (Maybe a)
 
 At the Core level, just as with term-level typeclass methods, ``=>`` degrades into ``->`` and the promoted dictionary created above is given to satisfy this newly required visible argument.
 
@@ -193,7 +186,7 @@ At the Core level, just as with term-level typeclass methods, ``=>`` degrades in
     type Usage = Increment Nat TNumDictNat (3 :: Nat)
 
 Backwards Compatibility
-~~~~~~~~~~~~~~~~~~~~~~~
++++++++++++++++++++++++
 
 It seems as if this behavior is going to break enough existing code that the sensible thing to do is to gate it behind an extension. However, this is the wrong way to go, because if it can be turned off, it would require a separate version of any library that uses associated type/data families for use with and without the extension enabled. There is another way to ensure backwards compatibility without simply turning off the feature completely, as will be explained in the remainder of this section.
 
@@ -228,96 +221,75 @@ Because this backwards compatibility system is somewhat complicated and does som
 
 Indeed, if I am the one to implement this, I will initially be implementing this as an error, and will look at how much code will break based on the changes before implementing the "warn and fix" behavior.
 
-Further Exposition
-++++++++++++++++++
-
-This section is not part of the formal specification, and if there are any differences between the formal specification and this section, the formal specification wins.
-
-Promote Typeclass Dictionaries
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Currently, typeclass instances are desugared into the creation of constant values in a special namespace with a "secret" dictionary type that shares the name of the typeclass that contains fields for each value-level member of the typeclass, or for typeclasses without any value-level members, as a unit type. For example, using the ``TNum k`` example and ``-ddump-simpl``, it can be seen that we generate the following dictionary for a declaration of ``TNum Int``.
-
-::
-
-    -- RHS size: {terms: 1, types: 1, coercions: 0, joins: 0/0}
-    interactive:Ghci2.$fTNumInt [InlPrag=CONLIKE] :: TNum Int
-    [GblId[DFunId], Caf=NoCafRefs]
-    interactive:Ghci2.$fTNumInt = interactive:Ghci1.C:TNum @ Int
-
-This has a very simple constructor ``C:TNum`` and it is easy to promote it, but this doesn't help typeclasses that contain both type and value level members. What should GHC do with a typeclass such as the following?
-
-::
-
-    class IsList l where
-        type family Item l :: *
-        fromList :: [Item l] -> l
-
-Of course, we could only promote classes that don't have any methods, but that is a very limiting solution to the problem. Instead, I propose that we promote every class as if it has no methods, which does create another case where the original and promoted type differ, but this is hardly new. ``Type`` is uninhabited at the term level but contains ``Int``, ``Bool``, ``Char`` and many more at the type level.
-
-There is one further wrinkle of how typeclass instances work that must be addressed. Instance declarations for classes with a superclass requirement include the superclass' dictionary, and promoted dictionaries function the same way.
-
-::
-
-    class (TNum k) => TIntegral k where
-        -- ...
-
-``C:TIntegral``, once promoted, will have kind ``forall (k :: Type). TNum k -> TIntegral k``.
-
-In summary, typeclass dictionaries are promoted to the type level, but ignoring their members, either as a unit type or as a type that simply contains promoted dictionaries for the superclass.
-
-For Associated Type Families, Require Promoted Dictionaries to Reduce
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Let us return to the ``TNum k`` class above. What does the kind of ``(+)`` look like?
-
-::
-
-    λ> :k (+)
-    (+) :: (TNum k) => k -> k -> k
-
-This is about what we would expect, and it functions exactly the same way that a constrained term level function works. As the code is simplified, ``=>`` still degrades into ``->``, and an implicit argument (now of **kind** ``TNum k``) is supplied. If there is no such implicit dictionary in scope, this is a type error.
-
-For obvious reasons of symmetry, the same requirement is present for instantiation of associated data families.
-
-::
-
-    class C1 (a :: k) where
-        data D1 (a :: k)
-
-    instance C1 Int where
-        data D1 Int = D1Int Int
-
-    class C2 (a :: k) where
-        data D2 (a :: k)
-
-    instance C1 a => C2 [a] where
-        data D2 [a] = D2List [D1 a]
-
-    instance C2 a => C2 (Maybe a) where
-        data D2 (Maybe a) = D2Maybe (D2 a)
-
-``D2`` now has kind ``D2 :: forall (a :: k) -> C2 a => Type`` and ``D2Maybe`` now has type ``D2Maybe :: (C2 a) => D2 a -> D2 (Maybe a)``. This is not limited to the same class, and is simply based on the instance's givens.
-
 Effect and Interactions
 -----------------------
-It is obvious that this solves the issue raised by example 2, because it creates a kind that expresses the constraint that is intended and allows the type system to provide the same guarantees that we provide to term level functions to type families.
 
-By itself, however, it does nothing to resolve the issue with example 1. For that purpose, it is important to extend the injectivity checker to consider the injectivity over the domain of types with instances rather than all well-kinded types, allowing example 1 to be written as:
+Improves the Type Safety of Associated Families
+++++++++++++++++++++++++++++++++++++++++++++++++
+It is obvious that this solves the issue raised by the example in the Motivation section, because it creates a kind that expresses the constraint that is intended and allows the type system to provide the same guarantees that we provide to term level functions to type families.
+
+Future Development Will Simplify Type Family Injectivity
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Consider the simple type family ``ListElems`` drawn from the Constrained Type Families paper (§ 3.3). For more examples, see § 4.1 in `the paper introducing injective type families <http://ics.p.lodz.pl/~stolarek/_media/pl:research:stolarek_peyton-jones_eisenberg_injectivity.pdf>`_.
 
 ::
 
-    data Nat = Zero | Succ Nat
+    type family ListElems a = b | b -> a where
+        ListElems [a] = a
 
-    class NatPred (nat :: Nat) where
-        type Pred (nat :: Nat) = (pred :: Nat) | pred -> nat
+Currently, this is an error, because even for a closed type family, GHC is unable to recognize that a type family can have a partial domain. 
 
-    instance NatPred (Succ nat) where
-        type Pred (Succ nat) = nat
+:: 
 
-``Pred`` would now have the kind ``forall (nat :: Nat) -> NatPred nat => Nat``, which is an example of visible dependent quantification. There is an existing GHC proposal to add this syntax to the source language, but this feature has existed in the compiler since GHC 8.0.
+    • Type family equation violates injectivity annotation.
+      RHS of injective type family equation is a bare type variable
+      but these LHS type and kind patterns are not bare variables: ‘[a]’
+        ListElems [a] = a -- Defined at <interactive>:4:9
+    • In the equations for closed type family ‘ListItems’
+      In the type family declaration for ‘ListItems’
 
-The other reliance on accepted-yet-unimplemented functionality is to allow type families and other similar contextless syntax forms to use constrained type families.
+This is because ``ListElems [ListElems Int] ~ ListElems Int`` by the declaration given, and by injectivity as defined in the Injective Type Families paper (Definition 1)
+
+    Definition 1 (Injectivity). A type family F is n-injective (i.e. injective in its nth argument) iff ∀σ,τ : F σ ∼ F τ ⇒ σ n ∼ τ n
+
+we recover the equation ``[ListElems Int] ~ Int``.
+
+This is an obvious problem, but constrained type families provide a solution. There is an existing pairwise-apartness test for injective type families, which requires that no two RHSes are able to unify. This would clearly prevent any other instances of ``ListElems`` from being written, including some ``ListElems Int``, because any type is unifiable with ``a``. Thus, this heinous equality is safely guarded behind an unsatisfiable ``ListElems Int`` constraint.
+
+To get the maximum improvement, there are several follow-on changes that would need to be made:
+
+* Add support for closed type classes (whether exposed or not) 
+* Change top-level type families into syntactic sugar for (constrained) associated types, including changing closed type families into closed typeclasses:  
+
+    This would effectively change this
+
+    ::
+
+        type family Pred :: Nat -> Nat where
+            Pred (S n) = n
+
+    into syntactic sugar for something morally equivalent to this (using notional syntax for closed type classes)
+
+    ::
+
+        class {-# CLOSED #-} Pred (n :: Nat) where
+            type Pred n :: Nat
+
+            instance Pred (S n) where
+                type Pred (S n) = n
+
+* Once all (non-total) type families are constrained, we can eliminate the assumption of totality.
+    * This means we no longer need to use infiniary unification for the closed type family apartness check, because any infinite type family would require satisfying an infinite constraint (something in the form ``Loop => Loop``), which is plainly impossible.
+    * This will make type families in general more closely match the intuition of them as potentially partial type-level functions.
+    * Obvious caveat: Determining totality is a difficult (indeed, unsolvable) but well-understood problem, and a rubicon that GHC will have to cross at some point as it moves towards being a dependently typed language.
+* By constraining type families to the domains over which they are defined, we solve "Awkward Case 2" in the Injective Type Families paper.
+* Additionally, as mentioned above, infinite constrainted type families would also be hidden behind an unsatisfiable constraint, so it would solve "Awkward Case 3" as well.
+
+Top-Level Kind Signatures Are Necessary
++++++++++++++++++++++++++++++++++++++++
+
+The proposal does have reliance on allowing type families and other similar contextless syntax forms to use constrained type families by implementing `proposal #36 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0036-kind-signatures.rst>`_, ``-XTopLevelKindSignatures``.
 
 ::
 
@@ -327,16 +299,13 @@ The other reliance on accepted-yet-unimplemented functionality is to allow type 
     type family S a where
         S a = T a
 
-As implemented now, if this proposal were to be accepted, it would not be possible to write ``S``, because there is no way of stating the ``C a`` constraint. Top-level kind signatures solve this issue handily.
+If this proposal were to be accepted now, it would not be possible to write ``S``, because there is no way of stating the ``C a`` constraint. Top-level kind signatures solve this issue handily.
 
 ::
 
     type S :: forall (a :: Type) -> C a => Type
     type family S a where
         S a = T a
-
-
-There are no substantial conflicts with other compiler features, because it is a simple extension of existing functionality with fairly minimal potential for conflict.
 
 Costs and Drawbacks
 -------------------
@@ -367,15 +336,6 @@ Which now adds a dictionary's burden. While this may have performance implicatio
     data FPack a where
         FPack :: forall (_ :: C) => F a -> FPack a
 
-Another, simpler solution would be to change how datatype contexts work, giving them the required constraint semantics that are truly desired here. Then, it can be written simply as:
-
-::
-
-    data (C a) => FPack a where
-        FPack :: F a -> FPack a
-
-Some have proposed undeprecating ``-XDatatypeContexts`` with the addendum that such constraints are available when kind checking. Since constraints where never previously relevant at the kind level, this is not a breaking change, but I do not expect the idea of undeprecating this largely regretted extension to be popular, and therefore will only give it this brief treatment.
-
 
 The New Haskeller Story
 +++++++++++++++++++++++
@@ -393,6 +353,16 @@ Unresolved questions
 - What is lost relative to implementing the full CTF paper system in GHC?
 - How much existing code is actually going to be broken by these changes?
     - This is likely unknowable until an implementation exists.
+- Should we use ``-XDatatypeContexts`` to resolve the performance implications without waiting for matchability?
+    Another, simpler way to remove the new dictionary burden on records that contain associated-typed values would be to change how datatype contexts work, giving them the required constraint semantics that are truly desired here. Then, it can be written simply as:
+
+    ::
+
+        data (C a) => FPack a where
+            FPack :: F a -> FPack a
+
+    This would entail undeprecating ``-XDatatypeContexts`` with the addendum that such constraints are available when kind checking. Since constraints where never previously relevant at the kind level, this is not a breaking change, but I do not expect the idea of undeprecating this largely regretted extension to be popular.
+
 
 Implementation Plan
 -------------------
