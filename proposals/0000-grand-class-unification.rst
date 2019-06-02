@@ -135,8 +135,8 @@ At this point, we end up with the following set of features:
   from class methods. We propose to use name capitalization as a hint::
 
     class C a where
-      F :: Bool   -- associated type
-      f :: Bool   -- class method
+      F :: a -> Bool   -- associated type
+      f :: a -> Bool   -- class method
 
   This should only affect typechecking (class methods are not promoted), but
   not parsing or name resolution. Dependent types will allow us to do away
