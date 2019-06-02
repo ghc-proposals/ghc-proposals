@@ -130,6 +130,18 @@ At this point, we end up with the following set of features:
 
   This unifies TLKS and regular, term-level signatures.
 
+  We may also drop the ``type`` prefix for associated types, but without proper
+  dependent types, the implementation will need to distinguish associated types
+  from class methods. We propose to use name capitalization as a hint::
+
+    class C a where
+      F :: Bool   -- associated type
+      f :: Bool   -- class method
+
+  This should only affect typechecking (class methods are not promoted), but
+  not parsing or name resolution. Dependent types will allow us to do away
+  with this distinction completely.
+
   Guarded by ``-XDefaultNamespace``.
 
 * Syntax for ``-XTypeFamilyDependencies`` in top-level kind signatures::
@@ -139,7 +151,7 @@ At this point, we end up with the following set of features:
 
     K :: forall a b -> Type | K a b -> a
     class C a b where
-      type K :: Type
+      K :: Type
 
 * Quantify class variables visibly when ambiguous::
 
@@ -158,7 +170,7 @@ At this point, we end up with the following set of features:
 * Constrain the domain of associated types by the class::
 
     class Container c where
-      type Item :: Type
+      Item :: Type
       toList :: c -> [Item c]
 
     Item :: forall c -> Container c => Type
@@ -169,8 +181,8 @@ At this point, we end up with the following set of features:
 
     C :: Type -> Constraint
     class C a where
-      type F :: Bool  -> Bool
-      type G :: Bool :-> Bool
+      F :: Bool  -> Bool
+      G :: Bool :-> Bool
 
     F :: forall a -> C a => Bool  -> Bool    -- arity = 3
     G :: forall a -> C a => Bool :-> Bool    -- arity = 2
@@ -211,7 +223,7 @@ Examples
 * **Example 3**, ``MonadReader`` in the style of ``monads-tf``. Definition site::
 
     class MonadReader m where
-      type Env :: Type
+      Env :: Type
       ask :: m (Env m)
 
     Env :: forall m -> MonadReader m => Type
