@@ -237,8 +237,15 @@ TBD.
 Effect and Interactions
 -----------------------
 
-TBD.
+* The syntax for VDQ function application will be such that type and term
+  arguments can be parsed, name resolved, and disambiguated before the type
+  checking of the applied function.
 
+* Under ``-XVDQ``, the type and term language are to use the same syntax, so
+  only namespace resolution is different. Under ``-XDefaultNamespace``,
+  namespace resolution is the same as well.
+
+TBD.
 
 Costs and Drawbacks
 -------------------
