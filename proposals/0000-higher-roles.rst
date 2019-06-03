@@ -53,8 +53,8 @@ Lennart Augustsson of Google Research.
 
 Proposed Change Specification
 -----------------------------
-During role inference of a type with a datatype context, bring the datatype context
-into scope as a given.
+During role inference of a type with a datatype context, assume the constraints
+in the datatype context as givens.
 
 Then, when inferring the role of the argument of a type ``ty`` (which may be a type
 variable or some other type):
