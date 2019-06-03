@@ -142,7 +142,7 @@ Proposed Change Specification
 
 * As a consequence of these rules, ``(- x)`` is now an operator section,
   ``(-x)`` is prefix negation. This change is to be guarded behind a new
-  language extension ``-XPrefixNegation``.
+  language extension ``-XLexicalNegation``.
 
 * Add a new warning, ``-Woperator-whitespace``, disabled by default, that warns
   on prefix, suffix, and tight infix uses of operators that do not have a
@@ -196,10 +196,13 @@ implementation.
 Alternatives
 ------------
 
-If this proposal is rejected, the implementation will need another hand-written
-state machine, which is hard to extend and maintain. This state machine will
-not be able to handle some corner cases which whitespace-based disambiguation
-handles easily.
+* If this proposal is rejected, the implementation will need another hand-written
+  state machine, which is hard to extend and maintain. This state machine will
+  not be able to handle some corner cases which whitespace-based disambiguation
+  handles easily.
+
+* We could classify ``if``, ``do``, ``case``, ``let``, and other keywords as
+  opening.
 
 Unresolved Questions
 --------------------
