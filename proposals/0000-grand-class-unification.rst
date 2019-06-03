@@ -89,7 +89,7 @@ At this point, we end up with the following set of features:
   * In a term position (to the right of ``=``), look in the data namespace
     first; if the lookup fails, look in the type namespace.
 
-  Guarded by ``-XVDQ``.
+  Guarded by ``-XVisibleForall`` (old name referenced in the discussion: ``-XVDQ``).
 
 * Default namespace and namespace qualified imports::
 
@@ -103,7 +103,7 @@ At this point, we end up with the following set of features:
 
     data T = T   -- rejected
 
-  The namespace lookup rules of ``-XVDQ`` (outlined in the previous bullet) do
+  The namespace lookup rules of ``-XVisibleForall`` (outlined in the previous bullet) do
   not allow to specify a namespace explicitly. We solve this with an extended set of rules:
 
   * In a module with ``-XDefaultNamespace``, all declarations and variables
@@ -253,7 +253,7 @@ Effect and Interactions
   arguments can be parsed, name resolved, and disambiguated before the type
   checking of the applied function.
 
-* Under ``-XVDQ``, the type and term language are to use the same syntax, so
+* Under ``-XVisibleForall``, the type and term language are to use the same syntax, so
   only namespace resolution is different. Under ``-XDefaultNamespace``,
   namespace resolution is the same as well.
 
