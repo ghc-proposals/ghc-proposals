@@ -240,22 +240,32 @@ Costs and Drawbacks
 -------------------
 The main maintenance cost I can forsee is due to additional productions in the parser and extra information (a Boolean flag) in the AST nodes for records.
 For example, future changes to record parsing or pretty printing would bear a slightly higher complexity.
-However we do not consider this a significant cost.
+However I do not consider this a significant cost.
 
 On the user side, the proposed change could in fact be *more* intuitive for novice users.
 The ``with`` syntax is consistent with other occurrences of layout syntax and promotes the use of indentation across the board.
 It avoids questions around the placement of braces and commas as well as the need for alignment conventions.
 
-The possible drawback is that there would be two different syntax styles to be aware of.
+One obvious drawback is the introduction of a new keyword.
+This means that ``with`` cannot be used as an identifier in any module or project using the extension.
+We have been informed of examples of ``with`` naming resource allocation functions.
+Such names would need to be changed to be compatible with the extension.
+We explore the option of reusing an existing keyword in the Alternatives section.
+
+Another possible drawback is having two different syntax styles to be aware of.
 The mixture of semicolons and commas may be confusing, as
 ``Rec with { x :: Int; y :: Bool }`` looks quite similar to ``Rec { x :: Int, y :: Bool }``,
 but the field delimiters are different.
-This probably won't be much of an issue as ``with`` syntax will mostly be used with indentation instead of punctuation.
+It is an unresolved question whether we should be flexible about the use of semicolons and commas to make the transition smoother.
+However, this is a fairly minor issue as ``with`` syntax will mostly be used with indentation instead of punctuation.
 
 
 Alternatives
 ------------
-There is no alternative syntax for records that I am aware of.
+
+Workarounds Using Existing Extensions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+There is currently no alternative syntax for records.
 However, one could avoid large record expressions and patterns by using existing extensions such as ``NamedFieldPuns`` or ``RecordWildCards``.
 For example, you can bind field names using a ``let`` or ``where`` block outside of a record expression:
 ::
@@ -282,6 +292,61 @@ Second, they rely on bound variables being exactly the same as the field names o
 Therefore the syntactic convenience cannot be used for multiple record expressions of the same type in the same scope.
 (The same is true if you need to pattern match on multiple records of the same type in a single definition, as the field names would clash.)
 Moreover, using ``RecordWildCards`` to construct records can be error prone as it is easy to use a variable from scope when you should have set the value of the field explicitly.
+
+Reusing an Existing Keyword
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+We explored whether we could use an existing layout keyword instead of ``with``.
+The ones which read sensibly are ``where`` and ``of``.
+
+``where`` reads quite naturally for record constructs.
+For example, you could declare a record like
+::
+
+  data R = R where
+    f1 :: Int
+    f2 :: Int
+
+However, there are serious ambiguities when it comes to record construction and update.
+Using the previous declaration of ``R``, the following term declaration has two type-correct meanings:
+::
+
+  e = R where f1 = 2; f2 = 2
+
+(one being a record of type ``R`` and the other being the constructor of type ``Int -> Int -> R`` ignoring the local ``f1`` and ``f2`` bindings).
+
+We get a similar ambiguity for record updates:
+::
+
+  r = R 1 2
+  e = r where f1 = 11; f2 = 22
+
+These issues seem to be dealbreakers for reusing ``where`` for record fields.
+
+``of`` on the other hand may be more plausible.
+A declaration looks like
+::
+
+  data R = R of
+    f1 :: Int
+    f2 :: Int
+
+However there may be confusion (both for users and for the GHC parser) when trying to parse a record expression within a ``case`` expression.
+::
+
+  c = case R of f1 = 1; f2 = 2 of
+        R of f1; f2 -> f1
+
+There is only one successful parse of this example, but it may cause an error in Happy parser generation or parsing itself.
+
+You can see further issues for a record update within a ``case`` expression.
+::
+
+  r = R of f1 = 1; f2 = 2
+  c = let f1 = 11 in
+      case r of f1 of f1 -> f1
+
+The first ``of f1`` in ``c`` is a field update using ``NamedFieldPuns`` whereas the second ``of f1`` starts a pattern binding a variable ``f1``.
+There is only one successful parse of this example too, but again I expect this to cause trouble for the parser.
 
 
 Unresolved Questions
