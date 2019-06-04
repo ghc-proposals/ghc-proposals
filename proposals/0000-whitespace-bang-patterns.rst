@@ -144,6 +144,10 @@ Proposed Change Specification
   ``(-x)`` is prefix negation. This change is to be guarded behind a new
   language extension ``-XLexicalNegation``.
 
+* Under ``-XLexicalNegation``, prefix ``-`` binds tighter than any infix
+  operator, so that ``-a % b`` is parsed as ``(-a) % b`` regardless of the
+  fixity of ``b``.
+
 * Add a new warning, ``-Woperator-whitespace``, disabled by default, that warns
   on prefix, suffix, and tight infix uses of operators that do not have a
   meaning override at the moment. Users who desire forward compatibility may
