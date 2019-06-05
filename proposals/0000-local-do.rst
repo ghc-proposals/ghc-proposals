@@ -103,7 +103,7 @@ The semantics of ``do`` notation statements is given as follows (using
   Note that a ``join`` field is only needed if the final expression is
   not identifiably a ``return``.
 
-  When the applicative statements contain nested statement (see the
+  When the applicative statements contain nested statements (see the
   `wiki page
   <https://gitlab.haskell.org/ghc/ghc/wikis/applicative-do>`_ for a
   complete description of applicative-do statements), we also need a
