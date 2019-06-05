@@ -256,7 +256,6 @@ Another possible drawback is having two different syntax styles to be aware of.
 The mixture of semicolons and commas may be confusing, as
 ``Rec with { x :: Int; y :: Bool }`` looks quite similar to ``Rec { x :: Int, y :: Bool }``,
 but the field delimiters are different.
-It is an unresolved question whether we should be flexible about the use of semicolons and commas to make the transition smoother.
 However, this is a fairly minor issue as ``with`` syntax will mostly be used with indentation instead of punctuation.
 
 
@@ -352,28 +351,7 @@ There is only one successful parse of this example too, but again I expect this 
 Unresolved Questions
 --------------------
 
-With the ``RecordWith`` extension enabled, how flexible should we be in mixing traditional and layout syntax?
-For example, should we allow commas when using ``with`` (as in the following)?
-::
-
-  data Rec = Rec with field1 :: T1, field2 :: T2, field3 :: T3
-
-If so, should we also allow the reverse scenario?
-::
-
-  data Rec = Rec { field1 :: T1; field2 :: T2; field3 :: T3 }
-
-Allowing these cases may be more forgiving for users switching between the two syntaxes on different projects.
-
-We do propose that declaring multiple fields of the same type should only use commas regardless of the syntax choice, e.g.
-::
-
-  data Rec = Rec with field1, field2 :: T12; field3 :: T3
-
-Should we allow mixing commas and semicolons more generally (as in the following)?
-::
-
-  data Rec = Rec with field1 :: T1, field2 :: T2; field3 :: T3
+No unresolved questions.
 
 
 Implementation Plan
