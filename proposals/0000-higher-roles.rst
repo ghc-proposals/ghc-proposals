@@ -108,6 +108,22 @@ Alternatives
 
 * We could configure the warning about datatype contexts in some other way.
 
+* Instead of using datatype contexts at all, we could use data constructor contexts,
+  which avoid the controversy of datatype contexts. Role inference necessarily looks at
+  the usages of type variables in each constructor. When doing so, we could assume the
+  constraints on the data constructor as givens, and then do the checks as described
+  in the Specification, above. This means that a datatype with many constructors would
+  have to repeat the context many times. It also means that, by default, an unnecessary
+  dictionary would be stored by the constructor; however, I think it would not be hard
+  to optimize that dictionary away completely.
+
+  One problem with this alternative is that it means that newtypes cannot take advantage
+  of these higher-order roles. Given that the constructor of ``Linked`` in the Motivation
+  would be hidden in clients, it means that this alternative would not actually permit
+  the motivating program to be accepted.
+
+  I have orchestrated an unofficial vote on this alternative `on the GitHub trail <https://github.com/ghc-proposals/ghc-proposals/pull/233#issuecomment-498672441>`_.
+
 Unresolved Questions
 --------------------
 None at this time.
