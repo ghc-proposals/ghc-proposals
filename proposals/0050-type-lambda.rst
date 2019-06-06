@@ -31,8 +31,8 @@ extends this idea to lambda-expressions, allowing ``\ @a x -> ...``. Here are so
   fconst :: a -> b -> b
   fconst @_ @d _ x = (x :: d)             -- order matters
 
-  pair :: forall a. a -> (a, a)           -- brings a into scope (just like today)
-  pair @b x = (x :: a, x :: b)            -- brings b into scope with the same meaning as a
+  pair :: forall a. a -> (a, a)           -- no longer brings a into scope
+  pair @b x = (x :: b, x :: b)            -- brings b into scope
   
   higherRank :: (forall a. a -> a -> a) -> ...
   higherRank = ...
@@ -98,7 +98,7 @@ As always, we can consider a nested lambda ``\ x y z -> ...`` to be an abbreviat
 variable (preceded by ``@``). We do require, as usual, that we do not bind the same variable
 twice in a single lambda; this is true for type variables, too.
 
-Thus, the proposal boils down to one rule:
+Thus, the core of the proposal boils down to one rule:
 
 * ``\ @a -> body``, being checked against the type ``forall a. ty`` (where the ``a`` is *specified*), binds the type
   variable ``a`` and then checks ``body`` against the type ``ty``. Checking an
@@ -115,12 +115,16 @@ As usual, we can interpret a function defintion ``f <args> = body`` as
 ``f = \ <args> -> body``, and thus the function-definition case reduces to the lambda-expression
 case above.
 
-This new behavior will be with ``-XTypeApplications``. Naturally, scoped type variables
-work only with 
-``-XScopedTypeVariables`` enabled, so using this feature without ``-XScopedTypeVariables``
-would enable only ``@_`` abstractions.
+One wrinkle is that, according to the rules in the `Visible Type Application`_ paper,
+type variables quantified by a ``forall`` in a type signature get brought into scope
+*before* we check the term. We thus add the following rule:
 
-This change is specified in the appendix to the `Type variables in patterns <https://cs.brynmawr.edu/~rae/papers/2018/pat-tyvars/pat-tyvars.pdf>`_ paper.
+* The new extension ``-XTypeAbstractions`` enables binding type variables as described
+  in this proposal. Additionally, it disables the behavior of ``-XScopedTypeVariables``
+  that brings ``forall``\-quantified variables into scope in the body of the ``forall``.
+  Examples are below.
+
+This change is specified in the appendix to the `Type variables in patterns <https://cs.brynmawr.edu/~rae/papers/2018/pat-tyvars/pat-tyvars-extended.pdf>`_ paper.
 
 Bidirectional type checking
 ---------------------------
@@ -162,10 +166,41 @@ In the context of the GHC implementation, we have these definitions::
 *Checking* mode is precisely when the ``ExpType`` passed to ``tcExpr`` is a ``Check``.
 *Inference* mode is precisely when the ``ExpType`` passed to ``tcExpr`` is an ``Infer``.
   
-  
+Examples of new behavior of ``-XScopedTypeVariables``
+-----------------------------------------------------
 
-Examples
---------
+::
+
+   f :: forall a. a -> a
+   f x = (x :: a)      -- rejected with -XTypeAbstractions
+
+   g :: forall a. a -> a
+   g @a x = (x :: a)   -- accepted
+
+   h = ((\x -> (x :: a)) :: forall a. a -> a)
+     -- accepted with previous -XScopedTypeVariables, but rejected
+     -- if -XTypeAbstractions is in effect
+
+   i = ((\ @a x -> (x :: a)) :: forall a. a -> a)
+     -- accepted with -XTypeAbstractions
+
+Note that limiting the behavior of ``-XScopedTypeVariables`` is necessary if we
+think about where type variables are brought into scope. Are they brought into
+scope by the ``forall``? Or by the ``@a``? It can't be both, as there is no
+sensible desugaring into System F. Specifically, if we have ``expr :: forall a. ty``,
+that gets desugared into ``/\ a -> expr``. If we have ``(\ @a -> expr) :: forall b. ty``,
+what does it get desugared into? It would have to be ``/\ b -> /\ a -> expr``, but then
+``b`` and ``a`` are different.
+
+Here might be another way of thinking about it. Suppose we're checking ``expr`` against
+the pushed-down (known) type ``forall a. ty``. If we bring ``a`` into scope, what type
+do we check ``expr`` against? Is it ``forall a. ty`` again? That's very awkward if ``a``
+is *already* in scope. If we check ``expr`` against ``ty`` and ``expr`` looks like
+``\ @b -> expr'``, then we check ``\ @b -> expr'`` against ``ty`` -- not against
+``forall a. ty``.
+     
+Motivating Examples
+-------------------
 
 Here are two real-world examples of how this will help, courtesy of @int-index:
 
@@ -242,7 +277,7 @@ Effect and Interactions
   right before doing the subsumption check. Type generalization is hard in GHC, though,
   and so the paper avoided it. In order to implement this proposal, we'll have to work
   out how to do this.
-
+  
 Costs and Drawbacks
 -------------------
 This is another feature to specify and maintain, and that's always a burden. It will take
