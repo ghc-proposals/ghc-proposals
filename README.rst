@@ -44,7 +44,7 @@ What is the timeline of a proposal?
    into GHC provided it is well-engineered, well-documented, and does not
    complicate the code-base too much.
 
-   `≡ List of accepted proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3AAccepted>`_
+   `≡ List of accepted proposals <https://github.com/ghc-proposals/ghc-proposals/tree/master/proposals>`_
 
 7. If a proposal sees no activity for along time, they are marked as “dormant”.
 
