@@ -1,4 +1,4 @@
-Compile with the threaded RTS by default
+Compile with threaded RTS by default
 ==============
 
 .. proposal-number:: <blank>
