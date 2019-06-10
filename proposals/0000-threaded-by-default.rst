@@ -43,7 +43,7 @@ Alternatives
 ------------
 The alternative is status quo: deafult to the non-threaded RTS. This is a plausible option but feels outdated as of now.
 
-There is also a minor concern about the fallback flag name. Possible options taht have been suggested so far are ``-single-threaded`` and ``-non-threaded``
+There is also a minor concern about the fallback flag name. Possible options taht have been suggested so far are ``-single-threaded`` and ``-non-threaded``.
 
 
 Unresolved Questions
