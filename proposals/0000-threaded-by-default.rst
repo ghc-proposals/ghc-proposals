@@ -1,24 +1,9 @@
-Notes on reStructuredText - delete this section before submitting
-==================================================================
-
-The proposals are submitted in reStructuredText format.  To get inline code, enclose text in double backticks, ``like this``.  To get block code, use a double colon and indent by at least one space
-
-::
-
- like this
- and
-
- this too
-
-To get hyperlinks, use backticks, angle brackets, and an underscore `like this <http://www.haskell.org/>`_.
-
-
-Make RTS threaded by default
+Compile with the threaded RTS by default
 ==============
 
 .. proposal-number:: <blank>
 .. trac-ticket:: 16126
-.. implemented:: <blank>
+.. implemented::
 .. highlight:: haskell
 .. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_.
             **After creating the pull request, edit this file again, update the
@@ -31,48 +16,37 @@ Today, in order to use the threaded variant of the runtime, one have to pass the
 
 Motivation
 ------------
-Parallel hardware is here. It is hard to imagine a setting without an access to multiple cores. Defaulting to single-threaded RTS seems to be a legacy these days, and the one we should cleanup at some point. The proposal suggest exactly this. We should default on the common case, which is parallel hardware today, and provide a way to fallback for users with special needs. The latter can be done by the means of the new ``-single-threaded`` flag.
-
+Parallel hardware is here. The overwhelming majority of GHC users probably has an access to multiple cores. In this setting, defaulting to single-threaded RTS seems to be a legacy, and the one we should cleanup at some point anyway. The proposal suggest exactly this. We should default on the common case, which is parallel hardware today, and provide a way to fallback for users of single-core architectures. The latter can be done by the means of the new ``-single-threaded`` flag.
 
 
 Proposed Change Specification
 -----------------------------
 
-***** below is still the template *****
-
-Specify the change in precise, comprehensive yet concise language. Avoid words like should or could. Strive for a complete definition. Your specification may include,
-
-* grammar and semantics of any new syntactic constructs
-* the types and semantics of any new library interfaces
-* how the proposed change interacts with existing language or compiler features, in case that is otherwise ambiguous
-
-Note, however, that this section need not describe details of the implementation of the feature. The proposal is merely supposed to give a conceptual specification of the new feature and its behavior.
+The GHC compiler should start in `-threaded` mode by default. To fallback to the non-threaded mode, one would have to pass `-single-threaded` flag to the compiler. Otherwise, if a user pass the `-threaded` flag, they should get a warning that this flag has no effect anymore.
 
 
 Effect and Interactions
 -----------------------
-Detail how the proposed change addresses the original problem raised in the motivation.
+The users of GHC will get their programs compiled with the threaded RTS by default. This is felt to be the reasonable default these days. 
 
-Discuss possibly contentious interactions with existing language or compiler features. 
-
+Those who passed `-threaded` before will get a new warning, which might be painful (e.g. in the `-Werror` setting).
 
 Costs and Drawbacks
 -------------------
-Give an estimate on development and maintenance costs. List how this effects learnability of the language for novice users. Define and list any remaining drawbacks that cannot be resolved.
+The main concern of this change is sudden changes to performance of compiled programs. In some cases it will improve, but in certain casses it may degrade. In the lack of objective data at hand, we can only speculate that: 1) typical architecture of a GHC user has multiple cores; 2) switch to `-threaded` will *most likely* improve performance in such a setting. In contrast, the users of single-threaded acrchitectures might observe certain degradations upon updating to a newer GHC, and we should make sure to advertise the option to opt-out (via `-single-threaded` in the release notes).
 
+Implementation has very low cost and mostly concern with figuring out neccessary adaptations in the GHC test suite.
 
 Alternatives
 ------------
-List existing alternatives to your proposed change as they currently exist and discuss why they are insufficient.
+The alternative is status quo: deafult to the non-threaded RTS. This is a plausible options but feels outdated as of now.
 
 
 Unresolved Questions
 --------------------
-Explicitly list any remaining issues that remain in the conceptual design and specification. Be upfront and trust that the community will help. Please do not list *implementation* issues.
-
-Hopefully this section will be empty by the time the proposal is brought to the steering committee.
-
+None
 
 Implementation Plan
 -------------------
-(Optional) If accepted who will implement the change? Which other ressources and prerequisites are required for implementation?
+The implementation is started in _`!538 <https://gitlab.haskell.org/ghc/ghc/merge_requests/538>`_. The main challenge is to get test suite pass because of certain warnings arising after the switch to the new default.
+
