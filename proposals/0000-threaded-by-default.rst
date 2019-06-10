@@ -39,7 +39,7 @@ Implementation has a very low cost and mostly concern with figuring out neccessa
 
 Alternatives
 ------------
-The alternative is status quo: deafult to the non-threaded RTS. This is a plausible option but feels outdated as of now.
+The alternative is status quo: default to the non-threaded RTS. This is a plausible option but feels outdated as of now.
 
 There is also a minor concern about the fallback flag name. Possible options that have been suggested so far are ``-single-threaded`` and ``-non-threaded``.
 
