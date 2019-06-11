@@ -3,7 +3,7 @@ Pattern synonym construction function signatures
 
 .. proposal-number:: 0005
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/14602
-.. implemented:: Not yet.
+.. implemented::
 .. highlight:: haskell
 .. sectnum::
    :start: 5
