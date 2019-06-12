@@ -9,18 +9,18 @@ Local Warning Pragmas
 .. sectnum::
 .. contents::
 
-We propose to add functionality for control warnings locally, in particular, add pragmas ``WARN``, ``IGNORE`` and ``ERROR``. Consider this code:
+We propose to add functionality for control warnings locally, in particular, add pragmas ``WARN``, ``NOWARN`` and ``WERROR``. Consider this code:
 ::
  {-# OPTIONS_GHC -Wname-shadowing #-}
 
  main :: IO ()
- main = {-# IGNORE name-shadowing #-} do 
+ main = {-# NOWARN name-shadowing #-} do 
    let x = "some data"
    let x = "updated version of that data"
    let x = "further changed version of data"
    print x
     
-Here in each case, you are effectively throwing away the previous version of the data without any warning but if you remove ``IGNORE`` you get ``-Wname-shadowing``. You can rewrite some lines to rid of it:
+Here in each case, you are effectively throwing away the previous version of the data without any warning but if you remove ``NOWARN`` you get ``-Wname-shadowing``. You can rewrite some lines to rid of it:
 ::
  let x1 = "some data"
  let x2 = "updated version of that data"
@@ -37,7 +37,7 @@ Motivation
 
 All examples have been created or updated pursuant to `the remarks by @scott-fleischman <https://github.com/ghc-proposals/ghc-proposals/pull/234#issuecomment-496661390>`_. 
 
-Warnings and errors by compiler help to write nice code. Using ``WARN``, ``IGNORE`` and ``ERROR`` pragmas you can configure warnings which are indicate bugs with more flexibility.
+Warnings and errors by compiler help to write nice code. Using ``WARN``, ``NOWARN`` and ``WERROR`` pragmas you can configure warnings which are indicate bugs with more flexibility.
 
 Code examples
 ~~~~~~~~~~~~~
@@ -46,7 +46,7 @@ Code examples
 
 We might choose one place where we reluctantly decide that we don't want to match all patterns (due to other people's code, or maybe your own poor choice in the past but not able/willing to fix right now), but we certainly want to check for complete patterns everywhere else in the module. For example, there are deprecated cases in a sum type, where we didn't want to pattern match on them due to being deprecated, which also would generate a deprecated warning.
 
-Pragma ``IGNORE`` fixes it:
+Pragma ``NOWARN`` fixes it:
 ::
  {-# OPTIONS_GHC -Wincomplete-patterns #-}
 
@@ -86,7 +86,7 @@ We disable ``-Worphans`` warning for ``instance ApplyFunc Box`` but warning for 
  import Foo
  import Bar
 
- instance {-# IGNORE orphans #-} ApplyFunc Box where
+ instance {-# NOWARN orphans #-} ApplyFunc Box where
    func f Empty       = Empty
    func f (Content a) = Content $ f a
 
@@ -113,7 +113,7 @@ In this example the ``-Wmissing-signatures`` flag will warn about ``x`` but not 
 
  x = 12
 
- {-# IGNORE missing-signatures #-}    
+ {-# NOWARN missing-signatures #-}    
  y = 13
 
 Another motivation
@@ -133,8 +133,8 @@ Proposed Change Specification
 GHC already support the ``OPTIONS_GHC`` pragma for configuring options for the file as a whole (in particular, configure warnings). **We propose to create new pragmas**:
 
 1. ``WARN`` - enables a warning locally
-2. ``IGNORE`` - disables a warning locally
-3. ``ERROR`` - makes a specific warning into a fatal error localy
+2. ``NOWARN`` - disables a warning locally
+3. ``WERROR`` - makes a specific warning into a fatal error localy
 
 This pragmas use an idea of (``-W``, ``-Wno-``, ``-Werror-``) batch switching of flags `proposed @nomeata <https://github.com/ghc-proposals/ghc-proposals/pull/234#issuecomment-495977461>`_.
 
