@@ -16,7 +16,7 @@ Record ``with`` syntax
 We propose a layout syntax for records, triggered by a new keyword ``with``.
 This means that record fields in type declarations, expressions and patterns can be formatted using indentation instead of punctuation.
 The feature removes syntactic noise and makes large records easier to read and modify.
-It is consistent with the use of layout for other constructs that span several lines (e.g. ``do`` blocks, branches of ``case`` expressions).
+It is consistent with the use of layout for other constructs that span several lines, e.g. ``do`` blocks and ``case`` expressions.
 
 
 Motivation
@@ -105,12 +105,24 @@ The feature is well precedented by layout syntax in other Haskell constructs.
 
 Proposed Change Specification
 -----------------------------
-We propose a language extension called ``RecordWith`` offering layout syntax for records.
-With the extension enabled, there is an additional keyword ``with`` which induces layout syntax for record fields.
 
-The structure and formatting options are very similar to monadic ``do`` blocks (and other layout-inducing constructs).
-Specifically, ``with`` can be followed either by indentation and newline delimiters or by curly braces ``{ }`` and semicolon ``;`` delimiters.
-For example, the following 3 declarations are all valid, equivalent ways to define a record type ``Rec``:
+Informal Specification
+~~~~~~~~~~~~~~~~~~~~~~
+We propose a language extension called ``RecordWith`` offering layout syntax for records.
+With the extension enabled, there is an additional keyword ``with`` inducing layout syntax for record fields.
+
+The ``with`` keyword is a so-called *layout herald*: it enables the layout mechanism in the same way as ``where``, ``let``, ``do`` and ``of``.
+In the formal grammar, ``with`` should be followed by curly braces ``{ }`` and semicolons ``;`` delimiting fields.
+In the source program, the user can instead use indentation and newlines as delimiters, and the layout mechanism will automatically insert the missing braces and semicolons.
+A general description of the layout mechanism is available `here <https://www.haskell.org/onlinereport/haskell2010/haskellch2.html#x7-210002.7>`_.
+
+To achieve a uniform record syntax, we propose to allow semicolons as field delimiters even without the ``with`` keyword.
+(However you cannot mix commas and semicolons in a single field list.)
+We allow optional leading and trailing semicolons, as well as extraneous repeated semicolons, for consistency with other layout syntax.
+The more flexible semicolon delimiters could be useful for easier record editing, even without layout syntax.
+
+The syntax proposal is easiest to understand through examples.
+Firstly, we can declare a record ``Rec`` using the layout herald ``with`` and newline delimiters.
 ::
 
   data Rec = Rec with
@@ -118,36 +130,47 @@ For example, the following 3 declarations are all valid, equivalent ways to defi
     field2 :: T2
     field3 :: T3
 
+The layout mechanism inserts the necessary punctuation to get the following equivalent declaration.
+::
+
   data Rec = Rec with
     { field1 :: T1
     ; field2 :: T2
     ; field3 :: T3 }
-  
+
+Alternatively, you can write a hybrid version all on one line as follows.
+::
+
   data Rec = Rec with field1 :: T1; field2 :: T2; field3 :: T3
 
-These are all equivalent to the traditional syntax
+Here the layout mechanism inserts the curly braces for us.
+
+We can also use semicolon delimiters without the ``with`` layout herald:
+::
+
+  data Rec = Rec { field1 :: T1; field2 :: T2; field3 :: T3 }
+
+These declarations are all equivalent to the traditional record syntax:
 ::
 
   data Rec = Rec { field1 :: T1, field2 :: T2, field3 :: T3 }
 
-(which can also be spread across multiple lines).
-
 The ``with`` syntax can occur in any language construct where traditional record syntax usually appears.
-Namely, we need to handle the following features:
+Specifically, we consider the following features:
 
 1. Data type declarations
 2. Record construction
 3. Record field updates
 4. Record patterns
 
-We showed an example of the first case above.
+We showed examples of the first case above.
 Note that ``with`` should work in data types with several constructors, as well as constructors with zero arguments.
 So the following declaration is valid:
 ::
 
   data ComplexRec = Con1 with f1 :: Int; f2 :: Bool | Con2 with | Con3 String
 
-(``Con2 with`` is permitted for consistency with ``Con2 {}``.)
+(``Con2 with`` has the same meaning as ``Con2 {}``.)
 
 We can also use ``with`` to construct record expressions.
 We can use newlines and indentation
@@ -158,7 +181,7 @@ We can use newlines and indentation
     field2 = expr2
     field3 = expr3
 
-or we can use delimiting punctuation
+or we can write the punctuation explicitly
 ::
 
   Rec with
@@ -210,7 +233,7 @@ We can also write variations on this such as constructing a record with some fie
     field1 = expr1
     ..
 
-Record ``with`` syntax can also work with GADTs in a fairly predictable way.
+Record ``with`` syntax also works with GADTs in a fairly predictable way.
 The following example shows a GADT declaration using ``with`` syntax.
 ::
 
@@ -223,6 +246,83 @@ The following example shows a GADT declaration using ``with`` syntax.
 
 Note that to write ``Con2`` on a single line, the curly braces are required to separate the field type from the result type.
 
+Extension to BNF Grammar
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Here we show the proposed extension to the BNF grammar of the Haskell 2010 `base language <https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#x17-18000010.5>`_.
+Recall the four affected record constructs: data constructor declarations, record construction and update expressions, and record patterns.
+These correspond to four new lines in the ``constr``, ``aexp`` and ``apat`` productions.
+
+Note that the grammar specification assumes that the layout mechanism has inserted all missing curly braces and semicolons to the user-written layout syntax.
+The optional ``[with]`` syntax in the new rules reflects our proposal that records can use semicolon delimiters even without the ``with`` keyword.
+For clarity, we only include the modified productions with some surrounding ones for context.
+The new lines in the grammar are marked with a ``-- NEW`` comment.
+
+::
+
+  ...
+  
+  topdecls	→	topdecl1 ; … ; topdecln	    (n ≥ 0)
+  topdecl	→	type simpletype = type
+  		|	data [context =>] simpletype [= constrs] [deriving]
+  		|	newtype [context =>] simpletype = newconstr [deriving]
+  		|	class [scontext =>] tycls tyvar [where cdecls]
+  		|	instance [scontext =>] qtycls inst [where idecls]
+  		|	default (type1 , … , typen)	    (n ≥ 0)
+  		|	foreign fdecl
+  		|	decl
+  
+  ...
+
+  constrs	→	constr1 | … | constrn	    (n ≥ 1)
+  constr	→	con [!] atype1 … [!] atypek	    (arity con  =  k, k ≥ 0)
+  		|	(btype | ! atype) conop (btype | ! atype)	    (infix conop)
+  		|	con { fielddecl1 , … , fielddecln }		(n ≥ 0)
+  		|	con [with] { fielddecl1 ; … ; fielddecln }	(n ≥ 0) -- NEW
+  newconstr	→	con atype
+  		|	con { var :: type }
+  fielddecl	→	vars :: (type | ! atype)
+  deriving	→	deriving (dclass | (dclass1, … , dclassn))	    (n ≥ 0)
+  dclass	→	qtycls
+  
+  ...
+  
+  aexp		→	qvar	    (variable)
+  		|	gcon	    (general constructor)
+  		|	literal
+  		|	( exp )	    (parenthesized expression)
+  		|	( exp1 , … , expk )	    (tuple, k ≥ 2)
+  		|	[ exp1 , … , expk ]	    (list, k ≥ 1)
+  		|	[ exp1 [, exp2] .. [exp3] ]	    (arithmetic sequence)
+  		|	[ exp | qual1 , … , qualn ]	    (list comprehension, n ≥ 1)
+  		|	( infixexp qop )	    (left section)
+  		|	( qop⟨-⟩ infixexp )	    (right section)
+  		|	qcon { fbind1 , … , fbindn }		(labeled construction, n ≥ 0)
+  		|	qcon [with] { fbind1 ; … ; fbindn }	(labeled construction, n ≥ 0) -- NEW
+  		|	aexp⟨qcon⟩ { fbind1 , … , fbindn }	(labeled update, n  ≥  1)
+  		|	aexp⟨qcon⟩ [with] { fbind1 ; … ; fbindn }	(labeled update, n  ≥  1) -- NEW
+  
+  ...
+
+  fbind		→	qvar = exp
+  
+  ...
+  
+  apat		→	var [ @ apat]	    (as pattern)
+  		|	gcon	    (arity gcon  =  0)
+  		|	qcon { fpat1 , … , fpatk }	(labeled pattern, k ≥ 0)
+  		|	qcon [with] { fpat1 ; … ; fpatk }	(labeled pattern, k ≥ 0) -- NEW
+  		|	literal
+  		|	_	    (wildcard)
+  		|	( pat )	    (parenthesized pattern)
+  		|	( pat1 , … , patk )	    (tuple pattern, k ≥ 2)
+  		|	[ pat1 , … , patk ]	    (list pattern, k ≥ 1)
+  		|	~ apat	    (irrefutable pattern)
+  
+  fpat		→	qvar = pat
+  
+  ...
+
 
 Effect and Interactions
 -----------------------
@@ -232,31 +332,29 @@ The change has very little interaction with other language features.
 It introduces a new keyword but otherwise reuses established layout syntax.
 Moreover, it does not clash with but rather complements existing extensions like ``NamedFieldPuns`` and ``RecordWildCards``.
 
-Note that we have implemented record ``with`` syntax in a fork of GHC used for the `DAML <https://github.com/digital-asset/daml>`_ language.
+Note that we have implemented ``with`` syntax in a fork of GHC used for the `DAML <https://github.com/digital-asset/daml>`_ language.
 We have found the user experience to be intuitive and did not encounter unexpected interactions with other features.
 
 
 Costs and Drawbacks
 -------------------
-The main maintenance cost I can forsee is due to additional productions in the parser and extra information (a Boolean flag) in the AST nodes for records.
-For example, future changes to record parsing or pretty printing would bear a slightly higher complexity.
-However I do not consider this a significant cost.
+From a development perspective, the main maintenance costs I forsee are due to:
+
+1. Additional productions in the parser and
+2. Extra information in the record AST nodes indicating the user's choice of syntax.
+
+Future changes to record parsing or pretty printing would need to take these extra cases into account and be slightly more complex.
 
 On the user side, the proposed change could in fact be *more* intuitive for novice users.
 The ``with`` syntax is consistent with other occurrences of layout syntax and promotes the use of indentation across the board.
 It avoids questions around the placement of braces and commas as well as the need for alignment conventions.
+However, it does require users to be familiar with both old and new styles of syntax, especially for moving between codebases.
 
 One obvious drawback is the introduction of a new keyword.
 This means that ``with`` cannot be used as an identifier in any module or project using the extension.
-We have been informed of examples of ``with`` naming resource allocation functions.
+We have been informed of uses of ``with`` for naming resource allocation functions.
 Such names would need to be changed to be compatible with the extension.
 We explore the option of reusing an existing keyword in the Alternatives section.
-
-Another possible drawback is having two different syntax styles to be aware of.
-The mixture of semicolons and commas may be confusing, as
-``Rec with { x :: Int; y :: Bool }`` looks quite similar to ``Rec { x :: Int, y :: Bool }``,
-but the field delimiters are different.
-However, this is a fairly minor issue as ``with`` syntax will mostly be used with indentation instead of punctuation.
 
 
 Alternatives
@@ -356,13 +454,13 @@ No unresolved questions.
 
 Implementation Plan
 -------------------
-I volunteer to implement this feature with my collaborators.
+I volunteer to implement this feature with my collaborators at Digital Asset.
 As mentioned, we have a prototype implementation for the `DAML <https://github.com/digital-asset/daml>`_ language that we can use as reference.
 We do not require any changes to GHC in advance of the feature.
 
 The implementation entails the following changes to the compiler frontend:
 
-1. Extra ``with`` token in the lexer (conditional on the ``RecordWith`` extension being set), enabling layout syntax
-2. Extra productions in the parser for ``with`` followed by record fields within virtual braces, storing source locations as usual
-3. Boolean flags in AST nodes involving records, indicating if ``with`` syntax was used
-4. Embellishment of pretty printers to respect layout syntax (e.g. when reporting error messages)
+1. Extra ``with`` token in the lexer, conditional on the ``RecordWith`` extension being set, enabling layout syntax
+2. Additional parser rules reflecting the new grammar, i.e. record fields delimited by semicolons following the optional ``with`` keyword
+3. Additional data in record-related AST nodes, indicating the user's choice of syntax
+4. Embellishment of pretty printers to preserve the user's choice of record syntax, e.g. when reporting error messages
