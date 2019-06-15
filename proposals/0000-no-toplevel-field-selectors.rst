@@ -1,4 +1,4 @@
-NoToplevelFieldSelectors
+NoFieldSelectors
 ==============
 
 .. proposal-number:: Leave blank. This will be filled in when the proposal is
@@ -38,28 +38,29 @@ bindings for other values.
 - namespaced lenses
 - overloaded-labels based accessors / lenses
 - row types
-- https://github.com/ghc-proposals/ghc-proposals/pull/158
+- `<https://github.com/ghc-proposals/ghc-proposals/pull/158>`_
 - ...
 
 Proposed Change Specification
 -----------------------------
 
 Record definition no longer defines toplevel selector functions when the
-``NoToplevelFieldSelectors`` extension is enabled.
+``NoFieldSelectors`` extension is enabled. The default is ``FieldSelectors``,
+which implies the current behavior, that selector functions are being generated.
 
 Record construction/update syntax and pattern matching will work as before, the
 disambiguation handled by ``DuplicateRecordFields``. The necessary selectors
-will be part of a ``Record(..)`` export, or can also be named one by one. They
+will be part of a ``Record(..)`` export, or can also be named individually. They
 always have to be associated with the data type though, because there is no more
-toplevel selector.
+toplevel selector (see `Example`_).
 
 A function for Template Haskell to go from a record field name to a selector for
 that field will be provided, because it's not possible anymore to go from field
 name directly to selector.
 
-A new `TH` function is added which takes two `Name` and returns an `Exp` which
-is equivalent to `a -> b`, where `a` is the record type specified by the second
-argument, and `b` the contents of the field specified by the first argument.
+A new ``TH`` function is added which takes a ``Name`` (for the constructor) and
+a ``String`` (for the field) and returns a ``Maybe Name``, just like
+``lookupValueName``.
 
 Example
 ^^^^^^^
@@ -76,7 +77,7 @@ The following will be available:
 - the names ``bar`` and ``baz`` for record construction (``Foo { bar = 3, baz = "foo" }``)
 - the names ``bar`` and ``baz`` for ``RecordWildCards``
 
-If the language extension ``NoToplevelFieldSelectors`` is enabled for the module
+If the language extension ``NoFieldSelectors`` is enabled for the module
 or ``Foo`` specifically, all of the above will be generated, except for the two
 functions ``bar`` and ``baz``.
 
@@ -85,9 +86,13 @@ these functions are otherwise defined, the wildcard will not export them.
 Exporting the names for record construction now has to be specific to the
 record. Without ambiguitiy, previously this was equivalent
 
+.. code-block:: haskell
     module A where (Foo(Foo, bar, baz))
+    data Foo = Foo { bar :: Int, baz :: Int }
 
-    module A where (Foo(Foo, bar), baz)
+.. code-block:: haskell
+    module B where (Foo(Foo, bar), baz)
+    data Foo = Foo { bar :: Int, baz :: Int }
 
 Because of the new semantics, these two export statements are now different. The
 first one will export the field ``baz``, but not the function ``baz``, while the
@@ -95,11 +100,54 @@ second one will export the function ``baz``, but not the field ``baz``. Because
 of this change, writing out all selector functions by hand is still different,
 because they all have to be exported manually.
 
+.. code-block:: haskell
+    {-# LANGUAGE NoFieldSelectors #-}
+    module A where (Foo(Foo, bar), baz)
+    data Foo = Foo { bar :: Int, baz :: Int }
+    baz = 42
+
+.. code-block:: haskell
+    {-# LANGUAGE NoFieldSelectors #-}
+    module B where (Foo(Foo, bar, baz))
+    data Foo = Foo { bar :: Int, baz :: Int }
+    baz = 42
+
+This will now fail, because the record updater ``baz`` is not in scope anymore:
+
+.. code-block:: haskell
+    import B
+    foo = Foo 23 42
+    foo { baz = 1 }
+
+Template Haskell
+^^^^^^^^^^^^^^^^
+
+A new function will be added to Template Haskell, where the ``Name`` is a
+reference to a constructor. This function should be used in new TH even if this
+extension isn't enabled.
+
+.. code-block:: haskell
+   lookupFieldName :: Name -> String -> Q (Maybe Name)
+
+Additionally, ``NameSpace`` will be extended with a new constructor ``FieldName``.
+
 Effect and Interactions
 -----------------------
 
 `HasField` will work as before, if the corresponding field has been exported. It
 doesn't need to be exported as function.
+
+Interaction with DuplicateRecordFields
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Because of Record updates still being valid, this code will still fail to
+compile without DuplicateRecordFields:
+
+.. code-block:: haskell
+  {-# LANGUAGE NoFieldSelectors #-}
+
+  data Foo = Foo { foo :: Int }
+  data Bar = Bar { foo :: Int }
 
 Breakage estimation
 ^^^^^^^^^^^^^^^^^^^
@@ -135,6 +183,7 @@ Unresolved questions
 --------------------
 
 - Which order of arguments in the new TH function?
+- Should this extension imply DuplicateRecordFields?
 
 
 Implementation Plan
@@ -148,7 +197,15 @@ follows:
   be found as `VarName`
 - Remove `FlParent`
 - Change any field lookup code to look for new `OccName`
-- Implement `ToplevelFieldSelector` flag to look for selectors if you're looking
+- Implement `FieldSelector` flag to look for selectors if you're looking
   for `VarName`
 - Adjust `Generic` instances
 - Add new `TH` function to access record selectors
+
+Future Plans
+------------
+
+Make the behavior outlined
+
+.. code-block:: haskell
+  data Foo = Foo { foo :: Int } deriving selectors
