@@ -34,7 +34,7 @@ Effect and Interactions
 
 The users of GHC will get their programs compiled with the threaded RTS by default. This follows principle of the least surprise: many programs implicitly depending on tools such as `forkIO` can deadlock or crush with no good explanation with the single-threaded RTS. As surprising as it may sound, the threaded RTS comes closer to the principle of the least surprise than the single-threaded RTS.
 
-One of the main concerns with regards to the threaded RTS is parallel GC, which, anecdotally, almost certainly brings performance losses when not tuned carefully. It is important to understand that parallel GC **is not implied** by ``-threaded``. The threaded mode still starts the program with one capability by default (unless ``-N`` is explicitly provided by the user), and GC runs sequential.
+One of the main concerns with regards to the threaded RTS is parallel GC, which, anecdotally, almost certainly brings performance losses when not tuned carefully (cf., e.g. `#9221 <https://gitlab.haskell.org/ghc/ghc/issues/9221>`_). It is important to understand that parallel GC **is not implied** by ``-threaded``. The threaded mode still starts the program with one capability by default (unless ``-N`` is explicitly provided by the user), and GC runs sequential.
 
 Those who passed ``-threaded`` before will get a new warning, which might be painful (e.g. in the ``-Werror`` setting).
 
@@ -50,7 +50,13 @@ Implementation has a very low cost and mostly concern with figuring out necessar
 Alternatives
 ------------
 
-The alternative is status quo: default to the non-threaded RTS. This is a plausible option but feels outdated as of now.
+One alternative is status quo: default to the non-threaded RTS. This is a plausible option but feels outdated as of now.
+
+Another alternative suggested by Cris Done:
+
+> GHC could determine at the Core/STG phase whether in the call graph from main, directly or transitively, there was a reference to ``fork#`` and other primops related to threading, and if neither ``-threaded`` nor ``-single-threaded`` was specified, it could warn "Your program may use multi-threaded code, please specify a mode by either: ``-threaded`` or ``-single-threaded``".
+
+This, in fact, does not exclude the option to switch the deafult.
 
 There is also a minor concern about the fallback flag name. Possible options that have been suggested so far are ``-single-threaded`` and ``-non-threaded``.
 
@@ -64,4 +70,3 @@ Implementation Plan
 -------------------
 
 The implementation is started in `!538 <https://gitlab.haskell.org/ghc/ghc/merge_requests/538>`_.
-
