@@ -15,7 +15,12 @@ Today, in order to use the threaded variant of the runtime, one have to pass the
 Motivation
 ------------
 
-Parallel hardware is here. The overwhelming majority of GHC users probably has access to multiple cores. GHC's `base` library contains essential features to utilize those resources. In this setting, **defaulting** to the single-threaded RTS seems to be a legacy, which is not only over-pessimistic about the program environment, but also leads to subtle crushes and deadlocks when those `base` features are in use. The proposal suggests addressing this by defaulting on the common case, which is parallel hardware today, and provide a way to fallback for users in need of single-threaded RTS mode for certain reasons (determinism, debugging, limited hardware, etc.). The latter can be done by the means of the new ``-single-threaded`` flag.
+Parallel hardware is here. The overwhelming majority of GHC users probably has access to multiple cores. Parts of GHC's ``base`` library, as well as FFI implementation, utilize those resources. In this setting, **defaulting** to the single-threaded RTS seems to be a legacy, which is not only over-pessimistic about the program environment, but also leads to subtle crushes and deadlocks when those GHC features are in use. E.g. 
+
+* using ``GHC.Conc.registerDelay`` aborts compilation without ``-threaded``,
+* calling a foreign function that is “safe” and blocks makes the nonthreaded RTS blocking altogether.
+
+The proposal suggests avoiding these subtle problems by defaulting on the threaded RTS, and provide a way to fallback for users in need of single-threaded RTS mode for certain reasons (determinism, debugging, limited hardware, etc.). The latter can be done by the means of the new ``-single-threaded`` flag.
 
 
 Proposed Change Specification
