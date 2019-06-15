@@ -54,7 +54,7 @@ One alternative is status quo: default to the non-threaded RTS. This is a plausi
 
 Another alternative suggested by Cris Done:
 
-> GHC could determine at the Core/STG phase whether in the call graph from main, directly or transitively, there was a reference to ``fork#`` and other primops related to threading, and if neither ``-threaded`` nor ``-single-threaded`` was specified, it could warn "Your program may use multi-threaded code, please specify a mode by either: ``-threaded`` or ``-single-threaded``".
+    GHC could determine at the Core/STG phase whether in the call graph from main, directly or transitively, there was a reference to ``fork#`` and other primops related to threading, and if neither ``-threaded`` nor ``-single-threaded`` was specified, it could warn "Your program may use multi-threaded code, please specify a mode by either: ``-threaded`` or ``-single-threaded``".
 
 This, in fact, does not exclude the option to switch the deafult.
 
