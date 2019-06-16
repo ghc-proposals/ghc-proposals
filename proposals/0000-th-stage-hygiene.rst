@@ -13,7 +13,7 @@ The proposals are submitted in reStructuredText format.  To get inline code, enc
 To get hyperlinks, use backticks, angle brackets, and an underscore `like this <http://www.haskell.org/>`_.
 
 
-Proposal title
+Stage Hygiene in Template Haskell
 ==============
 
 .. proposal-number:: Leave blank. This will be filled in when the proposal is
@@ -35,44 +35,177 @@ Here you should write a short abstract motivating and briefly summarizing the pr
 
 Motivation
 ------------
-Give a strong reason for why the community needs this change. Describe the use case as clearly as possible and give an example. Explain how the status quo is insufficient or not ideal.
 
+Template Haskell currently doesn't work well with cross compilation.
+
+The external interpreter made it at least possible, relatively automatically, but doesn't work if you explicitly want side affects to be run on the compiler's platform.
+Also, while same-OS cross can sometimes be fairly lightweight
+—e.g. by having QEMU translate syscalls so th native kernel can be used—
+differnet-OS requires harder to provision virtual machines or real devices.
+
+Another alternative is dumping and loading splices, where one builds natively, dumping splices, and the builds cross with those dumped splices.
+This became easier with `this patch <https://github.com/reflex-frp/reflex-platform/blob/master/splices-load-save.patch>`_.
+Still, this requires building every package twice, and worse doesn't work if the macro is target specific.
+For example, imagine some code like
+::
+  #ifdef ios_HOST_OS
+  data SomeIosFfiType
+  $(iosBoilerplateHelper ''SomeIosFfiType)
+  #endif
+If the splice is within the ``ifdef``, it won't be dumped.
+But if it is outside the ``ifdef``, the native one won't build!
+
+What we need instead is a way to say is different platforms:
+ - Splices alone run on the build platform (of the module being built, not GHC).
+ - Normal code, as usual, runs on the host platform.
+ - quoted code runs on the target platform.
+This solves all the above problems:
+ - No need to emulate any other platforms, since evaluation only happens within splices.
+ - No need to build everything twice.
+ - No all-or-nothing CPP problem.
+
+To do this, we need to cleanly separate the stages induced by quoting and splicing.
+But there are other more surprising restrictions too.
+
+As a final side benefit, now that Template Haskell will be implemented in terms of stages, we can relax ``-XTemplateHaskellQuotes``.
+For example, the following current prohibited:
+::
+  [| $(x) |]
+But actually imposes no problems.
+This is the same as
+::
+  x
+and likewise
+::
+  [| f $(x) b |]
+and is the same as
+::
+  AppE <$> [| f |] <*> x <*>  [| b |]
+Since the splices all can be desugared away without the evaluation of user-written code, there is no reason to penalize them.
 
 Proposed Change Specification
------------------------------
-Specify the change in precise, comprehensive yet concise language. Avoid words like should or could. Strive for a complete definition. Your specification may include,
+------------
 
-* grammar and semantics of any new syntactic constructs
-* the types and semantics of any new library interfaces
-* how the proposed change interacts with existing language or compiler features, in case that is otherwise ambiguous
+GHC
+~~~~~~~~~~~~
 
-Note, however, that this section need not describe details of the implementation of the feature. The proposal is merely supposed to give a conceptual specification of the new feature and its behavior.
+1. Let there be a notion of stages assigned to the integers.
+   All existing rules outside of TH on binding/name resolution are retaken to act independently per stage.
+   (i.e. identifiers in stage *n* resolve to bindings in stage *n*, all syntax in the rule is parameterized with the stage.)
+   The top level is always stage 0.
+   A consequence of the above is all non-TH syntax in isx also stage 0.
 
+2. Redefine quoting and splicing as acting on adjacent stages. Specifically, quoting quotes code from the next stage:
+   ::
+     G(n) ⊢ syntax
+     -----------------------
+     G(n + 1) ⊢ [| syntax |]
+   and splicing splices code from the previous stage:
+   ::
+     G(n) ⊢ syntax
+     -----------------------
+     G(n - 1) ⊢ $(syntax)
+
+   The existing side conditions, which restricting nested quotes and splices (i.e. stages outside of -1, 0, and 1) remain in place, but are ripe for removal in #204.
+
+3. Add new syntax for stage-offset imports:
+   ::
+     #import <integer-literal> <<existing syntax>>
+   This means import a module in stage *n + offset* instead of stage 0 as per normal.
+
+4. Relax ``-XTemplateHaskellQuotes`` to instead allow Template Haskell constructs, but restrict their usage so all syntax is in stages >= 0.
+
+5. Introduce ``-XTemplateStagePersistence``.
+   Which is implied by ``-XTemplateHaskellQuotes`` (and thus plain ``-XTemplateHaskell``) for backwards compat.
+   It allows the current behavior where we blur the distinction between stages.
+   In particular, with this enabled:
+    - Stage 0 identifiers bound in another module can be used in stage 1 (quotes) and stage -1 (splices).
+    - Stage 0 identifiers bound anywhere can be used in stage 1, and are automatically.
+    - Typed template haskell is allowed.
+    - The ``Lift`` type class and all its associated definitions are made available.
+
+   With ``-XNoTemplateStagePersistence``, overriding the default, all of those are *disabled*.
+
+6. Extend the command line (TODO bikeshed!!) with a way to specify per-stage package dependencies and the like.
+   If/when GHC becomes multi-target, by default stages >= 0 take GHC's target platform / the packages host platform (where compiled code runs), while stages < 0 take GHC's host platform / the packages build platform (where GHC runs).
+   But, the emitted platform can still be specified per-stage like the other flags.
+   This is needed when building TH functions to be used from cross compiled code.
+
+7. When importing modules/packages, after applying the import offset ensure that the platforms match.
+   Note that while each module only has bindings in its own stage 0, those bindings can contain quotes from stages greater than 0.
+   All such quoted platforms need to match.
+
+Cabal
+~~~~~~~~~~~~
+
+1. Extend the ``build-depends`` syntax with a stage number.
+   N.B ``build-tool-depends`` can be thought of as a stage -1 executable dependencies list.
+   `https://github.com/haskell/cabal/issues/5411`_ asks for a ``run-tool-depends`` which would be nothing but a stage 0 executable depends.
+   ``setup-depends`` can also be thought of as a stage -1 executable dependencies list.
+
+2. Replace today's "qualified goals" with a notion "per-stage coherence".
+   In particular, existing qualified dependencies from ``setup-depends`` and ``build-tool-depends`` are from stage *n* to *n - 1*;
+   that the stages are different alone explains why versions are allowed to differ.
+   However a *-n* dependency composed with an *n* dependency create a 0 dependency, which as all the usual version coherence restrictions.
+   As an exception to this, we keep today's same-package version constraint.
+   In particular this means given a dependency edge where the needed and needing components are in the same package regardless of their relative stage indices,
+   the same version of the package must be used for both.
 
 Effect and Interactions
 -----------------------
-Detail how the proposed change addresses the original problem raised in the motivation.
 
-Discuss possibly contentious interactions with existing language or compiler features.
+This proposal, in conjunction with a "naive" core interpreter (#162) should make it permitted to use Template Haskell in GHC.
+Stage 1 GHC even today could use Template Haskell.
+Stage 2 was the sticking point, if stage 1 is a cross compiler or the ABI was changed.
+But those cases are now OK too.
+Consider the "worst case", where the ``ho``/``hi`` format and ABI are both changed, and we are building stage 2 for a different platform.
+The stage 1 compiler can load ``-fexpose-all-unfoldings`` stage 2 interface files it built for the native platform,
+and naively interpret them (which avoids any coupling with the stage 0 RTS, ABI, etc).
 
 
 Costs and Drawbacks
 -------------------
-Give an estimate on development and maintenance costs. List how this effects learnability of the language for novice users. Define and list any remaining drawbacks that cannot be resolved.
 
+- This is a huge amount of work.
+  But I am fine chipping away it over a long period of time.
+
+- Even a temporary conflict between typed TH and this could slow typed TH's adoption.
+
+- I don't know of precedent for extensions that prevent modules from being linked together.
+
+- Most existing libraries with commonly used TH helpers (`lens`, `aeson`) have the TH in the same call component but in a different module.
+  To leverage this proposal, we would have to refactor them to put those modules in a separate library component.
+  It would take decent amount of conditional code to still support old GHCs, and even more to not be a breaking change on those old libraries.
 
 Alternatives
 ------------
-List existing alternatives to your proposed change as they currently exist and discuss why they are insufficient.
 
+At the cost of more complexity, we could have multi-stage cabal components.
+Then one could do ``#import 1 Control.Lens.Lens`` in ``Control.Lens.TH`` while keeping ``Control.Lens.TH`` in the same library.
+Would need stage-specific ``exposed-module`` and ``other-modules`` too in Cabal.
+I don't like the complexity, and I would rather packages leverage public Cabal sub-libraries for Template Haskell anyways;
+I think that's a cleaner way to package code.
 
 Unresolved Questions
 --------------------
-Explicitly list any remaining issues that remain in the conceptual design and specification. Be upfront and trust that the community will help. Please do not list *implementation* issues.
 
-Hopefully this section will be empty by the time the proposal is brought to the steering committee.
+Quotes in ``-XTemplateStagePersistence`` modules cannot reliably be used from ``-XNoTemplateStagePersistence`` modules without introducing scoping errors.
+Need some way to prevent that outright, or catch those errors early, perhaps by tainting any quote with cross-stage persisted syntax.
+[Thankfully the other direction is fine.
+Libraries can experiment with this extension without forcing an ecosystem split.]
 
 
 Implementation Plan
 -------------------
-(Optional) If accepted who will implement the change? Which other ressources and prerequisites are required for implementation?
+
+I volunteer to chip away at this, thought it will take quite a while for one person to do it all.
+Here is a rough plan.
+
+1. Make GHC multi-target. I am almost done with this.
+
+2. Land `https://gitlab.haskell.org/ghc/ghc/merge_requests/935`_, refactoring GHC to allow there being more than one "home package" per session.
+   This PR also may help with the 2019 GSOC around `https://gitlab.haskell.org/ghc/ghc/wikis/Multi-Session-GHC-API`.
+
+3. Parameterize dependency data types (for module and package dependencies) to track dependencies per stage.
+
+4. Refactor the implementation of Template Haskell to use the per-stage data-types.
