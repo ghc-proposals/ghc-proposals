@@ -195,7 +195,7 @@ Hypothetical ``ios-th`` package:
 ::
   module Ios.Macros where
 
-  #ifdef ios_TARGET_OS
+  #ifndef ios_TARGET_OS
   # error Module shouldn't be built. Fix Cabal file!
   #endif
 
@@ -208,7 +208,7 @@ end user code:
 ::
   module MyApp.Ios where
 
-  #ifdef ios_HOST_OS
+  #ifndef ios_HOST_OS
   # error Module shouldn't be built. Fix Cabal file!
   #endif
 
