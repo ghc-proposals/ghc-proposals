@@ -23,7 +23,7 @@ Motivation
 
 Template Haskell currently doesn't work well with cross compilation.
 
-The external interpreter made it at least possible, relatively automatically, but doesn't work if you explicitly want side affects to be run on the compiler's platform.
+The external interpreter made it at least possible, relatively automatically, but doesn't work if you explicitly want side effects to be run on the compiler's platform.
 Also, while same-OS cross can sometimes be fairly lightweight
 —e.g. by having QEMU translate syscalls so the native kernel can be used—
 differnet-OS requires harder to provision virtual machines or real devices.
