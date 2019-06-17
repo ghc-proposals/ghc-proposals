@@ -126,14 +126,14 @@ GHC
 
 2. Redefine quoting and splicing as acting on adjacent stages. Specifically, quoting quotes code from the next stage:
    ::
-     G(n) ⊢ syntax
+     G(n + 1) ⊢ syntax
      -----------------------
-     G(n + 1) ⊢ [| syntax |]
+     G(n) ⊢ [| syntax |]
    and splicing splices code from the previous stage:
    ::
-     G(n) ⊢ syntax
+     G(n - 1) ⊢ syntax
      -----------------------
-     G(n - 1) ⊢ $(syntax)
+     G(n) ⊢ $(syntax)
 
    The existing side conditions, which restricting nested quotes and splices (i.e. stages outside of -1, 0, and 1) remain in place, but are ripe for removal in #204.
 
