@@ -149,10 +149,14 @@ GHC
 
    The existing side conditions, which restricting nested quotes and splices (i.e. stages outside of -1, 0, and 1) remain in place, but are ripe for removal in #204.
 
-3. Add new syntax for stage-offset imports:
+3. Add new syntax for stage-offset imports and bindings:
    ::
-     #import <integer-literal> <<existing syntax>>
-   This means import a module in stage *n + offset* instead of stage 0 as per normal.
+     $import <integer-literal> <<existing syntax>>
+   This means import a module in stage *n* instead of stage 0 as per normal.
+   ::
+     $let <integer-literal> <<existing syntax>> = <<existing syntax>>
+   The means bind identifers in stage *n* instead of stage 0 as per normal.
+   Module exports however are restricted to stage 0.
 
 4. Relax ``-XTemplateHaskellQuotes`` to instead allow Template Haskell constructs, but restrict their usage so all syntax is in stages >= 0.
 
