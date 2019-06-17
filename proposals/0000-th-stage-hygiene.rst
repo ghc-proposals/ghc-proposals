@@ -65,9 +65,50 @@ This solves all the above problems:
  - No all-or-nothing CPP problem.
 
 To do this, we need to cleanly separate the stages induced by quoting and splicing.
-But there are other more surprising restrictions too.
+This is not a new idea for programming langauges in general.
+Racket (and probably some schemes) do this.
+The work-in-progress (?) `OCaml macro system <https://github.com/ocamllabs/ocaml-macros>`_ does this.
+It has even been informally proposed for Haskell by @ezyang in `<http://blog.ezyang.com/2016/07/what-template-haskell-gets-wrong-and-racket-gets-right/>`_.
 
-As a final side benefit, now that Template Haskell will be implemented in terms of stages, we can relax ``-XTemplateHaskellQuotes``.
+Enforcing that seperation means restricting programs we currently allow.
+Least surprisingly, normal bindings, and normal imports, in the module cannot be used in splices or quotes.
+But there are other constructs that more surprisingly tangle stages too.
+Typed Templated Haskell is one.
+First of all, there is name leakage.
+::
+  [|| ... :: IosOnlyType ||] :: Q (TExp IosOnlyType)
+This can't work unless we are building *on* and *for* iOS.
+But even if we work around that, there's also will be semantic leakage.
+In the near future there would be
+::
+  AppE <$> [|| ... :: foreach (x :: Int) -> F x ||] <*> [|| 2^36 :: Int ||] :: Q (TExp (F ???))
+How do we type the whole expression, or ``AppE`` in particular?
+And say the compiling platform has 32-bit Ints?
+The dependent function will have different result types due to overflow, which ruins the guarantees of typed Template Haskell.
+Even today we have similar problems with CPP'd type familes:
+::
+  #if mingw_HOST_OS
+  type instance F Bool = []
+  #else
+  type instance F Bool = Tree
+  #endif
+``Lift`` is similarly problematic.
+::
+  lift (.. :: LinuxOnlyType)
+This relies on native compilation to Linux or a scoping violation must also be induced.
+::
+  lift (2^^25)
+This though is fine as regardless of overflowing on either side an ``Int`` can be kept an ``Int``, and overflowing is already defined behavior.
+
+I would love to, instead of outright banning Typed Template Haskell and ``Lift``, come up with a flexible way to associate types and terms between stages.
+To be "complete" in that module scoping everything is compmlete is still possible, we would need slightly different requirements for each.
+For ``Lift`` we just need to map *values* preserving type, while typed Template Haskell we need to map type *expressions* such that evaluation commutes with the mapping.
+Adding language support for such a mapping is lots of extra work—borderline research—for a proposal which already is no small task.
+I therefore think banning for now to start solving the problems people have with cross compilation as soon as possible is prudent.
+Because this is breaking change no matter what, a variant extension is used anyways, so no program breaks.
+Instead, users a just temporarily presented with a choice to either support cross compilation or have ``Lift`` and typed TH.
+
+As a final side benefit, now that Template Haskell will be defined and implemented in terms of stages, we can relax ``-XTemplateHaskellQuotes``.
 For example, the following current prohibited:
 ::
   [| $(x) |]
