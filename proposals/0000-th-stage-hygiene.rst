@@ -41,13 +41,16 @@ If the splice is within the ``ifdef``, it won't be dumped.
 But if it is outside the ``ifdef``, the native one won't build!
 
 What we need instead is a way to say is different platforms:
- - Splices alone run on the build platform (of the module being built, not GHC).
- - Normal code, as usual, runs on the host platform.
- - quoted code runs on the target platform.
+
+- Splices alone run on the build platform (of the module being built, not GHC).
+- Normal code, as usual, runs on the host platform.
+- quoted code runs on the target platform.
+
 This solves all the above problems:
- - No need to emulate any other platforms, since evaluation only happens within splices.
- - No need to build everything twice.
- - No all-or-nothing CPP problem.
+
+- No need to emulate any other platforms, since evaluation only happens within splices.
+- No need to build everything twice.
+- No all-or-nothing CPP problem.
 
 To do this, we need to cleanly separate the stages induced by quoting and splicing.
 This is not a new idea for programming langauges in general.
@@ -149,10 +152,11 @@ GHC
    Which is implied by ``-XTemplateHaskellQuotes`` (and thus plain ``-XTemplateHaskell``) for backwards compat.
    It allows the current behavior where we blur the distinction between stages.
    In particular, with this enabled:
-    - Stage 0 identifiers bound in another module can be used in stage 1 (quotes) and stage -1 (splices).
-    - Stage 0 identifiers bound anywhere can be used in stage 1, and are automatically.
-    - Typed template haskell is allowed.
-    - The ``Lift`` type class and all its associated definitions are made available.
+
+   - Stage 0 identifiers bound in another module can be used in stage 1 (quotes) and stage -1 (splices).
+   - Stage 0 identifiers bound anywhere can be used in stage 1, and are automatically.
+   - Typed template haskell is allowed.
+   - The ``Lift`` type class and all its associated definitions are made available.
 
    With ``-XNoTemplateStagePersistence``, overriding the default, all of those are *disabled*.
 
