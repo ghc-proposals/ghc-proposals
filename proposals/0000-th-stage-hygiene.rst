@@ -25,7 +25,7 @@ Template Haskell currently doesn't work well with cross compilation.
 
 The external interpreter made it at least possible, relatively automatically, but doesn't work if you explicitly want side affects to be run on the compiler's platform.
 Also, while same-OS cross can sometimes be fairly lightweight
-—e.g. by having QEMU translate syscalls so th native kernel can be used—
+—e.g. by having QEMU translate syscalls so the native kernel can be used—
 differnet-OS requires harder to provision virtual machines or real devices.
 
 Another alternative is dumping and loading splices, where one builds natively, dumping splices, and the builds cross with those dumped splices.
@@ -53,12 +53,12 @@ This solves all the above problems:
 - No all-or-nothing CPP problem.
 
 To do this, we need to cleanly separate the stages induced by quoting and splicing.
-This is not a new idea for programming langauges in general.
+This is not a new idea for programming languages in general.
 Racket (and probably some schemes) do this.
 The work-in-progress (?) `OCaml macro system <https://github.com/ocamllabs/ocaml-macros>`_ does this.
 It has even been informally proposed for Haskell by @ezyang in `<http://blog.ezyang.com/2016/07/what-template-haskell-gets-wrong-and-racket-gets-right/>`_.
 
-Enforcing that seperation means restricting programs we currently allow.
+Enforcing that separation means restricting programs we currently allow.
 Least surprisingly, normal bindings, and normal imports, in the module cannot be used in splices or quotes.
 But there are other constructs that more surprisingly tangle stages too.
 Typed Templated Haskell is one.
@@ -71,9 +71,9 @@ In the near future there would be
 ::
   AppE <$> [|| ... :: foreach (x :: Int) -> F x ||] <*> [|| 2^36 :: Int ||] :: Q (TExp (F ???))
 How do we type the whole expression, or ``AppE`` in particular?
-And say the compiling platform has 32-bit Ints?
+And say the compiling platform has 32-bit `Int`s?
 The dependent function will have different result types due to overflow, which ruins the guarantees of typed Template Haskell.
-Even today we have similar problems with CPP'd type familes:
+Even today we have similar problems with CPP'd type families:
 ::
   #if mingw_HOST_OS
   type instance F Bool = []
@@ -89,7 +89,7 @@ This relies on native compilation to Linux or a scoping violation must also be i
 This though is fine as regardless of overflowing on either side an ``Int`` can be kept an ``Int``, and overflowing is already defined behavior.
 
 I would love to, instead of outright banning Typed Template Haskell and ``Lift``, come up with a flexible way to associate types and terms between stages.
-To be "complete" in that module scoping everything is compmlete is still possible, we would need slightly different requirements for each.
+To be "complete" in that module scoping everything is complete is still possible, we would need slightly different requirements for each.
 For ``Lift`` we just need to map *values* preserving type, while typed Template Haskell we need to map type *expressions* such that evaluation commutes with the mapping.
 Adding language support for such a mapping is lots of extra work—borderline research—for a proposal which already is no small task.
 I therefore think banning for now to start solving the problems people have with cross compilation as soon as possible is prudent.
@@ -122,7 +122,7 @@ GHC
    All existing rules outside of TH on binding/name resolution are retaken to act independently per stage.
    (i.e. identifiers in stage *n* resolve to bindings in stage *n*, all syntax in the rule is parameterized with the stage.)
    The top level is always stage 0.
-   A consequence of the above is all non-TH syntax in isx also stage 0.
+   A consequence of the above is all non-TH syntax in is also stage 0.
 
 2. Redefine quoting and splicing as acting on adjacent stages. Specifically, quoting quotes code from the next stage:
    ::
@@ -143,13 +143,13 @@ GHC
    This means import a module in stage *n* instead of stage 0 as per normal.
    ::
      $let <integer-literal> <<existing syntax>> = <<existing syntax>>
-   The means bind identifers in stage *n* instead of stage 0 as per normal.
+   The means bind identifiers in stage *n* instead of stage 0 as per normal.
    Module exports however are restricted to stage 0.
 
 4. Relax ``-XTemplateHaskellQuotes`` to instead allow Template Haskell constructs, but restrict their usage so all syntax is in stages >= 0.
 
 5. Introduce ``-XTemplateStagePersistence``.
-   Which is implied by ``-XTemplateHaskellQuotes`` (and thus plain ``-XTemplateHaskell``) for backwards compat.
+   Which is implied by ``-XTemplateHaskellQuotes`` (and thus plain ``-XTemplateHaskell``) for backwards compatibility.
    It allows the current behavior where we blur the distinction between stages.
    In particular, with this enabled:
 
@@ -168,6 +168,8 @@ GHC
 7. When importing modules/packages, after applying the import offset ensure that the platforms match.
    Note that while each module only has bindings in its own stage 0, those bindings can contain quotes from stages greater than 0.
    All such quoted platforms need to match.
+
+8. Just as GHC defines ``*_HOST_OS`` and similar CPP identifiers today, it would define ``*_BUILD_*`` ones if you have any stage -1 package imports, and ``*_BUILD_*`` if you have any stage 1 package imports.
 
 Cabal
 ~~~~~~~~~~~~
@@ -188,6 +190,37 @@ Cabal
 Effect and Interactions
 -----------------------
 
+Here is an example of many the features used together, rewriting the code from the motivation.
+Hypothetical ``ios-th`` package:
+::
+  module Ios.Macros where
+
+  #ifdef ios_TARGET_OS
+  # error Module shouldn't be built. Fix Cabal file!
+  #endif
+
+  import Language.Haskell.TH
+  $import 1 Ios.Types (Foo(..))
+
+  iosBoilerplateHelper :: Name -> Q Expr
+  iosBoilerplateHelper name = ... [| ... :: Foo |] ...
+end user code:
+::
+  module MyApp.Ios where
+
+  #ifdef ios_HOST_OS
+  # error Module shouldn't be built. Fix Cabal file!
+  #endif
+
+  import Ios.Types
+  $import -1 Ios.Macros
+
+  data SomeIosFfiType
+
+  $let -1 unneededBinding = iosBoilerplateHelper ''SomeIosFfiType
+
+  $(unneededBinding)
+
 This proposal, in conjunction with a "naive" core interpreter (#162) should make it permitted to use Template Haskell in GHC.
 Stage 1 GHC even today could use Template Haskell.
 Stage 2 was the sticking point, if stage 1 is a cross compiler or the ABI was changed.
@@ -196,6 +229,9 @@ Consider the "worst case", where the ``ho``/``hi`` format and ABI are both chang
 The stage 1 compiler can load ``-fexpose-all-unfoldings`` stage 2 interface files it built for the native platform,
 and naively interpret them (which avoids any coupling with the stage 0 RTS, ABI, etc).
 
+The conditional definition of the CPP macros ensures they don't pollute the purity of the build when they don't matter.
+This is important for highly pure build systems like Nix to not have to needless rebuild stuff when the target platform changes.
+It will also cut down on people improperly using "target" when they meant "host".
 
 Costs and Drawbacks
 -------------------
