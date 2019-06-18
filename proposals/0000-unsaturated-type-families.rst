@@ -104,10 +104,13 @@ but not type constructors, whose kind is ``a -> b``. To rectify this,
 we make matchability a first-class type, and abstraction over
 matchabilities. Thus ::
   data Matchability = Matchable | Unmatchable
+  
+Then we have a single arrow constructor, whose matchability can be instantiated with
+the mixfix syntax: ``->{m}``, where ``m`` stands for a matchability (either concrete
+or a variable). Then ``->`` and ``~>`` are defined as type synonyms ::
 
   type (->) = (->{'Matchable})
   type (~>) = (->{'Unmatchable})
-
 
 Finally, ``Map`` can be defined to be *matchability polymorphic* ::
 
@@ -116,6 +119,7 @@ Finally, ``Map`` can be defined to be *matchability polymorphic* ::
      Map f (x ': xs) = f x ': Map f xs
 
 Accepting both ``Map Id`` and ``Map Maybe``.
+Here, the kind of ``Map`` is ``forall (m :: Matchability) a b. (a ->{m} b) ~> [a] ~> [b]``
 
 Inference
 ~~~~~~~~~
