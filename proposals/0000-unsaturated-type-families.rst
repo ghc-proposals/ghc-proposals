@@ -62,7 +62,7 @@ To make sure that ``f`` and ``g`` are not type families, GHC disallows
 unsaturated type families.
 
 For more background and examples see
-`Section 2 of the paper<https://www.microsoft.com/en-us/research/publication/higher-order-type-level-programming-in-haskell>`_.
+`Section 2 of the paper <https://www.microsoft.com/en-us/research/publication/higher-order-type-level-programming-in-haskell>`_.
 
 Proposed Change Specification
 -----------------------------
@@ -123,9 +123,7 @@ Inference
 To retain backwards compatibility, matchabilities are **not**
 generalised over, instead, they are defaulted to ``'Matchable``. That
 is, any matchability-polymorphic definition must be manually defined
-so.
-
-::
+so. ::
    foo :: f a -> f a                                                    -- (f :: * -> *)
    bar :: HList xs -> HList (Map f xs)                                  -- (f :: * -> *)
    baz :: forall m xs (f :: * ->{m} *).  HList xs -> HList (Map f xs)   -- (f :: * ->{m} *)
@@ -186,7 +184,9 @@ surface Haskell, the arrow is rendered as ``->`` in terms).
 
 Inferred arguments
 ~~~~~~~~~~~~~~~~~~
+
 When supplying type arguments to matchability-polymorphic functions such as ::
+
    qux :: forall m (f :: * ->{m} *) a. f a -> f a
 
 the user needs to provide either a concrete matchability or a wildcard before
