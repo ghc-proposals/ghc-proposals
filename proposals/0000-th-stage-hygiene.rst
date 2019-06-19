@@ -15,13 +15,18 @@ Stage Hygiene in Template Haskell
 .. sectnum::
 .. contents::
 
-Here you should write a short abstract motivating and briefly summarizing the proposed change.
-
+Template Haskell currently doesn't work well with cross compilation.
+This is a big nuisance for anyone making phone or browser software.
+To fix this, enforce stronger separation between the stages.
 
 Motivation
 ------------
 
-Template Haskell currently doesn't work well with cross compilation.
+In the olden days, one couldn't use Template Haskell with cross compilation at all.
+This is bad in itself, but also bad from an ecosystem perspective.
+Haskell has an excellent culture of code reuse, but that means that arbitrary software is very likely to depend on Template Haskell.
+That lack of being able to write idiomatic Haskell code with popular libraries for all platform is as big of a loss as not being able to Template Haskell itself.
+The risk of library fragmentation between between those writing code for weird platforms and those not is also bad for everyone.
 
 The external interpreter made it at least possible, relatively automatically, but doesn't work if you explicitly want side effects to be run on the compiler's platform.
 Also, while same-OS cross can sometimes be fairly lightweight
@@ -111,6 +116,12 @@ and is the same as
 ::
   AppE <$> [| f |] <*> x <*>  [| b |]
 Since the splices all can be desugared away without the evaluation of user-written code, there is no reason to penalize them.
+
+Macro systems have often been judged by their (lack of) hygiene.
+Macros that delay all name resolution post splicing are deemed unhygienic.
+It has been argued in [InferringScope] that hygiene just is alpha-equivalence from a better vantage point, a point which was obscured by the early Scheme macro systems (and TH's) use of renaming and gensym in lieu of a more principled formalism.
+It is my hope that a lack of stage separation comes to be viewed as unhygienic in the same way.
+It should be immaterial whether build time "base" has any identifiers in common with the run-time "base", and nothing should be improperly captured or dangling either way.
 
 Proposed Change Specification
 ------------
@@ -284,7 +295,6 @@ Need some way to prevent that outright, or catch those errors early, perhaps by 
 [Thankfully the other direction is fine.
 Libraries can experiment with this extension without forcing an ecosystem split.]
 
-
 Implementation Plan
 -------------------
 
@@ -301,3 +311,5 @@ Here is a rough plan.
 #. Refactor the implementation of Template Haskell to use the per-stage data-types.
 
 .. "naive" core interpreter: #162
+
+.. [InferringScope] https://cs.brown.edu/~sk/Publications/Papers/Published/pkw-inf-scope-syn-sugar/paper.pdf
