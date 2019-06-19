@@ -147,6 +147,12 @@ GHC
    The means bind identifiers in stage *n* instead of stage 0 as per normal.
    Module exports however are restricted to stage 0.
 
+#. The current "stage restriction" on splices using items from module is abolished.
+   Any stage n + 1 binding in a stage n splice is fair game.
+   The prohibition on referencing bindings can stay for now, but hopefully will be removed in a future proposal.
+   (It just avoids the need to topologically sort splices based references from the quotations inside them.
+   Nevertheless, implementing that is not trivial so its good to decouple from this already-large proposal.)
+
 #. Relax ``-XTemplateHaskellQuotes`` to instead allow Template Haskell constructs, but restrict their usage so all syntax is in stages >= 0.
 
 #. Introduce ``-XTemplateStagePersistence``.
@@ -161,10 +167,15 @@ GHC
 
    With ``-XNoTemplateStagePersistence``, overriding the default, all of those are *disabled*.
 
-#. Extend the command line (TODO bikeshed!!) with a way to specify per-stage package dependencies and the like.
+#. Extend the command line [TODO bikeshed!!] with a way to specify per-stage package dependencies and the like.
    If/when GHC becomes multi-target, by default stages >= 0 take GHC's target platform / the packages host platform (where compiled code runs), while stages < 0 take GHC's host platform / the packages build platform (where GHC runs).
    But, the emitted platform can still be specified per-stage like the other flags.
    This is needed when building TH functions to be used from cross compiled code.
+
+#. Add a Core "way" to GHC, which basically amounts to `-fexpose-all-unfoldings` but no need to compile pass core [TODO bikeshed/clarify].
+   Positive stage imports can be satisfied with the core way alone, as no code needs to be run.
+   (With the `"naive" core interpreter`_, negative stage imports can also use this, as those stages, while run, and discarded after and not included machine code.)
+   [TODO Cross reference with the backpack ``hi``-only steps for type checking.]
 
 #. When importing modules/packages, after applying the import offset ensure that the platforms match.
    Note that while each module only has bindings in its own stage 0, those bindings can contain quotes from stages greater than 0.
@@ -179,6 +190,11 @@ Cabal
    N.B ``build-tool-depends`` can be thought of as a stage -1 executable dependencies list.
    `https://github.com/haskell/cabal/issues/5411`_ asks for a ``run-tool-depends`` which would be nothing but a stage 0 executable depends.
    ``setup-depends`` can also be thought of as a stage -1 executable dependencies list.
+
+#. Likewise extend ``other-modules`` with a stage integer offset parameter, to support intra-package ``$import``.
+   Leave ``exposed-modules`` as is, however. Libraries should only expose stage 0 modules, just as modules only expose stage 0 definitions.
+   Restrict the ``other-modules`` offset to be <= 0, as positive stage code is either pointless or would escape via references from quotes causing build system havoc.
+   Unexposed negative stage modules need not be installed at all, as there is no way for stage 0 to reference them (splices eliminate references).
 
 #. Replace today's "qualified goals" with a notion "per-stage coherence".
    In particular, existing qualified dependencies from ``setup-depends`` and ``build-tool-depends`` are from stage *n* to *n - 1*;
@@ -222,7 +238,7 @@ end user code:
 
   $(unneededBinding)
 
-This proposal, in conjunction with a "naive" core interpreter (#162) should make it permitted to use Template Haskell in GHC.
+This proposal, in conjunction with a `"naive" core interpreter`_ should make it permitted to use Template Haskell in GHC.
 Stage 1 GHC even today could use Template Haskell.
 Stage 2 was the sticking point, if stage 1 is a cross compiler or the ABI was changed.
 But those cases are now OK too.
@@ -251,10 +267,13 @@ Costs and Drawbacks
 Alternatives
 ------------
 
-At the cost of more complexity, we could have multi-stage cabal components.
-Then one could do ``#import 1 Control.Lens.Lens`` in ``Control.Lens.TH`` while keeping ``Control.Lens.TH`` in the same library.
-Would need stage-specific ``exposed-module`` and ``other-modules`` too in Cabal.
-I don't like the complexity, and I would rather packages leverage public Cabal sub-libraries for Template Haskell anyways;
+There is no fundamental reason modules couldn't export non-stage-0 items, and libraries expose non-stage-0 modules.
+At the cost of more complexity, there could be a `.lib` or `.so` for each exposed stage, and imports would be offset to match the ``#import <offset>`` literal.
+But in fairness, this might allow a smoother transition form how libraries are structured today.
+For example, one could do ``#import 1 Control.Lens.Lens`` in ``Control.Lens.TH`` while exposing ``Control.Lens.TH`` from the same library just like today.
+I decided against this as a matter of taste.
+I think it good to enforce the normal form that the "main" stage is stage 0.
+As to the specific example, I would rather packages leverage public Cabal sub-libraries for Template Haskell anyways;
 I think that's a cleaner way to package code.
 
 Unresolved Questions
@@ -280,3 +299,5 @@ Here is a rough plan.
 #. Parameterize dependency data types (for module and package dependencies) to track dependencies per stage.
 
 #. Refactor the implementation of Template Haskell to use the per-stage data-types.
+
+.. "naive" core interpreter: #162
