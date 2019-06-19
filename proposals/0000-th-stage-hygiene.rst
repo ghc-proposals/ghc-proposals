@@ -30,7 +30,7 @@ The risk of library fragmentation between between those writing code for weird p
 
 The external interpreter made it at least possible, relatively automatically, but doesn't work if you explicitly want side effects to be run on the compiler's platform.
 Also, while same-OS cross can sometimes be fairly lightweight
-—e.g. by having QEMU translate syscalls so the native kernel can be used—
+— e.g. by having QEMU translate syscalls so the native kernel can be used —
 differnet-OS requires harder to provision virtual machines or real devices.
 
 Another alternative is dumping and loading splices, where one builds natively, dumping splices, and the builds cross with those dumped splices.
@@ -119,7 +119,8 @@ Since the splices all can be desugared away without the evaluation of user-writt
 
 Macro systems have often been judged by their (lack of) hygiene.
 Macros that delay all name resolution post splicing are deemed unhygienic.
-It has been argued in [InferringScope] that hygiene just is alpha-equivalence from a better vantage point, a point which was obscured by the early Scheme macro systems (and TH's) use of renaming and gensym in lieu of a more principled formalism.
+It has been argued in [InferringScope]_ that hygiene just is alpha-equivalence from a better vantage point,
+a point which was obscured by the early Scheme macro systems (and TH's) use of renaming and gensym in lieu of a more principled formalism.
 It is my hope that a lack of stage separation comes to be viewed as unhygienic in the same way.
 It should be immaterial whether build time "base" has any identifiers in common with the run-time "base", and nothing should be improperly captured or dangling either way.
 
@@ -199,7 +200,7 @@ Cabal
 
 #. Extend the ``build-depends`` syntax with a stage integer offset parameter.
    N.B ``build-tool-depends`` can be thought of as a stage -1 executable dependencies list.
-   `https://github.com/haskell/cabal/issues/5411`_ asks for a ``run-tool-depends`` which would be nothing but a stage 0 executable depends.
+   `<https://github.com/haskell/cabal/issues/5411>`_ asks for a ``run-tool-depends`` which would be nothing but a stage 0 executable depends.
    ``setup-depends`` can also be thought of as a stage -1 executable dependencies list.
 
 #. Likewise extend ``other-modules`` with a stage integer offset parameter, to support intra-package ``$import``.
@@ -303,13 +304,13 @@ Here is a rough plan.
 
 #. Make GHC multi-target. I am almost done with this.
 
-#. Land `https://gitlab.haskell.org/ghc/ghc/merge_requests/935`_, refactoring GHC to allow there being more than one "home package" per session.
-   This PR also may help with the 2019 GSOC around `https://gitlab.haskell.org/ghc/ghc/wikis/Multi-Session-GHC-API`.
+#. Land `<https://gitlab.haskell.org/ghc/ghc/merge_requests/935>`_, refactoring GHC to allow there being more than one "home package" per session.
+   This PR also may help with the 2019 GSOC around `<https://gitlab.haskell.org/ghc/ghc/wikis/Multi-Session-GHC-API>`_.
 
 #. Parameterize dependency data types (for module and package dependencies) to track dependencies per stage.
 
 #. Refactor the implementation of Template Haskell to use the per-stage data-types.
 
-.. "naive" core interpreter: #162
+.. _`"naive" core interpreter`: https://github.com/ghc-proposals/ghc-proposals/issues/162
 
 .. [InferringScope] https://cs.brown.edu/~sk/Publications/Papers/Published/pkw-inf-scope-syn-sugar/paper.pdf
