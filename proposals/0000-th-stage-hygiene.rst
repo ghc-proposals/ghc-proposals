@@ -1,4 +1,4 @@
-Stage Hygiene in Template Haskell
+Stage Hygiene for Template Haskell
 ==============
 
 .. proposal-number:: Leave blank. This will be filled in when the proposal is
