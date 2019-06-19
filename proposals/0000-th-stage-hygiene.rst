@@ -143,6 +143,7 @@ GHC
    This means import a module in stage *n* instead of stage 0 as per normal.
    ::
      $let <integer-literal> <<existing syntax>> = <<existing syntax>>
+   In both case the ``$`` must not be followed by whitespace, both to avoid conflicts with other syntax and to be consistent with splices.
    The means bind identifiers in stage *n* instead of stage 0 as per normal.
    Module exports however are restricted to stage 0.
 
