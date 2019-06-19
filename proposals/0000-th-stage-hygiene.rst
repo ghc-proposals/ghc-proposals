@@ -118,13 +118,13 @@ Proposed Change Specification
 GHC
 ~~~~~~~~~~~~
 
-1. Let there be a notion of stages assigned to the integers.
+#. Let there be a notion of stages assigned to the integers.
    All existing rules outside of TH on binding/name resolution are retaken to act independently per stage.
    (i.e. identifiers in stage *n* resolve to bindings in stage *n*, all syntax in the rule is parameterized with the stage.)
    The top level is always stage 0.
    A consequence of the above is all non-TH syntax in is also stage 0.
 
-2. Redefine quoting and splicing as acting on adjacent stages. Specifically, quoting quotes code from the next stage:
+#. Redefine quoting and splicing as acting on adjacent stages. Specifically, quoting quotes code from the next stage:
    ::
      G ⊢(n + 1) syntax
      -----------------------
@@ -137,7 +137,7 @@ GHC
 
    The existing side conditions, which restricting nested quotes and splices (i.e. stages outside of -1, 0, and 1) remain in place, but are ripe for removal in #204.
 
-3. Add new syntax for stage-offset imports and bindings:
+#. Add new syntax for stage-offset imports and bindings:
    ::
      $import <integer-literal> <<existing syntax>>
    This means import a module in stage *n* instead of stage 0 as per normal.
@@ -147,9 +147,9 @@ GHC
    The means bind identifiers in stage *n* instead of stage 0 as per normal.
    Module exports however are restricted to stage 0.
 
-4. Relax ``-XTemplateHaskellQuotes`` to instead allow Template Haskell constructs, but restrict their usage so all syntax is in stages >= 0.
+#. Relax ``-XTemplateHaskellQuotes`` to instead allow Template Haskell constructs, but restrict their usage so all syntax is in stages >= 0.
 
-5. Introduce ``-XTemplateStagePersistence``.
+#. Introduce ``-XTemplateStagePersistence``.
    Which is implied by ``-XTemplateHaskellQuotes`` (and thus plain ``-XTemplateHaskell``) for backwards compatibility.
    It allows the current behavior where we blur the distinction between stages.
    In particular, with this enabled:
@@ -161,26 +161,26 @@ GHC
 
    With ``-XNoTemplateStagePersistence``, overriding the default, all of those are *disabled*.
 
-6. Extend the command line (TODO bikeshed!!) with a way to specify per-stage package dependencies and the like.
+#. Extend the command line (TODO bikeshed!!) with a way to specify per-stage package dependencies and the like.
    If/when GHC becomes multi-target, by default stages >= 0 take GHC's target platform / the packages host platform (where compiled code runs), while stages < 0 take GHC's host platform / the packages build platform (where GHC runs).
    But, the emitted platform can still be specified per-stage like the other flags.
    This is needed when building TH functions to be used from cross compiled code.
 
-7. When importing modules/packages, after applying the import offset ensure that the platforms match.
+#. When importing modules/packages, after applying the import offset ensure that the platforms match.
    Note that while each module only has bindings in its own stage 0, those bindings can contain quotes from stages greater than 0.
    All such quoted platforms need to match.
 
-8. Just as GHC defines ``*_HOST_OS`` and similar CPP identifiers today, it would define ``*_BUILD_*`` ones if you have any stage -1 package imports, and ``*_BUILD_*`` if you have any stage 1 package imports.
+#. Just as GHC defines ``*_HOST_OS`` and similar CPP identifiers today, it would define ``*_BUILD_*`` ones if you have any stage -1 package imports, and ``*_BUILD_*`` if you have any stage 1 package imports.
 
 Cabal
 ~~~~~~~~~~~~
 
-1. Extend the ``build-depends`` syntax with a stage number.
+#. Extend the ``build-depends`` syntax with a stage integer offset parameter.
    N.B ``build-tool-depends`` can be thought of as a stage -1 executable dependencies list.
    `https://github.com/haskell/cabal/issues/5411`_ asks for a ``run-tool-depends`` which would be nothing but a stage 0 executable depends.
    ``setup-depends`` can also be thought of as a stage -1 executable dependencies list.
 
-2. Replace today's "qualified goals" with a notion "per-stage coherence".
+#. Replace today's "qualified goals" with a notion "per-stage coherence".
    In particular, existing qualified dependencies from ``setup-depends`` and ``build-tool-depends`` are from stage *n* to *n - 1*;
    that the stages are different alone explains why versions are allowed to differ.
    However a *-n* dependency composed with an *n* dependency create a 0 dependency, which as all the usual version coherence restrictions.
@@ -272,11 +272,11 @@ Implementation Plan
 I volunteer to chip away at this, thought it will take quite a while for one person to do it all.
 Here is a rough plan.
 
-1. Make GHC multi-target. I am almost done with this.
+#. Make GHC multi-target. I am almost done with this.
 
-2. Land `https://gitlab.haskell.org/ghc/ghc/merge_requests/935`_, refactoring GHC to allow there being more than one "home package" per session.
+#. Land `https://gitlab.haskell.org/ghc/ghc/merge_requests/935`_, refactoring GHC to allow there being more than one "home package" per session.
    This PR also may help with the 2019 GSOC around `https://gitlab.haskell.org/ghc/ghc/wikis/Multi-Session-GHC-API`.
 
-3. Parameterize dependency data types (for module and package dependencies) to track dependencies per stage.
+#. Parameterize dependency data types (for module and package dependencies) to track dependencies per stage.
 
-4. Refactor the implementation of Template Haskell to use the per-stage data-types.
+#. Refactor the implementation of Template Haskell to use the per-stage data-types.
