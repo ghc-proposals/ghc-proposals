@@ -147,7 +147,7 @@ GHC
      -----------------------
      G ⊢(n) $(syntax)
 
-   The existing side conditions, which restricting nested quotes and splices (i.e. stages outside of -1, 0, and 1) remain in place, but are ripe for removal in #204.
+   The existing side conditions, which restricting nested quotes and splices (i.e. stages outside of -1, 0, and 1) remain in place, but are ripe for removal in https://github.com/ghc-proposals/ghc-proposals/pulls/204.
 
 #. Add new syntax for stage-offset imports and bindings:
    ::
