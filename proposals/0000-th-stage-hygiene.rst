@@ -151,19 +151,16 @@ GHC
 
 #. Add new syntax for stage-offset imports and bindings:
    ::
-     $import <integer-literal> <<existing syntax>>
+     <impdecl> ::= $import <integer-literal> <<existing syntax>>
    This means import a module in stage *n* instead of stage 0 as per normal.
    ::
-     $let <integer-literal> <<existing syntax>> = <<existing syntax>>
+     <decl> ::= $let <integer-literal> <<existing syntax>> = <<existing syntax>>
    In both case the ``$`` must not be followed by whitespace, both to avoid conflicts with other syntax and to be consistent with splices.
    The means bind identifiers in stage *n* instead of stage 0 as per normal.
    Module exports however are restricted to stage 0.
 
 #. The current "stage restriction" on splices using items from module is abolished.
    Any stage n + 1 binding in a stage n splice is fair game.
-   The prohibition on referencing bindings can stay for now, but hopefully will be removed in a future proposal.
-   (It just avoids the need to topologically sort splices based references from the quotations inside them.
-   Nevertheless, implementing that is not trivial so its good to decouple from this already-large proposal.)
 
 #. Relax ``-XTemplateHaskellQuotes`` to instead allow Template Haskell constructs, but restrict their usage so all syntax is in stages >= 0.
 
@@ -177,14 +174,15 @@ GHC
    - Typed template haskell is allowed.
    - The ``Lift`` type class and all its associated definitions are made available.
 
-   With ``-XNoTemplateStagePersistence``, overriding the default, all of those are *disabled*.
+   These are all already always permitted today.
+   But with ``-XNoTemplateStagePersistence``, overriding the default, all of those are *disabled*.
 
 #. Extend the command line [TODO bikeshed!!] with a way to specify per-stage package dependencies and the like.
    If/when GHC becomes multi-target, by default stages >= 0 take GHC's target platform / the packages host platform (where compiled code runs), while stages < 0 take GHC's host platform / the packages build platform (where GHC runs).
    But, the emitted platform can still be specified per-stage like the other flags.
    This is needed when building TH functions to be used from cross compiled code.
 
-#. Add a Core "way" to GHC, which basically amounts to `-fexpose-all-unfoldings` but no need to compile pass core [TODO bikeshed/clarify].
+#. Add a Core "way" to GHC, which basically amounts to `-fexpose-all-unfoldings` and doing no work no past core [TODO bikeshed/clarify].
    Positive stage imports can be satisfied with the core way alone, as no code needs to be run.
    (With the `"naive" core interpreter`_, negative stage imports can also use this, as those stages, while run, and discarded after and not included machine code.)
    [TODO Cross reference with the backpack ``hi``-only steps for type checking.]
@@ -208,13 +206,25 @@ Cabal
    Restrict the ``other-modules`` offset to be <= 0, as positive stage code is either pointless or would escape via references from quotes causing build system havoc.
    Unexposed negative stage modules need not be installed at all, as there is no way for stage 0 to reference them (splices eliminate references).
 
-#. Replace today's "qualified goals" with a notion "per-stage coherence".
-   In particular, existing qualified dependencies from ``setup-depends`` and ``build-tool-depends`` are from stage *n* to *n - 1*;
-   that the stages are different alone explains why versions are allowed to differ.
-   However a *-n* dependency composed with an *n* dependency create a 0 dependency, which as all the usual version coherence restrictions.
-   As an exception to this, we keep today's same-package version constraint.
-   In particular this means given a dependency edge where the needed and needing components are in the same package regardless of their relative stage indices,
-   the same version of the package must be used for both.
+#. Connect today's "qualified goals" to stages.
+   [TODO exact formalism, is it in scope?]
+   Some properties that must be true in the brave new world:
+
+   - Executable dependencies are cross-stage and private, they are maximally qualified in that they introduce the fewest cross-stage constraints.
+
+   - Regular library dependencies are public and same stage.
+     They carry their transitive closure in the form of mandatory unification constraints.
+
+   - Cross-stage library dependencies are still public.
+     The stages can independent since cross-stage types don't ever unify, but *within* each stage everything works as usual.
+     Compositions of cross-stage dependencies can result in same-stage dependencies, and their public closure unification "burdens" will combine.
+
+   - Intra-package dependencies regardless of stage must resolve within the same version of the package.
+     This is already the case so the setup component knows what library it's building.
+     Now it is also the case so the TH library knows what types are used in its quotes.
+     These only arise from immediate dependencies.
+     The unification obligation is propagated like all the others, but there's no magic beyond that.
+     When the same package is transitively visible in two stages, there is no same-version constraint across the two stages that arises out of thin air.
 
 Effect and Interactions
 -----------------------
@@ -254,17 +264,58 @@ end user code:
 
   $(unneededBinding)
 
-This proposal, in conjunction with a `"naive" core interpreter`_ should make it permitted to use Template Haskell in GHC.
-Stage 1 GHC even today could use Template Haskell.
-Stage 2 was the sticking point, if stage 1 is a cross compiler or the ABI was changed.
-But those cases are now OK too.
-Consider the "worst case", where the ``ho``/``hi`` format and ABI are both changed, and we are building stage 2 for a different platform.
-The stage 1 compiler can load ``-fexpose-all-unfoldings`` stage 2 interface files it built for the native platform,
-and naively interpret them (which avoids any coupling with the stage 0 RTS, ABI, etc).
+A few misc implementation notes:
 
-The conditional definition of the CPP macros ensures they don't pollute the purity of the build when they don't matter.
-This is important for highly pure build systems like Nix to not have to needless rebuild stuff when the target platform changes.
-It will also cut down on people improperly using "target" when they meant "host".
+Bindings interleave stages
+  Note that ``$let`` can appear outside the top-level, including in contexts where a variable of later stage is bound.
+  At first glance, binding a compile-time variable within a run-time variable might seem like a staging violation:
+  ::
+    f x = $huh
+       where foo = ...
+             $let -1 huh ... = ... [| x |] ... [| foo |] ...
+  But remember that later stage syntax can just be used in quotes; it is inert and cannot be evaluated.
+  ``huh`` is trivially lifted outside of ``f`` since captures the syntactic ``x`` which is static at compile-time.
+  Nothing passed into ``f`` at any call site is available to ``huh``.
+
+Forward references across splices
+   The intra-module staging restriction is gone, but that's separate from the prohibition on referencing bindings.
+   It just avoids the need to topologically sort splices based references from the quotations inside them, or break cycles à la ``*.hs-boot``.
+   Nevertheless, implementing that is not trivial so it is good to decouple relaxing the restriction from this already-large proposal.
+   Hopefully a future proposal will tackle this.
+
+Template Haskell in GHC
+  The motivation evokes the specter of ecosystem splits.
+  Well, we already have one with GHC in that it cannot use Template Haskell or depend on arbitrary packages.
+  Cross compilation is one issue, but also ABI changes, where a newly built stage 1 uses and older ABI than code it compiles.
+  In a very bad case imagine a simultaneous ``hi``/``ho``-file format change and ABI change.
+  It can neither load stage0 compiled code, since the file formats are different, nor load its own compiled code since the ABI is different.
+
+  This proposal out of the box only solves the cross compilation issue, but it does get us closer on the other.
+  The key is a `"naive" core interpreter`_.
+  We can actually make the bad base above worse by throwing in cross compilation too (stage 2 will run on different platform).
+  The stage 1 compiler can load core way / ``-fexpose-all-unfoldings`` (stage 2 interface files it built for the native platform, which are cross platform
+  and naively interpret them to avoid the ABI it outputs and just leave the ABI it itself uses in the picture.
+
+  Yes, core isn't portable in the real world because of earlier-stage issues like CPP and conditional cabal files, but I am very close to making those run-time configurable.
+  Then, the same stage 1 GHC binary that will build the stage 2 for the foreign platform can also make "stage 2, TH stage -1" code for itself.
+  [N.B. In the easy case when we don't change the ABI, compiler bootstrapping stages and TH stages coincide!
+  Stage 2 - 1 = Stage 1.]
+
+``*_BUILD_*`` and ``*_HOST_*`` not always defined
+  The conditional definition of the CPP macros ensures they don't pollute the purity of the build when they don't matter.
+  This is important for highly pure build systems like Nix to not have to needless rebuild stuff when the target platform changes.
+  It will also cut down on people improperly using "target" when they meant "host".
+
+``Lift`` and qualified goals
+  When we carefully introduce lifting to stage-hygienic goals, we need to ensure that the type being lifted is the same or "close enough".
+  This means we will need to introduce a intra-package constraint on package defining that type across the stage pair where Lift is made available.
+  Conceptually, there might be an auto-generated package with the orphan ``Lift`` instance which imposes the same version constraint on it's library dependency in both stages.
+
+  In particular, existing qualified dependencies from ``setup-depends`` and ``build-tool-depends`` are from stage *n* to *n - 1*;
+  that the stages are different alone explains why versions are allowed to differ.
+  In particular this means given a dependency edge where the needed and needing components are in the same package regardless of their relative stage indices,
+  the same version of the package must be used for both.
+
 
 Costs and Drawbacks
 -------------------
