@@ -222,6 +222,8 @@ Effect and Interactions
 Here is an example of many the features used together, rewriting the code from the motivation.
 Hypothetical ``ios-th`` package:
 ::
+  {-# LANGUAGE TemplateHaskell #-}
+  {-# LANGUAGE NoTemplateStagePersistence #-}
   module Ios.Macros where
 
   #ifndef ios_TARGET_OS
@@ -235,6 +237,8 @@ Hypothetical ``ios-th`` package:
   iosBoilerplateHelper name = ... [| ... :: Foo |] ...
 end user code:
 ::
+  {-# LANGUAGE TemplateHaskell #-}
+  {-# LANGUAGE NoTemplateStagePersistence #-}
   module MyApp.Ios where
 
   #ifndef ios_HOST_OS
