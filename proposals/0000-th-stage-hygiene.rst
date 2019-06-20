@@ -53,6 +53,7 @@ This solves all the above problems:
 
 - No need to emulate any other platforms, since evaluation only happens within splices.
 - No need to build everything twice.
+  Just what is needed in each phase, and just when it's needed.
 - No all-or-nothing CPP problem.
 
 To do this, we need to cleanly separate the stages induced by quoting and splicing.
@@ -180,11 +181,6 @@ GHC
    But, the emitted platform can still be specified per-stage like the other flags.
    This is needed when building TH functions to be used from cross compiled code.
 
-#. Add a Core "way" to GHC, which basically amounts to `-fexpose-all-unfoldings` and doing no work no past core [TODO bikeshed/clarify].
-   Positive stage imports can be satisfied with the core way alone, as no code needs to be run.
-   (With the `"naive" core interpreter`_, negative stage imports can also use this, as those stages, while run, and discarded after and not included machine code.)
-   [TODO Cross reference with the backpack ``hi``-only steps for type checking.]
-
 #. When importing modules/packages, after applying the import offset ensure that the platforms match.
    Note that while each module only has bindings in its own stage 0, those bindings can contain quotes from stages greater than 0.
    All such quoted platforms need to match.
@@ -281,23 +277,55 @@ Forward references across splices
    Nevertheless, implementing that is not trivial so it is good to decouple relaxing the restriction from this already-large proposal.
    Hopefully a future proposal will tackle this.
 
+Speeding up builds
+  Modules and libraries are relative in that their exported stage 0 may not be imported at stage 0.
+  There is no notion of a global "true" stage 0.
+  This is good in that we can share build artifacts without breaking abstractions.
+  For example, in the common native case, a library that needs another library in stage 0 and stage -1 can load the *same* build of the library in both of those stages.
+  By virtue of explicit stage of the import, the definitions do not unify even though the underlying build is the same.
+  This can be compared to repeated abstract interfaces in backpack being instantiated with the same concrete module.
+
+  In the cross case, there is no getting around needing separate native and foreign builds for different stages, but there are still performance improvements.
+  As said in the motivation, we only need what is needed when it is needed, versus everything twice with splice dumping and loading.
+  This reduces the size and improves the parallelism of the build plan.
+  More subtly, and perhaps more importantly, are benefits with rebuilds during development.
+  Let's say because of this proposal, splices (stage -1 code) are now used in a core library like `containers`.
+  Let's say also that the stage -1 code depends on code which depends transitively on `containers`.
+  Because of stage isolation, while developing `containers` we are free to use the old version of containers in the -1 stage.
+  That means we don't have to rebuild all our dependencies each bug cycle.
+  This is comparable to today's trick of renaming `containers` to `kontainers` so we can tune it and re-benchmark without rebuilding criterion and friends.
+
+  There are *still* more tricks we can do for overall build size and parallelism.
+  Stage 1 code doesn't need to be evaluated, just composed correctly.
+  As such, we just need the interface of imports, and don't care about the definitions behind those declarations.
+  That means we just need to build as far as today's `hi` files to resolve those imports.
+  Stage -1 code does need to be run, but still not compiled in the final binary since it cannot be exported.
+  To satisfy that, we just `hi` files with `-fexpose-all-unfoldings` file, along with a `"naive" Core interpreter`_ which can evaluate those unfoldings.
+  Splices are typically small and numerous, so it seems likely that the lower latency of starting the interpreter is worth the cost of slower evaluation once it is started.
+  https://gitlab.haskell.org/ghc/ghc/issues/10871, originally made for Backpack, enshrines `hi` files with `-fexpose-all-unfoldings` as a separate "fat" interface file format.
+  This ideal duel to the "naive" core interpreter to ensure errors are caught as soon as possible.
+
 Template Haskell in GHC
   The motivation evokes the specter of ecosystem splits.
   Well, we already have one with GHC in that it cannot use Template Haskell or depend on arbitrary packages.
-  Cross compilation is one issue, but also ABI changes, where a newly built stage 1 uses and older ABI than code it compiles.
-  In a very bad case imagine a simultaneous ``hi``/``ho``-file format change and ABI change.
-  It can neither load stage0 compiled code, since the file formats are different, nor load its own compiled code since the ABI is different.
+  Cross compilation is one issue, but also ABI changes, where a newly built stage 1 compiler uses and older ABI than code it compiles.
+  In a worst imagine a simultaneous ``hi``/``ho``-file format change, ABI change, and trying to cross compile a new GHC to run on a different platform.
+  The GHC doing the building can neither load stage0 compiled code, since the file formats are different, nor load its own compiled code since the ABI is different.
 
   This proposal out of the box only solves the cross compilation issue, but it does get us closer on the other.
-  The key is a `"naive" core interpreter`_.
-  We can actually make the bad base above worse by throwing in cross compilation too (stage 2 will run on different platform).
-  The stage 1 compiler can load core way / ``-fexpose-all-unfoldings`` (stage 2 interface files it built for the native platform, which are cross platform
-  and naively interpret them to avoid the ABI it outputs and just leave the ABI it itself uses in the picture.
-
-  Yes, core isn't portable in the real world because of earlier-stage issues like CPP and conditional cabal files, but I am very close to making those run-time configurable.
-  Then, the same stage 1 GHC binary that will build the stage 2 for the foreign platform can also make "stage 2, TH stage -1" code for itself.
+  The first missing piece is multi-target support for GHC.
+  This allows the same new binary to create native and foreign ``hi``/``ho`` files in the new format, for TH stages -1 and 0 of the bootstrapping stage 2 GHC and its dependencies.
+  [Core is multi-platform, but the resolution of CPP, cabal conditions, and other miscellanea is platform-specific.]
+  I've already been working on making GHC multi-target, building on earlier work by @angerman and others, and am almost done.
+  The second missing piece is the `"naive" Core interpreter`_, as described in the previous subsection.
+  File formats are independent of RTS ABIs, and so the stage 1 compiler can always load a "fat" interface file it itself created and interpret it.
+  Putting everything together, the stage 1 compiler makes native "fat" interface files for "stage 2, TH stage -1", and splices their evaluations into the "stage 2, TH stage 0" code to make the stage 2 GHC that will run on the foreign platform.
   [N.B. In the easy case when we don't change the ABI, compiler bootstrapping stages and TH stages coincide!
   Stage 2 - 1 = Stage 1.]
+
+  Switching all existing ``derive-*`` code generators to TH would probably make them lighter and easier to maintain.
+  It should also allow building GHC the binary with plain `cabal`.
+  Hadrian would be one step closer to being another implementation of Cabal/cabal-install without GHC-specific logic.
 
 ``*_BUILD_*`` and ``*_HOST_*`` not always defined
   The conditional definition of the CPP macros ensures they don't pollute the purity of the build when they don't matter.
@@ -364,6 +392,6 @@ Here is a rough plan.
 
 #. Refactor the implementation of Template Haskell to use the per-stage data-types.
 
-.. _`"naive" core interpreter`: https://github.com/ghc-proposals/ghc-proposals/issues/162
+.. _`"naive" Core interpreter`: https://github.com/ghc-proposals/ghc-proposals/issues/162
 
 .. [InferringScope] https://cs.brown.edu/~sk/Publications/Papers/Published/pkw-inf-scope-syn-sugar/paper.pdf
