@@ -17,6 +17,9 @@ If we write ``data T f a = MkT (f a)``, GHC assigns a nominal role to ``a``, bec
 as the argument of a type variable, and we cannot know how this argument will be used. This proposal
 describes a way to assign a representational role to ``a`` via the use of a quantified constraint.
 
+There are two proposed ways to fix this problem, each described in its own "Proposed Change
+Specification". Only **one** of these changes should be implemented.
+
 Motivation
 ----------
 Consider::
@@ -51,8 +54,8 @@ equalities. And it's also sad that we need a newtype here.
 This issue was directly inspired by a need in real software, as reported by
 Lennart Augustsson of Google Research.
 
-Proposed Change Specification
------------------------------
+Proposed Change Specification (1)
+---------------------------------
 During role inference of a type with a datatype context, assume the constraints
 in the datatype context as givens.
 
@@ -69,22 +72,49 @@ variable or some other type):
 3. Otherwise, mark the argument of ``ty`` as having a nominal role.
 
 Lastly, GHC will not warn when ``-XDatatypeContexts`` is specified.
-   
+
+Proposed Change Specification (2)
+---------------------------------
+When role inference inspects the type of a data constructor, it will assume the
+data constructor context as a given.
+
+Then, when inferring the role of the argument of a type ``ty`` (which may be a type
+variable or some other type):
+
+1. Try to solve ``forall a b. Coercible (ty a) (ty b)``. If solving succeeds, then
+   add no constraints on the role of the argument of ``ty``.
+
+2. Try to solve ``forall a b. Coercible a b => Coercible (ty a) (ty b)``. If solving
+   succeeds, then mark the argument of ``ty`` as having at least a representational
+   role.
+
+3. Otherwise, mark the argument of ``ty`` as having a nominal role.
+
 Effect and Interactions
 -----------------------
-1. We can now write ::
+1. We can now write (with change (1)) ::
 
      data (forall c d. Coercible c d => Coercible (v c) (v d)) => GList v a = Mk Metadata (v a)
      type role GList representational representational
 
-2. You might be worried (I was) that the fact that datatype contexts are broken would
+   or (with change (2)) ::
+
+     data GList v a where
+       Mk :: (forall c d. Coercible c d => Coercible (v c) (v d)) => Metadata -> v a -> GList v a
+     type role GList representational representational
+
+2. (1) You might be worried (I was) that the fact that datatype contexts are broken would
    make this unsound. That is, even if we have ``G :: Type -> Type`` with ``type role G nominal``, one
    can still talk about the type ``GList G Int``. However, we would never have a value
    of that type, and so no threat to soundness can come of the type's existence.
 
+3. (2) It would appear that the ``Mk`` constructor in this example would now have to hold
+   evidence for the implication constraint. However, it seems quite possible to detect this
+   shape of dictionary and eliminate it.
+   
 Costs and Drawbacks
 -------------------
-1. This uses ``-XDatatypeContexts``, which many people don't like. But it's exactly what
+1. (1) This uses ``-XDatatypeContexts``, which many people don't like. But it's exactly what
    we need here.
 
 2. This is potentially non-performant, requiring running the solver a lot during role inference.
@@ -99,6 +129,9 @@ Costs and Drawbacks
    abstraction barrier might be compromised. There is also a remote chance that I will quantum-tunnel
    through the floor and break my leg on the floor below. Neither of these is likely.
 
+5. (2) Newtypes will not be able to take advantage of this new facility, as newtype
+   constructors cannot have contexts.
+
 Alternatives
 ------------
 * Instead of using a quantified constraint and invoking the solver, we could come up with a more
@@ -106,27 +139,18 @@ Alternatives
   This would mean we wouldn't run the solver during role inference. However, such a feature seems
   sadly non-orthogonal when we have the features to express this idea already.
 
-* We could configure the warning about datatype contexts in some other way.
+* (1) We could configure the warning about datatype contexts in some other way.
 
-* Instead of using datatype contexts at all, we could use data constructor contexts,
-  which avoid the controversy of datatype contexts. Role inference necessarily looks at
-  the usages of type variables in each constructor. When doing so, we could assume the
-  constraints on the data constructor as givens, and then do the checks as described
-  in the Specification, above. This means that a datatype with many constructors would
-  have to repeat the context many times. It also means that, by default, an unnecessary
-  dictionary would be stored by the constructor; however, I think it would not be hard
-  to optimize that dictionary away completely.
+* I have orchestrated an unofficial vote on the two alternatives `on the GitHub trail <https://github.com/ghc-proposals/ghc-proposals/pull/233#issuecomment-498672441>`_.
 
-  One problem with this alternative is that it means that newtypes cannot take advantage
-  of these higher-order roles. Given that the constructor of ``Linked`` in the Motivation
-  would be hidden in clients, it means that this alternative would not actually permit
-  the motivating program to be accepted.
-
-  I have orchestrated an unofficial vote on this alternative `on the GitHub trail <https://github.com/ghc-proposals/ghc-proposals/pull/233#issuecomment-498672441>`_.
+* Considering (1) vs (2), both have the potential for repetition: In (1), the datatype
+  context may have to be written in many type signatures and instance heads, etc. In (2),
+  the context may have to be written in many constructors. In the end, (1)'s repetition
+  is unbounded, while (2) is more manageable.
 
 Unresolved Questions
 --------------------
-None at this time.
+\(1) or (2)?
 
 Implementation Plan
 -------------------
