@@ -314,6 +314,13 @@ proposal is ready for decision.
    Ideally, the committee reaches consensus, as determined by the secretary or
    the shepherd. If consensus is elusive, then we vote, with the Simons
    retaining veto power.
+   
+-  If consensus eludes us, the shepherd may call for a vote. The shepherd may 
+   propose any number of alternative resolutions, which the committee members
+   will rank in order of preference. For the duration of the vote, the shepherd
+   will lock the thread, to ensure that only committee members participate.
+   Once voting is complete, the shepherd will tally the votes and announce the
+   result.
 
 -  The decision is announced, by the shepherd or the secretary, on the Github
    thread and the mailing list.
