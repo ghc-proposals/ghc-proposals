@@ -77,20 +77,19 @@ Then this proposal firstly aims to avoid users blundering blindly into ambiguous
 Proposed Change Specification
 -----------------------------
 
-1. There is to be a pragma ``{-# AMBIGUOUS #-}``, to appear immediately after the ``::`` (so before the type), in principle wherever ``::`` can appear. That is a function or method definition's signature; term type annotations beginning ``::``; pattern signatures (and pattern synonyms). The "in principle" would also include ``::`` introducing kind signatures (type of types); and possibly places ready for not-yet-developed usages of type ``@`` applications. Examples
-::
+1. There is to be a pragma ``{-# AMBIGUOUS #-}``, to appear immediately after the ``::`` (so before the type), in principle wherever ``::`` can appear. That is a function or method definition's signature; term type annotations beginning ``::``; pattern signatures (and pattern synonyms). The "in principle" would also include ``::`` introducing kind signatures (type of types); and possibly places ready for not-yet-developed usages of type ``@`` applications. Examples::
 
-    f :: {-# AMBIGUOUS #-} C a => Int
+        f :: {-# AMBIGUOUS #-} C a => Int
 
-    class Sized a  where
-      sizeOf :: {-# AMBIGUOUS #-} Integer
+        class Sized a  where
+          sizeOf :: {-# AMBIGUOUS #-} Integer
       
-    apply (x :: {-# AMBIGUOUS #-} forall a. (Read a, Show a) => String -> String) = x @Int "01"
+        apply (x :: {-# AMBIGUOUS #-} forall a. (Read a, Show a) => String -> String) = x @Int "01"
     
-    norm :: {-# AMBIGUOUS #-} forall a. (Read a, Show a) => String -> String
-    norm = show @a . read                                     -- needs type-lambda #155
+        norm :: {-# AMBIGUOUS #-} forall a. (Read a, Show a) => String -> String
+        norm = show @a . read                                     -- needs type-lambda #155
     
-    data T :: {-# AMBIGUOUS #-} F a -> Type                   -- ambiguous kind signature
+        data T :: {-# AMBIGUOUS #-} F a -> Type                   -- ambiguous kind signature
 
 2. Signatures marked ``AMBIGUOUS`` are to be validated as if ``-XAllowAmbiguousTypes`` is set, for that signature only. (If that is already set module-wide, the pragma has the effect of suppressing the ``-Wambiguous-type`` warning, see 5.)
 
@@ -155,13 +154,15 @@ I would disagree with that "useless". I see the confusion they cause as harmful.
 Unresolved questions
 --------------------
 
-* Precise wording to be discussed for the rejection message that currently suggests enabling ``AllowAmbiguousTypes``.
+No contrary feedback received for these questions, so left here as visible for Committee discussion.
 
-* Re pragmas that change semantics (such as the ``{-# OVERLAPPABLE #-}`` series), there has been comment they're difficult for source tooling utilities to observe. As well as the ``AMBIGUOUS`` pragma per signature, should there be a module-wide ``LANGUAGE`` setting? ``-XAllowAmbiguousTypesPragma``.
+* [No objection to:] Precise wording proposed for the rejection message that currently suggests enabling ``AllowAmbiguousTypes``.
 
-* From discussion, decide against this: For modules containing more ambiguous types than not, so with ``AllowAmbiguousTypes`` switched on, should there be a per-signature pragma ``{-# NOAMBIGUOUS #-}`` that *does* apply the ambiguity check? That would prevent in future deprecating ``AllowAmbiguousTypes``.
+* [Implementor's judgment:] Re pragmas that change semantics (such as the ``{-# OVERLAPPABLE #-}`` series), there has been comment they're difficult for source tooling utilities to observe. As well as the ``AMBIGUOUS`` pragma per signature, should there be a module-wide ``LANGUAGE`` setting? ``-XAmbiguousTypesPragma``.
 
-* If a signature marked ``{-# AMBIGUOUS #-}`` is not in fact ambiguous ...? A comment suggested warning of the non-ambiguity. Leave that to the implementer's judgment.
+* [From discussion, decide against this:] For modules containing more ambiguous types than not, so with ``AllowAmbiguousTypes`` switched on, should there be a per-signature pragma ``{-# NOAMBIGUOUS #-}`` that *does* apply the ambiguity check? That would prevent in future deprecating ``AllowAmbiguousTypes``.
+
+* [Implementor's judgment:] If a signature marked ``{-# AMBIGUOUS #-}`` is not in fact ambiguous ...? A comment suggested warning of the non-ambiguity. 
 
 
 Implementation Plan
