@@ -44,9 +44,10 @@ bindings for other values.
 Proposed Change Specification
 -----------------------------
 
-Record definition no longer defines toplevel selector functions when the
-``NoFieldSelectors`` extension is enabled. The default is ``FieldSelectors``,
-which implies the current behavior, that selector functions are being generated.
+This proposal introduces a new extension ``FieldSelectors`` that controls the
+generation of record field selector functions. The extension is enabled by
+default to match the current behavior, but may be disabled per-module with the
+``NoFieldSelectors`` language pragma.
 
 Record construction/update syntax and pattern matching will work as before, the
 disambiguation handled by ``DuplicateRecordFields``. The necessary selectors
@@ -59,8 +60,11 @@ that field will be provided, because it's not possible anymore to go from field
 name directly to selector.
 
 A new ``TH`` function is added which takes a ``Name`` (for the constructor) and
-a ``String`` (for the field) and returns a ``Maybe Name``, just like
-``lookupValueName``.
+a ``String`` (for the field) and returns a ``Q Exp``.
+
+.. code-block:: haskell
+
+    mkFieldSelector :: Name -> String -> Q Exp
 
 Example
 ^^^^^^^
@@ -87,10 +91,12 @@ Exporting the names for record construction now has to be specific to the
 record. Without ambiguitiy, previously this was equivalent
 
 .. code-block:: haskell
+
     module A where (Foo(Foo, bar, baz))
     data Foo = Foo { bar :: Int, baz :: Int }
 
 .. code-block:: haskell
+
     module B where (Foo(Foo, bar), baz)
     data Foo = Foo { bar :: Int, baz :: Int }
 
@@ -101,12 +107,14 @@ of this change, writing out all selector functions by hand is still different,
 because they all have to be exported manually.
 
 .. code-block:: haskell
+
     {-# LANGUAGE NoFieldSelectors #-}
     module A where (Foo(Foo, bar), baz)
     data Foo = Foo { bar :: Int, baz :: Int }
     baz = 42
 
 .. code-block:: haskell
+
     {-# LANGUAGE NoFieldSelectors #-}
     module B where (Foo(Foo, bar, baz))
     data Foo = Foo { bar :: Int, baz :: Int }
@@ -115,6 +123,7 @@ because they all have to be exported manually.
 This will now fail, because the record updater ``baz`` is not in scope anymore:
 
 .. code-block:: haskell
+
     import B
     foo = Foo 23 42
     foo { baz = 1 }
@@ -127,7 +136,8 @@ reference to a constructor. This function should be used in new TH even if this
 extension isn't enabled.
 
 .. code-block:: haskell
-   lookupFieldName :: Name -> String -> Q (Maybe Name)
+
+    lookupFieldName :: Name -> String -> Q (Maybe Name)
 
 Additionally, ``NameSpace`` will be extended with a new constructor ``FieldName``.
 
@@ -144,10 +154,11 @@ Because of Record updates still being valid, this code will still fail to
 compile without DuplicateRecordFields:
 
 .. code-block:: haskell
-  {-# LANGUAGE NoFieldSelectors #-}
 
-  data Foo = Foo { foo :: Int }
-  data Bar = Bar { foo :: Int }
+    {-# LANGUAGE NoFieldSelectors #-}
+
+    data Foo = Foo { foo :: Int }
+    data Bar = Bar { foo :: Int }
 
 Breakage estimation
 ^^^^^^^^^^^^^^^^^^^
@@ -205,7 +216,8 @@ follows:
 Future Plans
 ------------
 
-Make the behavior outlined
+Make the behavior outlined in the discussion work:
 
 .. code-block:: haskell
-  data Foo = Foo { foo :: Int } deriving selectors
+
+    data Foo = Foo { foo :: Int } deriving selectors
