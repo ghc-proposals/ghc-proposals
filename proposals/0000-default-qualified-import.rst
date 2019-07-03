@@ -92,15 +92,16 @@ Here are alternative syntax proposals for explicit unqualified imports
 
 - ``unqualified`` can be used in place of ``open``. This will appears more symmetric with the Haskell 98 syntax which uses ``qualified`` for qualified modules import.
 - More symmetric with the Haskell 98 syntax, ``open`` could be specified in before the module name: ``import open ModuleName``. However, considering the positive responses to https://github.com/ghc-proposals/ghc-proposals/pull/190 , it does not seem like a good option.
-- The position of the `open` keywoard may depends on the activation of the ``-XQualifiedImportsPostpositive`` extension.
+- The position of the ``open`` keywoard may depends on the activation of the ``-XQualifiedImportsPostpositive`` extension.
 - Yet another option is to consider, conceptually, and represent visually that unqualified imports are just qualified imports in a zero-length namespace. Example syntax could be:
-    - ``import ModuleName as unqualified``
-    - ``import ModuleName as *``
-    - ``import ModuleName as .``
 
-    Each time, the right-hand side of the ``as`` is a keyword, which signifies unqualified import.
+  - ``import ModuleName as unqualified``
+  - ``import ModuleName as *``
+  - ``import ModuleName as .``
 
-    It would, however, prevent writing ``import ModuleName open as ImportName`` (which corresponds to the current ``import ModuleName as ImportName``).
+  Each time, the right-hand side of the ``as`` is a keyword, which signifies unqualified import.
+
+  It would, however, prevent writing ``import ModuleName open as ImportName`` (which corresponds to the current ``import ModuleName as ImportName``).
 
 Unresolved Questions
 --------------------
