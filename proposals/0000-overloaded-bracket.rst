@@ -29,6 +29,7 @@ defines the operations which are necessary to construct the code representation:
 
    class Applicative m => Quote m where
       newName :: String -> m Name
+      fail :: String -> m Name
 
 An instance for ``Quote`` can be implemented
 for ``Q``, retaining backwards compatibility, but also ``State NameSupply`` to
@@ -53,6 +54,7 @@ The goal of the changes is for an expression ``e : T`` to give the representatio
 
       class Applicative m => Quote m where
          newName :: String -> m Name
+         fail :: String -> m Name
 
    These are all the operations which are necessary to build the representation
    of expressions.
@@ -62,29 +64,76 @@ The goal of the changes is for an expression ``e : T`` to give the representatio
    ``Q`` which was used is the ``newName`` function which generates a fresh name.
    All the other combinators can be defined using the ``Applicative`` operations.
 
-3. Overload the type of typed quotations as well. ``[|| e ||] :: QuoteT p => p T``::
 
-      class QuoteT p where
-         fromBracket :: (forall m . Quote m => m Exp) -> p a
+3. Generalise the ``Lift`` type class::
+
+      class Lift a where
+         lift :: Quote m => a -> m Exp
+         liftT :: Quote m => a -> m (TExp a)
+
+   This is necessary so that implicit lifting can continue to work without
+   enforcing strong constraints on the type of the bracket.
+
+4. Refine the rules to do with splicing. A top-level splice instantiates ``m ~ Q``
+   and operates as before. The use of nested brackets doesn't enforce any
+   specific constraints on ``m``. A quotation which contains splices inherits
+   the constraints on the representation.
+
+Proposed Change Specification (Typed Template Haskell)
+------------------------------------------------------
+
+There is another useful axis of polymorphism for typed quotations.
+It is useful to be polymorphic in the type constructor
+``p``. This can be used to embed quotations directly into an EDSL and write
+instances for typed quotations which isn't convenient without the polymorpism.
+
+Example 1: Creating a partially static data type::
+
+      data Expr m a where
+         Leaf :: Code m a -> Expr a
+         Int :: Int -> Expr Int
+         Add :: Expr Int -> Expr Int -> Expr Int
+
+      data Code m a = Code (m (TExp a))
+
+      instance TypedQuote Expr where
+         fromBracket = Leaf . Code
+
+      expr = [|| 5 ||] `Add` [|| 10 ||]
+
+Example 2: A stage polymorphic interpreter::
+
+      data Code m a = Code (m (TExp a))
+
+      instnace TypedQuote Code where
+
+      weaken :: Code WQ a -> WQ (TExp a)
+
+      class Ops r where
+         _int :: Int -> r Int
+         _plus :: r Int -> r Int -> r Int
+
+      instance Ops (Code WQ) where
+         _int x = [|| x ||]
+         _plus x1 x2 = [|| $$(weaken x1) + $$(weaken x2) ||]
+
+      instance Ops Identity where
+         _int x = return x
+         _plus = liftA2 (+)
+
+It was agreed in `proposal 195 <https://github.com/ghc-proposals/ghc-proposals/pull/195>`_
+that this was a sensible idea.
+
+5. Overload the type of typed quotations as well. ``[|| e ||] :: (Quote m, TypedQuote p) => p m a``::
+
+      class TypedQuote p where
+         fromBracket :: m (TExp a) -> p m a
 
    ``fromBracket`` is a generalisation of ``unsafeTExpCoerce`` which allows the
    type of resulting representation to be modified. This is not a backwards
    compatible change because the current type of quotatations is ``Q (TExp a)`` for which
    you can't write an instance of ``QuoteT``.
 
-4. Generalise the ``Lift`` type class::
-
-      class Lift a where
-         lift :: Quote m => a -> m Exp
-         liftT :: QuoteT m => a -> m a
-
-   This is necessary so that implicit lifting can continue to work without
-   enforcing strong constraints on the type of the bracket.
-
-5. Refine the rules to do with splicing. A top-level splice instantiates ``m ~ Q``
-   and operates as before. The use of nested brackets doesn't enforce any
-   specific constraints on ``m``. A quotation which contains splices inherits
-   the constraints on the representation.
 
 
 Effect and Interactions
@@ -119,21 +168,16 @@ which fall into this category if any at all.
 Interaction with Typed Template Haskell
 .......................................
 
-The bracket form for Typed Template Haskell should also be generalised but should
-use a different interface to normal quotation brackets to allow for the type
-index. Given an expression ``e : T``,
-``[|| e ||] : QuoteT m => m T``.
-
-This is not backwards compatible with the existing typed template haskell
-implementation because you are forbidden from writing an instance for `Q (TExp a)`
+The changes to typed template haskell are not
+backwards compatible because you are unable to write an ``TypedQuote`` instance for ``Q (TExp a)``
 without using ``Compose`` or a specific newtype. There is more discussion about
 why making this change is a good idea anyway in `proposal 195 <https://github.com/ghc-proposals/ghc-proposals/pull/195>`_.
 
 Connection with StaticPtrs
 ..........................
 
-This form of overloading is already implemented for static pointers, a similar
-metaprogramming facility to template haskell.
+The style of overloading for typed quotations is already implemented for static
+pointers (with similar motivation).
 
 Definition of Quote
 ...................
@@ -141,7 +185,7 @@ Definition of Quote
 Richard observes that ``Language.Haskell.TH.Lib.Internal.numTyLit`` calls
 ``fail`` from the ``Q`` monad.
 
-It needs to be decided whether ``fail`` should also be added as a member of
+Therefore ``fail`` should also be added as a member of
 ``Quote``. Desugaring to ``error`` results in a run-time error rather than a
 compile-time error as in the correct implementation.
 
@@ -175,7 +219,8 @@ Costs and Drawbacks
 Alternatives
 ------------
 
-
+* It could be argued that ``OverloadedSyntax`` should be enabled for these
+  extensions.
 
 Unresolved Questions
 --------------------
@@ -185,22 +230,10 @@ Unresolved Questions
   representations of primitive data types. This is out of scope of this proposal
   though.
 
-* The definition of `QuoteT` does not allow constraints to propagate in the same
-  manner as untype quotations. Perhaps the definition should instead be::
-
-      class QuoteT p where
-         fromBracket :: (forall m . c m => m Exp) -> p c a
-
-      data Code c a where
-         Code :: (forall m . c m => m Exp) -> Code c a
-
-      runCode :: c m => Code c a -> m Exp
-      runCode (Code e) = e
-
-* It would also be possible to make ``Quote`` a superclass of ``Q `` but
+* It would also be possible to make ``Quote`` a superclass of ``Q`` but
   this hierarchy refactoring seems unecessary.
 
 Implementation Plan
 -------------------
 
-* I will implement this.
+* I (mpickering) will implement this.
