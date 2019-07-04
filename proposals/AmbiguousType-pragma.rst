@@ -101,7 +101,13 @@ Proposed Change Specification
  
      The ambiguity might be resolvable through TypeApplications at use sites. Then mark this signature as AMBIGUOUS
  
-5. There is to be a flag ``-Wambiguous-types`` controlling whether a warning is raised for ambiguous types -- as allowed by ``-XAllowAmbiguousTypes``. If the signature is also marked ``{-# AMBIGUOUS #-}``, then don't issue the warning (see "migration path" below). If a signature marked ``{-# AMBIGUOUS #-}`` is not in fact ambiguous, ignore.
+5. There is to be a flag ``-Wambiguous-types`` controlling whether a warning is raised for ambiguous types -- as allowed by ``-XAllowAmbiguousTypes``. That is:
+
+   - If ``-XAllowAmbiguousTypes`` is not set, reject ambiguous signatures/don't also warn.
+   - If ``-XAllowAmbiguousTypes`` is set and the signature is also marked ``{-# AMBIGUOUS #-}``, then don't issue the warning (see "migration path" below).
+   - If a signature marked ``{-# AMBIGUOUS #-}`` is not in fact ambiguous, ignore.
+
+   ``-Wambiguous-types`` is to be in bin-of-warnings ``-W`` "normal warnings", on grounds an ambiguous signature is outside Haskell 2010. (If some time in future, ``-XAllowAmbiguousTypes`` is to be deprecated in favour of per-signature pragmas, move ``-Wambiguous-types`` into the ``-Wcompat`` bin.)
 
 6. The pragma can only appear with an explicit ``::`` signature; not for terms where the inferred signature is ambiguous such as toplevel functions or instances::
 
@@ -120,7 +126,7 @@ By lifting the ambiguity check only for signatures deliberately flagged, this en
 
 The proposed behaviour affects only validation and error/warning messages, not type checking rules or type inference.
 
-Existing code using ``AllowAmbiguousTypes`` is not affected. That is, ambiguities are not checked. The migration path is:
+Existing code using ``AllowAmbiguousTypes`` is not affected. That is, ambiguities are not checked. The migration path away from the module-wide setting for modules with ambiguous signatures is:
 
 * Switch on ``-Wambiguous-types``; compile the module to examine signatures that are currently ambiguous.
 
@@ -128,7 +134,11 @@ Existing code using ``AllowAmbiguousTypes`` is not affected. That is, ambiguitie
 
 * Remove the ``LANGUAGE AllowAmbiguousTypes`` setting and recompile.
 
-* In due course (not within scope of this proposal), deprecate the ``AllowAmbiguousTypes`` extension. (Same idea as introducing the ``OVERLAPPABLE`` and friends pragmas; then deprecating ``OverlappingInstances``/``IncoherentInstances``.)
+After this proposal is in place, with experience of how onerous or intrusive is the per-signature ``{-# AMBIGUOUS #-}``, a possible future migration path away from module-wide ``AllowAmbiguousTypes`` for GHC is
+
+* In due course (not within scope of this proposal), deprecate the ``AllowAmbiguousTypes`` extension in GHC, and eventually remove it. (Same idea as introducing the ``OVERLAPPABLE`` and friends pragmas; then deprecating ``OverlappingInstances``/``IncoherentInstances``.)
+
+Also note
 
 * Discussion on this proposal is going on in parallel with #234 'Local Warning Pragmas'. Because ``{-# AMBIGUOUS #-}`` is a language extension (an alternative to ``-XAllowAmbiguousTypes``), not merely controlling warnings, I see this as outside the scope that #234 has evolved to. (The ``-Wambiguous-types`` point 5. warning might fall within the 'Local Warning' in the sense of #234, but note that ``{-# AMBIGUOUS #-}`` in effect is a local suppression of that warning.)
 
@@ -160,7 +170,7 @@ No contrary feedback received for these questions, so left here as visible for C
 
 * [Implementor's judgment:] Re pragmas that change semantics (such as the ``{-# OVERLAPPABLE #-}`` series), there has been comment they're difficult for source tooling utilities to observe. As well as the ``AMBIGUOUS`` pragma per signature, should there be a module-wide ``LANGUAGE`` setting? ``-XAmbiguousTypesPragma``.
 
-* [From discussion, decide against this:] For modules containing more ambiguous types than not, so with ``AllowAmbiguousTypes`` switched on, should there be a per-signature pragma ``{-# NOAMBIGUOUS #-}`` that *does* apply the ambiguity check? That would prevent in future deprecating ``AllowAmbiguousTypes``.
+* [From discussion, decide against this:] For modules containing more ambiguous types than not, so with ``AllowAmbiguousTypes`` switched on, should there be a per-signature pragma ``{-# NO[T_]AMBIGUOUS #-}`` that *does* apply the ambiguity check? That would prevent in future deprecating ``AllowAmbiguousTypes``.
 
 * [Implementor's judgment:] If a signature marked ``{-# AMBIGUOUS #-}`` is not in fact ambiguous ...? A comment suggested warning of the non-ambiguity. 
 
