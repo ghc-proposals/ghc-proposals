@@ -115,6 +115,7 @@ Then this table shows what names are brought into scope by the specified import 
 
 .. list-table:: Effects of import statements
    :header-rows: 1
+
    * - #
      - Import declaration
      - Names brought into scope
