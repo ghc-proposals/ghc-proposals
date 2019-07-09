@@ -70,9 +70,9 @@ Core Coercions
      C : forall a* b*. phi => H a* ~_R H b*
      |- G
      (G |- t : k)*
-     G (r : k)* |- c : phi[t* / a*][r* / a*][s* / b*][r* / b*]
+     G |- c : forall (r : k)*. phi[t* / a*][r* / a*][s* / b*][r* / b*]
      -------------------------------------------------------------------------------- Co_TyConAp'
-     G |- C(t*, s*) : H t* ~_R H s*
+     G |- C(t*, s*, c) : H t* ~_R H s*
 
    ``r`` is the remaining arguments to saturate the axiom.
    ``r*`` appears twice because we are applying the same fresh vars twice for each side.
@@ -86,7 +86,7 @@ Core Coercions
      G |- c : H t* ~_R H s*
      H is not a newtype
      -------------------------------------------------------------------------------- Co_Premise
-     G |- c : forall r*. phi[t* / a*][r* / a*][s* / b*][r* / b*]
+     G |- premise c : forall r*. phi[t* / a*][r* / a*][s* / b*][r* / b*]
 
 Surface language
 ~~~~~~~~~~~~~~~~
