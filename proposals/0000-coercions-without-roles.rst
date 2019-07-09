@@ -99,7 +99,7 @@ Surface language
 
    These "instaces" are subject to analogous restrictions as the core axioms.
 
-#. Absent an explicit "instance", we derive the first order axiom we affectively do today.
+#. Absent an explicit "instance", we derive the first order axiom we effectively do today.
    ::
      data T ... = ...
        deriving (Coercible)
