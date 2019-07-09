@@ -60,14 +60,12 @@ Core Coercions
    Not-too-incompleteness
      The axiom can't be stricter than all nominal roles today.
      Formally:
-
      ::
        (forall a* b*. (a ~_N b)* => H a* ~_R H b*) => C
 
      This allows us to continue with roughly the current treatment of unsaturated ``H`` in the typing rules.
 
 #. ``coTyConApp``, the first typing judgement involving roles that must be rewritten
-
    ::
      C : forall a* b*. phi => H a* ~_R H b*
      |- G
@@ -93,7 +91,7 @@ Core Coercions
 Surface language
 ~~~~~~~~~~~~~~~~
 
-#. We steal the `deriving instance` syntax for ``Coercible``:
+#. We steal the ``deriving instance`` syntax for ``Coercible``:
    ::
      data T ... = ...
 
@@ -102,13 +100,12 @@ Surface language
    These "instaces" are subject to analogous restrictions as the core axioms.
 
 #. Absent an explicit "instance", we derive the first order axiom we affectively do today.
-
    ::
      data T ... = ...
        deriving (Coercible)
 
    gives a warning because we derive ``Coercible`` by default, and this cannot be prevented.
-   (Or else `t ~_N s => t ~_R s` would not be true.)
+   (Or else ``t ~_N s => t ~_R s`` would not be true.)
 
 #. Explicit role applications are deprecated.
 
@@ -143,7 +140,7 @@ Alternatives
 Earlier proposals had pseudo-classes to speak of the roles of higher-kinded type parameters, so we still had one rich-role per argument.
 This seems overwrought (too many pseudo-classes), and _still_ is less expressive:
 The higher-kinded roles speak to the entire domain, rather than the types we actually apply the type constructor to.
-This is similar to the issues with `Foo1` classes.
+This is similar to the issues with ``Foo1`` classes.
 
 If we required the axioms be complete, we could get rid of the no newtype restriction for ``Co_Premise``.
 The idea then is appealing to coercions on the underlying type never lead to anything more premissive because the axioms are "lossless".
