@@ -159,4 +159,6 @@ Hopefully this section will be empty by the time the proposal is brought to the 
 
 Implementation Plan
 -------------------
-(Optional) If accepted who will implement the change? Which other resources and prerequisites are required for implementation?
+
+I think I can implement this.
+However I've started a bunch of project mucking around with GHC lately and I don't want to bite off more than I can chew and get none of them done.
