@@ -90,6 +90,23 @@ Proposed Change Specification
         norm = show @a . read                                     -- needs type-lambda #155
     
         data T :: {-# AMBIGUOUS #-} F a -> Type                   -- ambiguous kind signature
+        
+   Also ``{-# AMBIGUOUS #-}`` can appear after ``::`` in a ``data`` or ``newtype`` declaration -- either for fields or GADT-style constructors; or in H2010-style immediately after the constructor::
+   
+        data D a where                                            -- GADT style
+          MkD :: {-# AMBIGUOUS #-} (forall b. C a b => a)
+
+        data D2 a = MkD2  {-# AMBIGUOUS #-} (forall b. C a b => a) (Show a => a) 
+                                               -- H2010 style; note no ::; note the second arg is not ambiguous
+                                               
+        newtype N a = MkN {-# AMBIGUOUS #-} { foo :: {-# AMBIGUOUS #-} (forall b. C a b => a) } 
+                                               -- AMBIGUOUS not ambiguous, but one is redundant
+
+   ``{-# AMBIGUOUS #-}`` is also to be allowed in the body of a type application::
+
+        x = foo @({-# AMBIGUOUS #-} forall b. C a b => a) bar
+   
+   See Appendix giving a diff to the BNF for the language (wrt the Report, and affected extensions).
 
 2. Signatures marked ``AMBIGUOUS`` are to be validated as if ``-XAllowAmbiguousTypes`` is set, for that signature only. (If that is already set module-wide, the pragma has the effect of suppressing the ``-Wambiguous-type`` warning, see 5.)
 
@@ -180,3 +197,42 @@ Implementation Plan
 
 I am not accredited to interfere in GHC's type checking. Hopefully this is a narrowly targetted mod that merely suppresses the rejection message, if the pragma is present in the AST for the signature.
 
+Appendix: BNF diff for appearences of ``{-# AMBIGUOUS #-}``
+---------------------------------------------------------
+
+(The optional ``[ {-# AMBIGUOUS #-} ]`` is the change.)
+::
+
+    exp     → infixexp :: [ {-# AMBIGUOUS #-} ] [context =>] type      (expression type signature)
+            | infixexp
+            
+    fexp    → [fexp] [@([ {-# AMBIGUOUS #-} ] type)] aexp	       (function application with type applicn)
+
+    gendecl → vars :: [ {-# AMBIGUOUS #-} ] [context =>] type          (type signature)
+            | fixity [integer] ops                                     (fixity declaration)
+            |                                                          (empty declaration)
+
+    constr  → con [ {-# AMBIGUOUS #-} ] [!] atype1 … [!] atypek	       (arity con  =  k, k ≥ 0)
+            | [ {-# AMBIGUOUS #-} ] (btype | ! atype) conop (btype | ! atype)	    (infix conop)
+            | con { fielddecl1 , … , fielddecln }	               (n ≥ 0)
+
+    newconstr → con [ {-# AMBIGUOUS #-} ] atype
+            | con { var :: [ {-# AMBIGUOUS #-} ] type }
+            
+    topdecl → ...
+            | data simpletype where [gconstrs] [deriving]              (GADT style data or newtype)
+            | newtype [context =>] simpletype where [newgconstrs] [deriving]
+            | ...
+            
+    gconstrs → gconstr1 | … | gconstrn	                               (n ≥ 1)
+    gconstr → con [{ fielddecl1 , … , fielddecln }] :: [ {-# AMBIGUOUS #-} ] [context =>] type  
+                                                   	               (n ≥ 0, GADT style constructor)
+                                                                       (GADT style newtype constr likewise)
+
+    fielddecl → vars :: [ {-# AMBIGUOUS #-} ] (type | ! atype)
+
+And optional ``[ {-# AMBIGUOUS #-} ]`` following ``::`` in
+
+* a pattern signature;
+* a pattern synonym signature;
+* a kind signature (in class/instance heads).
