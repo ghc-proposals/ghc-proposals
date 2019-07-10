@@ -91,20 +91,20 @@ Proposed Change Specification
     
         data T :: {-# AMBIGUOUS #-} F a -> Type                   -- ambiguous kind signature
         
-   Also ``{-# AMBIGUOUS #-}`` can appear after ``::`` in a ``data`` or ``newtype`` declaration -- either for fields or GADT-style constructors; or in H2010-style immediately after the constructor::
+   Also ``{-# AMBIGUOUS #-}`` can appear after ``::`` in a ``data`` or ``newtype`` declaration -- either for fields or GADT-style constructors; or in H2010-style immediately ~after~ before the constructor (that is, after ``=`` or ``|``, because no ``::``)::
    
         data D a where                                            -- GADT style
           MkD :: {-# AMBIGUOUS #-} (forall b. C a b => a)
 
-        data D2 a = MkD2  {-# AMBIGUOUS #-} (forall b. C a b => a) (Show a => a) 
+        data D2 a = {-# AMBIGUOUS #-} MkD2  (forall b. C a b => a) (Show a => a) 
                                                -- H2010 style; note no ::; note the second arg is not ambiguous
                                                
-        newtype N a = MkN {-# AMBIGUOUS #-} { foo :: {-# AMBIGUOUS #-} (forall b. C a b => a) } 
+        newtype N a = {-# AMBIGUOUS #-} MkN { foo :: {-# AMBIGUOUS #-} (forall b. C a b => a) } 
                                                -- AMBIGUOUS not ambiguous, but one is redundant
 
-   ``{-# AMBIGUOUS #-}`` is also to be allowed in the body of a type application::
+   For type applications, see 7. <strike>``{-# AMBIGUOUS #-}`` is also to be allowed in the body of a type application::
 
-        x = foo @({-# AMBIGUOUS #-} forall b. C a b => a) bar
+        x = foo @({-# AMBIGUOUS #-} forall b. C a b => a) bar</strike>
    
    See Appendix giving a diff to the BNF for the language (wrt the Report, and affected extensions).
 
@@ -133,6 +133,8 @@ Proposed Change Specification
     instance C (F b) => C (Option a)
     
    For those cases, the user must contrive an explicit signature (with ``-XInstanceSigs`` if necessary).
+
+7. Type applications are to be allowed ambiguous signatures, no warning or error, without needing ``{-# AMBIGUOUS #-}`` (nor needing ``LANGUAGE AllowAmbiguousTypes``).
 
 
 
