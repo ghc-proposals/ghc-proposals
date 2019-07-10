@@ -189,9 +189,3 @@ number of `=`s as characters in the line above it.
 Note that markdown doesn't require indentation of the code block, nor does it
 require blank lines before and after it.
 
-```diff
-@@ inline code
-- ``foo :: Int``
-+ `foo :: Int`
-```
-
