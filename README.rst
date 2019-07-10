@@ -247,13 +247,13 @@ The current members, including their GitHub handle, when they joined and their r
 Christopher Allen       `@bitemyapp <https://github.com/bitemyapp>`_          2017/02
 Vitaly Bragilevsky      `@bravit <https://github.com/bravit>`_                2018/09
 Joachim Breitner        `@nomeata <https://github.com/nomeata>`_              2017/02  secretary
-Manuel M T Chakravarty  `@mchakravarty <https://github.com/mchakravarty>`_    2017/02
 Iavor Diatchki          `@yav <https://github.com/yav>`_                      2017/02
 Richard Eisenberg       `@goldfirere <https://github.com/goldfirere>`_        2017/02
-Ben Gamari              `@bgamari <https://github.com/bgamari>`_              2017/02
+Sandy Maguire           `@isovector <https://github.com/isovector>`_          2019/07
 Simon Marlow            `@simonmar <https://github.com/simonmar>`_            2017/02  co-chair
 Simon Peyton-Jones      `@simonpj <https://github.com/simonpj>`_              2017/02  co-chair
 Eric Seidel             `@gridaphobe <https://github.com/gridaphobe>`_        2018/09
+Arnaud Spiwack          `@aspiwack <https://github.com/aspiwack/>`_           2019/07
 ======================  ====================================================  =======  =========
 
 The committee members have committed to adhere to the `Haskell committee guidelines for respectful communication <GRC.rst>`_.
@@ -263,6 +263,8 @@ We would also like to thank our former members:
 ======================  ====================================================  =================
 Ryan Newton             `@rrnewton <https://github.com/rrnewton>`_            2017/02 - 2018/09
 Roman Leshchinskiy      `@rleshchinskiy <https://github.com/rleshchinskiy>`_  2017/02 - 2018/11
+Ben Gamari              `@bgamari <https://github.com/bgamari>`_              2017/02 - 2019/07
+Manuel M T Chakravarty  `@mchakravarty <https://github.com/mchakravarty>`_    2017/02 - 2019/07
 ======================  ====================================================  =================
 
 
