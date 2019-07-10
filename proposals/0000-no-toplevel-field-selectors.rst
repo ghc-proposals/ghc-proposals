@@ -168,8 +168,6 @@ selector / selector doesn't exist.
 
     mkFieldSelector :: Name -> String -> Q Exp
 
-Additionally, ``NameSpace`` will be extended with a new constructor ``FieldName``.
-
 Effect and Interactions
 -----------------------
 
