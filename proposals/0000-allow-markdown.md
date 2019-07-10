@@ -4,6 +4,8 @@ ticket-url: ""
 implemented: ""
 ---
 
+This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/249).
+
 # Allow Proposals to be Written in Markdown
 
 The current proposal process requires proposals to be written in ReST. This is a
