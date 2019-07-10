@@ -109,18 +109,39 @@ because they all have to be exported manually.
 .. code-block:: haskell
 
     {-# LANGUAGE NoFieldSelectors #-}
-    module A where (Foo(Foo, bar), baz)
+    module A where (Foo(Foo, bar, baz))
     data Foo = Foo { bar :: Int, baz :: Int }
     baz = 42
+
+Which would be equivalent to:
 
 .. code-block:: haskell
 
     {-# LANGUAGE NoFieldSelectors #-}
-    module B where (Foo(Foo, bar, baz))
+    module A where (Foo(..))
     data Foo = Foo { bar :: Int, baz :: Int }
     baz = 42
 
-This will now fail, because the record updater ``baz`` is not in scope anymore:
+A second module, ``B``, which does not export the selector ``baz`` of
+constructor ``Foo``, but instead exports the toplevel bind ``baz``.
+
+.. code-block:: haskell
+
+    {-# LANGUAGE NoFieldSelectors #-}
+    module B where (Foo(Foo, bar), baz)
+    data Foo = Foo { bar :: Int, baz :: Int }
+    baz = 42
+
+The updaters can still be used when exported (as in module ``A``).
+
+.. code-block:: haskell
+
+    import A
+    foo = Foo 23 42
+    foo { baz = 1 }
+
+This will now fail, because the record updater ``baz`` is not in scope anymore,
+because the selector is not exported by ``B``.
 
 .. code-block:: haskell
 
@@ -128,16 +149,24 @@ This will now fail, because the record updater ``baz`` is not in scope anymore:
     foo = Foo 23 42
     foo { baz = 1 }
 
+The value ``baz`` is only exported from module ``B``, not ``A``. This would fail:
+
+.. code-block:: haskell
+
+    import A
+    main = print baz
+
 Template Haskell
 ^^^^^^^^^^^^^^^^
 
 A new function will be added to Template Haskell, where the ``Name`` is a
 reference to a constructor. This function should be used in new TH even if this
-extension isn't enabled.
+extension isn't enabled. It will fail if it's not possible to create a valid
+selector / selector doesn't exist.
 
 .. code-block:: haskell
 
-    lookupFieldName :: Name -> String -> Q (Maybe Name)
+    mkFieldSelector :: Name -> String -> Q Exp
 
 Additionally, ``NameSpace`` will be extended with a new constructor ``FieldName``.
 
