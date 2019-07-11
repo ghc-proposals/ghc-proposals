@@ -29,7 +29,6 @@ defines the operations which are necessary to construct the code representation:
 
    class Applicative m => Quote m where
       newName :: String -> m Name
-      fail :: String -> m Name
 
 An instance for ``Quote`` can be implemented
 for ``Q``, retaining backwards compatibility, but also ``State NameSupply`` to
