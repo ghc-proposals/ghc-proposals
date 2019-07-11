@@ -49,17 +49,15 @@ generation of record field selector functions. The extension is enabled by
 default to match the current behavior, but may be disabled per-module with the
 ``NoFieldSelectors`` language pragma.
 
-Record construction/update syntax and pattern matching will work as before, the
-disambiguation handled by ``DuplicateRecordFields``. The necessary selectors
-will be part of a ``Record(..)`` export, or can also be named individually. They
-always have to be associated with the data type though, because there is no more
-toplevel selector (see `Example`_).
+When ``NoFieldSelectors`` is enabled, Record construction/update syntax and
+pattern matching will work as before, as will the disambiguation handled by
+``DuplicateRecordFields``. Record fields will still be part of a ``Record(..)``
+export, or can also be named individually. They always have to be associated
+with the data type though, because there is no more toplevel selector (see `Example`_).
 
-A function for Template Haskell to go from a record field name to a selector for
+A Template Haskell function ``mkFieldSelector`` to go from a record field name to a selector for
 that field will be provided, because it's not possible anymore to go from field
-name directly to selector.
-
-A new ``TH`` function is added which takes a ``Name`` (for the constructor) and
+name directly to selector.  It takes a ``Name`` (for the constructor) and
 a ``String`` (for the field) and returns a ``Q Exp``.
 
 .. code-block:: haskell
@@ -75,15 +73,13 @@ Given a data structure
 
 The following will be available:
 
-- the type ``Foo``
-- the constructor ``Foo``
-- the two functions ``bar`` and ``baz``
-- the names ``bar`` and ``baz`` for record construction (``Foo { bar = 3, baz = "foo" }``)
-- the names ``bar`` and ``baz`` for ``RecordWildCards``
+1. the type constructor ``Foo``
+2. the data constructor ``Foo``
+3. the fields ``bar`` and ``baz`` for record construction, update, and patterns
+4. the two functions ``bar`` and ``baz``
 
-If the language extension ``NoFieldSelectors`` is enabled for the module
-or ``Foo`` specifically, all of the above will be generated, except for the two
-functions ``bar`` and ``baz``.
+If the language extension ``NoFieldSelectors`` is enabled, items (1), (2), and (3)
+will still be generated, but (4) will not.
 
 Wildcard exports will work as before, except for the two functions. Even if
 these functions are otherwise defined, the wildcard will not export them.
@@ -100,11 +96,11 @@ record. Without ambiguitiy, previously this was equivalent
     module B where (Foo(Foo, bar), baz)
     data Foo = Foo { bar :: Int, baz :: Int }
 
-Because of the new semantics, these two export statements are now different. The
+Under ``NoFieldSelectors``, these two export statements are now different. The
 first one will export the field ``baz``, but not the function ``baz``, while the
-second one will export the function ``baz``, but not the field ``baz``. Because
+second one will export the function ``baz`` (assuming one is defined), but not the field ``baz``. Because
 of this change, writing out all selector functions by hand is still different,
-because they all have to be exported manually.
+because they all have to be exported separately.
 
 .. code-block:: haskell
 
@@ -123,7 +119,7 @@ Which would be equivalent to:
     baz = 42
 
 A second module, ``B``, which does not export the selector ``baz`` of
-constructor ``Foo``, but instead exports the toplevel bind ``baz``.
+constructor ``Foo``, but instead exports the toplevel binder ``baz``.
 
 .. code-block:: haskell
 
@@ -140,8 +136,8 @@ The fields can still be used when exported (as in module ``A``).
     foo = Foo 23 42
     foo { baz = 1 }
 
-This will now fail, because the record updater ``baz`` is not in scope anymore,
-because the selector is not exported by ``B``.
+This will now fail, because the field ``baz`` is not in scope anymore,
+because it is not exported by ``B``.
 
 .. code-block:: haskell
 
