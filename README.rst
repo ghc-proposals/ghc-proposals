@@ -100,7 +100,7 @@ contributor to write a formal proposal.
 What should a proposal look like?
 ---------------------------------
 
-Each proposal document must follow the following outline. A template is provided in `proposal template <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.rst>`_.
+Each proposal document must follow the following outline. Templates are available for both `ReStructuredText <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.rst>`_, and `Markdown <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.md>`_.
 
 a. *Motivation*: Give a strong reason for why the community needs this change. Describe the use case as clearly as possible and give at least one concrete example. Explain how the status quo is insufficient or not ideal.
 
@@ -125,17 +125,12 @@ g. *Implementation Plan* (Optional): If accepted who will implement the change? 
   This is also a good section to outline the changes to the implementation, or otherwise include insights that assume familiarity with the implementation.
 
 
-Note that proposals are written in `ReStructuredText
-<http://www.sphinx-doc.org/en/stable/rest.html>`_ rather than Markdown for its
-expressiveness and ease of integration into other GHC infrastructure. See the
-`GHC Users Guide
-<http://downloads.haskell.org/~ghc/latest/docs/html/users_guide/editing-guide.html>`_
-for a brief introduction to ReStructuredText.
+Proposals may be written in either `ReStructuredText <http://www.sphinx-doc.org/en/stable/rest.html>`_ or `Markdown <https://github.github.com/gfm/>`_. While the proposal process itself has no preference, keep in mind that the `GHC Users Guide <http://downloads.haskell.org/~ghc/latest/docs/html/users_guide/editing-guide.html>`_ uses ReStructuredText exclusively. Accepted proposals written in ReStructuredText thus have the slight benefit that they can be more easily included in the official GHC documentation.
 
 How to start a new proposal
 ---------------------------
 
-To start a proposal, create a pull request that adds your proposal as ``proposals/0000-proposal-name.rst``. Use ``proposals/0000-template.rst`` as a template.
+To start a proposal, create a pull request that adds your proposal as ``proposals/0000-proposal-name.rst`` or ``proposals/0000-proposal-name.md``. Use the corresponding ``proposals/0000-template`` file as a template.
 
 If you are unfamiliar with git and github, you can use the GitHub web interface to perform these steps:
 
