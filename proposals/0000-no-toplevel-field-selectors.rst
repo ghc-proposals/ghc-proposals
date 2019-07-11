@@ -132,7 +132,7 @@ constructor ``Foo``, but instead exports the toplevel bind ``baz``.
     data Foo = Foo { bar :: Int, baz :: Int }
     baz = 42
 
-The updaters can still be used when exported (as in module ``A``).
+The fields can still be used when exported (as in module ``A``).
 
 .. code-block:: haskell
 
@@ -155,6 +155,24 @@ The value ``baz`` is only exported from module ``B``, not ``A``. This would fail
 
     import A
     main = print baz
+
+If you wanted to use both, you'd have to export both explicitly:
+
+.. code-block:: haskell
+
+    {-# LANGUAGE NoFieldSelectors #-}
+    module C where (Foo(Foo, bar, baz), baz)
+    data Foo = Foo { bar :: Int, baz :: Int }
+    baz = 42
+
+Now ``baz`` here assigns the value ``42`` to the field ``baz``.
+
+.. code-block:: haskell
+
+   import C
+    foo = Foo 23 1
+    foo { baz = baz }
+
 
 Template Haskell
 ^^^^^^^^^^^^^^^^
