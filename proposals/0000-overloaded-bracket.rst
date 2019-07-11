@@ -54,7 +54,6 @@ The goal of the changes is for an expression ``e : T`` to give the representatio
 
       class Applicative m => Quote m where
          newName :: String -> m Name
-         fail :: String -> m Name
 
    These are all the operations which are necessary to build the representation
    of expressions.
@@ -78,63 +77,6 @@ The goal of the changes is for an expression ``e : T`` to give the representatio
    and operates as before. The use of nested brackets doesn't enforce any
    specific constraints on ``m``. A quotation which contains splices inherits
    the constraints on the representation.
-
-Proposed Change Specification (Typed Template Haskell)
-------------------------------------------------------
-
-There is another useful axis of polymorphism for typed quotations.
-It is useful to be polymorphic in the type constructor
-``p``. This can be used to embed quotations directly into an EDSL and write
-instances for typed quotations which isn't convenient without the polymorpism.
-
-Example 1: Creating a partially static data type::
-
-      data Expr m a where
-         Leaf :: Code m a -> Expr a
-         Int :: Int -> Expr Int
-         Add :: Expr Int -> Expr Int -> Expr Int
-
-      data Code m a = Code (m (TExp a))
-
-      instance TypedQuote Expr where
-         fromBracket = Leaf . Code
-
-      expr = [|| 5 ||] `Add` [|| 10 ||]
-
-Example 2: A stage polymorphic interpreter::
-
-      data Code m a = Code (m (TExp a))
-
-      instnace TypedQuote Code where
-
-      weaken :: Code WQ a -> WQ (TExp a)
-
-      class Ops r where
-         _int :: Int -> r Int
-         _plus :: r Int -> r Int -> r Int
-
-      instance Ops (Code WQ) where
-         _int x = [|| x ||]
-         _plus x1 x2 = [|| $$(weaken x1) + $$(weaken x2) ||]
-
-      instance Ops Identity where
-         _int x = return x
-         _plus = liftA2 (+)
-
-It was agreed in `proposal 195 <https://github.com/ghc-proposals/ghc-proposals/pull/195>`_
-that this was a sensible idea.
-
-5. Overload the type of typed quotations as well. ``[|| e ||] :: (Quote m, TypedQuote p) => p m a``::
-
-      class TypedQuote p where
-         fromBracket :: m (TExp a) -> p m a
-
-   ``fromBracket`` is a generalisation of ``unsafeTExpCoerce`` which allows the
-   type of resulting representation to be modified. This is not a backwards
-   compatible change because the current type of quotatations is ``Q (TExp a)`` for which
-   you can't write an instance of ``QuoteT``.
-
-
 
 Effect and Interactions
 -----------------------
@@ -165,29 +107,13 @@ an additional class ``LiftQ`` could be defined which has the old interface. This
 would mean users need to explicitly lift but there are likely only a few instances
 which fall into this category if any at all.
 
-Interaction with Typed Template Haskell
-.......................................
-
-The changes to typed template haskell are not
-backwards compatible because you are unable to write an ``TypedQuote`` instance for ``Q (TExp a)``
-without using ``Compose`` or a specific newtype. There is more discussion about
-why making this change is a good idea anyway in `proposal 195 <https://github.com/ghc-proposals/ghc-proposals/pull/195>`_.
-
-Connection with StaticPtrs
-..........................
-
-The style of overloading for typed quotations is already implemented for static
-pointers (with similar motivation).
-
 Definition of Quote
 ...................
 
 Richard observes that ``Language.Haskell.TH.Lib.Internal.numTyLit`` calls
-``fail`` from the ``Q`` monad.
-
-Therefore ``fail`` should also be added as a member of
-``Quote``. Desugaring to ``error`` results in a run-time error rather than a
-compile-time error as in the correct implementation.
+``fail`` from the ``Q`` monad. This call to ``fail`` can be replaced with
+a call to ``error``. It will still be executed at compile-time but with a
+potentially slightly worse error message.
 
 Other Effects
 .............
@@ -211,16 +137,11 @@ Costs and Drawbacks
 * The modification to the ``Lift`` interface could cause user-written instances
   to break but users should not define their own instances anyway. ``DeriveLift``
   is the blessed manner in which to define a ``Lift`` instance.
-* The changes to the typed template haskell quotation is in line with the untyped
-  variant but will be a breaking change to user programs. The number of users of
-  typed template haskell is however very small so this shouldn't stop the adoption of
-  the proposal.
 
 Alternatives
 ------------
 
-* It could be argued that ``OverloadedSyntax`` should be enabled for these
-  extensions.
+* Just keep things the way they are.
 
 Unresolved Questions
 --------------------
