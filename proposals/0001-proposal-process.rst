@@ -2,6 +2,8 @@ A Proposal for Proposals
 ========================
 
 
+.. author:: Ben Gamari
+.. date-accepted:: 2018-02-27
 .. sectnum::
    :start: 1
 .. contents::

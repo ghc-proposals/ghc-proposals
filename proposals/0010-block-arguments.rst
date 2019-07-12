@@ -2,6 +2,8 @@ BlockArguments Extension
 ========================
 
 .. proposal-number:: 10
+.. author:: Takano Akio
+.. date-accepted:: 2018-02-27
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/10843
 .. implemented:: 8.6.1
 .. highlight:: haskell

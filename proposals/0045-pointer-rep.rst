@@ -2,6 +2,8 @@ Pointer Rep
 ==============
 
 .. proposal-number:: 45
+.. author:: Andrew Martin
+.. date-accepted:: 2019-05-11
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell

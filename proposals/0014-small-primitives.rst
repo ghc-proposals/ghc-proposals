@@ -2,6 +2,8 @@
 Add more fixed size primitive types, like ``Int8#/Word8#``
 ==========================================================
 
+.. author:: Michal Terepeta
+.. date-accepted:: 2018-03-01
 .. proposal-number:: 14
 .. ticket-url:: https://phabricator.haskell.org/D5006, https://phabricator.haskell.org/D5258
 .. implemented::

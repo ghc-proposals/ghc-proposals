@@ -2,6 +2,8 @@ Revise Levity Polymorphism
 ==========================
 
 .. proposal-number:: 0003
+.. author:: Richard Eisenberg
+.. date-accepted:: 2018-02-27
 .. ticket-url:: https://phabricator.haskell.org/D2842
 .. implemented:: 8.2.1
 .. highlight:: haskell

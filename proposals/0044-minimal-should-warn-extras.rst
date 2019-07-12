@@ -2,6 +2,8 @@ MINIMAL should warn about extra definitions
 ===========================================
 
 .. proposal-number:: 44
+.. author:: Levent Erkok
+.. date-accepted:: 2019-03-14
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/16314
 .. implemented::
 .. highlight:: haskell

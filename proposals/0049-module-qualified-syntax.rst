@@ -2,6 +2,8 @@ Allow ``qualified`` to follow module name
 =========================================
 
 .. proposal-number:: 49
+.. author:: Shayne Fletcher
+.. date-accepted:: 2019-05-11
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/merge_requests/853
 .. implemented::
 .. highlight:: haskell

@@ -2,6 +2,8 @@ Offer more array resizing primitives
 ====================================
 
 .. proposal-number:: 25
+.. author:: David Feuer
+.. date-accepted:: 2018-07-02
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell

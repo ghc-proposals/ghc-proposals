@@ -2,6 +2,8 @@ Type-level type applications
 ============================
 
 .. proposal-number:: 15
+.. author:: Richard Eisenberg
+.. date-accepted:: 2018-03-01
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/12045
 .. implemented:: 8.8
 .. highlight:: haskell

@@ -2,6 +2,8 @@ Declare ``Constraint`` is not apart from ``Type``
 =================================================
 
 .. proposal-number:: 19
+.. author:: Richard Eisenberg
+.. date-accepted:: 2018-04-24
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell

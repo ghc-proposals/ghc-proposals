@@ -2,6 +2,8 @@ Hexadecimal Floats in Haskell
 =============================
 
 .. proposal-number:: 0004
+.. author:: Joachim Breitner
+.. date-accepted:: 2017-04-02
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/13126
 .. implemented:: 8.4.1
 .. highlight:: haskell

@@ -2,6 +2,8 @@ Overloaded Record Fields
 ========================
 
 .. proposal-number:: 0002
+.. author:: Adam Gundry
+.. date-accepted:: 2018-02-27
 .. implemented:: 8.2
 .. sectnum::
    :start: 2
