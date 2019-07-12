@@ -3,7 +3,7 @@ Meaning-preserving parsing rules for SCC annotations
 
 .. proposal-number:: 46
 .. author:: Vladislav Zavialov
-.. date-accepted:: 2019-05-11
+.. date-accepted:: 2019-04-17
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell

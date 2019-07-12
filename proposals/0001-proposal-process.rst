@@ -3,7 +3,7 @@ A Proposal for Proposals
 
 
 .. author:: Ben Gamari
-.. date-accepted:: 2018-02-27
+.. date-accepted:: 2017-01-03
 .. sectnum::
    :start: 1
 .. contents::
