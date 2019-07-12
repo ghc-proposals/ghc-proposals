@@ -49,7 +49,7 @@ A new optional field, ``source-origin`` is added to the `InstalledPackageInfo <h
 
 B) *Provenance Aliases*
 
-Since urls can be unwieldy, and it is expected that few will be used, it makes sense to allow specification of shorthand aliases to ghc with a new flag. Hence we add a new flag ``--source-origin-alias [ALIAS]=[URL]``  that may be specified multiple times. In the event the same alias is specified twice, an error is thrown.
+Since urls can be unwieldy, and it is expected that few will be used, it makes sense to allow specification of shorthand aliases to ghc with a new flag. Hence we add a new flag ``-source-origin-alias [ALIAS]=[URL]``  that may be specified multiple times. In the event the same alias is specified twice, an error is thrown.
 
 C) *Provenance Specification*
 
@@ -63,9 +63,11 @@ Under this proposal we can also specify
 
 Where repo is either the url of a repository root or an alias which maps to one.
 
-D) Cabal syntax
 
-Cabal files are extended in two ways.
+Effect and Interactions
+-----------------------
+
+Cabal file syntax can then be extended as follows to then take advantage of this feature:
 
 ``source-origin-aliases:`` is a top-level property consisting of a list of aliases in the usual indented assignment style.  These aliases will be passed to all invocations of ``ghc`` in the course of a cabal build. Example syntax: ::
 
@@ -77,9 +79,9 @@ Cabal files are extended in two ways.
 
 Further, there is an implicitly defined ``baserepo`` alias that always refers to the base repo set by the user in their ``~/.cabal/config`` (or in the command-line, if the config file is overridden).
 
-Effect and Interactions
------------------------
-I can think of no difficult interactions with existing features. There may need to be a fair amount of mechanical work to remove assumptions about uniqueness of package names throughout different portions of the codebase. I do not believe that there is any interaction with backpack, but it would be important to confirm this.
+I can think of no further difficult interactions with existing features. There may need to be a fair amount of mechanical work to remove assumptions about uniqueness of package names throughout different portions of the codebase. I do not believe that there is any interaction with backpack, but it would be important to confirm this.
+
+Note: currently, today, if two packages are in scope with the same name, which is possible, then users specifying this ambiguous name using package qualified imports are presented with an error. This proposal does not alter this behavior.
 
 Costs and Drawbacks
 -------------------
@@ -101,6 +103,8 @@ Possible areas of disagreement/future work
 2) The question arises: should there be some global location for alias maps? At this point, I think we should not have this. In particular, the aim of the proposal is to allow genuine federation, without the need of any central authority. By introducing some global location by which names are assigned (outside of the mechanisms for assigning names that are common to the internet as a whole), we find ourselves with another version of the same problem. In the future, if we find it is too awkward for packages to each assign aliases, this can be revisited. (Also note -- it is expected that the use of these aliases is not going to be common, to begin with, and will generally not be for *central* packages, but rather, for the most part, for proprietary code, and individual applications).
 
 3) The potential of different choices for what is placed into the `source-origin` field and their meaning to tools like ``cabal-install`` is left open at this point. This will need to be worked out in the future to allow *fetching* from such specifications (i.e. when present in `cabal` files). A suggested heuristic would be as follows (in order of precedence): If the url is of a directory that contains a ``root.json`` it is assumed to be a package repository as defined in ``hackage-security``. If the url is of a ``.tar.gz`` file, it is a direct specification of a package tarball. If it terminates in ``.git``, it is assumed to be a git repo of a single package. (In this latter case, this leaves unresolved the question of a syntax for branches or tags, which would need to be determined). Because this proposal involves modifying the ``Cabal`` library, but not yet the ``cabal-install`` tool, we can afford to leave this not fully worked out for the time being.
+
+4) There is a question as to why ghc rather than e.g. cabal needs to know about source origin aliases. The answer is that the aliases are made reference to in haskell files. Meanwhile, the packagedb does not contain aliases, but contains the full, unabbreviated provenance url. Since it is ghc that needs to resolve the provenance qualified packages against the packagedb, then ghc itself needs to know the aliasing scheme.
 
 Implementation Plan
 -------------------
