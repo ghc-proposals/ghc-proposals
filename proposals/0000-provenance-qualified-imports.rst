@@ -45,11 +45,11 @@ Proposed Change Specification
 
 A) *Provenance Information*
 
-A new optional field, `source-origin` is added to the `InstalledPackageInfo <http://downloads.haskell.org/~ghc/latest/docs/html/users_guide/packages.html#installed-pkg-info>`_ file and in turn to ghc package databases. Tools which register packages to databases may also specify this field. The intended use of this field is to contain a url  that specifies the origin of the package, typically the root of the package repository from which a package was sourced.
+A new optional field, ``source-origin`` is added to the `InstalledPackageInfo <http://downloads.haskell.org/~ghc/latest/docs/html/users_guide/packages.html#installed-pkg-info>`_ file and in turn to ghc package databases. Tools which register packages to databases may also specify this field. The intended use of this field is to contain a url  that specifies the origin of the package, typically the root of the package repository from which a package was sourced.
 
 B) *Provenance Aliases*
 
-Since urls can be unwieldy, and it is expected that few will be used, it makes sense to allow specification of shorthand aliases to ghc with a new flag. Hence we add a new flag `--source-origin-alias [ALIAS]=[URL]``  that may be specified multiple times. In the event the same alias is specified twice, an error is thrown.
+Since urls can be unwieldy, and it is expected that few will be used, it makes sense to allow specification of shorthand aliases to ghc with a new flag. Hence we add a new flag ``--source-origin-alias [ALIAS]=[URL]``  that may be specified multiple times. In the event the same alias is specified twice, an error is thrown.
 
 C) *Provenance Specification*
 
