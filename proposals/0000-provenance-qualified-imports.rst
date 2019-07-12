@@ -67,7 +67,7 @@ D) Cabal syntax
 
 Cabal files are extended in two ways.
 
-``source-origin-alises:`` is a top-level property consisting of a list of aliases in the usual indented assignment style.  These aliases will be passed to all invocations of `ghc` in the course of a cabal build. Example syntax: ::
+``source-origin-aliases:`` is a top-level property consisting of a list of aliases in the usual indented assignment style.  These aliases will be passed to all invocations of ``ghc`` in the course of a cabal build. Example syntax: ::
 
     source-origin-aliases:
        hackage: https://…
