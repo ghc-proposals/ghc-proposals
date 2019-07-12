@@ -2,7 +2,7 @@ As patterns in pattern synonyms
 ==============
 
 .. proposal-number:: 16
-.. author:: simonpj
+.. author:: Simon Peyton Jones
 .. date-accepted:: 2018-03-18
 .. ticket-url:: Leave blank. This will eventually be filled with the
                 ticket URL which will track the progress of the
