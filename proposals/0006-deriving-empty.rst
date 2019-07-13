@@ -2,6 +2,8 @@ Overhaul deriving instances for empty data types
 ================================================
 
 .. proposal-number:: 0006
+.. author:: Ryan Scott
+.. date-accepted:: 2017-08-28
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/7401, https://gitlab.haskell.org/ghc/ghc/issues/10577, https://gitlab.haskell.org/ghc/ghc/issues/13117
 .. implemented:: 8.4
 .. highlight:: haskell

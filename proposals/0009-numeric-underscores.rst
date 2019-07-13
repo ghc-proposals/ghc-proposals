@@ -2,6 +2,8 @@ Underscores in Numeric Literals
 ===============================
 
 .. proposal-number:: 0009
+.. author:: Takenobu Tani
+.. date-accepted:: 2017-11-14
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/14473
 .. implemented:: 8.6.1
 .. highlight:: haskell

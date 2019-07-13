@@ -2,6 +2,8 @@ Replace the ``atomicModifyMutVar#`` primop
 ==========================================
 
 .. proposal-number:: 27
+.. author:: David Feuer
+.. date-accepted:: 2018-07-11
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/15364
 .. implemented::
 .. highlight:: haskell

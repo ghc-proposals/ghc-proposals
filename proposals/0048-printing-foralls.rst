@@ -2,6 +2,8 @@ Clean up printing of foralls
 ============================
 
 .. proposal-number:: 48
+.. author:: Richard Eisenberg
+.. date-accepted:: 2019-04-17
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/16320
 .. implemented::
 .. highlight:: haskell

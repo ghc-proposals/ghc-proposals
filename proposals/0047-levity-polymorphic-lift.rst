@@ -2,6 +2,8 @@ Levity-polymorphic `Lift`
 =========================
 
 .. proposal-number:: 47
+.. author:: Alec Theriault
+.. date-accepted:: 2019-04-17
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/merge_requests/789
 .. implemented:: 8.10
 .. highlight:: haskell

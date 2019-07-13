@@ -2,6 +2,8 @@ Top-level kind signatures
 =========================
 
 .. proposal-number:: 36
+.. author:: Richard Eisenberg
+.. date-accepted:: 2018-09-30
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell

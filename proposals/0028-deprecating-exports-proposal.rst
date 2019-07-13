@@ -2,6 +2,8 @@ Deprecating Exports
 ===================
 
 .. proposal-number:: 28
+.. author:: Alanas Plascinskas
+.. date-accepted:: 2018-07-14
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell

@@ -2,6 +2,8 @@ Quantified Constraints
 ======================
 
 .. proposal-number:: 18
+.. author:: Ryan Scott
+.. date-accepted:: 2018-04-23
 
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/2893
 

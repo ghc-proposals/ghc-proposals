@@ -2,6 +2,8 @@ Make unboxed tuple patterns lazy / warn on unbanged strict patterns
 ===================================================================
 
 .. proposal-number:: 33
+.. author:: Richard Eisenberg
+.. date-accepted:: 2018-09-12
 .. ticket-url:: https://phabricator.haskell.org/D2842
 .. implemented::
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/35>`_.

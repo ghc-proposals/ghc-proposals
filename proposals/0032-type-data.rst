@@ -2,6 +2,8 @@ Define Kinds Without Promotion
 ==============================
 
 .. proposal-number:: 32
+.. author:: Iavor Diatchki
+.. date-accepted:: 2018-09-12
 .. ticket-url::
 .. implemented::
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/106>`_.

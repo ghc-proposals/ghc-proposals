@@ -2,6 +2,8 @@ Explicit specificity in type variable binders
 =============================================
 
 .. proposal-number:: 26
+.. author:: Richard Eisenberg
+.. date-accepted:: 2018-07-02
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/16393
 .. implemented::
 .. highlight:: haskell
