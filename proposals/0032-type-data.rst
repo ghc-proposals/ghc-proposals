@@ -2,7 +2,7 @@ Define Kinds Without Promotion
 ==============================
 
 .. proposal-number:: 32
-.. author:: Gabor Greif
+.. author:: Iavor Diatchki
 .. date-accepted:: 2018-09-12
 .. ticket-url::
 .. implemented::
