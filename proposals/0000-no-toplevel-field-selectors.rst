@@ -55,17 +55,17 @@ pattern matching will work as before, as will the disambiguation handled by
 export, or can also be named individually. They always have to be associated
 with the data type though, because there is no more toplevel selector (see `Example`_).
 
-A Template Haskell function ``mkFieldSelector`` to go from a record field name to a selector for
-that field will be provided, because it's not possible anymore to go from field
-name directly to selector.  It takes a ``Name`` (for the constructor) and
-a ``String`` (for the field) and returns a ``Q Exp``.
+A new function will be added to Template Haskell, where the ``Name`` is a
+reference to a constructor. This function should be used in new TH even if this
+extension isn't enabled. It will fail if it's not possible to create a valid
+selector / selector doesn't exist.
 
 .. code-block:: haskell
 
     mkFieldSelector :: Name -> String -> Q Exp
 
-Example
-^^^^^^^
+Examples
+--------
 
 Given a data structure
 
@@ -76,7 +76,7 @@ The following will be available:
 1. the type constructor ``Foo``
 2. the data constructor ``Foo``
 3. the fields ``bar`` and ``baz`` for record construction, update, and patterns
-4. the two functions ``bar`` and ``baz``
+4. the two functions ``bar`` and ``baz``, which are ``Foo -> Int`` and ``Foo -> String``
 
 If the language extension ``NoFieldSelectors`` is enabled, items (1), (2), and (3)
 will still be generated, but (4) will not.
@@ -98,9 +98,30 @@ record. Without ambiguitiy, previously this was equivalent
 
 Under ``NoFieldSelectors``, these two export statements are now different. The
 first one will export the field ``baz``, but not the function ``baz``, while the
-second one will export the function ``baz`` (assuming one is defined), but not the field ``baz``. Because
-of this change, writing out all selector functions by hand is still different,
-because they all have to be exported separately.
+second one will export the function ``baz`` (assuming one is defined), but not
+the field ``baz``. Because of this change, writing out all selector functions by
+hand is still different, because they all have to be exported separately.
+
+.. code-block:: haskell
+
+    {-# LANGUAGE NoFieldSelectors #-}
+    module Exports where (Foo(Foo, bar, baz))
+    data Foo = Foo { bar :: Int, baz :: Int }
+
+    bar (Foo x _) = x
+    baz (Foo _ x) = x
+
+is different from
+
+.. code-block:: haskell
+
+    module Exports where (Foo(Foo, bar, baz))
+    data Foo = Foo { bar :: Int, baz :: Int }
+
+Because the functions in the furst example don't get exported.
+
+Let's take a module ``A`` with a function with the same name as a field, with
+the extension enabled:
 
 .. code-block:: haskell
 
@@ -119,7 +140,8 @@ Which would be equivalent to:
     baz = 42
 
 A second module, ``B``, which does not export the selector ``baz`` of
-constructor ``Foo``, but instead exports the toplevel binder ``baz``.
+constructor ``Foo``, but instead exports the toplevel binder ``baz``. The fields
+can still be used when exported (as in module ``A``).
 
 .. code-block:: haskell
 
@@ -128,16 +150,8 @@ constructor ``Foo``, but instead exports the toplevel binder ``baz``.
     data Foo = Foo { bar :: Int, baz :: Int }
     baz = 42
 
-The fields can still be used when exported (as in module ``A``).
-
-.. code-block:: haskell
-
-    import A
-    foo = Foo 23 42
-    foo { baz = 1 }
-
-This will now fail, because the field ``baz`` is not in scope anymore,
-because it is not exported by ``B``.
+Using ``baz`` when importing ``B`` will fail, because the field ``baz`` is not
+in scope anymore, because it is not exported by ``B``.
 
 .. code-block:: haskell
 
@@ -145,11 +159,11 @@ because it is not exported by ``B``.
     foo = Foo 23 42
     foo { baz = 1 }
 
-The value ``baz`` is only exported from module ``B``, not ``A``. This would fail:
+However, it is possible to use the imported variable ``baz``, because ``B`` exports it.
 
 .. code-block:: haskell
 
-    import A
+    import B
     main = print baz
 
 If you wanted to use both, you'd have to export both explicitly:
@@ -169,18 +183,6 @@ Now ``baz`` here assigns the value ``42`` to the field ``baz``.
     foo = Foo 23 1
     foo { baz = baz }
 
-
-Template Haskell
-^^^^^^^^^^^^^^^^
-
-A new function will be added to Template Haskell, where the ``Name`` is a
-reference to a constructor. This function should be used in new TH even if this
-extension isn't enabled. It will fail if it's not possible to create a valid
-selector / selector doesn't exist.
-
-.. code-block:: haskell
-
-    mkFieldSelector :: Name -> String -> Q Exp
 
 Effect and Interactions
 -----------------------
@@ -234,7 +236,10 @@ None.
 Unresolved questions
 --------------------
 
-- Which order of arguments in the new TH function?
+- What would TH code look like in the future? The disambiguating field name is
+  always the first constructor, maybe introducing a new `Newtype` might make it
+  easier to use the function? Or should all constructors work, by having TH
+  normalize to the first one?
 - Should this extension imply DuplicateRecordFields?
 
 
