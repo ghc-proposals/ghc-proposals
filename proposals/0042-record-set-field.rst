@@ -2,6 +2,8 @@ Add ``setField`` to ``HasField``
 ================================
 
 .. proposal-number:: 42
+.. author:: Neil Mitchell
+.. date-accepted:: 2019-01-22
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/16232
 .. implemented::
 .. highlight:: haskell

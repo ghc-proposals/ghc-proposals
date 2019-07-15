@@ -2,6 +2,8 @@ Extend ``-Wall`` with ``incomplete-uni-patterns`` and ``incomplete-record-update
 ==============
 
 .. proposal-number:: 12
+.. author:: tomjaguarpaw
+.. date-accepted:: 2018-02-07
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/15656
 .. implemented::
 .. sectnum::

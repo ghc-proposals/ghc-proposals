@@ -2,6 +2,8 @@ Refining the plugin recompilation API
 ==============
 
 .. proposal-number:: 22
+.. author:: Matthew Pickering
+.. date-accepted:: 2018-05-15
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/7414
 .. implemented:: 8.6
 .. highlight:: haskell

@@ -2,6 +2,8 @@ Make rebindable ``fail`` work with overloaded strings
 =====================================================
 
 .. proposal-number:: 38
+.. author:: Shayne Fletcher
+.. date-accepted:: 2018-10-21
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/15645
 .. implemented:: 8.8
 .. highlight:: haskell

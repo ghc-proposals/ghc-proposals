@@ -2,6 +2,8 @@ Binding type variables in lambda-expressions
 ============================================
 
 .. proposal-number:: 50
+.. author:: Richard Eisenberg
+.. date-accepted:: 2019-05-09
 .. trac-ticket::
 .. implemented::
 .. highlight:: haskell

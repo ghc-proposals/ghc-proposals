@@ -2,6 +2,8 @@ Deriving Via
 ============
 
 .. proposal-number:: 23
+.. author:: Icelandjack
+.. date-accepted:: 2018-05-22
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/15178
 .. implemented:: 8.6
 .. highlight:: haskell

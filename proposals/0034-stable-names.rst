@@ -2,6 +2,8 @@ Remove an undocumented `StableName` guarantee
 =============================================
 
 .. proposal-number:: 34
+.. author:: David Feuer
+.. date-accepted:: 2018-09-30
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
