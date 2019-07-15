@@ -208,7 +208,7 @@ Appendix: BNF diff for appearences of ``{-# AMBIGUOUS #-}``
     exp     → infixexp :: [ {-# AMBIGUOUS #-} ] [context =>] type      (expression type signature)
             | infixexp
             
-    fexp    → [fexp] [@([ {-# AMBIGUOUS #-} ] type)] aexp	       (function application with type applicn)
+    fexp    → [fexp [@([ {-# AMBIGUOUS #-} ] type)] ] aexp	       (function application with type applicn)
 
     gendecl → vars :: [ {-# AMBIGUOUS #-} ] [context =>] type          (type signature)
             | fixity [integer] ops                                     (fixity declaration)
@@ -223,11 +223,11 @@ Appendix: BNF diff for appearences of ``{-# AMBIGUOUS #-}``
             
     topdecl → ...
             | data simpletype where [gconstrs] [deriving]              (GADT style data or newtype)
-            | newtype [context =>] simpletype where [newgconstrs] [deriving]
+            | newtype simpletype where [newgconstrs] [deriving]
             | ...
             
     gconstrs → gconstr1 | … | gconstrn	                               (n ≥ 1)
-    gconstr → con [{ fielddecl1 , … , fielddecln }] :: [ {-# AMBIGUOUS #-} ] [context =>] type  
+    gconstr → con :: [ {-# AMBIGUOUS #-} ] [{ fielddecl1 , … , fielddecln }] [context =>] type  
                                                    	               (n ≥ 0, GADT style constructor)
                                                                        (GADT style newtype constr likewise)
 
