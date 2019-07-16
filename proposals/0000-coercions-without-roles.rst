@@ -116,6 +116,9 @@ Surface language
 
    These "instaces" are subject to analogous restrictions as the core axioms.
 
+   ``-XUndecidableInstance`` has no effect, as we really need all coersions to terminate so they are safe to erase.
+   (Normal classes have non-erased methods so we safely diverge at run time.)
+
 #. Absent an explicit "instance", we derive the first order axiom we effectively do today.
    ::
      data T ... = ...
