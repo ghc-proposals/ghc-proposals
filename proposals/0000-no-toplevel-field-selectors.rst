@@ -118,7 +118,7 @@ is different from
     module Exports where (Foo(Foo, bar, baz))
     data Foo = Foo { bar :: Int, baz :: Int }
 
-Because the functions in the furst example don't get exported.
+Because the functions in the first example don't get exported.
 
 Let's take a module ``A`` with a function with the same name as a field, with
 the extension enabled:
@@ -150,8 +150,8 @@ can still be used when exported (as in module ``A``).
     data Foo = Foo { bar :: Int, baz :: Int }
     baz = 42
 
-Using ``baz`` when importing ``B`` will fail, because the field ``baz`` is not
-in scope anymore, because it is not exported by ``B``.
+Using ``baz`` as a field when importing ``B`` will fail, because the field
+``baz`` is not in scope anymore, because it is not exported by ``B``.
 
 .. code-block:: haskell
 
@@ -236,10 +236,10 @@ None.
 Unresolved questions
 --------------------
 
-- What would TH code look like in the future? The disambiguating field name is
-  always the first constructor, maybe introducing a new `Newtype` might make it
-  easier to use the function? Or should all constructors work, by having TH
-  normalize to the first one?
+- What would TH code look like in the future? The disambiguating record
+  constructor is always the first constructor, maybe introducing a new `Newtype`
+  might make it easier to use the function? Or should all constructors work, by
+  having TH normalize to the first one?
 - Should this extension imply DuplicateRecordFields?
 
 
