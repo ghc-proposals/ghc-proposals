@@ -63,7 +63,7 @@ Core Coercions
      ::
        ft is a type of a field of H
        -----------------------------------------------
-       CP => (forall a* b*. ft[t* / a*] ~ ft[t* / b*])
+       CP => (forall a* b*. ft[t* / a*] ~_R ft[t* / b*])
      In other words:
      Take the two substitutions of the types of each of the fields corresponding the two applications ``H a*`` and ``H b*``.
      Zipping the fields in each substitution, accumulate per-field ``f_n ~_R f'_n`` constraints.
