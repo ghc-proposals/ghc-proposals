@@ -100,7 +100,7 @@ contributor to write a formal proposal.
 What should a proposal look like?
 ---------------------------------
 
-Each proposal document must follow the following outline. A template is provided in `proposal template <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.rst>`_.
+Each proposal document must follow the following outline. Templates are available for both `ReStructuredText <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.rst>`_, and `Markdown <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.md>`_.
 
 a. *Motivation*: Give a strong reason for why the community needs this change. Describe the use case as clearly as possible and give at least one concrete example. Explain how the status quo is insufficient or not ideal.
 
@@ -125,21 +125,16 @@ g. *Implementation Plan* (Optional): If accepted who will implement the change? 
   This is also a good section to outline the changes to the implementation, or otherwise include insights that assume familiarity with the implementation.
 
 
-Note that proposals are written in `ReStructuredText
-<http://www.sphinx-doc.org/en/stable/rest.html>`_ rather than Markdown for its
-expressiveness and ease of integration into other GHC infrastructure. See the
-`GHC Users Guide
-<http://downloads.haskell.org/~ghc/latest/docs/html/users_guide/editing-guide.html>`_
-for a brief introduction to ReStructuredText.
+Proposals are written in either `ReStructuredText <http://www.sphinx-doc.org/en/stable/rest.html>`_ or `Markdown <https://github.github.com/gfm/>`_. While the proposal process itself has no preference, keep in mind that the `GHC Users Guide <http://downloads.haskell.org/~ghc/latest/docs/html/users_guide/editing-guide.html>`_ uses ReStructuredText exclusively. Accepted proposals written in ReStructuredText thus have the slight benefit that they can be more easily included in the official GHC documentation.
 
 How to start a new proposal
 ---------------------------
 
-To start a proposal, create a pull request that adds your proposal as ``proposals/0000-proposal-name.rst``. Use ``proposals/0000-template.rst`` as a template.
+To start a proposal, create a pull request that adds your proposal as ``proposals/0000-proposal-name.rst`` or ``proposals/0000-proposal-name.md``. Use the corresponding ``proposals/0000-template`` file as a template.
 
 If you are unfamiliar with git and github, you can use the GitHub web interface to perform these steps:
 
-1. `This link`__ loads the proposal template.
+1. Load the proposal template using `this link (ReStructuredText)`__ or `this link (Markdown)`__.
 2. Change the filename and edit the proposal.
 3. Press “Commit new file”
 
@@ -147,6 +142,12 @@ __ https://github.com/ghc-proposals/ghc-proposals/new/master?filename=proposals/
 
 .. link generated with
    python -c "import urllib;print 'https://github.com/ghc-proposals/ghc-proposals/new/master?filename=proposals/new-proposal.rst;message=%s;value=%s' % (urllib.quote('Start new proposal'), urllib.quote(file('proposals/0000-template.rst').read()))"
+
+__ https://github.com/ghc-proposals/ghc-proposals/new/master?filename=proposals/new-proposal.md;message=Start%20new%20proposal;value=---%0Aauthor%3A%20Your%20name%0Adate-accepted%3A%20%22%22%0Aproposal-number%3A%20%22%22%0Aticket-url%3A%20%22%22%0Aimplemented%3A%20%22%22%0A---%0A%0AThis%20proposal%20is%20%5Bdiscussed%20at%20this%20pull%20request%5D%28https%3A//github.com/ghc-proposals/ghc-proposals/pull/0%3E%29.%0A%2A%2AAfter%20creating%20the%20pull%20request%2C%20edit%20this%20file%20again%2C%20update%20the%20number%20in%0Athe%20link%2C%20and%20delete%20this%20bold%20sentence.%2A%2A%0A%0A%23%20Proposal%20title%0A%0AHere%20you%20should%20write%20a%20short%20abstract%20motivating%20and%20briefly%20summarizing%20the%20proposed%20change.%0A%0A%0A%23%23%20Motivation%0A%0AGive%20a%20strong%20reason%20for%20why%20the%20community%20needs%20this%20change.%20Describe%20the%20use%20case%20as%20clearly%20as%20possible%20and%20give%20an%20example.%20Explain%20how%20the%20status%20quo%20is%20insufficient%20or%20not%20ideal.%0A%0A%0A%23%23%20Proposed%20Change%20Specification%0A%0ASpecify%20the%20change%20in%20precise%2C%20comprehensive%20yet%20concise%20language.%20Avoid%20words%20like%20should%20or%20could.%20Strive%20for%20a%20complete%20definition.%20Your%20specification%20may%20include%2C%0A%0A%2A%20grammar%20and%20semantics%20of%20any%20new%20syntactic%20constructs%0A%2A%20the%20types%20and%20semantics%20of%20any%20new%20library%20interfaces%0A%2A%20how%20the%20proposed%20change%20interacts%20with%20existing%20language%20or%20compiler%20features%2C%20in%20case%20that%20is%20otherwise%20ambiguous%0A%0ANote%2C%20however%2C%20that%20this%20section%20need%20not%20describe%20details%20of%20the%20implementation%20of%20the%20feature.%20The%20proposal%20is%20merely%20supposed%20to%20give%20a%20conceptual%20specification%20of%20the%20new%20feature%20and%20its%20behavior.%0A%0A%0A%23%23%20Effect%20and%20Interactions%0A%0ADetail%20how%20the%20proposed%20change%20addresses%20the%20original%20problem%20raised%20in%20the%20motivation.%0A%0ADiscuss%20possibly%20contentious%20interactions%20with%20existing%20language%20or%20compiler%20features.%0A%0A%0A%23%23%20Costs%20and%20Drawbacks%0A%0AGive%20an%20estimate%20on%20development%20and%20maintenance%20costs.%20List%20how%20this%20effects%20learnability%20of%20the%20language%20for%20novice%20users.%20Define%20and%20list%20any%20remaining%20drawbacks%20that%20cannot%20be%20resolved.%0A%0A%0A%23%23%20Alternatives%0A%0AList%20existing%20alternatives%20to%20your%20proposed%20change%20as%20they%20currently%20exist%20and%20discuss%20why%20they%20are%20insufficient.%0A%0A%0A%23%23%20Unresolved%20Questions%0A%0AExplicitly%20list%20any%20remaining%20issues%20that%20remain%20in%20the%20conceptual%20design%20and%20specification.%20Be%20upfront%20and%20trust%20that%20the%20community%20will%20help.%20Please%20do%20not%20list%20%2Aimplementation%2A%20issues.%0A%0AHopefully%20this%20section%20will%20be%20empty%20by%20the%20time%20the%20proposal%20is%20brought%20to%20the%20steering%20committee.%0A%0A%0A%23%23%20Implementation%20Plan%0A%0A%28Optional%29%20If%20accepted%20who%20will%20implement%20the%20change%3F%20Which%20other%20resources%20and%20prerequisites%20are%20required%20for%20implementation%3F%0A%0A
+
+
+.. link generated with
+   python -c "import urllib;print 'https://github.com/ghc-proposals/ghc-proposals/new/master?filename=proposals/new-proposal.md;message=%s;value=%s' % (urllib.quote('Start new proposal'), urllib.quote(file('proposals/0000-template.md').read()))"
 
 The pull request summary should include a brief description of your
 proposal, along with a link to the rendered view of proposal document
