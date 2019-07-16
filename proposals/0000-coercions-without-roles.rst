@@ -1,4 +1,4 @@
-Coercions without Roles
+Coercions without Type Constructor Roles
 ==============
 
 .. proposal-number:: Leave blank. This will be filled in when the proposal is
@@ -32,45 +32,62 @@ Proposed Change Specification
 Core Coercions
 ~~~~~~~~~~~~~~~~
 
-#. The language of constraints propositions is considered higher-order.
-   This is not an implementation change because GHC already lumps everything under ``Type``, and can already be tricked with ``unsafeCoerce`` into inhabiting these today.
+#. The grammar of constraint propositions is considered higher-order.
+   This is in fact not an implementation change, But rather just a specification change.
+   GHC already lumps coercions under ``Type``, has quantified constraints, and can already be tricked with ``unsafeCoerce`` on ``Dict`` into inhabiting everything following this grammar.
    ::
-     phi ::= t0 ~_r t1 -- old
-          -- new
-          | forall (a : k)*. phi
-          | '(' phi, phi (, phi)* ')'
-          | phi => phi
+     coProp ::= t0 ~_r t1 -- old
+             -- new
+             | forall (a : k)*. coProp
+             | '(' coProp, coProp (, coProp)* ')'
+             | coProp => coProp
+   We are just deeming a larger portion of ``Type`` the constraint proposition language then before.
 
-#. Instead of roles, we associate axioms with regular (non-newtype) data types.
-   newtypes and type families also create axioms, though we must keep these axioms separate as only they are eligible for ``nthCo``.
-   The axiom is admissible under these conditions.
+#. Instead of roles, we associate an axiom with (both regular and newtype) data types.
+   newtypes and type families already come with built-in axioms, so now all type constants have at least one.
+   (However, that doesn't mean we can now treat all three sorts of type constants uniformly, as we still only allow axioms from regular data types to be eligible for reverse reasoning.)
+   These new data type axioms are admissible under the following conditions:
 
    Shape
-     It must be in the form ``forall a* b*. phi => H a* ~_R H b*``.
-     In other words it, has head of representational equality constraint of same type constructor applied to some variable arguments on each side.
+     The axiom (hereafter wbound as ``CP``) must be in the form
+     ::
+       CP := forall a* b*. coProp => H a* ~_R H b*
+     In other words, it has head of representational equality constraint of same type constructor applied to some variable arguments on each side.
 
    Saturation
      The ``H`` must be saturated on both sides.
      Likewise, one cannot just skip assigning a role today.
 
    Soundness
-     If one looks at the type of each field under the two applications, they will accumulate per-field ``f_n ~_R f'_n`` constraints.
+     The following must be derivable:
+     ::
+       ft is a type of a field of H
+       -----------------------------------------------
+       CP => (forall a* b*. ft[t* / a*] ~ ft[t* / b*])
+     In other words:
+     Take the two substitutions of the types of each of the fields corresponding the two applications ``H a*`` and ``H b*``.
+     Zipping the fields in each substitution, accumulate per-field ``f_n ~_R f'_n`` constraints.
      The axiom's premise must be sufficient to derive all of those constraints.
 
    Not-too-incompleteness
      The axiom can't be stricter than all nominal roles today.
      Formally:
      ::
-       (forall a* b*. (a ~_N b)* => H a* ~_R H b*) => C
+       (forall a* b*. (a ~_N b)* => H a* ~_R H b*) => CP
 
-     This allows us to continue with roughly the current treatment of unsaturated ``H`` in the typing rules.
+     This allows us to continue with the current treatment of unsaturated ``H`` and variable type constructors in the typing rules.
+
+   Uniqueness
+     There is only such axiom per ``H``.
+     (Newtypes keep their existing unwrapping axioms, but those have a disjoint form.)
+     This matches how there is one assignment of roles to type constructor parameters in the old system.
 
 #. ``coTyConApp``, the first typing judgement involving roles that must be rewritten
    ::
-     C : forall a* b*. phi => H a* ~_R H b*
+     C : forall a* b*. coProp => H a* ~_R H b*
      |- G
      (G |- t : k)*
-     G |- c : forall (r : k)*. phi[t* / a*][r* / a*][s* / b*][r* / b*]
+     G |- c : forall (r : k)*. coProp[t* / a*][r* / a*][s* / b*][r* / b*]
      -------------------------------------------------------------------------------- Co_TyConAp'
      G |- C(t*, s*, c) : H t* ~_R H s*
 
@@ -82,11 +99,11 @@ Core Coercions
 #. ``coNth``, the second such judgement is replaced with ``coPremise``.
    The name is changed because we no longer take a parameter index, but just get the whole premise back in one lump.
    ::
-     C : forall a* b*. phi => H a* ~_R H b*
+     C : forall a* b*. coProp => H a* ~_R H b*
      G |- c : H t* ~_R H s*
      H is not a newtype
      -------------------------------------------------------------------------------- Co_Premise
-     G |- premise c : forall r*. phi[t* / a*][r* / a*][s* / b*][r* / b*]
+     G |- premise c : forall r*. coProp[t* / a*][r* / a*][s* / b*][r* / b*]
 
 Surface language
 ~~~~~~~~~~~~~~~~
@@ -121,11 +138,11 @@ Proof Sketch
 
 ``Co_TyConAp'`` and ``Co_Premise`` are nearly dual.
 The key difference is the ``C(t*, s*)`` use of the axiom in the former, gets replaced with an abstract constraint ``c`` in the latter.
-This is OK because we can rewrite any closed term with the correct type into one where the Axiom is at it's head!
-All the other coercersion type formers distribute over the axiom application, so we can always push the other formers deeper, and pull axiom applications to the front.
-\[One can think of the preexisting prohibition against newtypes in terms of this two. The rewrite is not possible if ``H`` is a newtype.]
+This is OK because we can rewrite any closed term coercion with the correct type into one where ``H``'s axiom is at it's head!
+All the other coercion type formers distribute over the axiom application, so we can always push the other formers deeper, and pull ``H``'s axiom applications to the front.
+\[One can think of the preexisting prohibition against newtypes in terms of this, too. The rewrite is not possible if ``H`` is a newtype.]
 
-I should rigorously show that this is true, but for now intution
+I must rigorously show that this is true, but for now intuition.
 
 Costs and Drawbacks
 -------------------
@@ -143,7 +160,10 @@ The higher-kinded roles speak to the entire domain, rather than the types we act
 This is similar to the issues with ``Foo1`` classes.
 
 If we required the axioms be complete, we could get rid of the no newtype restriction for ``Co_Premise``.
-The idea then is appealing to coercions on the underlying type never lead to anything more premissive because the axioms are "lossless".
+The reason for the restriction against ``coNth`` against newtypes is that the unwrapping axioms can generate more ``H ... ~ H ...`` coercions than ``Co_TyConAp`` alone.
+This is unavoidable with the old system: type constructor roles just aren't expressive enough.
+But with the new system we can require that newtype's new axioms generate all valid ``H ... ~ H ...`` coercions.
+The new axioms are thus "lossless", since they can generate any coersion in the right form that the unwrapping ones can.
 That means by the same proof technique the axiom application can always be pulled to the head, so ``Co_Premise`` stays the duel of ``Co_TyConAp``.
 This however is a big breaking change.
 
