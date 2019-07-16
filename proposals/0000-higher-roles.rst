@@ -120,6 +120,12 @@ Alternatives
   Now, users can make their own decisions. This seems strictly better than either previous
   proposal.
 
+* An `alternative proposal <https://github.com/ghc-proposals/ghc-proposals/pull/248>`_
+  introduces an entirely new mechanism for ``Coercible``. At this point, that proposal
+  has yet to become convincingly sound, and it is *much* more invasive than this one.
+  It is worth reading as a counterpoint, but I don't think it's yet ready to be counted
+  as a viable.
+  
 Unresolved Questions
 --------------------
 None at this time.
