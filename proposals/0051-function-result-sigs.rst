@@ -1,11 +1,13 @@
 Function Result Type Signatures
 ===============================
 
-.. proposal-number::
+.. proposal-number:: 51
+.. author:: Vladislav Zavialov
+.. date-accepted:: 2019-07-16
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/228>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/228>`_.
 .. sectnum::
 .. contents::
 
