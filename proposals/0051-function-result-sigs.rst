@@ -188,7 +188,7 @@ an optional type annotation::
            | pat varop pat
            | ( funlhs' ) apat {apat}
 
-  funlhs -> funlhs' :: [context =>] type
+  funlhs -> funlhs' [:: type]
 
 This results in an ambiguity with pattern bindings, which is resolved in favor
 of function bindings.
@@ -242,8 +242,36 @@ Alternatives
   this is neither consistent nor terribly useful.
 
 * We could detect CUSKs as we do in types to enable polymorphic recursion, but
-  this makes little sense as we are in the proccess of their deprecation.
+  this makes little sense as we are in the process of their deprecation.
 
+* We could allow contexts in the return type.
+  An earlier version of this proposal had::
+
+    funlhs -> funlhs' [:: [context =>] type]
+
+  But the usage of this can be confusing.
+  For example::
+
+    f (x :: a) :: Eq a => a
+
+  looks like it it might have type::
+
+    f :: a -> Eq a => a
+
+  Which is gratuitously higher-ranked. Base Haskell 2010 never reorders
+  arguments currently, so just moving the ``Eq a`` to the front seems overly
+  magical.
+
+  However, with ``-XRank2Types``, contexts are allowed in types and so this
+  naturally becomes legal again. In GHCi today we have::
+
+    Prelude> :set -XRank2Types
+    Prelude> f :: Int -> Eq a => a; f = undefined
+    Prelude> :t f
+    f :: Eq a => Int -> a
+
+  i.e. the "out of order" ``Eq a`` is allowed and moved to the front.
+  By analogy, the return signature ``Eq a`` would also be so moved.
 
 Unresolved Questions
 --------------------
