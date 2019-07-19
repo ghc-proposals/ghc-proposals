@@ -174,26 +174,28 @@ Proposed Change Specification
 
 Allow function result type signatures on the left-hand side.
 
-**Syntax.** Take the Haskell 2010 function left-hand side grammar as the
-starting point::
+Syntax
+~~~~~~
+
+Take the Haskell 2010 function left-hand side grammar as the
+starting point: ::
 
   funlhs -> var apat {apat}
           | pat varop pat
           | ( funlhs ) apat {apat}
 
-The change is to remove the mandatory ``apat`` from the first rule and to add
-an optional type annotation::
+The change is to add an optional type annotation: ::
 
-  funlhs' -> var {apat}
+  funlhs' -> var apat {apat}
            | pat varop pat
            | ( funlhs' ) apat {apat}
 
-  funlhs -> funlhs' :: [context =>] type
+  funlhs -> funlhs' [:: [context =>] type]
 
-This results in an ambiguity with pattern bindings, which is resolved in favor
-of function bindings.
+Semantics
+~~~~~~~~~
 
-**Semantics.** The result type signature is unified with the inferred type of
+The result type signature is unified with the inferred type of
 the function body. It does not enable polymorphic recursion.
 
 Result type signatures behave just like pattern signatures, as in ``\ (x ::
@@ -205,29 +207,8 @@ site for ``a`` (in this example); and the ``a`` might be bound to any type, e.g
 Effect and Interactions
 -----------------------
 
-At the moment, a binding with no parameters and a signature is parsed as a
-pattern binding::
-
-  x :: String -> String = reverse    -- accepted as PatBind
-
-The consequence of this is that we reject scoped type variables::
-
-  x :: [a] -> [a] = reverse    -- rejected with an error:
-  -------------------------------------------------------
-    • You cannot bind scoped type variable ‘a’
-        in a pattern binding signature
-    • In the pattern: x :: [a] -> [a]
-      In a pattern binding: x :: [a] -> [a] = reverse
-
-Under this proposal, we reclassify this construct as a function binding and
-allow scoped type variables::
-
-  x :: [a] -> [a] = reverse    -- accepted as FunBind
-
-This is the result of this grammar change::
-
-  - funlhs  -> var apat {apat}
-  + funlhs' -> var {apat}
+Purposefully kept to a minimum. See the alternatives for why an extension had
+negative interactions.
 
 Costs and Drawbacks
 -------------------
@@ -244,6 +225,68 @@ Alternatives
 * We could detect CUSKs as we do in types to enable polymorphic recursion, but
   this makes little sense as we are in the proccess of their deprecation.
 
+* An earlier version of the propsal changed the boundary between function binds
+  and pattern binds via not requring an arugment::
+
+    - funlhs' -> var apat {apat}
+    + funlhs' -> var {apat}
+
+  and resolving the resulting ambiguity with pattern bindings in favor of
+  function bindings.
+
+  The motivation issue is that at the moment, a binding with no parameters and
+  a signature is parsed as a pattern binding::
+
+    x :: String -> String = reverse -- accepted as PatBind
+
+  The consequence of this is that we reject scoped type variables::
+
+    x :: [a] -> [a] = reverse -- rejected with an error:
+    -------------------------------------------------------
+      • You cannot bind scoped type variable ‘a’
+          in a pattern binding signature
+      • In the pattern: x :: [a] -> [a]
+        In a pattern binding: x :: [a] -> [a] = reverse
+
+  But by reclassifying this construct as a function binding and
+  allow scoped type variables::
+
+    x :: [a] -> [a] = reverse -- accepted as FunBind
+
+    -- | Remember 'a' can be constrained.
+    x' :: a' = reverse -- accepted as FunBind
+
+  The problem is that there is another conflicting interpretation where ``x``
+  stays a pattern bind::
+
+    x :: [a] -> [a] = reverse @Int -- maybe someday accepted as PatBind
+
+    y :: a
+    y = 1 :: Int
+
+  ``a`` is a (unified) type variable with the same scope as ``x``. This matches
+  ``f (x :: a) = ...`` and ``(x :: a) <- ...`` where the ``x`` and ``a`` also
+  coincide scopes. The overlap with the monadic bind is especially intersting,
+  because we *have* to have these semantics / scope of ``a`` there in order to
+  bind existentials. This also scales to deeper pattern signatures::
+
+    Identity (x :: a) = Identity @Int 1 -- maybe someday accepted as PatBind
+
+  To recover the function signature, one could use an explicit ``forall``::
+
+    x :: forall a. [a] -> [a] = reverse -- maybe someday accepted as PatBind
+
+  Which can be combined with the above if ``-XImpredicativeTypes`` is ever
+  cleaned up. True, this doesn't bind ``a`` over the function body, but `type lambdas
+  <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0050-type-lambda.rst>`_
+  provide a solution.::
+
+    x :: forall a. [a] -> [a] = \@b -> id @[b]
+    Identity (x :: forall a. [a] -> [a]) = Identity \@b -> id @[b]
+
+  All this is of course future work, but it seems premature for this proposal
+  to cut off that line of research as just a side effect. By conservatively
+  keeping pattern binds the same as today, we keep all options open.
 
 Unresolved Questions
 --------------------
