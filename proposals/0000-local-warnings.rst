@@ -1,5 +1,5 @@
-Local Warning Pragmas
-=====================
+Local control of warning flags
+==============================
 
 .. proposal-number:: 
 .. ticket-url::
