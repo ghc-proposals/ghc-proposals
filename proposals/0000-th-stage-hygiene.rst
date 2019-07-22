@@ -29,7 +29,7 @@ The risk of library fragmentation between between those writing code for weird p
 The external interpreter made it at least possible, relatively automatically, but doesn't work if you explicitly want side effects to be run on the compiler's platform.
 Also, while same-OS cross can sometimes be fairly lightweight
 — e.g. by having QEMU translate syscalls so the native kernel can be used —
-differnet-OS requires harder to provision virtual machines or real devices.
+different-OS requires harder to provision virtual machines or real devices.
 
 Another alternative is dumping and loading splices, where one builds natively, dumping splices, and the builds cross with those dumped splices.
 This became easier with `this patch <https://github.com/reflex-frp/reflex-platform/blob/master/splices-load-save.patch>`_.
@@ -47,7 +47,7 @@ What we need instead is a way to say is different platforms:
 
 - Splices alone run on the build platform (of the module being built, not GHC).
 - Normal code, as usual, runs on the host platform.
-- quoted code runs on the target platform.
+- Quoted code runs on the target platform.
 
 This solves all the above problems:
 
@@ -98,7 +98,7 @@ For ``Lift`` we just need to map *values* preserving type, while typed Template 
 Adding language support for such a mapping is lots of extra work—borderline research—for a proposal which already is no small task.
 I therefore think banning for now to start solving the problems people have with cross compilation as soon as possible is prudent.
 Because this is breaking change no matter what, a variant extension is used anyways, so no program breaks.
-Instead, users a just temporarily presented with a choice to either support cross compilation or have ``Lift`` and typed TH.
+Instead, users are just temporarily presented with a choice to either support cross compilation or have ``Lift`` and typed TH.
 
 As a final side benefit, now that Template Haskell will be defined and implemented in terms of stages, we can relax ``-XTemplateHaskellQuotes``.
 For example, the following current prohibited:
@@ -146,7 +146,7 @@ GHC
      -----------------------
      G ⊢(n) $(syntax)
 
-   The existing side conditions, which restricting nested quotes and splices (i.e. stages outside of -1, 0, and 1) remain in place, but are ripe for removal in https://github.com/ghc-proposals/ghc-proposals/pulls/204.
+   The existing side conditions, which restrict nested quotes and splices (i.e. stages outside of -1, 0, and 1) remain in place, but are ripe for removal in https://github.com/ghc-proposals/ghc-proposals/pulls/204.
 
 #. Add new syntax for stage-offset imports and bindings:
    ::
@@ -158,7 +158,7 @@ GHC
    The means bind identifiers in stage *n* instead of stage 0 as per normal.
    Module exports however are restricted to stage 0.
 
-#. The current "stage restriction" on splices using items from module is abolished.
+#. The current "stage restriction" on splices using bindings from the current module is abolished.
    Any stage n + 1 binding in a stage n splice is fair game.
 
 #. Relax ``-XTemplateHaskellQuotes`` to instead allow Template Haskell constructs, but restrict their usage so all syntax is in stages >= 0.
@@ -166,14 +166,14 @@ GHC
 #. Introduce ``-XTemplateStagePersistence``.
    Which is implied by ``-XTemplateHaskellQuotes`` (and thus plain ``-XTemplateHaskell``) for backwards compatibility.
    It allows the current behavior where we blur the distinction between stages.
-   In particular, with this enabled:
+   In particular, with `TemplateStagePersistence` enabled:
 
    - Stage 0 identifiers bound in another module can be used in stage 1 (quotes) and stage -1 (splices).
    - Stage 0 identifiers bound anywhere can be used in stage 1, and are automatically.
    - Typed template haskell is allowed.
    - The ``Lift`` type class and all its associated definitions are made available.
 
-   These are all already always permitted today.
+   These are always permitted today.
    But with ``-XNoTemplateStagePersistence``, overriding the default, all of those are *disabled*.
 
 #. Extend the command line [TODO bikeshed!!] with a way to specify per-stage package dependencies and the like.
@@ -210,7 +210,7 @@ Cabal
      They carry their transitive closure in the form of mandatory unification constraints.
 
    - Cross-stage library dependencies are still public.
-     The stages can independent since cross-stage types don't ever unify, but *within* each stage everything works as usual.
+     The stages can be independent since cross-stage types don't ever unify, but *within* each stage everything works as usual.
      Compositions of cross-stage dependencies can result in same-stage dependencies, and their public closure unification "burdens" will combine.
 
    - Intra-package dependencies regardless of stage must resolve within the same version of the package.
@@ -223,7 +223,7 @@ Cabal
 Effect and Interactions
 -----------------------
 
-Here is an example of many the features used together, rewriting the code from the motivation.
+Here is an example of many of the features used together, rewriting the code from the motivation.
 Hypothetical ``ios-th`` package:
 ::
   {-# LANGUAGE TemplateHaskell #-}
@@ -268,12 +268,12 @@ Bindings interleave stages
        where foo = ...
              $let -1 huh ... = ... [| x |] ... [| foo |] ...
   But remember that later stage syntax can just be used in quotes; it is inert and cannot be evaluated.
-  ``huh`` is trivially lifted outside of ``f`` since captures the syntactic ``x`` which is static at compile-time.
+  ``huh`` is trivially lifted outside of ``f`` since it captures the syntactic ``x`` which is static at compile-time.
   Nothing passed into ``f`` at any call site is available to ``huh``.
 
 Forward references across splices
    The intra-module staging restriction is gone, but that's separate from the prohibition on referencing bindings.
-   It just avoids the need to topologically sort splices based references from the quotations inside them, or break cycles à la ``*.hs-boot``.
+   It just avoids the need to topologically sort splices based on references from the quotations inside them, or break cycles à la ``*.hs-boot``.
    Nevertheless, implementing that is not trivial so it is good to decouple relaxing the restriction from this already-large proposal.
    Hopefully a future proposal will tackle this.
 
@@ -282,7 +282,7 @@ Speeding up builds
   There is no notion of a global "true" stage 0.
   This is good in that we can share build artifacts without breaking abstractions.
   For example, in the common native case, a library that needs another library in stage 0 and stage -1 can load the *same* build of the library in both of those stages.
-  By virtue of explicit stage of the import, the definitions do not unify even though the underlying build is the same.
+  By virtue of the explicit stage attached to the import, the definitions do not unify even though the underlying build is the same.
   This can be compared to repeated abstract interfaces in backpack being instantiated with the same concrete module.
 
   In the cross case, there is no getting around needing separate native and foreign builds for different stages, but there are still performance improvements.
