@@ -20,6 +20,9 @@ To fix this, enforce stronger separation between the stages.
 Motivation
 ------------
 
+Hacking TH today
+~~~~~~~~~~~~~~~~
+
 In the olden days, one couldn't use Template Haskell with cross compilation at all.
 This is bad in itself, but also bad from an ecosystem perspective.
 Haskell has an excellent culture of code reuse, but that means that arbitrary software is very likely to depend on Template Haskell.
@@ -33,7 +36,7 @@ different-OS requires harder to provision virtual machines or real devices.
 
 Another alternative is dumping and loading splices, where one builds natively, dumping splices, and the builds cross with those dumped splices.
 This became easier with `this patch <https://github.com/reflex-frp/reflex-platform/blob/master/splices-load-save.patch>`_.
-Still, this requires building every package twice, and worse doesn't work if the macro is target specific.
+Still, this requires building every package twice, since we redo the entire compilation on both platforms, and worse doesn't work if a top-level splice is target specific.
 For example, imagine some code like
 ::
   #ifdef ios_HOST_OS
@@ -41,20 +44,48 @@ For example, imagine some code like
   $(iosBoilerplateHelper ''SomeIosFfiType)
   #endif
 If the splice is within the ``ifdef``, it won't be dumped.
-But if it is outside the ``ifdef``, the native one won't build!
+When we compile to dump splices, compilation occurs on the native platform, and so the splice will be removed at preprocessing time before dumping.
+And deleting the CPP is no quick fix — if it is outside the ``ifdef``, the native one won't build!
+If it is outside the ``ifdef``, then when we compile to dump splices we will actually fail, since we're now trying to build ios-specific code on the wrong platform.
 
-What we need instead is a way to say is different platforms:
+What we need instead is a way to say different code runs on different platforms.
 
-- Splices alone run on the build platform (of the module being built, not GHC).
+Referencing platforms
+~~~~~~~~~~~~~~~~~~~~~
+
+First, an aside about naming platforms.
+Long ago, the autoconf invented the terms "build" platform, "host" platform, and "target" platform:
+
+- the build platform of some code is where it is built.
+- the host platform of some code is where it runs.
+- the target platform of some code is the host platform of code produced by this code.
+
+Yes, the names are vague, and yes, the naming of one inductive step (target) is awkward, but the beauty of these names is they work for native and cross compilation alike.
+Rather than thinking about concrete platforms and where they are used, they turn the problem around by thinking about the holes where concrete platforms go in.
+These "abstract" platforms are thus parameters.
+And whereas most designs are native only, and then hurridly retrofitted for cross, these names naturally lead to not assuming any of the 3 platforms are the same.
+In other words, native compilation is the special case, not cross.
+
+Explicit Staging
+~~~~~~~~~~~~~~~~
+
+With that in mind, what we are looking for is:
+
+- Splices alone run on the build platform.
 - Normal code, as usual, runs on the host platform.
 - Quoted code runs on the target platform.
 
-This solves all the above problems:
+This solves all the problems of the first section:
 
-- No need to emulate any other platforms, since evaluation only happens within splices.
+- No need to emulate any other platforms.
+  Recall TH-induced evaluation only happens within top-level splices; splices within brackets just build bigger expressions.
+  That means only TH only induces build platform splicing, which is native by defintion!
+
 - No need to build everything twice.
-  Just what is needed in each phase, and just when it's needed.
-- No all-or-nothing CPP problem.
+  Just what is needed in each phase is built, and just when it's needed.
+
+- No risk of CPPing away the splice, because we aren't faking it with build == host native builds.
+  ``ios_HOST_OS`` is independent of any ``*_BUILD_OS`` macro.
 
 To do this, we need to cleanly separate the stages induced by quoting and splicing.
 This is not a new idea for programming languages in general.
@@ -62,14 +93,22 @@ Racket (and probably some schemes) do this.
 The work-in-progress (?) `OCaml macro system <https://github.com/ocamllabs/ocaml-macros>`_ does this.
 It has even been informally proposed for Haskell by @ezyang in `<http://blog.ezyang.com/2016/07/what-template-haskell-gets-wrong-and-racket-gets-right/>`_.
 
-Enforcing that separation means restricting programs we currently allow.
-Least surprisingly, normal bindings, and normal imports, in the module cannot be used in splices or quotes.
+Enforcing that separation means restricting programs we currently allow,
+by assigning bindings to stages and restricting what kinds of references between stages are allowed.
+Least surprisingly, normal bindings, and normal imports in the module cannot be used in splices or quotes.
 But there are other constructs that more surprisingly tangle stages too.
 Typed Templated Haskell is one.
 First of all, there is name leakage.
 ::
   [|| ... :: IosOnlyType ||] :: Q (TExp IosOnlyType)
 This can't work unless we are building *on* and *for* iOS.
+Otherwise the ``IosOnlyType`` will be out of scope in one of its two usage sites.
+If we aren't compiling for iOS (iOS is not host OS), then ``IosOnlyType`` is not in scope in the quote.
+If we aren't compiling on iOS (iOS is not the build OS), the ``IosOnlyType`` is not in scope as the argument for ``TExp``.
+The latter one is the show-stopper, presumably we are compiling for ``iOS`` if we want to do this.
+Typed TH in affect assumes that any host type can be mapped back to a build type for sake of the phantom param.
+As shown, this is not always the the case.
+
 But even if we work around that, there's also will be semantic leakage.
 In the near future there would be
 ::
