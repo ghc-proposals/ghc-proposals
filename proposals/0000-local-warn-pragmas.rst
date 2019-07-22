@@ -50,7 +50,7 @@ Pragma ``NOWARN`` fixes it:
 ::
  {-# OPTIONS_GHC -Wincomplete-patterns #-}
 
- {-# INGNORE incomplete-patterns #-}
+ {-# NOWARN incomplete-patterns #-}
  f :: (Show a) => Maybe a -> String
  f (Just a) = show a
 
