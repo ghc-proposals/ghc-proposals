@@ -26,7 +26,7 @@ Haskell has an excellent culture of code reuse, but that means that arbitrary so
 That lack of being able to write idiomatic Haskell code with popular libraries for all platform is as big of a loss as not being able to Template Haskell itself.
 The risk of library fragmentation between between those writing code for weird platforms and those not is also bad for everyone.
 
-The external interpreter made it at least possible, relatively automatically, but doesn't work if you explicitly want side effects to be run on the compiler's platform.
+The external interpreter made it at least possible, relatively automatically, but doesn't work if you explicitly want side effects to be run on the platform doing the compiling (build platform).
 Also, while same-OS cross can sometimes be fairly lightweight
 — e.g. by having QEMU translate syscalls so the native kernel can be used —
 different-OS requires harder to provision virtual machines or real devices.
@@ -75,7 +75,7 @@ In the near future there would be
 ::
   AppE <$> [|| ... :: foreach (x :: Int) -> F x ||] <*> [|| 2^36 :: Int ||] :: Q (TExp (F ???))
 How do we type the whole expression, or ``AppE`` in particular?
-And say the compiling platform has 32-bit `Int`s?
+And say the platform the compiler runs on (build platform) has 32-bit `Int`s?
 The dependent function will have different result types due to overflow, which ruins the guarantees of typed Template Haskell.
 Even today we have similar problems with CPP'd type families:
 ::
@@ -285,7 +285,7 @@ Speeding up builds
   By virtue of the explicit stage attached to the import, the definitions do not unify even though the underlying build is the same.
   This can be compared to repeated abstract interfaces in backpack being instantiated with the same concrete module.
 
-  In the cross case, there is no getting around needing separate native and foreign builds for different stages, but there are still performance improvements.
+  In the cross case, there is no getting around needing separate builds for the different platform used in each stage, but there are still performance improvements.
   As said in the motivation, we only need what is needed when it is needed, versus everything twice with splice dumping and loading.
   This reduces the size and improves the parallelism of the build plan.
   More subtly, and perhaps more importantly, are benefits with rebuilds during development.
