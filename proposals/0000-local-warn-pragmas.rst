@@ -156,7 +156,6 @@ Here some warnings which are proposed to be added in ...
  - all deprecated warnings: ``-Wamp``, ``-Wduplicate-constraints``, ``-Wmissing-*-sigs``, ``-Wstar-is-type``
  - all ``-Wnoncanonical*``, ``-Wmissing-monadfail-instances``, ``-Wsemigroup``, ``-Wmissing-methods``
  - all ``-Wdodgy*``
- - ``-Wunrecognised-warning-flags``,  ``-Wunrecognised-pragmas``
  - ``-Wduplicate-exports``, ``-Wmissing-export-lists``
  - ``-Whi-shadowing``, ``-Wmissing-home-modules``
  - ``-Wimplicit-prelude``
@@ -165,6 +164,7 @@ Here some warnings which are proposed to be added in ...
  - ``-Wcpp-undef``
 
 **whitelist**
+ - ``-Wunrecognised-warning-flags``,  ``-Wunrecognised-pragmas`` 
  - ``-Wtyped-holes``
  - ``-Wpartial-type-signatures``
  - ``-Wmissed-specialisations``, ``-Wall-missed-specialisations``
@@ -191,8 +191,6 @@ Here some warnings which are proposed to be added in ...
  - ``-Wunused-do-bind``
  - ``-Wunused-foralls``
  - ``-Wunbanged-strict-patterns``
- 
-**there is some syntax for local suppression** (but we can add it in whitelist):
  - ``-Wredundant-constraints``
  - ``-Wname-shadowing``
  - ``-Wunused-matches``
