@@ -8,7 +8,8 @@ Function Result Type Signatures
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/228>`_.
-.. sectnum::
+.. sectnum:: 
+     :start: 51
 .. contents::
 
 We propose to allow function result type signatures, shown as ``:: r`` in the
