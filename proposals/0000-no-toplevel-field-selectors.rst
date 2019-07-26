@@ -45,24 +45,27 @@ Proposed Change Specification
 -----------------------------
 
 This proposal introduces a new extension ``FieldSelectors`` that controls the
-generation of record field selector functions. The extension is enabled by
-default to match the current behavior, but may be disabled per-module with the
-``NoFieldSelectors`` language pragma.
+generation of toplevel record field selector functions. The extension is enabled
+by default to match the current behavior, but may be disabled per-module with
+the ``NoFieldSelectors`` language pragma.
 
 When ``NoFieldSelectors`` is enabled, Record construction/update syntax and
-pattern matching will work as before, as will the disambiguation handled by
-``DuplicateRecordFields``. Record fields will still be part of a ``Record(..)``
-export, or can also be named individually. They always have to be associated
-with the data type though, because there is no more toplevel selector (see `Example`_).
+pattern matching will work as before, and the behavior of
+``DuplicateRecordFields`` will be enabled by implication. The
+``DuplicateRecordFields`` will be deprecated in favor of ``NoFieldSelectors``.
 
-A new function will be added to Template Haskell, where the ``Name`` is a
-reference to a constructor. This function should be used in new TH even if this
-extension isn't enabled. It will fail if it's not possible to create a valid
-selector / selector doesn't exist.
+Record fields will still be part of a ``Record(..)`` export, or can also be
+named individually. They always have to be associated with the data type though,
+because there is no more toplevel selector (see `Example`_).
 
-.. code-block:: haskell
+Template Haskell should not rely on the selectors being present, and should use
+named pattern matching instead.
 
-    mkFieldSelector :: Name -> String -> Q Exp
+Because field labels and toplevel selectors are now different entities,
+import/export lists now behave differently. Names listed with the constructor
+(e.g. ``Record(field)``) refer to the field, whereas direct mentions ``field``
+refer to a function named ``field``. Without setting ``NoFieldSelectors``, these
+two would be equivalent.
 
 Examples
 --------
@@ -193,22 +196,13 @@ doesn't need to be exported as function.
 Interaction with DuplicateRecordFields
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Because of Record updates still being valid, this code will still fail to
-compile without DuplicateRecordFields:
-
-.. code-block:: haskell
-
-    {-# LANGUAGE NoFieldSelectors #-}
-
-    data Foo = Foo { foo :: Int }
-    data Bar = Bar { foo :: Int }
+Setting ``NoFieldSelectors`` implies ``DuplicateRecordFields``.
 
 Breakage estimation
 ^^^^^^^^^^^^^^^^^^^
 
-Enabling this extension will break a lot of Template Haskell. Going from record
-field name to selector won't work anymore. A new way to go from record field
-name to selector has to be found.
+Enabling this extension will beak Template Haskell which assumes the presence of
+ a field selector. Use named pattern matching instead.
 
 Anything that generates code with the help of Generic should be fine. The same
 functionality that generates the anonymous functions for Generic could be used
@@ -231,16 +225,6 @@ Alternatives
 ------------
 
 None.
-
-
-Unresolved questions
---------------------
-
-- What would TH code look like in the future? The disambiguating record
-  constructor is always the first constructor, maybe introducing a new `Newtype`
-  might make it easier to use the function? Or should all constructors work, by
-  having TH normalize to the first one?
-- Should this extension imply DuplicateRecordFields?
 
 
 Implementation Plan
