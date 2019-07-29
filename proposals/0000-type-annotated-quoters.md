@@ -7,7 +7,7 @@ implemented: ""
 ---
 
 This proposal is [discussed at this pull
-request](https://github.com/ghc-proposals/ghc-proposals/pull/125>).
+request](https://github.com/ghc-proposals/ghc-proposals/pull/125).
 
 
 # Type Annotated Quoters
