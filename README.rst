@@ -334,6 +334,9 @@ proposal is ready for decision.
    *  **If we say yes:**
       The pull request will be merged, numbered and labeled
       `Accepted <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3AAccepted>`_.
+      Its meta-data will be updated to include the acceptance date and the number.
+      A link to the accepted proposal is added to the top of the PR discussion, together with
+      the sentence “The proposal has been accepted; the following discussion is mostly of historic interest.”.
 
       At this point, the proposal process is technically
       complete. It is outside the purview of the committee to implement,
