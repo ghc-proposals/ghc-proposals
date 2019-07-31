@@ -131,7 +131,7 @@ Proposed Change Specification
     
    For those cases, the user must contrive an explicit signature (with ``-XInstanceSigs`` if necessary).
 
-7. ``-XTypeApplications`` is to be changed, so that when enabled, ``f @t`` is valid regardless of whether ``t`` is ambiguous. That is, Type applications are to be allowed ambiguous signatures, no warning or error, without needing ``{-# AMBIGUOUS #-}`` (nor needing ``LANGUAGE AllowAmbiguousTypes``). For example, this is currently rejected without ``AllowAmbiguousTypes``:
+7. ``-XTypeApplications`` is to be changed, so that when enabled, ``f @t`` is valid regardless of whether ``t`` is ambiguous. That is, Type applications are to be allowed ambiguous signatures, no warning or error, without needing ``{-# AMBIGUOUS #-}`` (nor needing ``LANGUAGE AllowAmbiguousTypes``). For example, this is currently rejected without ``AllowAmbiguousTypes``::
 
         x = foo @(forall b. C a b => a) bar
 
@@ -178,7 +178,7 @@ Do nothing. That is, continue with the module-wide ``AllowAmbiguousTypes`` setti
     
 I would disagree with that "useless". I see the confusion they cause as harmful. Especially because that follows from the error message's misleading ``enable AllowAmbiguousTypes``.
 
-Re Type Applications [Section 2 Point 7.] possibly changing to silently accept ambiguous signatures might be considered too radical of a change. (Although this is the opposite of a breaking change: it will accept more programs, without needing ``LANGUAGE AllowAmbiguousTypes``.) Then Point 7. could require an ``{-# AMBIGUOUS #-}`` pragma after the ``@``, and syntactically would need the signature and pragma enclosed in parens, for example:
+Re Type Applications [Section 2 Point 7.] possibly changing to silently accept ambiguous signatures might be considered too radical of a change. (Although this is the opposite of a breaking change: it will accept more programs, without needing ``LANGUAGE AllowAmbiguousTypes``.) Then Point 7. could require an ``{-# AMBIGUOUS #-}`` pragma after the ``@``, and syntactically would need the signature and pragma enclosed in parens, for example::
 
     x = foo @({-# AMBIGUOUS #-} forall b. C a b => a) bar
 
