@@ -291,35 +291,9 @@ Alternatives
 Unresolved Questions
 --------------------
 
-What treatment do we give to the following example? ::
-
-  (x :: [a] -> [a]) = reverse
-
-At the moment, it is parsed as a ``PatBind`` and rejected because scoped type
-variables are not allowed in pattern bindings. However, it only differs from the
-example we propose to accept by parenthesization::
-
-  x :: [a] -> [a] = reverse    -- accepted as FunBind
-  (x :: [a] -> [a]) = reverse  -- rejected as PatBind
-
-In general, the situation with parenthesization in bindings is quite elaborate::
-
-  f       = ...  -- FunBind
-  f a     = ...  -- FunBind
-  (f a)   = ...  -- parse error
-  (f a) b = ...  -- FunBind
-
-A possible solution is change this parsing rule::
-
-  funlhs' ->
-    ...
-    | ( funlhs' ) apat {apat}
-
-We can treat all of the examples above as ``FunBind`` by removing the mandatory ``apat``::
-
-  funlhs' ->
-    ...
-    | ( funlhs' ) {apat}
+No unresolved questions. The previous version of the proposal in changing
+division between pattern and function binds raised some, but we avoid that by
+keeping the existing division.
 
 Implementation Plan
 -------------------
