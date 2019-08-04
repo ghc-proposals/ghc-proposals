@@ -50,9 +50,8 @@ by default to match the current behavior, but may be disabled per-module with
 the ``NoFieldSelectors`` language pragma.
 
 When ``NoFieldSelectors`` is enabled, Record construction/update syntax and
-pattern matching will work as before, and the behavior of
-``DuplicateRecordFields`` will be enabled by implication. The
-``DuplicateRecordFields`` will be deprecated in favor of ``NoFieldSelectors``.
+pattern matching will work as before, as will the disambiguation handled by
+``DuplicateRecordFields``.
 
 Record fields will still be part of a ``Record(..)`` export, or can also be
 named individually. They always have to be associated with the data type though,
@@ -192,11 +191,6 @@ Effect and Interactions
 
 `HasField` will work as before, if the corresponding field has been exported. It
 doesn't need to be exported as function.
-
-Interaction with DuplicateRecordFields
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Setting ``NoFieldSelectors`` implies ``DuplicateRecordFields``.
 
 Breakage estimation
 ^^^^^^^^^^^^^^^^^^^
