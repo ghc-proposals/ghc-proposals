@@ -46,28 +46,28 @@ properly tagged.
 For ``Nat`` above, having ``x :: Strict Nat`` is enough to know that the
 inhabitant really only can be a natural number.
 
-For another example, consider strict lists of ``Int``:
+For another example, consider a binary tree data structure:
 
 ::
 
- data IntList = ICons !Int !IntList
-              | INil
+ data Tree a = Branch !(Tree a) !a !(Tree a)
+             | Leaf
 
- isum :: IntList -> Int
- isum INil         = 0
- isum (ICons x xs) = x + isum xs
+ tsum :: Tree Int -> Int
+ tsum Leaf           = 0
+ tsum (Branch l x r) = tsum l + x + tsum r
 
-Since ``isum undefined`` is a possible call site of ``isum``, codegen can't
-omit a tag check on the parameter of ``isum``, although in all recursive calls
-the tail should be properly tagged. Giving ``isum`` the following type,
+Since ``tsum undefined`` is a possible call site of ``tsum``, codegen can't
+omit a tag check on the parameter of ``tsum``, although in all recursive calls
+the tail should be properly tagged. Giving ``tsum`` the following type,
 reflecting its strictness, gets rid of any tag checks, offloading the burden to
 the caller:
 
 ::
 
- isum :: Strict IntList -> Int
- isum (Force INil)         = 0
- isum (Force (ICons x xs)) = x + isum xs
+ tsum :: Strict (Tree Int) -> Int
+ tsum Force Leaf           = 0
+ tsum Force (Branch l x r) = tsum l + x + tsum r
 
 Note that this particular example would be a non-issue if we had strictness
 analysis and worker/wrapper transformation work for sum types: The argument
