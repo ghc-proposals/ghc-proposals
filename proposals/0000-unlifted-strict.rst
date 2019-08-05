@@ -46,7 +46,7 @@ properly tagged.
 For ``Nat`` above, having ``x :: Strict Nat`` is enough to know that the
 inhabitant really only can be a natural number.
 
-For another example, consider strict lists of ``Int``s:
+For another example, consider strict lists of ``Int``:
 
 ::
 
@@ -57,10 +57,11 @@ For another example, consider strict lists of ``Int``s:
  isum INil         = 0
  isum (ICons x xs) = x + isum xs
 
-Since ``isum undefined`` is a possible call site of ``isum``, codegen can't omit
-a tag check on ``isum``s parameter, although in all recursive calls the tail
-should be properly tagged. Giving ``isum`` the following type, reflecting its
-strictness, gets rid of any tag checks, offloading the burden to the caller:
+Since ``isum undefined`` is a possible call site of ``isum``, codegen can't
+omit a tag check on the parameter of ``isum``, although in all recursive calls
+the tail should be properly tagged. Giving ``isum`` the following type,
+reflecting its strictness, gets rid of any tag checks, offloading the burden to
+the caller:
 
 ::
 
