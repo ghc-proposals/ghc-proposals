@@ -66,8 +66,8 @@ the caller:
 ::
 
  tsum :: Strict (Tree Int) -> Int
- tsum Force Leaf           = 0
- tsum Force (Branch l x r) = tsum l + x + tsum r
+ tsum (Force Leaf)           = 0
+ tsum (Force (Branch l x r)) = tsum l + x + tsum r
 
 Note that this particular example would be less of an issue if we had
 strictness analysis and worker/wrapper transformation work for sum types: The
