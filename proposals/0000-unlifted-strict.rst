@@ -46,7 +46,13 @@ properly tagged.
 For ``Nat`` above, having ``x :: Strict Nat`` is enough to know that the
 inhabitant really only can be a natural number.
 
-For another example, consider a binary tree data structure:
+Now for the rest of this proposal, we assume that the plan outlined in `#16970
+<https://gitlab.haskell.org/ghc/ghc/issues/16970>`_ has landed, in particular
+for its operational consequence that strict constructor fields always contain
+tagged pointers.
+
+This is attractive in the following example involving a binary tree data
+structure:
 
 ::
 
@@ -58,8 +64,9 @@ For another example, consider a binary tree data structure:
  tsum (Branch l x r) = tsum l + x + tsum r
 
 Since ``tsum undefined`` is a possible call site of ``tsum``, codegen can't
-omit a tag check on the parameter of ``tsum``, although in all recursive calls
-the tail should be properly tagged. Giving ``tsum`` the following type,
+omit a tag check on the parameter of ``tsum``. But in the recursive calls
+the pointers should be correctly tagged, since they come from strict
+constructor fields ``l`` and ``r``! Giving ``tsum`` the following type,
 reflecting its strictness, gets rid of any tag checks, offloading the burden to
 the caller:
 
@@ -68,6 +75,9 @@ the caller:
  tsum :: Strict (Tree Int) -> Int
  tsum (Force Leaf)           = 0
  tsum (Force (Branch l x r)) = tsum l + x + tsum r
+
+NB: Since ``Force`` is strict in its argument, it will always carry a tagged
+pointer.
 
 Note that this particular example would be less of an issue if we had
 strictness analysis and worker/wrapper transformation work for sum types: The
