@@ -69,9 +69,9 @@ the caller:
  tsum Force Leaf           = 0
  tsum Force (Branch l x r) = tsum l + x + tsum r
 
-Note that this particular example would be a non-issue if we had strictness
-analysis and worker/wrapper transformation work for sum types: The argument
-would turn into an unboxed sum with arguably even better performance
+Note that this particular example would be less of an issue if we had
+strictness analysis and worker/wrapper transformation work for sum types: The
+argument would turn into an unboxed sum with arguably even better performance
 characteristics.
 The point is that we can do this for *any* strictly used argument of lifted
 kind! There's an opportunity for worker/wrapper here.
@@ -84,15 +84,18 @@ with a single constructor ``Force :: !a -> Strict a``.
 As ``Strict`` is just one more unlifted data type, its semantics follow from 
 the semantics of unlifted data types. In particular:
 
-* When wrapped in a field (e.g. ``data T = MkT (Strict ())``), the semantics are
-  identical to a field with a bang pattern (``data T = MkT !()``), modulo
-  packing and unpacking of the ``Force`` constructor.
+* When occuring in a constructor field (e.g. ``data T = MkT (Strict ())``), the
+  semantics are identical to a field with a bang pattern
+  (``data T = MkT !()``), modulo packing and unpacking of the ``Force``
+  constructor.
 
-* In argument position (``f (Force a)``) and in the right-hand side of let
-  bindings (``let x = Force e1 in e2``), the argument ``Force a`` is evaluated
-  before beta reduction and the right-hand side ``Force e1`` is evaluated
-  before the body. Since ``Force`` is strict in its field, this forces
-  evaluation of the wrapped lifted expressions ``a`` and ``e1``. 
+* In an application ``f (Force a)``, the argument ``Force a`` is evaluated
+  before the application is beta reduced. Since ``Force`` is strict in its
+  field, this forces evaluation of the wrapped lifted expression ``a``. 
+
+* In a let binding ``let x = Force e1 in e2``, the right-hand side ``Force e1``
+  is evaluated before the body. Since ``Force`` is strict in its field, this
+  forces evaluation of the wrapped lifted expression ``e1``. 
 
 Examples
 --------
