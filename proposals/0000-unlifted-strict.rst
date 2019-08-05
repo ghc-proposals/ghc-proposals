@@ -180,6 +180,22 @@ information for Codegen to omit the tag checks:
    = case $wfoo (x-1) of
        (# Force a, Force b #) -> (# Force (a+1), Force (b+1) #)
 
+Finally, ``Strict`` provides a type-level mechanism to convey strictness of a
+function to the compiler without having to resort to often superfluous bangs,
+by encoding strictness in its calling convention:
+
+::
+
+ printAverage :: Strict Int -> Strict Int -> IO ()
+ printAverage (Force sum) (Force count)
+   | count == 0 = error "Need at least one value!"
+   | otherwise = print (fromIntegral sum / fromIntegral count :: Double)
+
+Superficially, this doesn't seem to have an advantage over ``-XBangPatterns``,
+but smililar to ``safeHead :: NonEmpty a -> a`` it offloads the burden of
+evaluation to the caller, who is in a better position to decide if that ``seq``
+is needed or not.
+
 Effect and Interactions
 -----------------------
 Introduction of ``Strict`` means we can finally write code processing data types
