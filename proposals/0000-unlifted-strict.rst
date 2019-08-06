@@ -63,12 +63,20 @@ structure:
  tsum Leaf           = 0
  tsum (Branch l x r) = tsum l + x + tsum r
 
-Since ``tsum undefined`` is a possible call site of ``tsum``, codegen can't
-omit a `zero check on the tag <https://gitlab.haskell.org/ghc/ghc/issues/16820>`_
-of the parameter of ``tsum``. But in the recursive calls the pointers are
-correctly tagged, since they come from strict constructor fields ``l`` and
-``r``! Giving ``tsum`` the following type, reflecting its strictness, gets rid
-of any tag checks, offloading the burden to the caller:
+On each pattern match, the compiler has to generate code that checks if the
+pointer to the scrutinee is properly tagged, and if not, *enter* the heap
+object to evaluate it and get to know the constructor tag. We loosely refer to
+this check as the "zero tag check", as in `#16820
+<https://gitlab.haskell.org/ghc/ghc/issues/16820>`_. If the compiler can prove
+that the scrutinee is never untagged, it can omit this check and remove a whole
+lot of dead code.
+
+Not so in the example above: Since ``tsum undefined`` is a possible call site
+of ``tsum``, codegen can't omit the zero tag check on the parameter of
+``tsum``. But in the recursive calls the pointers are correctly tagged, since
+they come from strict constructor fields ``l`` and ``r``! Giving ``tsum`` the
+following type, reflecting its strictness, gets rid of any tag checks,
+offloading the zero tag checking to the caller:
 
 ::
 
@@ -78,12 +86,12 @@ of any tag checks, offloading the burden to the caller:
 
 Because ``Force`` is strict in its field, both the ``Strict`` box and the
 wrapped thing are evaluated and tagged, so contrary to above there's no zero
-check necessary. In the recursive call to ``tsum``, we now need to wrap ``l`` and
-``r`` in ``Force``, implicitly evaluating and tagging them before making the
-recursive call. This evaluation can immediately be optimised away, because we
-know that ``l`` and ``r`` were already tagged to begin with. Thus no zero tag
-checking has to happen on the recursive code path, at least saving us a few
-instructions and relieving pressure on the branch predictor.
+tag check necessary. In the recursive call to ``tsum``, we now need to wrap
+``l`` and ``r`` in ``Force``, implicitly evaluating and tagging them before
+making the recursive call. This evaluation can immediately be optimised away,
+because we know that ``l`` and ``r`` were already tagged to begin with. Thus no
+zero tag checking has to happen on the recursive code path, at least saving us
+a few instructions and relieving pressure on the branch predictor.
 
 This particular example would be less of an issue if we had strictness analysis
 and worker/wrapper transformation work for sum types: The argument would turn
