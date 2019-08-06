@@ -66,10 +66,20 @@ structure:
 On each pattern match, the compiler has to generate code that checks if the
 pointer to the scrutinee is properly tagged, and if not, *enter* the heap
 object to evaluate it and get to know the constructor tag. We loosely refer to
-this check as the "zero tag check", as in `#16820
-<https://gitlab.haskell.org/ghc/ghc/issues/16820>`_. If the compiler can prove
-that the scrutinee is never untagged, it can omit this check and remove a whole
-lot of dead code.
+this check as the "zero tag check", as in
+`#16820 <https://gitlab.haskell.org/ghc/ghc/issues/16820>`_.
+It looks like this in the generated C--:
+
+::
+
+           if (R1 & 7 != 0) goto c1fi; else goto c1fj;
+       c1fj: // global
+           call (I64[R1])(R1) returns to c1fi, args: 8, res: 8, upd: 8;
+       c1fi: // global
+           // rest of the code, assuming R1 is properly tagged
+
+If the compiler can prove that the scrutinee (R1) is always tagged, it can omit
+this check and remove a whole lot of dead code.
 
 Not so in the example above: Since ``tsum undefined`` is a possible call site
 of ``tsum``, codegen can't omit the zero tag check on the parameter of
@@ -268,7 +278,7 @@ This is the generated Core, which looks good enough:
            }
        }
 
-STG looks similar. Now look what happens in Cmm:
+STG looks similar. Now look what happens in C--:
 
 ::
 
@@ -328,7 +338,7 @@ STG looks similar. Now look what happens in Cmm:
 Wow, that's quite a mouthful, all due to the lifted representation of ``Bool``!
 Assuming that the call site can prove evaluatedness at a lower cost than
 ``pack``, we can wrap all ``Bool`` s in ``Strict`` and after removing dead code
-(by hand, so no liability assumed) and freeing up stack space the Cmm would
+(by hand, so no liability assumed) and freeing up stack space the C-- would
 water down to:
 
 ::
