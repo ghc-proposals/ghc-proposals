@@ -49,7 +49,7 @@ inhabitant really only can be a natural number.
 Now for the rest of this proposal, we assume that the plan outlined in `#16970
 <https://gitlab.haskell.org/ghc/ghc/issues/16970>`_ has landed, in particular
 for its operational consequence that strict constructor fields always contain
-tagged pointers.
+tagged pointers (meaning their tag is never zero, like for thunks).
 
 This is attractive in the following example involving a binary tree data
 structure:
@@ -64,27 +64,32 @@ structure:
  tsum (Branch l x r) = tsum l + x + tsum r
 
 Since ``tsum undefined`` is a possible call site of ``tsum``, codegen can't
-omit a tag check on the parameter of ``tsum``. But in the recursive calls
-the pointers should be correctly tagged, since they come from strict
-constructor fields ``l`` and ``r``! Giving ``tsum`` the following type,
-reflecting its strictness, gets rid of any tag checks, offloading the burden to
-the caller:
+omit a `zero check on the tag <https://gitlab.haskell.org/ghc/ghc/issues/16820>`_
+of the parameter of ``tsum``. But in the recursive calls the pointers are
+correctly tagged, since they come from strict constructor fields ``l`` and
+``r``! Giving ``tsum`` the following type, reflecting its strictness, gets rid
+of any tag checks, offloading the burden to the caller:
 
 ::
 
  tsum :: Strict (Tree Int) -> Int
  tsum (Force Leaf)           = 0
- tsum (Force (Branch l x r)) = tsum l + x + tsum r
+ tsum (Force (Branch l x r)) = tsum (Force l) + x + tsum (Force r)
 
-NB: Since ``Force`` is strict in its argument, it will always carry a tagged
-pointer.
+Because ``Force`` is strict in its field, both the ``Strict`` box and the
+wrapped thing are evaluated and tagged, so contrary to above there's no zero
+check necessary. In the recursive call to ``tsum``, we now need to wrap ``l`` and
+``r`` in ``Force``, implicitly evaluating and tagging them before making the
+recursive call. This evaluation can immediately be optimised away, because we
+know that ``l`` and ``r`` were already tagged to begin with. Thus no zero tag
+checking has to happen on the recursive code path, at least saving us a few
+instructions and relieving pressure on the branch predictor.
 
-Note that this particular example would be less of an issue if we had
-strictness analysis and worker/wrapper transformation work for sum types: The
-argument would turn into an unboxed sum with arguably even better performance
-characteristics.
-The point is that we can do this for *any* strictly used argument of lifted
-kind! There's an opportunity for worker/wrapper here.
+This particular example would be less of an issue if we had strictness analysis
+and worker/wrapper transformation work for sum types: The argument would turn
+into an unboxed sum with arguably even better performance characteristics. The
+point is that we can do this for *any* strictly used argument of lifted kind!
+There's an opportunity for worker/wrapper here.
 
 Proposed Change Specification
 -----------------------------
@@ -170,12 +175,12 @@ inlining for the sake of simplicity)
 Compared to the original definition of ``foo``, ``$wfoo`` lost knowledge of the
 fact that ``a`` and ``b`` in the recursive call are always evaluated, hence
 tagged after `#16970 <https://gitlab.haskell.org/ghc/ghc/issues/16970>`_.
-Meaning we could omit the tag check in the original definition (because
+Meaning we could omit the zero tag check in the original definition (because
 ``SPair`` is strict in its fields), but not in the definition of ``$wfoo``,
 because unboxed pairs are lazy in lifted fields.
 
 With ``Strict``, WW could emulate strict unboxed tuples, hence preserve enough
-information for Codegen to omit the tag checks:
+information for Codegen to omit the zero tag checks:
 
 ::
 
