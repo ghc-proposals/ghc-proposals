@@ -1,5 +1,5 @@
-Top-level kind signatures
-=========================
+Standalone kind signatures
+==========================
 
 .. proposal-number:: 36
 .. author:: Richard Eisenberg
@@ -13,7 +13,7 @@ Top-level kind signatures
 .. contents::
 
 
-This proposal adds *top-level kind signatures* allowing users to declare the kind of
+This proposal adds *standalone kind signatures* allowing users to declare the kind of
 type-level declarations introduced with ``type``, ``data``, ``newtype``, or ``class``.
 
 For example::
@@ -35,11 +35,11 @@ For example::
     TyMaybe :: TypeRep Maybe
     TyApp   :: TypeRep a -> TypeRep b -> TypeRep (a b)
 
-Declarations that have a top-level kind signature (with no wildcards)
+Declarations that have a standalone kind signature (with no wildcards)
 can use polymorphic recursion; declarations
 without such signatures are understood to have inferred kinds, and polymorphic
 recursion is not available. Note that the last example above, ``TypeRep``, uses
-polymorphic recursion and would be rejected without the top-level kind signature.
+polymorphic recursion and would be rejected without the standalone kind signature.
 
 This proposal replaces GHC's current notion of syntactic
 CUSKs_.
@@ -59,7 +59,7 @@ unpredictable. For example, here_ are_ some_ tickets_ borne of confusion around 
 
 This new proposal makes the choice of whether or not to infer a kind much simpler.
 Even better, this proposal makes type-level polymorphic recursion have the same rules
-as term-level polymorphic recursion: you *must* have a top-level signature (with no
+as term-level polymorphic recursion: you *must* have a standalone signature (with no
 wildcards).
 
 Proposed Change Specification
@@ -82,12 +82,12 @@ Proposed Change Specification
    Unlike type signatures, the type variables brought into scope in a type-level kind
    signature do *not* scope over the type definition.
 
-   Top-level kind signatures are enabled with the extension ``-XTopLevelKindSignatures``.
+   Standalone kind signatures are enabled with the extension ``-XStandaloneKindSignatures``.
 
 2. Introduce a new extension ``-XCUSKs``, on by default, that detects CUSKs as they
-   currently exist. A CUSK will be treated identically to a top-level kind signature.
+   currently exist. A CUSK will be treated identically to a standalone kind signature.
 
-   When ``-XNoCUSKs`` is specified, only a top-level kind signature enables
+   When ``-XNoCUSKs`` is specified, only a standalone kind signature enables
    polymorphic recursion.
 
 3. Plan to turn ``-XCUSKs`` off by default in GHC 8.8 and to remove it sometime thereafter.
@@ -98,7 +98,7 @@ This is largely a simplification over the status quo, eventually eliminating the
 the fiddly definition and detection of CUSKs. It allows users to control whether they want
 inference or specification in a more conspicuous way than CUSKs do.
 
-Note that a top-level kind signature, by itself, is insufficient in describing a type-level
+Note that a standalone kind signature, by itself, is insufficient in describing a type-level
 construct in, say, an hs-boot file. The kind signature omits details like
 
 * whether the type is generative and/or injective
@@ -136,7 +136,7 @@ Alternatives
   several confused users yearly.
 
 * A previous version of this proposal introduced a new type former ``~>``, which denoted
-  *matchable* functions. Using ``~>``, a top-level kind signature could differentiate
+  *matchable* functions. Using ``~>``, a standalone signature could differentiate
   between the parameters of a type family that are required to be saturated and any others.
   However, this particular choice of syntax was bound to create confusion and disagreement.
   Furthermore, the particular way the syntax was designed was based on issues around
@@ -145,7 +145,7 @@ Alternatives
 * We don't need the ``type`` keyword to introduce non-symbolic kind signatures, as the
   capital letter can tip GHC off. Perhaps omit.
 
-* With top-level kind signatures, some aspects of type declarations are redundant.
+* With standalone kind signatures, some aspects of type declarations are redundant.
   (For example, the ``a b c`` in ``data T a b c where ...``.) One could imagine removing
   these as an extension to this proposal.
 
