@@ -114,6 +114,9 @@ the semantics of unlifted data types. In particular:
 
 Examples
 --------
+
+Desugaring of unlifted data types
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Every unlifted data type will become syntactic sugar over a combination
 of unlifted newtypes and ``Strict``, like
 
@@ -126,7 +129,9 @@ of unlifted newtypes and ``Strict``, like
  newtype UPair :: Type -> Type -> TYPE 'UnliftedRep where
    UPair :: Strict (a, b) -> UPair a b
 
-We can even recover ad-hoc forms of `unboxed strict tuples <https://gitlab.haskell.org/ghc/ghc/issues/17001>`_:
+Ad-hoc desugaring of strict unboxed tuples
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+We can recover ad-hoc forms of `unboxed strict tuples <https://gitlab.haskell.org/ghc/ghc/issues/17001>`_:
 
 ::
 
@@ -139,6 +144,9 @@ crucially is a specialisation to lifted types, though, meaning it still has a
 boxed representation. This is important for later endeavours into levity
 polymorphism (rather than the current boxity polymorphism) over lifted and
 unlifted types.
+
+Worker/wrapper without loss taggedness information
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Another example again concerns the worker/wrapper transformation. Consider
 
@@ -195,6 +203,8 @@ information for Codegen to omit the zero tag checks:
    = case $wfoo (x-1) of
        (# Force a, Force b #) -> (# Force (a+1), Force (b+1) #)
 
+Encoding strictness of a function in its type
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Finally, ``Strict`` provides a type-level mechanism to convey strictness of a
 function to the compiler without having to resort to often superfluous bangs,
 by encoding strictness in its calling convention:
@@ -210,6 +220,135 @@ Superficially, this doesn't seem to have an advantage over ``-XBangPatterns``,
 but smililar to ``safeHead :: NonEmpty a -> a`` it offloads the burden of
 evaluation to the caller, who is in a better position to decide if that ``seq``
 is needed or not.
+
+Low-level code
+~~~~~~~~~~~~~~
+
+Consider the following rather low-level, performance sensitive code:
+
+::
+ 
+ {-# LANGUAGE MagicHash #-}
+
+ module Lib where
+ 
+ import GHC.Exts
+ 
+ pack :: Bool -> Bool -> Int#
+ pack False False = 0#
+ pack False True  = 1#
+ pack True  False = 2#
+ pack True  True  = 3#
+
+The programmer manually unboxed the resulting ``Int`` in desperate endeavour of squeezing out the last bit of performance.
+This is the generated Core, which looks good enough:
+
+::
+
+ pack
+   = \ (ds_d11d :: Bool) (ds1_d11e :: Bool) ->
+       case ds_d11d of {
+         False ->
+           case ds1_d11e of {
+             False -> 0#;
+             True -> 1#
+           };
+         True ->
+           case ds1_d11e of {
+             False -> 2#;
+             True -> 3#
+           }
+       }
+
+STG looks similar. Now look what happens in Cmm:
+
+::
+
+       c1fp: // global
+           if ((Sp + -16) < SpLim) (likely: False) goto c1fq; else goto c1fr;
+       c1fq: // global
+           R3 = R3;
+           R2 = R2;
+           R1 = Lib.pack_closure;
+           call (stg_gc_fun)(R3, R2, R1) args: 8, res: 0, upd: 8;
+       c1fr: // global
+           I64[Sp - 16] = c1fi;
+           R1 = R2;
+           P64[Sp - 8] = R3;
+           Sp = Sp - 16;
+           if (R1 & 7 != 0) goto c1fi; else goto c1fj; <-- Zero tag check
+       c1fj: // global
+           call (I64[R1])(R1) returns to c1fi, args: 8, res: 8, upd: 8; <-- Dead enter if argument was always evaluted
+       c1fi: // global
+           _s1fa::P64 = P64[Sp + 8];
+           if (R1 & 7 != 1) goto c1fn; else goto c1fm;
+       c1fn: // global
+           I64[Sp + 8] = c1fJ;
+           R1 = _s1fa::P64;
+           Sp = Sp + 8;
+           if (R1 & 7 != 0) goto c1fJ; else goto c1fL; <-- Zero tag check
+       c1fL: // global
+           call (I64[R1])(R1) returns to c1fJ, args: 8, res: 8, upd: 8; <-- Dead enter if argument was always evaluted
+       c1fJ: // global
+           if (R1 & 7 != 1) goto c1fV; else goto c1fR;
+       c1fV: // global
+           R1 = 3;
+           Sp = Sp + 8;
+           call (P64[Sp])(R1) args: 8, res: 0, upd: 8;
+       c1fR: // global
+           R1 = 2;
+           Sp = Sp + 8;
+           call (P64[Sp])(R1) args: 8, res: 0, upd: 8;
+       c1fm: // global
+           I64[Sp + 8] = c1fu;
+           R1 = _s1fa::P64;
+           Sp = Sp + 8;
+           if (R1 & 7 != 0) goto c1fu; else goto c1fw; <-- Zero tag check
+       c1fw: // global
+           call (I64[R1])(R1) returns to c1fu, args: 8, res: 8, upd: 8; <-- Dead enter if argument was always evaluted
+       c1fu: // global
+           if (R1 & 7 != 1) goto c1fG; else goto c1fC;
+       c1fG: // global
+           R1 = 1;
+           Sp = Sp + 8;
+           call (P64[Sp])(R1) args: 8, res: 0, upd: 8;
+       c1fC: // global
+           R1 = 0;
+           Sp = Sp + 8;
+           call (P64[Sp])(R1) args: 8, res: 0, upd: 8;
+
+Wow, that's quite a mouthful, all due to the lifted representation of ``Bool``!
+Assuming that the call site can prove evaluatedness at a lower cost than
+``pack``, we can wrap all ``Bool`` s in ``Strict`` and after removing dead code
+(by hand, so no liability assumed) and freeing up stack space the Cmm would
+water down to:
+
+::
+
+       c1fr: // global
+           R1 = R2;
+           if (R1 & 7 != 1) goto c1fn; else goto c1fm;
+       c1fn: // global
+           R1 = R3;
+           if (R1 & 7 != 1) goto c1fV; else goto c1fR;
+       c1fV: // global
+           R1 = 3;
+           call (P64[Sp])(R1) args: 8, res: 0, upd: 8;
+       c1fR: // global
+           R1 = 2;
+           call (P64[Sp])(R1) args: 8, res: 0, upd: 8;
+       c1fm: // global
+           R1 = R3;
+           if (R1 & 7 != 1) goto c1fG; else goto c1fC;
+       c1fG: // global
+           R1 = 1;
+           call (P64[Sp])(R1) args: 8, res: 0, upd: 8;
+       c1fC: // global
+           R1 = 0;
+           call (P64[Sp])(R1) args: 8, res: 0, upd: 8;
+
+Much better! A decent backend should be able to turn this into a couple of
+bitshifts on the tags.
 
 Effect and Interactions
 -----------------------
