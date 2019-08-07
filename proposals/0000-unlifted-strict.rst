@@ -179,7 +179,6 @@ Another example again concerns the worker/wrapper transformation. Consider
    | otherwise
    = case foo (x-1) of
        SPair a b -> SPair (a+1) (b+1)
-  data SPair a b = SPair !a !b
 
 CPR analysis will discover that ``foo`` has the constructed product result
 property. Hence WW will turn this function into (ignoring strictness and
