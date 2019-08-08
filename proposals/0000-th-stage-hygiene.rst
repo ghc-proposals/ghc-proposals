@@ -34,7 +34,8 @@ Also, while same-OS cross can sometimes be fairly lightweight
 — e.g. by having QEMU translate syscalls so the native kernel can be used —
 different-OS requires harder to provision virtual machines or real devices.
 
-Another alternative is dumping and loading splices, where one builds natively, dumping splices, and the builds cross with those dumped splices.
+Another alternative is dumping and loading splices.
+This is where one first builds natively (host ≔ build) so TH can be evaluated, dumps the evaluated splices, and the builds cross (for the original host platform) by splicing in those dumped pre-evaluated splices rather than evaluating anything afresh.
 This became easier with `this patch <https://github.com/reflex-frp/reflex-platform/blob/master/splices-load-save.patch>`_.
 Still, this requires building every package twice, since we redo the entire compilation on both platforms, and worse doesn't work if a top-level splice is target specific.
 For example, imagine some code like
@@ -84,7 +85,7 @@ This solves all the problems of the first section:
 - No need to build everything twice.
   Just what is needed in each phase is built, and just when it's needed.
 
-- No risk of CPPing away the splice, because we aren't faking it with build == host native builds.
+- No risk of CPPing away the splice, as with dumping and loading, because we aren't faking it with build == host native builds.
   ``ios_HOST_OS`` is independent of any ``*_BUILD_OS`` macro.
 
 To do this, we need to cleanly separate the stages induced by quoting and splicing.
@@ -112,31 +113,50 @@ As shown, this is not always the the case.
 But even if we work around that, there's also will be semantic leakage.
 In the near future there would be
 ::
-  AppE <$> [|| ... :: foreach (x :: Int) -> F x ||] <*> [|| 2^36 :: Int ||] :: Q (TExp (F ???))
+  AppE <$> [|| ... :: foreach (x :: Int) -> F x ||] <*> [|| 2 ^ 36 :: Int ||] :: Q (TExp (F ???))
 How do we type the whole expression, or ``AppE`` in particular?
-And say the platform the compiler runs on (build platform) has 32-bit `Int`s?
-The dependent function will have different result types due to overflow, which ruins the guarantees of typed Template Haskell.
-Even today we have similar problems with CPP'd type families:
+``F (2 ^ 36)``?
+But say the platform the compiler runs on (build platform) has a 32-bit ``Int``, while the platform the spliced code runs on (host platform) has a 64-bit ``Int``?
+The code when eventually spliced will have a type of ``F (2 ^ 36)``, but the quote has a type of ``TExp (F 0)``.
+This ruins the guarantees of typed Template Haskell.
+Even today with CPP'd type families:
 ::
   #if mingw_HOST_OS
   type instance F Bool = []
   #else
   type instance F Bool = Tree
   #endif
-``Lift`` is similarly problematic.
+Say we are compiling the following from linux to mingw.
 ::
-  lift (.. :: LinuxOnlyType)
-This relies on native compilation to Linux or a scoping violation must also be induced.
+   AppE <$> [|| ... :: forall a. a -> F a ||] <*> [|| True ||] :: Q (TExp (F Bool))
+We'll have ``F Bool = []`` when the code is eventually spliced, but ``TExp (F Bool) = TExp Tree`` for the quote itself.
+
+Finally, ``Lift`` is problematic for similar reasons.
+Consider
 ::
-  lift (2^^25)
-This though is fine as regardless of overflowing on either side an ``Int`` can be kept an ``Int``, and overflowing is already defined behavior.
+  lift (linuxOnlyValue)
+This will evaluate through something like
+::
+  lift (LinuxOnlyConstructor arg0 ...argn)
+All good so far.
+But that in turn evaluates as
+::
+  [| LinuxOnlyConstructor $(lift arg0) ...$(lift argn) |]
+If we aren't compiling to ``Linux``, ``LinuxOnlyConstructor`` will be out of scope.
+The overflowing issue doesn't break type safety, but is still nastily non-confluent.
+::
+  lift (2 ^ 25 >= 0) /= [| $(lift $ 2 ^ 25) >= 0 |]
+  ==>
+  [| 0 >= 0 {- on 32-bit build platform -} |] /= [| 1 >= 0 {- on 64-bit host platform -} |]
+There's no non-determinism since ``lift`` doesn't automatically commute like that,
+but the lack of bijectivity is still a foot-gun.
 
 I would love to, instead of outright banning Typed Template Haskell and ``Lift``, come up with a flexible way to associate types and terms between stages.
-To be "complete" in that module scoping everything is complete is still possible, we would need slightly different requirements for each.
-For ``Lift`` we just need to map *values* preserving type, while typed Template Haskell we need to map type *expressions* such that evaluation commutes with the mapping.
-Adding language support for such a mapping is lots of extra work—borderline research—for a proposal which already is no small task.
-I therefore think banning for now to start solving the problems people have with cross compilation as soon as possible is prudent.
-Because this is breaking change no matter what, a variant extension is used anyways, so no program breaks.
+For ``Lift``, at a minimum, we just need to map *values* preserving type, though bijectivity is still nice, at least as something one can but manually opts out of.
+For typed Template Haskell, I think we additionally need to map type *expressions* such that evaluation commutes with the mapping.
+Adding language support for such mappings is lots of extra work—borderline research—for a proposal which already is no small task.
+I therefore think banning these constructs for now to start solving the problems people have with cross compilation as soon as possible is prudent.
+Because this proposal is breaking change vs Template Haskell today, a variant extension is used anyways, so no program breaks.
 Instead, users are just temporarily presented with a choice to either support cross compilation or have ``Lift`` and typed TH.
 
 As a final side benefit, now that Template Haskell will be defined and implemented in terms of stages, we can relax ``-XTemplateHaskellQuotes``.
