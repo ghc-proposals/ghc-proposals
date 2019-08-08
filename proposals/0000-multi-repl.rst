@@ -35,10 +35,10 @@ Multiple Home Packages (multi-package GHCi)
 
 Allow GHC to work with multiple packages at once.
 Most importantly to the end user, this allows proper developing of multiple packages in GHCi.
-It also has other potential development benefits, e.g. with incremental compilation and haskell-ide-engine.
+It also has other potential development benefits, e.g. with incremental compilation and Haskell IDE Engine.
 
 Most broadly, this is step towards the principle that division of "laborers"
-(e.g. GHC processes, GHC "sessions" within each process)
+(e.. GHC processes, GHC "sessions" within each process)
 shouldn't be tied to division of work
 (e.g. defintions, modules, or packages, etc to be compiled, pipeline stages done so far).
 The structure and originization of code is too important to compromise for how implementations today consume it.
@@ -91,6 +91,14 @@ thing is to do with the proposal.
 
 Effect and Interactions
 -----------------------
+
+In the GHC wiki page `Multi Session GHC API`_ it was originally proposed that multiple GHC sessions be able to exist in one process.
+This was a large component of a number of changes to make the GHC API more flexible, and better able to support Haskell IDE Engine.
+This is still a good change, but multiple packages within one session largely supplants it.
+While the former is great for developing two indepent packages, it doesn't work well when one depends on the other:
+The upstream one still must be completely built to be loaded, normally, by the session for the downstream one.
+With multiple packages per session, one must merely parse and analyze both packages' modules alike.
+
 Detail how the proposed change addresses the original problem raised in the
 motivation.
 
@@ -127,5 +135,6 @@ Implementation Plan
 The generalizing of HscEnv has begun in `!935`_.
 TODO future steps.
 
+.. _Multi Session GHC API: https://gitlab.haskell.org/ghc/ghc/wikis/Multi-Session-GHC-API
 .. _#10827: https://gitlab.haskell.org/ghc/ghc/issues/10827
 .. _!935: https://gitlab.haskell.org/ghc/ghc/merge_requests/935
