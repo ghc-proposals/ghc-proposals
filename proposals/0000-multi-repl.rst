@@ -16,8 +16,8 @@ To get hyperlinks, use backticks, angle brackets, and an underscore `like this <
 Multiple Home Packages (multi-package GHCi)
 ==============
 
-.. author:: John Ericson
-.. co-author:: Ken Micklas
+.. author:: John Ericson (@Ericson2314)
+.. co-author:: Ken Micklas (@kmicklas)
 .. date-accepted:: Leave blank. This will be filled in when the proposal is accepted.
 .. proposal-number:: Leave blank. This will be filled in when the proposal is
                      accepted.
