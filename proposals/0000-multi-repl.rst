@@ -13,10 +13,11 @@ The proposals are submitted in reStructuredText format.  To get inline code, enc
 To get hyperlinks, use backticks, angle brackets, and an underscore `like this <http://www.haskell.org/>`_.
 
 
-Proposal title
+Multiple Home Packages (multi-package GHCi)
 ==============
 
-.. author:: Your name
+.. author:: John Ericson
+.. co-author:: Ken Micklas
 .. date-accepted:: Leave blank. This will be filled in when the proposal is accepted.
 .. proposal-number:: Leave blank. This will be filled in when the proposal is
                      accepted.
@@ -32,20 +33,38 @@ Proposal title
 .. sectnum::
 .. contents::
 
-Here you should write a short abstract motivating and briefly summarizing the proposed change.
+Allow GHC to work with multiple packages at once.
+Most importantly to the end user, this allows proper developing of multiple packages in GHCi.
+It also has other potential development benefits, e.g. with incremental compilation and haskell-ide-engine.
 
+Most broadly, this is step towards the principle that division of "laborers"
+(e.g. GHC processes, GHC "sessions" within each process)
+shouldn't be tied to division of work
+(e.g. defintions, modules, or packages, etc to be compiled, pipeline stages done so far).
+The structure and originization of code is too important to compromise for how implementations today consume it.
 
 Motivation
 ----------
-Give a strong reason for why the community needs this change. Describe the use
-case as clearly as possible and give an example. Explain how the status quo is
-insufficient or not ideal.
 
-A good Motivation section is often driven by examples and real-world scenarios.
+Haskell prides itself on extreme composibility.
+Programs should and indeed are written in terms of the fine-grained composition of numerous abstractions.
+Yet the tools push us away from this back towareds everyone else.
+On one hand, it is much easier to work on a single library than multiple at once.
+On the other, the better the abstraction is the "farther" (module, component, package, etc) it ought to live from its use-site.
 
+Multi-package GHCi destroys the contradiction by allowing as many libraries (the biggest unit of code) to be loaded in GHCi (the fastest debug cycle) as one likes.
+Indeed it is already popular today.
+Stack emulates it to the best of its ability today.
+TODO link or something brief.
+It is also a requested feature for Cabal `<https://github.com/haskell/cabal/issues/3659>`_.
+
+The problem is it's *ownly* emulatable today.
+A GHCi session is tied to a GHC session, which only supports one "home package", i.e. package on the operating table.
+TODO more.
 
 Proposed Change Specification
 -----------------------------
+
 Specify the change in precise, comprehensive yet concise language. Avoid words
 like "should" or "could". Strive for a complete definition. Your specification
 may include,
@@ -102,5 +121,8 @@ the steering committee.
 
 Implementation Plan
 -------------------
-(Optional) If accepted who will implement the change? Which other resources
-and prerequisites are required for implementation?
+
+The generalizing of HscEnv has begun in `!935`_
+TODO future steps.
+
+.. _!935: https://gitlab.haskell.org/ghc/ghc/merge_requests/935
