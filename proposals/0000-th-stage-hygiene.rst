@@ -191,15 +191,16 @@ GHC
 #. Let there be a notion of stages assigned to the integers.
    All existing rules outside of TH on binding/name resolution are retaken to act independently per stage.
    (i.e. identifiers in stage *n* resolve to bindings in stage *n*, all syntax in the rule is parameterized with the stage.)
-   The top level is always stage 0.
-   A consequence of the above is all non-TH syntax in is also stage 0.
+   bindings (with existing, regular syntax) on the top level are always in stage 0.
+   As a consequence, all non-TH syntax in is also stage 0.
 
-#. Redefine quoting and splicing as acting on adjacent stages. Specifically, quoting quotes code from the next stage:
+#. Redefine quoting and splicing as acting on adjacent stages.
+   Specifically, quoted code from the next stage:
    ::
      G ⊢(n + 1) syntax
      -----------------------
      G ⊢(n) [| syntax |]
-   and splicing splices code from the previous stage:
+   and spliced code from the previous stage:
    ::
      G ⊢(n - 1) syntax
      -----------------------
@@ -213,24 +214,27 @@ GHC
    This means import a module in stage *n* instead of stage 0 as per normal.
    ::
      <decl> ::= $let <integer-literal> <<existing syntax>> = <<existing syntax>>
+   This means bind identifiers in stage *n* instead of stage 0 as per normal.
    In both case the ``$`` must not be followed by whitespace, both to avoid conflicts with other syntax and to be consistent with splices.
-   The means bind identifiers in stage *n* instead of stage 0 as per normal.
-   Module exports however are restricted to stage 0.
+
+#. Module exports, however, are restricted to stage 0.
+   There is no syntax analogous to that of definitions and imports to overcome what is for them merely a default of stage 0.
 
 #. The current "stage restriction" on splices using bindings from the current module is abolished.
-   Any stage n + 1 binding in a stage n splice is fair game.
+   Any stage n - 1 binding in a stage n splice is fair game.
 
-#. Relax ``-XTemplateHaskellQuotes`` to instead allow Template Haskell constructs, but restrict their usage so all syntax is in stages >= 0.
+#. Relax ``-XTemplateHaskellQuotes`` to instead allow splices, but restrict their usage so all syntax is in stages >= 0.
 
 #. Introduce ``-XTemplateStagePersistence``.
    Which is implied by ``-XTemplateHaskellQuotes`` (and thus plain ``-XTemplateHaskell``) for backwards compatibility.
    It allows the current behavior where we blur the distinction between stages.
    In particular, with `TemplateStagePersistence` enabled:
 
-   - Stage 0 identifiers bound in another module can be used in stage 1 (quotes) and stage -1 (splices).
-   - Stage 0 identifiers bound anywhere can be used in stage 1, and are automatically.
+   - Stage 0 identifiers bound in another module can be used in stage -1 (splices).
+   - Stage 0 identifiers bound at the top level can be used "by reference" in stage 1.
    - Typed template haskell is allowed.
    - The ``Lift`` type class and all its associated definitions are made available.
+   - Stage 0 identifiers bound anywhere can be used "by value" in stage 1, via an implicit ``lift``.
 
    These are always permitted today.
    But with ``-XNoTemplateStagePersistence``, overriding the default, all of those are *disabled*.
@@ -318,6 +322,17 @@ end user code:
   $(unneededBinding)
 
 A few misc implementation notes:
+
+Relaxing the stage restriction is hygiene at work
+   We can fearlessly interpret all n - 1 code to fill in splices in stage n without the risk of encountering splices that depend on themselves.
+   The stages enforce a guardedness condition.
+   Inter-module infinite stages are still possible via e.g. a library that depends on itself in stage -1, but Cabal catches that rather than GHC.
+
+"True" splices vs splices within quotes
+  The new rules for ``-XTemplateHaskellQuotes`` instead require that "all syntax is in stages >= 0".
+  This means every splice is within a quote.
+  Those nested splices effectively cancel out with their parent quote.
+  Splices from stages <= 0 (i.e. caused by syntax in stages < 0) are the "true" splices which actually force evaluation.
 
 Bindings interleave stages
   Note that ``$let`` can appear outside the top-level, including in contexts where a variable of later stage is bound.
