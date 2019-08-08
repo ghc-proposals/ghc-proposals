@@ -65,6 +65,8 @@ TODO more.
 Proposed Change Specification
 -----------------------------
 
+TODO Reference `#10827`_.
+
 Specify the change in precise, comprehensive yet concise language. Avoid words
 like "should" or "could". Strive for a complete definition. Your specification
 may include,
@@ -122,7 +124,8 @@ the steering committee.
 Implementation Plan
 -------------------
 
-The generalizing of HscEnv has begun in `!935`_
+The generalizing of HscEnv has begun in `!935`_.
 TODO future steps.
 
+.. _#10827: https://gitlab.haskell.org/ghc/ghc/issues/10827
 .. _!935: https://gitlab.haskell.org/ghc/ghc/merge_requests/935
