@@ -98,67 +98,14 @@ It has even been informally proposed for Haskell by @ezyang in `<http://blog.ezy
 Enforcing that separation means restricting programs we currently allow,
 by assigning bindings to stages and restricting what kinds of references between stages are allowed.
 Least surprisingly, normal bindings, and normal imports in the module cannot be used in splices or quotes.
-But there are other constructs that more surprisingly tangle stages too.
-Typed Templated Haskell is one.
-First of all, there is name leakage.
-::
-  [|| ... :: IosOnlyType ||] :: Q (TExp IosOnlyType)
-This can't work unless we are building *on* and *for* iOS.
-Otherwise the ``IosOnlyType`` will be out of scope in one of its two usage sites.
-If we aren't compiling for iOS (iOS is not host OS), then ``IosOnlyType`` is not in scope in the quote.
-If we aren't compiling on iOS (iOS is not the build OS), the ``IosOnlyType`` is not in scope as the argument for ``TExp``.
-The latter one is the show-stopper, presumably we are compiling for ``iOS`` if we want to do this.
-Typed TH in affect assumes that any host type can be mapped back to a build type for sake of the phantom param.
-As shown, this is not always the the case.
-
-But even if we work around that, there's also will be semantic leakage.
-In the near future there would be
-::
-  AppE <$> [|| ... :: foreach (x :: Int) -> F x ||] <*> [|| 2 ^ 36 :: Int ||] :: Q (TExp (F ???))
-How do we type the whole expression, or ``AppE`` in particular?
-``F (2 ^ 36)``?
-But say the platform the compiler runs on (build platform) has a 32-bit ``Int``, while the platform the spliced code runs on (host platform) has a 64-bit ``Int``?
-The code when eventually spliced will have a type of ``F (2 ^ 36)``, but the quote has a type of ``TExp (F 0)``.
-This ruins the guarantees of typed Template Haskell.
-Even today with CPP'd type families:
-::
-  #if mingw_HOST_OS
-  type instance F Bool = []
-  #else
-  type instance F Bool = Tree
-  #endif
-Say we are compiling the following from linux to mingw.
-::
-   AppE <$> [|| ... :: forall a. a -> F a ||] <*> [|| True ||] :: Q (TExp (F Bool))
-We'll have ``F Bool = []`` when the code is eventually spliced, but ``TExp (F Bool) = TExp Tree`` for the quote itself.
-
-Finally, ``Lift`` is problematic for similar reasons.
-Consider
-::
-  lift (linuxOnlyValue)
-This will evaluate through something like
-::
-  lift (LinuxOnlyConstructor arg0 ...argn)
-All good so far.
-But that in turn evaluates as
-::
-  [| LinuxOnlyConstructor $(lift arg0) ...$(lift argn) |]
-If we aren't compiling to ``Linux``, ``LinuxOnlyConstructor`` will be out of scope.
-The overflowing issue doesn't break type safety, but is still nastily non-confluent.
-::
-  lift (2 ^ 25 >= 0) /= [| $(lift $ 2 ^ 25) >= 0 |]
-  ==>
-  [| 0 >= 0 {- on 32-bit build platform -} |] /= [| 1 >= 0 {- on 64-bit host platform -} |]
-There's no non-determinism since ``lift`` doesn't automatically commute like that,
-but the lack of bijectivity is still a foot-gun.
-
-I would love to, instead of outright banning Typed Template Haskell and ``Lift``, come up with a flexible way to associate types and terms between stages.
-For ``Lift``, at a minimum, we just need to map *values* preserving type, though bijectivity is still nice, at least as something one can but manually opts out of.
-For typed Template Haskell, I think we additionally need to map type *expressions* such that evaluation commutes with the mapping.
-Adding language support for such mappings is lots of extra work—borderline research—for a proposal which already is no small task.
+But Typed Templated Haskell and ``Lift`` also entangle stages too, and I propose banning them with this feature for now
+I would love to, instead of outright banning Typed Template Haskell and ``Lift``, come up with more flexible ways to restrict / opt into them,
+But doing that is lots of extra work—borderline research—for a proposal which already is no small task.
 I therefore think banning these constructs for now to start solving the problems people have with cross compilation as soon as possible is prudent.
 Because this proposal is breaking change vs Template Haskell today, a variant extension is used anyways, so no program breaks.
 Instead, users are just temporarily presented with a choice to either support cross compilation or have ``Lift`` and typed TH.
+Remember, this is still strictly better than today when the choice is cross compilation vs all of TH.
+Untyped TH is liberated from the fragmentation, and hopefully the others follow.
 
 As a final side benefit, now that Template Haskell will be defined and implemented in terms of stages, we can relax ``-XTemplateHaskellQuotes``.
 For example, the following current prohibited:
@@ -322,6 +269,66 @@ end user code:
   $(unneededBinding)
 
 A few misc implementation notes:
+
+Banning ``Lift`` and typed TH
+  let's start with the ways typed Templated Haskell entangles the stages.
+  First of all, there is name leakage.
+  ::
+    [|| ... :: IosOnlyType ||] :: Q (TExp IosOnlyType)
+  This can't work unless we are building *on* and *for* iOS.
+  Otherwise the ``IosOnlyType`` will be out of scope in one of its two usage sites.
+  If we aren't compiling for iOS (iOS is not host OS), then ``IosOnlyType`` is not in scope in the quote.
+  If we aren't compiling on iOS (iOS is not the build OS), the ``IosOnlyType`` is not in scope as the argument for ``TExp``.
+  The latter one is the show-stopper, presumably we are compiling for ``iOS`` if we want to do this.
+  Typed TH in affect assumes that any host type can be mapped back to a build type for sake of the phantom param.
+  As shown, this is not always the the case.
+
+  But even if we work around that, there's also will be semantic leakage.
+  In the near future there would be
+  ::
+    AppE <$> [|| ... :: foreach (x :: Int) -> F x ||] <*> [|| 2 ^ 36 :: Int ||] :: Q (TExp (F ???))
+  How do we type the whole expression, or ``AppE`` in particular?
+  ``F (2 ^ 36)``?
+  But say the platform the compiler runs on (build platform) has a 32-bit ``Int``, while the platform the spliced code runs on (host platform) has a 64-bit ``Int``?
+  The code when eventually spliced will have a type of ``F (2 ^ 36)``, but the quote has a type of ``TExp (F 0)``.
+  This ruins the guarantees of typed Template Haskell.
+  Even today with CPP'd type families:
+  ::
+    #if mingw_HOST_OS
+    type instance F Bool = []
+    #else
+    type instance F Bool = Tree
+    #endif
+  Say we are compiling the following from linux to mingw.
+  ::
+     AppE <$> [|| ... :: forall a. a -> F a ||] <*> [|| True ||] :: Q (TExp (F Bool))
+  We'll have ``F Bool = []`` when the code is eventually spliced, but ``TExp (F Bool) = TExp Tree`` for the quote itself.
+
+  Finally, ``Lift`` is problematic for similar reasons.
+  Consider
+  ::
+    lift (linuxOnlyValue)
+  This will evaluate through something like
+  ::
+    lift (LinuxOnlyConstructor arg0 ...argn)
+  All good so far.
+  But that in turn evaluates as
+  ::
+    [| LinuxOnlyConstructor $(lift arg0) ...$(lift argn) |]
+  If we aren't compiling to ``Linux``, ``LinuxOnlyConstructor`` will be out of scope.
+  The overflowing issue doesn't break type safety, but is still nastily non-confluent.
+  ::
+    lift (2 ^ 25 >= 0) /= [| $(lift $ 2 ^ 25) >= 0 |]
+    ==>
+    [| 0 >= 0 {- on 32-bit build platform -} |] /= [| 1 >= 0 {- on 64-bit host platform -} |]
+  There's no non-determinism since ``lift`` doesn't automatically commute like that,
+  but the lack of bijectivity is still a foot-gun.
+
+  The alternative to outright banning these is some sort of flexible way to associate types and terms between stages.
+  For ``Lift``, at a minimum, we just need to map *values* preserving type, though bijectivity is still nice.
+  Perhaps unbijective mappings would take an extra opt-in.
+  For typed Template Haskell, I think we additionally need to map type *expressions* such that evaluation commutes with the mapping.
+  The type for ``AppE`` uses stage n rather than stage n + 1 (type) application, so we can't just concern ourselves with the mapping of type values.
 
 Relaxing the stage restriction is hygiene at work
    We can fearlessly interpret all n - 1 code to fill in splices in stage n without the risk of encountering splices that depend on themselves.
