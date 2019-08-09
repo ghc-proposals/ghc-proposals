@@ -263,11 +263,6 @@ Cabal
    `<https://github.com/haskell/cabal/issues/5411>`_ asks for a ``run-tool-depends`` which would be nothing but a stage 0 executable depends.
    ``setup-depends`` can also be thought of as a stage -1 executable dependencies list.
 
-#. Likewise extend ``other-modules`` with a stage integer offset parameter, to support intra-package ``$import``.
-   Leave ``exposed-modules`` as is, however. Libraries should only expose stage 0 modules, just as modules only expose stage 0 definitions.
-   Restrict the ``other-modules`` offset to be <= 0, as positive stage code is either pointless or would escape via references from quotes causing build system havoc.
-   Unexposed negative stage modules need not be installed at all, as there is no way for stage 0 to reference them (splices eliminate references).
-
 #. Connect today's "qualified goals" to stages.
    [TODO exact formalism, is it in scope?]
    Some properties that must be true in the brave new world:
