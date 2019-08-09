@@ -362,14 +362,15 @@ Bindings interleave stages
 Forward references across splices
    The intra-module staging restriction is gone, but that's separate from the prohibition on referencing bindings.
    It just avoids the need to topologically sort splices based on references from the quotations inside them, or break cycles à la ``*.hs-boot``.
-   Nevertheless, implementing that is not trivial so it is good to decouple relaxing the restriction from this already-large proposal.
+   Nevertheless, allowing circular intra-module dependencies is not trivial so it is good to decouple relaxing that restriction from this already-large proposal.
    Hopefully a future proposal will tackle this.
 
 Speeding up builds
-  Modules and libraries are relative in that their exported stage 0 may not be imported at stage 0.
-  There is no notion of a global "true" stage 0.
-  This is good in that we can share build artifacts without breaking abstractions.
-  For example, in the common native case, a library that needs another library in stage 0 and stage -1 can load the *same* build of the library in both of those stages.
+  Modules' and libraries' number of stages is relative.
+  Specifically, their exported stage 0 may not necessarily be imported at stage 0.
+  There is no notion of a global "true" stage 0, which would have to be something the entire dependency graph agrees on.
+  This is good in that we can share build artifacts more widely without breaking abstractions.
+  For example, in the mostly-common native case (build == host), a library that needs another library in stage 0 and stage -1 can load the *same* build of the library in both of those stages.
   By virtue of the explicit stage attached to the import, the definitions do not unify even though the underlying build is the same.
   This can be compared to repeated abstract interfaces in backpack being instantiated with the same concrete module.
 
@@ -391,7 +392,7 @@ Speeding up builds
   To satisfy that, we just `hi` files with `-fexpose-all-unfoldings` file, along with a `"naive" Core interpreter`_ which can evaluate those unfoldings.
   Splices are typically small and numerous, so it seems likely that the lower latency of starting the interpreter is worth the cost of slower evaluation once it is started.
   https://gitlab.haskell.org/ghc/ghc/issues/10871, originally made for Backpack, enshrines `hi` files with `-fexpose-all-unfoldings` as a separate "fat" interface file format.
-  This ideal duel to the "naive" core interpreter to ensure errors are caught as soon as possible.
+  This is an ideal complement to the "naive" core interpreter to ensure we do no more work than necessary.
 
 Template Haskell in GHC
   The motivation evokes the specter of ecosystem splits.
@@ -441,7 +442,7 @@ Costs and Drawbacks
 
 - I don't know of precedent for extensions that prevent modules from being linked together.
 
-- Most existing libraries with commonly used TH helpers (`lens`, `aeson`) have the TH in the same call component but in a different module.
+- Most existing libraries with commonly used TH helpers (`lens`, `aeson`) have the TH in the same Cabal component but in a different module.
   To leverage this proposal, we would have to refactor them to put those modules in a separate library component.
   It would take decent amount of conditional code to still support old GHCs, and even more to not be a breaking change on those old libraries.
 
@@ -451,6 +452,7 @@ Alternatives
 There is no fundamental reason modules couldn't export non-stage-0 items, and libraries expose non-stage-0 modules.
 At the cost of more complexity, there could be a `.lib` or `.so` for each exposed stage, and imports would be offset to match the ``#import <offset>`` literal.
 But in fairness, this might allow a smoother transition form how libraries are structured today.
+Not only would GHC need to learn more tricks, but also Cabal and other tools.
 For example, one could do ``#import 1 Control.Lens.Lens`` in ``Control.Lens.TH`` while exposing ``Control.Lens.TH`` from the same library just like today.
 I decided against this as a matter of taste.
 I think it good to enforce the normal form that the "main" stage is stage 0.
