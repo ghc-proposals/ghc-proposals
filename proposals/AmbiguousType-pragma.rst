@@ -109,11 +109,9 @@ Proposed Change Specification
 
 3. This does not change the validation for ambiguous types/type variables at usage sites.
 
-4. The error reporting from the ambiguity check that currently suggests ``To defer the ambiguity check to use sites, enable AllowAmbiguousTypes`` must make clear this is likely to entail using ``TypeApplications`` at usage sites, and that there are several possible approaches to avoid ambiguous type variables.
-
-   Precise wording to be arrived at in discussion of this PR. (Prefer not mentioning ``AllowAmbiguousTypes`` at all.) Starting bikeshed::
+4. The error reporting from the ambiguity check that currently suggests ``To defer the ambiguity check to use sites, enable AllowAmbiguousTypes`` must make clear this is likely to entail using ``TypeApplications`` at usage sites, and that there are several possible approaches to avoid ambiguous types. (Prefer not mentioning ``AllowAmbiguousTypes`` at all.) ::
  
-     The ambiguity might be resolvable through TypeApplications at use sites. Then mark this signature as AMBIGUOUS
+     If you intend to resolve the ambiguity at each use site (typically via TypeApplications), prefix this signature with the AMBIGUOUS pragma.
  
 5. There is to be a flag ``-Wambiguous-types`` controlling whether a warning is raised for ambiguous types -- as allowed by ``-XAllowAmbiguousTypes``. That is:
 
