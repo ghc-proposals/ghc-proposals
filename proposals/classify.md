@@ -49,7 +49,7 @@ via `Compose Identity (Co Point)`:
   instance Representable f => Applicative (Point f)
 
 anyclass:
- instance .. => X (Point f a)
+  instance X (Point f a)
 
 stock:
   instance Show (f a) => Show (Point f a)
