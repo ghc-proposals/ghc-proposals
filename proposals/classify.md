@@ -6,7 +6,7 @@ ticket-url: ""
 implemented: ""
 ---
 
-This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/261>).
+This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/261).
 
 # Classify instances by deriving strategy / declaration
 
