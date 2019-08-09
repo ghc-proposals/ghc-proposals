@@ -89,6 +89,7 @@ This solves all the problems of the first section:
   ``ios_HOST_OS`` is independent of any ``*_BUILD_OS`` macro.
 
 To do this, we need to cleanly separate the stages induced by quoting and splicing.
+In short, regular code is stage 0, top level splices eliminate stage -1 code, and top-level quotes introduce stage 1 code.
 This is not a new idea for programming languages in general.
 Racket (and probably some schemes) do this.
 The work-in-progress (?) `OCaml macro system <https://github.com/ocamllabs/ocaml-macros>`_ does this.
@@ -240,21 +241,25 @@ GHC
    But with ``-XNoTemplateStagePersistence``, overriding the default, all of those are *disabled*.
 
 #. Extend the command line [TODO bikeshed!!] with a way to specify per-stage package dependencies and the like.
-   If/when GHC becomes multi-target, by default stages >= 0 take GHC's target platform / the packages host platform (where compiled code runs), while stages < 0 take GHC's host platform / the packages build platform (where GHC runs).
-   But, the emitted platform can still be specified per-stage like the other flags.
-   This is needed when building TH functions to be used from cross compiled code.
+   If the emitted platform is specified without regards to a specific stage stage, it applies to stages 0, while stages -1 is left the same.
+   If the platform of stage other than those two isn't specified, it defaults to that of the stage next closest to 0.
+   [That's n takes's n + 1's, if n < -1, and n take's n - 1's, if n > 0.]
+   All that said, the emitted platform can still be specified per-stage like the other flags.
 
 #. When importing modules/packages, after applying the import offset ensure that the platforms match.
-   Note that while each module only has bindings in its own stage 0, those bindings can contain quotes from stages greater than 0.
-   All such quoted platforms need to match.
+   Note that while each imported module only has exports in its own stage 0, those exports can contain quotes of code in stages greater than 0.
+   Those stages > 0 (by the imported modules' numbering) need to also match.
 
-#. Just as GHC defines ``*_HOST_OS`` and similar CPP identifiers today, it would define ``*_BUILD_*`` ones if you have any stage -1 package imports, and ``*_BUILD_*`` if you have any stage 1 package imports.
+#. Just as GHC defines ``*_HOST_OS`` and similar CPP identifiers today, define ``*_BUILD_*`` ones if the current module has any stage -1 package imports, and ``*_TARGET_*`` if the current module has any stage 1 package imports.
+   Not always defining them helps people not use the wrong one, and improves the caching of builds (in principle at least).
 
 Cabal
 ~~~~~~~~~~~~
 
-#. Extend the ``build-depends`` syntax with a stage integer offset parameter.
+#. Extend the ``build-depends`` syntax with an optional stage integer offset parameter.
+   The default is stage 0.
    N.B ``build-tool-depends`` can be thought of as a stage -1 executable dependencies list.
+   "Those executables are executed at build time, like top-evel splices, and so need to be built for the build platform."
    `<https://github.com/haskell/cabal/issues/5411>`_ asks for a ``run-tool-depends`` which would be nothing but a stage 0 executable depends.
    ``setup-depends`` can also be thought of as a stage -1 executable dependencies list.
 
@@ -334,13 +339,27 @@ Relaxing the stage restriction is hygiene at work
   Those nested splices effectively cancel out with their parent quote.
   Splices from stages <= 0 (i.e. caused by syntax in stages < 0) are the "true" splices which actually force evaluation.
 
+Spices per platform
+   The 0 and -1 split for the shorthand target syntax comes from these principles:
+    - All build products are confined to stage 0, so that is almost always the platform we want to change.
+    - Users almost never want to change the platform the stages < 0 are built for, because that code needs to be run to produce stage 0.
+      That code gets eliminated in top-level splices, or splices within top-level splices, etc.
+   The adjacent stage default is less important, but still motivated.
+    - If you have stages > 0 or < -1, that roughly means you are an intermediate build product.
+    - Something else needs to do a stage-offset import to make your exotic stages their stage 0 or -1 so it is put to work at run-time or build-time.
+    - If Cabal is aware of that, stages > 0 are already constrained.
+    - If Cabal isn't aware of that, it doesn't really matter.
+      But defaulting those stages' platforms to match their inner adjacent ones' is tantamount to assuming that eventual consumer is a native build.
+      By common sense, this seems more likely than any cross configuration, and so is a good assumption.
+
 Bindings interleave stages
   Note that ``$let`` can appear outside the top-level, including in contexts where a variable of later stage is bound.
-  At first glance, binding a compile-time variable within a run-time variable might seem like a staging violation:
+  At first glance, binding a compile-time variable within a run-time variable's scope might seem like a staging violation:
   ::
     f x = $huh
-       where foo = ...
-             $let -1 huh ... = ... [| x |] ... [| foo |] ...
+      where foo = ...
+            -- huh binding is a where-clause
+            $let -1 huh ... = ... [| x |] ... [| foo |] ...
   But remember that later stage syntax can just be used in quotes; it is inert and cannot be evaluated.
   ``huh`` is trivially lifted outside of ``f`` since it captures the syntactic ``x`` which is static at compile-time.
   Nothing passed into ``f`` at any call site is available to ``huh``.
