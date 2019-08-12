@@ -103,6 +103,13 @@ Alternatives
 List existing alternatives to your proposed change as they currently exist and
 discuss why they are insufficient.
 
+Approximations:
+
+- Stack
+- Obelisk
+
+TODO: why they are insufficient.
+
 
 Unresolved Questions
 --------------------
