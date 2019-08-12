@@ -97,6 +97,8 @@ Give an estimate on development and maintenance costs. List how this effects
 learnability of the language for novice users. Define and list any remaining
 drawbacks that cannot be resolved.
 
+- Potential to slow down GHC a bit with more indirection
+
 
 Alternatives
 ------------
@@ -119,6 +121,8 @@ not list *implementation* issues.
 
 Hopefully this section will be empty by the time the proposal is brought to
 the steering committee.
+
+- Command line syntax
 
 
 Implementation Plan
