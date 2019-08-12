@@ -42,7 +42,7 @@ But ``-M``'s output lacks important dependency information:
 
 * Plugins, enabled with the ``-fplugin`` option or with Template Haskell's ``addCorePlugin`` or otherwise.
 
-* Dependencies added in Template Haskell splices by ``addDependentFile`` (see `Dependency Tracking <https://gitlab.haskell.org/ghc/ghc/wikis/dependency-tracking>`_)
+* Dependencies added by plugins or in Template Haskell splices by ``addDependentFile`` (see `Dependency Tracking <https://gitlab.haskell.org/ghc/ghc/wikis/dependency-tracking>`_)
 
 Much of this is discovered dynamically during compilation. Without this information, external build systems cannot implement correct incremental builds with recompilation avoidance. This proposal aims to solve that limitation by providing *comprehensive* dependency information.
 
@@ -68,8 +68,6 @@ The following dependency information will be collected:
 
 * "Precompilation dependencies"
 
-  * ``{-# OPTIONS_GHC #-}`` pragmas which may add dependencies on plugins (with ``-plugin``) or preprocessors (with ``-pgmf``)
-
   * Direct module ``import`` s.
 
     * There are two cases of imports:
@@ -80,15 +78,14 @@ The following dependency information will be collected:
 
     * In both cases, a list of file paths where GHC looked for the import before finding it. This list is represented with glob patterns.
 
+  * CPP ``#include`` paths.
+
 * "Dynamic dependencies"
-
-  * CPP ``#include`` paths
-
   * Header files needed by ``foreign import`` s
 
   * Plugins, enabled with the ``-fplugin`` option or with Template Haskell's ``addCorePlugin`` or otherwise.
 
-  * Dependencies added in Template Haskell splices by ``addDependentFile`` (see `Dependency Tracking <https://gitlab.haskell.org/ghc/ghc/wikis/dependency-tracking>`_)
+  * Dependencies added by plugins or in Template Haskell splices by ``addDependentFile`` (see `Dependency Tracking <https://gitlab.haskell.org/ghc/ghc/wikis/dependency-tracking>`_)
 
 
 Output format
@@ -104,9 +101,6 @@ The output will be in JSON. Paths may be absolute or relative to the current wor
             {
                 // Source file of this module.
                 "source": "./src/MyModule.hs",
-    
-                // {-# OPTIONS_GHC ... #-} pragmas.
-                "optionsGhcPragmas": ["-fplugin Foo.Plugin", "-pgmF cpp2"],
     
                 // All dependencies discovered while compiling this module.
                 // Entries can be of various types.
@@ -170,7 +164,7 @@ The output will be in JSON. Paths may be absolute or relative to the current wor
     
                     // "file": the build depends on the existence and contents of
                     // this file. CPP include paths, foreign import header files,
-                    // and Template Haskell ``addDependentFile`` files.
+                    // and plugin/Template Haskell ``addDependentFile`` files.
                     {
                         "type": "file",
                         "missing": false,
@@ -220,15 +214,11 @@ Given that most of the dependency information is already available, it's just a 
 Alternatives
 ------------
 
-One option is to expand on ``-M``, but users expect this option to be fast, while some of the dependency information required by this proposal can only be discovered later in the compilation pipeline. In particular dependencies added in Template Haskell splices by ``addDependentFile``. Additionally, the output of ``-M`` is a makefile, which cannot include information such as which about search paths or package databases where queried.
+One option is to expand on ``-M``, but users expect this option to be fast, while some of the dependency information required by this proposal can only be discovered later in the compilation pipeline. In particular dependencies added by plugins or in Template Haskell splices by ``addDependentFile``. Additionally, the output of ``-M`` is a makefile, which cannot include information such as which about search paths or package databases where queried.
 
 
 Unresolved Questions
 --------------------
-
-* Should we create some mechanism for plugins to declare build dependencies or should this be left as future work?
-
-* Should we add a ``{-# DEPENDS fileA fileB ... #-}`` module pragma, which allows a source file to explicitly declare a dependency (e.g. due to ``addDependentFile``)? This would allow dependencies to be discovered earlier (i.e. with ``-precompilation-deps``). This may also provide a workaround mechanism for potential bugs in GHC that omit dependency information.
 
 
 Implementation Plan
