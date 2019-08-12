@@ -43,7 +43,7 @@ Stack emulates it to the best of its ability today.
 TODO link or something brief.
 It is also a requested feature for Cabal `<https://github.com/haskell/cabal/issues/3659>`_.
 
-The problem is it's *ownly* emulatable today.
+The problem is it's *only* emulatable today.
 A GHCi session is tied to a GHC session, which only supports one "home package", i.e. package on the operating table.
 TODO more.
 
