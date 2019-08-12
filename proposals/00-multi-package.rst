@@ -35,10 +35,10 @@ Multiple Home Packages (multi-package GHCi)
 
 Allow GHC to work with multiple packages at once.
 Most importantly to the end user, this allows proper developing of multiple packages in GHCi.
-It also has other potential development benefits, e.g. with incremental compilation and Haskell IDE Engine.
+There are other workflows which can benefit from such functionality, such as incremental compilation and Haskell IDE Engine.
 
-Most broadly, this is step towards the principle that division of "laborers"
-(e.. GHC processes, GHC "sessions" within each process)
+Most broadly, this is step towards the principle that division of compilation "workers"
+(e.g. GHC processes, GHC "sessions" within each process)
 shouldn't be tied to division of work
 (e.g. defintions, modules, or packages, etc to be compiled, pipeline stages done so far).
 The structure and originization of code is too important to compromise for how implementations today consume it.
@@ -48,7 +48,7 @@ Motivation
 
 Haskell prides itself on extreme composibility.
 Programs should and indeed are written in terms of the fine-grained composition of numerous abstractions.
-Yet the tools push us away from this back towareds everyone else.
+Yet various limitations of Haskell tooling limit the potential of ecosystem in this regard.
 On one hand, it is much easier to work on a single library than multiple at once.
 On the other, the better the abstraction is the "farther" (module, component, package, etc) it ought to live from its use-site.
 
