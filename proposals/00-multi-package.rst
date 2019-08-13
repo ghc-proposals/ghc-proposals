@@ -38,32 +38,34 @@ On one hand, it is much easier to work on a single library than multiple at once
 On the other, the better the abstraction is the "farther" (module, component, package, etc) it ought to live from its use-site.
 
 Multi-package GHCi destroys the contradiction by allowing as many libraries (the biggest unit of code) to be loaded in GHCi (the fastest debug cycle) as one likes.
-Indeed it is already popular today.
-Stack emulates it to the best of its ability today.
-TODO link or something brief.
+Indeed it is already popular today: Stack emulates it to the best of its ability today.
+Obelisk's ``ob run`` does also.
+[See :ref:`Alternatives` for more on what Stack and Obelisk exactly do.]
 It is also a requested feature for Cabal `<https://github.com/haskell/cabal/issues/3659>`_.
 
 The problem is it's *only* emulatable today.
+`#10827`_ was opened in GHC a while back explaining the problem that (original just) stack faced.
 A GHCi session is tied to a GHC session, which only supports one "home package", i.e. package which can be recompiled dynamically.
-TODO more.
+Smashing together multiple packages as one package fails because there is one ``DynFlags`` per package.
+As `#10827`_ points out, you hack with per-module ``DynFlags`` some settings specific to a specific module, but this doesn't work for settings affect how modules *relate*.
+Name uniqueness, import resolution, module visibility enforcement, etc can't just be done by faking the module flags, but need slightly richer data structures with GHC because the informatino isn't wastefully computed afresh from the flags every time.
+What `#10827`_ glosses over however is if you do the data structure change (parts 1) then there is no need for part 2 because part 1 subsumes it.
+We therfore go straight for the data structure change.
+No more hacks, no more stop gaps.
+Just implement the feature and implement it correctly.
 
 Proposed Change Specification
 -----------------------------
 
-TODO Reference `#10827`_.
+1. Change ``HscEnv``.
+   The core change boils down to replacing an HscEnv-wide ``HomePackageTable`` and ``DynFlags`` with a pair of each per ``UnitId``.
+   [This core change and its fallout is what `!935`_ does.]
 
-Specify the change in precise, comprehensive yet concise language. Avoid words
-like "should" or "could". Strive for a complete definition. Your specification
-may include,
+2. Extend command line to allow setting the package-specific ``DynFlags``.
+   TODO massive bikeshed.
 
-* grammar and semantics of any new syntactic constructs
-* the types and semantics of any new library interfaces
-* how the proposed change interacts with existing language or compiler
-  features, in case that is otherwise ambiguous
-
-Note, however, that this section need not describe details of the
-implementation of the feature or examples. The proposal is merely supposed to
-give a conceptual specification of the new feature and its behavior.
+3. Update Cabal to take advantage of the new CLI.
+   [Cabal's own syntax is easy to generalize; ``cabal new-repl foo bar`` in fact already parses.]
 
 Examples
 --------
@@ -93,43 +95,44 @@ features.
 
 Costs and Drawbacks
 -------------------
-Give an estimate on development and maintenance costs. List how this effects
-learnability of the language for novice users. Define and list any remaining
-drawbacks that cannot be resolved.
 
-- Potential to slow down GHC a bit with more indirection
+``HscEnv`` becomes more unwieldy, as for virtualy every task not all the information within it is relevant.
+I think a good solution is to make a per-package "view" which is close to its old definition.
+GHC would store everything needed, but each package-specific task would work off the view instead.
+In general any feature than involves changing lots of existing code is liable to create tech debt.
+But with enough refactors with the benefit of hindsight, nothing should be permenenant.
+The requested feature here shouldn't be "inherently architecturally ugly".
 
+Performance of changing the datastructures, with or without the "view" mentioned above, remains unevaluated.
+There is nothing to do but try it.
 
 Alternatives
 ------------
-List existing alternatives to your proposed change as they currently exist and
-discuss why they are insufficient.
 
-Approximations:
+Approximations today:
 
-- Stack
-- Obelisk
+- Stack's ``stack repl``
+- Obelisk's ``ob repl``
+  - https://github.com/obsidiansystems/obelisk/pull/489 is a completely coincidal PR extending `ob run` to do more than the 3 default packages.
+    Hopefully the concidence further illustrates the desire for multi-package repl.
 
-TODO: why they are insufficient.
-
+As mentioned in the notification, neither of these are correct, and this only becomes apparent with the number of packages one repls at once.
+If multple packages are controlled by the author this can be worked around, by syncronizing the default-extensions, ghc flags, etc.
+However, some of the best use-cases of multi-package repl are working on your own project while simultaneously changing upstream package you do not control.
+In this case, those flag-alignment hacks are not appropriate for upstream since they are tailored to your downstream package alone.
+Only true multi-package repl works for this.
 
 Unresolved Questions
 --------------------
-Explicitly list any remaining issues that remain in the conceptual design and
-specification. Be upfront and trust that the community will help. Please do
-not list *implementation* issues.
 
-Hopefully this section will be empty by the time the proposal is brought to
-the steering committee.
-
-- Command line syntax
-
+The exact command line syntax needs to be decided.
 
 Implementation Plan
 -------------------
 
-The generalizing of HscEnv has begun in `!935`_.
-TODO future steps.
+The generalization of HscEnv has begun in `!935`_.
+Hopefully that can land before the exact CLI is agreed upon.
+Follow up PRs would teach GHC and Cabal.
 
 .. _Multi Session GHC API: https://gitlab.haskell.org/ghc/ghc/wikis/Multi-Session-GHC-API
 .. _#10827: https://gitlab.haskell.org/ghc/ghc/issues/10827
