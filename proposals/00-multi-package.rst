@@ -112,7 +112,9 @@ Alternatives
 Approximations today:
 
 - Stack's ``stack repl``
+
 - Obelisk's ``ob repl``
+
   - https://github.com/obsidiansystems/obelisk/pull/489 is a completely coincidal PR extending `ob run` to do more than the 3 default packages.
     Hopefully the concidence further illustrates the desire for multi-package repl.
 
