@@ -25,7 +25,7 @@ There are other workflows which can benefit from such functionality, such as inc
 Most broadly, this is step towards the principle that division of compilation "workers"
 (e.g. GHC processes, GHC "sessions" within each process)
 shouldn't be tied to division of work
-(e.g. defintions, modules, or packages, etc to be compiled, pipeline stages done so far).
+(e.g. defintions, modules, or packages, etc. to be compiled, pipeline stages done so far).
 The structure and originization of code is too important to compromise for how implementations today consume it.
 
 Motivation
@@ -33,36 +33,34 @@ Motivation
 
 Haskell prides itself on extreme composibility.
 Programs should and indeed are written in terms of the fine-grained composition of numerous abstractions.
-Yet various limitations of Haskell tooling limit the potential of ecosystem in this regard.
+Yet various limitations of Haskell tooling limit the potential of the ecosystem in this regard.
 On one hand, it is much easier to work on a single library than multiple at once.
 On the other, the better the abstraction is the "farther" (module, component, package, etc) it ought to live from its use-site.
 
-Multi-package GHCi destroys the contradiction by allowing as many libraries (the biggest unit of code) to be loaded in GHCi (the fastest debug cycle) as one likes.
-Indeed it is already popular today: Stack emulates it to the best of its ability today.
-Obelisk's ``ob run`` does also.
+Multi-package GHCi would overcome this contradiction by allowing as many libraries (the biggest unit of code) to be loaded in GHCi (the fastest debug cycle) as one likes.
+Indeed it is already popular today: Stack emulates it to the best of its ability.
+Obelisk's ``ob run`` does a limited version of this also.
 [See :ref:`Alternatives` for more on what Stack and Obelisk exactly do.]
 It is also a requested feature for Cabal `<https://github.com/haskell/cabal/issues/3659>`_.
 
-The problem is it's *only* emulatable today.
-`#10827`_ was opened in GHC a while back explaining the problem that (original just) stack faced.
+The problem is it's *only* unreliably emulatable today.
+`#10827`_ was opened in GHC a while back explaining the problem that (originally just) Stack faced.
 A GHCi session is tied to a GHC session, which only supports one "home package", i.e. package which can be recompiled dynamically.
-Smashing together multiple packages as one package fails because there is one ``DynFlags`` per package.
-As `#10827`_ points out, you hack with per-module ``DynFlags`` some settings specific to a specific module, but this doesn't work for settings affect how modules *relate*.
-Name uniqueness, import resolution, module visibility enforcement, etc can't just be done by faking the module flags, but need slightly richer data structures with GHC because the informatino isn't wastefully computed afresh from the flags every time.
-What `#10827`_ glosses over however is if you do the data structure change (parts 1) then there is no need for part 2 because part 1 subsumes it.
+Smashing together multiple packages as one package fails because there is one ``DynFlags`` shared across all the underlying packages.
+As `#10827`_ points out, you hack with per-module ``DynFlags`` some settings specific to a certain module, but this doesn't work for settings affecting how modules *relate*.
+Name uniqueness, import resolution, module visibility enforcement, etc. can't just be done by faking the module flags, but need slightly richer data structures in GHC.
+What `#10827`_ glosses over however is if you do the data structure change (part 1) then there is no need for part 2 because part 1 subsumes it.
 We therfore go straight for the data structure change.
-No more hacks, no more stop gaps.
-Just implement the feature and implement it correctly.
 
 Proposed Change Specification
 -----------------------------
 
 1. Change ``HscEnv``.
-   The core change boils down to replacing an HscEnv-wide ``HomePackageTable`` and ``DynFlags`` with a pair of each per ``UnitId``.
+   The core change boils down to replacing an ``HscEnv``-wide ``HomePackageTable`` and ``DynFlags`` with a pair of each per ``UnitId``.
    [This core change and its fallout is what `!935`_ does.]
 
 2. Extend command line to allow setting the package-specific ``DynFlags``.
-   TODO massive bikeshed.
+   TODO: massive bikeshed.
 
 3. Update Cabal to take advantage of the new CLI.
    [Cabal's own syntax is easy to generalize; ``cabal new-repl foo bar`` in fact already parses.]
@@ -96,14 +94,14 @@ features.
 Costs and Drawbacks
 -------------------
 
-``HscEnv`` becomes more unwieldy, as for virtualy every task not all the information within it is relevant.
+``HscEnv`` becomes more unwieldy, as for virtually every task not all the information within it is relevant.
 I think a good solution is to make a per-package "view" which is close to its old definition.
 GHC would store everything needed, but each package-specific task would work off the view instead.
-In general any feature than involves changing lots of existing code is liable to create tech debt.
-But with enough refactors with the benefit of hindsight, nothing should be permenenant.
+In general any feature that involves changing lots of existing code is liable to create tech debt.
+But with enough refactors and the benefit of hindsight, nothing should be permanent.
 The requested feature here shouldn't be "inherently architecturally ugly".
 
-Performance of changing the datastructures, with or without the "view" mentioned above, remains unevaluated.
+Performance of changing the data structures, with or without the "view" mentioned above, remains unevaluated.
 There is nothing to do but try it.
 
 Alternatives
@@ -115,14 +113,12 @@ Approximations today:
 
 - Obelisk's ``ob repl``
 
-  - https://github.com/obsidiansystems/obelisk/pull/489 is a completely coincidal PR extending `ob run` to do more than the 3 default packages.
-    Hopefully the concidence further illustrates the desire for multi-package repl.
+  - https://github.com/obsidiansystems/obelisk/pull/489 extends `ob run` to do more than the 3 default packages.
 
-As mentioned in the notification, neither of these are correct, and this only becomes apparent with the number of packages one repls at once.
-If multple packages are controlled by the author this can be worked around, by syncronizing the default-extensions, ghc flags, etc.
-However, some of the best use-cases of multi-package repl are working on your own project while simultaneously changing upstream package you do not control.
-In this case, those flag-alignment hacks are not appropriate for upstream since they are tailored to your downstream package alone.
-Only true multi-package repl works for this.
+As mentioned in the notification, neither of these are correct, and this becomes more apparent with the number of packages one loads at once.
+If multple packages are controlled by the author this can be worked around, by syncronizing the default-extensions, GHC flags, etc.
+However, some of the best use-cases of multi-package repl are working on your own project while simultaneously changing upstream packages you do not control.
+In this case, flag mismatch is likely to cause issues.
 
 Unresolved Questions
 --------------------
@@ -132,9 +128,8 @@ The exact command line syntax needs to be decided.
 Implementation Plan
 -------------------
 
-The generalization of HscEnv has begun in `!935`_.
+The generalization of ``HscEnv`` has begun in `!935`_.
 Hopefully that can land before the exact CLI is agreed upon.
-Follow up PRs would teach GHC and Cabal.
 
 .. _Multi Session GHC API: https://gitlab.haskell.org/ghc/ghc/wikis/Multi-Session-GHC-API
 .. _#10827: https://gitlab.haskell.org/ghc/ghc/issues/10827
