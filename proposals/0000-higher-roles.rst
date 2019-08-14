@@ -17,9 +17,6 @@ If we write ``data T f a = MkT (f a)``, GHC assigns a nominal role to ``a``, bec
 as the argument of a type variable, and we cannot know how this argument will be used. This proposal
 describes a way to assign a representational role to ``a`` via the use of a quantified constraint.
 
-There are two proposed ways to fix this problem, each described in its own "Proposed Change
-Specification". Only **one** of these changes should be implemented.
-
 Motivation
 ----------
 Consider::
@@ -115,9 +112,9 @@ Alternatives
   This would mean we wouldn't run the solver during role inference. However, such a feature seems
   sadly non-orthogonal when we have the features to express this idea already.
 
-* Previous versions of this proposal had the constraints either in the datatype context or
-  in the constructor contexts, but that decision was made at the level of the proposal.
-  Now, users can make their own decisions. This seems strictly better than either previous
+* Previous versions of this proposal had the constraints either in the datatype context (only) or
+  in the constructor contexts (only).
+  In this version of the proposal, allowing constraints in both places, users can make their own decisions. This seems strictly better than either previous
   proposal.
 
 * An `alternative proposal <https://github.com/ghc-proposals/ghc-proposals/pull/248>`_
