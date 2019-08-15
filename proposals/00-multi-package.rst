@@ -49,8 +49,10 @@ A GHCi session is tied to a GHC session, which only supports one "home package",
 Smashing together multiple packages as one package fails because there is one ``DynFlags`` shared across all the underlying packages.
 As `#10827`_ points out, you hack with per-module ``DynFlags`` some settings specific to a certain module, but this doesn't work for settings affecting how modules *relate*.
 Name uniqueness, import resolution, module visibility enforcement, etc. can't just be done by faking the module flags, but need slightly richer data structures in GHC.
-What `#10827`_ glosses over however is if you do the data structure change (part 1) then there is no need for part 2 because part 1 subsumes it.
-We therfore go straight for the data structure change.
+Concretely, `#10827`_ points out two data structures are global causing problems, ``HomePackageTable`` and ``DynFlags``.
+It tries to imagine generalizing the first but can't decide exactly how. then proposes the module hack half-heartedly.
+Everyone agrees packages have different sets of ``DynFlags`` in principle, and ``HomePackageTable`` certainly purports to be a package-specific data structure too.
+We propose going straight to making both per-package.
 
 Proposed Change Specification
 -----------------------------
