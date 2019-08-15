@@ -3,15 +3,13 @@
 Ambiguous Type per-signature pragma
 ===================================
 
-.. proposal-number:: Leave blank. This will be filled in when the proposal is
-                     accepted.
-.. ticket-url:: Leave blank. This will eventually be filled with the
-                ticket URL which will track the progress of the
-                implementation of the feature.
-.. implemented:: Leave blank. This will be filled in with the first GHC version which
-                 implements the described feature.
+.. proposal-number:: 54
+.. date-accepted:: 2019-08-15
+.. author:: AntC2
+.. ticket-url::
+.. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/232>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/232>`_.
 .. sectnum::
 .. contents::
 
