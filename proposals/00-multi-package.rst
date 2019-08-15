@@ -86,12 +86,8 @@ While the former is great for developing two indepent packages, it doesn't work 
 The upstream one still must be completely built to be loaded, normally, by the session for the downstream one.
 With multiple packages per session, one must merely parse and analyze both packages' modules alike.
 
-Detail how the proposed change addresses the original problem raised in the
-motivation.
-
-Discuss possibly contentious interactions with existing language or compiler
-features.
-
+Proposal `#243`_ would isolate regular, TH quote, and TH splice code with their own binding namespace and imports.
+This is mostly easily implemented by treating each stage as a separate module in conjunction with this proposal.
 
 Costs and Drawbacks
 -------------------
@@ -136,3 +132,4 @@ Hopefully that can land before the exact CLI is agreed upon.
 .. _Multi Session GHC API: https://gitlab.haskell.org/ghc/ghc/wikis/Multi-Session-GHC-API
 .. _#10827: https://gitlab.haskell.org/ghc/ghc/issues/10827
 .. _!935: https://gitlab.haskell.org/ghc/ghc/merge_requests/935
+.. _#243: https://github.com/ghc-proposals/ghc-proposals/pull/243
