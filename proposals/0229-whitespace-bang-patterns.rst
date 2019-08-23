@@ -5,7 +5,7 @@ Simplify parsing of (~) and (!)
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/229>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/229>`_.
 .. sectnum::
 .. contents::
 
