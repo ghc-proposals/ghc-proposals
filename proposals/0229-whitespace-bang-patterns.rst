@@ -1,12 +1,15 @@
 Simplify parsing of (~) and (!)
 ===============================
 
-.. proposal-number::
+.. proposal-number:: 229
+.. date-accepted:: 2019-08-24
+.. author:: Vladislav Zavialov
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/229>`_.
 .. sectnum::
+     :start: 229
 .. contents::
 
 We propose to simplify GHC internals and the lexical syntax of Haskell by
