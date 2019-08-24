@@ -7,6 +7,7 @@ Revise Levity Polymorphism
 .. ticket-url:: https://phabricator.haskell.org/D2842
 .. implemented:: 8.2.1
 .. highlight:: haskell
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/29>`_.
 .. sectnum::
    :start: 3
 .. contents::
