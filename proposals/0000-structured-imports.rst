@@ -1,9 +1,11 @@
 Structured module exports/imports
 =================================
 
+.. author:: Kosyrev Serge
+.. date-accepted::
 .. proposal-number::
-.. trac-ticket::
-.. implemented:: Not yet
+.. ticket-url::
+.. implemented::
 .. highlight:: haskell
 .. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/205>`_.
 .. sectnum::
@@ -18,94 +20,224 @@ Preludes (meaning, broadly, all modules with reexports) give us a tool to centra
 * compressing the total set of import statements in the overarching program
 * providing authoritative decisions on the direct availability of names -- essentially providing a common language
 
-This centralisation use case, however, is deficient in that it isn't supported by any form of sharing of *module aliases* (module names, introduced specifically via the 'as' keyword), forcing explicit redefinition of these aliases across module collections. The effect is an unnecessary increase in the costs of module abstraction:
+This centralisation use case, however, is deficient in that it isn't supported by any form of sharing of *qualified names*, forcing explicit redefinition of structure established by the qualifiers across module collections. The effect is an unnecessary increase in the costs of module abstraction:
 
-* for the reader, there are no commons to learn and refer to -- every module is a potential snowflake regarding the structure of its namespace (in the alias part)
-* for the writer, growing the program and splitting it into modules brings super-linear expenditures for the namespace maintenance aspect (again, in the alias part)
+* for the reader, there are no commons to learn and refer to -- every module is a potential snowflake regarding the structure of its namespace (in its name qualification aspect)
+* for the writer, growing the program and splitting it into modules brings super-linear expenditures for the namespace maintenance aspect (again, in the qualification aspect)
 
-NOTE: sharing of qualified module names introduced by import statements without the 'as' keyword is another side of the namespace replication issue, and one which is admittedly harder to tackle.  This side is explicitly not part of the proposal, although the basic rationale is briefly touched upon later.
+We propose to provide module authors with a way of importing and exporting sets of qualified names:
 
-NOTE: while we discuss importing and exporting *aliases*, what we *really* mean is performing these operations on the *sets of names available as qualified by those aliases*.  We'll clarify usage where this distinction becomes important.
+* Defining module::
 
-We propose to provide module authors with a way of importing and exporting sets of names qualified by locally-established aliases, in their qualified form:
-
-* alias definition module::
+    {-# LANGUAGE StructuredImports #-}
 
     module C
-      ( aliases                       -- Complete export of all aliases available in the current module
-      , aliases (ALIAS..)             -- Export of the available alias set intersected with the specified list
-      , aliases hiding (ALIAS..)      -- Export of the available alias set, modulo the specified list
+      ( module Containers qualified   -- Export the set of names qualified with 'Containers', qualified.
+                                      -- And also,
+      , module Containers             -- ..iff we'd also want those names exported traditionally, *unqualified*.
       )
     where
-    import A.B.C as A.B.C
-    import D.E.F as DEF
 
-* alias user module::
+    import Data.Map as Containers     -- We populate an alias, that contains all of the names
+    import Data.Set as Containers     -- ..exported by the subordinate imports.
+                                      -- This is the normal, usual part.
 
-    module B
-    where
-    import C aliases                  -- Complete import of all aliases available in the imported module
-    import C aliases (ALIAS..)        -- Import of a subset of aliases available in the imported module
-    import C aliases hiding (ALIAS..) -- ...
+* User module::
 
-For some potential additions/tweaks to this proposal, please see the `Additional extensions`_ section.
+    {-# LANGUAGE StructuredImports #-}
+
+    module B where
+
+    import C                          -- We bring in the unqualified *and* qualified names exported by C.
+                                      -- Or, alternatively,
+    import C (module Containers)      -- ..if we want to be explicit about the qualified names.
+    import C hiding (module Containers) -- ..or even explicitly negative.
+
+    foo :: Containers.Map Int String
+    foo = Containers.empty
+
+
+For some potential additions/tweaks to this proposal, please see the `Alternatives`_ section.
 
 Proposed Change Specification
 -----------------------------
+Overview of changes to the export side
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+We review the set of export use cases, organised along three axes:
+
+- origin of exported name(s) -- *local* versus *imported*,
+- specification for the set of exports -- *pointwise* versus *wholesale*,
+- qualification at the export boundary -- the key point of this proposal
+
+.. list-table:: Exports: intent vs. syntax
+   :header-rows: 1
+
+   * - #
+     - Feature set
+     - Origin: local or imported
+     - Pointwise or wholesale
+     - Qualified?
+     - Export declaration
+     - Added exports
+     - Comments
+   * - 1
+     - *Haskell2010*
+     - local
+     - point
+     - unqual
+     - ``module M (a) where a = 1``
+     - ``a``
+     -
+   * - 2
+     - *Haskell2010*
+     - imported
+     - point
+     - unqual
+     - ``module M (a) where import N (a)``
+     - ``a``
+     -
+   * - 3
+     - *Haskell2010*
+     - local
+     - whole
+     - unqual
+     - ``module M (module M) where a = 1``
+     - ``a``
+     -
+   * - 4
+     - *Haskell2010*
+     - imported
+     - whole
+     - unqual
+     - ``module M (module N) where import N``
+     - ``N`` 's exports, flat set
+     -
+   * - 5
+     - *Structured Imports*
+     - local
+     - point-set
+     - qual
+     - ``module M (module N qualified) where import N``
+     - All of ``N`` unqualified exports, re-qualified as ``N.x``.
+     - Names ``N.x`` are only created locally in ``M``, so we add them to the export list, qualified.
+   * - 6
+     - *Structured Imports*
+     - imported
+     - point-set
+     - qual
+     - ``module M (module O qualified) where import N``
+     - A subset of ``N`` exports, which is qualified as ``O.x``, verbatim.
+     - Assuming that module ``N`` exports a set of names qualified with ``O``.
+   * - 7
+     - **out of scope**
+     - local
+     - whole
+     - qual
+     - Would've been ``module M (module M) where import N``
+     -
+     - This is controversial -- while ``N`` is a locally-introduced qualifier,
+       ``N.x`` are not local names, so we decide not to allow this, retaining
+       normal interpretation.
+   * - 8
+     - *Structured Imports*
+     - imported
+     - whole
+     - qual
+     - ``module M (module N) where import N``
+     - All of ``N`` 's qualified and unqualified exports, verbatim.
+     - This is reinterpretation of #4 enabled by the proposed extension.
+
 Export lists
 ^^^^^^^^^^^^
-In section 5.2, "Export lists", extend the *export* non-terminal to accept extra clauses::
+In section 5.2, "Export lists", extend the *export* non-terminal to accept an extra clause::
 
-    |	aliases
-    |	aliases (*modid1*, .., *modidN*)
-    |	aliases hiding (*modid1*, .., *modidN*)
+    |	module *modid* qualified
 
-Extend the list of cases (starting with "Entities in an export list may be named as follows:") with the a seventh entry:
+With regards to the the list of cases (starting with "Entities in an export list may be named as follows:"):
 
-7. A set of aliased names in scope under a set of aliases may be referred by one of the following three forms:
+Reword the fifth entry as follows:
 
-   1. The form ``aliases`` denotes the entire set of entities available under aliased names.
-   2. The form ``aliases (*modid1*, .., *modidN*)`` denotes the set of entities available under names qualified with specified aliases.
-   3. The form ``aliases hiding (*modid1*, .., *modidN*)`` denotes the set of entities available under names qualified by all aliases, except those specified.  For example, the following module will carry the sum of sets of names exported by modules ``GH.I`` and ``G.HI`` in own its exports, but qualified by the alias ``GHI``::
+    The form “module M” names two sets of entities:
 
-        module M ( aliases hiding (ABC, DEF) ) where
-          import AB.C as ABC
-          import D.EF as DEF
-          import GH.I as GHI
-          import G.HI as GHI
+      1. The set of all entities that are in scope with both an unqualified name “e” and a qualified name “M.e”. This set may be empty. For example:
 
-      It is an error to use module A in an alias export list unless A is established as an alias by at least one import declaration.
+          module Queue( module Stack, enqueue, dequeue ) where
+               import Stack
+               ...
+
+         Here the module Queue uses the module name Stack in its export list to abbreviate all the entities imported from Stack.
+
+         These entities will be re-exported unqualified.
+
+      2. The set of all entities that are in scope with a qualified name “M.e”.  Again this set may be empty.
+
+         These entities will be re-exported with their qualified names.
+
+    A module can name its own local definitions in its export list using its own name in the “module M” syntax, because a local declaration brings into scope both a qualified and unqualified name (Section 5.5.1). For example:
+      module Mod1( module Mod1, module Mod2 ) where
+      import Mod2
+      import Mod3
+
+Add a sixth entry:
+
+   The form ``module M qualified`` names the set of all entities that are in scope with a qualified name ``M.e``.
+   Those entities will be advertised by the module as exported with their qualified name.
+
+   It is an error to use ``module M qualified`` in an export list unless ``M`` is established either as an alias or a module name, by at least one import declaration.
 
 The same section of Haskell2010 describes a restriction:
 
    The unqualified names of the entities exported by a module must all be distinct (within their respective namespace).
 
-With regards to the aliased name exports, this restriction only applies to the individual sets of exports under individual alias names -- it is naturally a name clash to export different entities under the same name, within the set of names under the same alias.
+With regards to the qualified name exports, this restriction only applies to the individual sets of exports with individual qualifiers -- it is naturally a name clash to export different entities with the same qualified name.
+
+The same section says:
+
+   If the export list is omitted, all values, types and classes defined in the module are exported, but not those that are imported.
+
+This is to be extended to cover the qualified names -- none of them are exported in case of an omitted export list.
 
 Import lists
 ^^^^^^^^^^^^
-In section 5.3, "Import lists", extend the *impdecl* non-terminal to accept extra clauses::
+In section 5.3, "Import lists", extend the *import* non-terminal to accept an extra clause::
 
-    |	import *modid* aliases
-    |	import *modid* aliases (*modid1*, .., *modidN*)
-    |	import *modid* aliases hiding (*modid1*, .., *modidN*)
+    |	module *modid*
 
-Lexically, the terminal symbol ``aliases`` is a varid rather than a reservedid, has special significance only in the context of an import declaration and may also be used as variable.
+This clause stands for a set of names qualified with ``modid``.
 
-We extend the list under section 5.3.1 ("What is imported") as follows:
+The leading part of the section 5.3 should is to be extended with:
 
-   4. Entities can be imported from modules under qualified names (should the respective modules export them in fashion described in the previous section) as follows:
+   Imported names might be already qualified, if the module being imported exports them as qualified.
 
-      1. ``import *modid* aliases`` marks the entire set of ``*modid*``'s names exported under aliases to be made available qualified by those corresponding aliases.
-      2. ``import *modid* aliases (*modid1*, .., *modidN*)`` marks the subset of ``*modid*``'s names exported under aliases *modid1*.. *modidN* to be made available qualified by those corresponding aliases.
-      3. ``import *modid* aliases hiding (*modid1*, .., *modidN*)`` marks the entire subset of ``*modid*``'s names exported under aliases (but those under aliases *modid1*.. *modidN*) to be made available qualified by those corresponding aliases.  It is an error to hide an alias that is not, in fact, exported by the imported module.
+The third entry of the list in section 5.3.1 should be reworded as:
+
+   Finally, if impspec is omitted then all the entities exported by the specified module are imported, including all of the entities exported with qualified names.
+
+Changes to the operational semantics
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Semantics of module interface files need to be extended from the status-quo of only allowing a flat set of regular names in the exports, to also admitting qualified names.
+
+More specifically, in the ``mi_exports`` field of ``HscTypes.ModIface`` we're going from ``[IfaceExport]`` to something morally equivalent to ``[(ModuleName, IfaceExport)]``.
+
+Note: Implementation options
+  1. Changing ``mi_exports`` to carry a list of pairs, as described above.
+  2. Keeping the type and semantics of the ``mi_exports`` field as-is, and adding the new semantics to a new field, such as ``mi_exports_aliases`` -- which would be less disruptive (and more conducive towards maintaining backwards compatibility), but also less clean in the long run.
+
+Gating the functionality
+^^^^^^^^^^^^^^^^^^^^^^^^
+The new semantics are to be guarded by a language pragma, such as:
+
+  - ``StructuredImports``     -- because that's what we want, ultimately,
+  - ``FirstClassModuleNames`` -- because that's what it is, conceptually.
 
 Examples
-^^^^^^^^
-To clarify the above import rules, suppose the module A has the following import/export structure::
+--------
+To clarify the above new import rules, suppose the module A has the following import/export structure::
 
    module A
-     ( aliases (ABC, DEF)
+     ( module ABC qualified
+     , module DEF qualified
      )
    where
    import A.B.C as ABC (a,b,c)
@@ -120,30 +252,16 @@ Then this table shows what names are brought into scope by the specified import 
      - Import declaration
      - Names brought into scope
    * - 1
-     - ``import A aliases``
+     - ``import A``
      - ``ABC.a, ABC.b, ABC.c, DEF.d, DEF.e, DEF.f``
    * - 2
-     - ``import A aliases (ABC)``
+     - ``import A (module ABC)``
      - ``ABC.a, ABC.b, ABC.c``
    * - 3
-     - ``import A aliases hiding (ABC)``
+     - ``import A hiding (module ABC)``
      - ``DEF.d, DEF.e, DEF.f``
 
 In all cases, all instance declarations in scope in module A are imported.
-
-Changes to the operational semantics
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Semantics of module interface files need to be extended from the status-quo of only allowing a flat set of regular names in the exports, to also admitting qualified names.
-
-More specifically, in the ``mi_exports`` field of ``HscTypes.ModIface`` we're going from ``[IfaceExport]`` to something like ``[(ModuleName, IfaceExport)]``.
-
-Note: Implementation options
-  1. Changing ``mi_exports`` to carry a list of pairs, as described above.
-  2. Keeping the type and semantics of the ``mi_exports`` field as-is, and adding the new semantics to a new field, such as ``mi_exports_aliases`` -- which would be less disruptive (and more conducive towards maintaining backwards compatibility), but also less clean in the long run.
-
-Gating the functionality
-^^^^^^^^^^^^^^^^^^^^^^^^
-The new semantics are to be guarded by a language pragma, such as ``StructuredImports`` or ``SmugglingAliases``.
 
 Effect and Interactions
 -----------------------
@@ -155,24 +273,26 @@ The implementation cases incurs a serialisation of module interface that is inco
 
 Costs and Drawbacks
 -------------------
+Complication of the module interface
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 One unavoidable downside is the necessary complication in the module interface machinery -- we're now assigning structure to the previously unstructured set of names exchanged between modules, and that structure needs a material carrier.  The effect is two-fold, regardless of the use of the extended functionality:
 
 1. Modules compiled by the extended compiler will be impossible to link using older compilers,
 2. Linkability of modules produced by older compilers, if desired, will be restricted by the implementation of compatibility handling, that would assume empty exports sets of *level-1* names.
 
+Language-level costs
+^^^^^^^^^^^^^^^^^^^^
 There appear to be no language-level costs for the non-users: ``StructuredImports`` not enabled in either module will result in simple, predictable, customary behavior (except for the backward compatibility cost).
 
 There appears to be no compile-time cost whatsoever associated with handling of the modules compiled without the extension enabled.
-
-The newly introduced keyword (``aliases``) is only assigned meaning locally to the import/export declarations and are not stolen from the overall syntax, similar to how it's handled in *Section 5.3 of Haskell2010*:
-
-   Lexically, the terminal symbols “as”, “qualified” and “hiding” are each a varid rather than a reservedid. They have special significance only in the context of an import declaration; they may also be used as variables.
 
 Compile-time costs regarding processing of modules with the extension enabled should be:
 
 1. Constrained to the module processing (compilation/linking) time,
 2. Proportional to the complexity of the namespaces defined.
 
+Implementation costs
+^^^^^^^^^^^^^^^^^^^^
 Implementation costs appear to include (according to a proof-of-concept implementation):
 
 1. Parser changes
