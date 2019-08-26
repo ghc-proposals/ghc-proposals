@@ -93,7 +93,7 @@ Proposed Change Specification
     closing, in particular ``whitespace`` (including comments), and separators
     ``,``, ``;``.
 
-  Note that identifiers and literals are classied as both closing and opening.
+  Note that identifiers and literals are classified as both closing and opening.
 
   Lexical non-terminals introduced by a language extension must be classified
   as opening or closing by the specification of that extension.
