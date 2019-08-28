@@ -29,7 +29,7 @@ It is just a roll up of every configuration option anything needs ever.
 This is bad for modularity: it leaks information to components of the compiler that they shouldn't care about, and prevents adding additional components with more configuration options.
 
 The easiest way to replace it today is to use type variables and ``Has*`` classes to project smaller records.
-[Perhaps in ea future with row types we would do something different, but we can refactor to do that then.]
+[Perhaps in the near future with row types we would do something different, but we can refactor to do that then.]
 ``DynFlags`` would still be substituted for those variables to satisfy those constraints for GHC the executable, but other consumers of the library could instantiate with something different instead.
 
 With ``DynFlags`` not mentioned directly in most places, we should have opened up more opportunities to modularize the compiler further.
