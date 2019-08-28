@@ -93,7 +93,10 @@ See the WIP MR.
 Costs and Drawbacks
 -------------------
 
-- ``PairConstraint`` is annoying,
+- ``PairConstraint`` is annoying.
+  One has to turn lists of ``Type -> Constraint`` into binary trees.
+  However, once we have higher order type families we can get rid of ``PairConstraint`` and the binary trees, and just use tuples.
+  Maybe we can even do that now by adding a second parameter that is never cased on to ``OutputableNeedsOfConfig``.
 
 - Lots of dictionary inlining is needed to maintain the same performance.
 
