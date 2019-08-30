@@ -25,20 +25,9 @@ types and class methods. The reasoning goes like this:
 * Class methods are constrained by the parent class, therefore we also
   constrain associated types. The details are worked out in an existing
   proposal, `#177 <https://github.com/ghc-proposals/ghc-proposals/pull/177>`_.
-* Associated types are introduced with a declaration header, class methods are
-  introduced with a type signature. To unify, we say that associated types are
-  now to be introduced with a kind signature inside the class.
-* Without declarations headers, associated types need another way to specify
-  arity and injectivity. We add syntax for this.
 * Associated types may quantify visibly over class variables, while class
-  methods cannot. To bridge the gap, we introduce a new "quantify visibly if
-  ambiguous" rule, which deprecates ``-XAllowAmbiguousTypes`` along the way.
-* The "quantify visibly if ambiguous" rule is non-syntactic, so we add
-  top-level signatures for class methods and associated types to serve as
-  machine-checked documentation (based on a `comment under #148
-  <https://github.com/ghc-proposals/ghc-proposals/pull/148#issuecomment-491794309>`_
-  but not the current iteration of the proposal text).
-* The "quantify visibly if ambiguous" rule implies visible dependent
+  methods cannot. To bridge the gap, we introduce class method headers.
+* Visible quantification in class methods implies visible dependent
   quantification in terms, which is a milestone towards Dependent Haskell and
   is mentioned briefy in `#102
   <https://github.com/ghc-proposals/ghc-proposals/pull/102>`_.
@@ -51,24 +40,6 @@ types and class methods. The reasoning goes like this:
   signatures becomes unnecessary, so we remove it.
 
 At this point, we end up with the following set of features:
-
-* Top-level signatures for class methods that serve as machine-checked
-  documentation::
-
-    class Eq a where
-      eq :: a -> a -> a
-
-    eq :: forall t. Eq t => t -> t -> t
-
-  The rule for checking the top-level signature is as follows. Let us refer to
-  the in-class method as ``$eq``, then we assume the following definition::
-
-    eq = $eq
-
-  This allows us to reorder and rename invisible type variables, and to
-  use a subclass instead of the actual parent class.
-
-  Guarded by ``-XTopLevelSignatures``.
 
 * Visible dependent quantification in terms::
 
@@ -122,6 +93,16 @@ At this point, we end up with the following set of features:
 
   Guarded by ``-XDefaultNamespace``.
 
+* Class method headers that mirror associated type headers and allow us to
+  choose the order and visibility of class variables::
+
+   class C k (a :: k) (b :: k) where
+      f k @b @a :: Proxy a -> Proxy b
+
+   -- f :: forall k -> forall b a. C k a b => Proxy a -> Proxy b
+
+  Guarded by ``-XClassMethodHeaders``.
+
 * No ``type`` prefix for top-level kind signatures::
 
     Functor :: (Type -> Type) -> Constraint
@@ -144,29 +125,6 @@ At this point, we end up with the following set of features:
 
   Guarded by ``-XDefaultNamespace``.
 
-* Syntax for ``-XTypeFamilyDependencies`` in top-level kind signatures::
-
-    H :: forall (a :: Type) -> Type | H a -> a
-    type family H a where { ... }
-
-    K :: forall a b -> Type | K a b -> a
-    class C a b where
-      K :: Type
-
-* Quantify class variables visibly when ambiguous::
-
-    class C a where
-      m :: ty
-
-    m :: forall a. C a => ty    -- if  ty  determines  a  (ambiguity check)
-    m :: forall a -> C a => ty  -- if  ty  doesn't determine  a
-
-  This removes the need for ``-XAllowAmbiguousTypes``, which are to be deprecated.
-  Note that the programmer may give a top-level signature to the methods, so the
-  readers of the code need not figure out which class variables are ambiguous.
-
-  Guarded by ``-XVisibleClassVariables``.
-
 * Constrain the domain of associated types by the class::
 
     class Container c where
@@ -177,29 +135,16 @@ At this point, we end up with the following set of features:
 
   Note that we use the same "quantify visibly if ambiguous" rule.
 
-* Syntax for matchable quantifiers::
-
-    C :: Type -> Constraint
-    class C a where
-      F :: Bool  -> Bool
-      G :: Bool :-> Bool
-
-    F :: forall a -> C a => Bool  -> Bool    -- arity = 3
-    G :: forall a -> C a => Bool :-> Bool    -- arity = 2
-
-  Guarded by ``-XMatchableQuantifiers``.
-
-
 Examples
 --------
 
 * **Example 1**, ``Storable``. Definition site::
 
     class Storable a where
-      sizeOf :: Int
-      alignmentOf :: Int
+      sizeOf a :: Int
+      alignmentOf a :: Int
 
-    sizeOf, aligmentOf :: forall a -> Storable a => Int
+    -- sizeOf, aligmentOf :: forall a -> Storable a => Int
 
   Use site::
 
@@ -211,9 +156,9 @@ Examples
 * **Example 2**, tagged accessor class ``HasLens``. Definition site::
 
     class HasLens tag s a | tag s -> a where
-      lensOf :: Lens' s a
+      lensOf tag @s @a :: Lens' s a
 
-    lensOf :: forall tag -> forall s a. HasLens tag s a => Lens' s a
+    -- lensOf :: forall tag -> forall s a. HasLens tag s a => Lens' s a
 
   Use site::
 
@@ -223,11 +168,11 @@ Examples
 * **Example 3**, ``MonadReader`` in the style of ``monads-tf``. Definition site::
 
     class MonadReader m where
-      Env :: Type
+      Env m :: Type
       ask :: m (Env m)
 
-    Env :: forall m -> MonadReader m => Type
-    ask :: forall m. MonadReader m => m (Env m)
+    -- Env :: forall m -> MonadReader m => Type
+    -- ask :: forall m. MonadReader m => m (Env m)
 
   Use site::
 
