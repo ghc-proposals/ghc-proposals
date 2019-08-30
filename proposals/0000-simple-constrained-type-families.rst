@@ -120,17 +120,6 @@ Explicitly, a typeclass's associated type family would be kinded as follows:
 
 The distinction rests on if the variables of the class appear in the kind that the type family would have without these changes.
 
-An important issue arises here: an associated type family currently may not provide sufficient information to unambiguously refer to a required instance. Consider the following example:
-
-::
-
-    class Vague (a :: j) (b :: k) where
-        type Underspecified (b :: k)
-
-Currently, ``Underspecified :: k -> Type``. If we try to constrain this in the obvious way, we get ``Underspecified :: forall (a :: j). forall (b :: k) -> Vague a b => Type`` which is not only a lot more complicated, but is also going to be ambiguous unless the programmer adds type applications to set ``a``!
-
-Thus, we now require that the variables used in an associated type declaration must cover all of the class variables, in that choices for the associated type arguments must uniquely determine the choice of class instance. This might be done via, e.g., functional dependencies or superclass equality constraints. This will lead to code breakage, but in almost all cases, there is an implicit dependency between the variables that can be made explicit. In the few cases where no such dependency exists, the associated type may be factored out into a superclass over only the relevant variables.
-
 Associated data family data constructors also gain the constraints for the instance. For example:
 
 ::
@@ -153,6 +142,22 @@ Associated data family data constructors also gain the constraints for the insta
         -- D2Maybe :: (C2 a) => D a -> D (Maybe a)
         data D2 (Maybe a) = D2Maybe (D2 a)
 
+Require Associated Type Families to Cover Their Constraints
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+An important issue arises here: an associated type family currently may not provide sufficient information to unambiguously refer to a required instance. Consider the following example:
+
+::
+
+    class Vague (a :: j) (b :: k) where
+        type Underspecified (b :: k)
+
+Currently, ``Underspecified :: k -> Type``. If we try to constrain this in the obvious way, we get ``Underspecified :: forall (a :: j). forall (b :: k) -> Vague a b => Type`` which is not only a lot more complicated, but is also going to be ambiguous unless the programmer adds type applications to set ``a``!
+
+Thus, we now require that the variables used in an associated type declaration must cover all of the class variables, in that choices for the associated type arguments must uniquely determine the choice of class instance. This might be done via, e.g., functional dependencies or superclass equality constraints. This will lead to code breakage, but in almost all cases, there is an implicit dependency between the variables that can be made explicit. In the few cases where no such dependency exists, the associated type may be factored out into a superclass over only the relevant variables.
+
+Core-Level Example
+~~~~~~~~~~~~~~~~~~
 
 At the Core level, just as with term-level typeclass methods, ``=>`` degrades into ``->`` and the promoted dictionary created above is given to satisfy this newly required visible argument.
 
