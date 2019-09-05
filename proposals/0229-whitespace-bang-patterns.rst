@@ -188,6 +188,7 @@ accepted::
   f ~ a ~ b = <rhs>     -- standard interpretation: lazy (irrefutable) patterns
   x !y = x == y         -- standard interpretation: infix operator (!)
   data T = MkT ! Int    -- standard interpretation: strict field !Int
+  f = (!3)              -- standard interpretation: operator section
 
 This may break existing programs. The migration strategy is to adjust
 whitespace::
@@ -195,6 +196,7 @@ whitespace::
   f ~a ~b = <rhs>
   x ! y = x == y
   data T = MkT !Int
+  f = (! 3)
 
 This already matches the style of most Haskell users and will simplify the
 implementation.
