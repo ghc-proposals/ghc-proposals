@@ -67,11 +67,11 @@ Proposed Change Specification
 
 1. Introduce a new top-level declaration form ::
 
-     type <name> :: <kind>
+     type <name_1> , ... , <name_n> :: <kind>
 
-   It is distinguishable from a type synonym by the lack of an ``=`` on the line. A
+   (where ``n >= 1``) It is distinguishable from a type synonym by the lack of an ``=`` on the line. A
    type-level declaration with a top-level kind signature may use polymorphic recursion;
-   one without is considered to have an inferred kind and may not use polymorphic recursion.
+   one without is considered to have an inferred kind and may not use polymorphic recursion. One signature can apply to many names, just like a type signature.
 
    The kind given is checked against the declaration of the type. All kind generalization
    is done before ever examining the full declaration, just like how GHC treats type
