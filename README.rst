@@ -162,7 +162,7 @@ Here are some characteristics that a good proposal should have
   Defusing this suspicion, by describing use-cases and inviting support from others,
   is helpful.
 
-* It should be compiously iillustrated with examples, to aid understanding.
+* It should be compiously illustrated with examples, to aid understanding.
 
 Proposals are written in either `ReStructuredText <http://www.sphinx-doc.org/en/stable/rest.html>`_ or `Markdown <https://github.github.com/gfm/>`_. While the proposal process itself has no preference, keep in mind that the `GHC Users Guide <http://downloads.haskell.org/~ghc/latest/docs/html/users_guide/editing-guide.html>`_ uses ReStructuredText exclusively. Accepted proposals written in ReStructuredText thus have the slight benefit that they can be more easily included in the official GHC documentation.
 
