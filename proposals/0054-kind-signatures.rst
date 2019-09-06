@@ -70,14 +70,14 @@ Proposed Change Specification
      type <name_1> , ... , <name_n> :: <kind>
 
    (where ``n >= 1``) It is distinguishable from a type synonym by the lack of an ``=`` on the line. A
-   type-level declaration with a top-level kind signature may use polymorphic recursion;
+   type-level declaration with a standalone kind signature may use polymorphic recursion;
    one without is considered to have an inferred kind and may not use polymorphic recursion. One signature can apply to many names, just like a type signature.
 
    The kind given is checked against the declaration of the type. All kind generalization
    is done before ever examining the full declaration, just like how GHC treats type
    signatures.
 
-   Associated types may not be given top-level kind signatures. (See "Costs and Drawbacks" for discussion.)
+   Associated types may not be given standalone kind signatures. (See "Costs and Drawbacks" for discussion.)
 
    Unlike type signatures, the type variables brought into scope in a type-level kind
    signature do *not* scope over the type definition.
@@ -118,6 +118,10 @@ to give, e.g., ``data ProxyVis k (a :: k)`` a kind signature.
 
 Costs and Drawbacks
 -------------------
+
+Implementation Cost
+~~~~~~~~~~~~~~~~~~~
+
 Implementation should be rather straightforward, as this is a new syntactic construct.
 
 Parsing may be slightly complicated by the similarity to a type synonym, but I doubt this
@@ -129,12 +133,42 @@ The hardest part will be complicating the code in TcTyClsDecls, which is already
 involved; however, I don't think this change will be invasive, as it will just affect the
 code that currently checks for CUSKs.
 
-This proposal excludes signatures on associated types, as it was unclear how best to
-choose a candidate from the design space. The need for signatures for associated types
-is less pressing (they cannot be recursive, because instances are independent of the
-family declaration), and so we live without associated type signatures until a clear
-design presents itself. See `PR#227 <https://github.com/ghc-proposals/ghc-proposals/pull/227>`_
-for lots of discussion.
+Associated Types
+~~~~~~~~~~~~~~~~
+
+This proposal excludes signatures on associated types, as it was unclear how
+best to choose a candidate from the design space.
+
+If we had standalone kind signatures for associated types, would they look
+
+… like this? (OUT) ::
+
+ type T :: Type -> Type
+ class C a where
+   type T a
+
+… or like this? (IN) ::
+
+ class C a where
+   type T :: Type -> Type
+   type T a
+
+The (IN) variant is syntactically ambiguous::
+
+ class C a where
+   type T :: a   -- TLKS?
+   type T :: a   -- declaration header?
+
+The (OUT) variant does not suffer from this issue, but it might not be the
+direction in which we want to take Haskell: we seek to unify type families and
+functions, and, by extension, associated types with class methods. And yet we
+give class methods their signatures inside the class, not outside. Neither do
+we have the counterpart of ``InstanceSigs`` for standalone kind signatures.
+
+The need for signatures for associated types is less pressing (they cannot be
+recursive, because instances are independent of the family declaration), and so
+we live without associated type signatures until a clear design presents
+itself.
 
 Alternatives
 ------------
