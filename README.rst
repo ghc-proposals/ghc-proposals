@@ -361,7 +361,7 @@ is a polite ping/enquiry.
    * *Technical discussion* takes place on the discussion thread, where others may
      continue contribute.
 
-   * *Evaluative discussion", about whether to accept, reject, or return the
+   * *Evaluative discussion*, about whether to accept, reject, or return the
      proposal for revision, takes place on the committee's email list,
      which others can read but not post to.
 
