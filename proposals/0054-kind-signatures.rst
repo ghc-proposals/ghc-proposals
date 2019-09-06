@@ -77,7 +77,7 @@ Proposed Change Specification
    is done before ever examining the full declaration, just like how GHC treats type
    signatures.
 
-   Associated types may be given kind signatures within their classes.
+   Associated types may not be given top-level kind signatures. (See "Costs and Drawbacks" for discussion.)
 
    Unlike type signatures, the type variables brought into scope in a type-level kind
    signature do *not* scope over the type definition.
@@ -128,6 +128,13 @@ Checking and generalizing the kind can be done by already-written code (in TcHsT
 The hardest part will be complicating the code in TcTyClsDecls, which is already somewhat
 involved; however, I don't think this change will be invasive, as it will just affect the
 code that currently checks for CUSKs.
+
+This proposal excludes signatures on associated types, as it was unclear how best to
+choose a candidate from the design space. The need for signatures for associated types
+is less pressing (they cannot be recursive, because instances are independent of the
+family declaration), and so we live without associated type signatures until a clear
+design presents itself. See `PR#227 <https://github.com/ghc-proposals/ghc-proposals/pull/227>`_
+for lots of discussion.
 
 Alternatives
 ------------
