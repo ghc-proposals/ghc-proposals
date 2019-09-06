@@ -124,6 +124,45 @@ g. *Implementation Plan* (Optional): If accepted who will implement the change? 
 
   This is also a good section to outline the changes to the implementation, or otherwise include insights that assume familiarity with the implementation.
 
+Here are some characteristics that a good proposal should have
+
+* It should be self-standing.  Some proposals accumulate a long and interesting discussion
+  thread, but in ten years time all that will be gone (except for the most assiduous readers).
+  Before acceptance, therefore, the proposal should be edited to reflect the fruits of
+  that dicussion, so that it can stand alone.
+
+* It should be precise, especially the "Proposed change specification"
+  section.  Language design is complicated, with lots of
+  interactions. It is not enough to offer a few suggestive examples
+  and hope that the reader can infer the rest.  Vague proposals waste
+  everyone's time; precision is highly valued.
+
+  We do not insist on a fully formal specification, with a
+  machine-checked proof.  There is no such baseline to work from, and
+  it would set the bar far too high.  On the other hand, for
+  proposals involving syntactic changes, it is very reasonable to ask for
+  a BNF for the changes.
+
+  Ultimately, the necessary degree of precision is a judgement that the committee
+  must make; but authors should try hard to offer precision.
+
+* It should offer evidence of utility.  Even the strongest proposals carry costs:
+
+  * For programmers: they usually make the language just a bit more complicated;
+  * For GHC maintainers: they make the implementation a bit more complicated;
+  * For those wanting to proposals in the future: they usually add new back-compat burdens, and consume syntactic design space.
+  * Moreover, all these costs contitute a permanent tax on every future programmer, langauge designer, and GHC maintainer.
+
+  The tax may well be worth it (a language without polymorphism
+  would be simpler but we don't want it), but the case should be made.
+
+  The case is stronger if lots of people jump in saying "yes, this would be so
+  useful to me".  The committee is often faced with proposals that are reasonable,
+  but where there is a suspicion that no one other than the author cares.
+  Defusing this suspicion, by describing use-cases and inviting support from others,
+  is helpful.
+
+* It should be compiously iillustrated with examples, to aid understanding.
 
 Proposals are written in either `ReStructuredText <http://www.sphinx-doc.org/en/stable/rest.html>`_ or `Markdown <https://github.github.com/gfm/>`_. While the proposal process itself has no preference, keep in mind that the `GHC Users Guide <http://downloads.haskell.org/~ghc/latest/docs/html/users_guide/editing-guide.html>`_ uses ReStructuredText exclusively. Accepted proposals written in ReStructuredText thus have the slight benefit that they can be more easily included in the official GHC documentation.
 
@@ -212,11 +251,12 @@ comment or proposal, feel free to use GitHub's "Reactions"
 How to bring a proposal before the committee
 ---------------------------------------------
 
-When the discussion has ebbed down and the author thinks the proposal is ready, he
+When the discussion has ebbed down and the author thinks the proposal is ready, he or she
 
-1. reviews the discussion thread and ensure that the proposal text accounts for
-   all salient points.
-2. adds a comment to the a pull request, briefly summarizing the major points raised
+1. Reviews the discussion thread and ensure that the proposal text accounts for
+   all salient points. *Remember, the proposal must stand by itself, and be understandable
+   without reading the disucssion thread.* 
+2. Adds a comment to the a pull request, briefly summarizing the major points raised
    during the discussion period and stating your belief that the proposal is
    ready for review. In this comment, tag the committee secretary (currently
    ``@nomeata``).
@@ -274,6 +314,13 @@ Committee process
 The committee process starts once the secretary has been notified that a
 proposal is ready for decision.
 
+The steps below have timescales attached, show that everyone shares
+the same expectations.  But they are only reasonable expectations.
+The committee consists of volunteers with day jobs, who are reviewing
+proposals in their spare time.  If they do not meet the timescales
+indicated below (e.g they might be on holiday), a reasonable response
+is a polite ping/enquiry.
+
 -  The secretary nominates a member of the committee, the *shepherd*, to oversee
    the discussion. The secretary
 
@@ -284,7 +331,7 @@ proposal is ready for decision.
 
 -  Based on the proposal text (but not the GitHub commentary), the shepherd
    decides whether the proposal ought to be accepted or rejected or returned for
-   revision.
+   revision.  The shepherd should do this within two weeks.
 
 -  If the shepherd thinks the proposal ought to be rejected, they post their
    justifications on the GitHub thread, and invite the authors to respond with
@@ -309,17 +356,58 @@ proposal is ready for decision.
    * drop a short mail to the mailing list informing the committee that
      discussion has started.
 
--  Discussion among the committee ensues on the discussion thread.
-   Silence is understood as agreement with the shepherd's recommendation.
+-  Discussion among the committee ensues, in two places
+
+   * *Technical discussion* takes place on the discussion thread, where others may
+     continue contribute.
+
+   * *Evaluative discussion", about whether to accept, reject, or return the
+     proposal for revision, takes place on the committee's email list,
+     which others can read but not post to.
+
+   Silence is typically understood as agreement with the shepherd's recommendation.
    Ideally, the committee reaches consensus, as determined by the secretary or
    the shepherd. If consensus is elusive, then we vote, with the Simons
    retaining veto power.
 
+   This phase should conclude within a month.
+
+-  For acceptance, a proposal must have at least *some* enthusiastic support
+   from member(s) of the committee. The committee, fallible though its members may be,
+   is the guardian of the language.   If all of them are luke-warm about a change,
+   there is a presumption that it should be rejected, or at least "parked".
+   (See "evidence of utility" above, under "What a proposal should look like".)
+
+-  A typical situation is that the committee, now that they have been asked
+   to review the proposal in detail, unearths some substantive technical issues.
+   This is absolutely fine -- it is what the review process is *for*!
+
+   If the technical debate is not rapidly resolved, the shepherd
+   should return the proposal for revision. Further technical
+   discussion can then take place, the author can incorporate tha
+   conclusions in the proposal itself, and re-submit it.  Returning a
+   proposal for revision is not a negative judgement; on the contrary
+   it might connote "we absolutely love this proposal but we want it
+   to be clear on these points".
+
+   In fact, this should happen if *any* substantive technical debate
+   takes place.  The goal of the commitee review is to say yes/no to a
+   proposal *as it stands*.  If new issues come up, they should be
+   resolved, incorporated in the proposal, and the revised proposal
+   should then be re-submitted for timely yes/no decision.  In this way,
+   *no propoosal should languish in the committee review stage for long*,
+   and every proposal can be accepted as-is, rather than suject to a raft
+   of ill-specified futher modifications.
+
 -  The decision is announced, by the shepherd or the secretary, on the Github
    thread and the mailing list.
 
-   The secretary tags the pull request accordingly, and either merges or closes it.
-   In particular
+   Notwithstanding the return/resubmit cycle described above, it may be
+   that the shepherd accepts a proposal subject to some specified minor changes
+   to the proposal text.  In that case the author should carry them out.
+
+   The secretary then tags the pull request accordingly, and either
+   merges or closes it.  In particular
 
    *  **If we say no:**
       The pull request will be closed and labeled
