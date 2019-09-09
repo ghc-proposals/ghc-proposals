@@ -100,34 +100,12 @@ contributor to write a formal proposal.
 What should a proposal look like?
 ---------------------------------
 
-Each proposal document must follow the following outline. Templates are available for both `ReStructuredText <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.rst>`_, and `Markdown <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.md>`_.
+Each proposal document must follow the outline in the proposal templates. Templates are available for both `ReStructuredText <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.rst>`_, and `Markdown <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.md>`_.
 
-a. *Motivation*: Give a strong reason for why the community needs this change. Describe the use case as clearly as possible and give at least one concrete example. Explain how the status quo is insufficient or not ideal.
-
-b. *Proposed Change Specification*: Specify the change in precise and comprehensive yet concise language. Your specification may include,
-
-   - grammar and semantics of any new syntactic constructs
-   - the types and semantics of any new library interfaces
-   - how the proposed change addresses the original problem (perhaps referring back to the example)
-
-  The change should be phrased relative to the Haskell report and/or the GHC user manual. Do not assume familiarity with the implementation, and avoid referncing the implementation.
-
-c. *Effect and Interactions*. Detail how the proposed change addresses the original problem raised in the motivation. Detail how the proposed change interacts with existing language or compiler features. Think about what surprising or problematic interactions may occur.
-
-d. *Costs and Drawbacks*. What are the drawbacks and costs to the community should this change be implemented? For example, does this make Haskell harder to learn for novice users?  Does it make Haskell code harder to read or reason about? Will the implementation be complex or invasive?
-
-e. *Alternatives*: List alternatives to your proposed change and discuss why they are insufficient.
-
-f. *Unresolved questions*: Explicitly list any remaining issues that remain in the conceptual design and specification. Be upfront and trust that the community will help. Please do not list *implementation* issues.
-
-g. *Implementation Plan* (Optional): If accepted who will implement the change? It's quite okay to say "unknown" if you don't feel willing or able to carry out the implementation yourself.
-
-  This is also a good section to outline the changes to the implementation, or otherwise include insights that assume familiarity with the implementation.
-
-Here are some characteristics that a good proposal should have
+Here are some characteristics that a good proposal should have:
 
 * It should be self-standing.  Some proposals accumulate a long and interesting discussion
-  thread, but in ten years time all that will be gone (except for the most assiduous readers).
+  thread, but in ten years' time all that will be gone (except for the most assiduous readers).
   Before acceptance, therefore, the proposal should be edited to reflect the fruits of
   that dicussion, so that it can stand alone.
 
@@ -151,9 +129,9 @@ Here are some characteristics that a good proposal should have
   * For programmers: most proposals make the language just a bit more complicated;
   * For GHC maintainers:  most proposals make the implementation a bit more complicated;
   * For future proposers:  most proposals consume syntactic design space add/or add new back-compat burdens, both of which make new proposals harder to fit in.
-  * It is much, much harder subsequently to remove an extensiuon than it is to add it.
+  * It is much, much harder subsequently to remove an extension than it is to add it.
 
-  All these costs contitute a permanent tax on every future programmer, langauge designer, and GHC maintainer.  The tax may well be worth it (a language without polymorphism
+  All these costs constitute a permanent tax on every future programmer, langauge designer, and GHC maintainer.  The tax may well be worth it (a language without polymorphism
   would be simpler but we don't want it), but the case should be made.
 
   The case is stronger if lots of people jump in saying "yes, this would be so
@@ -162,7 +140,8 @@ Here are some characteristics that a good proposal should have
   Defusing this suspicion, by describing use-cases and inviting support from others,
   is helpful.
 
-* It should be compiously illustrated with examples, to aid understanding.
+* It should be copiously illustrated with examples, to aid understanding. However,
+  these examples should *not* be the specification.
 
 Proposals are written in either `ReStructuredText <http://www.sphinx-doc.org/en/stable/rest.html>`_ or `Markdown <https://github.github.com/gfm/>`_. While the proposal process itself has no preference, keep in mind that the `GHC Users Guide <http://downloads.haskell.org/~ghc/latest/docs/html/users_guide/editing-guide.html>`_ uses ReStructuredText exclusively. Accepted proposals written in ReStructuredText thus have the slight benefit that they can be more easily included in the official GHC documentation.
 
@@ -349,23 +328,22 @@ is a polite ping/enquiry.
 
    * post their recommendation, with a rationale, on the GitHub discussion thread,
    * label the pull request as ``Pending committee review``,
-   * notify the committee by mentioning ``@ghc-proposals/ghc-steering-committee``,
-   * include the sentence “This proposal will now be discussed by the committee.
-     We welcome all authors to join the discussion, but kindly ask others to
-     refrain from posting.” in the comment
+   * re-title the proposal, appending ``(under review)`` at the end. (This enables easy email filtering.)
    * drop a short mail to the mailing list informing the committee that
      discussion has started.
 
 -  Discussion among the committee ensues, in two places
 
    * *Technical discussion* takes place on the discussion thread, where others may
-     continue contribute.
+     continue to contribute.
 
    * *Evaluative discussion*, about whether to accept, reject, or return the
      proposal for revision, takes place on the committee's email list,
      which others can read but not post to.
 
-   Silence is typically understood as agreement with the shepherd's recommendation.
+   It is expected that every committee member express an opinion about every proposal under review.
+   The most minimal way to do this is to "thumbs-up" the shepherd's recommendation on GitHub.
+
    Ideally, the committee reaches consensus, as determined by the secretary or
    the shepherd. If consensus is elusive, then we vote, with the Simons
    retaining veto power.
@@ -398,6 +376,9 @@ is a polite ping/enquiry.
    *no propoosal should languish in the committee review stage for long*,
    and every proposal can be accepted as-is, rather than suject to a raft
    of ill-specified futher modifications.
+
+   The author of the proposal may invite committee collaboration on clarifying
+   technical points. There is a place to do this in the proposal template.
 
 -  The decision is announced, by the shepherd or the secretary, on the Github
    thread and the mailing list.
