@@ -148,12 +148,12 @@ Here are some characteristics that a good proposal should have
 
 * It should offer evidence of utility.  Even the strongest proposals carry costs:
 
-  * For programmers: they usually make the language just a bit more complicated;
-  * For GHC maintainers: they make the implementation a bit more complicated;
-  * For those wanting to proposals in the future: they usually add new back-compat burdens, and consume syntactic design space.
-  * Moreover, all these costs contitute a permanent tax on every future programmer, langauge designer, and GHC maintainer.
+  * For programmers: most proposals make the language just a bit more complicated;
+  * For GHC maintainers:  most proposals make the implementation a bit more complicated;
+  * For future proposers:  most proposals consume syntactic design space add/or add new back-compat burdens, both of which make new proposals harder to fit in.
+  * It is much, much harder subsequently to remove an extensiuon than it is to add it.
 
-  The tax may well be worth it (a language without polymorphism
+  All these costs contitute a permanent tax on every future programmer, langauge designer, and GHC maintainer.  The tax may well be worth it (a language without polymorphism
   would be simpler but we don't want it), but the case should be made.
 
   The case is stronger if lots of people jump in saying "yes, this would be so
