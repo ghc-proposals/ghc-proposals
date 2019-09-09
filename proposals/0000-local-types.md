@@ -6,26 +6,24 @@ ticket-url: ""
 implemented: ""
 ---
 
-This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/0>).
-**After creating the pull request, edit this file again, update the number in
-the link, and delete this bold sentence.**
+This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/273>).
 
-# Local types and instances
+# Locally declared types and instances
 
 The `reflection` package offers a solution to the "configurations problem",
 allowing instance definitions to depend on run-time values. There are some
 performance downsides to the implementation (`unsafeCoerce` is required,
 leading to a loss of inlining). Furthermore, the whole API is a tad
 awkward for end users. I propose local type and instance declarations as an
-alternative, equally powerful, solution.
+alternative, friendlier solution with at least as much power.
 
 ## Motivation
 
 Detailed motivation for the core idea behind the `reflection` package can be found in
 "[Functional Pearl: Implicit Configurations — or, Type Classes Reflect the Values of Types](http://okmij.org/ftp/Haskell/tr-15-04.pdf)",
 by Oleg Kiselyov and Chung-chieh Shan. Much of that paper discusses a very
-different (and much less efficient) implementation approach; only the general
-discussion and examples are really relevant. In determining the importance
+different (and much less efficient) implementation approach. I hereby incorporate
+by reference its general discussion and examples. In determining the importance
 of supporting this idea, the committee is urged to consider the
 [reverse dependencies of the `reflection` package](http://packdeps.haskellers.com/reverse/reflection).
 
@@ -79,6 +77,34 @@ reify a f = f (Proxy :: Proxy S)
       reflect _ = a
 ```
 
+### Type declarations
+
+Local `data` and `newtype` declarations have forms similar to global ones,
+but their kind signatures may not mention local type variables, as Richard
+Eisenberg believes this would be a significant complication). Local type
+declarations are local to their scope and may not escape: all terms must
+be typed using only global types and local types in scope.
+
+```haskell
+-- OK
+
+data Hide = forall a. Hide a
+f :: Int -> Hide
+f x = Hide (P x)
+  where
+    newtype P = P Int
+
+-- Prohibited: the type P escapes its scope.
+g x = P x
+  where
+    newtype P = P Int
+```
+
+### Type synonyms
+
+Local type synonym definitions would be allowed, working exactly as they
+do elsewhere.
+
 ### Coherence
 
 It is well known that allowing arbitrary local instances destroys coherence.
@@ -99,11 +125,26 @@ f append = Dict
 at which point matching on two applications of `f` could reveal conflicting
 `Semigroup` instances for the same type. We must not allow that!
 
-We can recover coherence by imposing a simple requirement: the instance
-head of an instance in a `let` expression or `where` clause must mention a
-local type declared in the *same* `let` or `where`. The type checker must
-still check for overlap, both between global and local instances and
-between local instances.
+I believe the key to maintaining coherence simply is to reject *local* instances
+in favor of *locally defined* instances. All instances remain (conceptually)
+global, but they may involve local types and values. To keep things simple, we
+impose the following requirement: the instance head of a locally defined instance
+must mention a local type declared in the *same* `let` or `where`. We could
+optionally remove this requirement for instances labeled `INCOHERENT`. But it
+doesn't seem at all likely that such extensive incoherence will ever be desirable,
+so I don't think we want to allow it.
+
+We could, if we wanted, replace the strict "same `let` or `where`" requirement
+by a laxer requirement that it would be possible to *float out* the instance
+declaration into said `let` or `where`. But this offers no additional power and
+complicates the machinery and documentation.
+
+The type checker must still check for overlap, both between globally and locally
+defined instances and between locally defined instances. I believe it makes
+sense to allow (annotated) overlap between global and local instances, but
+probably not between one local instance and another—that would get just as wild
+as self-incoherent local instances would.
+
 
 ```haskell
 -- Global/local:
@@ -114,7 +155,7 @@ g = let
       data B
       -- Overlaps the global instance, requiring an
       -- {-# OVERLAPPING #-} annotation
-      instance Foo B where ...
+      instance Foo A B where ...
     in ...
 
 
@@ -130,10 +171,23 @@ h x =
 i =
   let
     data C
-    -- Overlaps the local instance in h, requiring that at
-    -- least one have overlap pragmas.
+    -- Impermissibly overlaps the local instance in h.
     instance Bar a C where ...
   in ...
+```
+
+How do we deal with locally bound type variables in instance heads?
+Richard Eisenberg believes the idea of matching on those is absurd. So we
+propose that a type variable in an instance head *shadows* any type
+variable with the same name. An explicit equality constraint may be used
+to constrain a type variable to match it:
+
+```haskell
+j :: forall a. ...
+j = ...
+  where
+    newtype N x = N x
+    instance a ~ b => C (N b)
 ```
 
 ### Type families
@@ -173,33 +227,30 @@ Similar overlap checks are required as for class instances.
 
 Why don't we require a locally defined type to appear on the left-hand
 side? That would cause a problem for associated types in cases where
-the associated type only depends on some of the class variables.
+the associated type only depends on some of the class variables. We
+*could* impose that requirement on standalone type family instance
+declarations, but in some cases that could force related code to
+separate.
 
 How do we deal with locally bound type variables on the left-hand side?
-
-```haskell
--- ??? valid ???
-r :: forall a. a -> ...
-r x = ...
-  where
-    type instance Foo a = Int
-```
-
-I don't see any *obvious* way to make sense of matching on such variables,
-so I don't think we should try too hard initially. On the other hand, I have the
-nagging feeling that we might eventually need to find a way to do so. I
-therefore propose that locally bound type variables be *prohibited* on the
-left-hand side of a local type family instance.
+These shadow just like they do in instance heads.
 
 ### Data families
 
 Data families can be treated the same as type families. Their constructors
 will only be available locally.
 
+### Functional dependencies
+
+Functional dependencies should be treated like type families: when applying
+each fundep to an instance, there must be a locally defined type on the left
+side of the arrow that's defined at least as close as any type on the right
+side of the arrow.
+
 ### `Typeable`
 
 Locally defined types will *not* be given `Typeable` instances automatically.
-It's not at all obvious to me whether there is a good way to give them `Typeable`
+It's not at all obvious to me whether there is a sensible way to give them `Typeable`
 instances at all, and if it is, the costs may be high enough to justify
 manual `deriving Typeable`.
 
@@ -214,9 +265,9 @@ features.
 
 ## Costs and Drawbacks
 
-Give an estimate on development and maintenance costs. List how this effects
-learnability of the language for novice users. Define and list any remaining
-drawbacks that cannot be resolved.
+I have no estimate of the development or maintenance costs. I imagine the
+change would violate several assumptions baked into GHC's type checker
+and specializer.
 
 
 ## Alternatives
@@ -227,13 +278,9 @@ discuss why they are insufficient.
 
 ## Unresolved Questions
 
-Explicitly list any remaining issues that remain in the conceptual design and
-specification. Be upfront and trust that the community will help. Please do
-not list *implementation* issues.
-
-Hopefully this section will be empty by the time the proposal is brought to
-the steering committee.
-
+Should instances be allowed to float out before type checking? In some cases
+that would allow related code to be kept together. But it would become more
+complex to explain the rules.
 
 ## Implementation Plan
 
