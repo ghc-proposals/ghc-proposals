@@ -86,8 +86,7 @@ declarations are local to their scope and may not escape: all terms must
 be typed using only global types and local types in scope.
 
 ```haskell
--- OK
-
+-- OK: *values* involving local types may escape.
 data Hide = forall a. Hide a
 f :: Int -> Hide
 f x = Hide (P x)
@@ -98,6 +97,23 @@ f x = Hide (P x)
 g x = P x
   where
     newtype P = P Int
+```
+
+How could we interpret locally defined types in terms of more familiar globally
+defined ones? I believe we can do this using a sort of dependent lambda lifting.
+Suppose we have
+
+```haskell
+p :: forall a b. Int -> a -> F a b
+p i c = ...
+  where
+    data M x = M Int x
+```
+
+We can lift `M` by capturing its local type *and value* context:
+
+```haskell
+data M' (a :: Type) (b :: Type) (i :: Int) (c :: a) (x :: Type) = M Int x
 ```
 
 ### Type synonyms
@@ -254,6 +270,7 @@ It's not at all obvious to me whether there is a sensible way to give them `Type
 instances at all, and if it is, the costs may be high enough to justify
 manual `deriving Typeable`.
 
+
 ## Effect and Interactions
 
 Detail how the proposed change addresses the original problem raised in the
@@ -272,8 +289,16 @@ and specializer.
 
 ## Alternatives
 
-List existing alternatives to your proposed change as they currently exist and
-discuss why they are insufficient.
+"Coherent Explicit Dictionary Application for Haskell", by Winant and Devriese,
+offers a way to construct and use class dictionaries explicitly, which also
+provides `reflection`-like power. Their proposal is larger and, in some ways,
+more powerful—it allows locally defined instances to be used for *global*
+types. To accommodate this power, their safety mechanism must be quite complex,
+and fragile in the face of redundant constraints. They have not yet found a way
+to accommodate associated types or type families involved in constraints, and
+they do not seem entirely confident that they will be able to do so. Of course,
+nothing prevents the present proposal from living side by side with theirs
+should both prove workable.
 
 
 ## Unresolved Questions
