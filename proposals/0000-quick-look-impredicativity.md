@@ -18,7 +18,7 @@ This proposal is based on this [paper draft](https://www.dropbox.com/s/hxjp28ym3
 
 As most languages based on the Hindley-Damas-Milner typing discipline do, Haskell 2010 distinguishes between *monomorphic types* such as `Int -> Int`, which contain no `forall`s, and *type schemes* or *polymorphic types* like `forall a. a -> a`. Each expression in a program must, in principle, be given a *monomorphic* type -- if a variable has a polymorphic type it is *instantiated* beforehand to a *variable*, whose value is found by type inference. For example, when we write `id True`, the `a` in the type of `id` is instantiated to the type `Bool`, which means that that specific occurrence of `id` has type `Bool -> Bool`.
 
-On the other side of the spectrum we find System F, which forms the basis of GHC Core, in which instantiation is not restricted to monomorphic types. Using the syntax from `TypeApplications`, we can write `id @(forall a. a -> a)` to obtain a function of type `(forall a. a -> [a]) -> (forall a. a -> [a])`. We say that such instantiation with a polymorphic type is an *impredicative* instantiation. System F is able to instantiatiate impredicatively simply because every instantiation there is *explicit*, as one can witness when looking at GHC Core.
+On the other side of the spectrum we find System F, which forms the basis of GHC Core, in which instantiation is not restricted to monomorphic types. Using the syntax from `TypeApplications`, we can write `id @(forall a. a -> [a])` to obtain a function of type `(forall a. a -> [a]) -> (forall a. a -> [a])`. We say that such instantiation with a polymorphic type is an *impredicative* instantiation. System F is able to instantiatiate impredicatively simply because every instantiation there is *explicit*, as one can witness when looking at GHC Core.
 
 Historically, the `ImpredicativeTypes` extension in GHC has allowed programmers to use impredicative instantiation. However, there was no clear specification of how it works or any guarantee that code that compiles now remains well-typed in the future. As a result, the official stance is that `ImpredicativeTypes` is not supported. The aim of this proposal is to remedy that, by giving a clear specification of impredicative polymorphism in the context of the modern GHC compiler.
 
@@ -31,7 +31,17 @@ type Lens s t a b = forall f. Functor f => (a -> f b) -> s -> f t
 type Lens' s a = Lens s s a a
 ```
 
-Creating a list of such lenses, `[Lens' a Int]`, requires impredicatively instantiating the constructors `(:)` and `[]`. Also if we want to replace an expression such as `view l` with `view $ l`, we need to instantiate the types of `($) :: forall a b. (a -> b) -> a -> b` impredicatively (this case is so common that GHC contains a special case for them).
+Creating a list of such lenses, `[Lens' a Int]`, requires impredicatively instantiating the constructors `(:)` and `[]`. Without no good support for impredicativity, programmers had to resort to wrapping the values in a `newtype`. For example, the `lens` library defines:
+
+> ```haskell
+> type ALens s t a b = LensLike (Pretext (->) a b) s t a b 
+> ```
+>
+> This type can also be used when you need to store a `Lens` in a container, since it is rank-1.
+
+This proposal makes most of these `newtype` wrappers unnecessary.
+
+Furthermore, if we want to replace an expression such as `view l` with `view $ l`, we need to instantiate the types of `($) :: forall a b. (a -> b) -> a -> b` impredicatively (this case is so common that GHC contains a special case for them).
 
 ## Proposed Change Specification
 
@@ -91,7 +101,7 @@ The main disadvantage of making "quick look impredicativity" official is that it
 
 The problem is of technical nature, but without this restriction we would not be able to infer impredicative instantiations of functions like `($)`. **This restriction affects not only users of `ImpredicativeTypes`, but also users of `RankNTypes`, effectively making this proposal not 100% backwards compatible.**
 
-Note however that there is a simple workaround for this problem: eta-expansion. Take for example the functions `choose :: forall a. (a -> Bool) -> (a -> Bool) -> Bool`, `f :: (Bool -> Bool) -> Bool` and `g :: (forall a. a -> a) -> Bool`. In theory we can accept the expressions `choose f g` and `choose g f` if we instantiate `a` with `Int -> Int`, due to contravariance. In a non-contravariant world we need to eta-expand `g` to make it work: `choose f (\x -> g x)`.
+Note however that there is a simple workaround for this problem: eta-expansion. Take for example the functions `choose :: forall a. (a -> Bool) -> (a -> Bool) -> Bool`, `f :: (Bool -> Bool) -> Bool` and `g :: (forall a. a -> a) -> Bool`. In theory we can accept the expressions `choose f g` and `choose g f` if we instantiate `a` with `(forall a. a -> a)`. In a non-contravariant world we need to eta-expand `f` to make it work: `choose (\x -> f x) g`; now the `x` is assigned type `forall a. a -> a`, which is then instantiated to `Int -> Int` before passing it to `f`.
 
 Note anyway that the support for contravariance in GHC is really fragile. Here is an excerpt of a GHCi session which shows that the one of the expressions discussed above is accepted and the other is not:
 
