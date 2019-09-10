@@ -35,7 +35,7 @@ Creating a list of such lenses, `[Lens' a Int]`, requires impredicatively instan
 
 This proposal is structured in two parts. A precise specification can be found in this [paper draft](https://www.dropbox.com/s/hxjp28ym3lptmxw/quick-look-steps.pdf?dl=0), which would most surely lead to an actual paper submitted to a research conference. Below you can find a more approachable description, which could ultimately lead to a section in the GHC Users Guide.
 
-Any programmer which does not enable `ImpredicativeTypes` is unaware of the contents of this proposal (with a small caveat for users of `RankNTypes`, see below): impredicative instantiation is *not* allowed (rank-n types do not contradict that statement, since there is no instantiation going on during their type checking). In particular, type checking an application `e_0 e_1 ... e_n` in done in the following steps:
+Any programmer who does not enable `ImpredicativeTypes` is unaware of the contents of this proposal (with a small caveat for users of `RankNTypes`, see below): impredicative instantiation is *not* allowed (rank-n types do not contradict that statement, since there is no instantiation going on during their type checking). In particular, type checking an application `e_0 e_1 ... e_n` in done in the following steps:
 
 1. *Infer* the type of `e_0`, which we shall call `sigma_0`,
 2. Expose the first *n* argument types by instantiating `sigma_0` into a type of the form `sigma_1 -> ... -> sigma_n -> sigma_result`,
@@ -71,7 +71,7 @@ Several examples can be found in the [paper draft](https://www.dropbox.com/s/hxj
   a. `\x -> x` against `forall a. a -> a`,
   b. `ids` against `[forall a. a -> a]`.
 
-Compare this example to `(\x -> x) : []`. In this case quick look does not return any impredicativity information (since `[]` does not contain any). Thus the inferred type for that expression is `[beta -> beta]`, without any polymorphism.
+Compare this example to `(\x -> x) : []`. In this case quick look does not return any impredicativity information (since `[]` does not contain any). Thus the inferred type for that expression is `[beta -> beta]`, without any impredicative polymorphism.
 
 ## Effect and Interactions
 
