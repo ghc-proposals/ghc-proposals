@@ -35,7 +35,7 @@ Creating a list of such lenses, `[Lens' a Int]`, requires impredicatively instan
 
 This proposal is structured in two parts. A precise specification can be found in this [paper draft](https://www.dropbox.com/s/hxjp28ym3lptmxw/quick-look-steps.pdf?dl=0), which would most surely lead to an actual paper submitted to a research conference. Below you can find a more approachable description, which could ultimately lead to a section in the GHC Users Guide.
 
-Any programmer who does not enable `ImpredicativeTypes` is unaware of the contents of this proposal (with a small caveat for users of `RankNTypes`, see below): impredicative instantiation is *not* allowed (rank-n types do not contradict that statement, since there is no instantiation going on during their type checking). In particular, type checking an application `e_0 e_1 ... e_n` in done in the following steps:
+Any programmer who does not enable `ImpredicativeTypes` is unaware of the contents of this proposal (with a small caveat for users of `RankNTypes`, see [lack of contravariance](#rankntypes-and-lack-of-contravariance) below): impredicative instantiation is *not* allowed (rank-n types do not contradict that statement, since there is no instantiation going on during their type checking). In particular, type checking an application `e_0 e_1 ... e_n` in done in the following steps:
 
 1. *Infer* the type of `e_0`, which we shall call `sigma_0`,
 2. Expose the first *n* argument types by instantiating `sigma_0` into a type of the form `sigma_1 -> ... -> sigma_n -> sigma_result`,
@@ -77,13 +77,17 @@ Compare this example to `(\x -> x) : []`. In this case quick look does not retur
 
 As discussed several times throughout this proposal, its goal is to give a clear and simple specification of impredicative instantiation within GHC. Whereas "simple" is a subjective matter, the availability of a set of typing rules defines a clear specification.
 
-We deem the interaction with `TypeApplications` as a very important one; the goal is for our specification to benefit from user-written types as much as possible. We want `(:) @(forall a. a -> a) (\x -> x) []` to work, without the need of an additional type application in `[]`. The draft paper details the interaction between those features in depth,
+### `TypeApplications`
+
+We deem the interaction with `TypeApplications` as a very important one; the goal is for our specification to benefit from user-written types as much as possible. We want `(:) @(forall a. a -> a) (\x -> x) []` to work, without the need of an additional type application in `[]`. The draft paper details the interaction between those features in depth.
+
+### `RankNTypes` and lack of contravariance
 
 The main disadvantage of making "quick look impredicativity" official is that it collides with *contravariance of function types*. That is, it no longer holds that:
 
 `(Int -> Int) -> R is a subtype of (forall a. a -> a) -> R`
 
-The problem is of technical nature, but without this restriction we would not be able to infer impredicative instantiations of functions like `($)`.
+The problem is of technical nature, but without this restriction we would not be able to infer impredicative instantiations of functions like `($)`. **This restriction affects not only users of `ImpredicativeTypes`, but also users of `RankNTypes`, effectively making this proposal not 100% backwards compatible.**
 
 Note however that there is a simple workaround for this problem: eta-expansion. Take for example the functions `choose :: forall a. (a -> Bool) -> (a -> Bool) -> Bool`, `f :: (Bool -> Bool) -> Bool` and `g :: (forall a. a -> a) -> Bool`. In theory we can accept the expressions `choose f g` and `choose g f` if we instantiate `a` with `Int -> Int`, due to contravariance. In a non-contravariant world we need to eta-expand `g` to make it work: `choose f (\x -> g x)`.
 
@@ -105,6 +109,20 @@ Prelude> :t choose f g
 Prelude> :t choose g f
 choose g f :: Bool
 ```
+
+### The typing rule for `($)`
+
+Currently, GHC contains a hard-coded typing rule for `($)` (you can find it in [this file](https://gitlab.haskell.org/ghc/ghc/blob/master/compiler/typecheck/TcExpr.hs), looking for `dollarIdKey`) which ensures that `f $ e` works even when `($)` would need to be impredicatively instantiated. The million dollar question is: can we drop this special case from the compiler?
+
+A few versions ago, the answer would have been **no**. The reason was that `($)` was the only function able to operate with both lifted and unlifted kinds. But nowadays, this fact is reflected in its type:
+
+```haskell
+($) ::
+  forall (r :: GHC.Types.RuntimeRep) a (b :: TYPE r).
+  (a -> b) -> a -> b
+```
+
+So the initial answer would be **yes**. This should be taken with a grain of salt, though, since the specification in the draft paper does not consider polymorphic type representations. However, for the usual case of `b` having kind `*`, the rule may be dropped. This also means that other combinators such as `(&)` or `(.)` no longer are second-class with respect to impredicativity.
 
 ## Costs and Drawbacks
 
