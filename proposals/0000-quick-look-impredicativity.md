@@ -12,6 +12,8 @@ This proposal is [discussed at this pull request](https://github.com/ghc-proposa
 
 `ImpredicativeTypes` is one of those extensions which are not usually needed, but is unavoidable once you require it. Alas, `ImpredicativeTypes` has been in a half-broken state for quite some time, and not officially supported. This proposal describes a new approach to impredicative type checking which is (1) powerful enough for the most common use cases, and (2) predictable, so errors can be readily explained.
 
+This proposal is based on this [paper draft](https://www.dropbox.com/s/hxjp28ym3lptmxw/quick-look-steps.pdf?dl=0), which in turn borrows many ideas from [*Guarded impredicative polymorphism*](https://www.microsoft.com/en-us/research/publication/guarded-impredicative-polymorphism/) (published in PLDI'18).
+
 ## Motivation
 
 As most languages based on the Hindley-Damas-Milner typing discipline do, Haskell 2010 distinguishes between *monomorphic types* such as `Int -> Int`, which contain no `forall`s, and *type schemes* or *polymorphic types* like `forall a. a -> a`. Each expression in a program must, in principle, be given a *monomorphic* type -- if a variable has a polymorphic type it is *instantiated* beforehand to a *variable*, whose value is found by type inference. For example, when we write `id True`, the `a` in the type of `id` is instantiated to the type `Bool`, which means that that specific occurrence of `id` has type `Bool -> Bool`.
