@@ -29,7 +29,7 @@ type Lens s t a b = forall f. Functor f => (a -> f b) -> s -> f t
 type Lens' s a = Lens s s a a
 ```
 
-Creating a list of such lenses, `[Lens a Int]`, requires impredicatively instantiating the constructors `(:)` and `[]`. Also if we want to replace an expression such as `view l` with `view $ l`, we need to instantiate the types of `($) :: forall a b. (a -> b) -> a -> b` impredicatively (this case is so common that GHC contains a special case for them).
+Creating a list of such lenses, `[Lens' a Int]`, requires impredicatively instantiating the constructors `(:)` and `[]`. Also if we want to replace an expression such as `view l` with `view $ l`, we need to instantiate the types of `($) :: forall a b. (a -> b) -> a -> b` impredicatively (this case is so common that GHC contains a special case for them).
 
 ## Proposed Change Specification
 
