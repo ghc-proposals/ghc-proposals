@@ -76,7 +76,7 @@ The following dependency information will be collected:
 
       * Compiled modules. In this case the result will include the package ID where the module was found and the module name.
 
-    * In both cases, a list of file paths where GHC looked for the import before finding it. This list is represented with glob patterns.
+    * In both cases, a list of file paths where GHC looked for the import before finding it.
 
   * CPP ``#include`` paths.
 
@@ -116,12 +116,12 @@ The output will be in JSON. Paths may be absolute or relative to the current wor
                         // The paths searched before finding the import or after
                         // exhausting all search paths.
                         "query": [
-                            "some/path/*/with/globs/src/A.hs",
-                            "/some/other/path/*/with/globs/src/A.hs"
+                            "some/relative/path/src/A.hs",
+                            "/some/absolute/path/src/A.hs"
                         ]
     
                         // The path of the source import, or false if not found.
-                        "path": "/some/other/path/123/with/globs/src/A.hs",
+                        "path": "/some/absolute/path/src/A.hs"
                     },
     
                     // A compiled module import or plugin.
@@ -137,10 +137,10 @@ The output will be in JSON. Paths may be absolute or relative to the current wor
                         "package": false
     
                         // The paths searched before finding the plugin module or
-                        // after exhausting all search paths. This can contain globs
-                        // of file system queries, or ghc-pkg database paths
+                        // after exhausting all search paths. This can contain
+                        // file paths, or ghc-pkg database paths.
                         "query": [
-                            { "type": "glob",  "glob": "some/path/*/with/globs.*.hs"},
+                            { "type": "path",  "path": "some/path/MyPlugin.hs"},
                             { "type": "pkgdb", "pkgdb": "build/package.conf.d" }
                         ],
     
