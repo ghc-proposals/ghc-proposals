@@ -206,7 +206,7 @@ j = ...
     instance a ~ b => C (N b)
 ```
 
-### Type families
+### Type family instances
 
 It's important to be able to include local type family instances, because
 classes may rely on them. To ensure coherence, we impose the following
@@ -251,7 +251,7 @@ separate.
 How do we deal with locally bound type variables on the left-hand side?
 These shadow just like they do in instance heads.
 
-### Data families
+### Data family instances
 
 Data families can be treated the same as type families. Their constructors
 will only be available locally.
@@ -263,13 +263,95 @@ each fundep to an instance, there must be a locally defined type on the left
 side of the arrow that's defined at least as close as any type on the right
 side of the arrow.
 
+### Class, type family, and data family declarations
+
+We can support these, and therefore probably should. Perhaps surprisingly,
+they don't seem to add any additional power, but in the case of classes they
+may add considerable convenience. Given a local declaration
+
+```haskell
+type family F a b ...
+```
+
+we can translate this into a local type declaration, a global type
+family declaration, and a local type synonym declaration:
+
+```haskell
+-- Local
+data FT
+type F a b = F' FT a b
+
+-- Global
+type family F' ctx a b
+```
+
+Data families can be treated similarly.
+
+Translating local class declarations is a bit trickier. Given a local
+declaration
+
+```haskell
+class superclasses => C a b
+```
+
+we may need to augment the global class with extra parameters to accommodate
+locally bound or locally defined types mentioned in the constraints. For example,
+
+```haskell
+f x =
+  let
+    data T
+    class q T => C a
+  in
+    let
+      class C a => D a
+    in ...
+```
+
+could be translated into a combination of local and global declarations thus:
+
+```haskell
+-- Local
+f x =
+  let
+    data T
+    data CT
+    type C a = C' CT q T a
+  in
+    let
+      data DT
+      type D a = D' DT CT q T a
+    in ...
+
+-- Global
+class q t => C' ctx q t a
+class C' cctx q t a => D' dctx ctx q t a
+```
+
 ### `Typeable`
 
 Locally defined types will *not* be given `Typeable` instances automatically.
-It's not at all obvious to me whether there is a sensible way to give them `Typeable`
-instances at all, and if it is, the costs may be high enough to justify
-manual `deriving Typeable`.
+I don't believe there is a sensible way to give them `Typeable`
+instances at all. In principle, we could offer a multi-parameter version
+of `Typeable`. Imagine a type of "run-time contexts" and a type family
+that gets the run-time context of a type:
 
+```haskell
+data Context
+type family ContextOf (t :: k) :: Context
+```
+
+Then we could offer
+
+```haskell
+class Typeable' (c :: Context) t where
+  typeRep' :: TypeRep c t
+```
+
+It would only be possible to compare `TypeRep` values relative to the same
+context. The main limitation of this scheme is that I don't believe there
+would be any sensible way to serialize or deserialize `TypeRep`s relative
+to anything but the global context.
 
 ## Effect and Interactions
 
