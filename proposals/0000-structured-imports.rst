@@ -120,6 +120,110 @@ We review the set of export use cases, organised along three axes:
      - All of ``N`` 's qualified and unqualified exports, verbatim.
      - This is reinterpretation of #4 enabled by the proposed extension.
 
+Overview of changes to the import side
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+We review the set of import use cases, organised along three axes:
+
+- origin of qualified name(s) -- *local* versus *imported* -- the key point of this proposal
+- specification for the set of imports -- *pointwise* versus *wholesale*,
+- renaming of the qualifier
+
+For the sake of examples, we assume availability of a module defined as follows::
+
+   -- | A module in extended semantics.
+   {-# LANGUAGE StructuredImports #-}
+   module C
+     ( module Map qualified
+     , module Map
+     )
+
+   import qualified Data.Map as Map
+   import           Data.Map (map)
+
+For each import statement we provide two sets of *newly introduced names* -- both
+for un-extended *Haskell2010* language, and for *Structured Imports*.
+
+Note that we don't specifically consider ``import qualified`` statements, since
+presence of the ``qualified`` keyword is specified not to incur a difference in
+effect on imports of names that are exported with qualified names.
+
+.. list-table:: Import: intent vs. syntax
+   :header-rows: 1
+
+   * - #
+     - Origin: local or imported
+     - Pointwise or wholesale
+     - Renamed?
+     - Import declaration
+     - *Haskell 2010*
+     - *Structured Imports*
+     - Comments
+   * - 1
+     - local
+     - point
+     - unchanged
+     - ``import C (map)``
+     - ``C.map, map``
+     - ``C.map, map``
+     - Extension has no effect, because the explicit import spec doesn't mention qualified imports.
+   * - 2
+     - local
+     - point
+     - renamed
+     - ``import C as LC (map)``
+     - ``LC.map, map``
+     - ``LC.map, map``
+     - *Same as above*.
+   * - 3
+     - local
+     - whole
+     - unchanged
+     - ``import C``
+     - ``C.map, map``
+     - ``C.map, map, Map.map``
+     - Incompatible change. Reinterpretation of the import statement to also implicitly include the qualified exports.
+   * - 4
+     - local
+     - whole
+     - renamed
+     - ``import C as LC``
+     - ``LC.map, map``
+     - ``LC.map, map, Map.map``
+     - *Same as above*.
+   * - 5
+     - imported
+     - point
+     - unchanged
+     - ``import C (module Map (map))``
+     - *unavailable*
+     - ``Map.map``
+     - Unqualified imports not brought in by the explicit import spec.
+   * - 6
+     - imported
+     - point
+     - renamed
+     - ``import C (module Map as LMap (map))``
+     - *unavailable*
+     - ``LMap.map``
+     -
+   * - 7
+     - imported
+     - whole
+     - unchanged
+     - ``import C (module Map)``
+     - *unavailable*
+     - ``Map.map``
+     - Outside of this example, it is a warning, not an error, if ``C`` does not export names qualified with ``Map``.
+   * - 8
+     - imported
+     - whole
+     - renamed
+     - *unavailable*
+     - ``import C (module Map as LMap)``
+     - ``LMap.map``
+     - Outside of this example, it is a warning, not an error, if ``C`` does not export names qualified with ``Map``.
+
 Export lists
 ^^^^^^^^^^^^
 In section 5.2, "Export lists", extend the *export* non-terminal to accept an extra clause::
@@ -174,9 +278,12 @@ Import lists
 ^^^^^^^^^^^^
 In section 5.3, "Import lists", extend the *import* non-terminal to accept an extra clause::
 
-    |	module *modid*
+    |	module *modid* [as *modid*] [*impspec*]
 
-This clause stands for a set of names qualified with ``modid``.
+Assuming module ``M`` is being imported by the statement, this clause stands for a set of names exported by module ``M`` that is:
+  - qualified with either the ``modid`` qualifier coming from the export structure of module ``M``, if the ``as`` clause is absent,
+    or, otherwise, with the qualifier coming from the ``as`` clause;
+  - restricted by the normal intepretation of ``impspec``, if it has been provided.
 
 The leading part of the section 5.3 should is to be extended with:
 
