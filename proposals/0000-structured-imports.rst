@@ -241,11 +241,42 @@ Examples
 
 Effect and Interactions
 -----------------------
+Effect
+^^^^^^
 Package author will gain an option of conveniently setting up coherent namespaces for their entire packages (or their desired subsets), by potentially specifying the entire shared namespace structure in a single file.
 
 The natural divergences and ambiguities of things like ``T`` meaning ``Data.Text`` or ``Data.Text.Lazy``, ``Map`` meaning ``Data.Map`` or ``Data.Map.Strict`` -- all those will have a concise and effective way of being addressed by a policy that will become expressible.
 
 The implementation cases incurs a serialisation of module interface that is incompatible with non-extended functionality, regardless of the use of the extended functionality by the compiled module.
+
+Interactions
+^^^^^^^^^^^^
+Backpack
+++++++++
+There might be potential interactions with the Backpack module system extension.
+
+Deprecating Exports
++++++++++++++++++++
+There is an interaction with the ``DEPRECATED`` pragma::
+
+   A symbol exported by a module is deprecated if all export specifiers for that symbol have a DEPRECATED pragma
+
+This meaning is to be extended to include export specifiers for qualified exports.
+
+Qualified Imports
++++++++++++++++++
+Relationship with the discussed ``Qualified Imports`` extension (https://github.com/ghc-proposals/ghc-proposals/pull/220 ):
+
+- ``StructuredImports`` deals with:
+  1. Expressivity of the inter-module boundary:
+     - increasing the amount of namespace structure that can cross inter-module boundary.
+
+  2. Expressivity of the intra-module namespace formation language:
+     - new way of forming namespace structure -- by import of qualified names.
+
+- ``QualifiedImports``
+  1. Expressivity of the intra-module namespace formation language:
+     - a language extension as a way to control whether names come qualified by default.
 
 Costs and Drawbacks
 -------------------
