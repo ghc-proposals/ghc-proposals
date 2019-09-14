@@ -25,37 +25,9 @@ This centralisation use case, however, is deficient in that it isn't supported b
 * for the reader, there are no commons to learn and refer to -- every module is a potential snowflake regarding the structure of its namespace (in its name qualification aspect)
 * for the writer, growing the program and splitting it into modules brings super-linear expenditures for the namespace maintenance aspect (again, in the qualification aspect)
 
-We propose to provide module authors with a way of importing and exporting sets of qualified names:
+We propose to provide module authors with a way of importing and exporting sets of qualified names.
 
-* Defining module::
-
-    {-# LANGUAGE StructuredImports #-}
-
-    module C
-      ( module Containers qualified   -- Export the set of names qualified with 'Containers', qualified.
-                                      -- And also,
-      , module Containers             -- ..iff we'd also want those names exported traditionally, *unqualified*.
-      )
-    where
-
-    import Data.Map as Containers     -- We populate an alias, that contains all of the names
-    import Data.Set as Containers     -- ..exported by the subordinate imports.
-                                      -- This is the normal, usual part.
-
-* User module::
-
-    {-# LANGUAGE StructuredImports #-}
-
-    module B where
-
-    import C                          -- We bring in the unqualified *and* qualified names exported by C.
-                                      -- Or, alternatively,
-    import C (module Containers)      -- ..if we want to be explicit about the qualified names.
-    import C hiding (module Containers) -- ..or even explicitly negative.
-
-    foo :: Containers.Map Int String
-    foo = Containers.empty
-
+For the examples, please see the `Examples`_ section.
 
 For some potential additions/tweaks to this proposal, please see the `Alternatives`_ section.
 
@@ -233,35 +205,39 @@ The new semantics are to be guarded by a language pragma, such as:
 
 Examples
 --------
-To clarify the above new import rules, suppose the module A has the following import/export structure::
 
-   module A
-     ( module ABC qualified
-     , module DEF qualified
-     )
-   where
-   import A.B.C as ABC (a,b,c)
-   import D.E.F as DEF (d,e,f)
+* Defining module::
 
-Then this table shows what names are brought into scope by the specified import statement:
+    {-# LANGUAGE StructuredImports #-}
 
-.. list-table:: Effects of import statements
-   :header-rows: 1
+    module Containers
+      ( module Map qualified          -- Export the set of names qualified with 'Map' and 'Set', qualified.
+      , module Set qualified          -- ..and the same for 'Set'.
+      , Map, Set                      -- And the 'Map' and 'Set' types, unqualified.
+      )
+    where
 
-   * - #
-     - Import declaration
-     - Names brought into scope
-   * - 1
-     - ``import A``
-     - ``ABC.a, ABC.b, ABC.c, DEF.d, DEF.e, DEF.f``
-   * - 2
-     - ``import A (module ABC)``
-     - ``ABC.a, ABC.b, ABC.c``
-   * - 3
-     - ``import A hiding (module ABC)``
-     - ``DEF.d, DEF.e, DEF.f``
+    import qualified Data.Map as Map  -- We construct the classic names for containers..
+    import qualified Data.Set as Set
+    import           Data.Map (Map)
+    import           Data.Set (Set)
 
-In all cases, all instance declarations in scope in module A are imported.
+* User module::
+
+    {-# LANGUAGE StructuredImports #-}
+
+    module M where
+
+    import Containers                 -- We bring in both the unqualified *and* qualified names.
+
+    import Containers ( module Map    -- Or, alternatively,
+                      , module Set)   -- ..if we want to be explicit about the qualified names.
+    import Containers hiding
+                      ( module Map    -- ..or, even, explicitly negative.
+                      , module Set)
+
+    foo :: Map Int String
+    foo = Map.empty
 
 Effect and Interactions
 -----------------------
