@@ -27,15 +27,85 @@ This centralisation use case, however, is deficient in that it isn't supported b
 
 We propose to provide module authors with a way of importing and exporting sets of qualified names.
 
+For the relevant chapter of the *Haskell2010* specification, please see: https://www.haskell.org/onlinereport/haskell2010/haskellch5.html
+
 For the examples, please see the `Examples`_ section.
 
 For some potential additions/tweaks to this proposal, please see the `Alternatives`_ section.
 
 Proposed Change Specification
 -----------------------------
-Overview of changes to the export side
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Export side changes
+^^^^^^^^^^^^^^^^^^^
+Syntax
+++++++
+In section 5.2, "Export lists", we extend the **export** non-terminal to accept an extra clause::
 
+    |	module *modid* qualified
+
+Semantics
++++++++++
+Set of qualified names selected for export
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Export entry without a 'qualified' keyword: reinterpretation
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+In section 5.2, "Export lists", *Haskell2010*, with regards to the the list of cases
+starting with "Entities in an export list may be named as follows:", reword the fifth entry as follows:
+
+    The form ``module M`` names two sets of entities:
+
+    1. The set of all entities that are in scope with both an unqualified name ``e`` and a qualified name ``M.e``. This set may be empty. For example::
+
+          module Queue( module Stack, enqueue, dequeue ) where
+          import Stack
+          ...
+
+       Here the module Queue uses the module name Stack in its export list to abbreviate all the entities imported from Stack.
+
+       These entities will be re-exported unqualified.
+
+    2. The set of all entities that are in scope with a qualified name ``M.e``.  Again this set may be empty.
+
+       These entities will be re-exported with their qualified names.
+
+    A module can name its own local definitions in its export list using its own name in the ``module M`` syntax, because a local declaration brings into scope both a qualified and unqualified name (Section 5.5.1). For example::
+
+       module Mod1( module Mod1, module Mod2 ) where
+       import Mod2
+       import Mod3
+
+Export entry with a 'qualified' keyword: qualified names only
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+In section 5.2, "Export lists", *Haskell2010*, with regards to the the list of cases
+starting with "Entities in an export list may be named as follows:", add a sixth entry:
+
+   The form ``module M qualified`` names the set of all entities that are in scope with a qualified name ``M.e``.
+   Those entities will be advertised by the module as exported with their qualified name.
+
+   It is an error to use ``module M qualified`` in an export list, unless the local module namespace has a non-empty set of names qualified with ``M``.
+   That is, such names must have been introduced by either:
+
+   - regular import statements, with or without the ``as`` keyword,
+   - imports of qualified names (subject of this proposal).
+
+Injectivity: preserve
+~~~~~~~~~~~~~~~~~~~~~
+The same section describes a restriction:
+
+   The unqualified names of the entities exported by a module must all be distinct (within their respective namespace).
+
+With regards to the qualified name exports, this restriction only applies to the individual sets of exports with individual qualifiers -- it is naturally a name clash to export different entities with the same qualified name.
+
+Omitted export list: no qualified exports
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The same section says:
+
+   If the export list is omitted, all values, types and classes defined in the module are exported, but not those that are imported.
+
+This is to be extended to cover the qualified names -- none of them are exported in case of an omitted export list.
+
+Comparative case analysis
+~~~~~~~~~~~~~~~~~~~~~~~~~
 We review the set of export use cases, organised along three axes:
 
 - origin of exported name(s) -- *local* versus *imported*,
@@ -100,7 +170,7 @@ We review the set of export use cases, organised along three axes:
      - qual
      - ``module M (module O qualified) where import N``
      - A subset of ``N`` exports, which is qualified as ``O.x``, verbatim.
-     - Assuming that module ``N`` exports a set of names qualified with ``O``.
+     - Assuming that module ``N`` exports a set of names qualified with ``O``. It is an error otherwise.
    * - 7
      - **out of scope**
      - local
@@ -109,7 +179,7 @@ We review the set of export use cases, organised along three axes:
      - Would've been ``module M (module M) where import N``
      -
      - This is controversial -- while ``N`` is a locally-introduced qualifier,
-       ``N.x`` are not local names, so we decide not to allow this, retaining
+       ``N.x`` are not names defined locally, so we decide not to allow this, retaining
        normal interpretation.
    * - 8
      - *Structured Imports*
@@ -120,9 +190,92 @@ We review the set of export use cases, organised along three axes:
      - All of ``N`` 's qualified and unqualified exports, verbatim.
      - This is reinterpretation of #4 enabled by the proposed extension.
 
-Overview of changes to the import side
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Import side changes
+^^^^^^^^^^^^^^^^^^^
+Syntax
+++++++
+In section 5.3, "Import lists", extend the **import** non-terminal to accept an extra clause::
 
+    |	module *modid* [as *modid*] [*impspec*]
+
+Semantics
++++++++++
+Specification of imported names
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+We might consider the import process as a combination of two steps:
+
+1. *Selection* of exported names, and,
+2. *Introduction* of local names to those selected.
+
+Import statement with an import spec, without hiding
+''''''''''''''''''''''''''''''''''''''''''''''''''''
+Considering import statements of the form::
+   import M (module *modid* [as *modid*] [*impspec*], ...)
+
+Assuming the context of **import** non-terminal from the above "Syntax" subsection,
+this clause *selects* a subset of names exported by module ``M`` -- the subset
+that has the **modid** qualifier.
+
+This subset can be further restricted by the normal intepretation of **impspec**,
+if it has been provided (see section 5.3.1, "Import lists" of *Haskell2010*).
+
+The qualifier of locally-*introduced* names can be changed to an alternative **modid** by an ``as`` clause.
+
+Import statement with an import spec, with hiding
+'''''''''''''''''''''''''''''''''''''''''''''''''
+Considering import statements of the form::
+   import M hiding (module *modid* [*impspec*], ...)
+
+The hiding import extends the normal interpretation of the un-extended language semantic,
+to the *selected* names that have a qualifier.
+
+Whatever the set of qualified names that is *selected* for *introduction* by an
+**import** non-terminal (as specified in the previous subsection "Import statement
+with an import spec, without hiding"), addition of the ``hiding`` keyword to the
+top-level of the ``import`` statement designates the same set to be un-*selected*
+from the entire set of qualified exports of the module being imported.
+
+Import statement with a renaming import spec, with hiding: forbid
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+Considering import statements of the form::
+   import M hiding (module *modid* as *modid* [*impspec*], ...)
+
+Such statements are forbidden, since they appear to have no useful meaning.
+
+Import statement without an import spec: reinterpretation
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+Considering import statements of the form::
+   import M
+
+The third entry of the list in section 5.3.1 should be reworded as:
+
+   Finally, if impspec is omitted then all the entities exported by the specified module are imported, including all of the entities exported with qualified names.
+
+This constitutes a case of reinterpretation of existing code under the extended semantic.
+
+Import statements with/without 'qualified' keyword: indifference, mostly
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+Considering import statements of the form::
+   import qualified M [as *modid*] [(module ..., ...)]
+
+Neither *selection* of qualified names for import, nor their *introduction* into
+the local namespace is affected by the presence or absence of the
+of the ``import`` statement.
+
+There is one small exception to this, namely the case where a combination of
+``qualified`` and ``as`` modifiers would free up a portion of the local namespace
+that would've otherwise caused a name clash.  Consider the following case::
+   import           M as N (module M (map), map)
+
+This would fail to compile, because of the conflict on the name ``M.map``, that is
+introduced by both the regular qualified import, and structured import.
+
+Addition of the qualified ``qualified`` modifier in the above situation would
+resolve the conflict, by precluding the regular qualified import::
+  import qualified M as N (module M (map), map)
+
+Comparative case analysis
+~~~~~~~~~~~~~~~~~~~~~~~~~
 We review the set of import use cases, organised along three axes:
 
 - origin of qualified name(s) -- *local* versus *imported* -- the key point of this proposal
@@ -134,9 +287,8 @@ For the sake of examples, we assume availability of a module defined as follows:
    -- | A module in extended semantics.
    {-# LANGUAGE StructuredImports #-}
    module C
-     ( module Map qualified
-     , module Map
-     )
+     ( module Map   -- Note that this export entry includes qualified names
+     )              -- under the extended semantic.
 
    import qualified Data.Map as Map
    import           Data.Map (map)
@@ -219,79 +371,10 @@ effect on imports of names that are exported with qualified names.
      - imported
      - whole
      - renamed
-     - *unavailable*
      - ``import C (module Map as LMap)``
+     - *unavailable*
      - ``LMap.map``
      - Outside of this example, it is a warning, not an error, if ``C`` does not export names qualified with ``Map``.
-
-Export lists
-^^^^^^^^^^^^
-In section 5.2, "Export lists", extend the *export* non-terminal to accept an extra clause::
-
-    |	module *modid* qualified
-
-With regards to the the list of cases (starting with "Entities in an export list may be named as follows:"):
-
-Reword the fifth entry as follows:
-
-    The form “module M” names two sets of entities:
-
-      1. The set of all entities that are in scope with both an unqualified name “e” and a qualified name “M.e”. This set may be empty. For example:
-
-          module Queue( module Stack, enqueue, dequeue ) where
-               import Stack
-               ...
-
-         Here the module Queue uses the module name Stack in its export list to abbreviate all the entities imported from Stack.
-
-         These entities will be re-exported unqualified.
-
-      2. The set of all entities that are in scope with a qualified name “M.e”.  Again this set may be empty.
-
-         These entities will be re-exported with their qualified names.
-
-    A module can name its own local definitions in its export list using its own name in the “module M” syntax, because a local declaration brings into scope both a qualified and unqualified name (Section 5.5.1). For example:
-      module Mod1( module Mod1, module Mod2 ) where
-      import Mod2
-      import Mod3
-
-Add a sixth entry:
-
-   The form ``module M qualified`` names the set of all entities that are in scope with a qualified name ``M.e``.
-   Those entities will be advertised by the module as exported with their qualified name.
-
-   It is an error to use ``module M qualified`` in an export list unless ``M`` is established either as an alias or a module name, by at least one import declaration.
-
-The same section of Haskell2010 describes a restriction:
-
-   The unqualified names of the entities exported by a module must all be distinct (within their respective namespace).
-
-With regards to the qualified name exports, this restriction only applies to the individual sets of exports with individual qualifiers -- it is naturally a name clash to export different entities with the same qualified name.
-
-The same section says:
-
-   If the export list is omitted, all values, types and classes defined in the module are exported, but not those that are imported.
-
-This is to be extended to cover the qualified names -- none of them are exported in case of an omitted export list.
-
-Import lists
-^^^^^^^^^^^^
-In section 5.3, "Import lists", extend the *import* non-terminal to accept an extra clause::
-
-    |	module *modid* [as *modid*] [*impspec*]
-
-Assuming module ``M`` is being imported by the statement, this clause stands for a set of names exported by module ``M`` that is:
-  - qualified with either the ``modid`` qualifier coming from the export structure of module ``M``, if the ``as`` clause is absent,
-    or, otherwise, with the qualifier coming from the ``as`` clause;
-  - restricted by the normal intepretation of ``impspec``, if it has been provided.
-
-The leading part of the section 5.3 should is to be extended with:
-
-   Imported names might be already qualified, if the module being imported exports them as qualified.
-
-The third entry of the list in section 5.3.1 should be reworded as:
-
-   Finally, if impspec is omitted then all the entities exported by the specified module are imported, including all of the entities exported with qualified names.
 
 Changes to the operational semantics
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -307,8 +390,8 @@ Gating the functionality
 ^^^^^^^^^^^^^^^^^^^^^^^^
 The new semantics are to be guarded by a language pragma, such as:
 
-  - ``StructuredImports``     -- because that's what we want, ultimately,
-  - ``FirstClassModuleNames`` -- because that's what it is, conceptually.
+- ``StructuredImports``     -- because that's what we want, ultimately,
+- ``FirstClassModuleNames`` -- because that's what it is, conceptually.
 
 Examples
 --------
@@ -318,13 +401,13 @@ Examples
     {-# LANGUAGE StructuredImports #-}
 
     module Containers
-      ( module Map qualified          -- Export the set of names qualified with 'Map' and 'Set', qualified.
-      , module Set qualified          -- ..and the same for 'Set'.
-      , Map, Set                      -- And the 'Map' and 'Set' types, unqualified.
+      ( module Map qualified         -- Export the set of names qualified with 'Map' and 'Set', qualified.
+      , module Set qualified         -- ..and the same for 'Set'.
+      , Map, Set                     -- And the 'Map' and 'Set' types, unqualified.
       )
     where
 
-    import qualified Data.Map as Map  -- We construct the classic names for containers..
+    import qualified Data.Map as Map -- We construct the classic names for containers..
     import qualified Data.Set as Set
     import           Data.Map (Map)
     import           Data.Set (Set)
@@ -375,15 +458,20 @@ Qualified Imports
 Relationship with the discussed ``Qualified Imports`` extension (https://github.com/ghc-proposals/ghc-proposals/pull/220 ):
 
 - ``StructuredImports`` deals with:
+
   1. Expressivity of the inter-module boundary:
-     - increasing the amount of namespace structure that can cross inter-module boundary.
+
+     - increasing the amount of namespace structure that can cross the inter-module boundary.
 
   2. Expressivity of the intra-module namespace formation language:
-     - new way of forming namespace structure -- by import of qualified names.
+
+     - new way of forming local namespace structure -- by import of qualified names.
 
 - ``QualifiedImports``
+
   1. Expressivity of the intra-module namespace formation language:
-     - a language extension as a way to control whether names come qualified by default.
+
+     - language extension as a toggle for whether names come qualified by default.
 
 Costs and Drawbacks
 -------------------
