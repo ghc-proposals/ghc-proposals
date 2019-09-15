@@ -415,14 +415,18 @@ instances:
 
 ::
 
-  data family T :: * -> TYPE 'UnliftedRep
+  data family T :: * -> TYPE k
+
   data instance unlifted T Int = MkTInt Int
   -- Alternative syntax:
   data instance T Char :: * -> TYPE 'UnliftedRep where
     MkTChar :: Char -> T Char
 
-where the ``unlifted`` keyword and the kind signature are mandatory,
-anticipating levity polymorphic data families in the future.
+where the ``unlifted`` keyword and the kind signature are mandatory. The latter
+can possibly be inferred when ``k`` is actually instantiated. Note that as with
+the `Unlifted Newtypes proposal <https://github.com/ghc-proposals/ghc-proposals/pull/98>`,
+declaring the data family will not require ``-XUnliftedData``, only declaring
+instances of the data family will need the extension.
 
 Costs and Drawbacks
 -------------------
