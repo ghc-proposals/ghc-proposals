@@ -402,15 +402,38 @@ we should eliminate the indirection in constructors like ``Force`` (we
 certainly should!) and to what degree we could infer and let the user omit
 ``Force`` constructors.
 
+It makes sense to give special syntax to ordinary unlifted algebraic datatypes:
+
+::
+
+  data unlifted SPair a b = MkSP !a !b
+
+The new keyword should be easy to introduce in a backwards compatible way.
+
+It would be inconsequential not to also introduce unlifted data family
+instances:
+
+::
+
+  data family T :: * -> TYPE 'UnliftedRep
+  data instance unlifted T Int = MkTInt Int
+  -- Alternative syntax:
+  data instance T Char :: * -> TYPE 'UnliftedRep where
+    MkTChar :: Char -> T Char
+
+where the ``unlifted`` keyword and the kind signature are mandatory,
+anticipating levity polymorphic data families in the future.
+
 Costs and Drawbacks
 -------------------
 I have no idea how long this will take to be implemented. Presumably all phases
 of the compiler up to C-- are affected, but the change is atomic enough to be
-implemented in a rather straightforward fashion. Since this isn't exactly new a
-surface language extension, I don't think maintenance will be an issue.
+implemented in a rather straightforward fashion. Since all new surface language
+features translate into familiar concepts after the frontend, I don't think
+maintenance will be an issue.
 
-Beginners won't have to touch unlifted newtypes at all, unless they crave for
-better performance in a custom data structure, at which point I wouldn't
+Beginners won't come in touch with unlifted newtypes at all, unless they crave
+for better performance in a custom data structure, at which point I wouldn't
 consider them beginners anymore. There's precedent in going from unlifted to
 lifted by
 `Idris <http://docs.idris-lang.org/en/latest/tutorial/typesfuns.html>`_ with its
