@@ -221,19 +221,40 @@ We might consider the import process as a combination of two steps:
 1. *Selection* of exported names, and,
 2. *Introduction* of local names to those selected.
 
+Import statement without an import spec: reinterpretation
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+Considering import statements of the form::
+   import M
+
+The third entry of the list in section 5.3.1 should be reworded as:
+
+   Finally, if impspec is omitted then all the entities exported by the specified
+   module are imported, including all of the entities exported with qualified names.
+
+This constitutes a reinterpretation of the normal import statement for the sake
+of a low-friction flow of qualified names between modules.
+
 Import statement with an import spec, without hiding
 ''''''''''''''''''''''''''''''''''''''''''''''''''''
 Considering import statements of the form::
    import M (module *modid* [as *modid*] [*impspec*], ...)
 
 Assuming the context of **import** non-terminal from the above "Syntax" subsection,
-this clause *selects* a subset of names exported by module ``M`` -- the subset
-that has the **modid** qualifier.
+this clause *selects* a subset of qualified names exported by module ``M`` -- and,
+specifically, the subset that has the **modid** qualifier.
 
 This subset can be further restricted by the normal intepretation of **impspec**,
 if it has been provided (see section 5.3.1, "Import lists" of *Haskell2010*).
 
-The qualifier of locally-*introduced* names can be changed to an alternative **modid** by an ``as`` clause.
+The qualifier of locally-*introduced* names can be changed to an alternative **modid**,
+by an ``as`` clause.
+
+The same **modid** can appear in several ``module`` import entries, and their
+effect would be strictly cumulative, as per section 5.3:
+
+   The effect of multiple import declarations is strictly cumulative: an entity is
+   in scope if it is imported by any of the import declarations in a module. The
+   ordering of import declarations is irrelevant.
 
 Import statement with an import spec, with hiding
 '''''''''''''''''''''''''''''''''''''''''''''''''
@@ -249,6 +270,14 @@ with an import spec, without hiding"), addition of the ``hiding`` keyword to the
 top-level of the ``import`` statement designates the same set to be un-*selected*
 from the entire set of qualified exports of the module being imported.
 
+Note that this has an implication of assigning a double-negation interpretation
+to the import statements of a form similar to the following::
+
+  import M hiding (module N hiding (a))
+
+This example would take a meaning of introducing exactly the name ``N.a`` to the
+local namespace.
+
 Import statement with a renaming import spec, with hiding: forbid
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 Considering import statements of the form::
@@ -256,35 +285,50 @@ Considering import statements of the form::
 
 Such statements are forbidden, since they appear to have no useful meaning.
 
-Import statement without an import spec: reinterpretation
-'''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+Import statement with renaming at top level: indifference
+'''''''''''''''''''''''''''''''''''''''''''''''''''
 Considering import statements of the form::
-   import M
+   import M as N (module *modid* ..., ...)
 
-The third entry of the list in section 5.3.1 should be reworded as:
+The addition of a renaming ``as`` modifier only has effect on the regular imports,
+not on the qualified names introduced by the ``module`` import list entry.
 
-   Finally, if impspec is omitted then all the entities exported by the specified module are imported, including all of the entities exported with qualified names.
+This allows us to avoid the need for a separate import statement in case we want
+to combine an explicit import list and renaming of the qualifier for the regular imports.
 
-Import statements with/without 'qualified' keyword: indifference, mostly
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+Import statements with/without 'qualified' keyword: indifference
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 Considering import statements of the form::
-   import qualified M [as *modid*] [(module ..., ...)]
+   import qualified M [(module ..., ...)]
 
 Neither *selection* of qualified names for import, nor their *introduction* into
-the local namespace is affected by the presence or absence of the
-of the ``import`` statement.
+the local namespace is affected by the presence or absence of the ``qualified``
+modifier to the import statement.
 
-There is one small exception to this, namely the case where a combination of
-``qualified`` and ``as`` modifiers would free up a portion of the local namespace
-that would've otherwise caused a name clash.  Consider the following case::
-   import           M as N (module M (map), map)
+Note, that this form has an effect of allowing *import* (which is distinct from
+*local introduction*) of qualified names only, which might cater to the policy
+preference of unqualified name avoidance.
 
-This would fail to compile, because of the conflict on the name ``M.map``, that is
-introduced by both the regular qualified import, and structured import.
+Import-side name self-clash: a new curious kind
+'''''''''''''''''''''''''''''''''''''''''''''''
+Note that the new ability to *import* qualified names introduces a new,
+previously unavailable kind of import-time conflict -- one between names imported
+from a single module.
 
-Addition of the qualified ``qualified`` modifier in the above situation would
-resolve the conflict, by precluding the regular qualified import::
-  import qualified M as N (module M (map), map)
+To elucidate this matter, let's assume an import statement of the form
+``import M [as N] [(...)]``.
+
+In this context we have to draw a distinction between:
+
+- qualified names coming as a regular Haskell98 import, due to regular qualification.
+- qualified names coming from the exports of module ``M`` chosen for import.
+
+Indeed, it is possible for those names to refer to different entities, and also coincide.
+
+Some of those conflicts can be avoided by preventing them on the export side,
+and all of them can be avoided on the import side through use of local qualifier renaming.
+
+Generally, though, such conflicts should be relatively rare.
 
 Comparative case analysis
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -433,8 +477,8 @@ Examples
 
     import Containers                 -- We bring in both the unqualified *and* qualified names.
 
-    import Containers ( module Map    -- Or, alternatively,
-                      , module Set)   -- ..if we want to be explicit about the qualified names.
+    import Containers ( module Map as LMap  -- Or, alternatively,
+                      , module Set as LSet) -- ..if we want to be explicit about the qualified names.
     import Containers hiding
                       ( module Map    -- ..or, even, explicitly negative.
                       , module Set)
@@ -517,7 +561,27 @@ Implementation costs appear to include (according to a proof-of-concept implemen
 
 Alternatives
 ------------
-A widely used alternative is disciplined copy-pasting of locally-aliased module imports between modules.  But avoiding reliance on human perfection is specifically part of our goal.
+
+A widely used alternative is disciplined copy-pasting of locally-aliased module
+imports between modules.  But avoiding reliance on human perfection is
+specifically part of our goal.
+
+Options
+^^^^^^^
+Unqualified imports
++++++++++++++++++++
+Assuming a certain future after the proposal is accepted, some situations might call for
+mixing preference for allowing and disallowing qualified imports from different modules.
+
+The current proposal only allows either:
+
+1. specifying this preference at module level, by applying the language pragma,
+2. explicitly hiding every set of qualified names in a hiding import.
+
+Neither of those options is particularly flexible.
+
+To cater to a more exquisite, fine-grained taste, we might want to introduce the
+``unqualified`` keyword to the top level of the import statements.
 
 Prior work
 ^^^^^^^^^^
