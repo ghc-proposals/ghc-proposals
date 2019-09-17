@@ -95,15 +95,13 @@ We deem the interaction with `TypeApplications` as a very important one; the goa
 
 ### `RankNTypes` and lack of contravariance
 
-The main disadvantage of making "quick look impredicativity" official is that it collides with *contravariance of function types*. That is, it no longer holds that:
+The main disadvantage of making "quick look impredicativity" official as described in the [paper draft](https://www.dropbox.com/s/hxjp28ym3lptmxw/quick-look-steps.pdf?dl=0) is that it collides with *contravariance of function types*. That is, it no longer holds that:
 
 `(Int -> Int) -> R is a subtype of (forall a. a -> a) -> R`
 
 The problem is of technical nature, but without this restriction we would not be able to infer impredicative instantiations of functions like `($)`. **This restriction affects not only users of `ImpredicativeTypes`, but also users of `RankNTypes`, effectively making this proposal not 100% backwards compatible.**
 
-Note however that there is a simple workaround for this problem: eta-expansion. Take for example the functions `choose :: forall a. (a -> Bool) -> (a -> Bool) -> Bool`, `f :: (Bool -> Bool) -> Bool` and `g :: (forall a. a -> a) -> Bool`. In theory we can accept the expressions `choose f g` and `choose g f` if we instantiate `a` with `(forall a. a -> a)`. In a non-contravariant world we need to eta-expand `f` to make it work: `choose (\x -> f x) g`; now the `x` is assigned type `forall a. a -> a`, which is then instantiated to `Int -> Int` before passing it to `f`.
-
-Note anyway that the support for contravariance in GHC is really fragile. Here is an excerpt of a GHCi session which shows that the one of the expressions discussed above is accepted and the other is not:
+Note anyway that the support for contravariance in GHC is really fragile. Take for example the functions `choose :: forall a. (a -> Bool) -> (a -> Bool) -> Bool`, `f :: (Bool -> Bool) -> Bool` and `g :: (forall a. a -> a) -> Bool`. In theory we can accept the expressions `choose f g` and `choose g f` if we instantiate `a` with `(forall a. a -> a)`. Here is an excerpt of a GHCi session which shows that the one of the expressions is accepted and the other is not:
 
 ```text
 Prelude> :set -XRankNTypes -XImpredicativeTypes
@@ -121,6 +119,28 @@ Prelude> :t choose f g
 Prelude> :t choose g f
 choose g f :: Bool
 ```
+
+#### Alternative 1: fully remove contravariance
+
+There is a simple workaround that works most of the time: eta-expansion (you might need to eta-expand more than once, though). Taking the `choose`, `f`, and `g` functions defined above,in a non-contravariant world we need to eta-expand `f` to make it work: `choose (\x -> f x) g`; now the `x` is assigned type `forall a. a -> a`, which is then instantiated to `Int -> Int` before passing it to `f`.
+
+After a preliminary assessment of which packages still compile under this new policy, it looks like most of them do not need it. Except one big and important one: `Cabal` (and anything that uses its API). This library often uses functions of the form:
+
+```haskell
+f :: ( (... -> CabalIO a) -> ...) -> ...
+```
+
+where `CabalIO a` is defined as `HasCallStack => IO a`. That means that whereas before we could pass a function `g` as argument, now we have to do something akin to `\... t ... -> g (\... x ... -> t ... x ...)`, which is quite annoying.
+
+#### Alternative 2: `ContravariantFunctions` extension
+
+The second alternative is to make contravariance of functions only available if the extension `ContravariantFunctions` is on, which should be the default.
+
+In addition, we would make `ImpredicativeTypes` imply `NoContravariantFunctions`. As a result, unless you manually override this by adding another `LANGUAGE` pragme, quick look impredicativity uses non-contravariant functions.
+
+When **both** `ImpredicativeTypes` and `ContravariantFunctions` are enabled, the quick look phase does **not** consider the left-hand side of an arrow as a guarded place, thus inferring fewer things. On the other hand, the subsumption check is fully contravariant.
+
+The main advantage of this alternative is that we guarantee that the code using only `RankNTypes` keeps working as is. The disadvantage is that we get a "fork-like" proposal, in which the language changes (although slightly) depending on the set of flags you have.
 
 ### The typing rule for `($)`
 
@@ -142,7 +162,7 @@ As discussed below, there is already a branch of GHC in which these changes have
 
 `ImpredicativeTypes` has always been an advanced feature of the language. However, once you arrive at it, programmers often ask themselves: "what is stopping the compiler from accepting this?". This proposal gives an answer to that question, with a succint explanation: "impredicative is never guessed, it must be obvious from the simple parts of each application".
 
-The main drawback is clearly the lack of contravariance. It is arguable whether contravariance of function types is something a beginner (or even intermediate) Haskeller expects, since up to that point all types are compared by equality. However, it should be possible during error reporting to scan whether a type error talks about two types which could be related if contravariance was taking into account, and report a message on the lines of:
+The main drawback is the complicated treatment of contravariance that this proposal brings with it. It is arguable whether contravariance of function types is something a beginner (or even intermediate) Haskeller expects, since up to that point all types are compared by equality. However, it should be possible during error reporting to scan whether a type error talks about two types which could be related if contravariance was taking into account, and report a message on the lines of:
 
 ```text
 Hint: try to eta-expand the second argument.
@@ -160,7 +180,6 @@ Another possibility is to drop impredicative type inference altogether, and expe
 
 ## Unresolved Questions
 
-* Is it possible to regain contravariance without over-complicating the specification?
 * What should be the error messages in those cases in which "quick look" was unsuccessful and did not infer enough information for impredicative instantiation?
 
 ## Implementation Plan
