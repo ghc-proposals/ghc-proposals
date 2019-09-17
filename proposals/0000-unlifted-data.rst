@@ -119,19 +119,59 @@ as ``Strict`` can be a user-defined type.
 
 Proposed Change Specification
 -----------------------------
-Similar to the unlifted newtypes proposal, allow definition of unlifted data
-types through GADT syntax, like above. The return kind ``TYPE 'UnliftedRep``
-in the kind annotation enables this language extension.
+
+Henceforth, data type declaration refers to both data type and data family instance declarations.
+
+Syntax
+~~~~~~
+
+Introduce a new contextual keyword ``unlifted``, only to be used in
+non-GADT-syntax data type declarations. Revised grammar rules:
+
+::
+  topdecl -> 'data' [ 'unlifted' ] [ context => ] ...
+  topdecl -> 'data' 'instance' [ 'unlifted' ] [ context => ] ...
+
+GADT-style declarations can't use the ``unlifted`` keyword (TODO: this is
+entirely my preference, challenge me on this if you disagree); they are
+required to specify a kind signature for unliftedness (see below).
+
+Static semantics
+~~~~~~~~~~~~~~~~
+
+Name resolution can ignore the ``unlifted`` keyword.
+
+The type checking of data type declarations becomes more permissive.
+Similar to -XUnliftedNewtypes, the return kind of a data type declaration's
+kind signature (which may be given explicitly by the user or be inferred) may
+now be of kind ``TYPE 'UnliftedRep`` as opposed to ``TYPE 'LiftedRep``. The
+result kind of a non-GADT-syntax data type declaration with an ``unlifted``
+keyword is ``TYPE 'UnliftedRep``.
+
+The static semantics of other types of unlifted kind, such as the inability to
+delare them at the top-level, apply.
+
+Dynamic Semantics
+~~~~~~~~~~~~~~~~~
+
+Unliftedness (i.e., the absence of divergence) implies the need for an eager
+evaluation semantics, which GHC implements in expression of kind ``#``.
+
+Thus, call-by-value semantics are already well established within GHC. The
+novelty is pattern matching on and construction of unlifted data types, but
+that's exactly the same as it is for lifted data types. 
+
+Examples
+--------
+
+Unlifted (call-by-value) semantics
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Example:
 
 ::
 
- data UPair :: TYPE 'UnliftedRep where
-   UPair :: a -> b -> SPair a b
-
-Note that we explicitly don't allow levity polymorphism for now.
-The usual semantics of kind ``TYPE 'UnliftedRep`` apply.
+ data unlifted UPair a b = UPair a b
 
 * When occuring in a constructor field (e.g.
   ``data T = MkT (UPair Int Bool)``), the semantics are identical to a field
@@ -143,19 +183,15 @@ The usual semantics of kind ``TYPE 'UnliftedRep`` apply.
 
 * In a let binding ``let x = UPair a b in e``, the right-hand side ``UPair a b``
   is evaluated before the body.
-  
-Examples
---------
 
 The Strict data type
 ~~~~~~~~~~~~~~~~~~~~
 
-As already suggested in the motivation, we get to define ``Strict``
+We get to define ``Strict``
 
 ::
 
- data Strict :: Type -> TYPE 'UnliftedRep where
-   Force :: !a -> Strict a
+ data unlifted Strict a = Force !a
 
 that deprives itself and its argument of ⊥.
 
@@ -252,6 +288,9 @@ rescue:
 
  data Ptr a :: TYPE 'UnliftedRep where
    Ptr :: !Addr# -> Ptr a
+
+(This uses GADT-style syntax and a kind signature instead of the ``unlifted``
+keyword to imply unliftedness)
 
 No bottom, no zero tag checking. This applies to a lot of wrappers around
 unlifted primitives that can't easily be unlifted newtypes.
@@ -401,32 +440,6 @@ potentially be reused for unlifted, boxed data types!) and details of whether
 we should eliminate the indirection in constructors like ``Force`` (we
 certainly should!) and to what degree we could infer and let the user omit
 ``Force`` constructors.
-
-It makes sense to give special syntax to ordinary unlifted algebraic datatypes:
-
-::
-
-  data unlifted SPair a b = MkSP !a !b
-
-The new keyword should be easy to introduce in a backwards compatible way.
-
-It would be inconsequential not to also introduce unlifted data family
-instances:
-
-::
-
-  data family T :: * -> TYPE k
-
-  data instance unlifted T Int = MkTInt Int
-  -- Alternative syntax:
-  data instance T Char :: * -> TYPE 'UnliftedRep where
-    MkTChar :: Char -> T Char
-
-where the ``unlifted`` keyword and the kind signature are mandatory. The latter
-can possibly be inferred when ``k`` is actually instantiated. Note that as with
-the `Unlifted Newtypes proposal <https://github.com/ghc-proposals/ghc-proposals/pull/98>`,
-declaring the data family will not require ``-XUnliftedData``, only declaring
-instances of the data family will need the extension.
 
 Costs and Drawbacks
 -------------------
