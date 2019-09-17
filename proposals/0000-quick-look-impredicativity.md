@@ -132,11 +132,21 @@ f :: ( (... -> CabalIO a) -> ...) -> ...
 
 where `CabalIO a` is defined as `HasCallStack => IO a`. That means that whereas before we could pass a function `g` as argument, now we have to do something akin to `\... t ... -> g (\... x ... -> t ... x ...)`, which is quite annoying.
 
-#### Alternative 2: `ContravariantFunctions` extension
+#### Alternatives 2a and 2b: keep contravariance
 
-The second alternative is to make contravariance of functions only available if the extension `ContravariantFunctions` is on, which should be the default.
+We could also keep contravariance in our subsumption relation. This opens two possibilities:
 
-In addition, we would make `ImpredicativeTypes` imply `NoContravariantFunctions`. As a result, unless you manually override this by adding another `LANGUAGE` pragme, quick look impredicativity uses non-contravariant functions.
+* The "right" choice is to then make the left-hand side of function types not count as guarded, which implies that the quick look pass cannot infer polymorphic types from that position. Unfortunately, that means that we lose quite some inference power.
+
+  For example, in the type of `($) :: forall a b. (a -> b) -> a -> b` none of the positions is guarded. That means that if we have an argument such as `runST :: forall v. (forall s. ST s v) -> v`, the quick look pass will not give us the desired result `a := forall s. ST s v`, type-checking would fail instead.
+
+* The second choice is to make quick look look under those places as if function types were not contravariant, but then use contravariance in the subsumption relation. The problem here is that quick look is greedy, and always returns the *first* choice for each variable.
+
+  The consequences is that the order of arguments starts to matter again. In fact, this system would have the same problem as described above: `choose f g` would fail to type check, whereas `choose g f` would be accepted without further problems.
+
+#### Alternative 3: contravariance as a flag
+
+The third alternative is to make contravariance of functions only available if the extension `ContravariantFunctions` is on, which should be the default. In addition, we would make `ImpredicativeTypes` imply `NoContravariantFunctions`. As a result, unless you manually override this by adding another `LANGUAGE` pragme, quick look impredicativity uses non-contravariant functions.
 
 When **both** `ImpredicativeTypes` and `ContravariantFunctions` are enabled, the quick look phase does **not** consider the left-hand side of an arrow as a guarded place, thus inferring fewer things. On the other hand, the subsumption check is fully contravariant.
 
