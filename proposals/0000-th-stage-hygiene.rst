@@ -24,27 +24,60 @@ Hacking TH today
 ~~~~~~~~~~~~~~~~
 
 In the olden days, one couldn't use Template Haskell with cross compilation at all.
-This is bad in itself, but also bad from an ecosystem perspective.
-Haskell has an excellent culture of code reuse, but that means that arbitrary software is very likely to depend on Template Haskell.
-That lack of being able to write idiomatic Haskell code with popular libraries for all platform is as big of a loss as not being able to Template Haskell itself.
-The risk of library fragmentation between between those writing code for weird platforms and those not is also bad for everyone.
+This was bad for uses wishing to cross compiler, of course, but also bad for everyone else.
+Users not using TH would have to forgo popular libraries using TH, developing their own alternatives which might appear verbose to the rest of the ecosystem.
+Haskell has an excellent culture of code reuse, but with each side deprived of making best use of the libraries of the other.
 
-The external interpreter made it at least possible, relatively automatically, but doesn't work if you explicitly want side effects to be run on the platform doing the compiling (build platform).
+The external interpreter made it at least possible, relatively automatically::
+
+  data MyType = ...
+  -- Yay, works!
+  makeLenses ''Foo
+
+but doesn't work if you explicitly want side effects to be run on the platform doing the compiling (build platform)::
+
+  data MyType = ...
+  readABunchOfFilesAndCreateSomeProccesses ''Foo
+  -- Oh no, the external interpreter cannot find those files,
+  -- or create those processes!
+
 Also, while same-OS cross can sometimes be fairly lightweight
 — e.g. by having QEMU translate syscalls so the native kernel can be used —
 different-OS requires harder to provision virtual machines or real devices.
+This is just more cumbersome, even ignoring worrying about build vs host effects.
 
 Another alternative is dumping and loading splices.
-This is where one first builds natively (host ≔ build) so TH can be evaluated, dumps the evaluated splices, and the builds cross (for the original host platform) by splicing in those dumped pre-evaluated splices rather than evaluating anything afresh.
+This is where one first builds natively (host platform ≔ build platform) so TH can be evaluated, dumps the evaluated splices, and the builds cross (for the original host platform) by splicing in those dumped pre-evaluated splices rather than evaluating anything afresh.::
+
+  -- build for build platform (local host platform := overall build platform, native)
+  data MyType = ...
+  -- Yay, works!
+  makeLenses ''Foo -- dump this
+
+::
+  -- build for host platform (local host platform := overall host platform, cross)
+  data MyType = ...
+  -- Yay, works!
+  $(...) -- file in with dumped splice, no eval needed
+
 This became easier with `this patch <https://github.com/reflex-frp/reflex-platform/blob/master/splices-load-save.patch>`_.
 Still, this requires building every package twice, since we redo the entire compilation on both platforms, and worse doesn't work if a top-level splice is target specific.
-For example, imagine some code like
-::
+For example, imagine some code like::
+
   #ifdef ios_HOST_OS
   data SomeIosFfiType
   $(iosBoilerplateHelper ''SomeIosFfiType)
   #endif
-If the splice is within the ``ifdef``, it won't be dumped.
+
+If the splice is within the ``ifdef``, it won't be dumped.::
+
+  -- build for build platform (local host platform := overall build platform, native)
+  #ifdef ios_HOST_OS -- ios_HOST_OS not defined
+  -- dead code
+  data SomeIosFfiType
+  $(iosBoilerplateHelper ''SomeIosFfiType) -- not dumped
+  #endif
+
 When we compile to dump splices, compilation occurs on the native platform, and so the splice will be removed at preprocessing time before dumping.
 And deleting the CPP is no quick fix — if it is outside the ``ifdef``, the native one won't build!
 If it is outside the ``ifdef``, then when we compile to dump splices we will actually fail, since we're now trying to build ios-specific code on the wrong platform.
