@@ -31,8 +31,8 @@ Haskell has an excellent culture of code reuse, but with each side deprived of m
 The external interpreter made it at least possible, relatively automatically::
 
   data MyType = ...
-  -- Yay, works!
   makeLenses ''Foo
+  -- Yay, works!
 
 but doesn't work if you explicitly want side effects to be run on the platform doing the compiling (build platform)::
 
@@ -47,17 +47,16 @@ different-OS requires harder to provision virtual machines or real devices.
 This is just more cumbersome, even ignoring worrying about build vs host effects.
 
 Another alternative is dumping and loading splices.
-This is where one first builds natively (host platform ≔ build platform) so TH can be evaluated, dumps the evaluated splices, and the builds cross (for the original host platform) by splicing in those dumped pre-evaluated splices rather than evaluating anything afresh.::
+This is where one first builds natively (host platform ≔ build platform) so TH can be evaluated, dumps the evaluated splices, and the builds cross (for the original host platform) by splicing in those dumped pre-evaluated splices rather than evaluating anything afresh::
 
   -- build for build platform (local host platform := overall build platform, native)
   data MyType = ...
-  -- Yay, works!
   makeLenses ''Foo -- dump this
 
 ::
+
   -- build for host platform (local host platform := overall host platform, cross)
   data MyType = ...
-  -- Yay, works!
   $(...) -- file in with dumped splice, no eval needed
 
 This became easier with `this patch <https://github.com/reflex-frp/reflex-platform/blob/master/splices-load-save.patch>`_.
@@ -65,24 +64,50 @@ Still, this requires building every package twice, since we redo the entire comp
 For example, imagine some code like::
 
   #ifdef ios_HOST_OS
-  data SomeIosFfiType
+  data SomeIosFfiType = ...
   $(iosBoilerplateHelper ''SomeIosFfiType)
   #endif
 
-If the splice is within the ``ifdef``, it won't be dumped.::
+If the splice is within the ``ifdef``, it won't be dumped::
 
   -- build for build platform (local host platform := overall build platform, native)
   #ifdef ios_HOST_OS -- ios_HOST_OS not defined
   -- dead code
-  data SomeIosFfiType
+  data SomeIosFfiType = ...
   $(iosBoilerplateHelper ''SomeIosFfiType) -- not dumped
   #endif
 
 When we compile to dump splices, compilation occurs on the native platform, and so the splice will be removed at preprocessing time before dumping.
-And deleting the CPP is no quick fix — if it is outside the ``ifdef``, the native one won't build!
-If it is outside the ``ifdef``, then when we compile to dump splices we will actually fail, since we're now trying to build ios-specific code on the wrong platform.
+And deleting the CPP is no quick fix::
 
-What we need instead is a way to say different code runs on different platforms.
+  -- build for build platform (local host platform := overall build platform, native)
+  -- #ifdef ios_HOST_OS -- remove CPP
+  -- live code code
+  data SomeIosFfiType = ... -- error!
+  -- ^ refers to things that don't exist on build platform
+  $(iosBoilerplateHelper ''SomeIosFfiType) -- don't even get this far
+  -- #endif -- remove CPP
+
+Nor is moving just the splice outside ``ifdef``::
+
+  -- build for build platform (local host platform := overall build platform, native)
+  #ifdef ios_HOST_OS
+  -- dead code
+  data SomeIosFfiType = ... -- dead code, trivially OK again
+  #endif
+  $(iosBoilerplateHelper ''SomeIosFfiType)
+  -- ^ error! 'SomeIosFfiType' doesn't exist
+
+Even if ``SomeIosFfiType`` doesn't have any iOS-only types in its definition, the generated code probably refers to ios-only identifiers::
+
+  -- build for build platform (local host platform := overall build platform, native)
+  -- #ifdef ios_HOST_OS -- remove CPP
+  -- live code code
+  data SomeIosFfiType = SomeIosFfiType Word64 -- OK this time
+  $(iosBoilerplateHelper ''SomeIosFfiType) -- error! expands to contain missing iOS-only identifier.
+  -- #endif -- remove CPP
+
+What we need instead is a way to say different code in quotes or splices runs on different platforms without resorting to half-working CPP tricks.
 
 Referencing platforms
 ~~~~~~~~~~~~~~~~~~~~~
