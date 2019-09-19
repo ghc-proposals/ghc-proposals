@@ -10,7 +10,7 @@ This proposal is [discussed at this pull request](https://github.com/ghc-proposa
 
 # Quick Look Impredicativity
 
-`ImpredicativeTypes` is one of those extensions which are not usually needed, but is unavoidable once you require it. Alas, `ImpredicativeTypes` has been in a half-broken state for quite some time, and not officially supported. This proposal describes a new approach to impredicative type checking which is (1) powerful enough for the most common use cases, and (2) predictable, so errors can be readily explained.
+`ImpredicativeTypes` is one of those extensions which are not usually needed, but is unavoidable once you require it. Alas, `ImpredicativeTypes` has been in a half-broken state for quite some time, and not officially supported. This proposal describes a new approach to impredicative type checking which is (1) powerful enough for the most common use cases, and (2) predictable, so errors can be readily explained. As we shall see, the desire for backwards compatibility forces us to introduce another extension, `ContravariantFunctions`.
 
 This proposal is based on this [paper draft](https://www.dropbox.com/s/hxjp28ym3lptmxw/quick-look-steps.pdf?dl=0), which in turn borrows many ideas from [*Guarded impredicative polymorphism*](https://www.microsoft.com/en-us/research/publication/guarded-impredicative-polymorphism/) (published in PLDI'18).
 
@@ -120,9 +120,9 @@ Prelude> :t choose g f
 choose g f :: Bool
 ```
 
-#### Alternative 1: fully remove contravariance
-
 There is a simple workaround that works most of the time: eta-expansion (you might need to eta-expand more than once, though). Taking the `choose`, `f`, and `g` functions defined above,in a non-contravariant world we need to eta-expand `f` to make it work: `choose (\x -> f x) g`; now the `x` is assigned type `forall a. a -> a`, which is then instantiated to `Int -> Int` before passing it to `f`.
+
+### The `ContravariantFunctions` extension
 
 After a preliminary assessment of which packages still compile under this new policy, it looks like most of them do not need it. Except one big and important one: `Cabal` (and anything that uses its API). This library often uses functions of the form:
 
@@ -132,25 +132,7 @@ f :: ( (... -> CabalIO a) -> ...) -> ...
 
 where `CabalIO a` is defined as `HasCallStack => IO a`. That means that whereas before we could pass a function `g` as argument, now we have to do something akin to `\... t ... -> g (\... x ... -> t ... x ...)`, which is quite annoying.
 
-#### Alternatives 2a and 2b: keep contravariance
-
-We could also keep contravariance in our subsumption relation. This opens two possibilities:
-
-* The "right" choice is to then make the left-hand side of function types not count as guarded, which implies that the quick look pass cannot infer polymorphic types from that position. Unfortunately, that means that we lose quite some inference power.
-
-  For example, in the type of `($) :: forall a b. (a -> b) -> a -> b` none of the positions is guarded. That means that if we have an argument such as `runST :: forall v. (forall s. ST s v) -> v`, the quick look pass will not give us the desired result `a := forall s. ST s v`, type-checking would fail instead.
-
-* The second choice is to make quick look look under those places as if function types were not contravariant, but then use contravariance in the subsumption relation. The problem here is that quick look is greedy, and always returns the *first* choice for each variable.
-
-  The consequences is that the order of arguments starts to matter again. In fact, this system would have the same problem as described above: `choose f g` would fail to type check, whereas `choose g f` would be accepted without further problems.
-
-#### Alternative 3: contravariance as a flag
-
-The third alternative is to make contravariance of functions only available if the extension `ContravariantFunctions` is on, which should be the default. In addition, we would make `ImpredicativeTypes` imply `NoContravariantFunctions`. As a result, unless you manually override this by adding another `LANGUAGE` pragme, quick look impredicativity uses non-contravariant functions.
-
-When **both** `ImpredicativeTypes` and `ContravariantFunctions` are enabled, the quick look phase does **not** consider the left-hand side of an arrow as a guarded place, thus inferring fewer things. On the other hand, the subsumption check is fully contravariant.
-
-The main advantage of this alternative is that we guarantee that the code using only `RankNTypes` keeps working as is. The disadvantage is that we get a "fork-like" proposal, in which the language changes (although slightly) depending on the set of flags you have.
+We thus propose to add another extension to GHC, called `ContravariantFunctions`, which should be disabled by default. When the extension is enabled, subsumption checking is done using full contravariance of function types (but during quick look contravariance does not enter the game). This means that `RankNTypes` + `ContravariantFunctions` behaves the same as the old `RankNTypes. This has the benefit of asking people to eta-expand their functions, while having a escape way for those libraries which would require too many changes.
 
 ### The typing rule for `($)`
 
@@ -172,7 +154,7 @@ As discussed below, there is already a branch of GHC in which these changes have
 
 `ImpredicativeTypes` has always been an advanced feature of the language. However, once you arrive at it, programmers often ask themselves: "what is stopping the compiler from accepting this?". This proposal gives an answer to that question, with a succint explanation: "impredicative is never guessed, it must be obvious from the simple parts of each application".
 
-The main drawback is the complicated treatment of contravariance that this proposal brings with it. It is arguable whether contravariance of function types is something a beginner (or even intermediate) Haskeller expects, since up to that point all types are compared by equality. However, it should be possible during error reporting to scan whether a type error talks about two types which could be related if contravariance was taking into account, and report a message on the lines of:
+The main drawback is the loss of contravariance that this proposal brings with it, unless an extension is eanbled. It is arguable whether contravariance of function types is something a beginner (or even intermediate) Haskeller expects, since up to that point all types are compared by equality. However, it should be possible during error reporting to scan whether a type error talks about two types which could be related if contravariance was taking into account, and report a message on the lines of:
 
 ```text
 Hint: try to eta-expand the second argument.
@@ -187,6 +169,8 @@ Another possibility is to drop impredicative type inference altogether, and expe
 ```haskell
 (++) @(forall a. a -> a) ids ([] @(forall a. a -> a))
 ```
+
+Finally, we could also enable `ContravariantFunctions` whenever `RankNTypes` is enabled but `ImpredicativeTypes` is not. The main disadvantage is that code that compiles under the former flag may stop compiling if you add the latter.
 
 ## Unresolved Questions
 
