@@ -82,6 +82,16 @@ This constitutes a re-interpretation of module re-export statements, that
 essentially allows qualified names to flow between modules in a transparent manner,
 the same way regular names are allowed to.
 
+Module self re-export: unchanged
+''''''''''''''''''''''''''''''''
+Considering module self-re-exports::
+   module M (module M) where ...
+
+Such self re-export does not add any qualified names to the export list.
+
+The rationale is that the local qualified namespace is often quite populous,
+and so reinterpretation to include it would hinder the established usage.
+
 Export entry with a 'qualified' keyword: qualified names only
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 In section 5.2, "Export lists", *Haskell2010*, with regards to the the list of cases
