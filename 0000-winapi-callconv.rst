@@ -33,7 +33,7 @@ convention for both. On `x86_64` GHC would then generate the following warning
         foreign import stdcall unsafe "static shlobj.h ShellExecuteA" c_ShellExecuteA
 
 
-Which is confusing as it's both incorrect, but also users seem to replace the
+Which is confusing as it's technically incorrect, but also users seem to replace the
 `stdcall` with `cdecl` in the source, which ends up breaking `x86`.
 
 The solution to this ends up needing to use `CPP` to correctly choose the right
@@ -68,6 +68,10 @@ suggestion as native compilers will correctly reinterpret this to the x86_64 ABI
 calling convention.
 
 The maintenance should be fairly low as the ABI is set and won't change.
+
+I propose this to be added without needing a language extension, as it does not
+modify the language at all.  It just makes use of clauses already in the existing
+specification.
 
 Drawbacks
 ---------
