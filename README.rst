@@ -102,7 +102,7 @@ What should a proposal look like?
 
 Each proposal document must follow the outline in the proposal templates. Templates are available for both `ReStructuredText <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.rst>`_, and `Markdown <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.md>`_.
 
-Here are some characteristics that a good proposal should have:
+Here are some characteristics that a good proposal should have.  But see also "Review criteria" below, for further guidance about the critera used to evaluate proposals.
 
 * It should be self-standing.  Some proposals accumulate a long and interesting discussion
   thread, but in ten years' time all that will be gone (except for the most assiduous readers).
@@ -439,6 +439,13 @@ and any other relevant considerations appropriately.
    solutions, none of which have that "aha" feeling of "this is the Right
    Way to solve this"; in that case we might delay rather than forge ahead
    regardless.
+   
+-  *Does not create a language fork*.  By a "fork" we mean
+
+  * It fails the test "Is this extension something that most people would be happy to enable, even if they don't want to use it?"
+  * It fails the rest "Do we think there's a reasonable chance this extension will make it into a future language standard?"; that is, the propoosal reflects the stylistic preferences of a subset of the Haskell community, rather than a consensus about the direction that (in the committee's judgement) we want to push the whole language.
+   
+   The idea is that unless we can see a path to a point where everyone has the extension turned on, we're left with different groups of people using incompatible dialects of the language. A similar problem arises with extensions that are mutually incompatible.
 
 -  *Fit with the language.* If we just throw things into GHC
    willy-nilly, it will become a large ball of incoherent and
