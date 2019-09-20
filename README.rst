@@ -234,7 +234,7 @@ When the discussion has ebbed down and the author thinks the proposal is ready, 
 
 1. Reviews the discussion thread and ensure that the proposal text accounts for
    all salient points. *Remember, the proposal must stand by itself, and be understandable
-   without reading the disucssion thread.* 
+   without reading the discussion thread.* 
 2. Adds a comment to the a pull request, briefly summarizing the major points raised
    during the discussion period and stating your belief that the proposal is
    ready for review. In this comment, tag the committee secretary (currently
@@ -362,7 +362,7 @@ is a polite ping/enquiry.
 
    If the technical debate is not rapidly resolved, the shepherd
    should return the proposal for revision. Further technical
-   discussion can then take place, the author can incorporate tha
+   discussion can then take place, the author can incorporate that
    conclusions in the proposal itself, and re-submit it.  Returning a
    proposal for revision is not a negative judgement; on the contrary
    it might connote "we absolutely love this proposal but we want it
@@ -375,7 +375,7 @@ is a polite ping/enquiry.
    should then be re-submitted for timely yes/no decision.  In this way,
    *no propoosal should languish in the committee review stage for long*,
    and every proposal can be accepted as-is, rather than suject to a raft
-   of ill-specified futher modifications.
+   of ill-specified further modifications.
 
    The author of the proposal may invite committee collaboration on clarifying
    technical points. There is a place to do this in the proposal template.
@@ -442,7 +442,7 @@ and any other relevant considerations appropriately.
    
 -  *Does not create a language fork*.  By a "fork" we mean
 
-  * It fails the test "Is this extension something that most people would be happy to enable, even if they don't want to use it?"
+  * It fails the test "Is this extension something that most people would be happy to enable, even if they don't want to use it?"; and if not,
   * It fails the rest "Do we think there's a reasonable chance this extension will make it into a future language standard?"; that is, the propoosal reflects the stylistic preferences of a subset of the Haskell community, rather than a consensus about the direction that (in the committee's judgement) we want to push the whole language.
    
    The idea is that unless we can see a path to a point where everyone has the extension turned on, we're left with different groups of people using incompatible dialects of the language. A similar problem arises with extensions that are mutually incompatible.
