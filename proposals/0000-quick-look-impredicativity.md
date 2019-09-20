@@ -154,7 +154,7 @@ As discussed below, there is already a branch of GHC in which these changes have
 
 `ImpredicativeTypes` has always been an advanced feature of the language. However, once you arrive at it, programmers often ask themselves: "what is stopping the compiler from accepting this?". This proposal gives an answer to that question, with a succint explanation: "impredicative is never guessed, it must be obvious from the simple parts of each application".
 
-The main drawback is the loss of contravariance that this proposal brings with it, unless an extension is eanbled. It is arguable whether contravariance of function types is something a beginner (or even intermediate) Haskeller expects, since up to that point all types are compared by equality. However, it should be possible during error reporting to scan whether a type error talks about two types which could be related if contravariance was taking into account, and report a message on the lines of:
+The main drawback is the loss of contravariance that this proposal brings with it, unless an extension is enabled. It is arguable whether contravariance of function types is something a beginner (or even intermediate) Haskeller expects, since up to that point all types are compared by equality. However, it should be possible during error reporting to scan whether a type error talks about two types which could be related if contravariance was taking into account, and report a message on the lines of:
 
 ```text
 Hint: try to eta-expand the second argument.
