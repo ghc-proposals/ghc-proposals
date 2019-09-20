@@ -443,8 +443,8 @@ and any other relevant considerations appropriately.
    
 -  *Does not create a language fork*.  By a "fork" we mean
 
-  * It fails the test "Is this extension something that most people would be happy to enable, even if they don't want to use it?"; and if not,
-  * It fails the rest "Do we think there's a reasonable chance this extension will make it into a future language standard?"; that is, the propoosal reflects the stylistic preferences of a subset of the Haskell community, rather than a consensus about the direction that (in the committee's judgement) we want to push the whole language.
+  * It fails the test "Is this extension something that most people would be happy to enable, even if they don't want to use it?"; 
+  * And it also fails the test "Do we think there's a reasonable chance this extension will make it into a future language standard?"; that is, the propoosal reflects the stylistic preferences of a subset of the Haskell community, rather than a consensus about the direction that (in the committee's judgement) we want to push the whole language.
    
    The idea is that unless we can see a path to a point where everyone has the extension turned on, we're left with different groups of people using incompatible dialects of the language. A similar problem arises with extensions that are mutually incompatible.
 
