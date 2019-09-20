@@ -420,10 +420,10 @@ Review criteria
 ---------------
 
 Below are some criteria that the committee and the supporting GHC
-community will generally use to evaluate a proposal. This list
-is merely set of a guidelines and questions to consider; none is an absolute bar.
-It is the committee's job to weigh these
-and any other relevant considerations appropriately.
+community will generally use to evaluate a proposal. These criteria
+are guidelines and questions that the committee will consider.
+None of these criteria is an absolute bar: it is the committee's job to weigh them,
+and any other relevant considerations, appropriately.
 
 -  *Utility and user demand*. What exactly is the problem that the
    feature solves? Is it an important problem, felt by many users, or is
