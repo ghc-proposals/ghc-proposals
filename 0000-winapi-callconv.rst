@@ -120,10 +120,6 @@ I propose to let
    foreign export winapi "foo" c_foo :: IO ()
 
 
-have the same semantics as import for determining
-the calling convention but also generate a warning such as
+have the same semantics as import for determining the calling convention.  It
+has a valid use-case in if the user wants to create a "Windows API" style DLL.
 
-::
-
-    * the 'winapi' calling convention is not supported for exports,
-      treating as ccall
