@@ -122,7 +122,7 @@ With this proposal, we could rebind ``$#`` like so:
   instance Applicable Exp Exp Exp where
     apply = AppE
 
-  f $# a = apply f a
+  f $# a = apply GHC.$# f GHC.$# a
 
 This would enable the simplified examples shown in the Motivation.
 
