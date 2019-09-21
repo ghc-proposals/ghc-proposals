@@ -54,19 +54,32 @@ Could be written like:
 Proposed Change Specification
 -----------------------------
 
-I propose that the juxtaposition syntax for application
-(i.e. ``f a``) essentially becomes syntactic sugar for ``(f $# a)``
-with the caveat that the applications in ``(f $# a)`` are not further
-desugared, as that would cause an infinite loop.
+I propose that function application ``f a`` become syntactic sugar for
+``f $# a``. Operator application remains the same (i.e. ``f $# a`` is
+thus not further desugared).
 
-By default, this uses a new ``$#`` operator found in ``GHC.Exts``.
-However, if the ``RebindableApplication`` extension is turned on, it
-uses the ``$#`` from the current scope.
++-----------------------+------------------+-----------------------+
+| Juxtaposition         | Current Syntax   |  Proposed Desugaring  |
++=======================+==================+=======================+
+| Function Application  | ``f a``          | ``f $# a``            |
++-----------------------+------------------+-----------------------+
+| Type Application      | ``f @t``         | ``f @t``              |
++-----------------------+------------------+-----------------------+
+| Operator              | ``a <> b``       | ``a <> b``            |
++-----------------------+------------------+-----------------------+
+| Left Section          | ``(e <>)``       | ``\x -> x <> e``      |
++-----------------------+------------------+-----------------------+
+| Right Section         | ``(<> e)``       | ``\x -> e <> x``      |
++-----------------------+------------------+-----------------------+
 
-The ``S#`` Operator
+By default, the function application desugaring uses a new ``$#`` operator
+found in ``GHC.Exts``. However, if the ``RebindableApplication`` extension
+is turned on, it uses the ``$#`` from the current scope.
+
+The ``$#`` Operator
 ^^^^^^^^^^^^^^^^^^^
 
-The ``S#`` operator is designed to represent standard function
+The ``$#`` operator is designed to represent standard function
 application, thus it would ideally have the following signature:
 
 .. code-block:: haskell
@@ -76,24 +89,17 @@ application, thus it would ideally have the following signature:
 
 However, due to the restrictions of levity polymorphism, a function
 cannot have this signature. As such, ``$#`` would have to be magic,
-much like unboxed tuple constructors (ex. ``(#,,#)``).
-
-The magic ``$#`` comes with two rules:
-
-1. ``$#`` cannot be used unsaturated (i.e. one can not write ``($) = ($#)``).
-   This would make ``$#`` a function, which it is not.
-2. When ``$#`` is applied, the application is not further desugared.
-   This means ``a $# b`` does not become ``($#) $# a $# b`` -- which would
-   be invalid anyway due to rule 1.
+much like unboxed tuple constructors (ex. ``(#,,#)``). Such magic requires
+that ``$#`` cannot be used unsaturated (i.e. one can not write ``($) = ($#)``).
+This would make ``$#`` a function, which it is not.
 
 Rebinding ``$#``
 ^^^^^^^^^^^^^^^^
 
 Since ``$#`` is magic, rebindings of ``$#`` should be magic as well.
-As such, when ``RebindableApplication`` is enabled, they are.
-The binding is allowed to be fully levity polymorphic. The new ``$#``
-is unable to be used unsaturated and its applications are not further
-desugared.
+As such, when ``RebindableApplication`` is enabled, they are -- the binding
+is allowed to be fully levity polymorphic, but the new ``$#`` is unable to be
+used unsaturated.
 This means that top-level declarations of ``$#`` can not be exported from
 normal modules (as they can't be compiled into functions) and are thus
 automatically excluded from module export lists.
@@ -143,25 +149,29 @@ notation is merely syntactic sugar.
 ``TypeApplications``
 ^^^^^^^^^^^^^^^^^^^^
 
-With the ``TypeApplications`` extension, functions can have types
-applied to them. This proposal does not overloaded this kind of application.
-However, there is still a question as to whether the proposed
-desugaring could negatively impact ``TypeApplications``.
-
-I propose that code like:
+With the ``TypeApplications`` extension, functions can have types applied
+to them. This proposal does not currently overload this kind of application.
+I have proposed that code like:
 
 .. code-block:: haskell
 
   f @Int @Char a b
 
-desugars to:
+desugar to:
 
 .. code-block:: haskell
 
   f @Int @Char $# a $# b
 
-I think this should work as desired.
+However, I would ideally like it to desugar to
 
+.. code-block:: haskell
+
+  f $@ Int $@ Char $# a $# b
+
+where ``$@`` is the (new) type application operator. Unfortunately, I believe
+this would be too complicated due to differences in type and term parsing, so
+I have not included it in the proposed changes.
 
 Costs and Drawbacks
 -------------------
