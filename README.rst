@@ -247,7 +247,7 @@ When the discussion has ebbed down and the author thinks the proposal is ready, 
 <#committee-process>`_.  (If this does not happen within a day or two, please
 ping the secretary or the committee.)
 
-What is a dormant proposal
+What is a dormant proposal?
 --------------------------
 
 In order to keep better track of actively discussed proposals, proposals that
@@ -258,7 +258,7 @@ proposal by picking up the discussion (and possibly asking `the secretary
 
 You can see the `list of dormant proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22dormant%22>`_.
 
-Who is the committee
+Who is the committee?
 --------------------
 You can reach the committee by email at ghc-steering-committee@haskell.org:
 
