@@ -100,23 +100,6 @@ Hopefully this section will be empty by the time the proposal is brought to
 the steering committee.
 
 
-Proposal Collaboration
-----------------------
-Choose **one** of the following two statements (and delete the other), or write
-your own that addresses this theme:
-
-1. Writing precise specifications is hard. Accordingly, I invite the committee
-   members to collaborate in writing this proposal, helping to make the specification
-   of my new features as tight as possible and easiest to implement. These
-   external contributions are meant to clarify my intent, not change it, and I retain
-   the ability to shape the final proposal.
-   
-2. Writing precise specifications is hard. Accordingly, I seek to increase my
-   ability to perform this skill and welcome constructive, detailed criticism
-   in how to make my specification more precise. I recognize that doing so may
-   take many rounds and will interpret others' advice as a way to improve my
-   craft. If I get frustrated with the process, I will speak up early.
-
 Implementation Plan
 -------------------
 (Optional) If accepted who will implement the change? Which other resources

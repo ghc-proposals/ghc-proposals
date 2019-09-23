@@ -134,8 +134,10 @@ Here are some characteristics that a good proposal should have.  But see also "R
   All these costs constitute a permanent tax on every future programmer, langauge designer, and GHC maintainer.  The tax may well be worth it (a language without polymorphism
   would be simpler but we don't want it), but the case should be made.
 
-  The case is stronger if lots of people jump in saying "yes, this would be so
-  useful to me".  The committee is often faced with proposals that are reasonable,
+  The case is stronger if lots of people express support by giving a "thumbs-up"
+  in GitHub. Even better is the community contributes new examples that illustrate
+  how the proposal will be broadly useful.
+  The committee is often faced with proposals that are reasonable,
   but where there is a suspicion that no one other than the author cares.
   Defusing this suspicion, by describing use-cases and inviting support from others,
   is helpful.
@@ -230,12 +232,12 @@ comment or proposal, feel free to use GitHub's "Reactions"
 How to bring a proposal before the committee
 ---------------------------------------------
 
-When the discussion has ebbed down and the author thinks the proposal is ready, he or she
+When the discussion has ebbed down and the author thinks the proposal is ready, they
 
-1. Reviews the discussion thread and ensure that the proposal text accounts for
+1. Review the discussion thread and ensure that the proposal text accounts for
    all salient points. *Remember, the proposal must stand by itself, and be understandable
    without reading the discussion thread.* 
-2. Adds a comment to the a pull request, briefly summarizing the major points raised
+2. Add a comment to the a pull request, briefly summarizing the major points raised
    during the discussion period and stating your belief that the proposal is
    ready for review. In this comment, tag the committee secretary (currently
    ``@nomeata``).
@@ -293,7 +295,7 @@ Committee process
 The committee process starts once the secretary has been notified that a
 proposal is ready for decision.
 
-The steps below have timescales attached, show that everyone shares
+The steps below have timescales attached, so that everyone shares
 the same expectations.  But they are only reasonable expectations.
 The committee consists of volunteers with day jobs, who are reviewing
 proposals in their spare time.  If they do not meet the timescales
@@ -328,7 +330,7 @@ is a polite ping/enquiry.
 
    * post their recommendation, with a rationale, on the GitHub discussion thread,
    * label the pull request as ``Pending committee review``,
-   * re-title the proposal, appending ``(under review)`` at the end. (This enables easy email filtering.)
+   * re-title the proposal pull request, appending ``(under review)`` at the end. (This enables easy email filtering.)
    * drop a short mail to the mailing list informing the committee that
      discussion has started.
 
@@ -373,12 +375,15 @@ is a polite ping/enquiry.
    proposal *as it stands*.  If new issues come up, they should be
    resolved, incorporated in the proposal, and the revised proposal
    should then be re-submitted for timely yes/no decision.  In this way,
-   *no propoosal should languish in the committee review stage for long*,
-   and every proposal can be accepted as-is, rather than suject to a raft
+   *no proposal should languish in the committee review stage for long*,
+   and every proposal can be accepted as-is, rather than subject to a raft
    of ill-specified further modifications.
 
    The author of the proposal may invite committee collaboration on clarifying
-   technical points. There is a place to do this in the proposal template.
+   technical points; conversely members of the committee may offer such help.
+
+   When a proposal is returned for revision, GitHub labels are updated accordingly
+   and the ``(under review)`` suffix is removed from the title of the PR.
 
 -  The decision is announced, by the shepherd or the secretary, on the Github
    thread and the mailing list.
@@ -444,7 +449,7 @@ and any other relevant considerations, appropriately.
 -  *Does not create a language fork*.  By a "fork" we mean
 
   * It fails the test "Is this extension something that most people would be happy to enable, even if they don't want to use it?"; 
-  * And it also fails the test "Do we think there's a reasonable chance this extension will make it into a future language standard?"; that is, the propoosal reflects the stylistic preferences of a subset of the Haskell community, rather than a consensus about the direction that (in the committee's judgement) we want to push the whole language.
+  * And it also fails the test "Do we think there's a reasonable chance this extension will make it into a future language standard?"; that is, the proposal reflects the stylistic preferences of a subset of the Haskell community, rather than a consensus about the direction that (in the committee's judgement) we want to push the whole language.
    
    The idea is that unless we can see a path to a point where everyone has the extension turned on, we're left with different groups of people using incompatible dialects of the language. A similar problem arises with extensions that are mutually incompatible.
 
