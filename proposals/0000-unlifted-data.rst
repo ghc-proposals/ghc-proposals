@@ -442,6 +442,31 @@ we should eliminate the indirection in constructors like ``Force`` (we
 certainly should!) and to what degree we could infer and let the user omit
 ``Force`` constructors.
 
+Pattern match checking with unlifted types will be weird in some edge cases.
+Consider the following example:
+
+::
+ 
+  data unlifted SVoid 
+  f :: SVoid -> ()
+  f _ = ()
+
+Should this program be accepted without warning? It would be accepted for
+lifted ``Void``, because ``f (error "boom")`` is a valid call and would
+evaluate to ``()``. But with unlifted ``Void`` this doesn't make sense anymore:
+Because of call-by-value, the ``error`` thunk will be evaluated before entering
+``f``, resulting in a crash. In that regard, it's similar to the situation with
+
+::
+
+  data lifted Void
+  f :: Void -> ()
+  f !_ = ()
+
+And should probably elicit an inaccessible RHS warning. I guess this is accurate
+for unlifted functions as well as long as we don't allow functions without
+bindings.
+
 Costs and Drawbacks
 -------------------
 I have no idea how long this will take to be implemented. Presumably all phases
