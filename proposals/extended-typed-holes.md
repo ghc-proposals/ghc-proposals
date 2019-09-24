@@ -28,8 +28,38 @@ compiler during compilation beyond just parsing and type errors. Currently,
 typed hole plugins allow users to extend how these holes are dealt with. But,
 the only way the user can pass any information to the plugin is via flags or
 via the name of the hole, which is not an ideal situation. This means that all
-the information must be passed along as alphanumeric strings, and not as 
-Haskell datastructures as we'd like.
+the information must be passed along as alphanumeric strings (without spaces in
+case of names!), and not in the type safe manner of Haskell data structures as
+we'd like. Strings do allow us to define some language that the user would have
+to learn, but does not allow for expressive combinators.
+
+This limits the usefulness of typed-hole plugins and means that IDE features
+that interact with holes would either need to pass complex flags or hard to
+read names to plugins for any advanced functionality such as limiting synthesis
+to specific modules or constraints. 
+
+As an example, consider the [DjinnHoogleModPlugin](https://github.com/Tritlo/ExampleHolePlugin/tree/master/djinn-hoogle-mod-plugin):
+```
+{-# OPTIONS -fplugin=DjinnHoogleModPlugin
+            -funclutter-valid-hole-fits #-}
+module Main where
+import Control.Monad
+f :: (a,b) -> a
+f = _invoke_Djinn
+g :: [a] -> [[a]]
+g = _invoke_Hoogle
+h :: [[a]] -> [a]
+h = _module_Control_Monad
+
+
+main :: IO ()
+main = return ()
+```
+
+Here, the name of the hole is used to invoke different utilities and filter by
+specific modules, but the limitation of having only the name makes it impractical
+to invoke more than one command at a time, and requires us to use `_` in the
+names of the modules we want to filter by.
 
 
 ## Proposed Change Specification
@@ -42,7 +72,11 @@ on the lexing of the following tokens:
 +  `_$(` opens a extended typed-hole with a template haskell within.
 +  `_$$(` opens an extended typed-hole with a typed template haskell within.
 
+Both `_$(` and `_$$(` require `TemplateHaskell` to be enabled as well as
+`ExtendedTypedHoles`.
+
 We extend the grammer by adding the following constructs:
+
 ```
 extended_typed_hole
         : '_(' maybe_hole_content hole_close
@@ -78,7 +112,8 @@ need to handle the new `HsExpr`.
 
 ## Examples
 
-As an example, consider the ExtendedHolesPlugin. By defining a DSL, the plugin
+As an example, consider the [ExtendedHolesPlugin](https://github.com/Tritlo/ExampleHolePlugin/tree/master/extended-holes-plugin).
+By defining a DSL, the plugin
 can express how users can interact with it via template haskell expressions.
 This allows us to compile the following:
 
@@ -90,9 +125,14 @@ module Main where
 import Control.Monad
 import Language.Haskell.TH
 import ExtendedHolesPlugin
+import Control.Monad
+
 
 f :: (a,b) -> b
 f = _$(invoke "hoogle" & filterBy "Prelude" & invoke "djinn")0
+
+g :: [[a]] -> [a]
+g = _$(invoke "hoogle" & filterBy "Control.Monad")1
 
 main = return ()
 ```
@@ -101,17 +141,17 @@ where `invoke` and `filterBy` are defined by the plugin itself. This results
 in the following output:
 
 ```
-Main.hs:10:5: error:
+Main.hs:12:5: error:
     • Found hole: _$(...)0 :: (a, b) -> b
       Where: ‘a’, ‘b’ are rigid type variables bound by
                the type signature for:
                  f :: forall a b. (a, b) -> b
-               at Main.hs:9:1-15
+               at Main.hs:11:1-15
       Or perhaps ‘_$(...)0’ is mis-spelled, or not in scope
     • In the expression: _$(...)0
       In an equation for ‘f’: f = _$(...)0
     • Relevant bindings include
-        f :: (a, b) -> b (bound at Main.hs:10:1)
+        f :: (a, b) -> b (bound at Main.hs:12:1)
       Valid hole fits include
         (\ (_, a) -> a)
         (\ (_, a) -> seq (head (cycle (([]) ++ ([])))) a)
@@ -120,11 +160,33 @@ Main.hs:10:5: error:
         f :: (a, b) -> b
         snd :: forall a b. (a, b) -> b
    |
-10 | f = _$(invoke "hoogle" & filterBy "Prelude" & invoke "djinn")0
+12 | f = _$(invoke "hoogle" & filterBy "Prelude" & invoke "djinn")0
    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Main.hs:15:5: error:
+    • Found hole: _$(...)1 :: [[a]] -> [a]
+      Where: ‘a’ is a rigid type variable bound by
+               the type signature for:
+                 g :: forall a. [[a]] -> [a]
+               at Main.hs:14:1-17
+      Or perhaps ‘_$(...)1’ is mis-spelled, or not in scope
+    • In the expression: _$(...)1
+      In an equation for ‘g’: g = _$(...)1
+    • Relevant bindings include
+        g :: [[a]] -> [a] (bound at Main.hs:15:1)
+      Valid hole fits include
+        Hoogle: Data.List subsequences :: [a] -> [[a]]
+        Hoogle: Data.List permutations :: [a] -> [[a]]
+        g :: [[a]] -> [a]
+        join :: forall (m :: * -> *) a. Monad m => m (m a) -> m a
+        msum :: forall (t :: * -> *) (m :: * -> *) a.
+                (Foldable t, MonadPlus m) =>
+                t (m a) -> m a
+        forever :: forall (f :: * -> *) a b. Applicative f => f a -> f b
+   |
+15 | g = _$(invoke "hoogle" & filterBy "Control.Monad")1
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ```
-
-
 
 ## Effect and Interactions
 
@@ -142,9 +204,7 @@ this cost is minor.
 
 
 ## Alternatives
-
 + Do nothing, and use the names of holes as a way of communicating with plugins.
-+ Disable extensions to typed-holes alltogether.
 
 ## Unresolved Questions
 
@@ -152,6 +212,9 @@ this cost is minor.
   entirely different like `<...>`. `_(...)` and `_$(...)` matches the current template haskell syntax
   nicely though, and it follows the convention that things on the right hand side that start with an
   underscore are typed-holes.
++ Should we make `ExtendedTypedHoles` and the `_(...)`  syntax available without requiring the extension
+  flag enabled? This would allow us to use `_` for regular typed-holes (without any suggestions etc.), and
+  require users that want suggestions or to use plugins to use  the `_(...)` syntax.
 
 ## Implementation Plan
 
