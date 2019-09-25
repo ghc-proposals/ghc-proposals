@@ -67,9 +67,8 @@ names of the modules we want to filter by.
 We add `-XExtendedTypedHoles` to the available extensions, which turns
 on the lexing of the following tokens:
 + `_(` for extended typed-holes, whose contents are strings
-+ `\) $decdigit $decdigit*` for allowing users to enumerate the holes,
-  with e.g. `_(...)0`, ..., `_(...)n`.
-+ `\) @varid` same as above, but allows arbitrary names for the hole.
++ `\) $idchar $idchar*` for allowing users to enumerate the holes,
+  with e.g. `_(...)0`, ..., `_(...)n`, or name them e.g. `_(...)a` or `_(...)fix_this`.
 +  `_$(` opens a extended typed-hole with a template haskell within.
 +  `_$$(` opens an extended typed-hole with a typed template haskell within.
 
@@ -96,7 +95,7 @@ maybe_hole_content
   | {- empty -}
 ```
 
-where `CLOSE_HOLE` is the `\) $decdigit $decdigit*` or `\) @varid` token.
+where `CLOSE_HOLE` is the `\) $idchar $idchar*` lexeme.
 
 These are parsed into a new `HsExpr`, `HsExtendedHole`, which either contains
 the string, or the `LHsExpr` containing the splice.
@@ -221,8 +220,8 @@ a type error, complete programs are unlikely to have holes in them.
   entirely different like `<...>`. `_(...)` and `_$(...)` matches the current template haskell syntax
   nicely though, and it follows the convention that things on the right hand side that start with an
   underscore are typed-holes.
-+ Is `_(...)varid` a form that is neccessary, or is it enough that users can use `_(...)0`, ..., `_(...)n`
-  to disambiguate between holes.
++ Is `_(...)idchars` a form that is neccessary, or is it enough that users can use `_(...)0`, ..., `_(...)n`
+  to disambiguate between holes?
 + Should we make `ExtendedTypedHoles` and the `_(...)`  syntax available without requiring the extension
   flag enabled? This would allow us to use `_` for regular typed-holes (without any suggestions etc.), and
   require users that want suggestions or to use plugins to use  the `_(...)` syntax.
