@@ -227,7 +227,8 @@ a type error, complete programs are unlikely to have holes in them.
   require users that want suggestions or to use plugins to use  the `_(...)` syntax.
 + Should we define and require that the template haskell splices have a specific type? This could ease the
   interop between different plugins, but we'd also like to give plugin developers as much freedom as possible.
-
++ Should we allow the hole plugins to solve the constraint and result in a splice instead of an error? This
+  seems like an avenue that could be explored further in the future.
 ## Implementation Plan
 
 The implementation will be done by @Tritlo, and is already partly available at [!1766](https://gitlab.haskell.org/ghc/ghc/merge_requests/1766).
