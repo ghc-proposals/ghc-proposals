@@ -69,6 +69,7 @@ on the lexing of the following tokens:
 + `_(` for extended typed-holes, whose contents are strings
 + `\) $decdigit $decdigit*` for allowing users to enumerate the holes,
   with e.g. `_(...)0`, ..., `_(...)n`.
++ `\) @varid` same as above, but allows arbitrary names for the hole.
 +  `_$(` opens a extended typed-hole with a template haskell within.
 +  `_$$(` opens an extended typed-hole with a typed template haskell within.
 
@@ -95,11 +96,16 @@ maybe_hole_content
   | {- empty -}
 ```
 
-where `CLOSE_HOLE` is the `\) $decdigit $decdigit*` token.
+where `CLOSE_HOLE` is the `\) $decdigit $decdigit*` or `\) @varid` token.
 
 These are parsed into a new `HsExpr`, `HsExtendedHole`, which either contains
-the string, or the `LHsExpr` containing the splice. In case of the splice,
-it is renamed during renaming and type-checked during type-checking.
+the string, or the `LHsExpr` containing the splice.
+
+In case of the splice, it is renamed during renaming and type-checked during
+type-checking, and generally behave in the same way and adhere to the same
+rules as regular template haskell splices, i.e. they are run at the same time.
+The only difference is that the resulting expression is not spliced into the code,
+but rather passed along with the `ExtendedExprHole` to the constraint solver.
 
 When the type-checker encounters a `HsExtendedHole` expression, it emits
 an insoluable `CHoleCan` containing a `ExtendedExprHole` constraint with
@@ -137,8 +143,9 @@ g = _$(invoke "hoogle" & filterBy "Control.Monad")1
 main = return ()
 ```
 
-where `invoke` and `filterBy` are defined by the plugin itself. This results
-in the following output:
+where `invoke :: String -> Q Exp` and `filterBy :: String -> Q Exp`
+and the `(&) :: Q Exp -> Q Expr -> Q Exp` combinator are defined by the
+plugin itself. This results in the following output:
 
 ```
 Main.hs:12:5: error:
@@ -202,6 +209,8 @@ typed hole plugins to make effective use of this new information, but since
 this is behind an extension and does not interfere with previous functionality,
 this cost is minor.
 
+The extended typed-holes are a bit notation heavy, but since they always result in
+a type error, complete programs are unlikely to have holes in them.
 
 ## Alternatives
 + Do nothing, and use the names of holes as a way of communicating with plugins.
@@ -212,9 +221,13 @@ this cost is minor.
   entirely different like `<...>`. `_(...)` and `_$(...)` matches the current template haskell syntax
   nicely though, and it follows the convention that things on the right hand side that start with an
   underscore are typed-holes.
++ Is `_(...)varid` a form that is neccessary, or is it enough that users can use `_(...)0`, ..., `_(...)n`
+  to disambiguate between holes.
 + Should we make `ExtendedTypedHoles` and the `_(...)`  syntax available without requiring the extension
   flag enabled? This would allow us to use `_` for regular typed-holes (without any suggestions etc.), and
   require users that want suggestions or to use plugins to use  the `_(...)` syntax.
++ Should we define and require that the template haskell splices have a specific type? This could ease the
+  interop between different plugins, but we'd also like to give plugin developers as much freedom as possible.
 
 ## Implementation Plan
 
