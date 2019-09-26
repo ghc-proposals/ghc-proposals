@@ -16,7 +16,7 @@ Typed-holes are a powerful way to interact with the compiler during compilation,
 to ask for more information about the context and (recently) to get suggestions
 on what could be used in place of the hole. However, the user can only influence
 the name of the hole, with the rest being determined by the hole's context.
-We propose to add a new extension, `-XExtendedTypedHoles` to allow users to
+We propose to add a new extension, `ExtendedTypedHoles` to allow users to
 communicate more efficiently with the compiler by adding 3 new syntactic constructs
 to GHC that represent typed-holes by using `_(...)`, `_$(...)` and `_$$(...)`
 where `...` is a string, a template haskell or a typed template haskell expressions
