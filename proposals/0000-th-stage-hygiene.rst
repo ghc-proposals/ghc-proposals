@@ -20,6 +20,9 @@ To fix this, enforce stronger separation between the stages.
 Motivation
 ------------
 
+*N.B. this proposal uses the dreaded Autoconf "build" "host" "target" terminology.*
+*.See the appendix for what those mean.*
+
 Hacking TH today
 ~~~~~~~~~~~~~~~~
 
@@ -547,6 +550,96 @@ Here is a rough plan.
 
 #. Refactor the implementation of Template Haskell to use the per-stage data-types.
 
+Appendix: "build", "host", and "target" terminology, and some opinions
+------------------------------------------------------------------------
+
+These terms come from GNU Autoconf `<ttps://gcc.gnu.org/onlinedocs/gccint/Configure-Terms.html>`_.
+You may also want to compare Nixpkgs's documentation, `<https://nixos.org/nixpkgs/manual/#sec-cross-platform-parameters>`_, as Nixpkgs's use of these terms very much influenced this proposal.
+
+build
+  The "build" platform is the platform on which the thing is built;
+  It is where the work is done.
+  One should always strive to not leak the build platform; artifacts should be shareable regardless of where they are built.
+
+host
+  The "host" platform is the platform on which the thing will be run.
+  This is the most important platform: it's not obscure like "target", and its not something that ought not to leak (and thus be worried about transitively) like "host".
+  Too bad it also has the least salient name of the three!
+  Countless bugs have been caused by people gravitating towards build and target instead.
+
+target
+  The "target" platform is where a compiler's generated code will run.
+  The target platform is, unlike the other two platforms, not actually fundamental to the process of building software.
+  It is only relevant for [building] compilers.
+  It is also not a primitive concept: the target platform is the emitted code's host platform.
+  But we could also speak of the "emitted code's emitted code's emitted code's.....host platform".
+  Naming just one inductive step was not a good idea, and also has caused much confusion.
+
+Here are some examples / informal definitions:
+
+- "Native" means ``build = host``.
+  I don't like the connotations of this choice of words:
+  It implies that the "natural" environment of build artifact is where it is built, but that's silly, it should be where it runs!
+  Moreover since the build artifacts should not betray the build platform, the nativeness vs crossness of build artifacts should be unobservable from the host platform.
+
+- "Cross" I use to mean ``build != host``, but a cross compiler is ``host != target``.
+  If one built the cross compiler themselves, we have ``build = host != target``.
+  Confusion between cross compilers and cross-compiled compilers, has muddled this.
+
+- As hinted in the notes on the target platform we have a law where if ``a `builds` b``, then ``host b`` = ``build a``.
+
+This is a rather colorful appendix, but I really hope to convey a shift in perspective that the dry definitions alone may fail to do.
+Despite Make's early popularizing of call-by-need semantics (if you squint) at build system authors, they reverted to conventional imperative thinking for cross compilation and bootstrapping.
+If you focus on the building, the work, and who does it, then the build platform is given undo importance:
+Native is normal, cross is weird; ``if cross then ... else ...`` code abounds.
+But try focusing on the needing, the "why", so the subject and object are switched if you imagine being a anthropomorphized dependency node and looking at your now-flipped edges and new adjacent nodes like I do!
+The host platform regains its rightful primacy:
+We "need" something to be built that "run" on our platform, we don't care where it is built.
+Target vs host comparisons are also less of a concern:
+If the needer doesn't care where the dependency is built, it should care even less where the compiler that built the dependency is built.
+If the compiler is multi-target, and the runtime and standard libraries can be built separately, then "target" almost isn't needed at all:
+every node in the dependency graph is uniquely determined (say for caching purposes) by its build and host platforms (and dependency closure).
+
+Platforms and stages
+~~~~~~~~~~~~~~~~~~~~
+
+I said target "'target' almost isn't needed" because ironically, given my general disdain for abstract platforms other than build and host, this proposal makes them relevant again.
+While stages less than 0, corresponding to "build", "pre-build", "pre-pre-build", etc, should never leak in the library's interface,
+stages greater than 0---quotes and nested quotes---corresponding to "target, "post-target", "post-post-target", do and must influence the interface.
+From the building perspective this is simple: quotes are not eliminated by compilation, they remain in the interface, the package is thinking further and further ahead on how it is used.
+From the needing perspective, things are more subtle.
+If I have a ``-1`` import on ``Foo``, and splice some code from ``Foo``, I could end up with a quote form ``Foo`` in exposed in stage 0 of myself.
+This imposes a ``target Foo ~ host Me`` constraint.
+The more nested quotes a package exposes, the more such constraints we are obligated to abide by.
+For sake of sound but not agonizing caching, it is crucial to know how just many positive stages dependencies have to inflict downstream.
+
+Rigid vars
+~~~~~~~~~~
+
+Why bother with these abstract platforms?
+Why not have something like separate Linux vs Windows ``import``s and ``build-depends``, or separate native vs cross ones?
+Many systems in fact work this way; I changed Nixpkgs and `Meson`_ to *not* work this way as best as I could.
+The simple answer is there's a combinatorial explosion.
+There's many arches * many OSes * many libcs * many linking strategies that may sadly be observable, etc.
+It doesn't scale to pick out individual combinations.
+There is also a deeper answer that this doesn't reflect the structure anything people write.
+From the building perspective, this is simple enough: build stuff for all these platforms, then build stuff using those platforms, done!
+From the needing perspective, this is weird because ``build = Windows, host = Linux`` (I'll abbreviate this ``Linux -> Windows``) is nothing like ``Windows -> Linux``.
+Worse, in the native case, one gets *silently spoiled* with a bunch of "build ~ host" equalities that silently disappear in the cross case.
+"Cross vs Native" also adds a bunch of useless ``if cross-build then cross-thing else native-thing`` boilerplate to everything.
+This is why everything (Haskell and beyond) breaks on cross: entropy increases and implicit assumptions never refuted by CI proliferate.
+
+In the spirit of "pay for what you use", the design maxim is to start with as few constraints as possible, and have the user state their assumptions/requirements.
+All the platforms of all the stages are abstract rigid vars, and the code can ask questions and case on answers.
+[Note that the oh so convenient decidability of these questions about the static platforms -> casing -> non parametricity can pull against the goal of monotonicity, but this tension is more design question for `CPP replacements`_ than TH stage hygiene.]
+In this case what one finds is there is very little use for a ``build me ~ host me`` constraint, unless one is writing a GHCi or something.
+It's just rather arcane.
+The crutch that bedeviled most code by stealth is now no longer needed!
+
 .. _`"naive" Core interpreter`: https://github.com/ghc-proposals/ghc-proposals/issues/162
 
 .. [InferringScope] https://cs.brown.edu/~sk/Publications/Papers/Published/pkw-inf-scope-syn-sugar/paper.pdf
+
+.. _`Meson`: http://mesonbuild.com/
+
+.. _`CPP replacements`: https://icfp19.sigplan.org/details/hiw-2019-papers/9/Configuration-but-without-CPP
