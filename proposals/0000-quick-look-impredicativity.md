@@ -64,11 +64,11 @@ For example, suppose we are inferring the type of `id True`:
    c. We perform the subtype check `alpha <= Bool`, leading to the unification `alpha := Bool`;
 4. The result of the inference is `alpha`; after zonking the result is `Bool`.
 
-When `ImpredicativeTypes` is on we introduce an additional step between (2) and (3), which we call *quick look*. Quick look traverses the arguments of the application, and tries to infer as much impredicative instantiations as possible. The results are applied before step (3), which means that arguments are type checked with the correct impredicative instantiations. Another way to look at this proposal is that each application is type checked *twice*: first the "simple" pass tries to infer impredicative instantiation, which is then fed to the second, real pass.
+When `ImpredicativeTypes` is on we introduce an additional step between (2) and (3), which we call *quick look*. Quick look traverses the arguments of the application, and tries to infer as much impredicative instantiations as possible. The results are applied before step (3), which means that arguments are type checked with the correct impredicative instantiations. The "quick look" pass only traverses *simple expressions*, which we define to be (possibly nested) applications of variables in the environment.
 
-The name "quick look"  was chosen because this additional step only traverses the "simple" cases of type checking, namely (possibly nested) applications of variables in the environment. In those cases it is crystal clear how impredicative instantiation is threaded. On the contrary, it never looks at abstractions, pattern matching, `let`s, or any other expression.
+Another way to look at this proposal is that each application is type checked *twice*: first the "quick look" pass tries to infer impredicative instantiation, which is then fed to the second, real pass. For simple expressions it is crystal clear how impredicative instantiation is threaded. On the contrary, it never looks at abstractions, pattern matching, `let`s, or any other expression.
 
-In addition, "quick look" only unifies a type variable when it is found under a type constructor different than arrows, because invariance ensures that equality is the only way to make the expression type check. It never tries to perform any complicated analysis on other types: impredicativity must be the *only obvious* solution to make the program type check (or as we say in the paper, "impredicativity is never guessed").
+One important feature of Haskell's type system that "quick look" uses is the invariance of type constructors. In short, the subsumption rules ensure that if, for example, `Maybe t` is a more polymorphic than `Maybe s`, it must be the case that `t` equals `s`. This property holds for every type constructor except for function types, which require a slightly more complex handling. The proposed inference algorithm never tries to perform any complicated analysis on other types: impredicativity must be the *only obvious* solution to make the program type check (or as we say in the paper, "impredicativity is never guessed").
 
 ## Examples
 
@@ -76,8 +76,8 @@ Several examples can be found in the [paper draft](https://www.dropbox.com/s/hxj
 
 1. We infer the type of the head of the application, `(:) :: forall a. a -> [a] -> [a]`.
 2. We expose two arguments, which leads to the type `alpha -> [alpha] -> [alpha]` where `alpha` is a fresh unification variable.
-3. Now we do *quick look* by checking the "simple" expressions against those types:
-  a. `\x -> x` is not "simple", so nothing is done.
+3. Now we do *quick look* by checking the simple expressions against those types:
+  a. `\x -> x` is not simple, so nothing is done.
   b. `ids :: [forall a. a -> a]` is checked against `[alpha]`. Since `alpha` is under a type constructor different than arrow, `alpha` *must* be `forall a. a -> a` for the expression to type check.
 4. The result of quick look is thus `alpha := forall a. a -> a`. This means that the second, real type checking phase must check:
   a. `\x -> x` against `forall a. a -> a`,
@@ -95,11 +95,13 @@ We deem the interaction with `TypeApplications` as a very important one; the goa
 
 ### `RankNTypes` and lack of contravariance
 
-The main disadvantage of making "quick look impredicativity" official as described in the [paper draft](https://www.dropbox.com/s/hxjp28ym3lptmxw/quick-look-steps.pdf?dl=0) is that it collides with *contravariance of function types*. That is, it no longer holds that:
+The main backwards-incompatible change of the "quick look impredicativity" rules described in the [paper draft](https://www.dropbox.com/s/hxjp28ym3lptmxw/quick-look-steps.pdf?dl=0) is the loss of *contravariance of function types*. That is, it no longer holds that:
 
 `(Int -> Int) -> R is a subtype of (forall a. a -> a) -> R`
 
-The problem is of technical nature, but without this restriction we would not be able to infer impredicative instantiations of functions like `($)`. **This restriction affects not only users of `ImpredicativeTypes`, but also users of `RankNTypes`, effectively making this proposal not 100% backwards compatible.**
+We need to have this restriction in place because we rely on invariance of type constructors to perform well-behaved guesses. If we want to have contravariance of function types, we have to remove that position from the set of places from which "quick look" can infer. In turn, that means that inferring the right instantiation for function combinators such as `($) :: (a -> b) -> a -> b` or `(.) :: (b -> c) -> (a -> b) -> a -> c` becomes impossible since all types are under the function type constructor.
+
+The proposal is to remove contravariance of function types **altogether** from the compiler, not only when `ImpredicativeTypes` is enabled (there are other alternatives, as discussed below). **As a result, this proposal affects not only users of `ImpredicativeTypes`, but also users of `RankNTypes`, effectively making this proposal not 100% backwards compatible.**
 
 Note anyway that the support for contravariance in GHC is really fragile. Take for example the functions `choose :: forall a. (a -> Bool) -> (a -> Bool) -> Bool`, `f :: (Bool -> Bool) -> Bool` and `g :: (forall a. a -> a) -> Bool`. In theory we can accept the expressions `choose f g` and `choose g f` if we instantiate `a` with `(forall a. a -> a)`. Here is an excerpt of a GHCi session which shows that the one of the expressions is accepted and the other is not:
 
@@ -120,25 +122,13 @@ Prelude> :t choose g f
 choose g f :: Bool
 ```
 
-There is a simple workaround that works most of the time: eta-expansion (you might need to eta-expand more than once, though). Taking the `choose`, `f`, and `g` functions defined above,in a non-contravariant world we need to eta-expand `f` to make it work: `choose (\x -> f x) g`; now the `x` is assigned type `forall a. a -> a`, which is then instantiated to `Int -> Int` before passing it to `f`.
-
-### The `ContravariantFunctions` extension
-
-After a preliminary assessment of which packages still compile under this new policy, it looks like most of them do not need it. Except one big and important one: `Cabal` (and anything that uses its API). This library often uses functions of the form:
-
-```haskell
-f :: ( (... -> CabalIO a) -> ...) -> ...
-```
-
-where `CabalIO a` is defined as `HasCallStack => IO a`. That means that whereas before we could pass a function `g` as argument, now we have to do something akin to `\... t ... -> g (\... x ... -> t ... x ...)`, which is quite annoying.
-
-We thus propose to add another extension to GHC, called `ContravariantFunctions`, which should be disabled by default. When the extension is enabled, subsumption checking is done using full contravariance of function types (but during quick look contravariance does not enter the game). This means that `RankNTypes` + `ContravariantFunctions` behaves the same as the old `RankNTypes. This has the benefit of asking people to eta-expand their functions, while having a escape way for those libraries which would require too many changes.
+There is a simple workaround that works most of the time under this proposal: eta-expansion (you might need to eta-expand more than once, though). Taking the `choose`, `f`, and `g` functions defined above,in a non-contravariant world we need to eta-expand `f` to make it work: `choose (\x -> f x) g`; now the `x` is assigned type `forall a. a -> a`, which is then instantiated to `Int -> Int` before passing it to `f`.
 
 ### The typing rule for `($)`
 
-Currently, GHC contains a hard-coded typing rule for `($)` (you can find it in [this file](https://gitlab.haskell.org/ghc/ghc/blob/master/compiler/typecheck/TcExpr.hs), looking for `dollarIdKey`) which ensures that `f $ e` works even when `($)` would need to be impredicatively instantiated. The million dollar question is: can we drop this special case from the compiler?
+Currently, GHC contains a [hard-coded typing rule for `($)`](https://gitlab.haskell.org/ghc/ghc/blob/795986aaf33e2ffc233836b86a92a77366c91db2/compiler/typecheck/TcExpr.hs#L368-397) which ensures that `f $ e` works even when `($)` would need to be impredicatively instantiated. The million dollar question is: can we drop this special case from the compiler?
 
-A few versions ago, the answer would have been **no**. The reason was that `($)` was the only function able to operate with both lifted and unlifted kinds. But nowadays, this fact is reflected in its type:
+In the releases of GHC prior to the introduction of levity polymorphism, the answer would have been **no**. The reason was that `($)` was the only function able to operate with both lifted and unlifted kinds. But nowadays, this fact is reflected in its type using a levity-polymorphic type:
 
 ```haskell
 ($) ::
@@ -147,6 +137,16 @@ A few versions ago, the answer would have been **no**. The reason was that `($)`
 ```
 
 So the initial answer would be **yes**. This should be taken with a grain of salt, though, since the specification in the draft paper does not consider polymorphic type representations. However, for the usual case of `b` having kind `*`, the rule may be dropped. This also means that other combinators such as `(&)` or `(.)` no longer are second-class with respect to impredicativity.
+
+Note however that currently GHC is very lenient about required extensions when using `($)`. For example, this code compiles today *without extensions*:
+
+```haskell
+> import Control.Monad.ST
+> runST $ return 0
+0
+```
+
+Even though the [current documentation about `RankNTypes`](https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-RankNTypes) does not make it clear whether the extension is required if you merely want to consume types of this form, it is clear that `($)` has to be impredicatively instantiated for the expression to type check. **Removing the special rule is thus backwards-incompatible, as users would be asked to enable `ImpredicativeTypes`.**
 
 ## Costs and Drawbacks
 
@@ -170,11 +170,27 @@ Another possibility is to drop impredicative type inference altogether, and expe
 (++) @(forall a. a -> a) ids ([] @(forall a. a -> a))
 ```
 
-Finally, we could also enable `ContravariantFunctions` whenever `RankNTypes` is enabled but `ImpredicativeTypes` is not. The main disadvantage is that code that compiles under the former flag may stop compiling if you add the latter.
+### The `ContravariantFunctions` extension
+
+After a preliminary assessment of which packages still compile under the new policy of non-contravariant functions, most of the packages using either `RankNTypes` or `ImpredicativeTypes` continue to compile. The main problem comes from some usage patterns within the `Cabal` library. This library often uses functions of the form:
+
+```haskell
+f :: ( (... -> CabalIO a) -> ...) -> ...
+```
+
+where `CabalIO a` is defined as `HasCallStack => IO a`. That means that whereas before we could pass a function `g` as argument, now we have to do something akin to `\... t ... -> g (\... x ... -> t ... x ...)`, which is quite annoying. At the moment of writing, though, only `cabal-doctest` seems to be really problematic, as many other packages in the ecosystem relies on it.
+
+We thus propose to add another extension to GHC, called `ContravariantFunctions`, which should be disabled by default. When the extension is enabled, subsumption checking is done using full contravariance of function types. This means that `RankNTypes` + `ContravariantFunctions` behaves the same as the old `RankNTypes. This has the benefit of asking people to eta-expand their functions, while having a escape way for those libraries which would require too many changes.
+
+Another alternative is to enable `ContravariantFunctions` whenever `RankNTypes` is enabled but `ImpredicativeTypes` is not (by making `ContravariantFunctions` enabled by default and making `ImpredicativeTypes` imply `NoContravariantFunctions`). The main disadvantage is that code that compiles under the former flag may stop compiling if you add the latter.
+
+### The dollar rule
+
+As discussed above, currently GHC is very lenient in requiring the right extensions for impredicative instantiations of `($)`. One alternative (the one which is currently implemented in the corresponding merge request) is to keep the special rule, only to continue with that lenient behavior. This would coincide with the non-written rule among Haskellers that `f $ x` is exactly as writing `f x` but with different fixity.
 
 ## Unresolved Questions
 
-* What should be the error messages in those cases in which "quick look" was unsuccessful and did not infer enough information for impredicative instantiation?
+Right now the "quick look" phase does not produce any errors on its own, but not inferring some types on that phase may lead to errors down the pipeline. Can we improve the current error messages about impredicative instantiation to suggest hints, such as eta-expanding a function or adding a type application?
 
 ## Implementation Plan
 
