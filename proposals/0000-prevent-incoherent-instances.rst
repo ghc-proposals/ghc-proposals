@@ -16,7 +16,7 @@ Prevent Incoherent Instances
 .. contents::
 
 Currently it is possible to cause incoherent instance behavior without ``-Worphans`` giving any warning and without even
-enabling ``Overlaps``/``Overlappable`` let alone ``Incoherent``.
+enabling ``Overlaps``/``Overlappable`` let alone ``Incoherent``. You only need `FlexibleInstances`.
 
 This proposal introduces a flexible and general mechanism that prevents this incoherence.
 
@@ -24,7 +24,7 @@ Motivation
 ----------
 As seen `here <https://pastebin.com/wyVMdRkc>`_ and `here <https://pastebin.com/MQ4wd17Y>`_, it is currently possible to break
 coherence without the use of the ``Incoherent`` pragma, without ``-Worphan`` warnings, and even without any usage of
-``Overlaps``/``Overlappable``.
+``Overlaps``/``Overlappable``. The only extension needed to cause these problems to occur is `FlexibleInstances`.
 
 As seen above this incoherence can break various invariants without warning, and cause unintuitive and antimodular behavior,
 and thus we should prevent it.
@@ -156,7 +156,7 @@ It is not as flexible as the status quo of allowing incoherence.
 
 Alternatives
 ------------
-Doing nothing and accepting that instances are not guaranteed to be coherent once you leave Haskell2010.
+Doing nothing and accepting that instances are not guaranteed to be coherent once you enable FlexibleInstances.
 
 Unresolved Questions
 --------------------
