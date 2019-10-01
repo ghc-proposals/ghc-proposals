@@ -22,7 +22,7 @@ This proposal introduces a flexible and general mechanism that prevents this inc
 
 Motivation
 ----------
-As seen `here<https://pastebin.com/wyVMdRkc>`_ and `here<https://pastebin.com/MQ4wd17Y>`_, it is currently possible to break
+As seen `here <https://pastebin.com/wyVMdRkc>`_ and `here <https://pastebin.com/MQ4wd17Y>`_, it is currently possible to break
 coherence without the use of the ``Incoherent`` pragma, without ``-Worphan`` warnings, and even without any usage of
 ``Overlaps``/``Overlappable``.
 
