@@ -1,15 +1,17 @@
-.. proposal-number:: Leave blank. This will be filled in when the proposal is
-                     accepted.
-
-.. trac-ticket:: Leave blank. This will eventually be filled with the Trac
-                 ticket number which will track the progress of the
-                 implementation of the feature.
-
-.. implemented:: Leave blank. This will be filled in with the first GHC version which
-                 implements the described feature.
-
 Add winapi pseudo calling convention
 ====================================
+
+.. proposal-number:: 277
+.. author:: Tamar Christina
+.. date-accepted:: 2019-10-02
+.. ticket-url::
+.. implemented::
+.. highlight:: haskell
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/277>`_.
+.. sectnum::
+     :start: 277
+.. contents::
+
 
 On Windows when calling Windows API functions the calling conventions differ
 based on the architecture. The correct calling convention is often gotten wrong
