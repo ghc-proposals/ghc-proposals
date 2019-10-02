@@ -12,28 +12,29 @@ the link, and delete this bold sentence.**
 
 # Extended Typed-holes
 
-Typed-holes are a powerful way to interact with the compiler during compilation,
-to ask for more information about the context and (recently) to get suggestions
-on what could be used in place of the hole. However, the user can only influence
-the name of the hole, with the rest being determined by the hole's context.
-We propose to add a new extension, `ExtendedTypedHoles` to allow users to
-communicate more efficiently with the compiler by adding 3 new syntactic constructs
-to GHC that represent typed-holes by using `_(...)`, `_$(...)` and `_$$(...)`
-where `...` is an expression, a template haskell expression or a typed template
-haskell expression respectively.
+Typed-holes are a powerful way for users to interact with the compiler during
+compilation, to ask for more information about the context and (recently) to
+get suggestions on what could be used in place of the hole. However, the user
+can only influence the name of the hole, with the rest being determined by the
+hole's context.  We propose to add a new extension, `ExtendedTypedHoles` to
+allow users to communicate more efficiently with the compiler by adding 3 new
+syntactic constructs to GHC that represent typed-holes by using `_(...)`,
+`_$(...)` and `_$$(...)` where `...` is an expression, a template haskell
+expression or a typed template haskell expression respectively.
 
 
 ## Motivation
 
 Typed-holes have a lot of potential for users to really interact with the
 compiler during compilation beyond just parsing and type errors. Currently,
-typed hole plugins allow users to extend how these holes are dealt with. But,
-the only way the user can pass any information to the plugin is via flags or
-via the name of the hole, which is not an ideal situation. This means that all
-the information must be passed along as alphanumeric strings (without spaces in
-case of names!), and not in the type safe manner of Haskell data structures as
-we'd like. Strings do allow us to define some language that the user would have
-to learn, but does not allow for expressive combinators.
+typed hole plugins allow plugin developers to extend how these holes are
+handled. But, the only way the user can pass any information to the plugin is
+via flags or via the name of the hole, which is not an ideal situation.
+This means that all the information must be passed along as alphanumeric
+strings (without spaces in case of names!), and not in the type safe manner
+of Haskell data structures as we'd like. Strings do allow us to define some
+language that the user would have to learn, but does not allow for expressive
+combinators.
 
 This limits the usefulness of typed-hole plugins and means that IDE features
 that interact with holes would either need to pass complex flags or hard to
@@ -60,7 +61,7 @@ main = return ()
 
 Here, the name of the hole is used to invoke different utilities and filter by
 specific modules, but the limitation of having only the name makes it impractical
-to invoke more than one command at a time, and requires us to use `_` in the
+to invoke more than one command at a time, and requires users to use `_` in the
 names of the modules we want to filter by.
 
 
@@ -68,17 +69,21 @@ names of the modules we want to filter by.
 
 We add `-XExtendedTypedHoles` to the available extensions, which turns
 on the lexing of the following tokens:
-+ `_(` for extended typed-holes, whose contents are strings
-+ `\) $idchar $idchar*` for allowing users to enumerate the holes,
-  with e.g. `_(...)0`, ..., `_(...)n`, or name them e.g. `_(...)a` or `_(...)fix_this`.
-+  `_$(` opens a extended typed-hole with a template haskell within.
-+  `_$$(` opens an extended typed-hole with a typed template haskell within.
++ `_(` for opening an extended typed-hole, whose content is either
+  nothing, or a haskell expression.
++ `\) $idchar $idchar*` for allowing users to enumerate the holes, with
+   e.g. `_(...)0`, ..., `_(...)n`, or name them e.g. `_(...)a`
+   or `_(...)fix_this`.
++ `_$(` opens a extended typed-hole containing a template haskell expression
+  inside.
++ `_$$(` opens an extended typed-hole containing a typed template haskell
+  expression.
 
-Both `_$(` and `_$$(` require `TemplateHaskell` to be enabled as well as
+Both `_$(` and `_$$(` require `TemplateHaskell` to be enabled in addition to
 `ExtendedTypedHoles`.
 
-We extend the grammer by adding the `extended_typed_hole`
-construct to `aexp2` and `hole_op`, where `extended_typed_hole` is:
+We extend the grammar by adding the `extended_typed_hole` construct to `aexp2`
+and `hole_op`, where `extended_typed_hole` is:
 
 ```
 extended_typed_hole
@@ -109,14 +114,16 @@ constraint solver.
 The resulting expressions are then wrapped in a `toDyn` call from 
 `Data.Dynamic` prior to being type-checked, and the
 `runExtHExpr :: LHsExpr GhcTc -> TcM Dynamic` function is provided
-in `TcHoleErrors`. This allows plugin writers to easily run the
+in `TcHoleErrors`. This allows plugin developers to easily run the
 expressions and obtain a `Dynamic`, which they can then safely try to
 interpet as whatever type they expect the user to use in the holes.
 
 When the type-checker encounters a `HsExtendedHole` expression, it emits
-an insoluable `CHoleCan` containing a `ExtendedExprHole` constraint with
-the string or already run splice as its contents. The string or splice can
-then be accessed via the constraint from plugins or the error reporter.
+an insoluable `CHoleCan` (as we do for typed-holes already), but one that
+contains an `ExtendedExprHole` constraint with the expression (if any) or
+the expression resulting from running the splice, as well as the inferred
+type of that expression. The expression can then be accessed via the
+constraint from plugins or the error reporter.
 
 As it is behind an extension flag, it does not impact any existing parsing
 nor features, except Haddock and other Haskell AST parsing utilities will 
@@ -125,8 +132,8 @@ need to handle the new `HsExpr`.
 ## Examples
 
 As an example, consider the [ExtendedHolesPlugin](https://github.com/Tritlo/ExampleHolePlugin/tree/master/extended-holes-plugin).
-By defining a DSL, the plugin
-can express how users can interact with it via template haskell expressions.
+By defining a DSL, the plugin can express how users can interact with it
+via template haskell expressions.
 
 
 This allows us to compile the following:
@@ -174,7 +181,6 @@ Main.hs:9:5: error:
       Valid hole fits include
         Hoogle: Prelude fst :: (a, b) -> a
         Hoogle: Data.Tuple fst :: (a, b) -> a
-        Dynamic
         f :: (a, b) -> a
         fst :: forall a b. (a, b) -> a
   |
@@ -196,7 +202,6 @@ Main.hs:13:5: error:
         (\ (_, a) -> a)
         Hoogle: Prelude fst :: (a, b) -> a
         Hoogle: Data.Tuple fst :: (a, b) -> a
-        Dynamic
         g :: (a, b) -> b
    |
 13 | g = _$( exec $ do
@@ -216,7 +221,6 @@ Main.hs:19:5: error:
       Valid hole fits include
         (\ (_, a) -> a)
         (\ (_, a) -> g (head (cycle (([]) ++ ([]))), a))
-        Dynamic
         h :: (a, b) -> b
         g :: forall a b. (a, b) -> b
         snd :: forall a b. (a, b) -> b
@@ -247,19 +251,24 @@ a type error, complete programs are unlikely to have holes in them.
 
 ## Unresolved Questions
 
-+ Is `_(...)` the right syntax? Other alternatives could be `_{...}` to mirror Agda, or even something
-  entirely different like `<...>`. `_(...)` and `_$(...)` matches the current template haskell syntax
-  nicely though, and it follows the convention that things on the right hand side that start with an
-  underscore are typed-holes.
-+ Is `_(...)idchars` a form that is neccessary, or is it enough that users can use `_(...)0`, ..., `_(...)n`
-  to disambiguate between holes?
-+ Should we make `ExtendedTypedHoles` and the `_(...)`  syntax available without requiring the extension
-  flag enabled? This would allow us to use `_` for regular typed-holes (without any suggestions etc.), and
-  require users that want suggestions or to use plugins to use  the `_(...)` syntax.
-+ Should we define and require that the template haskell splices have a specific type, and do away with `Dynamic`? This could ease the
-  interop between different plugins, but we'd also like to give plugin developers as much freedom as possible.
-+ Should we allow the hole plugins to solve the constraint and result in a splice instead of an error? This
-  seems like an avenue that could be explored further in the future.
++ Is `_(...)` the right syntax? Other alternatives could be `_{...}` to mirror
+  Agda, or even something entirely different like `<...>`. `_(...)` and `_$(...)`
+  matches the current template haskell syntax nicely though, and it follows the
+  convention that things on the right hand side that start with an underscore
+  are typed-holes.
++ Is `_(...)idchars` a form that is neccessary, or is it enough that users can
+  use `_(...)0`, ..., `_(...)n` to disambiguate between holes?
++ Should we make `ExtendedTypedHoles` and the `_(...)`  syntax available
+  without requiring the extension flag enabled? This would allow us to
+  use `_` for regular typed-holes (without any suggestions etc.), and require users
+  that want suggestions or to use plugins to use  the `_(...)` syntax.
++ Should we define and require that the template haskell splices have a specific
+  type, and do away with `Dynamic`?  This could ease the interop between different
+  plugins, but we'd also like to give plugin developers as much freedom as possible.
++ Should we allow the hole plugins to solve the constraint and result in a splice
+  instead of an error? This seems like an avenue that could be explored further in
+  the future.
+
 ## Implementation Plan
 
-The implementation will be done by @Tritlo, and is already partly available at [!1766](https://gitlab.haskell.org/ghc/ghc/merge_requests/1766).
+The implementation will be done by @Tritlo, and a prototype is available at [!1766](https://gitlab.haskell.org/ghc/ghc/merge_requests/1766).
