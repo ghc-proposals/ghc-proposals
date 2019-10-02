@@ -119,9 +119,8 @@ interpet as whatever type they expect the user to use in the holes.
 When the type-checker encounters a `HsExtendedHole` expression, it emits
 an insoluable `CHoleCan` (as we do for typed-holes already), but one that
 contains an `ExtendedExprHole` constraint with the expression (if any) or
-the expression resulting from running the splice, as well as the inferred
-type of that expression. The expression can then be accessed via the
-constraint from plugins or the error reporter.
+the expression resulting from running the splice. The expression can then
+be accessed via the constraint from plugins or the error reporter.
 
 As it is behind an extension flag, it does not impact any existing parsing
 nor features, except Haddock and other Haskell AST parsing utilities will 
