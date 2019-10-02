@@ -10,7 +10,7 @@ This proposal is [discussed at this pull request](https://github.com/ghc-proposa
 **After creating the pull request, edit this file again, update the number in
 the link, and delete this bold sentence.**
 
-# Extended Typed-holes
+# Extended Typed-Holes
 
 Typed-holes are a powerful way for users to interact with the compiler during
 compilation, to ask for more information about the context and (recently) to
