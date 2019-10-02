@@ -123,7 +123,9 @@ an insoluable `CHoleCan` (as we do for typed-holes already), but one that
 contains an `ExtendedExprHole` constraint with the expression (if any) or
 the expression resulting from running the splice, as well as the inferred
 type of that expression. The expression can then be accessed via the
-constraint from plugins or the error reporter.
+constraint from plugins or the error reporter, and will hopefully enable
+us to move towards [Extensible Type-Directed Editing](http://cattheory.com/extensibleTypeDirectedEditing.pdf)
+in Haskell.
 
 As it is behind an extension flag, it does not impact any existing parsing
 nor features, except Haddock and other Haskell AST parsing utilities will 
