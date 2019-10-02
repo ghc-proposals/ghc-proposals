@@ -19,8 +19,8 @@ the name of the hole, with the rest being determined by the hole's context.
 We propose to add a new extension, `ExtendedTypedHoles` to allow users to
 communicate more efficiently with the compiler by adding 3 new syntactic constructs
 to GHC that represent typed-holes by using `_(...)`, `_$(...)` and `_$$(...)`
-where `...` is a string, a template haskell or a typed template haskell expressions
-respectively. 
+where `...` is an expression, a template haskell expression or a typed template
+haskell expression respectively.
 
 
 ## Motivation
@@ -77,36 +77,41 @@ on the lexing of the following tokens:
 Both `_$(` and `_$$(` require `TemplateHaskell` to be enabled as well as
 `ExtendedTypedHoles`.
 
-We extend the grammer by adding the following constructs:
+We extend the grammer by adding the `extended_typed_hole`
+construct to `aexp2` and `hole_op`, where `extended_typed_hole` is:
 
 ```
 extended_typed_hole
-        : '_(' maybe_hole_content hole_close
-        | typed_hole_splice
-
-typed_hole_splice
-        : '_$('  exp hole_close  
-        | '_$$('  exp hole_close 
+        : '_('       hole_close
+        | '_('   exp hole_close
+        | '_$('  exp hole_close
+        | '_$$(' exp hole_close
 
 hole_close
-  : ')'    
+  : ')'
   | CLOSE_HOLE
 
-maybe_hole_content 
-  : STRING 
-  | {- empty -}
 ```
 
 where `CLOSE_HOLE` is the `\) $idchar $idchar*` lexeme.
 
-These are parsed into a new `HsExpr`, `HsExtendedHole`, which either contains
-the string, or the `LHsExpr` containing the splice.
+These are parsed into a new `HsExpr`, `HsExtendedHole`, contains the
+`LHsExpr` from the hole or a template haskell splice.
 
-In case of the splice, it is renamed during renaming and type-checked during
-type-checking, and generally behave in the same way and adhere to the same
-rules as regular template haskell splices, i.e. they are run at the same time.
-The only difference is that the resulting expression is not spliced into the code,
-but rather passed along with the `ExtendedExprHole` to the constraint solver.
+For the splices, they behave the same as template haskell splices in that
+the untyped splice is run during renaming, and the typed template haskell
+splice is run during  type-checking, and generally behave in the same way 
+as regular template haskell splices, i.e. they are run at the same time.
+The only difference is that the resulting expression is not spliced into
+the code, but rather passed along with the `ExtendedExprHole` to the
+constraint solver.
+
+The resulting expressions are then wrapped in a `toDyn` call from 
+`Data.Dynamic` prior to being type-checked, and the
+`runExtHExpr :: LHsExpr GhcTc -> TcM Dynamic` function is provided
+in `TcHoleErrors`. This allows plugin writers to easily run the
+expressions and obtain a `Dynamic`, which they can then safely try to
+interpet as whatever type they expect the user to use in the holes.
 
 When the type-checker encounters a `HsExtendedHole` expression, it emits
 an insoluable `CHoleCan` containing a `ExtendedExprHole` constraint with
@@ -122,6 +127,8 @@ need to handle the new `HsExpr`.
 As an example, consider the [ExtendedHolesPlugin](https://github.com/Tritlo/ExampleHolePlugin/tree/master/extended-holes-plugin).
 By defining a DSL, the plugin
 can express how users can interact with it via template haskell expressions.
+
+
 This allows us to compile the following:
 
 ```
@@ -129,71 +136,93 @@ This allows us to compile the following:
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE ExtendedTypedHoles #-}
 module Main where
-import Control.Monad
-import Language.Haskell.TH
 import ExtendedHolesPlugin
 import Control.Monad
 
+f :: (a,b) -> a
+f = _([Hoogle])
 
-f :: (a,b) -> b
-f = _$(invoke "hoogle" & filterBy "Prelude" & invoke "djinn")0
 
-g :: [[a]] -> [a]
-g = _$(invoke "hoogle" & filterBy "Control.Monad")1
+g :: (a,b) -> b
+g = _$( exec $ do
+        invoke Hoogle
+        filterBy "Control.Monad"
+        invoke Djinn)0
 
-main = return ()
+h :: (a,b) -> b
+h = _$$( execTyped $ do
+         filterBy "Prelude"
+         invoke Djinn)1
+
 ```
 
-where `invoke :: String -> Q Exp` and `filterBy :: String -> Q Exp`
-and the `(&) :: Q Exp -> Q Expr -> Q Exp` combinator are defined by the
-plugin itself. This results in the following output:
+where `invoke :: PluginType -> Cmd ()`, `filterBy :: String -> Cmd ()`,
+`exec :: Cmd () -> Q Expr`, and the `execTyped :: Cmd () -> Q (TExp [PluginType])`
+functions are defined by the plugin itself. This results in the following output:
 
 ```
-Main.hs:12:5: error:
+Main.hs:9:5: error:
+    • Found hole: _(...) :: (a, b) -> a
+      Where: ‘b’, ‘a’ are rigid type variables bound by
+               the type signature for:
+                 f :: forall a b. (a, b) -> a
+               at Main.hs:8:1-15
+      Or perhaps ‘_(...)’ is mis-spelled, or not in scope
+    • In the expression: _(...)
+      In an equation for ‘f’: f = _(...)
+    • Relevant bindings include f :: (a, b) -> a (bound at Main.hs:9:1)
+      Valid hole fits include
+        Hoogle: Prelude fst :: (a, b) -> a
+        Hoogle: Data.Tuple fst :: (a, b) -> a
+        Dynamic
+        f :: (a, b) -> a
+        fst :: forall a b. (a, b) -> a
+  |
+9 | f = _([Hoogle])
+  |     ^^^^^^^^^^^
+
+Main.hs:13:5: error:
     • Found hole: _$(...)0 :: (a, b) -> b
       Where: ‘a’, ‘b’ are rigid type variables bound by
                the type signature for:
-                 f :: forall a b. (a, b) -> b
-               at Main.hs:11:1-15
+                 g :: forall a b. (a, b) -> b
+               at Main.hs:12:1-15
       Or perhaps ‘_$(...)0’ is mis-spelled, or not in scope
     • In the expression: _$(...)0
-      In an equation for ‘f’: f = _$(...)0
+      In an equation for ‘g’: g = _$(...)0
     • Relevant bindings include
-        f :: (a, b) -> b (bound at Main.hs:12:1)
+        g :: (a, b) -> b (bound at Main.hs:13:1)
       Valid hole fits include
         (\ (_, a) -> a)
-        (\ (_, a) -> seq (head (cycle (([]) ++ ([])))) a)
         Hoogle: Prelude fst :: (a, b) -> a
         Hoogle: Data.Tuple fst :: (a, b) -> a
-        f :: (a, b) -> b
+        Dynamic
+        g :: (a, b) -> b
+   |
+13 | g = _$( exec $ do
+   |     ^^^^^^^^^^^^^...
+
+Main.hs:19:5: error:
+    • Found hole: _$$(...)1 :: (a, b) -> b
+      Where: ‘a’, ‘b’ are rigid type variables bound by
+               the type signature for:
+                 h :: forall a b. (a, b) -> b
+               at Main.hs:18:1-15
+      Or perhaps ‘_$$(...)1’ is mis-spelled, or not in scope
+    • In the expression: _$$(...)1
+      In an equation for ‘h’: h = _$$(...)1
+    • Relevant bindings include
+        h :: (a, b) -> b (bound at Main.hs:19:1)
+      Valid hole fits include
+        (\ (_, a) -> a)
+        (\ (_, a) -> g (head (cycle (([]) ++ ([]))), a))
+        Dynamic
+        h :: (a, b) -> b
+        g :: forall a b. (a, b) -> b
         snd :: forall a b. (a, b) -> b
    |
-12 | f = _$(invoke "hoogle" & filterBy "Prelude" & invoke "djinn")0
-   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Main.hs:15:5: error:
-    • Found hole: _$(...)1 :: [[a]] -> [a]
-      Where: ‘a’ is a rigid type variable bound by
-               the type signature for:
-                 g :: forall a. [[a]] -> [a]
-               at Main.hs:14:1-17
-      Or perhaps ‘_$(...)1’ is mis-spelled, or not in scope
-    • In the expression: _$(...)1
-      In an equation for ‘g’: g = _$(...)1
-    • Relevant bindings include
-        g :: [[a]] -> [a] (bound at Main.hs:15:1)
-      Valid hole fits include
-        Hoogle: Data.List subsequences :: [a] -> [[a]]
-        Hoogle: Data.List permutations :: [a] -> [[a]]
-        g :: [[a]] -> [a]
-        join :: forall (m :: * -> *) a. Monad m => m (m a) -> m a
-        msum :: forall (t :: * -> *) (m :: * -> *) a.
-                (Foldable t, MonadPlus m) =>
-                t (m a) -> m a
-        forever :: forall (f :: * -> *) a b. Applicative f => f a -> f b
-   |
-15 | g = _$(invoke "hoogle" & filterBy "Control.Monad")1
-   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+19 | h = _$$( execTyped $ do
+   |     ^^^^^^^^^^^^^^^^^^^...
 ```
 
 ## Effect and Interactions
@@ -227,7 +256,7 @@ a type error, complete programs are unlikely to have holes in them.
 + Should we make `ExtendedTypedHoles` and the `_(...)`  syntax available without requiring the extension
   flag enabled? This would allow us to use `_` for regular typed-holes (without any suggestions etc.), and
   require users that want suggestions or to use plugins to use  the `_(...)` syntax.
-+ Should we define and require that the template haskell splices have a specific type? This could ease the
++ Should we define and require that the template haskell splices have a specific type, and do away with `Dynamic`? This could ease the
   interop between different plugins, but we'd also like to give plugin developers as much freedom as possible.
 + Should we allow the hole plugins to solve the constraint and result in a splice instead of an error? This
   seems like an avenue that could be explored further in the future.
