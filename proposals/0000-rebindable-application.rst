@@ -13,8 +13,8 @@ Rebindable Application
 
 While most of GHC's syntax is in some way customizable
 (ex. through overloaded type classes and/or ``RebindableSyntax``),
-function application's juxtaposition syntax is not.
-I propose to change that.
+the function application syntax ``f a`` (i.e. the juxtaposition syntax)
+is not. I propose to change that.
 
 Motivation
 ----------
@@ -43,25 +43,28 @@ And if it worked on ``Exp`` (from Template Haskell), code like this:
 
 .. code-block:: haskell
 
-  mapE f xs = ConE 'map `AppE` f `AppE` xs
+  mapE f xs = VarE 'map `AppE` f `AppE` xs
 
 Could be written like:
 
 .. code-block:: haskell
 
-  mapE f xs = ConE 'map f xs
+  mapE f xs = VarE 'map f xs
 
 Proposed Change Specification
 -----------------------------
 
-I propose that function application ``f a`` become syntactic sugar for
-``f $# a``. Operator application remains the same (i.e. ``f $# a`` is
-thus not further desugared).
+I propose a new extension called ``RebindableApplication``. When this
+extension is turned on, the juxtaposition syntax for function application
+``f a`` becomes syntactic sugar for ``f $ a``, where ``$`` is whatever ``$``
+is currently in scope. Operator application remains the  same (ex. ``f $ a``
+is not further desugared). To clarify these changes, the table below lists
+my proposed desugaring for each kind of application syntax.
 
 +-----------------------+------------------+-----------------------+
-| Juxtaposition         | Current Syntax   |  Proposed Desugaring  |
+| Application           | Current Syntax   |  Proposed Desugaring  |
 +=======================+==================+=======================+
-| Function Application  | ``f a``          | ``f $# a``            |
+| Function Application  | ``f a``          | ``f $ a``             |
 +-----------------------+------------------+-----------------------+
 | Type Application      | ``f @t``         | ``f @t``              |
 +-----------------------+------------------+-----------------------+
@@ -72,66 +75,45 @@ thus not further desugared).
 | Right Section         | ``(<> e)``       | ``\x -> e <> x``      |
 +-----------------------+------------------+-----------------------+
 
-By default, the function application desugaring uses a new ``$#`` operator
-found in ``GHC.Exts``. However, if the ``RebindableApplication`` extension
-is turned on, it uses the ``$#`` from the current scope.
+The idea is that only application in the plain juxtaposition syntax is
+rebindable, application found elsewhere remains the same.
 
-The ``$#`` Operator
-^^^^^^^^^^^^^^^^^^^
-
-The ``$#`` operator is designed to represent standard function
-application, thus it would ideally have the following signature:
-
-.. code-block:: haskell
-
-  infixr 0 $#
-  ($#) :: forall r1 r2 (a :: TYPE r2) (b:: TYPE r2). (a -> b) -> a -> b
-
-However, due to the restrictions of levity polymorphism, a function
-cannot have this signature. As such, ``$#`` would have to be magic,
-much like unboxed tuple constructors (ex. ``(#,,#)``). Such magic requires
-that ``$#`` cannot be used unsaturated (i.e. one can not write ``($) = ($#)``).
-This would make ``$#`` a function, which it is not.
-
-Rebinding ``$#``
-^^^^^^^^^^^^^^^^
-
-Since ``$#`` is magic, rebindings of ``$#`` should be magic as well.
-As such, when ``RebindableApplication`` is enabled, they are -- the binding
-is allowed to be fully levity polymorphic, but the new ``$#`` is unable to be
-used unsaturated.
-This means that top-level declarations of ``$#`` can not be exported from
-normal modules (as they can't be compiled into functions) and are thus
-automatically excluded from module export lists.
+To rebind function application, one sets the ``$`` currently
+in scope. This can be done globally by declaring/importing a top-level
+``$`` and locally by using ``let`` or ``where``.
 
 Examples
 --------
 
-With this proposal, we could rebind ``$#`` like so:
+With ``RebindableApplication``, we can use a local rebind to
+write the simplified examples shown in the motivation:
 
 .. code-block:: haskell
 
-  import qualified GHC.Exts as GHC
+  -- ``f = g <$> a <*> b <*> c`` can become
+  f = let g' = pure g; ($) = (<*>) in g' a b c
+
+  -- ``mapE = VarE 'map `AppE` f `AppE` xs`` can become
+  mapE f xs = let map' = VarE 'map, ($) = AppE in map' f xs
+
+Alternatively, we could use a type class and a global rebinding instead:
+
+.. code-block:: haskell
+
+  import qualified Prelude as P
 
   class Applicable a b r where
-    apply :: a -> b -> r
+    ($) :: a -> b -> r
 
-  instance (b' ~ b) => Applicable (a -> b) a b' where
-    apply = a GHC.$# b
+  instance (a' ~ a, b' ~ b) => Applicable (a -> b) a' b' where
+    ($) = (P.$)
 
-  instance (b' ~ f b, Functor f) => Applicable (a -> b) (f a) b' where
-    apply = (<$>)
+  instance (a ~ Exp, b ~ Exp) => Applicable Exp a b where
+    ($) = AppE
 
-  instance (b' ~ f b, Applicative f) => Applicable (f (a -> b)) (f a) b' where
-    apply = (<*>)
-
-  instance Applicable Exp Exp Exp where
-    apply = AppE
-
-  f $# a = apply GHC.$# f GHC.$# a
-
-This would enable the simplified examples shown in the Motivation.
-
+  -- ``mapE = VarE 'map `AppE` f `AppE` xs`` can now become
+  mapE :: Exp -> Exp -> Exp
+  mapE f xs = VarE 'map f xs
 
 Effect and Interactions
 -----------------------
@@ -143,150 +125,82 @@ more concise (and, to a certain extent, clearer) code.
 It also has the interesting effect of making application more
 first-class syntactically (according to the definition Dijkstra outlined
 `here <http://www.the-magus.in/Publications/ewd.pdf>`_).
-It now has a explicit operator (i.e ``$#``) for which the juxtaposition
-notation is merely syntactic sugar.
-
-``TypeApplications``
-^^^^^^^^^^^^^^^^^^^^
-
-With the ``TypeApplications`` extension, functions can have types applied
-to them. This proposal does not currently overload this kind of application.
-I have proposed that code like:
-
-.. code-block:: haskell
-
-  f @Int @Char a b
-
-desugar to:
-
-.. code-block:: haskell
-
-  f @Int @Char $# a $# b
-
-However, I would ideally like it to desugar to
-
-.. code-block:: haskell
-
-  f $@ Int $@ Char $# a $# b
-
-where ``$@`` is the (new) type application operator. Unfortunately, I believe
-this would be too complicated due to differences in type and term parsing, so
-I have not included it in the proposed changes.
+The juxtaposition notation is now merely syntactic sugar for an
+operator (namely ``$``).
 
 Costs and Drawbacks
 -------------------
 
-The proposed ``$#`` operator is very magical. Magic is generally not good.
-However, this magic is not a desire of the proposal, but rather a necessary
-consequence of current restrictions of levity polymorphism.
-Were these restrictions ever lifted, ``$#`` could become significantly less
-magic, with the only likely requirement being that applications of ``$#``
-not be further desugared.
+I imagine that their will be some maintenance costs associated with
+the proposed extension -- though given that the proposal is purely
+syntactic, I imagine such costs will be minor.
 
-As such, I believe that the magic of ``$#`` should not work against the
-proposal at conceptual level. It may however work against it at an
-implementation level, depending on its difficulty in practice.
+For learners, the desugaring may be initially confusing, but I would
+argue that confusion will be mostly from long time Haskellers who are used
+to function application being built into the syntax.
+New users are just learning of the parallels between the
+juxtaposition syntax and ``$`` and thus do not have such distinctions
+ingrained.
+Thus, I would argue that they will likely find the desugaring much more
+straightforward (and possibly even expected).
 
-There is also some magic in the ``$#`` rebindings, as it is not particular
-clear from a plain reading that the rebinding would effect the juxtaposition
-syntax. This is helped somewhat by it being locked behind an extension, but
-an alternative were the rebinding is more obvious may be preferred.
+The proposed desugaring does however come with a number of drawbacks due to
+the limitations of the function ``$``.
+Due to the restrictions of levity polymorphism, ``$`` can not be fully levity
+polymorphic. Thus modules with ``RebindableApplication`` can not use the
+juxtaposition syntax for primitive operations and constructors like ``I#``.
+Similar problems occur with higher-rank functions defined with ``RankNTypes``.
+
+I imagine these limitations will pose a major challenge to learning
+the ins and outs of ``RebindableApplication``, and I consider them a major
+weakness of the proposal overall.
+Unfortunately, there is not much that can be done about this at the moment.
+However, I intend to post a proposal soon that proposes an explicit application
+operator ``$#`` (which was described in previous versions of this proposal).
+If accepted, that operator could be used to mitigate these issues --
+problematic applications could simply use it instead.
 
 Alternatives
 ------------
 
-There are a number of possible alternatives.
+There are a number of possible alternatives, two of which I will discuss here.
 
 Do Nothing
 ^^^^^^^^^^
 
-We can always do nothing.
+We can always do nothing. This would require us to still use application
+operators like ``(<$>)`` to perform application on types outside the function
+arrow ``(->)``.
 
-This would require us to still use application operators like ``(<$>)`` to
-perform application on types outside the function arrow ``(->)``.
-It also leave us without an explicit function application operator.
-While ``$`` generally suffices, it does not work in primitive code.
-For example, the following is possible with ``$#`` but not with ``$``:
-
-.. code-block:: haskell
-
-  peekWord16LE# addr# = W16# $#
-    uncheckedShiftL# (indexWord8OffAddr# addr# 1#) 8# `or#`
-    indexWord8OffAddr# addr# 0#
-
-Instead, to implement this in current Haskell, unsightly parentheses
-are necessary.
-
-No ``$#``
-^^^^^^^^^
-
-Instead of implementing ``$#``, we could conceivably have ``f a`` desugar to
-``f $ a`` instead. As ``$`` is not (and can not be) fully levity polymorphic,
-this would require the desugaring to only happen when ``RebindableApplication``
-is enabled (as it otherwise would break code with primitive operations).
-It would also mean that there is no way to recover the original behavior
-in modules with ``RebindableApplication``.  As such, a more tightly scoped
-approach would likely be desired.
-
-Local Only
-^^^^^^^^^^
-
-Instead of allowing module wide function application rebindings,
-rebindings could be restricted to some local scope (ex. to a
-``let`` expression).
+Personally, I believe that this status quo is rather ugly and causes the
+language to give unjustified primacy to functions represented by the function
+arrow ``(->)`` as opposed to those presented other ways.
+A similar critique was made by Dijkstra himself in the EWD note previously
+referenced  (i.e. `this one <http://www.the-magus.in/Publications/ewd.pdf>`_).
+As such, I do not believe it is correct to maintain the status quo.
 
 Idiom Brackets
 ^^^^^^^^^^^^^^
 
-We could also use a bracket syntax to restrict the scoped of the rebinding.
-For example:
+If global rebindings of the juxtaposition syntax are considered too extreme,
+we could use a bracketing syntax to limit the scope of the rebinding.
+Instead of desugaring all occurrences of the juxtaposition syntax, we only
+do so within the brackets. For example, using idiom brackets:
 
 .. code-block:: haskell
 
-  (| ConE 'map f xs |)
+  let map' = VarE 'map, ($) = AppE in (| map' f xs |)
 
-The code within the brackets could then use whatever ``$#`` (or ``$``)
-was in scope.
+could desugar to
 
+.. code-block:: haskell
+
+  let map' = VarE 'map, ($) = AppE in map' $ f $ xs
 
 Unresolved Questions
 --------------------
 
-Does ``$#`` need more?
-^^^^^^^^^^^^^^^^^^^^^^
-
-I have suggested that the juxtaposition syntax always be desugared to ``$#``,
-as the idea is for ``$#`` to have a one-to-one correspondence with the existing
-function application syntax. I am not sure if the operator (as currently
-proposed) actually has this correspondence.
-If it does not, then it will need to be adjusted so it does.
-If it cannot be so adjusted, then my proposal has a problem.
-One quick fix is to desugar application in the proposed way only when
-``RebindableApplication`` is enabled.
-However, it would still be impossible to recover the original
-behavior in the ``RebindableApplication`` module.
-Thus, should this be the case, it might be a good reason to consider one of the
-local alternatives described above.
-
-``RankNTypes``
-^^^^^^^^^^^^^^
-
-I am not sure as to whether ``$#`` (as currently proposed) works
-with functions of higher ranks. If it does, great. If it does not,
-then it is my hope it can be modified to do so. If it can't be,
-then the same problem as discussed above emerges.
-
-Partially Saturated ``$#``
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-I do not know enough about the details of levity polymorphism to know if
-``$#`` can be used partially saturated. I believe that it can be, but if
-not, it can be required that ``$#`` only be used fully saturated.
-
-Naming
-^^^^^^
-
-All the names in the proposal (i.e. ``RebindableApplication`` and ``$#``)
+The name of the extension given in the proposal i.e. ``RebindableApplication``
 could be changed if desired.
 
 
@@ -296,6 +210,4 @@ Implementation Plan
 **TBD**
 
 Depending on the anticipated difficulty (hacking on GHC is rather new to me),
-I could potentially volunteer to implement this. However, given some of the
-magic involved, it might be wiser to have someone with more experience
-handle it.
+I could potentially volunteer to implement this.
