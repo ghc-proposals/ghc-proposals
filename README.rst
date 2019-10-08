@@ -108,6 +108,8 @@ Proposals are written in either `ReStructuredText <http://www.sphinx-doc.org/en/
 
 Poposals should follow the structure given in the `ReStructuredText template <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.rst>`_, or the `Markdown template <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.md>`_.  (The two are identical except for format.)
 
+See the section `Review criteria <#review-criteria>`_ below for more information about what makes a strong proposal, and how it will be reviewed.
+
 To start a proposal, create a pull request that adds your proposal as ``proposals/0000-proposal-name.rst`` or ``proposals/0000-proposal-name.md``. Use the corresponding ``proposals/0000-template`` file as a template.
 
 If you are unfamiliar with git and github, you can use the GitHub web interface to perform these steps:
