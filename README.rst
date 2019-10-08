@@ -15,6 +15,33 @@ GHC.
 * `≡ List of implemented proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`_
 * `≡ List of all proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=>`_
 
+What is a proposal?
+-------------------
+
+A GHC Proposal is a document describing a proposed change to the compiler, the
+GHC/Haskell language, or the libraries in the ``GHC.*`` module namespace. These
+include,
+
+* A syntactic change to GHC/Haskell (e.g. the various ``ShortImports``
+  `proposals <https://gitlab.haskell.org/ghc/ghc/issues/10478>`_, ``do``
+  `expressions <https://gitlab.haskell.org/ghc/ghc/issues/10843>`_ without ``$``)
+
+* A major change to the user-visible behaviour of the compiler (e.g. the recent
+  `change <https://gitlab.haskell.org/ghc/ghc/issues/11762>`_ in super-class
+  solving, and ``-Wall`` `behavior <https://gitlab.haskell.org/ghc/ghc/issues/11370>`_)
+
+* The addition of major features to the compiler (e.g. ``-XTypeInType``, GHCi
+  `commands <https://gitlab.haskell.org/ghc/ghc/issues/10874>`_,
+  `type-indexed <https://gitlab.haskell.org/ghc/ghc/wikis/typeable>`_
+  ``Typeable`` representations)
+
+Changes to the GHC API or the plugin API are not automatically within the scope
+of the committee, and can be contributed following the usual GHC workflow.
+Should the GHC maintainers deem a change significant or controversial enough to
+warrant that, they may, at their discretion, involve the committee and ask the
+contributor to write a formal proposal.
+
+
 The life cycle of a proposal
 -----------------------------------
 
@@ -48,7 +75,7 @@ This section outlines what stages a proposal may go through. The stage is identi
    `≡ List of proposals under review <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+committee+review%22>`_
 
 6. Eventually, the committee rejects a proposal (label: Rejected), or passes it back to the
-   author for review (label: `Needs revision <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`_), or accepts it (label: Accepted).
+   author for review (label: `Needs revision <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`_), or accepts it (label: `Needs revision <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Accepted%22>`_).
 
    Acceptance of the proposal implies that the implementation will be accepted
    into GHC provided it is well-engineered, well-documented, and does not
@@ -61,7 +88,7 @@ This section outlines what stages a proposal may go through. The stage is identi
 7. Label: `Dormant <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Dormant>`_.  If a proposal sees no activity for along time, it is marked as “dormant”,
    and eventually closed.
 
-   `What is a dormant proposal <#what-is-a-dormant-proposal>`_ •
+   `What is a dormant proposal? <#what-is-a-dormant-proposal>`_ •
    `≡ List of dormant proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22dormant%22>`_
 
 
@@ -74,85 +101,12 @@ This section outlines what stages a proposal may go through. The stage is identi
 
 Do not hesitate to `contact <#questions>`_ us if you have questions.
 
-What is a proposal?
--------------------
-
-A GHC Proposal is a document describing a proposed change to the compiler, the
-GHC/Haskell language, or the libraries in the ``GHC.*`` module namespace. These
-include,
-
-* A syntactic change to GHC/Haskell (e.g. the various ``ShortImports``
-  `proposals <https://gitlab.haskell.org/ghc/ghc/issues/10478>`_, ``do``
-  `expressions <https://gitlab.haskell.org/ghc/ghc/issues/10843>`_ without ``$``)
-
-* A major change to the user-visible behaviour of the compiler (e.g. the recent
-  `change <https://gitlab.haskell.org/ghc/ghc/issues/11762>`_ in super-class
-  solving, and ``-Wall`` `behavior <https://gitlab.haskell.org/ghc/ghc/issues/11370>`_)
-
-* The addition of major features to the compiler (e.g. ``-XTypeInType``, GHCi
-  `commands <https://gitlab.haskell.org/ghc/ghc/issues/10874>`_,
-  `type-indexed <https://gitlab.haskell.org/ghc/ghc/wikis/typeable>`_
-  ``Typeable`` representations)
-
-Changes to the GHC API or the plugin API are not automatically within the scope
-of the committee, and can be contributed following the usual GHC workflow.
-Should the GHC maintainers deem a change significant or controversial enough to
-warrant that, they may, at their discretion, involve the committee and ask the
-contributor to write a formal proposal.
-
-
-What should a proposal look like?
----------------------------------
-
-Each proposal document must follow the outline in the proposal templates. Templates are available for both `ReStructuredText <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.rst>`_, and `Markdown <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.md>`_.
-
-Here are some characteristics that a good proposal should have.  But see also "Review criteria" below, for further guidance about the critera used to evaluate proposals.
-
-* It should be self-standing.  Some proposals accumulate a long and interesting discussion
-  thread, but in ten years' time all that will be gone (except for the most assiduous readers).
-  Before acceptance, therefore, the proposal should be edited to reflect the fruits of
-  that dicussion, so that it can stand alone.
-
-* It should be precise, especially the "Proposed change specification"
-  section.  Language design is complicated, with lots of
-  interactions. It is not enough to offer a few suggestive examples
-  and hope that the reader can infer the rest.  Vague proposals waste
-  everyone's time; precision is highly valued.
-
-  We do not insist on a fully formal specification, with a
-  machine-checked proof.  There is no such baseline to work from, and
-  it would set the bar far too high.  On the other hand, for
-  proposals involving syntactic changes, it is very reasonable to ask for
-  a BNF for the changes.
-
-  Ultimately, the necessary degree of precision is a judgement that the committee
-  must make; but authors should try hard to offer precision.
-
-* It should offer evidence of utility.  Even the strongest proposals carry costs:
-
-  * For programmers: most proposals make the language just a bit more complicated;
-  * For GHC maintainers:  most proposals make the implementation a bit more complicated;
-  * For future proposers:  most proposals consume syntactic design space add/or add new back-compat burdens, both of which make new proposals harder to fit in.
-  * It is much, much harder subsequently to remove an extension than it is to add it.
-
-  All these costs constitute a permanent tax on every future programmer, langauge designer, and GHC maintainer.  The tax may well be worth it (a language without polymorphism
-  would be simpler but we don't want it), but the case should be made.
-
-  The case is stronger if lots of people express support by giving a "thumbs-up"
-  in GitHub. Even better is the community contributes new examples that illustrate
-  how the proposal will be broadly useful.
-  The committee is often faced with proposals that are reasonable,
-  but where there is a suspicion that no one other than the author cares.
-  Defusing this suspicion, by describing use-cases and inviting support from others,
-  is helpful.
-
-* It should be copiously illustrated with examples, to aid understanding. However,
-  these examples should *not* be the specification.
+How to start a new proposal
+---------------------------
 
 Proposals are written in either `ReStructuredText <http://www.sphinx-doc.org/en/stable/rest.html>`_ or `Markdown <https://github.github.com/gfm/>`_. While the proposal process itself has no preference, keep in mind that the `GHC Users Guide <http://downloads.haskell.org/~ghc/latest/docs/html/users_guide/editing-guide.html>`_ uses ReStructuredText exclusively. Accepted proposals written in ReStructuredText thus have the slight benefit that they can be more easily included in the official GHC documentation.
 
-How to start a new proposal
----------------------------
+Poposals should follow the structure given in the `ReStructuredText template <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.rst>`_, or the `Markdown template <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.md>`_.  (The two are identical except for format.)
 
 To start a proposal, create a pull request that adds your proposal as ``proposals/0000-proposal-name.rst`` or ``proposals/0000-proposal-name.md``. Use the corresponding ``proposals/0000-template`` file as a template.
 
@@ -427,6 +381,49 @@ is a polite ping/enquiry.
 
 Review criteria
 ---------------
+Here are some characteristics that a good proposal should have.
+
+* *It should be self-standing*.  Some proposals accumulate a long and interesting discussion
+  thread, but in ten years' time all that will be gone (except for the most assiduous readers).
+  Before acceptance, therefore, the proposal should be edited to reflect the fruits of
+  that dicussion, so that it can stand alone.
+
+* *It should be precise*, especially the "Proposed change specification"
+  section.  Language design is complicated, with lots of
+  interactions. It is not enough to offer a few suggestive examples
+  and hope that the reader can infer the rest.  Vague proposals waste
+  everyone's time; precision is highly valued.
+
+  We do not insist on a fully formal specification, with a
+  machine-checked proof.  There is no such baseline to work from, and
+  it would set the bar far too high.  On the other hand, for
+  proposals involving syntactic changes, it is very reasonable to ask for
+  a BNF for the changes.
+
+  Ultimately, the necessary degree of precision is a judgement that the committee
+  must make; but authors should try hard to offer precision.
+
+* *It should offer evidence of utility*.  Even the strongest proposals carry costs:
+
+  * For programmers: most proposals make the language just a bit more complicated;
+  * For GHC maintainers:  most proposals make the implementation a bit more complicated;
+  * For future proposers:  most proposals consume syntactic design space add/or add new back-compat burdens, both of which make new proposals harder to fit in.
+  * It is much, much harder subsequently to remove an extension than it is to add it.
+
+  All these costs constitute a permanent tax on every future programmer, langauge designer, and GHC maintainer.
+  The tax may well be worth it (a language without polymorphism
+  would be simpler but we don't want it), but the case should be made.
+
+  The case is stronger if lots of people express support by giving a "thumbs-up"
+  in GitHub. Even better is the community contributes new examples that illustrate
+  how the proposal will be broadly useful.
+  The committee is often faced with proposals that are reasonable,
+  but where there is a suspicion that no one other than the author cares.
+  Defusing this suspicion, by describing use-cases and inviting support from others,
+  is helpful.
+
+* *It should be copiously illustrated with examples*, to aid understanding. However,
+  these examples should *not* be the specification.
 
 Below are some criteria that the committee and the supporting GHC
 community will generally use to evaluate a proposal. These criteria
@@ -438,7 +435,10 @@ and any other relevant considerations, appropriately.
    feature solves? Is it an important problem, felt by many users, or is
    it very specialised? The whole point of a new feature is to be useful
    to people, so a good proposal will explain why this is so, and
-   ideally offer evidence of some form.
+   ideally offer evidence of some form.  The "Endorsements" section of
+   the proposal provides an opportunity for third parties to express
+   their support for the proposal, and the reasons they would like to
+   see it adopted.
 
 -  *Elegant and principled*. Haskell is a beautiful and principled
    language. It is tempting to pile feature upon feature (and GHC
@@ -449,12 +449,12 @@ and any other relevant considerations, appropriately.
    solutions, none of which have that "aha" feeling of "this is the Right
    Way to solve this"; in that case we might delay rather than forge ahead
    regardless.
-   
+
 -  *Does not create a language fork*.  By a "fork" we mean
 
   * It fails the test "Is this extension something that most people would be happy to enable, even if they don't want to use it?"; 
   * And it also fails the test "Do we think there's a reasonable chance this extension will make it into a future language standard?"; that is, the proposal reflects the stylistic preferences of a subset of the Haskell community, rather than a consensus about the direction that (in the committee's judgement) we want to push the whole language.
-   
+
    The idea is that unless we can see a path to a point where everyone has the extension turned on, we're left with different groups of people using incompatible dialects of the language. A similar problem arises with extensions that are mutually incompatible.
 
 -  *Fit with the language.* If we just throw things into GHC
