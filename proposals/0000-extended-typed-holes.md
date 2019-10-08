@@ -58,20 +58,19 @@ main = return ()
 ```
 
 Here, the name of the hole is used to invoke different utilities and filter by
-specific modules, but the limitation of having only the name makes it impractical
-to invoke more than one command at a time, and requires users to use `_` in the
-names of the modules we want to filter by.
+specific modules, but the limitation of having only the name makes it
+impractical to invoke more than one command at a time, and requires users to
+use `_` in the names of the modules we want to filter by.
 
 
 ## Proposed Change Specification
 
 We add `-XExtendedTypedHoles` to the available extensions, which turns
 on the lexing of the following tokens:
-+ `_(` for opening an extended typed-hole, whose content is either
-  nothing, or a haskell expression.
-+ `\) $idchar $idchar*` for allowing users to enumerate the holes, with
-   e.g. `_(...)0`, ..., `_(...)n`, or name them e.g. `_(...)a`
-   or `_(...)fix_this`.
++ `_(` for opening an extended typed-hole, whose content is either nothing, or
+  a haskell expression.
++ `\) $idchar $idchar*` for allowing users to enumerate the holes, with e.g.
+  `_(...)0`, ..., `_(...)n`, or name them e.g. `_(...)a` or `_(...)fix_this`.
 + `_$(` opens a extended typed-hole containing a template haskell expression
   inside.
 + `_$$(` opens an extended typed-hole containing a typed template haskell
@@ -98,41 +97,49 @@ hole_close
 
 where `CLOSE_HOLE` is the `\) $idchar $idchar*` lexeme.
 
-These are parsed into a new `HsExpr`, `HsExtendedHole`, contains the
-`LHsExpr` from the hole or a template haskell splice.
+These are parsed into a new `HsExpr`, `HsExtendedHole`, contains the `LHsExpr`
+from the hole or a template haskell splice.
 
-For the splices, they behave the same as template haskell splices in that
-the untyped splice is run during renaming, and the typed template haskell
-splice is run during  type-checking, and generally behave in the same way 
-as regular template haskell splices, i.e. they are run at the same time.
-The only difference is that the resulting expression is not spliced into
-the code, but rather passed along with the `ExtendedExprHole` to the
-constraint solver.
+For the splices, they behave the same as template haskell splices in that the
+untyped splice is run during renaming, and the typed template haskell splice is
+run during  type-checking, and generally behave in the same way as regular
+template haskell splices, i.e. they are run at the same time.  The only
+difference is that the resulting expression is not spliced into the code, but
+rather passed along with the `ExtendedExprHole` to the constraint solver.
 
-The resulting expressions are then wrapped in a `toDyn` call from 
-`Data.Dynamic` prior to being type-checked, and the
-`runExtHExpr :: LHsExpr GhcTc -> TcM Dynamic` function is provided
-in `TcHoleErrors`. This allows plugin developers to easily run the
-expressions and obtain a `Dynamic`, which they can then safely try to
-interpet as whatever type they expect the user to use in the holes.
+The resulting template haskell expressions are wrapped in a `toDyn` call from
+`Data.Dynamic` prior to being type-checked, and a
+`runEHSplice :: LHsExpr GhcTc -> TcM Dynamic` function is provided in
+`TcHoleErrors`. This allows plugin developers to easily run the expressions and
+obtain a `Dynamic`, which they can then safely try to interpet as whatever type
+they expect the user to use in the holes.
 
-When the type-checker encounters a `HsExtendedHole` expression, it emits
-an insoluable `CHoleCan` (as we do for typed-holes already), but one that
-contains an `ExtendedExprHole` constraint with the expression (if any) or
-the expression resulting from running the splice. The expression can then
-be accessed via the constraint from plugins or the error reporter, and
+For expressions contained in a `_(...)` hole, the contained expression is only 
+parsed and not renamed nor type-checked, though the
+`runEHRawExpr :: LHsExpr GhcPs -> TcM HValue` and
+`runEHRRawExprDyn :: LHsExpr GhcPs -> TcM Dynamic` functions are provided in
+`TcHoleErrors` for easy interaction with the expressions. This allows hole
+plugin developers to manipulate the contained expressions at will, and allows
+users to operate directly on an expression by simply wrapping it in a `_(...)`
+hole.
+
+When the type-checker encounters a `HsExtendedHole` expression, it emits an
+insoluble `CHoleCan` (as we do for typed-holes already), but one that contains
+an `ExtendedExprHole` constraint with the parsed expression (if any) or the
+`toDyn` wrapped expression resulting from running the splice.  The expression
+can then be accessed via the constraint from plugins or the error reporter, and
 will hopefully enable us to move towards [Extensible Type-Directed Editing](http://cattheory.com/extensibleTypeDirectedEditing.pdf)
 in Haskell.
 
-As it is behind an extension flag, it does not impact any existing parsing
-nor features, except Haddock and other Haskell AST parsing utilities will 
-need to handle the new `HsExpr`.
+As it is behind an extension flag, it does not impact any existing parsing nor
+features, except Haddock and other Haskell AST parsing utilities will need to
+handle the new `HsExpr`.
 
 ## Examples
 
 As an example, consider the [ExtendedHolesPlugin](https://github.com/Tritlo/ExampleHolePlugin/tree/master/extended-holes-plugin).
-By defining a DSL, the plugin can express how users can interact with it
-via template haskell expressions.
+By defining a DSL, the plugin can express how users can interact with it via
+template haskell expressions.
 
 
 This allows us to compile the following:
