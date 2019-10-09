@@ -235,6 +235,66 @@ Main.hs:19:5: error:
    |     ^^^^^^^^^^^^^^^^^^^...
 ```
 
+Note that the expressions in `_(...)` are only parsed. Only when we try to
+extract the value are the contents type-checked, desugared and compiled.
+However, `runEHSplice`, `runEHRawExpr` and `runEHRRawExprDyn` all make sure to
+propagate any errors encountered to the plugin, which can then handle it
+accordingly. E.g. for the ExtendedHolesPlugin, we can compile the following:
+
+```
+{-# OPTIONS -fplugin=ExtendedHolesPlugin -funclutter-valid-hole-fits #-}
+{-# LANGUAGE ExtendedTypedHoles #-}
+module Main where
+import ExtendedHolesPlugin
+
+
+data A = A | B | C
+
+b :: A
+b = A
+
+j :: ()
+j = _([A,b])
+
+main = return ()
+```
+
+and get the following output:
+
+```
+Main.hs:13:5: error:
+    GHC error in desugarer lookup in Main:
+      attempting to use module ‘main:Main’ (Main.hs) which is not loaded
+   |
+13 | j = _([A,b])
+   |     ^^^^^^^^
+
+Main.hs:13:5: error:
+    GHC error in desugarer lookup in Main:
+      Can't find interface-file declaration for variable Main.$tcA
+        Probable cause: bug in .hi-boot file, or inconsistent .hi file
+        Use -ddump-if-trace to get an idea of which file caused the error
+   |
+13 | j = _([A,b])
+   |     ^^^^^^^^
+
+Main.hs:13:5: error:
+    • Found hole: _(...) :: ()
+      Or perhaps ‘_(...)’ is mis-spelled, or not in scope
+    • In the expression: _(...)
+      In an equation for ‘j’: j = _(...)
+    • Relevant bindings include j :: () (bound at Main.hs:13:1)
+   |
+13 | j = _([A,b])
+   | 
+
+```
+
+Here the first two errors are internal GHC error being propagated and shown to
+the user, it is however up to the discretion of the plugin developer.
+
+
+
 ## Effect and Interactions
 
 By being able to parse any string and the result of template haskell expressions
