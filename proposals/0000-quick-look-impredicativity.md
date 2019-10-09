@@ -70,6 +70,8 @@ Another way to look at this proposal is that each application is type checked *t
 
 One important feature of Haskell's type system that "quick look" uses is the invariance of type constructors. In short, the subsumption rules ensure that if, for example, `Maybe t` is a more polymorphic than `Maybe s`, it must be the case that `t` equals `s`. This property holds for every type constructor except for function types, which require a slightly more complex handling. The proposed inference algorithm never tries to perform any complicated analysis on other types: impredicativity must be the *only obvious* solution to make the program type check (or as we say in the paper, "impredicativity is never guessed").
 
+To ease the transition from fully contravariant functions to [non-contravariant ones](#rankntypes-and-lack-of-contravariance) we propose to add another extension to GHC, called `ContravariantFunctions`, which should be disabled by default. When the extension is enabled, subsumption checking is done using full contravariance of function types. This means that `RankNTypes` + `ContravariantFunctions` behaves the same as the old `RankNTypes`.
+
 ## Examples
 
 Several examples can be found in the [paper draft](https://www.dropbox.com/s/hxjp28ym3lptmxw/quick-look-steps.pdf?dl=0). Let us review the main example, `(\x -> x) : ids`, where `ids :: [forall a. a -> a]` from the eyes of the "approachable" description.
@@ -124,6 +126,16 @@ choose g f :: Bool
 
 There is a simple workaround that works most of the time under this proposal: eta-expansion (you might need to eta-expand more than once, though). Taking the `choose`, `f`, and `g` functions defined above,in a non-contravariant world we need to eta-expand `f` to make it work: `choose (\x -> f x) g`; now the `x` is assigned type `forall a. a -> a`, which is then instantiated to `Int -> Int` before passing it to `f`.
 
+### The `ContravariantFunctions` extension
+
+After a preliminary assessment of which packages still compile under the new policy of non-contravariant functions, most of the packages using either `RankNTypes` or `ImpredicativeTypes` continue to compile. The main problem comes from some usage patterns within the `Cabal` library. This library often uses functions of the form:
+
+```haskell
+f :: ( (... -> CabalIO a) -> ...) -> ...
+```
+
+where `CabalIO a` is defined as `HasCallStack => IO a`. That means that whereas before we could pass a function `g` as argument, now we have to do something akin to `\... t ... -> g (\... x ... -> t ... x ...)`, which is quite annoying. At the moment of writing, though, only `cabal-doctest` seems to be really problematic, as many other packages in the ecosystem relies on it. To ease the transition, we propose the `ContravariantFunctions` extension discussed above.
+
 ### The typing rule for `($)`
 
 Currently, GHC contains a [hard-coded typing rule for `($)`](https://gitlab.haskell.org/ghc/ghc/blob/795986aaf33e2ffc233836b86a92a77366c91db2/compiler/typecheck/TcExpr.hs#L368-397) which ensures that `f $ e` works even when `($)` would need to be impredicatively instantiated. The million dollar question is: can we drop this special case from the compiler?
@@ -169,18 +181,6 @@ Another possibility is to drop impredicative type inference altogether, and expe
 ```haskell
 (++) @(forall a. a -> a) ids ([] @(forall a. a -> a))
 ```
-
-### The `ContravariantFunctions` extension
-
-After a preliminary assessment of which packages still compile under the new policy of non-contravariant functions, most of the packages using either `RankNTypes` or `ImpredicativeTypes` continue to compile. The main problem comes from some usage patterns within the `Cabal` library. This library often uses functions of the form:
-
-```haskell
-f :: ( (... -> CabalIO a) -> ...) -> ...
-```
-
-where `CabalIO a` is defined as `HasCallStack => IO a`. That means that whereas before we could pass a function `g` as argument, now we have to do something akin to `\... t ... -> g (\... x ... -> t ... x ...)`, which is quite annoying. At the moment of writing, though, only `cabal-doctest` seems to be really problematic, as many other packages in the ecosystem relies on it.
-
-We thus propose to add another extension to GHC, called `ContravariantFunctions`, which should be disabled by default. When the extension is enabled, subsumption checking is done using full contravariance of function types. This means that `RankNTypes` + `ContravariantFunctions` behaves the same as the old `RankNTypes. This has the benefit of asking people to eta-expand their functions, while having a escape way for those libraries which would require too many changes.
 
 Another alternative is to enable `ContravariantFunctions` whenever `RankNTypes` is enabled but `ImpredicativeTypes` is not (by making `ContravariantFunctions` enabled by default and making `ImpredicativeTypes` imply `NoContravariantFunctions`). The main disadvantage is that code that compiles under the former flag may stop compiling if you add the latter.
 
