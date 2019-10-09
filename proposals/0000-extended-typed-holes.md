@@ -328,6 +328,7 @@ a type error, complete programs are unlikely to have holes in them.
   without requiring the extension flag enabled? This would allow us to
   use `_` for regular typed-holes (without any suggestions etc.), and require users
   that want suggestions or to use plugins to use  the `_(...)` syntax.
++ Should `-XExtendedTypedHoles` imply `-XTemplateHaskell`?
 + Should we define and require that the template haskell splices have a specific
   type, and do away with `Dynamic`?  This could ease the interop between different
   plugins, but we'd also like to give plugin developers as much freedom as possible.
