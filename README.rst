@@ -312,9 +312,16 @@ proposal is ready for decision.
 -  Discussion among the committee ensues on the discussion thread.
    Silence is understood as agreement with the shepherd's recommendation.
    Ideally, the committee reaches consensus, as determined by the secretary or
-   the shepherd. If consensus is elusive, then we vote, with the Simons
-   retaining veto power.
-
+   the shepherd.
+   
+-  If consensus eludes us, the shepherd may call for a vote. The shepherd may 
+   propose any number of alternative resolutions, which the committee members
+   will rank in order of preference. For the duration of the vote, the shepherd
+   will lock the thread, to ensure that only committee members participate.
+   Once voting is complete, the shepherd will tally the votes according to the
+   `Schulze method <https://en.wikipedia.org/wiki/Schulze_method>`_ [#schulze]_,
+   and announce the result. The Simons retain veto power.
+ 
 -  The decision is announced, by the shepherd or the secretary, on the Github
    thread and the mailing list.
 
@@ -345,7 +352,6 @@ proposal is ready for decision.
       The proposal authors or other implementors are encouraged to update the
       proposal with the implementation status (i.e. ticket URL and the
       first version of GHC implementing it.)
-
 
 Review criteria
 ---------------
@@ -413,3 +419,5 @@ Questions?
 Feel free to contact any of the members of the `GHC Steering Committee
 <#who-is-the-committee>`_ with questions. `Email <https://wiki.haskell.org/Mailing_lists>`_
 and IRC (``#ghc`` on ``irc.freenode.net``) are both good ways of accomplishing this.
+
+.. [#schulze] `<https://condorcet.vote>`_ is a handy online calculator for tallying votes.
