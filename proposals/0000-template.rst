@@ -109,7 +109,7 @@ Endorsements
 -------------
 (Optional) This section provides an opportunty for any third parties to express their
 support for the proposal, and to say why they would like to see it adopted.
-It is not mandatory for have any endorsements at all, but the substantial
+It is not mandatory for have any endorsements at all, but the more substantial
 the proposal is, the more desirable it is to offer evidence that there is
 significant demand from the community.  This section is one way to provide
 such evidence.
