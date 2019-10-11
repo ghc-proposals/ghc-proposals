@@ -92,6 +92,25 @@ The above forms combine to provide these identities:
 | `e{lbl1 = val1, lbl2 = val2}` | `(e{lbl1 = val1}){lbl2 = val2}` |
 | `e{lbl1.lbl2, ..}` | `e{lbl2=lbl1.lbl2, ..}` when record wild cards are enabled |
 
+### Syntax
+
+#### Whitespace
+
+- `f.x` means `getField @"lbl" f`;
+- `f .x` (note the space) means the same thing;
+- `f (.x)` means `f (\r -> r.x)`;
+- `f(.x)` does too.
+
+#### Qualified names vs. field projections
+
+- `Foo.name` is a qualified variable;
+- `Foo .name` is an attempt to project a name field from a constructor (will manifest as an error);
+- `Foo(.name)` is the constructor `Foo` applied to the section `(.name)`.
+
+#### Precedence
+
+In the prototype, function application takes precedence over field projection so `f a.foo.bar.baz.quux 12` parses as `((f a).foo.bar.baz.quux) 12`. To treat the first argument to `f` as a projection of `a`, write `f (a.foo.bar.baz.quux) 12` and `f (a .foo .bar .baz .quux) 12` is equivalent.
+
 ### Lexer
 
 A new lexeme *fieldid* is introduced.
@@ -286,6 +305,7 @@ Below are some possible variations on this plan, but we advocate the choices mad
 * Should `RecordDotSyntax` imply `NoFieldSelectors`? They are often likely to be used in conjunction, but they aren't inseparable.
 * It seems appealing that `a{field += 1}` would be the syntax for incrementing a field. However, `+=` is a valid operator (would that be `a{field +== 1}`?) and for infix operators like `div` would that be <tt>\`div\`=</tt>?
 * We do not extend pattern matching, although it would be possible for `P{foo.bar=Just x}` to be defined.
+* Should `f a.foo.bar.baz.quux 12` parse as `((f a).foo.bar.baz.quux) 12` or `f (a.foo.bar.baz.quux) 12`?
 
 ## Implementation Plan
 
