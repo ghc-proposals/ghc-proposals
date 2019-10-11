@@ -41,7 +41,7 @@ For the specification we focus on the changes to the parsing rules, and the desu
 
 This change adds a new language extension (enabled at source via `{-# LANGUAGE RecordDotSyntax #-}` or on the command line via the flag `-XRecordDotSyntax`).
 
-When `RecordDotSyntax` is in effect, the use of '.' to denote record field access is disambiguated from function composition by the absence of whitespace trailing the '.'.
+When `RecordDotSyntax` is in effect, the use of '.' to denote record field access is disambiguated from function composition by the absence of whitespace trailing the '.'. Concretely, `a.b` and `a .b` are record field accesses, while `a . b` is not, where `a` can be any atomic expression (e.g. `foo`, `foo.bar` or `(f x y)`), but not a module name (e.g. not `Foo.bar`).
 
 Suppose the following datatype declarations.
 
@@ -269,7 +269,9 @@ A full, rigorous set of examples (as tests) are available in the examples direct
 
 ## Effect and Interactions
 
-**Polymorphic updates:** When enabled, this extension takes the `a{b=c}` syntax and uses it to mean `setField`. The biggest difference a user is likely to experience is that the resulting type of `a{b=c}` is the same as the type `a` - you _cannot_ change the type of the record by updating its fields. The removal of polymorphism is considered essential to preserve decent type inference, and is the only option supported by [the `HasField` proposal](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0158-record-set-field.rst).
+**Polymorphic updates:** When enabled, this extension takes the `a{b=c}` syntax and uses it to mean `setField`. The biggest difference a user is likely to experience is that the resulting type of `a{b=c}` is the same as the type `a` - you _cannot_ change the type of the record by updating its fields. The removal of polymorphism is considered essential to preserve decent type inference, and is the only option supported by [the `HasField` proposal](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0158-record-set-field.rst). Anyone wishing to use polymorphic updates can write `let Foo{..} = Foo{polyField=[], ..}` instead.
+
+**Higher-rank fields:** It is impossible to express `HasField` instances for data types such as `data T = MkT { foo :: forall a . a -> a}`, which means they can't have this syntax available. Users can still write their own selector functions using record puns if required.
 
 **Stealing a.b syntax:** The `a.b` syntax is commonly used in conjunction with the `lens` library, e.g. `expr^.field1.field2`. Treating `a.b` without spaces as a record projection would break such code. The alternatives would be to use a library with a different lens composition operator (e.g. `optics`), introduce an alias in `lens` for `.` (perhaps `%`), write such expressions with spaces, or not enable this extension when also using lenses. While unfortunate, we consider that people who are heavy users of lens don't feel the problems of inadequate records as strongly, so the problems are lessened.
 
@@ -302,7 +304,7 @@ All these approaches are currently used, and represent the "status quo", where H
 
 Below are some possible variations on this plan, but we advocate the choices made above:
 
-* Should `RecordDotSyntax` imply `NoFieldSelectors`? They are often likely to be used in conjunction, but they aren't inseparable.
+* Should `RecordDotSyntax` imply `NoFieldSelectors`? Typically `RecordDotSyntax` will be used in conjunction with `NoFieldSelectors`, but `DuplicateRecordFields` would work too.
 * It seems appealing that `a{field += 1}` would be the syntax for incrementing a field. However, `+=` is a valid operator (would that be `a{field +== 1}`?) and for infix operators like `div` would that be <tt>\`div\`=</tt>?
 * We do not extend pattern matching, although it would be possible for `P{foo.bar=Just x}` to be defined.
 * Should `f a.foo.bar.baz.quux 12` parse as `((f a).foo.bar.baz.quux) 12` or `f (a.foo.bar.baz.quux) 12`?
