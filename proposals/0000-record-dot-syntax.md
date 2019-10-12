@@ -109,7 +109,7 @@ The above forms combine to provide these identities:
 
 #### Precedence
 
-In the prototype, function application takes precedence over field projection so `f a.foo.bar.baz.quux 12` parses as `((f a).foo.bar.baz.quux) 12`. To treat the first argument to `f` as a projection of `a`, write `f (a.foo.bar.baz.quux) 12` and `f (a .foo .bar .baz .quux) 12` is equivalent.
+In the prototype, function application takes precedence over field projection so `f a.foo.bar.baz.quux 12` parses as `((f a).foo.bar.baz.quux) 12`. To treat the first argument to `f` as a projection of `a`, write `f (a.foo.bar.baz.quux) 12` and `f (a .foo .bar .baz .quux) 12` is equivalent (see the ["Unresolved Questions"](#unresolved-questions) section).
 
 ### Lexer
 
