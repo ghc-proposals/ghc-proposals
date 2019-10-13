@@ -8,7 +8,7 @@ the GHC Steering Committee, is to broaden the discussion of the evolution of
 GHC.
 
 * `≡ List of proposals under discussion <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+no%3Alabel>`_
-* `≡ List of proposals waiting for shepherd <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+shepherd+recommendation%22>`_
+* `≡ List of proposals waiting for shepherd recommendation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+shepherd+recommendation%22>`_
 * `≡ List of proposals waiting for committee decision <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+committee+review%22>`_
 * `≡ List of accepted proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Accepted%22>`_
 * `≡ List of rejected proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Rejected%22>`_
@@ -332,8 +332,11 @@ proposal is ready for decision.
       GHC, it will be reverted.
 
    *  **If we say yes:**
-      The pull request will be merged, numbered and labeled
+      The pull request will be merged and labeled
       `Accepted <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3AAccepted>`_.
+      Its meta-data will be updated to include the acceptance date.
+      A link to the accepted proposal is added to the top of the PR discussion, together with
+      the sentence “The proposal has been accepted; the following discussion is mostly of historic interest.”.
 
       At this point, the proposal process is technically
       complete. It is outside the purview of the committee to implement,
