@@ -339,3 +339,33 @@ I (Sandy Maguire) have [already][mr1730] [implemented][mr1739] most of this.
 [mr1730]: https://gitlab.haskell.org/ghc/ghc/merge_requests/1730
 [mr1739]: https://gitlab.haskell.org/ghc/ghc/merge_requests/1739
 
+
+
+---
+
+```haskell
+data ErrorMessage rk a where
+  Text :: Symbol -> ErrorMessage rk Symbol
+  ShowType :: t -> ErrorMessage rk Symbol
+  ...
+  ShowTypePrec :: Nat -> t -> ErrorMessage rk Symbol
+  NoTypeError :: ErrorMessage rk Symbol
+  If :: ErrorMessage rk Bool -> ErrorMessage rk k -> ErrorMessage rk k -> ErrorMessage rk k
+  IsApart :: t -> ErrorMessage rk Bool
+  IsAmbiguous :: t -> ErrorMessage rk Bool
+  IsUndischarged :: Constraint -> ErrorMessage Constraint Bool
+  And :: ErrorMessage rk Bool -> ErrorMessage rk Bool -> ErrorMessage rk Bool
+  Or :: ErrorMessage rk Bool -> ErrorMessage rk Bool -> ErrorMessage rk Bool
+  Not :: ErrorMessage rk Bool -> ErrorMessage rk Bool
+
+type family TypeError (err :: ErrorMessage k Symbol) :: k
+
+type WithMessage (c :: Constraint) (msg :: ErrorMessage Constraint Symbol) :: Constraint =
+  ( c
+  , TypeError ('If ('IsUndischarged c) msg NoTypeError)
+  )
+```
+
+
+
+
