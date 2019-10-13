@@ -220,7 +220,7 @@ This is one more feature to implement and maintain.
 Alternatives
 ------------
 
-* We could treat ``f :: t = <rhs>`` equivalently to ``f = <rhs> :: t``, but
+* We could treat ``f x :: t = <rhs>`` equivalently to ``f x = <rhs> :: t``, but
   this is neither consistent nor terribly useful.
 
 * We could detect CUSKs as we do in types to enable polymorphic recursion, but
