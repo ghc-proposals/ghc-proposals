@@ -179,13 +179,13 @@ Syntax
 ~~~~~~
 
 Take the Haskell 2010 function left-hand side grammar as the
-starting point: ::
+starting point::
 
   funlhs -> var apat {apat}
           | pat varop pat
           | ( funlhs ) apat {apat}
 
-The change is to add an optional type annotation: ::
+The change is to add an optional type annotation::
 
   funlhs' -> var apat {apat}
            | pat varop pat
@@ -208,8 +208,8 @@ site for ``a`` (in this example); and the ``a`` might be bound to any type, e.g
 Effect and Interactions
 -----------------------
 
-Purposefully kept to a minimum. See the alternatives for why an extension had
-negative interactions.
+Purposefully kept to a minimum. See the alternatives for why an extension to
+this proposal had negative interactions.
 
 Costs and Drawbacks
 -------------------
@@ -251,8 +251,8 @@ Alternatives
       • In the pattern: x :: [a] -> [a]
         In a pattern binding: x :: [a] -> [a] = reverse
 
-  But by reclassifying this construct as a function binding and
-  allow scoped type variables::
+  But by reclassifying this construct as a function binding we could allow
+  scoped type variables::
 
     x :: [a] -> [a] = reverse -- accepted as FunBind
 
@@ -267,11 +267,12 @@ Alternatives
     y :: a
     y = 1 :: Int
 
-  ``a`` is a (unified) type variable with the same scope as ``x``. This matches
-  ``f (x :: a) = ...`` and ``(x :: a) <- ...`` where the ``x`` and ``a`` also
-  coincide scopes. The overlap with the monadic bind is especially intersting,
-  because we *have* to have these semantics / scope of ``a`` there in order to
-  bind existentials. This also scales to deeper pattern signatures::
+  Here, ``a`` is a (unified) type variable with the same scope as ``x``. This
+  matches ``f (x :: a) = ...`` and ``(x :: a) <- ...`` where the ``x`` and
+  ``a`` also have the same scope. The overlap with the monadic bind is
+  especially intersting, because we *have* to have these the scope of ``a`` not
+  include the RHS of the bind in order to bind existentials. This also scales
+  to deeper pattern signatures::
 
     Identity (x :: a) = Identity @Int 1 -- maybe someday accepted as PatBind
 
@@ -288,15 +289,15 @@ Alternatives
     Identity (x :: forall a. [a] -> [a]) = Identity \@b -> id @[b]
 
   All this is of course future work, but it seems premature for this proposal
-  to cut off that line of research as just a side effect. By conservatively
-  keeping pattern binds the same as today, we keep all options open.
+  to cut off that future work. By conservatively keeping pattern binds the same
+  as today, we keep all options open.
 
 Unresolved Questions
 --------------------
 
-No unresolved questions. The previous version of the proposal in changing
-division between pattern and function binds raised some, but we avoid that by
-keeping the existing division.
+No unresolved questions. The previous version of the proposal in changing the
+division between pattern and function binds raised some, but now we avoid that
+by keeping the existing division.
 
 Implementation Plan
 -------------------
