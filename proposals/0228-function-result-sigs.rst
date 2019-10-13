@@ -307,3 +307,9 @@ I (Vladislav Zavialov) will (attempt to) implement.
 The function result signatures are already a part of the ``Parser.y`` grammar,
 and a validation step rejects them. This check will be removed, and ``FunBind``
 extended with a result type.
+
+I, John Ericson (@Ericson2314), started GHC MR `!1474`_, which makes GHC's division of pattern and function bindings match the spec.
+I will attempt to finish it, probably after the 8.10 fork.
+While it may not be necessary, it is probably the best way to ensure that `f :: a = ...` works according to the proposal and not the alternative.
+
+.. _`!1474`: https://gitlab.haskell.org/ghc/ghc/merge_requests/1474
