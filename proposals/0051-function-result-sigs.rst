@@ -225,8 +225,8 @@ Alternatives
 * We could detect CUSKs as we do in types to enable polymorphic recursion, but
   this makes little sense as we are in the proccess of their deprecation.
 
-* An earlier version of the propsal changed the boundary between function binds
-  and pattern binds via not requring an arugment::
+* An earlier version of the proposal changed the boundary between function binds
+  and pattern binds via not requring an argument::
 
     - funlhs' -> var apat {apat}
     + funlhs' -> var {apat}
