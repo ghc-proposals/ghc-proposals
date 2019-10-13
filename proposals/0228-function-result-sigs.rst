@@ -227,7 +227,9 @@ Alternatives
   this makes little sense as we are in the proccess of their deprecation.
 
 * An earlier version of the proposal changed the boundary between function binds
-  and pattern binds via not requring an argument::
+  and pattern binds via not requring an argument:
+
+  .. code-block:: diff
 
     - funlhs' -> var apat {apat}
     + funlhs' -> var {apat}
