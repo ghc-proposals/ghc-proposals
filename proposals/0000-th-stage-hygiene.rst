@@ -623,7 +623,7 @@ Rigid vars
 ~~~~~~~~~~
 
 Why bother with these abstract platforms?
-Why not have something like separate Linux vs Windows ``import``s and ``build-depends``, or separate native vs cross ones?
+Why not have something like separate Linux vs Windows ``import`` and ``build-depends``, or separate native vs cross ones?
 Many systems in fact work this way; I changed Nixpkgs and `Meson`_ to *not* work this way as best as I could.
 The simple answer is there's a combinatorial explosion.
 There's many arches * many OSes * many libcs * many linking strategies that may sadly be observable, etc.
