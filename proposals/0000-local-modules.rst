@@ -50,6 +50,8 @@ provides a tempting way toward a resurrection of rejected proposal `#40`_
 .. _`#273`: https://github.com/ghc-proposals/ghc-proposals/pull/273
 .. _`#40`: https://github.com/ghc-proposals/ghc-proposals/blob/context-fixes/proposals/0000-context-fixes.rst
 .. _`#160`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0160-no-toplevel-field-selectors.rst
+.. _`#88`: https://github.com/ghc-proposals/ghc-proposals/pull/88
+.. _`#234`: https://github.com/ghc-proposals/ghc-proposals/pull/234
 
 Motivation
 ----------
@@ -206,12 +208,14 @@ Proposed Change Specification
 
 4. Definitions in a local module may be mutually recursive with definitions
    in other local modules or outside of any local module. That is, local
-   modules influence scoping, but not type-checking or dependency.
+   modules influence scoping only, but not type-checking or dependency.
    
 5. A local module declaration brings into scope names listed in its export
    list. These names are always brought into scope qualified by the local
    module name, unless that module name is ``_``. If the declaration includes
-   the ``import`` keyword, the names are also brought into scope unqualified.
+   the ``import`` keyword, the names are also brought into scope unqualified
+   by the local module name. (In the case of nested local modules, the names
+   might be qualified by inner module names.)
 
 6. It is an error to specify a non-empty export list, name a module ``_``, and
    not include the ``import`` keyword. (Modules named ``_`` without an
@@ -370,16 +374,19 @@ Effect and Interactions
 * Proposal `#160`_ allows users to suppress field selectors, thus ameliorating a small part
   of what has motivated this proposal.
 
+* This proposal does not appear to interact with Backpack. It does not address ``signature``\s,
+  the key feature in Backpack. Perhaps the ideas here could be extended to work with ``signature``\s.
+  
 Costs and Drawbacks
 -------------------
 
 * This is a significant new bit of implementation and specification, and it should require the
   requisite level of support from the community to be accepted.
 
-Alternatives
+Related Work
 ------------
 
-There are many alternatives. The list below is shamelessly cribbed from `#205`_.
+There is much prior art. The list below is shamelessly cribbed from `#205`_.
 
 * Proposal `#205`_. That proposal essentially tweaks the ``qualified`` feature to
   become more flexible and exportable. It has proved hard to digest (from the commentary),
@@ -397,6 +404,24 @@ There are many alternatives. The list below is shamelessly cribbed from `#205`_.
   
 * 2013 de Castro Lopo, qualified exports: `<https://wiki.haskell.org/GHC/QualifiedModuleExport>`_
   ``qualified module T`` in export list and is essentially a subset of this proposal.
+
+Alternatives
+------------
+
+Beyond the `Related Work`_, there is wiggle room within this proposal for alternatives.
+
+A. Drop specification point (7) making implicit modules for each type declaration. It's
+   not required by the rest of the proposal. I like it, though.
+
+B. Drop the possibility of the ``import`` keyword in the ``module`` import
+   item. Users can always just write one more ``import module`` statement to
+   unqualify the module's contents. Yet, to me, it just seems more ergonomic
+   to get to the chase right away here.
+
+C. Drop point (8) allowing extension of existing local modules. That was added so that
+   definitions could be mixed in with, e.g., constructors of an implicit local module
+   surrounding a type declaration. But it also seems like a nice way of flexibly mixing
+   modules together. It's an inessential feature.
 
 Future Work
 -----------
@@ -416,8 +441,16 @@ I see a few future directions along these lines, but I leave it to others to fle
 
    However, it would be nice to separate the treatment of compilation units and source files,
    as well. This would allow, for example, the inliner and specializer to make decisions with
-   respect to more definitions (if the compilation unit is larger than the source file).
+   respect to more definitions (if the compilation unit is larger than the source file). It would
+   also allow for easy mutual dependency between files: just put the SCC of definitions into
+   a multi-file compilation unit.
 
+3. Some language extensions and other compiler settings, such as warning flags,
+   might make sense on a per-module basis. We can imagine setting these on local
+   modules instead of only at the top-level module in a file. With such an extension
+   to this design, we might nab abandoned proposal `#88`_ on language extensions
+   or tabled proposal `#234`_ on warning flags.
+   
 Unresolved questions
 --------------------
 None at this time.
