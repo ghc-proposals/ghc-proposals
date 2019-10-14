@@ -169,20 +169,11 @@ Remember, this is still strictly better than today when the choice is cross comp
 Untyped TH is liberated from the fragmentation, and hopefully the others follow.
 
 As a final side benefit, now that Template Haskell will be defined and implemented in terms of stages, we can relax ``-XTemplateHaskellQuotes``.
-For example, the following current prohibited:
-::
-  [| $(x) |]
-But actually imposes no problems.
-This is the same as
-::
-  x
-and likewise
-::
-  [| f $(x) b |]
-and is the same as
-::
-  AppE <$> [| f |] <*> x <*>  [| b |]
-Since the splices all can be desugared away without the evaluation of user-written code, there is no reason to penalize them.
+Splices within quotes are currently prohibited.
+For example, one cannot write ``[| $(x) |]``.
+But actually this imposes no problems.
+``[| $(x) |]`` is the same as plain ``x``, and likewise ``[| f $(x) b |]`` is the same as ``AppE <$> [| f |] <*> x <*>  [| b |]``.
+Since these splices all can be desugared away without the evaluation of user-written code, there is no reason to penalize them.
 
 Macro systems have often been judged by their (lack of) hygiene.
 Macros that delay all name resolution post splicing are deemed unhygienic.
