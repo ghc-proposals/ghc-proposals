@@ -72,9 +72,10 @@ The expression:
 
 means `getField @"lbl" f`, provided:
 
-- There is no whitespace either side of `.`
-- That `lbl` is a valid variable name
-- That `e` is an expression, but not a *conid*
+- There is no whitespace either side of `.`;
+- That `lbl` is a valid variable name;
+- That `e` is an expression, but not a *conid*;
+- Precedence : `f a.foo.bar.baz.quux 12` parses as `f (a.foo.bar.baz.quux) 12`.
 
 Similarly, `e{lbl=val}` only applies if `e` is an expression, but not a *conid*.
 
@@ -190,9 +191,7 @@ aexp2   :: { ECP }
 
 ### Prototype
 
-To confirm these changes integrate as expected we have written [a prototype implementation](https://gitlab.haskell.org/shayne-fletcher-da/ghc/commits/record-dot-syntax) that parses and desugars the forms directly in the parser. For confirmation, we _do not_ view desugaring in the parser as the correct implementation choice, but it provides a simple mechanism to pin down the changes without going as far as adding additional AST nodes or type checker rules.
-
-In the prototype, function application incorrectly takes precedence over field projection so `f a.foo.bar.baz.quux 12` parses as `((f a).foo.bar.baz.quux) 12` - we consider that a bug.
+To confirm these changes integrate as expected we have written [a prototype implementation](https://gitlab.haskell.org/shayne-fletcher-da/ghc/commits/record-dot-syntax) that parses and desugars the forms directly in the parser. For confirmation, we _do not_ view desugaring in the parser as the correct implementation choice, but it provides a simple mechanism to pin down the changes without going as far as adding additional AST nodes or type checker rules. Note that in the prototype, projection ([as proposed here](#syntax)), takes precedence over application so `f a.foo.bar.baz.quux 12` parses as `f (a.foo.bar.baz.quux) 12`.
 
 ## Examples
 
