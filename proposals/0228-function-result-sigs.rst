@@ -2,7 +2,8 @@ Function Result Type Signatures
 ===============================
 
 .. proposal-number:: 51
-.. author:: Vladislav Zavialov
+.. author:: Vladislav Zavialov (@int-index)
+.. co-author:: John Ericson (@Ericson2314)
 .. date-accepted:: 2019-07-16
 .. ticket-url::
 .. implemented::
