@@ -340,6 +340,8 @@ Which now adds a dictionary's burden. While this may have performance implicatio
     data FPack a where
         FPack :: forall (_ :: C) => F a -> FPack a
 
+Indeed, adding constrained type families provides a motivation to add irrelevant binders, at least for constraints, without needing dependent types fas a justification, but that is beyond the scope of this proposal.
+
 
 The New Haskeller Story
 +++++++++++++++++++++++
@@ -357,16 +359,6 @@ Unresolved questions
 * What is lost relative to implementing the full CTF paper system in GHC?
 * How much existing code is actually going to be broken by these changes?
     * This is likely unknowable until an implementation exists.
-* Should we use ``-XDatatypeContexts`` to resolve the performance implications without waiting for matchability?
-    Another, simpler way to remove the new dictionary burden on records that contain associated-typed values would be to change how datatype contexts work, giving them the required constraint semantics that are truly desired here. Then, it can be written simply as:
-
-    ::
-
-        data (C a) => FPack a where
-            FPack :: F a -> FPack a
-
-    This would entail undeprecating ``-XDatatypeContexts`` with the addendum that such constraints are available when kind checking. Since constraints where never previously relevant at the kind level, this is not a breaking change, but I do not expect the idea of undeprecating this largely regretted extension to be popular.
-
 
 Implementation Plan
 -------------------
