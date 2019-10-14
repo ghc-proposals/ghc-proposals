@@ -433,14 +433,25 @@ Forward references across splices
    Nevertheless, allowing circular intra-module dependencies is not trivial so it is good to decouple relaxing that restriction from this already-large proposal.
    Hopefully a future proposal will tackle this.
 
-Speeding up builds
-  Modules' and libraries' number of stages is relative.
-  Specifically, their exported stage 0 may not necessarily be imported at stage 0.
+Faster and finer-grained builds
+  Because any import could be used by TH, GHC today must be extra cautious parallelizing complation. [#thanks-th-incr]_
+  Firstly, a module must be built after object code or byte code for all imports is produced, lest that import be used in a splice.
+  But we if we know exactly which imports could be used in splices, we'd need only wait for the interface of that module to be produced.
+  Likewise, we wouldn't need to type check again if just the implementations of imports changed but the interface didn't.
+  And in the the unoptimized case, we couldn't need to code-gen again either.
+  GHC currently compiles all modules pessimistically, as if they all use TH and use every import in every splice, so ther are huge performance gains to be had here.
+
+  The stage numering may make it seem like we need to build some things twice unncessarily.
+  While we do have the benefit of not treating every `import` and `build-depends` as a -1 dep used by TH, what about dependencies like `base` that are almost always used in both stage 0 and stage -1 code?
+  We don't necessarily need to build those twice either; the key is that import and dependency stages numbers are the property of the downstream consumer, not dependency itself.
   There is no notion of a global "true" stage 0, which would have to be something the entire dependency graph agrees on.
+  Specifically, module's and libary's exported stage 0 may not necessarily be imported at stage 0.
   This is good in that we can share build artifacts more widely without breaking abstractions.
   For example, in the mostly-common native case (build == host), a library that needs another library in stage 0 and stage -1 can load the *same* build of the library in both of those stages.
+  The loaded libary neither knows or cares what stage number it is used at.
   By virtue of the explicit stage attached to the import, the definitions do not unify even though the underlying build is the same.
-  This can be compared to repeated abstract interfaces in backpack being instantiated with the same concrete module.
+  So likewise, the downstream libraries doesn't now or care whether 1 build is shared between both imports, or multiple separate builds are imported.
+  With both side so blind, the sharing of builds in the native case is leak-free. [#backpack]_
 
   In the cross case, there is no getting around needing separate builds for the different platform used in each stage, but there are still performance improvements.
   As said in the motivation, we only need what is needed when it is needed, versus everything twice with splice dumping and loading.
@@ -449,8 +460,7 @@ Speeding up builds
   Let's say because of this proposal, splices (stage -1 code) are now used in a core library like `containers`.
   Let's say also that the stage -1 code depends on code which depends transitively on `containers`.
   Because of stage isolation, while developing `containers` we are free to use the old version of containers in the -1 stage.
-  That means we don't have to rebuild all our dependencies each bug cycle.
-  This is comparable to today's trick of renaming `containers` to `kontainers` so we can tune it and re-benchmark without rebuilding criterion and friends.
+  That means we don't have to rebuild all our dependencies each bug cycle. [#kontainers]_
 
   There are *still* more tricks we can do for overall build size and parallelism.
   Stage 1 code doesn't need to be evaluated, just composed correctly.
@@ -461,6 +471,11 @@ Speeding up builds
   Splices are typically small and numerous, so it seems likely that the lower latency of starting the interpreter is worth the cost of slower evaluation once it is started.
   https://gitlab.haskell.org/ghc/ghc/issues/10871, originally made for Backpack, enshrines `hi` files with `-fexpose-all-unfoldings` as a separate "fat" interface file format.
   This is an ideal complement to the "naive" core interpreter to ensure we do no more work than necessary.
+
+  .. [#backpack] This can be compared to repeated abstract interfaces in backpack being instantiated with the same concrete module.
+      Code that just dependends on the abstract interfaces and isn't privy to their instantiation can neither assume pairs abstract types are equal or non-equal.
+
+  .. [#kontainers] This is comparable to today's trick of renaming `containers` to `kontainers` so we can tune it and re-benchmark without rebuilding criterion and other test dependencies which themselves depend on `containers`.
 
 Template Haskell in GHC
   The motivation evokes the specter of ecosystem splits.
@@ -539,7 +554,7 @@ Implementation Plan
 -------------------
 
 I volunteer to chip away at this, thought it will take quite a while for one person to do it all.
-Here is a rough plan.
+Here is a rough plan:
 
 #. Make GHC multi-target. I am almost done with this.
 
@@ -635,6 +650,8 @@ All the platforms of all the stages are abstract rigid vars, and the code can as
 In this case what one finds is there is very little use for a ``build me ~ host me`` constraint, unless one is writing a GHCi or something.
 It's just rather arcane.
 The crutch that bedeviled most code by stealth is now no longer needed!
+
+.. [#thanks-th-incr] Thanks @mboes for pointing this out.]
 
 .. _`"naive" Core interpreter`: https://github.com/ghc-proposals/ghc-proposals/issues/162
 
