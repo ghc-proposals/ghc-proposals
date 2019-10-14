@@ -338,8 +338,14 @@ Banning ``Lift`` and typed TH
   But even if we work around that, there's also will be semantic leakage.
   In the near future there would be
   ::
-    AppE <$> [|| ... :: foreach (x :: Int) -> F x ||] <*> [|| 2 ^ 36 :: Int ||] :: Q (TExp (F ???))
-  How do we type the whole expression, or ``AppE`` in particular?
+    appET :: Q (TExp (foreach x -> b x)) -> Q (TExp a) -> Q (TExp (b a))
+    appET f x = [|| $$f $$x ||])
+
+    expr :: Q (TExp (F _))
+    expr = appET
+       [|| ... :: foreach (x :: Int) -> F x ||]
+       [|| 2 ^ 36 :: Int ||]
+  How do we type ``expr``?
   ``F (2 ^ 36)``?
   But say the platform the compiler runs on (build platform) has a 32-bit ``Int``, while the platform the spliced code runs on (host platform) has a 64-bit ``Int``?
   The code when eventually spliced will have a type of ``F (2 ^ 36)``, but the quote has a type of ``TExp (F 0)``.
@@ -347,15 +353,19 @@ Banning ``Lift`` and typed TH
   Even today with CPP'd type families:
   ::
     #if mingw_HOST_OS
-    type instance F Bool = []
+    type instance F Bool = [Int]
     #else
-    type instance F Bool = Tree
+    type instance F Bool = Tree Int
     #endif
-  Say we are compiling the following from linux to mingw.
+  Say we are compiling the following from Linux to MinGW.
   ::
-     AppE <$> [|| ... :: forall a. a -> F a ||] <*> [|| True ||] :: Q (TExp (F Bool))
-  We'll have ``F Bool = []`` when the code is eventually spliced, but ``TExp (F Bool) = TExp Tree`` for the quote itself.
-
+    [|| (... :: forall a. a -> F a) True ||] :: Q (TExp (F Bool))
+  We'll have ``F Bool = [Int]`` when the code is eventually spliced, but ``TExp (F Bool) = TExp (Tree Int)`` for the quote itself.
+  What this bools down to is that
+  ::
+    [|| ... :: F Bool ||] :: Q (TExp (F Bool)) -- seems ok
+    ==>
+    [|| ... :: [Int] ||] :: Q (TExp (Tree Bool)) -- not ok
   Finally, ``Lift`` is problematic for similar reasons.
   Consider
   ::
@@ -380,7 +390,7 @@ Banning ``Lift`` and typed TH
   For ``Lift``, at a minimum, we just need to map *values* preserving type, though bijectivity is still nice.
   Perhaps unbijective mappings would take an extra opt-in.
   For typed Template Haskell, I think we additionally need to map type *expressions* such that evaluation commutes with the mapping.
-  The type for ``AppE`` uses stage n rather than stage n + 1 (type) application, so we can't just concern ourselves with the mapping of type values.
+  The type for ``appET`` uses stage n rather than stage n + 1 (type) application, so we can't just concern ourselves with the mapping of type values.
 
 Relaxing the stage restriction is hygiene at work
    We can fearlessly interpret all n - 1 code to fill in splices in stage n without the risk of encountering splices that depend on themselves.
