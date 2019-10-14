@@ -35,49 +35,19 @@ An implementation of this proposal has been battle tested and hardened over 18 m
 
 ## Proposed Change Specification
 
-For the specification we focus on the changes to the parsing rules, and the desugaring, with the belief the type checking and renamer changes required are an unambiguous consequences of those. To confirm these changes integrate as expected we have written [a prototype implementation](https://gitlab.haskell.org/shayne-fletcher-da/ghc/commits/record-dot-syntax) that parses and desugars the forms directly in the parser. For confirmation, we _do not_ view desugaring in the parser as the correct implementation choice, but it provides a simple mechanism to pin down the changes without going as far as adding additional AST nodes or type checker rules.
+For the specification we focus on the changes to the parsing rules, and the desugaring, with the belief the type checking and renamer changes required are an unambiguous consequences of those.
 
 ### `RecordDotSyntax` language extension
 
-This change adds a new language extension (enabled at source via `{-# LANGUAGE RecordDotSyntax #-}` or on the command line via the flag `-XRecordDotSyntax`).
-
-When `RecordDotSyntax` is in effect, the use of '.' to denote record field access is disambiguated from function composition by the absence of whitespace trailing the '.'. Concretely, `a.b` and `a .b` are record field accesses, while `a . b` is not, where `a` can be any atomic expression (e.g. `foo`, `foo.bar` or `(f x y)`), but not a module name (e.g. not `Foo.bar`).
-
-Suppose the following datatype declarations.
-
-```haskell
-data Foo = Foo {foo :: Bar}
-data Bar = Bar {bar :: Baz}
-data Baz = Baz {baz :: Quux}
-data Quux = Quux {quux :: Int}
-```
-
-The existence of the builtin `HasField` typeclass means that it is possible to write code for getting and setting record fields like this:
-
-```haskell
-getQuux :: Foo -> Int
-getQuux a = getField @"quux" (getField @"baz" (getField @"bar" (getField @"foo" a)))
-
-setQuux :: Foo -> Int -> Foo
-setQuux a i = setField@"foo" a (setField@"bar" (getField @"foo" a) (setField@"baz" (getField @"bar" (getField @"foo" a)) (setField@"quux" (getField @"baz" (getField @"bar" (getField @"foo" a))) i)))
-```
-
-`RecordDotSyntax` enables new concrete syntax so that the following program is equivalent.
-
-```haskell
-getQuux a = a.foo.bar.baz.quux
-setQuux a i = a{foo.bar.baz.quux = i}
-```
-
-In the event the language extension is enabled:
+This change adds a new language extension `RecordDotSyntax`. In the event the language extension is enabled:
 
 | Expression | Equivalent |
 | -- | -- |
-| `e.lbl` | `getField @"lbl" e` the `.` cannot have whitespace after |
+| `e.lbl` | `getField @"lbl" e` the `.` cannot have whitespace either before or after |
 | `e{lbl = val}` | `setField @"lbl" e val` |
 | `(.lbl)` | `(\x -> x.lbl)` the `.` cannot have whitespace after |
 | `e{lbl1.lbl2 = val}` | `e{lbl1 = (e.lbl1){lbl2 = val}}` performing a nested update |
-| `e{lbl * val}` | `e{lbl = e.lbl * val}` where `*` can be any operator |
+| `e{lbl * val}` | `e{lbl = e.lbl * val}` where `*` can be any operator (can be optimised to `modifyField`) |
 | `e{lbl1.lbl2}` | `e{lbl1.lbl2 = lbl2}` when punning is enabled |
 
 The above forms combine to provide these identities:
@@ -94,22 +64,19 @@ The above forms combine to provide these identities:
 
 ### Syntax
 
-#### Whitespace
+#### Record selection
 
-- `f.x` means `getField @"lbl" f`;
-- `f .x` (note the space) means the same thing;
-- `f (.x)` means `f (\r -> r.x)`;
-- `f(.x)` does too.
+The expression:
 
-#### Qualified names vs. field projections
+> e.lbl
 
-- `Foo.name` is a qualified variable;
-- `Foo .name` is an attempt to project a name field from a constructor (will manifest as an error);
-- `Foo(.name)` is the constructor `Foo` applied to the section `(.name)`.
+means `getField @"lbl" f`, provided:
 
-#### Precedence
+- There is no whitespace either side of `.`
+- That `lbl` is a valid variable name
+- That `e` is an expression, but not a *conid*
 
-In the prototype, function application takes precedence over field projection so `f a.foo.bar.baz.quux 12` parses as `((f a).foo.bar.baz.quux) 12`. To treat the first argument to `f` as a projection of `a`, write `f (a.foo.bar.baz.quux) 12` and `f (a .foo .bar .baz .quux) 12` is equivalent (see the ["Unresolved Questions"](#unresolved-questions) section).
+Similarly, `e{lbl=val}` only applies if `e` is an expression, but not a *conid*.
 
 ### Lexer
 
@@ -221,6 +188,12 @@ aexp2   :: { ECP }
         | '(' fieldids ')' {...} -- <- here
 ```
 
+### Prototype
+
+To confirm these changes integrate as expected we have written [a prototype implementation](https://gitlab.haskell.org/shayne-fletcher-da/ghc/commits/record-dot-syntax) that parses and desugars the forms directly in the parser. For confirmation, we _do not_ view desugaring in the parser as the correct implementation choice, but it provides a simple mechanism to pin down the changes without going as far as adding additional AST nodes or type checker rules.
+
+In the prototype, function application incorrectly takes precedence over field projection so `f a.foo.bar.baz.quux 12` parses as `((f a).foo.bar.baz.quux) 12` - we consider that a bug.
+
 ## Examples
 
 This is a record type with functions describing a study `Class` (*Oh! Pascal, 2nd ed. Cooper & Clancy, 1985*).
@@ -271,7 +244,7 @@ A full, rigorous set of examples (as tests) are available in the examples direct
 
 **Polymorphic updates:** When enabled, this extension takes the `a{b=c}` syntax and uses it to mean `setField`. The biggest difference a user is likely to experience is that the resulting type of `a{b=c}` is the same as the type `a` - you _cannot_ change the type of the record by updating its fields. The removal of polymorphism is considered essential to preserve decent type inference, and is the only option supported by [the `HasField` proposal](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0158-record-set-field.rst). Anyone wishing to use polymorphic updates can write `let Foo{..} = Foo{polyField=[], ..}` instead.
 
-**Higher-rank fields:** It is impossible to express `HasField` instances for data types such as `data T = MkT { foo :: forall a . a -> a}`, which means they can't have this syntax available. Users can still write their own selector functions using record puns if required.
+**Higher-rank fields:** It is impossible to express `HasField` instances for data types such as `data T = MkT { foo :: forall a . a -> a}`, which means they can't have this syntax available. Users can still write their own selector functions using record puns if required.  There is a possibility that with future types of impredicativity such `getField` expressions could be solved specially by the compiler.
 
 **Stealing a.b syntax:** The `a.b` syntax is commonly used in conjunction with the `lens` library, e.g. `expr^.field1.field2`. Treating `a.b` without spaces as a record projection would break such code. The alternatives would be to use a library with a different lens composition operator (e.g. `optics`), introduce an alias in `lens` for `.` (perhaps `%`), write such expressions with spaces, or not enable this extension when also using lenses. While unfortunate, we consider that people who are heavy users of lens don't feel the problems of inadequate records as strongly, so the problems are lessened.
 
@@ -304,10 +277,12 @@ All these approaches are currently used, and represent the "status quo", where H
 
 Below are some possible variations on this plan, but we advocate the choices made above:
 
-* Should `RecordDotSyntax` imply `NoFieldSelectors`? Typically `RecordDotSyntax` will be used in conjunction with `NoFieldSelectors`, but `DuplicateRecordFields` would work too.
-* It seems appealing that `a{field += 1}` would be the syntax for incrementing a field. However, `+=` is a valid operator (would that be `a{field +== 1}`?) and for infix operators like `div` would that be <tt>\`div\`=</tt>?
+* Should `RecordDotSyntax` imply `NoFieldSelectors`? Typically `RecordDotSyntax` will be used in conjunction with `NoFieldSelectors`, but `DuplicateRecordFields` would work too. Of those two, `DuplicateRecordFields` complicates GHC, while `NoFieldSelectors` conceptually simplifies it, so we prefer to bias the eventual outcome.
+* It seems appealing that `a{field += 1}` would be the syntax for incrementing a field. However, `+=` is a valid operator (would that be `a{field +== 1}`?) and for infix operators like `div` would that be <tt>\`div\`=</tt>? One possibility is to use the syntax `a{field + = 1}`.
+* There are no update sections. Should `({a=})`, `({a=b})` or `(.lbl=)` be an update section?
 * We do not extend pattern matching, although it would be possible for `P{foo.bar=Just x}` to be defined.
-* Should `f a.foo.bar.baz.quux 12` parse as `((f a).foo.bar.baz.quux) 12` or `f (a.foo.bar.baz.quux) 12`?
+* Will whitespace sensitivity become worse? We're not aware of qualified modules giving any problems, but it's adding whitespace sensitivity in one more place.
+* One suggestion is that record updates remain as normal, but `a { .foo = 1 }` be used to indicate the new forms of updates. While possible, we believe that option leads to a confusing result, with two forms of update both of which fail in different corner cases. Instead, we recommend use of `C{foo}` as a pattern to extract fields if necessary.
 
 ## Implementation Plan
 
