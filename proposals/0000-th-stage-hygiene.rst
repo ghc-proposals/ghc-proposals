@@ -543,6 +543,16 @@ I think it good to enforce the normal form that the "main" stage is stage 0.
 As to the specific example, I would rather packages leverage public Cabal sub-libraries for Template Haskell anyways;
 I think that's a cleaner way to package code.
 
+It would be nice to go straight implement typed TH by quoting types.
+One would do something like::
+  [|| e... :: t... ||] :: Q (TExp [t| t... |])
+This correctly gets ``t...`` from the right for the argument to ``TExp``.
+The problem though is the parameter is type syntax rather than a type; we've thrown away all the semantics.
+We can explicitly normalize, however::
+  [|| e... :: t... ||] :: Q (TExp (Normalize [t| t... |])
+``Normalize`` could be some sort of magic type family that just tells GHC to do its thing, rather than a implementation of Haskell.
+It's good to know there are options going forward, but I think there is just too much uncertainty here to commit to anything at this time.
+
 Unresolved Questions
 --------------------
 
