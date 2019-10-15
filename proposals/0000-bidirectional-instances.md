@@ -228,7 +228,7 @@ extensions of existing algorithms.
 Implementation in a
 [prototype compiler](https://github.com/KoenP/bidirectional-instances)
 was straightforward and quick.
-Further discussion on developments and maintenance costs 
+Further discussion on developments and maintenance costs is welcome.
 
 ## Alternatives
 
