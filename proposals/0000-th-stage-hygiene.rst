@@ -435,7 +435,7 @@ Forward references across splices
    Hopefully a future proposal will tackle this.
 
 Faster and finer-grained builds
-  Because any import could be used by TH, GHC today must be extra cautious parallelizing complation. [#thanks-th-incr]_
+  Because any import could be used by TH, GHC today must be extra cautious parallelizing complation. [#thanks-mboes]_
   Firstly, a module must be built after object code or byte code for all imports is produced, lest that import be used in a splice.
   But we if we know exactly which imports could be used in splices, we'd need only wait for the interface of that module to be produced.
   Likewise, we wouldn't need to type check again if just the implementations of imports changed but the interface didn't.
@@ -515,6 +515,13 @@ Template Haskell in GHC
   In particular this means given a dependency edge where the needed and needing components are in the same package regardless of their relative stage indices,
   the same version of the package must be used for both.
 
+Static and dynamic linking
+  It's hard to build large swaths of the ecosystem with just static libraries. [#thanks-mboes]_
+  This is because GHCi "prefers" loading dynamic libraries.
+  The easiest thing to do is build both ways and then throw away the shared libraries.
+  The better thing to do is think of shared GHC -> static outputs as cross compilation.
+  Then only stage < 0 code for splices needs be built as shared libraries (or bytecode).
+  Plus, that builds aren't installed along side the stage 0 code, so there is no extra step to manually shave off the shared libraries.
 
 Costs and Drawbacks
 -------------------
@@ -662,7 +669,7 @@ In this case what one finds is there is very little use for a ``build me ~ host 
 It's just rather arcane.
 The crutch that bedeviled most code by stealth is now no longer needed!
 
-.. [#thanks-th-incr] Thanks @mboes for pointing this out.]
+.. [#thanks-mboes] Thanks @mboes for pointing these out.]
 
 .. _`"naive" Core interpreter`: https://github.com/ghc-proposals/ghc-proposals/issues/162
 
