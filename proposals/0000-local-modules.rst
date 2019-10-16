@@ -238,11 +238,11 @@ Proposed Change Specification
    of the enclosing ``instance`` declaration: the ``data``\/\ ``newtype``
    module is *not* nested within the class module.
 
-8. Local modules may be extended via the declaration of another local module
-   of the same name. If local modules with the same name are in scope at the
-   same time (either through importation or declaration) their contents are
-   simply merged. Individual identifiers that are multiply defined will be
-   an error if used ambiguously.
+8. Local modules may be extended via the declaration or importing of another
+   local module of the same name. If local modules with the same name are in
+   scope at the same time (either through importation or declaration) their
+   contents are simply merged. Individual identifiers that are multiply
+   defined will be an error if used ambiguously.
 
 9. A new declaration form is introduced with the following BNF::
 
@@ -423,6 +423,12 @@ C. Drop point (8) allowing extension of existing local modules. That was added s
    surrounding a type declaration. But it also seems like a nice way of flexibly mixing
    modules together. It's an inessential feature.
 
+D. This proposal does not allow the export of a qualified local module such that
+   importers get the identifiers unqualified. We could imagine a new export item
+   ``import module M`` that exports all identifiers in scope with a ``M.`` prefix
+   unqualified. I don't find this feature necessary, but it would fit with the
+   rest of this proposal.
+   
 Future Work
 -----------
 
