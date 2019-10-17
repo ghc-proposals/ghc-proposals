@@ -114,7 +114,7 @@ to become
 class GetField (x :: k) r a | x r -> a where
     getField :: r -> a
 
-class GetField x r a => SetField (x :: k) r a | k r -> a where
+class GetField x r a => SetField (x :: k) r a | x r -> a where
     setField :: a -> r -> r
     setField = updateField @x . const
 
