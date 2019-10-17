@@ -102,4 +102,4 @@ Implementation Plan
 I think this will be easy to implement.
 I take responsibility for implementing it, but hope to use the opportunity to mentor someone else rather than do all myself.
 
-.. `#270`: https://github.com/ghc-proposals/ghc-proposals/pull/270
+.. _`#270`: https://github.com/ghc-proposals/ghc-proposals/pull/270
