@@ -1,4 +1,4 @@
-``-XNoImplicitForall``
+``-XNoImplicitForAll``
 ======================
 
 .. author:: John Ericson (@Ericson2314)
@@ -44,16 +44,16 @@ However, there is one exception to the unification of namespaces: lower case var
   x = 0
 
 Unlike the other changes done with warnings, this would be breaking change, so we need an extension.
-``-XNoImplicitForall`` alone would *not* cause ``t`` in the signature to be bound from in the above; it would be unbound causing and error.
+``-XNoImplicitForAll`` alone would *not* cause ``t`` in the signature to be bound from in the above; it would be unbound causing and error.
 But, as a newly freed variable, it is now ready to be capture by whatever is proposed in `#270`_.
 I think this is a good separation of concerns.
 
 Proposed Change Specification
 -----------------------------
 
-Create ``-XImplicitForall`` to allow automatically capturing free variables in an outer ``forall`` as is always done today.
+Create ``-XImplicitForAll`` to allow automatically capturing free variables in an outer ``forall`` as is always done today.
 It is on by default for backwards compatibility.
-When using ``-XNoImplicitForall``, all variables in types must be explicitly bound.
+When using ``-XNoImplicitForAll``, all variables in types must be explicitly bound.
 
 Examples
 --------
@@ -69,7 +69,7 @@ This has the exact same effect at requiring explicit bounds::
   
   <interactive>:21:14: error: Not in scope: type variable ‘t’
 
-We can imagine then that ``-XNoImplicitForall`` puts an ``forall.`` at the beginning of every signature, in order to "desugar" the new behavior into the old behavior.
+We can imagine then that ``-XNoImplicitForAll`` puts an ``forall.`` at the beginning of every signature, in order to "desugar" the new behavior into the old behavior.
 
 Effect and Interactions
 -----------------------
