@@ -70,7 +70,7 @@ The expression:
 
 > e.lbl
 
-means `getField @"lbl" f`, provided:
+means `getField @"lbl" e`, provided:
 
 - There is no whitespace either side of `.`;
 - That `lbl` is a valid variable name;
