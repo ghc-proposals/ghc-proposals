@@ -203,16 +203,16 @@ data Quarter = Fall | Winter | Spring
 data Status = Passed | Failed | Incomplete | Withdrawn
 
 data Taken =
-  Taken { year : Int
-        , term : Quarter
+  Taken { year :: Int
+        , term :: Quarter
         }
 
 data Class =
-  Class { hours : Int
-        , units : Int
-        , grade : Grade
-        , result : Status
-        , taken : Taken
+  Class { hours :: Int
+        , units :: Int
+        , grade :: Grade
+        , result :: Status
+        , taken :: Taken
         }
 
 getResult :: Class -> Status
