@@ -116,8 +116,15 @@ class GetField (x :: k) r a | x r -> a where
 
 class GetField x r a => SetField (x :: k) r a | k r -> a where
     setField :: a -> r -> r
+    setField = updateField @x . const
+
     updateField :: (a -> a) -> r -> r
+    updateField f r = let (g, a) = hasField @x r in g (f a)
+
     hasField :: r -> (a -> r, a)
+    hasField r = (\a -> setField @x a r, getField @x r)
+
+    {-# MINIMAL setField | updateField | hasField #-}
 ```
 
 
