@@ -18,7 +18,7 @@ This proposal argues that GHC’s type system is a bit too liberal; in particula
 
 All four features are implemented in GHC.
 
-However, **all four change the semantics of Haskell*, by performing eta-expansion, changing bottom into non-bottom.  That’s a pretty serious change, which needs pretty serious motivation.  But actually all we get in exchange is a minor improvement in programming convenience.  So I argue that:
+However, *all four change the semantics of Haskell*, by performing eta-expansion, changing bottom into non-bottom.  That’s a pretty serious change, which needs pretty serious motivation.  But actually all we get in exchange is a minor improvement in programming convenience.  So I argue that:
 
 * **The benefit, in terms of programming convenience, is small**.  In particular, while using these features accepts some more programs, any such program is easily accepted without these features, after a small edit.
 
