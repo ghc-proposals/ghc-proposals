@@ -42,7 +42,7 @@ The proposal argues to remove all four.  The following subsections descuss each 
 
 Consider these types (paper, 4.6.1):
 ```
-f :: ∀ab.a → b → b)
+f :: ∀ab.a → b → b
 g :: (∀p.p → (∀q.q → q)) → Int
 ```
 Is `(g f)` well typed?  Notice that `g` requires an argument with a forall to the right of an arrow. With deep skolemisation, the answer is “yes”.  But remember that GHC elaborates to System F.  Here is its elaboration of `(g f)`:
@@ -147,15 +147,15 @@ The main cost is that some existing programs will require some manual eta-expans
 
 Jurriaan is gathering data on how many libraries are affected.
 
-Ideally we'd like a deprecation saying "you are using this feature, and it's going to disappear".  But this would have falies positives: just because deep instantiation does eta-expansion does not imply that using only shallow instantaition would make the program un-typable.
+Ideally we'd like a deprecation saying "you are using this feature, and it's going to disappear".  But this would have false positives: just because deep instantiation does eta-expansion does not imply that using only shallow instantiation would make the program un-typable.
 
 ## Alternatives
 
-Status quo. But the the stauts quo is extremely unsatisfactory.
+Status quo. But the the status quo is extremely unsatisfactory.
 
 
 ## Unresolved Questions
 
 ## Implementation Plan
 
-Implemenation is relatively easy.  I can do it, or Richard, or Alejandro.
+Implementation is relatively easy.  I can do it, or Richard, or Alejandro.
