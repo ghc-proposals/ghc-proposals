@@ -16,7 +16,8 @@ Overloaded Quotations
 .. contents::
 
 This proposal is about making quotation brackets polymorphic. The motivation
-is so that quotes can be used without being tied to the ``Q`` monad.
+is so that quotes can be used without being tied to the ``Q`` monad and to
+enable effects during code generation.
 
 
 Motivation
@@ -44,7 +45,12 @@ implementation is a name generation effect.
 Detaching quotations from ``Q`` makes way for a form of "pure" template haskell
 so there is no need to invoke ``Q`` in order to create the representation of an
 expression. The most immediate application is the ability to purely
-manipulate ``Exp`` values in user libraries.
+manipulate ``Exp`` values in user libraries::
+
+  lamPlus1 :: Exp
+  lamPlus1 = (runParse us [| \x -> x + 1 |])
+
+
 
 Another benefit is that in a cross compilation setting a "pure" quote can be
 fully evaluated on the host and then the generated code compiled for the target.
@@ -52,9 +58,53 @@ Certain effects in the ``Q`` monad mean that currently all splices have to be
 evaluated on the target which leads to significant complication when
 cross-compiling.
 
-The proposal doesn't deal with anything to do with Typed Template Haskell at
-all. This generalisation is expected to follow in a future proposal.
+In a similar fashion, we can overload the type of a typed quotation::
 
+  lamPlus :: TExp (Int -> Int)
+  lamPlus = (runParse us [|| \x -> x + 1 ||])
+
+Due to the implementation of a typed quotation being already in terms of
+untyped syntax, the implementation of this is natural.
+
+Motivation 2: Effectful Code Generation
+---------------------------------------
+
+Jamie Willis provides additional motivation for the generalisation of the
+quotation bracket. Whilst writing multi-stage programs it is almost inevitable
+that you will need to perform effects whilst doing the code generation.
+For example, this is from the abstract of Kameyama, Kiselyov and Shan's (2014) Combinators
+for impure yet hygienic code generation:
+
+    Code generation is the leading approach to making high-performance software reusable. Effects are indispensable in code generators, whether to report failures or to insert let-statements and if- guards.
+
+To be precise, in his parser combinator library which is implemented using
+typed template haskell the following effects are necessary.
+
+1. Use the ``Reader`` monad in order to carry around an environment.
+2. Use a let-insertion effect to automatically insert lets to avoid code duplication.
+3. Use an exception monad to automatically insert missing dependencies for mutually recursive code generation.
+
+Even using the simple ``Reader`` monad is awkward at the moment::
+
+   generateLoop :: String -> Reader CodeMap (Q Exp)
+   generateLoop name = ask (\codeMap -> [|
+     let loopyCode x =
+       $(runReader loopBody (Map.insert name [|loopyCode|] codeMap))
+     in loopyCode ...
+     |])
+
+The effect must be explicitly run in each splice. For state or other more complicated
+effects this approach doesn't work. With the proposal we would hope to write something like::
+
+   generateLoop :: (MonadReader CodeMap m, Quote m) => String -> m Exp
+   generateLoop name = [|
+     let loopyCode x =
+       $(local (Map.insert name [|loopyCode|]) loopBody)
+     in loopyCode ...
+     |]
+
+and directly use the ``local`` function inside the nested splice just like normal
+monadic programming.
 
 
 Proposed Change Specification
@@ -111,6 +161,11 @@ make this change possible.
 5. The types of type, pattern and declaration quotes will also
    be generalised in the same manner.
 
+6. Type quotations are similarly generalised::
+
+   i :: Quote m => m (TExp (Int -> Int))
+   i = [|| \x -> x + 1 ||]
+
 
 Effect and Interactions
 -----------------------
@@ -147,7 +202,8 @@ Definition of Quote
 Richard observes that ``Language.Haskell.TH.Lib.Internal.numTyLit`` calls
 ``fail`` from the ``Q`` monad. This call to ``fail`` can be replaced with
 a call to ``error``. It will still be executed at compile-time but with a
-potentially slightly worse error message.
+potentially slightly worse error message. The alternative is to
+also add this effect to the ``Quote`` type class.
 
 Other Effects
 .............
@@ -175,7 +231,11 @@ Costs and Drawbacks
 Alternatives
 ------------
 
-* Just keep things the way they are.
+* The main alternative to the design would be to only require a ``Quote``
+  constraint when the quotation requires the ``newName`` effect. For example,
+  ``[| 5 |] :: Applicative m => m Exp``. I am opposed to this direction as it
+  breaks abstraction. The implementation detail of how ``[| 5 |]`` is desugared
+  leaks to the user.
 
 Unresolved Questions
 --------------------
