@@ -1,22 +1,7 @@
-Notes on reStructuredText - delete this section before submitting
-==================================================================
+``-XNoImplicitForall``
+======================
 
-The proposals are submitted in reStructuredText format.  To get inline code, enclose text in double backticks, ``like this``.  To get block code, use a double colon and indent by at least one space
-
-::
-
- like this
- and
-
- this too
-
-To get hyperlinks, use backticks, angle brackets, and an underscore `like this <http://www.haskell.org/>`_.
-
-
-Proposal title
-==============
-
-.. author:: Your name
+.. author:: John Ericson (@Ericson2314)
 .. date-accepted:: Leave blank. This will be filled in when the proposal is accepted.
 .. proposal-number:: Leave blank. This will be filled in when the proposal is
                      accepted.
@@ -26,81 +11,91 @@ Proposal title
 .. implemented:: Leave blank. This will be filled in with the first GHC version which
                  implements the described feature.
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_.
+.. header:: This proposal is ``discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>``_.
             **After creating the pull request, edit this file again, update the
             number in the link, and delete this bold sentence.**
 .. sectnum::
 .. contents::
 
-Here you should write a short abstract motivating and briefly summarizing the proposed change.
-
+Provide a way to opt out of implicit ``forall`` binding of free variables in type signatures.
 
 Motivation
 ----------
-Give a strong reason for why the community needs this change. Describe the use
-case as clearly as possible and give an example. Explain how the status quo is
-insufficient or not ideal.
 
-A good Motivation section is often driven by examples and real-world scenarios.
+There are two independent motivations, education and a unified namespace.
 
+Education
+~~~~~~~~~
+
+Some people think that implicit binding is bad for people learning Haskell.
+All other variables are explicitly bound, and the inconsistency means more to learn.
+Also, implicit syntax in general allows the beginner to not realize what they are doing.
+What are tedious tasks for the export may be helpful learning steps to them.
+
+I don't wish to argue whether this is true or false, but just state that some people have this opinion and there is no technical reason GHC cannot accommodate it.
+
+Unified Namespace
+~~~~~~~~~~~~~~~~~
+
+If #270 is accepted, there will be a way to program Haskell with "morally" one namespace for types and terms alike.
+However, there is one exception to the unification of namespaces: lower case variables in type signatures bound "like terms" still are treated as free and implicitly bound with a ``forall`` instead::
+
+  t = Int
+  x :: t -- sugar for 'forall t. t', no 't ~ Int'
+  x = 0
+
+Unlike the other changes done with warnings, this would be breaking change, so we need an extension.
+``-XNoImplicitForall`` alone would *not* cause ``t`` in the signature to be bound from in the above; it would be unbound causing and error.
+But, as a newly freed variable, it is now ready to be capture by whatever is proposed in #270.
+I think this is a good separation of concerns.
 
 Proposed Change Specification
 -----------------------------
-Specify the change in precise, comprehensive yet concise language. Avoid words
-like "should" or "could". Strive for a complete definition. Your specification
-may include,
 
-* grammar and semantics of any new syntactic constructs
-* the types and semantics of any new library interfaces
-* how the proposed change interacts with existing language or compiler
-  features, in case that is otherwise ambiguous
-
-Note, however, that this section need not describe details of the
-implementation of the feature or examples. The proposal is merely supposed to
-give a conceptual specification of the new feature and its behavior.
+Create ``-XImplicitForall``, to allow automatically capturing free variables in an outer ``forall`` as is always done today.
+It is on by default for backwards compatibility.
+When using ``-XNoImplicitForall``, all variables in types must be explicitly bound.
 
 Examples
 --------
-This section illustrates the specification through the use of examples of the
-language change proposed. It is best to exemplify each point made in the
-specification, though perhaps one example can cover several points. Contrived
-examples are OK here. If the Motivation section describes something that is
-hard to do without this proposal, this is a good place to show how easy that
-thing is to do with the proposal.
+
+It is a little known fact that one can do "empty" ```forall`` quantifications today::
+
+  x :: forall. Int -- same as 'x :: Int'
+  x = 0
+
+This has the exact same effect at requiring explicit bounds::
+  Prelude> x :: forall. t; x = x
+  
+  <interactive>:21:14: error: Not in scope: type variable ‘t’
+
+We can imagine then that ``-XNoImplicitForall`` puts an ``forall.`` at the beginning of every signature, in order to "desugar" the new behavior into the old behavior.
 
 Effect and Interactions
 -----------------------
-Detail how the proposed change addresses the original problem raised in the
-motivation.
 
-Discuss possibly contentious interactions with existing language or compiler
-features.
-
+As described in the motivation, this opens the door to other means to bind the previously implicitly bound variables.
+Other than that, I think this doesn't interact with other features in interesting ways.
 
 Costs and Drawbacks
 -------------------
-Give an estimate on development and maintenance costs. List how this effects
-learnability of the language for novice users. Define and list any remaining
-drawbacks that cannot be resolved.
 
+Broadens a stylistic split in the ecosystem between those that like and dislike implicit quantification.
+But note that one could already put in the optional ``forall`` if they so please.
 
 Alternatives
 ------------
-List existing alternatives to your proposed change as they currently exist and
-discuss why they are insufficient.
 
+Idris has a single namespace, but always does the implicit bindings such that writing the type of an argument with a single lower case identifier is impossible.
+Do note that more complicated type expressions with lower case identifiers is fine.
 
 Unresolved Questions
 --------------------
-Explicitly list any remaining issues that remain in the conceptual design and
-specification. Be upfront and trust that the community will help. Please do
-not list *implementation* issues.
 
-Hopefully this section will be empty by the time the proposal is brought to
-the steering committee.
-
+No unresolved questions.
 
 Implementation Plan
 -------------------
-(Optional) If accepted who will implement the change? Which other resources
-and prerequisites are required for implementation?
+
+I think this will be easy to implement.
+I take responsibility for implementing it, but hope to use the opportunity to mentor someone else rather than do all myself.
