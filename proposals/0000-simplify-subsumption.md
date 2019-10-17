@@ -22,9 +22,9 @@ All four features are implemented in GHC.
 
 However, **all four change the semantics of Haskell*, by performing eta-expansion, changing bottom into non-bottom.  That’s a pretty serious change, which needs pretty serious motivation.  But actually all we get in exchange is a minor improvement in programming convenience.  So I argue that:
 
-* The benefit, in terms of programming convenience, is small.  In particular, while using these features accepts some more programs, any such program is easily accepted without these features, after a small edit.
+* **The benefit, in terms of programming convenience, is small**.  In particular, while using these features accepts some more programs, any such program is easily accepted without these features, after a small edit.
 
-* The cost is large.  There is extra complexity in the compiler.  There is extra complexity in the formal description of the type system, and in any paper we write about it.  But, worst of all, the features change the semantics of the program.
+* **The cost is large**.  There is extra complexity in the compiler.  There is extra complexity in the formal description of the type system, and in any paper we write about it.  But, worst of all, the features change the semantics of the program.
 
 * A recent new cost is that the [Quick Look Impredicativity proposal]( https://github.com/ghc-proposals/ghc-proposals/pull/274) gains extra power by not having contravariance.
 
@@ -36,16 +36,18 @@ The baseline for this proposal is [Practical Type Inference for Arbitrary Rank T
 * **Covariance** of the function arrow (Fig 7, rule FUN)
 * **Contravariance** of the function arrow (Fig 7, rule FUN)
 * **Deep skolemisation** (Fig 7, rule DEEP-SKOL)
-* **Deep instantiation**.  Actually, the section (4.7.3) says that we don’t need deep instantiation, but GHC actually does deep instantiation too, for reasons sketched below.
+* **Deep instantiation**.  Section (4.7.3) says that we don’t need deep instantiation, but GHC actually does that too, for reasons sketched below.
+
+The proposal argues to remove all four.  The following subsections descuss each in turn.
 
 ### Deep skolemisation
 
-Suppose (paper, 4.6.1)?
+Consider these types (paper, 4.6.1):
 ```
 f :: ∀ab.a → b → b)
 g :: (∀p.p → (∀q.q → q)) → Int
 ```
-Is `(g f)` well typed?  Notice that `g` requires an argument with a forall to the right of an arrow. With deep skolemisation, the answer is “yes”; but without the program would be rejected.  But remember that GHC elaborates to System F.  Here is its elaboration of `(g f)`:
+Is `(g f)` well typed?  Notice that `g` requires an argument with a forall to the right of an arrow. With deep skolemisation, the answer is “yes”.  But remember that GHC elaborates to System F.  Here is its elaboration of `(g f)`:
 ```
 g (/\p. \(x:p). /\q.\(y:q). f @p @q x y)
 ```
@@ -56,7 +58,7 @@ BUT suppose `f` and `g` are defined like this:
 f = bottom
 g f = f `seq` 0
 ```
-You would expect `g f` to diverge, since it seq’s on bottom.  But it won’t  it’ll return 0.  Yikes.
+You would expect `g f` to diverge, since it seq’s on bottom.  But it won’t! it’ll return 0.  Yikes.
 
 Without deep skolemisation, `(g f)` is rejected.  But the programmer can easily repair it by manual eta-expansion, to
 ```
@@ -66,11 +68,11 @@ and now, of course, it is not surprising that the expression evaluates to 0.
 
 ### Deep instantiation
 
-Suppose `f :: Int -> forall a. a -> a`.   Notice the forall to the right of the arrow.  Now consider this definition, which lacks a type signature:
+Suppose `f :: Int -> forall a. a -> a`.   Again, notice the forall to the right of the arrow.  Now consider this definition, which lacks a type signature:
 ```
 g x = f
 ```
-What type would you expect to infer for `g`?   The obvious answer is
+What type would you expect to infer for `g`?   The obvious answer (and the one we'd get without deep instantiation) is
 ```
 g :: forall b. b -> Int -> forall a. a -> a
 ```
@@ -78,7 +80,7 @@ But GHC actually deeply instantiates `f` (for no very well-explained reason), so
 ```
 g :: forall b a. b -> Int -> a -> a
 ```
-Perhaps that type is a tiny bit more explicable to the programmer.  But again, to produce that type, GHC must elaborate `g` to
+with the buried foralls pulled to the top.  Perhaps that type is a tiny bit more explicable to the programmer.  But again, to produce that type, GHC must elaborate `g` to
 ```
 g = /\ b a. \(x:b). \(i:Int). f i @a
 ```
@@ -101,11 +103,13 @@ Well, according to rule FUN of Figure 7, using contravariance of `(->)`, that is
 ```
 forall a. a -> a    <=      Int -> Int
 ```
-and that is certainly true.  But again, GHC needs to eta-expand during elaboration.  We get this elaboration of `(g f)`:
+and that is certainly true.  But again, to witness that proof GHC needs to eta-expand during elaboration.  We get this elaboration of `(g f)`:
 ```
 g (\(h : forall a. a->a).  f (h @Int))
 ```
-Again we have changed the semantics.  Yikes.  Again, lacking covariance the program would be rejected, but is easily fixed by manual eta-expansion, thus `g (\h -> f h)`
+Again we have changed the semantics.  Yikes.
+
+Again, lacking covariance the program would be rejected, but is easily fixed by manual eta-expansion, thus `g (\h -> f h)`
 
 ### Covariance
 
