@@ -23,7 +23,7 @@ Motivation
 ----------
 
 There are two independent motivations, education and a unified namespace.
-Compliments the unified namespace proposal (#270) by making all bindings usable in type signatures.
+Compliments the unified namespace proposal (`#270`_) by making all bindings usable in type signatures.
 
 Education
 ~~~~~~~~~
@@ -38,7 +38,7 @@ I don't wish to argue whether this is true or false, but just state that some pe
 Unified Namespace
 ~~~~~~~~~~~~~~~~~
 
-If #270 is accepted, there will be a way to program Haskell with "morally" one namespace for types and terms alike.
+If `#270`_ is accepted, there will be a way to program Haskell with "morally" one namespace for types and terms alike.
 However, there is one exception to the unification of namespaces: lower case variables in type signatures bound "like terms" still are treated as free and implicitly bound with a ``forall`` instead::
 
   t = Int
@@ -47,7 +47,7 @@ However, there is one exception to the unification of namespaces: lower case var
 
 Unlike the other changes done with warnings, this would be breaking change, so we need an extension.
 ``-XNoImplicitForall`` alone would *not* cause ``t`` in the signature to be bound from in the above; it would be unbound causing and error.
-But, as a newly freed variable, it is now ready to be capture by whatever is proposed in #270.
+But, as a newly freed variable, it is now ready to be capture by whatever is proposed in `#270`_.
 I think this is a good separation of concerns.
 
 Proposed Change Specification
@@ -101,3 +101,5 @@ Implementation Plan
 
 I think this will be easy to implement.
 I take responsibility for implementing it, but hope to use the opportunity to mentor someone else rather than do all myself.
+
+.. `#270`: https://github.com/ghc-proposals/ghc-proposals/pull/270
