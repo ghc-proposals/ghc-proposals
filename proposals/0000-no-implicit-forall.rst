@@ -21,7 +21,7 @@ Motivation
 ----------
 
 There are two independent motivations, education and a unified namespace.
-Compliments the unified namespace proposal (`#270`_) by making all bindings usable in type signatures.
+Complements the unified namespace proposal (`#270`_) by making all bindings usable in type signatures.
 
 Education
 ~~~~~~~~~
@@ -29,7 +29,7 @@ Education
 Some people think that implicit binding is bad for people learning Haskell.
 All other variables are explicitly bound, and the inconsistency means more to learn.
 Also, implicit syntax in general allows the beginner to not realize what they are doing.
-What are tedious tasks for the export may be helpful learning steps to them.
+What are tedious tasks for the expert may be helpful learning steps to them.
 
 I don't wish to argue whether this is true or false, but just state that some people have this opinion and there is no technical reason GHC cannot accommodate it.
 
