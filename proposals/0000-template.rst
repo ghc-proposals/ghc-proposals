@@ -50,7 +50,7 @@ Specify the change in precise, comprehensive yet concise language. Avoid words
 like "should" or "could". Strive for a complete definition. Your specification
 may include,
 
-* grammar and semantics of any new syntactic constructs
+* BNF grammar and semantics of any new syntactic constructs
 * the types and semantics of any new library interfaces
 * how the proposed change interacts with existing language or compiler
   features, in case that is otherwise ambiguous
@@ -104,3 +104,12 @@ Implementation Plan
 -------------------
 (Optional) If accepted who will implement the change? Which other resources
 and prerequisites are required for implementation?
+
+Endorsements
+-------------
+(Optional) This section provides an opportunty for any third parties to express their
+support for the proposal, and to say why they would like to see it adopted.
+It is not mandatory for have any endorsements at all, but the more substantial
+the proposal is, the more desirable it is to offer evidence that there is
+significant demand from the community.  This section is one way to provide
+such evidence.
