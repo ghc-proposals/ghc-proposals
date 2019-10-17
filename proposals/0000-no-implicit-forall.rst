@@ -53,7 +53,7 @@ I think this is a good separation of concerns.
 Proposed Change Specification
 -----------------------------
 
-Create ``-XImplicitForall``, to allow automatically capturing free variables in an outer ``forall`` as is always done today.
+Create ``-XImplicitForall`` to allow automatically capturing free variables in an outer ``forall`` as is always done today.
 It is on by default for backwards compatibility.
 When using ``-XNoImplicitForall``, all variables in types must be explicitly bound.
 
