@@ -23,6 +23,7 @@ Motivation
 ----------
 
 There are two independent motivations, education and a unified namespace.
+Compliments the unified namespace proposal (#270) by making all bindings usable in type signatures.
 
 Education
 ~~~~~~~~~
@@ -65,6 +66,7 @@ It is a little known fact that one can do "empty" ```forall`` quantifications to
   x = 0
 
 This has the exact same effect at requiring explicit bounds::
+
   Prelude> x :: forall. t; x = x
   
   <interactive>:21:14: error: Not in scope: type variable ‘t’
