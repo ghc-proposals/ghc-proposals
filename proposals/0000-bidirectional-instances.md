@@ -318,6 +318,34 @@ Although this workaround works,
 it is decidedly nontrivial, and some boilerplate is still required,
 which needs to be written for every instance.
 
+### A Workaround for the Append Example
+This workaround was suggested by [Oleg Grenrus](https://github.com/phadej).
+```haskell
+{-# LANGUAGE GADTs, FunctionalDependencies #-}
+{-# LANGUAGE DataKinds, KindSignatures #-}
+{-# LANGUAGE FlexibleInstances, UndecidableInstances #-}
+
+data Nat :: * where
+  Z :: Nat
+  S :: Nat -> Nat
+data Vec :: Nat -> * -> * where
+  VN :: Vec Z a
+  VC :: a -> Vec n a -> Vec (S n) a
+
+class Add (n :: Nat) (m :: Nat) (k :: Nat) | n m -> k where
+instance              Add Z     m m -- one could also have m ~ k => Add Z m k instance, which behaves better
+instance Add n m k => Add (S n) m (S k)
+
+class Add n m k => Append (n :: Nat) (m :: Nat) (k :: Nat) | n m -> k where
+    append :: Vec n a -> Vec m a -> Vec k a
+
+instance Append 'Z m m where
+    append VN        ys = ys
+
+instance Append n m k => Append ('S n) m ('S k) where
+    append (VC x xs) ys = VC x (append xs ys)
+```
+
 ## Unresolved Questions
 
 As mentioned in the "Costs and Drawbacks" section, runtime performance might be
