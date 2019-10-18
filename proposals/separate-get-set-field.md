@@ -139,6 +139,10 @@ but neither is the planned implementation. Unlike the planned implementation
 it would be a very mechanical rename to fix, as opposed to a potentially
 impossible definition of `hasField`.
 
+Currently with this proposal alone you will have to manually define any desired
+GetField-only instances, as the derived instances will include an associated
+SetField instance.
+
 
 ## Costs and Drawbacks
 
@@ -169,15 +173,6 @@ some other class.
 
 
 ## Unresolved Questions
-
-Physical fields are currently resolved automatically by GHC whenever the field
-is in scope, so to allow for GHC to autoderive read-only fields we will want
-some syntax to export only the GetField instance and not the SetField instance.
-
-Should any of `hasField`, `setField`, `updateField` be dropped from `SetField`?
-They are all mentioned currently for performance reasons, as I can imagine
-situations where it seems like you need all 3 for optimal perf. But they can
-all be defined in terms of each other, so perhaps some should be dropped.
 
 
 ## Implementation Plan
