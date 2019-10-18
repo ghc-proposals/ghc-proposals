@@ -149,6 +149,48 @@ Jurriaan is gathering data on how many libraries are affected.
 
 Ideally we'd like a deprecation saying "you are using this feature, and it's going to disappear".  But this would have false positives: just because deep instantiation does eta-expansion does not imply that using only shallow instantiation would make the program un-typable.
 
+### Examples of back-compat issues
+
+We found an example of a back-compat problem in `cabal-doctest`.  In `Cabal:Distribution/Compat/Prelude` we have:
+```
+type CabalIO a = HasCallStack => IO a
+
+```
+(actually the definition re-uses `IO` as the name, but that's just confusing, so I've renamed it `CabalIO` here.) Then in `Cabal:Ditribution.Simple.LocalBuildInfo` we have
+```
+withLibLBI :: PackageDescription -> LocalBuildInfo
+           -> (Library -> ComponentLocalBuildInfo -> CabalIO ()) -> CabalIO ()
+```
+Finally, in `cabal-doctest`, a function has a local definition, with no type signature,
+looking like
+```
+   let getBuildDoctests withCompLBI mbCompName compExposedModules
+                        compMainIs compBuildInfo = ...
+   in
+   ...(getBuildDoctests withLibLBI ...)...
+```
+Now, lacking a type signature on `getBuildDoctests`, GHC infers the type of the function
+to have plain arrows in its type, something like
+```
+   getBuildDoctests :: (PackageDescription -> LocalBuildInfo -> blah -> IO ())
+                    -> ...blah...
+```
+but in the call the actual argument `withLibLBI` has type
+```
+withLibLBI :: PackageDescription -> LocalBuildInfo -> blah -> HasCallStack => IO ()
+```
+And the function and its argumetnt do not agree about the placement of the `HasCallStack` constraint.
+With deep skolemisation, GHC would eta-expand the call to
+```
+   getBuildDoctests (\ a b c. withLibLBI a b c)  ...
+```
+but, as discussed, that is unsound in general.
+
+Moreover, there is a *nested* use of `CabalIO` in `withLibLBI`'s third argument, so GHC has to use contravariance and more eta expansion to make that line up.
+
+The solution is simple, and improves the code: just give `getBuildDoctests` a type signature!
+
+
 ## Alternatives
 
 Status quo. But the the status quo is extremely unsatisfactory.
