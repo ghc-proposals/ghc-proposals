@@ -257,6 +257,18 @@ If this proposal becomes widely used then it is likely that all Haskell users wo
 
 This proposal advocates a different style of writing Haskell records, which is distinct from the existing style. As such, it may lead to the bifurcation of Haskell styles, with some people preferring the lens approach, and some people preferring the syntax presented here. That is no doubt unfortunate, but hard to avoid - `a.b` really is ubiquitous in programming languages. We consider that any solution to the records problem _must_ cause some level of divergence, but note that this mechanism (as distinct from some proposals) localises that divergence in the implementation of a module - users of the module will not know whether its internals used this extension or not.
 
+The use of `a.b` with no spaces on either side can make it harder to write expressions that span multiple lines. To split over two lines it is possible to do either of:
+
+```
+(myexpression.field1.field2.field3
+    ).field4.field5
+
+let temp = myexpression.field1.field2.field3
+in temp.field4.field5
+```
+
+We prefer the former, but both are permissible.
+
 ## Alternatives
 
 The primary alternatives to the problem of records are:
