@@ -147,7 +147,7 @@ In this table, the newly added cases are shown next to an example expression the
 
 | Production | Example | Commentary |
 | -- |  -- | -- |
-|*var* *fieldids*=*exp* | `a{foo.bar=2}` | the *var* is `foo`, `.bar` is a fieldid |
+|*var* *fieldids*=*exp* | `a{foo.bar = 2}` | the *var* is `foo`, `.bar` is a fieldid |
 |*var* *fieldids* *qop* *exp* | `a{foo.bar * 12}`   | update `a`'s `foo.bar` field to 12 times its initial value |
 
 For example, support for expressions like `a{foo.bar.baz.quux=i}` can be had with one additional case:
