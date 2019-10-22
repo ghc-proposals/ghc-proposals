@@ -143,11 +143,15 @@ See Motivation above.
 
 ## Costs and Drawbacks
 
-The main cost is that some existing programs will require some manual eta-expansion.
-
+The main user-facing cost is that some existing programs will require some manual eta-expansion.
 Jurriaan is gathering data on how many libraries are affected.
 
 Ideally we'd like a deprecation saying "you are using this feature, and it's going to disappear".  But this would have false positives: just because deep instantiation does eta-expansion does not imply that using only shallow instantiation would make the program un-typable.
+
+There are some implementation consequences:
+
+* `TcUnify.matchExpectedFunTys` would need to be extended to deal with the possiblity of a `forall`.  Very strightforward.
+* The ambiguity check would need a bit more code than at present.  Currently, we just check whether `ty <= ty` using the existing subsumption check: if this check fails, the type is ambiguous. With but with a simpler subsumption check `Int -> forall a. String` would be a sub-type of itself, even though it's plainly ambiguous. So we'd have to write a proper ambiguity checker.  Not hard!
 
 ### Examples of back-compat issues
 
