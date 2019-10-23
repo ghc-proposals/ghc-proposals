@@ -91,12 +91,12 @@ Additionally, superclass dictionaries are given as argument to the dictionary co
     type $FTIntegralInt :: TIntegral Int
     type $FTIntegralInt = 'C:TIntegral @ Int $FTNumInt
 
-Associated type and data family usage now emits constraints
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Associated type and data families have constrained kinds
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-Attempting to use an associated type/data family in any way without the appropriate class constraint (that is, if GHC does not have the appropriate promoted dictionary in scope) is an error. This is true even if it does not need to be reduced, because the dictionary is an argument to the Core level representation of a constrained type family.
+Attempting to use an associated type or data family in any way without the appropriate class constraint (that is, if GHC does not have the appropriate promoted dictionary in scope) is an error. This is true even if it does not need to be reduced, because the dictionary is an argument to the Core level representation of a constrained type family or of a constrained data family's type constructor.
 
-Explicitly, a typeclass's associated type family would be kinded as follows:
+Explicitly, a typeclass's associated type/data families would be kinded as follows:
 
 ::
 
@@ -120,30 +120,8 @@ Explicitly, a typeclass's associated type family would be kinded as follows:
 
 The distinction rests on if the variables of the class appear in the kind that the type family would have without these changes.
 
-Associated data family data constructors also gain the constraints for the instance. For example:
-
-::
-
-    class C1 (a :: k) where
-        data D1 (a :: k)
-
-    instance C1 Int where
-        -- D1Int :: Int -> D1 Int
-        data D1 Int = D1Int Int
-
-    class C2 (a :: k) where
-        data D2 (a :: k)
-
-    instance C1 a => C2 [a] where
-        -- D2List :: (C1 a) => [D1 a] -> D2 [a]
-        data D2 [a] = D2List [D1 a]
-
-    instance C2 a => C2 (Maybe a) where
-        -- D2Maybe :: (C2 a) => D a -> D (Maybe a)
-        data D2 (Maybe a) = D2Maybe (D2 a)
-
-Require Associated Type Families to Cover Their Constraints
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Require associated type and data families to cover their constraints
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 An important issue arises here: an associated type family currently may not provide sufficient information to unambiguously refer to a required instance. Consider the following example:
 
@@ -156,7 +134,7 @@ Currently, ``Underspecified :: k -> Type``. If we try to constrain this in the o
 
 Thus, we now require that the variables used in an associated type declaration must cover all of the class variables, in that choices for the associated type arguments must uniquely determine the choice of class instance. This might be done via, e.g., functional dependencies or superclass equality constraints. This will lead to code breakage, but in almost all cases, there is an implicit dependency between the variables that can be made explicit. In the few cases where no such dependency exists, the associated type may be factored out into a superclass over only the relevant variables.
 
-Core-Level Example
+Core-level example
 ~~~~~~~~~~~~~~~~~~
 
 At the Core level, just as with term-level typeclass methods, ``=>`` degrades into ``->`` and the promoted dictionary created above is given to satisfy this newly required visible argument.
@@ -191,7 +169,57 @@ At the Core level, just as with term-level typeclass methods, ``=>`` degrades in
     type Usage :: Nat
     type Usage = Increment Nat TNumDictNat (3 :: Nat)
 
-Backwards Compatibility
+Constraining data constructors
+++++++++++++++++++++++++++++++
+
+The new constraints added to the kinds of associated types have implications for the types of relevant data constructors.
+
+1. Associated data constructors *require* the availability of the appropriate instance of their parent class.
+
+   Considering the example below, it is clear that a binding ``x :: D Bool`` is not generally valid; ``D Bool`` is not even a valid type without the backwards compatibility elaborations! We must write ``x :: C Bool => D Bool`` instead.
+   
+   The same logic applies to the data constructor itself. ``DBool :: D Bool`` is not valid by itself, so instead the constructor must have the type ``DBool :: C Bool => D Bool``, but because ``C Bool`` must be in scope to pattern match on ``DBool``, we cannot *provide* it.
+
+2. A constructor that contains an associated type in a field *provides* the appropriate instance of its parent class.
+
+   This is implied by the backwards compatibility section below. When matching on ``MkE`` from the example below, for its existential field to have a valid type we must be provided an instance ``C a``, and thus the constructor must carry the dictionary.
+
+To provide a concrete example:
+
+::
+
+    class C a where
+        -- D :: forall (a :: Type) -> C a => Type
+        data D a
+    
+    instance C a => C (Maybe a) where
+        -- DMaybe :: C (Maybe a) => C a => D a -> D (Maybe a)
+        --           ^^^^^^^^^^^    ^^^
+        --           required       provided
+        data D (Maybe a) = DMaybe (D a)
+    
+    instance C Int where
+        -- DInt :: C Int => () => D Int
+        --         ^^^^^    ^^
+        --         req.     prov.
+        data D Int = DInt
+    
+    data E where
+        -- MkE :: C a => D a -> E
+        --        ^^^
+        --        prov.
+        MkE :: D a -> E
+
+In both of the above cases, if irrelevant constraints were implemented, it would be entirely reasonable to mark the constraints as irrelevant.
+
+Datatype contexts are available during kind checking
+++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Previously, non-equality constraints in kinds were prohibited and thus this does not truly represent a change in the semantics of datatype contexts, but is an important point to consider for performance reasons. Because "stupid theta" constraints are not provided, they let the programmer use associated types in datatype fields without adding a new field to hold the dictionary we newly demand. This is especially important because it preserves the ability to wrap associated types in ``newtype``s.
+
+Thus, ``DatatypeContexts`` are undeprecated, and are now permitted in conjunction with GADT syntax. GHC's parser already recognizes them correctly (in order to report an error stating that they are not supported). I cannot find a rigorous statement of the 'idealized' GADT syntax to give a precise change to the BNF, but in practice the change consists of simply removing the check.
+
+Backwards compatibility
 +++++++++++++++++++++++
 
 It seems as if this behavior is going to break enough existing code that the sensible thing to do is to gate it behind an extension. However, this is the wrong way to go, because if it can be turned off, it would require a separate version of any library that uses associated type/data families for use with and without the extension enabled. There is another way to ensure backwards compatibility without simply turning off the feature completely, as will be explained in the remainder of this section.
@@ -232,7 +260,7 @@ Effect and Interactions
 
 Improves the Type Safety of Associated Families
 ++++++++++++++++++++++++++++++++++++++++++++++++
-It is obvious that this solves the issue raised by the example in the Motivation section, because it creates a kind that expresses the constraint that is intended and allows the type system to provide the same guarantees that we provide to term level functions to type families.
+It is obvious that this solves the issue raised by the example in the Motivation section, because it creates a kind that expresses the constraint that is intended and allows the type system to provide the same guarantees that we provide with term level functions to type families.
 
 Future Development Will Simplify Type Family Injectivity
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
