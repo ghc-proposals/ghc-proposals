@@ -47,7 +47,6 @@ This change adds a new language extension `RecordDotSyntax`. In the event the la
 | `e{lbl = val}` | `setField @"lbl" e val` |
 | `(.lbl)` | `(\x -> x.lbl)` the `.` cannot have whitespace after |
 | `e{lbl1.lbl2 = val}` | `e{lbl1 = (e.lbl1){lbl2 = val}}` performing a nested update |
-| `e{lbl * val}` | `e{lbl = e.lbl * val}` where `*` can be any operator (can be optimised to `modifyField`) |
 
 The above forms combine to provide these identities:
 
@@ -57,7 +56,6 @@ The above forms combine to provide these identities:
 | `(.lbl1.lbl2)` | `(\x -> x.lbl1.lbl2)` |
 | `e.lbl1{lbl2 = val}` | `(e.lbl1){lbl2 = val}` |
 | `e{lbl1 = val}.lbl2` | `(e{lbl1 = val}).lbl2` |
-| `e{lbl1.lbl2 * val}` | `e{lbl1.lbl2 = e.lbl1.lbl2 * val}` |
 | `e{lbl1 = val1, lbl2 = val2}` | `(e{lbl1 = val1}){lbl2 = val2}` |
 
 ### Syntax
@@ -140,7 +138,7 @@ fexp    :: { ECP }
 To support the new forms of '.' field update, the *aexp* production is extended.
 <br/>
 <br> *aexp* → *aexp⟨qcon⟩* { *pbind* , … , *pbind* }
-<br/>*pbind* -> *qvar*=*exp* | *var* *fieldids*=*exp* | *var* *fieldids* *qop* *exp*
+<br/>*pbind* -> *qvar*=*exp* | *var* *fieldids*=*exp*
 <br/>*fieldids* -> *fieldids* *fieldid*
 
 In this table, the newly added cases are shown next to an example expression they enable:
@@ -148,7 +146,6 @@ In this table, the newly added cases are shown next to an example expression the
 | Production | Example | Commentary |
 | -- |  -- | -- |
 |*var* *fieldids*=*exp* | `a{foo.bar = 2}` | the *var* is `foo`, `.bar` is a fieldid |
-|*var* *fieldids* *qop* *exp* | `a{foo.bar * 12}`   | update `a`'s `foo.bar` field to 12 times its initial value |
 
 For example, support for expressions like `a{foo.bar.baz.quux=i}` can be had with one additional case:
 
@@ -222,10 +219,10 @@ setYearTaken :: Class -> Int -> Class
 setYearTaken c y = c{taken.year = y} -- nested update
 
 addYears :: Class -> Int -> Class
-addYears c n = c{taken.year + n} -- update via op
+addYears c n = c{taken.year = c.taken.year + n} -- update via op
 
 squareUnits :: Class -> Class
-squareUnits c = c{units & (\x -> x * x)} -- update via function
+squareUnits c = c{units = (\x -> x * x) c.units} -- update via function
 
 getResults :: [Class] -> [Status]
 getResults = map (.result) -- section
@@ -244,7 +241,7 @@ A full, rigorous set of examples (as tests) are available in the examples direct
 
 **Stealing a.b syntax:** The `a.b` syntax is commonly used in conjunction with the `lens` library, e.g. `expr^.field1.field2`. Treating `a.b` without spaces as a record projection would break such code. The alternatives would be to use a library with a different lens composition operator (e.g. `optics`), introduce an alias in `lens` for `.` (perhaps `%`), write such expressions with spaces, or not enable this extension when also using lenses. While unfortunate, we consider that people who are heavy users of lens don't feel the problems of inadequate records as strongly, so the problems are lessened.
 
-**Rebindable syntax:** When `RebindableSyntax` is enabled the `getField`, `setField` and `modifyField` functions are those in scope, rather than those in `GHC.Records`.
+**Rebindable syntax:** When `RebindableSyntax` is enabled the `getField` and `setField` functions are those in scope, rather than those in `GHC.Records`.
 
 **Enabled extensions:** When `RecordDotSyntax` is enabled it should imply the `NoFieldSelectors` extension and allow duplicate record field labels. It would be possible for `RecordDotSyntax` to imply `DuplicateRecordFields`, but we suspect that if people become comfortable with `RecordDotSyntax` then there will be a desire to remove the `DuplicateRecordFields` extension, so we don't want to build on top of it.
 
@@ -268,7 +265,7 @@ in temp.field4.field5
 
 We prefer the former, but both are permissible.
 
-## Alternatives
+## Alternatives to this proposal
 
 The primary alternatives to the problem of records are:
 
@@ -282,16 +279,17 @@ The primary alternatives to the problem of records are:
 
 All these approaches are currently used, and represent the "status quo", where Haskell records are considered not fit for purpose.
 
-## Unresolved Questions
+## Alternatives within this proposal
 
 Below are some possible variations on this plan, but we advocate the choices made above:
 
 * Should `RecordDotSyntax` imply `NoFieldSelectors`? Typically `RecordDotSyntax` will be used in conjunction with `NoFieldSelectors`, but `DuplicateRecordFields` would work too. Of those two, `DuplicateRecordFields` complicates GHC, while `NoFieldSelectors` conceptually simplifies it, so we prefer to bias the eventual outcome.
-* It seems appealing that `a{field += 1}` would be the syntax for incrementing a field. However, `+=` is a valid operator (would that be `a{field +== 1}`?) and for infix operators like `div` would that be <tt>\`div\`=</tt>? One possibility is to use the syntax `a{field + = 1}`.
-* There are no update sections. Should `({a=})`, `({a=b})` or `(.lbl=)` be an update section?
+* Earlier versions of this proposal contained a modify field sytnax of the form `a{field * 2}`. While appealing, there is a lot of syntactic debate, with variously `a{field <- (*2)}`, `a{field * = 2}` and others being proposed. None of these syntax variations are immediately clear to someone not familiar with this proposal. To be conservative, we leave this feature out.
+* There are no update sections. Should `({a=})`, `({a=b})` or `(.lbl=)` be an update section? While nice, we leave this feature out.
 * We do not extend pattern matching, although it would be possible for `P{foo.bar=Just x}` to be defined.
 * Will whitespace sensitivity become worse? We're not aware of qualified modules giving any problems, but it's adding whitespace sensitivity in one more place.
 * One suggestion is that record updates remain as normal, but `a { .foo = 1 }` be used to indicate the new forms of updates. While possible, we believe that option leads to a confusing result, with two forms of update both of which fail in different corner cases. Instead, we recommend use of `C{foo}` as a pattern to extract fields if necessary.
+* For selector functions we have opted for `(.foo)`, but `.foo` and `_.foo` have both been proposed. We consider `_.foo` to not be very Haskelly, as it is similar to very different uses of underscore. For `.foo` we err on the side of caution, noting that it is possible to permit `.foo` at a later date, but harder to require backets in future.
 
 ## Implementation Plan
 
