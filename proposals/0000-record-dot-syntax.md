@@ -290,6 +290,7 @@ Below are some possible variations on this plan, but we advocate the choices mad
 * Will whitespace sensitivity become worse? We're not aware of qualified modules giving any problems, but it's adding whitespace sensitivity in one more place.
 * One suggestion is that record updates remain as normal, but `a { .foo = 1 }` be used to indicate the new forms of updates. While possible, we believe that option leads to a confusing result, with two forms of update both of which fail in different corner cases. Instead, we recommend use of `C{foo}` as a pattern to extract fields if necessary.
 * For selector functions we have opted for `(.foo)`, but `.foo` and `_.foo` have both been proposed. We consider `_.foo` to not be very Haskelly, as it is similar to very different uses of underscore. For `.foo` we err on the side of caution, noting that it is possible to permit `.foo` at a later date, but harder to require backets in future.
+* Originally this proposal included `a{foo.bar}` to mean `a{foo.bar = bar}`, but that seemed to confuse everyone, so has been removed.
 
 ## Implementation Plan
 
