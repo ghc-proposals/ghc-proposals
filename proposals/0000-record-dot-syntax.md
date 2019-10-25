@@ -45,7 +45,7 @@ This change adds a new language extension `RecordDotSyntax`. In the event the la
 | -- | -- |
 | `e.lbl` | `getField @"lbl" e` the `.` cannot have whitespace either before or after |
 | `e{lbl = val}` | `setField @"lbl" e val` |
-| `(.lbl)` | `(\x -> x.lbl)` the `.` cannot have whitespace after |
+| `.lbl` | `(\x -> x.lbl)` the `.` cannot have whitespace after |
 | `e{lbl1.lbl2 = val}` | `e{lbl1 = (e.lbl1){lbl2 = val}}` performing a nested update |
 
 The above forms combine to provide these identities:
@@ -53,7 +53,7 @@ The above forms combine to provide these identities:
 | Expression | Identity
 | -- | -- |
 | `e.lbl1.lbl2` | `(e.lbl1).lbl2` |
-| `(.lbl1.lbl2)` | `(\x -> x.lbl1.lbl2)` |
+| `.lbl1.lbl2` | `(\x -> x.lbl1.lbl2)` |
 | `e.lbl1{lbl2 = val}` | `(e.lbl1){lbl2 = val}` |
 | `e{lbl1 = val}.lbl2` | `(e{lbl1 = val}).lbl2` |
 | `e{lbl1 = val1, lbl2 = val2}` | `(e{lbl1 = val1}){lbl2 = val2}` |
@@ -225,10 +225,10 @@ squareUnits :: Class -> Class
 squareUnits c = c{units = (\x -> x * x) c.units} -- update via function
 
 getResults :: [Class] -> [Status]
-getResults = map (.result) -- section
+getResults = map .result -- selector
 
 getTerms :: [Class]  -> [Quarter]
-getTerms = map (.taken.term) -- nested section
+getTerms = map .taken.term -- nested selector
 ```
 
 A full, rigorous set of examples (as tests) are available in the examples directory of [this repository](https://github.com/ndmitchell/record-dot-preprocessor). Those tests include infix applications, polymorphic data types, interoperation with other extensions and more. They follow the [specifications given earlier](#proposed-change-specification).
@@ -288,7 +288,7 @@ Below are some possible variations on this plan, but we advocate the choices mad
 * We do not extend pattern matching, although it would be possible for `P{foo.bar=Just x}` to be defined.
 * Will whitespace sensitivity become worse? We're not aware of qualified modules giving any problems, but it's adding whitespace sensitivity in one more place.
 * One suggestion is that record updates remain as normal, but `a { .foo = 1 }` be used to indicate the new forms of updates. While possible, we believe that option leads to a confusing result, with two forms of update both of which fail in different corner cases. Instead, we recommend use of `C{foo}` as a pattern to extract fields if necessary.
-* For selector functions we have opted for `(.foo)`, but `.foo` and `_.foo` have both been proposed. We consider `_.foo` to not be very Haskelly, as it is similar to very different uses of underscore. For `.foo` we err on the side of caution, noting that it is possible to permit `.foo` at a later date, but harder to require backets in future.
+* For selector functions we have opted for `.foo`, but `(.foo)` and `_.foo` have both been proposed. We consider `_.foo` to not be very Haskelly, as it is similar to very different uses of underscore. The `.foo` seems to be universally preferred.
 * Originally this proposal included `a{foo.bar}` to mean `a{foo.bar = bar}`, but that seemed to confuse everyone, so has been removed.
 
 ## Implementation Plan
