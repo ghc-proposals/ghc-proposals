@@ -267,7 +267,7 @@ We prefer the former, but both are permissible.
 
 ## Alternatives to this proposal
 
-The primary alternatives to the problem of records are:
+Instead of this proposal, we could do any of the following:
 
 * Using the [`lens` library](https://hackage.haskell.org/package/lens). The concept of lenses is very powerful, but that power can be [complex to use](https://twitter.com/fylwind/status/549342595940237312?lang=en). In many ways lenses let you abstract over record fields, but Haskell has neglected the "unabstracted" case of concrete fields.
 * The [`DuplicateRecordFields` extension](https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#duplicate-record-fields) is designed to solve similar problems. We evaluated this extension as the basis for DAML, but found it lacking. The rules about what types must be inferred by what point are cumbersome and tricky to work with, requiring a clear understanding of at what stage a type is inferred by the compiler.
@@ -275,7 +275,6 @@ The primary alternatives to the problem of records are:
 * Some style guidelines suggest prefixing each record field with the type name, e.g. `personName (companyOwner c)`. While it works, it isn't pleasant, and many libraries then abbreviate the types to lead to code such as `prsnName (coOwner c)`, which can increase confusion.
 * There is a [GHC plugin and preprocessor](https://github.com/ndmitchell/record-dot-preprocessor) that both implement much of this proposal. While both have seen light use, their ergonomics are not ideal. The preprocessor struggles to give good location information given the necessary expansion of substrings. The plugin cannot support the full proposal and leads to error messages mentioning `getField`. Suggesting either a preprocessor or plugin to beginners is not an adequate answer. One of the huge benefits to the `a.b` style in other languages is support for completion in IDE's, which is quite hard to give for something not actually in the language.
 * Continue to [vent](https://www.reddit.com/r/haskell/comments/vdg55/haskells_record_system_is_a_cruel_joke/) [about](https://bitcheese.net/haskell-sucks) [records](https://medium.com/@snoyjerk/least-favorite-thing-about-haskal-ef8f80f30733) [on](https://www.quora.com/What-are-the-worst-parts-about-using-Haskell) [social](http://www.stephendiehl.com/posts/production.html) [media](https://www.drmaciver.com/2008/02/tell-us-why-your-language-sucks/).
-* Previous versions of this proposal proposed a punning syntax for records, that was widely viewed as being confusing. It has been removed.
 
 All these approaches are currently used, and represent the "status quo", where Haskell records are considered not fit for purpose.
 
