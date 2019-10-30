@@ -69,33 +69,40 @@ Besides top level term bindings, we currently have signatures with implicit quan
 This proposal applies to all alike:
 
 ::
+
   data F :: x -> Type where -- needs `forall x.`
 
 ::
+
   instance Eq a => X a where -- needs `forall a.` (after `instance`)
 
 When `-XStandaloneKindSignatures` is on, it also affects those new standalone signatures as well.
 For example all of these would be invalid:
 
 ::
+
   type MonoTagged :: x -> x -> Type -- needs `forall x.`
   data MonoTagged t x = ...
 
 ::
+
   type Id :: k -> k -- needs `forall k.`
   type family Id x where
 
 ::
+
   type C :: (k -> Type) -> k -> Constraint -- needs `forall k.`
   class C a b where
 
 ::
+
   type TypeRep :: forall k. k -> Type -- needs `forall k.`
   data TypeRep a where
 
 The other "pattern style" of GADT declarations is also restricted:
 
 ::
+
   data F (y :: x) (z :: y) :: ... where -- `x` is unbound, `y` and `y` are OK.
 
 Note that ``y`` and ``z`` are deemed explicit bindings analogous to ``f (y :: x) (z :: z) = ...`` and permitted.
@@ -121,11 +128,13 @@ It is a little known fact that one can do "empty" ``forall`` quantifications tod
 This has the exact same effect at requiring explicit bounds:
 
 ::
+
   Prelude> x :: forall. t; x = x
   
   <interactive>:21:14: error: Not in scope: type variable ‘t’
 
 ::
+
   Prelude> instance forall. Eq a => Ord a where
 
   <interactive>:34:21: error: Not in scope: type variable ‘a’
@@ -133,6 +142,7 @@ This has the exact same effect at requiring explicit bounds:
   <interactive>:34:30: error: Not in scope: type variable ‘a’
 
 ::
+
   Prelude> data F :: forall. x -> Type
 
   -- should complain but there is a bug!
@@ -165,6 +175,7 @@ I sort of get why this is the case: CUSK madness and other concerns makes the bi
 But at least
 
 ::
+
   class Foo (x :: b)
 
 seems something that ought to be prohibited because ``b`` is unbound.
