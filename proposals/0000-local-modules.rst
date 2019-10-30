@@ -52,6 +52,8 @@ provides a tempting way toward a resurrection of rejected proposal `#40`_
 .. _`#160`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0160-no-toplevel-field-selectors.rst
 .. _`#88`: https://github.com/ghc-proposals/ghc-proposals/pull/88
 .. _`#234`: https://github.com/ghc-proposals/ghc-proposals/pull/234
+.. _`#282`: https://github.com/ghc-proposals/ghc-proposals/pull/282
+.. _`#243`: https://github.com/ghc-proposals/ghc-proposals/pull/243
 
 Motivation
 ----------
@@ -193,7 +195,8 @@ Proposed Change Specification
 1. Introduce a new extension ``-XLocalModules``.
 
 2. Introduce a new declaration form (allowed only at the top level of a
-   module) to declare new modules called *local modules*. Here is the BNF::
+   module -- i.e. not in a ``let`` or ``where``)
+   to declare new modules called *local modules*. Here is the BNF::
 
      decl ::= ... | [ 'import' ] 'module' modname [ export_spec ] 'where' decls
      modname ::= conid | '_'
@@ -250,7 +253,8 @@ Proposed Change Specification
 
    This declaration takes all entities (or those entities named in the
    ``import_spec``) in scope with a *conid*\ ``.`` and brings them into scope
-   into the local context unqualified.
+   into the local context without that qualification. (They may be more deeply
+   qualified, if *conid* exports local modules.)
 
    The declaration is allowed in ``let`` and ``where`` clauses.
 
@@ -376,6 +380,33 @@ Effect and Interactions
 
 * This proposal does not appear to interact with Backpack. It does not address ``signature``\s,
   the key feature in Backpack. Perhaps the ideas here could be extended to work with ``signature``\s.
+
+* Note that the new ``import module`` syntax works with traditional ``import qualified`` imports. For example::
+
+    -- top of file:
+    module A where
+
+    import qualified B ( wiz, woz )
+    import qualified C ( wiz, woz )
+
+    x = if wiz then woz else error "blargh"
+      where
+        import module B
+
+    y = woz + wiz
+      where
+        import module C
+
+* If you have ``module M`` in an export list, and ``M`` contains local modules, then those local
+  modules are exported.
+
+* Other proposals and features in GHC move toward allowing duplicate record field names without
+  qualification: `#160`_ suppresses top-level field selectors, `#282`_ proposes a new ``.``\-syntax
+  for record access, and GHC already has ``-XDuplicateRecordFields`` and ``-XDisambiguateRecordFields``.
+  This proposal would allow a different way to crack this nut, by giving users fine control
+  over the scope of the selectors. This proposal might obviate ``-XDuplicateRecordFields``, but
+  ``-XDisambiguateRecordFields`` is still useful with this proposal.
+  
   
 Costs and Drawbacks
 -------------------
@@ -428,6 +459,24 @@ D. This proposal does not allow the export of a qualified local module such that
    ``import module M`` that exports all identifiers in scope with a ``M.`` prefix
    unqualified. I don't find this feature necessary, but it would fit with the
    rest of this proposal.
+
+E. Drop the possibility of anonymous local modules; that is, remove ``_`` as a possibility
+   of ``modname``. However, I like the idea of anonymous modules, as they serve to reduce
+   the scope of some declarations without bothering the programmer to write a name for
+   the module.
+
+F. Disallow local modules to be mutually recursive. The current proposal says (point 4)
+   that the local module system affects scoping only. However, we could instead declare
+   that a mutual-dependency strongly-connected component (SCC) cannot include definitions
+   in more than one module. This would disable mutual recursion between modules, but open
+   the possibility of using local modules to explicitly stage compilation. This might
+   allow, for example, the definition of a function and its usage in a Template Haskell
+   splice in the same file (as long as they were in different local modules).
+
+   I prefer the proposal as-is in this regard: modules should be about abstraction and
+   naming, not about compilation dependencies. Compilation dependencies should be handled
+   via a mechanism specifically suited for compilation dependencies, such as explicit
+   staging like `#243`_.
    
 Future Work
 -----------
@@ -456,11 +505,17 @@ I see a few future directions along these lines, but I leave it to others to fle
    modules instead of only at the top-level module in a file. With such an extension
    to this design, we might nab abandoned proposal `#88`_ on language extensions
    or tabled proposal `#234`_ on warning flags.
+
+4. Formalise all of this along the lines of `A Formal Specification of the Haskell 98 Module
+   System <https://web.cecs.pdx.edu/~mpj/pubs/hsmods.pdf>`_, by Diatchki, Jones, and Hallgren.
    
 Unresolved questions
 --------------------
-None at this time.
 
+1. Would it be equivalent to say that all traditional ``import`` declarations create
+   local modules? That is, after I say ``import M (foo)``, then I can say ``M.foo``.
+   Does that mean we have a local module ``M``? I *think* such a treatment is consistent
+   with this proposal, but I'm somehow not sure.
 
 Implementation Plan
 -------------------
