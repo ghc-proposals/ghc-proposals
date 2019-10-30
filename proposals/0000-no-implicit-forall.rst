@@ -31,7 +31,7 @@ All other variables are explicitly bound, and the inconsistency means more to le
 Also, implicit syntax in general allows the beginner to not realize what they are doing.
 What are tedious tasks for the expert may be helpful learning steps to them.
 
-Further, the most beginnning students may be taught with both ``-XNoImplicictForall`` and ``-XNoExplicitForall``.
+Further, the most beginnning students may be taught with both ``-XNoImplicictForAll`` and ``-XNoExplicitForAll``.
 This means it's impossible to write forall types by any means.
 Combine with ``-Wmissing-signatures`` and ``-Wmissing-local-signatures``, so inferred polymorphic types of bindings are also prohibitted, and a monomorphic custom prelude, and forall types are all but expunged entirely.
 
