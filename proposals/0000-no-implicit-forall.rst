@@ -62,16 +62,80 @@ When using ``-XNoImplicitForAll``, all variables in types must be explicitly bou
 Examples
 --------
 
-It is a little known fact that one can do "empty" ```forall`` quantifications today::
+Not just terms
+~~~~~~~~~~~~~~
+
+Besides top level term bindings, we currently have signatures with implicit quantification for expressions, instances, and data decleration.
+This proposal applies to all alike:
+
+::
+  data F :: x -> Type where -- needs `forall x.`
+
+::
+  instance Eq a => X a where -- needs `forall a.` (after `instance`)
+
+When `-XStandaloneKindSignatures` is on, it also affects those new standalone signatures as well.
+For example all of these would be invalid:
+
+::
+  type MonoTagged :: x -> x -> Type -- needs `forall x.`
+  data MonoTagged t x = ...
+
+::
+  type Id :: k -> k -- needs `forall k.`
+  type family Id x where
+
+::
+  type C :: (k -> Type) -> k -> Constraint -- needs `forall k.`
+  class C a b where
+
+::
+  type TypeRep :: forall k. k -> Type -- needs `forall k.`
+  data TypeRep a where
+
+The other "pattern style" of GADT declarations is also restricted:
+
+::
+  data F (y :: x) (z :: y) :: ... where -- `x` is unbound, `y` and `y` are OK.
+
+Note that ``y`` and ``z`` are deemed explicit bindings analogous to ``f (y :: x) (z :: z) = ...`` and permitted.
+However ``x`` is a use, and thus implicit binding today, and not permitted.
+There is no way to fix this without rewriting "signature style" as::
+
+  data F :: forall x. forall (y :: z) -> ... where
+
+However maybe in the future we would have something like::
+
+  data F @x (y :: x) (z :: y) :: ... where
+
+which would be permitted.
+
+Empty `forall` "desugar"
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+It is a little known fact that one can do "empty" ``forall`` quantifications today::
 
   x :: forall. Int -- same as 'x :: Int'
   x = 0
 
-This has the exact same effect at requiring explicit bounds::
+This has the exact same effect at requiring explicit bounds:
 
+::
   Prelude> x :: forall. t; x = x
   
   <interactive>:21:14: error: Not in scope: type variable ‘t’
+
+::
+  Prelude> instance forall. Eq a => Ord a where
+
+  <interactive>:34:21: error: Not in scope: type variable ‘a’
+
+  <interactive>:34:30: error: Not in scope: type variable ‘a’
+
+::
+  Prelude> data F :: forall. x -> Type
+
+  -- should complain but there is a bug!
 
 We can imagine then that ``-XNoImplicitForAll`` puts an ``forall.`` at the beginning of every signature, in order to "desugar" the new behavior into the old behavior.
 
@@ -96,7 +160,14 @@ Do note that more complicated type expressions with lower case identifiers is fi
 Unresolved Questions
 --------------------
 
-No unresolved questions.
+Currently explicit ``forall`` is allowed in instances but not class heads.
+I sort of get why this is the case: CUSK madness and other concerns makes the binding structure very confusing and open to interpretation.
+But at least
+
+::
+  class Foo (x :: b)
+
+seems something that ought to be prohibited because ``b`` is unbound.
 
 Implementation Plan
 -------------------
