@@ -66,8 +66,8 @@ Examples
 
 All examples assume ``-XExplicitForAll`` and ``-XNoImplicitForAll``, in addition to their own ``LANGUAGE`` pragmas.
 
-
 ::
+
   f :: k -> ... -- error: k is not bound
   f x = ...
 
@@ -142,7 +142,7 @@ or with ``-XStandaloneKindSignatures``::
   type  F :: forall x. forall (y :: z) where
   class F y z
 
-Note that since there is no ``class F :: ...`` syntax analogous to `data F :: ...``, ``-XStandaloneKindSignatures`` are the only way to write explicitly kind-polymorphic classes.
+Note that since there is no ``class F :: ...`` syntax analogous to ``data F :: ...``, ``-XStandaloneKindSignatures`` are the only way to write explicitly kind-polymorphic classes.
 However maybe in the future we would have something like::
 
   data  F @x (y :: x) (z :: y) ... :: Type where
