@@ -59,8 +59,28 @@ Create ``-XImplicitForAll`` to allow automatically capturing free variables in a
 It is on by default for backwards compatibility.
 When using ``-XNoImplicitForAll``, all variables in types must be explicitly bound.
 
+Make ``-XImplicitForAll`` also exclusively allow the implicit binding of non-rigid (unified) variables in pattern signatures.
+
 Examples
 --------
+
+All examples assume ``-XExplicitForAll`` and ``-XNoImplicitForAll``, in addition to their own ``LANGUAGE`` pragmas.
+
+
+::
+  f :: k -> ... -- error: k is not bound
+  f x = ...
+
+::
+
+  f (x :: k) = ... -- error: k is not bound
+
+::
+
+  {-# LANGUAGE ScopedTypeVariables #-}
+
+  f :: forall k. ...
+  f (x :: k) = ... -- OK
 
 Not just terms
 ~~~~~~~~~~~~~~
@@ -70,52 +90,65 @@ This proposal applies to all alike:
 
 ::
 
-  data F :: x -> Type where -- needs `forall x.`
+  data F :: x -> Type where -- error: needs `forall x.`
 
 ::
 
-  instance Eq a => X a where -- needs `forall a.` (after `instance`)
+  instance Eq a => X a where -- error: needs `forall a.` (after `instance`)
 
-When `-XStandaloneKindSignatures` is on, it also affects those new standalone signatures as well.
+::
+
+  class Eq a => X (a :: b) where -- error: `b` unbound
+
+When ``-XStandaloneKindSignatures`` is on, it also affects those new standalone signatures as well.
 For example all of these would be invalid:
 
 ::
 
-  type MonoTagged :: x -> x -> Type -- needs `forall x.`
+  type MonoTagged :: x -> x -> Type -- error: needs `forall x.`
   data MonoTagged t x = ...
 
 ::
 
-  type Id :: k -> k -- needs `forall k.`
+  type Id :: k -> k -- error: needs `forall k.`
   type family Id x where
 
 ::
 
-  type C :: (k -> Type) -> k -> Constraint -- needs `forall k.`
+  type C :: (k -> Type) -> k -> Constraint -- error: needs `forall k.`
   class C a b where
 
 ::
 
-  type TypeRep :: forall k. k -> Type -- needs `forall k.`
+  type TypeRep :: forall k. k -> Type -- error: needs `forall k.`
   data TypeRep a where
 
-The other "pattern style" of GADT declarations is also restricted:
+The other "pattern style" of GADT declarations, like classs declarations, is also restricted::
 
-::
-
-  data F (y :: x) (z :: y) :: ... where -- `x` is unbound, `y` and `y` are OK.
+  data  F (y :: x) (z :: y) ... :: Type where -- error: `x` is unbound, `y` and `y` are OK.
+  class F (y :: x) (z :: y)             where -- ditto
 
 Note that ``y`` and ``z`` are deemed explicit bindings analogous to ``f (y :: x) (z :: z) = ...`` and permitted.
 However ``x`` is a use, and thus implicit binding today, and not permitted.
 There is no way to fix this without rewriting "signature style" as::
 
-  data F :: forall x. forall (y :: z) -> ... where
+  data  F :: forall x. forall (y :: z) -> ... -> Type where
 
+or with ``-XStandaloneKindSignatures``::
+
+  type  F :: forall x. forall (y :: z) -> ... -> Type
+  data  F y z where
+
+  type  F :: forall x. forall (y :: z) where
+  class F y z
+
+Note that since there is no ``class F :: ...`` syntax analogous to `data F :: ...``, ``-XStandaloneKindSignatures`` are the only way to write explicitly kind-polymorphic classes.
 However maybe in the future we would have something like::
 
-  data F @x (y :: x) (z :: y) :: ... where
+  data  F @x (y :: x) (z :: y) ... :: Type where
+  class F @x (y :: x) (z :: y) where
 
-which would be permitted.
+which would be permitted and not require ``-XStandaloneKindSignatures``.
 
 Empty `forall` "desugar"
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -149,6 +182,13 @@ This has the exact same effect at requiring explicit bounds:
 
 We can imagine then that ``-XNoImplicitForAll`` puts an ``forall.`` at the beginning of every signature, in order to "desugar" the new behavior into the old behavior.
 
+Class declarations
+~~~~~~~~~~~~~~~~~~
+
+Notice that today, one cannot even write ``class forall a. Foo a`` though they they can write ``instance forall a. Foo a``.
+This is because while the head of an instance is a class applied *arguments*, the head of a class is a class taking *parameters*.
+In other words, the ``a`` in ``Foo a`` in ``class forall a. Foo a`` is not a binder, while in ``class forall a. Foo a`` is one. 
+
 Effect and Interactions
 -----------------------
 
@@ -170,13 +210,7 @@ Do note that more complicated type expressions with lower case identifiers is fi
 Unresolved Questions
 --------------------
 
-Currently explicit ``forall`` is allowed in instances but not class heads.
-I sort of get why this is the case: CUSK madness and other concerns makes the binding structure very confusing and open to interpretation.
-But at least
-
-::
-
-  class Foo (x :: b)
+No unresolved questions.
 
 seems something that ought to be prohibited because ``b`` is unbound.
 
