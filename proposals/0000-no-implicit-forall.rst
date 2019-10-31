@@ -85,7 +85,7 @@ All examples assume ``-XExplicitForAll`` and ``-XNoImplicitForAll``, in addition
 Not just terms
 ~~~~~~~~~~~~~~
 
-Besides top level term bindings, we currently have signatures with implicit quantification for expressions, instances, and data decleration.
+Besides top level term bindings, we currently have signatures with implicit quantification for expressions, instances [#class-forall]_, and data decleration.
 This proposal applies to all alike:
 
 ::
@@ -182,13 +182,6 @@ This has the exact same effect at requiring explicit bounds:
 
 We can imagine then that ``-XNoImplicitForAll`` puts an ``forall.`` at the beginning of every signature, in order to "desugar" the new behavior into the old behavior.
 
-Class declarations
-~~~~~~~~~~~~~~~~~~
-
-Notice that today, one cannot even write ``class forall a. Foo a`` though they they can write ``instance forall a. Foo a``.
-This is because while the head of an instance is a class applied *arguments*, the head of a class is a class taking *parameters*.
-In other words, the ``a`` in ``Foo a`` in ``class forall a. Foo a`` is not a binder, while in ``class forall a. Foo a`` is one. 
-
 Effect and Interactions
 -----------------------
 
@@ -221,3 +214,9 @@ I think this will be easy to implement.
 I take responsibility for implementing it, but hope to use the opportunity to mentor someone else rather than do all myself.
 
 .. _`#270`: https://github.com/ghc-proposals/ghc-proposals/pull/270
+
+.. [#class-forall]
+
+  Notice that today, one cannot even write ``class forall a. Foo a`` though they they can write ``instance forall a. Foo a``.
+  This is because while the head of an instance is a class applied *arguments*, the head of a class is a class taking *parameters*.
+  In other words, the ``a`` in ``Foo a`` in ``class forall a. Foo a`` is not a binder, while in ``class forall a. Foo a`` is one. 
