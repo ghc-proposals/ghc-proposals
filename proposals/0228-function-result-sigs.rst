@@ -2,7 +2,8 @@ Function Result Type Signatures
 ===============================
 
 .. proposal-number:: 51
-.. author:: Vladislav Zavialov
+.. author:: Vladislav Zavialov (@int-index)
+.. co-author:: John Ericson (@Ericson2314)
 .. date-accepted:: 2019-07-16
 .. ticket-url::
 .. implemented::
@@ -175,26 +176,28 @@ Proposed Change Specification
 
 Allow function result type signatures on the left-hand side.
 
-**Syntax.** Take the Haskell 2010 function left-hand side grammar as the
+Syntax
+~~~~~~
+
+Take the Haskell 2010 function left-hand side grammar as the
 starting point::
 
   funlhs -> var apat {apat}
           | pat varop pat
           | ( funlhs ) apat {apat}
 
-The change is to remove the mandatory ``apat`` from the first rule and to add
-an optional type annotation::
+The change is to add an optional type annotation::
 
-  funlhs' -> var {apat}
+  funlhs' -> var apat {apat}
            | pat varop pat
            | ( funlhs' ) apat {apat}
 
-  funlhs -> funlhs' :: [context =>] type
+  funlhs -> funlhs' [:: [context =>] type]
 
-This results in an ambiguity with pattern bindings, which is resolved in favor
-of function bindings.
+Semantics
+~~~~~~~~~
 
-**Semantics.** The result type signature is unified with the inferred type of
+The result type signature is unified with the inferred type of
 the function body. It does not enable polymorphic recursion.
 
 Result type signatures behave just like pattern signatures, as in ``\ (x ::
@@ -206,29 +209,8 @@ site for ``a`` (in this example); and the ``a`` might be bound to any type, e.g
 Effect and Interactions
 -----------------------
 
-At the moment, a binding with no parameters and a signature is parsed as a
-pattern binding::
-
-  x :: String -> String = reverse    -- accepted as PatBind
-
-The consequence of this is that we reject scoped type variables::
-
-  x :: [a] -> [a] = reverse    -- rejected with an error:
-  -------------------------------------------------------
-    • You cannot bind scoped type variable ‘a’
-        in a pattern binding signature
-    • In the pattern: x :: [a] -> [a]
-      In a pattern binding: x :: [a] -> [a] = reverse
-
-Under this proposal, we reclassify this construct as a function binding and
-allow scoped type variables::
-
-  x :: [a] -> [a] = reverse    -- accepted as FunBind
-
-This is the result of this grammar change::
-
-  - funlhs  -> var apat {apat}
-  + funlhs' -> var {apat}
+Purposefully kept to a minimum. See the alternatives for why an extension to
+this proposal had negative interactions.
 
 Costs and Drawbacks
 -------------------
@@ -239,45 +221,84 @@ This is one more feature to implement and maintain.
 Alternatives
 ------------
 
-* We could treat ``f :: t = <rhs>`` equivalently to ``f = <rhs> :: t``, but
+* We could treat ``f x :: t = <rhs>`` equivalently to ``f x = <rhs> :: t``, but
   this is neither consistent nor terribly useful.
 
 * We could detect CUSKs as we do in types to enable polymorphic recursion, but
   this makes little sense as we are in the proccess of their deprecation.
 
+* An earlier version of the proposal changed the boundary between function binds
+  and pattern binds via not requring an argument:
+
+  .. code-block:: diff
+
+    - funlhs' -> var apat {apat}
+    + funlhs' -> var {apat}
+
+  and resolving the resulting ambiguity with pattern bindings in favor of
+  function bindings.
+
+  The motivation issue is that at the moment, a binding with no parameters and
+  a signature is parsed as a pattern binding::
+
+    x :: String -> String = reverse -- accepted as PatBind
+
+  The consequence of this is that we reject scoped type variables::
+
+    x :: [a] -> [a] = reverse -- rejected with an error:
+    -------------------------------------------------------
+      • You cannot bind scoped type variable ‘a’
+          in a pattern binding signature
+      • In the pattern: x :: [a] -> [a]
+        In a pattern binding: x :: [a] -> [a] = reverse
+
+  But by reclassifying this construct as a function binding we could allow
+  scoped type variables::
+
+    x :: [a] -> [a] = reverse -- accepted as FunBind
+
+    -- | Remember 'a' can be constrained.
+    x' :: a' = reverse -- accepted as FunBind
+
+  The problem is that there is another conflicting interpretation where ``x``
+  stays a pattern bind::
+
+    x :: [a] -> [a] = reverse @Int -- maybe someday accepted as PatBind
+
+    y :: a
+    y = 1 :: Int
+
+  Here, ``a`` is a (unified) type variable with the same scope as ``x``. This
+  matches ``f (x :: a) = ...`` and ``(x :: a) <- ...`` where the ``x`` and
+  ``a`` also have the same scope. The overlap with the monadic bind is
+  especially intersting, because we *have* to have these the scope of ``a`` not
+  include the RHS of the bind in order to bind existentials. This also scales
+  to deeper pattern signatures::
+
+    Identity (x :: a) = Identity @Int 1 -- maybe someday accepted as PatBind
+
+  To recover the function signature, one could use an explicit ``forall``::
+
+    x :: forall a. [a] -> [a] = reverse -- maybe someday accepted as PatBind
+
+  Which can be combined with the above if ``-XImpredicativeTypes`` is ever
+  cleaned up. True, this doesn't bind ``a`` over the function body, but `type lambdas
+  <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0050-type-lambda.rst>`_
+  provide a solution.::
+
+    x :: forall a. [a] -> [a] = \@b -> id @[b]
+    Identity (x :: forall a. [a] -> [a]) = Identity \@b -> id @[b]
+
+  All this is of course future work, but it seems premature for this proposal
+  to cut off that future work. By conservatively keeping pattern binds the same
+  as today, we keep all options open.
 
 Unresolved Questions
 --------------------
 
-What treatment do we give to the following example? ::
-
-  (x :: [a] -> [a]) = reverse
-
-At the moment, it is parsed as a ``PatBind`` and rejected because scoped type
-variables are not allowed in pattern bindings. However, it only differs from the
-example we propose to accept by parenthesization::
-
-  x :: [a] -> [a] = reverse    -- accepted as FunBind
-  (x :: [a] -> [a]) = reverse  -- rejected as PatBind
-
-In general, the situation with parenthesization in bindings is quite elaborate::
-
-  f       = ...  -- FunBind
-  f a     = ...  -- FunBind
-  (f a)   = ...  -- parse error
-  (f a) b = ...  -- FunBind
-
-A possible solution is change this parsing rule::
-
-  funlhs' ->
-    ...
-    | ( funlhs' ) apat {apat}
-
-We can treat all of the examples above as ``FunBind`` by removing the mandatory ``apat``::
-
-  funlhs' ->
-    ...
-    | ( funlhs' ) {apat}
+No unresolved questions. The previous version of the proposal in changing the
+division between pattern and function binds raised some, but now we avoid that
+by keeping the existing division.
 
 Implementation Plan
 -------------------
@@ -287,3 +308,9 @@ I (Vladislav Zavialov) will (attempt to) implement.
 The function result signatures are already a part of the ``Parser.y`` grammar,
 and a validation step rejects them. This check will be removed, and ``FunBind``
 extended with a result type.
+
+I, John Ericson (@Ericson2314), started GHC MR `!1474`_, which makes GHC's division of pattern and function bindings match the spec.
+I will attempt to finish it, probably after the 8.10 fork.
+While it may not be necessary, it is probably the best way to ensure that `f :: a = ...` works according to the proposal and not the alternative.
+
+.. _`!1474`: https://gitlab.haskell.org/ghc/ghc/merge_requests/1474
