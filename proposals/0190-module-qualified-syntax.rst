@@ -5,7 +5,7 @@ Allow ``qualified`` to follow module name
 .. author:: Shayne Fletcher
 .. date-accepted:: 2019-05-02
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/merge_requests/853
-.. implemented::
+.. implemented:: 8.10
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/190>`_.
 .. sectnum::
