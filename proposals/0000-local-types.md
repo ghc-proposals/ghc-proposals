@@ -99,29 +99,12 @@ g x = P x
     newtype P = P Int
 ```
 
-How could we interpret locally defined types in terms of more familiar globally
-defined ones? I believe we can do this using a sort of dependent lambda lifting.
-Suppose we have
-
-```haskell
-p :: forall a b. Int -> a -> F a b
-p i c = ...
-  where
-    data M x = M Int x
-```
-
-We can lift `M` by capturing its local type *and value* context:
-
-```haskell
-data M' (a :: Type) (b :: Type) (i :: Int) (c :: a) (x :: Type) = M Int x
-```
-
 ### Type synonyms
 
 Local type synonym definitions would be allowed, working exactly as they
 do elsewhere.
 
-### Coherence
+### Class instances
 
 It is well known that allowing arbitrary local instances destroys coherence.
 One could write
@@ -193,18 +176,76 @@ i =
 ```
 
 How do we deal with locally bound type variables in instance heads?
-Richard Eisenberg believes the idea of matching on those is absurd. So we
-propose that a type variable in an instance head *shadows* any type
-variable with the same name. An explicit equality constraint may be used
-to constrain a type variable to match it:
+Richard Eisenberg believes the idea of matching on those is absurd.
+However, as John Ericson points out, it could be quite confusing
+if those names were shadowed. His example is
 
 ```haskell
-j :: forall a. ...
-j = ...
-  where
-    newtype N x = N x
-    instance a ~ b => C (N b)
+sortWith :: forall a b. Ord b => (a -> b) -> Blob a -> Blob a
+sortWith f = coerce (sort :: Blob (N a) -> Blob (N a)) where
+  newtype N c = N {getN :: c}
+  instance Eq (N a) where
+    (==) = (==) `on` (f . getN)
+  instance Ord (N a) where
+    compare = compare `on` (f . getN)
 ```
+
+So I propose, for now, to *forbid* locally bound type variables in instance
+heads, with one exception. Consider the definition of `reify` above:
+
+```haskell
+reify :: forall a r. a -> (forall (s :: *). Reifies s a => Proxy s -> r) -> r
+reify a f = f (Proxy :: Proxy S)
+  where
+    data S
+    instance Reifies S a where
+      reflect _ = a
+```
+
+The type variable `a` appears in the instance head! We could avoid this if
+necessary using an equality constraint:
+
+```haskell
+reify :: forall a r. a -> (forall (s :: *). Reifies s a => Proxy s -> r) -> r
+reify a f = f (Proxy :: Proxy S)
+  where
+    data S
+    instance a ~ b => Reifies S b where
+      reflect _ = a
+```
+
+but that's pretty annoying. I believe, therefore, that we should allow a local
+type variable to be used in an instance head when it is determined by a
+functional dependency or (in a sufficiently obvious way) by an equality
+superclass constraint from concrete types. That is, it should be allowed in an
+instance head, but should never be matched on.
+
+### Interpretation
+
+How could we interpret locally defined types and instances in terms of more
+familiar globally defined ones? I believe we can do this using a sort of
+dependent lambda lifting.  Suppose we have
+
+```haskell
+p :: forall a b. C a => Int -> a -> F a b
+p i c = ...
+  where
+    data M x = M Int x
+    instance D M where
+      m = ...
+```
+
+We can lift `M` by capturing its local type *and value* context:
+
+```haskell
+data M' (a :: Type) (b :: Type) (i :: Int) (c :: a) (x :: Type) = M Int x
+instance forall (a :: Type) (b :: Type) (i :: Int) (c :: a).
+           C a => D (M' a b i c) where
+  m = ...
+```
+
+Why do we need the value context? The definition of `m` may use the `i` and/or
+`c` arguments, which are not globally available.
 
 ### Type family instances
 
@@ -249,7 +290,8 @@ declarations, but in some cases that could force related code to
 separate.
 
 How do we deal with locally bound type variables on the left-hand side?
-These shadow just like they do in instance heads.
+It would make sense to shadow them, but for now I propose to simply
+forbid them for consistency with instance heads.
 
 ### Data family instances
 
@@ -382,12 +424,12 @@ they do not seem entirely confident that they will be able to do so. Of course,
 nothing prevents the present proposal from living side by side with theirs
 should both prove workable.
 
-
 ## Unresolved Questions
 
 Should instances be allowed to float out before type checking? In some cases
 that would allow related code to be kept together. But it would become more
-complex to explain the rules.
+complex to explain the rules. It might be reasonable to allow it but also
+offer a warning when an instance can be floated.
 
 ## Implementation Plan
 
