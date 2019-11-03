@@ -1,15 +1,15 @@
 Function Result Type Signatures
 ===============================
 
-.. proposal-number:: 51
+.. proposal-number:: 228
 .. author:: Vladislav Zavialov (@int-index)
 .. co-author:: John Ericson (@Ericson2314)
 .. date-accepted:: 2019-07-16
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/228>`_.
-.. sectnum:: 
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/228>`_ and `amended at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/254>`_.
+.. sectnum::
      :start: 228
 .. contents::
 
