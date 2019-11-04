@@ -222,9 +222,9 @@ Thus, ``DatatypeContexts`` are undeprecated, and are now permitted in conjunctio
 Backwards compatibility
 +++++++++++++++++++++++
 
-It seems as if this behavior is going to break enough existing code that the sensible thing to do is to gate it behind an extension. However, this is the wrong way to go, because if it can be turned off, it would require a separate version of any library that uses associated type/data families for use with and without the extension enabled. There is another way to ensure backwards compatibility without simply turning off the feature completely, as will be explained in the remainder of this section.
+It seems as if this behavior is going to break enough existing code that the sensible thing to do is to gate it behind an extension. However, if it can be turned off, it would require a separate version of any library that uses associated type/data families for use with and without the extension enabled. Instead, GHC can infer the constraints needed and add them to pre-existing code.
 
-GHC can infer the constraint we'd expect if one uses an associated type family without an appropriate one. To find the constraint we need, it should be possible to just take the same variables given as an argument to the associated type and line them up with the class that contains it. GHC will emit a warning every time it has to do this.
+Because (if this proposal is accepted) each associated type's variables cover the instance variables, it is trivial for GHC to infer the appropriate constraint that would make such a usage legal, adding it to the programmer-supplied type and emitting a warning. 
 
 Let us now consider an actual example:
 
@@ -238,7 +238,7 @@ Let us now consider an actual example:
     foo :: a -> Elem a
     foo = undefined
 
-``foo`` is in a very real sense incorrect, because it is given a type signature that implies constraints that are not listed. To operationalize this correctness check, each time GHC sees an associated type used in a type, it generates the constraint required for the use by looking up the class that defines the associated type and instantiating a constraint from it using the parameters given for the associated type. If this constraint (or a constraint that subsumes it) is either given directly or otherwise known (such as from a GADT pattern match), the use of the associated type is lawful. If no such constraint is known, the type is unlawful.
+``foo`` is in a very real sense incorrect, because it is given a type signature that implies constraints that are not listed. To operationalize this correctness check, each time GHC sees an associated type used in a type, it generates the constraint required by instantiating the class variables appropriately. If this constraint (or a constraint that subsumes it) is required by the existing type or otherwise known (such as from a GADT pattern match), the use of the associated type is lawful. If no such constraint is known, the type is unlawful.
 
 While it may be natural to think that the correct solution is to error out and leave fixing it to the programmer, we already have a way to find the constraint we need to keep such previously correct code compiling. Assuming that the code is in reality correct, it is safe for GHC to emit a warning and then *add the inferred constraint to the type specified by the programmer*. However, if an error arises involving this constraint or any of the types that are mentioned inside of it, we give a modified error that gives the inferred constraint, the follow-on error from it, and the associated type that lead it to be generated.
 
@@ -249,11 +249,9 @@ Here's how it would work in practice:
 3. GHC checks to see if this constraint is either part of ``foo``'s type or ambiently known.
 4. Because it is not, GHC adds it to the provided type for ``foo``, making it ``foo :: (Collection a) => a -> Elem a``. GHC then prints a warning referencing the associated type that caused GHC to infer a new constraint and the constraint it inferred, with a suggestion that it be added to the file.
 
-In my ideal world, this would only stand for a time, perhaps governed by an extension that is initially on by default when type families are enabled and would be disabled after a few GHC major versions, turning the warning into an error.
+Analogously, data constructors that contain an associated type or data family but do not have the constraints necessary are modified to provide them, just as with a user-written GADT.
 
-Because this backwards compatibility system is somewhat complicated and does something somewhat unexpected (changing a programmer-supplied type signature) it may be wise to implement the feature with the warning as an error, and only enable/add the fix-up if the amount of code to be broken is substantial enough.
-
-Indeed, if I am the one to implement this, I will initially be implementing this as an error, and will look at how much code will break based on the changes before implementing the "warn and fix" behavior.
+This behavior would only stand for a time, governed by a new extension that is initially implied by `-XTypeFamilies` and that would be disabled after two GHC major versions, turning the warning into an error.
 
 Effect and Interactions
 -----------------------
@@ -387,6 +385,8 @@ Unresolved questions
 * What is lost relative to implementing the full CTF paper system in GHC?
 * How much existing code is actually going to be broken by these changes?
     * This is likely unknowable until an implementation exists.
+    * If the breakage would be minimal, perhaps GHC should simply produce a type error when the currently-proposed backwards compatibility fix would be needed.
+    * If the backwards compatibility extension is implemented, what should it be named? I would suggest `-XInferKindConstraints`.
 
 Implementation Plan
 -------------------
