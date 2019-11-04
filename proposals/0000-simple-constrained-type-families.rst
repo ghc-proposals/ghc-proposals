@@ -215,7 +215,7 @@ In both of the above cases, if irrelevant constraints were implemented, it would
 Datatype contexts are available during kind checking
 ++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-Previously, non-equality constraints in kinds were prohibited and thus this does not truly represent a change in the semantics of datatype contexts, but is an important point to consider for performance reasons. Because "stupid theta" constraints are not provided, they let the programmer use associated types in datatype fields without adding a new field to hold the dictionary we newly demand. This is especially important because it preserves the ability to wrap associated types in ``newtype``s.
+Previously, non-equality constraints in kinds were prohibited and thus this does not truly represent a change in the semantics of datatype contexts, but is an important point to consider for performance reasons. Because "stupid theta" constraints are not provided, they let the programmer use associated types in datatype fields without adding a new field to hold the dictionary we newly demand. This is especially important because it preserves the ability to wrap associated types in ``newtype``\s.
 
 Thus, ``DatatypeContexts`` are undeprecated, and are now permitted in conjunction with GADT syntax. GHC's parser already recognizes them correctly (in order to report an error stating that they are not supported). I cannot find a rigorous statement of the 'idealized' GADT syntax to give a precise change to the BNF, but in practice the change consists of simply removing the check.
 
@@ -251,7 +251,7 @@ Here's how it would work in practice:
 
 Analogously, data constructors that contain an associated type or data family but do not have the constraints necessary are modified to provide them, just as with a user-written GADT.
 
-This behavior would only stand for a time, governed by a new extension that is initially implied by `-XTypeFamilies` and that would be disabled after two GHC major versions, turning the warning into an error.
+This behavior would only stand for a time, governed by a new extension that is initially implied by ``-XTypeFamilies`` and that would be disabled after two GHC major versions, turning the warning into an error.
 
 Effect and Interactions
 -----------------------
@@ -386,7 +386,7 @@ Unresolved questions
 * How much existing code is actually going to be broken by these changes?
     * This is likely unknowable until an implementation exists.
     * If the breakage would be minimal, perhaps GHC should simply produce a type error when the currently-proposed backwards compatibility fix would be needed.
-    * If the backwards compatibility extension is implemented, what should it be named? I would suggest `-XInferKindConstraints`.
+    * If the backwards compatibility extension is implemented, what should it be named? I would suggest ``-XInferKindConstraints``.
 
 Implementation Plan
 -------------------
