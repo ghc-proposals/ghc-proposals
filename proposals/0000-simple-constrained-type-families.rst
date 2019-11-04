@@ -321,7 +321,7 @@ To get the maximum improvement, there are several follow-on changes that would n
 Top-Level Kind Signatures Are Necessary
 +++++++++++++++++++++++++++++++++++++++
 
-The proposal does have reliance on allowing type families and other similar contextless syntax forms to use constrained type families by implementing `proposal #36 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0036-kind-signatures.rst>`_, ``-XTopLevelKindSignatures``.
+The proposal does have reliance on allowing type families and other similar contextless syntax forms to use constrained type families, as specified in `proposal #36 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0036-kind-signatures.rst>`_, ``-XTopLevelKindSignatures`` and implemented in GHC 8.10.
 
 ::
 
@@ -331,7 +331,7 @@ The proposal does have reliance on allowing type families and other similar cont
     type family S a where
         S a = T a
 
-If this proposal were to be accepted now, it would not be possible to write ``S``, because there is no way of stating the ``C a`` constraint. Top-level kind signatures solve this issue handily.
+Without these signatures, it would not be possible to write ``S a``, but an explicit signature allows the programmer to specify the needed kind.
 
 ::
 
