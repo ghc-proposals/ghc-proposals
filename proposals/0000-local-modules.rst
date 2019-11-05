@@ -517,6 +517,27 @@ Unresolved questions
    Does that mean we have a local module ``M``? I *think* such a treatment is consistent
    with this proposal, but I'm somehow not sure.
 
+2. Should ``-XLocalModules`` be required to *import* a local module? Paraphrased from
+   a `comment <https://github.com/ghc-proposals/ghc-proposals/pull/283#issuecomment-548804545>`_
+   by @maralorn:
+
+   Consider a user having the following import::
+
+     import qualified Foo
+
+   Right now, the user can be sure that this will never include something like
+   ``Foo.Bar.baz``. With this extension that is going to be possible. If a
+   local module can be imported without extensions, then this proposal changes
+   the possible meanings of an import statement in Haskell quite a bit.
+   Someone not familiar with this change might get very confused by a e.g.
+   ``Text.Encoding.decode`` in the code when there is no import statement for
+   something called ``Text.Encoding``.
+
+   I'm personally split on this point. Requiring ``-XLocalModules`` to import a local
+   module goes against the general ethos of extensions ("necessary at definitions but
+   not usages"), but the point above is a good one. I'm happy to let the committee
+   decide on this point.
+
 Implementation Plan
 -------------------
 I do *not* volunteer to implement, but I wanted to write this down, as it seems like
