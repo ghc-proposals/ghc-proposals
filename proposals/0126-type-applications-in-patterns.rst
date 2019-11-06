@@ -115,7 +115,7 @@ But the pattern in::
  f2 :: forall a b. ([a], b) -> Int
  f2 (x :: [b], y) = ...
 
-does not bring ``a`` into scope; here ``b`` refers to the ``b`` from the type signature. This leads to an type error, because in general ``a`` and ``b`` do not refer to the same types.
+does not bring ``b`` into scope; here ``b`` refers to the ``b`` from the type signature. This leads to an type error, because in general ``a`` and ``b`` do not refer to the same types.
 
 And the pattern in::
 
