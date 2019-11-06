@@ -414,6 +414,13 @@ Costs and Drawbacks
 * This is a significant new bit of implementation and specification, and it should require the
   requisite level of support from the community to be accepted.
 
+* This proposal does not really make a module into a first-class entity. Instead, it
+  interprets a module essentially as the set of names that can be written qualified
+  by the module name. This design is keeping in the spirit of the existing language,
+  where we can have multiple ``import`` statements with the same ``qualified``
+  abbreviation. But perhaps a different design, making modules more self-aware would
+  be better. (Credit to @michaelpj for pointing this out.)
+  
 Related Work
 ------------
 
@@ -537,6 +544,16 @@ Unresolved questions
    module goes against the general ethos of extensions ("necessary at definitions but
    not usages"), but the point above is a good one. I'm happy to let the committee
    decide on this point.
+
+3. What is the grand plan here? There are several other proposals that interact
+   with this one (such as local types `#273`_ and ``-XNoFieldSelectors`` `#160`_)
+   and possibilities of future proposals addressing further breaking up the triple
+   confluence of (file = module = compilation unit). This current proposal is just
+   one step, but perhaps with a larger plan, we would see that this proposal is
+   not future-compatible. I don't have such a plan to offer, but concerns have
+   been raised (chiefly by @Ericson2314) about the lack of such a plan before
+   accepting this proposal.
+   
 
 Implementation Plan
 -------------------
