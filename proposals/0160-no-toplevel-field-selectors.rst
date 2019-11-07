@@ -89,12 +89,12 @@ record. Without ambiguitiy, previously this was equivalent
 
 .. code-block:: haskell
 
-    module A where (Foo(Foo, bar, baz))
+    module A (Foo(Foo, bar, baz)) where
     data Foo = Foo { bar :: Int, baz :: Int }
 
 .. code-block:: haskell
 
-    module B where (Foo(Foo, bar), baz)
+    module B (Foo(Foo, bar), baz) where
     data Foo = Foo { bar :: Int, baz :: Int }
 
 Under ``NoFieldSelectors``, these two export statements are now different. The
@@ -106,7 +106,7 @@ hand is still different, because they all have to be exported separately.
 .. code-block:: haskell
 
     {-# LANGUAGE NoFieldSelectors #-}
-    module Exports where (Foo(Foo, bar, baz))
+    module Exports (Foo(Foo, bar, baz)) where
     data Foo = Foo { bar :: Int, baz :: Int }
 
     bar (Foo x _) = x
@@ -116,7 +116,7 @@ is different from
 
 .. code-block:: haskell
 
-    module Exports where (Foo(Foo, bar, baz))
+    module Exports (Foo(Foo, bar, baz)) where
     data Foo = Foo { bar :: Int, baz :: Int }
 
 Because the functions in the first example don't get exported.
@@ -127,7 +127,7 @@ the extension enabled:
 .. code-block:: haskell
 
     {-# LANGUAGE NoFieldSelectors #-}
-    module A where (Foo(Foo, bar, baz))
+    module A (Foo(Foo, bar, baz)) where
     data Foo = Foo { bar :: Int, baz :: Int }
     baz = 42
 
@@ -136,7 +136,7 @@ Which would be equivalent to:
 .. code-block:: haskell
 
     {-# LANGUAGE NoFieldSelectors #-}
-    module A where (Foo(..))
+    module A (Foo(..)) where
     data Foo = Foo { bar :: Int, baz :: Int }
     baz = 42
 
@@ -147,7 +147,7 @@ can still be used when exported (as in module ``A``).
 .. code-block:: haskell
 
     {-# LANGUAGE NoFieldSelectors #-}
-    module B where (Foo(Foo, bar), baz)
+    module B (Foo(Foo, bar), baz) where
     data Foo = Foo { bar :: Int, baz :: Int }
     baz = 42
 
@@ -172,7 +172,7 @@ If you wanted to use both, you'd have to export both explicitly:
 .. code-block:: haskell
 
     {-# LANGUAGE NoFieldSelectors #-}
-    module C where (Foo(Foo, bar, baz), baz)
+    module C (Foo(Foo, bar, baz), baz) where
     data Foo = Foo { bar :: Int, baz :: Int }
     baz = 42
 
