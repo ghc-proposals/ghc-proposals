@@ -1,5 +1,5 @@
-``-XNoImplicitForAll``
-======================
+``-XNoImplicitForAll``, ``-XNoPatternSignatureBinds``
+=====================================================
 
 .. author:: John Ericson (@Ericson2314)
 .. date-accepted:: Leave blank. This will be filled in when the proposal is accepted.
@@ -15,7 +15,9 @@
 .. sectnum::
 .. contents::
 
-Provide a way to opt out of implicit ``forall`` binding of free variables in type signatures.
+Provide a way to strictly separate bindings and use of varariables, so the destinction never depends on what is in scope.
+This means opting out of implicit ``forall`` binding of free variables in type signatures, and opting out of the binding of variables in pattern signatures.
+The two can be controlled separately.
 
 Motivation
 ----------
@@ -31,7 +33,7 @@ All other variables are explicitly bound, and the inconsistency means more to le
 Also, implicit syntax in general allows the beginner to not realize what they are doing.
 What are tedious tasks for the expert may be helpful learning steps to them.
 
-Further, the most beginnning students may be taught with both ``-XNoImplicictForAll`` and ``-XNoExplicitForAll``.
+Further, the most beginnning students may be taught with both ``-XNoImplicictForAll``, ``-XNoExplicitForAll``, and ``-XNoPatternSignatureBinds``.
 This means it's impossible to write forall types by any means.
 Combine with ``-Wmissing-signatures`` and ``-Wmissing-local-signatures``, so inferred polymorphic types of bindings are also prohibitted, and a monomorphic custom prelude, and forall types are all but expunged entirely.
 
@@ -57,14 +59,16 @@ Proposed Change Specification
 
 Create ``-XImplicitForAll`` to allow automatically capturing free variables in an outer ``forall`` as is always done today.
 It is on by default for backwards compatibility.
-When using ``-XNoImplicitForAll``, all variables in types must be explicitly bound.
+When using ``-XNoImplicitForAll``, all variables in regular signatures, instances, and data declerations must be explicitly bound.
 
-Make ``-XImplicitForAll`` also exclusively allow the implicit binding of non-rigid (unified) variables in pattern signatures.
+Create ``-XPatternSignatureBinds`` to allow the implicit binding of free variables in pattern signatures.
+It is also on by default for backwards compatibility.
+When using ``-XNoPatternSignatureBinds``, all variables in pattern signatures must be explicitly bound.
 
 Examples
 --------
 
-All examples assume ``-XExplicitForAll`` and ``-XNoImplicitForAll``, in addition to their own ``LANGUAGE`` pragmas.
+All examples assume ``-XExplicitForAll``, ``-XNoPatternSignatureBinds``, and ``-XNoImplicitForAll``, in addition to their own ``LANGUAGE`` pragmas.
 
 ::
 
