@@ -143,7 +143,7 @@ A more complex example is this (also inspired by `#15050 <https://gitlab.haskell
     foo (MkT5 @_ @x @y)    = (() :: x ~ y => ())
     foo (MkT6 @x @y)       = (() :: ClassWithFunDep x y => ()) -- hard to bind b otherwise!
 
-All of these equations type-check.
+All of these equations type-check (just like they would if added value arguments of type ``a``, ``b``,... to the constructors and turned the type applications into type signatures).
 
 Note that the ``@_`` are not treated like partial type signatures.
 
