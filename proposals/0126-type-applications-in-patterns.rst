@@ -181,7 +181,7 @@ so it always has a variable on its left, whereas a type application is always he
 
 `Proposal #238`_ would introduce an ``-XTypeAbstractions``, which completes this in adding “top level” ``@ty`` patterns, while this proposal adds nested ``@ty`` patterns.
 It also restricts ``-XScopeTypeVariables`` so that ``forall`` no longer binds type variables over the term with the ``forall`` type.
-`Proposal 285`_ would introduce a ``-XNoImplcitForAll``, which would prohibit the implicit binding of free variables in regular and pattern signatures.
+`Proposal 285`_ would introduce a ``-XNoImplicitForAll``, which would prohibit the implicit binding of free variables in regular and pattern signatures.
 The combination of these proposals is rather nice; we can “write System F”, with no superfluous free var binding sugar or missing explicit syntactic constructs.
 This should be good for teaching, and also get us closer to a fully faithful resugaring of GHC’s core.
 
