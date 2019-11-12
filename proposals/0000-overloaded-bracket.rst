@@ -20,29 +20,118 @@ is so that quotes can be used without being tied to the ``Q`` monad and to
 enable effects during code generation.
 
 
+Background
+------------
+
+(Skip to "Motivation" if you have a good grasp of how Template Haskell quotation brackets work).
+
+A Template Haskell quotation ``[| ... |]`` is just syntactic sugar for
+combinators from ``Language.Haskell.TH.Lib``.
+
+For example, the following expressions are equivalent:
+
+* ``[| f 5 $(spl) |]``
+* ``appE (appE (varE 'f) (litE (integerL 5))) spl``
+
+A quotation ``[| ... |]`` has type ``Q Exp``, and it is also the type on which
+the combinators operate::
+
+  appE :: Q Exp -> Q Exp -> Q Exp
+  varE :: Name -> Q Exp
+  litE :: Lit -> Q Exp
+  integerL :: Integer -> Lit
+
+The ``Q`` monad is defined as follows::
+
+  newtype Q a = Q { unQ :: forall m. Quasi m => m a }
+
+And ``Quasi`` is a class that supports various Template Haskell operations:
+
+* Name generation: ``qNewName :: Quasi m => String -> m Name``
+* Error reporting: ``qReport  :: Quasi m => Bool -> String -> m ()``
+* Reification: ``qReify :: Quasi m => Name -> m Info``
+* Input/output: ``qRunIO :: Quasi m => IO a -> m a``
+
+In order to get the ``Exp`` out of ``[| ... |] :: Q Exp``, the user needs to
+run ``Q``, and that requires an instance that would implement all of the
+operations above::
+
+  main = do
+    exp <- runQ [| 1 + 2 |]
+    print exp
+
+  -- output:
+  --   InfixE (Just (LitE (IntegerL 1))) (VarE GHC.Num.+) (Just (LitE (IntegerL 2)))
+
+The available instances are ``Quasi Q`` and ``Quasi IO`` (the latter panics on
+reification).
+
+The only operation of ``Quasi`` required to desuar quotations is ``qNewName``,
+which is used to bind new names (e.g. to generate a fresh ``x`` in ``[| let x =
+... in ... |]``). Other operations of ``Quasi`` may be used by the inner
+splices, but not by the combinators used to desugar the quotation, such as
+``appE``, ``varE``, or ``litE``.
+
 Motivation
 ------------
 
 Quoting an expression ``[| e |]`` yields its representation. In the current
-implementation the type of representations is ``Q Exp``. This proposal is
-changing the type of the representation to the polymorphic
-``Quote m => m Exp``.
-The ``Quote`` interface defines the operations which are necessary to construct
-the code representation::
+implementation the type of representations is ``Q Exp``. However, there are a few
+issues with this:
+
+1. Extracting the ``Exp`` from ``Q Exp`` requires unsafe partial functions (see
+   Appendix A: ``PureQ``).
+
+2. Using more effects than ``Q`` provides (e.g. adding a ``ReaderT`` context)
+   requires manual wrapping of each quote and manual unwrapping of each splice.
+
+This proposal has two parts to it:
+
+* Define a dedicated class for fresh name generation, with an operation much
+  like the existing ``qNewName :: Quasi m => String -> m Name``::
 
    class Applicative m => Quote m where
       newName :: String -> m Name
 
-An instance for ``Quote`` can be implemented
-for ``Q``, retaining backwards compatibility, but also ``State NameSupply`` to
-enable a pure way to extract expressions.
+  The notable difference is that this is not bundled with other operations of
+  ``Quasi``. This means that ``Quote`` can be implemented by a mere ``State
+  NameSupply``::
 
-``Q`` is not necessary for the implementation of quotations.
-It provides much more power than is necessary. Quotations are used in order to
-construct a representation of expressions, the only effect which is used in the
-implementation is a name generation effect.
+    type NameSupply = Int
+    instance Quote (State NameSupply) where
+      newName s = state $ \i -> (mkNameU s i, i + 1)
 
-Detaching quotations from ``Q`` makes way for a form of "pure" template haskell
+* Generalize the types of combinators from ``Language.Haskell.TH.Lib`` to use
+  ``Quote``::
+
+    -- old type
+    appE :: Q Exp -> Q Exp -> Q Exp
+
+    -- new type
+    appE :: forall m. Quote m => m Exp -> m Exp -> m Exp
+
+  Consequently, generalize the type of quotation brackets from ``Q Exp`` to
+  ``forall m. C m => m Exp``, where the constraint ``C`` is the conjunction of
+  ``Quote`` and all constraints required by the splices within the quotation.
+
+  Let's say we have ``spl1 :: MonadState s m => m Exp`` and ``spl2 ::
+  MonadReader r m => m Exp``, then::
+
+   [| $(spl1) $(spl2) |] :: (Quote m, MonadState s m, MonadReader r m) => m Exp
+
+  Why this type? Easy: consider the desugared version::
+
+    appE spl1 spl2
+
+  Here, GHC would emit ``Quote m`` from the use of ``appE``, ``MonadState s m``
+  from the use of ``spl1``, and ``MonadReader r m`` from the use of ``spl2``,
+  resulting in::
+
+    appE spl1 spl2 :: (Quote m, MonadState s m, MonadReader r m) => m Exp
+
+  The same process happens with the ``[| ... |]`` syntactic sugar.
+
+Detaching quotations from ``Q`` makes way for a form of "pure" Template Haskell
 so there is no need to invoke ``Q`` in order to create the representation of an
 expression. The most immediate application is the ability to purely
 manipulate ``Exp`` values in user libraries::
@@ -213,7 +302,7 @@ expressions in splices. Each nested splice could have different constraints::
 
       f :: Quasi m => m Exp
       g :: MonadIO m => m Exp
-      [| putStrLn $(f) >> putStrLn $(g) |] :: (Applicative m, Quasi m, MonadIO m) => m Exp
+      [| putStrLn $(f) >> putStrLn $(g) |] :: (Quote m, Quasi m, MonadIO m) => m Exp
 
 If one of the nested splices has a specific type, for instance ``Q Exp``, then
 the type of the whole expression is fixed to be ``Q Exp``.
@@ -245,10 +334,61 @@ Unresolved Questions
   representations of primitive data types. This is out of scope of this
   proposal.
 
-* It would also be possible to make ``Quote`` a superclass of ``Q`` but
+* It would also be possible to make ``Quote`` a superclass of ``Quasi`` but
   this hierarchy refactoring seems unecessary.
 
 Implementation Plan
 -------------------
 
 * I (mpickering) will implement this.
+
+Appendix A: ``PureQ``
+---------------------
+
+``PureQ`` is an instance of ``Quasi`` that could be used for extracting ``Exp``
+out of a ``Q Exp`` generated by a quotation. It is unsafe due to the error
+calls, and would become safe with this proposal implemented::
+
+  module PureQ (runPureQ) where
+
+  import Control.Monad.Trans.State
+  import Control.Monad.IO.Class
+  import Control.Monad.Fail
+  import Language.Haskell.TH (Q, runQ)
+  import Language.Haskell.TH.Syntax (Quasi(..), mkNameU)
+
+  newtype PureQ a = MkPureQ (State Int a)
+    deriving newtype (Functor, Applicative, Monad)
+
+  runPureQ :: Q a -> a
+  runPureQ m = case runQ m of MkPureQ m' -> evalState m' 0
+
+  instance MonadFail PureQ where
+    fail = error
+
+  instance MonadIO PureQ where
+    liftIO = error "PureQ: liftIO"
+
+  instance Quasi PureQ where
+    qNewName s = MkPureQ $ state $ \i -> (mkNameU s i, i + 1)
+    qReport = error "PureQ: qReport"
+    qRecover = error "PureQ: qRecover"
+    qLookupName = error "PureQ: qLookupName"
+    qReify = error "PureQ: qReify"
+    qReifyFixity = error "PureQ: qReifyFixity"
+    qReifyInstances = error "PureQ: qReifyInstances"
+    qReifyRoles = error "PureQ: qReifyRoles"
+    qReifyAnnotations = error "PureQ: qReifyAnnotations"
+    qReifyModule = error "PureQ: qReifyModule"
+    qReifyConStrictness = error "PureQ: qReifyConStrictness"
+    qLocation = error "PureQ: qLocation"
+    qAddDependentFile = error "PureQ: qAddDependentFile"
+    qAddTempFile = error "PureQ: qAddTempFile"
+    qAddTopDecls = error "PureQ: qAddTopDecls"
+    qAddForeignFilePath = error "PureQ: qAddForeignFilePath"
+    qAddModFinalizer = error "PureQ: qAddModFinalizer"
+    qAddCorePlugin = error "PureQ: qAddCorePlugin"
+    qGetQ = error "PureQ: qGetQ"
+    qPutQ = error "PureQ: qPutQ"
+    qIsExtEnabled = error "PureQ: qIsExtEnabled"
+    qExtsEnabled = error "PureQ: qExtsEnabled"
