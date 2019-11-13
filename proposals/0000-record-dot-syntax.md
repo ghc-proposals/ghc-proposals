@@ -284,14 +284,37 @@ All these approaches are currently used, and represent the "status quo", where H
 
 Below are some possible variations on this plan, but we advocate the choices made above:
 
-* Should `RecordDotSyntax` imply `NoFieldSelectors` or another extension? Typically `RecordDotSyntax` will be used in conjunction with `NoFieldSelectors`, but `DuplicateRecordFields` would work too. Of those two, `DuplicateRecordFields` complicates GHC, while `NoFieldSelectors` conceptually simplifies it, so we prefer to bias the eventual outcome. However, there are lots of balls in the air, and enabling `RecordDotSyntax` should ideally not break normal code, so we leave everything distinct (after [being convinced](https://github.com/ghc-proposals/ghc-proposals/pull/282#issuecomment-547641588)).
-* Earlier versions of this proposal contained a modify field sytnax of the form `a{field * 2}`. While appealing, there is a lot of syntactic debate, with variously `a{field <- (*2)}`, `a{field * = 2}` and others being proposed. None of these syntax variations are immediately clear to someone not familiar with this proposal. To be conservative, we leave this feature out.
-* There are no update sections. Should `({a=})`, `({a=b})` or `(.lbl=)` be an update section? While nice, we leave this feature out.
-* We do not extend pattern matching, although it would be possible for `P{foo.bar=Just x}` to be defined.
-* Will whitespace sensitivity become worse? We're not aware of qualified modules giving any problems, but it's adding whitespace sensitivity in one more place.
-* One suggestion is that record updates remain as normal, but `a { .foo = 1 }` be used to indicate the new forms of updates. While possible, we believe that option leads to a confusing result, with two forms of update both of which fail in different corner cases. Instead, we recommend use of `C{foo}` as a pattern to extract fields if necessary.
-* For selector functions we have opted for `.foo`, but `(.foo)` and `_.foo` have both been proposed. We consider `_.foo` to not be very Haskelly, as it is similar to very different uses of underscore. This aspect is the most debated of the entire proposal (following [Wadler's law](https://wiki.haskell.org/Wadler's_Law)). The reasoning behind selecting `.foo` without brackets are that `.` is special syntax, so isn't realy a section. There is nothing else that `.foo` could reasonably mean. People can wrap it in brackets if they want.
-* Originally this proposal included `a{foo.bar}` to mean `a{foo.bar = bar}`, but that seemed to confuse everyone, so has been removed.
+### Should `RecordDotSyntax` imply `NoFieldSelectors` or another extension?
+
+Typically `RecordDotSyntax` will be used in conjunction with `NoFieldSelectors`, but `DuplicateRecordFields` would work too. Of those two, `DuplicateRecordFields` complicates GHC, while `NoFieldSelectors` conceptually simplifies it, so we prefer to bias the eventual outcome. However, there are lots of balls in the air, and enabling `RecordDotSyntax` should ideally not break normal code, so we leave everything distinct (after [being convinced](https://github.com/ghc-proposals/ghc-proposals/pull/282#issuecomment-547641588)).
+
+### Should a syntax be provided for modification?
+
+Earlier versions of this proposal contained a modify field sytnax of the form `a{field * 2}`. While appealing, there is a lot of syntactic debate, with variously `a{field <- (*2)}`, `a{field * = 2}` and others being proposed. None of these syntax variations are immediately clear to someone not familiar with this proposal. To be conservative, we leave this feature out.
+
+### Should there be update sections?
+
+There are no update sections. Should `({a=})`, `({a=b})` or `(.lbl=)` be an update section? While nice, we leave this feature out.
+
+### Should pattern matching be extended?
+
+We do not extend pattern matching, although it would be possible for `P{foo.bar=Just x}` to be defined.
+
+### Will whitespace sensitivity become worse?
+
+We're not aware of qualified modules giving any problems, but it's adding whitespace sensitivity in one more place.
+
+### Should a new update syntax be added?
+
+One suggestion is that record updates remain as normal, but `a { .foo = 1 }` be used to indicate the new forms of updates. While possible, we believe that option leads to a confusing result, with two forms of update both of which fail in different corner cases. Instead, we recommend use of `C{foo}` as a pattern to extract fields if necessary.
+
+### Which syntax should be chosen for selector functions?
+
+For selector functions we have opted for `.foo`, but `(.foo)` and `_.foo` have both been proposed. We consider `_.foo` to not be very Haskelly, as it is similar to very different uses of underscore. This aspect is the most debated of the entire proposal (following [Wadler's law](https://wiki.haskell.org/Wadler's_Law)). The reasoning behind selecting `.foo` without brackets are that `.` is special syntax, so isn't realy a section. There is nothing else that `.foo` could reasonably mean. People can wrap it in brackets if they want.
+
+### Should punning be extended to updates?
+
+Originally this proposal included `a{foo.bar}` to mean `a{foo.bar = bar}`, but that seemed to confuse everyone, so has been removed.
 
 ## Implementation Plan
 
