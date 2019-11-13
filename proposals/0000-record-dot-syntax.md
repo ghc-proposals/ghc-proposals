@@ -310,7 +310,19 @@ One suggestion is that record updates remain as normal, but `a { .foo = 1 }` be 
 
 ### Which syntax should be chosen for selector functions?
 
-For selector functions we have opted for `.foo`, but `(.foo)` and `_.foo` have both been proposed. We consider `_.foo` to not be very Haskelly, as it is similar to very different uses of underscore. This aspect is the most debated of the entire proposal (following [Wadler's law](https://wiki.haskell.org/Wadler's_Law)). The reasoning behind selecting `.foo` without brackets are that `.` is special syntax, so isn't realy a section. There is nothing else that `.foo` could reasonably mean. People can wrap it in brackets if they want.
+Three syntax options have bee proposed for selector functions: `.foo`, `(.foo)`, and `_.foo`.  This aspect is the most debated of the entire proposal (following [Wadler's law](https://wiki.haskell.org/Wadler's_Law)).  We have opted for `.foo`.
+
+We consider `_.foo` to not be very Haskelly, as it is similar to very different uses of underscore.  Therefore, we reject it.
+
+The decision between `.foo` and `(.foo)` comes down to both pragmatics, and a significant difference of perspective:
+
+* On the one hand, `x.foo` can be seen as the core syntax, and `(.foo)` as a section of that syntax.  Note that this is NOT a section of `.` as a binary operator, but rather a section in the more general sense that it elides the one and only expression, and desugars to `\x -> x.foo`.  This is very similar to `SignatureSections`, in that there is no operator or right-hand expression, so there are no separate left and right sections.  `TupleSections` for 3-tuples and above are another example.  But some would like to resist spreading this generalization further.
+* On the other hand, some believe that `.foo` is better understood as the fundamental construct here, reminiscent of `#foo` from `OverloadedLabels`, and should desugar directly to a use of `getField`.  Then `x.foo` is just a syntactic sugar for `.foo x`.  Some have advocated that `.foo` should not even need to be a field accessor function at all, and might be any type in the same vein as `OverloadedLabels`, but that is beyond the scope of this proposal and has its own challenges around how to handle nested fields like `.foo.bar`, how to desugar `x {foo.bar = 42}` consistently, and so on.
+
+Independent of this difference, there are pragmatic concerns on both sides:
+
+* Some consider treating this as a section like `(.foo)` to be too verbose, and the extra level of parentheses a problem for readability.
+* Some consider it acceptable (if unfortunate) that `a . b` and `a.b` have different meanings, but believe that assigning three distinct meanings to `a . b`, `a .b`, and `a.b` is just too confusing.
 
 ### Should punning be extended to updates?
 
