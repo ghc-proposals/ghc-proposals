@@ -83,17 +83,18 @@ Proposed Change Specification
   into three groups:
 
   * Opening non-terminals include identifiers (``qvarid``, ``qconid``,
-    ``qvarsym``, ``qconsym``), literals ``literal``, and opening brackets
-    ``(``, ``[``, ``{``.
+    ``qvarsym``, ``qconsym``), keywords (``if``, ``do``, ``case``, ``let``, and
+    so on), literals ``literal``, and opening brackets ``(``, ``[``, ``{``.
 
-  * Closing non-terminals include identifiers, literals, and closing brackets
+  * Closing non-terminals include identifiers, keywords, literals, and closing brackets
     ``)``, ``]``, ``}``.
 
   * Other non-terminals are any lexical non-terminals not considered opening or
     closing, in particular ``whitespace`` (including comments), and separators
     ``,``, ``;``.
 
-  Note that identifiers and literals are classified as both closing and opening.
+  Note that identifiers, keywords, and literals are classified as both closing
+  and opening.
 
   Lexical non-terminals introduced by a language extension must be classified
   as opening or closing by the specification of that extension.
@@ -147,9 +148,20 @@ Proposed Change Specification
   ``(-x)`` is prefix negation. This change is to be guarded behind a new
   language extension ``-XLexicalNegation``.
 
+* The prefix ``@`` override is guarded behind the ``-XTypeApplications``
+  extension flag.
+
+* The prefix ``$`` and ``$$`` overrides are guarded behind the
+  ``-XTemplateHaskell`` extension flag.
+
 * Under ``-XLexicalNegation``, prefix ``-`` binds tighter than any infix
   operator, so that ``-a % b`` is parsed as ``(-a) % b`` regardless of the
   fixity of ``b``.
+
+* Add a new warning, ``-Woperator-whitespace-ext-conflict``, enabled by
+  default, that warns on prefix, suffix, and tight infix uses of operators that
+  would be parsed differently (due to stolen syntax) if a different set of GHC
+  extensions was enabled.
 
 * Add a new warning, ``-Woperator-whitespace``, disabled by default, that warns
   on prefix, suffix, and tight infix uses of operators that do not have a
@@ -209,9 +221,6 @@ Alternatives
   state machine, which is hard to extend and maintain. This state machine will
   not be able to handle some corner cases which whitespace-based disambiguation
   handles easily.
-
-* We could classify ``if``, ``do``, ``case``, ``let``, and other keywords as
-  opening.
 
 Unresolved Questions
 --------------------
