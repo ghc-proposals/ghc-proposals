@@ -317,7 +317,7 @@ We consider `_.foo` to not be very Haskelly, as it is similar to very different 
 The decision between `.foo` and `(.foo)` partially comes from a significant difference of perspective:
 
 * On the one hand, `x.foo` can be seen, as described above, as a new syntax that desugars to `getField @"foo" x`, and `(.foo)` and `(.foo.bar)` as sections of that syntax, which themselves desugar to `\x -> x.foo` and `\x -> x.foo.bar`.  Note that this is NOT a section of `.` as a binary operator, but rather a section in the more general sense that it elides the one and only subexpression and adds an implicit lambda.
-* On the other hand, `.foo` can be seen as the more fundamental construct here, reminiscent of `#foo` from `OverloadedLabels`, and it can desugar directly to `getField @"foo"`.  Then one can recover the rest of the syntax above by defining more syntactic sugar: `x.foo` desugars to `.foo x`, and `.foo.bar` desugars to `.bar . .foo` (or `\x -> .bar (.foo x)`, a distinction that only matters if `RebindableSyntax` is in play), and `x.foo.bar` to one of `.bar (.foo x)` or `.foo.bar x` (which are equivalent unless `.foo.bar` is changed by `RebindableSyntax`).
+* On the other hand, `.foo` can be seen as the more fundamental construct here, reminiscent of `#foo` from `OverloadedLabels`, and it can desugar directly to `getField @"foo"`.  Then one can recover the rest of the syntax above by desugaring: `x.foo` to `.foo x`, and `.foo.bar` to `.bar . .foo`.
 
 Thus, it has been discussed at length whether field selection can be seen as just another section, or should be seen as something else that is not section-like.  The `SignatureSections` and `TupleSections` extensions (especially for 3-tuples and larger) have already established that that section can be formed by various kinds of elided expressions, not just the operands of a binary operator.  However, some would resist spreading this generalization further, and argue that `SignatureSections` and `TupleSections` are justified by looking "operator-like".  That is, even though a single `,` in a 3-tuple and the `::` in a type annotation are not real operators, some feel that they at least look a little more like it because there is non-trivial grammar on both sides.
 
@@ -325,6 +325,7 @@ Independent of this difference, there are pragmatic concerns on both sides:
 
 * Some consider the parentheses to be too verbose, and the extra level of parentheses a problem for readability.  Even if one agrees that this is conceptually a section, this is the first type of section where parentheses are not actually needed for parsing, so omitting parentheses is still possible even if it loses a bit of consistency in favor of brevity.
 * Some consider it acceptable (if unfortunate) that `a . b` and `a.b` have different meanings in this proposal, but believe that assigning three distinct meanings to `a . b`, `a .b`, and `a.b` is just too confusing.
+* A minor point is that composition comes up explicitly in the nested selector desugaring for the `.foo` case.  This raises the question of what happens with `RebindableSyntax`.  Does `RebindableSyntax` chooses the `(.)` from local scope?  If so, `(x.foo).bar` and `.foo.bar x` could have different values, and `x.foo.bar` might parse as either one.
 
 ### Should punning be extended to updates?
 
