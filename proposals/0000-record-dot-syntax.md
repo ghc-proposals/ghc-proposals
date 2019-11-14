@@ -314,15 +314,17 @@ Three syntax options have bee proposed for selector functions: `.foo`, `(.foo)`,
 
 We consider `_.foo` to not be very Haskelly, as it is similar to very different uses of underscore.  Therefore, we reject it.
 
-The decision between `.foo` and `(.foo)` comes down to both pragmatics, and a significant difference of perspective:
+The decision between `.foo` and `(.foo)` partially comes from a significant difference of perspective:
 
-* On the one hand, `x.foo` can be seen as the core syntax, and `(.foo)` as a section of that syntax.  Note that this is NOT a section of `.` as a binary operator, but rather a section in the more general sense that it elides the one and only expression, and desugars to `\x -> x.foo`.  This is very similar to `SignatureSections`, in that there is no operator or right-hand expression, so there are no separate left and right sections.  `TupleSections` for 3-tuples and above are another example.  But some would like to resist spreading this generalization further.
-* On the other hand, some believe that `.foo` is better understood as the fundamental construct here, reminiscent of `#foo` from `OverloadedLabels`, and should desugar directly to a use of `getField`.  Then `x.foo` is just a syntactic sugar for `.foo x`.  Some have advocated that `.foo` should not even need to be a field accessor function at all, and might be any type in the same vein as `OverloadedLabels`, but that is beyond the scope of this proposal and has its own challenges around how to handle nested fields like `.foo.bar`, how to desugar `x {foo.bar = 42}` consistently, and so on.
+* On the one hand, `x.foo` can be seen, as described above, as a new syntax that desugars to `getField @"foo" x`, and `(.foo)` and `(.foo.bar)` as sections of that syntax, which themselves desugar to `\x -> x.foo` and `\x -> x.foo.bar`.  Note that this is NOT a section of `.` as a binary operator, but rather a section in the more general sense that it elides the one and only subexpression and adds an implicit lambda.
+* On the other hand, `.foo` can be seen as the more fundamental construct here, reminiscent of `#foo` from `OverloadedLabels`, and it can desugar directly to `getField @"foo"`.  Then one can recover the rest of the syntax above by defining more syntactic sugar: `x.foo` desugars to `.foo x`, and `.foo.bar` desugars to `.bar . .foo` (or `\x -> .bar (.foo x)`, a distinction that only matters if `RebindableSyntax` is in play), and `x.foo.bar` to one of `.bar (.foo x)` or `.foo.bar x` (which are equivalent unless `.foo.bar` is changed by `RebindableSyntax`).
+
+Thus, it has been discussed at length whether field selection can be seen as just another section, or should be seen as something else that is not section-like.  The `SignatureSections` and `TupleSections` extensions (especially for 3-tuples and larger) have already established that that section can be formed by various kinds of elided expressions, not just the operands of a binary operator.  However, some would resist spreading this generalization further, and argue that `SignatureSections` and `TupleSections` are justified by looking "operator-like".  That is, even though a single `,` in a 3-tuple and the `::` in a type annotation are not real operators, some feel that they at least look a little more like it because there is non-trivial grammar on both sides.
 
 Independent of this difference, there are pragmatic concerns on both sides:
 
-* Some consider treating this as a section like `(.foo)` to be too verbose, and the extra level of parentheses a problem for readability.
-* Some consider it acceptable (if unfortunate) that `a . b` and `a.b` have different meanings, but believe that assigning three distinct meanings to `a . b`, `a .b`, and `a.b` is just too confusing.
+* Some consider the parentheses to be too verbose, and the extra level of parentheses a problem for readability.  Even if one agrees that this is conceptually a section, this is the first type of section where parentheses are not actually needed for parsing, so omitting parentheses is still possible even if it loses a bit of consistency in favor of brevity.
+* Some consider it acceptable (if unfortunate) that `a . b` and `a.b` have different meanings in this proposal, but believe that assigning three distinct meanings to `a . b`, `a .b`, and `a.b` is just too confusing.
 
 ### Should punning be extended to updates?
 
