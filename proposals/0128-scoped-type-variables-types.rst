@@ -59,7 +59,7 @@ Which of these should be accepted under the current rules?   (SPJ says: “I don
 
 Here are more type-checking puzzles. Can you tell which lines of ``foo`` typecheck::
 
-    P a = P
+    data P a = P
     data T1 a where
       MkT1 :: forall a.              P a               -> T1 a
       MkT2 :: forall a.              P a               -> T1 (a,a)
