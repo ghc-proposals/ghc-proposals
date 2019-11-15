@@ -41,7 +41,7 @@ instance for pairs only introduces an axiom of the form
 `∀ a b. (Show a, Show b) => Show (a,b)`.
 But since overlapping instances are
 disallowed by default, instance declarations are in fact bi-implications (the
-conditions in the instance context are not only necessary but also sufficient).
+conditions in the instance context are not only sufficient but also necessary).
 Our proposal is to allow the compiler to treat them as such (by way of a
 per-instance declaration pragma), which would be enough to resolve the constraints
 for the given example and type check the program.
