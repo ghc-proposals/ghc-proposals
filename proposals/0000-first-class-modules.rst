@@ -223,7 +223,7 @@ means the same as
 
 ::
 
-   module M where
+   module M (module A(..), module B(..)) where
        import A
        import B
 
@@ -243,9 +243,14 @@ Module export specifiers
 The previous section allows us to refer to modules by name, but not to
 export those names.
 
-We propose adding a language extension ``ExportModuleNames`` which
-*changes* the behaviour of the ``module M`` export specifier. It now
-exports the name ``M`` as a module binding.
+We propose adding a language extension ``ExportModuleNames`` which adds the following
+export specifiers:
+
+- ``module M`` *changes* to exports the name ``M`` as a module binding.
+- ``module M(a, b, .. c)`` exports ``M`` and some of its names.
+- ``module M(..)`` exports ``M`` and all of its names. [#]_
+
+.. [#] See `Do we need additional syntax for re-exporting all bindings from a module?`_ for more discussion.
 
 This ``ExportModuleNames`` behaviour is the “right” behaviour as far as
 this proposal is concerned, but we gate it behind a language extension
@@ -343,12 +348,12 @@ This could be achieved as follows:
    import qualified Data.Set as Set
 
 
-   module Data where
-       module ByteString where
+   module Data (module ByteString, module Set) where
+       module ByteString (module Lazy, module BS (..)) where
            import BS
-           module Lazy where
+           module Lazy (module BSL (..)) where
                import BSL
-       module Set where
+       module Set (module Set (..)) where
            import Set
 
 Because qualified names correspond to module-qualification, we can
@@ -505,6 +510,12 @@ differently: there is a module called ``Data.Set``, but there is no
 module ``Data`` which contains a module ``Set``.
 
 We could change the system so there *was* such a ``Data`` module. [#]_
+This would require constructing such virtual modules fora all the packages in
+the package database and then merging them. We can do this (as for the "ambiguous
+as" case), but it might create ambiguous names. However, we already have a mechanism
+for resolving this: `PackageImports`. An import with a package specifier should look
+in the *non*-merged virtual module from that package.
+
 However, there is also a scoping
 problem. If we want the dotted-name import ``import Data.Set`` to work
 as a qualified-name import, then there must be a module ``Data`` *in scope*
@@ -535,6 +546,17 @@ way we're handling dotted names and file module imports. We *could* signal this
 by having a different syntax for the new kind of imports, e.g. ``open`` (to mimic ML).
 I don't *think* this is necessary, but I might be wrong, and it might be clearer
 anyway.
+
+Do we need additional syntax for re-exporting all bindings from a module?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This proposal suggests using the export specifier ``module M(..)`` to re-export all the
+names defined in ``M``. This is useful when you want to effectively just rearrange the
+module structure without changing what is in a particular module.
+
+However, by analogy with the export specifier ``C(..)``, this should also export ``M``.
+I'm not sure if this is what we want, and if we don't, then perhaps we should have a
+different syntax.
 
 Datalog implementation
 ----------------------
