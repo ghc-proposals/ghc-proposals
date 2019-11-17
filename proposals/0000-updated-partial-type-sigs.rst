@@ -53,7 +53,7 @@ numbered for back-reference).
         addOne x = x + 1
 
       Here, we want GHC to use the definition of ``addOne`` to infer that the ``_`` stands for ``Int``. This works
-      also for contraints::
+      also for constraints::
 
         addOnePoly :: _ => a -> a
         addOnePoly x = x + 1
@@ -308,7 +308,7 @@ Here is a summary:
 |                            |"elision at             |printed with the hole's type|
 |                            |<line>:<col>"``. No     |and suggestions for what it |
 |                            |diagnostic is printed.  |might be filled in with.    |
-|                            |Needs                   |This behavior dies **not**  |
+|                            |Needs                   |This behavior does **not**  |
 |                            |``-XElidedExpressions``.|require an extension.       |
 |                            |In the future, perhaps  |                            |
 |                            |GHC can be cleverer (for|                            |
@@ -421,7 +421,7 @@ Resolved Questions
 
 Unresolved Questions
 --------------------
-* Is this really the best syntax? I am uncomfortable at stealing both underscored-idenfitiers and ``::?``.
+* Is this really the best syntax? I am uncomfortable at stealing both underscored-identifiers and ``::?``.
   How painful is it to do so?
 
 * Is this design too elaborate? I have a tendency to build elaborate but expressive edifices. Perhaps
