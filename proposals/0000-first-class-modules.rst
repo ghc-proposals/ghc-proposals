@@ -202,8 +202,8 @@ into scope, as described in [hsmods]_. It also brings
 the target module into scope bound to its declared simple name (which may be
 a dotted name if it is a file module).
 
-If a module is imported ``qualified`` then the target module is no
-brought into scope.
+If a module is imported ``qualified`` then the exported bindings of the target
+module are not brought into scope.
 
 If a module is imported ``as`` a simple name, then the target module is brought
 into scope with that simple name instead.
@@ -296,6 +296,7 @@ Module aliases
 
 We propose adding a language extension ``ModuleAliases``. This allows a
 new kind of top-level definition: ``module <name> = <qualname>``
+(where ``<name>`` is a non-dotted module name).
 
 A module alias adds a binding in the enclosing scope from the new name
 to the module referred to by the right hand side.
@@ -336,34 +337,38 @@ example <https://github.com/ghc-proposals/ghc-proposals/pull/283#issuecomment-54
    import Data.Set ( Set )
    import qualified Data.Set as Set
 
+The goal of this is to re-export everything in `Data.ByteString.Lazy` qualified
+under `BL`, so for example `BL.ByteString` would be `Bytestring` from `Data.Bytestring.Lazy`.
+And similarly for the other modules.
+
 This could be achieved as follows:
 
 ::
 
-   module MyPrelude (module Data, Set) where
+   module MyPrelude (module BL, module BS, Set, module Set) where
 
    import qualified Data.ByteString.Lazy as BL
    import qualified Data.ByteString as BS
    import Data.Set ( Set )
    import qualified Data.Set as Set
 
+This example is simple, because we only want a single level of qualification.
+For example, suppose that we instead want to re-export `Data.Bytestring.Lazy`
+as `Data.Bytestring`. Then we need to write:
 
-   module Data (module ByteString, module Set) where
-       module ByteString (module Lazy, module BS (..)) where
-           import BS
-           module Lazy (module BSL (..)) where
-               import BSL
-       module Set (module Set (..)) where
-           import Set
+::
 
-Because qualified names correspond to module-qualification, we can
-always create that structure ourselves. This is somewhat laborious for
-the author, but does allow the desired experience for the consumer.
+   module MyPrelude (module Data) where
 
-This example is somewhat unsatisfactory, since one would really like to
-re-export the “module” ``Data.ByteString``, but this is not a module as
-far as this proposal is concerned. See `Can we make dotted names less
-special?`_ for more discussion.
+   import qualified Data.ByteString.Lazy as BL
+
+   module Data (module ByteString) where
+       module ByteString = BL
+
+Here, we have to construct a `Data` module with the appropriate inner structure.
+This is how we can export "deeply-qualified" names: instead of exporting a "qualified name"
+per se, we export a module whose structure allows us to access the names we want to access
+with the qualifiers that we want.
 
 Effect and interactions
 -----------------------
