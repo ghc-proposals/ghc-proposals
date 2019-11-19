@@ -54,11 +54,6 @@ The goal of this proposal is the ability to define ``Nat`` instead as
    Z :: Nat
    S :: !Nat -> Nat
 
-Now for the rest of this proposal, we assume that the plan outlined in `#16970
-<https://gitlab.haskell.org/ghc/ghc/issues/16970>`_ has landed, in particular
-for its operational consequence that strict constructor fields always contain
-tagged pointers (meaning their tag is never zero, like for thunks).
-
 This is attractive in the following example involving a binary tree data
 structure:
 
@@ -107,10 +102,10 @@ of ``tsum``, codegen can't omit the zero tag check on the parameter of
 Now ``tsum undefined`` is invalid to begin with and won't even type-check!
 Notice how instead of the *callee* having to do the zero tag check/evaluation,
 evaluatedness is encoded as an invariant in the type system. Hence the *caller*
-has to evaluate ``Tree`` expression before the recursive call, effectively
+has to evaluate the ``Tree`` expression before the recursive call, effectively
 turning call by need into call by value. There isn't even any evalution
 necessary in the recursive calls, because we know that ``l`` and ``r`` came
-from strict fields to begin with! The compiler is able to notice this and
+from unlifted fields to begin with! The compiler is able to notice this and
 drop the zero tag check, at least saving us a few instructions and relieving
 pressure on the branch predictor.
 
@@ -145,6 +140,12 @@ Name resolution can ignore the ``unlifted`` keyword.
 Similar to -XUnliftedNewtypes, the return kind of a data type declaration's
 kind signature (which may be given explicitly by the user or be inferred) is
 ``TYPE 'UnliftedRep`` when there was a leading ``unlifted`` keyword.
+
+Data family instances may be declared unlifted, in which case the data family
+application's result kind must reduce to ``TYPE 'UnliftedRep``. See
+`the section on data families in the UnliftedNewtypes proposal <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0098-unlifted-newtypes.rst>`_
+and ``Note [Implementation of UnliftedNewtypes]`` for details involving
+type-checking the parent data family.
 
 The static semantics of other types of unlifted kind, such as the inability to
 delare them at the top-level, apply.
