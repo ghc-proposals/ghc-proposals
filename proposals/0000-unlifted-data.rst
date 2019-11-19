@@ -64,8 +64,9 @@ structure:
 
 ::
 
- data Tree a = Branch !(Tree a) !a !(Tree a)
-             | Leaf
+ data Tree a
+   = Branch !(Tree a) !a !(Tree a)
+   | Leaf
 
  tsum :: Tree Int -> Int
  tsum Leaf           = 0
@@ -95,9 +96,9 @@ of ``tsum``, codegen can't omit the zero tag check on the parameter of
 
 ::
 
- data unlifted Tree a :: TYPE 'UnliftedRep where
-   Branch :: !(Tree a) -> a -> !(Tree a) -> Tree a
-   Leaf :: Tree a
+ data unlifted Tree a
+   = Branch !(Tree a) a !(Tree a)
+   | Leaf
 
  tsum :: Tree Int -> Int
  tsum Leaf           = 0
