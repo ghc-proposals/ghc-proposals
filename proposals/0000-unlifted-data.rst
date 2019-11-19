@@ -270,32 +270,6 @@ but smililar to ``safeHead :: NonEmpty a -> a`` it offloads the burden of
 evaluation to the caller, who is in a better position to decide if that ``seq``
 is needed or not.
 
-Phantom types
-~~~~~~~~~~~~~
-
-Consider ``Foreig.Ptr.Ptr``:
-
-::
-
- data Ptr a = Ptr !Addr#
-
-The phantom type variable is used to provide type safety over the unlifted,
-untyped ``Addr#`` primitive. It is often used in high performance scenarios.
-But by declaring this wrapper for type safety, we incur the overhead of zero
-tag checking Everywhere we take apart a ``Ptr``! Unlifted data types to the
-rescue:
-
-::
-
- data Ptr a :: TYPE 'UnliftedRep where
-   Ptr :: !Addr# -> Ptr a
-
-(This uses GADT-style syntax and a kind signature instead of the ``unlifted``
-keyword to imply unliftedness)
-
-No bottom, no zero tag checking. This applies to a lot of wrappers around
-unlifted primitives that can't easily be unlifted newtypes.
-
 Low-level code
 ~~~~~~~~~~~~~~
 
