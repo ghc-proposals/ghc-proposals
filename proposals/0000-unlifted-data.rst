@@ -97,7 +97,7 @@ of ``tsum``, codegen can't omit the zero tag check on the parameter of
 ::
 
  data unlifted Tree a
-   = Branch !(Tree a) a !(Tree a)
+   = Branch (Tree a) a (Tree a)
    | Leaf
 
  tsum :: Tree Int -> Int
