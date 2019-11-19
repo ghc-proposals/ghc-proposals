@@ -20,9 +20,9 @@ in source Haskell, like
 
 ::
 
- data SMaybe :: Type -> TYPE 'UnliftedRep where 
-   SJust :: !a -> SMaybe a
-   SNothing :: SMaybe a
+ data unlifted SMaybe 
+   = SJust !a
+   | Nothing
 
 ``SMaybe a`` has the same inhabitants as ``Maybe a``, with the exception that
 it deprives itself and its arguments of ⊥.
@@ -50,7 +50,7 @@ The goal of this proposal is the ability to define ``Nat`` instead as
 
 ::
  
- data Nat :: TYPE 'UnliftedRep where
+ data unlifted Nat :: TYPE 'UnliftedRep where
    Z :: Nat
    S :: !Nat -> Nat
 
@@ -95,7 +95,7 @@ of ``tsum``, codegen can't omit the zero tag check on the parameter of
 
 ::
 
- data Tree a :: TYPE 'UnliftedRep where
+ data unlifted Tree a :: TYPE 'UnliftedRep where
    Branch :: !(Tree a) -> a -> !(Tree a) -> Tree a
    Leaf :: Tree a
 
@@ -125,29 +125,25 @@ Henceforth, data type declaration refers to both data type and data family insta
 Syntax
 ~~~~~~
 
-Introduce a new contextual keyword ``unlifted``, only to be used in
-non-GADT-syntax data type declarations. Revised grammar rules:
+Introduce a new contextual keyword ``unlifted``, only to be used in data type
+declarations. Revised grammar rules:
 
 ::
 
  topdecl -> 'data' [ 'unlifted' ] [ context => ] ...
  topdecl -> 'data' 'instance' [ 'unlifted' ] [ context => ] ...
 
-GADT-style declarations can't use the ``unlifted`` keyword (TODO: this is
-entirely my preference, challenge me on this if you disagree); they are
-required to specify a kind signature for unliftedness (see below).
+GADT-style declarations can optionally specify a kind signature.
+TODO: Also allow ``lifted`` for symmetry?
 
 Static semantics
 ~~~~~~~~~~~~~~~~
 
 Name resolution can ignore the ``unlifted`` keyword.
 
-The type checking of data type declarations becomes more permissive.
 Similar to -XUnliftedNewtypes, the return kind of a data type declaration's
-kind signature (which may be given explicitly by the user or be inferred) may
-now be of kind ``TYPE 'UnliftedRep`` as opposed to ``TYPE 'LiftedRep``. The
-result kind of a non-GADT-syntax data type declaration with an ``unlifted``
-keyword is ``TYPE 'UnliftedRep``.
+kind signature (which may be given explicitly by the user or be inferred) is
+``TYPE 'UnliftedRep`` when there was a leading ``unlifted`` keyword.
 
 The static semantics of other types of unlifted kind, such as the inability to
 delare them at the top-level, apply.
@@ -433,7 +429,7 @@ Because of call-by-value, the ``error`` thunk will be evaluated before entering
 
 ::
 
-  data lifted Void
+  data Void
   f :: Void -> ()
   f !_ = ()
 
