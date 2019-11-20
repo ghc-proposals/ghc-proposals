@@ -26,14 +26,12 @@ numbered for back-reference).
 
 1. Underscores may mean many different things.
 
-   a. **Blanks**: In patterns, a ``_`` means a part of a pattern that matches anything, but is otherwise immaterial. Examples::
+   a. In patterns, a ``_`` means a part of a pattern that matches anything, but is otherwise immaterial. Examples::
 
         const x _ = x
         type instance IsJust (Just _) = True   -- happens in types, too!
 
-      I will call these underscores "blanks".
-
-   b. **Holes**: In expressions, a ``_`` means a part of an expression for which you want GHC to print its type. Example::
+   b. In expressions, a ``_`` means a part of an expression for which you want GHC to print its type. Example::
 
         tuple :: (Int, Double, Bool, Char, Float, ShowS)
         tuple = (5, 3.14, False, _, _, _)   -- oops: I lost count, and then I forgot what ShowS meant
@@ -44,21 +42,19 @@ numbered for back-reference).
 
       There is no way to get this behavior in types today.
 
-      I will call these underscores "holes".
-
-   c. **Wildcards**: In type signature declarations, a ``_`` means a part of a type for which you want GHC to infer its value using
+   c. In type signature declarations, a ``_`` means a part of a type for which you want GHC to infer its value using
       the definition of the variable being declared. Example::
 
         addOne :: _ -> Int
         addOne x = x + 1
 
-      Here, we want GHC to use the definition of ``addOne`` to infer that the ``_`` stands for ``Int``. This works
+      Here, we want GHC to use the *definition* of ``addOne`` to infer that the ``_`` stands for ``Int``. This works
       also for constraints::
 
         addOnePoly :: _ => a -> a
         addOnePoly x = x + 1
 
-      GHC will infer that the ``_`` stands for ``Num a``.
+      GHC will infer that the ``_`` stands for ``Num a``. These underscores are called wildcards.
 
       In all cases, GHC reports to the user what it figured out. GHC normally rejects such programs, but it will
       accept them with ``-XPartialTypeSignatures`` enabled. GHC still reports its deductions for the wildcards
@@ -71,9 +67,9 @@ numbered for back-reference).
       uses during type-checking. As one example of this, if a declaration has a wildcard in its type, it may
       not use polymorphic recursion, which requires a complete type signature and an utter absence of type inference.
       Another example is that GHC defers kind-generalization until *after* checking the expression; this can
-      affect whether or not a program is accepted.
+      affect whether or not a program is accepted. (More on this point below.)
 
-   d. **Elisions**: In visible type applications, a ``_`` means a part of a type for which you want GHC to infer its value using
+   d. In visible type applications, a ``_`` means a part of a type for which you want GHC to infer its value using
       context. Example::
 
         x = id @_ True
@@ -87,7 +83,10 @@ numbered for back-reference).
       cause GHC to reject a program or print out further information.
 
 .. _`visible kind application`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0015-type-level-type-applications.rst
-      
+
+   These four meanings of underscores are distinct; we should allow programmers direct control over
+   which behavior they want.
+
 2. Visible kind applications don't fit well with partial type signatures. As recently merged into HEAD,
    the `visible kind application`_ implementation treats underscores as a combination of wildcard and elision:
    the existence of an underscore in a visible kind application has GHC treat a type signature as partial,
@@ -98,6 +97,9 @@ numbered for back-reference).
 
    Visible kind application (even an innocuous usage like the example in the previous paragraph) with underscores is not allowed
    where wildcards are not allowed, such as in data constructor declarations and in instance heads.
+
+   This bit is really just an outright bug, but it's unclear how to fix this bug without a proposal such
+   as this one.
 
 3. Named wildcards act like wildcards but are named. This allows two niceties: the user can specify that
    the same wildcard is used twice, and output is clarified by giving a name to the wildcard (instead of
@@ -142,6 +144,215 @@ numbered for back-reference).
    What's awkward here is that the examples are given in order of increasing specificity; each example's type is more
    specific than the previous. Yet GHC's behavior wibbles and wobbles between them.
 
+5. Sometimes, a type signature is meant to stand on its own; sometimes, it is meant to be understood in relation to
+   a nearby expression. For example, these type signatures stand on their own::
+
+     const :: a -> b -> a
+     prox :: Proxy a -> Proxy a
+     x :: Int
+
+   In all cases, we know everything there is to know about the type of these variables without looking further.
+   In the case of ``prox``, "knowing everything about the type" means that we can observe that ``a``\'s kind is
+   unconstrained. The full signature will be ``forall {k :: Type} (a :: k). Proxy @k a -> Proxy @k a``.
+
+   These type signatures do not stand on their own::
+
+     wurble :: _ -> Bool
+     wobble :: Either _ Bool -> Char
+
+   In order to know the types of ``wurble`` and ``wobble``, we must read their definitions.
+
+   Currently, we can distinguish between these cases by looking for the presence of an underscore (or, with
+   ``-XNamedWildCards``, a type variable spelled with an initial underscore) in the type signature. However,
+   sometimes we want a type signature with an underscore to stand alone (that is, be *complete*), and sometimes
+   we want a signature without an underscore not to (that is, be *partial*).
+
+   If we assume ``type Const :: forall a b. a -> b -> a``, then this type signature can be complete::
+
+     blurb :: Proxy (Const @_ @Bool 5) -> ()
+
+   We can infer that the first kind argument to ``Const`` should be ``Nat``. No definition for ``blurb``
+   is needed to know its type. Yet, our rule above that we distinguish complete from partial signatures
+   by the presence of an underscore works against us here.
+
+   Conversely, assuming ``f :: forall (a :: Bool). Proxy a -> ()``, this type signature can be partial::
+
+     hiccup :: Proxy a -> ()
+     hiccup = f
+
+   By looking at the *definition* for ``hiccup``, we learn that the kind of ``a`` should be ``Bool``. But
+   we cannot know that if the type signature is *complete*; indeed, GHC rejects ``hiccup`` today, believing
+   its type signature to be complete. The ``singletons`` package runs up against this: in the code it
+   generates, it needs the expression in order to infer the kind of a type variable. Yet, short of inserting
+   an underscore (and then asking our dear users to enable ``-XPartialTypeSignatures -Wno-partial-type-signatures``),
+   there is no way of getting the behavior we want.
+
+**Summary**
+
+Missing bits of programs vary along quite a few different axes.
+
+Axis 1: how to fill the missing bit in?
+
+A. Nothing/don't care (``_`` in patterns)
+
+B. Figure it out by local context (``const @_ @Bool 'x'``)
+
+C. Figure it out by looking at an expression nearby (``foo :: _ -> Int``)
+
+Axis 2: do we report information to the user?
+
+A. No
+
+B. Yes, as a warning
+
+C. Yes, as an error
+
+Axis 3: if we are reporting, what do we report?
+
+A. The inferred value of the missing bit (``foo :: _ -> Int``)
+
+B. The inferred type of the missing bit (``foo z = _``)
+
+C. (not applicable -- for completeness with respect to 2A)
+   
+Axis 4: do we want to name the missing bit?
+
+A. No
+
+B. Yes, in order to reuse the same missing bit in multiple places
+
+Axis 5: what context does the missing bit appear in?
+
+A. In a pattern (including patterns of a type family equation)
+
+B. In a term
+
+C. In a type signature with a nearby expression (``foo :: _ -> Int; foo z = z + 1``);
+   these may be partial (though changing them to partial changes their behavior)
+
+D. In a type signature without a nearby expression (``data T where MkT :: _ -> T``);
+   these must be complete
+
+I claim that (with the exception of controlling the severity of a diagnostic when we are not
+printing diagnostics) many locations in this matrix make sense and would be useful. However,
+we currently inhabit this matrix only sparsely. (This proposal does not affect patterns, 5A.)
+
+* 1A/2A/3C/4A/5A: **Allowed**: ``foo _ = True``, ``type instance Foo _ = True``
+
+* 1A/2A/3C/4A/5B: **Not allowed**: ``figureItOutLater :: Int -> Int; figureItOutLater = _``; allowed with this
+  proposal.
+  
+* 1A/2A/3C/4A/5C: **Not allowed**: ``foo :: _ -> Int; foo x = 5`` (we could just use a type variable, but the same
+  argument could apply to ``_`` patterns, and yet we really like those); allowed with this proposal.
+
+* 1A/2A/3C/4A/5D: **Not allowed**: ``data Existential where MkEx :: _ -> Existential`` (ditto comment); allowed
+  with this proposal.
+
+* 1A/2A/3C/4B/5A: **Allowed**: ``type family Equals a b where Equals _x _x = True`` (but
+  removing the underscores emits no warning; perhaps that's just a bug)
+
+* 1A/2A/3C/4B/5B: **Appears unuseful**, until we have very snazzy term inference
+
+* 1A/2A/3C/4B/5C: **Appears unuseful**; just use an ordinary type variable
+
+* 1A/2A/3C/4B/5D: **Appears unuseful**; just use an ordinary type variable
+
+* 1A/2BC/...: **Appears unuseful**; if we don't care about the missing bit, we don't want a diagnostic; exception follows:
+
+* 1A/2B/3A/4A/5B: **Not allowed**: ``figureItOutLater :: Int -> Int; figureItOutLater = _``, but now we get a warning
+  each time we do this. Allowed with this proposal.
+
+* 1B/2A/3C/4AB/5A: I can't tell the difference between this and the 1A case.
+  
+* 1B/2A/3C/4A/5B: **Not allowed**: ``id :: a -> a; id = _``, ``foo :: Sing True; foo = _`` (we can infer the exact value of these expressions from
+  their types); compatible with this proposal.
+
+* 1B/2A/3C/4A/5C: **Allowed**: ``foo :: Proxy @_ True -> ()`` with
+  ``-XPartialTypeSignatures -Wno-partial-type-signatures``; the type signature
+  becomes partial, even if we don't want this behavior. This last bit is fixed by this
+  proposal.
+
+* 1B/2A/3C/4A/5D: **Not allowed**: ``data T where MkT :: Proxy @_ True -> T``; allowed by this proposal.
+
+* 1B/2A/3C/4B/5B: I think this might be useful, but I can't come up with an example. It would mean
+  that we can infer the value of a term only by analyzing two (or more) of the term's occurrences.
+  Compatible with this proposal.
+
+* 1B/2A/3C/4B/5C: **Allowed**: ``foo :: Proxy @_k True -> Proxy @_k a`` but with same caveats as
+  1B/2A/3C/4A/5C. This will print a diagnostic with this proposal (1B/2BC/3AB/4B/5C).
+
+* 1B/2A/3C/4B/5D: **Not allowed**: ``data T where MkT :: Proxy @_k True -> Proxy @_k a -> T``. This
+  will print a diagnostic with this proposal (1B/2BC/3AB/4B/5D).
+
+* 1B/2BC/3A/4AB/5A: **Appears unuseful**: I don't know what this means.
+
+* 1B/2BC/3A/4A/5B: **Not allowed**: See 1B/2A/3C/4A/5B, but with printing. Compatible with this proposal.
+
+* 1B/2BC/3A/4A/5C: **Allowed**, but only with visible dependent quantification: ``type VDQ :: forall k -> k -> Type; foo :: VDQ _ Int -> ()``.
+  Reporting is always suppressed in a visible kind application. This proposal requires giving a name (4B) to the missing bit
+  in order to get a diagnostic.
+
+* 1B/2BC/3A/4A/5D: **Not allowed**: Like 1B/2A/3C/4A/5D. This proposal requires giving a name (4B) to the missing bit
+  in order to get a diagnostic.
+
+* 1B/2BC/3A/4B/5B: Like 1B/2A/3C/4B/5B. Named missing bits always print a diagnostic with this proposal.
+
+* 1B/2BC/3A/4B/5C: **Allowed**: Like 1B/2A/3C/4B/5C, but with other flags. This proposal removes dependency on flags
+  and does not force a signature to be partial.
+
+* 1B/2BC/3A/4B/5D: **Not allowed**: Like 1B/2A/3C/4B/5D. Allowed by this proposal.
+
+* 1B/2BC/3B/4A/5A: **Not allowed**: ``foo :: Maybe Bool -> (); foo (Just _) = ()``, but I want the type of the underscore.
+  
+* 1B/2B/3B/4A/5B: **Not allowed**: This is like 1B/2A/3C/4A/5B, but with printing. Compatible with this proposal.
+
+* 1B/2C/3B/4A/5B: **Allowed**: ``foo :: Int -> Bool; foo 5 = _``. Retained with this proposal.
+
+* 1B/2BC/3B/4A/5C: **Not allowed**: ``foo :: Either _ Bool -> Int``, but I want to know the type of the ``_``. Use
+  a name (4B) to get the diagnostic with this proposal.
+  
+* 1B/2BC/3B/4A/5D: **Not allowed**: ``data T where MkT :: Either _ Bool -> T``, but I want to know the type of the ``_``.
+  Use a name (4B) to get the diagnostic.
+
+* 1B/2BC/3B/4B/5A: **Not allowed**: ``type instance Foo _x (Left _x) = ...``, where I want the kind of ``_x``.
+  
+* 1B/2BC/3B/4B/5B: **Not allowed**: ``foo a = (_x True, not (_x a))`` (we can infer ``_x :: Bool -> Bool``, but only
+  by looking at *both* occurrences). Allowed by this proposal.
+
+* 1B/2BC/3B/4B/5C: **Not allowed**: Like 1B/2BC/3B/4A/5C. Allowed by this proposal.
+
+* 1B/2BC/3B/4B/5D: **Not allowed**: Like 1B/2BC/3B/4A/5D. Allowed by this proposal.
+
+* 1C/.../5A: Not applicable.
+
+* 1C/.../5B: Not applicable.
+
+* 1C/.../5D: Not applicable.
+
+* 1C/2A/3C/4A/5C: **Allowed**: ``foo :: _ -> Int; foo True = 5``, with ``-XPartialTypeSignatures -Wno-partial-type-signatures``. Retained
+  with this proposal.
+
+* 1C/2A/3C/4B/5C: **Allowed**: ``foo :: _t -> _t; foo _ = True``, with ``-XPartialTypeSignatures -XNamedWildCards -Wno-partial-type-signatures``.
+  Named missing bits always print a diagnostic with this proposal.
+
+* 1C/2BC/3A/4A/5C: **Allowed**: Like 1C/2A/3C/4A/5C, but with different flags. Use a name (4B) to get a diagnostic with this
+  proposal.
+
+* 1C/2BC/3A/4B/5C: **Allowed**: Like 1C/2A/3C/4B/5C, but with different flags. This proposal removes the
+  dependency on flags.
+  
+* 1C/2BC/3B/4A/5C: **Not allowed**: ``foo :: Proxy _ -> (); foo (Proxy :: Proxy @Bool a) = ()``, but I want the know that type of the ``_`` is ``Bool``.
+  Use a name (4B) to get a diagnostic with this propopsal.
+
+* 1C/2BC/3B/4B/5C: **Not allowed**: Similar to 1C/2BC/3B/4A/5C. Allowed by this proposal.
+
+There are several problems not really reflected by this taxonomy:
+
+a. We might usefully want to combine several possibilities in close proximity. Changing between modes with module-wide flags is unpleasant.
+
+b. As discussed in motivation point (5), we won't want the choice between complete and partial type signatures to be controlled by
+   the presence of underscores.
+  
 Proposed Change Specification
 -----------------------------
 
@@ -276,16 +487,18 @@ Here is a summary:
 |                            |elision, generalize.    |The diagnostic prints both  |
 |                            |Needs ``-XElidedTypes``.|the value GHC has discovered|
 |                            |                        |for the wildcard and its    |
-|                            |                        |kind. Compilation is aborted|
-|                            |                        |always.                     |
-|                            |                        |                            |
-|                            |                        |                            |
+|                            |Covers 1AB/2A/3C/4A/5CD,|kind. Compilation is aborted|
+|                            |without forcing a       |always.                     |
+|                            |partial type signature  |                            |
+|                            |                        |Covers 1BC/2C/3AB/4B/5CD    |
 |                            |                        |                            |
 +----------------------------+------------------------+----------------------------+
 |in partial type signature   |same as above, but      |same as above, but          |
 |(assume                     |information from the    |compilation is not          |
 |``-XPartialTypeSignatures``)|definition can be taken |aborted (i.e., the          |
 |                            |into account            |diagnostic is a warning)    |
+|                            |                        |                            |
+|                            |Covers 1ABC/2A/3C/4A/5C |Covers 1C/2B/3AB/4B/5C      |
 +----------------------------+------------------------+----------------------------+
 |in a visible type           |same as above, but no   |same behavior as an elision,|
 |application                 |generalization. If      |but printing a diagnostic.  |
@@ -294,38 +507,44 @@ Here is a summary:
 |                            |elision should be,      |``-XPartialTypeSignatures`` |
 |                            |use ``Any``.            |and is a warning with the   |
 |                            |                        |extension                   |
+|                            |Covers 1B/2A/3C/4A/5CD  |                            |
+|                            |                        |Covers 1B/2BC/3AB/4B/5CD    |
 +----------------------------+------------------------+----------------------------+
 |in another type (e.g., data |same as in a complete   |Not allowed; issue an error |
 |constructor signature,      |type signature          |with the kind of the        |
 |instance head, etc.)        |                        |wildcard and any information|
-|                            |                        |GHC can figure out about the|
+|                            |Covers 1AB/2A/3C/4A/5D  |GHC can figure out about the|
 |                            |                        |content of the wildcard.    |
 |                            |                        |                            |
-|                            |                        |                            |
+|                            |                        |Covers 1B/2C/3B/4B/5D       |
 +----------------------------+------------------------+----------------------------+
 |in an expression            |GHC replaces the        |Same behavior as today's    |
 |                            |underscore with ``error |holes: a diagnostic is      |
 |                            |"elision at             |printed with the hole's type|
-|                            |<line>:<col>"``. No     |and suggestions for what it |
-|                            |diagnostic is printed.  |might be filled in with.    |
-|                            |Needs                   |This behavior does **not**  |
-|                            |``-XElidedExpressions``.|require an extension.       |
-|                            |In the future, perhaps  |                            |
-|                            |GHC can be cleverer (for|                            |
+|                            |<line>:<col>"`` with    |and suggestions for what it |
+|                            |``-XElidedExpressions``.|might be filled in with.    |
+|                            |In the future, perhaps  |This behavior does **not**  |
+|                            |GHC can be cleverer (for|require an extension.       |
 |                            |example: ``f :: a -> a; |                            |
 |                            |f = _``.                |                            |
+|                            |                        |                            |
+|                            |Covers 1AB/2A/3C/4A/5B  |Covers 1AB/2C/3AB/4B/5B     |
+|                            |                        |                            |
+|                            |                        |                            |
 +----------------------------+------------------------+----------------------------+
 						  
 
 Effect and Interactions
 -----------------------
-* The new design combines the roles of holes and wildcards in the Motivation_. This means that
-  we have only 3 uses of underscores to consider.
+* All positions marked **Not allowed** (outside of patterns 5A)
+  in the Motivation are now allowed but with the caveat
+  that users must provide names when they want a diagnostic.
+
+* Using a name now prints a diagnostic (these can be suppressed with a module-wide flag); there
+  is no way to get a repeated missing bit without a diagnostic without using a module-wide flag.
 
 * The new design allows the user to control whether they want an elision or a named wildcard, using
   a convenient naming convention.
-
-* This proposal removes the existence of anonymous wildcards.
 
 * The new design gives users fine control over generalization, through the use of ``::?`` to
   suppress kind generalization and the use of ``forall a b c _.`` to explicitly enable type
@@ -353,6 +572,9 @@ Costs and Drawbacks
   design seems no simpler nor more complicated than the current, but it will take a fair amount
   of work to re-engineer.
 
+* It is conceivable to want a repeated name without a diagnostic; this proposal does not support
+  such a usage.
+  
 * The new design does not adequately treat patterns. It is conceivable that a user would want
   a wildcard (with diagnostic information) in a pattern, and this is no more achievable with this
   proposal than it was previously.
@@ -407,6 +629,11 @@ Alternatives
   awkward. If we choose to walk away from this more comprehensive proposal, it
   would be great to have a concrete design for underscores in visible kind
   application, at least.
+
+* In order to separate the choice of naming from the appearance of diagnostics, we could
+  imagine a ``{-# PRINT #-}`` pragma (or similar) telling GHC what to print. However, I dislike
+  this because a user who justs wants to make a quick query won't want to write ``{-# PRINT #-}``
+  to get it.
 
 Resolved Questions
 ------------------
