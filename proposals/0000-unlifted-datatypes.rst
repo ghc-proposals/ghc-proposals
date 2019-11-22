@@ -442,7 +442,7 @@ And should probably elicit an inaccessible RHS warning. I guess this is accurate
 for unlifted functions as well as long as we don't allow functions without
 bindings.
 
-**``-XStrict``/``-XStrictData``** could implicitly turn all data declarations
+**-XStrict/-XStrictData** could implicitly turn all data declarations
 into ``unlifted`` ones. I see two potential problems:
 
 * If a data type is exported, it's now an unlifted type. That's a breaking change.
