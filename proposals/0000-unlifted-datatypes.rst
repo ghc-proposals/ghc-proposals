@@ -55,7 +55,7 @@ The goal of this proposal is the ability to define ``Nat`` instead as
    S :: !Nat -> Nat
 
 This is attractive in the following example involving a binary tree data
-structure:
+structure, like it is the case in ``Data.Map``:
 
 ::
 
