@@ -1,4 +1,4 @@
-Unlifted Data
+Unlifted Datatypes
 ================================
 
 .. author:: Sebastian Graf
@@ -109,10 +109,6 @@ from unlifted fields to begin with! The compiler is able to notice this and
 drop the zero tag check, at least saving us a few instructions and relieving
 pressure on the branch predictor.
 
-This proposal subsumes
-`the Strict proposal <https://github.com/ghc-proposals/ghc-proposals/pull/257>`_,
-as ``Strict`` can be a user-defined type.
-
 Proposed Change Specification
 -----------------------------
 
@@ -121,13 +117,15 @@ Henceforth, data type declaration refers to both data type and data family insta
 Syntax
 ~~~~~~
 
-Introduce a new contextual keyword ``unlifted``, only to be used in data type
-declarations. Revised grammar rules:
+The language extension ``-XUnliftedDatatypes`` introduces a new contextual
+keyword ``unlifted``, only to be used in data type declarations. Revised
+grammar rules:
 
 ::
 
- topdecl -> 'data' [ 'unlifted' ] [ context => ] ...
- topdecl -> 'data' 'instance' [ 'unlifted' ] [ context => ] ...
+ topdecl   -> 'data' [ 'unlifted' ] [ context => ] ...
+ topdecl   -> 'data' 'instance' [ 'unlifted' ] [ context => ] ...
+ decl_inst -> 'data' [ 'instance' ] [ 'unlifted' ] [ context => ] ...
 
 GADT-style declarations can optionally specify a kind signature.
 TODO: Also allow ``lifted`` for symmetry?
@@ -137,7 +135,7 @@ Static semantics
 
 Name resolution can ignore the ``unlifted`` keyword.
 
-Similar to -XUnliftedNewtypes, the return kind of a data type declaration's
+Similar to ``-XUnliftedNewtypes``, the return kind of a data type declaration's
 kind signature (which may be given explicitly by the user or be inferred) is
 ``TYPE 'UnliftedRep`` when there was a leading ``unlifted`` keyword.
 
@@ -153,8 +151,9 @@ delare them at the top-level, apply.
 Dynamic Semantics
 ~~~~~~~~~~~~~~~~~
 
-Unliftedness (i.e., the absence of divergence) implies the need for an eager
-evaluation semantics, which GHC implements in expression of kind ``#``.
+Unliftedness (i.e., the absence of divergence) in general implies the need for
+an eager evaluation semantics, which GHC implements in expression of kind
+``#``.
 
 Thus, call-by-value semantics are already well established within GHC. The
 novelty is pattern matching on and construction of unlifted data types, but
@@ -267,6 +266,10 @@ Superficially, this doesn't seem to have an advantage over ``-XBangPatterns``,
 but smililar to ``safeHead :: NonEmpty a -> a`` it offloads the burden of
 evaluation to the caller, who is in a better position to decide if that ``seq``
 is needed or not.
+
+Major caveat: This will only be a worthwhile thing to do if we manage to
+eliminate the indirection in all cases, which is impossible to do in
+polymorphic scenarios (think of RTS hacks like ``tagToEnum#``).
 
 Low-level code
 ~~~~~~~~~~~~~~
@@ -404,8 +407,8 @@ Introduction of user-defined unlifted data types means we can finally write
 code processing data types that can be compiled as if we were in a strict
 language.
 
-Strict constructor fields share considerable overlap with ``Strict``, yet they
-proved unsufficient for encoding invariants for efficient code generation.
+**Strict constructor fields** share considerable overlap with ``Strict``, yet they
+proved insufficient for encoding invariants for efficient code generation.
 
 This proposal consciously left out further work like a new specification for
 levity polymorphism (every data type polymorphic over lifted types can
@@ -414,7 +417,7 @@ we should eliminate the indirection in constructors like ``Force`` (we
 certainly should!) and to what degree we could infer and let the user omit
 ``Force`` constructors.
 
-Pattern match checking with unlifted types will be weird in some edge cases.
+**Pattern match checking** with unlifted types will be weird in some edge cases.
 Consider the following example:
 
 ::
@@ -439,18 +442,27 @@ And should probably elicit an inaccessible RHS warning. I guess this is accurate
 for unlifted functions as well as long as we don't allow functions without
 bindings.
 
+**``-XStrict``/``-XStrictData``** could implicitly turn all data declarations
+into ``unlifted`` ones. I see two potential problems:
+
+* If a data type is exported, it's now an unlifted type. That's a breaking change.
+* For data family instances, this is only possible if the parent data family
+  was kind polymorphic. Plus it's a strange thing to do change kinds of a
+  declaration just by switching on a language extension.
+
+So rather dreadfully, we probably shouldn't "augment" ``-XStrict``.
+
 Costs and Drawbacks
 -------------------
-I have no idea how long this will take to be implemented. Presumably all phases
-of the compiler up to C-- are affected, but the change is atomic enough to be
-implemented in a rather straightforward fashion. Since all new surface language
-features translate into familiar concepts after the frontend, I don't think
-maintenance will be an issue.
+Thanks to previous work on unlifted types and ``-XUnliftedNewtypes``, this
+proposal seems rather easy to implement, with the majority of changes happening
+in the parser and type-checker. Notably the backend is not only affected **at
+all**. Very good cost to benefit ratio.
 
-Beginners won't come in touch with unlifted newtypes at all, unless they crave
-for better performance in a custom data structure, at which point I wouldn't
-consider them beginners anymore. There's precedent in going from unlifted to
-lifted by
+As for the risk of making the language harder to learn: Beginners won't come in
+touch with unlifted newtypes at all. Unless they crave for better performance
+in a custom data structure, at which point I wouldn't consider them beginners
+anymore. There's precedent in going from unlifted to lifted by
 `Idris <http://docs.idris-lang.org/en/latest/tutorial/typesfuns.html>`_ with its
 ``Lazy`` data type.
 
@@ -466,10 +478,6 @@ future, though.
 
 Unresolved Questions
 --------------------
-* Should ``Strict(Force)`` should become a wired-in type? I don't see how we
-  can make WW aware of it otherwise.
-* Unsure whether ``Strict(Force)`` is the best naming scheme, but it is neatly
-  complementary to what `Idris does <http://docs.idris-lang.org/en/latest/tutorial/typesfuns.html>`_.
 * We really want to remove the indirection of constructors like ``Force``
   wherever we can. Can we do this in the general case? What about interactions
   with reflection/``Typeable``?
