@@ -145,7 +145,7 @@ in your branch. For instance,
 How to amend an accepted proposal
 ---------------------------------
 
-Some proposals amend an existing proposal. Such an ammendment :
+Some proposals amend an existing proposal. Such an amendment :
 
 * Makes a significant (i.e. not just editorial or typographical) change, and hence warrants approval by the commitee
 * Is too small, or too closely tied to the existing proposal, to make sense as a new standalone proposal.
