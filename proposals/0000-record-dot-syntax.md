@@ -239,8 +239,7 @@ A full, rigorous set of examples (as tests) are available in the examples direct
 
 **Higher-rank fields:** It is impossible to express `HasField` instances for data types such as `data T = MkT { foo :: forall a . a -> a}`, which means they can't have this syntax available. Users can still write their own selector functions using record puns if required.  There is a possibility that with future types of impredicativity such `getField` expressions could be solved specially by the compiler.
 
-**Lenses and a.b syntax:**
- The `a.b` syntax is commonly used in conjunction with the `lens` library, e.g. `expr^.field1.field2`. Treating `a.b` without spaces as a record projection would break such code. The alternatives would be to use a library with a different lens composition operator (e.g. `optics`), introduce an alias in `lens` for `.` (perhaps `%`), write such expressions with spaces, or not enable this extension when also using lenses. While unfortunate, we consider that people who are heavy users of lens don't feel the problems of inadequate records as strongly, so the problems are lessened. In addition, it has been discussed (e.g. [here](https://github.com/ghc-proposals/ghc-proposals/pull/282#issuecomment-546159561)), that this proposal is  complimentary to lens and can actually benefit lens users (as with `NoFieldSelectors` one can use the same field names for everything: dot notation, lens-y getting, lens-y modification, record updates, `Show/Generic`).
+**Lenses and a.b syntax:** The `a.b` syntax is commonly used in conjunction with the `lens` library, e.g. `expr^.field1.field2`. Treating `a.b` without spaces as a record projection would break such code. The alternatives would be to use a library with a different lens composition operator (e.g. `optics`), introduce an alias in `lens` for `.` (perhaps `%`), write such expressions with spaces, or not enable this extension when also using lenses. While unfortunate, we consider that people who are heavy users of lens don't feel the problems of inadequate records as strongly, so the problems are lessened. In addition, it has been discussed (e.g. [here](https://github.com/ghc-proposals/ghc-proposals/pull/282#issuecomment-546159561)), that this proposal is  complimentary to lens and can actually benefit lens users (as with `NoFieldSelectors` one can use the same field names for everything: dot notation, lens-y getting, lens-y modification, record updates, `Show/Generic`).
 
 **Rebindable syntax:** When `RebindableSyntax` is enabled the `getField` and `setField` functions are those in scope, rather than those in `GHC.Records`.
 
@@ -263,8 +262,6 @@ The use of `a.b` with no spaces on either side can make it harder to write expre
 let temp = myexpression.field1.field2.field3
 in temp.field4.field5
 ```
-
-We prefer the former, but both are permissible.
 
 ## Alternatives to this proposal
 
