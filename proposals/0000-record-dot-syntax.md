@@ -328,6 +328,10 @@ Independent of this difference, there are pragmatic concerns on both sides:
 
 Originally this proposal included `a{foo.bar}` to mean `a{foo.bar = bar}`, but that seemed to confuse everyone, so has been removed.
 
+## Unresolved issues
+
+In this proposal we pick `.field` to be the syntax for selector functions, however, there are also good reasons (listed in this proposal) to require brackets, namely `(.field)`. While resolved, we consider it worth the committees deliberation as to which is preferable. Neither author is opposed to either outcome.
+
 ## Implementation Plan
 
 If accepted, the proposal authors would be delighted to provide an implementation. Implementation depends on the implementation of [the `HasField` proposal](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0158-record-set-field.rst) and [the `NoFieldSelectors` proposal](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0160-no-toplevel-field-selectors.rst).
