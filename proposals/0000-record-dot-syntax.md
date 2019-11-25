@@ -81,13 +81,13 @@ A new lexeme *fieldid* is introduced.
 <br/>
 <br/>*lexeme* → *qvarid* | *qconid* | *qvarsym* | *qconsym*
 | *literal* | *special* | *reservedop* | *reservedid* | *fieldid*
-<br/>*fieldid* → *.varid*
+<br/>*fieldid* → *.varid{.varid}*
 
 This specification results in the following.
 
 ```haskell
 -- Regular expressions
-@fieldid = (\. @varid)
+@fieldid = (\. @varid)+
 ...
 <0,option_prags> {
   ...
@@ -99,93 +99,72 @@ This specification results in the following.
 data Token
   = ITas
   | ...
-  | ITfieldid FastString
+  | ITfieldid [FastString]
   ...
 
 -- Lexer actions
 fieldid :: StringBuffer -> Int -> Token
-fieldid buf len = let (_dot, buf') = nextChar buf in ITfieldid $! lexemeToFastString buf' (len - 1)
+fieldid buf len = ITfieldid $! splitFields buf len
+
+-- Split a buffer with contents like '.foo.bar.baz' into components.
+splitFields :: StringBuffer -> Int -> [FastString]
+splitFields buf len = ...
 ```
 
 Tokens of case `ITfieldid`  may not be issued if `RecordDotSyntax` is not enabled.
 
 ### Parser
 
-#### Field selections
-
-To support '.' field selection the *fexp* production is extended.
-<br/>
-<br/>*fexp*	→ [ *fexp* ] *aexp* | *fexp* *fieldid*
-
-The specification expresses like this.
-
-```haskell
-%token
- ...
- FIELDID { L _ (ITfieldid  _) }
-%%
-
-...
-
-fexp    :: { ECP }
-        : fexp aexp { ...}
-        | fexp FIELDID { ...}  -- <- here
-        | ...
-```
-
-#### Field updates
-
-To support the new forms of '.' field update, the *aexp* production is extended.
-<br/>
-<br> *aexp* → *aexp⟨qcon⟩* { *pbind* , … , *pbind* }
-<br/>*pbind* -> *qvar*=*exp* | *var* *fieldids*=*exp*
-<br/>*fieldids* -> *fieldids* *fieldid*
-
-In this table, the newly added cases are shown next to an example expression they enable:
-
-| Production | Example | Commentary |
-| -- |  -- | -- |
-|*var* *fieldids*=*exp* | `a{foo.bar = 2}` | the *var* is `foo`, `.bar` is a fieldid |
-
-For example, support for expressions like `a{foo.bar.baz.quux=i}` can be had with one additional case:
-
-```haskell
-aexp1   :: { ECP }
-        : aexp1 '{' fbinds '}' { ... }
-        | aexp1 '{' VARID fieldids '=' texp '}' {...} -- <- here
-
-fieldids :: {[FastString]}
-fieldids
-        : fieldids FIELDID { getFIELDID $2 : $1 }
-        | FIELDID { [getFIELDID $1] }
-
-{
-getFIELDID      (dL->L _ (ITfieldid   x)) = x
-}
-```
-
-An implementation of `RecordDotSyntax` will have to do more than this to incorporate all alternatives.
 
 #### Sections
 
-To support '.' sections (e.g. `(.foo.bar.baz)`), we generalize *aexp*.
+To support sections  (e.g. `.foo.bar.baz`), we generalize *aexp*.
 <br/>
-<br/>*aexp* →	( *infixexp* *qop* ) (left section)
-          | ( *qop* *infixexp* )	 (right section)
-          | ( *fieldids* )           (projection (right) section)
+<br/>*aexp* → *fieldid*
 
-This specification implies the following additional case to `aexp2`.
+This specification results in the following schematic.
+```haskell
+%token
+ ...
+ FIELDID        { L _ (ITfieldid _)  }
+ ...
+
+%%
+
+aexp    :: { ECP }
+        ...
+
+        | '\\' apat apats '->' exp {...}
+
+        | FIELDID {
+            ...             -- This case is only possible when 'RecordDotSyntax' is enabled.
+          } -- <- here
+
+        ...
+```
+
+### Field selections
+
+To support field selections, the existing production *fexp* → *[fexp]* *aexp* is sufficient.
+
+### Field updates
+
+To support field updates, the *aexp* production is extended.
+<br/>
+<br> *aexp* → *aexp⟨qcon⟩* { *pbind* , … , *pbind* }
+<br/>*pbind* -> *qvar*=*exp* | *var* *aexp*=*exp*
 
 ```haskell
-aexp2   :: { ECP }
-        ...
-        | '(' texp ')' {...}
-        | '(' fieldids ')' {...} -- <- here
+
+aexp1   :: { ECP }
+        : aexp1 '{' fbinds '}' { ... }
+        | aexp1 '{' VARID aexp '=' texp '}' {...} -- <- here
+
 ```
 
 ### Prototype
 
-To confirm these changes integrate as expected we have written [a prototype implementation](https://gitlab.haskell.org/shayne-fletcher-da/ghc/commits/record-dot-syntax) that parses and desugars the forms directly in the parser. For confirmation, we _do not_ view desugaring in the parser as the correct implementation choice, but it provides a simple mechanism to pin down the changes without going as far as adding additional AST nodes or type checker rules. Note that in the prototype, projection ([as proposed here](#syntax)), takes precedence over application so `f a.foo.bar.baz.quux 12` parses as `f (a.foo.bar.baz.quux) 12`.
+To gain confidence these changes integrate as expected [a prototype implementation](https://gitlab.haskell.org/shayne-fletcher-da/ghc/commits/record-dot-syntax) was produced that parses and desugars forms directly in the parser. For confirmation, we _do not_ view desugaring in the parser as the correct implementation choice, but it provides a simple mechanism to pin down the changes without going as far as adding additional AST nodes or type checker rules. Note that in the prototype, projection ([as proposed here](#syntax)), takes precedence over application so `f a.foo.bar.baz.quux 12` parses as `f (a.foo.bar.baz.quux) 12`. Note also that the prototype does not follow the specification given above in that : `x .lbl` means `x.lbl` means `(.lbl) x`.
 
 ## Examples
 
@@ -231,7 +210,7 @@ getTerms :: [Class]  -> [Quarter]
 getTerms = map .taken.term -- nested selector
 ```
 
-A full, rigorous set of examples (as tests) are available in the examples directory of [this repository](https://github.com/ndmitchell/record-dot-preprocessor). Those tests include infix applications, polymorphic data types, interoperation with other extensions and more. They follow the [specifications given earlier](#proposed-change-specification).
+A full, rigorous set of examples (as tests) are available in the examples directory of [this repository](https://github.com/ndmitchell/record-dot-preprocessor). Those tests include infix applications, polymorphic data types, interoperation with other extensions and more.
 
 ## Effect and Interactions
 
@@ -330,7 +309,7 @@ Originally this proposal included `a{foo.bar}` to mean `a{foo.bar = bar}`, but t
 
 ## Unresolved issues
 
-In this proposal we pick `.field` to be the syntax for selector functions, however, there are also good reasons (listed in this proposal) to require brackets, namely `(.field)`. While resolved, we consider it worth the committees deliberation as to which is preferable. Neither author is opposed to either outcome.
+In this proposal we pick `.field` to be the syntax for selector functions, however, there are also good reasons (listed [in this proposal](#which-syntax-should-be-chosen-for-selector-functions)) to require brackets, namely `(.field)`. While resolved, we consider it worth the committee's deliberation as to which is preferable. Neither author is opposed to either outcome.
 
 ## Implementation Plan
 
