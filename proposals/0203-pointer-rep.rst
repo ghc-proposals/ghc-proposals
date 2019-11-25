@@ -34,7 +34,7 @@ to::
 
     data Levity = Lifted | Unlifted
     data RuntimeRep
-      = PtrRep Levity
+      = BoxedRep Levity
       | IntRep
       | ...
 
@@ -85,40 +85,40 @@ The ``RuntimeRep`` data type is redefined as::
 
     data Levity = Lifted | Unlifted
     data RuntimeRep
-      = PtrRep Levity
+      = BoxedRep Levity
       | IntRep
       | ...
 
 The following primitive types are given new kinds::
 
-    data Array# :: forall (v :: Levity). TYPE ('PtrRep v) -> Type
-    data MutableArray# :: forall (v :: Levity). Type -> TYPE ('PtrRep v) -> Type
-    data SmallArray# :: forall (v :: Levity). TYPE ('PtrRep v) -> Type
-    data SmallMutableArray# :: forall (v :: Levity). Type -> TYPE ('PtrRep v) -> Type
-    data MutVar# :: forall (v :: Levity). Type -> TYPE ('PtrRep v) -> Type
-    data TVar# :: forall (v :: Levity). Type -> TYPE ('PtrRep v) -> Type
-    data MVar# :: forall (v :: Levity). Type -> TYPE ('PtrRep v) -> Type
-    data Weak# :: forall (v :: Levity). TYPE ('PtrRep v) -> Type
-    data StableName# :: forall (v :: Levity). TYPE ('PtrRep v) -> Type
-    data StablePtr# :: forall (v :: Levity). TYPE ('PtrRep v) -> Type
+    data Array# :: forall (v :: Levity). TYPE ('BoxedRep v) -> Type
+    data MutableArray# :: forall (v :: Levity). Type -> TYPE ('BoxedRep v) -> Type
+    data SmallArray# :: forall (v :: Levity). TYPE ('BoxedRep v) -> Type
+    data SmallMutableArray# :: forall (v :: Levity). Type -> TYPE ('BoxedRep v) -> Type
+    data MutVar# :: forall (v :: Levity). Type -> TYPE ('BoxedRep v) -> Type
+    data TVar# :: forall (v :: Levity). Type -> TYPE ('BoxedRep v) -> Type
+    data MVar# :: forall (v :: Levity). Type -> TYPE ('BoxedRep v) -> Type
+    data Weak# :: forall (v :: Levity). TYPE ('BoxedRep v) -> Type
+    data StableName# :: forall (v :: Levity). TYPE ('BoxedRep v) -> Type
+    data StablePtr# :: forall (v :: Levity). TYPE ('BoxedRep v) -> Type
 
 Functions operating on the aforementioned types are given new kinds. The ``Levity``
 argument is marked as inferred. For example::
 
-    readArray# :: forall {v :: Levity} (s :: Type) (u :: TYPE ('PtrRep v)). MutableArray# s u -> Int# -> State# s -> (#State# s, u#)
-    makeStableName# :: forall {v :: Levity} (a :: TYPE ('PtrRep v)). a -> State# RealWorld -> (#State# RealWorld, StableName# a#)
+    readArray# :: forall {v :: Levity} (s :: Type) (u :: TYPE ('BoxedRep v)). MutableArray# s u -> Int# -> State# s -> (#State# s, u#)
+    makeStableName# :: forall {v :: Levity} (a :: TYPE ('BoxedRep v)). a -> State# RealWorld -> (#State# RealWorld, StableName# a#)
 
 The functions ``mkWeak#``, ``mkWeakNoFinalizer#``,
 ``touch#``, and ``with#`` are more constrained in a type argument that was
 previously accepted types of any representation (``ua`` and ``u`` below)::
 
-    mkWeak# :: forall {va :: Levity} {vb :: Levity} (ua :: TYPE ('PtrRep va)) (ub :: ('PtrRep vb)) (c :: Type).
+    mkWeak# :: forall {va :: Levity} {vb :: Levity} (ua :: TYPE ('BoxedRep va)) (ub :: ('BoxedRep vb)) (c :: Type).
       ua -> ub -> (State# RealWorld -> (#State# RealWorld, c#)) -> State# RealWorld -> (#State# RealWorld, Weak# ub#)
-    mkWeakNoFinalizer# :: forall {va :: Levity} {vb :: Levity} (ua :: TYPE ('PtrRep v)) (ub :: TYPE ('PtrRep v)).
+    mkWeakNoFinalizer# :: forall {va :: Levity} {vb :: Levity} (ua :: TYPE ('BoxedRep v)) (ub :: TYPE ('BoxedRep v)).
       ua -> ub -> State# RealWorld -> (#State# RealWorld, Weak# ub#)
-    touch# :: forall {v :: Levity} (u :: TYPE ('PtrRep v)).
+    touch# :: forall {v :: Levity} (u :: TYPE ('BoxedRep v)).
       u -> State# RealWorld -> State# RealWorld
-    with# :: forall {v :: Levity} {rep :: RuntimeRep} (u :: TYPE ('PtrRep v)) (s :: Type) (r :: TYPE rep).
+    with# :: forall {v :: Levity} {rep :: RuntimeRep} (u :: TYPE ('BoxedRep v)) (s :: Type) (r :: TYPE rep).
       u -> (State# s -> (# State s, r #)) -> State# s -> (# State# s, r #)
 
 The parser for ``primops.txt.pp`` is tweaked to assigned levity-polymorphic
@@ -174,11 +174,11 @@ Costs and Drawbacks
 -------------------
 The type signatures of primops become a little harder to read. Users of
 ``'LiftedRep`` and ``'UnliftedRep`` would be required to changed these
-to ``'PtrRep 'Lifted`` and ``'PtrRep 'Unlifted`` respectively. It is
+to ``'BoxedRep 'Lifted`` and ``'BoxedRep 'Unlifted`` respectively. It is
 possible for a backwards-compatibility package to introduce::
 
-    type LiftedRep = 'PtrRep 'Lifted
-    type UnliftedRep = 'PtrRep 'Unlifted
+    type LiftedRep = 'BoxedRep 'Lifted
+    type UnliftedRep = 'BoxedRep 'Unlifted
 
 However, this only half-way work. GHC encourages user (with warning
 messages) to tick promoted data constructors, and these type synonyms
@@ -199,6 +199,10 @@ Alternatives
 The Unlifted Newtypes proposal eschews levity polymorphism in favor
 of monomorphism. This leads to more types and more functions.
 
+The version of this proposal originally accepted by the commitee used
+the name ``PtrRep`` instead of ``BoxedRep``. In subsequent discussion,
+it was decided that ``BoxedRep`` better conveyed the intent of the
+data constructor.
 
 Unresolved Questions
 --------------------
