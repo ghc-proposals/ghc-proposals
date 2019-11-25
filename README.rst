@@ -142,6 +142,16 @@ in your branch. For instance,
 
     [Rendered](https://github.com/bgamari/ghc-proposals/blob/typeable/proposals/0000-type-indexed-typeable.rst)
 
+How to amend an accepted proposal
+---------------------------------
+
+
+Some proposals amend an existing proposal, i.e. make a change that is more than
+editorial in nature (and warrant approval by the committee), but are too small or
+too much tied to the existing proposal to be their own proposal. Often, this happens
+after a proposal is accepted, but before or while it is implemented.
+In these cases, a PR that _changes_ the accepted proposal can be opened. It goes through
+the same process as an original proposal.
 
 Discussion goals
 ----------------
