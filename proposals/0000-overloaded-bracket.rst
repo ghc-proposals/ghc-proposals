@@ -79,13 +79,16 @@ Quoting an expression ``[| e |]`` yields its representation. In the current
 implementation the type of representations is ``Q Exp``. However, there are a few
 issues with this:
 
-1. Extracting the ``Exp`` from ``Q Exp`` requires unsafe partial functions (see
-   Appendix A: ``PureQ``).
+1. Given a quote ``[| e ||] :: Q Exp`` then it should be possible to extract the
+   representation of ``e`` with nothing more than a name supply. At the moment in
+   order to extract the ``Exp`` from the quotation it is necessary to provide a
+   "fake" ``Quasi`` instance which stubs out all the methods. This is undesirable
+   and unsafe. (see Appendix A: ``PureQ``).
 
 2. Using more effects than ``Q`` provides (e.g. adding a ``ReaderT`` context)
    requires manual wrapping of each quote and manual unwrapping of each splice.
 
-This proposal has two parts to it:
+This proposal has three parts to it:
 
 * Define a dedicated class for fresh name generation, with an operation much
   like the existing ``qNewName :: Quasi m => String -> m Name``::
@@ -110,7 +113,7 @@ This proposal has two parts to it:
     -- new type
     appE :: forall m. Quote m => m Exp -> m Exp -> m Exp
 
-  Consequently, generalize the type of quotation brackets from ``Q Exp`` to
+* Generalize the type of quotation brackets from ``Q Exp`` to
   ``forall m. C m => m Exp``, where the constraint ``C`` is the conjunction of
   ``Quote`` and all constraints required by the splices within the quotation.
 
@@ -218,6 +221,10 @@ make this change possible.
    name. All the other combinators can be defined using the ``Applicative``
    operations.
 
+   For example, the ``appE`` combinator which constructs an application is
+   generalised to ``Quote m => m Exp -> m Exp -> m Exp``, the ``varE`` function
+   to ``Name -> m Exp`` and the ``lamE`` function to ``Quote m => [m Pat] -> m Exp -> m Exp``.
+   In general any ``ExpQ`` type is replaced with ``m Exp``, ``PatQ`` with ``m Pat`` and so on.
 
 3. Generalise the ``Lift`` type class::
 
@@ -250,10 +257,21 @@ make this change possible.
 5. The types of type, pattern and declaration quotes will also
    be generalised in the same manner.
 
-6. Type quotations are similarly generalised::
+6. Typed quotations are similarly generalised::
 
-   i :: Quote m => m (TExp (Int -> Int))
-   i = [|| \x -> x + 1 ||]
+    i :: Quote m => m (TExp (Int -> Int))
+    i = [|| \x -> x + 1 ||]
+
+
+   If at a later point ``Q (TExp a)`` is turned into a newtype then an extra
+   parameter to indicate the monad used will be added to the wrapper::
+
+    i :: Quote m => Code m (Int -> Int)
+    i = [|| \x -> x + 1 ||]
+
+   The monad will be exposed in the newtype to support user-defined effects
+   during code generation but retaining the newtype so that the typed representation
+   can still be placed into maps and instances defined easily for it.
 
 
 Effect and Interactions
@@ -325,6 +343,13 @@ Alternatives
   ``[| 5 |] :: Applicative m => m Exp``. I am opposed to this direction as it
   breaks abstraction. The implementation detail of how ``[| 5 |]`` is desugared
   leaks to the user.
+
+  It could be argued that this is different to how ``MonadFail`` constraints are
+  desugared. In a similar situation the desugaring gives rise to a constraint the
+  user has to satisfy. The key difference in this case is that the ``Quote`` constraint
+  is very easy to satisfy and can be implemented with a simple name supply.
+  If it turns out to be necessary then at a later point relaxing the constraints
+  placed on the combinators in a backwards compatible way.
 
 Unresolved Questions
 --------------------
