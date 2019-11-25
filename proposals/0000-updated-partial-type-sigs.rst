@@ -612,14 +612,16 @@ Costs and Drawbacks
   perhaps we want to allow wildcards in the context of an instance declaration, asking GHC
   to infer the context. There would be no obvious syntactic generalization to that scenario.
 
+* Elisions in types (``const :: a -> _ -> a``) seem less useful than other aspects of this
+  proposal, and yet they occupy prime syntactic real estate. Is there a better design around
+  this issue?
+  
 Alternatives
 ------------
 * Instead of having ``::?``, we could have ``:: {-# PARTIAL #-}`` or similar. A quick grep
   of all of Hackage (as it was last summer) finds no usage, at all, of the lexeme ``::?``.
   We could also keep both. This would allow us to label types as ``{-# PARTIAL #-}`` even
   when there is no ``::`` nearby.
-
-* I would welcome new syntax dealing with patterns in this framework.
 
 * Though specification parts (1), (2), and (3) are tightly linked, the others are not, and could be
   usefully removed from this proposal while not losing other parts.
@@ -634,6 +636,12 @@ Alternatives
   imagine a ``{-# PRINT #-}`` pragma (or similar) telling GHC what to print. However, I dislike
   this because a user who justs wants to make a quick query won't want to write ``{-# PRINT #-}``
   to get it.
+
+* Instead of printing diagnostics or not based on the presence of a name, we could say that
+  ``_`` (a single underscore) means no diagnostic, while two or more underscores means to
+  print something. This would separate out the choice of duplicate occurrences (which require
+  a name) from whether or not something is printed. I actually like this more than what is
+  proposed above, but I will wait for more consensus before editing the proposal further.
 
 Resolved Questions
 ------------------
@@ -654,6 +662,8 @@ Unresolved Questions
 * Is this design too elaborate? I have a tendency to build elaborate but expressive edifices. Perhaps
   there is a sweet spot closer to the ground here.
   
+* I would welcome new syntax dealing with patterns in this framework.
+
 Further examples
 ----------------
 
