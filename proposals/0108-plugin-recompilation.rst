@@ -8,8 +8,6 @@ Refining the plugin recompilation API
 .. implemented:: 8.6
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/108>`_.
-.. sectnum::
-   :start: 108
 .. contents::
 
 Modules compiled with plugins are always recompiled even if the source file is

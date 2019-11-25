@@ -8,8 +8,6 @@ UnliftedArray
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/112>`_.
-.. sectnum::
-   :start: 112
 .. contents::
 
 GHC provides an unlifted type ``ArrayArray#``. Similar to how ``Array#`` is an unlifted array

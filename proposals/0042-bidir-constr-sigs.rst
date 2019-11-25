@@ -7,8 +7,6 @@ Pattern synonym construction function signatures
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/14602
 .. implemented::
 .. highlight:: haskell
-.. sectnum::
-   :start: 42
 .. header:: This proposal was discussed at `this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/42>`_.
 .. contents::
 

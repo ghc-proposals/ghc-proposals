@@ -8,8 +8,6 @@ Standalone kind signatures
 .. implemented:: 8.10
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/54>`_ and `amended at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/259>`_.
-.. sectnum::
-   :start: 54
 .. contents::
 
 

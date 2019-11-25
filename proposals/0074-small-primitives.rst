@@ -9,8 +9,6 @@ Add more fixed size primitive types, like ``Int8#/Word8#``
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/74>`_.
-.. sectnum::
-   :start: 74
 .. contents::
 
 This proposes adding new primitive types to GHC:

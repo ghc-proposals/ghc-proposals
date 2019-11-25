@@ -5,8 +5,6 @@ Overloaded Record Fields
 .. author:: Adam Gundry
 .. date-accepted:: 2017-02-04
 .. implemented:: 8.2
-.. sectnum::
-   :start: 23
 .. contents::
 
 This is a proposal to introduce a new built-in typeclass,

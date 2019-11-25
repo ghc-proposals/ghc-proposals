@@ -10,8 +10,6 @@ Ambiguous Type per-signature pragma
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/232>`_.
-.. sectnum::
-     :start: 232
 .. contents::
 
 

@@ -8,8 +8,6 @@ NoFieldSelectors
 .. implemented:: 
 .. highlight:: haskell
 .. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/160>`_.
-.. sectnum::
-     :start: 160
 .. contents::
 
 Enabling this Language Extension removes the default of Haskell data

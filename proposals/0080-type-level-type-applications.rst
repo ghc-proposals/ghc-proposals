@@ -8,8 +8,6 @@ Type-level type applications
 .. implemented:: 8.8
 .. highlight:: haskell
 .. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/80>`_.
-.. sectnum::
-   :start: 80
 .. contents::
 
 .. _`#12045`: https://gitlab.haskell.org/ghc/ghc/issues/12045

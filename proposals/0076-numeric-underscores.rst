@@ -7,8 +7,6 @@ Underscores in Numeric Literals
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/14473
 .. implemented:: 8.6.1
 .. highlight:: haskell
-.. sectnum::
-   :start: 76
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/76>`_.
 .. contents::
 

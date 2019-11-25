@@ -8,8 +8,6 @@ Compile with threaded RTS by default
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/240>`_.
-.. sectnum::
-     :start: 240
 .. contents::
 
 Today, in order to use the threaded variant of the runtime, one have to pass the ``-threaded`` flag. The proposal suggests making ``-threaded`` the default: in order to get the threaded RTS one would not have to do anything, while to fallback to the current, single-threaded mode, one would use the new ``-single-threaded`` flag.

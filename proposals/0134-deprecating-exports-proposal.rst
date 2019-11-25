@@ -8,8 +8,6 @@ Deprecating Exports
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/134>`_.
-.. sectnum::
-   :start: 134
 .. contents::
 
 This is my GSoC 2018 project for Haskell.org

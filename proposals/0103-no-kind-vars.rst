@@ -8,8 +8,6 @@ Treat kind variables and type variables identically in ``forall``
 .. implemented:: 8.10
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/103>`_.
-.. sectnum::
-   :start: 103
 .. contents::
 
 

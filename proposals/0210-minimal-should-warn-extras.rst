@@ -8,8 +8,6 @@ MINIMAL should warn about extra definitions
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/210>`_.
-.. sectnum::
-   :start: 210
 .. contents::
 
 Currently, GHC issues no warnings if a class has a ``MINIMAL`` pragma requiring ``foo``, and yet you also

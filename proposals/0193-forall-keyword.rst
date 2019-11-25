@@ -8,8 +8,6 @@ Make ``forall`` a keyword
 .. implemented:: 8.8
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/193>`_.
-.. sectnum::
-   :start: 193
 .. contents::
 
 Having accepted proposals for `dependent visible quantification`_

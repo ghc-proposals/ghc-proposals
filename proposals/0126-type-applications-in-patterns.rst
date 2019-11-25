@@ -8,8 +8,6 @@ Type Applications in Patterns
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/126>`_.
-.. sectnum::
-   :start: 126
 .. contents::
 
 We have ``TypeApplications`` in terms. This proposal brings them to patterns in a way that preserves analogy to type signatures.

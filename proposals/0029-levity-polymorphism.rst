@@ -8,8 +8,6 @@ Revise Levity Polymorphism
 .. implemented:: 8.2.1
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/29>`_.
-.. sectnum::
-   :start: 29
 .. contents::
 
 GHC 8 introduced *levity polymorphism*, where a variable can be polymorphic in

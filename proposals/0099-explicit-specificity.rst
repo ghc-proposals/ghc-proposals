@@ -8,8 +8,6 @@ Explicit specificity in type variable binders
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/99>`_.
-.. sectnum::
-   :start: 99
 .. contents::
 
 This proposal introduces new syntax ``typeRep :: forall {k} (a :: k). ...`` (the

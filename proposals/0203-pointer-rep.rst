@@ -8,8 +8,6 @@ Pointer Rep
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/203>`_.
-.. sectnum::
-   :start: 203
 .. contents::
 
 GHC's ``RuntimeRep`` allows programmers to deal polymorphically with types of a

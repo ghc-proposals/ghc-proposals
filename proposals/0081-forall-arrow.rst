@@ -8,8 +8,6 @@ A syntax for visible dependent quantification
 .. implemented:: 8.10
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/81>`_.
-.. sectnum::
-   :start: 81
 .. contents::
 
 GHC 8.0 has support for visible dependent quantification in kinds. For example, GHC 8 will accept ::

@@ -8,8 +8,6 @@ Binding type variables in lambda-expressions
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/155>`_.
-.. sectnum::
-   :start: 155
 .. contents::
 
 .. _`#126`: https://github.com/ghc-proposals/ghc-proposals/pull/126

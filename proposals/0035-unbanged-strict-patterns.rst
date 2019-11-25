@@ -8,8 +8,6 @@ Make unboxed tuple patterns lazy / warn on unbanged strict patterns
 .. implemented::
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/35>`_.
 .. highlight:: haskell
-.. sectnum::
-   :start: 35
 .. contents::
 
 (Throughout this proposal, unboxed sums are treated identically to unboxed tuples. I refer only to unboxed tuples for simplicity.)

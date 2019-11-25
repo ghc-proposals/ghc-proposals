@@ -8,8 +8,6 @@ Deriving Via
 .. implemented:: 8.6
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/120>`_.
-.. sectnum::
-   :start: 120
 .. contents::
 
 We propose ``DerivingVia``, a new

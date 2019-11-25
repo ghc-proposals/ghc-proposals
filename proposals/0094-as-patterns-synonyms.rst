@@ -9,8 +9,6 @@ As patterns in pattern synonyms
                 implementation of the feature.
 .. implemented:: 8.6
 .. highlight:: haskell
-.. sectnum::
-   :start: 94
 .. header :: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/94>`_ and implemented in commit `411a97e2 <https://github.com/ghc/ghc/commit/411a97e2c0083529b4259d0cad8f453bae110dee>`_.
 .. contents::
 

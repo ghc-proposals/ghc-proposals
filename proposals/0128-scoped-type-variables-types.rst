@@ -8,8 +8,6 @@ Allow ScopedTypeVariables to refer to types
 .. implemented:: 8.8
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/128>`_.
-.. sectnum::
-   :start: 128
 .. contents::
 
 The ``ScopedTypeVariables`` extension has a restriction that type variables in patterns can only refer to type variables, not

@@ -8,8 +8,6 @@ Remove the * kind syntax
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/143>`_.
-.. sectnum::
-   :start: 143
 .. contents::
 
 The Haskell Report uses ``*`` to denote the kind of lifted types. As we move

@@ -8,8 +8,6 @@ The dot type operator
 .. implemented:: 8.8
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/173>`_.
-.. sectnum::
-   :start: 173
 .. contents::
 
 The ``TypeOperators`` language extension allows using symbols in type names,

@@ -6,8 +6,6 @@ More explicit ``forall``\s
 .. date-accepted:: 2017-06-11
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/2600, https://gitlab.haskell.org/ghc/ghc/issues/14268
 .. implemented:: 8.8
-.. sectnum::
-   :start: 55
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/55>`_.
 .. contents::

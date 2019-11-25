@@ -4,8 +4,6 @@ A Proposal for Proposals
 
 .. author:: Ben Gamari
 .. date-accepted:: 2017-01-03
-.. sectnum::
-   :start: 1
 .. contents::
 
 Recently there has been a growing feeling within the Haskell community that the

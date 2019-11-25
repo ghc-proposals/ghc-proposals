@@ -8,8 +8,6 @@ Add winapi pseudo calling convention
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/277>`_.
-.. sectnum::
-     :start: 277
 .. contents::
 
 

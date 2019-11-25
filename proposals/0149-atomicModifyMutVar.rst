@@ -8,8 +8,6 @@ Replace the ``atomicModifyMutVar#`` primop
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/149>`_.
-.. sectnum::
-   :start: 149
 .. contents::
 
 ``atomicModifyIORef``, a thin wrapper around the ``atomicModifyMutVar#`` primop,

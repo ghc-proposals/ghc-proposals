@@ -7,8 +7,6 @@ Overhaul deriving instances for empty data types
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/7401, https://gitlab.haskell.org/ghc/ghc/issues/10577, https://gitlab.haskell.org/ghc/ghc/issues/13117
 .. implemented:: 8.4
 .. highlight:: haskell
-.. sectnum::
-   :start: 63
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/63>`_.
 .. contents::
 

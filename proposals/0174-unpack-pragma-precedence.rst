@@ -8,8 +8,6 @@ Lower precedence for {-# UNPACK #-}
 .. implemented:: 8.8
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/174>`_.
-.. sectnum::
-   :start: 174
 .. contents::
 
 The ``{-# UNPACK #-}`` pragma is not valid inside a type but binds more

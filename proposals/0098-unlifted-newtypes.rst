@@ -8,8 +8,6 @@ Unlifted Newtypes
 .. implemented:: 8.10
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/98>`_.
-.. sectnum::
-   :start: 98
 .. contents::
 
 GHC 8.0 introduced a more sane way to talk about the kind of unlifted types,

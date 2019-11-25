@@ -9,8 +9,6 @@ Declare ``Constraint`` is not apart from ``Type``
 .. highlight:: haskell
 .. header::
    This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/32>`_.
-.. sectnum::
-   :start: 32
 .. contents::
 
 Since at least GHC 7.4, there has been an uneasy relationship between ``Constraint`` and ``Type`` (formerly known as ``*``). These

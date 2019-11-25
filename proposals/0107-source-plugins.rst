@@ -7,8 +7,6 @@ Source plugins
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/14709
 .. implemented:: 8.6
 .. highlight:: haskell
-.. sectnum::
-   :start: 107
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/107>`_.
 .. contents::
 

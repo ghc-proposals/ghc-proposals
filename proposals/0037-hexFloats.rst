@@ -7,8 +7,6 @@ Hexadecimal Floats in Haskell
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/13126
 .. implemented:: 8.4.1
 .. highlight:: haskell
-.. sectnum::
-   :start: 37
 .. header:: This proposal was `under discussion <https://github.com/ghc-proposals/ghc-proposals/pull/37>`_.
 .. contents::
 

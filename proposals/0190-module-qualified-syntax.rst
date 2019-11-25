@@ -8,8 +8,6 @@ Allow ``qualified`` to follow module name
 .. implemented:: 8.10
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/190>`_.
-.. sectnum::
-   :start: 190
 .. contents::
 
 We propose to allow the syntax ``import M qualified`` to solve hanging indents in module import lists.
