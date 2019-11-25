@@ -322,6 +322,7 @@ Independent of this difference, there are pragmatic concerns on both sides:
 
 * Some consider the parentheses to be too verbose, and the extra level of parentheses a problem for readability.  Even if one agrees that this is conceptually a section, this is the first type of section where parentheses are not actually needed for parsing, so omitting parentheses is still possible even if it loses a bit of consistency in favor of brevity.
 * Some consider it acceptable (if unfortunate) that `a . b` and `a.b` have different meanings in this proposal, but believe that assigning three distinct meanings to `a . b`, `a .b`, and `a.b` is just too confusing.
+* Looking at that existing implementation of GHC, supporting `(.b)` is less changes that supporting `.b` alone. While the implementation complexity is not a reason for picking one over the other, the existing grammar of the compiler can give hints about what logically follows.
 
 ### Should punning be extended to updates?
 
