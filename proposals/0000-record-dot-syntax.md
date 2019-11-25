@@ -241,7 +241,7 @@ A full, rigorous set of examples (as tests) are available in the examples direct
 
 **Lenses and a.b syntax:** The `a.b` syntax is commonly used in conjunction with the `lens` library, e.g. `expr^.field1.field2`. Treating `a.b` without spaces as a record projection would break such code. The alternatives would be to use a library with a different lens composition operator (e.g. `optics`), introduce an alias in `lens` for `.` (perhaps `%`), write such expressions with spaces, or not enable this extension when also using lenses. While unfortunate, we consider that people who are heavy users of lens don't feel the problems of inadequate records as strongly, so the problems are lessened. In addition, it has been discussed (e.g. [here](https://github.com/ghc-proposals/ghc-proposals/pull/282#issuecomment-546159561)), that this proposal is  complimentary to lens and can actually benefit lens users (as with `NoFieldSelectors` one can use the same field names for everything: dot notation, lens-y getting, lens-y modification, record updates, `Show/Generic`).
 
-**Rebindable syntax:** When `RebindableSyntax` is enabled the `getField` and `setField` functions are those in scope, rather than those in `GHC.Records`.
+**Rebindable syntax:** When `RebindableSyntax` is enabled the `getField` and `setField` functions are those in scope, rather than those in `GHC.Records`. The `.` function (as used in the `a.b.c` desugaring) remains the `Prelude` version (we see the `.` as a syntactic shortcut for an explicit lambda, and believe that whether the implementation uses literal `.` or a lambda is an internal detail).
 
 **Enabled extensions:** When `RecordDotSyntax` is a distinct extension, implying no other extensions off or on. It is often likely to be used in conjunction with either the `NoFieldSelectors` extension or`DuplicateRecordFields`.
 
@@ -322,7 +322,6 @@ Independent of this difference, there are pragmatic concerns on both sides:
 
 * Some consider the parentheses to be too verbose, and the extra level of parentheses a problem for readability.  Even if one agrees that this is conceptually a section, this is the first type of section where parentheses are not actually needed for parsing, so omitting parentheses is still possible even if it loses a bit of consistency in favor of brevity.
 * Some consider it acceptable (if unfortunate) that `a . b` and `a.b` have different meanings in this proposal, but believe that assigning three distinct meanings to `a . b`, `a .b`, and `a.b` is just too confusing.
-* A minor point is that composition comes up explicitly in the nested selector desugaring for the `.foo` case.  This raises the question of what happens with `RebindableSyntax`.  Does `RebindableSyntax` chooses the `(.)` from local scope?  If so, `(x.foo).bar` and `.foo.bar x` could have different values, and `x.foo.bar` might parse as either one.
 
 ### Should punning be extended to updates?
 
