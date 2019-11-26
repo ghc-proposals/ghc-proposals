@@ -452,6 +452,19 @@ into ``unlifted`` ones. I see two potential problems:
 
 So rather dreadfully, we probably shouldn't "augment" ``-XStrict``.
 
+**-UnliftedNewtypes** introduces unlifted *newtypes*, but does so simply by
+inferring the kind of its single constructor's field type, no ``unlifted``
+needed. Now with the new ``unlifted`` keyword, we could potentially allow
+syntax like ``newtype unlifted Foo (a :: TYPE r) = Foo a``. What are its semantics?
+Can we still have ``Foo Int#``? That wouldn't exactly be ``UnliftedRep`` (which
+this proposal is all about), but the unlifted, unboxed runtime-rep ``IntRep``.
+Similarly, do we allow ``Foo Int``? That would be boxed and lifted, seemingly
+contradicting the declaration.
+
+So I suggest that we (somewhat ironically) *disallow* ``unlifted`` syntax for
+Newtype delcarations and instead suggest to activate ``-XUnliftedNewtypes``,
+which will automatically infer the generalised kind.
+
 Costs and Drawbacks
 -------------------
 Thanks to previous work on unlifted types and ``-XUnliftedNewtypes``, this
