@@ -25,54 +25,37 @@ in source Haskell, like
    | Nothing
 
 ``SMaybe a`` has the same inhabitants as ``Maybe a``, with the exception that
-it deprives itself and its arguments of ⊥.
+it deprives itself and its arguments of ⊥. The advantage compared to using
+bangs everywhere (and hence ``-XStrict``) is that code generation can assume
+that every pointer is correctly tagged.
+
+There's a
+`WIP implementation <https://gitlab.haskell.org/ghc/ghc/merge_requests/2218>`_
+which works reasonably well already.
 
 Motivation
 ----------
-To quote the `unlifted data types wiki page <https://gitlab.haskell.org/ghc/ghc/wikis/unlifted-data-types#proposal-b4-levity-polymorphic-functions>`_:
 
-Bob Harper `has written <https://existentialtype.wordpress.com/2011/04/24/the-real-point-of-laziness/>`_:
-
-    Haskell suffers from a paucity of types.  It is not possible in Haskell to
-    define the type of natural numbers, nor the type of lists of natural numbers
-    (or lists of anything else), nor any other inductive type!
-
-The reason, of course, is that whenever you write ``data Nat = Z | S !Nat``, you
-define a type of strict natural numbers, AS WELL AS bottom. Ensuring that an
-``x :: Nat`` is never bottom requires all use-sites of this type to do strict
-pattern matching / force the value appropriately. It would be nice if there was
-some type-directed mechanism which specified that a value ``x`` was always
-evaluated. This would give benefits, e.g. for code generation, where we can
-assume that a pointer never points to a thunk or indirection and is thus
-properly tagged.
-
-The goal of this proposal is the ability to define ``Nat`` instead as
+Consider the following implementation of a set of ``Int`` s, not unlike
+``Data.Set.Strict`` specialised for ``Int``:
 
 ::
- 
- data unlifted Nat :: TYPE 'UnliftedRep where
-   Z :: Nat
-   S :: !Nat -> Nat
+  
+  data IntSet
+    = Branch IntSet !Int IntSet
+    | Leaf
 
-This is attractive in the following example involving a binary tree data
-structure, like it is the case in ``Data.Map``:
+  member :: Int -> IntSet -> Bool
+  member !k Leaf = False
+  member k (Branch l k' r)
+    | k == k'   = True
+    | k <  k'   = member k l
+    | otherwise = member k r
 
-::
-
- data Tree a
-   = Branch !(Tree a) !a !(Tree a)
-   | Leaf
-
- tsum :: Tree Int -> Int
- tsum Leaf           = 0
- tsum (Branch l x r) = tsum l + x + tsum r
-
-On each pattern match, the compiler has to generate code that checks if the
-pointer to the scrutinee is properly tagged, and if not, *enter* the heap
-object to evaluate it and get to know the constructor tag. We loosely refer to
-this check as the "zero tag check", as in
-`#16820 <https://gitlab.haskell.org/ghc/ghc/issues/16820>`_.
-It looks like this in the generated C--:
+The data structure is strict in the integer field so that it can be unboxed, to
+squeeze out the last bit of performance. Yet if we look at the resulting C--,
+we find that each pattern-match on ``IntSet`` is preceded with the following
+check:
 
 ::
 
@@ -80,34 +63,51 @@ It looks like this in the generated C--:
        c1fj: // global
            call (I64[R1])(R1) returns to c1fi, args: 8, res: 8, upd: 8;
        c1fi: // global
-           // rest of the code, assuming R1 is properly tagged
 
-If the compiler can prove that the scrutinee (R1) is always tagged, it can omit
-this check and remove a whole lot of dead code.
+What does it do? It tests whether the scrutinee pointer in R1 has its tag bits
+(the lower 3 bits) set. If not, the code will *enter* the heap object to
+possibly evaluate it and get to know the constructor tag (i.e. 1 for ``Branch``
+and 2 for ``Leaf``). Now, most of the time, the heap object has already been
+evaluated and the pointer is in fact properly tagged (the GC for example will
+tag every pointer to an evaluated heap object).
 
-Not so in the example above: Since ``tsum undefined`` is a possible call site
-of ``tsum``, codegen can't omit the zero tag check on the parameter of
-``tsum``. Let's define ``Tree`` as unlifted instead:
+Nevertheless, we end up with the code above (which we loosely refer to as the
+"zero tag check", as in
+`#16820 <https://gitlab.haskell.org/ghc/ghc/issues/16820>`_), because a call
+site like ``member k undefined`` is possible! Obviously, ``undefined`` is
+neither evaluated nor tagged. Even making ``IntSet`` spine-strict by adding
+bangs to the ``Branch`` constructor doesn't get rid of the problem: ``member k
+undefined`` is still well-typed, so we have to generate code for it.
+Fundamentally, ⊥ is an inhabitant of every data type in Haskell, so every data
+declaration introduces a *lifted* type of kind ``TYPE 'LiftedRep``.
+
+So omission of the zero tag check is only possible if ⊥ is not an inhabitant of
+the type. This is exactly the condition for a type to be *unlifted*! Since we
+are still talking about heap objects, we need unlifted, but boxed types, which
+have kind ``TYPE 'UnliftedRep``. Indeed, for types of this kind GHC will
+already omit the zero tag check today! So all that is left is to extend GHC in
+a way that
 
 ::
+  
+  data unlifted IntSet
+    = Branch IntSet !Int IntSet
+    | Leaf
 
- data unlifted Tree a
-   = Branch (Tree a) a (Tree a)
-   | Leaf
+  member :: Int -> IntSet -> Bool
+  member !k Leaf = False
+  member k (Branch l k' r)
+    | k == k'   = True
+    | k <  k'   = member k l
+    | otherwise = member k r
 
- tsum :: Tree Int -> Int
- tsum Leaf           = 0
- tsum (Branch l x r) = tsum l + x + tsum r
+does the Right Thing, namely disallowing unevaluated boxes to be passed around
+by using call-by-value. This way we can have the guarantee that all unlifted
+boxes are always properly tagged.
 
-Now ``tsum undefined`` is invalid to begin with and won't even type-check!
-Notice how instead of the *callee* having to do the zero tag check/evaluation,
-evaluatedness is encoded as an invariant in the type system. Hence the *caller*
-has to evaluate the ``Tree`` expression before the recursive call, effectively
-turning call by need into call by value. There isn't even any evalution
-necessary in the recursive calls, because we know that ``l`` and ``r`` came
-from unlifted fields to begin with! The compiler is able to notice this and
-drop the zero tag check, at least saving us a few instructions and relieving
-pressure on the branch predictor.
+Preliminary `benchmarks <https://gitlab.haskell.org/ghc/ghc/merge_requests/2218#note_239994>`_
+suggest that the unlifted variant is 5-10% faster, just due to omission of the
+zero tag check.
 
 Proposed Change Specification
 -----------------------------
@@ -146,7 +146,9 @@ and ``Note [Implementation of UnliftedNewtypes]`` for details involving
 type-checking the parent data family.
 
 The static semantics of other types of unlifted kind, such as the inability to
-delare them at the top-level, apply.
+delare them at the top-level, apply. The top-level restriction is not
+fundamental (see `#17521 <https://gitlab.haskell.org/ghc/ghc/issues/17521>`_),
+but best discussed in a separate proposal.
 
 Dynamic Semantics
 ~~~~~~~~~~~~~~~~~
@@ -497,5 +499,6 @@ Unresolved Questions
 
 Implementation Plan
 -------------------
-I will implement the changes, probably with a lot of help from #ghc.
-Anyone is invited to join in on the effort, of course.
+I will implement the changes. There is a working implementation at
+`!2218 <https://gitlab.haskell.org/ghc/ghc/merge_requests/2218>`_, but it may
+still be a little rough around the edges.
