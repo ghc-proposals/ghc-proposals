@@ -454,7 +454,7 @@ into ``unlifted`` ones. I see two potential problems:
 
 So rather dreadfully, we probably shouldn't "augment" ``-XStrict``.
 
-**-UnliftedNewtypes** introduces unlifted *newtypes*, but does so simply by
+**-XUnliftedNewtypes** introduces unlifted *newtypes*, but does so simply by
 inferring the kind of its single constructor's field type, no ``unlifted``
 needed. Now with the new ``unlifted`` keyword, we could potentially allow
 syntax like ``newtype unlifted Foo (a :: TYPE r) = Foo a``. What are its semantics?
@@ -466,6 +466,9 @@ contradicting the declaration.
 So I suggest that we (somewhat ironically) *disallow* ``unlifted`` syntax for
 Newtype delcarations and instead suggest to activate ``-XUnliftedNewtypes``,
 which will automatically infer the generalised kind.
+
+**Lazy pattern matches** ``let ~t = ... in ...`` should not be allowed if ``t``
+is unlifted. That is exactly the behavior that is currently implemented in GHC.
 
 Costs and Drawbacks
 -------------------
