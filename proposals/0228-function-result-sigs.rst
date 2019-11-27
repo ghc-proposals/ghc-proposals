@@ -8,7 +8,7 @@ Function Result Type Signatures
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/228>`_ and `amended at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/254>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/228>`_, `amended at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/254>`_, and further `amended following a bit more discussion <https://github.com/ghc-proposals/ghc-proposals/pull/228#issuecomment-558274417>`_.
 .. contents::
 
 We propose to allow function result type signatures, shown as ``:: r`` in the
@@ -190,7 +190,7 @@ The change is to add an optional type annotation::
            | pat varop pat
            | ( funlhs' ) apat {apat}
 
-  funlhs -> funlhs' [:: [context =>] type]
+  funlhs -> funlhs' [:: type]
 
 Semantics
 ~~~~~~~~~
@@ -210,6 +210,11 @@ Effect and Interactions
 Purposefully kept to a minimum. See the alternatives for why an extension to
 this proposal had negative interactions.
 
+Note that the result type may *not* have constraints. If we had a definition with
+multiple equations, it would be unclear how to unify all the constraints, and so
+we just forbid them. Some discussion of this is in proposed typing
+rules at `<https://gitlab.haskell.org/rae/haskell>`_.
+
 Costs and Drawbacks
 -------------------
 
@@ -224,6 +229,9 @@ Alternatives
 
 * We could detect CUSKs as we do in types to enable polymorphic recursion, but
   this makes little sense as we are in the proccess of their deprecation.
+  
+* We could allow constraints in a result signature if there is only one equation,
+  but it seems unnecessary to add this twist to the story.
 
 * An earlier version of the proposal changed the boundary between function binds
   and pattern binds via not requring an argument:
