@@ -213,7 +213,9 @@ this proposal had negative interactions.
 Note that the result type may *not* have constraints. If we had a definition with
 multiple equations, it would be unclear how to unify all the constraints, and so
 we just forbid them. Some discussion of this is in proposed typing
-rules at `<https://gitlab.haskell.org/rae/haskell>`_.
+rules at `<https://gitlab.haskell.org/rae/haskell/tree/poly-result-sigs>`_; note that
+this link points toward a dead branch of that project, as this alternative has
+been abandoned.
 
 Costs and Drawbacks
 -------------------
