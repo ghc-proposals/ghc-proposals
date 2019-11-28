@@ -116,6 +116,29 @@ Basic examples
      f :: forall k0. ...
      f @k (x :: k1) = ... -- OK
 
+#. ::
+
+     {-# LANGUAGE NoPatternSignatureBinds #-}
+     -- {-# LANGUAGE NoImplicitForAll #-} -- Does not matter whether enabled or disabled
+     {-# LANGUAGE ExistentialQuantification #-}
+
+     data Some where
+       MkSome :: forall a. a -> Some a
+
+     f (MkSome (x :: k)) = ... -- error: k is not bound
+
+   Could be rewritten as::
+
+     {-# LANGUAGE NoPatternSignatureBinds #-}
+     -- {-# LANGUAGE NoImplicitForAll #-} -- Does not matter whether enabled or disabled
+     {-# LANGUAGE ExistentialQuantification #-}
+     {-# LANGUAGE TypeApplications #-}
+
+     data Some where
+       MkSome :: forall a. a -> Some a
+
+     f (MkSome @k x) = ... -- OK
+
 Not just terms
 ~~~~~~~~~~~~~~
 
