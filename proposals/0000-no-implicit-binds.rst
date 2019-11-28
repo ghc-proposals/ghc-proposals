@@ -167,7 +167,7 @@ This has the exact same effect at requiring explicit bounds:
 ::
 
   Prelude> x :: forall. t; x = x
-  
+
   <interactive>:21:14: error: Not in scope: type variable ‘t’
 
 ::
@@ -230,4 +230,4 @@ I take responsibility for implementing it, but hope to use the opportunity to me
 
   Notice that today, one cannot even write ``class forall a. Foo a`` though they they can write ``instance forall a. Foo a``.
   This is because while the head of an instance is a class applied *arguments*, the head of a class is a class taking *parameters*.
-  In other words, the ``a`` in ``Foo a`` in ``class forall a. Foo a`` is not a binder, while in ``class forall a. Foo a`` is one. 
+  In other words, the ``a`` in ``Foo a`` in ``class forall a. Foo a`` is not a binder, while in ``class forall a. Foo a`` is one.
