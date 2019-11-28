@@ -68,23 +68,53 @@ When using ``-XNoPatternSignatureBinds``, all variables in pattern signatures mu
 Examples
 --------
 
-All examples assume ``-XExplicitForAll``, ``-XNoPatternSignatureBinds``, and ``-XNoImplicitForAll``, in addition to their own ``LANGUAGE`` pragmas.
+Basic examples
+~~~~~~~~~~~~~~
 
-::
+#. ::
 
-  f :: k -> ... -- error: k is not bound
-  f x = ...
+     {-# LANGUAGE NoImplicitForAll #-}
+     -- {-# LANGUAGE PatternSignatureBinds #-} -- Does not matter whether enabled or disabled
 
-::
+     f :: k -> ... -- error: k is not bound
+     f x = ...
 
-  f (x :: k) = ... -- error: k is not bound
+   Could be rewritten as::
 
-::
+     {-# LANGUAGE NoImplicitForAll #-}
+     -- {-# LANGUAGE PatternSignatureBinds #-} -- Does not matter whether enabled or disabled
+     {-# LANGUAGE ExplicitForAll #-}
 
-  {-# LANGUAGE ScopedTypeVariables #-}
+     f :: forall k. k -> ...
+     f x = ...
 
-  f :: forall k. ...
-  f (x :: k) = ... -- OK
+#. ::
+
+     {-# LANGUAGE NoPatternSignatureBinds #-}
+     -- {-# LANGUAGE NoImplicitForAll #-} -- Does not matter whether enabled or disabled
+
+     f (x :: k) = ... -- error: k is not bound
+
+   Could be rewritten as either::
+
+     {-# LANGUAGE NoPatternSignatureBinds #-}
+     -- {-# LANGUAGE NoImplicitForAll #-} -- Does not matter whether enabled or disabled
+     {-# LANGUAGE ScopedTypeVariables #-}
+
+     f :: forall k. ...
+     f (x :: k) = ... -- OK
+
+   or::
+
+     {-# LANGUAGE NoPatternSignatureBinds #-}
+     -- {-# LANGUAGE NoImplicitForAll #-} -- Does not matter whether enabled or disabled
+     -- {-# LANGUAGE ScopedTypeVariables #-} -- Does not matter whether enabled or disabled
+     {-# LANGUAGE ExplicitForAll #-}
+     {-# LANGUAGE TypeApplications #-}
+     {-# LANGUAGE TypeAbstractions #-} -- if #238 is accepted
+
+     f :: forall k0. ...
+     f @k (x :: k1) = ... -- OK
 
 Not just terms
 ~~~~~~~~~~~~~~
@@ -94,13 +124,22 @@ This proposal applies to all alike:
 
 ::
 
+  {-# LANGUAGE NoImplicitForAll #-}
+  -- {-# LANGUAGE PatternSignatureBinds #-} -- Does not matter whether enabled or disabled
+
   data F :: x -> Type where -- error: needs `forall x.`
 
 ::
 
+  {-# LANGUAGE NoImplicitForAll #-}
+  -- {-# LANGUAGE PatternSignatureBinds #-} -- Does not matter whether enabled or disabled
+
   instance Eq a => X a where -- error: needs `forall a.` (after `instance`)
 
 ::
+
+  {-# LANGUAGE NoImplicitForAll #-}
+  -- {-# LANGUAGE PatternSignatureBinds #-} -- Does not matter whether enabled or disabled
 
   class Eq a => X (a :: b) where -- error: `b` unbound
 
@@ -109,25 +148,44 @@ For example all of these would be invalid:
 
 ::
 
+  {-# LANGUAGE NoImplicitForAll #-}
+  -- {-# LANGUAGE PatternSignatureBinds #-} -- Does not matter whether enabled or disabled
+  {-# LANGUAGE StandaloneKindSignatures #-}
+
   type MonoTagged :: x -> x -> Type -- error: needs `forall x.`
   data MonoTagged t x = ...
 
 ::
+
+  {-# LANGUAGE NoImplicitForAll #-}
+  -- {-# LANGUAGE PatternSignatureBinds #-} -- Does not matter whether enabled or disabled
+  {-# LANGUAGE StandaloneKindSignatures #-}
 
   type Id :: k -> k -- error: needs `forall k.`
   type family Id x where
 
 ::
 
+  {-# LANGUAGE NoImplicitForAll #-}
+  -- {-# LANGUAGE PatternSignatureBinds #-} -- Does not matter whether enabled or disabled
+  {-# LANGUAGE StandaloneKindSignatures #-}
+
   type C :: (k -> Type) -> k -> Constraint -- error: needs `forall k.`
   class C a b where
 
 ::
 
+  {-# LANGUAGE NoImplicitForAll #-}
+  -- {-# LANGUAGE PatternSignatureBinds #-} -- Does not matter whether enabled or disabled
+  {-# LANGUAGE StandaloneKindSignatures #-}
+
   type TypeRep :: forall k. k -> Type -- error: needs `forall k.`
   data TypeRep a where
 
 The other "pattern style" of GADT declarations, like classs declarations, is also restricted::
+
+  {-# LANGUAGE NoImplicitForAll #-}
+  -- {-# LANGUAGE PatternSignatureBinds #-} -- Does not matter whether enabled or disabled
 
   data  F (y :: x) (z :: y) ... :: Type where -- error: `x` is unbound, `y` and `y` are OK.
   class F (y :: x) (z :: y)             where -- ditto
@@ -136,9 +194,16 @@ Note that ``y`` and ``z`` are deemed explicit bindings analogous to ``f (y :: x)
 However ``x`` is a use, and thus implicit binding today, and not permitted.
 There is no way to fix this without rewriting "signature style" as::
 
+  {-# LANGUAGE NoImplicitForAll #-}
+  -- {-# LANGUAGE PatternSignatureBinds #-} -- Does not matter whether enabled or disabled
+
   data  F :: forall x. forall (y :: z) -> ... -> Type where
 
 or with ``-XStandaloneKindSignatures``::
+
+  {-# LANGUAGE NoImplicitForAll #-}
+  -- {-# LANGUAGE PatternSignatureBinds #-} -- Does not matter whether enabled or disabled
+  {-# LANGUAGE StandaloneKindSignatures #-}
 
   type  F :: forall x. forall (y :: z) -> ... -> Type
   data  F y z where
@@ -149,6 +214,9 @@ or with ``-XStandaloneKindSignatures``::
 Note that since there is no ``class F :: ...`` syntax analogous to ``data F :: ...``, ``-XStandaloneKindSignatures`` are the only way to write explicitly kind-polymorphic classes.
 However maybe in the future we would have something like::
 
+  {-# LANGUAGE NoImplicitForAll #-}
+  -- {-# LANGUAGE PatternSignatureBinds #-} -- Does not matter whether enabled or disabled
+
   data  F @x (y :: x) (z :: y) ... :: Type where
   class F @x (y :: x) (z :: y) where
 
@@ -158,6 +226,8 @@ Empty `forall` "desugar"
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 It is a little known fact that one can do "empty" ``forall`` quantifications today::
+
+  {-# LANGUAGE ExplicitForAll #-}
 
   x :: forall. Int -- same as 'x :: Int'
   x = 0
