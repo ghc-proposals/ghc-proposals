@@ -93,7 +93,7 @@ This proposal has three parts to it:
 * Define a dedicated class for fresh name generation, with an operation much
   like the existing ``qNewName :: Quasi m => String -> m Name``::
 
-   class Applicative m => Quote m where
+   class Monad m => Quote m where
       newName :: String -> m Name
 
   The notable difference is that this is not bundled with other operations of
@@ -208,7 +208,7 @@ make this change possible.
 
 1. Define the interface for ``Quote``::
 
-      class Applicative m => Quote m where
+      class Monad m => Quote m where
          newName :: String -> m Name
 
    These are all the operations which are necessary to build the representation
@@ -218,12 +218,12 @@ make this change possible.
    Due to an `audit <https://github.com/ghc-proposals/ghc-proposals/issues/211#issuecomment-472092412>`_
    conducted by Richard, it was found that the only effect from
    ``Q`` which was used is the ``newName`` function which generates a fresh
-   name. All the other combinators can be defined using the ``Applicative``
+   name. All the other combinators can be defined using the ``Monad``
    operations.
 
    For example, the ``appE`` combinator which constructs an application is
    generalised to ``Quote m => m Exp -> m Exp -> m Exp``, the ``varE`` function
-   to ``Name -> m Exp`` and the ``lamE`` function to ``Quote m => [m Pat] -> m Exp -> m Exp``.
+   to ``Quote m => Name -> m Exp`` and the ``lamE`` function to ``Quote m => [m Pat] -> m Exp -> m Exp``.
    In general any ``ExpQ`` type is replaced with ``m Exp``, ``PatQ`` with ``m Pat`` and so on.
 
 3. Generalise the ``Lift`` type class::
@@ -340,7 +340,7 @@ Alternatives
 
 * The main alternative to the design would be to only require a ``Quote``
   constraint when the quotation requires the ``newName`` effect. For example,
-  ``[| 5 |] :: Applicative m => m Exp``. I am opposed to this direction as it
+  ``[| 5 |] :: Monad m => m Exp``. I am opposed to this direction as it
   breaks abstraction. The implementation detail of how ``[| 5 |]`` is desugared
   leaks to the user.
 
