@@ -8,7 +8,7 @@ implemented: ""
 
 This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/302>).
 
-# Proposal title
+# Guards in Lambda Expressions
 
 This proposal introduces a new extension `-XLambdaGuards`, which allows guards
 to appear in lambda expressions.
