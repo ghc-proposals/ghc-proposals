@@ -15,7 +15,7 @@ Overloaded Quotations
 .. sectnum::
 .. contents::
 
-This proposal is about making quotation brackets polymorphic. The motivation
+This proposal is about making quotation brackets (typed and untyped) polymorphic. The motivation
 is so that quotes can be used without being tied to the ``Q`` monad and to
 enable effects during code generation.
 
@@ -263,7 +263,7 @@ make this change possible.
     i = [|| \x -> x + 1 ||]
 
 
-   If at a later point ``Q (TExp a)`` is turned into a newtype then an extra
+   If at a later point `(Proposal 195) <https://github.com/ghc-proposals/ghc-proposals/pull/195>`_ ``Q (TExp a)`` is turned into a newtype then an extra
    parameter to indicate the monad used will be added to the wrapper::
 
     i :: Quote m => Code m (Int -> Int)
@@ -272,6 +272,13 @@ make this change possible.
    The monad will be exposed in the newtype to support user-defined effects
    during code generation but retaining the newtype so that the typed representation
    can still be placed into maps and instances defined easily for it.
+
+7. The types of ``untypeQ`` and ``unsafeTExpCoerce`` are generalised in the natural
+   manner::
+
+    untypeQ :: Quote m => m (TExp a) -> m Exp
+    unsafeTExpCoerce :: Quote m => m Exp -> m (TExp a)
+
 
 
 Effect and Interactions
@@ -284,6 +291,17 @@ ambiguity in the composition.
 
 It doesn't seem to me that there will be any problems with ambiguity here as
 the types of splices is not overloaded in the same manner.
+
+Due to the monomorphism restriction, unannotated top-level bindings will no
+longer typecheck by default::
+
+  module A where
+
+  -- Fails to typecheck due to unsolved constraint m
+  foo = [| 5 |]
+
+It is easy to workaround this in a backwards compatible way by either adding a
+type signature or turning on ``NoMonomorphismRestriction``.
 
 
 Interaction with Lift
