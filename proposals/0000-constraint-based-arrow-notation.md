@@ -313,12 +313,13 @@ The type of `keyed` was not originally written with `proc` notation in mind, but
 
 ```haskell
 proc (tableInfo, permissions) ->
-  (returnA -< M.groupOn _cpRole permissions) `keyed` \roleName permission -> do
-    let permDef = PermDef roleName (_cpDef permission) Nothing
-    Inc.ruleA -< buildPermInfo tableInfo permDef
+  (| keyed (\roleName permission -> do
+       let permDef = PermDef roleName (_cpDef permission) Nothing
+       Inc.ruleA -< buildPermInfo tableInfo permDef)
+  |) (M.groupOn _cpRole permissions)
 ```
 
-We *really want to use `proc` notation* here, since without it, we’d need to do manually thread the `tableInfo` variable from the outer scope through `keyed`. In other situations, we might need to thread a half dozen different variables, creating quite the confusing mess! Sadly, as with `handle`, GHC’s current implementation of arrow notation rejects the above use of `keyed`, instead requiring the following significantly worse type:
+We *really want to use `proc` notation here*, since without it, we’d need to do manually thread the `tableInfo` variable from the outer scope through `keyed`. In other situations, we might need to thread a half dozen different variables, creating quite the confusing mess! Sadly, as with `handle`, GHC’s current implementation of arrow notation rejects the above use of `keyed`, instead requiring the following significantly worse type:
 
 ```haskell
 keyed :: (Eq k, Applicative m)
