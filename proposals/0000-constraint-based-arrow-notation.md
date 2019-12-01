@@ -186,7 +186,152 @@ I don’t think this is actually a problem—61 arguments really ought to be eno
 
 ## Examples
 
-With this proposal, all of the examples given in the motivation section simply work. Here is a list of control operators and their types, all of which are accommodated by this proposal:
+### A worked example using `handle`
+
+The canonical example supported by this proposal is the `handle` operator, a member of the `ArrowError` class:
+
+```haskell
+class Arrow arr => ArrowError e arr | arr -> e where
+  throw :: arr e a
+  handle :: arr a b -> arr (a, e) b -> arr a b
+```
+
+The type of `handle` is quite natural, and it is the most logical type to write in the absence of `proc` notation. However, GHC 7.8+ does not allow `handle` to be used as a control operator in `proc` notation, rejecting the following `ArrowError` instance for the `ReaderA` arrow transformer:
+
+```haskell
+newtype ReaderA r arr a b = ReaderA { runReaderA :: arr (a, r) b }
+
+instance ArrowError e arr => ArrowError e (ReaderA r arr) where
+  throw = lift throw
+  handle (ReaderA f) (ReaderA g) = ReaderA $ proc (a, r) ->
+    (f -< (a, r)) `handle` \e -> g -< ((a, e), r)
+```
+
+(Note that commands using infix syntax, e.g. ``c1 `x` c2``, are implicitly treated as applications of control operators, even without banana brackets. The command ``c1 `handle` c2`` is therefore sugar for `(| handle c1 c2 |)`.)
+
+GHC rejects the above instance because it expects the type for `handle` mentioned in the motivation section. Under this proposal, the instance would be accepted. To understand why, we can work through the typechecking process by hand:
+
+  1. The first rule that applies is the rule for `proc`, which is an ordinary expression typing rule. If we use `c` to abbreviate the body of the above use of `proc`, we have:
+
+     ```
+     (a, r) :: (a, r) => a,r
+     G;a,r |-arr c :: '[] --> b
+     -------------------------------------
+     G |- proc (a, r) -> c :: arr (a, r) b
+     ```
+
+  2. Next, we need to check that `|-arr c` holds. Taking `c1 = f -< (a, r)` and `c2 = \e -> g -< ((a, e), r)`, we have:
+
+     ```
+     s1, s2, t1, t2 fresh
+     G |- handle :: forall w
+                  . arr (ArrowEnv w s1) t1
+                 -> arr (ArrowEnv w s2) t2
+                 -> arr (ArrowEnv w '[]) b
+     G;a,r |-arr c1 :: s1 --> t1
+     G;a,r |-arr c2 :: s2 --> t2
+     -------------------------------------------------------------------------
+     G;a,r |-arr (| handle c1 c2 |) :: '[] --> b
+     ```
+
+  3. First, let’s look at what happens when checking the `|- handle` judgment.
+
+     1. To start, the typechecker will unify the type of `handle` and the expected type given above, yielding the following equality constraints:
+
+        ```haskell
+        arr (ArrowEnv w s1) t1 ~ arr a1 b1
+        arr (ArrowEnv w s2) t2 ~ arr (a1, e) b1
+        arr (ArrowEnv w '[]) b ~ arr a1 b1
+        ```
+
+        After some simplification, the above constraints are reduced to
+
+        ```haskell
+        t1, t2, b1 := b
+        ArrowEnv w s1 ~ a1
+        ArrowEnv w s2 ~ (a1, e)
+        ArrowEnv w '[] ~ a1
+        ```
+
+     2. Next, the solver for `ArrowEnv` can have a go at the constraints. `ArrowEnv w '[]` is trivially reducible to `Env w`, so we can take `a1 := Env w` and discharge the constraint. With that substitution, the remaining constraints become
+
+        ```haskell
+        ArrowEnv w s1 ~ Env w
+        ArrowEnv w s2 ~ (Env w, e)
+        ```
+
+        which are solvable via injectivity, and we get `s1 := '[]` and `s2 := '[e]`.
+
+  4. With those constraints solved, we can move on to checking `c1` and `c2`.
+
+     1. `c1` is a simple arrow application command, so typechecking it is straightforward:
+
+        ```
+        t3 fresh
+        G,a,r |- (a, r) :: t3
+        G |- f :: arr (ArrowStack '[t3]) b
+        ------------------------------------
+        G;a,r |-arr f -< (a, r) :: '[] --> b
+        ```
+
+        After unification, `t3` is solved to `(a, r)`. `ArrowStack '[(a, r)]` reduces to `(a, r)`, so `f` is checked against type `arr (a, r) b`, which is trivially true.
+
+     2. `c2` is a little more interesting, since it is a lambda command:
+
+        ```
+        a,r, e :: e => a,r,e
+        G;a,r,e |-arr g -< ((a, e), r) :: '[] --> b
+        ------------------------------------------------
+        G;a,r |-arr \e -> g -< ((a, e), r) :: '[e] --> b
+        ```
+
+        Checking the application of `g` is essentially identical to the checking of `f` above.
+
+  5. Everything is checked and all constraints are solved, so we’re done.
+
+This example concretely illustrates why it is crucial that `ArrowEnv` is injective: in step 3, it allowed us to infer the expected stack for each argument to `handle`. Consider that if we didn’t learn that information that way, we’d be totally stuck in step 4, since `ArrowStack` is non-injective! We would gain no information from the types of `f` and `g`, so if `s1` and `s2` remained unsolved metavariables, we would get a type error.
+
+### Case study: `keyed`
+
+As mentioned in the motivation section, the codebase I work on for a living defines an arrow named `Rule`. A value of type `Rule m a b` can be thought of as a “build rule” that describes how to produce a `b` from an `a` in some monad `m`. The key feature of `Rule` that distinguishes it from `Kleisli` is that it supports automatic caching of built products using a `cache` combinator:
+
+```haskell
+cache :: (Eq a, Applicative m) => Rule m a b -> Rule m a b
+```
+
+This is, incidentally, why `Rule` is an arrow: `Monad` is too powerful to automatically determine the dependency graph, but `Arrow` + `ArrowChoice` is just right. Using arrows, a composition of `Rule`s effectively describes a *static* dependency graph where the shape of the graph is known at compile-time but can contain conditional branches.
+
+The `cache` combinator is itself a control operator, but it is sufficiently polymorphic to work with both the current GHC rules and the rules in this proposal. A more interesting combinator is `keyed`, which has the following type:
+
+```haskell
+keyed :: (Eq k, Applicative m) => Rule m (e, k, a) b -> Rule m (e, Map k a) (Map k b)
+```
+
+`keyed` allows a restricted form of dynamic dependencies: the dependency graph dynamically adapts to the keys in the map, and the values of the keys are used to relate dependencies to each other across builds.
+
+The type of `keyed` was not originally written with `proc` notation in mind, but it, too, is a control operator. In our codebase, we would like to be able to use it in `proc` notation in examples such as the following:
+
+```haskell
+proc (tableInfo, permissions) ->
+  (returnA -< M.groupOn _cpRole permissions) `keyed` \roleName permission -> do
+    let CatalogPermission _ permType metadata _ = permission
+        permDef = PermDef roleName metadata Nothing
+    Inc.ruleA -< buildPermInfo tableInfo permDef
+```
+
+We *really want to use `proc` notation* here, since without it, we’d need to do manually thread the `tableInfo` variable from the outer scope through `keyed`. In other situations, we might need to thread a half dozen different variables, creating quite the confusing mess. Sadly, as with `handle`, GHC’s current implementation of arrow notation rejects the above use of `keyed`, instead requiring the following significantly worse type:
+
+```haskell
+keyed :: (Eq k, Applicative m)
+      => Rule m (e, (k, (a, ()))) b
+      -> Rule m (e, (Map k a, ())) (Map k b)
+```
+
+The original type has great explanatory power: it lifts a `Rule` that operators on keys and values to one that works on maps. The second type expresses the same thing, but it’s significantly harder to see at a glance. Fortunately, this proposal also handles `keyed` quite nicely, working essentially identically to how it does with `handle`.
+
+### Other operators
+
+The same process outlined above works for all of the examples given in the motivation section. Here is a list of control operators and their types, all of which are accommodated by this proposal:
 
 ```haskell
 (<+>) :: ArrowPlus a => a e c -> a e c -> a e c
