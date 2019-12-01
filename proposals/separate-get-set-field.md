@@ -85,8 +85,10 @@ data FieldLenses r (f :: Type -> Type) = FieldLenses
 l :: FieldLenses r f
 l = FieldLenses
 
-instance (SetField x r a, Functor f) => GetField x (FieldLenses r f) ((a -> f a) -> r -> f r) where
-    getField _ = lens (getField @x) (setField @x)
+type instance FieldType x (FieldLenses r f) = (FieldType x r -> f (FieldType x r)) -> r -> f r
+
+instance (SetField x r, Functor f) => GetField x (FieldLenses r f) where
+    getField _ = lens (getField @x) (flip $ setField @x)
 ```
 
 The above when combined with the dot-syntax would allow for you to write
@@ -111,17 +113,19 @@ class HasField x r a | x r -> a where
 to become
 
 ```haskell
-class GetField (x :: k) r a | x r -> a where
-    getField :: r -> a
+type family FieldType (x :: k) r
 
-class GetField x r a => SetField (x :: k) r a | x r -> a where
-    setField :: a -> r -> r
+class GetField (x :: k) r where
+    getField :: r -> FieldType x r
+
+class GetField x r => SetField (x :: k) r where
+    setField :: FieldType x r -> r -> r
     setField = updateField @x . const
 
-    updateField :: (a -> a) -> r -> r
+    updateField :: (FieldType x r -> FieldType x r) -> r -> r
     updateField f r = let (g, a) = hasField @x r in g (f a)
 
-    hasField :: r -> (a -> r, a)
+    hasField :: r -> (FieldType x r -> r, FieldType x r)
     hasField r = (\a -> setField @x a r, getField @x r)
 
     {-# MINIMAL setField | updateField | hasField #-}
