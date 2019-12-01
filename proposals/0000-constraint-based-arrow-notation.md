@@ -314,12 +314,11 @@ The type of `keyed` was not originally written with `proc` notation in mind, but
 ```haskell
 proc (tableInfo, permissions) ->
   (returnA -< M.groupOn _cpRole permissions) `keyed` \roleName permission -> do
-    let CatalogPermission _ permType metadata _ = permission
-        permDef = PermDef roleName metadata Nothing
+    let permDef = PermDef roleName (_cpDef permission) Nothing
     Inc.ruleA -< buildPermInfo tableInfo permDef
 ```
 
-We *really want to use `proc` notation* here, since without it, we’d need to do manually thread the `tableInfo` variable from the outer scope through `keyed`. In other situations, we might need to thread a half dozen different variables, creating quite the confusing mess. Sadly, as with `handle`, GHC’s current implementation of arrow notation rejects the above use of `keyed`, instead requiring the following significantly worse type:
+We *really want to use `proc` notation* here, since without it, we’d need to do manually thread the `tableInfo` variable from the outer scope through `keyed`. In other situations, we might need to thread a half dozen different variables, creating quite the confusing mess! Sadly, as with `handle`, GHC’s current implementation of arrow notation rejects the above use of `keyed`, instead requiring the following significantly worse type:
 
 ```haskell
 keyed :: (Eq k, Applicative m)
@@ -327,7 +326,7 @@ keyed :: (Eq k, Applicative m)
       -> Rule m (e, (Map k a, ())) (Map k b)
 ```
 
-The original type has great explanatory power: it lifts a `Rule` that operators on keys and values to one that works on maps. The second type expresses the same thing, but it’s significantly harder to see at a glance. Fortunately, this proposal also handles `keyed` quite nicely, working essentially identically to how it does with `handle`.
+The original type has great explanatory power: it lifts a `Rule` that operates on keys and values to one that works on maps. The second type expresses the same thing, but it’s significantly harder to see at a glance. Fortunately, this proposal also handles `keyed` quite nicely, working essentially identically to how it does with `handle`.
 
 ### Other operators
 
