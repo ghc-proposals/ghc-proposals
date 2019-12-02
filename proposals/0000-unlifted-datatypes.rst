@@ -196,82 +196,8 @@ We get to define ``Strict``
 that deprives itself and its argument of ⊥.
 
 ``Strict`` is the very essence of this proposal: Every unlifted data type can
-be defined in terms of lifted data types and ``Strict``.
-
-It can be used to encode evaluatedness in the type system and thus has a very
-favorable interaction with the worker/wrapper transformation. Consider
-
-::
-
- data SPair a b = SPair !a !b
- 
- foo :: Int -> SPair Int Int
- foo x
-   | even x
-   = SPair (x+1)  x
-   | otherwise
-   = case foo (x-1) of
-       SPair a b -> SPair (a+1) (b+1)
-
-CPR analysis will discover that ``foo`` has the constructed product result
-property. Hence WW will turn this function into (ignoring strictness and
-inlining for the sake of simplicity)
-
-::
-
- foo :: Int -> SPair Int Int
- foo x = case $wfoo x of (# a, b #) -> SPair a b
-
- $wfoo :: Int -> (# Int, Int #)
- $wfoo x
-   | even x
-   = (# (x + 1), x #)
-   | otherwise
-   = case $wfoo (x-1) of
-       (# a, b #) -> (# a+1, b+1 #)
-
-Compared to the original definition of ``foo``, ``$wfoo`` lost knowledge of the
-fact that ``a`` and ``b`` in the recursive call are always evaluated, hence
-tagged after `#16970 <https://gitlab.haskell.org/ghc/ghc/issues/16970>`_.
-Meaning we could omit the zero tag check in the original definition (because
-``SPair`` is strict in its fields), but not in the definition of ``$wfoo``,
-because unboxed pairs are lazy in lifted fields.
-
-With ``Strict``, WW could emulate strict unboxed tuples, hence preserve enough
-information for Codegen to omit the zero tag checks:
-
-::
-
- foo :: Int -> SPair Int Int
- foo x = case $wfoo x of (# Force a, Force b #) -> SPair a b
-
- $wfoo :: Int -> (# Strict Int, Strict Int #)
- $wfoo x
-   | even x
-   = (# Force (x + 1), Force x #)
-   | otherwise
-   = case $wfoo (x-1) of
-       (# Force a, Force b #) -> (# Force (a+1), Force (b+1) #)
-
-Finally, ``Strict`` provides a type-level mechanism to convey strictness of a
-function to the compiler without having to resort to often superfluous bangs,
-by encoding strictness in its calling convention:
-
-::
-
- printAverage :: Strict Int -> Strict Int -> IO ()
- printAverage (Force sum) (Force count)
-   | count == 0 = error "Need at least one value!"
-   | otherwise = print (fromIntegral sum / fromIntegral count :: Double)
-
-Superficially, this doesn't seem to have an advantage over ``-XBangPatterns``,
-but smililar to ``safeHead :: NonEmpty a -> a`` it offloads the burden of
-evaluation to the caller, who is in a better position to decide if that ``seq``
-is needed or not.
-
-Major caveat: This will only be a worthwhile thing to do if we manage to
-eliminate the indirection in all cases, which is impossible to do in
-polymorphic scenarios (think of RTS hacks like ``tagToEnum#``).
+be defined in terms of lifted data types and ``Strict``, at the cost of an
+additional indirection.
 
 Low-level code
 ~~~~~~~~~~~~~~
@@ -292,8 +218,9 @@ Consider the following rather low-level, performance sensitive code:
  pack True  False = 2#
  pack True  True  = 3#
 
-The programmer manually unboxed the resulting ``Int`` in desperate endeavour of squeezing out the last bit of performance.
-This is the generated Core, which looks good enough:
+The programmer manually unboxed the resulting ``Int`` in a desperate endeavour
+of squeezing out the last bit of performance. This is the generated Core, which
+looks good enough:
 
 ::
 
@@ -371,9 +298,9 @@ STG looks similar. Now look what happens in C--:
 
 Wow, that's quite a mouthful, all due to the lifted representation of ``Bool``!
 Assuming that the call site can prove evaluatedness at a lower cost than
-``pack``, we can wrap all ``Bool`` s in ``Strict`` (see above) or define a new
-unlifted ``SBool`` and then after removing dead code (by hand, so no liability
-assumed) and freeing up stack space the C-- would water down to:
+``pack``, we can define a new unlifted datatype ``SBool`` and then after
+removing dead code (by hand, so no liability assumed) and freeing up stack
+space the C-- would water down to:
 
 ::
 
@@ -413,11 +340,12 @@ language.
 proved insufficient for encoding invariants for efficient code generation.
 
 This proposal consciously left out further work like a new specification for
-levity polymorphism (every data type polymorphic over lifted types can
-potentially be reused for unlifted, boxed data types!) and details of whether
-we should eliminate the indirection in constructors like ``Force`` (we
-certainly should!) and to what degree we could infer and let the user omit
-``Force`` constructors.
+**levity polymorphism**. Every data type polymorphic over lifted types can
+potentially be reused for unlifted, boxed data types! And functions can be
+levity polymorphic, too. There's
+`#15532 <https://gitlab.haskell.org/ghc/ghc/issues/15532>`_,
+which wants to weaken the restrictions we have in place for runtime-rep
+polymorphism.
 
 **Pattern match checking** with unlifted types will be weird in some edge cases.
 Consider the following example:
