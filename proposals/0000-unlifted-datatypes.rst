@@ -478,7 +478,7 @@ in the parser and type-checker. Notably the backend is not only affected **at
 all**. Very good cost to benefit ratio.
 
 As for the risk of making the language harder to learn: Beginners won't come in
-touch with unlifted newtypes at all. Unless they crave for better performance
+touch with unlifted datatypes at all. Unless they crave for better performance
 in a custom data structure, at which point I wouldn't consider them beginners
 anymore. There's precedent in going from unlifted to lifted by
 `Idris <http://docs.idris-lang.org/en/latest/tutorial/typesfuns.html>`_ with its
