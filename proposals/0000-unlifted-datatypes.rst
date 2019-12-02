@@ -123,12 +123,22 @@ grammar rules:
 
 ::
 
- topdecl   -> 'data' [ 'unlifted' ] [ context => ] ...
- topdecl   -> 'data' 'instance' [ 'unlifted' ] [ context => ] ...
- decl_inst -> 'data' [ 'instance' ] [ 'unlifted' ] [ context => ] ...
+ topdecl   -> 'data' [ 'lifted' | 'unlifted' ] [ context => ] ...
+ topdecl   -> 'data' 'instance' [ 'lifted' | 'unlifted' ] [ context => ] ...
+ decl_inst -> 'data' [ 'instance' ] [ 'lifted' | 'unlifted' ] [ context => ] ...
 
 GADT-style declarations can optionally specify a kind signature.
-TODO: Also allow ``lifted`` for symmetry?
+
+The ``lifted`` keyword can be dropped after parsing; it's just for symmetry.
+
+Note that (like data families with ``instance``) we are potentially stealing
+syntax: ``data unlifted = T Int`` could currently parse ``unlifted`` as the
+data type to be defined and bail out with a parser validation error
+(``Malformed head of type or class declaration: unlifted``). Under this
+proposal, it would turn into a parser error (``parse error on input ‘=’``).
+
+(I couldn't come up with an example where we actually turn a previously
+semantically correct program into one with a parser error.)
 
 Static semantics
 ~~~~~~~~~~~~~~~~
@@ -154,8 +164,9 @@ Dynamic Semantics
 ~~~~~~~~~~~~~~~~~
 
 Unliftedness (i.e., the absence of divergence) in general implies the need for
-an eager evaluation semantics, which GHC implements in expression of kind
-``#``.
+an eager evaluation semantics, which GHC implements in expressions of kind
+``TYPE r``, where ``r`` is not ``LiftedRep`` (so ``TYPE 'UnliftedRep`` in
+particular).
 
 Thus, call-by-value semantics are already well established within GHC. The
 novelty is pattern matching on and construction of unlifted data types, but
@@ -397,6 +408,17 @@ which will automatically infer the generalised kind.
 
 **Lazy pattern matches** ``let ~t = ... in ...`` should not be allowed if ``t``
 is unlifted. That is exactly the behavior that is currently implemented in GHC.
+
+**Data con wrappers** of nullary constructors like
+``data unlifted T a where TInt :: T Int`` will become unlifted top-level
+bindings, which GHC currently forbids in source syntax. I *think* these will
+always be properly tagged, though, so it's just an implementation detail.
+The Core formalism should only be minimally affected by such unlifted bindings
+at the top-level. Either regard them as evaluated on start up or just allow
+normal forms (modulo lifted fields) See
+`#17521 <https://gitlab.haskell.org/ghc/ghc/issues/17521>`_.
+Another way forward would be to turn wrappers of nullary unlifted constructors
+into functions by adding a `Void#` argument.
 
 Costs and Drawbacks
 -------------------
