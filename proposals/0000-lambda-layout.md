@@ -36,10 +36,10 @@ lambda expressions closer to the of function declarations:
     and [after it](https://github.com/ghc-proposals/ghc-proposals/pull/302),
     there were attempts to make it possible to match on multiple patterns. No
     solution was found, in part because this would make it different from
-    regular
-    case-expressions.
+    regular case-expressions.
     - If lambda expressions could have multiple clauses and guards, they
-      could be used instead of `-XLambdaCase`.
+      could be used instead of `-XLambdaCase`, and they can already match on
+      multiple patterns.
  2. The extension `-XMultiWayIf` essentially introduces standalone guards,
     simplifying the use of guards that aren't at the outermost level of a
     function declaration or case-expression. Among other things, this made it
