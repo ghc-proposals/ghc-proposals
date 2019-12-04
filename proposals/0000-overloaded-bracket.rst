@@ -319,7 +319,14 @@ will continue to work because these combinators will be generalised.
 Instances written in terms of ``Q`` will no longer work. For users to migrate
 an additional class ``LiftQ`` could be defined which has the old interface.
 This would mean users need to explicitly lift but there are likely only a few
-instances which fall into this category if any at all.
+instances which fall into this category if any at all. Neither myself (mpickering)
+or Ryan Scott know of any instances. If you define a ``Lift`` instance using ``Q``
+then it depends on the context where ``lift`` is invoked, for example it may
+depend on what identifiers are in scope or the location the splice is run.
+This is undesirable anyway for ``Lift``
+instances because the compiler inserts calls to ``lift`` in order to resolve
+variables used across stages it is very unpredicable the context in which the ``Q``
+actions will be invoked.
 
 Definition of Quote
 ...................
