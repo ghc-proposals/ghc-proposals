@@ -48,11 +48,11 @@ lambda expressions closer to the of function declarations:
       least one parameter, they could be used instead of `-XMultiWayIf`. This
       includes all uses of `-XMultiWayIf`, not just those inside of lambdas
       (see Example section).
- 3. During the implementation of `-XLambdaCase`, [some suggested]
-    (https://gitlab.haskell.org/ghc/ghc/issues/4359#note_51110) allowing lambda
-    expressions to have multiple clauses. This was not implemented: The most
-    obvious approach of turning `\` into a layout herald had the disadvantage
-    of making some common idioms invalid.
+ 3. During the implementation of `-XLambdaCase`,
+    [some suggested](https://gitlab.haskell.org/ghc/ghc/issues/4359#note_51110)
+    allowing lambda expressions to have multiple clauses. This was not
+    implemented: The most obvious approach of turning `\` into a layout herald
+    had the disadvantage of making some common idioms invalid.
     - This can be circumvented by having `\` only be a layout herald if a
       newline character immediately follows it.
 
