@@ -103,7 +103,7 @@ gdpat = "|" guard { "," guard } "->" exp
 lambda = "\\" clause
          -- multiple clauses have to follow the layout rules with respect to indentation
          -- i.e. each new clause has to start at the same level of indentation as the first one
-         -- Each clause must have the same number of patterns
+         -- All clauses must have the same number of patterns
        | "\\" "\n" clause { "\n" clause }
          -- explicit layout is also possible
        | "\\" "{" clause { ";" clause } "}"
