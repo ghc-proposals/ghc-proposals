@@ -71,13 +71,22 @@ language.
 
 A new extension `-XLambdaLayout` is introduced. Under this extension, lambda
 expressions can have guards. Like the current behavior with `-XMultiWayIf`,
-these guards introduce an implicit layout.
+these guards introduce an implicit layout. Lambdas expressions are also
+allowed to have zero parameters.
 
 Furthermore, if after the `\`, a newline occurs before the first pattern and
-guard, the `\` serves as a layout herald. Multiple clauses of the form
-`clause` (see BFN of changed syntax) may then be used in the following
-lines. Zero clauses are also permitted if the `-XEmptyCase` extension is
-enabled, just like with case- and `\case`-expressions.
+guard the `\` serves as a layout herald. (This means other whitespace or comments
+could appear between the `\` and the newline character. For simplicity, this is not
+reflected in the BNF.) Multiple clauses of the form `clause` (see BFN of changed
+syntax) may then be used in the following lines.
+
+Zero clauses are not permitted. This means that with `-XEmptyCase`,
+`-XLambdaCase` still has one (albeit rarely used) construct that cannot be
+replaced by a lambda expression without making it slightly longer, though
+`\case {}` *can* be replaced by `\x -> case x of  {}`. This could potentially
+be addressed in a future proposal, for example by adding absurd patterns, to
+provide a more general solution. Note that the `\case {}` construct only works
+for function of one argument.
 
 Like the existing behavior for alternatives in case- and
 `\case`-expressions, and equations in function declaration syntax, it is
@@ -87,11 +96,17 @@ expression.
 Explicit layout using braces can be used instead of the implicit layouts.
 
 ### BNF of changed syntax
-### TODO: Rest of BNF of changed syntax
 
 ```
-clause = pattern {pattern} ("->" exp | gdpat {gdpat} )
-gdpat = "|" guard {"," guard} "->" exp
+clause = { pattern } ( "->" exp | gdpat { gdpat } ) [ "where" { whereClause } ]
+gdpat = "|" guard { "," guard } "->" exp
+lambda = "\\" clause
+         -- multiple clauses have to follow the layout rules with respect to indentation
+         -- i.e. each new clause has to start at the same level of indentation as the first one
+         -- Each clause must have the same number of patterns
+       | "\\" "\n" clause { "\n" clause }
+         -- explicit layout is also possible
+       | "\\" "{" clause { ";" clause } "}"
 ```
 
 ## Examples
@@ -242,8 +257,8 @@ initially.
    would be possible to only implement a subset of them, though this would
    sacrifice parity of lambda expressions with function declarations.
 
- - For the same reason, it would be possible to use more than one extension for
-   these changes.
+ - For the same reason, it would be possible to introduce more than one extension
+   for these changes.
 
  - The name of the extension could be something else, for example
    `-XExtendedLambdas`.
