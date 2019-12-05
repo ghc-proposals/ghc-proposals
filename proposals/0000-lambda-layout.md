@@ -98,8 +98,8 @@ Explicit layout using braces can be used instead of the implicit layouts.
 ### BNF of changed syntax
 
 ```
-clause = { pattern } ( "->" exp | gdpat { gdpat } ) [ "where" { whereClause } ]
-gdpat = "|" guard { "," guard } "->" exp
+clause = { pattern } ( "->" exp | guardAlt { guardAlt } ) [ "where" { whereClause } ]
+guardAlt = "|" guard { "," guard } "->" exp
 lambda = "\\" clause
          -- multiple clauses have to follow the layout rules with respect to indentation
          -- i.e. each new clause has to start at the same level of indentation as the first one
