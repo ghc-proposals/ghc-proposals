@@ -13,11 +13,11 @@ Make Q (TExp a) into a newtype
 .. sectnum::
 .. contents::
 
-I propose to modify the typed template Haskell API to make the ``Code`` type
+I propose to modify the typed Template Haskell API to make the ``Code`` type
 more abstract. In particular we introduce a new data type called ``Code`` which
 is abstract such that ``Code m a`` represents an expression of type ``a`` produced
 in a monadic context ``m``. The reader should note that this proposal builds on
-top of the `overloaded quotations proposal<https://github.com/ghc-proposals/ghc-proposals/pull/246>`_ which was
+top of the `overloaded quotations proposal <https://github.com/ghc-proposals/ghc-proposals/pull/246>`_ which was
 accepted before this proposal.
 
 
@@ -41,7 +41,7 @@ There are three problems with the current API:
         _int = Identity
         _if (Identity b) (Identity t) (Identity f) = Identity (if b then t else f)
 
-      instance Lang (Code Q) where
+      instance Quote m => Lang (Code m) where
         _int = liftTyped
         _if cb ct cf = [|| if $$cb then $$ct else $$cf ||]
 
@@ -80,18 +80,24 @@ A newtype is defined called ``Code``::
 
   newtype Code m a = Code (m (TExp a))
 
-There are three constructs that the proposal affects.
+There are three main constructs that the proposal affects.
 
-Quoting an expression ``e :: T`` now produces an expression of typed ``Quote m => Code m T``.::
+Quoting an expression ``e :: T`` now produces an expression of typed ``Quote m => Code m T``::
 
   -- foo :: Quote m => m (TExp Int)
   foo :: Quote m => Code m Int
   foo = [|| 5 ||]
 
-Top-level splicing requires an expression of type ``Code Q T`` and produces a value of type ``T``.::
+Top-level splicing requires an expression of type ``Code Q T`` and produces a value of type ``T``::
 
   bar :: Int
   bar = $$foo
+
+Nested splicing requires an expression of type ``(Quote m, C m) => Code m T`` and the overall
+type of the quotation is a union of the constraints on all the nested splices::
+
+  baz :: Quote m => Code m Int
+  baz = [|| 1 + $$(foo) ||]
 
 The return type of lifting a value is changed from ``m (TExp a)`` to ``Code m a``.::
 
@@ -114,12 +120,12 @@ It is also useful to implement a method to modifying the underlying monadic
 representation. For example, in order to handle additional effects before running
 a top-level splice::
 
-  handleM :: (forall a . m a -> n a) -> Code m a -> Code n a
-  handleM f (Code a) = Code (f a)
+  hoistCode :: (forall a . m a -> n a) -> Code m a -> Code n a
+  hoistCode f (Code a) = Code (f a)
 
   -- Can be used to handle a state effect
   handleState :: Code (StateT Int Q) a -> Code Q a
-  handleState = handleM (flip runState 0)
+  handleState = hoistCode (flip runState 0)
 
 The ``Code`` data constructor is also exposed to users in case they want to
 explicitly interact with the underlying monadic computation in another manner.
