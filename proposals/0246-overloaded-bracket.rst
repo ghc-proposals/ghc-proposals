@@ -1,19 +1,15 @@
 Overloaded Quotations
 =====================
 
-.. proposal-number:: Leave blank. This will be filled in when the proposal is
-                     accepted.
-.. ticket-url:: Leave blank. This will eventually be filled with the
-                ticket URL which will track the progress of the
-                implementation of the feature.
-.. implemented:: Leave blank. This will be filled in with the first GHC version which
-                 implements the described feature.
+.. proposal-number:: 246
+.. author:: Matthew Pickering
+.. date-accepted:: 2019-12-06
+.. ticket-url::
+.. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_.
-            **After creating the pull request, edit this file again, update the
-            number in the link, and delete this bold sentence.**
-.. sectnum::
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/246>`_.
 .. contents::
+
 
 This proposal is about making quotation brackets (typed and untyped) polymorphic. The motivation
 is so that quotes can be used without being tied to the ``Q`` monad and to
