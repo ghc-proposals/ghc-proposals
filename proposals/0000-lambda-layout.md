@@ -262,27 +262,14 @@ initially.
 
  - The name of the extension could be something else, for example
    `-XExtendedLambdas`.
+   
+ - Guards in lambdas (or in general) could introduce layout, similar to how it works
+   in `MultiWayIf` today. This could avoid some unintuitive behavior when multiple
+   single-clause lambdas with guards are immediately chained, but that comes at the
+   expense of additional complexity, and if necessary a layout-introducing lambda
+   expression can be used instead, in that particular situation.
 
 ## Unresolved Questions
-
- - The reason `-XMultiWayIf` is layout-aware is due to examples like this:
-
-   ```Haskell
-   x = if | False -> if | False -> 1
-                        | False -> 2
-          | True -> 3
-   ```
-
-   This, intuitively, should evaluate to `3`, but without implicit layout, it
-   fails. The same reasoning applies to the `\ | pat -> expr` syntax. However,
-   for lambda expressions that introduce an implicit layout due to a newline,
-   this is unnecessary, just like it is unnecessary for the guards in
-   case-expressions, since `case ... of` is already a layout-herald.
-
-   Should guards, for consistency, introduce implicit layout in those lambda
-   expressions as well? If so, should all other places where guards occur (case,
-   `\case`, function declaration) be adjusted in the same way, again for
-   consistency, as long as the extension is enabled?
 
  - Is there an elegant alternative design that doesn't rely on a newline
    playing a significant role, while still allowing the snippets in the last
