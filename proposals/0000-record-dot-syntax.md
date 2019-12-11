@@ -202,7 +202,7 @@ aexp1   :: { ECP }
 ```
 *[As written, this of course means that `r{a = ...}` doesn't result in a `setField` expression whereas `r{a.b = ...}` does. Further, `r{a.b = ..., c = ...}` (multiple updates) aren't handled. We are not endorsing either of those things, rather we are just demonstrating that implementation of this proposal will be achieved by careful generalization of `fbinds`.]*
 
-The prototype implements the parsing scheme present here. More information about the prototype is available in [this section](#91-prototype).
+The prototype implements the parsing scheme present here. More information about the prototype is available in [this section](#81-prototype).
 
 ## 3. Examples
 
@@ -341,22 +341,18 @@ Independent of this difference, there are pragmatic concerns on both sides:
 * Some consider it acceptable (if unfortunate) that `a . b` and `a.b` have different meanings in this proposal, but believe that assigning three distinct meanings to `a . b`, `a .b`, and `a.b` is just too confusing.
 * Looking at that existing implementation of GHC, supporting `(.b)` is less changes that supporting `.b` alone. While the implementation complexity is not a reason for picking one over the other, the existing grammar of the compiler can give hints about what logically follows.
 
-### 7.8 Should punning be extended to updates?
-
-Originally this proposal included `a{foo.bar}` to mean `a{foo.bar = bar}`, but that seemed to confuse everyone, so has been removed.
-
-## 8. Unresolved issues
+## 7. Unresolved issues
 
 In this proposal we pick `.field` to be the syntax for selector functions, however, there are also good reasons (listed [in this proposal](#77-which-syntax-should-be-chosen-for-selector-functions)) to require brackets, namely `(.field)`. While resolved, we consider it worth the committee's deliberation as to which is preferable. Neither author is opposed to either outcome.
 
-## 9. Implementation Plan
+## 8. Implementation Plan
 
-### 9.1 Prototype
+### 8.1 Prototype
 
 To gain confidence these changes integrate as expected [a prototype](https://gitlab.haskell.org/shayne-fletcher-da/ghc/tree/record-dot-syntax-alt) was produced that parses and desugars forms directly in the parser. For confirmation, we _do not_ view desugaring in the parser as the correct implementation choice, but it provides a simple mechanism to pin down the changes without going as far as adding additional AST nodes or type checker rules. The prototype is sufficiently rich enough to "do the right thing" with [this test file](https://gitlab.haskell.org/shayne-fletcher-da/ghc/raw/record-dot-syntax-alt/record-dot-syntax-tests/Test.hs).
 
 *[An earlier version of this proposal came with a different [prototype](https://gitlab.haskell.org/shayne-fletcher-da/ghc/commits/record-dot-syntax). That prototype differs from the current state of this proposal in that "naked field selectors" are deemed illegal and field selections with white-space are legal e.g. `f .x .y` is `f.x.y`. These differences lead to a somewhat different parsing scheme than the one presented here]*
 
-### 9.2 Who will provide an implementation?
+### 8.2 Who will provide an implementation?
 
 If accepted, the proposal authors would be delighted to provide an implementation. Implementation depends on the implementation of [the `HasField` proposal](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0158-record-set-field.rst) and [the `NoFieldSelectors` proposal](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0160-no-toplevel-field-selectors.rst).
