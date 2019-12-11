@@ -12,7 +12,7 @@ This proposal is [discussed at this pull request](https://github.com/ghc-proposa
 
 Records in Haskell are [widely recognised](https://www.yesodweb.com/blog/2011/09/limitations-of-haskell) as being under-powered, with duplicate field names being particularly troublesome. We propose a new language extension `RecordDotSyntax` that provides syntactic sugar to make the features introduced in [the `HasField` proposal](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0158-record-set-field.rst) more accessible, improving the user experience.
 
-## Motivation
+## 1. Motivation
 
 In almost every programming language we write `a.b` to mean the `b` field of the `a` record expression. In Haskell that becomes `b a`, and even then, only works if there is only one `b` in scope. Haskell programmers have struggled with this weakness, variously putting each record in a separate module and using qualified imports, or prefixing record fields with the type name. We propose bringing `a.b` to Haskell, which works regardless of how many `b` fields are in scope. Here's a simple example of what is on offer:
 
@@ -33,14 +33,14 @@ We declare two records both having `name` as a field label. The user may then wr
 
 An implementation of this proposal has been battle tested and hardened over 18 months in the enterprise environment as part of [Digital Asset](https://digitalasset.com/)'s [DAML](https://daml.com/) smart contract language (a Haskell derivative utilizing GHC in its implementation), and also in a [Haskell preprocessor and a GHC plugin](https://github.com/ndmitchell/record-dot-preprocessor/). When initially considering Haskell as a basis for DAML, the inadequacy of records was considered the most severe problem, and without devising the scheme presented here, we wouldn't be using Haskell. The feature enjoys universal popularity with users.
 
-## Proposed Change Specification
+## 2. Proposed Change Specification
 
 For the specification we focus on the changes to the parsing rules, and the desugaring, with the belief the type checking and renamer changes required are an unambiguous consequences of those.
 
-### `RecordDotSyntax` language extension
+### 2.1 `RecordDotSyntax` language extension
 This change adds a new language extension `RecordDotSyntax`.
 
-#### Syntax
+#### 2.1.1 Syntax
 In the event the language extension is enabled:
 
 | Expression | Equivalent |
@@ -57,11 +57,11 @@ In the event the language extension is enabled:
 
 *[Note: `e{lbl=val}` is the syntax of a standard H98 record update. It's the nested form introduced by this proposal that is new : `e{lbl1.lbl2 = val}`. However, in the event `RecordDotSyntax` is in effect, we propose that `e{lbl = val}` desugar to `setField @"lbl" e a`]*.
 
-#### Precedence
+#### 2.1.2 Precedence
 
 Regarding precedence, we propose that '`.`' should "bind more tightly" than function application thus, `f r.a.b` should parse as `f (r.a.b)`.
 
-### Definitions
+### 2.2 Definitions
 
 For clarity of terminology in what follows, we make the following informal definitions:
 * A **field selector** is an expression like `.a` or `.a.b` preceded by white-space;
@@ -69,54 +69,11 @@ For clarity of terminology in what follows, we make the following informal defin
 * A **field update** is an expression like `r{a = 12}` or `r{a.b = "foo"}`;
 * A **punned field update** is an expression like `r{a}` or `r{a.b}` (where it is understood that `b` is a variable bound in the environment of the expression and only valid syntax if the `NamedFieldPuns` language extension is in effect).
 
-### Lexing and Parsing
+### 2.3 Lexing and Parsing
 
-The intent of this section is **not** to recommend a particular parsing implementation. Rather, we aim to prove that lexing and parsing is feasible. We are open to better strategies for lexing and parsing but in their absence, the scheme presented here appears to have the required properties.
+The intent of this section is **not** to recommend a particular parsing implementation. Rather, we aim only to show that lexing and parsing is feasible. We are open to learning of better strategies for the implementation of the lexing and parsing but in their absence, the scheme presented here appears to have the required properties.
 
-#### Lexer
-
-A new lexeme `fieldid` is introduced.
-```haskell
--- Regular expressions
-@fieldid = (\. @varid)+
-...
-<0,option_prags> {
-  ...
-  @fieldid / {ifExtension RecordDotSyntaxBit} { idtoken fieldid }
-}
-...
-
--- Token type
-data Token
-  = ITas
-  | ...
-  | ITfieldid [FastString]
-  ...
--- Lexer actions
-
-```
-
-
-
-
-
-
-#### Record selection
-
-The expression:
-
-> e.lbl
-
-means `getField @"lbl" e`, provided:
-
-- There is no whitespace either side of `.`;
-- That `lbl` is a valid variable name;
-- That `e` is an expression, but not a *conid*;
-- Precedence : `f a.foo.bar.baz.quux 12` parses as `f (a.foo.bar.baz.quux) 12`.
-
-Similarly, `e{lbl=val}` only applies if `e` is an expression, but not a *conid*.
-
-### Lexer
+#### 2.3.1 Lexer
 
 A new lexeme *fieldid* is introduced.
 <br/>
@@ -124,7 +81,7 @@ A new lexeme *fieldid* is introduced.
 | *literal* | *special* | *reservedop* | *reservedid* | *fieldid*
 <br/>*fieldid* → *.varid{.varid}*
 
-This specification results in the following.
+In terms of changes to GHC's `Lexer.x` we write the following.
 
 ```haskell
 -- Regular expressions
@@ -152,62 +109,102 @@ splitFields :: StringBuffer -> Int -> [FastString]
 splitFields buf len = ...
 ```
 
-Tokens of case `ITfieldid`  may not be issued if `RecordDotSyntax` is not enabled.
+Note that tokens of case `ITfieldid`  will never be issued if `RecordDotSyntax` is not enabled.
 
-### Parser
+In terms of changes to GHC's `Parser.y`, the new token is incorporated into the parser like so.
+```haskell
+%token
+  ...
+  FIELDID { L _ (ITfieldid _) }
+  ...
 
+{
+...
+getFIELDID      (dL->L _ (ITfieldid  x)) = x
+...
+}
+```
 
-#### Sections
+#### 2.3.2 Parsing
 
-To support sections  (e.g. `.foo.bar.baz`), we generalize *aexp*.
+##### 2.3.2.1 Parsing of field selectors
+
+Supporting field selectors is achieved by extending the set of `aexp` productions.
 <br/>
 <br/>*aexp* → *fieldid*
 
-This specification results in the following schematic.
 ```haskell
-%token
- ...
- FIELDID        { L _ (ITfieldid _)  }
- ...
-
-%%
-
 aexp    :: { ECP }
-        ...
+       ...
+       | FIELDID {
+           ...
+         } -- <- here
 
-        | '\\' apat apats '->' exp {...}
-
-        | FIELDID {
-            ...             -- This case is only possible when 'RecordDotSyntax' is enabled.
-          } -- <- here
-
-        ...
+       ...
 ```
 
-### Field selections
+##### 2.3.2.2 Parsing of field selections
 
-To support field selections, the existing production *fexp* → *[fexp]* *aexp* is sufficient.
+Supporting field selections does not require any new productions. The production *fexp -> fexp aexp* is sufficient, only, its semantic action needs to be updated to take `RecordDotSyntax` into account.
+```haskell
+fexp    :: { ECP }
+        : fexp aexp
+          {%do
+             {
+               ; recordDotSyntax <- getBit RecordDotSyntaxBit
+               ; if not recordDotSyntax
+                   then
+                     ... do as we do today
+                   else do {
+                     ; lhs <- runECP_P $1 :: P (Located (HsExpr GhcPs))
+                     ; rhs <- runECP_P $2 :: P (Located (HsExpr GhcPs))
+                     ; if not (isFieldSelector rhs)
+                        then
+                         .... do as we do today
+                        else
+                           if (adjacent lhs rhs)
+                             then
+                               ... handle field selection (e.g. 'a.foo.bar')
+                             else
+                               ... handle an application on a field selector (e.g. 'f .foo.bar')
+                    }
+         ...
+```
+*[No doubt a real implementation can express this logic more elegantly - we present it in this way here to elucidate.]*
 
-### Field updates
+The key point to note is the disambiguation of a field selection from the application of a term to a field selector. That is, looking at white-space to distinguish between `f.x` and `f .x`. This is handled by the function `adjacent` which can be defined simply as:
+```haskell
+adjacent :: Located a -> Located b -> Bool
+adjacent (L a _) (L b _) = isGoodSrcSpan a && srcSpanEnd a == srcSpanStart b
+```
 
-To support field updates, the *aexp* production is extended.
+*[One thing to look out for in the implementation at this point is to carefully respect the precedence rule i.e. `f a.b` parse as `f (a.b)`.]*
+
+##### 2.3.2.3 Parsing of field updates
+
+Field updates and punned field updates are achieved by generalizing the `aexp` productions.
 <br/>
 <br> *aexp* → *aexp⟨qcon⟩* { *pbind* , … , *pbind* }
 <br/>*pbind* -> *qvar*=*exp* | *var* *aexp*=*exp*
 
+The existing rule is
 ```haskell
-
 aexp1   :: { ECP }
-        : aexp1 '{' fbinds '}' { ... }
-        | aexp1 '{' VARID aexp '=' texp '}' {...} -- <- here
-
+        : aexp1 '{' fbinds '}' { ...}
 ```
+It's easy enough to extend `aexp1` to handle simple cases of nested field updates and punned field updates like so:
+```haskell
+aexp1   :: { ECP }
+        : aexp1 '{' fbinds '}' { ... as we do today... }
+        | aexp1 '{' VARID FIELDID '=' texp '}' { ... } <- nested field update here
+        | aexp1 '{' VARID FIELDID '}' { ... } <- punned field update here here
+       ...
+```
+*[As written, this of course means that `r{a = ...}` doesn't result in a `setField` expression whereas `r{a.b=...}` does. Further, `r{a.b = ..., c =}` (multiple updates) aren't handled. We are not endorsing either of those things, rather we are just demonstrating that implementation of this proposal will be achieved by careful generalization of `fbinds`.]*
 
-### Prototype
+The prototype implements the parsing scheme present here. More information about the prototype is available in [this section](#91-prototype).
 
-To gain confidence these changes integrate as expected [a prototype implementation](https://gitlab.haskell.org/shayne-fletcher-da/ghc/commits/record-dot-syntax) was produced that parses and desugars forms directly in the parser. For confirmation, we _do not_ view desugaring in the parser as the correct implementation choice, but it provides a simple mechanism to pin down the changes without going as far as adding additional AST nodes or type checker rules. Note that in the prototype, projection ([as proposed here](#syntax)), takes precedence over application so `f a.foo.bar.baz.quux 12` parses as `f (a.foo.bar.baz.quux) 12`. Note also that the prototype does not follow the specification given above in that : `x .lbl` means `x.lbl` means `(.lbl) x`.
-
-## Examples
+## 3. Examples
 
 This is a record type with functions describing a study `Class` (*Oh! Pascal, 2nd ed. Cooper & Clancy, 1985*).
 
@@ -253,7 +250,7 @@ getTerms = map .taken.term -- nested selector
 
 A full, rigorous set of examples (as tests) are available in the examples directory of [this repository](https://github.com/ndmitchell/record-dot-preprocessor). Those tests include infix applications, polymorphic data types, interoperation with other extensions and more.
 
-## Effect and Interactions
+## 4. Effect and Interactions
 
 **Polymorphic updates:** When enabled, this extension takes the `a{b=c}` syntax and uses it to mean `setField`. The biggest difference a user is likely to experience is that the resulting type of `a{b=c}` is the same as the type `a` - you _cannot_ change the type of the record by updating its fields. The removal of polymorphism is considered essential to preserve decent type inference, and is the only option supported by [the `HasField` proposal](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0158-record-set-field.rst). Anyone wishing to use polymorphic updates can write `let Foo{..} = Foo{polyField=[], ..}` instead.
 
@@ -265,9 +262,9 @@ A full, rigorous set of examples (as tests) are available in the examples direct
 
 **Enabled extensions:** When `RecordDotSyntax` is a distinct extension, implying no other extensions off or on. It is often likely to be used in conjunction with either the `NoFieldSelectors` extension or`DuplicateRecordFields`.
 
-## Costs and Drawbacks
+## 5. Costs and Drawbacks
 
-The implementation of this proposal adds code to the compiler, but not a huge amount. Our [prototype implementation](https://gitlab.haskell.org/shayne-fletcher-da/ghc/commits/record-dot-syntax) shows the essence of the parsing changes, which is the most complex part.
+The implementation of this proposal adds code to the compiler, but not a huge amount. Our [prototype](https://gitlab.haskell.org/shayne-fletcher-da/ghc/tree/record-dot-syntax-alt) shows the essence of the parsing changes, which is the most complex part.
 
 If this proposal becomes widely used then it is likely that all Haskell users would have to learn that `a.b` is a record field selection. Fortunately, given how popular this syntax is elsewhere, that is unlikely to surprise new users.
 
@@ -283,7 +280,7 @@ let temp = myexpression.field1.field2.field3
 in temp.field4.field5
 ```
 
-## Alternatives to this proposal
+## 6. Alternatives to this proposal
 
 Instead of this proposal, we could do any of the following:
 
@@ -297,35 +294,35 @@ More importantly, while the concept of lenses is very powerful, that power can b
 
 All these approaches are currently used, and represent the "status quo", where Haskell records are considered not fit for purpose.
 
-## Alternatives within this proposal
+## 7. Alternatives within this proposal
 
 Below are some possible variations on this plan, but we advocate the choices made above:
 
-### Should `RecordDotSyntax` imply `NoFieldSelectors` or another extension?
+### 7.1 Should `RecordDotSyntax` imply `NoFieldSelectors` or another extension?
 
 Typically `RecordDotSyntax` will be used in conjunction with `NoFieldSelectors`, but `DuplicateRecordFields` would work too. Of those two, `DuplicateRecordFields` complicates GHC, while `NoFieldSelectors` conceptually simplifies it, so we prefer to bias the eventual outcome. However, there are lots of balls in the air, and enabling `RecordDotSyntax` should ideally not break normal code, so we leave everything distinct (after [being convinced](https://github.com/ghc-proposals/ghc-proposals/pull/282#issuecomment-547641588)).
 
-### Should a syntax be provided for modification?
+### 7.2 Should a syntax be provided for modification?
 
 Earlier versions of this proposal contained a modify field sytnax of the form `a{field * 2}`. While appealing, there is a lot of syntactic debate, with variously `a{field <- (*2)}`, `a{field * = 2}` and others being proposed. None of these syntax variations are immediately clear to someone not familiar with this proposal. To be conservative, we leave this feature out.
 
-### Should there be update sections?
+### 7.3 Should there be update sections?
 
 There are no update sections. Should `({a=})`, `({a=b})` or `(.lbl=)` be an update section? While nice, we leave this feature out.
 
-### Should pattern matching be extended?
+### 7.4 Should pattern matching be extended?
 
 We do not extend pattern matching, although it would be possible for `P{foo.bar=Just x}` to be defined.
 
-### Will whitespace sensitivity become worse?
+### 7.5 Will whitespace sensitivity become worse?
 
 We're not aware of qualified modules giving any problems, but it's adding whitespace sensitivity in one more place.
 
-### Should a new update syntax be added?
+### 7.6 Should a new update syntax be added?
 
 One suggestion is that record updates remain as normal, but `a { .foo = 1 }` be used to indicate the new forms of updates. While possible, we believe that option leads to a confusing result, with two forms of update both of which fail in different corner cases. Instead, we recommend use of `C{foo}` as a pattern to extract fields if necessary.
 
-### Which syntax should be chosen for selector functions?
+### 7.7 Which syntax should be chosen for selector functions?
 
 Three syntax options have bee proposed for selector functions: `.foo`, `(.foo)`, and `_.foo`.  This aspect is the most debated of the entire proposal (following [Wadler's law](https://wiki.haskell.org/Wadler's_Law)).  We have opted for `.foo`.
 
@@ -344,14 +341,22 @@ Independent of this difference, there are pragmatic concerns on both sides:
 * Some consider it acceptable (if unfortunate) that `a . b` and `a.b` have different meanings in this proposal, but believe that assigning three distinct meanings to `a . b`, `a .b`, and `a.b` is just too confusing.
 * Looking at that existing implementation of GHC, supporting `(.b)` is less changes that supporting `.b` alone. While the implementation complexity is not a reason for picking one over the other, the existing grammar of the compiler can give hints about what logically follows.
 
-### Should punning be extended to updates?
+### 7.8 Should punning be extended to updates?
 
 Originally this proposal included `a{foo.bar}` to mean `a{foo.bar = bar}`, but that seemed to confuse everyone, so has been removed.
 
-## Unresolved issues
+## 8. Unresolved issues
 
-In this proposal we pick `.field` to be the syntax for selector functions, however, there are also good reasons (listed [in this proposal](#which-syntax-should-be-chosen-for-selector-functions)) to require brackets, namely `(.field)`. While resolved, we consider it worth the committee's deliberation as to which is preferable. Neither author is opposed to either outcome.
+In this proposal we pick `.field` to be the syntax for selector functions, however, there are also good reasons (listed [in this proposal](#77-which-syntax-should-be-chosen-for-selector-functions)) to require brackets, namely `(.field)`. While resolved, we consider it worth the committee's deliberation as to which is preferable. Neither author is opposed to either outcome.
 
-## Implementation Plan
+## 9. Implementation Plan
+
+### 9.1 Prototype
+
+To gain confidence these changes integrate as expected [a prototype](https://gitlab.haskell.org/shayne-fletcher-da/ghc/tree/record-dot-syntax-alt) was produced that parses and desugars forms directly in the parser. For confirmation, we _do not_ view desugaring in the parser as the correct implementation choice, but it provides a simple mechanism to pin down the changes without going as far as adding additional AST nodes or type checker rules. The prototype is sufficiently rich enough to "do the right thing" with [this test file](https://gitlab.haskell.org/shayne-fletcher-da/ghc/raw/record-dot-syntax-alt/record-dot-syntax-tests/Test.hs).
+
+*[An earlier version of this proposal came with a different [prototype](https://gitlab.haskell.org/shayne-fletcher-da/ghc/commits/record-dot-syntax). That prototype differs from the current state of this proposal in that "naked field selectors" are deemed illegal and field selections with white-space are legal e.g. `f .x .y` is `f.x.y`. These differences lead to a somewhat different parsing scheme than the one presented here]*
+
+### 9.2 Who will provide an implementation?
 
 If accepted, the proposal authors would be delighted to provide an implementation. Implementation depends on the implementation of [the `HasField` proposal](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0158-record-set-field.rst) and [the `NoFieldSelectors` proposal](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0160-no-toplevel-field-selectors.rst).
