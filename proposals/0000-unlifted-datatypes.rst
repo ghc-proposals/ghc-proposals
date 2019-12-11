@@ -20,14 +20,15 @@ in source Haskell, like
 
 ::
 
- data unlifted SMaybe 
-   = SJust !a
-   | Nothing
+ data SMaybe a :: TYPE 'UnliftedRep where
+   SJust    :: !a -> SMaybe a
+   SNothing :: SMaybe a
 
 ``SMaybe a`` has the same inhabitants as ``Maybe a``, with the exception that
 it deprives itself and its arguments of ⊥. The advantage compared to using
 bangs everywhere (and hence ``-XStrict``) is that code generation can assume
-that every pointer is correctly tagged.
+that every pointer is correctly tagged, as well as not having to write the
+bangs in the first place.
 
 There's a
 `WIP implementation <https://gitlab.haskell.org/ghc/ghc/merge_requests/2218>`_
@@ -90,9 +91,9 @@ a way that
 
 ::
   
-  data unlifted IntSet
-    = Branch IntSet !Int IntSet
-    | Leaf
+  data IntSet :: TYPE 'UnliftedRep where
+    Branch :: IntSet -> !Int -> IntSet -> IntSet
+    Leaf   :: IntSet
 
   member :: Int -> IntSet -> Bool
   member !k Leaf = False
@@ -114,49 +115,23 @@ Proposed Change Specification
 
 Henceforth, data type declaration refers to both data type and data family instance declarations.
 
-Syntax
-~~~~~~
-
-The language extension ``-XUnliftedDatatypes`` introduces a new contextual
-keyword ``unlifted``, only to be used in data type declarations. Revised
-grammar rules:
-
-::
-
- topdecl   -> 'data' [ 'lifted' | 'unlifted' ] [ context => ] ...
- topdecl   -> 'data' 'instance' [ 'lifted' | 'unlifted' ] [ context => ] ...
- decl_inst -> 'data' [ 'instance' ] [ 'lifted' | 'unlifted' ] [ context => ] ...
-
-GADT-style declarations can optionally specify a kind signature.
-
-The ``lifted`` keyword can be dropped after parsing; it's just for symmetry.
-
-Note that (like data families with ``instance``) we are potentially stealing
-syntax: ``data unlifted = T Int`` could currently parse ``unlifted`` as the
-data type to be defined and bail out with a parser validation error
-(``Malformed head of type or class declaration: unlifted``). Under this
-proposal, it would turn into a parser error (``parse error on input ‘=’``).
-
-(I couldn't come up with an example where we actually turn a previously
-semantically correct program into one with a parser error.)
-
 Static semantics
 ~~~~~~~~~~~~~~~~
 
-Name resolution can ignore the ``unlifted`` keyword.
+Kind signatures for regular data type declarations must have a return kind of
+``TYPE 'LiftedRep``. Activating ``-XUnliftedDatatypes`` will lift this
+restriction to also allow the return kind ``TYPE 'UnliftedRep``.
+(Note that Haskell98-style data declarations can use top-level kind signatures
+to specify the return kind.)
 
-Similar to ``-XUnliftedNewtypes``, the return kind of a data type declaration's
-kind signature (which may be given explicitly by the user or be inferred) is
-``TYPE 'UnliftedRep`` when there was a leading ``unlifted`` keyword.
-
-Data family instances may be declared unlifted, in which case the data family
+The same applies to data family instances, in which case the data family
 application's result kind must reduce to ``TYPE 'UnliftedRep``. See
 `the section on data families in the UnliftedNewtypes proposal <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0098-unlifted-newtypes.rst>`_
 and ``Note [Implementation of UnliftedNewtypes]`` for details involving
 type-checking the parent data family.
 
 The static semantics of other types of unlifted kind, such as the inability to
-delare them at the top-level, apply. The top-level restriction is not
+declare them at the top-level, apply. The top-level restriction is not
 fundamental (see `#17521 <https://gitlab.haskell.org/ghc/ghc/issues/17521>`_),
 but best discussed in a separate proposal.
 
@@ -182,7 +157,8 @@ Example:
 
 ::
 
- data unlifted UPair a b = UPair a b
+ data UPair a b :: TYPE 'UnliftedRep where
+   UPair :: a -> b -> UPair a b
 
 * When occuring in a constructor field (e.g.
   ``data T = MkT (UPair Int Bool)``), the semantics are identical to a field
@@ -202,7 +178,8 @@ We get to define ``Strict``
 
 ::
 
- data unlifted Strict a = Force !a
+ data Strict a :: TYPE 'UnliftedRep where
+   Force :: !a -> Strict a
 
 that deprives itself and its argument of ⊥.
 
@@ -363,7 +340,7 @@ Consider the following example:
 
 ::
  
-  data unlifted SVoid 
+  data SVoid :: TYPE 'Unlifted
   f :: SVoid -> ()
   f _ = ()
 
@@ -393,29 +370,16 @@ into ``unlifted`` ones. I see two potential problems:
 
 So rather dreadfully, we probably shouldn't "augment" ``-XStrict``.
 
-**-XUnliftedNewtypes** introduces unlifted *newtypes*, but does so simply by
-inferring the kind of its single constructor's field type, no ``unlifted``
-needed. Now with the new ``unlifted`` keyword, we could potentially allow
-syntax like ``newtype unlifted Foo (a :: TYPE r) = Foo a``. What are its semantics?
-Can we still have ``Foo Int#``? That wouldn't exactly be ``UnliftedRep`` (which
-this proposal is all about), but the unlifted, unboxed runtime-rep ``IntRep``.
-Similarly, do we allow ``Foo Int``? That would be boxed and lifted, seemingly
-contradicting the declaration.
-
-So I suggest that we (somewhat ironically) *disallow* ``unlifted`` syntax for
-Newtype delcarations and instead suggest to activate ``-XUnliftedNewtypes``,
-which will automatically infer the generalised kind.
-
 **Lazy pattern matches** ``let ~t = ... in ...`` should not be allowed if ``t``
 is unlifted. That is exactly the behavior that is currently implemented in GHC.
 
 **Data con wrappers** of nullary constructors like
-``data unlifted T a where TInt :: T Int`` will become unlifted top-level
-bindings, which GHC currently forbids in source syntax. I *think* these will
-always be properly tagged, though, so it's just an implementation detail.
-The Core formalism should only be minimally affected by such unlifted bindings
-at the top-level. Either regard them as evaluated on start up or just allow
-normal forms (modulo lifted fields) See
+``data T a :: TYPE 'UnliftedRep where TInt :: T Int`` will become unlifted
+top-level bindings, which GHC currently forbids in source syntax. I *think*
+these will always be properly tagged, though, so it's just an implementation
+detail. The Core formalism should only be minimally affected by such unlifted
+bindings at the top-level. Either regard them as evaluated on start up or just
+allow normal forms (modulo lifted fields) See
 `#17521 <https://gitlab.haskell.org/ghc/ghc/issues/17521>`_.
 Another way forward would be to turn wrappers of nullary unlifted constructors
 into functions by adding a `Void#` argument.
@@ -431,14 +395,16 @@ As for the risk of making the language harder to learn: Beginners won't come in
 touch with unlifted datatypes at all. Unless they crave for better performance
 in a custom data structure, at which point I wouldn't consider them beginners
 anymore. There's precedent in going from unlifted to lifted by
-`Idris <http://docs.idris-lang.org/en/latest/tutorial/typesfuns.html>`_ with its
-``Lazy`` data type.
+`Idris <http://docs.idris-lang.org/en/latest/tutorial/typesfuns.html>`_ or
+`OCaml <https://caml.inria.fr/pub/docs/manual-ocaml/libref/Lazy.html>`_ with
+their ``Lazy`` data type.
 
 Alternatives
 ------------
 Implement
 `the Strict data type only <https://github.com/ghc-proposals/ghc-proposals/pull/257>`_.
-Doing so provides the same semantics at the cost of more syntactic overhead.
+Doing so provides the same semantics at the cost of more syntactic overhead,
+plus we can't get rid of the additional box.
 
 Implement `strict unboxed tuples <https://gitlab.haskell.org/ghc/ghc/issues/17001>`_
 instead. Rules out the promising direction of levity polymorphism in the
@@ -446,9 +412,10 @@ future, though.
 
 Unresolved Questions
 --------------------
-* We really want to remove the indirection of constructors like ``Force``
-  wherever we can. Can we do this in the general case? What about interactions
-  with reflection/``Typeable``?
+* Should we allow data family instances without kind signatures when the
+  return kind can be inferred to be ``TYPE 'UnliftedRep``? We do so for
+  ``Type`` and unlifted newtype instances. The user would need to write the
+  kind signature according to this proposal.
 
 Implementation Plan
 -------------------
