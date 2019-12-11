@@ -38,27 +38,68 @@ An implementation of this proposal has been battle tested and hardened over 18 m
 For the specification we focus on the changes to the parsing rules, and the desugaring, with the belief the type checking and renamer changes required are an unambiguous consequences of those.
 
 ### `RecordDotSyntax` language extension
+This change adds a new language extension `RecordDotSyntax`.
 
-This change adds a new language extension `RecordDotSyntax`. In the event the language extension is enabled:
+#### Syntax
+In the event the language extension is enabled:
 
 | Expression | Equivalent |
 | -- | -- |
-| `e.lbl` | `getField @"lbl" e` the `.` cannot have whitespace either before or after |
-| `e{lbl = val}` | `setField @"lbl" e val` |
 | `.lbl` | `(\x -> x.lbl)` the `.` cannot have whitespace after |
-| `e{lbl1.lbl2 = val}` | `e{lbl1 = (e.lbl1){lbl2 = val}}` performing a nested update |
-
-The above forms combine to provide these identities:
-
-| Expression | Identity
-| -- | -- |
-| `e.lbl1.lbl2` | `(e.lbl1).lbl2` |
 | `.lbl1.lbl2` | `(\x -> x.lbl1.lbl2)` |
+| `e.lbl` | `getField @"lbl" e` the `.` cannot have whitespace either before or after |
+| `e.lbl1.lbl2` | `(e.lbl1).lbl2` |
+| `e{lbl = val}` | `setField @"lbl" e val` |
+| `e{lbl1.lbl2 = val}` | `e{lbl1 = (e.lbl1){lbl2 = val}}` performing a nested update |
 | `e.lbl1{lbl2 = val}` | `(e.lbl1){lbl2 = val}` |
 | `e{lbl1 = val}.lbl2` | `(e{lbl1 = val}).lbl2` |
 | `e{lbl1 = val1, lbl2 = val2}` | `(e{lbl1 = val1}){lbl2 = val2}` |
 
-### Syntax
+*[Note: `e{lbl=val}` is the syntax of a standard H98 record update. It's the nested form introduced by this proposal that is new : `e{lbl1.lbl2 = val}`. However, in the event `RecordDotSyntax` is in effect, we propose that `e{lbl = val}` desugar to `setField @"lbl" e a`]*.
+
+#### Precedence
+
+Regarding precedence, we propose that '`.`' should "bind more tightly" than function application thus, `f r.a.b` should parse as `f (r.a.b)`.
+
+### Definitions
+
+For clarity of terminology in what follows, we make the following informal definitions:
+* A **field selector** is an expression like `.a` or `.a.b` preceded by white-space;
+* A **field selection** is an expression like `r.a` or `(f x).a.b`, where the first dot is preceded by a close paren or a varid;
+* A **field update** is an expression like `r{a = 12}` or `r{a.b = "foo"}`;
+* A **punned field update** is an expression like `r{a}` or `r{a.b}` (where it is understood that `b` is a variable bound in the environment of the expression and only valid syntax if the `NamedFieldPuns` language extension is in effect).
+
+### Lexing and Parsing
+
+The intent of this section is **not** to recommend a particular parsing implementation. Rather, we aim to prove that lexing and parsing is feasible. We are open to better strategies for lexing and parsing but in their absence, the scheme presented here appears to have the required properties.
+
+#### Lexer
+
+A new lexeme `fieldid` is introduced.
+```haskell
+-- Regular expressions
+@fieldid = (\. @varid)+
+...
+<0,option_prags> {
+  ...
+  @fieldid / {ifExtension RecordDotSyntaxBit} { idtoken fieldid }
+}
+...
+
+-- Token type
+data Token
+  = ITas
+  | ...
+  | ITfieldid [FastString]
+  ...
+-- Lexer actions
+
+```
+
+
+
+
+
 
 #### Record selection
 
