@@ -200,7 +200,7 @@ aexp1   :: { ECP }
         | aexp1 '{' VARID FIELDID '}' { ... } <- punned field update here here
        ...
 ```
-*[As written, this of course means that `r{a = ...}` doesn't result in a `setField` expression whereas `r{a.b=...}` does. Further, `r{a.b = ..., c =}` (multiple updates) aren't handled. We are not endorsing either of those things, rather we are just demonstrating that implementation of this proposal will be achieved by careful generalization of `fbinds`.]*
+*[As written, this of course means that `r{a = ...}` doesn't result in a `setField` expression whereas `r{a.b = ...}` does. Further, `r{a.b = ..., c = ...}` (multiple updates) aren't handled. We are not endorsing either of those things, rather we are just demonstrating that implementation of this proposal will be achieved by careful generalization of `fbinds`.]*
 
 The prototype implements the parsing scheme present here. More information about the prototype is available in [this section](#91-prototype).
 
