@@ -20,7 +20,7 @@ in source Haskell, like
 
 ::
 
- data SMaybe a :: TYPE 'UnliftedRep where
+ data SMaybe a :: TYPE (BoxedRep Unlifted) where
    SJust    :: !a -> SMaybe a
    SNothing :: SMaybe a
 
@@ -80,18 +80,18 @@ neither evaluated nor tagged. Even making ``IntSet`` spine-strict by adding
 bangs to the ``Branch`` constructor doesn't get rid of the problem: ``member k
 undefined`` is still well-typed, so we have to generate code for it.
 Fundamentally, ⊥ is an inhabitant of every data type in Haskell, so every data
-declaration introduces a *lifted* type of kind ``TYPE 'LiftedRep``.
+declaration introduces a *lifted* type of kind ``TYPE (BoxedRep Lifted)``.
 
 So omission of the zero tag check is only possible if ⊥ is not an inhabitant of
 the type. This is exactly the condition for a type to be *unlifted*! Since we
 are still talking about heap objects, we need unlifted, but boxed types, which
-have kind ``TYPE 'UnliftedRep``. Indeed, for types of this kind GHC will
+have kind ``TYPE (BoxedRep Unlifted)``. Indeed, for types of this kind GHC will
 already omit the zero tag check today! So all that is left is to extend GHC in
 a way that
 
 ::
   
-  data IntSet :: TYPE 'UnliftedRep where
+  data IntSet :: TYPE (BoxedRep Unlifted) where
     Branch :: IntSet -> !Int -> IntSet -> IntSet
     Leaf   :: IntSet
 
@@ -119,33 +119,44 @@ Static semantics
 ~~~~~~~~~~~~~~~~
 
 Kind signatures for regular data type declarations must have a return kind of
-``TYPE 'LiftedRep``. Activating ``-XUnliftedDatatypes`` will lift this
-restriction to also allow the return kind ``TYPE 'UnliftedRep``.
-(Note that Haskell98-style data declarations can use top-level kind signatures
-to specify the return kind.)
+``TYPE (BoxedRep Lifted)``. Activating ``-XUnliftedDatatypes`` will lift this
+restriction to allow any return kind that unifies with ``TYPE (BoxedRep _)``. A
+data type constructor explitly *may* have levity polymorphic kind
+``forall l. TYPE (BoxedRep l)``.
+
+Note that Haskell98-style data declarations can use top-level kind signatures
+to specify the return kind. If the user provides no kind signature, the default
+remains that the data type has lifted return kind (``TYPE (BoxedRep Lifted)``).
+Specifying a kind signature is the only way to declare an unlifted data type.
 
 The same applies to data family instances, in which case the data family
-application's result kind must reduce to ``TYPE 'UnliftedRep``. See
+application's result kind must reduce to ``TYPE (BoxedRep _)``. See
 `the section on data families in the UnliftedNewtypes proposal <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0098-unlifted-newtypes.rst>`_
 and ``Note [Implementation of UnliftedNewtypes]`` for details involving
 type-checking the parent data family.
 
-The static semantics of other types of unlifted kind, such as the inability to
-declare them at the top-level, apply. The top-level restriction is not
-fundamental (see `#17521 <https://gitlab.haskell.org/ghc/ghc/issues/17521>`_),
-but best discussed in a separate proposal.
+As usual for types of unlifted kind, they may not be declared at the top-level.
+The top-level restriction is not fundamental (see
+`#17521 <https://gitlab.haskell.org/ghc/ghc/issues/17521>`_), but best
+discussed in a separate proposal. There is an interesting interaction of this
+restriction with nullary data-con wrappers (cf. "Effects and Interactions"),
+which we consider to be an implementation detail.
 
 Dynamic Semantics
 ~~~~~~~~~~~~~~~~~
 
 Unliftedness (i.e., the absence of divergence) in general implies the need for
 an eager evaluation semantics, which GHC implements in expressions of kind
-``TYPE r``, where ``r`` is not ``LiftedRep`` (so ``TYPE 'UnliftedRep`` in
-particular).
+``TYPE r``, where ``r`` is not ``BoxedRep Lifted`` (so
+``TYPE (BoxedRep Unlifted)`` in particular).
 
 Thus, call-by-value semantics are already well established within GHC. The
 novelty is pattern matching on and construction of unlifted data types, but
 that's exactly the same as it is for lifted data types. 
+
+We never have to decide on an evaluation strategy for ``TYPE (BoxedRep l)``
+with inconcrete ``l``, because the current restrictions on levity polymorphism
+don't allow to bind or pass expressions of this kind.
 
 Examples
 --------
@@ -157,7 +168,7 @@ Example:
 
 ::
 
- data UPair a b :: TYPE 'UnliftedRep where
+ data UPair a b :: TYPE (BoxedRep Unlifted) where
    UPair :: a -> b -> UPair a b
 
 * When occuring in a constructor field (e.g.
@@ -178,7 +189,7 @@ We get to define ``Strict``
 
 ::
 
- data Strict a :: TYPE 'UnliftedRep where
+ data Strict a :: TYPE (BoxedRep Unlifted) where
    Force :: !a -> Strict a
 
 that deprives itself and its argument of ⊥.
@@ -317,6 +328,29 @@ space the C-- would water down to:
 Much better! A decent backend should be able to turn this into a couple of
 bitshifts on the tags.
 
+Data structure re-use
+~~~~~~~~~~~~~~~~~~~~~
+
+With levity polymorphism, we can even re-use currently lifted-only data structures:
+
+::
+  
+  data List a :: TYPE (BoxedRep l) where
+    Nil :: List a
+    Cons :: a -> List a -> List a
+
+  mapLifted :: (a -> b) -> List a -> List b
+  mapLifted f Nil         = Nil
+  mapLifted f (Cons x xs) = Cons (f x) (mapLifted f xs)
+  
+  mapUnlifted :: (a -> b) -> List @Unlifted a -> List @Unlifted b
+  mapUnlifted f Nil         = Nil
+  mapUnlifted f (Cons x xs) = Cons (f x) (mapLifted f xs)
+  
+There no chance of sharing the ``map`` definition (not this one anyway)
+currently, because we don't have levity polymorphism in expressions yet, which
+should be tackled in a separate proposal.
+
 Effect and Interactions
 -----------------------
 
@@ -328,9 +362,8 @@ language.
 proved insufficient for encoding invariants for efficient code generation.
 
 This proposal consciously left out further work like a new specification for
-**levity polymorphism**. Every data type polymorphic over lifted types can
-potentially be reused for unlifted, boxed data types! And functions can be
-levity polymorphic, too. There's
+**levity polymorphism**. Similar to data types, functions can be levity
+polymorphic, too. There's
 `#15532 <https://gitlab.haskell.org/ghc/ghc/issues/15532>`_,
 which wants to weaken the restrictions we have in place for runtime-rep
 polymorphism.
@@ -340,7 +373,7 @@ Consider the following example:
 
 ::
  
-  data SVoid :: TYPE 'Unlifted
+  data SVoid :: TYPE (BoxedRep Unlifted)
   f :: SVoid -> ()
   f _ = ()
 
@@ -361,7 +394,7 @@ for unlifted functions as well as long as we don't allow functions without
 bindings.
 
 **-XStrict/-XStrictData** could implicitly turn all data declarations
-into ``unlifted`` ones. I see two potential problems:
+into unlifted ones. I see two potential problems:
 
 * If a data type is exported, it's now an unlifted type. That's a breaking change.
 * For data family instances, this is only possible if the parent data family
@@ -374,7 +407,7 @@ So rather dreadfully, we probably shouldn't "augment" ``-XStrict``.
 is unlifted. That is exactly the behavior that is currently implemented in GHC.
 
 **Data con wrappers** of nullary constructors like
-``data T a :: TYPE 'UnliftedRep where TInt :: T Int`` will become unlifted
+``data T a :: TYPE (BoxedRep Unlifted) where TInt :: T Int`` will become unlifted
 top-level bindings, which GHC currently forbids in source syntax. I *think*
 these will always be properly tagged, though, so it's just an implementation
 detail. The Core formalism should only be minimally affected by such unlifted
@@ -410,10 +443,18 @@ Implement `strict unboxed tuples <https://gitlab.haskell.org/ghc/ghc/issues/1700
 instead. Rules out the promising direction of levity polymorphism in the
 future, though.
 
+Introduce ``unlifted`` as a new contextual keyword ("special id") after
+``data``, like in a previous state of this proposal. Apart from the negligible
+disadvantage that it steals syntax (``data unlifted a => T = ...`` could parse
+``unlifted`` as ``unlifted :: Type -> Constraint``) it seems inconsistent
+compared to ``-XUnliftedNewtypes``, which uses kind signatures and would not
+support the syntax. Also, levity polymorphic data type declarations would be
+impossible.
+
 Unresolved Questions
 --------------------
 * Should we allow data family instances without kind signatures when the
-  return kind can be inferred to be ``TYPE 'UnliftedRep``? We do so for
+  return kind can be inferred to be ``TYPE (BoxedRep _)``? We do so for
   ``Type`` and unlifted newtype instances. The user would need to write the
   kind signature according to this proposal.
 
