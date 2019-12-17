@@ -61,6 +61,12 @@ In the event the language extension is enabled:
 
 Regarding precedence, we propose that '`.`' should "bind more tightly" than function application thus, `f r.a.b` should parse as `f (r.a.b)`.
 
+#### 2.1.3 Fields whose names are operator symbols
+
+We propose that dot notation be not available for fields whose names are operator symbols (for example, `+`, `.&.` and so on).
+
+*[Note : This does not preclude the use of explicit `getField` expressions in such cases (e.g. `getField@".+." r`)]*.
+
 ### 2.2 Definitions
 
 For clarity of terminology in what follows, we make the following informal definitions:
