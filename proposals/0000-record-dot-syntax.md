@@ -67,7 +67,7 @@ Regarding precedence, we propose that '`.`' should "bind more tightly" than func
 
 We propose that dot notation be not available for fields whose names are operator symbols (for example, `+`, `.&.` and so on).
 
-*[Note : This does not preclude the use of explicit `getField` expressions in such cases (e.g. `getField@".+." r`)]*.
+*[Note : This does not preclude the use of explicit `getField` expressions in such cases (e.g. `getField@".&." r`)]*.
 
 ### 2.2 Definitions
 
@@ -178,7 +178,7 @@ fexp    :: { ECP }
                     }
          ...
 ```
-*[No doubt a real implementation can express this logic more elegantly - we present it in this way here to elucidate.]*
+*[Note : No doubt a real implementation can express this logic more elegantly - we present it in this way here to elucidate.]*
 
 The key point to note is the disambiguation of a field selection from the application of a term to a field selector. That is, looking at white-space to distinguish between `f.x` and `f .x`. This is handled by the function `adjacent` which can be defined simply as:
 ```haskell
@@ -186,7 +186,7 @@ adjacent :: Located a -> Located b -> Bool
 adjacent (L a _) (L b _) = isGoodSrcSpan a && srcSpanEnd a == srcSpanStart b
 ```
 
-*[One thing to look out for in the implementation at this point is to carefully respect the precedence rule i.e. `f a.b` parse as `f (a.b)`.]*
+*[Note : One thing to look out for in the implementation at this point is to carefully respect the precedence rule i.e. `f a.b` parse as `f (a.b)`.]*
 
 ##### 2.3.2.3 Parsing of field updates
 
@@ -208,7 +208,7 @@ aexp1   :: { ECP }
         | aexp1 '{' VARID FIELDID '}' { ... } <- punned field update here here
        ...
 ```
-*[As written, this of course means that `r{a = ...}` doesn't result in a `setField` expression whereas `r{a.b = ...}` does. Further, `r{a.b = ..., c = ...}` (multiple updates) aren't handled. We are not endorsing either of those things, rather we are just demonstrating that implementation of this proposal will be achieved by careful generalization of `fbinds`.]*
+*[Note : As written, this of course means that `r{a = ...}` doesn't result in a `setField` expression whereas `r{a.b = ...}` does. Further, `r{a.b = ..., c = ...}` (multiple updates) aren't handled. We are not endorsing either of those things, rather we are just demonstrating that implementation of this proposal will be achieved by careful generalization of `fbinds`.]*
 
 The prototype implements the parsing scheme presented here. More information about the prototype is available in [this section](#91-prototype).
 
@@ -359,7 +359,7 @@ In this proposal we pick `.field` to be the syntax for selector functions, howev
 
 To gain confidence these changes integrate as expected [a prototype](https://gitlab.haskell.org/shayne-fletcher-da/ghc/tree/record-dot-syntax-alt) was produced that parses and desugars forms directly in the parser. For confirmation, we _do not_ view desugaring in the parser as the correct implementation choice, but it provides a simple mechanism to pin down the changes without going as far as adding additional AST nodes or type checker rules. The prototype is sufficiently rich enough to "do the right thing" with [this test file](https://gitlab.haskell.org/shayne-fletcher-da/ghc/raw/record-dot-syntax-alt/record-dot-syntax-tests/Test.hs).
 
-*[An earlier version of this proposal came with a different [prototype](https://gitlab.haskell.org/shayne-fletcher-da/ghc/commits/record-dot-syntax). That prototype differs from the current state of this proposal in that "naked field selectors" are deemed illegal and field selections with white-space are legal e.g. `f .x .y` is `f.x.y`. These differences lead to a somewhat different parsing scheme than the one presented here]*
+*[Note : An earlier version of this proposal came with a different [prototype](https://gitlab.haskell.org/shayne-fletcher-da/ghc/commits/record-dot-syntax). That prototype differs from the current state of this proposal in that "naked field selectors" are deemed illegal and field selections with white-space are legal e.g. `f .x .y` is `f.x.y`. These differences lead to a somewhat different parsing scheme than the one presented here]*.
 
 ### 9.2 Who will provide an implementation?
 
