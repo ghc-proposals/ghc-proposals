@@ -61,6 +61,8 @@ In the event the language extension is enabled:
 
 Regarding precedence, we propose that '`.`' should "bind more tightly" than function application thus, `f r.a.b` should parse as `f (r.a.b)`.
 
+*[Note : As normal, explicit parenthesization can be used to "force" the desired evaluation e.g. `(f r).a.b`]*.
+
 #### 2.1.3 Fields whose names are operator symbols
 
 We propose that dot notation be not available for fields whose names are operator symbols (for example, `+`, `.&.` and so on).
