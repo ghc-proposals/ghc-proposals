@@ -1,7 +1,6 @@
 Deprecating STM invariant mechanism
 ===================================
 
-.. proposal-number:: 11
 .. author:: Ben Gamari
 .. date-accepted:: 2018-02-03
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/14324

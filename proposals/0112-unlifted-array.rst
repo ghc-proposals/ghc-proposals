@@ -1,7 +1,6 @@
 UnliftedArray
 ==============
 
-.. proposal-number:: 21
 .. author:: Andrew Martin
 .. date-accepted:: 2018-05-14
 .. ticket-url::

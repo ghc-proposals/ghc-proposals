@@ -1,7 +1,6 @@
 Meaning-preserving parsing rules for SCC annotations
 ====================================================
 
-.. proposal-number:: 46
 .. author:: Vladislav Zavialov
 .. date-accepted:: 2019-04-17
 .. ticket-url::

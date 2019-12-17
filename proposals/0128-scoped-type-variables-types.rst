@@ -1,7 +1,6 @@
 Allow ScopedTypeVariables to refer to types
 ===========================================
 
-.. proposal-number:: 29
 .. author:: Joachim Breitner
 .. date-accepted:: 2018-08-04
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/15050

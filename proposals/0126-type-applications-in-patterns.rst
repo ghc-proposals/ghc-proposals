@@ -1,7 +1,6 @@
 Type Applications in Patterns
 =============================
 
-.. proposal-number:: 31
 .. author:: Ryan Scott
 .. date-accepted:: 2018-08-16
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/15530

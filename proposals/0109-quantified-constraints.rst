@@ -1,7 +1,6 @@
 Quantified Constraints
 ======================
 
-.. proposal-number:: 18
 .. author:: Ryan Scott
 .. date-accepted:: 2018-04-23
 

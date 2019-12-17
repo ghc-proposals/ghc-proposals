@@ -1,7 +1,6 @@
 NoFieldSelectors
 ==============
 
-.. proposal-number:: 160
 .. date-accepted:: 2019-08-23
 .. author:: reactormonk
 .. ticket-url::

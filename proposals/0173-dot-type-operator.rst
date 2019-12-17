@@ -1,7 +1,6 @@
 The dot type operator
 =====================
 
-.. proposal-number:: 39
 .. author:: Vladislav Zavialov
 .. date-accepted:: 2018-11-05
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/merge_requests/363

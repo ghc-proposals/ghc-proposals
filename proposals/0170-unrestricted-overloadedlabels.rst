@@ -1,7 +1,6 @@
 Unrestricted Overloaded Labels
 ==============================
 
-.. proposal-number:: 40
 .. author:: howtonotwin
 .. date-accepted:: 2018-11-05
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/11671

@@ -1,7 +1,6 @@
 Remove the * kind syntax
 ========================
 
-.. proposal-number:: 30
 .. author:: Vladislav Zavialov
 .. date-accepted:: 2018-08-04
 .. ticket-url::

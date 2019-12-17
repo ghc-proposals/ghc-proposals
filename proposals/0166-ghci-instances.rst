@@ -1,7 +1,6 @@
 List instances for a type in GHCi
 ==============
 
-.. proposal-number:: 41
 .. author:: Xavier Denis
 .. date-accepted:: 2018-11-05
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/15610

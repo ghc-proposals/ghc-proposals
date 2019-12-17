@@ -1,7 +1,6 @@
 Unlifted Newtypes
 =================
 
-.. proposal-number:: 13
 .. author:: Andrew Martin
 .. date-accepted:: 2018-02-27
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/15219

@@ -1,7 +1,6 @@
 More explicit ``forall``\s
 ==========================
 
-.. proposal-number:: 0007
 .. author:: Richard Eisenberg
 .. date-accepted:: 2017-06-11
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/2600, https://gitlab.haskell.org/ghc/ghc/issues/14268

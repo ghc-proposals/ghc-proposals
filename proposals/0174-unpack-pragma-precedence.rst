@@ -1,7 +1,6 @@
 Lower precedence for {-# UNPACK #-}
 ===================================
 
-.. proposal-number:: 37
 .. author:: Vladislav Zavialov
 .. date-accepted:: 2018-10-20
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/14761

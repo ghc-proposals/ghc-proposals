@@ -1,7 +1,6 @@
 Source plugins
 ==============
 
-.. proposal-number:: 17
 .. author:: Ryan Scott
 .. date-accepted:: 2018-04-13
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/14709

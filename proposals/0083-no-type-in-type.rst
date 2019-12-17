@@ -1,7 +1,6 @@
 Embrace ``Type :: Type``
 ==========================
 
-.. proposal-number:: 20
 .. author:: Richard Eisenberg
 .. date-accepted:: 2018-04-24
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/15195

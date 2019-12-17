@@ -1,7 +1,6 @@
 Overloaded Quotations
 =====================
 
-.. proposal-number:: 246
 .. author:: Matthew Pickering
 .. date-accepted:: 2019-12-06
 .. ticket-url::

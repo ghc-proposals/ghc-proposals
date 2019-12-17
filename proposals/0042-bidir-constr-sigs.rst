@@ -1,7 +1,6 @@
 Pattern synonym construction function signatures
 ================================================
 
-.. proposal-number:: 0005
 .. author:: David Feuer
 .. date-accepted:: 2017-01-25
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/14602

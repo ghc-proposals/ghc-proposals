@@ -3,7 +3,6 @@
 Ambiguous Type per-signature pragma
 ===================================
 
-.. proposal-number:: 54
 .. date-accepted:: 2019-08-15
 .. author:: AntC2
 .. ticket-url::

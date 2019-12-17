@@ -1,7 +1,6 @@
 Make ``forall`` a keyword
 =========================
 
-.. proposal-number:: 43
 .. author:: Richard Eisenberg
 .. date-accepted:: 2019-02-14
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/merge_requests/363

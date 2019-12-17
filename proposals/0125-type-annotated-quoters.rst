@@ -1,7 +1,6 @@
 Type Annotated Quoters
 ======================
 
-.. proposal-number:: 53
 .. date-accepted:: 2019-08-01
 .. ticket-url::
 .. author:: winterland1989

@@ -1,7 +1,6 @@
 Compile with threaded RTS by default
 ====================================
 
-.. proposal-number:: 52
 .. author:: Artem Pelenitsyn
 .. date-accepted:: 2019-07-29
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/16126

@@ -1,7 +1,6 @@
 A syntax for visible dependent quantification
 =============================================
 
-.. proposal-number:: 35
 .. author:: Richard Eisenberg
 .. date-accepted:: 2018-09-30
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/16326

@@ -1,7 +1,6 @@
 Function Result Type Signatures
 ===============================
 
-.. proposal-number:: 228
 .. author:: Vladislav Zavialov (@int-index)
 .. co-author:: John Ericson (@Ericson2314)
 .. date-accepted:: 2019-07-16

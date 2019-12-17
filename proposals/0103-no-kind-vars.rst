@@ -1,7 +1,6 @@
 Treat kind variables and type variables identically in ``forall``
 =================================================================
 
-.. proposal-number:: 24
 .. author:: Richard Eisenberg
 .. date-accepted:: 2018-05-22
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/15264

@@ -1,7 +1,6 @@
 Pointer Rep
 ==============
 
-.. proposal-number:: 203
 .. author:: Andrew Martin
 .. date-accepted:: 2019-04-17
 .. ticket-url::

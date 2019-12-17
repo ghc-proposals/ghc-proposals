@@ -1,7 +1,6 @@
 ---
 author: Your name
 date-accepted: ""
-proposal-number: ""
 ticket-url: ""
 implemented: ""
 ---

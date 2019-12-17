@@ -1,7 +1,6 @@
 Simplify parsing of (~) and (!)
 ===============================
 
-.. proposal-number:: 229
 .. date-accepted:: 2019-08-24
 .. author:: Vladislav Zavialov
 .. ticket-url::

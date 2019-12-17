@@ -1,7 +1,6 @@
 Add winapi pseudo calling convention
 ====================================
 
-.. proposal-number:: 277
 .. author:: Tamar Christina
 .. date-accepted:: 2019-10-02
 .. ticket-url::
