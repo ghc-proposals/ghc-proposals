@@ -1,13 +1,13 @@
 Pointer Rep
 ==============
 
-.. proposal-number:: 45
+.. proposal-number:: 203
 .. author:: Andrew Martin
 .. date-accepted:: 2019-04-17
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/203>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/203>`_ and amended in `#301 <https://github.com/ghc-proposals/ghc-proposals/pull/301>`_.
 .. contents::
 
 GHC's ``RuntimeRep`` allows programmers to deal polymorphically with types of a
