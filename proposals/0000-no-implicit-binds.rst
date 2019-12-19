@@ -15,7 +15,7 @@
 .. sectnum::
 .. contents::
 
-Provide a way to strictly separate bindings and use of varariables, so the destinction never depends on what is in scope.
+Provide a way to strictly separate bindings and use of varariables, so the distinction never depends on what is in scope.
 This means opting out of implicit ``forall`` binding of free variables in type signatures, and opting out of the binding of variables in pattern signatures.
 The two can be controlled separately.
 
@@ -51,7 +51,7 @@ However, there is one exception to the unification of namespaces: lower case var
 
 Unlike the other changes done with warnings, this would be breaking change, so we need an extension.
 ``-XNoImplicitForAll`` alone would *not* cause ``t`` in the signature to be bound from in the above; it would be unbound causing and error.
-But, as a newly freed variable, it is now ready to be capture by whatever is proposed in `#270`_.
+But, as a newly freed variable, it is now ready to be captured by whatever is proposed in `#270`_.
 I think this is a good separation of concerns.
 
 Proposed Change Specification
