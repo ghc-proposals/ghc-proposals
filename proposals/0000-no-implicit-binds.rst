@@ -104,17 +104,17 @@ Basic examples
      f :: forall t. ...
      f (x :: t) = ... -- OK
 
-   or::
+   or, if `#238`_ is accepted::
 
      -- {-# LANGUAGE NoImplicitForAll #-} -- Does not matter whether enabled or disabled
      {-# LANGUAGE NoPatternSignatureBinds #-}
      -- {-# LANGUAGE ScopedTypeVariables #-} -- Does not matter whether enabled or disabled
      {-# LANGUAGE ExplicitForAll #-}
      {-# LANGUAGE TypeApplications #-}
-     {-# LANGUAGE TypeAbstractions #-} -- if #238 is accepted
+     {-# LANGUAGE TypeAbstractions #-} -- from #238
 
      f :: forall t0. ...
-     f @t (x :: t1) = ... -- OK
+     f @t (x :: t) = ... -- OK
 
 #. ::
 
@@ -437,6 +437,8 @@ Implementation Plan
 
 I think this will be easy to implement.
 I take responsibility for implementing it, but hope to use the opportunity to mentor someone else rather than do all myself.
+
+.. _`#238`: https://github.com/ghc-proposals/ghc-proposals/pull/238
 
 .. _`#270`: https://github.com/ghc-proposals/ghc-proposals/pull/270
 
