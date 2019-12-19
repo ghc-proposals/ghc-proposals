@@ -22,8 +22,7 @@ The two can be controlled separately.
 Motivation
 ----------
 
-There are two independent motivations, education and a unified namespace.
-Complements the unified namespace proposal (`#270`_) by making all bindings usable in type signatures.
+There are two independent motivations: education and consistency with a unified namespace.
 
 Education
 ~~~~~~~~~
@@ -429,8 +428,6 @@ Unresolved Questions
 --------------------
 
 No unresolved questions.
-
-seems something that ought to be prohibited because ``b`` is unbound.
 
 Implementation Plan
 -------------------
