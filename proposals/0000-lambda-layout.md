@@ -266,8 +266,9 @@ initially.
  - Guards in lambdas (or in general) could introduce layout, similar to how it works
    in `MultiWayIf` today. This could avoid some unintuitive behavior when multiple
    single-clause lambdas with guards are immediately chained, but that comes at the
-   expense of additional complexity, and if necessary a layout-introducing lambda
-   expression can be used instead, in that particular situation.
+   expense of additional complexity. In cases where that issue does arise, a
+   layout-introducing lambda expression (i.e. one with a newline) can always be used
+   instead.
 
 ## Unresolved Questions
 
