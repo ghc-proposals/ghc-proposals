@@ -365,6 +365,13 @@ initially.
    expense of additional complexity. In cases where that issue does arise, a
    layout-introducing lambda expression (i.e. one with a newline) can always be used
    instead.
+   
+ - An additional keyword (e.g. `mcase`) and the corresponding analogue for -XLambdaCase
+   (e.g. `\mcase`) could be introduced to allow multiple patterns in case and lambda
+   case expressions. However, this would increase the complexity of the syntax instead
+   of allowing the syntax to become more consistent. Multiple patterns for regular case
+   expressions also are not as much of an improvement, since tuples can already be used
+   effectively for them.
 
 ## Unresolved Questions
 
