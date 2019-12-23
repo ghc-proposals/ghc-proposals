@@ -86,7 +86,7 @@ replaced by a lambda expression without making it slightly longer, though
 `\case {}` *can* be replaced by `\x -> case x of  {}`. This could potentially
 be addressed in a future proposal, for example by adding absurd patterns, to
 provide a more general solution. Note that the `\case {}` construct only works
-for function of one argument.
+for functions of one argument.
 
 Like the existing behavior for alternatives in case- and
 `\case`-expressions, and equations in function declaration syntax, it is
@@ -226,6 +226,102 @@ baz = \x -> do
 ```
 
 These wouldn't work if `\` always introduced an implicit layout.
+
+To illustrate with some real-world examples, this section shows
+how some snippets found on hackage would look if they used this new syntax:
+  
+megaparsec-tests-8.0.0/tests/Text/Megaparsec/Char/LexerSpec.hs
+```Haskell
+forAll mkFold $ \(l0,l1,l2) -> do
+  let {- various bindings -}
+  if | end0 && col1 <= col0 -> prs p s `shouldFailWith`
+       errFancy (getIndent l1 + g 1) (ii GT col0 col1)
+     | end1 && col2 <= col0 -> prs p s `shouldFailWith`
+       errFancy (getIndent l2 + g 2) (ii GT col0 col2)
+     | otherwise -> prs p s `shouldParse` (sbla, sblb, sblc)
+
+-- with -XLambdaLayout
+
+forAll mkFold $ \(l0,l1,l2) -> do
+  let {- various bindings -}
+  \ | end0 && col1 <= col0 -> prs p s `shouldFailWith`
+      errFancy (getIndent l1 + g 1) (ii GT col0 col1)
+    | end1 && col2 <= col0 -> prs p s `shouldFailWith`
+      errFancy (getIndent l2 + g 2) (ii GT col0 col2)
+    | otherwise -> prs p s `shouldParse` (sbla, sblb, sblc)
+```
+
+caramia-0.7.2.2/src/Graphics/Caramia/Texture.hs:
+```Haskell
+return $ if
+    | result == GL_CLAMP_TO_EDGE -> Clamp
+    | result == GL_REPEAT -> Repeat
+    | otherwise -> error "getWrapping: unexpected wrapping mode."
+
+-- with -XLambdaLayout and -XBlockArguments
+
+return \
+    | result == GL_CLAMP_TO_EDGE -> Clamp
+    | result == GL_REPEAT -> Repeat
+    | otherwise -> error "getWrapping: unexpected wrapping mode."
+```
+
+red-black-record-2.1.0.3/lib/Data/RBR/Internal.hs
+```Haskell
+_prefixNS = \case
+    Left  l -> S l
+    Right x -> case x of Here fv -> Z @_ @v @start fv
+_breakNS = \case
+    Z x -> Right (Here x)
+    S x -> Left x
+
+-- with -XLambdaLayout
+_prefixNS = \
+    (Left  l) -> S l
+    (Right x) -> case x of Here fv -> Z @_ @v @start fv
+_breakNS = \
+    (Z x) -> Right (Here x)
+    (S x) -> Left x
+```
+
+recursors-0.1.0.0/Control/Final.hs
+```Haskell
+map (\case PlainTV n    -> n
+           KindedTV n _ -> n) binders
+           
+-- With -XLambdaLayout - note that a newline has to be introduced
+
+map (\
+  (PlainTV n)    -> n
+  (KindedTV n _) -> n) binders
+```
+
+roc-id-0.1.0.0/library/ROC/ID/Gender.hs
+```Haskell
+printGender :: Language -> Gender -> Text
+printGender = \case
+  English -> printGenderEnglish
+  Chinese -> printGenderChinese
+
+printGenderEnglish :: Gender -> Text
+printGenderEnglish = \case
+  Male   -> "Male"
+  Female -> "Female"
+
+printGenderChinese :: Gender -> Text
+printGenderChinese = \case
+  Male   -> "男性"
+  Female -> "女性"
+
+-- With -XLambdaLayout - this makes use of the capability to have multiple parameters
+
+printGender :: Language -> Gender -> Text
+printGender = \
+  English Male   -> "Male"
+  English Female -> "Female"
+  Chinese Male   -> "男性"
+  Chinese Female -> "女性"
+```
 
 ## Effect and Interactions
 
