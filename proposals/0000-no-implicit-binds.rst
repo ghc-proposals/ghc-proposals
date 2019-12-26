@@ -58,7 +58,7 @@ Proposed Change Specification
 
 Create ``-XImplicitForAll`` to allow automatically capturing free variables in an outer ``forall`` as is always done today.
 It is on by default for backwards compatibility.
-When using ``-XNoImplicitForAll``, all variables in regular signatures, instances, and data declerations must be explicitly bound.
+When using ``-XNoImplicitForAll``, all variables in regular signatures, instances, and data declarations must be explicitly bound.
 
 Create ``-XPatternSignatureBinds`` to allow the implicit binding of free variables in pattern signatures.
 It is also on by default for backwards compatibility.
@@ -130,7 +130,7 @@ Basic examples
 
      -- {-# LANGUAGE NoImplicitForAll #-} -- Does not matter whether enabled or disabled
      {-# LANGUAGE NoPatternSignatureBinds #-}
-     {-# LANGUAGE ExistentialQuantification #-}
+     {-# LANGUAGE GADTs #-}
      {-# LANGUAGE TypeApplications #-}
 
      data Some where
