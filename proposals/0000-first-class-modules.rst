@@ -1,16 +1,10 @@
 .. author:: Michael Peyton Jones
-.. date-accepted:: Leave blank. This will be filled in when the proposal is accepted.
-.. proposal-number:: Leave blank. This will be filled in when the proposal is
-                     accepted.
-.. ticket-url:: Leave blank. This will eventually be filled with the
-                ticket URL which will track the progress of the
-                implementation of the feature.
-.. implemented:: Leave blank. This will be filled in with the first GHC version which
-                 implements the described feature.
+.. date-accepted:: ""
+.. proposal-number:: ""
+.. ticket-url:: ""
+.. implemented:: ""
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_.
-            **After creating the pull request, edit this file again, update the
-            number in the link, and delete this bold sentence.**
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/295>`_.
 .. sectnum::
 .. contents::
 
@@ -32,7 +26,7 @@ Motivation
 
 Modules are not first-class in the Haskell module system. They cannot be
 named in the way that other entities can, and this makes them difficult
-to manipulate. From the point of view of the Haskell report, modules barely
+to manipulate. From the point of view of [hs2010]_, modules barely
 even exist - the only real thing is qualified names! This is frustrating
 for users, since modules *seem* to have names, and they *seem* to have
 a logical role as entities which are “containers” of bindings. [#]_
@@ -55,9 +49,15 @@ Proposed change specification
 Outline
 ~~~~~~~
 
-This proposal consists of a series of changes, many of which could be
-adopted separately, but which build upon a central change which is
-described in the main section. However, the additions are important for
+This proposal consists of three sets of proposed changes. The first one,
+`Modules as entities`_, is a conceptual reinterpretation of the Haskell module
+system in which modules are entities.
+
+The second section, `Backwards compatibility extensions`_, lists a series
+of backwards compatibility changes which would need to accompany `Modules as entities`_.
+
+The third section, `Additional features`_, lists a number of additional features
+which could be added. These are more-or-less independent, but are important for
 the motivation of this proposal, and I would not recommend that it be
 accepted without at least some of them.
 
@@ -66,55 +66,55 @@ this provides an accurate representation of the current state of the
 Haskell module system and we describe our changes with respect to it. [#]_
 
 .. [#] I find the relational setting very amenable for this work, since it makes it
-       easy to describe the rules while gracefully handling un- or multiply-defined
-       bindings.
+   easy to describe the rules while gracefully handling un- or multiply-defined
+   bindings.
 
 The text here is mostly expository. There is a `Datalog implementation`_ of some
 of the rules.
 
-The proposed changes are:
-
-1. `Modules as entities`_
-2. `Module export specifiers`_
-3. `Local modules`_
-4. `Module aliases`_
-
 Terminology
 ~~~~~~~~~~~
 
--  A *compilation unit* is the unit of Haskell compilation, currently a
-   single ``.hs`` file.
--  A *file module* is a module which is defined at the top level of a
-   ``.hs`` file. Currently this corresponds to a compilation unit.
--  A *module* is a named scope, of which file modules are currently the
-   only examples.
+-  An *entity* is something that can be referred to with a name.
+   Currently this means types, values, field accessors, etc.
 -  A *simple name* is a name that is given to something when it is
    defined.
 -  A *qualified name* is a more complex form of name which can *refer*
-   to an entity. We will say more about qualified names later.
--  A *dotted name* is a (simple) module name that contains ``.``\ s, e.g
-   ``Data.Set``. We will want to distinguish these from qualified names.
--  An *entity* is something that can be referred to with a name.
-   Currently this means types, values, field accessors, etc.
+   to an entity. We will say more about qualified names later. 
+-  A *dotted name* is a simple name that contains ``.``\ s, e.g
+   ``Data.Set``. We will want to distinguish these from qualified names. [#]_
 -  A *binding* is a mapping from a name to an entity.
+-  An *environment* is a set of bindings, which can be used to resolve
+   variable references. We do not require that there be only one binding for
+   any given name.
+-  A *scope* is a region of the program which has an associated environment.
+-  A *compilation unit* is the unit of Haskell compilation, currently a
+   single ``.hs`` file.
+-  A *module* is a named scope, of which file modules are currently the
+   only examples.
+-  A *file module* is a module which is defined at the top level of a
+   ``.hs`` file. Currently this corresponds to a compilation unit.
+
+.. [#] See `Approaches to dotted names`_ for discussion.
+
+Finally, we can *merge* two environments by taking the union of their bindings. We will
+also say we can "merge" modules by merging their exported environments.
 
 Modules as entities
 ~~~~~~~~~~~~~~~~~~~
 
 This change makes modules into entities, and allows them to be referred
-to. However, the only place that they can be referred to is in the
-qualifiers of qualified names, so this changes little.
+to. We do *not* propose to gate this behind a language extension - rather we
+provide a number of `backwards compatibility extensions <Backwards compatibility extensions>`_, enabled by default,
+that ensure that we retain today's behaviour. [#]_
 
-I believe this would be entirely internal, and would have no effect on
-what names resolve to in existing Haskell programs. As such, it could be
-implemented without a language extension flag, and is completely
-compatible with existing code.
+.. [#] See `All or nothing`_ for discussion of this approach and an alternative.
 
 Modules become entities
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-Modules become entities. All scopes now have a *module namespace*, which
-contains the name bindings for modules. [#]_
+We create an entity for each module in the program. All scopes now have a
+*module namespace*, which contains bindings for modules. [#]_
 
 .. [#] I will ignore namespaces for the rest of this proposal. They don't
        interact with this proposal much, since it is easy to distinguish which
@@ -122,8 +122,8 @@ contains the name bindings for modules. [#]_
        to which namespace they belong to. Then we can have a "unified" namespace and
        simply filter out bindings that refer to the wrong kind of entities. 
 
-Qualified names become more structured
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Qualified names
+^^^^^^^^^^^^^^^
 
 Currently, qualified names consist of a simple name, possibly qualified
 by a module name. That is, they could be represented by a type like:
@@ -136,24 +136,37 @@ We propose to replace this with a type like:
 
 ::
 
-   data QualName = Qualified QualName Name | Simple Name
+   data QualName = NonEmpty Name
 
-That is, a qualified name is a simple name with a (possibly empty) list
-of qualifying names. These correspond to the dot-separated segments of
-the textual name.
+That is, a qualified name a non-empty list of (non-dotted) simple name segments.
+These correspond to the dot-separated segments of the textual name.
 
-Scopes contain simple names only
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+However, note that we propose to allow dotted names *as a kind of simple name*. [#]_
+This introduces an ambiguity: a given ``QualName`` could be either:
+
+1. A qualified name where the last segment is the simple name and the rest is the qualifier.
+2. A dotted simple name.
+
+.. [#] See `Approaches to dotted names`_ for discussion.
+
+Bindings are for simple names only
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Currently, the ``inScope`` relation relates *qualified* names to
-entities, with the following signature:
+entities, with the following signature: [#]_
+
+.. [#] This signature is taken from [hsmods]_, which like this proposal is mostly concerned
+       with modules. In reality the relation should relate *scopes* to bindings, but we are
+       only care about module scopes at the moment.
 
 ::
 
    inScope :: Rel Module QualName Entity
 
-We propose that instead it relates *simple* names to entities, and we
-add a new relation ``refersTo`` which relates qualified names to
+We propose that instead it relates *simple* names to entities. We continue to use the ``exports``
+relation as it is.
+
+We add a new relation ``refersTo`` which relates qualified names to
 entities in a scope. [#]_
 
 .. [#] By analogy to programming languages: the bindings in scope are like an environment,
@@ -163,39 +176,29 @@ entities in a scope. [#]_
 ::
 
    inScope :: Rel Module Name Entity
+   exports :: Rel Module Name Entity
    refersTo :: Rel Module QualName Entity
 
 ``refersTo`` works as follows:
 
-- If the qualified name has no
-  qualifiers, then it refers to whatever that simple name maps to in the
-  scope.
+- If the qualified name is a (possibly dotted) simple name, then 
+  it refers to whatever that simple name is bound to in the current scope.
 - If the qualified name has a qualifier, then we work out what
-  the qualifying name refers to. If it refers to a module, then we look at
-  the bindings exported by the module to find one matching the name.
+  the qualifier refers to in the current scope. If it refers to a module,
+  then we work out what the simple name refers to in the exported environment of
+  that module.
 
 That is, we interpret ``A.b`` by first working out what ``A`` refers to, as a
 module, and then looking inside it to find ``b``. ``A`` may itself be
 qualified (since modules may export module bindings, just like any other
 bindings), hence the need for the recursive lookup.
 
-Exporting module names
-^^^^^^^^^^^^^^^^^^^^^^
-
-Module names *cannot* be exported, since there are no export specifiers that can
-refer to them. [#]_ The existing ``module M`` export specifier
-continues to work as it is defined in the Haskell report.
-
-.. [#] See `Module export specifiers`_ for the changes to allow this.
-
 Imports
 ^^^^^^^
 
-Imports at the top level of a file module are treated specially. Their
-target is interpreted as a *dotted* name, which is resolved using the
-current rules for locating external Haskell modules. [#]_
-
-.. [#] For imports in other settings, see `Local modules`_.
+Normal imports can only appear at the top level of a file. The target of a 
+normal import is a *dotted* name, which is resolved using the
+current rules for locating external Haskell modules.
 
 Importing a module brings all the exported bindings of the target module
 into scope, as described in [hsmods]_. It also brings
@@ -206,99 +209,103 @@ If a module is imported ``qualified`` then the exported bindings of the target
 module are not brought into scope.
 
 If a module is imported ``as`` a simple name, then the target module is brought
-into scope with that simple name instead.
-
-If multiple modules are imported ``as`` the same name, then we retain the current
-behaviour, which is to “merge” modules. [#]_ The semantics is roughly that:
-
-.. [#] See `What should happen if multiple modules are defined
-       with the same name?`_ for discussion.
-
-::
-
-   import A as M
-   import B as M
-
-means the same as
-
-::
-
-   module M (module A(..), module B(..)) where
-       import A
-       import B
-
-This retains the current behaviour with respect to clashing names, since
-Haskell does not issue ambiguity warnings on import, only on usage. Thus
-the hypothetical definition of ``M`` is error-free even if ``A`` and
-``B`` export ``n``, but an attempt to use ``M.n`` will result in an
-ambiguity error. [#]_
-
-.. [#] This explication of the semantics uses a local module definition,
-   but we could wire the behaviour in as a special case if we decide
-   not to support local modules.
+into scope bound to that simple name instead.
 
 Module export specifiers
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-The previous section allows us to refer to modules by name, but not to
-export those names.
-
-We propose adding a language extension ``ExportModuleNames`` which adds the following
-export specifiers:
+The behaviour of the ``module`` export specifiers are changed as follows.
 
 - ``module M`` *changes* to exports the name ``M`` as a module binding.
-- ``module M(a, b, .. c)`` exports ``M`` and some of its names.
-- ``module M(..)`` exports ``M`` and all of its names. [#]_
+- ``module M(a, b, .. c)`` exports ``M`` and the listed in-scope bindings.
+- ``module M(..)`` exports ``M`` and all of its exported bindings. [#]_
 
 .. [#] See `Do we need additional syntax for re-exporting all bindings from a module?`_ for more discussion.
 
-This ``ExportModuleNames`` behaviour is the “right” behaviour as far as
-this proposal is concerned, but we gate it behind a language extension
-for backwards compatibility.
+Backwards compatibility extensions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Flat module exports
+^^^^^^^^^^^^^^^^^^^
+
+The extension ``FlatModuleExports`` is added and enabled by default. It has the effect
+that the ``module M`` export specifier has the behaviour given in [hs2010]_. [#]_
+
+.. [#] See `Flat module exports - reasoning`_ for reasoning.
+
+Import module merging
+^^^^^^^^^^^^^^^^^^^^^
+
+The extension ``ImportModuleMerging`` is added and enabled by default. It has the effect that
+when multiple modules are imported ``as`` the same name, we merge the modules. [#]_
+
+.. [#] See `Import module merging - reasoning`_ for reasoning. 
+   multiple modules are defined with the same name?`_ for discussion
+   about what the primary behaviour should be.
+
+Privileged local module access
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The extension ``PrivilegedLocalModuleAccess`` is added and enabled by default. It has the effect
+that for every file module ``M``, we add a new module declaration with the same name inside ``M``,
+which exports all and only the local declarations of ``M``. [#]_
+
+.. [#] See `Privileged local module access - reasoning`_ for reasoning.
+
+Additional features
+~~~~~~~~~~~~~~~~~~~
+
+The following extensions add features beyond existing Haskell, building upon the previous changes.
+
+Module imports
+^^^^^^^^^^^^^^
+
+We add the language extension ``ImportModule``, which introduces a a new
+syntax ``import module`` [#]_ for importing modules in other contexts.
+The target of an ``import module`` statement is a *qualified* name, resolved
+as normal for qualified names, and will *not* resolve to an external module as
+is possible for normal ``import``s. [#]_ . ``import module``
+otherwise behaves as ``import``.
+
+.. [#] See `What should the syntax be for importing qualified names?`_ for discussion of the syntax.
+
+.. [#] This ensures that we can always compute the dependency graph of
+   the compilation units of a Haskell program by looking at the top-level normal imports alone.
 
 Local modules
-~~~~~~~~~~~~~
+^^^^^^^^^^^^^
 
-We propose adding a language extension ``LocalModules``. This allows
-module definitions within modules, with the same syntax as in [ghc283]_. Local
-modules are very like file modules, in particular:
+We add the language extension ``LocalModules``, which is not enabled by default. This allows
+module declarations within modules. The syntax for a local module is the same as for a file
+module, only indented appropriately for the current scope.
 
-- They can have imports.
+Local modules:
 
-  - The imports can only target modules which can be referred to
-    with a qualified name in the current scope. Their target module name is *never*
-    interpreted as a dotted name.
+- Can have ``import module``s, but not normal ``import``s.
+- Can have nested module declarations.
+- Can have export specifiers.
 
-- They can have nested module definitions.
-- They can have export specifiers.
-- They can *not* have dotted names.
+Local module declarations mostly behave the same as file modules:
 
-The rules for local modules are mostly the same as for file modules,
-but:
+- A local module declaration adds a binding for its declared name to
+  its enclosing scope, as usual for declarations.
+- Bindings from the enclosing scope are in scope in the local module,
+  but are *shadowed* if there is a local declaration of the same name. [#]_
 
-- A local module definition adds a binding for its declared name to
-  its enclosing scope, as usual for definitions.
-- Bindings from the
-  enclosing scope are in scope in the local module, but are shadowed if
-  there is a local definition of the same name. [#]_
+.. [#] See `Recursion`_ for some subtleties.
 
-.. [#] See the `Recursion`_ section for some subtleties.
+Additionally, local modules cannot define typeclass instances or type family
+instances. [#]_
 
-Local modules *cannot* import file modules. This ensures that we can
-always compute the dependency graph of the compilation units of a
-Haskell program by looking at the top-level imports alone. [#]_
-
-.. [#] See `Do we need different syntax for "local" imports?`_ for discussions
-   of the consequences.
+.. [#] See `No local typeclass or type family instances - reasoning`_ for reasoning.
 
 Module aliases
-~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^
 
-We propose adding a language extension ``ModuleAliases``. This allows a
-new kind of top-level definition: ``module <name> = <qualname>``
-(where ``<name>`` is a non-dotted module name).
+We add the language extension ``ModuleAliases``. This allows a
+new kind of top-level declaration: ``module <name> = <qualname>``.
 
-A module alias adds a binding in the enclosing scope from the new name
+A module alias adds a binding in the current scope from the new name
 to the module referred to by the right hand side.
 
 Examples
@@ -370,12 +377,89 @@ This is how we can export "deeply-qualified" names: instead of exporting a "qual
 per se, we export a module whose structure allows us to access the names we want to access
 with the qualifiers that we want.
 
+Note that this is not *quite* as transparent as we might hope: because we have different syntax for
+importing from modules, users must use ``import module`` instead of ``import``.
+
 Effect and interactions
 -----------------------
 
 I believe this proposal would solve all the problems described in [ghc283]_ and [ghc205]_.
 Moreover, because it makes modules just like other entities, improvements to the module
 system will equally benefit management of modules.
+
+Backwards compatibility
+~~~~~~~~~~~~~~~~~~~~~~~
+
+No local typeclass or type family instances - reasoning
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Typeclass and type family instances currently participate in type inference and instance
+selection on a per-compilation-unit basis. This proposal does not seek to change that: the
+local modules we propose only provide locality in the renamer.
+
+We could allow instance declarations in local modules, but stipulate that they behave "as if" they were
+defined in the top-level file module, even though they are not in scope there. However, not only is this is
+confusingly inconsistent, there are competing proposals for "local" instances (see [ghc273]_). We therefore
+choose not to allow local instances in this proposal, and instead adopt whatever solution the community
+comes to (if it does so).
+
+Flat module exports - reasoning
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This straightforwardly restores the current behaviour for module export specifiers.
+
+Privileged local module access - reasoning
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The effect of this is to preserve section 5.5.1 of [hs2010]_, which states that the
+qualified name of an entity is in scope in its defining module. 
+
+This is *nearly* ensured by the `Modules as entities`_: the current module's name is in scope
+inside the module, so we should be able to access the entity qualified. However, this is only
+true if that entity is exported, so we have e.g.:
+
+::
+
+   module A () where
+   x = 1
+   y = A.x -- A is in scope but x is not exported, so this is an error
+
+With ``PrivilegedLocalModuleAccess`` the compiler instead sees the following:
+
+::
+
+  module A () where
+    -- This gives a new local declaration of A, so it shadows the outer declaration of A.
+    -- The export specifier is well-scoped, since x and y are in scope in the
+    -- enclosing scope.
+    module A (x, y) where
+
+    x = 1
+    y = A.x -- A here refers to the new module, which does indeed export x
+
+Import module merging - reasoning
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The effect of this is to preserve the current behaviour, which does not care that
+the *qualifiers* of names may clash. 
+
+This proposal takes the position that they *should* clash, and so the merging behaviour is
+an "backwards compatibility extension".
+
+This is not the only position: [ghc283]_ (effectively) proposes that multiple modules with
+the same name *should* be merged.
+
+I think the argument for merging is:
+
+- We have some existing cases where this happens (``import as``), which we need to support.
+- It might be convenient to “mix in” additional names into an existing module.
+
+The argument for ambiguity is:
+
+- Ambiguity is consistent with the way names work for everything else, so makes the system work.
+- It is not very inconvenient in practice
+
+  - It is easily to “manually” merge modules if you have local module declarations.
 
 Interactions
 ~~~~~~~~~~~~
@@ -412,7 +496,97 @@ module system.
 Alternatives
 ------------
 
-The primary alternative is the “Local Modules” proposal [ghc283]_. This
+All or nothing
+~~~~~~~~~~~~~~
+
+This proposal suggests that we unconditionally change the way the module system works in a way that *would* change
+the current behaviour, and then add various `epicycles <Backwards compatibility extensions>`_ to
+retain the current behaviour.
+
+An alternative would be to just have a single extension that turned on the new system, behaviour changes and everything.
+
+The downside of the "all-or-nothing" approach is that we would then have two largely independent implementations
+of the module system, one of which would be rarely used (assuming that the extension takes a while to become popular, if ever),
+and thus less robust. On the other hand, with this proposal as it stands, the new code path will be the only one
+(albeit with some epicycles), so should be thoroughly exercised.
+
+On the other hand, the approach in this proposal suffers from the need to replicate precisely the current behaviour
+(with acceptable error messages!), no matter how "weird" it is. A clean break would perhaps give us more latitude to make
+changes.
+
+It is unclear to me which approach is the better one, and I would be happy with either. 
+
+Approaches to dotted names
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The most awkward part of this proposal is how it treats dotted names. These are not actually *structured* in current Haskell, as
+[hs2010]_ says:
+
+    Module names can be thought of as being arranged in a hierarchy in which appending a new component creates a
+    child of the original module name. For example, the module ``Control.Monad.ST`` is a child of the ``Control.Monad`` sub-hierarchy.
+    This is purely a convention, however, and not part of the language definition; in this report a modid is
+    treated as a single identifier occupying a flat namespace.
+
+But they are extremely suggestive of structure. And indeed the final dot in the name *does* have structural behaviour: this dot
+indicates a selection from a module. 
+
+So we have two broad alternatives: either try and reinterpret dotted names so as to make them structured, or
+keep them as non-structured names that just happen to have dots in them.
+
+Structured dotted names
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The obvious thing to do to make dotted names really structured is to *make* modules for all the components of a dotted
+name. If we define the module ``Data.Set``, then the module ``Data`` is nowhere defined - but we could define it, and
+bind the ``Data.Set`` module to ``Set`` inside ``Data``.
+
+A thoroughgoing version of this approach is possible. For example, Scala where modules *are*
+objects, the "packages" that qualify classes are themselves objects as well. 
+
+However, this does not fit well with how dotted names work today. Firstly: if we were really generating new module
+definitions for the qualifiers, then they should *clash* with other definitions. Does the ``Control`` from ``Control.Monad``
+clash with the ``Control`` from ``Control.Applicative``? What if they were defined in different packages? Today the
+answer is no: instead they just merge.
+
+This is a surmountable problem. We could say that such "qualifying modules" do not clash with other bindings, but
+instead merge with them. But what if one of the clashing bindings is not for a qualifying module? Suppose I define
+an *actual* module called ``Control``? Do we still merge them? This would allow you to "inject" module bindings into
+other people's modules, which seems like an odd behaviour to allow. [#]_
+
+.. [#] In Scala it is an error to have a package object with the same name as a class/module. However, this wouldn't fly Haskell world: we have ``Debug.Trace``
+   in ``base``, and e.g. the ``ghc`` package has a module called ``Debug``, so GHC would become uncompilable. I think the
+   main difference is that packages in the JVM world are usually lowercased, while classes and objects are uppercased; whereas
+   in Haskell they are typically all uppercased, which increases the likelihood of clashes.
+
+Another problem is that dotted names can appear in places other than module declarations. Consider ``import A.B`` or ``import Prelude as A.B``.
+In this case we might also need to create an ``A`` module and worry about whether it should merge with e.g. a locally
+defined ``A``.
+
+Overall, this approach seems initially appealing, but I cannot see a way to fill it out satisfyingly. I would welcome
+any ideas for making this work.
+
+Non-structured dotted names
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Keeping dotted names unstructured sidesteps most of the problems in the previous section. However, it
+incurs its cost in ambiguity: we can no longer tell syntactically whether a name is a qualified name, or a simple
+dotted name. [#]_
+
+.. [#] One solution would be to use a syntax other than the dot for module selection, thus making dotted names
+   syntactically distinct (this is the approach taken by Semmle QL, for example, see the Name Resolution section of [qllang]_).
+   However, this ship sailed long ago, since dot is already used for module selection in Haskell today.
+
+This costs us: the implementation is less elegant [#]_; it is harder for readers to tell what is going on; and it is generally inconsistent.
+However, it does work, and so this is the approach taken by the current proposal.
+
+.. [#] This is why in `Qualified names`_ we cannot represent qualified names with a datatype with two alternatives, since
+   we do not know which case we are in until we try to resolve the name.
+
+Local modules (GHC283)
+~~~~~~~~~~~~~~~~~~~~~~
+
+The primary alternative route to the new features in this proposal is the
+“Local Modules” proposal [ghc283]_. This
 proposal aims to support most of the same things, but I will point out a
 few differences:
 
@@ -420,7 +594,7 @@ few differences:
 
   - The export specifiers in [ghc283]_ are quite complex, and there are questions about how they should
     behave for nested modules etc. The export specifiers in this
-    proposal are *extremely* simple: they just allow exporting a
+    proposal are simple, and consistent with the export specifiers for other types of entity: they just allow exporting a
     module name. All additional structure must be added by structuring
     the exported module.
 
@@ -445,7 +619,7 @@ of qualified names:
   - See `Termination`_ below for why this isn’t a problem for this
     proposal.
 
-Ultimately, I think this proposal is just *simpler*, in that it makes
+Ultimately, I think this proposal is *simpler*, in that it makes
 modules more like everything else in the module system, which then
 allows us to solve our problems with the namespacing tools we already
 have for other bindings.
@@ -457,111 +631,24 @@ focus on qualified names rather than giving modules an identity.
 Unresolved questions
 --------------------
 
-What should happen if multiple modules are defined with the same name?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+What should the syntax be for importing qualified names?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-[ghc283]_ effectively proposes that multiple modules with the same name should be
-*merged*. I would like to say that multiple modules with the same name
-should be *ambiguous*, just like all other names.
+The ``import module`` syntax is taken from [ghc283]_. I would prefer something shorter. Some
+ideas:
 
-I think the argument for merging is:
+- ``open``, following ML
+- ``with``, following Nix
 
-- We have some existing cases where this happens (``import as``), which we need to support.
-- It might be convenient to “mix in” additional names into an existing module.
-
-The argument for ambiguity is:
-
-- Ambiguity is consistent with the way names work for everything else, so makes the system work.
-- It is not very inconvenient in practice
-
-  - Anecdotal evidence: I wrote the Semmle QL module system this way, and I never had anybody ask
-    for module merging.
-  - It is easily to “manually” merge modules if you have local module definitions.
-
-If we thought ambiguity was more consistent with "modules as entities", we could add a language
-extension `AmbiguousAs` which makes such `import as` statements produce ambiguity errors instead.
-
-Do we need any tricky rules for typeclasses/type family instances?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Consider:
-
-::
-
-   module M where
-       instance Ord T where …
-       f :: T -> T -> Bool
-       f = compare
-
-   g = M.f
-
-That is, we can use ``f`` without importing its defining module, and
-hence the typeclass instance is not in scope. Possibly this is fine, but
-I’d like someone who knows more about how typeclasses work to think
-about this with me!
-
-An alternative would be for typeclass instances to be associated with a
-file module rather than any module. So if you import a module which
-contains an instance inside a nested module, then that instance is used
-during resolution even if it is not strictly in scope. But this would be
-somewhat unhygienic.
-
-Can we make dotted names less special?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-File modules declared with dots in them are awkward. The dots *look*
-like the qualifier we use in qualified names, but they behaves
-differently: there is a module called ``Data.Set``, but there is no
-module ``Data`` which contains a module ``Set``.
-
-We could change the system so there *was* such a ``Data`` module. [#]_
-This would require constructing such virtual modules fora all the packages in
-the package database and then merging them. We can do this (as for the "ambiguous
-as" case), but it might create ambiguous names. However, we already have a mechanism
-for resolving this: `PackageImports`. An import with a package specifier should look
-in the *non*-merged virtual module from that package.
-
-However, there is also a scoping
-problem. If we want the dotted-name import ``import Data.Set`` to work
-as a qualified-name import, then there must be a module ``Data`` *in scope*
-at that point. But we probably don’t want ``Data`` to be unconditionally
-in scope in the whole module! (Or do we?)
-
-.. [#] This is the case in Scala, for example.
-
-One possibility would be to have a special scope in the file module
-header where the “external modules” are in scope. I don’t know whether
-this would be nicer overall.
-
-Do we need different syntax for "local" imports?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Consider:
-
-::
-
-   module A where
-       import qualified B
-       module C where
-          import B.C
-
-From a user perspective, the operations carried out in the two import
-statements look very similar. However, there are differences because of the
-way we're handling dotted names and file module imports. We *could* signal this
-by having a different syntax for the new kind of imports, e.g. ``open`` (to mimic ML).
-I don't *think* this is necessary, but I might be wrong, and it might be clearer
-anyway.
+Indeed, possibly we should try harder to just allow ``import``. Having different syntax may just
+be an annoyance from a user perspective, as it is in `Exporting qualified names`_.
 
 Do we need additional syntax for re-exporting all bindings from a module?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This proposal suggests using the export specifier ``module M(..)`` to re-export all the
-names defined in ``M``. This is useful when you want to effectively just rearrange the
-module structure without changing what is in a particular module.
-
-However, by analogy with the export specifier ``C(..)``, this should also export ``M``.
-I'm not sure if this is what we want, and if we don't, then perhaps we should have a
-different syntax.
+This proposal suggests using the export specifier ``module M(..)`` to export all the exported 
+names in ``M``. By analogy with the export specifier for classes, it should also export ``M``
+itself , but it is unclear if that is what we want.
 
 Datalog implementation
 ----------------------
@@ -573,7 +660,7 @@ nice format for writing executable logical rules. This can be found at
 [hsmods-logic]_.
 
 So far, I have only implemented the simplest versions of the systems, in
-particular ignoring qualified imports and import/export specifiers. I
+particular ignoring qualified imports, import/export specifiers, and dotted names. I
 will add qualified imports given more time, but I don’t plan to add
 import/export specifiers, since they aren’t very interesting and just
 act as filters on the imported/exported bindings.
@@ -590,26 +677,30 @@ version is certainly possible.
 Recursion
 ~~~~~~~~~
 
-In both systems the defining relations are naturally recursive. This
-represents the possibility of recursive modules. Writing them in Datalog
-gives us this “for free”, since it has good support for recursion via
-fixpoint iteration. [#]_
-
-.. [#] The fact that the Haskell module system could be
-   made recursive via a fixpoint computation is observed in
-   [hsmods]_, but the Datalog version is much simpler.
+In both systems the defining relations are naturally recursive. As it happens,
+this naturally handles the possibility of recursive modules. It is known that
+the Haskell module system could be made recursive via the usual fixpoint computation
+(see the end of [hsmods]_), but writing the rules
+in Datalog gives us this “for free”.
 
 While supporting recursive modules across compilation units would be
 challenging, supporting recursion between *local* modules (see `Local modules`_)
 would be much less challenging and might be worth considering
 if they are implemented.
 
-In order for the recursion to be well-defined, we must not recurse
-through a negation. This actually has some design implications! *Name
-shadowing* is implemented by saying that a binding from an external
-scope is visible if it is *not* defined locally. We therefore could not
-allow *imported* bindings to shadow enclosing ones, as that would make
-the recursion non-monotonic. Fortunately, we probably don’t want to do
+There is one subtlety: in order for the fixpoint of the recursive computation to be
+well-defined, the function we are iterating must be monotone. In Datalog, this incurs the
+restriction that recursion must not go through a negation (as this is an anti-monotonic
+operation on relations).
+
+This actually has some design implications! Name shadowing is implemented by saying
+that a binding from is visible if:
+
+- It is defined locally, or
+- It is *not* defined locally, and it is visible in an enclosing scope.
+
+We therefore could not allow *imported* bindings to shadow bindings from enclosing scopes,
+as that would make the recursion non-monotonic. Fortunately, we probably don’t want to do
 that.
 
 Termination
@@ -637,3 +728,6 @@ References
 .. [souffle] `Souffle <https://souffle-lang.github.io/>`_
 .. [hsmods-logic] `<https://github.com/michaelpj/hsmods-logic>`_
 .. [ghc205] `Structured module exports/imports <https://github.com/ghc-proposals/ghc-proposals/pull/205>`_
+.. [ghc273] `Add support for local types <https://github.com/ghc-proposals/ghc-proposals/pull/273>`_
+.. [hs2010] `Haskell 2010 - Language Report <https://www.haskell.org/onlinereport/haskell2010/haskell.html>`_
+.. [qllang] `QL Language Handbook <https://help.semmle.com/QL/ql-handbook>`_
