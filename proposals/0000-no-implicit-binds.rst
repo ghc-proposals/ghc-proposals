@@ -365,8 +365,14 @@ Note that the variables to the left of the ``::`` are are deemed explicit bindin
 However ``x`` to the right of the ``::`` is a use, not otherwise bound, and thus implicit binding today.
 It is not permitted as-is, and must be explicitly bound or discarded as done in the working alternatives.
 
-Empty `forall` "desugar"
-~~~~~~~~~~~~~~~~~~~~~~~~
+Effect and Interactions
+-----------------------
+
+As described in the motivation, this opens the door to other means to bind the previously implicitly bound variables.
+Other than that, I think this doesn't interact with other features in interesting ways.
+
+Costs and Drawbacks
+-------------------
 
 It is a little known fact that one can do "empty" ``forall`` quantifications today::
 
@@ -398,17 +404,9 @@ This has the exact same effect at requiring explicit bounds:
   -- should complain but there is a bug!
 
 We can imagine then that ``-XNoImplicitForAll`` puts an ``forall.`` at the beginning of every signature, in order to "desugar" the new behavior into the old behavior.
+This serves as evidence it wouldn't be costly to implement.
 
-Effect and Interactions
------------------------
-
-As described in the motivation, this opens the door to other means to bind the previously implicitly bound variables.
-Other than that, I think this doesn't interact with other features in interesting ways.
-
-Costs and Drawbacks
--------------------
-
-Broadens a stylistic split in the ecosystem between those that like and dislike implicit quantification.
+A drawback is that the proposal broadens a stylistic split in the ecosystem between those that like and dislike implicit quantification.
 But note that one could already put in the optional ``forall`` if they so please.
 
 Alternatives
