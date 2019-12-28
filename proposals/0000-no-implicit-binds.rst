@@ -126,7 +126,7 @@ Basic examples
 
      f (MkSome (x :: t)) = ... -- error: `t` is not bound
 
-   This could be rewritten as::
+   This could be rewritten, once `#126`_ is implemented, as::
 
      -- {-# LANGUAGE NoImplicitForAll #-} -- Does not matter whether enabled or disabled
      {-# LANGUAGE NoPatternSignatureBinds #-}
@@ -432,6 +432,8 @@ Implementation Plan
 
 I think this will be easy to implement.
 I take responsibility for implementing it, but hope to use the opportunity to mentor someone else rather than do all myself.
+
+.. _`#126`: https://github.com/ghc-proposals/ghc-proposals/pull/126
 
 .. _`#238`: https://github.com/ghc-proposals/ghc-proposals/pull/238
 
