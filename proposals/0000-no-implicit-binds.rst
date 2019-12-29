@@ -412,15 +412,15 @@ But note that one could already put in the optional ``forall`` if they so please
 Alternatives
 ------------
 
-Idris has a single namespace, but always does the implicit bindings such that writing the type of an argument with a single lower case identifier is impossible.
-Do note that more complicated type expressions with lower case identifiers is fine.
+#. Idris has a single namespace, but always does the implicit bindings such that writing the type of an argument with a single lower case identifier is impossible.
+   Do note that more complicated type expressions with lower case identifiers is fine.
 
-Some people thought `-XNoImplicitForAll` should imply `-XExplicitForAll`, though with the option to opt out of both for education as described above.
-I am sympathetic---this does make common cases more terse---but am wary of making extensions non-monotonic.
+#. Some people thought `-XNoImplicitForAll` should imply `-XExplicitForAll`, though with the option to opt out of both for education as described above.
+   I am sympathetic---this does make common cases more terse---but am wary of making extensions non-monotonic.
 
-@Monoidal asks whether `-XNoImplicitForAll` should imply `-fprint-explicit-foralls`.
-I am also sympathetic, but again worried about non-monotonicity.
-That said, warnings are more freeform than extensions so I am less worried than with the above suggestion.
+#. @Monoidal asks whether `-XNoImplicitForAll` should imply `-fprint-explicit-foralls`.
+   I am also sympathetic, but again worried about non-monotonicity.
+   That said, warnings are more freeform than extensions so I am less worried than with the above suggestion.
 
 Unresolved Questions
 --------------------
