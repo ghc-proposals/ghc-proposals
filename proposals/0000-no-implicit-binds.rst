@@ -412,6 +412,15 @@ But note that one could already put in the optional ``forall`` if they so please
 Alternatives
 ------------
 
+#. ``-XImplicitForAll`` and ``-XPatternSignatureBinds`` could be combined into a single ``-XImplicitBinds`` extension.
+   The advantage of this is of course fewer extension to implement and learn.
+   However, this might obscure that implicit for all quantifiers and implicit pattern bindings work more differently than at first it seems.
+   Implicit for all quantifiers in particular have a simple driven-syntax desugaring, whereas implicit pattern bindings are only simple change to the type inference algorithm---not syntax driven.
+   I imagine this means some people would prefer the former since its "less magical", while others would prefer the latter as its more "bang for buck".
+   There is no easy adjudicating between those two positions, they are aesthetic matters of opinion.
+   Furthermore, since one of the main motivations for this proposal is education, I think its good to help teach their difference through independent extensions.
+   That said I would certainly rather see 1 extension than no extension---the status quo.
+
 #. Idris has a single namespace, but always does the implicit bindings such that writing the type of an argument with a single lower case identifier is impossible.
    Do note that more complicated type expressions with lower case identifiers is fine.
 
