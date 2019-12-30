@@ -54,6 +54,7 @@ provides a tempting way toward a resurrection of rejected proposal `#40`_
 .. _`#234`: https://github.com/ghc-proposals/ghc-proposals/pull/234
 .. _`#282`: https://github.com/ghc-proposals/ghc-proposals/pull/282
 .. _`#243`: https://github.com/ghc-proposals/ghc-proposals/pull/243
+.. _`#295`: https://github.com/ghc-proposals/ghc-proposals/pull/295
 
 Motivation
 ----------
@@ -290,7 +291,7 @@ Proposed Change Specification
     keyword in the export item.
 
     With ``qualified``: This exports the local module *conid* and all entities
-    in scope with qualified with the *conid*\ ``.`` prefix. If no local module
+    in scope qualified with the *conid*\ ``.`` prefix. If no local module
     *conid* exists but entities are in scope with the *conid*\ ``.`` prefix
     (because a top-level module *conid* exists or *conid* is after the ``as`` in
     a top-level module import declaration), then a local module *conid* is created
@@ -443,6 +444,13 @@ There is much prior art. The list below is shamelessly cribbed from `#205`_.
 * 2013 de Castro Lopo, qualified exports: `<https://wiki.haskell.org/GHC/QualifiedModuleExport>`_
   ``qualified module T`` in export list and is essentially a subset of this proposal.
 
+* A worthwhile counter-proposal can be found at `#295`_. That proposal re-casts modules as
+  entities proper; this one, in contrast, continues the historical treatment of modules
+  simply as qualifications to identifiers. In my view, `#295`_ needs to do too much work
+  to keep backward compatibility due to its more fundamental approach. Given a fresh start,
+  I would likely prefer something like `#295`_ than what I have written here, but we're not
+  making a fresh start.
+  
 Alternatives
 ------------
 
@@ -484,6 +492,45 @@ F. Disallow local modules to be mutually recursive. The current proposal says (p
    naming, not about compilation dependencies. Compilation dependencies should be handled
    via a mechanism specifically suited for compilation dependencies, such as explicit
    staging like `#243`_.
+
+G. Counter-proposal `#295`_ rightly observes that the export specifiers in this proposal
+   are complicated. At the risk of making this proposal fork-like (that is, by changing the
+   meaning of legacy constructs), these specifiers can be simplified. Here is an alternate
+   formulation, replacing the point (11) in the specification section:
+
+     * With ``-XLocalModules``, add this export item::
+
+         export_item ::= ... | 'module' conid [ export_spec ]
+
+       This exports the local module *conid* and all entities in scope
+       with the *conid*\ ``.`` prefix. If no local module *conid* exists
+       but entities are in scope with the *conid*\ ``.`` prefix
+       (because a top-level module *conid* exists or *conid* is after the ``as``
+       in a top-level module import declaration), then a local module *conid*
+       is created for export. If an *export_spec* is included, all entities
+       listed are exported unqualified; these entities must be in scope with
+       the *conid*\ ``.`` prefix. An *export_spec* of ``..`` exports all entities
+       with the *conid*\ ``.`` prefix unqualified.
+
+       This interpretation replaces the meaning of a ``module`` export item
+       in standard Haskell.
+
+   This new formulation is essentially a mix of the ``qualified`` and unqualified
+   versions of the ``module`` export item in the main proposal. It exports the module
+   (call it ``M``) itself in a way that importing modules will have to access entities
+   with ``M.`` syntax. But anything listed in the export specifier will be exported
+   unqualified. This allows users to write ``module M(..)`` as an export item to export
+   unqualified all entities in scope with a ``M.`` prefix. If you want to export a thinned
+   module without exporting anything unqualified, just make a shim local module.
+
+   I am agnostic on whether I prefer the meaning for ``module`` export items above,
+   or whether I prefer this alternative.
+
+H. Counter-proposal `#295`_ includes module aliases, stating that its approach
+   makes such a definition possible. Module aliases work under this proposal, too:
+   A declaration ``module New = Old`` could simply allow ``New.`` to work as a qualifier
+   for any entity in scope with an ``Old.`` prefix. I don't find module aliases to
+   be useful, but they could be added to this proposal if there is a desire to.
    
 Future Work
 -----------
