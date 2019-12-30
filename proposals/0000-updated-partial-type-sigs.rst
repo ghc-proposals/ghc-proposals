@@ -356,7 +356,7 @@ b. As discussed in motivation point (5), we won't want the choice between comple
 Proposed Change Specification
 -----------------------------
 
-1. Outside of patterns, treat ``_`` as an elision everywhere. This means that ``_`` means "I don't care".
+1. Outside of patterns, treat ``_`` and ``__`` as elisions everywhere. This means that ``_`` and ``__`` mean "I don't care".
 
    - In types (with ``-XElidedTypes``), a ``_`` is treated as a fresh unification variable. This means that ``foo :: _ -> _`` is the same as
      ``foo :: a -> b``, while ``Proxy @_ True`` is the same as ``Proxy @Bool True``. You're instructing GHC that
@@ -373,11 +373,17 @@ Proposed Change Specification
      either using a named wildcard to get a diagnostic or enabling ``-XElidedTypes`` to accept the
      elision.
 
+     Each elision spelled ``__`` will cause GHC to print out a diagnostic warning explaining how
+     the elision was filled. Writing an elision as ``_`` suppresses the diagnostic, as does
+     ``-Wno-elided-types``.
+
    - In expressions, a ``_`` is a part of the expression the author did not care to write. Currently, this means
      that ``_`` will be replaced with ``error "elision at <line>:<col>"``. In this case, an error will be printed,
      stating the inferred type of the ``_`` and suggesting to enable ``-XElidedExpressions`` if the user
-     wants to keep the ``error``\ing behavior. With ``-XElidedExpressions``, GHC will still warn; this can
-     be suppressed with ``-Wno-elided-expressions``.
+     wants to keep the ``error``\ing behavior. With ``-XElidedExpressions``, GHC will still warn, controlled
+     by ``-Werroring-elided-expressions``. (This case is an exception to the general rule that ``_`` prints
+     no diagnostic, as it seems willfully cruel not to print one here. Once GHC can infer proper expressions,
+     this might be changed.)
 
      In the future, GHC may support the possibility of inferring expressions. An elided expression may then
      be filled in, not with a call to ``error``, but a correct expression. For example, we might imagine
@@ -407,6 +413,9 @@ Proposed Change Specification
      including suggested replacements. In this way, an expression named
      wildcard will behave like holes have.
 
+   In all cases, the diagnostic is suppressed by prefixing the identifier with only one underscore;
+   two or more underscores will induce the diagnostic.
+
 3. In the absence of ``-XNamedWildCards``, the use of a type variable that begins with an underscore will induce a warning
    that it looks like an attempt to write a named wildcard. This warning will be
    controlled by ``-Wpossible-named-wildcards``, on by default.
@@ -425,8 +434,6 @@ Proposed Change Specification
 
      wurble ::? _ -> _
      wurble x = not x
-
-   Named wildcards would induce diagnostics; elisions would not.
 
    Partial type signatures would be kind-generalized *after* checking the function body. This would
    allow something like the following to be accepted::
@@ -456,10 +463,10 @@ Proposed Change Specification
 
    Here, ``ex4`` is rejected, because we do not know what type ``x`` should have and we cannot
    generalize. On the other hand ``ex5`` is accepted. The extension ``-XPartialTypeSignatures``
-   would have to be enabled, but there would otherwise be no diagnostic.
+   would have to be enabled; no diagnostic would be printed.
 
    The use of an extra-variables wildcard anywhere other than a top-level ``forall`` in a
-   partial type signature is disallowed, must like the extra-constraints wildcard previously.
+   partial type signature is disallowed, much like the extra-constraints wildcard previously.
 
    Note that any ordinary type variables mentioned in a type are generalized as usual. Thus, ::
 
@@ -475,63 +482,64 @@ Proposed Change Specification
 
 Here is a summary:
 
-+----------------------------+------------------------+----------------------------+
-|                            |elision                 |named wildcard (assume      |
-|                            |                        |``-XNamedWildCards``)       |
-+----------------------------+------------------------+----------------------------+
-|in complete type signature  |GHC uses unification to |GHC treats the signature as |
-|                            |fill in elision; no     |if it were partial, if      |
-|                            |diagnostic. If          |possible. GHC uses the      |
-|                            |unification does not    |definition of the identifier|
-|                            |find a value for the    |to solve for the wildcard.  |
-|                            |elision, generalize.    |The diagnostic prints both  |
-|                            |Needs ``-XElidedTypes``.|the value GHC has discovered|
-|                            |                        |for the wildcard and its    |
-|                            |Covers 1AB/2A/3C/4A/5CD,|kind. Compilation is aborted|
-|                            |without forcing a       |always.                     |
-|                            |partial type signature  |                            |
-|                            |                        |Covers 1BC/2C/3AB/4B/5CD    |
-|                            |                        |                            |
-+----------------------------+------------------------+----------------------------+
-|in partial type signature   |same as above, but      |same as above, but          |
-|(assume                     |information from the    |compilation is not          |
-|``-XPartialTypeSignatures``)|definition can be taken |aborted (i.e., the          |
-|                            |into account            |diagnostic is a warning)    |
-|                            |                        |                            |
-|                            |Covers 1ABC/2A/3C/4A/5C |Covers 1C/2B/3AB/4B/5C      |
-+----------------------------+------------------------+----------------------------+
-|in a visible type           |same as above, but no   |same behavior as an elision,|
-|application                 |generalization. If      |but printing a diagnostic.  |
-|                            |GHC is unable to        |The diagnostic is an error  |
-|                            |figure out what an      |without                     |
-|                            |elision should be,      |``-XPartialTypeSignatures`` |
-|                            |use ``Any``.            |and is a warning with the   |
-|                            |                        |extension                   |
-|                            |Covers 1B/2A/3C/4A/5CD  |                            |
-|                            |                        |Covers 1B/2BC/3AB/4B/5CD    |
-+----------------------------+------------------------+----------------------------+
-|in another type (e.g., data |same as in a complete   |Not allowed; issue an error |
-|constructor signature,      |type signature          |with the kind of the        |
-|instance head, etc.)        |                        |wildcard and any information|
-|                            |Covers 1AB/2A/3C/4A/5D  |GHC can figure out about the|
-|                            |                        |content of the wildcard.    |
-|                            |                        |                            |
-|                            |                        |Covers 1B/2C/3B/4B/5D       |
-+----------------------------+------------------------+----------------------------+
-|in an expression            |GHC replaces the        |Same behavior as today's    |
-|                            |underscore with ``error |holes: a diagnostic is      |
-|                            |"elision at             |printed with the hole's type|
-|                            |<line>:<col>"`` with    |and suggestions for what it |
-|                            |``-XElidedExpressions``.|might be filled in with.    |
-|                            |In the future, perhaps  |This behavior does **not**  |
-|                            |GHC can be cleverer (for|require an extension.       |
-|                            |example: ``f :: a -> a; |                            |
-|                            |f = _``.                |                            |
-|                            |                        |                            |
-|                            |Covers 1AB/2A/3C/4A/5B  |Covers 1AB/2C/3AB/4B/5B     |
-|                            |                        |                            |
-|                            |                        |                            |
-+----------------------------+------------------------+----------------------------+
++----------------------------+------------------------+------------------------------+
+|                            |elision                 |named wildcard (assume        |
+|                            |                        |``-XNamedWildCards``)         |
++----------------------------+------------------------+------------------------------+
+|in complete type signature  |GHC uses unification to |GHC treats the signature as   |
+|                            |fill in elision. If     |if it were partial, if        |
+|                            |unification does not    |possible. GHC uses the        |
+|                            |find a value for the    |definition of the identifier  |
+|                            |elision, generalize.    |to solve for the wildcard.    |
+|                            |Needs ``-XElidedTypes``.|The diagnostic prints both    |
+|                            |                        |the value GHC has discovered  |
+|                            |Covers 1AB/2A/3C/4A/5CD,|for the wildcard and its      |
+|                            |without forcing a       |kind. Compilation is aborted  |
+|                            |partial type signature  |always.                       |
+|                            |                        |                              |
+|                            |                        |Covers 1BC/2C/3AB/4B/5CD      |
+|                            |                        |                              |
++----------------------------+------------------------+------------------------------+
+|in partial type signature   |same as above, but      |same as above, but            |
+|(assume                     |information from the    |compilation is not aborted    |
+|``-XPartialTypeSignatures``)|definition can be taken |(i.e., any diagnostic is a    |
+|                            |into account            |warning)                      |
+|                            |                        |                              |
+|                            |Covers 1ABC/2A/3C/4A/5C |Covers 1C/2B/3AB/4B/5C        |
++----------------------------+------------------------+------------------------------+
+|in a visible type           |same as above, but no   |same behavior as an elision,  |
+|application                 |generalization. If GHC  |but requiring                 |
+|                            |is unable to figure out |``-XPartialTypeSignatures``   |
+|                            |what an elision should  |(and allowing sharing)        |
+|                            |be, error.              |                              |
+|                            |                        |Covers 1B/2BC/3AB/4B/5CD      |
+|                            |Covers 1B/2A/3C/4A/5CD  |                              |
+|                            |                        |                              |
+|                            |                        |                              |
+|                            |                        |                              |
++----------------------------+------------------------+------------------------------+
+|in another type (e.g., data |same as in a complete   |Not allowed; issue an error   |
+|constructor signature,      |type signature          |with the kind of the          |
+|instance head, etc.)        |                        |wildcard and any information  |
+|                            |Covers 1AB/2A/3C/4A/5D  |GHC can figure out about the  |
+|                            |                        |content of the wildcard.      |
+|                            |                        |                              |
+|                            |                        |Covers 1B/2C/3B/4B/5D         |
++----------------------------+------------------------+------------------------------+
+|in an expression            |GHC replaces the        |Same behavior as today's      |
+|                            |underscore with ``error |holes: a diagnostic is        |
+|                            |"elision at             |printed with the hole's type  |
+|                            |<line>:<col>"`` with    |and suggestions for what it   |
+|                            |``-XElidedExpressions``.|might be filled in with.      |
+|                            |In the future, perhaps  |This behavior does **not**    |
+|                            |GHC can be cleverer (for|require an extension.         |
+|                            |example: ``f :: a -> a; |                              |
+|                            |f = _``.                |                              |
+|                            |                        |                              |
+|                            |Covers 1AB/2A/3C/4A/5B  |Covers 1AB/2C/3AB/4B/5B       |
+|                            |                        |                              |
+|                            |                        |                              |
++----------------------------+------------------------+------------------------------+
 						  
 
 Effect and Interactions
