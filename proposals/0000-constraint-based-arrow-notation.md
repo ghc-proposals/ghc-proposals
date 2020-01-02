@@ -424,10 +424,6 @@ I, Alexis King, volunteer to implement this change if this proposal is accepted.
 
 Concretely, I expect the change will mostly involve implementing `ArrowStack` and `ArrowEnv` as new `BuiltInSynFamily`s and plumbing them through `TcArrows`.
 
-## Endorsements
-
-None so far.
-
 [arrow notation]: https://downloads.haskell.org/ghc/8.8.1/docs/html/users_guide/glasgow_exts.html#arrow-notation
 [hackage:arrows]: https://hackage.haskell.org/package/arrows
 [Paterson01]: http://www.staff.city.ac.uk/~ross/papers/notation.html
