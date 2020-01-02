@@ -186,6 +186,38 @@ I don’t think this is actually a problem—61 arguments really ought to be eno
 
 ## Examples
 
+### The `bind` combinator
+
+For a particularly extreme illustration of why the proposed desugaring is desirable while the current desugaring is not, consider the definition of the canonical `bind` operation on arrows:
+
+```haskell
+bind :: Arrow a => a e b -> a (e, b) c -> a e c
+bind f g = (id &&& f) >>> g
+```
+
+This operation is useful in its own right when used as an ordinary arrow combinator. Given two arrows `f :: Arr A B` and `g :: Arr (A, B) C`, `bind` can be used to compose them together as follows:
+
+```haskell
+foo :: Arr A C
+foo = f `bind` g
+```
+
+Under the proposed desugaring (and the pre-7.10 desugaring), `bind` is accepted as a control operator, allowing `bind` on arrows to serve double-duty as `bind` on commands. However, under the current desugaring, `bind` on commands has to be defined the following (enormously uglier) way:
+
+```haskell
+bind :: Arrow a => a (e, ()) b -> a (e, (b, ())) c -> a (e, ()) c
+bind f g = (id &&& f) >>> arr (\((e, ()), x) -> (e, (x, ()))) >>> g
+```
+
+Worse still, this definition of `bind` is utterly useless outside of `proc` notation, as to use it as an arrow combinator, the above definition of `foo` would need to be rewritten to the following:
+
+```haskell
+foo :: Arr A C
+foo = arr (, ()) >>> ((arr fst >>> f) `bind` (arr (\(x, (y, ())) -> (x, y)) >>> g)
+```
+
+This construction is completely unreadable by comparison, so the current desugaring makes it impractical to use control operators outside of `proc` notation. The proposed desugaring restores the reuse afforded by Paterson’s original desugaring.
+
 ### A worked example using `handle`
 
 The canonical example supported by this proposal is the `handle` operator, a member of the `ArrowError` class:
@@ -289,7 +321,7 @@ GHC rejects the above instance because it expects the type for `handle` mentione
 
   5. Everything is checked and all constraints are solved, so we’re done.
 
-This example concretely illustrates why it is crucial that `ArrowEnv` is injective: in step 3, it allowed us to infer the expected stack for each argument to `handle`. Consider that if we didn’t learn that information that way, we’d be totally stuck in step 4, since `ArrowStack` is non-injective! We would gain no information from the types of `f` and `g`, so if `s1` and `s2` remained unsolved metavariables, we would get a type error.
+This example concretely illustrates why it is crucial that `ArrowEnv` is injective: in step 3, it allowed us to infer the expected stack for each argument to `handle`. Consider that if we didn’t learn that information that way, we’d be totally stuck in step 4, since `ArrowStack` is non-injective! We would gain no information from the types of `f` and `g`, so if `s1` and `s2` remained unsolved metavariables, resulting in a type error due to insoluble equalities.
 
 ### Case study: `keyed`
 
@@ -372,7 +404,7 @@ This proposal has the following alternatives:
 
   1. **Implement this change, but gate it behind a separate language extension.**
 
-     I outlined in the previous section why I think this isn’t worth doing, and it would complicate the implementation but provide relatively little value. Still, it’s always an option.
+     I outlined in the previous section why I think this isn’t worth doing, and it would significantly complicate the implementation to maintain support for both desugarings yet provide relatively little value. Still, it’s an option if backwards-compatibility is deemed too important.
 
   2. **Implement this change, but use the nested tuple representation of the original paper instead of the flat representation of this proposal.**
 
