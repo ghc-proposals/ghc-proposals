@@ -13,8 +13,10 @@ Unsaturated Type Families
 .. sectnum::
 .. contents::
 
-This is a proposal to allow partial application of type families, as
-described in the paper `Higher-Order Type-level Programming in Haskell <https://www.microsoft.com/en-us/research/publication/higher-order-type-level-programming-in-haskell>`_.
+This is a proposal to allow partial application of type families. The idea is
+described in the paper
+`Higher-Order Type-level Programming in Haskell <https://www.microsoft.com/en-us/research/publication/higher-order-type-level-programming-in-haskell>`_,
+and is presented here with a few tweaks and refinements.
 
 
 Motivation
@@ -33,8 +35,8 @@ What this means is that while it's possible to write a type-level
      Map _ '[]       = '[]
      Map f (x ': xs) = f x ': Map f xs
 
-it is not possible to pass another type function as an argument,
-because that would require partial (unsaturated) application of the
+it is not possible to pass another type function as the first argument,
+to ``Map`` because that would require partial (unsaturated) application of the
 function argument.
 It is, however, possible to pass a type constructor, such as ``Maybe``.
 ``Map Maybe '[Int, Bool]`` evaluates to ``'[Maybe Int, Maybe Bool]``.
@@ -80,50 +82,51 @@ type functions in the *kind system*. That is, a type family such as identity ::
   type family Id a where
     Id a = a
 
-will have kind ``k ~> k``, instead of ``k -> k``, which is
-reserved for type constructors such as ``Maybe``.
-``~>`` is called an *unmatchable* arrow, while ``->`` is *matchable*
+would have kind ``k -> @U k`` instead of ``k -> k`` -- the kind that GHC would
+infer today. The ``U`` means "unmatchable". Type constructors such as ``Maybe``
+or ``[]`` would instead have kind ``Type -> @M Type``, meaning they are
+matchable. Matchability is a property of the arrow that appears in the kind.
+The saturation restriction for ``Map`` from earlier can now essentially be
+summed up by stating that its first argument must have kind ``a -> @M b``.
 
 Then equalities of the shape ``f a ~ g b`` are only solved by
-decomposition when ``f :: k -> j`` and ``g :: k -> j``.
+decomposition when ``f :: k -> @M j`` and ``g :: k -> @M j``.
 
-With this, it is now possible to define a version of ``Map`` that
+With this distinction, it is now possible to define a version of ``Map`` that
 abstracts over type families ::
 
-   type family Map (f :: a ~> b) (xs :: [a]) :: [b] where
+   type family Map (f :: a -> @U b) (xs :: [a]) :: [b] where
      Map _ '[]       = '[]
      Map f (x ': xs) = f x ': Map f xs
 
-The kind of ``Map`` itself becomes ``(a ~> b) ~> [a] ~> [b]``.
+The kind of ``Map`` itself becomes ``(a -> @U b) -> @U [a] -> @U [b]``.
 
-Matchability is a first-class type, and is defined as the following ::
+Matchability is a first-class type, and is defined as:::
 
   data Matchability = Matchable | Unmatchable
 
-There is a single primitive arrow constructor, called ``ARROW``, of which
-both ``->`` and ``~>`` are special cases. The full kind of ``ARROW`` is ::
+We could even define ``M`` and ``U`` as synonyms of ``'Matchable`` and
+``'Unmatchable`` respectively.::
+
+  type M = 'Matchable
+  type U = 'Unmatchable
+
+We could export these types from a new ``GHC.Matchability`` module,
+or perhaps ``GHC.Types``.
+
+There would then be a single primitive arrow constructor, called ``ARROW``:::
+
   ARROW :: forall (m :: Matchability) ->
            forall (q :: RuntimeRep) (r :: RuntimeRep).
            TYPE q -> TYPE r -> Type
-
-``->`` and ``~>`` are defined as type synonyms ::
-
-  type (->) = ARROW 'Matchable
-  type (~>) = ARROW 'Unmatchable
-
-and they both have kinds ::
-
-  (~>), (->) :: forall {q :: RuntimeRep} {r :: RuntimeRep}.
-             TYPE q -> TYPE r -> Type
 
 Matchability polymorphism
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The version of ``Map`` above can only be applied to type families
-(which have kind ``~>``) but not type constructors (which have kind
-``->``). Since matchabilities are a first-class type, they can be
-quantified over, thus enabling polymorphism in the matchability of the
-argument arrow.
+(which have kind ``-> @U``) but not type constructors (which have kind
+``-> @M``). Since matchabilities are a first-class type, they can be
+quantified over, thus enabling polymorphism in the matchability of arrows.
 
 This way, ``Map`` can be defined to be *matchability polymorphic* (in
 its first argument) ::
@@ -133,18 +136,111 @@ its first argument) ::
      Map f (x ': xs) = f x ': Map f xs
 
 As a matter of convenience for writing matchability-polymorphic arrow
-kinds, the mixfix syntax ``->{m}`` is introduced, which stands for an instantiation
-of ``ARROW`` with matchability ``m`` (which can be any type with kind ``Matchability``)
-
-
+kinds, we allow matchability variables (i.e type variables of kind
+``Matchability``) in ``@`` annotations, in addition to ``U`` and ``M``.
 Thus, ``Map`` can alternatively be written as ::
 
-   type family Map (f :: a ->{m} b) (xs :: [a]) :: [b] where
+   type family Map (f :: a -> @m b) (xs :: [a]) :: [b] where
      Map _ '[]       = '[]
      Map f (x ': xs) = f x ': Map f xs
 
-Accepting both ``Map Id`` and ``Map Maybe``.
-Here, the kind of ``Map`` is ``forall (m :: Matchability) a b. (a ->{m} b) ~> [a] ~> [b]``
+These two variants of ``Map`` support taking both ``Id`` (a type family) and
+``Maybe`` (a type constructor) as the first argument. The complete kind of
+``Map`` is ``forall (m :: Matchability) a b. (a -> @m b) -> @U [a] -> @U [b]``.
+
+In fact, as evidenced by the change suggested in the *Syntax* section, we
+can even allow matchabilities to be applications of type families, e.g:::
+
+  type family Flip (m :: Matchability) :: Matchability where
+    Alternate 'Matchable = 'Unmatchable
+    Alternate 'Unmatchable = 'Matchable
+
+  type ArrFlip (m :: Matchability) a b = a -> @(Flip m) b
+
+  -- F only accepts 'f's with a matchable arrow kind.
+  type family F (f :: ArrFlip 'Unmatchable i j) (a :: i) :: j where
+    F f a = f a
+
+We could optionally add reserved operators for ``-> @U`` and ``-> @M``, e.g
+``a $-> b`` and ``a |-> b`` respectively. These would have to be baked in
+because GHC would have to treat them like ``->`` and GHC's parser handles this
+operator in a special way
+(see `here <https://gitlab.haskell.org/ghc/ghc/issues/10056#note_157509>`_).
+
+Meaning of an annotation-free ``->``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Even though this proposal introduces a way to annotate arrows, we do not want
+to force every single arrow (written or inferred) to be annotated with a
+matchability. Therefore, let's consider the meaning that we want to give to an
+annotation-free ``->``, what matchability should be given by default? We could
+just default to matchable in all arrow kinds and unmatchable elsewhere. However,
+some contexts seem to be particularly adapted to a matchability-polymorphic
+interpretation, while others require a more rigid interpretation, constraining
+pieces of code to only accept type constructors with matchable arrow kinds.
+A few examples are given below.::
+
+  -- Here, we want:
+  --   Map1 :: forall (a :: Type) (m :: Matchability) (b :: Type).
+  --           (a -> @m b) -> @U [a] -> @U [b]
+  type family Map1 (f :: a -> b) (xs :: [a]) where
+    Map1 f       '[] =             '[]
+    Map1 f (x ': xs) = f x ': Map1 f xs
+
+  -- Same here:
+  --   Map2 :: forall (a :: Type) (m :: Matchability) (b :: Type).
+  --           (a -> @m b) -> @U [a] -> @U [b]
+  type family Map2 f xs where
+    Map2 f       '[] =             '[]
+    Map2 f (x ': xs) = f x ': Map2 f xs
+
+  -- Below, we want the type application '@(Type -> Type)'
+  -- to be interpreted as instantiating 'k' to 'Type -> @m Type',
+  -- so that both 'p1' and 'p2' typecheck, allowing us to construct proxies to
+  -- types with matchable and unmatchable arrow kinds.
+  data P k (a :: k) = P
+  type family F a
+  p1 = P @(Type -> Type) @Maybe
+  p2 = P @(Type -> Type) @F
+
+  -- Here, we only want to allow proper type constructors:
+  --   Functor1 :: (Type -> @M Type) -> @M Constraint
+  class Functor1 (f :: Type -> Type) where
+    fmap1 :: (a -> b) -> f a -> f b
+
+  -- Same here:
+  --   Functor2 :: (Type -> @M Type) -> @M Constraint
+  class Functor2 f where
+    fmap2 :: (a -> b) -> f a -> f b
+
+This suggests that the meaning of explicitly written or inferred arrow kinds
+should depend on the context from which they originated. We however are unlikely
+to interpret any annotation-free ``->`` as an unmatchable arrow. There is a
+balance to be found between the flexibility granted by a
+matchability-polymorphic interpretation and the inference problems that the said
+flexibility would cause. In the case of arrow kinds for type family arguments,
+the matchability-polymorphism seems desirable and might xeven end up accepting
+all the programs accepted today, and then some, without inducing any breakage.
+Likewise, it seems desirable to accept the definitions for ``p1`` *and* ``p2``.
+We therefore propose the following plan:
+
+1. Figure out all the different contexts where we would not want to default to
+   a matchable arrow, quite likely extending ``UserTypeCtxt`` along the way or
+   defining a dedicated type.
+
+2. Implement the desired behaviour in the compiler, for each context, by
+   allocating matchability variables or interpreting as matchable as
+   appropriate, for both explicitly written and inferred kind arrows.
+   In the matchability variable allocation case, the constraint solver would
+   then be responsible for unifying the variable with a specific matchability
+   or figuring out that we can just keep the matchability polymorphism. Being
+   able to discriminate on the context from which an annotation-free ``->``
+   comes will require that we associate to each of them some information about
+   the context in which they were written, earlier in the pipeline, or the
+   context in which they were inferred, during typechecking.
+
+3. Document and summarize the final behaviour in a specification that would be
+   included in the GHC manual.
 
 
 Syntax changes
@@ -155,50 +251,16 @@ standard defines the syntax of types as follows ::
 
   type ::= btype [-> type]
 
-This proposal changes the syntax by adding the two new additional constructs ::
+This proposal changes the syntax by adding an optional matchability annotation
+slot to ``->``, and defines what those matchability annotations can be
+(``U``, ``M`` or a (type) variable, the result of applying a type family to a
+type, ...).::
 
-    type ::= btype
-	|   btype ->{m} type
-	|   btype ->    type
-	|   btype ~>    type
+    type ::= btype [-> [@btype] type]
 
-Inference
-~~~~~~~~~
-
-To retain backwards compatibility, matchabilities are **not**
-generalised over, instead, they are defaulted to ``'Matchable``. That
-is, any matchability-polymorphic definition must be manually defined
-so. ::
-   foo :: f a -> f a                                                    -- (f :: * -> *)
-   bar :: HList xs -> HList (Map f xs)                                  -- (f :: * -> *)
-   baz :: forall m xs (f :: * ->{m} *).  HList xs -> HList (Map f xs)   -- (f :: * ->{m} *)
-   boo :: forall f. f ~ Id => f Int                                     -- (f :: * ~> *)
-
-Note that in ``baz``, ``f`` is explicitly marked to be polymorphic,
-whereas in ``bar``, it defaults to matchable.
-
-More generally, the type signature gets kind-checked first, with
-unification metavariables invented for all arrow kinds. Then, the
-arising constraints are simplified as normal. At this point, all unsolved
-matchability variables are defaulted to ``Matchable``, which in turn
-could result in simplifying further constraints.
-
-Matchability defaulting takes place at call sites too, when invoking a
-matchability-polymorphic function without explicitly providing the
-matchability of the argument.
-Consider the following function ::
-
-   qux :: forall m (f :: * ->{m} *) a. f a -> f a                       -- (f :: * ->{m} *)
-
-In ``qux (Just False)``, we need to solve ``f a ~ Maybe Bool``. Since
-``f`` is polymorphic, we are stuck. Here, ``f`` gets defaulted to matchable,
-and type inference can proceed by setting ``f := Maybe`` and ``a := Bool``.
-
-What if the user wishes to use a type family instead? They can use
-visible type applications: ``qux @_ @Id (Just False)``. Now, ``f`` is
-set to ``Id``, and ``a`` is inferred to be ``Maybe Bool``. (Note the
-wildcard ``@_`` standing in for the matchability; it can be inferred
-from the kind of ``Id``).
+The syntax described above is a mere application of the
+"infix type application" idea discussed in
+`#12363 <https://gitlab.haskell.org/ghc/ghc/issues/12363>`_.
 
 Arity of type families
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -206,11 +268,12 @@ Arity of type families
 Consider the following two type families ::
 
   type family Foo (a :: *) :: *
-  type family Bar :: * ~> *
+  type family Bar :: * -> @U *
 
-Both have the same kind, namely ``* ~> *``, but there is a crucial
+Both have the same kind, namely ``* -> @U *``, but there is a crucial
 difference: the arity of ``Foo`` is 1, whereas ``Bar`` is nullary.
 That is, it is possible to define ::
+
   type family Foo (a :: *) :: * where
     Foo Int  = Bool
     Foo Char = Int
@@ -218,7 +281,7 @@ That is, it is possible to define ::
 but ``Bar`` can only be defined without arguments and a type family on
 its RHS ::
 
-  type family Bar :: * ~> * where
+  type family Bar :: * -> @U * where
     Bar = Foo
 
 This is because type families can only be reduced when they are fully
@@ -233,15 +296,14 @@ Term-level functions
 Since ``TypeInType``, the types of terms and the kinds of types share
 the same arrow ``->``. Consequently, as a result of this proposal, term-level
 functions inevitably need to have a matchability. They are assigned
-the unmatchable arrow ``~>`` (though this should not be visible in
-surface Haskell, the arrow is rendered as ``->`` in the type of terms).
+the unmatchable arrow ``-> @U``.
 
 Inferred arguments
 ~~~~~~~~~~~~~~~~~~
 
 When supplying type arguments to matchability-polymorphic functions such as ::
 
-   qux :: forall m (f :: * ->{m} *) a. f a -> f a
+   qux :: forall m (f :: * -> @m *) a. f a -> f a
 
 the user needs to provide either a concrete matchability or a wildcard before
 supplying the instantiation for ``f``, as in ``qux @_ @Id``. This is tiresome,
@@ -262,13 +324,14 @@ are only used in *types*, whereas matchabilities only appear in
 Costs and Drawbacks
 -------------------
 
-There is no serious maintenance cost of this feature, as the change to
-the constraint solver is modest (taking into account matchability
-information when decomposing type applications).
+An implementation of this proposal would touch several parts of the
+compiler and some new complexity *would* be introduced, most of it
+concentrated in the implementation of the hybrid matchability
+inference/defaulting scheme in the typechecker.
 
-A potential drawback is that users will now need to be aware of the
+Another potential drawback is that users will now need to be aware of the
 arrow dichotomy. However, this only concerns advanced users, and
-the feature is backwards-compatible. Notably, before this feature,
+the feature aims to be backwards-compatible. Notably, before this feature,
 the kind of a type family never shows up in source Haskell, and is only
 printed by GHCi with the ``:kind`` command.
 
@@ -280,14 +343,15 @@ details of the proposal.
 
 1.  Instead of matchability polymorphism,
     a subsumption relationship could be considered between the two arrows.
-    This approach has been fully formalised by Richard Eisenberg in his `thesis <http://www.cis.upenn.edu/~sweirich/papers/eisenberg-thesis.pdf>`_,
-    and it would simply allow ``Map :: (a ~> b) ~> [a] ~> [b]`` to be applied to both
-    constructors and functions. The main drawback of that approach is that
-    inference would suffer compared to the scheme outlined above.
-    Matchability polymorphism also fits more cleanly into the existing
-    constraint solver mechanism.
+    This approach has been fully formalised by Richard Eisenberg in his
+    `thesis <http://www.cis.upenn.edu/~sweirich/papers/eisenberg-thesis.pdf>`_,
+    The main drawback of that approach is that inference would suffer compared
+    to the scheme outlined above. Matchability polymorphism also fits more
+    cleanly into the existing constraint solver mechanism. Alternatively, we
+    could stick to the simple defaulting scheme mentionned in the section about
+    annotation-free arrows. But...
 
-2.  Type inference with the matchability defaulting scheme is
+2.  Type inference with the "simple" matchability defaulting scheme is
     incomplete. Take following program ::
 	nested :: a b ~ c Id => b Bool
 	nested = False
@@ -296,43 +360,33 @@ details of the proposal.
     instantiated with unification variables, and there are no further
     steps. So they are all defaulted to be matchable, at which point
     the equality can be decomposed, and we learn that
-    ``(b :: * -> *) ~ (Id :: * ~> *)``. This way, ``nested`` cannot be called,
-    because no such ``b`` exists.
+    ``(b :: * -> @M *) ~ (Id :: * -> @U *)``. This way, ``nested`` cannot be
+    called, because no such ``b`` exists.
 
     Instead, we could do something more clever by defaulting
     matchabilities in dependency order, but it's not obvious if this
     additional complexity would be worth it.
 
+3.  We could make different choices for the syntax, regarding how we annotate
+    arrows with matchabilities or the particular names around the
+    ``Matchability`` type.
 
 Unresolved Questions
 --------------------
 
-1.  Syntax. Using ``~>`` for the unmatchable arrow would steal a very
-    commonly used operator.
+1. Syntax
+   We stick to just one operator, ``->``, but take the spot on the right of
+   the arrow to specify matchability annotations, while the Linear Haskell work
+   uses the spot on the left. Possibly two predefined operators that would stand
+   for ``-> @U`` and ``-> @M``. Is there a better syntax to annotate arrows
+   with matchabilities?
 
-    With regards to syntax stealing, an option would be to not bake it
-    into the parser, and instead define it in library code that can then
-    be imported manually. The issue with this is the special fixity rule
-    for ``->``, which is less than any user-definable fixity. To make the
-    fixity consistent, ``~>`` needs to be wired in in a similar manner.
-
-2. Naming of the arrows.
-   Richard Eisenberg suggests swapping the arrows. That is, ``~>`` would mean
-   matchable, and ``->`` would mean unmatchable. This would be in preparation for
-   Dependent Haskell, where the regular terms can be used in a type context, so
-   the term level functions need to have an unmatchable kind. Since term level function
-   types are much more prevalent than type constructor kinds, in the long term, the
-   least disruptive decision would be to make ``->`` mean normal,
-   *unmatchable* function arrow, and ``~>`` be the *matchable* arrow
-   kind of type constructors. This is unfortunately a breaking change, but is likely
-   to help avoid even larger breakages in the future.
-   If we do go with this option, it might be worth exploring implicitly quantifying over
-   matchabilities whenever the user writes ``->`` (unmatchable), so as
-   to allow both matchable and unmatchable arguments to be passed in.
-
+2. Precise inference/defaulting strategy.
+   This is part of the work involved in implementing this proposal.
 
 Implementation Plan
 -------------------
+
 I have implemented a
 `prototype <https://gitlab.haskell.org/kcsongor/ghc/tree/unsaturated_type_families>`_
-of this feature.
+of this feature, following a prior version of this proposal.
