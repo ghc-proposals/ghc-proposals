@@ -24,7 +24,7 @@ However, *all four change the semantics of Haskell*, by performing eta-expansion
 
 * **The cost is large**.  There is extra complexity in the compiler.  There is extra complexity in the formal description of the type system, and in any paper we write about it.  But, worst of all, the features change the semantics of the program.
 
-* A recent new cost is that the [Quick Look Impredicativity proposal]( https://github.com/ghc-proposals/ghc-proposals/pull/274) gains extra power by not having contravariance.
+* A recent new cost is that the [Quick Look Impredicativity proposal]( https://github.com/ghc-proposals/ghc-proposals/pull/274) gains extra power by not having contravariance.   More details in the [Quick Look paper](https://www.microsoft.com/en-us/research/publication/a-quick-look-at-impredicativity/)
 
 Here is a thought experiment.  Suppose GHC lacked all four features, and someone proposed adding them.  That proposal would never leave the launchpad. A minor change in programming convenience, in exchange for changing language semantics?  No.  If that’s true, then the only issue would be back-compat issues: how many libraries would be affected, and how painful they would be to fix.  We need to get data on that.
 
@@ -138,6 +138,7 @@ See Motivation above.
 
 ## Effect and Interactions
 
+* See Section 7 of the [Quick Look paper](https://www.microsoft.com/en-us/research/publication/a-quick-look-at-impredicativity/) for a detailed analysis of the practical impact of these changes.
 * Everything (specification, implementation) becomes a bit simpler
 * Quick Look Impredicativity gains more power
 
@@ -197,7 +198,8 @@ The solution is simple, and improves the code: just give `getBuildDoctests` a ty
 
 ## Alternatives
 
-Status quo. But the the status quo is extremely unsatisfactory.
+1.  Status quo. But the the status quo is extremely unsatisfactory.
+2.  Change GHC's internmediate language to base it on [System F-eta](https://www.sciencedirect.com/science/article/pii/0890540188900090) (Mitchell, 1988).  In this language, everything is done modulo eta expansion/contraction.  Apart from the huge engineering consequences, it's not clear that F-eta as an intermediate language is compatible with Haskell, which distinguishes bottom from (\x.bottom).
 
 
 ## Unresolved Questions
