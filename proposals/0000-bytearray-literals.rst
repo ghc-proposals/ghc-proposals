@@ -22,10 +22,11 @@ would be able to write:
 
 .. code-block:: haskell
 
-  "Literals"#         -- Addr# (Modified UTF-8)
-  "\xef\xbb\xbf"utf8# -- Addr# (UTF-8)
-  "Юникод"utf8##      -- ByteArray# (UTF-8)
-  "Юникод"utf16##     -- ByteArray# (UTF-16, native endian)
+  "Tag Team"utf8#    -- Addr# (UTF-8)
+  "Tag\x00Team"utf8# -- Addr# (UTF-8 with raw bytes)
+  "Foo\x00Bar"utf8## -- ByteArray# (UTF-8 with raw bytes)
+  "Юникод"utf8##     -- ByteArray# (UTF-8)
+  "Юникод"utf16##    -- ByteArray# (UTF-16, native endian)
 
 Motivation
 ----------
@@ -46,9 +47,11 @@ This proposal addresses several shortcomings with string literals in GHC:
   ``ByteArray#`` at all and must often resort to performing a series
   of equality tests.
 
-This proposal introduces additional syntax for two types: ``ByteArray#`` and
-``Addr#``. It causes GHC to reject some code that is currently accepted. It
-does not change the meaning of any programs that continue compiling.
+This proposal introduces provides a mechanism for literals of two types:
+``ByteArray#`` and ``Addr#``. It does with without extending the language
+syntactically. Consequently, all programs that compile with GHC today will
+continue to compile after this proposal is implemented. Their meaning will
+not change.
 
 Recap: String desugaring currently
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -59,70 +62,48 @@ Currently, it's possible to create primitive ``Addr#`` string literals:
 
   "hello"# -- :: Addr#
 
-These literals are octet sequences. That is, primitive string literals may
-only have characters <= '\xFF'. (Most BMP characters cannot be represented).
+Such literals encode text as UTF-8. Additionally, arbitrary octets are
+supported via hexadecimal and decimal escape sequences. A null byte is
+added to the end of the sequence.
 
-Strings with non-ASCII characters, like ``"hello"``, ``"Юникод"``, ``"\NUL"``,
-are desugared as:
+``String`` literals like ``"hello"``, ``"Юникод"``, ``"\NUL"`` are desugared
+using <Modified UTF-8 https://en.wikipedia.org/wiki/UTF-8#Modified_UTF-8>_.
+For example:
 
 .. code-block:: haskell
 
-  unpackCString# "hello"#
-  unpackCStringUtf8# "\208\174\208\189\208\184\208\186\208\190\208\180"#
-  unpackCString# "\192\128"#
+  "hello" ==> unpackCString# "hello"#
+  "Юникод" ==> unpackCStringUtf8# "\208\174\208\189\208\184\208\186\208\190\208\180"#
+  "\NUL" ==> unpackCStringUtf8# "\192\128"#
 
-The current representations are null-terminated and encoded with Modified UTF-8
-so that literals may contain the ``NUL`` character.
+Like ``Addr#`` literals, these result in null-terminated byte sequences.
+Unlike ``Addr#`` literals, they use Modified UTF-8. Note that Modified
+UTF-8 is only used when desugaring ``String`` literals, not when desugaring
+``Addr#`` literals. More concretely, ``"\NUL"`` is not desugared to an
+expression that involves ``"\NUL"#``.  This proposal does not impact the
+desugaring of ``String`` literals or ``Addr#`` literals in any way.
 
 Proposed Change Specification
 -----------------------------
 
-The new syntax for the primitive string literals uses a prefix before the
-magic hash. The suffix is the name of an encoding::
+Rather than adding new syntax, this proposal leverages an existing GHC
+extension: ``QuasiQuotes``. Rather than using ``TemplateHaskell``, these
+quasiquoters would be built in. Here are some examples of ``ByteArray#``
+literals under this scheme::
 
-  "foo"(utf8#|utf16#|utf8##|utf16##|)
+    [octets#|fe01bce8|] -- ByteArray# (four bytes)
+    [utf8#|Araña|]      -- ByteArray# (UTF-8)
+    [utf16#|Araña|]     -- ByteArray# (UTF-16, native endian)
+    [utf16le#|Araña|]   -- ByteArray# (UTF-16, little endian)
+    [utf16be#|Araña|]   -- ByteArray# (UTF-16, big endian)
 
-The meaning of this syntax is:
-
-* The number of hashes encodes the type:
-
-  * ``#``: ``Addr#``
-  * ``##``: ``ByteArray#``
-
-* The prefix is one of three encodings:
-
-  * ``utf8``
-  * ``utf16`` (native endian)
-  * Omitted: Modified UTF-8, which is currently used for ``Addr#``.
-    This makes the proposal backwards-compatible. This may only be
-    used with ``Addr#``, not with ``ByteArray#``. GHC will emit
-    an error on this literal ``"foo"##``. The reasoning is that
-    Modified UTF-8 is not useful when working with types like
-    ``ByteArray#`` that prefix a byte sequence with its length.
-    Such a literal would only be written by accident and could
-    lead to confusing and difficult-to-diagnose behavior.
-
-GHC will throw an error at compile-time if invalid Unicode
-surrogates are present. For example, GHC would reject
-
-.. code-block:: haskell
-
-  "\xd8000"utf16##
-
-with an error message reading:
-
-::
-
-  Invalid character or shift sequence at the end of the buffer.
-
-The encodings other than Modified UTF-8 (UTF-8 and UTF-16) will not
-be terminated with a null byte.
-
-To simplify implementation and prevent confusing messages from the
-compiler, this proposal goes one step further than just recognizing
-the new syntax. When ``MagicHash`` is enabled, ``utf8#``, ``utf8##``,
-``utf16#``, and ``utf16##`` are reserved as keywords. Users may no
-longer use these as identifiers.
+The five quasiquoters showcased above would be built in to GHC. The
+resulting ``ByteArray#`` literals would not be null-terminated. The
+textual quasiquotes (those that start with ``utf``) do not support
+escape sequences. The ``octets#`` quasiquoter only supports hexadecimal
+characters, and the number of characters must be even. GHC will throw
+an error at compile-time if an odd number of hexadecimal characters
+are given as the argument to ``octets#``.
 
 These literals can be used both as values and as a way to scrutize a
 ``ByteArray#`` that has been cased on. Casing would look like this:
@@ -131,9 +112,9 @@ These literals can be used both as values and as a way to scrutize a
 
   readSmallNumber :: ByteArray# -> Int#
   readSmallNumber x = case x of
-    "one"utf8# -> 1#
-    "two"utf8# -> 2#
-    "three"utf8# -> 3#
+    [utf8#|one|] -> 1#
+    [utf8#|two|] -> 2#
+    [utf8#|three|] -> 3#
     _ -> 4#
 
 When compiling STG to cmm, GHC has an opportunity to generate very
@@ -160,12 +141,13 @@ a compact regions. Technically, they would not actually be copied. The
 compact region is allowed to point to them because they are static data
 that cannot be GCed.
 
+Users in need of other encodings could use template haskell to provide
+additional non-built-in quasiquoters.
+
 Costs and Drawbacks
 -------------------
 
-Today, with ``MagicHash``, users may write ``"foo"utf8#`` as an expression
-that means: apply the function ``"foo"`` to the argument ``utf8#``. This
-proposal deprives users of that freedom.
+None that the author is aware of.
 
 Unresolved questions
 --------------------
@@ -176,14 +158,16 @@ to keep the list small.
 Implementation Plan
 -------------------
 
-There are two phases for implementation:
+There are three phases for implementation:
 
-1. Make the parser recognize the new syntax. Allow casing on values of type
-   ``ByteArray#`` with ``ByteArray#`` literals. Desugar this to nearly-perfect
-   hashing in cmm. Andrew Thaddeus Martin will implement this.
-2. Allow ``ByteArray#`` literals to appear in all other expected places.
+1. Add ``ByteArray#`` literals to GHC Core. Support them with built-in
+   quasiquoters. Andrew Thaddeus Martin will implement this.
+2. Allow casing on values of type ``ByteArray#`` with ``ByteArray#`` literals.
+   Desugar this to nearly-perfect hashing in cmm. Andrew Thaddeus Martin will
+   implement this.
+3. Allow ``ByteArray#`` literals to appear in all other expected places.
    Float them all to the top level. It is not known who will implement this.
 
-Phase 1 can be merged without phase two being completed. There is
+Phase 1 and 2 can be merged without phase 3 being completed. There is
 plenty of value in being able to case on values of type ``ByteArray#``
 even without being able to use literals elsewhere.
