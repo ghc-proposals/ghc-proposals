@@ -26,7 +26,7 @@ However, *all four change the semantics of Haskell*, by performing eta-expansion
 
 * A recent new cost is that the [Quick Look Impredicativity proposal]( https://github.com/ghc-proposals/ghc-proposals/pull/274) gains extra power by not having contravariance.   More details in the [Quick Look paper](https://www.microsoft.com/en-us/research/publication/a-quick-look-at-impredicativity/)
 
-Here is a thought experiment.  Suppose GHC lacked all four features, and someone proposed adding them.  That proposal would never leave the launchpad. A minor change in programming convenience, in exchange for changing language semantics?  No.  If that’s true, then the only issue would be back-compat issues: how many libraries would be affected, and how painful they would be to fix.  We need to get data on that.
+Here is a thought experiment.  Suppose GHC lacked all four features, and someone proposed adding them.  That proposal would never leave the launchpad. A minor change in programming convenience, in exchange for changing language semantics?  No.  If that’s true, then the only issue would be back-compat issues: how many libraries would be affected, and how painful they would be to fix.  We have collected data on this, presented in 
 
 ## Motivation
 
@@ -128,9 +128,9 @@ by removing
 * Deep skolemisation
 * Deep instantiation
 
-This could be under control of a flag, but I propose that we
-take a clear path to removing these features altogether, i.e.
-ultimately, without a flag that enables them.
+Thinking about a transition, it is very difficult to accept all current programs, while providing a warning for programs that will need to be changed when the propsal is adopted. Doing so would amount to compiling every program twice, which does not seem acceptable.
+
+It would be possible to offer a flag that restored the old behaviour, but that still means changing the .cabal file, or adding a LANGUAGE pragma. It seems more straightforward simply to change the source code to work with the new restrictions.  These changes turn out to be extremely minor, and fully backward compatible.
 
 ## Examples
 
@@ -142,12 +142,14 @@ See Motivation above.
 * Everything (specification, implementation) becomes a bit simpler
 * Quick Look Impredicativity gains more power
 
+Key conclusions of the practical impact (details in the paper) are:
+* Where programs require changes under this proposal, those changes are simple, local, and arguably desirable anyway.
+* The changes are backward-compatible: if you change a package to accommodate this proposal, it'll still compile with earlier GHC's too.
+
+
 ## Costs and Drawbacks
 
 The main user-facing cost is that some existing programs will require some manual eta-expansion.
-Jurriaan is gathering data on how many libraries are affected.
-
-Ideally we'd like a deprecation saying "you are using this feature, and it's going to disappear".  But this would have false positives: just because deep instantiation does eta-expansion does not imply that using only shallow instantiation would make the program un-typable.
 
 There are some implementation consequences:
 
