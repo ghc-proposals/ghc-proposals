@@ -531,6 +531,17 @@ H. Counter-proposal `#295`_ includes module aliases, stating that its approach
    A declaration ``module New = Old`` could simply allow ``New.`` to work as a qualifier
    for any entity in scope with an ``Old.`` prefix. I don't find module aliases to
    be useful, but they could be added to this proposal if there is a desire to.
+
+I. When exporting a module ``qualified``, we may also want to rename it. Here is an
+   example, thanks to @evincarofautumn::
+
+     module Data.Set (Set, qualified module Data.Set as Set) where
+
+     data Set = ...
+     fromList = ...
+
+   Note the ``as Set`` in the export list. Adding this feature to the proposal would be
+   easy, at the risk of further complicating export items.
    
 Future Work
 -----------
