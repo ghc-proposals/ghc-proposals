@@ -1,8 +1,14 @@
-This proposal is `discussed at this pull
-request <https://github.com/ghc-proposals/ghc-proposals/pull/287>`__.
-
 Simplify subsumption
 ====================
+
+.. author:: Simon PJ
+.. date-accepted:: 2020-01-24
+.. ticket-url::
+.. implemented::
+.. highlight:: haskell
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/287>`_.
+.. contents::
+
 
 This proposal argues that GHC’s type system is a bit too liberal; in
 particular, the subsumption judgement is too liberal. It adds a little
