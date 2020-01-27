@@ -260,7 +260,7 @@ A full, rigorous set of examples (as tests) are available in the examples direct
 
 ## 4. Effect and Interactions
 
-**Polymorphic updates:** When enabled, this extension takes the `a{b=c}` syntax and uses it to mean `setField`. The biggest difference a user is likely to experience is that the resulting type of `a{b=c}` is the same as the type `a` - you _cannot_ change the type of the record by updating its fields. The removal of polymorphism is considered essential to preserve decent type inference, and is the only option supported by [the `HasField` proposal](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0158-record-set-field.rst). Anyone wishing to use polymorphic updates can write `let Foo{..} = Foo{polyField=[], ..}` instead.
+**Polymorphic updates:** When enabled, this extension takes the `a{b=c}` syntax and uses it to mean `setField`. The biggest difference a user is likely to experience is that the resulting type of `a{b=c}` is the same as the type `a` - you _cannot_ change the type of the record by updating its fields. The removal of polymorphism is considered essential to preserve decent type inference, and is the only option supported by [the `HasField` proposal](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0158-record-set-field.rst). Anyone wishing to use polymorphic updates can write `let Foo{..} = a in Foo{polyField=[], ..}` instead.
 
 **Higher-rank fields:** It is impossible to express `HasField` instances for data types such as `data T = MkT { foo :: forall a . a -> a}`, which means they can't have this syntax available. Users can still write their own selector functions using record puns if required.  There is a possibility that with future types of impredicativity such `getField` expressions could be solved specially by the compiler.
 
@@ -268,7 +268,7 @@ A full, rigorous set of examples (as tests) are available in the examples direct
 
 **Rebindable syntax:** When `RebindableSyntax` is enabled the `getField` and `setField` functions are those in scope, rather than those in `GHC.Records`. The `.` function (as used in the `a.b.c` desugaring) remains the `Prelude` version (we see the `.` as a syntactic shortcut for an explicit lambda, and believe that whether the implementation uses literal `.` or a lambda is an internal detail).
 
-**Enabled extensions:** When `RecordDotSyntax` is a distinct extension, implying no other extensions off or on. It is often likely to be used in conjunction with either the `NoFieldSelectors` extension or`DuplicateRecordFields`.
+**Enabled extensions:** The `RecordDotSyntax` extension does not imply enabling/disabling any other extensions. It is often likely to be used in conjunction with either the `NoFieldSelectors` extension or`DuplicateRecordFields`.
 
 ## 5. Costs and Drawbacks
 
@@ -328,7 +328,7 @@ We're not aware of qualified modules giving any problems, but it's adding whites
 
 ### 7.6 Should a new update syntax be added?
 
-One suggestion is that record updates remain as normal, but `a { .foo = 1 }` be used to indicate the new forms of updates. While possible, we believe that option leads to a confusing result, with two forms of update both of which fail in different corner cases. Instead, we recommend use of `C{foo}` as a pattern to extract fields if necessary.
+One suggestion is that record updates remain as normal, but `a { .foo = 1 }` be used to indicate the new forms of updates. While possible, we believe that option leads to a confusing result, with two forms of update both of which fail in different corner cases. Instead, we recommend use of `C{foo}` as a pattern (with `-XNamedFieldPuns`) to extract fields if necessary.
 
 ### 7.7 Which syntax should be chosen for selector functions?
 
@@ -349,9 +349,20 @@ Independent of this difference, there are pragmatic concerns on both sides:
 * Some consider it acceptable (if unfortunate) that `a . b` and `a.b` have different meanings in this proposal, but believe that assigning three distinct meanings to `a . b`, `a .b`, and `a.b` is just too confusing.
 * Looking at that existing implementation of GHC, supporting `(.b)` is less changes that supporting `.b` alone. While the implementation complexity is not a reason for picking one over the other, the existing grammar of the compiler can give hints about what logically follows.
 
+### 7.8 What should naked selectors mean?
+
+While the meaning of `a.b` is obvious (record field projection), and of `a . b` (function composition), the meaning of `a .b` remains under debate. There are three choices:
+
+1. A naked selector is illegal. That choice is conservative; we can decide later. However `(.x)` would have to be allowed as a new syntactic production, meaning `\r -> r.x`.
+2. A naked selector is not a selector at all, and thus remains a slight-unusual function composition, as it does now.
+3. `.x` means `\r -> r.x`, thus resolving the selector function debate above.
+4. A naked selector is a postfix operator, binding less tightly than function application. So `(.x)` naturally means the section `\r -> r.x`, and `r .x` means `(.x) r`. This approach would allow a chain of applications to be expressed cleanly.
+
+Of these, 1, 2 and 3 are all local operations. In contrast, option 4 gives the authors difficulty producing parse trees in their head, and thus increases the total cost of learning the extension more than is considered desirable.
+
 ## 8. Unresolved issues
 
-In this proposal we pick `.field` to be the syntax for selector functions, however, there are also good reasons (listed [in this proposal](#77-which-syntax-should-be-chosen-for-selector-functions)) to require brackets, namely `(.field)`. While resolved, we consider it worth the committee's deliberation as to which is preferable. Neither author is opposed to either outcome.
+In this proposal we pick `.field` to be the syntax for selector functions, however, there are also good reasons (listed [in this proposal](#77-which-syntax-should-be-chosen-for-selector-functions)) to require brackets, namely `(.field)`. While resolved, we consider it worth the committee's deliberation as to which is preferable. Neither author is opposed to either outcome. Assuming `.field` is _not_ chosen as the selector function, then the meaning of that construct needs to be nailed down from the 4 options in Section 7.8.
 
 ## 9. Implementation Plan
 
