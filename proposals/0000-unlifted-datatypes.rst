@@ -115,53 +115,124 @@ Proposed Change Specification
 
 Henceforth, data type declaration refers to both data type and data family instance declarations.
 
+The entire proposal assumes that the
+`pointer rep proposal <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0203-pointer-rep.rst>`_
+and its
+`amendment <https://github.com/ghc-proposals/ghc-proposals/pull/301>`_
+have landed.
+
 Static semantics
 ~~~~~~~~~~~~~~~~
 
 Kind signatures for regular data type declarations must have a return kind of
 ``TYPE (BoxedRep Lifted)``. Activating ``-XUnliftedDatatypes`` will lift this
 restriction to allow any return kind that unifies with ``TYPE (BoxedRep _)``. A
-data type explitly *may* have levity polymorphic kind
-``TYPE (BoxedRep l)`` for some type variable ``l``.
+data type explicitly *may* have levity polymorphic kind
+``TYPE (BoxedRep l)`` for some type variable ``l``. Example:
+
+::
+
+  data List a :: TYPE (BoxedRep LiftedRep) where
+    Nil :: List a
+    Const :: a -> List a -> List a
+  data SList a :: TYPE (BoxedRep UnliftedRep) where
+    Nil :: SList a
+    Const :: a -> SList a -> SList a
+  data PList a :: TYPE (BoxedRep l) where
+    PNil :: List a
+    PCons :: a -> List a -> List a
 
 Note that Haskell98-style data declarations can use standalone kind signatures
-to specify the return kind. If the user provides no kind signature, the default
+to specify the return kind. Example:
+
+::
+
+  type SList :: Type -> TYPE (BoxedRep UnliftedRep)
+  data SList a = SNil | SCons a (List a)
+
+If the user provides no kind signature, the default
 remains that the data type has lifted return kind (``TYPE (BoxedRep Lifted)``).
-Specifying a kind signature is the only way to declare an unlifted or levity-polymorphic data type.
+Specifying a kind signature is the only way to declare an unlifted or
+levity-polymorphic data type.
 
 The same applies to data family instances, in which case the data family
-application's result kind must reduce to ``TYPE (BoxedRep _)``. See
+application's result kind must reduce to ``TYPE (BoxedRep _)``. Example:
+
+:: 
+ 
+  data family DF a :: TYPE (BoxedRep l)
+  data instance DF Int :: TYPE (BoxedRep UnliftedRep) where
+    TInt :: Int -> DF Int -- unlifted!
+  data instance DF Char :: TYPE (BoxedRep LiftedRep) where
+    TChar :: Char -> DF Char -- lifted!
+
+See
 `the section on data families in the UnliftedNewtypes proposal <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0098-unlifted-newtypes.rst>`_
 and ``Note [Implementation of UnliftedNewtypes]`` for details involving
 type-checking the parent data family.
 
 As usual for types of unlifted kind, values of unlifted data types may not be
-declared at the top-level. The top-level restriction is not fundamental (see
+declared at the top-level:
+
+:: 
+
+  -- rejected, `SList a` is not lifted 
+  nil :: SList a
+  nil = SNil 
+
+  -- accepted, `a -> SList a -> SList a` is a function, thus lifted
+  cons :: a -> SList a -> SList a
+  cons x xs = SCons x xs 
+
+The top-level restriction is not fundamental (see
 `#17521 <https://gitlab.haskell.org/ghc/ghc/issues/17521>`_), but best
-discussed in a separate proposal. Note that we don't consider nullary
-constructors to be top-level bindings in that regard, so nullary unlifted
-constructors are allowed. There *is* an interesting interaction of this
-restriction with nullary data constructor *wrappers* (cf. "Effects and
-Interactions"), though, which we consider to be an implementation detail.
+discussed in a separate proposal.
 
 Dynamic Semantics
 ~~~~~~~~~~~~~~~~~
 
-Unliftedness (i.e., the absence of divergence) in general implies the need for
-an eager evaluation semantics, which GHC implements in expressions of kind
-``TYPE r``, where ``r`` is not ``BoxedRep Lifted`` (so
-``TYPE (BoxedRep Unlifted)`` in particular).
+There is no change in GHC's existing dynamic semantics, namely
 
-Thus, call-by-value semantics are already well established within GHC. The
-novelty is pattern matching on and construction of unlifted data types, but
-that's exactly the same as it is for lifted data types. 
+- Values of unlifted type are always computed eagerly
+- Only values of types with a concrete ``RuntimeRep`` can be let-bound
 
-We never have to decide on an evaluation strategy for ``TYPE (BoxedRep l)``
-with inconcrete ``l``, because the current restrictions on levity polymorphism
-don't allow to bind or pass expressions of this kind.
+Example:
+
+::
+
+  f x = let y = if odd 42 then SNil else SCons 42 SNil
+        in ... y ...
+
+Since the binding for ``y`` is unlifted, the ``let`` binding (is legal and) is
+evaluated eagerly, without building a thunk.
+
+This proposal simply allows data declarations to have kinds other than
+``TYPE LiftedRep`` and the existing dynamic semantics of GHC takes care of the
+rest.
 
 Examples
 --------
+
+Declarations
+~~~~~~~~~~~~
+
+Here are a few example declarations that should all be accepted:
+
+::
+  
+  data List a :: TYPE (BoxedRep l) where
+    Nil :: List a
+    Cons :: a -> List a -> List a
+  -- alternative using a SAKS:
+  -- type List :: Type -> TYPE (BoxedRep l)
+
+  -- This one is with visible quantification in a SAKS
+  type DF :: forall l. Type -> TYPE (BoxedRep l)
+  data family DF
+  data instance DF Unlifted a where
+    
+
+     
 
 Unlifted (call-by-value) semantics
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -314,9 +385,28 @@ STG looks similar. Now look what happens in C--:
 
 Wow, that's quite a mouthful, all due to the lifted representation of ``Bool``!
 Assuming that the call site can prove evaluatedness at a lower cost than
-``pack``, we can define a new unlifted datatype ``SBool`` and then after
-removing dead code (by hand, so no liability assumed) and freeing up stack
-space the C-- would water down to:
+``pack``, we can define a new unlifted datatype ``SBool``:
+
+::
+ 
+ {-# LANGUAGE MagicHash #-}
+
+ module Lib where
+ 
+ import GHC.Exts
+
+ data SBool :: TYPE (BoxedRep Unlifted) where
+   STrue :: SBool
+   SFalse :: SBool
+ 
+ pack :: SBool -> SBool -> Int#
+ pack SFalse SFalse = 0#
+ pack SFalse STrue  = 1#
+ pack STrue  SFalse = 2#
+ pack STrue  STrue  = 3#
+
+And then after removing dead code (by hand, so no liability assumed) and
+freeing up stack space the C-- would water down to:
 
 ::
 
@@ -355,6 +445,8 @@ With levity polymorphism, we can even re-use currently lifted-only data structur
   data List a :: TYPE (BoxedRep l) where
     Nil :: List a
     Cons :: a -> List a -> List a
+  -- alternative using a SAKS:
+  -- type List :: Type -> TYPE (BoxedRep l)
 
   mapLifted :: (a -> b) -> List a -> List b
   mapLifted f Nil         = Nil
@@ -423,13 +515,29 @@ So rather dreadfully, we probably shouldn't "augment" ``-XStrict``.
 **Lazy pattern matches** ``let ~t = ... in ...`` should not be allowed if ``t``
 is unlifted. That is exactly the behavior that is currently implemented in GHC.
 
-**Data con wrappers** of nullary constructors like
-``data T a :: TYPE (BoxedRep Unlifted) where TInt :: T Int`` will become unlifted
-top-level bindings, which GHC currently forbids in source syntax. I *think*
-these will always be properly tagged, though, so it's just an implementation
-detail. The Core formalism should only be minimally affected by such unlifted
-bindings at the top-level. Either regard them as evaluated on start up or just
-allow normal forms (modulo lifted fields) See
+Concerning GHC's implementation (*only*) of **Data con wrappers**: The wrappers
+of nullary constructors carrying some constraint, like
+
+:: 
+
+  data T a :: TYPE (BoxedRep Unlifted) where
+    TInt :: T Int
+
+will become unlifted top-level bindings in Core:
+
+::
+
+  -- data constructor worker:
+  TInt :: a ~ Int => T Int
+  -- data constructor wrapper:
+  $WInt :: T Int
+  $WInt = TInt $d
+
+which GHC currently forbids in source syntax. I *think* these will always be
+properly tagged, though, so it's just an implementation detail. The Core
+formalism should only be minimally affected by such unlifted bindings at the
+top-level. Either regard them as evaluated on start up or just allow normal
+forms (modulo lifted fields) See
 `#17521 <https://gitlab.haskell.org/ghc/ghc/issues/17521>`_.
 Another way forward would be to turn wrappers of nullary unlifted constructors
 into functions by adding a `Void#` argument.
