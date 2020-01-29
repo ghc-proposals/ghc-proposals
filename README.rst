@@ -243,7 +243,7 @@ Joachim Breitner        `@nomeata <https://github.com/nomeata>`_              20
 Iavor Diatchki          `@yav <https://github.com/yav>`_                      2017/02
 Richard Eisenberg       `@goldfirere <https://github.com/goldfirere>`_        2017/02
 Cale Gibbard            `@cgibbard <https://github.com/cgibbard/>`_           2020/01
-Tom Harding             `@i-a-tom <https://github.com/i-a-tom/>`_             2020/01
+Tom Harding             `@i-am-tom <https://github.com/i-am-tom/>`_           2020/01
 Simon Marlow            `@simonmar <https://github.com/simonmar>`_            2017/02  co-chair
 Simon Peyton-Jones      `@simonpj <https://github.com/simonpj>`_              2017/02  co-chair
 Eric Seidel             `@gridaphobe <https://github.com/gridaphobe>`_        2018/09
