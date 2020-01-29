@@ -178,17 +178,21 @@ Example:
   field (``data T = MkT !(Int, Bool)``).
 
 * In an application ::
+
     f (if odd 42
          then UPair a a
          else UPair b b)
+
   the unlifted argument is evaluated before before the application is beta
   reduced. So call-by-value instead of call-by-need.
 
 * In a let binding ``let x = UPair a b in e`` ::
+
     let x = if odd 42
               then UPair a a
               else UPair b b
     in e
+
   the unlifted right-hand side of ``x`` is evaluated before the body ``e``.
 
 The Strict data type
