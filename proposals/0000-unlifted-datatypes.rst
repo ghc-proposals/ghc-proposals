@@ -121,13 +121,13 @@ Static semantics
 Kind signatures for regular data type declarations must have a return kind of
 ``TYPE (BoxedRep Lifted)``. Activating ``-XUnliftedDatatypes`` will lift this
 restriction to allow any return kind that unifies with ``TYPE (BoxedRep _)``. A
-data type constructor explitly *may* have levity polymorphic kind
-``forall l. TYPE (BoxedRep l)``.
+data type explitly *may* have levity polymorphic kind
+``TYPE (BoxedRep l)`` for some type variable ``l``.
 
-Note that Haskell98-style data declarations can use top-level kind signatures
+Note that Haskell98-style data declarations can use standalone kind signatures
 to specify the return kind. If the user provides no kind signature, the default
 remains that the data type has lifted return kind (``TYPE (BoxedRep Lifted)``).
-Specifying a kind signature is the only way to declare an unlifted data type.
+Specifying a kind signature is the only way to declare an unlifted or levity-polymorphic data type.
 
 The same applies to data family instances, in which case the data family
 application's result kind must reduce to ``TYPE (BoxedRep _)``. See
@@ -135,7 +135,7 @@ application's result kind must reduce to ``TYPE (BoxedRep _)``. See
 and ``Note [Implementation of UnliftedNewtypes]`` for details involving
 type-checking the parent data family.
 
-As usual for types of unlifted kind, they may not be declared at the top-level.
+As usual for types of unlifted kind, values of unlifted data types may not be declared at the top-level.
 The top-level restriction is not fundamental (see
 `#17521 <https://gitlab.haskell.org/ghc/ghc/issues/17521>`_), but best
 discussed in a separate proposal. There is an interesting interaction of this
