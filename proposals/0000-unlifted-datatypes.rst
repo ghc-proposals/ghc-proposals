@@ -454,7 +454,7 @@ With levity polymorphism, we can even re-use currently lifted-only data structur
   
   mapUnlifted :: (a -> b) -> List @Unlifted a -> List @Unlifted b
   mapUnlifted f Nil         = Nil
-  mapUnlifted f (Cons x xs) = Cons (f x) (mapLifted f xs)
+  mapUnlifted f (Cons x xs) = Cons (f x) (mapUnlifted f xs)
   
 There no chance of sharing the ``map`` definition (not this one anyway)
 currently, because we don't have levity polymorphism in expressions yet, which
