@@ -135,12 +135,14 @@ application's result kind must reduce to ``TYPE (BoxedRep _)``. See
 and ``Note [Implementation of UnliftedNewtypes]`` for details involving
 type-checking the parent data family.
 
-As usual for types of unlifted kind, values of unlifted data types may not be declared at the top-level.
-The top-level restriction is not fundamental (see
+As usual for types of unlifted kind, values of unlifted data types may not be
+declared at the top-level. The top-level restriction is not fundamental (see
 `#17521 <https://gitlab.haskell.org/ghc/ghc/issues/17521>`_), but best
-discussed in a separate proposal. There is an interesting interaction of this
-restriction with nullary data-con wrappers (cf. "Effects and Interactions"),
-which we consider to be an implementation detail.
+discussed in a separate proposal. Note that we don't consider nullary
+constructors to be top-level bindings in that regard, so nullary unlifted
+constructors are allowed. There *is* an interesting interaction of this
+restriction with nullary data constructor *wrappers* (cf. "Effects and
+Interactions"), though, which we consider to be an implementation detail.
 
 Dynamic Semantics
 ~~~~~~~~~~~~~~~~~
@@ -172,15 +174,22 @@ Example:
    UPair :: a -> b -> UPair a b
 
 * When occuring in a constructor field (e.g.
-  ``data T = MkT (UPair Int Bool)``), the semantics are identical to a field
-  with a bang pattern (``data T = MkT !(Int, Bool)``).
+  ``data T = MkT (UPair Int Bool)``), the semantics are identical to a strict
+  field (``data T = MkT !(Int, Bool)``).
 
-* In an application ``f (UPair a b)``, the argument ``UPair a b`` is evaluated
-  before the application is beta reduced. So call-by-value instead of
-  call-by-need.
+* In an application ::
+    f (if odd 42
+         then UPair a a
+         else UPair b b)
+  the unlifted argument is evaluated before before the application is beta
+  reduced. So call-by-value instead of call-by-need.
 
-* In a let binding ``let x = UPair a b in e``, the right-hand side ``UPair a b``
-  is evaluated before the body.
+* In a let binding ``let x = UPair a b in e`` ::
+    let x = if odd 42
+              then UPair a a
+              else UPair b b
+    in e
+  the unlifted right-hand side of ``x`` is evaluated before the body ``e``.
 
 The Strict data type
 ~~~~~~~~~~~~~~~~~~~~
@@ -197,6 +206,10 @@ that deprives itself and its argument of ⊥.
 ``Strict`` is the very essence of this proposal: Every unlifted data type can
 be defined in terms of lifted data types and ``Strict``, at the cost of an
 additional indirection.
+
+Whether we could define ``Strict`` as a ``newtype`` -- which would then mean we
+coerce between kinds, meaning coercions aren't zero-cost -- is left for a
+separate proposal.
 
 Low-level code
 ~~~~~~~~~~~~~~
@@ -362,11 +375,11 @@ language.
 proved insufficient for encoding invariants for efficient code generation.
 
 This proposal consciously left out further work like a new specification for
-**levity polymorphism**. Similar to data types, functions can be levity
+**levity polymorphic code**. Similar to data types, functions can be levity
 polymorphic, too. There's
 `#15532 <https://gitlab.haskell.org/ghc/ghc/issues/15532>`_,
 which wants to weaken the restrictions we have in place for runtime-rep
-polymorphism.
+polymorphic code.
 
 **Pattern match checking** with unlifted types will be weird in some edge cases.
 Consider the following example:
