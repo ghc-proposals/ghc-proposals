@@ -219,7 +219,7 @@ to interpret any annotation-free ``->`` as an unmatchable arrow. There is a
 balance to be found between the flexibility granted by a
 matchability-polymorphic interpretation and the inference problems that the said
 flexibility would cause. In the case of arrow kinds for type family arguments,
-the matchability-polymorphism seems desirable and might xeven end up accepting
+the matchability-polymorphism seems desirable and might even end up accepting
 all the programs accepted today, and then some, without inducing any breakage.
 Likewise, it seems desirable to accept the definitions for ``p1`` *and* ``p2``.
 We therefore propose the following plan:
