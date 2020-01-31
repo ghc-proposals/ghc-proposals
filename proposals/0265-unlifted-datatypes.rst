@@ -126,23 +126,23 @@ data type explicitly *may* have levity polymorphic kind
 
 ::
 
-  data List a :: TYPE (BoxedRep LiftedRep) where
+  data List a :: TYPE (BoxedRep Lifted) where
     Nil :: List a
-    Const :: a -> List a -> List a
-  data SList a :: TYPE (BoxedRep UnliftedRep) where
-    Nil :: SList a
-    Const :: a -> SList a -> SList a
+    Cons :: a -> List a -> List a
+  data SList a :: TYPE (BoxedRep Unlifted) where
+    SNil :: SList a
+    SCons :: a -> SList a -> SList a
   data PList a :: TYPE (BoxedRep l) where
-    PNil :: List a
-    PCons :: a -> List a -> List a
+    PNil :: PList a
+    PCons :: a -> PList a -> PList a
 
 Note that Haskell98-style data declarations can use standalone kind signatures
 to specify the return kind. Example:
 
 ::
 
-  type SList :: Type -> TYPE (BoxedRep UnliftedRep)
-  data SList a = SNil | SCons a (List a)
+  type SList :: Type -> TYPE (BoxedRep Unlifted)
+  data SList a = SNil | SCons a (SList a)
 
 If the user provides no kind signature, the default
 remains that the data type has lifted return kind (``TYPE (BoxedRep Lifted)``).
@@ -155,9 +155,9 @@ application's result kind must reduce to ``TYPE (BoxedRep _)``. Example:
 :: 
  
   data family DF a :: TYPE (BoxedRep l)
-  data instance DF Int :: TYPE (BoxedRep UnliftedRep) where
+  data instance DF Int :: TYPE (BoxedRep Unlifted) where
     TInt :: Int -> DF Int -- unlifted!
-  data instance DF Char :: TYPE (BoxedRep LiftedRep) where
+  data instance DF Char :: TYPE (BoxedRep Lifted) where
     TChar :: Char -> DF Char -- lifted!
 
 See
@@ -201,8 +201,8 @@ Since the binding for ``y`` is unlifted, the ``let`` binding (is legal and) is
 evaluated eagerly, without building a thunk.
 
 This proposal simply allows data declarations to have kinds other than
-``TYPE LiftedRep`` and the existing dynamic semantics of GHC takes care of the
-rest.
+``TYPE (BoxedRep Lifted)`` and the existing dynamic semantics of GHC takes care
+of the rest.
 
 Examples
 --------
@@ -214,19 +214,17 @@ Here are a few example declarations that should all be accepted:
 
 ::
   
-  data List a :: TYPE (BoxedRep l) where
-    Nil :: List a
-    Cons :: a -> List a -> List a
+  data PList a :: TYPE (BoxedRep l) where
+    PNil :: PList a
+    PCons :: a -> PList a -> PList a
   -- alternative using a SAKS:
-  -- type List :: Type -> TYPE (BoxedRep l)
+  -- type PList :: Type -> TYPE (BoxedRep l)
 
   -- This one is with visible quantification in a SAKS
   type DF :: forall l. Type -> TYPE (BoxedRep l)
   data family DF
   data instance DF Unlifted a where
-    
 
-     
 
 Unlifted (call-by-value) semantics
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -248,8 +246,8 @@ Example:
          then UPair a a
          else UPair b b)
 
-  the unlifted argument is evaluated before before the application is beta
-  reduced. So call-by-value instead of call-by-need.
+  the unlifted argument is evaluated before the application is beta reduced. So
+  call-by-value instead of call-by-need.
 
 * In a let binding ``let x = UPair a b in e`` ::
 
@@ -436,19 +434,17 @@ With levity polymorphism, we can even re-use currently lifted-only data structur
 
 ::
   
-  data List a :: TYPE (BoxedRep l) where
-    Nil :: List a
-    Cons :: a -> List a -> List a
-  -- alternative using a SAKS:
-  -- type List :: Type -> TYPE (BoxedRep l)
+  data PList a :: TYPE (BoxedRep l) where
+    PNil :: PList a
+    PCons :: a -> PList a -> PList a
 
-  mapLifted :: (a -> b) -> List a -> List b
-  mapLifted f Nil         = Nil
-  mapLifted f (Cons x xs) = Cons (f x) (mapLifted f xs)
+  mapLifted :: (a -> b) -> PList a -> PList b -- assumes defaulting of Levity to @Lifted
+  mapLifted f PNil         = PNil
+  mapLifted f (PCons x xs) = PCons (f x) (mapLifted f xs)
   
-  mapUnlifted :: (a -> b) -> List @Unlifted a -> List @Unlifted b
-  mapUnlifted f Nil         = Nil
-  mapUnlifted f (Cons x xs) = Cons (f x) (mapUnlifted f xs)
+  mapUnlifted :: (a -> b) -> PList @Unlifted a -> PList @Unlifted b
+  mapUnlifted f PNil         = PNil
+  mapUnlifted f (PCons x xs) = PCons (f x) (mapUnlifted f xs)
   
 There no chance of sharing the ``map`` definition (not this one anyway)
 currently, because we don't have levity polymorphism in expressions yet, which
