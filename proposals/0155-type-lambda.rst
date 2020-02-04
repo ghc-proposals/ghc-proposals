@@ -3,7 +3,7 @@ Binding type variables in lambda-expressions
 
 .. author:: Richard Eisenberg
 .. date-accepted:: 2019-05-09
-.. trac-ticket::
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/17594
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/155>`_.
