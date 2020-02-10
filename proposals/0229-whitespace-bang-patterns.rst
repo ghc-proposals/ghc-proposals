@@ -155,7 +155,7 @@ Proposed Change Specification
 
 * Under ``-XLexicalNegation``, prefix ``-`` binds tighter than any infix
   operator, so that ``-a % b`` is parsed as ``(-a) % b`` regardless of the
-  fixity of ``b``.
+  fixity of ``%``.
 
 * Add a new warning, ``-Woperator-whitespace-ext-conflict``, enabled by
   default, that warns on prefix, suffix, and tight infix uses of operators that
