@@ -264,7 +264,7 @@ We add the language extension ``ImportModule``, which introduces a a new
 syntax ``import module`` [#]_ for importing modules in other contexts.
 The target of an ``import module`` statement is a *qualified* name, resolved
 as normal for qualified names, and will *not* resolve to an external module as
-is possible for normal ``import``s. [#]_ . ``import module``
+is possible for normal ``import`` statements. [#]_ . ``import module``
 otherwise behaves as ``import``.
 
 .. [#] See `What should the syntax be for importing qualified names?`_ for discussion of the syntax.
@@ -281,7 +281,7 @@ module, only indented appropriately for the current scope.
 
 Local modules:
 
-- Can have ``import module``s, but not normal ``import``s.
+- Can have ``import module`` statements, but not normal ``import`` statements.
 - Can have nested module declarations.
 - Can have export specifiers.
 
