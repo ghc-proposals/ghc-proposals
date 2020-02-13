@@ -1,25 +1,24 @@
 Constructor Update Syntax
 =========================
 
-.. proposal-number:: Leave blank. This will be filled in when the proposal is
-                     accepted.
-.. trac-ticket:: Leave blank. This will eventually be filled with the Trac
-                 ticket number which will track the progress of the
-                 implementation of the feature.
+.. author:: Your name
+.. date-accepted:: Leave blank. This will be filled in when the proposal is accepted.
+.. ticket-url:: Leave blank. This will eventually be filled with the
+                ticket URL which will track the progress of the
+                implementation of the feature.
 .. implemented:: Leave blank. This will be filled in with the first GHC version which
                  implements the described feature.
 .. highlight:: haskell
 .. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_.
             **After creating the pull request, edit this file again, update the
             number in the link, and delete this bold sentence.**
-.. sectnum::
 .. contents::
 
 Introduce a new constructor update syntax which makes the variant (and thus type) explicit.
 This avoids a source of ambiguities and implementation complexity with working with ambiguous field names as allowed in ``DuplicateRecordField``.
 
 Motivation
-------------
+----------
 
 The ``DuplicateRecordFields`` extension is currently ridiculously cumbersome to implement.
 `<https://github.com/ghc-proposals/ghc-proposals/pull/160>`_ would attack one source of this: top-level record disambiguation.
@@ -62,6 +61,15 @@ The old syntax is disabled with ``NoLegacyUpdate``.
 Initially, ``DuplicateRecordFields`` will imply ``ConstructorUpdate``, and warn on legacy update.
 Later, it will also imply ``NoLegacyUpdate``.
 Then the complicated disambiguating code can be removed.
+
+Examples
+--------
+This section illustrates the specification through the use of examples of the
+language change proposed. It is best to exemplify each point made in the
+specification, though perhaps one example can cover several points. Contrived
+examples are OK here. If the Motivation section describes something that is
+hard to do without this proposal, this is a good place to show how easy that
+thing is to do with the proposal.
 
 Effect and Interactions
 -----------------------
@@ -136,3 +144,12 @@ Implementation Plan
 -------------------
 
 This should be a good beginner ticket for anyone, including me, to get familiar with GHC.
+
+Endorsements
+-------------
+(Optional) This section provides an opportunty for any third parties to express their
+support for the proposal, and to say why they would like to see it adopted.
+It is not mandatory for have any endorsements at all, but the more substantial
+the proposal is, the more desirable it is to offer evidence that there is
+significant demand from the community.  This section is one way to provide
+such evidence.
