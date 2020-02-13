@@ -1,7 +1,9 @@
 A Proposal for Proposals
 ========================
 
-.. sectnum::
+
+.. author:: Ben Gamari
+.. date-accepted:: 2017-01-03
 .. contents::
 
 Recently there has been a growing feeling within the Haskell community that the
@@ -16,16 +18,16 @@ To be clear, the process discussed below only affects proposal of the following
 five classes,
 
 * A syntactic change to GHC Haskell (e.g. the various ``ShortImports``
-  `proposals <https://ghc.haskell.org/trac/ghc/ticket/10478>`_, ``do``
-  `expressions <https://ghc.haskell.org/trac/ghc/ticket/10843>`_ without ``$``)
+  `proposals <https://gitlab.haskell.org/ghc/ghc/issues/10478>`_, ``do``
+  `expressions <https://gitlab.haskell.org/ghc/ghc/issues/10843>`_ without ``$``)
 
 * A major change to the user-visible behaviour of the compiler (e.g. the recent
-  `change <https://ghc.haskell.org/trac/ghc/ticket/11762>`_ in super-class
-  solving, and ``-Wall`` `behavior <https://ghc.haskell.org/trac/ghc/ticket/11370>`_)
+  `change <https://gitlab.haskell.org/ghc/ghc/issues/11762>`_ in super-class
+  solving, and ``-Wall`` `behavior <https://gitlab.haskell.org/ghc/ghc/issues/11370>`_)
 
 * The addition of major features to the compiler (e.g. ``-XTypeInType``, GHCi
-  `commands <https://ghc.haskell.org/trac/ghc/ticket/10874>`_,
-  `type-indexed <https://ghc.haskell.org/trac/ghc/wiki/Typeable>`_
+  `commands <https://gitlab.haskell.org/ghc/ghc/issues/10874>`_,
+  `type-indexed <https://gitlab.haskell.org/ghc/ghc/wikis/typeable>`_
   ``Typeable`` representations)
 
 * The removal of major features from the compiler
@@ -59,14 +61,14 @@ change management processes,
 
 1. Higher than necessary barrier-to-entry.
 
-   Involving oneself in the proposal process requires following a Trac ticket,
+   Involving oneself in the proposal process requires following a ticket,
    a Wiki page, one or more mailing list threads, and possibly Phabricator,
    each of which requires a separate account
 
 2. The proposal itself and the discussion surrounding it are quite decoupled.
 
-   The proposal specification itself is kept on the Trac Wiki, design
-   discussion occurs in largely independent Trac tickets, and further
+   The proposal specification itself is kept on the Wiki, design
+   discussion occurs in largely independent tickets, and further
    discussion is fragmented across several mailing lists, Reddit, and IRC. This
    leads to repetitive and often difficult-to-follow discussions.
 
@@ -104,12 +106,12 @@ Each proposal goes through the following stages:
    repository, proposing the merge of a document (derived from a
    `provided template <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.rst>`_)
    specifying the proposed change. This document is the primary specification
-   of the feature and takes the place of the current Trac Wiki document.
+   of the feature and takes the place of the current Wiki document.
 
    Due to GitHub's in-place editing feature (the pencil icon visible when viewing
    a file on GitHub), proposals can be made quickly without manual forking
    or cloning.
-   
+
 2. Community members (including members of the proposal committee) will discuss
    the proposal. The submitter is responsible for amending the specification to
    account for collected comments. It should be expected that the proposal will
@@ -132,8 +134,8 @@ Each proposal goes through the following stages:
 5. When the proposal is accepted the pull request will be merged and the
    document will be preserved in the proposals repository as a permanent
    specification for the feature.
-   
-6. The author will create a Trac ticket linking to the proposal to
+
+6. The author will create a ticket linking to the proposal to
    provide a place track the progress of the implementation.
 
 7. The author may choose to implement the proposal after acceptance, but she is
@@ -143,8 +145,8 @@ Each proposal goes through the following stages:
    The implementor should keep the specification up to date over the course of
    the implementation.
 
-Since the proposal pages already existing on the Trac `Wiki
-<https://ghc.haskell.org/trac/ghc/wiki/Proposal>`_ represent a significant
+Since the proposal pages already existing on the `Wiki
+<https://gitlab.haskell.org/ghc/ghc/wikis/proposal>`_ represent a significant
 amount of effort and knowledge, we'll make an effort to import those which have
 been implemented into the proposals repository if this scheme is adopted.
 
@@ -153,7 +155,7 @@ GHC Committee
 
 The process involves forming a small group which is responsible for
 deciding whether proposed changes should be accepted after discussion
-within the community. 
+within the community.
 
 The committee should be large enough to reflect the diversity of GHC's
 contributor- and user-base but small enough to ensure a sense of individual
@@ -234,9 +236,9 @@ likely apply to the process proposed here as well. In particular,
 * The ease of commenting may bring a slightly diminished signal-to-noise ratio
   in collected feedback, particularly on easily bike-shedded topics.
 
-Moreover, even leaving behind our current system incurs somewhat of a cost. Trac
-already exists and a significant fraction of GHC developers are already quite
-comfortable with it. The fact that we already use it for Wiki and ticket
+Moreover, even leaving behind our current system incurs somewhat of a cost.
+GitLab already exists and a significant fraction of GHC developers are already
+quite comfortable with it. The fact that we already use it for Wiki and ticket
 tracking means that cross-referencing between proposals, tickets, and the Wiki
 is trivial. Any replacement system would almost certainly regress in this area.
 
@@ -245,7 +247,7 @@ Alternatives
 
 There are a few alternatives which are worth considering,
 
-* We continue to build on Trac, but attempt to be more rigorous with our
+* We continue to build on GitLab, but attempt to be more rigorous with our
   current protocol. Namely we attempt to better document and more consistently
   enforce the procedures we currently have.
 
@@ -253,7 +255,7 @@ There are a few alternatives which are worth considering,
   This would offer the disadvantage of being slightly harder for casual
   contributors. Moreover, Phabricator lacks some of GitHub's support for
   formatting markup. Phabricator, however, offers the advantage of integrating
-  better with GHC's current Trac instance and avoid adding yet another tool to
+  better with GHC's current GitLab instance and avoid adding yet another tool to
   the GHC developer's toolchain.
 
 * Adopting the process discussed above but replacing GitHub with GitLab. GitLab
