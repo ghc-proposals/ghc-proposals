@@ -1,7 +1,7 @@
 Constructor Update Syntax
 =========================
 
-.. author:: Your name
+.. author:: John Ericson
 .. date-accepted:: Leave blank. This will be filled in when the proposal is accepted.
 .. ticket-url:: Leave blank. This will eventually be filled with the
                 ticket URL which will track the progress of the
