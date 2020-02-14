@@ -83,11 +83,13 @@ Proposed Change Specification
 The haskell 2010 report specifies record update syntax
 
 ::
+
   aexp → aexp_⟨qcon⟩ { fbind1 , … , fbindn }  (labeled update, n ≥ 1)
 
 with some side conditions on the well-formedness of the field names, and semantics:
 
   ::
+
     e { bs } = case e of
       C_1 v_1 … v_k_1 -> C_1 (pick_1^C_1 bs v_1) … (pick_k_1^C_1 bs v_k_1)
         …
@@ -99,11 +101,13 @@ with some side conditions on the well-formedness of the field names, and semanti
 We introduce alternative syntax:
 
 ::
+
   aexp → qtycon { fbind1 , … , fbindn .. exp }  (labeled update with type constructor, n ≥ 1)
 
 with the same side conditions and desugaring, but using the type constructor to unambiguously determine the constructors:
 
   ::
+
     SomeTyCon { bs .. e } = ... -- same as before
 
   where {``C_1``, …, ``C_j``} is the subset of constructors of ``SomeTyCon`` containing all labels in ``bs``, and ``k_i`` is the arity of ``C_i``.
@@ -115,12 +119,12 @@ The old syntax is available only when ``BareRecordUpdate`` is enabled, which is 
 Examples
 --------
 
-::
-  -- old way
+Old way::
+
   r { a = b }
 
-::
-  -- new way
+New way::
+
   MyRecord { a = b ..r }
 
 Effect and Interactions
