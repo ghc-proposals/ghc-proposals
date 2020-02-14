@@ -31,8 +31,10 @@ Indeed, not having any selectors at all avoids dealing with the overloading enti
 
 The problem is there is an even larger headache with ``DuplicateRecordFields`` that this leaves unaddressed, namely record update.
 Haskell's record update, like record selectors, do not explicitly spell out the record type constructor (or any data constructors), and so only from the record fields, or worse, type inference, can meaning and desugaring of the update be computed.
-Behold, the manual has an `entire section <https://downloads.haskell.org/~ghc/8.4.3/docs/html/users_guide/glasgow_exts.html#record-updates>`_ describing how it works, and indeed *both* nasty alternatives are in use.
+Behold, `GHC users guide on -XDuplicateRecordFields record updates`_ has an entire section describing how it works, and indeed *both* nasty alternatives are in use.
 Note that the rules involve inspecting adjacent syntax nodes, or otherwise getting the type checker to follow the right "hypothesis".
+As described in the `GHC users guide on -XDisambiguateRecordFields`_, even that earlier extension, while less aggressive, is still an ad-hoc constraint solver.
+With both extensions, code can suddenly break if unrelated imported record data types gain new fields creating a fresh ambiguity.
 This is a very awkward way of defining a feature that doesn't follow the principles of the either type inferring (collect constraints until one can proceed guess-free) or renaming (trivial, lexical, and local) algorithms.
 
 Again, like `Proposal 160`_, we can step to the side and avoid the overloading problem altogether.
@@ -208,6 +210,9 @@ It is not mandatory for have any endorsements at all, but the more substantial
 the proposal is, the more desirable it is to offer evidence that there is
 significant demand from the community.  This section is one way to provide
 such evidence.
+
+.. _`GHC users guide on -XDisambiguateRecordFields`: https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#record-field-disambiguation
+.. _`GHC users guide on -XDuplicateRecordFields record updates`: https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#record-updates
 
 .. _`Proposal 160`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0160-no-toplevel-field-selectors.rst
 
