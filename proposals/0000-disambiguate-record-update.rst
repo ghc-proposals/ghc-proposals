@@ -36,13 +36,13 @@ Note that the rules involve inspecting adjacent syntax nodes, or otherwise getti
 This is a very awkward way of defining a feature that doesn't follow the principles of the either type inferring (collect constraints until one can proceed guess-free) or renaming (trivial, lexical, and local) algorithms.
 
 Again, like `Proposal 160`_, we can step to the side and avoid the overloading problem altogether.
-By providing a different record update syntax, we can force the author of the code to disambiguate so GHC can easily understand the code written.
+By providing a different record update syntax, we can force the author of the code to disambiguate so GHC---and readers of the code---can easily understand the code written.
 This proposal is just that.
 For what its worth, the syntax is borrowed from Rust, where it solves the same problem.
-But it also has some visual similarity with the list constructor syntax ``[start, stride, ..end]``, so hopefully won't appear "foreign".
+But it also has some visual similarity with the list constructor syntax ``[start, stride ..end]``, so hopefully won't appear "foreign".
 
-No implicit polymorphism
-~~~~~~~~~~~~~~~~~~~~~~~~
+Hygiene and avoiding extra polymorphism
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The other approach to this problem is `Proposal 280`_, building upon the overloaded labels extension that we have already.
 In essence, whereas this approach favors the renamer, that approach favors the type checker:
@@ -58,12 +58,23 @@ Of course, our syntax is alpha-equivalence.
 Moreover, our macros are also hygienic, a somewhat nebulous term until it is defined as alpha-equivalence for *transformations* of syntax.
 Ought not our field names respect alpha-equivalence too?
 
-Overloaded labels degrade the nominal nature of types
+Using Overloaded labels for records degrades the nominal nature of types and has dubious hygiene.
+The fields of a record all become unavoidable part of the interface with overloaded labels.
+There are no private type class instances, and so also no way to hide fields.
+Type errors appear very different based on whether names coincide (though at least the guess-free nature of the type error ought to ensure *whether* one gets an error doesn't matter).
+Downstream users are also encouraged by inferred principle types to be polymorphic in a pseudo row types way, without regard to whether nominal types sharing the fields have anything in common.
+
+As a final aside, yes, if we actually had structural record types (e.g. row types) alone, these criticism would no longer apply.
+The field identifiers really would be the only "nominal intent" in the record type, and so the polymorphism and lack of privacy would be warranted.
+But even in that case, rather than using ``Symbol``, I would want an open union (like ``Type``) with labels declared in specific modules an subject to name resolution (like uninhabited ``data Foo`` type constructors for labels).
+That way, two modules independently choosing the same field name wouldn't interact, again in spirit of alpha equivalence broadly construed.
+I know this the choice of label kind is not constrained by other proposals (you can use the classes without the overloaded labels syntax), and that we aren't about to adopt a row types ruling this out either.
+I bring this up to better exemplify that spirit of alpha equivalence outside of the specific semantics for records as they exist today which isn't very popular.
 
 Recovering syntax for future records
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If we had structure record types (e.g. row types), ``f { a = b }`` would be nice to interpret as ``(f) ({ a = b })``, i.e. ``f`` applied to the anonymous record ``{ a = b }``.
+If we get structure record types, ``f { a = b }`` would be nice to interpret as ``(f) ({ a = b })``, i.e. ``f`` applied to the "anonymous" record ``{ a = b }``.
 This proposal frees up that syntax for that purpose (when the on-by-default extension for the legacy syntax is disabled).
 
 Proposed Change Specification
@@ -79,11 +90,11 @@ with some side conditions on the well-formedness of the field names, and semanti
   ::
     e { bs } = case e of
       C_1 v_1 … v_k_1 -> C_1 (pick_1^C_1 bs v_1) … (pick_k_1^C_1 bs v_k_1)
-           ...
+        …
       C_j v_1 … v_k_j -> C_j (pick_1^C_j bs v_1) … (pick_k_j^C_j bs v_k_j)
       _ -> error "Update error"
 
-  where ``{C_1, …, C_j}`` is the set of constructors containing all labels in ``bs``, and ``k_i`` is the arity of ``C_i``.
+  where {``C_1``, …, ``C_j``} is the set of constructors containing all labels in ``bs``, and ``k_i`` is the arity of ``C_i``.
 
 We introduce alternative syntax:
 
@@ -93,9 +104,9 @@ We introduce alternative syntax:
 with the same side conditions and desugaring, but using the type constructor to unambiguously determine the constructors:
 
   ::
-    SomeTyCon { bs ..e } = ... -- same as before
+    SomeTyCon { bs .. e } = ... -- same as before
 
-  where ``{C_1, …, C_j}`` is the subset of constructors of ``SomeTyCon`` containing all labels in ``bs``, and ``k_i`` is the arity of ``C_i``.
+  where {``C_1``, …, ``C_j``} is the subset of constructors of ``SomeTyCon`` containing all labels in ``bs``, and ``k_i`` is the arity of ``C_i``.
 
 To control these, there will be two new extensions ``TyconRecordUpdate`` and ``BareRecordUpdate``.
 The new syntax is available only when ``TyconRecordUpdate`` is enabled, which is not enabled by default.
@@ -104,38 +115,42 @@ The old syntax is available only when ``BareRecordUpdate`` is enabled, which is 
 Examples
 --------
 
-This section illustrates the specification through the use of examples of the
-language change proposed. It is best to exemplify each point made in the
-specification, though perhaps one example can cover several points. Contrived
-examples are OK here. If the Motivation section describes something that is
-hard to do without this proposal, this is a good place to show how easy that
-thing is to do with the proposal.
+::
+  -- old way
+  r { a = b }
+
+::
+  -- new way
+  MyRecord { a = b ..r }
 
 Effect and Interactions
 -----------------------
 
-The constructor identifies the type through name resolution alone.
-This is easier for GHC, and easier for the reader: you never need to look far to find explicitly spelled out the type whose field is being referred to.
+Tech debt
+~~~~~~~~~
 
-There many complaints with Haskell's records overall.
-``<https://prime.haskell.org/wiki/ExistingRecords>`` has some (albeit old) complaints.
-The general takeaway might be the haskell records are simultaneous too rigid and two flexible:
-they offer certain ad-hoc flexibilties but no well-founded polymorphism composition.
-Something completely different, e.g. lens (``HasField``) or row-type based (??), would be a proper solution.
+As mentioned in the motivation, with ``-XNoFieldSelectors`` and ``-XBareRecordUpdate``, all occurrences of field identifiers in syntax can be resolved as part of renaming.
+We should definitely take advantage of that, and consider a future where these (or these and some overloaded labels thing) are the only options so that nasty implementation bits that prop up the status quo can be removed altogether.
+
+Structural records
+~~~~~~~~~~~~~~~~~~
 
 This proposal continues the trend of ratcheting down the legacy record system so as to clear space for something better.
-The drawback below, of lacking a "variant-polymorphic" update, can be mitigated by using labels and lenses for a truly (type-) polymorphic update.
-An exact product (variant), or true polymorphism, seem to me to be better points in the design space.
-If, in the future, this syntax is the only allowed one, we could repurpose the original syntax or something overlapping it to desugar to lenses and labels, or whatever the more expressive idiom *du jour* is.
+Even if one disagrees with the criticism of overloaded labels and ``Symbol`` in the motivation, they may still appreciate this proposal is part of a deprecation cycle for today's records.
+If, in the future, this syntax is the only allowed one, we could repurpose the original syntax, or something conflicting with it, it to desugar to future records.
+Unlike stealing the syntax immediately, this avoids the need for the new desugaring to stretch and strain itself do everything the old one can (e.g. some polymorphic record updates that only are hard for nominal record types) during a transition period.
 
-As a final note, the precedence rules for legacy record update can be surprising:
+Precedence
+~~~~~~~~~~~
+
+The precedence rules for legacy record update can be surprising:
 ::
-  foo bar { .. } baz { .. }
-This certainly looks like 4 arguments to me!
+  foo (quix bar) { .. } (quix baz) { .. }
+This certainly looked like 4 arguments to me the first time I saw it, but is actually 2!
 The new syntax at least matches an existing similar oddity in the pattern syntax:
 ::
   foo A { a = a } A { a = b } = 1
-where ``A { a = a }`` is a single pattern not requiring parenthesis.
+where ``A { a = .. }`` is a single pattern not requiring parenthesis.
 
 Of course, we could propose mandating parantheses with either syntax, but this one is still easier to disambiguate (for the computer or the human!) in that the braces and constructor together distinguish the terminal.
 Reading left to right, the first character immediately distinguishes the constructor, and only in that scenario versus the very general case of an ``aexp`` are the braces allowed.
@@ -143,19 +158,17 @@ Reading left to right, the first character immediately distinguishes the constru
 If we don't add the parenthesis, the precedence tricks seem more justifiable to me with this.
 The normal treatment of whitespace as function application can be viewed as an
 "implicit infix operator".
-It is already an accepted proposal that
+With ``-XBlockArguments``
 ::
   foo do { … } do { … } do { … }
-be accepted under similar precedence-based reasoning.
+is deemed valid and parsed under similar precedence-based reasoning.
 The constructor isn't as iron-clad a disambiguator as ``do``, ``case``, or some other head of a layout syntax rule,
 but at least offers some syntactic hint as described above, so the "implicit infix operator" can be decently parsed from both sides.
 
 Costs and Drawbacks
 -------------------
 
-The most important change to note is with the new syntax, it is no longer possible to update multiple different variants of the same type.
-But most Haskellers already shun using record syntax in type with multiple variants.
-In that case, the semantics are identical.
+The new syntax is more verbose than the old record update syntax.
 
 Alternatives
 ------------
@@ -174,7 +187,7 @@ Alternatives
 Unresolved Questions
 --------------------
 
-None at this time.
+When, if ever, should ``-XDuplicateRecordFields`` imply and require ``-XNoFieldSelectors`` and ``-XBareRecordUpdate`` so the nasty bits of the implementation can be removed?
 
 Implementation Plan
 -------------------
@@ -184,6 +197,7 @@ I'll do it myself or offer to assist in any event.
 
 Endorsements
 -------------
+
 (Optional) This section provides an opportunty for any third parties to express their
 support for the proposal, and to say why they would like to see it adopted.
 It is not mandatory for have any endorsements at all, but the more substantial
