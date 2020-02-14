@@ -177,16 +177,16 @@ The new syntax is more verbose than the old record update syntax.
 Alternatives
 ------------
 
- - Keep the current situation with its difficult implementation for ``DuplicateRecordFields``.
-   I argue this makes duplicate record is a waste of precious compiler development resources to keep that complexity.
-   It is possible that other proposals of the overloaded labels variety can also obviate it in conjunction with ``-XNoFieldSelectors``.
+- Keep the current situation with its difficult implementation for ``DuplicateRecordFields``.
+  I argue this makes duplicate record is a waste of precious compiler development resources to keep that complexity.
+  It is possible that other proposals of the overloaded labels variety can also obviate it in conjunction with ``-XNoFieldSelectors``.
 
- - Disallow record update entirely with ``DuplicateRecordFields``
-   The second is fine with me, but rather draconian.
-   The two workarounds---either using record wildcards or having to write all the untouched fields---are not appealing to me.
+- Disallow record update entirely with ``DuplicateRecordFields``
+  The second is fine with me, but rather draconian.
+  The two workarounds---either using record wildcards or having to write all the untouched fields---are not appealing to me.
 
- - Use data constructors rather than type constructors in the new update syntax.
-   I like the way this *looks*, in that it matches record construction syntax, but would need a different semantics, and as-such is less of a clear replacement.
+- Use data constructors rather than type constructors in the new update syntax.
+  I like the way this *looks*, in that it matches record construction syntax, but would need a different semantics, and as-such is less of a clear replacement.
 
 Unresolved Questions
 --------------------
