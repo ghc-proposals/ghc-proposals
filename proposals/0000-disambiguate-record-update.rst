@@ -1,5 +1,5 @@
-Constructor Update Syntax
-=========================
+Disambiguate Record Update
+==========================
 
 .. author:: John Ericson
 .. date-accepted:: Leave blank. This will be filled in when the proposal is accepted.
@@ -14,56 +14,96 @@ Constructor Update Syntax
             number in the link, and delete this bold sentence.**
 .. contents::
 
-Introduce a new constructor update syntax which makes the variant (and thus type) explicit.
-This avoids a source of ambiguities and implementation complexity with working with ambiguous field names as allowed in ``DuplicateRecordField``.
+Introduce a new update syntax which makes the type constructor, and thus fields explicit.
+This avoids the remaining source of ambiguities and implementation complexity with working with ambiguous field names as allowed in ``DuplicateRecordFields``.
+It also avoids the difficult type errors possible with the various overloaded-labels-related strategies.
 
 Motivation
 ----------
 
-The ``DuplicateRecordFields`` extension is currently ridiculously cumbersome to implement.
-`<https://github.com/ghc-proposals/ghc-proposals/pull/160>`_ would attack one source of this: top-level record disambiguation.
-In `<https://github.com/ghc-proposals/ghc-proposals/pull/160#issuecomment-413457758>`_, SPJ makes not the implementation complexity, and proposes that ``DuplicateRecordFields`` imply that proposal's (anti-)extension.
+Namespacing, not overloading
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The other main source of the complexity of ``DuplicateRecordFields`` is record update.
-Behold, the manual has an `entire section <https://downloads.haskell.org/~ghc/8.4.3/docs/html/users_guide/glasgow_exts.html#record-updates>`_ describing how it works.
+The ``DuplicateRecordFields`` extension was more cumbersome to implement than expected.
+`Proposal 160`_  attacks one source of this: top-level record disambiguation.
+In that thread, @simonpj and others noted how not having any record selector functions should make it easier to reuse the same record name.
+Indeed, not having any selectors at all avoids dealing with the overloading entirely.
+
+The problem is there is an even larger headache with ``DuplicateRecordFields`` that this leaves unaddressed, namely record update.
+Haskell's record update, like record selectors, do not explicitly spell out the record type constructor (or any data constructors), and so only from the record fields, or worse, type inference, can meaning and desugaring of the update be computed.
+Behold, the manual has an `entire section <https://downloads.haskell.org/~ghc/8.4.3/docs/html/users_guide/glasgow_exts.html#record-updates>`_ describing how it works, and indeed *both* nasty alternatives are in use.
 Note that the rules involve inspecting adjacent syntax nodes, or otherwise getting the type checker to follow the right "hypothesis".
-This is a very awkward implementation-driven way of defining a feature.
+This is a very awkward way of defining a feature that doesn't follow the principles of the either type inferring (collect constraints until one can proceed guess-free) or renaming (trivial, lexical, and local) algorithms.
 
-Much cleaner would just be an alternative syntax that forces the disambiguation up front.
+Again, like `Proposal 160`_, we can step to the side and avoid the overloading problem altogether.
+By providing a different record update syntax, we can force the author of the code to disambiguate so GHC can easily understand the code written.
 This proposal is just that.
 For what its worth, the syntax is borrowed from Rust, where it solves the same problem.
-But it also has some visual similarity with the list constructor syntax ``[start, ..end``, so hopefully won't appear "foreign".
+But it also has some visual similarity with the list constructor syntax ``[start, stride, ..end]``, so hopefully won't appear "foreign".
+
+No implicit polymorphism
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The other approach to this problem is `Proposal 280`_, building upon the overloaded labels extension that we have already.
+In essence, whereas this approach favors the renamer, that approach favors the type checker:
+the proposal deprecates the ad-hoc disambiguation algorithm by *actually* making it collect constraints, letting the typechecker grind through them with everything else.
+
+The first thing to note is there is no reason we can't have both.
+But, there are a few reasons to prefer this alone.
+Firstly, keep in mind that today's records are still nominal types.
+Each record is a distinct type no more related to one other record type than any other.
+Fields may be private / unexported, and there is no expectation identically-named fields in different records have anything in common.
+Secondly, recall the recall the importance of alpha equivalence---names shouldn't matter.
+Of course, our syntax is alpha-equivalence.
+Moreover, our macros are also hygienic, a somewhat nebulous term until it is defined as alpha-equivalence for *transformations* of syntax.
+Ought not our field names respect alpha-equivalence too?
+
+Overloaded labels degrade the nominal nature of types
+
+Recovering syntax for future records
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If we had structure record types (e.g. row types), ``f { a = b }`` would be nice to interpret as ``(f) ({ a = b })``, i.e. ``f`` applied to the anonymous record ``{ a = b }``.
+This proposal frees up that syntax for that purpose (when the on-by-default extension for the legacy syntax is disabled).
 
 Proposed Change Specification
 -----------------------------
 
-The haskell 2010 report has the syntax
-::
-  aexp → aexp⟨qcon⟩ { fbind1 , … , fbindn }  (labeled update, n ≥ 1)
-with semantics
-::
-  e { bs } = case e of
-    C1 v1 … vk1 -> C1 (pick1C1 bs v1) … (pickk 1C1 bs v k1)
-         ...
-    Cj v1 … vkj -> Cj (pick1Cj bs v1) … (pickk jCj bs v kj)
-    _ -> error "Update error"
-We introduce alternative syntax
-::
-  aexp → qcon { fbind1 , … , fbindn, .. exp }  (labeled update with constructor, n ≥ 1)
-with semantics
-::
-  C { bs, ..e } = case e of
-    C v1 … vk1 -> C (pick1C1 bs v1) … (pickk 1C1 bs v k1)
-    _ -> error "Update error"
-The new syntax is enabled with ``ConstructorUpdate``.
-The old syntax is disabled with ``NoLegacyUpdate``.
+The haskell 2010 report specifies record update syntax
 
-Initially, ``DuplicateRecordFields`` will imply ``ConstructorUpdate``, and warn on legacy update.
-Later, it will also imply ``NoLegacyUpdate``.
-Then the complicated disambiguating code can be removed.
+::
+  aexp → aexp_⟨qcon⟩ { fbind1 , … , fbindn }  (labeled update, n ≥ 1)
+
+with some side conditions on the well-formedness of the field names, and semantics:
+
+  ::
+    e { bs } = case e of
+      C_1 v_1 … v_k_1 -> C_1 (pick_1^C_1 bs v_1) … (pick_k_1^C_1 bs v_k_1)
+           ...
+      C_j v_1 … v_k_j -> C_j (pick_1^C_j bs v_1) … (pick_k_j^C_j bs v_k_j)
+      _ -> error "Update error"
+
+  where ``{C_1, …, C_j}`` is the set of constructors containing all labels in ``bs``, and ``k_i`` is the arity of ``C_i``.
+
+We introduce alternative syntax:
+
+::
+  aexp → qtycon { fbind1 , … , fbindn .. exp }  (labeled update with type constructor, n ≥ 1)
+
+with the same side conditions and desugaring, but using the type constructor to unambiguously determine the constructors:
+
+  ::
+    SomeTyCon { bs ..e } = ... -- same as before
+
+  where ``{C_1, …, C_j}`` is the subset of constructors of ``SomeTyCon`` containing all labels in ``bs``, and ``k_i`` is the arity of ``C_i``.
+
+To control these, there will be two new extensions ``TyconRecordUpdate`` and ``BareRecordUpdate``.
+The new syntax is available only when ``TyconRecordUpdate`` is enabled, which is not enabled by default.
+The old syntax is available only when ``BareRecordUpdate`` is enabled, which is enabled by default for backwards compatibility.
 
 Examples
 --------
+
 This section illustrates the specification through the use of examples of the
 language change proposed. It is best to exemplify each point made in the
 specification, though perhaps one example can cover several points. Contrived
@@ -75,7 +115,7 @@ Effect and Interactions
 -----------------------
 
 The constructor identifies the type through name resolution alone.
-This allows
+This is easier for GHC, and easier for the reader: you never need to look far to find explicitly spelled out the type whose field is being referred to.
 
 There many complaints with Haskell's records overall.
 ``<https://prime.haskell.org/wiki/ExistingRecords>`` has some (albeit old) complaints.
@@ -120,30 +160,27 @@ In that case, the semantics are identical.
 Alternatives
 ------------
 
- - Keep the current situation with its difficult implementation.
+ - Keep the current situation with its difficult implementation for ``DuplicateRecordFields``.
+   I argue this makes duplicate record is a waste of precious compiler development resources to keep that complexity.
+   It is possible that other proposals of the overloaded labels variety can also obviate it in conjunction with ``-XNoFieldSelectors``.
 
  - Disallow record update entirely with ``DuplicateRecordFields``
+   The second is fine with me, but rather draconian.
+   The two workarounds---either using record wildcards or having to write all the untouched fields---are not appealing to me.
 
-The first I argue is a silly waste of preacious compiler development resources.
-The second is fine with me, but might be deemed too draconian.
-It seems record update is a lessor offender than top-level accessors, in that it is just conflating different type's field namespaces rather than doing that and additionally dumping the mess the in the top level namespace.
-As such, it deserves less "punishment" than being banned entirely.
+ - Use data constructors rather than type constructors in the new update syntax.
+   I like the way this *looks*, in that it matches record construction syntax, but would need a different semantics, and as-such is less of a clear replacement.
 
 Unresolved Questions
 --------------------
 
- - The exact deprecation cycle.
-   In what releases do warnings and errors happen?
-
- - Should parentheses be required anywhere?
-   Should that be left to a separate proposal?
-
-Explicitly list any remaining issues that remain in the conceptual design and specification. Be upfront and trust that the community will help. Please do not list *implementation* issues.
+None at this time.
 
 Implementation Plan
 -------------------
 
-This should be a good beginner ticket for anyone, including me, to get familiar with GHC.
+I thought this should be a good beginner ticket, but that would only be the case perhaps only once `Proposal 160`_, which has been harder to implement than expected, is done.
+I'll do it myself or offer to assist in any event.
 
 Endorsements
 -------------
@@ -153,3 +190,7 @@ It is not mandatory for have any endorsements at all, but the more substantial
 the proposal is, the more desirable it is to offer evidence that there is
 significant demand from the community.  This section is one way to provide
 such evidence.
+
+.. _`Proposal 160`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0160-no-toplevel-field-selectors.rst
+
+.. _`Proposal 280`: https://github.com/ghc-proposals/ghc-proposals/pull/282
