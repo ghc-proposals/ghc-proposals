@@ -21,23 +21,23 @@ that the former assigns a name to the function, whereas the latter can be used
 for anonymous functions. However, the differences go significantly beyond that:
 
  - Lambda expressions can only have a single clause, function declarations
-   can have an arbitrary number of equations (apart from zero)
+   can have an arbitrary non-zero number of equations
  - Lambda expressions cannot have guards
  - Lambda expressions must have at least one parameter
 
 There have been multiple attempts in the past to bring the capabilities of
-lambda expressions closer to the of function declarations:
+lambda expressions closer to those of function declarations:
 
  1. The extension `-XLambdaCase` introduces a `\case` construct which allows
     lambda expression to have multiple clauses, however, only one pattern can
     be matched on. Like a regular case-expression, this can also have guards.
     [During its
     implementation](https://gitlab.haskell.org/ghc/ghc/issues/4359#note_44819)
-    and [after it](https://github.com/ghc-proposals/ghc-proposals/pull/302),
+    as well as [after it](https://github.com/ghc-proposals/ghc-proposals/pull/18),
     there were attempts to make it possible to match on multiple patterns. No
     solution was found, in part because this would make it different from
     regular case-expressions.
-    - If lambda expressions could have multiple clauses and guards, they
+    - If lambda expressions could have multiple clauses as well as guards, they
       could be used instead of `-XLambdaCase`, and they can already match on
       multiple patterns.
  2. The extension `-XMultiWayIf` essentially introduces standalone guards,
@@ -70,12 +70,13 @@ language.
 ## Proposed Change Specification
 
 A new extension `-XLambdaLayout` is introduced. Under this extension, lambda
-expressions can have guards. Like the current behavior with `-XMultiWayIf`,
-these guards introduce an implicit layout. Lambdas expressions are also
+expressions can have guards. Unlike the current behavior with `-XMultiWayIf`,
+these guards do not introduce an implicit layout, since there is an alternative
+way of introducing one (see next paragraph). Lambda expressions are also
 allowed to have zero parameters.
 
-Furthermore, if after the `\`, a newline occurs before the first pattern and
-guard the `\` serves as a layout herald. (This means other whitespace or comments
+Furthermore, if after the `\`, a newline occurs before both the first pattern and
+guard, the `\` serves as a layout herald. (This means other whitespace or comments
 could appear between the `\` and the newline character. For simplicity, this is not
 reflected in the BNF.) Multiple clauses of the form `clause` (see BFN of changed
 syntax) may then be used in the following lines.
@@ -83,7 +84,9 @@ syntax) may then be used in the following lines.
 Zero clauses are not permitted. This means that with `-XEmptyCase`,
 `-XLambdaCase` still has one (albeit rarely used) construct that cannot be
 replaced by a lambda expression without making it slightly longer, though
-`\case {}` *can* be replaced by `\x -> case x of  {}`. This could potentially
+where that is acceptable,
+`\case {}` can (even today) be replaced by `\x -> case x of {}`. This shortcoming
+could potentially
 be addressed in a future proposal, for example by adding absurd patterns, to
 provide a more general solution. Note that the `\case {}` construct only works
 for functions of one argument.
@@ -191,7 +194,7 @@ This also makes it possible to have `where` bindings that scope over multiple
 equations
 
 ```Haskell
--- have to repeat the definition of bar or place it outside the definition of
+-- have to repeat the definition of `magicNumber` or place it outside the definition of
 -- foo
 foo (Just x) | x < 0 = ...
              | let y = blah + 1 = ...
@@ -372,23 +375,6 @@ initially.
    of allowing the syntax to become more consistent. Multiple patterns for regular case
    expressions also are not as much of an improvement, since tuples can already be used
    effectively for them.
-
-## Unresolved Questions
-
- - Is there an elegant alternative design that doesn't rely on a newline
-   playing a significant role, while still allowing the snippets in the last
-   example to work?
-
-   @Ericson2314 suggests a more general approach of enabling inner layout
-   heralds to dominate outer ones, as in
-
-   ```Haskell
-   do x do
-    y z
-   ```
-
-   Would an approach along these lines solve the above-mentioned problems, and
-   would it be feasible to implement in ghc?
 
 ## Implementation Plan
 
