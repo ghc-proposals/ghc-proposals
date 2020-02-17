@@ -11,9 +11,7 @@
 .. implemented:: Leave blank. This will be filled in with the first GHC version which
                  implements the described feature.
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_.
-            **After creating the pull request, edit this file again, update the
-            number in the link, and delete this bold sentence.**
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/311>`_.
 .. contents::
 
 When a data declaration with GADT-syntax has been given a standalone kind
@@ -29,15 +27,15 @@ specify the kind of the type constructor:
 
 1) By directly specifying parameters (optionally with kind signatures), as in
 
-:: haskell
+::
 
   data Foo a (b :: Bool) where
     MkFoo :: a -> proxy b -> Foo a b
 
-Note that the names of these parameters does not matter, i.e. the following
+Note that the names of these parameters do not matter, i.e. the following
 declaration is equivalent:
 
-:: haskell
+::
 
   data Foo c (d :: Bool) where
     MkFoo :: a -> proxy b -> Foo a b
@@ -45,16 +43,16 @@ declaration is equivalent:
 With option 2, having to give irrelevant names to these parameters can be
 avoided:
 
-2) By Using an inline kind kignature
+2) By Using an inline kind signature
 
-:: haskell
+::
 
   data Foo :: Type -> Bool -> Type where
     MkFoo :: a -> proxy b -> Foo a b
 
 Additionally, both options can be combined:
 
-:: haskell
+::
 
   data Foo a :: Bool -> Type where
     MkFoo :: a -> proxy b -> Foo a b
@@ -62,7 +60,7 @@ Additionally, both options can be combined:
 This information can also be provided by using a standalone kind signature, as
 in
 
-:: haskell
+::
 
   type Foo :: Type -> Bool -> Type
   data Foo where
@@ -70,8 +68,8 @@ in
 
 However, the above code, as is, is currently not accepted by GHC - the kind of
 ``Foo`` has to be additionally and redundantly specified via option 1 or 2 (or
-a combination). There is no good reason why giving an inline kind signature
-should be enough, yet a standalone kind signature shouldn't be. Hence this
+a combination). There is no good reason why giving a standalone kind signature
+shouldn't be sufficient, when giving an inline kind signature *is*. Hence, this
 proposal renders the above code acceptable.
 
 Proposed Change Specification
@@ -93,7 +91,7 @@ Examples
 Given the standalone kind signature ``type Foo :: Type -> Bool -> Type``, these
 are all accepted:
 
-:: haskell
+::
 
   data Foo
   data Foo a
@@ -110,7 +108,7 @@ already use standalone kind signatures today. Old lines are prefixed with
 ``-``, the replacing new lines made possible by this proposal are prefixed with
 ``+``:
 
-:: haskell
+::
 
     -- GADT data
     type SomeSing :: Type -> Type
