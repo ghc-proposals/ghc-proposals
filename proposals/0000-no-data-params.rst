@@ -43,7 +43,7 @@ declaration is equivalent:
 With option 2, having to give irrelevant names to these parameters can be
 avoided:
 
-2) By Using an inline kind signature
+2) By using an inline kind signature
 
 ::
 
