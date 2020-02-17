@@ -138,7 +138,7 @@ Costs and Drawbacks
 -------------------
 
 The proposed change is a fairly minor one that doesn't affect the Parser and is
-essentially identical to already existing behaviour for inline kind signatures,
+very similar to already existing behaviour for inline kind signatures,
 so the implementation and maintenance costs should be low.
 
 Alternatives
