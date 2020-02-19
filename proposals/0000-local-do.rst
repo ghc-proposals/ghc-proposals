@@ -123,8 +123,6 @@ The semantics of ``do`` notation statements is given as follows (using
        ; stmts
        }
 
-It is, crucially, not required that the record projections be in scope unqualified (otherwise projections of various builders would shadow one-another).
-
 If a name ``M.op`` is required by the desugaring process (and only if it's required!) but the name is not in scope, an error message is produced:
 
 * “Desugaring statement <stmt> requires <M.op> which is not in scope”
@@ -167,7 +165,7 @@ Enabling ``-XQualifiedDo`` doesn't change the meaning of existing do-expressions
 When both ``QualifiedDo`` and ``RebindableSyntax`` are enabled, ``QualifiedDo`` only affects qualified ``do``'s and ``RebindableSyntax`` affects the unqualified ``do``'s.
 
 In principle, `QualifiedDo` would not affect monad comprehensions, though we could
-imagin a similar mechanism to qualify the names in the desugared expressions
+imagine a similar mechanism to qualify the names in the desugared expressions
 given some suitable syntax to specify the qualifier.
 
 Costs and Drawbacks
@@ -221,7 +219,7 @@ when desugaring.
       y <- someLinearFunction x
       return y
 
-The main obstacle with this approach, was that it was difficult to express the
+The main obstacle with this approach was that it was difficult to express the
 desugaring of the do notation without knowing the type of the builder. And all
 attempts to characterize the type ended up requiring impredicative types.
 
@@ -251,8 +249,8 @@ would desugar to
     (Linear.>>=) Linear.builder (someLinearFunction x) (\y -> Linear.return y)
 
 This effectively avoids the need to find the type of the builder for desugaring.
-We haven't opted for this approach because it requires defining builders while
-the qualified do requires no extra definitions.
+We haven't opted for this approach though, because it requires defining builders
+while the qualified do requires no extra definitions.
 
 
 Related work
