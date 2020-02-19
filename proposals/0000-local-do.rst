@@ -1,5 +1,5 @@
-Local do
-========
+Qualified do
+============
 
 .. proposal-number:: Leave blank. This will be filled in when the proposal is
                      accepted.
@@ -13,8 +13,7 @@ Local do
 .. sectnum::
 .. contents::
 
-This proposal introduces a new extension ``-XLocalDo`` which makes it possible to overload the meaning of a do-notation expression *on a case-by-case basis* (as opposed to the global effect of ``-XRebindableSyntax``), by writing ``do @builder``. The design is inspired by F#'s  `computational expressions <https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/computation-expressions>`_.
-
+This proposal introduces a new extension ``-XQualifiedDo`` which makes it possible to overload the meaning of a do-notation expression *on a case-by-case basis* (as opposed to the global effect of ``-XRebindableSyntax``), by writing ``modid.do``.
 
 Motivation
 ------------
@@ -46,149 +45,130 @@ You may not want all this. For instance, with linear types ``if then else`` synt
 Proposed Change Specification
 -----------------------------
 
-This proposal creates a new language extension ``-XLocalDo``.
+This proposal creates a new language extension ``-XQualifiedDo``.
 
-When ``-XLocalDo`` is activated, the syntax of the ``do`` notation is changed to
+When ``-XQualifiedDo`` is activated, the syntax of the ``do`` notation is changed to
 
 ::
 
-  <lexp> ⟶ do [@<aexp>]
+  <lexp> ⟶ [modid.]do
 
-(``aexp`` means that the notation after the ``@`` is parsed as a variable, unless there are parentheses)
+where ``modid`` stands for some module name.
 
-The additional expression is called the *builder* of the do-expression. A builder's type must be a record, other than that the type is immaterial.
+The additional module name is called the qualifier of the do-expression.
 
 The semantics of ``do`` notation statements is given as follows (using
-``-XNamedFieldsPuns`` and ``-XLambdaCase`` notations):
+``-XLambdaCase`` notation):
 
-* The ``x <- u`` statement uses the ``(>>=)`` field of the builder
-
-  ::
-
-    do @b { x <- u; stmts }  =  case b of { >>= } -> (>>=) u $ \x -> do @b { stmts }
-* The ``u`` statement uses ``(>>)`` field of the builder
+* The ``x <- u`` statement uses ``(modid.>>=)``
 
   ::
 
-    do @b { u; stmts }  =  case b of { >> } -> (>>) u $ do @b { stmts }
-
-* The a ``pat <- u`` statement uses ``fail`` field of the builder for
-  the failing case, if such a case is needed
+    M.do { x <- u; stmts }  =  (M.>>=) u $ \x -> M.do { stmts }
+* The ``u`` statement uses ``modid.(>>)``
 
   ::
 
-    do @b { pat <- u; stmts }  =  case b of { >>=; fail } -> (>>=) u $ \case
-      { pat -> do @b { stmts }
-      ; _ -> fail
+    M.do { u; stmts }  =  (M.>>) u $ M.do { stmts }
+
+* The a ``pat <- u`` statement uses ``M.fail`` for the failing case,
+  if such a case is needed
+
+  ::
+
+    M.do { pat <- u; stmts }  =  (M.>>=) u $ \case
+      { pat -> M.do { stmts }
+      ; _ -> M.fail "…"
       }
 
-  If the pattern cannot fail, then we don't need a ``fail`` field in the builder.
+  If the pattern cannot fail, then we don't need to use ``M.fail``.
 
   ::
 
-    do @b { pat <- u; stmts }  =  case b of { >>= } -> (>>=) u $ \case pat -> do @b { stmts }
+    M.do { pat <- u; stmts }  =  (M.>>=) u $ \case pat -> M.do { stmts }
 
-* ``-XApplicativeDo`` uses the ``(<*>)`` field of the builder (this
+* ``-XApplicativeDo`` uses ``(M.<$>)``, ``(M.<*>)`` and ``M.join`` (this
   assumes that the applicative-do grouping has been performed)
 
   ::
 
-    do @b { (x1 <- u1 | … | xn <- un); return e }  =  case b of { (<*>) ; (<$>) } ->
-      (\x1 … xn -> e) <$> u1 <*> … <*> un
+    M.do { (x1 <- u1 | … | xn <- un); return e }  =
+      (\x1 … xn -> e) M.<$> u1 M.<*> … M.<*> un
 
-    do @b { (x1 <- u1 | … | xn <- un); stmts }  =  case b of { (<*>) ; (<$>) ; join } ->
-      join (\x1 … xn -> do @b { stmts }) <$> u1 <*> … <*> un
+    M.do { (x1 <- u1 | … | xn <- un); stmts }  =
+      M.join (\x1 … xn -> M.do { stmts }) M.<$> u1 M.<*> … M.<*> un
 
 
-  Note that a ``join`` field is only needed if the final expression is
+  Note that ``M.join`` is only needed if the final expression is
   not identifiably a ``return``.
 
   When the applicative statements contain nested statements (see the
   `wiki page
   <https://gitlab.haskell.org/ghc/ghc/wikis/applicative-do>`_ for a
   complete description of applicative-do statements), we also need a
-  ``return`` field. *e.g.*
+  ``M.return``. *e.g.*
 
   ::
 
-    do @b { ({stmt1; …; stmtn} {x1; …; xn} | y <- u) ; return e }  =  case b of { (<*>) ; (<$>) ; return } ->
-      (\(x1,…,xn) y -> e) <$> (do @b { stmt1; …; stmtn; return (x1, …, xn)}) <*> u
+    M.do { ({stmt1; …; stmtn} {x1; …; xn} | y <- u) ; return e }  =
+      (\(x1,…,xn) y -> e) <$> (M.do { stmt1; …; stmtn; M.return (x1, …, xn)}) <*> u
 
-*  With ``-XRecursiveDo``, ``rec`` blocks use the ``mfix`` and ``return`` fields of the builder:
+*  With ``-XRecursiveDo``, ``rec`` blocks use ``M.mfix`` and ``M.return``:
 
    ::
 
-     do @b { rec { x1 <- u1; … ; xn <- un }; stmts }  =  case b of { mfix; return} ->
-       do @b
-       { (x1, …, xn) <- mfix (\~(x1, …, xn) -> do @b { x1 <- u1; …; xn <- un; return (x1, …, xn)})
+     M.do { rec { x1 <- u1; … ; xn <- un }; stmts }  =
+       M.do
+       { (x1, …, xn) <- M.mfix (\~(x1, …, xn) -> M.do { x1 <- u1; …; xn <- un; M.return (x1, …, xn)})
        ; stmts
        }
 
 It is, crucially, not required that the record projections be in scope unqualified (otherwise projections of various builders would shadow one-another).
 
-If a field is required by the desugaring process (and only if it's required!) but the builder's type doesn't have such a field, an error message is produced:
+If a name ``M.op`` is required by the desugaring process (and only if it's required!) but the name is not in scope, an error message is produced:
 
-* “Desugaring statement <stmt> requires <field name> but builder <builder name> doesn't provide it”
+* “Desugaring statement <stmt> requires <M.op> which is not in scope”
 
-The fields of a builder are subject to the same type restrictions as their counterparts with ``-XRebindableSyntax``.
+The qualified operations are subject to the same type restrictions as their counterparts with ``-XRebindableSyntax``.
 
-When the ``@<aexp>`` annotation is omitted, then
+When the qualifier ``modid.`` is omitted, the meaning of ``do { … }`` is the
+same as if ``-XQualifiedDo`` is *not* in effect.
 
-- If ``-XRebindableSyntax`` is *not* set, then ``do { … }`` has the default behaviour of using methods of the monad type classes from the prelude.
-- If ``-XRebindableSyntax`` is set, the builder is taken to be whatever is named ``builder`` in scope.
-
-A standard builder is added to ``Control.Monad``:
-
-::
-
-  -- For simplicity, this ignores the namespacing issues
-
-  data StandardBuilder = StandardBuilder
-    { (>>=) :: Monad m => m a -> (a -> m b) -> m b
-    , (>>) :: Monad m => m a -> m b -> m b
-    , return :: Monad m => m a -> m b -> m b
-    , fail :: MonadFail m => m a
-    , (<*>) :: Applicative f => f (a -> b) -> f a -> f b
-    , mfix :: MonadFix m => (a -> m a) -> m a
-    }
-
-  builder :: StandardBuilder
-  builder = StandardBuilder (>>=) (>>) return fail (<*>) mfix
 
 Effect and Interactions
 -----------------------
 
-``-XLocalDo`` make it possible to choose, for each individual do-expressions, what kind of monad-like notion they are about. Even if the monad-like notion doesn't support all the range of desugaring (for instance it doesn't have a ``fail``), this will still work, as long as the do-expression doesn't use the corresponding feature (in our example: pattern-binders).
+``-XQualifiedDo`` makes it possible to choose, for each individual do-expressions, what kind of monad-like notion they are about. Even if the monad-like notion doesn't support all the range of desugaring (for instance it doesn't have a ``fail``), this will still work, as long as the do-expression doesn't use the corresponding feature (in our example: pattern-binders).
 
-For instance we could make a builder for monoids:
+For instance we could write operations for monoids:
 
 ::
 
-  module Data.Monoid.Builder where
-    data MonoidBuilder = MonoidBuilder
-      { (>>) :: Monoid a => a -> a -> a
-      }
+  module Data.Monoid.QualifiedDo where
+    import Prelude hiding ((>>))
 
-    builder :: MonoidBuilder
-    builder = MonoidBuilder (<>)
+    (>>) :: Monoid a => a -> a -> a
+    (>>) = (<>)
 
   module X where
-    import qualified Data.Monoid.Builder as Monoid
+    import qualified Data.Monoid.QualifiedDo as Monoid
 
-    f = do @Monoid.builder
+    f = Monoid.do
       Sum 2
       Sum 3
       Sum 5
       Sum 8
 
-If one would try to use ``x <- u`` with ``Monoid.builder``, GHC would
+If one would try to use ``x <- u`` with ``Monoid.do``, GHC would
 raise an error *even if there is a value for ``(>>=)`` in scope*.
 
-Importing ``-XLocalDo`` doesn't change the meaning of existing do-expressions: they will pick up the ``builder`` from the ``Prelude``, which has the same meaning as current default.
+Enabling ``-XQualifiedDo`` doesn't change the meaning of existing do-expressions.
 
-``LocalDo`` interferes with ``RebindableSyntax``. We propose that ``LocalDo`` take precedence when both are enabled.
+When both ``QualifiedDo`` and ``RebindableSyntax`` are enabled, ``QualifiedDo`` only affects qualified ``do``'s and ``RebindableSyntax`` affects the unqualified ``do``'s.
 
-The syntax was chosen to resemble that of visible type applications (as it also makes visible arguments which were previously hidden). There is no syntax conflicts, as ``do`` is not actually a function, therefore the notation ``@<expr>`` cannot occur at this site currently. This is still true after `Type applications in patterns <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0031-type-applications-in-patterns.rst>`_, even if one chooses to use the whitespace syntax *and* writes the first statement on the same line as the ``do``: no pattern can start with an ``@``.
+In principle, `QualifiedDo` would not affect monad comprehensions, though we could
+imagin a similar mechanism to qualify the names in the desugared expressions
+given some suitable syntax to specify the qualifier.
 
 Costs and Drawbacks
 -------------------
@@ -198,35 +178,82 @@ The do-expression store, during type-checking, which expression they will use fo
 Alternatives
 ------------
 
-Syntax variations
-~~~~~~~~~~~~~~~~~
+Do with builders
+~~~~~~~~~~~~~~~~
 
-In the pull request discussion some concerns were raised about the use of the syntax ``do @builder``, as ``builder`` is not a type (``@`` is typically followed by a type) and because a competing idea would be to have ``do @MonadType`` be the regular ``do`` on monads, but with the monad specified.
+The initial version of the proposal was inspired by F#'s `computational expressions <https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/computation-expressions>`_.
 
-Both points can be addressed
+Instead of qualifying ``do``, it would attach an expression to it:
 
-- ``@`` is better understood as something which makes an *invisible* argument visible. As it happens, invisible arguments in current Haskell are always types, but it may be best to consider it a coincidence. Especially as Haskell is moving towards more type dependency and more control over the visibility of arguments.
-- It is possible, within the changes of this proposal, to specify the monad type:
+::
 
-  ::
+  <lexp> ⟶ do [@aexp] { stmts }
 
-    do @(builder @MonadType)
-      <do block>
+The optional expression should evaluate to a record containing the operations to use
+when desugaring.
 
-  where ``builder`` is the standard builder from ``Control.Monad`` (in the discussion of the pull request, this ``builder`` was also referred to as ``withMonad``).
+::
 
-Nevertheless an alternative syntax has been proposed:
+  module Control.Monad.Linear.Builder where
 
-- ``do via <aexpr>``. It is modelled after the ``deriving via`` construction. The implications on the parser are less clear then ``@<aexpr>``, however.
+    data BuilderType = Builder
+      { (>>=) :: forall m a b. Linear.Monad m => m a #-> (a #-> m b) #-> m b
+      , (>>) :: forall m b. Linear.Monad m => m () #-> m b #-> m b
+      , fail :: forall m a. Linear.MonadFail m => String -> m a
+      , return :: forall m a. Linear.Monad m => a #-> m a
+      }
 
-Semantics variations
-~~~~~~~~~~~~~~~~~~~~
+    monadBuilder :: BuilderType
+    monadBuilder = Builder
+      { (>>=) = (Linear.>>=)
+      , (>>) = (Linear.>>)
+      , fail = Linear.fail
+      , return = Linear.return }
 
-A previous version of the proposal made it so that ``do {…}``, without an ``@…`` notation, would always use, as its builder, the variable named ``builder`` in scope. This had the dual advantage of being uniform (with ``-XLocalDo``, the ``do`` notation always uses a builder), and to let programmers affect the behaviour of their ``do`` block for a whole module without having to resort to ``-XRebindableSyntax``. For instance, with the future ``-XLinearTypes``, ``-XRebindableSyntax`` makes it impossible to write linear expressions.
 
-On the other hand, a number of commenters pointed out that this would be a very surprising behaviour, as this sort of rebinding is exceptional without ``-XRebindableSyntax``. This is a fatal flaw.
+  module X where
 
-This also required that the standard builder for monads be exported in the ``Prelude``, which could be dropped without remorse in this version.
+    import qualified Control.Monad.Linear as Linear
+    import qualified Control.Monad.Linear.Builder as Linear
+
+    f :: Linear.Monad m => a #-> m a
+    f x = do @Linear.builder
+      y <- someLinearFunction x
+      return y
+
+The main obstacle with this approach, was that it was difficult to express the
+desugaring of the do notation without knowing the type of the builder. And all
+attempts to characterize the type ended up requiring impredicative types.
+
+It was later suggested that the optional expression could be constrained to
+a qualified variable.
+
+::
+
+  <lexp> ⟶ do @qvarid { stmts }
+
+With this constraint, the desugaring could use the qualifier to qualify the
+monad operations.
+
+::
+
+  f :: Linear.Monad m => a #-> m a
+  f x = do @Linear.builder
+    y <- someLinearFunction x
+    return y
+
+would desugar to
+
+::
+
+  f :: Linear.Monad m => a #-> m a
+  f x =
+    (Linear.>>=) Linear.builder (someLinearFunction x) (\y -> Linear.return y)
+
+This effectively avoids the need to find the type of the builder for desugaring.
+We haven't opted for this approach because it requires defining builders while
+the qualified do requires no extra definitions.
+
 
 Related work
 ~~~~~~~~~~~~
@@ -236,38 +263,61 @@ Related work
   * This was the essence of the `OverloadedDo proposal <https://github.com/ghc-proposals/ghc-proposals/pull/78>`_, though type inference was never solved for this
   * A more recent idea is `supermonads <http://www.cs.nott.ac.uk/~psznhn/Publications/jfp2018.pdf>`_, which solves the type inference issue using a plugin
 
-  It requires somewhat less work (“only” a plugin, rather than a change in GHC's compiler, at least it's more modular), and is more automatic, as the correct functions are picked automatically from the type. But there is no way that this will capture all the desired notion: some restrictions need be imposed for the sake of type inference. Note as well that this proposal doesn't preclude an automatic approach when appropriate: simply import your very automatic builder in scope, and all the do-expressions without an explicit builder will use this.
+  It requires somewhat less work (“only” a plugin, rather than a change in GHC's compiler, at least it's more modular), and is more automatic, as the correct functions are picked automatically from the type. But there is no way that this will capture all the desired notion: some restrictions need be imposed for the sake of type inference.
 
-* There is a way to emulate ``-XLocalDo`` in current GHC using ``-XRecordWildcards``: have no ``(>>=)`` and such in scope, and import a builder with ``Builder {..} = builder``. It is used in `linear-base <https://github.com/tweag/linear-base/blob/0d6165fbd8ad84dd1574a36071f00a6137351637/src/System/IO/Resource.hs#L119-L120>`_. This is not a very good solution: it is rather a impenetrable idiom, and, if a single function uses several builders, it yields syntactic contortion (which is why shadowing warnings are deactivated `here <https://github.com/tweag/linear-base/blob/0d6165fbd8ad84dd1574a36071f00a6137351637/src/System/IO/Resource.hs#L1>`_)
-
-* Instead of changing the ``Prelude``, the standard builder could be
-  hosted in a separate module (such as ``Ghc.LocalDo``), and the
-  programmer could ``import Ghc.LocalDo`` when they use ``-XLocalDo``.
-
-* An alternative to the ``@<aexpr>`` notation would be to use implicit parameters, somehow. But it's unclear how exactly it would look.
+* There is a way to emulate ``-XQualifiedDo`` in current GHC using ``-XRecordWildcards``: have no ``(>>=)`` and such in scope, and import a builder with ``Builder {..} = builder``. It is used in `linear-base <https://github.com/tweag/linear-base/blob/0d6165fbd8ad84dd1574a36071f00a6137351637/src/System/IO/Resource.hs#L119-L120>`_. This is not a very good solution: it is rather a impenetrable idiom, and, if a single function uses several builders, it yields syntactic contortion (which is why shadowing warnings are deactivated `here <https://github.com/tweag/linear-base/blob/0d6165fbd8ad84dd1574a36071f00a6137351637/src/System/IO/Resource.hs#L1>`_)
 
 Extensions
 ~~~~~~~~~~
 
-Comprehension
-+++++++++++++
+Qualified do with parameters
+++++++++++++++++++++++++++++
 
-A possible extension which has been floated but not fully explored is to extend the same idea to list comprehension, in which case we can (and should!) extend the proposal to handle parallel list comprehension.
-
-The following syntax has been proposed
-
-- ``[ @builder x | x <- xs, isEven x ]``
-
-It seems that GHC uses a custom-crafter n-ary ``zip`` function in list comprehension, which would be impossible to replicate in a builder, but in monad comprehension desugaring, an iterated binary ``zip`` function is used
+At some point, this proposal could be complemented with another extension
+to allow passing parameters to the operations during desugaring.
 
 ::
 
-  mzip :: MonadZip m => m a -> m b -> m (a, b)
-  munzip :: MonadZip m => m (a, b) -> (m a, m b)
+  <lexp> ⟶ do @aexp … @aexp { stmts }
 
-So builders could contain an ``mzip`` and an ``munzip`` field for parallel comprehension. The default builder would include ``mzip`` and ``munzip`` fields for ``MonadZip``.
+This would allow a user to fix the type of the monad like so
 
-We could set ``-XLocalDo`` to affect comprehension whenever ``-XMonadComprehensions`` is also set.
+::
+
+  do @(@Maybe)
+    x <- (+1) <$> m
+    return x
+
+which would be equivalent to
+
+::
+
+  (>>=) @Maybe ((+1) <$> m) (\x -> return @Maybe x)
+
+Or it could be used to pass information which is available locally
+
+::
+  f =
+    M.do @x1 @x2
+      x <- (+1) <$> m
+      return x
+    where
+      x1 = …
+      x2 = …
+
+which would be equivalent to
+
+::
+
+  f =
+    (M.>>=) x1 x2 ((+1) <$> m) (\x -> M.return x1 x2 x)
+    where
+      x1 = …
+      x2 = …
+
+Some commenters have expressed interest in these cases, but they would fall beyond
+the scope of ``-XQualifiedDo``.
+
 
 Unresolved Questions
 --------------------
