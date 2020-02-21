@@ -12,7 +12,7 @@ Pointer Rep
 GHC's ``RuntimeRep`` allows programmers to deal polymorphically with types of a
 common runtime representation. It distinguishes between lifted pointer
 representations, unlifted pointer representations, and various unlifted
-non-pointer reprenestations. There is a shortcoming of the way this
+non-pointer representations. There is a shortcoming of the way this
 distinction is currently drawn. There are several primitives types
 (``MutVar#``, ``MVar#``, ``Array#``, ``TVar#``, ``SmallArray#``, etc.)
 that are polymorphic in such a way that they only accept lifted types.
