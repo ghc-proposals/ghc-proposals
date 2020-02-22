@@ -33,7 +33,7 @@ These approaches have various performance tradeoffs, but all of them suffer from
 To make this cost more concrete, consider the following example monadic code:
 
 ```haskell
-f a b = g a >>= \c -> h (b + c)
+f a b = g a >>= \c -> h $! (b + c)
 ```
 
 Depending on the particular monad used, this code may be compiled in dramatically different ways. Suppose for a moment that the monad in question is `IO`. Even if `g` and `h` are not inlined, GHC will compile `f` efficiently, producing STG code along these lines:
@@ -68,7 +68,7 @@ f = \r [a b]
 
 Unlike the `IO` code, this has not one but *four* uses of `let`! CPS is the culprit: the calls to `g` and `h` are each passed a continuation, which must be a closure, and closures are allocated on the heap. This means that all computations in `Cont` end up traversing a long chain of heap-allocated closures, whether they ever actually capture the continuation or not.
 
-Note that this example is the best case scenario if `g` and `h` are not inlined. The STG above assumes they are still known calls strict in their arguments, and `>>=` is specialized and inlined. In practice, effect systems usually add even more overhead:
+Note that this example is the best case scenario if `g` and `h` are not inlined. The STG above still assumes `>>=` is specialized and inlined and that its unfolding is simple. In practice, effect systems usually add even more overhead:
 
   * Real systems have to implement tagged delimited continuations, which requires extra bookkeeping.
 
