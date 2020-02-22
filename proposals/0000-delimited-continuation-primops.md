@@ -147,14 +147,14 @@ In addition to these restrictions, `control0` includes a minor departure from it
 This mimics the semantics of the `pushPrompt` operator of Dybvig et al., and it allows a continuation to be restored before proceeding with further computation. In Haskell, this is useful for reinstalling exception handlers or interrupt masking state. For example, using the `IO`-wrapped operators,
 
 ```haskell
-prompt $ catch (shift $ \k -> k $ throwIO (ErrorCall "bang"))
+prompt $ catch (control0 $ \k -> k $ throwIO (ErrorCall "bang"))
                (\(ErrorCall msg) -> pure msg)
 ```
 
 is equivalent to `pure "bang"`, since the application of `k` will reinstall the exception handler before executing the `throwIO` call. In contrast,
 
 ```haskell
-prompt $ catch (shift $ \k -> k . pure =<< throwIO (ErrorCall "bang"))
+prompt $ catch (control0 $ \k -> k . pure =<< throwIO (ErrorCall "bang"))
                (\(ErrorCall msg) -> pure msg)
 ```
 
