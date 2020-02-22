@@ -118,7 +118,7 @@ However, note that I do **not** propose actually providing the `IO` versions any
 
 ### Operational semantics
 
-The names and semantics of `prompt` and `control0` comes from [the paper “Shift to control” by Chung-chieh Shan][shan:shift-to-control]. As their names imply, they are closely related to both Felleisen’s original `prompt` and `control` operators, which in turn are closely related to Danvy and Filinski’s `reset` and `shift`. The differences lie in whether the prompt is included in the captured continuation and whether it is removed upon aborting; the reduction rules show the differences clearly:
+The names and semantics of `prompt` and `control0` come from [the paper “Shift to control” by Chung-chieh Shan][shan:shift-to-control]. As their names imply, they are closely related to both Felleisen’s original `prompt` and `control` operators, which in turn are closely related to Danvy and Filinski’s `reset` and `shift`. The differences lie in whether the prompt is included in the captured continuation and whether it is removed upon aborting; the reduction rules show the differences clearly:
 
   * prompt *v* ⟶ *v*  
     prompt *E*[control *x*<sub>1</sub> *e*] ⟶ prompt ((λ *x*<sub>1</sub>. *e*) (λ *x*<sub>2</sub>. *E*[*x*<sub>2</sub>]))
@@ -251,7 +251,7 @@ Internally, `withFile` uses `bracket` to manage the lifetime of a `Handle`, but 
 
   * A more satisfying approach would be to make `bracket` behave like Scheme’s `dynamic-wind`, where the “allocate” and “destroy” actions are executed upon every jump in or out of the delimited context. This might work better for some resources, like a mutex, but it doesn’t work for `withFile`, since any state of the `Handle` will be destroyed. (And even if it could somehow be recreated, the captured continuation already closes over the *old* `Handle`.)
 
-Existing code just isn’t equipped to deal with continuations. Furthermore, adequately handling these situations in general is not a solved problem. Therefore, this proposal passes punts the problem to library authors, who may experiment with different solutions outside of GHC proper.
+Existing code just isn’t equipped to deal with continuations. Furthermore, adequately handling these situations in general is not a solved problem. Therefore, this proposal punts the problem to library authors, who may experiment with different solutions outside of GHC proper.
 
 
 ## Costs and Drawbacks
