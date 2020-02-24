@@ -8,10 +8,10 @@ implemented: ""
 
 This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/302).
 
-# Layout and guards in lambda expressions
+# Multi-way lambda expressions (`\ of`)
 
-This proposal introduces a new extension `-XLambdaLayout`, which allows lambda
-expressions to have implicit layout as well as guards.
+This proposal introduces a new extension `-XMultiWayLambda`, which introduces a
+lambda-like expression capable of handling multiple clauses as well as guards.
 
 ## Motivation
 
@@ -37,15 +37,17 @@ lambda expressions closer to those of function declarations:
     there were attempts to make it possible to match on multiple patterns. No
     solution was found, in part because this would make it different from
     regular case-expressions.
-    - If lambda expressions could have multiple clauses as well as guards, they
-      could be used instead of `-XLambdaCase`, and they can already match on
+    - If there were an expression that had pattern matching syntax more similar
+      to lambda expressions but which could also have guards and multiple clauses,
+      it could be used instead of `-XLambdaCase` and would be able to match on
       multiple patterns.
  2. The extension `-XMultiWayIf` essentially introduces standalone guards,
     simplifying the use of guards that aren't at the outermost level of a
     function declaration or case-expression. Among other things, this made it
     easier to use guards inside of lambda expressions.
-    - If lambda expressions could have guards and weren't required to have at
-      least one parameter, they could be used instead of `-XMultiWayIf`. This
+    - If there were an expression similar to lambda expressions that could have
+      guards and wasn't required to have at
+      least one parameter, it could be used instead of `-XMultiWayIf`. This
       includes all uses of `-XMultiWayIf`, not just those inside of lambdas
       (see Example section).
  3. During the implementation of `-XLambdaCase`,
@@ -53,37 +55,33 @@ lambda expressions closer to those of function declarations:
     allowing lambda expressions to have multiple clauses. This was not
     implemented: The most obvious approach of turning `\` into a layout herald
     had the disadvantage of making some common idioms invalid.
-    - This can be circumvented by having `\` only be a layout herald if a
-      newline character immediately follows it.
+    - This can be circumvented by introducing a new expression that isn't required
+      to be backwards compatible with existing idioms.
 
 This proposal, then, aims to overcome the shortcomings of lambda expressions
-and allow them to have the same capabilities as function declarations,
+and allows a new expression to have the same capabilities as function declarations,
 obviating the need for `-XMultiWayIf`, `-XLambdaCase`, and potentially even
-most of function declaration syntax, if a user wishes to use lambda expressions
-instead (see Example section).
+most of function declaration syntax, if a user wishes to use the new expression
+instead (see Example section). This new expression is introduced with the sequence `\ of`. It
+behaves similarly to lambda expressions, except with layout, guards and multiple clauses.
 
-By combining the functionality of several features into one existing feature in
-a way that's consistent with the rest of the language, they enable users who
+By combining the functionality of several features into one feature in
+a way that's consistent with the rest of the language, it enables users who
 wish to use this functionality to work with a simpler and more consistent
 language.
 
 ## Proposed Change Specification
 
-A new extension `-XLambdaLayout` is introduced. Under this extension, lambda
-expressions can have guards. Unlike the current behavior with `-XMultiWayIf`,
-these guards do not introduce an implicit layout, since there is an alternative
-way of introducing one (see next paragraph). Lambda expressions are also
-allowed to have zero parameters.
+A new extension `-XMultiWayLambda` is implemented. Under this extension, a new
+expression is enabled, introduced by the token sequence `\ of`. The whitespace between  `\` and `of`
+is optional and may contain an arbitrary sequence of whitespace characters.
+`\ of` behaves in a way largely similar to `\`, but it is a layout herald, can have multiple
+clauses, and may contain guards (see BNF for details).
 
-Furthermore, if after the `\`, a newline occurs before both the first pattern and
-guard, the `\` serves as a layout herald. (This means other whitespace or comments
-could appear between the `\` and the newline character. For simplicity, this is not
-reflected in the BNF.) Multiple clauses of the form `clause` (see BFN of changed
-syntax) may then be used in the following lines.
-
-Zero clauses are not permitted. This means that with `-XEmptyCase`,
+Zero clauses are not permitted, as the type of the expression would be ambiguous.
+This means that with `-XEmptyCase`,
 `-XLambdaCase` still has one (albeit rarely used) construct that cannot be
-replaced by a lambda expression without making it slightly longer, though
+replaced by a `\ of`-expression without making it slightly longer, though
 where that is acceptable,
 `\case {}` can (even today) be replaced by `\x -> case x of {}`. This shortcoming
 could potentially
@@ -93,29 +91,33 @@ for functions of one argument.
 
 Like the existing behavior for alternatives in case- and
 `\case`-expressions, and equations in function declaration syntax, it is
-possible to use `where` clauses within each clause of a multi-clause lambda
-expression.
+possible to use `where` clauses within each clause of a `\ of`-expression.
 
-Explicit layout using braces can be used instead of the implicit layouts.
+Explicit layout using braces can be used instead of the implicit layout.
+
+Once https://github.com/ghc-proposals/ghc-proposals/pull/155 is being implemented,
+with `-XTypeAbstractions`, `\ of`-expressions will also be able to bind type
+variables.
 
 ### BNF of changed syntax
 
 ```
-clause = { pattern } ( "->" exp | guardAlt { guardAlt } ) [ "where" { whereClause } ]
+-- patterns must be surrounded by parentheses if they could otherwise
+-- be interpreted as multiple patterns
+lpattern = "(" pattern ")" | pattern
+clause = { lpattern } ( "->" exp | guardAlt { guardAlt } ) [ "where" { whereClause } ]
 guardAlt = "|" guard { "," guard } "->" exp
-lambda = "\\" clause
-         -- multiple clauses have to follow the layout rules with respect to indentation
+lambda   -- multiple clauses have to follow the layout rules with respect to indentation
          -- i.e. each new clause has to start at the same level of indentation as the first one
          -- All clauses must have the same number of patterns
-       | "\\" "\n" clause { "\n" clause }
+       = "\" "of" clause { "\n" clause }
          -- explicit layout is also possible
-       | "\\" "{" clause { ";" clause } "}"
+       | "\" "of" "{" clause { ";" clause } "}"
 ```
 
 ## Examples
 
-It is now possible to use guards in lambdas, which allows shortening some
-definitions:
+Using multi-way lambda expressions with guards allows shortening some definitions:
 
 ```Haskell
 {-# LANGUAGE MultiWayIf, BlockArguments #-}
@@ -128,11 +130,11 @@ take' = flip $ flip foldr (const [])
 
 take' :: Int -> [a] -> [a]
 take' = flip $ flip foldr (const [])
-  \x more n | n > 0 -> x : more (n - 1)
-            | otherwise -> []
+  \of x more n | n > 0 -> x : more (n - 1)
+               | otherwise -> []
 ```
 
-Lambdas can always replace `-XMultiWayIf`:
+Multi-way lambdas can always replace `-XMultiWayIf`:
 
 ```Haskell
 foo = bar baz if | g1 -> a
@@ -140,22 +142,20 @@ foo = bar baz if | g1 -> a
 
 -- with -XBlockArguments becomes
 
-foo = bar baz \ | g1 -> a
-                | g2 -> b
+foo = bar baz \of | g1 -> a
+                  | g2 -> b
 ```
 
-`\case` can be replaced by a lambda expression:
+`\case` can be replaced by a `\ of`-expression:
 
 ```Haskell
-\case
-  Bar baz -> Just baz
-  Quux -> Nothing
+\case Bar baz -> Just baz
+      Quux -> Nothing
 
 -- becomes
 
-\
-(Bar baz) -> Just baz
-Quux -> Nothing
+\of (Bar baz) -> Just baz
+    Quux -> Nothing
 ```
 
 Lambda expressions are more powerful since they can match on multiple patterns:
@@ -169,12 +169,12 @@ Lambda expressions are more powerful since they can match on multiple patterns:
 
 -- becomes
 
-\
-(Just 4) 3 False -> 42
-_ _ _ -> 0
+\of
+  (Just 4) 3 False -> 42
+  _ _ _ -> 0
 ```
 
-Lambda expressions can be used instead of regular function declaration syntax,
+`\ of`-expressions can be used instead of regular function declaration syntax,
 potentially resulting in more concise definitions:
 
 ```Haskell
@@ -184,7 +184,7 @@ extremelyLengthyFunctionIdentifier _        _     = Nothing
 
 -- becomes
 
-extremelyLengthyFunctionIdentifier = \
+extremelyLengthyFunctionIdentifier = \of
   (Just a) False -> Just 42
   (Just a) True  -> Just (a / 2)
   _        _     -> Nothing
@@ -205,9 +205,9 @@ foo Nothing = magicNumber
 
 -- becomes
 
--- note that the first `where` clause belongs to the first lambda expression
+-- note that the first `where` clause belongs to the first `\ of`-expression
 -- clause, rather than the function declaration, because it is indented further
-foo = \
+foo = \of
   (Just x) | x < 0 -> ...
            | let y = blah + 1 -> ...
     where blah = x + magicNumber
@@ -215,20 +215,6 @@ foo = \
   where
     magicNumber = 5
 ```
-
-Common idioms still work if no newline follows the `\`:
-
-```Haskell
-foo >>= \a ->
-bar >>= \b ->
-pure $ a + b
-
-baz = \x -> do
-  a x
-  b
-```
-
-These wouldn't work if `\` always introduced an implicit layout.
 
 To illustrate with some real-world examples, this section shows
 how some snippets found on hackage would look if they used this new syntax:
@@ -243,15 +229,15 @@ forAll mkFold $ \(l0,l1,l2) -> do
        errFancy (getIndent l2 + g 2) (ii GT col0 col2)
      | otherwise -> prs p s `shouldParse` (sbla, sblb, sblc)
 
--- with -XLambdaLayout
+-- with -XMultiWayLambda
 
 forAll mkFold $ \(l0,l1,l2) -> do
   let {- various bindings -}
-  \ | end0 && col1 <= col0 -> prs p s `shouldFailWith`
-      errFancy (getIndent l1 + g 1) (ii GT col0 col1)
-    | end1 && col2 <= col0 -> prs p s `shouldFailWith`
-      errFancy (getIndent l2 + g 2) (ii GT col0 col2)
-    | otherwise -> prs p s `shouldParse` (sbla, sblb, sblc)
+  \of | end0 && col1 <= col0 -> prs p s `shouldFailWith`
+        errFancy (getIndent l1 + g 1) (ii GT col0 col1)
+      | end1 && col2 <= col0 -> prs p s `shouldFailWith`
+        errFancy (getIndent l2 + g 2) (ii GT col0 col2)
+      | otherwise -> prs p s `shouldParse` (sbla, sblb, sblc)
 ```
 
 caramia-0.7.2.2/src/Graphics/Caramia/Texture.hs:
@@ -261,9 +247,9 @@ return $ if
     | result == GL_REPEAT -> Repeat
     | otherwise -> error "getWrapping: unexpected wrapping mode."
 
--- with -XLambdaLayout and -XBlockArguments
+-- with -XMultiWayLambda and -XBlockArguments
 
-return \
+return \of
     | result == GL_CLAMP_TO_EDGE -> Clamp
     | result == GL_REPEAT -> Repeat
     | otherwise -> error "getWrapping: unexpected wrapping mode."
@@ -278,11 +264,11 @@ _breakNS = \case
     Z x -> Right (Here x)
     S x -> Left x
 
--- with -XLambdaLayout
-_prefixNS = \
+-- with -XMultiWayLambda
+_prefixNS = \of
     (Left  l) -> S l
     (Right x) -> case x of Here fv -> Z @_ @v @start fv
-_breakNS = \
+_breakNS = \of
     (Z x) -> Right (Here x)
     (S x) -> Left x
 ```
@@ -292,11 +278,10 @@ recursors-0.1.0.0/Control/Final.hs
 map (\case PlainTV n    -> n
            KindedTV n _ -> n) binders
            
--- With -XLambdaLayout - note that a newline has to be introduced
+-- With -XMultiWayLambda
 
-map (\
-  (PlainTV n)    -> n
-  (KindedTV n _) -> n) binders
+map (\of (PlainTV n)    -> n
+         (KindedTV n _) -> n) binders
 ```
 
 roc-id-0.1.0.0/library/ROC/ID/Gender.hs
@@ -316,10 +301,10 @@ printGenderChinese = \case
   Male   -> "男性"
   Female -> "女性"
 
--- With -XLambdaLayout - this makes use of the capability to have multiple parameters
+-- With -XMultiWayLambda - this makes use of the capability to have multiple parameters
 
 printGender :: Language -> Gender -> Text
-printGender = \
+printGender = \of
   English Male   -> "Male"
   English Female -> "Female"
   Chinese Male   -> "男性"
@@ -331,11 +316,9 @@ printGender = \
 Enabling the extension enables users to use the suggested syntax. This obviates
 the need for `-XMultiWayIf` and `-XLambdaCase`.
 
-Since these changes are guarded behind an extension, no code will break. Even
-if the extension were enabled on all hackage packages, only three of them use a
-newline immediately after a `\` in a lambda expression, and all instances of
-this that would not work with the extension could be easily fixed by indenting
-a line one level deeper.
+As `of` is already a keyword, no currently allowed syntax is stolen by this extension,
+and the behavior of no currently legal program would be changed with the extension
+enabled.
 
 ## Costs and Drawbacks
 
@@ -344,37 +327,16 @@ cost should be fairly low due to the similarity to already existing constructs.
 
 While this also means one additional construct to learn for beginners, the
 syntax is consistent with similar constructs in the existing language, and as
-such users might be surprised that parts of it *don't* work at the moment.
-
-Using newlines as indicator for whether or not there should be implicit layout
-is not part of any other construct of Haskell, and may thus be surprising,
-initially.
+such users might be surprised that a construct with these capabilities
+doesn't yet exist.
 
 ## Alternatives
 
- - This proposal is about several related but fairly independent changes. It
-   would be possible to only implement a subset of them, though this would
-   sacrifice parity of lambda expressions with function declarations.
-
- - For the same reason, it would be possible to introduce more than one extension
-   for these changes.
-
- - The name of the extension could be something else, for example
-   `-XExtendedLambdas`.
+ - The name of the extension could be something else.
    
- - Guards in lambdas (or in general) could introduce layout, similar to how it works
-   in `MultiWayIf` today. This could avoid some unintuitive behavior when multiple
-   single-clause lambdas with guards are immediately chained, but that comes at the
-   expense of additional complexity. In cases where that issue does arise, a
-   layout-introducing lambda expression (i.e. one with a newline) can always be used
-   instead.
-   
- - An additional keyword (e.g. `mcase`) and the corresponding analogue for -XLambdaCase
-   (e.g. `\mcase`) could be introduced to allow multiple patterns in case and lambda
-   case expressions. However, this would increase the complexity of the syntax instead
-   of allowing the syntax to become more consistent. Multiple patterns for regular case
-   expressions also are not as much of an improvement, since tuples can already be used
-   effectively for them.
+ - Regular lambda expressions could be extended to use layout and guards, however,
+   this necessitates some potentially controversial decision on when exactly to
+   herald layout, since always doing so would disallow existing idioms.
 
 ## Implementation Plan
 
