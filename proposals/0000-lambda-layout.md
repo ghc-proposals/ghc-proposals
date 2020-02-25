@@ -63,7 +63,17 @@ and allows a new expression to have the same capabilities as function declaratio
 obviating the need for `-XMultiWayIf`, `-XLambdaCase`, and potentially even
 most of function declaration syntax, if a user wishes to use the new expression
 instead (see Example section). This new expression is introduced with the sequence `\ of`. It
-behaves similarly to lambda expressions, except with layout, guards and multiple clauses.
+behaves similarly to lambda expressions, except with layout, guards and multiple clauses; for example,
+here is a definition of filter in terms of fix:
+
+```haskell
+filter = fix \of filter' _ []                 -> []
+                 filter' p (x:xs) | p x       -> x : rest
+                                  | otherwise ->     rest
+                   where rest = filter' p xs
+```
+
+The `\of` can be read as "*lambda* comprised *of* the following cases".
 
 By combining the functionality of several features into one feature in
 a way that's consistent with the rest of the language, it enables users who
