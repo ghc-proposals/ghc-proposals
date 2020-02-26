@@ -105,25 +105,21 @@ possible to use `where` clauses within each clause of a `\ of`-expression.
 
 Explicit layout using braces can be used instead of the implicit layout.
 
+As with function declaration equations, all clauses must have the same number of patterns.
+
 Once the [*Binding type variables in lambda-expressions*](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0155-type-lambda.rst) proposal is being implemented,
 with `-XTypeAbstractions`, `\ of`-expressions will also be able to bind type
 variables.
 
 ### BNF of changed syntax
 
-```
--- patterns must be surrounded by parentheses if they could otherwise
--- be interpreted as multiple patterns
-lpattern = "(" pattern ")" | pattern
-clause = { lpattern } ( "->" exp | guardAlt { guardAlt } ) [ "where" { whereClause } ]
-guardAlt = "|" guard { "," guard } "->" exp
-lambda   -- multiple clauses have to follow the layout rules with respect to indentation
-         -- i.e. each new clause has to start at the same level of indentation as the first one
-         -- All clauses must have the same number of patterns
-       = "\" "of" clause { "\n" clause }
-         -- explicit layout is also possible
-       | "\" "of" "{" clause { ";" clause } "}"
-```
+*ofexp* → `\` `of` `{` *ofalts* `}`  
+*ofalts* → *ofalt₁* `;` … `;` *ofaltₙ*  
+*ofalt* → *apat₁* … *apatₙ* `->` *exp* [`where` *decls*]  
+ | *apat₁* … *apatₙ* *gdpat* [`where` *decls*]
+ 
+Aside from the explicit layout using `{`, `}`, and `;`, implicit layout as described in the Haskell
+report can also be used.
 
 ## Examples
 
