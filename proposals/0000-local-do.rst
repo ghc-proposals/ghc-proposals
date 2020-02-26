@@ -271,8 +271,8 @@ Extensions
 Qualified do with parameters
 ++++++++++++++++++++++++++++
 
-At some point, this proposal could be complemented with another extension
-to allow passing parameters to the operations during desugaring.
+At some point, this language extension could be modified to allow passing
+parameters to the operations during desugaring.
 
 ::
 
@@ -313,8 +313,8 @@ which would be equivalent to
       x1 = …
       x2 = …
 
-Some commenters have expressed interest in these cases, but they would fall beyond
-the scope of ``-XQualifiedDo``.
+Some commenters have expressed interest in these cases, which fall beyond
+the scope of the current proposal.
 
 
 Unresolved Questions
