@@ -115,8 +115,8 @@ variables.
 
 *ofexp* → `\` `of` `{` *ofalts* `}`  
 *ofalts* → *ofalt₁* `;` … `;` *ofaltₙ*  
-*ofalt* → *apat₁* … *apatₙ* `->` *exp* [`where` *decls*]  
- | *apat₁* … *apatₙ* *gdpat* [`where` *decls*]
+*ofalt* → [ *apat₁* … *apatₙ* ] `->` *exp* [`where` *decls*]  
+ | [ *apat₁* … *apatₙ* ] *gdpat* [`where` *decls*]
  
 Aside from the explicit layout using `{`, `}`, and `;`, implicit layout as described in the Haskell
 report can also be used.
