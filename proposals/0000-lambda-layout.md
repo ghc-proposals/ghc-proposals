@@ -88,16 +88,16 @@ is optional and may contain an arbitrary sequence of whitespace characters.
 `\ of` behaves in a way largely similar to `\`, but it is a layout herald, can have multiple
 clauses, and may contain guards (see BNF for details).
 
-Zero clauses are not permitted, as the type of the expression would be ambiguous.
+Zero clauses are not permitted, as the expression would be ambiguous.
+(See `Alternatives` section for details.)
 This means that with `-XEmptyCase`,
 `-XLambdaCase` still has one (albeit rarely used) construct that cannot be
-replaced by a `\ of`-expression without making it slightly longer, though
-where that is acceptable,
+replaced by a `\ of`-expression, though
 `\case {}` can (even today) be replaced by `\x -> case x of {}`. This shortcoming
 could potentially
 be addressed in a future proposal, for example by adding absurd patterns, to
-provide a more general solution. Note that the `\case {}` construct only works
-for functions of one argument.
+provide a more general solution. Note that the `\case {}` construct only works for matching
+on a single pattern.
 
 Like the existing behavior for alternatives in case- and
 `\case`-expressions, and equations in function declaration syntax, it is
@@ -105,7 +105,7 @@ possible to use `where` clauses within each clause of a `\ of`-expression.
 
 Explicit layout using braces can be used instead of the implicit layout.
 
-Once https://github.com/ghc-proposals/ghc-proposals/pull/155 is being implemented,
+Once the [*Binding type variables in lambda-expressions*](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0155-type-lambda.rst) proposal is being implemented,
 with `-XTypeAbstractions`, `\ of`-expressions will also be able to bind type
 variables.
 
@@ -342,11 +342,41 @@ doesn't yet exist.
 
 ## Alternatives
 
- - The name of the extension could be something else.
+ - Zero clauses could be permitted. In this case, however, a way would have to be found
+   to indicate how many arguments a given `\ of`-expression matches on, as otherwise, it would
+   be ambiguous.
+   The number of arguments a `\ of`-expression pattern matches on becomes obvious from the
+   clauses, e.g. `\ of a b -> ...` clearly matches on two arguments. Without clauses, this remains
+   unclear. This means it would also be unclear whether the patterns are non-exhaustive:
+   Consider the expression `\of {} :: Bool -> Void -> a`. If the expression is supposed to match on
+   both arguments, the patterns are exhaustive. If it is only supposed to match on the first argument
+   and evaluate to a funtion of type `Void -> a`, it is not exhaustive.
+   With `\case {}` this problem doesn't arise, since it always matches on exactly one argument,
+   and similarly for `case x of {}`, which only matches on `x`.
+   A syntax to resolve this has been proposed in the discussion: `(\of)` for matching on no arguments,
+   `(\of _)` for one, `(\of _ _)` for two, and so on.
    
  - Regular lambda expressions could be extended to use layout and guards, however,
    this necessitates some potentially controversial decision on when exactly to
-   herald layout, since always doing so would disallow existing idioms.
+   herald layout, since always doing so would disallow existing idioms; these would not
+   be legal when the extension is enabled:
+   ```haskell
+   do
+     f a >>= \b ->
+     g b >>= \c ->
+     h c
+     
+   foo = \x -> do
+     a x
+     b
+   ```
+   Two alternatives would be to only herald layout
+     - if a newline immediately follows the `\` or
+     - if, given that token `t` is the token after `\`, the line below the one with `t` has
+       the same indentation as or greater than `t`
+
+   Both of these would avoid the problem, but both rules are dissimilar from how layout heralding
+   is handled in other Haskell constructs.
 
 ## Implementation Plan
 
