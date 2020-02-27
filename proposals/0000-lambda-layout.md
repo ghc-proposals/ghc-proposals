@@ -373,6 +373,11 @@ doesn't yet exist.
 
    Both of these would avoid the problem, but both rules are dissimilar from how layout heralding
    is handled in other Haskell constructs.
+   
+ - `\ of`-expressions with zero patterns could only be allowed if the expression contains guards.
+   This would make them somewhat less consistent, but it is how lambda expressions work
+   (i.e. `\ -> ...` is illegal) and only disallows expressions that are needlessly verbose (i.e.
+   `\of -> exp` can always be replaced by `exp`).
 
 ## Implementation Plan
 
