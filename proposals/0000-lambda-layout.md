@@ -111,6 +111,13 @@ Once the [*Binding type variables in lambda-expressions*](https://github.com/ghc
 with `-XTypeAbstractions`, `\ of`-expressions will also be able to bind type
 variables.
 
+Given an `\ of`-expression `ofexp` with one or more scrutinees and function `f` declared with function
+declaration syntax
+and with the same alternatives and same guards for each alternative as `ofexp`, the semantics of the
+expression `ofexp` are the same as those of the expression `f`. If `ofexp` has no scrutinees, the
+semantics are the same as those of an expression `p` declared with a pattern binding with the same
+guards as `ofexp`.
+
 ### BNF of changed syntax
 
 *ofexp* → `\` `of` `{` *ofalts* `}`  
@@ -120,6 +127,11 @@ variables.
  
 Aside from the explicit layout using `{`, `}`, and `;`, implicit layout as described in the Haskell
 report can also be used.
+
+In expressions that have zero scrutinees and multiple guards, there is an ambiguity as to whether
+the expression has multiple alternatives with one guard each or one alternative with multiple guards
+(or any combination thereof). However, the semantics for these are equivalent, so this ambiguity can be
+resolved in an arbitrary way.
 
 ## Examples
 
@@ -344,9 +356,10 @@ doesn't yet exist.
    The number of arguments a `\ of`-expression pattern matches on becomes obvious from the
    clauses, e.g. `\ of a b -> ...` clearly matches on two arguments. Without clauses, this remains
    unclear. This means it would also be unclear whether the patterns are non-exhaustive:
-   Consider the expression `\of {} :: Bool -> Void -> a`. If the expression is supposed to match on
+   Consider the expression `f = \of {} :: Bool -> Void -> a`. If the expression is supposed to match on
    both arguments, the patterns are exhaustive. If it is only supposed to match on the first argument
-   and evaluate to a funtion of type `Void -> a`, it is not exhaustive.
+   and evaluate to a funtion of type `Void -> a`, it is not exhaustive. Moreover, in the former case,
+   ``f undefined `seq` ()`` evaluates to `()`, whereas in the latter case, it evaluates to bottom.
    With `\case {}` this problem doesn't arise, since it always matches on exactly one argument,
    and similarly for `case x of {}`, which only matches on `x`.
    A syntax to resolve this has been proposed in the discussion: `(\of)` for matching on no arguments,
