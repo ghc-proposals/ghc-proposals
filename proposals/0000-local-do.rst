@@ -162,9 +162,9 @@ raise an error *even if there is a value for ``(>>=)`` in scope*.
 
 Enabling ``-XQualifiedDo`` doesn't change the meaning of existing do-expressions.
 
-When both ``QualifiedDo`` and ``RebindableSyntax`` are enabled, ``QualifiedDo`` only affects qualified ``do``'s and ``RebindableSyntax`` affects the unqualified ``do``'s.
+When both ``-XQualifiedDo`` and ``-XRebindableSyntax`` are enabled, ``-XQualifiedDo`` only affects qualified ``do``'s and ``-XRebindableSyntax`` affects the unqualified ``do``'s.
 
-In principle, `QualifiedDo` would not affect monad comprehensions, though we could
+In principle, ``-XQualifiedDo`` would not affect monad comprehensions, though we could
 imagine a similar mechanism to qualify the names in the desugared expressions
 given some suitable syntax to specify the qualifier.
 
