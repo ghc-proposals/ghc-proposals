@@ -33,7 +33,7 @@ whose names coincide:
 data T = T
 ```
 
-The use of identical names for type-level annd term-level entities is called
+The use of identical names for type-level and term-level entities is called
 *punning*.
 
 At use sites, GHC infers which `T` is referred to from context:
