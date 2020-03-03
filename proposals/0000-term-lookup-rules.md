@@ -270,13 +270,13 @@ With `-Wpuns` and namespace-qualified imports, `'` can be used exclusively for
 * Deprecate the `''` syntax in Template Haskell. Introduce a new warning,
   `-Wdouble-prime-template-haskell` which warns about the usage of the syntax.
 
-* Introduce a new warning, `-Wpun-bindings`, which warns the user about name
-  bindings (at definition sites) that would clash with another identifier if
-  Haskell had a single unified namespace.
+* Introduce a new warning, `-Wpun-bindings`, triggered by any name
+  binding that would clash with another identifier if Haskell had a single
+  unified namespace.
 
-* Introduce a new warning, `-Wpuns`, which warns the user of using an
-  identifier that would be referred to another identifier if Haskell had a
-  single unified namespace.
+* Introduce a new warning, `-Wpuns`, triggered by using an identifier
+  that would be ambiguous or refer to another entity if Haskell had a single
+  unified namespace.
 
 * The deprecation strategy for the `'` syntax in `-XDataKinds` and `''` syntax in `-XTemplateHaskell` is the following:
   * In the next release add `-Wpun-bindings`, `-Wpuns`, `-Wprime-data-kinds` and `-Wdouble-prime-template-haskell` to `-Wcompat`.
