@@ -252,6 +252,79 @@ This effectively avoids the need to find the type of the builder for desugaring.
 We haven't opted for this approach though, because it requires defining builders
 while the qualified do requires no extra definitions.
 
+Exclusive names
+~~~~~~~~~~~~~~~
+
+It has been noted during discussion of the proposal that using the usual names
+when desugaring (``(>>=)``, ``return``, ``(>>)``, ``fail``, etc) could cause
+undesired ambiguity when trying to resolve names in some cases. For instance,
+
+::
+
+  import Data.Monoid
+
+  f = Data.Monoid.do
+    Sum 2
+    Sum 3
+
+  main = putStr "Hello" >> putStrLn "World" -- (Data.Monoid.>>) or (Prelude.>>)?
+
+One would have to write instead
+
+::
+
+  import qualified Data.Monoid.QualifiedDo as Data.Monoid
+  import Data.Monoid -- Changed to not export (>>)
+
+  f = Data.Monoid.do
+    Sum 2
+    Sum 3
+
+  main = putStr "Hello" >> putStrLn "World"
+
+Fiddling with the imports like this would not be necessary if ``-XQualifiedDo``
+used different names like ``qualifiedBind``, ``qualifiedThen``,
+``qualifiedReturn``, etc.
+
+Although the solution is effective for the case of monoids, it has a couple
+of drawbacks that make unclear whether it would be a net win.
+
+Firstly, using exclusive names would make errors about out-of-scope names
+harder to understand. Compare
+
+::
+
+  /tmp/test.hs:4:5: error:
+      • Variable not in scope: Data.Monoid.qualifiedThen
+    |
+  4 | f = Data.Monoid.do
+    |   Sum 2
+    |   Sum 3
+    |
+
+with
+
+::
+
+  /tmp/test.hs:4:5: error:
+      • Variable not in scope: Data.Monoid.>>
+    |
+  4 | f = Data.Monoid.do
+    |   Sum 2
+    |   Sum 3
+    |
+
+The reader can figure out that the do notation requires ``qualifiedThen``
+only if she knows that ``-XQualifiedDo`` desugars to ``qualifiedThen`` when
+regular ``do`` notation would desugar to ``(>>)``.
+
+Secondly, the motivating examples of ``-XQualifiedDo`` are monad-like concepts
+that can define ``(>>=)`` and ``return`` for explicit use without the ``do``
+notation. Asking to define aliases like ``qualifiedBind`` and
+``qualifiedReturn`` is additional work that would not solve the name ambiguities
+when all of ``(>>=)``, ``return``, ``qualifiedBind`` and ``qualifiedReturn`` are
+exported.
+
 
 Related work
 ~~~~~~~~~~~~
