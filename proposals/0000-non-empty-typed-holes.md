@@ -8,18 +8,22 @@ implemented: ""
 
 This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/280).
 
-# Extended Typed-Holes
+# Non-Empty Typed-Holes
 
 Typed-holes are a powerful way for users to interact with the compiler during
 compilation, to ask for more information about the context and (recently) to
 get suggestions on what could be used in place of the hole. However, the user
 can only influence the name of the hole, with the rest being determined by the
-hole's context.  We propose to add a new extension, `ExtendedTypedHoles` to
-allow users to communicate more efficiently with the compiler by adding 3 new
-syntactic constructs to GHC that represent typed-holes by using `_(...)`,
+hole's context.  We propose to add a new extension, `NonEmptyTypedHoles` to
+allow users and IDEs to communicate efficiently with the compiler by adding 3
+new syntactic constructs to GHC that represent typed-holes by using `_(...)`,
 `_$(...)` and `_$$(...)` where `...` is an expression, a template haskell
 expression or a typed template haskell expression respectively.
 
+Using expressions as the contents of the holes not only enables us to
+efficiently communicate with any hole plugins, but also allows us to
+internalize the notion of the "red underline" that many editors have around
+type inconsistencies [[Omar et. al 2019]](https://dl.acm.org/doi/10.1145/3290327).
 
 ## Motivation
 
@@ -37,7 +41,8 @@ combinators.
 This limits the usefulness of typed-hole plugins and means that IDE features
 that interact with holes would either need to pass complex flags or hard to
 read names to plugins for any advanced functionality such as limiting synthesis
-to specific modules or constraints. 
+to specific modules or constraints.
+
 
 As an example, consider the [DjinnHoogleModPlugin](https://github.com/Tritlo/ExampleHolePlugin/tree/master/djinn-hoogle-mod-plugin):
 ```
@@ -62,28 +67,33 @@ specific modules, but the limitation of having only the name makes it
 impractical to invoke more than one command at a time, and requires users to
 use `_` in the names of the modules we want to filter by.
 
+Passing only the name of the hole also means that we cannot convert
+type-inconsistent expressions into typed-holes, which prevents us from dealing
+means that we cannot deal with type-inconsistencies beyond reporting them as
+type errors.
+
 
 ## Proposed Change Specification
 
-We add `-XExtendedTypedHoles` to the available extensions, which turns
+We add `-XNonEmptyTypedHoles` to the available extensions, which turns
 on the lexing of the following tokens:
-+ `_(` for opening an extended typed-hole, whose content is either nothing, or
-  a haskell expression.
++ `_(` for opening an non-empty typed-hole, whose content is a haskell
+  expression (which might be empty)
 + `\) $idchar $idchar*` for allowing users to enumerate the holes, with e.g.
   `_(...)0`, ..., `_(...)n`, or name them e.g. `_(...)a` or `_(...)fix_this`.
-+ `_$(` opens a extended typed-hole containing a template haskell expression
++ `_$(` opens a non-empty typed-hole containing a template haskell expression
   inside.
-+ `_$$(` opens an extended typed-hole containing a typed template haskell
++ `_$$(` opens an non-empty typed-hole containing a typed template haskell
   expression.
 
 Both `_$(` and `_$$(` require `TemplateHaskell` to be enabled in addition to
-`ExtendedTypedHoles`.
+`NonEmptyTypedHoles`.
 
-We extend the grammar by adding the `extended_typed_hole` construct to `aexp2`
-and `hole_op`, where `extended_typed_hole` is:
+We extend the grammar by adding the `non_empty_typed_hole` construct to `aexp2`
+and `hole_op`, where `non_empty_typed_hole` is:
 
 ```
-extended_typed_hole
+non_empty_typed_hole
         : '_('       hole_close
         | '_('   exp hole_close
         | '_$('  exp hole_close
@@ -97,7 +107,7 @@ hole_close
 
 where `CLOSE_HOLE` is the `\) $idchar $idchar*` lexeme.
 
-These are parsed into a new `HsExpr`, `HsExtendedHole`, contains the `LHsExpr`
+These are parsed into a new `HsExpr`, `HsNonEmptyHole`, contains the `LHsExpr`
 from the hole or a template haskell splice.
 
 For the splices, they behave the same as template haskell splices in that the
@@ -105,30 +115,31 @@ untyped splice is run during renaming, and the typed template haskell splice is
 run during  type-checking, and generally behave in the same way as regular
 template haskell splices, i.e. they are run at the same time.  The only
 difference is that the resulting expression is not spliced into the code, but
-rather passed along with the `ExtendedExprHole` to the constraint solver.
+rather passed along with the `NonEmptyExprHole` to the constraint solver.
 
 The resulting template haskell expressions are wrapped in a `toDyn` call from
 `Data.Dynamic` prior to being type-checked, and a
-`runEHSplice :: LHsExpr GhcTc -> TcM Dynamic` function is provided in
+`runNEHSplice :: LHsExpr GhcTc -> TcM Dynamic` function is provided in
 `TcHoleErrors`. This allows plugin developers to easily run the expressions and
 obtain a `Dynamic`, which they can then safely try to interpet as whatever type
 they expect the user to use in the holes.
 
-For expressions contained in a `_(...)` hole, the contained expression is only 
+For expressions contained in a `_(...)` hole, the contained expression is only
 parsed and not renamed nor type-checked, though the
-`runEHRawExpr :: LHsExpr GhcPs -> TcM HValue` and
-`runEHRRawExprDyn :: LHsExpr GhcPs -> TcM Dynamic` functions are provided in
+`runNEHRawExpr :: LHsExpr GhcPs -> TcM HValue` and
+`runNEHRawExprDyn :: LHsExpr GhcPs -> TcM Dynamic` functions are provided in
 `TcHoleErrors` for easy interaction with the expressions. This allows hole
 plugin developers to manipulate the contained expressions at will, and allows
 users to operate directly on an expression by simply wrapping it in a `_(...)`
 hole.
 
-When the type-checker encounters a `HsExtendedHole` expression, it emits an
+When the type-checker encounters a `HsNonEmptyHole` expression, it emits an
 insoluble `CHoleCan` (as we do for typed-holes already), but one that contains
-an `ExtendedExprHole` constraint with the parsed expression (if any) or the
+an `NonEmptyExprHole` constraint with the parsed expression (if any) or the
 `toDyn` wrapped expression resulting from running the splice.  The expression
 can then be accessed via the constraint from plugins or the error reporter, and
 will hopefully enable us to move towards [Extensible Type-Directed Editing](http://cattheory.com/extensibleTypeDirectedEditing.pdf)
+and [Live Functional Programming with Typed-Holes](https://dl.acm.org/doi/10.1145/3290327)
 in Haskell.
 
 As it is behind an extension flag, it does not impact any existing parsing nor
@@ -137,7 +148,7 @@ handle the new `HsExpr`.
 
 ## Examples
 
-As an example, consider the [ExtendedHolesPlugin](https://github.com/Tritlo/ExampleHolePlugin/tree/master/extended-holes-plugin).
+As an example, consider the [NonEmptyHolesPlugin](https://github.com/Tritlo/ExampleHolePlugin/tree/master/non-empty-holes-plugin).
 By defining a DSL, the plugin can express how users can interact with it via
 template haskell expressions.
 
@@ -145,11 +156,11 @@ template haskell expressions.
 This allows us to compile the following:
 
 ```
-{-# OPTIONS -fplugin=ExtendedHolesPlugin -funclutter-valid-hole-fits #-}
+{-# OPTIONS -fplugin=NonEmptyHolesPlugin -funclutter-valid-hole-fits #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE ExtendedTypedHoles #-}
+{-# LANGUAGE NonEmptyTypedHoles #-}
 module Main where
-import ExtendedHolesPlugin
+import NonEmptyHolesPlugin
 import Control.Monad
 
 f :: (a,b) -> a
@@ -237,15 +248,15 @@ Main.hs:19:5: error:
 
 Note that the expressions in `_(...)` are only parsed. Only when we try to
 extract the value are the contents type-checked, desugared and compiled.
-However, `runEHSplice`, `runEHRawExpr` and `runEHRRawExprDyn` all make sure to
+However, `runNEHSplice`, `runNEHRawExpr` and `runNEHRawExprDyn` all make sure to
 propagate any errors encountered to the plugin, which can then handle it
-accordingly. E.g. for the ExtendedHolesPlugin, we can compile the following:
+accordingly. E.g. for the NonEmptyHolesPlugin, we can compile the following:
 
 ```
-{-# OPTIONS -fplugin=ExtendedHolesPlugin -funclutter-valid-hole-fits #-}
-{-# LANGUAGE ExtendedTypedHoles #-}
+{-# OPTIONS -fplugin=NonEmptyHolesPlugin -funclutter-valid-hole-fits #-}
+{-# LANGUAGE NonEmptyTypedHoles #-}
 module Main where
-import ExtendedHolesPlugin
+import NonEmptyHolesPlugin
 
 
 data A = A | B | C
@@ -297,23 +308,25 @@ the user, it is however up to the discretion of the plugin developer.
 
 ## Effect and Interactions
 
-By being able to parse any string and the result of template haskell expressions
-along to the typed-hole plugins, we enable much richer interaction that the user
-can define during development.
+By being able to pass any expression and the result of template haskell expressions
+along to the typed-hole plugins, we enable much richer interaction that the user or IDE
+can define during development, as well as an internal notion for
+type-inconsistent expressions beyond type-errors.
 
 ## Costs and Drawbacks
 
 As it is mostly a change in how we parse and pass along information, the cost
-is not high from GHC's point of view. Further work will be needed from any 
+is not high from GHC's point of view. Further work will be needed from any
 typed hole plugins to make effective use of this new information, but since
 this is behind an extension and does not interfere with previous functionality,
 this cost is minor.
 
-The extended typed-holes are a bit notation heavy, but since they always result in
+The non-empty typed-holes are a bit notation heavy, but since they always result in
 a type error, complete programs are unlikely to have holes in them.
 
 ## Alternatives
-+ Do nothing, and use the names of holes as a way of communicating with plugins.
++ Do nothing, and use the names of holes as a way of communicating with plugins,
+  with no internal notion of inconsistent programs.
 
 ## Unresolved Questions
 
@@ -324,11 +337,11 @@ a type error, complete programs are unlikely to have holes in them.
   are typed-holes.
 + Is `_(...)idchars` a form that is neccessary, or is it enough that users can
   use `_(...)0`, ..., `_(...)n` to disambiguate between holes?
-+ Should we make `ExtendedTypedHoles` and the `_(...)`  syntax available
++ Should we make `NonEmptyTypedHoles` and the `_(...)`  syntax available
   without requiring the extension flag enabled? This would allow us to
   use `_` for regular typed-holes (without any suggestions etc.), and require users
   that want suggestions or to use plugins to use  the `_(...)` syntax.
-+ Should `-XExtendedTypedHoles` imply `-XTemplateHaskell`?
++ Should `-XNonEmptyTypedHoles` imply `-XTemplateHaskell`?
 + Should we define and require that the template haskell splices have a specific
   type, and do away with `Dynamic`?  This could ease the interop between different
   plugins, but we'd also like to give plugin developers as much freedom as possible.
