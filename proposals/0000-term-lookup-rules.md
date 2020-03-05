@@ -65,7 +65,7 @@ r = Const :& RNil
 ```
 
 Note that we had to qualify both the list syntax and the `T` data constructor
-with a prime.
+with a tick.
 
 ### Problem Statement
 
@@ -182,6 +182,27 @@ do not clash.
 With `-Wpuns` and namespace-qualified imports, `'` can be used exclusively for
 `-XTemplateHaskell` name quotation, and `''` is not needed anymore.
 
+Since `[]`, `()`, `(,)`, and so on, type constructors use punning, they will no
+longer be always visible in scope and we introduce `Data.BuiltInTypes` module
+that exports them and is imported by default (this behavior can be overriden
+with `-XNoImplicitBuiltInTypes`).
+
+This leaves us with `(~)` which we also propose to change to a type operator
+and add to `Data.BuiltInTypes`. The main motivation to do it as part of this
+proposal is to avoid breakage in the future. Consider this example:
+
+```
+{-# LANGUAGE NoImplicitBuiltInTypes #-}
+id :: a ~ b => a -> b
+id x = x
+```
+
+Should this code compile?
+
+If we don't add `(~)` to `Data.BuiltInTypes` in this proposal, the answer is initially "yes" and "no" afterwards.
+
+If we handle `(~)` now, the answer is "no" from the get go.
+
 ## Proposed Change Specification
 
 * The name lookup rules are extended: when looking up a term-level identifier
@@ -218,6 +239,8 @@ With `-Wpuns` and namespace-qualified imports, `'` can be used exclusively for
   type [] = List
   ```
 
+  Users are also able to have their own declarations of `[]`.
+
 * In `GHC.Tuple`, rename the tuple type constructors to `Tuple<N>` and add a
   new type family, `Tuple`:
 
@@ -239,6 +262,9 @@ With `-Wpuns` and namespace-qualified imports, `'` can be used exclusively for
     {- ... -}
   ```
 
+  Existing `Unit` in GHC.Tuple is renamed to `Tuple1` and `Unit` is now
+  aliased to the unit type instead.
+
   In `Data.BuiltInTypes`, introduce backwards-compatibility type synonyms:
 
   ```haskell
@@ -249,6 +275,9 @@ With `-Wpuns` and namespace-qualified imports, `'` can be used exclusively for
   {- ... -}
   ```
 
+  Just as for lists, users are able to have their own declarations for `()`,
+  `(,)` and so on.
+
 * Change `a ~ b` from special built-in syntax to a type operator, and
   export it from `Data.BuiltInTypes` and `Data.Type.Equality`.
 
@@ -256,6 +285,8 @@ With `-Wpuns` and namespace-qualified imports, `'` can be used exclusively for
   always in scope. Instead, they are looked up as any other constructor, which
   by default coincides with today's behavior, as `Data.BuiltInTypes` is
   imported by default.
+
+* The data constructors [], (), (,), (,,), (:), and so on, continue to be always in scope.
 
 * The `[a]` syntax is treated as follows:
 
@@ -271,11 +302,11 @@ With `-Wpuns` and namespace-qualified imports, `'` can be used exclusively for
   This also applies to tuples of other arities.
 
 * Deprecate the `'` syntax of `-XDataKinds`, reserving this syntax for Template
-  Haskell name quotation. Introduce a new warning, `-Wprime-data-kinds` which
+  Haskell name quotation. Introduce a new warning, `-Wticked-promoted-constructors` which
   warns of the usage of the syntax.
 
 * Deprecate the `''` syntax in Template Haskell. Introduce a new warning,
-  `-Wdouble-prime-template-haskell` which warns about the usage of the syntax.
+  `-Wdouble-tick-template-haskell` which warns about the usage of the syntax.
 
 * Introduce a new warning, `-Wpun-bindings`, triggered by any name
   binding that would clash with another identifier if Haskell had a single
@@ -286,9 +317,9 @@ With `-Wpuns` and namespace-qualified imports, `'` can be used exclusively for
   unified namespace.
 
 * The deprecation strategy for the `'` syntax in `-XDataKinds` and `''` syntax in `-XTemplateHaskell` is the following:
-  * In the next release add `-Wpun-bindings`, `-Wpuns`, `-Wprime-data-kinds` and `-Wdouble-prime-template-haskell` to `-Wcompat` and deprecate `-Wunticked-promoted-constructors`.
+  * In the next release add `-Wpun-bindings`, `-Wpuns`, `-Wticked-promoted-constructors` and `-Wdouble-tick-template-haskell` to `-Wcompat` and deprecate `-Wunticked-promoted-constructors`.
   * Three releases from after this proposal is implemented add all four warnings to `-Wall`.
-  * Seven releases from after this proposal is implemented deprecate the syntax and enable `-Wprime-data-kinds` and `-Wdouble-prime-template-haskell` by default.
+  * Seven releases from after this proposal is implemented deprecate the syntax and enable `-Wticked-promoted-constructors` and `-Wdouble-tick-template-haskell` by default.
   * Fifteen releases from after this proposal is implemented remove the syntax.
 
 * Amend [GHC Proposal #65](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0065-type-infix.rst)
