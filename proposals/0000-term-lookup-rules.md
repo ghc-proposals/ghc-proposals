@@ -257,8 +257,15 @@ With `-Wpuns` and namespace-qualified imports, `'` can be used exclusively for
   by default coincides with today's behavior, as `Data.BuiltInTypes` is
   imported by default.
 
-* In the type-level context, `[a]` syntax means `[] a` when the
-  `[]` type constructor is in scope, and `a : []` (a singleton list) otherwise.
+* The `[a]` syntax is treated as follows:
+
+  1. Look up `[]` according to the scoping rules in the given context.
+
+  2. If `[]` came from the type namespace, treat `[a]` as `[] a`.
+
+  3. If `[]` came from the data namespace, treat `[a]` as `a : []`.
+
+  4. If `[]` is not in scope, error
 
 * The `(a,b)` syntax means `(,) a b`, where `(,)` is resolved according to the new rules.
   This also applies to tuples of other arities.
@@ -279,7 +286,7 @@ With `-Wpuns` and namespace-qualified imports, `'` can be used exclusively for
   unified namespace.
 
 * The deprecation strategy for the `'` syntax in `-XDataKinds` and `''` syntax in `-XTemplateHaskell` is the following:
-  * In the next release add `-Wpun-bindings`, `-Wpuns`, `-Wprime-data-kinds` and `-Wdouble-prime-template-haskell` to `-Wcompat`.
+  * In the next release add `-Wpun-bindings`, `-Wpuns`, `-Wprime-data-kinds` and `-Wdouble-prime-template-haskell` to `-Wcompat` and deprecate `-Wunticked-promoted-constructors`.
   * Three releases from after this proposal is implemented add all four warnings to `-Wall`.
   * Seven releases from after this proposal is implemented deprecate the syntax and enable `-Wprime-data-kinds` and `-Wdouble-prime-template-haskell` by default.
   * Fifteen releases from after this proposal is implemented remove the syntax.
@@ -384,9 +391,10 @@ h = [a]   -- warning
 x = [a,b] -- no warning
 ```
 
-All of the cases except the very last one will emit `-Wpuns` warning because in
-all of them it is not clear whether the data constructor or a type constructor
-is being referred to, except in the very last case.
+Since `Data.BuiltInTypes` is imported by default, all of the cases except the
+very last one will emit `-Wpuns` warning because in all of them it is not clear
+whether the data constructor or a type constructor is being referred to, except
+in the very last case.
 
 #### `-Wpuns`, example #5
 
@@ -460,7 +468,8 @@ data J = Bool
 ```
 
 This should not cause the warning because `Bool` defined here would not
-conflict with `Bool` imported from `Prelude`, it would shadow it instead:
+conflict with `Bool` imported from `Prelude`, this declaration is not rejected
+by GHC:
 
 ```haskell
 import Prelude (Bool)
@@ -506,6 +515,21 @@ data Bool -- no conflict
    ```haskell
    data T = MkT
    f = T
+   ```
+
+ * You can self-import a module to have namespace qualifiers in it:
+
+   ```haskell
+   {-# LANGUAGE ExplicitNamespaces, DataKinds #-}
+   module M where
+
+   import M type as T
+   import M data as D
+
+   data T = T
+
+   foo :: Proxy D.T -> ()
+   foo = undefined
    ```
 
 ## Costs and Drawbacks
