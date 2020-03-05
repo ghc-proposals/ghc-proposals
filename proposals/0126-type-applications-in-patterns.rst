@@ -3,7 +3,7 @@ Type Applications in Patterns
 
 .. author:: Ryan Scott
 .. date-accepted:: 2018-08-16
-.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/15530
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/11350
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/126>`_.
