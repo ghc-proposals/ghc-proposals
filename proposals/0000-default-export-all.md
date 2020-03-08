@@ -63,7 +63,7 @@ would make it clearer.
 
 ## Effect and Interactions
 
-I am aware of none.
+I am aware of no unwanted interactions.
 
 ## Costs and Drawbacks
 
@@ -74,7 +74,21 @@ extension name.
 
 ## Alternatives
 
-See the motivation section.
+See the motivation section for non-GHC alternatives for solving the identified
+use case.
+
+Implementation alternatives:
+
+1. Don't add a language extension; just export everything all the time.  Even
+   if this change were made blindly, this would have minimal effect, because
+   it's rare to import a `Main` module.  However, it still happens sometimes
+   in test code (usually when using `-main-is` to change the entry point to a
+   new one that imports and calls the old one).  Hence the decision to add a
+   language extension and avoid the risk.
+2. If the decision were made to migrate the language in this direction in the
+   long term, one could imagine adding a warning to encourage fixing the rare
+   cases where it might break something.  This is not straight-forward, and I
+   am not proposing it.
 
 ## Unresolved Questions
 
