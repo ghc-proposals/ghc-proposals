@@ -50,9 +50,12 @@ implied module header just `module Main where` instead, without the export list)
 
 ## Proposed Change Specification
 
-A new language extension will be defined called `DefaultExportAll`.  When
-enabled, the default module header will become `module Main where` instead
-of `module Main (main) where` as it is now.
+A new language extension will be defined called `DefaultExportAll`.  When this is
+enabled and GHC compiles a module that does *not* contain an explicit module header,
+the default module header will become `module Main where` rather than
+`module Main (main) where` as it is in the Haskell Report.
+
+If the module has an explicit module header, there is no change in behavior.
 
 ## Examples
 
