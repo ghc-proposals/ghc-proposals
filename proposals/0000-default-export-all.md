@@ -89,12 +89,12 @@ The first seems unlikely, but the second is known to happen.  A typical case
 involves something like this:
 
 ``` haskell
-module Main (main) where
-
+-- Main.hs
 main = putStrLn "Doing work..."
 ```
 
 ``` haskell
+-- Test.hs
 module Test where
 
 import Main
@@ -106,11 +106,11 @@ testMain = do
   putStrLn "Check assertions"
 ```
 
-Now the tests can be run by compiling with `-main-is Test.testMain`.
+The test can be run with `-main-is Test.testMain`.
 
 This pattern is used by some people who notice when it's broken.  For instance, see https://gitlab.haskell.org/ghc/ghc/issues/15702.  Neither the examples here nor there
-would be broken by the change, but they are both vulnerable to name collisions after
-this change.
+would be broken outright by this change, but they would become vulnerable to name
+collisions after this change is made.
 
 So it's possible this might break some code, but we cannot find any examples of code
 that would actually break.  If it did break, then there are two easy fixes: either
