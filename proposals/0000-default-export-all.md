@@ -7,18 +7,19 @@ implemented: ""
 
 This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/316).
 
-# Default Export All
+# Export all symbols from modules with no header
 
 This proposal adds an option to export everything from a module with no module
 header.  This is useful for some educational uses of GHC.
 
 ## Motivation
 
-The Haskell Report current states that if a module has no module header, it is
-assumed to be called `Main`, and to export a symbol called `main`.  This works
-great for writing Haskell applications starting from a blank slate.  However, in
-certain educational contexts, it is convenient to ask students to write and
-submit parts of a pre-existing project.
+The Haskell Report currently says that if a module has no module header, a header
+is implied of the form `module Main (main) where`.  That is, the module is named
+`Main`, and the only export is the symbol `main`.  This works great for writing
+Haskell applications starting from a blank slate.  However, in certain educational
+contexts, it is convenient to ask students to write and submit parts of a
+pre-existing project.
 
 In those cases, the person designing the educational experience has several
 choices, all of them imperfect.
@@ -30,13 +31,10 @@ choices, all of them imperfect.
    student has not modified the test harness to always succeed, or something
    of the sort.
 2. Instructors could implement `main` in a different module, and ask students to
-   submit their own module with a module header that explicitly lists their
-   exports.  This works, but requires extra work by students to name their module
-   correctly, remember all the export names, avoid typos in extra code, etc.
-   Students are sometimes not prepared to appreciate the need for this extra code.
-   (This is akin to the well known "first day of Java" problem, except that
-   students must blindly type `module Main (foo, bar, baz) where` instead of
-   `public class Main { public static void main(String[] args) { } }`.)
+   add a module header without really understanding why.  This boilerplate is
+   similar to the well known "first day of Java" problem, except that students
+   must blindly type `module Main where`, instead of
+   `public class Main { public static void main(String[] args) { } }`.
 3. Instructors could modify the code submitted by the student to add a module
    header themselves.  However, it's actually very tricky to edit a Haskell AST,
    rewrite the source, compile it, and match up resulting error messages back to
@@ -46,16 +44,16 @@ choices, all of them imperfect.
 All of this is an unfortunate consequence of the Haskell Report's apparently
 arbitrary decision that a default module header will only export `main`.  There
 is no harm in the normal case to exporting everything (that, is, making the
-implied module header just `module Main where` instead, without the export list).
+implied module header just `module Main where` without the export list).
 
 ## Proposed Change Specification
 
 A new language extension will be defined called `DefaultExportAll`.  When this is
 enabled and GHC compiles a module that does *not* contain an explicit module header,
 the default module header will become `module Main where` rather than
-`module Main (main) where` as it is in the Haskell Report.
+`module Main (main) where` as in the Haskell Report.
 
-If the module has an explicit module header, there is no change in behavior.
+If the module has an explicit module header, the extension has no effect.
 
 ## Examples
 
@@ -75,21 +73,55 @@ extension name.
 
 ## Alternatives
 
-See the motivation section for non-GHC alternatives for solving the identified
-use case.
+One interesting alternative is to not add a language extension, and instead
+just have GHC diverge from the Haskell Report.  Obviously, this is not ideal.
+However, I think a reasonable argument can be made for it.
 
-Implementation alternatives:
+First of all, the only time this can have an effect is when something else
+imports `Main`.  Since `Main` is the standard entry point for a Haskell
+program, this is unusual to say the least.  In particular, it can only happen
+in these cases:
 
-1. Don't add a language extension; just export everything all the time.  Even
-   if this change were made blindly, this would have minimal effect, because
-   it's rare to import a `Main` module.  However, it still happens sometimes
-   in test code (usually when using `-main-is` to change the entry point to a
-   new one that imports and calls the old one).  Hence the decision to add a
-   language extension and avoid the risk.
-2. If the decision were made to migrate the language in this direction in the
-   long term, one could imagine adding a warning to encourage fixing the rare
-   cases where it might break something.  This is not straight-forward, and I
-   am not proposing it.
+1. There is a circular dependency involving `Main`.
+2. The project was compiled using `-main-is` to change the standard entry point.
+
+The first seems unlikely, but the second is known to happen.  A typical case
+involves something like this:
+
+``` haskell
+module Main (main) where
+
+main = putStrLn "Doing work..."
+```
+
+``` haskell
+module Test where
+
+import Main
+import System.Environment
+
+testMain = do
+  putStrLn "Setting up the test..."
+  withArgs ["test", "args"] main
+  putStrLn "Check assertions"
+```
+
+Now the tests can be run by compiling with `-main-is Test.testMain`.
+
+This pattern is used by some people who notice when it's broken.  For instance, see https://gitlab.haskell.org/ghc/ghc/issues/15702.  Neither the examples here nor there
+would be broken by the change, but they are both vulnerable to name collisions after
+this change.
+
+So it's possible this might break some code, but we cannot find any examples of code
+that would actually break.  If it did break, then there are two easy fixes: either
+add an explicit module header, or add an import list to the import.  Either one will
+avoid the breakage, and is backward compatible.
+
+One could imagine adding a warning for cases where this would happen.  This is not
+straight-forward, since it means a compiled module needs to remember whether it had
+an explicit module header or not.  This seems like overkill for something that I
+would guess is going to break a single-digit (where that digit might be 0) number
+of people's code.
 
 ## Unresolved Questions
 
