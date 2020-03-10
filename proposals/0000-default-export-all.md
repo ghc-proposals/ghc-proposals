@@ -68,8 +68,15 @@ I am aware of no unwanted interactions.
 
 The implementation itself should be approximately a single-digit number of
 lines of code.  The documentation and test cases will be slightly larger.
-The greatest cost is probably just keeping track of yet another language
-extension name.
+
+A second cost is just keeping track of yet another language extension.
+
+Finally, there's a potential performance cost to enabling this.  Joachim
+Breitner has found, in a different situation, [a gain of 11% in performance]
+(http://www.joachim-breitner.de/blog/762-Faster_Winter_4__Export_lists)
+just by adding a module header with explicit exports.  This is because GHC
+can cheaply inline definitions that are only used once, but exporting a
+definition from the module breaks this.
 
 ## Alternatives
 
@@ -122,6 +129,9 @@ straight-forward, since it means a compiled module needs to remember whether it 
 an explicit module header or not.  This seems like overkill for something that I
 would guess is going to break a single-digit (where that digit might be 0) number
 of people's code.
+
+On the other hand, the inlining performance cost mentioned above would apply to a lot
+more programs, so it's likely this shouldn't be the default.
 
 ## Unresolved Questions
 
