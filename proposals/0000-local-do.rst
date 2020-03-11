@@ -132,6 +132,51 @@ The qualified operations are subject to the same type restrictions as their coun
 When the qualifier ``modid.`` is omitted, the meaning of ``do { … }`` is the
 same as if ``-XQualifiedDo`` is *not* in effect.
 
+Examples
+--------
+
+``-XQualifiedDo`` does not affect ``return`` in the monadic ``do`` notation.
+
+::
+
+  import qualified Some.Monad.M as M
+
+  boolM :: (a -> M.M Bool) -> b -> b -> a -> M.M b
+  boolM p a b x = M.do
+      px <- p x     -- M.>>=
+      if px then
+        return b    -- Prelude.return
+      else
+        M.return a  -- M.return
+
+``-XQualifiedDo`` does not affect explicit ``(>>=)`` in the monadic ``do`` notation.
+
+::
+
+  import qualified Some.Monad.M as M
+  import Data.Bool (bool)
+
+  boolMM :: (a -> M.M Bool) -> M b -> M b -> a -> M.M b
+  boolMM p ma mb x = M.do
+      p x >>= bool ma mb   -- Prelude.>>=
+
+Linear ``do`` blocks would look as follows.
+
+::
+
+  import qualified Control.Monad.Linear as Linear
+
+  f :: Linear.Monad m => a #-> m b
+  f a = Linear.do
+    b <- someLinearFunction a         -- Linear.>>=
+    anotherLinearFunction b
+
+  g :: Linear.Monad m => a #-> m b
+  g a = Linear.do
+    b <- someLinearFunction a         -- Linear.>>=
+    c <- anotherLinearFunction b      -- Linear.>>=
+    Linear.return c
+
 
 Effect and Interactions
 -----------------------
@@ -217,7 +262,7 @@ when desugaring.
     f :: Linear.Monad m => a #-> m a
     f x = do @Linear.builder
       y <- someLinearFunction x
-      return y
+      Linear.return y
 
 The main obstacle with this approach was that it was difficult to express the
 desugaring of the do notation without knowing the type of the builder. And all
@@ -238,7 +283,7 @@ monad operations.
   f :: Linear.Monad m => a #-> m a
   f x = do @Linear.builder
     y <- someLinearFunction x
-    return y
+    Linear.return y
 
 would desugar to
 
@@ -325,6 +370,72 @@ notation. Asking to define aliases like ``qualifiedBind`` and
 when all of ``(>>=)``, ``return``, ``qualifiedBind`` and ``qualifiedReturn`` are
 exported.
 
+Desugar unqualified returns
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Initially, it had been conceived that ``-XQualifiedDo`` should be used
+with an unqualified ``return``.
+
+::
+
+  import qualified Control.Monad.Linear as Linear
+
+  g :: Linear.Monad m => a #-> m b
+  g a = Linear.do
+    b <- someLinearFunction a         -- Linear.>>=
+    c <- anotherLinearFunction b      -- Linear.>>=
+    return c                          -- Desugared to Linear.return
+
+Unfortunately, it is difficult to characterize the locations at which
+return should be desugared or left alone. For instance
+
+::
+
+  import qualified Some.Monad.M as M
+
+  boolM :: (a -> M.M Bool) -> b -> b -> a -> M.M b
+  boolM p a b x = M.do
+      px <- p x
+      y <- if px then
+             return b   -- Prelude.return or M.return ?
+           else
+             return a   -- Prelude.return or M.return ?
+      return y          -- Prelude.return or M.return ?
+
+``-XRebindableSyntax`` solves this by affecting every occurrence of
+``return``. Following that approach for ``-XQualifiedDo`` would
+complicate writing ``do`` blocks where ``return`` is used on a
+different monad.
+
+::
+
+  import qualified Control.Monad.Linear as Linear
+  import qualified System.IO.Linear (fromSystemIO)
+
+  g :: Linear.Monad m => a #-> m b
+  g a = Linear.do
+    b <- fromSystemIO (print () >> return b)   -- Control.Monad.return ?
+    return b                                   -- Linear.return
+
+Also, scoping rules would need to be added to deal with nested ``do`` blocks.
+
+::
+
+  import qualified Some.Monad.M as M
+  import qualified Some.Monad.N as N
+
+  condMM :: (a -> M.M Bool) -> M b -> M b -> a -> M.M b
+  condMM p ma mb x = M.do
+      px <- p x
+      if px then N.do
+        a <- ma
+        return a        -- N.return ?
+      else do
+        b <- mb
+        return b        -- Prelude.return ?
+
+This alternative is feasible. But on balance, it is not clear whether it is
+worth the cost of working with whatever scoping rules are chosen.
 
 Related work
 ~~~~~~~~~~~~
@@ -371,7 +482,7 @@ Or it could be used to pass information which is available locally
   f =
     M.do @x1 @x2
       x <- (+1) <$> m
-      return x
+      M.return x
     where
       x1 = …
       x2 = …
