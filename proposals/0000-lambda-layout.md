@@ -391,6 +391,18 @@ doesn't yet exist.
    This would make them somewhat less consistent, but it is how lambda expressions work
    (i.e. `\ -> ...` is illegal) and only disallows expressions that are needlessly verbose (i.e.
    `\of -> exp` can always be replaced by `exp`).
+   
+ - `\case` could be deprecated, since all its usecases would be subsumed by `\of`, albeit with additional
+   parentheses around patterns that consist of more than one token. However, since this is a controversial
+   change of its own and some working out has to be done as to the exact details of this potential deprecation,
+   this might be better suited to being its own, separate proposal. Combined with this, an alternative to the keyword would be
+   to reuse `\case` and change the way it works.
+ 
+ - There are also other alternatives for the keyword that have been raised: `\cases` and `\mcase`.
+ 
+ - The possibility to have a construct similar to `-XMultiWayIf` but without the keyword, i.e. using guards directly as
+   an expression, was also raised in the discussion. If this were to be used instead of `\of` expressions, any pattern
+   matching would have to be done with pattern guards.
 
 ## Implementation Plan
 
