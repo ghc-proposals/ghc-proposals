@@ -233,6 +233,8 @@ If we handle `(~)` now, the answer is "no" from the get go.
   data List a = [] | a : List a
   ```
 
+  The new type constructor is re-exported in `Data.List`.
+
   In `Data.BuiltInTypes`, introduce a backwards-compatibility type synonym:
 
   ```
@@ -264,6 +266,8 @@ If we handle `(~)` now, the answer is "no" from the get go.
 
   Existing `Unit` in GHC.Tuple is renamed to `Tuple1` and `Unit` is now
   aliased to the unit type instead.
+
+  The new type constructors and the type family are re-exported in `Data.Tuple`.
 
   In `Data.BuiltInTypes`, introduce backwards-compatibility type synonyms:
 
