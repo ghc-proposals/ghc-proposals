@@ -233,7 +233,7 @@ If we handle `(~)` now, the answer is "no" from the get go.
   data List a = [] | a : List a
   ```
 
-  The new type constructor is re-exported in `Data.List`.
+  The new type constructor is re-exported from `Data.List`.
 
   In `Data.BuiltInTypes`, introduce a backwards-compatibility type synonym:
 
@@ -267,7 +267,7 @@ If we handle `(~)` now, the answer is "no" from the get go.
   Existing `Unit` in GHC.Tuple is renamed to `Tuple1` and `Unit` is now
   aliased to the unit type instead.
 
-  The new type constructors and the type family are re-exported in `Data.Tuple`.
+  The new type constructors and the type family are re-exported from `Data.Tuple`.
 
   In `Data.BuiltInTypes`, introduce backwards-compatibility type synonyms:
 
@@ -290,7 +290,7 @@ If we handle `(~)` now, the answer is "no" from the get go.
   by default coincides with today's behavior, as `Data.BuiltInTypes` is
   imported by default.
 
-* The data constructors [], (), (,), (,,), (:), and so on, continue to be always in scope.
+* The data constructors `[]`, `()`, `(,)`, `(,,)`, `(:)`, and so on, continue to be always in scope.
 
 * The `[a]` syntax is treated as follows:
 
@@ -299,8 +299,6 @@ If we handle `(~)` now, the answer is "no" from the get go.
   2. If `[]` came from the type namespace, treat `[a]` as `[] a`.
 
   3. If `[]` came from the data namespace, treat `[a]` as `a : []`.
-
-  4. If `[]` is not in scope, error
 
 * The `(a,b)` syntax means `(,) a b`, where `(,)` is resolved according to the new rules.
   This also applies to tuples of other arities.
