@@ -31,7 +31,7 @@ For example, consider the two following type signatures::
   typeRep2 :: Typeable (a :: k) => TypeRep (a :: k)
 
 Because any user-written type or kind variable is *specified*, the type of ``typeRep2`` contains *two* specified
-type variables, ``k`` and ``a``. This means that someone who wants the type represenatation for ``Int`` needs
+type variables, ``k`` and ``a``. This means that someone who wants the type representation for ``Int`` needs
 to say ``typeRep2 @Type @Int`` or perhaps ``typeRep2 @_ @Int``. Contrast with ``typeRep1``, which is kind-polymorphic
 but keeps its kind variable as inferred. Clients would get the representation for ``Int`` with ``typeRep1 @Int``.
 None of this is new in this proposal.
