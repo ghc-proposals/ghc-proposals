@@ -107,10 +107,10 @@ GHC subsystem. For example (simplified):::
 We could even split error types further if necessary, making it a
 slightly more elaborate/deep hierarchy. The exact shape of the said hierarchy
 has yet to be determined, as it will be best informed by staring at the
-error generation code that GHC has today. We would also provide a toplevel
-error data type, ``GHCError``, which would be a sum of the error types from all
-subsystems. This would allow us to store and more generally treat
-uniformly errors from different systems:::
+error generation code that GHC has today.
+
+We would also provide a toplevel error sum type, ``GHCError``, but only in the
+driver.::
 
     data GHCError
       = PsError ParseError
@@ -118,29 +118,41 @@ uniformly errors from different systems:::
       | TcError TypecheckerError
       | ...
 
-One can then define helper functions such as
-``notInScope :: OccName -> Name -> GHCError`` to be able to easily construct
-error values from within, say, the guts of a renamer function, without
-having to make the intermediate layers and wrapping visible there. We would
-create, manipulate and store ``GHCError`` values until the very last moment,
-when it is time to render the errors and report them. This would require
-implementing ``errorMessage :: GHCError -> ErrDoc``, and would be equivalent
-to all the ``ErrDoc`` building code that GHC has right now.
+Each subsystem would stick to its dedicated error type and the driver
+could then easily wrap those up appropriately to get a ``GHCError``. This would
+allow us to store and more generally treat uniformly errors from different
+systems at the top of the call stack (therefore avoiding potential cycles), and
+GHC API users would be free to handle the error values differently.
 
-Error consumers (the GHC program, GHC API users) would be presented with
-``GHCError`` values, and would be free to just call ``errorMessage`` on them
-to generate error message documents, or do something more interesting with
-some or all of the error values, using good old pattern matching to provide a
-specific interpretation for the errors of interest.
+We would quite want to likely define many helpful little functions to assist in
+the construction of error values, for each subsystem, e.g
+``notInScopeError :: OccName -> Name -> RenamerError`` or
+``occursCheckError :: Type -> Type -> TypecheckerError``, with some possibly
+requiring a suitable monadic context to gather extra information to stick in the
+error value. We may or may not want to move that logic to a dedicated place.
+
+We could then have an ``IsError`` class, defined as follows:::
+
+  class IsError e where
+    errorMessage :: e -> ErrDoc
+
+coming with instances for all the subsystem-specific error types, as well as
+``GHCError``, so that any value of one of those types can be used directly to
+generate an error document without having to resort to any kind of
+wrapping/unwrapping. This would all be equivalent to the entire ``ErrDoc``
+building code that GHC has right now. Most of that code would in fact simply
+move without undergoing any serious change.
+
+Error consumers (the GHC program, GHC API users) could be presented with
+``ParserError``, ``RenamerError``, ``TypecheckerError`` or ``GHCError`` values,
+depending on the parts of the API that are used. They would be free to just call
+``errorMessage`` on them to generate error message documents, or do something
+more interesting with some or all of the error values, using good old pattern
+matching to provide a specific interpretation for the errors of interest.
 
 For error producers, the main change is that the different subsystems will
-define error types and helper functions to build error values. In order for
-``GHCError`` to be able to refer to all the different error types, and for
-those types to use names from the module where ``GHCError`` is defined, we will
-quite likely have to introduce ``.hs-boot`` files to work around
-the import cycles induced by such an architecture. The exact details should be
-figured out at implementation time, but there might be a way to get away with
-just one ``.hs-boot`` file (must be confirmed).
+define error types and helper functions to build error values, along with the
+(existing) error document building code.
 
 It is important to note that ``errorMessage`` ties this proposal back with
 the existing system. Right now, GHC immediately emits error messages
@@ -155,12 +167,11 @@ as values of suitably defined algebraic data types, with all the
 expressions, types, contexts, suggestions and more stored in fields of
 those ADTs.
 
-If necessary, we could define a separate sum type for warnings and
+If necessary, we could define a separate hierarchy for warnings and
 update the definitions of ``ErrorMessages`` and ``WarningMessages``
 given earlier as follows:::
 
-    -- defined as a direct sum of the warning data for each warning, or
-    -- as a subsystem-driven hierarchy (like for errors) if required
+    -- defined as a subsystem-driven hierarchy (like for errors) if required
     data GHCWarning
       = UnnecessaryImport ModuleName
       | ...
@@ -174,15 +185,24 @@ given earlier as follows:::
 (The alternative being to just store ``GHCError`` values in both bags and
 augment ``GHCError`` with a constructor dedicated to warnings.)
 
+These types would only be used in the driver... except that the ``TcRn``
+monad and other pieces of code seem to be relying on ``Messages``. This
+suggests that we might have to either parametrize ``Messages`` on the
+concrete warning and error types, or replace those uses of ``Messages`` with
+an accumulation of values of the corresponding subsystem's error and warning
+types, essentially reimplementing the ``Messages`` machinery. The option of
+just using ``GHCError`` in all those places is dismissed because of the import
+cycles that this would come with.
+
 Finally, we would have to update some error reporting infrastructure
-to take ``GHCError`` values as arguments instead of ``ErrDoc``. That is
-the point at which the actual rendering of error messages would happen,
+to work with ``GHCError`` or ``IsError e => e`` values instead of ``ErrDoc``.
+That is the point at which the actual rendering of error messages would happen,
 under this proposal, right before calling the code that logs the said errors.
 
-A consequence of this is that the ``Messages`` type that GHC API users
-consume would now carry error and warning **values** that they can render
-but also inspect, without parsing. A lot of the work would be about
-actually moving all the error rendering code away from where we create
+A consequence of implementing this proposal would be that the ``Messages`` type
+that GHC API users consume would now carry error and warning **values** that
+they can render but also inspect, without parsing. A lot of the work would be
+about actually moving all the error rendering code away from where we create
 errors, and defining suitable types that carry the data around until
 it is time to report the errors to the user.
 
@@ -226,12 +246,7 @@ be made a lot easier if the current proposal is accepted.
 Costs and drawbacks
 -------------------
 
-The potential import cycles induced by this architecture and the ``.hs-boot``
-file(s) that we might add to work around them are going to add a little bit of
-maintenance overhead which we believe is largely compensated by having errors
-become proper values.
-
-Another drawback is that the wrapping in ``ParserError``, ``GHCError`` and
+One drawback is that the wrapping in ``ParserError``, ``GHCError`` and
 friends can be a bit verbose, becoming more verbose still as we introduce
 additional levels to the hierarchy. This can be mitigated by going for a
 rather flat hierarchy like the one presented above, with ``GHCError`` at the
@@ -245,6 +260,17 @@ The major cost of implementing this proposal is the sheer amount of
 refactoring that will be necessary to emit error values and move the
 rendering to much later, essentially delegating this work to each subystem
 and combining everything in the implementation of ``errorMessage``.
+Some complications are anticipated around the ``TcRn`` monad (and perhaps
+others), because this is a case of two subsystems using common code. A
+straightforward update to the ``Messages`` related types, used by ``TcRn``,
+would leave us with those two subsystems depending on ``GHCError``, introducing
+import cycles. A better idea would probably involve parametrizing ``TcRn`` (and
+the other types involved here) by the error/warning type(s) stored/accumulated,
+with functions to change the error type. This would surely involve quite a bit
+of refactoring but would give us precise types as far as errors are concerned,
+in a similar spirit to how ``mtl`` users write
+``MonadExcept SomeErrorType m => ...``, to say that a piece of code possibly
+throws errors of type ``SomeErrorType``.
 
 Alternatives
 ------------
@@ -264,10 +290,9 @@ This would allow us to work around the whole import cycles problem,
 at the price of being a lot more cumbersome to use: error consumers would
 have to use ``Typeable`` to implement specific behaviours for some types of
 errors. This price is likely a higher one to pay in the long run than the
-import cycles that we would work around when implementing the current proposal,
-as the cost will likely be non-trivial when/if we implement the proposal, but
-very small afterwards, especially with a flat hierarchy. GHC does not get a
-new subsystem nor an error infrastructure redesign all that often.
+refactorings necessary to implement this proposal, or than the
+import cycles that would come with using this proposal's ``GHCError`` everywhere.
+we would work around when implementing the current proposal,
 
 Unresolved Questions
 --------------------
@@ -275,7 +300,7 @@ Unresolved Questions
 We have not fully fleshed out the entire list of error types that would have
 to be defined, since we believe this is something that will be best done by
 scanning GHC's code, looking for functions that emit error messages and trying
-to adapt them to emit a suitably wrapped error **value**. This however did not
+to adapt them to emit a suitable error **value**. This however did not
 seem very relevant to describing the idea behind this proposal, as it is mostly
 about determining what constructors we should have in the "leaf error types"
 and which pieces of data have to be stored in those constructors, while the
