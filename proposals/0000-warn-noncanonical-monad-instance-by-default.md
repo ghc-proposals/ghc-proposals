@@ -7,18 +7,20 @@ implemented: ""
 
 This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/314).
 
-# Enable `-Wnoncanonical-monad-instances` by default
+# Enable `-Wnoncanonical-monad-instances` and `-Wnoncanonical-monoid-instances` by default
 
-Currently, `-Wnoncanonical-monad-instances` is not enabled in any of the default, `-Wall` and `-Wcompat`.
+Currently, `-Wnoncanonical-monad-instances` and `-Wnoncanonical-monoid-instances` are not enabled in any of the default, `-Wall` and `-Wcompat`.
 I propose enabling the warning by default.
 
 ## Motivation
 
 The prerequisite of the Phase 2 of [monad of no return](https://gitlab.haskell.org/ghc/ghc/wikis/proposal/monad-of-no-return) is to wait until "we're confident that the majority of Hackage has reacted to the warning". However, a warning that's disabled unless you specify it individually gives infinitesimally small incentive to the ecosystem, so we can't really expect them to react. In order to avoid catastrophic breakage like what we experienced when `fail` got removed, I think the warning should be enabled by default, not just in `-Wall` or `-Wcompat`.
 
+I also propose enabling `-Wnoncanonical-monoid-instances` for the same reason.
+
 ## Proposed Change Specification
 
-* Add `-Wnoncanonical-monad-instances` to the set of default warnings.
+* Add `-Wnoncanonical-monad-instances` and `-Wnoncanonical-monoid-instances` to the set of default warnings.
 
 ## Examples
 
@@ -53,7 +55,7 @@ With this proposal implemented, it would produce the following warning:
 
 ## Effect and Interactions
 
-Once this proposal is implemented, people are more likely to notice non canonical definitions of `return` and fix them.
+Once this proposal is implemented, people are more likely to notice non canonical definitions of `return` and `mappend`.
 
 ## Costs and Drawbacks
 
