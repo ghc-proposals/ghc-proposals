@@ -39,6 +39,13 @@ instance Applicative P where
 instance Monad P where
   return _ = P
   _ >>= _ = P
+
+instance Semigroup (P a) where
+  _ <> _ = P
+
+instance Monoid (P a) where
+  mempty = P
+  mappend _ _ = P
 ```
 
 With this proposal implemented, it would produce the following warning:
@@ -51,6 +58,13 @@ With this proposal implemented, it would produce the following warning:
    |
 12 |   return _ = P
    |   ^^^^^^^^^^^^
+
+/path/to/example.hs:12:3: warning: [-Wnoncanonical-monoid-instances]
+    Noncanonical ‘mappend’ definition detected
+    in the instance declaration for ‘Monoid (P a)’.
+    Define as ‘mappend = (<>)’
+   |
+20 |   mappend _ _ = P
 ```
 
 ## Effect and Interactions
