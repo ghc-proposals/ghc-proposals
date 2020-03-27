@@ -29,6 +29,7 @@ There are many kinds of monad-like things out there:
 * linear variants of all the above once `linear types
   <https://github.com/ghc-proposals/ghc-proposals/pull/111>`_ are
   implemented
+
   * in particular, the linear IO monad from the `Linear Haskell paper
     <https://arxiv.org/abs/1710.09756>`_ is an example of a linear
     graded monad
@@ -55,8 +56,7 @@ When ``-XQualifiedDo`` is activated, the syntax of the ``do`` notation is change
 
   <lexp> ⟶ [<aexp>.]do
 
-``aexp`` means that the notation before the ``.`` is parsed as a variable, unless there are paren
-theses.
+``aexp`` means that the notation before the ``.`` is parsed as a variable, unless there are parentheses.
 
 The additional expression is called the *builder* of the do-expression. The following restrictions apply to the builder and its type.
 
@@ -67,6 +67,7 @@ The additional expression is called the *builder* of the do-expression. The foll
   ``(>>=)``, ``(>>)``, ``fail``, ``return``, ``<*>``, and ``<$>``.
 
 We say that an expression **has a fully settled type** when
+
 * it is an identifier imported from another module, or
 * it is of the form ``expr @ty`` where `expr` **has a fully settled type**.
 
@@ -138,14 +139,14 @@ The semantics of ``do`` notation statements is given as follows (using
 * With ``-XRecursiveDo``, ``rec`` blocks use the ``mfix`` and ``return``
   fields of the builder:
 
-   ::
+  ::
 
-     b.do { rec { x1 <- u1; … ; xn <- un }; stmts }  =
-       case b of K { mfix = v1, return = v2 } ->
-         b.do
-         { (x1, …, xn) <- v1 (\~(x1, …, xn) -> b.do { x1 <- u1; …; xn <- un; v2 (x1, …, xn)})
-         ; stmts
-         }
+    b.do { rec { x1 <- u1; … ; xn <- un }; stmts }  =
+      case b of K { mfix = v1, return = v2 } ->
+        b.do
+        { (x1, …, xn) <- v1 (\~(x1, …, xn) -> b.do { x1 <- u1; …; xn <- un; v2 (x1, …, xn)})
+        ; stmts
+        }
 
 It is, crucially, not required that the record projections be in scope unqualified (otherwise projections of various builders would shadow one-another).
 
@@ -381,9 +382,9 @@ An example of super monad follows.
   import qualified Control.Monad.Linear as Linear
 
   g :: Bind SomeM SomeN SomeP => a -> SomeP b
-  g a = graded.do
-    b <- someGradedFunction a Super.>>= someOtherGradedFunction
-    c <- anotherGradedFunction b
+  g a = super.do
+    b <- someSuperFunction a Super.>>= someOtherSuperFunction
+    c <- anotherSuperFunction b
     Super.return c
 
   f :: Linear.Monad m => a #-> m b
@@ -429,7 +430,7 @@ When both ``-XQualifiedDo`` and ``-XRebindableSyntax`` are enabled, ``-XQualifie
 ``-XQualifiedDo`` doesn't affect monad comprehensions. But given some suitable syntax,
 it would be possible to extend ``-XQualifiedDo`` to support them.
 
-``-XQualifiedDo`` doesn't affect the `do notation for arrow commands <https://downloads.haskell.org/~ghc/8.8.2/docs/html/users_guide/glasgow_exts.html#do-notation-for-commands>` either. We defer analysis and handling of this case for the future.
+``-XQualifiedDo`` doesn't affect the `do notation for arrow commands <https://downloads.haskell.org/~ghc/8.8.2/docs/html/users_guide/glasgow_exts.html#do-notation-for-commands>`_ either. We defer analysis and handling of this case for the future.
 
 Costs and Drawbacks
 -------------------
@@ -736,10 +737,6 @@ be considered to have a fully settled type:
 It has been suggested that the predicate could have other uses as well.
 For instance, to identify expressions whose type can be reified in Template
 Haskell.
-
-In a way similar to the monadic case, it would be possible to use builders to
-use the ``do`` notation for arrow-like things.
-* It affects many syntactic constructs (numerical literals, the ``if then else`` syntax, … (see the `full list <https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-RebindableSyntax>`_)).
 
 
 Unresolved Questions
