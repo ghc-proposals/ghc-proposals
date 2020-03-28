@@ -18,15 +18,9 @@ ByteArray# literals
 ===================
 
 This is a proposal to introduce ``ByteArray#`` literals. The user
-would be able to write:
-
-.. code-block:: haskell
-
-  "Tag Team"utf8#    -- Addr# (UTF-8)
-  "Tag\x00Team"utf8# -- Addr# (UTF-8 with raw bytes)
-  "Foo\x00Bar"utf8## -- ByteArray# (UTF-8 with raw bytes)
-  "Юникод"utf8##     -- ByteArray# (UTF-8)
-  "Юникод"utf16##    -- ByteArray# (UTF-16, native endian)
+would be able to use write code like ``[utf8|Tag Team|]`` and
+``[utf16le|Araña|]``, valid as either an expression or a pattern.
+This would not require turning on ``TemplateHaskell``.
 
 Motivation
 ----------
@@ -35,7 +29,7 @@ This proposal addresses several shortcomings with string literals in GHC:
 
 * GHC produces suboptimal generated code when using constant ``ByteArray#``
   terms (often wrapped in ``Data.Primitive.ByteArray`` at the top level).
-  The ``ByteArray`` thunk that wraps the ``ByteArray#`` gets forced every
+  The ``ByteArray`` constructor that wraps the ``ByteArray#`` gets forced every
   time it is accessed.
 * There is no O(1) way to get the length of a primitive string
   literal. `Trac 5218 <https://ghc.haskell.org/trac/ghc/ticket/5218>`_.
@@ -47,16 +41,15 @@ This proposal addresses several shortcomings with string literals in GHC:
   ``ByteArray#`` at all and must often resort to performing a series
   of equality tests.
 
-This proposal introduces provides a mechanism for literals of two types:
-``ByteArray#`` and ``Addr#``. It does with without extending the language
+This proposal introduces provides a mechanism for writing ``ByteArray#``
+literals. It does this with without extending the language
 syntactically. Consequently, all programs that compile with GHC today will
-continue to compile after this proposal is implemented. Their meaning will
-not change.
+continue to compile after this proposal is implemented.
 
 Recap: String desugaring currently
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Currently, it's possible to create primitive ``Addr#`` string literals:
+Currently, it is possible to create primitive ``Addr#`` string literals:
 
 .. code-block:: haskell
 
@@ -67,8 +60,9 @@ supported via hexadecimal and decimal escape sequences. A null byte is
 added to the end of the sequence.
 
 ``String`` literals like ``"hello"``, ``"Юникод"``, ``"\NUL"`` are desugared
-using <Modified UTF-8 https://en.wikipedia.org/wiki/UTF-8#Modified_UTF-8>_.
-For example:
+using `Modified UTF-8`_. For example:
+
+.. _Modified UTF-8: https://en.wikipedia.org/wiki/UTF-8#Modified_UTF-8
 
 .. code-block:: haskell
 
@@ -88,22 +82,23 @@ Proposed Change Specification
 
 Rather than adding new syntax, this proposal leverages an existing GHC
 extension: ``QuasiQuotes``. Rather than using ``TemplateHaskell``, these
-quasiquoters would be built in. Here are some examples of ``ByteArray#``
-literals under this scheme::
+quasiquoters would be built in to the compiler. Here are some examples of
+``ByteArray#`` literals under this scheme::
 
-    [octets#|fe01bce8|] -- ByteArray# (four bytes)
-    [utf8#|Araña|]      -- ByteArray# (UTF-8)
-    [utf16#|Araña|]     -- ByteArray# (UTF-16, native endian)
-    [utf16le#|Araña|]   -- ByteArray# (UTF-16, little endian)
-    [utf16be#|Araña|]   -- ByteArray# (UTF-16, big endian)
+    [octets|fe01bce8|] -- ByteArray# (four bytes)
+    [utf8|Araña|]      -- ByteArray# (UTF-8)
+    [utf16|Araña|]     -- ByteArray# (UTF-16, native endian)
+    [utf16le|Araña|]   -- ByteArray# (UTF-16, little endian)
+    [utf16be|Araña|]   -- ByteArray# (UTF-16, big endian)
 
-The five quasiquoters showcased above would be built in to GHC. The
+The five quasiquoters showcased above would be known-key identifiers
+exported by ``GHC.Exts``. The
 resulting ``ByteArray#`` literals would not be null-terminated. The
 textual quasiquotes (those that start with ``utf``) do not support
-escape sequences. The ``octets#`` quasiquoter only supports hexadecimal
+escape sequences. The ``octet#`` quasiquoter only supports hexadecimal
 characters, and the number of characters must be even. GHC will throw
 an error at compile-time if an odd number of hexadecimal characters
-are given as the argument to ``octets#``.
+are given as the argument to ``octets``.
 
 These literals can be used both as values and as a way to scrutize a
 ``ByteArray#`` that has been cased on. Casing would look like this:
@@ -112,9 +107,9 @@ These literals can be used both as values and as a way to scrutize a
 
   readSmallNumber :: ByteArray# -> Int#
   readSmallNumber x = case x of
-    [utf8#|one|] -> 1#
-    [utf8#|two|] -> 2#
-    [utf8#|three|] -> 3#
+    [utf8|one|] -> 1#
+    [utf8|two|] -> 2#
+    [utf8|three|] -> 3#
     _ -> 4#
 
 When compiling STG to cmm, GHC has an opportunity to generate very
@@ -124,25 +119,38 @@ perfect or nearly-perfect hashing. Currently, that burden is pushed onto
 program authors.
 
 Only one optimization is mandated by this proposal: GHC must perform
-constant-folding when ``sizeofByteArray#`` is applied to a ``ByteArray#``
-literal.
+constant-folding when ``sizeofByteArray#``, ``indexWord8Array#``, or
+``isByteArrayPinned#`` is applied to a ``ByteArray#`` literal.
+
+Users in need of other less common textual encodings could use template
+haskell to provide additional non-built-in quasiquoters.
 
 Effect and Interactions
 -----------------------
 
+The template-haskell library
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The data type ``QuasiQuoter`` (currently defined in
+``Language.Haskell.TH.Quote``) needs to be moved from ``template-haskell``
+to ``base``. It is desirable that the known-key quasiquoters be
+available *without* depending on the ``template-haskell`` library.
+For this to be possible, their *type* must also be defined in ``base``.
+
+Overloaded Strings
+~~~~~~~~~~~~~~~~~~
 Future proposals may build on top of this one to improve the desugaring
 of string literals. This proposal does not change the way that string
 literals are desugared, but it does lay important groundwork that any
 future proposal would build on.
 
-Compact regions. All ``ByteArray#`` literals are considered pinned, but
+Compact Regions
+~~~~~~~~~~~~~~~
+All ``ByteArray#`` literals are considered pinned, but
 unlike explicitly pinned ``ByteArray#`` literals, they can be copied into
 a compact regions. Technically, they would not actually be copied. The
 compact region is allowed to point to them because they are static data
 that cannot be GCed.
 
-Users in need of other encodings could use template haskell to provide
-additional non-built-in quasiquoters.
 
 Costs and Drawbacks
 -------------------
@@ -152,8 +160,7 @@ None that the author is aware of.
 Unresolved questions
 --------------------
 
-Should we support all encoding ``iconv`` supports? I think that it is best
-to keep the list small.
+None.
 
 Implementation Plan
 -------------------
@@ -161,12 +168,14 @@ Implementation Plan
 There are three phases for implementation:
 
 1. Add ``ByteArray#`` literals to GHC Core. Support them with built-in
-   quasiquoters. Andrew Thaddeus Martin will implement this.
+   quasiquoters. An eager student may implement this.
 2. Allow casing on values of type ``ByteArray#`` with ``ByteArray#`` literals.
-   Desugar this to nearly-perfect hashing in cmm. Andrew Thaddeus Martin will
+   Desugar this to nearly-perfect hashing in cmm. An eager student may
    implement this.
 3. Allow ``ByteArray#`` literals to appear in all other expected places.
-   Float them all to the top level. It is not known who will implement this.
+   Float them all to the top level. Constant fold ``sizeofByteArray#``,
+   ``isByteArrayPinned#``, and ``indexWord8Array#`` when their argument
+   byte array is a literal. An eager student may implement this.
 
 Phase 1 and 2 can be merged without phase 3 being completed. There is
 plenty of value in being able to case on values of type ``ByteArray#``
