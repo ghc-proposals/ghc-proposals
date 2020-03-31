@@ -210,7 +210,7 @@ An example of linear ``do`` blocks follows, mixed with non-linear
 
   {-# LANGUAGE LinearTypes #-}
   {-# LANGUAGE NoImplicitPrelude #-}
-  module Control.Monad.Linear.Internal (Monad(..), linear) where
+  module Control.Monad.Linear.Internal (Monad(..)) where
 
   class Monad m where
     return :: a #-> m a
@@ -474,7 +474,7 @@ This is an example with the linear monad
 
   {-# LANGUAGE LinearTypes #-}
   {-# LANGUAGE NoImplicitPrelude #-}
-  module Control.Monad.Linear (Monad(..), linear) where
+  module Control.Monad.Linear (Monad(..)) where
 
   class Monad m where
     return :: a #-> m a
