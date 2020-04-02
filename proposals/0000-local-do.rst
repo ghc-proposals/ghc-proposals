@@ -67,10 +67,12 @@ The additional expression is called the *builder* of the do-expression. The foll
 * ``K`` must be a record constructor, defining fields with any of the following names:
   ``(>>=)``, ``(>>)``, ``fail``, ``return``, ``<*>``, and ``<$>``.
 
-We say that an expression **has a fully settled type** when
+We say that an expression **has the fully settled type** ``T`` when
 
-* it is an identifier imported from another module, or
-* it is of the form ``expr @ty`` where `expr` **has a fully settled type**.
+* it is of the form ``e :: T``, or
+* it is an identifier imported from another module with type ``T``, or
+* it is of the form ``expr @ty`` where `expr` **has a fully settled type**
+  ``forall a. T``.
 
 The semantics of ``do`` notation statements is given as follows (using
 ``-XLambdaCase`` notation and fresh variables ``v, v1, …, vn``):
