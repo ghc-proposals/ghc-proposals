@@ -60,9 +60,10 @@ When ``-XQualifiedDo`` is activated, the syntax of the ``do`` notation is change
 
 The additional expression is called the *builder* of the do-expression. The following restrictions apply to the builder and its type.
 
-* expr must **have a fully settled type** ``T``.
-* ``T`` must be a subtype of a type ``R t0 … tn``.
-* ``R`` must be a datatype, with precisely one constructor ``K``.
+* expr must **have the fully settled type** ``T``.
+* There is a type ``R`` such that normalizing ``T`` with respect to type
+  families yields a type of the form ``R T0 … Tn``.
+* ``R`` must be a datatype with precisely one constructor ``K``.
 * ``K`` must be a record constructor, defining fields with any of the following names:
   ``(>>=)``, ``(>>)``, ``fail``, ``return``, ``<*>``, and ``<$>``.
 
@@ -356,12 +357,12 @@ An example of super monad follows.
 
   import qualified Control.Monad.Super as Super
 
-  data SuperMonadBuilder m n p = SuperMonadBuilder
-    { (>>=) :: forall a b. BindCts m n p => m a -> (a -> n b) -> p b
-    , (>>) :: forall a b. BindCts m n p => m a -> n b -> p b
+  data SuperMonadBuilder = SuperMonadBuilder
+    { (>>=) :: forall m n p a b. (Bind m n p, BindCts m n p) => m a -> (a -> n b) -> p b
+    , (>>) :: forall m n p a b. (Bind m n p, BindCts m n p) => m a -> n b -> p b
     }
 
-  super :: Bind m n p => SuperMonadBuilder m n p
+  super :: SuperMonadBuilder
   super = SuperMonadBuilder (Super.>>=) (\a b -> a Super.>>= const b)
 
   -----------------
@@ -381,7 +382,7 @@ An example of super monad follows.
   import Control.Monad.Linear (linear)
   import qualified Control.Monad.Linear as Linear
 
-  g :: Bind SomeM SomeN SomeP => a -> SomeP b
+  g :: a -> SomeSuperMonad b
   g a = super.do
     b <- someSuperFunction a Super.>>= someOtherSuperFunction
     c <- anotherSuperFunction b
