@@ -516,12 +516,26 @@ from different modules if they are imported with the same qualifier:
         g
         return x
 
-Despite of its verbosity when compared to the ``M.do`` approach, the
-``builder.do`` approach is preferred because it groups in a single record
-the operations that work together when desugaring a ``builder.do`` block.
-This single record is easier to import, export and document. In contrast,
-when using ``M.do``, one has to make sure to bring all the needed
-operations into scope.
+The advantages of this approach are that it doesn't need the programmer
+to understand a new notion of expressions having fully settled types.
+Moreover, no type information is necessary to desugar the do notation.
+And lastly, there is no need to write builders: the monadic and applicative
+operations can be brought into scope right from the places where they
+are defined or exported.
+
+A downside of ``M.do`` is that it requires to bring into scope all the
+operations that a ``do`` block needs. In contrast, the builder approach
+only requires to bring a single entity into scope: the builder.
+This single record is easier to import, export and document.
+
+Another downside is that error messages are less specific. Compare
+
+* “Desugaring statement <stmt> requires <field name> but builder <builder expression> doesn't provide it”
+
+with
+
+* “Desugaring statement <stmt> requires ``M.>>`` which is not in scope”
+
 
 Qualified do with parameters
 ++++++++++++++++++++++++++++
