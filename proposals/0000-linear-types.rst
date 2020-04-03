@@ -62,21 +62,21 @@ been met. The remaining conditions are:
    and who do not import modules that do should never need to know about the
    feature:
    
- a. Error messages must remain free of mention of linear types, unless
-    ``-XLinearTypes`` is in effect (or some flag like ``-fprint-linear-types``
-    is on). The same must be true of using the ``:type`` facility in GHCi.
-    
- b. Type inference must remain backward-compatible. All programs accepted
-    today must be accepted when ``-XLinearTypes`` is not in effect.
-    
- c. Compile times for programs without ``-XLinearTypes`` must not unduly
-    increase. Anything approaching or over a 2% across-the-board increase in
-    compile times would be a cause for concern.
-    
- d. There must be no degradation in runtime performance of GHC-compiled
-    programs. Linear types in Core might, for example, make some optimizations
-    harder to apply; however, we must find a way to get runtime performance on
-    par with what we have today.
+   a. Error messages must remain free of mention of linear types, unless
+      ``-XLinearTypes`` is in effect (or some flag like ``-fprint-linear-types``
+      is on). The same must be true of using the ``:type`` facility in GHCi.
+      
+   b. Type inference must remain backward-compatible. All programs accepted
+      today must be accepted when ``-XLinearTypes`` is not in effect.
+      
+   c. Compile times for programs without ``-XLinearTypes`` must not unduly
+      increase. Anything approaching or over a 2% across-the-board increase in
+      compile times would be a cause for concern.
+      
+   d. There must be no degradation in runtime performance of GHC-compiled
+      programs. Linear types in Core might, for example, make some optimizations
+      harder to apply; however, we must find a way to get runtime performance on
+      par with what we have today.
 
 2. The theory of the linear types must be sound. This seems to be the case
    today, but as things evolve, we want to state explicitly that this must
@@ -112,8 +112,8 @@ to have more discussion.
 Previous condition
 ------------------
 
-* We must work out an acceptable syntax for this all. In particular, ``:`` in
-   types is taken by the list-cons operator, so we'll need something new.
+- We must work out an acceptable syntax for this all. In particular, ``:`` in
+  types is taken by the list-cons operator, so we'll need something new.
 
 This condition has been met, by using a syntax around ``#``, as described in
 the Syntax_ section below.
