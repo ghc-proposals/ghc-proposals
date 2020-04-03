@@ -53,19 +53,24 @@ With this proposal implemented, it would produce the following warning:
 ```
 /path/to/example.hs:12:3: warning: [-Wnoncanonical-monad-instances]
     Noncanonical ‘return’ definition detected
-    in the instance declaration for ‘Monad P’.
-    Either remove definition for ‘return’ or define as ‘return = pure’
+    ‘return’ will eventually be removed from the ‘Monad’ class in favour of ‘pure’.
+    Either remove definition for ‘return’ (recommended) or define as ‘return = pure’
+    See also: https://gitlab.haskell.org/ghc/ghc/-/wikis/proposal/monad-of-no-return
    |
 12 |   return _ = P
    |   ^^^^^^^^^^^^
 
 /path/to/example.hs:12:3: warning: [-Wnoncanonical-monoid-instances]
     Noncanonical ‘mappend’ definition detected
+    ‘mappend’ will eventually be removed from the ‘Monoid’ class in favour of ‘(<>)’.
     in the instance declaration for ‘Monoid (P a)’.
-    Define as ‘mappend = (<>)’
+    Either remove definition for ‘mappend’ (recommended) or define as ‘mappend = (<>)’
+    See also: https://gitlab.haskell.org/ghc/ghc/-/wikis/proposal/semigroup-monoid
    |
 20 |   mappend _ _ = P
 ```
+
+Note that it also updates the warning messages, adding a URL and a notice that the method will be removed.
 
 ## Effect and Interactions
 
