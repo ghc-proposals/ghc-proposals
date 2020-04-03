@@ -48,6 +48,76 @@ the `extended version of the paper <https://arxiv.org/abs/1710.09756>`_.
   document
   <https://github.com/tweag/linear-types/releases/download/v2.3-pre.0/minicore.pdf>`_
 
+Current status
+==============
+
+Edited April 3, 2020.
+
+On Oct 22, 2018, this proposal was `conditionally accepted
+<https://github.com/ghc-proposals/ghc-proposals/pull/111#issuecomment-431944078>`_
+by the committee. Some of the conditions (in particular, about syntax) have
+been met. The remaining conditions are:
+
+1. The extension is pay-as-you-go; users who do not enable ``-XLinearTypes``
+   and who do not import modules that do should never need to know about the
+   feature:
+   
+ a. Error messages must remain free of mention of linear types, unless
+    ``-XLinearTypes`` is in effect (or some flag like ``-fprint-linear-types``
+    is on). The same must be true of using the ``:type`` facility in GHCi.
+    
+ b. Type inference must remain backward-compatible. All programs accepted
+    today must be accepted when ``-XLinearTypes`` is not in effect.
+    
+ c. Compile times for programs without ``-XLinearTypes`` must not unduly
+    increase. Anything approaching or over a 2% across-the-board increase in
+    compile times would be a cause for concern.
+    
+ d. There must be no degradation in runtime performance of GHC-compiled
+    programs. Linear types in Core might, for example, make some optimizations
+    harder to apply; however, we must find a way to get runtime performance on
+    par with what we have today.
+
+2. The theory of the linear types must be sound. This seems to be the case
+   today, but as things evolve, we want to state explicitly that this must
+   remain true. In particular, we must be able to rely on the safety of using
+   linear mutable arrays.
+
+3. There must be a specification (in some typeset document) of the new core
+   language, written out for public inspection. We expect this to be an update
+   to the existing core-spec document in the GHC source tree in the
+   ``docs/core-spec/`` directory.
+
+In addition to the stronger conditions above, we wish to meet these conditions:
+
+4. The worries in (1), above, should not become unduly worse when
+   ``-XLinearTypes`` is enabled. For example, it is ideal if all programs that
+   are accepted without ``-XLinearTypes`` are still accepted with
+   ``-XLinearTypes``, but there is considerably more wiggle room here.
+   Similarly with compile times: a compile-time regression with
+   ``-XLinearTypes`` is more acceptable than a regression without
+   ``-XLinearTypes``, but would still be a cause for concern.
+
+5. There should be a story for a migration of ``base``. The committee is
+   concerned that, once linear types hits, there will be a great demand to
+   incorporate linear types into ``base``. (Note that ``fmap`` may want a linear
+   type, and due to Functor's status as a superclass of ``Monad``, ``fmap`` is
+   really baked in.) How will this work? In particular, how will Haddock
+   render newly-linearized types?
+
+If the final version of ``-XLinearTypes`` should violate these prescriptions, it
+does not immediately mean we are at an impasse -- it just means that we need
+to have more discussion.
+
+Previous condition
+------------------
+
+* We must work out an acceptable syntax for this all. In particular, ``:`` in
+   types is taken by the list-cons operator, so we'll need something new.
+
+This condition has been met, by using a syntax around ``#``, as described in
+the Syntax_ section below.
+  
 Motivation
 ==========
 
