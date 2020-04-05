@@ -3,8 +3,8 @@ Overloaded Quotations
 
 .. author:: Matthew Pickering
 .. date-accepted:: 2019-12-06
-.. ticket-url::
-.. implemented::
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/merge_requests/2247
+.. implemented:: 8.12
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/246>`_.
 .. contents::
