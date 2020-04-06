@@ -692,7 +692,7 @@ of ``x`` in ``ui`` is ``qi`` and in ``v`` is ``q``.
 
 If a binder ``pi`` is recursively defined, then ``pi`` must be ``ω``.
 
-A ``case`` expression has an implicit multiplicity annotation. It if
+A ``case`` expression has an implicit multiplicity annotation. It is
 often inferred from the type annotation of an equation. The usage of
 ``x`` in ``case_p u of { … }``, where the usage of ``x`` in ``u`` is
 ``q`` is ``p*q`` plus the *join* of the usage of ``x`` in each branch.
