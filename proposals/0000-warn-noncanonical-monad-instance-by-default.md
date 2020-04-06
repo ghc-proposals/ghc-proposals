@@ -62,8 +62,8 @@ With this proposal implemented, it would produce the following warning:
 
 /path/to/example.hs:12:3: warning: [-Wnoncanonical-monoid-instances]
     Noncanonical ‘mappend’ definition detected
-    ‘mappend’ will eventually be removed from the ‘Monoid’ class in favour of ‘(<>)’.
     in the instance declaration for ‘Monoid (P a)’.
+    ‘mappend’ will eventually be removed from the ‘Monoid’ class in favour of ‘(<>)’.
     Either remove definition for ‘mappend’ (recommended) or define as ‘mappend = (<>)’
     See also: https://gitlab.haskell.org/ghc/ghc/-/wikis/proposal/semigroup-monoid
    |
