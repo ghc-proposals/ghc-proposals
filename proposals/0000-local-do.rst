@@ -588,6 +588,78 @@ which would be equivalent to
       x2 = …
 
 
+QualifiedDo with operations that are not in scope
++++++++++++++++++++++++++++++++++++++++++++++++++
+
+It was suggested in the discussion that we could modify the meaning of
+``M.do`` to not require the operations from module ``M`` to be in scope.
+The new meaning would be that the name ``M.(>>=)`` in the translation
+resolves to any ``(>>=)`` that is exported by any module aliased by the
+name ``M``, independently of whether it is in scope (i.e. imported). And
+a similar treatment would be given to the other names intervening in the
+translation.
+
+The following program, that would have been rejected because ``(Linear.>>=)``
+is not in scope, would now be accepted.
+
+::
+
+  module SomeModule where
+
+  import Control.Monad.Linear as Linear ()
+  import Control.Monad.Linear as Linear (Monad, return)
+
+  f :: Linear.Monad m => a #-> m b
+  f a = Linear.do
+    b <- someLinearFunction a
+    c <- anotherLinearFunction b
+    Linear.return (somePureFunction c)
+
+The purpose of this variation in ``M.do`` would be to increase the set of
+programs accepted. The bet is that the compiler could figure out from the module
+name alone which operations are meant, without requiring the programmer to bring
+them into scope. Some implications of this approach follow.
+
+Firstly, multiple modules can be imported with the same alias ``M``, and more
+than one module can export different functions with the same name. In the
+following example, ``(M.>>=)`` could refer to either ``(Control.Monad.>>=)``
+or ``(Control.Monad.Linear.>>=)``.
+
+::
+
+  import Control.Monad.Linear as M ()
+  import qualified Control.Monad as M
+
+  f = M.do
+    -- (Control.Monad.>>=) or (Control.Monad.Linear.>>=) ?
+    b <- someFunction
+    anotherFunction b
+
+  ...
+
+The ambiguity error is a new kind of ambiguity, one which does
+not affect explicit uses of ``M.>>=`` but only the ``M.do`` notation.
+
+
+Another thing to keep in mind is that the programmer can't constraint which
+operations are used in her module. Suppose that she wants to get an error
+every time a pattern which can fail is used. The following program will be
+accepted, regardless of the effort to keep ``Prelude.fail`` hidden. This is
+a limitation in the handling of ``do`` with respect to ``RebindableSyntax``.
+
+::
+
+  {-# LANGUAGE NoImplicitPrelude #-}
+  module SomeModule where
+
+  import Control.Monad as Prelude (Monad, (>>=), return)
+
+  f :: Prelude.Monad m => a -> m b
+  f a = Prelude.do
+    [b] <- someFunction a
+    anotherFunction b
+
+
 Desugar unqualified returns
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
