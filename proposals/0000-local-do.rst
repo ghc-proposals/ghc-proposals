@@ -530,11 +530,15 @@ This single record is easier to import, export and document.
 
 Another downside is that error messages are less specific. Compare
 
-* “Desugaring statement <stmt> requires <field name> but builder <builder expression> doesn't provide it”
+* “Desugaring statement <stmt> requires a ``fail`` field but builder <builder expression> doesn't provide it”
 
 with
 
-* “Desugaring statement <stmt> requires ``M.>>`` which is not in scope”
+* “Desugaring statement <stmt> requires ``M.fail`` which is not in scope”
+
+In the later case, ``M.fail`` may need a new import statement, or maybe there is
+a typo in an import statement, or maybe ``fail`` is just not supported for this
+particular use of ``do`` notation.
 
 
 Qualified do with parameters
