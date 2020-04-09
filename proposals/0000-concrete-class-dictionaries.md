@@ -12,24 +12,25 @@ the link, and delete this bold sentence.**
 # Concrete class dictionaries
 
 Currently typeclass dictionaries are second class citizens in Haskell.
-They are used internally but they are not exposed properly to the user.
+They are passed around explicitly in core but these concrete dictionaries
+are not exposed cleanly to the developer.
 
-This has led to a proliferation of extensions to help you define instances
+This has led to a proliferation of extensions that help you define instances
 and convert instances between one another. Even with these extensions the
-ergonomics are still significantly worse than regular value level Haskell.
+ergonomics are still significantly worse than regular value-level Haskell.
 
 For this reason I think we should instead focus on making the underlying
-dictionaries firsts class and accessible to developers.
+dictionaries first class and accessible to developers.
 
 
 ## Motivation
 
 There has been a large proliferation of typeclass related extensions, and yet
-the ergonomics for interacting with typeclass dictionaries is still poor.
+the ergonomics for manipulating typeclass dictionaries is still poor.
 
 Something fundamentally quite simple such as defining a series of newtype
-wrappers over Int for modular arithmetic, with each using a different modulo for
-Num, is very painful.
+wrappers over `Int` for modular arithmetic, with each using a different modulo
+for `Num`, is very painful.
 
 The specifical example that motivated me to write this proposal is the one
 given [here](https://mail.haskell.org/pipermail/haskell-cafe/2020-April/132083.html)
@@ -64,8 +65,8 @@ instance (Eq b, Injective a b) => Eq (a `InjectedInto` b) where
 With some follow up discussion about making libraries of various type level
 utilities to help with the above.
 
-Everything in the above example is really just manipulating value level code
-and thus I think it should be done on the value level.
+Everything in the above example is fundamentally value-level code. Writing it
+at the type level adds a lot of complexity and verbosity for no real benefit.
 
 I would expect something closer to the following:
 
@@ -82,6 +83,7 @@ foo2bar :: Foo -> Bar
 foo2bar Foo = Bar
 
 eqOn :: ???
+eqOn = ???
 ```
 
 
@@ -91,7 +93,7 @@ The proposal introduces a new extension `ConcreteClassDictionaries` that
 enables direct manipulation of typeclass dictionaries.
 
 First we add a new syntactic construct that allows for defining a type and
-constructor for classes:
+constructor for the underlying dictionary of a class:
 
 ```Haskell
 class Eq a where
@@ -135,7 +137,7 @@ class Default a = def :: a
 ```
 
 This syntax does not need to use `NoFieldSelectors` as no class methods are
-created besides the singular `fold :: Foldable a => Fold a`.
+created besides the chosen `fold :: Foldable a => Fold a` and `def`.
 
 We now provide syntax for defining new instances directly from an appropriate
 concrete dictionary:
@@ -195,14 +197,13 @@ newtype Int7 = Int7 Int
 instance Num Int7 = coerce (modularNum @Int 7)
 
 newtype Int13 = Int13 Int
-    deriving (Num = coerce (modularNum @Int 13)
+    deriving (Num = coerce (modularNum @Int 13))
 ```
 
 ## Effect and Interactions
 
 With these additions, we have the full power of value level Haskell available
-to us when defining various ways to create and transform typeclass
-dictionaries.
+to us when creating and transforming typeclass dictionaries.
 
 There is no longer any need to build up complex and verbose type level
 utilities in order to define various desired typeclass instances.
@@ -228,7 +229,7 @@ any effect on core or the underlying runtime.
 I do not anticipate significant learnability difficulties. I actually prefer
 this approach to the status quo for learnability, as it makes it clear that
 classes and instances are basically just extensible partial functions from the
-type level to the valeu level.
+type level to the value level.
 
 
 ## Alternatives
@@ -240,21 +241,21 @@ name and thus may as well have full control of both the type name and the
 constructor name.
 
 * I also considered providing an `IsClass (c :: Constraint)` class with a
-`use :: (IsClass c, c) => Dict c` but decided to do away with it once I decided
-I didn't want to use a data family. Particularly since there would be no way to
-avoid exporting this conversion without specifying extra rules about how that
-would work.
+`dict :: (IsClass c, c) => Dict c` but decided to do away with it once I decided
+I didn't want to use a data family. Particularly since there would be no way for
+users to avoid exporting this conversion without specifying extra rules about
+how that would work.
 
 
 ## Unresolved Questions
 
 * Is it worthwhile to adjust/extend the first syntax to also allow for defining
-a function that converts directly from an instance to the underlying dict.
+a function that converts directly from an instance to the underlying dict?
 Equivalent to `fold :: Foldable f => Fold f` from the second syntax.
 
 * Is it worthwhile to add an optional flag to the second syntax that will
 automatically create top level class methods for every field of the underlying
-type. This would allow you to avoid writing out the fields/methods twice just
+type? This would allow you to avoid writing out the fields/methods twice just
 like we can do with the first syntax.
 
 
