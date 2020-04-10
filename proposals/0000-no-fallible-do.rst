@@ -69,17 +69,27 @@ Monads are already an infamous steep part of the learning curve without having t
 Avoid ``fail`` altogether
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-These problems are frustrating in context, because often one has no interest in having ``MonadFail`` constraints appear at all.
-Errors made with `fail` are always strings, and so completely unstructured. Whether one prefers `Either` and `EitherT` or synchronous exceptions, the norm is to use types to structure failure modes, just as we use types to structure everything else in Haskell.
-Furthermore, even if one does want to use unstructured textual errors, `fail` uses `String` rather than something with better performance characteristics like `Text`.
-For these reasons, one might want to avoid going down a rabbit hole of subtler issues of completeness checking when the real concern is for ``fail`` not to appear in the translation at all.
+looking at the problem as described above, are options are limited.
+``fail`` worked well before because its presence or absence did not influence type checking.
+At the same time, we do not want to go back to putting ``fail`` back inside ``Monad``.
+The simplest thing to do is just cut the Gordian knot, and provide a way to not use ``fail`` in the desugaring.
 
-So to cut through the knots a bit and provide a way to avoid the more complicated and challenging issues about completeness checking while their solutions are worked out, we decided to try something simple and provide a way to turn off the use of ``fail`` altogether.
+This may sound drastic, even taking into account we'll propose something opt-in rather than a breaking change in the next section.
+But, we'd like the case that given the way Haskell is actually written, it isn't.
+Often, one has no interest in having ``MonadFail`` constraints appear at all.
+Errors made with ``fail`` are always strings, and so completely unstructured.
+Whether one prefers ``Either`` and ``EitherT`` or synchronous exceptions, the norm is to use types to structure failure modes, just as we use types to structure everything else in Haskell.
+Furthermore, even if one does want to use unstructured textual errors, ``fail`` uses ``String`` rather than something with better performance characteristics like ``Text``.
+For these reasons, one might want to avoid going down a rabbit hole of subtler issues of completeness checking when the real immediate problem at hand is ``fail`` ever being used in the translation at all.
 
 Proposed Change Specification
 -----------------------------
 
-We propose a module-level means of switching off the use of ``fail`` in ``do``-syntax altogether via an extension flag. Specifically, there is a default extension flag ``FallibleDo`` which indicates the usual translation of the ``do``-syntax involving ``fail``, and ``NoFallibleDo`` then replaces the use of ``fail`` with throwing a `PatternMatchFail <https://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Exception.html#t:PatternMatchFail>`_. Moreover, when the ``-Wincomplete-uni-patterns`` warning flag is enabled alongside NoFallibleDo, we will warn about the incomplete pattern match.
+We propose a module-level means of switching off the use of ``fail`` in ``do``-syntax altogether via an extension flag.
+Specifically, there is a default extension flag ``FallibleDo`` which indicates the usual translation of the ``do``-syntax involving ``fail``, and ``NoFallibleDo`` then replaces the use of ``fail`` with throwing a `PatternMatchFail <https://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Exception.html#t:PatternMatchFail>`_.
+Moreover, when the ``-Wincomplete-uni-patterns`` warning flag is enabled alongside ``NoFallibleDo``, we will warn about the incomplete pattern match.
+
+Monad comprehensions are effected by this extension, but list comprehension are not---fallible patterns always turn into ``[]`` / ``mzero`` there.
 
 Potentially failing pattern matches in the ``pat <- stmt`` syntax then result in a generated application of ``throw`` that provides the source location of the pattern match failure with a message about the reason for the exception.
 
@@ -122,6 +132,25 @@ Effect and Interactions
 -----------------------
 
 This effectively sidesteps the issues where completeness checking is imperfect in the translations of ``do``-syntax by simply not making use of ``fail`` in the first place, which avoids the spurious ``MonadFail`` constraints.
+
+The use of a ``PatternMatchFail`` might seem surprising.
+Who actually likes infallible pattern matching?
+Why not just ban fallible pattern outright so as to not pick and choose between bad static semantics (the pattern match heuristic) and bad dynamic semantics (some oft-maligned synchronous exception)?
+
+The first reason is consistency with the rest of the language.
+Nowhere else are complete patterns always required, and the user can always get this behavior with ``-Werror=...``.
+Is there truly a need to forge a different path here?
+
+The second reason is balancing the competing interests of programming in the small and programming in the large.
+For programming in the large, we do expect the vast majority users to strive for no implicit partiality using ``-Werror=...``, banning certain unfortunate ``Prelude`` functions, and what-not.
+But for programming in the small, one is often trying to throw together a happy path to get some job done in the next few minutes, never mind what failure modes exist provided we don't hit them right now.
+``fail`` sugar is useful because it allows you to defer thinking about those failure cases, and if your code does blow up, it says where.
+``PatternMatchFail`` sugar provides these same two benefits.
+Conversely, we don't think the difference between pure monadic failures, throwing synchronous exceptions in pure code, and throwing synchronous exceptions in impure code---the sorts of options  one would carefully chose between when programming in the large---matter terribly much when programming in the small.
+
+Perhaps in the future we would want to switch the defaults so all pattern matches must be total by default, and incomplete patterns with match failure exceptions are an opt-in debugging escape hatch akin to ``-fdeferred-type-errors``.
+(@Ericson2314 at least would love this.)
+But this applies to all pattern matching not just binds in ``do``-notation, and as such is out of scope of this proposal.
 
 Costs and Drawbacks
 -------------------
