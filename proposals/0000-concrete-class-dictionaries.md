@@ -198,6 +198,45 @@ newtype Int13 = Int13 Int
     deriving (Num = coerce (modularNum @Int 13))
 ```
 
+Another example I will use is from a production codebase. Currently we have
+several instances that look like the following:
+
+```Haskell
+instance PersistStoreWrite Environment where
+    insert = contramapReaderT eBackend . insert
+    insert_ = contramapReaderT eBackend . insert_
+    insertMany = contramapReaderT eBackend . insertMany
+    insertMany_ = contramapReaderT eBackend . insertMany_
+    insertEntityMany = contramapReaderT eBackend . insertEntityMany
+    insertKey = (contramapReaderT eBackend .) . insertKey
+    repsert = (contramapReaderT eBackend .) . repsert
+    repsertMany = contramapReaderT eBackend . repsertMany
+    replace = (contramapReaderT eBackend .) . replace
+    delete = contramapReaderT eBackend . delete
+    update = (contramapReaderT eBackend .) . update
+    updateGet = (contramapReaderT eBackend .) . updateGet
+```
+
+Despite how obviously duplicated the above code is, there is basically nothing
+the library (persistent) can do to make it more concise for us. At least not
+without resorting to TH or hacky type-level shenangians like in the original
+motivating example.
+
+This would allow persistent to define:
+
+```Haskell
+persistStoreWriteDict :: PersistStoreWrite b => PersistStoreWriteDict b
+persistStoreWriteDict = ...
+
+instance Contravariant PersistStoreWriteDict ...
+```
+
+Which would allow us to simply write:
+
+```Haskell
+instance PersistStoreWrite Environment = contramap eBackend persistStoreWriteDict
+```
+
 ## Effect and Interactions
 
 With these additions, we have the full power of value level Haskell available
