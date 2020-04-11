@@ -132,11 +132,9 @@ The Haskell grammar is extended with the following productions. We use these not
 ###### 2.3.2.5
 [Field update]
 <br/>
-&nbsp;&nbsp;&nbsp;&nbsp; *aexp* → *aexp* *{* *pbind₁* *,* ... *}*
+&nbsp;&nbsp;&nbsp;&nbsp; *fbind*  →  *field* *.ᵀ* *fieldToUpdate* *=* *exp*
 <br/>
-&nbsp;&nbsp;&nbsp;&nbsp; *pbind* → *field* *.ᵀ* *fieldToUpdate* *=* *exp*
-<br/>
-&nbsp;&nbsp;&nbsp;&nbsp; *pbind* → *field* *.ᵀ* *fieldToUpdate*
+&nbsp;&nbsp;&nbsp;&nbsp; *fbind* → *field* *.ᵀ* *fieldToUpdate*
 <br/>
 
 ## 3. Examples
