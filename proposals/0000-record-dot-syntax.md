@@ -84,7 +84,7 @@ For what follows, we use these informal definitions:
 The prototype implements the parsing scheme presented here. More information about the prototype is available in [this section](#91-prototype).
 
 #### 2.3.1 Lexer
-A new token case `ITproj Bool` is introduced. When the extension is enabled occurences of operator '`.`' are classified using the whitespace sensitive operator mechanism from [this (accepted) GHC proposal](https://github.com/ghc-proposals/ghc-proposals/pull/229). The rules are:
+A new token case `ITproj Bool` is introduced. When the extension is enabled occurences of operator `.` are classified using the whitespace sensitive operator mechanism from [this (accepted) GHC proposal](https://github.com/ghc-proposals/ghc-proposals/pull/229). The rules are:
 
 | Occurence   | Token          | Means                | Example |
 | --          | --             | --                   | --      |
