@@ -56,7 +56,7 @@ In the event the language extension is enabled:
 *[Note: `e{lbl = val}` is the syntax of a standard H98 record update. It's the nested form introduced by this proposal that is new : `e{lbl1.lbl2 = val}`. However, in the event `RecordDotSyntax` is in effect, note that we propose that `e{lbl = val}` desugar to `setField @"lbl" e val`]*.
 
 #### 2.1.2 Precedence
-We propose that '`.`' "bind more tightly" than function application thus, `f r.a.b` parses as `f (r.a.b)`.
+We propose that `.` "bind more tightly" than function application thus, `f r.a.b` parses as `f (r.a.b)`.
 
 | Expression   | Interpretation    |
 | --           | --                |
