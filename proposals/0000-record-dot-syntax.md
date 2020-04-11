@@ -106,35 +106,35 @@ The Haskell grammar is extended with the following productions. We use these not
 ###### 2.3.2.1
 [Field]
 <br/>
-&nbsp;&nbsp;&nbsp;&nbsp; *field* -> *varid*  &nbsp;&nbsp;|&nbsp;&nbsp; *qvarid*
+&nbsp;&nbsp;&nbsp;&nbsp; *field* &nbsp;&nbsp;→&nbsp;&nbsp; *varid*  &nbsp;&nbsp;|&nbsp;&nbsp; *qvarid*
 <br/>
 
 ###### 2.3.2.2
 [Field to update]
 <br/>
-&nbsp;&nbsp;&nbsp;&nbsp; *fieldToUpdate* -> *fieldToUpdate* *.ᵀ* *field* &nbsp;&nbsp;|&nbsp;&nbsp; *field*
+&nbsp;&nbsp;&nbsp;&nbsp; *fieldToUpdate* &nbsp;&nbsp;→&nbsp;&nbsp; *fieldToUpdate* *.ᵀ* *field* &nbsp;&nbsp;|&nbsp;&nbsp; *field*
 <br/>
 
 ###### 2.3.2.3
 [Field selectors]
 <br/>
-&nbsp;&nbsp;&nbsp;&nbsp; *aexp* → *( projection )*
+&nbsp;&nbsp;&nbsp;&nbsp; *aexp* &nbsp;&nbsp;→&nbsp;&nbsp; *( projection )*
 <br/>
-&nbsp;&nbsp;&nbsp;&nbsp; *projection* → *.ᴾ* *field* &nbsp;&nbsp;|&nbsp;&nbsp; *projection* *.ᵀ* *field*
+&nbsp;&nbsp;&nbsp;&nbsp; *projection* &nbsp;&nbsp;→&nbsp;&nbsp; *.ᴾ* *field* &nbsp;&nbsp;|&nbsp;&nbsp; *projection* *.ᵀ* *field*
 <br/>
 
 ###### 2.3.2.4
 [Field selection]
 <br/>
-&nbsp;&nbsp;&nbsp;&nbsp; *fexp* → *fexp* *.ᵀ* *field*
+&nbsp;&nbsp;&nbsp;&nbsp; *fexp* &nbsp;&nbsp;→&nbsp;&nbsp; *fexp* *.ᵀ* *field*
 <br/>
 
 ###### 2.3.2.5
 [Field update]
 <br/>
-&nbsp;&nbsp;&nbsp;&nbsp; *fbind*  →  *field* *.ᵀ* *fieldToUpdate* *=* *exp*
+&nbsp;&nbsp;&nbsp;&nbsp; *fbind* &nbsp;&nbsp;→&nbsp;&nbsp;  *field* *.ᵀ* *fieldToUpdate* *=* *exp*
 <br/>
-&nbsp;&nbsp;&nbsp;&nbsp; *fbind* → *field* *.ᵀ* *fieldToUpdate*
+&nbsp;&nbsp;&nbsp;&nbsp; *fbind* &nbsp;&nbsp;→&nbsp;&nbsp; *field* *.ᵀ* *fieldToUpdate*
 <br/>
 
 ## 3. Examples
