@@ -106,13 +106,13 @@ The Haskell grammar is extended with the following productions. We use these not
 ###### 2.3.2.1
 [Field]
 <br/>
-&nbsp;&nbsp;&nbsp;&nbsp; *field* -> *varid* | *qvarid*
+&nbsp;&nbsp;&nbsp;&nbsp; *field* -> *varid*  &nbsp;&nbsp;|&nbsp;&nbsp; *qvarid*
 <br/>
 
 ###### 2.3.2.2
 [Field to update]
 <br/>
-&nbsp;&nbsp;&nbsp;&nbsp; *fieldToUpdate* -> *fieldToUpdate* *.ᵀ* *field* | *field*
+&nbsp;&nbsp;&nbsp;&nbsp; *fieldToUpdate* -> *fieldToUpdate* *.ᵀ* *field* &nbsp;&nbsp;|&nbsp;&nbsp; *field*
 <br/>
 
 ###### 2.3.2.3
@@ -120,7 +120,7 @@ The Haskell grammar is extended with the following productions. We use these not
 <br/>
 &nbsp;&nbsp;&nbsp;&nbsp; *aexp* → *( projection )*
 <br/>
-&nbsp;&nbsp;&nbsp;&nbsp; *projection* → *.ᴾ* *field* | *projection* *.ᵀ* *field*
+&nbsp;&nbsp;&nbsp;&nbsp; *projection* → *.ᴾ* *field* &nbsp;&nbsp;|&nbsp;&nbsp; *projection* *.ᵀ* *field*
 <br/>
 
 ###### 2.3.2.4
