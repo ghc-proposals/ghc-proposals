@@ -6,7 +6,7 @@ ticket-url: "https://github.com/ghc-proposals/ghc-proposals/pull/325"
 implemented: ""
 ---
 
-This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/325>).
+This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/325   ).
 
 # Give error messages unique reference IDs
 
