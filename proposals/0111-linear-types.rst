@@ -1,26 +1,16 @@
-==============
  Linear Types
 ==============
 
-.. proposal-number:: Leave blank. This will be filled in when the proposal is
-                     accepted.
-
-.. trac-ticket:: Leave blank. This will eventually be filled with the Trac
-                 ticket number which will track the progress of the
-                 implementation of the feature.
-
-.. implemented:: Leave blank. This will be filled in with the first GHC version which
-                 implements the described feature.
-
-.. sectnum::
-
+.. author:: Arnaud Spiwack
+.. date-accepted:: 2018-10-22
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/15981
+.. implemented:: 
 .. highlight:: haskell
-
-This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/111>`_.
-It previously underwent a round of review `at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/91>`_.
-
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/111>`_.
 .. contents::
 
+This proposal previously underwent a round of review `at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/91>`_.
+   
 This proposal introduces a notion of *linear function* to GHC. Linear
 functions are regular functions that guarantee that they will use
 their argument exactly once. Whether a function ``f`` is linear or not
