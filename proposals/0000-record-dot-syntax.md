@@ -228,7 +228,7 @@ Typically `RecordDotSyntax` will be used in conjunction with `NoFieldSelectors`,
 
 ### 7.2 Should a syntax be provided for modification?
 
-Earlier versions of this proposal contained a modify field sytnax of the form `a{field * 2}`. While appealing, there is a lot of syntactic debate, with variously `a{field <- (*2)}`, `a{field * = 2}` and others being proposed. None of these syntax variations are immediately clear to someone not familiar with this proposal. To be conservative, we leave this feature out.
+Earlier versions of this proposal contained a modify field syntax of the form `a{field * 2}`. While appealing, there is a lot of syntactic debate, with variously `a{field <- (*2)}`, `a{field * = 2}` and others being proposed. None of these syntax variations are immediately clear to someone not familiar with this proposal. To be conservative, we leave this feature out.
 
 ### 7.3 Should there be update sections?
 
