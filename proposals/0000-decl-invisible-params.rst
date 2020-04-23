@@ -204,10 +204,6 @@ I have some bugs but it has not been hard so far.
 Endorsements
 -------------
 
-    In 3.2 you refer to a "hypothetical not-yet-proposed" syntax for ``data type data T @k (a:k) = .....`` Is it really not yet proposed? Please write a proposal! We obviously want it!
-
-– SPJ in `<https://github.com/ghc-proposals/ghc-proposals/pull/285#issuecomment-567267248>`_.
-
 .. _`Proposal 126`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0126-type-applications-in-patterns.rst
 
 .. _`Proposal 155`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0155-type-lambda.rst
