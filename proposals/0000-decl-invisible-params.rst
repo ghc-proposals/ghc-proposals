@@ -1,22 +1,7 @@
-Notes on reStructuredText - delete this section before submitting
-==================================================================
-
-The proposals are submitted in reStructuredText format.  To get inline code, enclose text in double backticks, ``like this``.  To get block code, use a double colon and indent by at least one space
-
-::
-
- like this
- and
-
- this too
-
-To get hyperlinks, use backticks, angle brackets, and an underscore `like this <http://www.haskell.org/>`_.
-
-
-Proposal title
+Invisible parameters for declarations
 ==============
 
-.. author:: Your name
+.. author:: John Ericson (@Ericson2314)
 .. date-accepted:: Leave blank. This will be filled in when the proposal is accepted.
 .. ticket-url:: Leave blank. This will eventually be filled with the
                 ticket URL which will track the progress of the
@@ -29,84 +14,202 @@ Proposal title
             number in the link, and delete this bold sentence.**
 .. contents::
 
-Here you should write a short abstract motivating and briefly summarizing the proposed change.
-
+There are certain implicit bindings that cannot be written explicitly.
+This adds the syntax to fix that not already proposed.
 
 Motivation
 ----------
-Give a strong reason for why the community needs this change. Describe the use
-case as clearly as possible and give an example. Explain how the status quo is
-insufficient or not ideal.
 
-A good Motivation section is often driven by examples and real-world scenarios.
+Implicit binding is confusing to users.
+Even advanced users.
+It is far from obvious that:
 
+::
+
+  data F :: forall (a :: k) -> Type
+
+  data family F :: forall (a :: k) -> Type
+
+do not mean the same thing (respectively) as:
+
+::
+
+  data F :: forall k. forall (a :: k) -> Type
+
+  data family F :: forall k. (a :: k) -> Type
+
+For both the ``data`` and ``data family`` declaration, the order in which the ``k`` parameter is quantified changes, but perhaps that isn't so bad on its own.
+Worse is that for the family definition, the implicitly bound ``k`` is something instances can scrutinize, while the other ``k`` is purely parametric.
+
+Making matter worse still, the latter forms of each cannot be written with all variables explicitly bound.
+How are we suppose to teach these subtle things made even by no explicit way to highlight their differences!
+
+The solution is ``@``-prefixed "invisible parameter", as they are known, just as is already proposed for constructor patterns, in `Proposal 126`_, and lambdas, in proposal `Proposal 155`_.
+The uniformity between all of these should round out the language according to expectations.
 
 Proposed Change Specification
 -----------------------------
-Specify the change in precise, comprehensive yet concise language. Avoid words
-like "should" or "could". Strive for a complete definition. Your specification
-may include,
 
-* BNF grammar and semantics of any new syntactic constructs
-* the types and semantics of any new library interfaces
-* how the proposed change interacts with existing language or compiler
-  features, in case that is otherwise ambiguous
+Parsing
+~~~~~~
 
-Note, however, that this section need not describe details of the
-implementation of the feature or examples. The proposal is merely supposed to
-give a conceptual specification of the new feature and its behavior.
+``data``, ``newtype``, ``type``, ``class``, ``type family``, and ``data family`` declarations will no longer the prohibit the use of ``@``-prefixed applications in their heads.
+\[This prohibition is currently a side-condition prohibition, as these declaration heads use the regular type grammar.\]
+
+``@``-prefixed applications remain only expressible with ``-XTypeApplications``.
+
+Renaming
+~~~~~~~~
+
+Any such declaration with an invisible parameter must only bind variables via explicit parameters in its head.
+There is no implicit binding of free variables in this case.
+
+Type checking
+~~~~~~~~~~~~~
+
+An invisible parameter is given a invisible forall quantifier (``forall ... .`` kind).
 
 Examples
 --------
-This section illustrates the specification through the use of examples of the
-language change proposed. It is best to exemplify each point made in the
-specification, though perhaps one example can cover several points. Contrived
-examples are OK here. If the Motivation section describes something that is
-hard to do without this proposal, this is a good place to show how easy that
-thing is to do with the proposal.
+
+Data type
+~~~~~~~~~
+::
+
+  type F :: forall k. k -> Type
+  data F @k :: k -> Type -- OK
+
+::
+
+  type F :: forall k. k -> Type
+  data F @k :: k1 -> Type -- k1 is not bound
+
+::
+
+  type F :: forall k -> k -> Type
+  data F @k :: k1 -> Type -- dosen't match kind signature
+
+Type synonym
+~~~~~~~~~~~~~
+
+::
+
+  type F :: forall k. k -> Type
+  type F (a :: k) = k -- OK, already
+  --           ^    ^
+  --           induces implicit binding
+
+::
+
+  type F :: forall k. k -> Type
+  type F @k (a :: k) = k -- OK
+  --              ^    ^
+  --              Use not binding
+
+::
+
+  type F :: forall k. k -> Type
+  type F @k (a :: k1) = k -- k1 not bound
+
+Class
+~~~~~
+
+::
+
+  type F :: forall k. k -> Constraint
+  class F (a :: k) -- OK, already
+
+::
+
+  type F :: forall k. k -> Constraint
+  class F @k (a :: k) -- OK
+
+::
+
+  type F :: forall k. k -> Constraint
+  class Foo k1 -> F @k (a :: k) -- k1 is not bound
+
+::
+
+  type F :: forall k. k -> Constraint
+  class Foo k -> F @k (a :: k1) -- k1 is not bound
+
+Family
+~~~~~~
+
+::
+
+  type F :: forall k. k -> k -> Type
+  type family F @k (a :: k) :: k -> Type -- OK
+
+::
+
+  type F :: forall k. k -> k
+  type family F @k (a :: k) :: k -- OK
 
 Effect and Interactions
 -----------------------
-Detail how the proposed change addresses the original problem raised in the
-motivation.
 
-Discuss possibly contentious interactions with existing language or compiler
-features.
+Whether to mix explicit and implicit invisible parameters
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+The prohibition on mixing ``@`` patterns and implicit variable binding is modeled on the existing "forall-or-nothing" rule.
+That says if one has an outermost ``forall`` in a signature, no free variables are implicitly bound.
+The idea is if a user is fastidious enough to not *rely* on implicit binding, they probably don't want it.
+\[Nested use ``forall`` is required to express things, and thus doesn't indicate fastidiousness.]
+
+Likewise, the invisible parameters being proposed here also indicate fastidiousness.
+
+What about instances?
+~~~~~~~~~~~~~~~~~~~~~
+
+It may seem like class and family instances bind variables.
+In fact, those are deemed uses.
+To wit, one can use an explicit ``forall`` with each:
+
+::
+
+  instance forall a. Foo a
+
+::
+
+  type instance forall a. Foo a = a
+
+::
+
+  data instance forall a. Foo a
 
 Costs and Drawbacks
 -------------------
-Give an estimate on development and maintenance costs. List how this effects
-learnability of the language for novice users. Define and list any remaining
-drawbacks that cannot be resolved.
 
+None known at this time.
 
 Alternatives
 ------------
-List existing alternatives to your proposed change as they currently exist and
-discuss why they are insufficient.
 
+Allow implicit variable binding always, or some in-between (such as allowing based off whether the first parameter is visible).
 
 Unresolved Questions
 --------------------
-Explicitly list any remaining issues that remain in the conceptual design and
-specification. Be upfront and trust that the community will help. Please do
-not list *implementation* issues.
 
-Hopefully this section will be empty by the time the proposal is brought to
-the steering committee.
-
+None at this time.
 
 Implementation Plan
 -------------------
-(Optional) If accepted who will implement the change? Which other resources
-and prerequisites are required for implementation?
+
+I have begun this in `GHC MR 3145`_.
+I have some bugs but it has not been hard so far.
+@int-index's syntax work as provided a very good foundation.
 
 Endorsements
 -------------
-(Optional) This section provides an opportunty for any third parties to express their
-support for the proposal, and to say why they would like to see it adopted.
-It is not mandatory for have any endorsements at all, but the more substantial
-the proposal is, the more desirable it is to offer evidence that there is
-significant demand from the community.  This section is one way to provide
-such evidence.
+
+    In 3.2 you refer to a "hypothetical not-yet-proposed" syntax for ``data type data T @k (a:k) = .....`` Is it really not yet proposed? Please write a proposal! We obviously want it!
+
+– SPJ in `<https://github.com/ghc-proposals/ghc-proposals/pull/285#issuecomment-567267248>`_.
+
+.. _`Proposal 126`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0126-type-applications-in-patterns.rst
+
+.. _`Proposal 155`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0155-type-lambda.rst
+
+.. _`GHC MR 3145`: https://gitlab.haskell.org/ghc/ghc/-/merge_requests/3145
