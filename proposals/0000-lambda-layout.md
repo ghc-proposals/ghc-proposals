@@ -392,11 +392,12 @@ doesn't yet exist.
    (i.e. `\ -> ...` is illegal) and only disallows expressions that are needlessly verbose (i.e.
    `\of -> exp` can always be replaced by `exp`).
    
- - `\case` could be deprecated, since all its usecases would be subsumed by `\of`, albeit with additional
-   parentheses around patterns that consist of more than one token. However, since this is a controversial
-   change of its own and some working out has to be done as to the exact details of this potential deprecation,
+ - `\case` could be deprecated, since all its use cases would be subsumed by `\of`, albeit with additional
+   parentheses around patterns that consist of more than one token. However, the discussion of this proposal
+   has shown that such a deprecation would be a controversial
+   change of its own and that some working out has to be done as to the exact details of it, thus,
    this might be better suited to being its own, separate proposal. Combined with this, an alternative to the keyword would be
-   to reuse `\case` and change the way it works.
+   to reuse `\case` and change the way it works to the behaviour described in this proposal.
  
  - There are also other alternatives for the keyword that have been raised: `\cases` and `\mcase`.
  
