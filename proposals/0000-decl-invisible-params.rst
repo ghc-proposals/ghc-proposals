@@ -1,5 +1,5 @@
 Invisible parameters for declarations
-==============
+=====================================
 
 .. author:: John Ericson (@Ericson2314)
 .. date-accepted:: Leave blank. This will be filled in when the proposal is accepted.
@@ -18,32 +18,122 @@ This adds the syntax to fix that not already proposed.
 Motivation
 ----------
 
-Implicit binding is confusing to users.
-Even advanced users.
-It is far from obvious that:
+Scoping and parameter order in declaration heads
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-::
+When someone sees declarations like::
 
-  data F :: forall (a :: k) -> Type
+  data Foo_0 a :: forall (b :: k). Type
 
-  data family F :: forall (a :: k) -> Type
+  data family Foo_1 a :: forall (b :: k). Type
 
-do not mean the same thing (respectively) as:
+  type family Foo_2 a :: forall (b :: k). Type
 
-::
+They might think the signature works just like a term signature, and they can explicitly bind ``k`` without changing the meaning like::
 
-  data F :: forall k. forall (a :: k) -> Type
+  data Bar_0 a :: forall k (b :: k). Type
 
-  data family F :: forall k. (a :: k) -> Type
+  data family Bar_1 a :: forall k (b :: k). Type
 
-For both the ``data`` and ``data family`` declaration, the order in which the ``k`` parameter is quantified changes, but perhaps that isn't so bad on its own.
-Worse is that for the family definition, the implicitly bound ``k`` is something instances can scrutinize, while the other ``k`` is purely parametric.
+  type family Bar_2 a :: forall k (b :: k). Type
 
-Making matter worse still, the latter forms of each cannot be written with all variables explicitly bound.
-How are we suppose to teach these subtle things made even by no explicit way to highlight their differences!
+But this is in fact not the same: the ``k`` parameter comes before the ``a`` in the first group, but after the ``a`` and before the ``b`` in the second group.
+At least, we can use standalone kind signatures to illustrate the difference if not fix the problem::
 
-The solution is ``@``-prefixed "invisible parameter", as they are known, just as is already proposed for constructor patterns, in `Proposal 126`_, and lambdas, in proposal `Proposal 155`_.
-The uniformity between all of these should round out the language according to expectations.
+  type Foo_0, Foo_1, Foo_2 ::
+    forall k. Type -> forall (b :: k). Type
+
+versus::
+
+  type Bar_0, Bar_1, Bar_2 ::
+    Type -> forall k (b :: k). Type
+
+(pretending for concision's sake we had multiple name SAKS syntax).
+
+Scoping in declaration bodies
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+These all work (with SAKSs for just clarity---they can be removed)::
+
+  type Foo :: Type -> Type
+  data Foo k = forall (b :: k). MkFoo
+
+  type Foo :: forall k. k -> Type
+  data Foo (a :: k) = forall (b :: k). MkFoo
+
+  type Foo :: forall k. k -> Type
+  type Foo (a :: k) = k
+
+  type C :: Type -> Constraint
+  class C k where
+    type F :: k
+
+  type C :: forall k. k -> Constraint
+  class C (a :: k) where
+    type F :: k
+
+But these don't::
+
+  type Foo :: forall k. Type
+  data Foo = forall (b :: k). MkFoo -- k is unbound
+
+  type Foo :: forall k. Type -> Type
+  data Foo a = forall (b :: k). MkFoo -- k is unbound
+
+  type Foo :: forall k. k -> Type
+  type a = k
+
+  type C :: forall k. k -> Constraint
+  class C a where
+    type F :: k
+
+The problem is while free variables in the LHS / head are implicit bound, free variables in the RHS / body are not.
+The ``forall k`` in the SAKSs corresponds the invisible parameter we'd like to use.
+In the ambiguous cases like the first failing example, where no visible parameter references the invisible parameter, there is in fact no way to make the experiment type-check today.
+
+Arity
+~~~~~
+
+For type synonyms and type families, the kind doesn't yet tell the whole story.
+There is also a notion of arity: the number of arguments a type synonym family must be applied if the use of it is to be allowed.
+
+We have the rough intuition that the number of parameters with patterns is the arity.
+The first problem is that implicitly bound variables in the kind, in floating to the LHS, also count::
+
+  -- arity 1
+  type Foo_0 :: forall (b :: k). Type
+  -- arity 2
+  type family Foo_1 a :: forall (b :: k). Type
+
+  -- arity 0
+  type Foo_0 :: forall k (b :: k) -> Type
+  -- arity 1
+  type family Foo_1 a :: forall k (b :: k) -> Type
+
+Now, since there is no body here, unlike the previous section we don't have a scoping problem or problem defining with ambiguous kinds.
+We can always just write down the any quantifiers we want in the kind, and then control should they count towards the arity or not.
+The problem is, because there is no pattern syntax for invisible binders, GHC uses the legacy explicit return kind to determine the *non*\ -arity part of the kind signature from the legacy inline kind signature, and *just* for invisible binders!.
+This is convoluted to both learn and implement, and requires the user to write more than they should::
+
+  type F :: forall k. Maybe k
+  type family F
+            -- arity = [invisible]
+
+  type G :: Type -> forall k. Maybe k
+  type family G
+            -- arity = []
+
+  type H :: Type -> forall k. Maybe k
+  type family H a
+            -- arity = [visible, invisible]
+
+  type H :: Type -> forall k. Maybe k
+  type family H a :: forall k. Maybe k
+            -- arity = [visible]
+
+The solution for all of these problems ``@``\ -prefixed patterns for invisible parameters, just as is already proposed for constructor patterns, in `Proposal 126`_, and lambdas, in proposal `Proposal 155`_.
+We can use the same simple argument order, scoping, and arity rules for both visible and invisible parameters, and complete the obseletion of inline kind signatures and CUKSs.
+Finally, this proposal completes what the other two proposals started, bringing a much-needed uniformity to the language, and matching users expectations after they first encounter ``@``\ -bindings in one context and try to use in another.
 
 Proposed Change Specification
 -----------------------------
@@ -51,12 +141,12 @@ Proposed Change Specification
 Parsing
 ~~~~~~
 
-``data``, ``newtype``, ``type``, ``class``, ``type family``, and ``data family`` declarations will no longer the prohibit the use of ``@``-prefixed applications in their heads.
+``data``, ``newtype``, ``type``, ``class``, ``type family``, and ``data family`` declarations will no longer the prohibit the use of ``@``\ -prefixed applications in their heads.
 \[This prohibition is currently a side-condition prohibition, as these declaration heads use the regular type grammar.\]
 
 These declaration forms also now allow parameters of the form ``@{var}``, where ``var`` is, as usual, a lower-case identifier.
 
-``@``-prefixed applications remain only expressible with ``-XTypeApplications``.
+``@``\ -prefixed applications remain only expressible with ``-XTypeApplications``.
 
 Renaming
 ~~~~~~~~
@@ -216,7 +306,7 @@ minor releases. We thus require that the name of such variables in the type defi
 in the SAK. In the case of the SAK given in this paragraph, there is no name in the SAK, and so the
 ``@{k}`` construct can never work. We thus add this naming restriction as a way of binding inferred
 variables predictably.
-  
+
 Costs and Drawbacks
 -------------------
 
