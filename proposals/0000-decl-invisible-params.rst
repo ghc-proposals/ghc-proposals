@@ -335,7 +335,7 @@ Implementation Plan
 
 I have begun this in `GHC MR 3145`_.
 I have some bugs but it has not been hard so far.
-@int-index's syntax work as provided a very good foundation.
+@int-index's syntax work has provided a very good foundation.
 
 Endorsements
 -------------
