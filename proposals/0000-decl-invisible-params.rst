@@ -151,18 +151,23 @@ These declaration forms also now allow parameters of the form ``@{var}``, where 
 Renaming
 ~~~~~~~~
 
-Any such declaration with an invisible parameter must only bind variables via explicit parameters in its head.
-There is no implicit binding of free variables in this case.
+``@``\ -prefixed parameters bind their variables just like normal ones do, in the same namespace and with the same scopes.
+\[The same rules on shadowing, duplication, and the mixing of implicitly and explicitly bound variables apply, as all follow from the choice of scope variables are bound in.\]
 
 Type checking
 ~~~~~~~~~~~~~
 
 An invisible parameter is given a invisible forall quantifier (``forall ... .`` kind).
+Invisible parameters need not all be given, the rule will be dual to type applications, and analogous to type lambdas:
 
-An invisible parameter in braces can be used only when the type being declared
-also has a standalone kind signature (SAK). The parameter name in braces must
-exactly match the name of a parameter bound with the ``forall {var}``
-construct in the type's SAK.
+ - An invisible parameter must match a corresponding invisible quantifier in the same position before, after, or between visible quantifiers.
+
+ - Invisible parameter in those positions must match a prefix of invisible quantifiers.
+
+Explicit and implicit visible parameters are both type-checked in the same way.
+
+An invisible parameter in braces can be used only when the type being declared also has a standalone kind signature (SAK).
+The parameter name in braces must exactly match the name of a parameter bound with the ``forall {var}`` construct in the type's SAK.
 
 Examples
 --------
@@ -176,13 +181,14 @@ Data type
 
 ::
 
-  type F :: forall k. k -> Type
-  data F @k :: k1 -> Type -- k1 is not bound
+  type F :: forall k -> k -> Type
+  data F @k :: k1 -> Type -- Rejected: doesn't match kind signature
 
 ::
 
-  type F :: forall k -> k -> Type
-  data F @k :: k1 -> Type -- dosen't match kind signature
+  type F :: forall k1 k2. forall (a :: k1) -> k -> Type
+  data F @kA @(a :: kB) :: k1 -> Type
+    -- Rejected: implicit binding for kB comes after kA, so kind is not matched.
 
 ::
 
@@ -315,7 +321,9 @@ None known at this time.
 Alternatives
 ------------
 
-Allow implicit variable binding always, or some in-between (such as allowing based off whether the first parameter is visible).
+Prohibit implicit bindings if explicit visible bindings are used.
+This was deemed to draconian.
+@Ericson2314 would argue that thanks to the simplifications to the arity rules, we arguable have extra "complexity budget" to "spend" on the interaction between implicit and explicit parameters.
 
 Unresolved Questions
 --------------------
