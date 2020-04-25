@@ -54,6 +54,8 @@ Parsing
 ``data``, ``newtype``, ``type``, ``class``, ``type family``, and ``data family`` declarations will no longer the prohibit the use of ``@``-prefixed applications in their heads.
 \[This prohibition is currently a side-condition prohibition, as these declaration heads use the regular type grammar.\]
 
+These declaration forms also now allow parameters of the form ``@{var}``, where ``var`` is, as usual, a lower-case identifier.
+
 ``@``-prefixed applications remain only expressible with ``-XTypeApplications``.
 
 Renaming
@@ -66,6 +68,11 @@ Type checking
 ~~~~~~~~~~~~~
 
 An invisible parameter is given a invisible forall quantifier (``forall ... .`` kind).
+
+An invisible parameter in braces can be used only when the type being declared
+also has a standalone kind signature (SAK). The parameter name in braces must
+exactly match the name of a parameter bound with the ``forall {var}``
+construct in the type's SAK.
 
 Examples
 --------
@@ -86,6 +93,27 @@ Data type
 
   type F :: forall k -> k -> Type
   data F @k :: k1 -> Type -- dosen't match kind signature
+
+::
+
+  type F4 :: forall {k1} {k2} a b. Proxy a -> Proxy b -> Type
+  data F4 @{k1} @{k2} @a @b p1 p2   -- OK
+
+::
+
+  type F5 :: forall {k1} {k2} a b. Proxy a -> Proxy b -> Type
+  data F5 @{k1} @{k2} @p @q x y     -- OK: specified type variables can be renamed
+
+::
+
+  type F6 :: forall {k1} {k2} a b. Proxy a -> Proxy b -> Type
+  data F6 @{k2} @{k1} @a @b p1 p2  -- Rejected: variables in wrong order
+
+::
+
+  type F7 :: forall a b. Proxy a -> Proxy b -> Type
+  data F7 @{k1} @{k2} @a @b p1 p2  -- Rejected: names do not match up (because no name
+                                   -- supplied in SAK)
 
 Type synonym
 ~~~~~~~~~~~~~
@@ -177,6 +205,18 @@ To wit, one can use an explicit ``forall`` with each:
 
   data instance forall a. Foo a
 
+Explicit inferred variables
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Users can write ``forall {k}`` to introduce an *inferred* variable in a kind signature. We would like to
+be able to bind these explicitly in type definitions. However, we must be able to know the *order* of such
+variables. For example, if we had ``type T :: forall a b. Proxy a -> Proxy b -> Type``, which comes first:
+the kind of ``a`` or the kind of ``b``? GHC might change the order of these variables, even between
+minor releases. We thus require that the name of such variables in the type definition matches that
+in the SAK. In the case of the SAK given in this paragraph, there is no name in the SAK, and so the
+``@{k}`` construct can never work. We thus add this naming restriction as a way of binding inferred
+variables predictably.
+  
 Costs and Drawbacks
 -------------------
 
