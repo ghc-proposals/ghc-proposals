@@ -23,11 +23,11 @@ Scoping and parameter order in declaration heads
 
 When someone sees declarations like::
 
-  data Foo_0 a :: forall (b :: k). Type
+  data Foo_0 a :: Type -> forall (b :: k). Type
 
-  data family Foo_1 a :: forall (b :: k). Type
+  data family Foo_1 a :: Type -> forall (b :: k). Type
 
-  type family Foo_2 a :: forall (b :: k). Type
+  type family Foo_2 a :: Type -> forall (b :: k). Type
 
 They might think the signature works just like a term signature, and they can explicitly bind ``k`` without changing the meaning like::
 
@@ -41,7 +41,7 @@ But this is in fact not the same: the ``k`` parameter comes before the ``a`` in 
 At least, we can use standalone kind signatures to illustrate the difference if not fix the problem::
 
   type Foo_0, Foo_1, Foo_2 ::
-    forall k. Type -> forall (b :: k). Type
+    forall k. Type -> Type -> forall (b :: k). Type
 
 versus::
 
@@ -100,14 +100,14 @@ There is also a notion of arity: the number of arguments a type synonym family m
 We have the rough intuition that the number of parameters with patterns is the arity.
 The first problem is that implicitly bound variables in the kind, in floating to the LHS, also count::
 
-  -- arity 1
-  type Foo_0 :: forall (b :: k). Type
-  -- arity 2
-  type family Foo_1 a :: forall (b :: k). Type
+  -- arity [invisible]
+  type Foo_0 :: Type -> forall (b :: k). Type
+  -- arity [invisible, visible]
+  type family Foo_1 a :: Type -> forall (b :: k). Type
 
-  -- arity 0
+  -- arity []
   type Foo_0 :: forall k (b :: k) -> Type
-  -- arity 1
+  -- arity [visible]
   type family Foo_1 a :: forall k (b :: k) -> Type
 
 Now, since there is no body here, unlike the previous section we don't have a scoping problem or problem defining with ambiguous kinds.
