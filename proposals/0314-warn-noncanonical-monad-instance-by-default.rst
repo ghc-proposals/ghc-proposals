@@ -6,7 +6,7 @@ Enable ``-Wnoncanonical-monad-instances`` and ``-Wnoncanonical-monoid-instances`
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/324>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/314>`_.
 .. contents::
 
 
