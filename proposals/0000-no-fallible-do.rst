@@ -17,7 +17,9 @@ Motivation
 It's hard to know when to fail
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-There are situations in which pattern completeness checking and ``do``-syntax can presently interact in frustrating ways. On the one hand, there are cases involving GADTs where one knows the index type of a GADT being pattern matched, and said GADT has only a single constructor with that index, making the pattern match theoretically complete, but GHC presently fails to discover this. For example:
+There are situations in which pattern completeness checking and ``do``\ -syntax can presently interact in frustrating ways.
+On the one hand, there are cases involving GADTs where one knows the index type of a GADT being pattern matched, and said GADT has only a single constructor with that index, making the pattern match theoretically complete, but GHC presently fails to discover this.
+For example:
 
 ::
 
@@ -30,11 +32,11 @@ There are situations in which pattern completeness checking and ``do``-syntax ca
     A n <- x
     return n
 
-This presently fails because the desugaring of the ``do``-expression involves a use of ``fail``, which induces a ``MonadFail`` constraint, even though the generated ``fail`` is theoretically dead code.
+This presently fails because the desugaring of the ``do``\ -expression involves a use of ``fail``, which induces a ``MonadFail`` constraint, even though the generated ``fail`` is theoretically dead code.
 Let's break down exactly how this happens:
 
 #. The Renamer uses a conservative heuristic to decide whether pattern is fallible, includes ``fail`` syntax if so.
-   Patterns involving GADT constructors like `A` and pattern synonyms, are always deemed failing, however.
+   Patterns involving GADT constructors like ``A`` and pattern synonyms, are always deemed failing, however.
 
 #. The Typechecker works on the undesugared ``do`` notation, and the presence of absence of the ``fail`` syntax effects whether a ``MonadFail`` constraint is wanted.
 
@@ -53,7 +55,7 @@ The problem is a bit of a Gordian knot:
 - Pattern match exhaustiveness checking can only be done after type checking.
   (The heuristic during renaming is fundamentally unfixable.)
 
-- The type of a ``do``-expression straightforwardly depends on how it is desugared
+- The type of a ``do``\ -expression straightforwardly depends on how it is desugared
 
 - Whether to use ``fail``, optimally, depends on pattern match exhaustiveness checking
 
@@ -64,7 +66,7 @@ Now, we can put on our Tarski hats and perhaps come up with some ingenious stagi
 For sake of argument, let's even assume this wouldn't have abysmal performance.
 Do we really want ``do`` notation to be this complex?
 It is far from clear whether we want the unfolding of syntax sugar to depend on anything that is going on at the type level in the first place, as that makes it far more challenging to teach and understand.
-Monads are already an infamous steep part of the learning curve without having to drag in the entire architecture of the compiler frontend to explain ``do``-notation.
+Monads are already an infamous steep part of the learning curve without having to drag in the entire architecture of the compiler frontend to explain ``do``\ -notation.
 
 Avoid ``fail`` altogether
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -85,8 +87,8 @@ For these reasons, one might want to avoid going down a rabbit hole of subtler i
 Proposed Change Specification
 -----------------------------
 
-We propose a module-level means of switching off the use of ``fail`` in ``do``-syntax altogether via an extension flag.
-Specifically, there is a default extension flag ``FallibleDo`` which indicates the usual translation of the ``do``-syntax involving ``fail``, and ``NoFallibleDo`` then replaces the use of ``fail`` with throwing a `PatternMatchFail <https://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Exception.html#t:PatternMatchFail>`_.
+We propose a module-level means of switching off the use of ``fail`` in ``do``\ -syntax altogether via an extension flag.
+Specifically, there is a default extension flag ``FallibleDo`` which indicates the usual translation of the ``do``\ -syntax involving ``fail``, and ``NoFallibleDo`` then replaces the use of ``fail`` with throwing a `PatternMatchFail <https://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Exception.html#t:PatternMatchFail>`_.
 Moreover, when the ``-Wincomplete-uni-patterns`` warning flag is enabled alongside ``NoFallibleDo``, we will warn about the incomplete pattern match.
 
 Monad comprehensions are effected by this extension, but list comprehension are not---fallible patterns always turn into ``[]`` / ``mzero`` there.
@@ -124,14 +126,14 @@ with NoFallibleDo, this would become:
 
 whose inferred type is only constrained by ``Monad m``.
 
-Except for the exact error message in the `PatternMatchFail`, this is just like the desugaring everyone learned::
+Except for the exact error message in the ``PatternMatchFail``, this is just like the desugaring everyone learned::
 
   example x = x >>= \(A n) -> return n
 
 Effect and Interactions
 -----------------------
 
-This effectively sidesteps the issues where completeness checking is imperfect in the translations of ``do``-syntax by simply not making use of ``fail`` in the first place, which avoids the spurious ``MonadFail`` constraints.
+This effectively sidesteps the issues where completeness checking is imperfect in the translations of ``do``\ -syntax by simply not making use of ``fail`` in the first place, which avoids the spurious ``MonadFail`` constraints.
 
 The use of a ``PatternMatchFail`` might seem surprising.
 Who actually likes infallible pattern matching?
@@ -150,18 +152,22 @@ Conversely, we don't think the difference between pure monadic failures, throwin
 
 Perhaps in the future we would want to switch the defaults so all pattern matches must be total by default, and incomplete patterns with match failure exceptions are an opt-in debugging escape hatch akin to ``-fdeferred-type-errors``.
 (@Ericson2314 at least would love this.)
-But this applies to all pattern matching not just binds in ``do``-notation, and as such is out of scope of this proposal.
+But this applies to all pattern matching not just binds in ``do``\ -notation, and as such is out of scope of this proposal.
 
 Costs and Drawbacks
 -------------------
 
-Toggling this option on or off can definitely have an impact on the meaning of code. ``NoFallibleDo`` can turn working code into code which dies with an exception at runtime. However, when it does so, it at least results in a warning.
+Toggling this option on or off can definitely have an impact on the meaning of code.
+``NoFallibleDo`` can turn working code into code which dies with an exception at runtime.
+However, when it does so, it at least results in a warning.
 
-As mentioned above, we probably want to also provide something at the expression level, and it's unlikely that this design for control over the desugaring of ``do``-syntax will want to stay in exactly this form once that happens. I don't anticipate the migration in those cases to be particularly challenging though.
+As mentioned above, we probably want to also provide something at the expression level, and it's unlikely that this design for control over the desugaring of ``do``\ -syntax will want to stay in exactly this form once that happens.
+I don't anticipate the migration in those cases to be particularly challenging though.
 
 A possible disadvantage is that this perhaps somewhat disincentivises work on those deeper issues that were raised, however, I see this extension as somewhat of a stop-gap measure.
 
-If the completeness checker gets really good (and finds its way to being used at the time of ``do``-syntax desugaring despite the awkwardness inherent in that), then perhaps ``NoFallibleDo`` will eventually lose its reason to exist and can be deprecated and removed. Similarly, if we come up with better syntax for controlling the unfolding of ``do``-syntax at the term level which is coordinated with a module-level version of the same, it might obviate this extension as well.
+If the completeness checker gets really good (and finds its way to being used at the time of ``do``\ -syntax desugaring despite the awkwardness inherent in that), then perhaps ``NoFallibleDo`` will eventually lose its reason to exist and can be deprecated and removed.
+Similarly, if we come up with better syntax for controlling the unfolding of ``do``\ -syntax at the term level which is coordinated with a module-level version of the same, it might obviate this extension as well.
 
 One of the reasons we picked this route is that the implementation cost seemed minimal while also solving the problems our client was running into, and the work thus far has borne that out, it's a fairly small change overall.
 
@@ -180,17 +186,24 @@ Some potential fixes that spring to mind are rather costly, and also don't compl
   And, this still leaves out GADTs.
   On could imagine a hypothetical: ``{-# COMPLETE Pats :: TyCon iargs #-}``, but this too embroilers the type checker and thus can't be used by the heuristic.
 
-Aside from eventually fixing the issues with completeness checking and its interaction with `do`-syntax that prompted this, one might also wish for a way to specify at the term-level rather than the module-level which of the proliferating translations of ``do`` we wanted to use. That seems like an entirely reasonable thing as well, but first a concrete syntax for it would have to be invented. The options seem somewhat ugly and I hadn't yet the stomach to paint that bikeshed myself. In any case, once we did have that, we'd probably also want a means of specifying the default choice of translation at a module level regardless.
+Aside from eventually fixing the issues with completeness checking and its interaction with `do`-syntax that prompted this, one might also wish for a way to specify at the term-level rather than the module-level which of the proliferating translations of ``do`` we wanted to use.
+That seems like an entirely reasonable thing as well, but first a concrete syntax for it would have to be invented.
+The options seem somewhat ugly and I hadn't yet the stomach to paint that bikeshed myself.
+In any case, once we did have that, we'd probably also want a means of specifying the default choice of translation at a module level regardless.
 
 Unresolved Questions
 --------------------
 
-If anyone wants to discuss other potential names for the extension, I'm not entirely sold on the name. But note that (No)MonadFailDesugaring is already a thing, which can make many options a bit awkward. Somewhat in line with ``RecursiveDo`` we ended up going with the name ``FallibleDo`` for the default behaviour of the ``do``-syntax which uses ``fail`` (this becomes an addition to the list of default-on extensions), and so ``NoFallibleDo`` turns the use of ``fail`` off.
+If anyone wants to discuss other potential names for the extension, I'm not entirely sold on the name.
+But note that (No)MonadFailDesugaring is already a thing, which can make many options a bit awkward.
+Somewhat in line with ``RecursiveDo`` we ended up going with the name ``FallibleDo`` for the default behaviour of the ``do``\ -syntax which uses ``fail`` (this becomes an addition to the list of default-on extensions), and so ``NoFallibleDo`` turns the use of ``fail`` off.
 
 Implementation Plan
 -------------------
 
-Obsidian Systems will implement the change. We have a work in progress PR where the implementation is already essentially complete, modulo support in Cabal and possibly other tools. See https://gitlab.haskell.org/ghc/ghc/merge_requests/2333
+Obsidian Systems will implement the change.
+We have a work in progress PR where the implementation is already essentially complete, modulo support in Cabal and possibly other tools.
+See https://gitlab.haskell.org/ghc/ghc/merge_requests/2333
 
 Endorsements
 -------------
