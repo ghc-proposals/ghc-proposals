@@ -88,12 +88,14 @@ Proposed Change Specification
 -----------------------------
 
 We propose a module-level means of switching off the use of ``fail`` in ``do``\ -syntax altogether via an extension flag.
-Specifically, there is a default extension flag ``FallibleDo`` which indicates the usual translation of the ``do``\ -syntax involving ``fail``, and ``NoFallibleDo`` then replaces the use of ``fail`` with throwing a `PatternMatchFail <https://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Exception.html#t:PatternMatchFail>`_.
-Moreover, when the ``-Wincomplete-uni-patterns`` warning flag is enabled alongside ``NoFallibleDo``, we will warn about the incomplete pattern match.
+Specifically, there is a extension flag ``FallibleDo``, which is enabled by default, that controls the desugaring of fallible patterns in ``do``\ -notation binds (i.e. ``pat <- stmt`` syntax).
+
+With ``FallibleDo``, the usual translation of the ``do``\ -syntax involving ``fail`` is used.
+With ``NoFallibleDo`` the use of ``fail`` is replaced with the usual throwing of a `PatternMatchFail <https://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Exception.html#t:PatternMatchFail>`_.
+
+When the ``-Wincomplete-uni-patterns`` warning flag is enabled alongside ``NoFallibleDo``, we will warn about the incomplete pattern match.
 
 Monad comprehensions are effected by this extension, but list comprehension are not---fallible patterns always turn into ``[]`` / ``mzero`` there.
-
-Potentially failing pattern matches in the ``pat <- stmt`` syntax then result in a generated application of ``throw`` that provides the source location of the pattern match failure with a message about the reason for the exception.
 
 Examples
 --------
@@ -140,7 +142,8 @@ Who actually likes infallible pattern matching?
 Why not just ban fallible pattern outright so as to not pick and choose between bad static semantics (the pattern match heuristic) and bad dynamic semantics (some oft-maligned synchronous exception)?
 
 The first reason is consistency with the rest of the language.
-Nowhere else are complete patterns always required, and the user can always get this behavior with ``-Werror=...``.
+Nowhere else are complete patterns always required, and the user can always get this behavior with ``-Werror=incomplete-uni-patterns``.
+(And soon ``-Wall -Werror``, too, once `Proposal 71`_ is implemented.)
 Is there truly a need to forge a different path here?
 
 The second reason is balancing the competing interests of programming in the small and programming in the large.
@@ -158,18 +161,20 @@ Costs and Drawbacks
 -------------------
 
 Toggling this option on or off can definitely have an impact on the meaning of code.
-``NoFallibleDo`` can turn working code into code which dies with an exception at runtime.
-However, when it does so, it at least results in a warning.
+Disabling ``FallibleDo`` can turn working code into code which dies with an exception at runtime, if whatever caught the ``fail`` doesn't catch the ``PatternMatchFail``.
+But with ``-Werror=incomplete-uni-patterns``, the user is at least made aware all locations this could possibly happen.
+They can then rewrite the false positives with explicit error handling to not spuriously trigger the warning.
 
-As mentioned above, we probably want to also provide something at the expression level, and it's unlikely that this design for control over the desugaring of ``do``\ -syntax will want to stay in exactly this form once that happens.
-I don't anticipate the migration in those cases to be particularly challenging though.
+We may want to come up with some new syntax that indicates a finer-grained per-binding or per-do-block intent.
+Many such designs would obviate a module-wide extension like this.
+See the alternatives section for details.
 
-A possible disadvantage is that this perhaps somewhat disincentivises work on those deeper issues that were raised, however, I see this extension as somewhat of a stop-gap measure.
+We probably ought to get just rid of the heuristic earlier in the compilation pipeline that conservatively decides whether a pattern match is infallible.
+By getting rid of the main problem it causes, we disincentive doing that work.
+However, if we get rid of ``FallibleDo`` unconditionally, which this proposal points the way to, we will no longer have any need for that heuristic.
 
-If the completeness checker gets really good (and finds its way to being used at the time of ``do``\ -syntax desugaring despite the awkwardness inherent in that), then perhaps ``NoFallibleDo`` will eventually lose its reason to exist and can be deprecated and removed.
-Similarly, if we come up with better syntax for controlling the unfolding of ``do``\ -syntax at the term level which is coordinated with a module-level version of the same, it might obviate this extension as well.
-
-One of the reasons we picked this route is that the implementation cost seemed minimal while also solving the problems our client was running into, and the work thus far has borne that out, it's a fairly small change overall.
+To the cost in particular, one of the reasons we picked this route is that the implementation cost seemed by-far the most minimal while also solving the problems our client was running into, and thus far the work has borne that out:
+After merging some cleanup MRs which are good in any event, it's a quite small change.
 
 Alternatives
 ------------
@@ -186,17 +191,32 @@ Some potential fixes that spring to mind are rather costly, and also don't compl
   And, this still leaves out GADTs.
   On could imagine a hypothetical: ``{-# COMPLETE Pats :: TyCon iargs #-}``, but this too embroilers the type checker and thus can't be used by the heuristic.
 
-Aside from eventually fixing the issues with completeness checking and its interaction with `do`-syntax that prompted this, one might also wish for a way to specify at the term-level rather than the module-level which of the proliferating translations of ``do`` we wanted to use.
-That seems like an entirely reasonable thing as well, but first a concrete syntax for it would have to be invented.
-The options seem somewhat ugly and I hadn't yet the stomach to paint that bikeshed myself.
-In any case, once we did have that, we'd probably also want a means of specifying the default choice of translation at a module level regardless.
+`Proposal 216`_ proposes that we specify how ``do`` notation (and possibly other syntactic sugar) is desugared per-use, rather than per module.
+At first glance, this seems like something which ought to subsume the solutions mentioned here, but we caution it is less than a shoe-in than it first appears.
+One might want to use that to provide a ``fail`` expression with a custom type error (or "type warning", if that is proposed).
+However, due to the "Gordian knot", one would get spurious errors/warnings due to the conservatism of the heuristic before the desugar has a change to remove them.
+One would need to rig up a special warning pass that looked at the generated core, at which point `Proposal 216`_ isn't such a subsuming solution anymore.
+This is however a good fit for a desugaring using ``MonadZero`` instead of ``MonadFail``, imitating list comprehensions.
+
+A final option is a per-binding syntax, within ``do`` blocks.
+People usually care where failures might occur in a do block, not just that they do.
+There is also a great opportunity to together with this solve the problem of indicating which "binds" should be turned into ``Applicative`` expressions with ``ApplicativeDo``.
+This is the most promising alternative, but also the most work.
+Also consider these two opposing opinions:
+
+ - What really is so bad about explicit error handling anyways?
+   I would argue it's not writing down the error patterns but other things, and opened `Proposal 327` to indicate what an alternate sugar might look like.
+   This proposal keeps pattern exhaustiveness simple, and so in conjunction with ``-XNoFallibleDo`` can get back some of the lost concision without sacrificing the benefits.
+
+ - Some of us prefer ideom brackets to do notation for ``Applicative`` anyways.
+   A TH-style, more explicit "ideom brackets" with explicit splices within the quotes/brackets also works for things beyond ``Applicative``, such as the "overloaded lambda and application" ideas that have been stewing for a while as a replacement for arrow syntax.
 
 Unresolved Questions
 --------------------
 
 If anyone wants to discuss other potential names for the extension, I'm not entirely sold on the name.
-But note that (No)MonadFailDesugaring is already a thing, which can make many options a bit awkward.
-Somewhat in line with ``RecursiveDo`` we ended up going with the name ``FallibleDo`` for the default behaviour of the ``do``\ -syntax which uses ``fail`` (this becomes an addition to the list of default-on extensions), and so ``NoFallibleDo`` turns the use of ``fail`` off.
+But note that ``(No)MonadFailDesugaring`` is already a thing, which can make many options a bit awkward.
+Somewhat in line with ``RecursiveDo``, we ended up going with the name ``FallibleDo`` for the default behaviour of the ``do``\ -syntax which uses ``fail`` (this becomes an addition to the list of default-on extensions), and so ``NoFallibleDo`` turns the use of ``fail`` off.
 
 Implementation Plan
 -------------------
@@ -209,3 +229,9 @@ Endorsements
 -------------
 
 Obsidian Systems did this work on behalf of MIRI.
+
+.. _`Proposal 71`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0071-Wall-uni-patterns.rst
+
+.. _`Proposal 216`: https://github.com/ghc-proposals/ghc-proposals/pull/216
+
+.. _`Proposal 327`: https://github.com/ghc-proposals/ghc-proposals/pull/327
