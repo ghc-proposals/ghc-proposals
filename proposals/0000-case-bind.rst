@@ -27,10 +27,10 @@ There are roughly to ways to write this.
 The first way is like this::
 
   do
-    res0 <- action
+    res0 <- action0
     case res0 of
       Good0... -> do
-        res1 <- action
+        res1 <- action1
         case res1 of
           Good1... ->
             ...
@@ -46,12 +46,12 @@ The former problem however is unsolvable in this style.
 The second way is like this::
 
   do
-    res0 <- action
+    res0 <- action0
     TupleVars0 <- case res0 of
       Good0... -> pure TupleVars0
       Bad0_0... -> ...
       Bad0_1... -> ...
-    res1 <- action
+    res1 <- action1
     TupleVars1 <- case res1 of
       Good1... -> pure TupleVars1
       Bad1_1... -> ...
@@ -83,16 +83,16 @@ Examples
 We can rewrite the motivation's example as::
 
   do
-    res0 <- action
-    case Good0... <- case res0 of
+    case Good0... <- action0 of
       Bad0_0... -> ...
       Bad0_1... -> ...
-    res1 <- action
-    case Good1... <- case res1 of
+    case Good1... <- action1 of
       Bad1_0... -> ...
       Bad1_1... -> ...
     ...
 
+This also gets rid of the ``res0`` and ``res1``.
+I did not complain about those in the motivation as ``action0 >>= \case`` also gets rid of them does that today.
 
 Effect and Interactions
 -----------------------
