@@ -205,7 +205,7 @@ This is the most promising alternative, but also the most work.
 Also consider these two opposing opinions:
 
 - What really is so bad about explicit error handling anyways?
-  I would argue it's not writing down the error patterns but other things, and opened `Proposal 327` to indicate what an alternate sugar might look like.
+  I would argue it's not writing down the error patterns but other things, and opened `Proposal 327`_ to indicate what an alternate sugar might look like.
   This proposal keeps pattern exhaustiveness simple, and so in conjunction with ``-XNoFallibleDo`` can get back some of the lost concision without sacrificing the benefits.
 
 - Some of us prefer ideom brackets to do notation for ``Applicative`` anyways.
