@@ -71,7 +71,7 @@ Monads are already an infamous steep part of the learning curve without having t
 Avoid ``fail`` altogether
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-looking at the problem as described above, are options are limited.
+Looking at the problem as described above, our options are limited.
 ``fail`` worked well before because its presence or absence did not influence type checking.
 At the same time, we do not want to go back to putting ``fail`` back inside ``Monad``.
 The simplest thing to do is just cut the Gordian knot, and provide a way to not use ``fail`` in the desugaring.
