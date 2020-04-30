@@ -204,12 +204,12 @@ There is also a great opportunity to together with this solve the problem of ind
 This is the most promising alternative, but also the most work.
 Also consider these two opposing opinions:
 
- - What really is so bad about explicit error handling anyways?
-   I would argue it's not writing down the error patterns but other things, and opened `Proposal 327` to indicate what an alternate sugar might look like.
-   This proposal keeps pattern exhaustiveness simple, and so in conjunction with ``-XNoFallibleDo`` can get back some of the lost concision without sacrificing the benefits.
+- What really is so bad about explicit error handling anyways?
+  I would argue it's not writing down the error patterns but other things, and opened `Proposal 327` to indicate what an alternate sugar might look like.
+  This proposal keeps pattern exhaustiveness simple, and so in conjunction with ``-XNoFallibleDo`` can get back some of the lost concision without sacrificing the benefits.
 
- - Some of us prefer ideom brackets to do notation for ``Applicative`` anyways.
-   A TH-style, more explicit "ideom brackets" with explicit splices within the quotes/brackets also works for things beyond ``Applicative``, such as the "overloaded lambda and application" ideas that have been stewing for a while as a replacement for arrow syntax.
+- Some of us prefer ideom brackets to do notation for ``Applicative`` anyways.
+  A TH-style, more explicit "ideom brackets" with explicit splices within the quotes/brackets also works for things beyond ``Applicative``, such as the "overloaded lambda and application" ideas that have been stewing for a while as a replacement for arrow syntax.
 
 Unresolved Questions
 --------------------
