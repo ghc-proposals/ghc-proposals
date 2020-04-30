@@ -208,8 +208,8 @@ Also consider these two opposing opinions:
   I would argue it's not writing down the error patterns but other things, and opened `Proposal 327`_ to indicate what an alternate sugar might look like.
   This proposal keeps pattern exhaustiveness simple, and so in conjunction with ``-XNoFallibleDo`` can get back some of the lost concision without sacrificing the benefits.
 
-- Some of us prefer ideom brackets to do notation for ``Applicative`` anyways.
-  A TH-style, more explicit "ideom brackets" with explicit splices within the quotes/brackets also works for things beyond ``Applicative``, such as the "overloaded lambda and application" ideas that have been stewing for a while as a replacement for arrow syntax.
+- Some of us prefer idiom brackets to do notation for ``Applicative`` anyways.
+  A TH-style, more explicit "idiom brackets" with explicit splices within the quotes/brackets also works for things beyond ``Applicative``, such as the "overloaded lambda and application" ideas that have been stewing for a while as a replacement for arrow syntax.
 
 Unresolved Questions
 --------------------
