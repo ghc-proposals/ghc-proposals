@@ -174,41 +174,56 @@ Examples
 
 Data type
 ~~~~~~~~~
-::
-
-  type F :: forall k. k -> Type
-  data F @k :: k -> Type -- OK
 
 ::
 
-  type F :: forall k -> k -> Type
-  data F @k :: k1 -> Type -- Rejected: doesn't match kind signature
+  data D0 @k :: k -> Type -- OK
 
 ::
 
-  type F :: forall k1 k2. forall (a :: k1) -> k -> Type
-  data F @kA @(a :: kB) :: k1 -> Type
+  type D1 :: forall k. k -> Type
+  data D1 @k :: k -> Type -- OK
+
+::
+
+  type D1 :: forall k. k -> Type
+  data D1 @k -- Rejected: default return kind is Type [Proposal 311 might relax]
+
+::
+
+  type D1 :: forall k. k -> Type
+  data D1 @k = DC1 -- Rejected: default return kind is Type
+
+::
+
+  type D2 :: forall k -> k -> Type
+  data D2 @k :: k1 -> Type -- Rejected: doesn't match kind signature
+
+::
+
+  type D3 :: forall k1 k2. forall (a :: k1) -> k -> Type
+  data D3 @kA @(a :: kB) :: k1 -> Type
     -- Rejected: implicit binding for kB comes after kA, so kind is not matched.
 
 ::
 
-  type F4 :: forall {k1} {k2} a b. Proxy a -> Proxy b -> Type
-  data F4 @{k1} @{k2} @a @b p1 p2   -- OK
+  type D4 :: forall {k1} {k2} a b. Proxy a -> Proxy b -> Type
+  data D4 @{k1} @{k2} @a @b p1 p2   -- OK
 
 ::
 
-  type F5 :: forall {k1} {k2} a b. Proxy a -> Proxy b -> Type
-  data F5 @{k1} @{k2} @p @q x y     -- OK: specified type variables can be renamed
+  type D5 :: forall {k1} {k2} a b. Proxy a -> Proxy b -> Type
+  data D5 @{k1} @{k2} @p @q x y     -- OK: specified type variables can be renamed
 
 ::
 
-  type F6 :: forall {k1} {k2} a b. Proxy a -> Proxy b -> Type
-  data F6 @{k2} @{k1} @a @b p1 p2  -- Rejected: variables in wrong order
+  type D6 :: forall {k1} {k2} a b. Proxy a -> Proxy b -> Type
+  data D6 @{k2} @{k1} @a @b p1 p2  -- Rejected: variables in wrong order
 
 ::
 
-  type F7 :: forall a b. Proxy a -> Proxy b -> Type
-  data F7 @{k1} @{k2} @a @b p1 p2  -- Rejected: names do not match up (because no name
+  type D7 :: forall a b. Proxy a -> Proxy b -> Type
+  data D7 @{k1} @{k2} @a @b p1 p2  -- Rejected: names do not match up (because no name
                                    -- supplied in SAK)
 
 Type synonym
@@ -216,58 +231,104 @@ Type synonym
 
 ::
 
-  type F :: forall k. k -> Type
-  type F (a :: k) = k -- OK, already
+  type T0 :: forall k. k -> Type
+  type T0 (a :: k) = k -- OK, already
   --           ^    ^
   --           induces implicit binding
 
 ::
 
-  type F :: forall k. k -> Type
-  type F @k (a :: k) = k -- OK
+  type T1 :: forall k. k -> Type
+  type T1 @k (a :: k) = k -- OK
   --              ^    ^
   --              Use not binding
 
 ::
 
-  type F :: forall k. k -> Type
-  type F @k (a :: k1) = k -- k1 not bound
+  type T2 @k (a :: k1) = k -- Rejected: k1 not bound
 
 Class
 ~~~~~
 
 ::
 
-  type F :: forall k. k -> Constraint
-  class F (a :: k) -- OK, already
+  type C0 :: forall k. k -> Constraint
+  class C0 (a :: k) -- OK, already
 
 ::
 
-  type F :: forall k. k -> Constraint
-  class F @k (a :: k) -- OK
+  type C1 :: forall k. k -> Constraint
+  class C1 @k (a :: k) -- OK
 
 ::
 
-  type F :: forall k. k -> Constraint
-  class Foo k1 -> F @k (a :: k) -- k1 is not bound
+  type C2 :: forall k. k -> Constraint
+  class C2 k1 -> C @k (a :: k) -- Rejected: k1 is not bound
 
 ::
 
-  type F :: forall k. k -> Constraint
-  class Foo k -> F @k (a :: k1) -- k1 is not bound
+  type C3 :: forall k. k -> Constraint
+  class C3 k -> C @k (a :: k1) -- Rejected: k1 is not bound
 
 Family
 ~~~~~~
 
 ::
 
-  type F :: forall k. k -> k -> Type
-  type family F @k (a :: k) :: k -> Type -- OK
+  type family F0 @k (a :: k) :: k -> Type -- OK
+            -- arity = [invisible, visible]
 
 ::
 
-  type F :: forall k. k -> k
-  type family F @k (a :: k) :: k -- OK
+  type F1 :: forall k. k -> k -> Type
+  type family F1 @k (a :: k) :: k -> Type -- OK
+            -- arity = [invisible, visible]
+
+::
+
+  type F2 :: forall k. k -> k -> Type
+  type family F2 (a :: k) @k -- OK, return kind can be anything SAKS wants
+            -- arity = [invisible, visible]
+
+::
+
+  type F3 :: forall k. k -> k
+  type family F3 (a :: k) :: k -- OK
+            -- arity = [invisible, visible]
+
+::
+
+  type F4 :: forall k. k -> k
+  type family F4 (a :: k) @k :: k -- Rejected: doesn't match signature
+
+::
+
+  type F4 :: forall k. k -> forall k2. k2
+  type family F4 (a :: k) @k2 :: k2 --  OK
+            -- arity = [invisible, visible, invisible]
+
+::
+
+  type F4 :: forall k. k -> forall k2. k2
+  type family F4 (a :: k) @k2
+            -- arity = [invisible, visible, invisible]
+
+::
+
+  type F4 :: forall k. k -> forall k2. k2
+  type family F4 (a :: k) :: forall k2. k2 -- OK
+            -- arity = [visible, invisible]
+
+::
+
+  type F4 :: forall k. k -> forall k2. k2
+  type family F4 (a :: k) -- OK
+            -- arity = [visible, invisible]
+
+::
+
+  type family F4 (a :: k) -- OK
+            -- arity = [visible, invisible]
 
 Effect and Interactions
 -----------------------
