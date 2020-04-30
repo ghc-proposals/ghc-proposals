@@ -1,22 +1,7 @@
-Notes on reStructuredText - delete this section before submitting
-==================================================================
-
-The proposals are submitted in reStructuredText format.  To get inline code, enclose text in double backticks, ``like this``.  To get block code, use a double colon and indent by at least one space
-
-::
-
- like this
- and
-
- this too
-
-To get hyperlinks, use backticks, angle brackets, and an underscore `like this <http://www.haskell.org/>`_.
-
-
-Proposal title
+Case bind
 ==============
 
-.. author:: Your name
+.. author:: John Ericson @Ericson2314
 .. date-accepted:: Leave blank. This will be filled in when the proposal is accepted.
 .. ticket-url:: Leave blank. This will eventually be filled with the
                 ticket URL which will track the progress of the
@@ -29,84 +14,123 @@ Proposal title
             number in the link, and delete this bold sentence.**
 .. contents::
 
-Here you should write a short abstract motivating and briefly summarizing the proposed change.
-
+Provide a more concise why to handle failure patterns in do notation.
 
 Motivation
 ----------
-Give a strong reason for why the community needs this change. Describe the use
-case as clearly as possible and give an example. Explain how the status quo is
-insufficient or not ideal.
 
-A good Motivation section is often driven by examples and real-world scenarios.
+Let's say I need to manually handle some failures in do notation by pattern matching.
+"Manually", because the ``fail`` desugar doesn't do what I want,
+and "by pattern matching" because I am not catching an exception or anything like that.
+There are roughly to ways to write this.
 
+The first way is like this::
+
+  do
+    res0 <- action
+    case res0 of
+      Good0... -> do
+        res1 <- action
+        case res1 of
+          Good1... ->
+            ...
+          Bad1_0... -> ...
+          Bad1_1... -> ...
+      Bad0_0... -> ...
+      Bad0_1... -> ...
+
+Notice how the indentation grows at every failure, and also the earlier good and bad patterns are quite far apart.
+The latter problem can sometime be fixed if the bad pattern doesn't have too many wildcards can can come first.
+The former problem however is unsolvable in this style.
+
+The second way is like this::
+
+  do
+    res0 <- action
+    TupleVars0 <- case res0 of
+      Good0... -> pure TupleVars0
+      Bad0_0... -> ...
+      Bad0_1... -> ...
+    res1 <- action
+    TupleVars1 <- case res1 of
+      Good1... -> pure TupleVars1
+      Bad1_1... -> ...
+      Bad1_1... -> ...
+    ...
+
+This solves the rightward drift and distant alternatives problems, but at the cost of making the user manually construct destruct tuples of all the variables they bound in the "good case".
+This is tedious, and makes the code harder to modify.
+
+Clearly, both styles have drawbacks.
 
 Proposed Change Specification
 -----------------------------
-Specify the change in precise, comprehensive yet concise language. Avoid words
-like "should" or "could". Strive for a complete definition. Your specification
-may include,
 
-* BNF grammar and semantics of any new syntactic constructs
-* the types and semantics of any new library interfaces
-* how the proposed change interacts with existing language or compiler
-  features, in case that is otherwise ambiguous
+We introduce a new sugar in ``do``\ -notation, using the Haskell Report 2010's non-terminals::
 
-Note, however, that this section need not describe details of the
-implementation of the feature or examples. The proposal is merely supposed to
-give a conceptual specification of the new feature and its behavior.
+  stmt → case pat <- exp of { alts }
+
+where ``of`` is, as usual, a layout herald.
+
+The existing ``do``\ -notation desugar is augmented to handled this as follows::
+
+  do { case p <- e of { alts }; stmts } =
+    e >>= \case { p -> do { stmts }; alts }
 
 Examples
 --------
-This section illustrates the specification through the use of examples of the
-language change proposed. It is best to exemplify each point made in the
-specification, though perhaps one example can cover several points. Contrived
-examples are OK here. If the Motivation section describes something that is
-hard to do without this proposal, this is a good place to show how easy that
-thing is to do with the proposal.
+
+We can rewrite the motivation's example as::
+
+  do
+    res0 <- action
+    case Good0... <- case res0 of
+      Bad0_0... -> ...
+      Bad0_1... -> ...
+    res1 <- action
+    case Good1... <- case res1 of
+      Bad1_0... -> ...
+      Bad1_1... -> ...
+    ...
+
 
 Effect and Interactions
 -----------------------
-Detail how the proposed change addresses the original problem raised in the
-motivation.
 
-Discuss possibly contentious interactions with existing language or compiler
-features.
+- Exhaustiveness checking is very easy.
+  Unlike the current ``fail`` desugar, errors handling doesn't rely on any intentional incomplete patterns.
 
+- Recursive ``do``\ -notation makes the second option with the tuple harder still to use, as one cannot reuse the same variable names.
 
 Costs and Drawbacks
 -------------------
-Give an estimate on development and maintenance costs. List how this effects
-learnability of the language for novice users. Define and list any remaining
-drawbacks that cannot be resolved.
 
+This is more syntactic sugar, which is rightfully deemed an indulgence.
+I find no joy in proposing sugar.
+But, when weighed together with `Proposal 319`_, we'd be deprecating one sugar for another, which seems more morally neutral.
 
 Alternatives
 ------------
-List existing alternatives to your proposed change as they currently exist and
-discuss why they are insufficient.
 
+- Syntax variations such as ``pat case <- expr of``
+
+- Status quo
+
+- Some way of marking patterns as intending to be fallible / infallible for sake of the problems brought up in `Proposal 319`_.
+  That does however leave the problems in this proposal unaddressed.
 
 Unresolved Questions
 --------------------
-Explicitly list any remaining issues that remain in the conceptual design and
-specification. Be upfront and trust that the community will help. Please do
-not list *implementation* issues.
 
-Hopefully this section will be empty by the time the proposal is brought to
-the steering committee.
+None at this time.
 
 
 Implementation Plan
 -------------------
-(Optional) If accepted who will implement the change? Which other resources
-and prerequisites are required for implementation?
+
+I suppose I could do it.
 
 Endorsements
 -------------
-(Optional) This section provides an opportunty for any third parties to express their
-support for the proposal, and to say why they would like to see it adopted.
-It is not mandatory for have any endorsements at all, but the more substantial
-the proposal is, the more desirable it is to offer evidence that there is
-significant demand from the community.  This section is one way to provide
-such evidence.
+
+.. _`Proposal 319`: https://github.com/ghc-proposals/ghc-proposals/pull/319
