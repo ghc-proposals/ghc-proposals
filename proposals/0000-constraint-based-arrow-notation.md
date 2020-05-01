@@ -106,27 +106,27 @@ I do not propose any radical changes to the structure of the `|-a` judgment or i
 
   2. Introduce two wired-in type families:
 
-     1. `ArrowStack :: [Type] -> Type`, which converts a stack type to a tuple. Morally, it is a closed type family with the following infinitely-long definition:
+     1. `ArrowStackTup :: [Type] -> Type`, which converts a stack type to a tuple. Morally, it is a closed type family with the following infinitely-long definition:
 
         ```haskell
-        type family ArrowStack stk where
-          ArrowStack '[a]       = a
-          ArrowStack '[a, b]    = (a, b)
-          ArrowStack '[a, b, c] = (a, b, c)
+        type family ArrowStackTup stk where
+          ArrowStackTup '[a]       = a
+          ArrowStackTup '[a, b]    = (a, b)
+          ArrowStackTup '[a, b, c] = (a, b, c)
           ...
         ```
 
         This type family is non-injective, as the RHS of the first case overlaps with all other cases.
 
-     2. `ArrowEnv :: Type -> [Type] -> Type`, which accepts an environment and a stack and produces a tuple. This is quite similar to `ArrowStack`, and it has a similar definition:
+     2. `ArrowEnvTup :: Type -> [Type] -> Type`, which accepts an environment and a stack and produces a tuple. This is quite similar to `ArrowStackTup`, and it has a similar definition:
 
          ```haskell
-         data Env env -- an opaque type that represents the local environment
+         data ArrowEnv env -- an opaque type that represents the local environment
 
-         type family ArrowEnv env stk = arg | arg -> env stk where
-           ArrowEnv env '[]     = Env env
-           ArrowEnv env '[a]    = (Env env, a)
-           ArrowEnv env '[a, b] = (Env env, a, b)
+         type family ArrowEnvTup env stk = arg | arg -> env stk where
+           ArrowEnvTup env '[]     = ArrowEnv env
+           ArrowEnvTup env '[a]    = (ArrowEnv env, a)
+           ArrowEnvTup env '[a, b] = (ArrowEnv env, a, b)
            ...
          ```
 
@@ -134,7 +134,7 @@ I do not propose any radical changes to the structure of the `|-a` judgment or i
 
   3. Change the `|-a` rules for `f -< e`, `f -<< e`, `c e`, `\p -> c`, and `(| e c ... |)` to use the above type families in the relevant places. In the context of GHC’s implementation, this means emitting equality constraints between applications of those type families rather than solving everything up front.
 
-Because the ASCII-art versions of the modified rules are more difficult to read than properly typeset versions, I’ve created readable renderings of the key rules (where Σ(θ) is used in place of `ArrowStack` and Σ(Δ,θ) is used in place of `ArrowEnv`):
+Because the ASCII-art versions of the modified rules are more difficult to read than properly typeset versions, I’ve created readable renderings of the key rules (where Σ(θ) is used in place of `ArrowStackTup` and Σ(Δ,θ) is used in place of `ArrowEnvTup`):
 
 <img src="0000-typechecking-rules.png" height="600" />
 
@@ -164,16 +164,16 @@ In GHC, the desugaring rules can remain essentially unchanged under this proposa
 
 #### Error reporting
 
-In practice, it is unlikely that the generated equality constraints on `ArrowStack` and `ArrowEnv` will ever fail to solve. The strict type required by the `(| e c ... |)` rule is almost always enough to propagate information downwards, and the other rules cannot introduce any ambiguity about the shape of the stack. However, while unlikely, it is not impossible, so it likely makes sense for GHC to generate custom type error messages upon failure to solve `ArrowStack` and `ArrowEnv` equalities to avoid implementation details leaking out to the programmer.
+In practice, it is unlikely that the generated equality constraints on `ArrowStackTup` and `ArrowEnvTup` will ever fail to solve. The strict type required by the `(| e c ... |)` rule is almost always enough to propagate information downwards, and the other rules cannot introduce any ambiguity about the shape of the stack. However, while unlikely, it is not impossible, so it likely makes sense for GHC to generate custom type error messages upon failure to solve `ArrowStackTup` and `ArrowEnvTup` equalities to avoid implementation details leaking out to the programmer.
 
-#### The `Env` type
+#### The `ArrowEnv` type
 
-The `ArrowEnv` rule wraps the environment type in an opaque, compiler-defined `Env` type, unlike the current implementation, which simply uses a large tuple. The separate `Env` type is necessary primarily to ensure the `ArrowEnv` type family is injective: if it were a tuple, the RHS of the empty stack case would overlap with other cases. Additionally, the `Env` wrapper allows the `(| e c ... |)` rule to check `e` against a type with a skolem variable in place of `env` without destroying injectivity.
+The `ArrowEnvTup` rule wraps the environment type in an opaque, compiler-defined `ArrowEnv` type, unlike the current implementation, which simply uses a large tuple. The separate `ArrowEnv` type is necessary primarily to ensure the `ArrowEnvTup` type family is injective: if it were a tuple, the RHS of the empty stack case would overlap with other cases. Additionally, the `ArrowEnv` wrapper allows the `(| e c ... |)` rule to check `e` against a type with a skolem variable in place of `env` without destroying injectivity.
 
-Fortunately, the wrapper itself is only necessary at the type level, so the actual representation can be identical to the current one. A logical implementation of `Env` would be
+Fortunately, the wrapper itself is only necessary at the type level, so the actual representation can be identical to the current one. A logical implementation of `ArrowEnv` would be
 
 ```haskell
-newtype Env env = Env env
+newtype ArrowEnv env = ArrowEnv env
 ```
 
 so the current representation can be passed as the `env` parameter directly.
@@ -182,7 +182,7 @@ so the current representation can be passed as the `env` parameter directly.
 
 This proposal eliminates the use of a nested tuple for the argument stack completely. Instead, a stack of *n* arguments is represented directly be a tuple of size *n* (or *n*+1 when combined with an environment). Theoretically, this could cause trouble, as GHC does not support tuples of arbitrary size.
 
-I don’t think this is actually a problem—61 arguments really ought to be enough for anyone! The only situation where the tuple limit could possibly be relevant is the environment, but the existing technique of nesting tuples works fine there, since the representation of the environment is opaque. It’s probably a good idea to make `ArrowStack` and `ArrowEnv` report meaningful error messages if that limit is ever somehow exceeded, but otherwise, I don’t expect this to be an issue.
+I don’t think this is actually a problem—61 arguments really ought to be enough for anyone! The only situation where the tuple limit could possibly be relevant is the environment, but the existing technique of nesting tuples works fine there, since the representation of the environment is opaque. It’s probably a good idea to make `ArrowStackTup` and `ArrowEnvTup` report meaningful error messages if that limit is ever somehow exceeded, but otherwise, I don’t expect this to be an issue.
 
 ## Examples
 
@@ -257,9 +257,9 @@ GHC rejects the above instance because it expects the type for `handle` mentione
      ```
      s1, s2, t1, t2 fresh
      G |- handle :: forall w
-                  . arr (ArrowEnv w s1) t1
-                 -> arr (ArrowEnv w s2) t2
-                 -> arr (ArrowEnv w '[]) b
+                  . arr (ArrowEnvTup w s1) t1
+                 -> arr (ArrowEnvTup w s2) t2
+                 -> arr (ArrowEnvTup w '[]) b
      G;a,r |-arr c1 :: s1 --> t1
      G;a,r |-arr c2 :: s2 --> t2
      -------------------------------------------------------------------------
@@ -271,25 +271,25 @@ GHC rejects the above instance because it expects the type for `handle` mentione
      1. To start, the typechecker will unify the type of `handle` and the expected type given above, yielding the following equality constraints:
 
         ```haskell
-        arr (ArrowEnv w s1) t1 ~ arr a1 b1
-        arr (ArrowEnv w s2) t2 ~ arr (a1, e) b1
-        arr (ArrowEnv w '[]) b ~ arr a1 b1
+        arr (ArrowEnvTup w s1) t1 ~ arr a1 b1
+        arr (ArrowEnvTup w s2) t2 ~ arr (a1, e) b1
+        arr (ArrowEnvTup w '[]) b ~ arr a1 b1
         ```
 
         After some simplification, the above constraints are reduced to
 
         ```haskell
         t1, t2, b1 := b
-        ArrowEnv w s1 ~ a1
-        ArrowEnv w s2 ~ (a1, e)
-        ArrowEnv w '[] ~ a1
+        ArrowEnvTup w s1 ~ a1
+        ArrowEnvTup w s2 ~ (a1, e)
+        ArrowEnvTup w '[] ~ a1
         ```
 
-     2. Next, the solver for `ArrowEnv` can have a go at the constraints. `ArrowEnv w '[]` is trivially reducible to `Env w`, so we can take `a1 := Env w` and discharge the constraint. With that substitution, the remaining constraints become
+     2. Next, the solver for `ArrowEnvTup` can have a go at the constraints. `ArrowEnvTup w '[]` is trivially reducible to `ArrowEnv w`, so we can take `a1 := ArrowEnv w` and discharge the constraint. With that substitution, the remaining constraints become
 
         ```haskell
-        ArrowEnv w s1 ~ Env w
-        ArrowEnv w s2 ~ (Env w, e)
+        ArrowEnvTup w s1 ~ ArrowEnv w
+        ArrowEnvTup w s2 ~ (ArrowEnv w, e)
         ```
 
         which are solvable via injectivity, and we get `s1 := '[]` and `s2 := '[e]`.
@@ -301,12 +301,12 @@ GHC rejects the above instance because it expects the type for `handle` mentione
         ```
         t3 fresh
         G,a,r |- (a, r) :: t3
-        G |- f :: arr (ArrowStack '[t3]) b
+        G |- f :: arr (ArrowStackTup '[t3]) b
         ------------------------------------
         G;a,r |-arr f -< (a, r) :: '[] --> b
         ```
 
-        After unification, `t3` is solved to `(a, r)`. `ArrowStack '[(a, r)]` reduces to `(a, r)`, so `f` is checked against type `arr (a, r) b`, which is trivially true.
+        After unification, `t3` is solved to `(a, r)`. `ArrowStackTup '[(a, r)]` reduces to `(a, r)`, so `f` is checked against type `arr (a, r) b`, which is trivially true.
 
      2. `c2` is a little more interesting, since it is a lambda command:
 
@@ -321,7 +321,7 @@ GHC rejects the above instance because it expects the type for `handle` mentione
 
   5. Everything is checked and all constraints are solved, so we’re done.
 
-This example concretely illustrates why it is crucial that `ArrowEnv` is injective: in step 3, it allowed us to infer the expected stack for each argument to `handle`. Consider that if we didn’t learn that information that way, we’d be totally stuck in step 4, since `ArrowStack` is non-injective! We would gain no information from the types of `f` and `g`, so if `s1` and `s2` remained unsolved metavariables, resulting in a type error due to insoluble equalities.
+This example concretely illustrates why it is crucial that `ArrowEnvTup` is injective: in step 3, it allowed us to infer the expected stack for each argument to `handle`. Consider that if we didn’t learn that information that way, we’d be totally stuck in step 4, since `ArrowStackTup` is non-injective! We would gain no information from the types of `f` and `g`, so if `s1` and `s2` remained unsolved metavariables, resulting in a type error due to insoluble equalities.
 
 ### Case study: `keyed`
 
@@ -414,15 +414,9 @@ This proposal has the following alternatives:
 
      Arrows are a pretty low-priority feature in GHC right now, so not doing this isn’t going to leave too many people upset. Still, I think it’s a small enough change to be worth the effort, assuming someone (me) is willing to volunteer their time to implement it.
 
-## Unresolved Questions
-
-I do not have any unresolved questions about the approach in the proposal at this time.
-
 ## Implementation Plan
 
-I, Alexis King, volunteer to implement this change if this proposal is accepted. I have examined the implementation of `TcArrows` and `DsArrows`, and neither of them seem particularly complicated to change. I am no expert in GHC’s internals, and in fact I’ve never actually submitted a patch before, but this seems like as good a reason as any to try.
-
-Concretely, I expect the change will mostly involve implementing `ArrowStack` and `ArrowEnv` as new `BuiltInSynFamily`s and plumbing them through `TcArrows`.
+I, Alexis King, have already implemented most of this proposal on [my `constraint-based-arrow-notation` branch of GHC](https://gitlab.haskell.org/lexi.lambda/ghc/-/tree/constraint-based-arrow-notation). [MR !3191 on GitLab](https://gitlab.haskell.org/ghc/ghc/-/merge_requests/3191) includes a high-level overview of the changes, as well as what is left to be done. Discussing further implementation details is out of scope for this proposal, but those interested can look at and/or comment on the MR.
 
 [arrow notation]: https://downloads.haskell.org/ghc/8.8.1/docs/html/users_guide/glasgow_exts.html#arrow-notation
 [hackage:arrows]: https://hackage.haskell.org/package/arrows
