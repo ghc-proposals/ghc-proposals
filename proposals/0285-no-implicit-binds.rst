@@ -211,7 +211,7 @@ When ``-XStandaloneKindSignatures`` is on, these new standalone signatures are a
      -- {-# LANGUAGE PatternSignatureBinds #-} -- Does not matter whether enabled or disabled
      {-# LANGUAGE StandaloneKindSignatures #-}
 
-     type F :: foral k. k -> Type -- OK
+     type F :: forall k. k -> Type -- OK
      data F _ = ...
 
 #. ::
