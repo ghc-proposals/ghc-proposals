@@ -85,7 +85,7 @@ But before that, we can at least fix type level defaults to match term level def
 
 ## Proposed Change Specification
 
-In backpack signatures and hs-boot files, any instance item which occurs without mention of an class item simply places no constraint on that type family, regardless of whether the class has a default for that item.
+In backpack signatures and hs-boot files, any instance which doesn't mention an item in the instantiated class places no constraint on that item, regardless of whether the class has a default for that item.
 
 ## Examples
 
