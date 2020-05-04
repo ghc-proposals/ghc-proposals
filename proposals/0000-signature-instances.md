@@ -119,6 +119,8 @@ instance C X
 
 The proposed change addresses the issue raised in the motivation section directly. I don't immediately foresee any negative interactions with other language features.
 
+It's not the intention of this proposal to specify anything with regards to whether type family instances, specifications of type equalities, or ordinary definitions (to be matched on some sort of equivalence perhaps), are permitted in hs-boot and backpack signatures. As of this writing, they're not supported, but there are open GHC issues discussing adding support along these lines [#8441](https://gitlab.haskell.org//ghc/ghc/issues/8441) and [#12680](https://gitlab.haskell.org//ghc/ghc/issues/12680).
+
 ## Costs and Drawbacks
 
 If you do want the default you have to repeat it. This is currently unsupported anyway at the type level, but we may wish to allow specifications of type family instances in `hs-boot` and `hsig` files in the future.
