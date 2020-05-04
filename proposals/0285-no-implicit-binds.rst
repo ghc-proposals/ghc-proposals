@@ -2,17 +2,11 @@
 =====================================================
 
 .. author:: John Ericson (@Ericson2314)
-.. date-accepted:: Leave blank. This will be filled in when the proposal is accepted.
-.. proposal-number:: Leave blank. This will be filled in when the proposal is
-                     accepted.
-.. ticket-url:: Leave blank. This will eventually be filled with the
-                ticket URL which will track the progress of the
-                implementation of the feature.
-.. implemented:: Leave blank. This will be filled in with the first GHC version which
-                 implements the described feature.
+.. date-accepted:: 2020-05-04
+.. ticket-url::
+.. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/285>`_.
-.. sectnum::
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/285>`_.
 .. contents::
 
 Provide a way to strictly separate bindings and use of varariables, so the distinction never depends on what is in scope.
