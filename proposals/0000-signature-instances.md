@@ -64,7 +64,7 @@ instance C X
   f _ = 7 -- error
 ```
 
-This a blatantly inconsistent, with 3 ways to make it consistent:
+This is blatantly inconsistent, with 3 ways to make it consistent:
 
  1. Never allow (term or type level) items in instances, nor infer them from class defaults, in `hsig`/`hs-boot` files
 
@@ -72,20 +72,11 @@ This a blatantly inconsistent, with 3 ways to make it consistent:
  
  3. Do allow items in instances, but ignore defaults in `hsig`/`hs-boot` files
 
-(1) seems needlessly restrictive, there are tons of valid reasons why one would want to constrain an associated type in a `hsig`/`hs-boot` file, just as they would constrain it in the type of an item in a module.
-
-(2) is awkward because it makes the default mandatory, without some extra syntax to opt *out* of the default. 
-This seems backwards.
-The default provided by the class probably is not something that a programmer intends to make part of the interface when they omit any mention of the type family from the instance---the programmer should be opting *in*.
-
-(3) seems the best option; the user could always repeat the default definition in the method if they would like to constrain.
-
-Now implementing instance item definitions in `hsig`/`hs-boot` files is a decent chunk of work which is why it hasn't been done already.
-But before that, we can at least fix type level defaults to match term level defaults and not attempt to turn them into currently-disallowed/broken instance definitions, in other words starting with (1) and then going to (3) is not a breaking change. 
+Our approach is essentially to go with solution (1) here, with an understanding that (3) might eventually be desired if future proposals want to allow some type equality specifications in signatures. (2) seems needlessly confusing and restrictive.
 
 ## Proposed Change Specification
 
-In backpack signatures and hs-boot files, any instance which doesn't mention an item in the instantiated class places no constraint on that item, regardless of whether the class has a default for that item.
+We propose that any instance in backpack signatures and hs-boot files, places no constraint on the terms and associated type family instances which may be specified by the corresponding class, regardless of whether there are defaults provided by the class specification.
 
 ## Examples
 
@@ -140,7 +131,7 @@ There's an option to eventually support specification of type family instances i
 
 On one hand, there are no term level equality constraints.
 On the other, we can simply require a module define any term-level method that the signature/boot file defines, or check for crude syntactic equality as a sound conservative approximation.
-8
+
 ## Implementation Plan
 
 John Ericson has already implemented this. [Pull Request #1776](https://gitlab.haskell.org/ghc/ghc/-/merge_requests/1776).
