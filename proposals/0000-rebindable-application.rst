@@ -20,24 +20,84 @@ Motivation
 ----------
 
 In Haskell, there are a lot of types that behave like functions.
-These types thus have there own unique function application operations.
-For example, the ``Functor`` class has ``<$>`` which, to quote the
-documentation, is "function application lifted over a Functor".
+However, outside of the primitive function arrow (``->``), none of
+these are permitted to use the juxtaposition syntax for function 
+application (i.e. ``f a ``).
 
-As such, it would be nice if types other than the function arrow
-(``->``) could be applied using the standard syntax.
-For instance, if function application's juxtaposition syntax
-worked on ``Applicative``, this would allow code like:
+Newtypes
+^^^^^^^^
+
+There are many mewtype wrappers around function types (ex. ``Predicate``, 
+``Cont``) or more general types (ex. ``Identity``). 
+Newtypes often wish to copy much of the original functionality of 
+the wrapped type, hence why extensions like ``GeneralizedNewtypeDeriving`` 
+were created.
+However, wrapped function types at disadvantage. They are unable to 
+transparently copy the functionality of their wrapped types because they 
+cannot leverage the juxtaposition  syntax for function application. 
+
+For example, consider the following definition of a ``Match`` type.
 
 .. code-block:: haskell
 
-  f = g <$> a <*> b <*> c
+  newtype Match a r = Match { runMatch :: a -> BoolCont r }
+  newtype BoolCont r = BoolCont { runBoolCont :: r -> r -> r }
+
+  matchComma :: Match Char r
+  matchComma = Match \a -> BoolCont \y n -> case a of { ',' -> y; _ -> n } 
+
+  matchComma' :: Char -> r -> r -> r
+  matchComma' \a y n = case a of { ',' -> y; _ -> n } 
+
+In this example, ``BoolCont`` is a continuation-passing style (CPS) 
+version of ``Bool`` and ``Match`` is a CPS version of ``Predicate``. 
+If we want use these types as functions we have to unwrap them first.
+
+.. code-block:: haskell
+
+  hasCommaPrefix :: [Char] -> Bool
+  hasCommaPrefix (x:xs) = runBoolCont (runMatch matchComma x) False True
+
+This is inelegant and cumbersome. If we drop the newtypes, we can instead 
+write the above function like so:
+
+.. code-block:: haskell
+
+  hasCommaPrefix' :: [Char] -> Bool
+  hasCommaPrefix' (x:xs) = matchComma' x False True
+
+This is much cleaner. However, doing so loses the type distinction newtypes 
+provide, which can be useful in many cases -- for example, in type classes. 
+We can define specialized ``Monad`` instances for ``Match`` and ``BoolCont``, 
+but the same  cannot be done for the unwrapped function type as it already has 
+a ``Monad`` instance.
+
+As such, it would be most convenient if newtypes around functions could also
+use the juxtaposition syntax. 
+It would also provide additional abstraction as newtypes for functions and 
+regular functions could then be used interchangeably in many cases.
+
+Alternative Application Operators
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+There are also many different function application operations.
+For example, the ``Functor`` class has ``<$>``, which, to quote the
+documentation, is "function application lifted over a Functor".
+
+As such, it would be nice if these other application operators 
+could also use the juxtaposition syntax.
+For instance, if the syntax worked with ``Applicative``, 
+this would allow code like:
+
+.. code-block:: haskell
+
+  f = pure g <*> a <*> b <*> c
 
 To be written like:
 
 .. code-block:: haskell
 
-  f = g a b c
+  f = pure g a b c
 
 And if it worked on ``Exp`` (from Template Haskell), code like this:
 
@@ -49,16 +109,22 @@ Could be written like:
 
 .. code-block:: haskell
 
+  map' = VarE 'map
+  mapE f xs = map' f xs
+
+  -- or
   mapE f xs = VarE 'map f xs
 
 Proposed Change Specification
 -----------------------------
 
-I propose a new extension called ``RebindableApplication``. When this
-extension is turned on, the juxtaposition syntax for function application
-``f a`` becomes syntactic sugar for ``f $ a``, where ``$`` is whatever ``$``
-is currently in scope. Operator application remains the  same (ex. ``f $ a``
-is not further desugared). To clarify these changes, the table below lists
+I propose a new extension called ``RebindableApplication``. 
+When this extension is turned on, the juxtaposition syntax for 
+function application ``f a`` becomes syntactic sugar for ``f $ a``, 
+where ``$`` is whatever ``$`` is currently in scope. 
+Operator application remains the same (ex. ``f $ a`` is not 
+further desugared). 
+To clarify these changes, the table below lists
 my proposed desugaring for each kind of application syntax.
 
 +-----------------------+------------------+-----------------------+
@@ -79,8 +145,37 @@ The idea is that only application in the plain juxtaposition syntax is
 rebindable, application found elsewhere remains the same.
 
 To rebind function application, one sets the ``$`` currently
-in scope. This can be done globally by declaring/importing a top-level
+in scope. This can be done globally by declaring or importing a top-level
 ``$`` and locally by using ``let`` or ``where``.
+
+To allow users to still use primitive application when necessary
+(such as with primitive types), I also propose there be new primitive 
+application operator ``$#``. 
+This operator simply desugars to primitive application when used. 
+As such, it would not be permitted to be use unsaturated. 
+To clarify, the table below shows how ``$#`` would be desugared.
+
++---------------------+------------+---------------------+
+| Use                 | Syntax     | Proposed Desugaring |
++=====================+============+=====================+
+| Unsaturated         | ``($#)``   | Prohibited          |
++---------------------+------------+---------------------+
+| Partially Saturated | ``($#) f`` | ``f``               |
++---------------------+------------+---------------------+
+| Fully Saturated     | ``f $# a`` | ``f a``             |
++---------------------+------------+---------------------+
+| Left Section        | ``(f $#)`` | ``f``               |
++---------------------+------------+---------------------+
+| Right Section       | ``($# a)`` | ``\f -> f a``       |
++---------------------+------------+---------------------+
+
+I propose that this ``$#`` operator be located in ``GHC.Exts``
+if it is implemented as an actual name and not built into GHC's syntax.
+I also propose that it should have the same fixity as ``$``.
+That is, it would appear to have the following definition:
+
+  infixr 0 $#
+  ($#) :: forall r1 r2 (a :: TYPE r2) (b:: TYPE r2). (a -> b) -> a -> b
 
 Examples
 --------
@@ -99,17 +194,48 @@ write the simplified examples shown in the motivation:
 Alternatively, we could use a type class and a global rebinding instead:
 
 .. code-block:: haskell
+   
+  import Data.Functor.Identity
+  import Data.Functor.Contravariant
+  import Control.Monad.Trans.Cont
+  import Language.Haskell.TH (Exp(..))
 
-  import qualified Prelude as P
+  import Prelude hiding (($))
+  import qualified Data.Function as F
 
-  class Applicable a b r where
-    ($) :: a -> b -> r
+  class Applicable f a b | f -> a b where
+    ($) :: f -> a -> b
 
-  instance (a' ~ a, b' ~ b) => Applicable (a -> b) a' b' where
-    ($) = (P.$)
+  instance Applicable (a -> b) a b where
+    ($) = (F.$)
 
-  instance (a ~ Exp, b ~ Exp) => Applicable Exp a b where
-    ($) = AppE
+  -- Newtype Examples
+
+  instance Applicable f a b => Applicable (Identity f) a b where
+    f $ a = runIdentity f $ a
+
+  instance Applicable (Predicate a) a Bool where
+    ($) = getPredicate
+
+  instance Applicable (Cont r a) (a -> r) r where
+    ($) = runCont
+
+  -- Match Example
+
+  instance Applicable (Match a r) a (BoolCont r) where
+    ($) = runMatch
+
+  instance Applicable (BoolCont r) r (r -> r) where
+    ($) = runBoolCont
+
+  -- We can now write this
+  hasCommaPrefix :: [Char] -> Bool
+  hasCommaPrefix (x:xs) = matchComma x False True
+
+  -- TH Example
+
+  instance Applicable Exp Exp Exp where
+    ($) = AppE 
 
   -- ``mapE = VarE 'map `AppE` f `AppE` xs`` can now become
   mapE :: Exp -> Exp -> Exp
@@ -118,7 +244,7 @@ Alternatively, we could use a type class and a global rebinding instead:
 Effect and Interactions
 -----------------------
 
-This proposal allows different application functions to
+This proposal allows different modes of function application to
 all share the same syntax, which I would argue allows users to write
 more concise (and, to a certain extent, clearer) code.
 
@@ -128,37 +254,45 @@ first-class syntactically (according to the definition Dijkstra outlined
 The juxtaposition notation is now merely syntactic sugar for an
 operator (namely ``$``).
 
+The ``$`` operator is often used to reduce parentheses in normal code.
+With the proposed primitive application operator, users of primitive functions
+will now be able to use ``$#`` for a similar purpose. For example:
+
+.. code-block:: haskell
+
+  peekWord16LE# addr# = W16# $#
+    uncheckedShiftL# (indexWord8OffAddr# addr# 1#) 8# `or#`
+    indexWord8OffAddr# addr# 0#
+
 Costs and Drawbacks
 -------------------
 
-I imagine that their will be some maintenance costs associated with
-the proposed extension -- though given that the proposal is purely
+I imagine that there will be some maintenance costs associated with
+the proposed extension -- though given that the proposal is essentially purely
 syntactic, I imagine such costs will be minor.
 
-For learners, the desugaring may be initially confusing, but I would
-argue that confusion will be mostly from long time Haskellers who are used
-to function application being built into the syntax.
-New users are just learning of the parallels between the
-juxtaposition syntax and ``$`` and thus do not have such distinctions
-ingrained.
-Thus, I would argue that they will likely find the desugaring much more
-straightforward (and possibly even expected).
+For learners, the new desugaring may be surprising.
+However, since new users are just learning of the similarities and differences 
+between the juxtaposition syntax and ``$``, they do not have original 
+distinctions ingrained.
+Thus, I argue that they will likely find the proposed desugaring much more
+straightforward and, possibly, even expected.
+Long time Haskellers, however, may find this confusing as they are most 
+used to function application being built into the syntax -- though, being
+experienced, they are also likely to adapt easier.
 
-The proposed desugaring does however come with a number of drawbacks due to
+The proposed desugaring does, however, come with a number of drawbacks due to
 the limitations of the function ``$``.
 Due to the restrictions of levity polymorphism, ``$`` can not be fully levity
 polymorphic. Thus modules with ``RebindableApplication`` can not use the
 juxtaposition syntax for primitive operations and constructors like ``I#``.
 Similar problems occur with higher-rank functions defined with ``RankNTypes``.
 
-I imagine these limitations will pose a major challenge to learning
-the ins and outs of ``RebindableApplication``, and I consider them a major
-weakness of the proposal overall.
-Unfortunately, there is not much that can be done about this at the moment.
-However, I intend to post a proposal soon that proposes an explicit application
-operator ``$#`` (which was described in previous versions of this proposal).
-If accepted, that operator could be used to mitigate these issues --
-problematic applications could simply use it instead.
+However, the proposed primitive application operator ``$#`` helps mitigate 
+these issues. Higher-rank functions and primitive operations can forgo the 
+juxtaposition syntax and use ``$#`` to apply arguments instead. While this
+may decrease readability in some cases, I believe it is best solution for
+now.
 
 Alternatives
 ------------
@@ -168,9 +302,9 @@ There are a number of possible alternatives, two of which I will discuss here.
 Do Nothing
 ^^^^^^^^^^
 
-We can always do nothing. This would require us to still use application
-operators like ``(<$>)`` to perform application on types outside the function
-arrow ``(->)``.
+We can always do nothing. This would mean newtype wrappers around functions
+would not be able to use the juxtaposition syntax and alternative application
+operators like ``(<$>)`` would still need to be explicit in all circumstances.
 
 Personally, I believe that this status quo is rather ugly and causes the
 language to give unjustified primacy to functions represented by the function
@@ -200,14 +334,11 @@ could desugar to
 Unresolved Questions
 --------------------
 
-The name of the extension given in the proposal i.e. ``RebindableApplication``
-could be changed if desired.
+The name of the extension given in the proposal (i.e. ``RebindableApplication``)
+and the symbol for primitive application (``$#``) could be changed if desired.
 
 
 Implementation Plan
 -------------------
 
 **TBD**
-
-Depending on the anticipated difficulty (hacking on GHC is rather new to me),
-I could potentially volunteer to implement this.
