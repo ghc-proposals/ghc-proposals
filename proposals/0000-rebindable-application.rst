@@ -136,9 +136,9 @@ my proposed desugaring for each kind of application syntax.
 +-----------------------+------------------+-----------------------+
 | Operator              | ``a <> b``       | ``a <> b``            |
 +-----------------------+------------------+-----------------------+
-| Left Section          | ``(e <>)``       | ``\x -> x <> e``      |
+| Left Section          | ``(a <>)``       | ``\x -> a <> x``      |
 +-----------------------+------------------+-----------------------+
-| Right Section         | ``(<> e)``       | ``\x -> e <> x``      |
+| Right Section         | ``(<> a)``       | ``\x -> x <> a``      |
 +-----------------------+------------------+-----------------------+
 
 The idea is that only application in the plain juxtaposition syntax is
