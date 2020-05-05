@@ -174,6 +174,8 @@ if it is implemented as an actual name and not built into GHC's syntax.
 I also propose that it should have the same fixity as ``$``.
 That is, it would appear to have the following definition:
 
+.. code-block:: haskell
+
   infixr 0 $#
   ($#) :: forall r1 r2 (a :: TYPE r2) (b:: TYPE r2). (a -> b) -> a -> b
 
