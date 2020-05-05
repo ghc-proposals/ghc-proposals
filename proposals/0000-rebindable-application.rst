@@ -136,13 +136,17 @@ my proposed desugaring for each kind of application syntax.
 +-----------------------+------------------+-----------------------+
 | Operator              | ``a <> b``       | ``a <> b``            |
 +-----------------------+------------------+-----------------------+
-| Left Section          | ``(a <>)``       | ``\x -> a <> x``      |
+| Left Section          | ``(a <>)``       | ``\x -> a <> x`` *    |
 +-----------------------+------------------+-----------------------+
 | Right Section         | ``(<> a)``       | ``\x -> x <> a``      |
 +-----------------------+------------------+-----------------------+
 
-The idea is that only application in the plain juxtaposition syntax is
-rebindable, application found elsewhere remains the same.
+Technically, the left section would actually desugared to ``(<>) e`` 
+(using primitive application) since GHC does not eta abstract 
+the left section so as to support the ``PostfixOperators`` extension. 
+Regardless, the point of the above table is to demonstrate that only 
+application  in the plain juxtaposition syntax is rebindable, application 
+found elsewhere remains the same. 
 
 To rebind function application, one sets the ``$`` currently
 in scope. This can be done globally by declaring or importing a top-level
