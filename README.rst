@@ -237,7 +237,6 @@ You can reach the committee by email at ghc-steering-committee@haskell.org.
 The current members, including their GitHub handle, when they joined and their role, are listed at:
 
 ======================  ====================================================  =======  =========
-Christopher Allen       `@bitemyapp <https://github.com/bitemyapp>`_          2017/02
 Vitaly Bragilevsky      `@bravit <https://github.com/bravit>`_                2018/09
 Joachim Breitner        `@nomeata <https://github.com/nomeata>`_              2017/02  secretary
 Iavor Diatchki          `@yav <https://github.com/yav>`_                      2017/02
@@ -261,6 +260,7 @@ Roman Leshchinskiy      `@rleshchinskiy <https://github.com/rleshchinskiy>`_  20
 Ben Gamari              `@bgamari <https://github.com/bgamari>`_              2017/02 - 2019/07
 Manuel M T Chakravarty  `@mchakravarty <https://github.com/mchakravarty>`_    2017/02 - 2019/07
 Sandy Maguire           `@isovector <https://github.com/isovector>`_          2019/07 - 2019/12
+Christopher Allen       `@bitemyapp <https://github.com/bitemyapp>`_          2017/02 - 2020/05
 ======================  ====================================================  =================
 
 
