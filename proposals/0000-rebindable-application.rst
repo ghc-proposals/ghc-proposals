@@ -143,7 +143,8 @@ my proposed desugaring for each kind of application syntax.
 
 Technically, the left section would actually desugared to ``(<>) e`` 
 (using primitive application) since GHC does not eta abstract 
-the left section so as to support the ``PostfixOperators`` extension. 
+the left section so as to support the ``PostfixOperators`` extension
+(see `Issue #18151 <https://gitlab.haskell.org/ghc/ghc/issues/18151>`_). 
 Regardless, the point of the above table is to demonstrate that only 
 application  in the plain juxtaposition syntax is rebindable, application 
 found elsewhere remains the same. 
@@ -151,37 +152,6 @@ found elsewhere remains the same.
 To rebind function application, one sets the ``$`` currently
 in scope. This can be done globally by declaring or importing a top-level
 ``$`` and locally by using ``let`` or ``where``.
-
-To allow users to still use primitive application when necessary
-(such as with primitive types), I also propose there be new primitive 
-application operator ``$#``. 
-This operator simply desugars to primitive application when used. 
-As such, it would not be permitted to be use unsaturated. 
-To clarify, the table below shows how ``$#`` would be desugared.
-
-+---------------------+------------+---------------------+
-| Use                 | Syntax     | Proposed Desugaring |
-+=====================+============+=====================+
-| Unsaturated         | ``($#)``   | Prohibited          |
-+---------------------+------------+---------------------+
-| Partially Saturated | ``($#) f`` | ``f``               |
-+---------------------+------------+---------------------+
-| Fully Saturated     | ``f $# a`` | ``f a``             |
-+---------------------+------------+---------------------+
-| Left Section        | ``(f $#)`` | ``f``               |
-+---------------------+------------+---------------------+
-| Right Section       | ``($# a)`` | ``\f -> f a``       |
-+---------------------+------------+---------------------+
-
-I propose that this ``$#`` operator be located in ``GHC.Exts``
-if it is implemented as an actual name and not built into GHC's syntax.
-I also propose that it should have the same fixity as ``$``.
-That is, it would appear to have the following definition:
-
-.. code-block:: haskell
-
-  infixr 0 $#
-  ($#) :: forall r1 r2 (a :: TYPE r2) (b:: TYPE r2). (a -> b) -> a -> b
 
 Examples
 --------
@@ -247,6 +217,22 @@ Alternatively, we could use a type class and a global rebinding instead:
   mapE :: Exp -> Exp -> Exp
   mapE f xs = VarE 'map f xs
 
+To recover the behavior of primitive application, one can use the ``$``
+operator from ``Prelude``. If better support for unlifted types is needed,
+one can also define a more primitive application operator ``$#`` like so:
+
+.. code-block:: haskell
+
+  infixl 9 $#
+  ($#) :: forall a. a -> a
+  ($#) = id
+
+While this ``$#`` works with unlifted types, it unfortunately does not yet 
+work for higher-rank types (i.e., those produced with ``RankNTypes``), though 
+this may be resolved if the proposal in 
+`#274 <https://github.com/ghc-proposals/ghc-proposals/pull/274>`_ 
+gets accepted.
+
 Effect and Interactions
 -----------------------
 
@@ -259,16 +245,6 @@ first-class syntactically (according to the definition Dijkstra outlined
 `here <http://www.the-magus.in/Publications/ewd.pdf>`_).
 The juxtaposition notation is now merely syntactic sugar for an
 operator (namely ``$``).
-
-The ``$`` operator is often used to reduce parentheses in normal code.
-With the proposed primitive application operator, users of primitive functions
-will now be able to use ``$#`` for a similar purpose. For example:
-
-.. code-block:: haskell
-
-  peekWord16LE# addr# = W16# $#
-    uncheckedShiftL# (indexWord8OffAddr# addr# 1#) 8# `or#`
-    indexWord8OffAddr# addr# 0#
 
 Costs and Drawbacks
 -------------------
@@ -294,11 +270,14 @@ polymorphic. Thus modules with ``RebindableApplication`` can not use the
 juxtaposition syntax for primitive operations and constructors like ``I#``.
 Similar problems occur with higher-rank functions defined with ``RankNTypes``.
 
-However, the proposed primitive application operator ``$#`` helps mitigate 
-these issues. Higher-rank functions and primitive operations can forgo the 
-juxtaposition syntax and use ``$#`` to apply arguments instead. While this
-may decrease readability in some cases, I believe it is best solution for
-now.
+However, this problem can be somewhat mitigated with a operator like the 
+``$#``  mentioned in the Examples section. 
+Unfortunately, It does not solve  the ``RankNTypes`` problem (yet), 
+and, as such, I consider this aspect to the weakest part of the proposal. 
+To resolve this, I proposed the magic ``$#`` described below in the 
+Alternatives section, but in the course of discussing this proposal that was 
+thought to maybe be a bit too extreme (hence it being demoted to an 
+alternative).
 
 Alternatives
 ------------
@@ -336,6 +315,36 @@ could desugar to
 .. code-block:: haskell
 
   let map' = VarE 'map, ($) = AppE in map' $ f $ xs
+
+Magic ``$#``
+^^^^^^^^^^^^
+
+It is not currently possible to recover exactly the behavior of 
+primitive application in a module with ``RebindableApplication`` enabled. 
+The ``$#`` mentioned in the Examples section helps but does not support 
+``RankNTypes``. 
+To solve this, we could add new magic application operator ``$#``.
+This operator would simply desugar to primitive application when used. 
+As such, it would not be permitted to be use unsaturated. 
+To clarify, the table below shows how ``$#`` would be desugared.
+
++---------------------+------------+---------------------+
+| Use                 | Syntax     | Proposed Desugaring |
++=====================+============+=====================+
+| Unsaturated         | ``($#)``   | Prohibited          |
++---------------------+------------+---------------------+
+| Partially Saturated | ``($#) f`` | ``f``               |
++---------------------+------------+---------------------+
+| Fully Saturated     | ``f $# a`` | ``f a``             |
++---------------------+------------+---------------------+
+| Left Section        | ``(f $#)`` | ``f``               |
++---------------------+------------+---------------------+
+| Right Section       | ``($# a)`` | ``\f -> f a``       |
++---------------------+------------+---------------------+
+
+This ``$#`` operator could be located in ``GHC.Exts``
+if it is implemented as an actual name and not built into GHC's syntax.
+
 
 Unresolved Questions
 --------------------
