@@ -10,9 +10,9 @@ This proposal is [discussed at this pull request](https://github.com/ghc-proposa
 
 # Quick Look Impredicativity
 
-`ImpredicativeTypes` is one of those extensions which are not usually needed, but is unavoidable once you require it. Alas, `ImpredicativeTypes` has been in a half-broken state for quite some time, and not officially supported. This proposal describes a new approach to impredicative type checking which is (1) powerful enough for the most common use cases, and (2) predictable, so errors can be readily explained. As we shall see, the desire for backwards compatibility forces us to introduce another extension, `ContravariantFunctions`.
+`ImpredicativeTypes` is one of those extensions which are not usually needed, but is unavoidable once you require it. Alas, `ImpredicativeTypes` has been in a half-broken state for quite some time, and not officially supported. This proposal describes a new approach to impredicative type checking which is (1) powerful enough for the most common use cases, and (2) predictable, so errors can be readily explained.
 
-This proposal is based on this [paper draft](https://www.dropbox.com/s/hxjp28ym3lptmxw/quick-look-steps.pdf?dl=0), which in turn borrows many ideas from [*Guarded impredicative polymorphism*](https://www.microsoft.com/en-us/research/publication/guarded-impredicative-polymorphism/) (published in PLDI'18).
+This proposal is based on this [paper draft](https://www.microsoft.com/en-us/research/publication/a-quick-look-at-impredicativity/), which in turn borrows many ideas from [*Guarded impredicative polymorphism*](https://www.microsoft.com/en-us/research/publication/guarded-impredicative-polymorphism/) (published in PLDI'18).
 
 ## Motivation
 
@@ -45,9 +45,9 @@ Furthermore, if we want to replace an expression such as `view l` with `view $ l
 
 ## Proposed Change Specification
 
-This proposal is structured in two parts. A precise specification can be found in this [paper draft](https://www.dropbox.com/s/hxjp28ym3lptmxw/quick-look-steps.pdf?dl=0), which would most surely lead to an actual paper submitted to a research conference. Below you can find a more approachable description, which could ultimately lead to a section in the GHC Users Guide.
+This proposal is structured in two parts. A precise specification can be found in this [paper draft](https://www.microsoft.com/en-us/research/publication/a-quick-look-at-impredicativity/), which would most surely lead to an actual paper submitted to a research conference. Below you can find a more approachable description, which could ultimately lead to a section in the GHC Users Guide.
 
-Any programmer who does not enable `ImpredicativeTypes` is unaware of the contents of this proposal (with a small caveat for users of `RankNTypes`, see [lack of contravariance](#rankntypes-and-lack-of-contravariance) below): impredicative instantiation is *not* allowed (rank-n types do not contradict that statement, since there is no instantiation going on during their type checking). In particular, type checking an application `e_0 e_1 ... e_n` in done in the following steps:
+Any programmer who does not enable `ImpredicativeTypes` is unaware of the contents of this proposal: impredicative instantiation is *not* allowed (rank-n types do not contradict that statement, since there is no instantiation going on during their type checking). In particular, type checking an application `e_0 e_1 ... e_n` in done in the following steps:
 
 1. *Infer* the type of `e_0`, which we shall call `sigma_0`,
 2. Expose the first *n* argument types by instantiating `sigma_0` into a type of the form `sigma_1 -> ... -> sigma_n -> sigma_result`,
@@ -70,11 +70,9 @@ Another way to look at this proposal is that each application is type checked *t
 
 One important feature of Haskell's type system that "quick look" uses is the invariance of type constructors. In short, the subsumption rules ensure that if, for example, `Maybe t` is a more polymorphic than `Maybe s`, it must be the case that `t` equals `s`. This property holds for every type constructor except for function types, which require a slightly more complex handling. The proposed inference algorithm never tries to perform any complicated analysis on other types: impredicativity must be the *only obvious* solution to make the program type check (or as we say in the paper, "impredicativity is never guessed").
 
-To ease the transition from fully contravariant functions to [non-contravariant ones](#rankntypes-and-lack-of-contravariance) we propose to add another extension to GHC, called `ContravariantFunctions`, which should be disabled by default. When the extension is enabled, subsumption checking is done using full contravariance of function types. This means that `RankNTypes` + `ContravariantFunctions` behaves the same as the old `RankNTypes`.
-
 ## Examples
 
-Several examples can be found in the [paper draft](https://www.dropbox.com/s/hxjp28ym3lptmxw/quick-look-steps.pdf?dl=0). Let us review the main example, `(\x -> x) : ids`, where `ids :: [forall a. a -> a]` from the eyes of the "approachable" description.
+Several examples can be found in the [paper draft](https://www.microsoft.com/en-us/research/publication/a-quick-look-at-impredicativity/). Let us review the main example, `(\x -> x) : ids`, where `ids :: [forall a. a -> a]` from the eyes of the "approachable" description.
 
 1. We infer the type of the head of the application, `(:) :: forall a. a -> [a] -> [a]`.
 2. We expose two arguments, which leads to the type `alpha -> [alpha] -> [alpha]` where `alpha` is a fresh unification variable.
@@ -94,47 +92,6 @@ As discussed several times throughout this proposal, its goal is to give a clear
 ### `TypeApplications`
 
 We deem the interaction with `TypeApplications` as a very important one; the goal is for our specification to benefit from user-written types as much as possible. We want `(:) @(forall a. a -> a) (\x -> x) []` to work, without the need of an additional type application in `[]`. The draft paper details the interaction between those features in depth.
-
-### `RankNTypes` and lack of contravariance
-
-The main backwards-incompatible change of the "quick look impredicativity" rules described in the [paper draft](https://www.dropbox.com/s/hxjp28ym3lptmxw/quick-look-steps.pdf?dl=0) is the loss of *contravariance of function types*. That is, it no longer holds that:
-
-`(Int -> Int) -> R is a subtype of (forall a. a -> a) -> R`
-
-We need to have this restriction in place because we rely on invariance of type constructors to perform well-behaved guesses. If we want to have contravariance of function types, we have to remove that position from the set of places from which "quick look" can infer. In turn, that means that inferring the right instantiation for function combinators such as `($) :: (a -> b) -> a -> b` or `(.) :: (b -> c) -> (a -> b) -> a -> c` becomes impossible since all types are under the function type constructor.
-
-The proposal is to remove contravariance of function types **altogether** from the compiler, not only when `ImpredicativeTypes` is enabled (there are other alternatives, as discussed below). **As a result, this proposal affects not only users of `ImpredicativeTypes`, but also users of `RankNTypes`, effectively making this proposal not 100% backwards compatible.**
-
-Note anyway that the support for contravariance in GHC is really fragile. Take for example the functions `choose :: forall a. (a -> Bool) -> (a -> Bool) -> Bool`, `f :: (Bool -> Bool) -> Bool` and `g :: (forall a. a -> a) -> Bool`. In theory we can accept the expressions `choose f g` and `choose g f` if we instantiate `a` with `(forall a. a -> a)`. Here is an excerpt of a GHCi session which shows that the one of the expressions is accepted and the other is not:
-
-```text
-Prelude> :set -XRankNTypes -XImpredicativeTypes
-Prelude> choose :: (a -> Bool) -> (a -> Bool) -> Bool ; choose = undefined
-Prelude> f :: (Bool -> Bool) -> Bool ; f = undefined
-Prelude> g :: (forall a. a -> a) -> Bool ; g = undefined
-Prelude> :t choose f g
-
-<interactive>:1:10: error:
-    • Couldn't match type ‘Bool -> Bool’ with ‘forall a. a -> a’
-      Expected type: (Bool -> Bool) -> Bool
-        Actual type: (forall a. a -> a) -> Bool
-    • In the second argument of ‘choose’, namely ‘g’
-      In the expression: choose f g
-Prelude> :t choose g f
-choose g f :: Bool
-```
-
-There is a simple workaround that works most of the time under this proposal: eta-expansion (you might need to eta-expand more than once, though). Taking the `choose`, `f`, and `g` functions defined above,in a non-contravariant world we need to eta-expand `f` to make it work: `choose (\x -> f x) g`; now the `x` is assigned type `forall a. a -> a`, which is then instantiated to `Int -> Int` before passing it to `f`.
-
-### The `ContravariantFunctions` extension
-
-After a preliminary assessment of which packages still compile under the new policy of non-contravariant functions, most of the packages using either `RankNTypes` or `ImpredicativeTypes` continue to compile. The main problem comes from some usage patterns within the `Cabal` library. This library often uses functions of the form:
-
-```haskell
-f :: ( (... -> CabalIO a) -> ...) -> ...
-```
-
-where `CabalIO a` is defined as `HasCallStack => IO a`. That means that whereas before we could pass a function `g` as argument, now we have to do something akin to `\... t ... -> g (\... x ... -> t ... x ...)`, which is quite annoying. At the moment of writing, though, only `cabal-doctest` seems to be really problematic, as many other packages in the ecosystem relies on it. To ease the transition, we propose the `ContravariantFunctions` extension discussed above.
 
 ### The typing rule for `($)`
 
@@ -166,12 +123,6 @@ As discussed below, there is already a branch of GHC in which these changes have
 
 `ImpredicativeTypes` has always been an advanced feature of the language. However, once you arrive at it, programmers often ask themselves: "what is stopping the compiler from accepting this?". This proposal gives an answer to that question, with a succint explanation: "impredicative is never guessed, it must be obvious from the simple parts of each application".
 
-The main drawback is the loss of contravariance that this proposal brings with it, unless an extension is enabled. It is arguable whether contravariance of function types is something a beginner (or even intermediate) Haskeller expects, since up to that point all types are compared by equality. However, it should be possible during error reporting to scan whether a type error talks about two types which could be related if contravariance was taking into account, and report a message on the lines of:
-
-```text
-Hint: try to eta-expand the second argument.
-```
-
 ## Alternatives
 
 The main alternative is to keep the *status quo*: `ImpredicativeTypes` is there, but never officially supported. However, that may bring surprising behavior, which may change unexpectedly with a new GHC release.
@@ -181,8 +132,6 @@ Another possibility is to drop impredicative type inference altogether, and expe
 ```haskell
 (++) @(forall a. a -> a) ids ([] @(forall a. a -> a))
 ```
-
-Another alternative is to enable `ContravariantFunctions` whenever `RankNTypes` is enabled but `ImpredicativeTypes` is not (by making `ContravariantFunctions` enabled by default and making `ImpredicativeTypes` imply `NoContravariantFunctions`). The main disadvantage is that code that compiles under the former flag may stop compiling if you add the latter.
 
 ### The dollar rule
 
@@ -194,4 +143,4 @@ Right now the "quick look" phase does not produce any errors on its own, but not
 
 ## Implementation Plan
 
-The proposal has been implemented in a branch, and is under code review in [this merge request](https://gitlab.haskell.org/ghc/ghc/merge_requests/1659).
+A previous version of this proposal has been implemented in [this merge request](https://gitlab.haskell.org/ghc/ghc/merge_requests/1659). Simon PJ is working on an implementation of the new version. 
