@@ -27,8 +27,8 @@ exceptions. This proposal endeavors to fix this `long-standing
 <https://www.youtube.com/watch?v=J0c4L-AURDQ>`_ problem.
 
 In short, we want to ensure that exceptions report provenance information *by
-default* without requiring action on the part of the ``throw``-er by leveraging the
-existing mechanisms for collecting backtraces listed above.
+default* without requiring action on the part of the ``throw``-er by leveraging
+the existing mechanisms for collecting backtraces listed above.
 
 Proposed Change Specification
 -----------------------------
@@ -206,7 +206,7 @@ mechanism at once. It's possible that we might want a more general definition
 which allows use of more than one mechanism at once.
 
 Alternatively, the community might rather choose one of the backtrace
-mechanisms discussed about and use this mechanism exclusively in exception
+mechanisms discussed above and use this mechanism exclusively in exception
 backtraces. However, we suspect that a single mechanism won't be sufficient:
 
 * there have been `previous efforts
