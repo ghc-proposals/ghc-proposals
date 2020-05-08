@@ -28,7 +28,12 @@ exceptions. This proposal endeavors to fix this `long-standing
 
 In short, we want to ensure that exceptions report provenance information *by
 default* without requiring action on the part of the ``throw``-er by leveraging
-the existing mechanisms for collecting backtraces listed above.
+the existing mechanisms for collecting backtraces listed above. Furthermore, we
+want to ensure that this information is available for consumption in structured
+form by the user program, to allow use by logging libraries (for instance, see
+`kaptip-raven #1
+<https://github.com/cachix/katip-raven/issues/1#issuecomment-625389463>`_ and
+the like.
 
 Proposed Change Specification
 -----------------------------
@@ -220,6 +225,12 @@ backtraces. However, we suspect that a single mechanism won't be sufficient:
 * native stack unwinding approaches offer stacktraces that are necessarily
   approximate (due to tail calls) and can be harder to interpret but have no
   runtime overhead in the non-failing case.
+
+Yet another design would be to relegate handling and reporting of backtraces
+completely to the runtime system. This would avoid the thorny design questions
+surrounding changing ``SomeException`` but would we would lose out on many of
+the benefits of offering structured backtraces to the user.
+
 
 Unresolved Questions
 --------------------
