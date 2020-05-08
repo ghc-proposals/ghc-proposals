@@ -116,7 +116,7 @@ the ``HasCallStack``, cost-center stack, and execution stack cases.
 Making backtraces ubiquitous
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-While these functions are useful building blocks, they do not address
+While these functions are useful building blocks, they do not
 address the most common debugging scenario: searching for an exception
 thrown by a third-party library (which likely calls the old ``throw`` and
 consequently would not produce a backtrace). For this we propose a pragmatic,
@@ -184,8 +184,8 @@ in surprising behavior when manipulated by more than one actor.
 
 This being said, we consider this approach to be a compromise which reflects
 the fact that stack traces are primarily a debugging tool and somewhat of a
-cross-cutting concern. While a stateful approach would be preferred, we believe
-that this compromise is a significant improvement over the status quo.
+cross-cutting concern. While a stateless approach would be preferred, we
+believe that this compromise is a significant improvement over the status quo.
 
 Alternatives
 ------------
