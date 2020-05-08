@@ -26,6 +26,10 @@ information), currently we do not have a story for attaching such backtraces to
 exceptions. This proposal endeavors to fix this `long-standing
 <https://www.youtube.com/watch?v=J0c4L-AURDQ>`_ problem.
 
+In short, we want to ensure that exceptions report provenance information *by
+default* without requiring action on the part of the ``throw``-er by leveraging the
+existing mechanisms for collecting backtraces listed above.
+
 Proposed Change Specification
 -----------------------------
 
