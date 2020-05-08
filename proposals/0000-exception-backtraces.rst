@@ -104,7 +104,7 @@ designed to capture them all: ::
     instance Show Backtrace
 
 With such a type we can easily write a variant of ``throwIO`` that, for
-instance, attaches a DWARF backtrace: ::
+instance, attaches a ``HasCallStack`` backtrace: ::
 
     -- | Throws an exception with a 'HasCallStack' backtrace.
     throwIOWithCallStack :: (Exception e, HasCallStack) => e -> IO a
@@ -133,6 +133,7 @@ for backtrace collection in ``mkSomeExceptionWithLocation``: ::
       | ExecutionStackBacktrace
 
     -- | Set the global backtrace mechanism.
+    -- (this state would be represented internally as a simple global IORef.
     setGlobalBacktraceMechanism :: BacktraceMechanism -> IO ()
 
 The ``collectBacktrace`` primitive referenced in the previous section then
