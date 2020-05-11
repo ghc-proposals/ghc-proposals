@@ -123,7 +123,7 @@ instance C Int where
 
 The instance `C Int` in B.hs-boot is legal, does not imply `instance F Int = Int -> Int`, despite the default associated type declaration in the original definition of the class `C`. Indeed, the final `instance C Int` in B.hs (shown above) might use an entirely different type instance than the default.
 
-This is all the same as class methods. The existence of a default method for op in the defn of C does not imply that the C Int instance (defined in B.hs presumably) uses that default method.
+This is all the same as class methods. The existence of a default method for `op` in the definition of `C` does not imply that the `C Int` instance (defined in B.hs presumably) uses that default method.
 
 ## Effect and Interactions
 
