@@ -113,6 +113,7 @@ Alternatives
 - Tweaks to the exact flags:
 
   - Use the original warning categories instead of ``deferred-*`` variants for the deferred errors.
+    (``missing-fields`` would be used instead of a new ``incomplete-record-construction`` with identical meaning.)
 
   - Use one ``deferred-incompleteness`` warning category.
 
