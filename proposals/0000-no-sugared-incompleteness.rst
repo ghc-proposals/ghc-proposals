@@ -23,14 +23,14 @@ The culture around Haskell has become one striving for programming correctness, 
 For those learning Haskell, learning this mindset is sometimes as important and novel as learning the language itself.
 We should help those learners by trying to guide in that direction every step of the code they right.
 
-Haskell's culture wasn't always that way, however, and we do however have old syntax that can not only introduces run-time errors, but does so implicitly.
+Haskell's culture wasn't always that way, however, and we do however have old syntax that can not only introduce run-time errors, but does so implicitly.
 Incomplete pattern matches, incomplete record updates, etc., are all un-asked-for "conveniences" that just get in the way of a programmer trying to understand where their program can go wrong.
 
 I think most of us would agree with the above paragraph.
 But many of us also would say it's a solved problem, because we have ``-Werror`` to catch all these things.
 Why write yet another proposal for yet another extension when this is solved problem?
 
-Well, I just don't think ``-Werror`` is good enough.
+Well, I just don't think ``-Werror`` is the right thing to rely on.
 Partial code is to me just worse than the other things we warn for, valuable as I think those other warnings are.
 Also, whereas I think of most warnings as stemming from extra analysis to find flaws in otherwise good programs, partial sugar seams like the opposite case where the compiler does extra work adding the run-time error throwing to make broken program run.
 
@@ -39,7 +39,7 @@ Nobody would propose type checking is some extraneous analysis GHC need not do b
 The "defer" in the name makes clear we are getting what is normally a compile-time check and deferring it to run-time.
 Whether for quick slap-dash programming, or arguing with proponents of untyped languages, ``-fdefered-type-errors`` allows GHC to both express its opinion and yet also not straight-jacket-ing the user into any one policy.
 
-My idea is to do the same thing for incompleteness checking ``
+My idea is to do the same thing for incompleteness checking: it should be mandatory, but as a debugging aid their is a flag to defer the compile time error into a run-time error.
 
 Proposed Change Specification
 -----------------------------
@@ -102,7 +102,7 @@ Effect and Interactions
 Costs and Drawbacks
 -------------------
 
-- In the short term, we have far to many knobs to control the same thing.
+- In the short term, we have far too many knobs to control the same thing.
   But, my hope is that in future versions of the language ``SugaredIncompleteness`` can be deprecated and then removed, reducing the number of knobs back to something sane.
 
 - Somebody is going to think this has something to do with Kurt Gödel unless we choose a different name.
