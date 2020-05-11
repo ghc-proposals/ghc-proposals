@@ -80,31 +80,50 @@ We propose that any instance in backpack signatures and hs-boot files, places no
 
 ## Examples
 
-Given the `module A` from the motivation:
+A.hs
+```
+module A where
 
-This is valid:
+class C a where
+  type F a
+  type F a = a -> a    -- Default instance
+  op :: a -> a
 
-```haskell
--- in B.hs-boot
-module B where
-import A
-data X
-instance C X
-  -- T is unconstrained
-  -- f is unconstrained
+  foo :: C a => [a] -> F a
+  foo = blah
 ```
 
-This is not:
-
-```haskell
--- in B.hs-boot
+B.hs-boot
+```
 module B where
 import A
-data X
-instance C X
-  type T x = [Bool] -- error for now, not yet implemented
-  f _ = 7 -- error for now, not yet implemented
+instance C Int
 ```
+
+C.hs
+```
+module C where
+import {-# SOURCE #-} B
+
+wim :: [Int] -> F Int
+wim = foo                 -- OK
+
+wam :: [Int] -> Int -> Int
+wam = foo                 -- NOT OK
+```
+
+B.hs
+```
+module B where
+import A
+instance C Int where
+  type F Int = [Int]
+  op = reverse
+```
+
+The instance `C Int` in B.hs-boot is legal, does not imply `instance F Int = Int -> Int`, despite the default associated type declaration in the original definition of the class `C`. Indeed, the final `instance C Int` in B.hs (shown above) might use an entirely different type instance than the default.
+
+This is all the same as class methods. The existence of a default method for op in the defn of C does not imply that the C Int instance (defined in B.hs presumably) uses that default method.
 
 ## Effect and Interactions
 
