@@ -121,8 +121,10 @@ Proposed Change Specification
 I propose a new extension called ``RebindableApplication``. 
 When this extension is turned on, the juxtaposition syntax for 
 function application ``f a`` becomes syntactic sugar for ``f $ a``, 
-where ``$`` is whatever ``$`` is currently in scope. 
-Operator application remains the same (ex. ``f $ a`` is not 
+where ``$`` is whatever ``$`` is currently in scope.
+Function application still retains its original (left) fixity 
+and precedence (ex. ``f a b`` desugars to ``(f $ a) $ b``).
+Operator application also remains the same (ex. ``f $ a`` is not 
 further desugared). 
 To clarify these changes, the table below lists
 my proposed desugaring for each kind of application syntax.
