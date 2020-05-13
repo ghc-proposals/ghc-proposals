@@ -79,11 +79,24 @@ In ``data`` or ``newtype`` declarations with GADT-syntax and a standalone kind
 signature, if no kind signature follows the parameter list following the
 ``data`` or ``newtype`` keyword, the status quo is that ``n`` parameter names
 must be given in this list, assuming the standalone kind signature specifies an
-``n``-ary kind. These parameters may have inline kind signatures matching the
+``n``-ary kind. These parameters may have individual inline kind signatures, matching the
 standalone kind signature.
 
 The change suggested in this proposal instead allows between zero and ``n``
-(inclusive) parameter names to be given.
+(inclusive) parameter names to be given, regardless of whether or not a kind signature
+follows the parameter list.
+
+Alternatively, the inline kind signature of the declaration may be
+a wildcard (``_``), which allows users to more explicitly state that the kind is determined by the
+standalone kind signature.
+
+In ``data instance`` declarations with GADT syntax, this also works: If a standalone kind signature has been given
+to the ``data family`` declaration, then a data instance declaration without a kind signature (or with a
+wildcard as kind signature) is assumed
+to have the most general kind possible, i.e. the one given by the standalone kind signature. Note that
+this will result in an error if the kind specified by the standalone kind signature has a non-* return kind.
+
+In the context of this proposal, declarations without constructors are also treated as GADT-style declarations.
 
 Examples
 --------
@@ -96,12 +109,14 @@ are all accepted:
   data Foo
   data Foo a
   data Foo a b
+  data Foo :: _
+  data Foo a :: _
+  data Foo a b :: _
   data Foo :: Type -> Bool -> Type
   data Foo a :: Bool -> Type
   data Foo a b :: Type
 
-As well as any variations that include inline kind signatures for ``a`` or
-``b``.
+As well as any variations that include inline kind signatures for ``a`` or ``b``.
 
 There are some illustrative real-world examples in the singletons library that
 already use standalone kind signatures today. Old lines are prefixed with
@@ -122,10 +137,21 @@ already use standalone kind signatures today. Old lines are prefixed with
   + newtype WrappedSing where
       WrapSing :: forall k (a :: k). { unwrapSing :: Sing a } -> WrappedSing a
 
-    -- Empty data declaration (also GADT-syntax)
+    -- Empty data declaration (also treated as GADT-syntax)
     type TyFun :: Type -> Type -> Type
   - data TyFun a b
   + data TyFun
+  
+  
+While less useful, this can also be used for data families:
+
+::
+
+  data family F1 :: Bool -> Type
+  data instance F1 -- kind: Bool -> Type
+  
+  data family F2 :: Bool -> k
+  data instance F2 -- error due to non-* return kind
 
 Effect and Interactions
 -----------------------
@@ -137,17 +163,23 @@ implicitly guarded behind the ``-XStandaloneKindSignatures`` extension.
 Costs and Drawbacks
 -------------------
 
-The proposed change is a fairly minor one that doesn't affect the Parser and is
-very similar to already existing behaviour for inline kind signatures,
-so the implementation and maintenance costs should be low.
+This is a fairly minor change, since the compiler already has to ensure that the standalone kind
+signature matches the inline kind signature. As such, the implementation and maintenance costs
+should be low.
 
 Alternatives
 ------------
-None aside from keeping the status quo.
+- Fully partial kind signatures could be allowed, rather than just wildcards. Given the marginal
+  benefit, this does not seem to be worth it.
+- Between making it possible to leave off the kind signature, and to have it be a wildcard, one of these
+  two could be dropped. The main reason to keep the first is brevity, the main reason to keep the second
+  is allowing the user to be explicit.
+- These changes could only apply to declarations that have not been given any paramaters, rather than zero to
+  ``n`` parameters.
 
 Unresolved Questions
 --------------------
-None.
+Should ``-XPartialTypeSignatures`` be required for Wildcards?
 
 
 Implementation Plan
