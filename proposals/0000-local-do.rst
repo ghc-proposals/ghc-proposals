@@ -979,7 +979,7 @@ to be more flexible about how builders are used. For instance,
 
   (f builder).do { stmts }
 
-where ``f`` is some transformer on builders. It is no possible to be so
+where ``f`` is some transformer on builders. It is not possible to be so
 succint with ``TypeClass.do``.
 
 Related work
