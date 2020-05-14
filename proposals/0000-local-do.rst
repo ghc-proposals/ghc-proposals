@@ -54,6 +54,296 @@ When ``-XQualifiedDo`` is activated, the syntax of the ``do`` notation is change
 
 ::
 
+  <lexp> ⟶ [modid.]do
+
+where ``modid`` stands for some module name.
+
+The additional module name is called the qualifier of the do-expression.
+
+The semantics of ``do`` notation statements is given as follows (using
+``-XLambdaCase`` notation):
+
+* The ``x <- u`` statement uses ``(modid.>>=)``
+
+  ::
+
+    M.do { x <- u; stmts }  =  u M.>>= \x -> M.do { stmts }
+
+* The ``u`` statement uses ``modid.(>>)``
+
+  ::
+
+    M.do { u; stmts }  =  u M.>> M.do { stmts }
+
+* The a ``pat <- u`` statement uses ``M.fail`` for the failing case,
+  if such a case is needed
+
+  ::
+
+    M.do { pat <- u; stmts }  =  u M.>>= \case
+      { pat -> M.do { stmts }
+      ; _ -> M.fail "…"
+      }
+
+  If the pattern cannot fail, then we don't need to use ``M.fail``.
+
+  ::
+
+    M.do { pat <- u; stmts }  =  u M.>>= \case pat -> M.do { stmts }
+
+* ``-XApplicativeDo`` uses ``(M.<$>)``, ``(M.<*>)`` and ``M.join`` (this
+  assumes that the applicative-do grouping has been performed)
+
+  ::
+
+    M.do { (x1 <- u1 | … | xn <- un); return e }  =
+      (\x1 … xn -> e) M.<$> u1 M.<*> … M.<*> un
+
+    M.do { (x1 <- u1 | … | xn <- un); stmts }  =
+      M.join (\x1 … xn -> M.do { stmts }) M.<$> u1 M.<*> … M.<*> un
+
+
+  Note that ``M.join`` is only needed if the final expression is
+  not identifiably a ``return``.
+
+  When the applicative statements contain nested statements (see the
+  `wiki page
+  <https://gitlab.haskell.org/ghc/ghc/wikis/applicative-do>`_ for a
+  complete description of applicative-do statements), we also need a
+  ``M.return``. *e.g.*
+
+  ::
+
+    M.do { ({stmt1; …; stmtn} {x1; …; xn} | y <- u) ; return e }  =
+      (\(x1,…,xn) y -> e) <$> (M.do { stmt1; …; stmtn; M.return (x1, …, xn)}) <*> u
+
+*  With ``-XRecursiveDo``, ``rec`` blocks use ``M.mfix`` and ``M.return``:
+
+   ::
+
+     M.do { rec { x1 <- u1; … ; xn <- un }; stmts }  =
+       M.do
+       { (x1, …, xn) <- M.mfix (\~(x1, …, xn) -> M.do { x1 <- u1; …; xn <- un; M.return (x1, …, xn)})
+       ; stmts
+       }
+
+If a name ``M.op`` is required by the desugaring process (and only if it's required!) but the name is not in scope, an error message is produced:
+
+* “Desugaring statement <stmt> requires <M.op> which is not in scope”
+
+The qualified operations are subject to the same type restrictions as their counterparts with ``-XRebindableSyntax``.
+
+When the qualifier ``modid.`` is omitted, the meaning of ``do { … }`` is the
+same as if ``-XQualifiedDo`` is *not* in effect.
+
+Examples
+--------
+
+``-XQualifiedDo`` does not affect ``return`` in the monadic ``do`` notation.
+
+::
+
+  import qualified Some.Monad.M as M
+
+  boolM :: (a -> M.M Bool) -> b -> b -> a -> M.M b
+  boolM p a b x = M.do
+      px <- p x     -- M.>>=
+      if px then
+        return b    -- Prelude.return
+      else
+        M.return a  -- M.return
+
+``-XQualifiedDo`` does not affect explicit ``(>>=)`` in the monadic ``do`` notation.
+
+::
+
+  import qualified Some.Monad.M as M
+  import Data.Bool (bool)
+
+  boolMM :: (a -> M.M Bool) -> M b -> M b -> a -> M.M b
+  boolMM p ma mb x = M.do
+      p x >>= bool ma mb   -- Prelude.>>=
+
+Nested ``do`` blocks do not affect each other meanings.
+
+::
+
+  import qualified Some.Monad.M as M
+
+  f :: M.M SomeType
+  f = M.do
+      x <- f1                 -- M.>>=
+      f2 (do y <- g1          -- Prelude.>>=
+             g2 x y
+         )
+    where
+      f1 = ...
+      f2 m = ...
+      g1 = ...
+      g2 x y = ...
+
+An example of linear ``do`` blocks follows, mixed with non-linear
+``do``.
+
+::
+
+  {-# LANGUAGE LinearTypes #-}
+  {-# LANGUAGE NoImplicitPrelude #-}
+  module Control.Monad.Linear (Monad(..)) where
+
+  class Monad m where
+    return :: a #-> m a
+    (>>=) :: m a #-> (a #-> m b) #-> mb
+
+  -----------------
+
+  module M where
+
+  import qualified Control.Monad.Linear as Linear
+
+  f :: Linear.Monad m => a #-> m b
+  f a = Linear.do
+    b <- someLinearFunction a Linear.>>= someOtherLinearFunction
+    c <- anotherLinearFunction b
+    Linear.return c
+
+  g :: Monad m => a -> m b
+  g a = do
+    b <- someNonLinearFunction a >>= someOtherNonLinearFunction
+    c <- anotherNonLinearFunction b
+    return c
+
+An example of graded monads follows, mixed with linear monads.
+
+::
+
+  {-# LANGUAGE ConstraintKinds #-}
+  {-# LANGUAGE PolyKinds #-}
+  {-# LANGUAGE TypeFamilies #-}
+  module Control.Monad.Graded (GradedMonad(..)) where
+
+  import Data.Kind (Constraint)
+
+  class GradedMonad (m :: k -> * -> *) where
+    type Unit m :: k
+    type Plus m (i :: k) (j :: k) :: k
+    type Inv  m (i :: k) (j :: k) :: Constraint
+    (>>=) :: Inv m i j => m i a -> (a -> m j b) -> m (Plus m i j) b
+    return :: a -> m (Unit m) a
+
+  -----------------
+
+  module M where
+
+  import Control.Monad.Graded as Graded
+  import Control.Monad.Linear as Linear
+
+  g :: GradedMonad m => a -> m SomeTypeIndex b
+  g a = Graded.do
+    b <- someGradedFunction a Graded.>>= someOtherGradedFunction
+    c <- anotherGradedFunction b
+    Graded.return c
+
+  f :: Linear.Monad m => a #-> m b
+  f a = Linear.do
+    b <- someLinearFunction a Linear.>>= someOtherLinearFunction
+    c <- anotherLinearFunction b
+    Linear.return c
+
+An example of super monad follows.
+
+::
+
+  {-# LANGUAGE ConstraintKinds #-}
+  {-# LANGUAGE PolyKinds #-}
+  {-# LANGUAGE TypeFamilies #-}
+  module Control.Monad.Super (Bind(..), Return(..)) where
+
+  import Data.Kind (Constraint)
+
+  class (Functor m, Functor n, Functor p) => Bind m n p where
+    type BindCts m n p :: Constraint
+    type BindCts m n p = ()
+    (>>=) :: (BindCts m n p) => m a -> (a -> n b) -> p b
+
+  class Functor m => Return m where
+    type ReturnCts m :: Constraint
+    type ReturnCts m = ()
+    return :: (ReturnCts m) => a -> m a
+
+  -----------------
+
+  module M where
+
+  import qualified Control.Monad.Super as Super
+  import qualified Control.Monad.Linear as Linear
+
+  g :: a -> SomeSuperMonad b
+  g a = Super.do
+    b <- someSuperFunction a Super.>>= someOtherSuperFunction
+    c <- anotherSuperFunction b
+    Super.return c
+
+  f :: Linear.Monad m => a #-> m b
+  f a = Linear.do
+    b <- someLinearFunction a Linear.>>= someOtherLinearFunction
+    c <- anotherLinearFunction b
+    Linear.return c
+
+
+Effect and Interactions
+-----------------------
+
+``-XQualifiedDo`` makes it possible to choose, for each individual do-expressions, what kind of monad-like notion they are about. Even if the monad-like notion doesn't support all the range of desugaring (for instance it doesn't have a ``fail``), this will still work, as long as the do-expression doesn't use the corresponding feature (in our example: pattern-binders).
+
+For instance we could write operations for monoids:
+
+::
+
+  module Data.Monoid.QualifiedDo where
+    import Prelude hiding ((>>))
+
+    (>>) :: Monoid a => a -> a -> a
+    (>>) = (<>)
+
+  module X where
+    import Data.Monoid.QualifiedDo as Monoid
+
+    f = Monoid.do
+      Sum 2
+      Sum 3
+      Sum 5
+      Sum 8
+
+If one would try to use ``x <- u`` with ``Monoid.do``, GHC would
+raise an error *even if there is a value for ``(>>=)`` in scope*.
+
+Enabling ``-XQualifiedDo`` doesn't change the meaning of existing do-expressions.
+
+When both ``-XQualifiedDo`` and ``-XRebindableSyntax`` are enabled, ``-XQualifiedDo`` only affects qualified ``do``'s and ``-XRebindableSyntax`` affects the unqualified ``do``'s.
+
+``-XQualifiedDo`` doesn't affect monad comprehensions. But given some suitable syntax,
+it would be possible to extend ``-XQualifiedDo`` to support them.
+
+``-XQualifiedDo`` doesn't affect the `do notation for arrow commands <https://downloads.haskell.org/~ghc/8.8.2/docs/html/users_guide/glasgow_exts.html#do-notation-for-commands>`_ either. We defer analysis and handling of this case for the future.
+
+Costs and Drawbacks
+-------------------
+
+The do-expression stores, during type-checking, which expression they will use for ``(>>=)``, etc… So the core infrastructure is actually already there. We anticipate the cost of implementation and maintenance of this feature to be very low.
+
+Alternatives
+------------
+
+Do with builders
+~~~~~~~~~~~~~~~~
+
+The initial version of the proposal was inspired by F#'s `computational expressions <https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/computation-expressions>`_.
+
+When ``-XQualifiedDo`` is activated, the syntax of the ``do`` notation would change to
+
+::
+
   <lexp> ⟶ [<aexp>.]do
 
 ``aexp`` means that the notation before the ``.`` is parsed as a variable, unless there are parentheses.
@@ -160,8 +450,8 @@ If a field is required by the desugaring process (and only if it's required!) bu
 When the qualifier ``<aexp>.`` is omitted, the meaning of ``do { … }`` is the
 same as if ``-XQualifiedDo`` is *not* in effect.
 
-Examples
---------
+Examples of builders
+++++++++++++++++++++
 
 ``-XQualifiedDo`` does not affect ``return`` in the monadic ``do`` notation.
 
@@ -397,111 +687,10 @@ An example of super monad follows.
     Linear.return c
 
 
-Effect and Interactions
------------------------
+Comparison with M.do
+++++++++++++++++++++
 
-``-XQualifiedDo`` makes it possible to choose, for each individual do-expressions, what kind of monad-like notion they are about. Even if the monad-like notion doesn't support all the range of desugaring (for instance it doesn't have a ``fail``), this will still work, as long as the do-expression doesn't use the corresponding feature (in our example: pattern-binders).
-
-For instance we could write operations for monoids:
-
-::
-
-  module Data.Monoid.Builder where
-    data MonoidBuilder = MonoidBuilder
-      { (>>) :: Monoid a => a -> a -> a
-      }
-
-    builder :: MonoidBuilder
-    builder = MonoidBuilder (<>)
-
-  module X where
-    import Data.Monoid.Builder
-
-    f = builder.do
-      Sum 2
-      Sum 3
-      Sum 5
-      Sum 8
-
-If one would try to use ``x <- u`` with ``Monoid.builder``, GHC would
-raise an error *even if there is a value for ``(>>=)`` in scope*.
-
-Enabling ``-XQualifiedDo`` doesn't change the meaning of existing do-expressions.
-
-When both ``-XQualifiedDo`` and ``-XRebindableSyntax`` are enabled, ``-XQualifiedDo`` only affects qualified ``do``'s and ``-XRebindableSyntax`` affects the unqualified ``do``'s.
-
-``-XQualifiedDo`` doesn't affect monad comprehensions. But given some suitable syntax,
-it would be possible to extend ``-XQualifiedDo`` to support them.
-
-``-XQualifiedDo`` doesn't affect the `do notation for arrow commands <https://downloads.haskell.org/~ghc/8.8.2/docs/html/users_guide/glasgow_exts.html#do-notation-for-commands>`_ either. We defer analysis and handling of this case for the future.
-
-Costs and Drawbacks
--------------------
-
-The do-expression stores, during type-checking, which expression they will use for ``(>>=)``, etc… So the core infrastructure is actually already there. We anticipate the cost of implementation and maintenance of this feature to be very low.
-
-Alternatives
-------------
-
-Do with a module name
-~~~~~~~~~~~~~~~~~~~~~
-
-An earlier version of the proposal used an ``<modid>.do`` syntax, where
-``<modid>`` stands for some module name.
-
-::
-
-  <lexp> ⟶ [<modid>.]do { stmts }
-
-The additional module name is called the qualifier of the do-expression.
-
-The semantics of ``do`` notation statements is given schematically as follows.
-
-* The ``x <- u`` statement uses ``(modid.>>=)``
-
-  ::
-
-    M.do { x <- u; stmts }  =  u M.>>= \x -> M.do { stmts }
-
-* The ``u`` statement uses ``modid.(>>)``
-
-  ::
-
-    M.do { u; stmts }  =  u M.>> M.do { stmts }
-
-and so on ...
-
-This is an example with the linear monad
-
-::
-
-  {-# LANGUAGE LinearTypes #-}
-  {-# LANGUAGE NoImplicitPrelude #-}
-  module Control.Monad.Linear (Monad(..)) where
-
-  class Monad m where
-    return :: a #-> m a
-    (>>=) :: m a #-> (a #-> m b) #-> mb
-
-  -----------------
-
-  module M where
-
-  import qualified Control.Monad.Linear as Linear
-
-  f :: Linear.Monad m => a #-> m b
-  f a = Linear.do
-    b <- someLinearFunction a Linear.>>= someOtherLinearFunction
-    c <- anotherLinearFunction b
-    Linear.return c
-
-  g :: Monad m => a -> m b
-  g a = do
-    b <- someNonLinearFunction a
-    c <- anotherNonLinearFunction b
-    return c
-
-The major difference with the ``builder.do`` approach, is that no record
+A major difference of ``do`` with a module name (``M.do``), is that no record
 of operations needs to be defined. The ``(M.>>=)`` is taken to be whatever
 such operation is in scope. For instance ``(M.>>=)`` and ``(M.>>)`` can come
 from different modules if they are imported with the same qualifier:
@@ -516,12 +705,11 @@ from different modules if they are imported with the same qualifier:
         g
         return x
 
-The advantages of this approach are that it doesn't need the programmer
+An advantage of ``M.do`` is that it doesn't need the programmer
 to understand a new notion of expressions having fully settled types.
 Moreover, no type information is necessary to desugar the do notation.
-And lastly, there is no need to write builders: the monadic and applicative
-operations can be brought into scope right from the places where they
-are defined or exported.
+And lastly, not having to define a builder, ``M.do`` is requires
+less from the provider of a monad.
 
 A downside of ``M.do`` is that it requires to bring into scope all the
 operations that a ``do`` block needs. In contrast, the builder approach
@@ -538,58 +726,28 @@ with
 
 In the later case, ``M.fail`` may need a new import statement, or maybe there is
 a typo in an import statement, or maybe ``fail`` is just not supported for this
-particular use of ``do`` notation.
+particular use of ``do`` notation. The error in the case of builders admits only
+the explanation of ``fail`` not being supported.
 
 
-Qualified do with parameters
-++++++++++++++++++++++++++++
+More expressions with a fully settled type
+++++++++++++++++++++++++++++++++++++++++++
 
-``M.do`` can be extended (or complemented with another language extension)
-to pass parameters to the operations during desugaring.
+**Having a fully settled type** is a predicate that could be modified
+to accept more expressions over time. In particular, the following expressions could
+be considered to have a fully settled type:
 
-::
+* Identifiers from before a top-level Template Haskell splice
+* Top-level identifiers from previous mutually-recursive groups when there is no monomorphism restriction
+* Variables bound with a type signature or arguments to functions defined with a type signature
 
-  <lexp> ⟶ [<modid>.]do @aexp … @aexp { stmts }
-
-This would allow a user to fix the type of the monad like so
-
-::
-
-  M.do @(@Maybe)
-    x <- m
-    M.return (x + 1)
-
-which would be equivalent to
-
-::
-
-  (M.>>=) @Maybe m (\x -> M.return @Maybe (x + 1))
-
-Or it could be used to pass information which is available locally
-
-::
-
-  f =
-    M.do @x1 @x2
-      x <- m
-      M.return (x + 1)
-    where
-      x1 = …
-      x2 = …
-
-which would be equivalent to
-
-::
-
-  f =
-    (M.>>=) x1 x2 m (\x -> M.return x1 x2 (x + 1))
-    where
-      x1 = …
-      x2 = …
+It has been suggested that the predicate could have other uses as well.
+For instance, to identify expressions whose type can be reified in Template
+Haskell.
 
 
 QualifiedDo with operations that are not in scope
-+++++++++++++++++++++++++++++++++++++++++++++++++
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 It was suggested in the discussion that we could modify the meaning of
 ``M.do`` to not require the operations from module ``M`` to be in scope.
@@ -659,6 +817,30 @@ a limitation in the handling of ``do`` with respect to ``RebindableSyntax``.
     [b] <- someFunction a
     anotherFunction b
 
+On a first discussion by the committee, it was noted that the justification
+was not strong enough for these modifications. And besides, it would not be
+harder to add it later should it be decided in the future that this is worth
+the effort.
+
+
+Desugar to non-standard names
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+During the discussion of this proposal, it was suggested that ``M.do``
+could desguar to ``M.qualifiedBind`` instead of ``(M.>>=)``.
+
+Defining ``qualifiedBind`` would make it very clear in the haddocks that
+the module is meant to be imported qualified.
+
+On the other hand, using ``(M.>>=)`` would make ``M.do`` more similar to
+regular ``do`` expressions, and anyways, ``M`` likely wants to export ``(>>=)``
+for explicit use. Thus, there is no need to double export the same operation.
+
+Moreover, an idiom and convention could be established, where modules to be
+used in qualified do would have names like ``Control.Linear.QualifiedDo``,
+which would provide the desirable “recognizability” that was aimed with
+``qualifiedBind``.
+
 
 Desugar unqualified returns
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -668,11 +850,10 @@ with an unqualified ``return``.
 
 ::
 
-  import Control.Monad.Linear (linear)
   import Control.Monad.Linear as Linear
 
   g :: Linear.Monad m => a #-> m b
-  g a = linear.do
+  g a = Linear.do
     b <- someLinearFunction a         -- Linear.>>=
     c <- anotherLinearFunction b      -- Linear.>>=
     return c                          -- Desugared to Linear.return
@@ -685,7 +866,7 @@ return should be desugared or left alone. For instance
   import qualified Some.Monad.M as M
 
   boolM :: (a -> M.M Bool) -> b -> b -> a -> M.M b
-  boolM p a b x = M.builder.do
+  boolM p a b x = M.do
       px <- p x
       y <- if px then
              return b   -- Prelude.return or M.return ?
@@ -813,23 +994,55 @@ Related work
 
 * There is a way to emulate ``-XQualifiedDo`` in current GHC using ``-XRecordWildcards``: have no ``(>>=)`` and such in scope, and import a builder with ``Builder {..} = builder``. It is used in `linear-base <https://github.com/tweag/linear-base/blob/0d6165fbd8ad84dd1574a36071f00a6137351637/src/System/IO/Resource.hs#L119-L120>`_. This is not a very good solution: it is rather a impenetrable idiom, and, if a single function uses several builders, it yields syntactic contortion (which is why shadowing warnings are deactivated `here <https://github.com/tweag/linear-base/blob/0d6165fbd8ad84dd1574a36071f00a6137351637/src/System/IO/Resource.hs#L1>`_)
 
+
 Extensions
 ~~~~~~~~~~
 
-More expressions with a fully settled type
-++++++++++++++++++++++++++++++++++++++++++
+Qualified do with parameters
+++++++++++++++++++++++++++++
 
-**Having a fully settled type** is a predicate that could be modified
-to accept more expressions over time. In particular, the following expressions could
-be considered to have a fully settled type:
+``M.do`` can be extended (or complemented with another language extension)
+to pass parameters to the operations during desugaring.
 
-* Identifiers from before a top-level Template Haskell splice
-* Top-level identifiers from previous mutually-recursive groups when there is no monomorphism restriction
-* Variables bound with a type signature or arguments to functions defined with a type signature
+::
 
-It has been suggested that the predicate could have other uses as well.
-For instance, to identify expressions whose type can be reified in Template
-Haskell.
+  <lexp> ⟶ [<modid>.]do @aexp … @aexp { stmts }
+
+This would allow a user to fix the type of the monad like so
+
+::
+
+  M.do @(@Maybe)
+    x <- m
+    M.return (x + 1)
+
+which would be equivalent to
+
+::
+
+  (M.>>=) @Maybe m (\x -> M.return @Maybe (x + 1))
+
+Or it could be used to pass information which is available locally
+
+::
+
+  f =
+    M.do @x1 @x2
+      x <- m
+      M.return (x + 1)
+    where
+      x1 = …
+      x2 = …
+
+which would be equivalent to
+
+::
+
+  f =
+    (M.>>=) x1 x2 m (\x -> M.return x1 x2 (x + 1))
+    where
+      x1 = …
+      x2 = …
 
 
 Unresolved Questions
