@@ -1,13 +1,11 @@
 ---
 author: John Ericson and Cale Gibbard on behalf of Obsidian Systems
-date-accepted: ""
+date-accepted: 2020-05-14
 ticket-url: ""
 implemented: ""
 ---
 
-This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/0>).
-**After creating the pull request, edit this file again, update the number in
-the link, and delete this bold sentence.**
+This proposal was [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/320>).
 
 # Defaults and backpack/hs-boot
 
