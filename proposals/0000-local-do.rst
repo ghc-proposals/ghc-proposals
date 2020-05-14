@@ -362,7 +362,8 @@ We say that an expression **has the fully settled type** ``T`` when
 * it is of the form ``e :: T``, or
 * it is an identifier imported from another module with type ``T``, or
 * it is of the form ``expr @ty`` where `expr` **has a fully settled type**
-  ``forall a. T``.
+  ``forall a. T``, or
+* it is of the form ``expr1 expr2`` where ``expr1`` **has a fully settled type** ``T1 -> T``.
 
 The semantics of ``do`` notation statements is given as follows (using
 ``-XLambdaCase`` notation and fresh variables ``v, v1, …, vn``):
