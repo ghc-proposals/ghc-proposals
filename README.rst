@@ -409,18 +409,19 @@ is a polite ping/enquiry.
 
       2. Merge the PR branch into master, and push.
 
-      3. Update the PR description:
+      3. Update the PR description to start
+         with the text "The proposal has been accepted; the following discussion is mostly of historic interest."
+         where the word "proposal" links to the final rendered version pushed above.
 
-         a. Update the "Rendered" link to point to the permanent home
-         of the accepted proposal.
+      4. If the PR title has "(under review)", remove it.
+         
+      5. Set the PR to have the "Accepted" label.
 
-         b. Add the text "The proposal has been accepted; the following discussion is mostly of historic interest."
+      6. Comment on the PR that the proposal was accepted.
 
-      4. Set the PR to have the "Accepted" label.
+      7. Close the PR if GitHub has not detected the merge.
 
-      5. Comment on the PR that the proposal was accepted.
-
-      6. Close the PR if GitHub has not detected the merge.
+      8. Announce on the committee mailing list.
 
 Review criteria
 ---------------
