@@ -418,6 +418,10 @@ is a polite ping/enquiry.
 
       4. Set the PR to have the "Accepted" label.
 
+      5. Comment on the PR that the proposal was accepted.
+
+      6. Close the PR if GitHub has not detected the merge.
+
 Review criteria
 ---------------
 Here are some characteristics that a good proposal should have.
