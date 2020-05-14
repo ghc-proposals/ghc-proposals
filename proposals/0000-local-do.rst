@@ -100,7 +100,7 @@ The semantics of ``do`` notation statements is given as follows (using
       (\x1 … xn -> e) M.<$> u1 M.<*> … M.<*> un
 
     M.do { (x1 <- u1 | … | xn <- un); stmts }  =
-      M.join (\x1 … xn -> M.do { stmts }) M.<$> u1 M.<*> … M.<*> un
+      M.join ((\x1 … xn -> M.do { stmts }) M.<$> u1 M.<*> … M.<*> un)
 
 
   Note that ``M.join`` is only needed if the final expression is
