@@ -395,6 +395,33 @@ is a polite ping/enquiry.
       proposal with the implementation status (i.e. ticket URL and the
       first version of GHC implementing it.)
 
+      Concretely, a committee member must perform the following steps:
+
+      1. Add a new commit on top of the PR branch that:
+
+         a. Changes the filename of the proposal to correspond to the PR number.
+
+         b. Updates any metadata fields that may have changed in the template on ``master`` since
+            the PR branch split off.
+
+         c. Fills in these metadata fields as appropriate, including changing "is discussed"
+            to "was discussed".
+
+      2. Merge the PR branch into master, and push.
+
+      3. Update the PR description to start
+         with the text "The proposal has been accepted; the following discussion is mostly of historic interest."
+         where the word "proposal" links to the final rendered version pushed above.
+
+      4. If the PR title has "(under review)", remove it.
+         
+      5. Set the PR to have the "Accepted" label.
+
+      6. Comment on the PR that the proposal was accepted.
+
+      7. Close the PR if GitHub has not detected the merge.
+
+      8. Announce on the committee mailing list.
 
 Review criteria
 ---------------
