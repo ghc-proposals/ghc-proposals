@@ -401,7 +401,7 @@ is a polite ping/enquiry.
 
          a. Changes the filename of the proposal to correspond to the PR number.
 
-         b. Updates any metadata fields that may have changed in ``master`` since
+         b. Updates any metadata fields that may have changed in the template on ``master`` since
             the PR branch split off.
 
          c. Fills in these metadata fields as appropriate, including changing "is discussed"
