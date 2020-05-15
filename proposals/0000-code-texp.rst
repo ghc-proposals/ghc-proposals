@@ -13,12 +13,15 @@ Make Q (TExp a) into a newtype
 .. sectnum::
 .. contents::
 
-I propose to modify the typed Template Haskell API to make the ``Code`` type
+I propose to modify the Typed Template Haskell API to make the ``Code`` type
 more abstract. In particular we introduce a new data type called ``Code`` which
 is abstract such that ``Code m a`` represents an expression of type ``a`` produced
 in a monadic context ``m``. The reader should note that this proposal builds on
 top of the `overloaded quotations proposal <https://github.com/ghc-proposals/ghc-proposals/pull/246>`_ which was
 accepted before this proposal.
+
+The Untyped Template Haskell API is unmodified. This proposal is only about
+Typed Template Haskell.
 
 
 Motivation
@@ -69,7 +72,8 @@ There are three problems with the current API:
    it creates even more syntactic noise than normal metaprogramming.
 
 
-3. ``Quote m => m (TExp a)`` is ugly to read and write. This is a weak reason but one everyone
+3. ``m (TExp a)`` is ugly to read and write, understanding ``Code m a`` is
+   easier. This is a weak reason but one everyone
    can surely agree with.
 
 
@@ -93,13 +97,14 @@ Top-level splicing requires an expression of type ``Code Q T`` and produces a va
   bar :: Int
   bar = $$foo
 
-Nested splicing requires an expression of type ``(Quote m, C m) => Code m T`` and the overall
+Nested splicing requires an expression of type ``Code m T`` and the overall
 type of the quotation is a union of the constraints on all the nested splices::
 
   baz :: Quote m => Code m Int
   baz = [|| 1 + $$(foo) ||]
 
-The return type of lifting a value is changed from ``m (TExp a)`` to ``Code m a``.::
+The return type of the ``liftTyped`` method of the class ``Lift``
+is changed from ``m (TExp a)`` to ``Code m a``.::
 
   class Lift a where
     lift :: Quote m => a -> m Exp
@@ -109,9 +114,9 @@ The functions ``unsafeTExpCoerce`` and ``unTypeQ`` are modified to work directly
 with ``Code``::
 
   unsafeTExpCoerce :: m Exp -> Code m a
-  unTypeQ :: Code m a -> m Exp
+  unType :: Code m a -> m Exp
 
-A new method is added in order to perform monadic actions inside of ``Code``.::
+A new function is added to ``Language.Haskell.TH.Syntax`` in order to perform monadic actions inside of ``Code``.::
 
   liftCode :: m (TExp a) -> Code m a
   liftCode = Code
@@ -141,7 +146,7 @@ type constructors.
 Costs and Drawbacks
 -------------------
 
-The main drawback is that this will break all users of typed Template Haskell who
+The main drawback is that this will break all users of Typed Template Haskell who
 write type signatures.
 However, I feel like I am the only user so the impact will be minimal.
 
