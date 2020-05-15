@@ -134,11 +134,11 @@ I do not propose any radical changes to the structure of the `|-a` judgment or i
 
   3. Change the `|-a` rules for `f -< e`, `f -<< e`, `c e`, `\p -> c`, and `(| e c ... |)` to use the above type families in the relevant places. In the context of GHC’s implementation, this means emitting equality constraints between applications of those type families rather than solving everything up front.
 
-Because the ASCII-art versions of the modified rules are more difficult to read than properly typeset versions, I’ve created readable renderings of the key rules (where Σ(θ) is used in place of `ArrowStackTup` and Σ(Δ,θ) is used in place of `ArrowEnvTup`):
+Because the ASCII-art versions of the modified rules are more difficult to read than properly typeset versions, I’ve created readable renderings of the key rules (where Sᴛᴋ⟦𝜎⟧ is used in place of `ArrowStackTup` and Eɴᴠ⟦𝜏,𝜎⟧ is used in place of `ArrowEnvTup`):
 
 <img src="0000-typechecking-rules.png" height="600" />
 
-The rule for `f -<< e` follows naturally from the one for `f -< e`, and the other rules remain essentially unchanged.
+The full set of rules, rendered from [this Ott model](0000-typechecking-rules.ott), are [available here in PDF form](0000-typechecking-rules.pdf).
 
 ### Desugaring
 
@@ -164,7 +164,27 @@ In GHC, the desugaring rules can remain essentially unchanged under this proposa
 
 #### Error reporting
 
-In practice, it is unlikely that the generated equality constraints on `ArrowStackTup` and `ArrowEnvTup` will ever fail to solve. The strict type required by the `(| e c ... |)` rule is almost always enough to propagate information downwards, and the other rules cannot introduce any ambiguity about the shape of the stack. However, while unlikely, it is not impossible, so it likely makes sense for GHC to generate custom type error messages upon failure to solve `ArrowStackTup` and `ArrowEnvTup` equalities to avoid implementation details leaking out to the programmer.
+In practice, it is unlikely that the generated equality constraints on `ArrowStackTup` and `ArrowEnvTup` will ever fail to solve. The strict type required by the `(| e c ... |)` rule is almost always enough to propagate information downwards, and the other rules cannot introduce any ambiguity about the shape of the stack. However, while unlikely, it is not impossible, especially in partially-written programs containing `undefined` or typed holes, such as this one:
+
+```haskell
+bad :: () -> ()
+bad = proc () -> (| undefined (not -< True) |)
+```
+
+In this case, `undefined`’s type is so polymorphic that the stack it “provides” to its argument could be absolutely anything. This means we eventually end up with the constraint `ArrowStackTup (Bool ': t0) ~ Bool` when trying to typecheck `not -< True`, where `t0` is ambiguous, and GHC barfs:
+
+```
+error:
+    • Couldn't match type ‘GHC.Desugar.ArrowStackTup (Bool : t0)’ with ‘Bool’
+      Expected type: GHC.Desugar.ArrowStackTup (Bool : t0) -> Bool
+        Actual type: Bool -> Bool
+      The type variable ‘t0’ is ambiguous
+    • In the expression: not
+      In the command: not -< True
+      In the command: (| undefined (not -< True) |)
+```
+
+This error message is unhelpful, since the programmer doesn’t have any idea what `ArrowStackTup` is. For that reason, it likely makes sense for GHC to generate custom type error messages upon failure to solve `ArrowStackTup` and `ArrowEnvTup` equalities to prevent implementation details from leaking out to the programmer.
 
 #### The `ArrowEnv` type
 
@@ -394,6 +414,16 @@ There are two primary drawbacks to this change:
 
      The number of users of `proc` notation is small to begin with, and the number of users using custom control operators is vanishingly tiny. Consider that GHC 7.8 made an equally backwards-incompatible change to this same feature, and as far as I can tell, precisely zero users complained (and possibly roughly as many noticed). The change was considered so inconsequential that despite being very backwards incompatible, it was not even mentioned in the release notes!
 
+     Furthermore, an audit of all packages on Hackage found just *three* packages that use banana brackets at all (ignoring packages that parse Haskell code and only include them in parsing test cases):
+
+       1. [Ross Paterson’s `arrows` package](https://hackage.haskell.org/package/arrows), which is mentioned in this proposal. As mentioned above, this package is *already* broken under the current arrow desugaring rules; this proposal would fix it, not break it further.
+
+       2. @dwincort’s [UISF package](https://hackage.haskell.org/package/UISF), which uses banana brackets with operators like `leftRight` and `setSize`. These operators are [sufficiently polymorphic](https://github.com/ghc-proposals/ghc-proposals/pull/303#issuecomment-570813964) to be unaffected by this change; they work under all versions of the arrow desugaring.
+
+       3. The third and final package is [HSoM](https://hackage.haskell.org/package/HSoM), which only uses banana brackets because it depends on UISF and uses them in the same way.
+
+     Therefore, it seems unlikely that anyone (except me) will even notice this change. (Maybe not the most exciting argument—“we shouldn’t worry about compatibility because nobody cares”—but at least you can’t call me unrealistic.)
+
   2. It adds new functionality into the constraint solver (indirectly, via the wired-in type families) specifically to support arrows, which seem somewhat maligned in the Haskell community. Arguably, this moves in the wrong direction: some people might prefer `proc` notation be removed, not further cemented.
 
      I think, however, such fear would be unfounded. The proposed change doesn’t make `proc` notation any more difficult to remove should someone wish to do it in the future, nor does it introduce any meaningful maintenance burden on any other part of the compiler. As long as `proc` notation is here (and some programmers, myself included, do find it useful!), it might as well work properly.
@@ -410,7 +440,13 @@ This proposal has the following alternatives:
 
      This is basically just a subjective choice. Arguably, the original implementation worked the way it did because it wasn’t clear how to make it work differently at the time. I think the flat representation is more useful to programmers, and I don’t think it has any significant downsides, but I’m not completely attached to it either.
 
-  3. **Do nothing.**
+  3. **Implement this change, but define the type families in Haskell rather than making them wired-in.**
+
+     Technically, this is possible to do, since GHC has a maximum tuple size, so the type families could just list out all the cases. The primary downside of doing this is that it eliminates the possibility of performing improvement on constraints involving `ArrowStackTup`. For example, suppose we have the wanted constraint `[W] ArrowStackTup stk ~ Int`. From this, we can generate the derived equality `[D] stk ~ '[Int]`, since no other cases can possibly match.
+
+     In theory, GHC could do this kind of improvement for *all* closed type families, which would eliminate this difference. But currently, it does not, so it would be a difference barring other changes.
+
+  4. **Do nothing.**
 
      Arrows are a pretty low-priority feature in GHC right now, so not doing this isn’t going to leave too many people upset. Still, I think it’s a small enough change to be worth the effort, assuming someone (me) is willing to volunteer their time to implement it.
 
