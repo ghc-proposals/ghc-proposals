@@ -127,7 +127,7 @@ The semantics of ``do`` notation statements is given as follows (using
        ; stmts
        }
 
-If a name ``M.op`` is required by the desugaring process (and only if it's required!) but the name is not in scope, an error message is produced:
+If a name ``M.op`` is required by the desugaring process (and only if it's required!) but the name is not in scope, an error message like the following is produced:
 
 * “Desugaring statement <stmt> requires <M.op> which is not in scope”
 
