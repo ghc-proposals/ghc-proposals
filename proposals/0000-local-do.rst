@@ -114,7 +114,7 @@ The semantics of ``do`` notation statements is given as follows (using
 
   ::
 
-    M.do { ({stmt1; …; stmtn} {x1; …; xn} | y <- u) ; return e }  =
+    M.do { ({stmt1; …; stmtn} {x1; …; xn} | y <- u) ; M.return e }  =
       (\(x1,…,xn) y -> e) <$> (M.do { stmt1; …; stmtn; M.return (x1, …, xn)}) <*> u
 
 *  With ``-XRecursiveDo``, ``rec`` blocks use ``M.mfix`` and ``M.return``:
