@@ -96,7 +96,7 @@ The semantics of ``do`` notation statements is given as follows (using
 
   ::
 
-    M.do { (x1 <- u1 | … | xn <- un); return e }  =
+    M.do { (x1 <- u1 | … | xn <- un); M.return e }  =
       (\x1 … xn -> e) M.<$> u1 M.<*> … M.<*> un
 
     M.do { (x1 <- u1 | … | xn <- un); stmts }  =
