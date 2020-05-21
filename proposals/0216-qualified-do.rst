@@ -1,16 +1,12 @@
 Qualified do
 ============
 
-.. proposal-number:: Leave blank. This will be filled in when the proposal is
-                     accepted.
-.. trac-ticket:: Leave blank. This will eventually be filled with the Trac
-                 ticket number which will track the progress of the
-                 implementation of the feature.
-.. implemented:: Leave blank. This will be filled in with the first GHC version which
-                 implements the described feature.
+.. author:: Facundo Domínguez, Arnaud Spiwack, Matthías Páll Gissurarson
+.. date-accepted:: 2020-05-21
+.. ticket-url::
+.. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/216>`_.
-.. sectnum::
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/216>`_.
 .. contents::
 
 This proposal introduces a new extension ``-XQualifiedDo`` which makes it possible to overload the meaning of a do-notation expression *on a case-by-case basis* (as opposed to the global effect of ``-XRebindableSyntax``), by writing ``builder.do``. The design is inspired by F#'s  `computational
