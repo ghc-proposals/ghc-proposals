@@ -9,7 +9,7 @@ Qualified do
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/216>`_.
 .. contents::
 
-This proposal introduces a new extension ``-XQualifiedDo`` which makes it possible to overload the meaning of a do-notation expression *on a case-by-case basis* (as opposed to the global effect of ``-XRebindableSyntax``), by writing ``builder.do``. The design is inspired by F#'s  `computational
+This proposal introduces a new extension ``-XQualifiedDo`` which makes it possible to overload the meaning of a do-notation expression *on a case-by-case basis* (as opposed to the global effect of ``-XRebindableSyntax``), by writing ``builder.do``. The design is inspired by F♯'s  `computational
 expressions <https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/computation-express
 ions>`_.
 
