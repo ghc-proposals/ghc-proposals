@@ -1,13 +1,11 @@
 ---
-author: Alejandro
+author: Alejandro Serrano Mena
 date-accepted: ""
 ticket-url: ""
 implemented: ""
 ---
 
-This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/0>).
-**After creating the pull request, edit this file again, update the number in
-the link, and delete this bold sentence.**
+This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/333).
 
 # Unfinished `do` blocks
 
