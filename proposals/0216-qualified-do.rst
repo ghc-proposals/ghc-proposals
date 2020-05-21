@@ -312,7 +312,7 @@ For instance we could write operations for monoids:
       Sum 8
 
 If one would try to use ``x <- u`` with ``Monoid.do``, GHC would
-raise an error *even if there is a value for ``(>>=)`` in scope*.
+raise an error *even if there is a value for* ``(>>=)`` *in scope*.
 
 Enabling ``-XQualifiedDo`` doesn't change the meaning of existing do-expressions.
 
