@@ -316,7 +316,7 @@ raise an error *even if there is a value for ``(>>=)`` in scope*.
 
 Enabling ``-XQualifiedDo`` doesn't change the meaning of existing do-expressions.
 
-When both ``-XQualifiedDo`` and ``-XRebindableSyntax`` are enabled, ``-XQualifiedDo`` only affects qualified ``do``'s and ``-XRebindableSyntax`` affects the unqualified ``do``'s.
+When both ``-XQualifiedDo`` and ``-XRebindableSyntax`` are enabled, ``-XQualifiedDo`` only affects qualified ``do``s and ``-XRebindableSyntax`` affects the unqualified ``do``s.
 
 ``-XQualifiedDo`` doesn't affect monad comprehensions. But given some suitable syntax,
 it would be possible to extend ``-XQualifiedDo`` to support them.
