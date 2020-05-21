@@ -290,7 +290,7 @@ An example of super monad follows.
 Effect and Interactions
 -----------------------
 
-``-XQualifiedDo`` makes it possible to choose, for each individual do-expressions, what kind of monad-like notion they are about. Even if the monad-like notion doesn't support all the range of desugaring (for instance it doesn't have a ``fail``), this will still work, as long as the do-expression doesn't use the corresponding feature (in our example: pattern-binders).
+``-XQualifiedDo`` makes it possible to choose, for each of the individual do-expressions, what kind of monad-like notion they are about. Even if the monad-like notion doesn't support all the range of desugaring (for instance it doesn't have a ``fail``), this will still work, as long as the do-expression doesn't use the corresponding feature (in our example: pattern-binders).
 
 For instance we could write operations for monoids:
 
@@ -796,7 +796,7 @@ The ambiguity error is a new kind of ambiguity, one which does
 not affect explicit uses of ``M.>>=`` but only the ``M.do`` notation.
 
 
-Another thing to keep in mind is that the programmer can't constraint which
+Another thing to keep in mind is that the programmer can't constrain which
 operations are used in her module. Suppose that she wants to get an error
 every time a pattern which can fail is used. The following program will be
 accepted, regardless of the effort to keep ``Prelude.fail`` hidden. This is
