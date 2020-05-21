@@ -37,7 +37,7 @@ The prescribed solution is to use ``-XRebindableSyntax``. But ``-XRebindableSynt
 
 * It affects many syntactic constructs (numerical literals, the ``if then else`` syntax, … (see the `full list <https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-RebindableSyntax>`_)).
 * It implies ``-XNoImplicitPrelude``
-* It uses the same rebinding for all the do-expression in an entire file.
+* It uses the same rebinding for all the do-expressions in an entire file.
 
 You may not want all this. For instance, with linear types ``if then else`` syntax cannot be meaningfully rebound to a function. And there is no reason why a file wouldn't have a piece code referring to a monad, one to a graded monad, and one to a linear relative monad.
 
