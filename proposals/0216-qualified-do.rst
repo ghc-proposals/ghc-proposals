@@ -160,7 +160,7 @@ Examples
   boolMM p ma mb x = M.do
       p x >>= bool ma mb   -- Prelude.>>=
 
-Nested ``do`` blocks do not affect each other meanings.
+Nested ``do`` blocks do not affect each others' meanings.
 
 ::
 
