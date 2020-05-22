@@ -7,9 +7,9 @@ implemented: ""
 
 This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/333).
 
-# Unfinished `do` blocks
+# Defer parse errors
 
-The syntax of `do` blocks in Haskell requires a final expression in order to even *parse*. This means that half-baked `do` blocks stops the pipeline, and no feedback can be gathered about name resolution or typing. This scenario arises quite often during interactive development. This proposal introduces a new flag in the compiler, `-fallow-unfinished-do`, which essentially treats those unfinished `do` blocks as having a hole at the end.
+The syntax of `do` blocks in Haskell requires a final expression in order to even *parse*, lists cannot start with a comma, these are all examples of errors which GHC recognizes as *parse* errors nowadays. This means that half-baked `do` blocks, or a misplaced comment before the first element of a list, stop the pipeline, and no feedback can be gathered about name resolution or typing. This scenario arises quite often during interactive development. This proposal introduces a new flag in the compiler, `-fdefer-parse-errors`, which essentially treats those unfinished elements are having holes filling the missing places.
 
 ## Motivation
 
@@ -28,9 +28,28 @@ do putStr "what is your name?"
 
 Since the error happens in the *parsing* phase, this means that it is impossible to get any feedback on following phases (name resolution, typing) until that error is solved. This problem manifests even more when using interactive development tools, as pointed out by [Neil Mitchell](https://neilmitchell.blogspot.com/2020/05/ghc-unproposals.html).
 
+Another instance of this problem is that lists literals do not accept an *initial* comma. However, suppose we are developing code with uses a list, following a common code style within the Haskell community.
+
+```haskell
+thing [ a
+      , b
+      , c
+      ]
+```
+
+Then we turn the first element into a comment, as follows.
+
+```haskell
+thing [ -- a
+```
+
+We have the same problem as with `do` blocks: this missing item makes the code syntactically wrong, leaving out any possibility of further analysis by the compiler.
+
 ## Proposed Change Specification
 
-There is a new flag in the compiler, `-fallow-unfinished-do`, which allows such "unfinished" `do`s to go over the parsing phase. Conceptually, they are treated as having a final typed hole, but the error reports the location of the entire `do` block instead. This is enough to block the compiler to go over the typing phase, but good enough for interactive development.
+There is a new flag in the compiler, `-fdefer-parse-errors`, which allows such "unfinished" sequences of items to go over the parsing phase. Conceptually, they are treated as having a (typed) hole wherever the item is missing, but the error reports the location of the entire block instead. This is enough to allow the compiler to go until the typing phase, which is great for interactive development. These holes are can be taken until runtime if `-fdefer-type-errors` is also enabled.
+
+### `do` blocks
 
 Considering the syntax [the corresponding section](https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-470003.14) of the Haskell 2010 Report, we make the following change:
 
@@ -47,20 +66,33 @@ The translation section is updated with the rule:
 + do { stmt } = do { stmt ; _end }  (where '_end' is a fresh hole)
 ```
 
-At the end of the parsing phase, if `-fallow-unfinished-do` is *not* enabled, a parsing error is raised, as usual, but with a hint to enable the extension.
+At the end of the parsing phase, if `-fdefer-parse-errors` is *not* enabled, a parsing error is raised, as usual, but with a hint to enable the extension.
 
 ```
 The last statement in a 'do' block must be an expression
-Use -fallow-unfinished-do to allow this
+Use -fdefer-parse-errors to allow this
 ```
-
-If `-fallow-unfinished-do` is enabled, the pipeline continues. If the compiler gets to the typing phase, it reports back the inferred type of the required final expression, and any useful context (as it would do with a hole).
 
 As described below in the [implementation plan](#implementation-plan), GHC already allows unfinished `do` in its syntax.
 
+### List literals
+
+Considering the syntax for [list literals](https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-340003.7) of the Haskell 2010 Report, we make the following change:
+
+```diff
+  aexp → [ exp1 , … , expk ]
++      | [ , exp1, … , expk ]
+```
+
+The translation section is updated with the rule:
+
+```diff
++ [ , e1, …, ek ] = [ _elt , e1, …, ek ]
+```
+
 ## Examples
 
-The example in the [motivation](#motivation) section would produce the following error message when `-fallow-unfinished-do` is enabled:
+The first example in the [motivation](#motivation) section would produce the following error message when `-fdefer-parse-errors` is enabled:
 
 ```
 • Found unfinished do block
@@ -91,9 +123,24 @@ The main alternative is to keep the *status quo*. Some people (including myself)
 ## Unresolved Questions
 
 1. Should we treat completely empty `do` block in some special way? My feeling is **no**.
-2. Should we have a flag to control this behavior? It feels that nothing wrong may happen if we allow the compiler pipeline to continue until the typing phase. Of course, we would be deviating from the Report.
+2. Should we even have a flag to control this behavior? It feels that nothing wrong may happen if we allow the compiler pipeline to continue until the typing phase. Of course, we would be deviating from the Report.
 3. Should this behavior be controlled by a language extension instead? I think **no**, because this does not make more programs to be accepted (we still get an error, just a bit later than before).
-4. Should we have a similar behavior for other unfinished productions? For example, conditional expressions.
+
+### Other unfinished productions
+
+Another usual suspect for error which are signalled as parse errors but occur often during interactive development is unfinished bind blocks.
+
+```haskell
+f = g 3
+  where g =
+```
+
+Would it be possible to turn this into a hole too? My fear is that the syntax of Haskell, with its complicated layout rules, may require too much lookahead for this to work. Other than that, it would be great that we could obtain.
+
+```
+• Found missing implementation of 'g'
+    with inferred type :: Num a => a -> b
+```
 
 ## Implementation Plan
 
@@ -108,3 +155,12 @@ It turns out that GHC already checks that `do` blocks end with an expression in 
 
 This suggests that the implementation should be quite straightforward.
 
+The syntax of [list expressions](https://gitlab.haskell.org/ghc/ghc/-/blob/master/compiler/GHC/Parser.y#L3024) is a bit more convoluted, since we have many different kinds (literals, comprehensions, sequences). But conceptually a new production rule:
+
+```haskell
+lexps :: { forall b. DisambECP b => PV [Located b] }
+        : ...
+        | ',' lexps
+```
+
+should be enough to many this work.
