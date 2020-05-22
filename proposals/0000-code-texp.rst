@@ -116,10 +116,15 @@ with ``Code``::
   unsafeTExpCoerce :: m Exp -> Code m a
   unType :: Code m a -> m Exp
 
-A new function is added to ``Language.Haskell.TH.Syntax`` in order to perform monadic actions inside of ``Code``.::
+A new function is added to ``Language.Haskell.TH.Syntax`` in order to perform monadic actions inside of ``Code``::
 
   liftCode :: m (TExp a) -> Code m a
   liftCode = Code
+
+And also a function which allows access to the wrapped ``TExp`` value::
+
+  examineCode :: Code m a -> m (TExp a)
+  examineCode (Code m) = m
 
 It is also useful to implement a method to modifying the underlying monadic
 representation. For example, in order to handle additional effects before running
@@ -131,6 +136,15 @@ a top-level splice::
   -- Can be used to handle a state effect
   handleState :: Code (StateT Int Q) a -> Code Q a
   handleState = hoistCode (flip runState 0)
+
+Two more useful combinators are ``bindCode`` and ``bindCode_`` which
+are versions of ``>>=`` and ``>>`` and interact nicely with QualifiedDo::
+
+  bindCode :: m a -> (a -> Code m b) -> Code m b
+  bindCode q k = liftCode (q >>= examineCode . k)
+
+  bindCode_ :: m a -> Code m b -> Code m b
+  bindCode_ q c = liftCode (q >> examineCode c)
 
 The ``Code`` data constructor is also exposed to users in case they want to
 explicitly interact with the underlying monadic computation in another manner.
@@ -153,21 +167,6 @@ However, I feel like I am the only user so the impact will be minimal.
 
 Alternatives
 ------------
-
-Instead of ``liftCode`` it might have been more intuitive to add convenient
-functions such as ``addM`` and ``addMThen`` to the API::
-
-  addM :: m () -> Code m a -> Code m a
-  addMThen :: m a -> (a -> Code m b) -> Code m b
-
-These functions can already be implemented with ``liftCode``::
-
-  addM q c = liftCode (q >> fromCode c)
-  addMThen q k = liftCode (q >>= fromCode . k)
-
-
-So can be added as library functions.
-
 
 Unresolved Questions
 --------------------
