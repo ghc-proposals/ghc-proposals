@@ -27,7 +27,7 @@ application (i.e. ``f a ``).
 Newtypes
 ^^^^^^^^
 
-There are many mewtype wrappers around function types (ex. ``Predicate``, 
+There are many newtype wrappers around function types (ex. ``Predicate``, 
 ``Cont``) or more general types (ex. ``Identity``). 
 Newtypes often wish to copy much of the original functionality of 
 the wrapped type, hence why extensions like ``GeneralizedNewtypeDeriving`` 
