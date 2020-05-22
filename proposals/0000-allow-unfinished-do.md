@@ -21,9 +21,8 @@ do putStr "what is your name?"
    -- this do block is syntactically wrong
 ```
 ```
-<interactive>:3:4: error:
-    The last statement in a 'do' block must be an expression
-      name <- getLine
+The last statement in a 'do' block must be an expression
+  name <- getLine
 ```
 
 Since the error happens in the *parsing* phase, this means that it is impossible to get any feedback on following phases (name resolution, typing) until that error is solved. This problem manifests even more when using interactive development tools, as pointed out by [Neil Mitchell](https://neilmitchell.blogspot.com/2020/05/ghc-unproposals.html).
@@ -44,6 +43,15 @@ thing [ -- a
 ```
 
 We have the same problem as with `do` blocks: this missing item makes the code syntactically wrong, leaving out any possibility of further analysis by the compiler.
+
+A third instance is having one type signature without the corresponding definition. This also happens when writing code, as many people write the type signature and then the implementation.
+
+```haskell
+f :: Int -> Int
+```
+```
+The type signature for ‘f’ lacks an accompanying binding
+```
 
 ## Proposed Change Specification
 
@@ -89,6 +97,10 @@ The translation section is updated with the rule:
 ```diff
 + [ , e1, …, ek ] = [ _elt , e1, …, ek ]
 ```
+
+### Missing implementations
+
+For those cases in which there is a type signature, but not a binding, we also want to replace it by a single implementation with a hole. This enables the compiler to continue. However, we do *not* want to introduce yet another message, since the already-existing one already points the problem correctly.
 
 ## Examples
 
