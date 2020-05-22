@@ -9,7 +9,7 @@ Qualified do
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/216>`_.
 .. contents::
 
-This proposal introduces a new extension ``-XQualifiedDo`` which makes it possible to overload the meaning of a do-notation expression *on a case-by-case basis* (as opposed to the global effect of ``-XRebindableSyntax``), by writing ``builder.do``. The design is inspired by F#'s  `computational
+This proposal introduces a new extension ``-XQualifiedDo`` which makes it possible to overload the meaning of a do-notation expression *on a case-by-case basis* (as opposed to the global effect of ``-XRebindableSyntax``), by writing ``builder.do``. The design is inspired by F♯'s  `computational
 expressions <https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/computation-express
 ions>`_.
 
@@ -37,7 +37,7 @@ The prescribed solution is to use ``-XRebindableSyntax``. But ``-XRebindableSynt
 
 * It affects many syntactic constructs (numerical literals, the ``if then else`` syntax, … (see the `full list <https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-RebindableSyntax>`_)).
 * It implies ``-XNoImplicitPrelude``
-* It uses the same rebinding for all the do-expression in an entire file.
+* It uses the same rebinding for all the do-expressions in an entire file.
 
 You may not want all this. For instance, with linear types ``if then else`` syntax cannot be meaningfully rebound to a function. And there is no reason why a file wouldn't have a piece code referring to a monad, one to a graded monad, and one to a linear relative monad.
 
@@ -160,7 +160,7 @@ Examples
   boolMM p ma mb x = M.do
       p x >>= bool ma mb   -- Prelude.>>=
 
-Nested ``do`` blocks do not affect each other meanings.
+Nested ``do`` blocks do not affect each other's meanings.
 
 ::
 
@@ -290,7 +290,7 @@ An example of super monad follows.
 Effect and Interactions
 -----------------------
 
-``-XQualifiedDo`` makes it possible to choose, for each individual do-expressions, what kind of monad-like notion they are about. Even if the monad-like notion doesn't support all the range of desugaring (for instance it doesn't have a ``fail``), this will still work, as long as the do-expression doesn't use the corresponding feature (in our example: pattern-binders).
+``-XQualifiedDo`` makes it possible to choose, for each of the individual do-expressions, what kind of monad-like notion they are about. Even if the monad-like notion doesn't support all the range of desugaring (for instance it doesn't have a ``fail``), this will still work, as long as the do-expression doesn't use the corresponding feature (in our example: pattern-binders).
 
 For instance we could write operations for monoids:
 
@@ -312,11 +312,11 @@ For instance we could write operations for monoids:
       Sum 8
 
 If one would try to use ``x <- u`` with ``Monoid.do``, GHC would
-raise an error *even if there is a value for ``(>>=)`` in scope*.
+raise an error *even if there is a value for* ``(>>=)`` *in scope*.
 
 Enabling ``-XQualifiedDo`` doesn't change the meaning of existing do-expressions.
 
-When both ``-XQualifiedDo`` and ``-XRebindableSyntax`` are enabled, ``-XQualifiedDo`` only affects qualified ``do``'s and ``-XRebindableSyntax`` affects the unqualified ``do``'s.
+When both ``-XQualifiedDo`` and ``-XRebindableSyntax`` are enabled, ``-XQualifiedDo`` only affects qualified ``do``\ s and ``-XRebindableSyntax`` affects the unqualified ``do``\ s.
 
 ``-XQualifiedDo`` doesn't affect monad comprehensions. But given some suitable syntax,
 it would be possible to extend ``-XQualifiedDo`` to support them.
@@ -334,7 +334,7 @@ Alternatives
 Do with builders
 ~~~~~~~~~~~~~~~~
 
-The initial version of the proposal was inspired by F#'s `computational expressions <https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/computation-expressions>`_.
+The initial version of the proposal was inspired by F♯'s `computational expressions <https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/computation-expressions>`_.
 
 When ``-XQualifiedDo`` is activated, the syntax of the ``do`` notation would change to
 
@@ -796,7 +796,7 @@ The ambiguity error is a new kind of ambiguity, one which does
 not affect explicit uses of ``M.>>=`` but only the ``M.do`` notation.
 
 
-Another thing to keep in mind is that the programmer can't constraint which
+Another thing to keep in mind is that the programmer can't constrain which
 operations are used in her module. Suppose that she wants to get an error
 every time a pattern which can fail is used. The following program will be
 accepted, regardless of the effort to keep ``Prelude.fail`` hidden. This is
