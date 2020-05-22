@@ -4,7 +4,7 @@ Function Result Type Signatures
 .. author:: Vladislav Zavialov (@int-index)
 .. co-author:: John Ericson (@Ericson2314)
 .. date-accepted:: 2019-07-16
-.. ticket-url::
+.. ticket-url:: `#18203 <https://gitlab.haskell.org/ghc/ghc/issues/18203>`_
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/228>`_, `amended at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/254>`_, and further `amended following a bit more discussion <https://github.com/ghc-proposals/ghc-proposals/pull/228#issuecomment-558274417>`_.
