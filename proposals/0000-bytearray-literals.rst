@@ -125,8 +125,8 @@ constant-folding when ``sizeofByteArray#``, ``indexWord8Array#``, or
 Users in need of other less common textual encodings could use template
 haskell to provide additional non-built-in quasiquoters.
 
-Effect and Interactions
------------------------
+Effects and Interactions
+------------------------
 
 The template-haskell library
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
