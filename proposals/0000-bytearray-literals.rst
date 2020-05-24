@@ -18,7 +18,7 @@ ByteArray# literals
 ===================
 
 This is a proposal to introduce ``ByteArray#`` literals. The user
-would be able to use write code like ``[utf8|Tag Team|]`` and
+would be able to write code like ``[utf8|Tag Team|]`` and
 ``[utf16le|Araña|]``, valid as either an expression or a pattern.
 This would not require turning on ``TemplateHaskell``.
 
