@@ -100,7 +100,7 @@ characters, and the number of characters must be even. GHC will throw
 an error at compile-time if an odd number of hexadecimal characters
 are given as the argument to ``octets``.
 
-These literals can be used both as values and as a way to scrutize a
+These literals can be used both as values and as a way to scrutinize a
 ``ByteArray#`` that has been cased on. Casing would look like this:
 
 .. code-block:: haskell
