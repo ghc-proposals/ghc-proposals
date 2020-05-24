@@ -68,7 +68,7 @@ When `ImpredicativeTypes` is on we introduce an additional step between (2) and 
 
 Another way to look at this proposal is that each application is type checked *twice*: first the "quick look" pass tries to infer impredicative instantiation, which is then fed to the second, real pass. For simple expressions it is crystal clear how impredicative instantiation is threaded. On the contrary, it never looks at abstractions, pattern matching, `let`s, or any other expression.
 
-One important feature of Haskell's type system that "quick look" uses is the invariance of type constructors. In short, the subsumption rules ensure that if, for example, `Maybe t` is a more polymorphic than `Maybe s`, it must be the case that `t` equals `s`. This property holds for every type constructor except for function types, which require a slightly more complex handling. The proposed inference algorithm never tries to perform any complicated analysis on other types: impredicativity must be the *only obvious* solution to make the program type check (or as we say in the paper, "impredicativity is never guessed").
+One important feature of Haskell's type system that "quick look" uses is the invariance of type constructors. In short, the subsumption rules ensure that if, for example, `Maybe t` is a more polymorphic than `Maybe s`, it must be the case that `t` equals `s`. This property holds for every type constructor except for function types, which require a slightly more complex handling. The proposed inference algorithm never tries to perform any complicated analysis on other types: impredicativity must be the *only obvious* solution to make the program type check (or as we say in the paper, "impredicativity is never guessed"). Note that since [proposal 287, *Simplify Subsumption*](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0287-simplify-subsumption.rst) has been accepted, function types are also considered invariant.
 
 ## Examples
 
@@ -143,4 +143,4 @@ Right now the "quick look" phase does not produce any errors on its own, but not
 
 ## Implementation Plan
 
-A previous version of this proposal has been implemented in [this merge request](https://gitlab.haskell.org/ghc/ghc/merge_requests/1659). Simon PJ is working on an implementation of the new version. 
+@simonpj is working on an implementation in [merge request !3220](https://gitlab.haskell.org/ghc/ghc/-/merge_requests/3220).
