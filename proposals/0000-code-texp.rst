@@ -110,11 +110,17 @@ is changed from ``m (TExp a)`` to ``Code m a``.::
     lift :: Quote m => a -> m Exp
     liftTyped :: Quote m => a -> Code m a
 
-The functions ``unsafeTExpCoerce`` and ``unTypeQ`` are modified to work directly
+The functions ``unsafeCodeCoerce`` and ``unTypeCode`` are introduced to work directly
 with ``Code``::
 
-  unsafeTExpCoerce :: m Exp -> Code m a
-  unType :: Code m a -> m Exp
+  unsafeCodeCoerce :: m Exp -> Code m a
+  unTypeCode :: Code m a -> m Exp
+
+There are still the normal functions for interacting with ``TExp a``::
+
+  unsafeTExpCoerce :: Quote m => m Exp -> m (TExp a)
+  TExp :: Exp -> TExp a
+  unType :: TExp a -> Exp
 
 A new function is added to ``Language.Haskell.TH.Syntax`` in order to perform monadic actions inside of ``Code``::
 
@@ -126,6 +132,9 @@ And also a function which allows access to the wrapped ``TExp`` value::
   examineCode :: Code m a -> m (TExp a)
   examineCode (Code m) = m
 
+``Code`` is still exported though so users can pattern match on it themselves
+rather than using these convenience functions.
+
 It is also useful to implement a method to modifying the underlying monadic
 representation. For example, in order to handle additional effects before running
 a top-level splice::
@@ -133,7 +142,7 @@ a top-level splice::
   hoistCode :: (forall a . m a -> n a) -> Code m a -> Code n a
   hoistCode f (Code a) = Code (f a)
 
-  -- Can be used to handle a state effect
+  -- As an example, hoistCode can be used to handle a state effect
   handleState :: Code (StateT Int Q) a -> Code Q a
   handleState = hoistCode (flip runState 0)
 
