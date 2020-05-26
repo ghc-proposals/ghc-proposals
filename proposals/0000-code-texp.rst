@@ -80,6 +80,9 @@ There are three problems with the current API:
 Proposed Change Specification
 -----------------------------
 
+In this section, the proposed complete interface for ``Code`` and ``TExp`` is
+given.
+
 A newtype is defined called ``Code``::
 
   newtype Code m a = Code (m (TExp a))
@@ -119,8 +122,10 @@ with ``Code``::
 There are still the normal functions for interacting with ``TExp a``::
 
   unsafeTExpCoerce :: Quote m => m Exp -> m (TExp a)
+  unsafeTExpCoerce = fmap unsafeExpToTExp
   TExp :: Exp -> TExp a
   unType :: TExp a -> Exp
+  unType (TExp a) = a
 
 A new function is added to ``Language.Haskell.TH.Syntax`` in order to perform monadic actions inside of ``Code``::
 
