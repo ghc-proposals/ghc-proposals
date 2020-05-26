@@ -101,6 +101,12 @@ Proposed Change Specification
 * Under ``-XTemplateHaskell``, classify ``[|``, ``[||``, ``[p|``, ``[t``, and
   so on, as opening; and ``|]``, ``||]``, as closing.
 
+* Under ``-XArrows``, classify ``(|`` as opening and ``|)`` as closing.
+
+* Under ``-XUnicodeSyntax``, classify ``⟦`` as opening and ``⟧`` as closing if
+  ``-XTemplatehHaskell`` is also enabled, as well as ``⦇`` as opening and ``⦈``
+  as closing if ``-XArrows`` is also enabled.
+
 * Any unqualified ``varsym`` is interpreted as "prefix", "suffix", "tight
   infix", or "loose infix", based on the preceding and following lexical
   non-terminals:
