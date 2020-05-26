@@ -104,7 +104,7 @@ Proposed Change Specification
 * Under ``-XArrows``, classify ``(|`` as opening and ``|)`` as closing.
 
 * Under ``-XUnicodeSyntax``, classify ``⟦`` as opening and ``⟧`` as closing if
-  ``-XTemplatehHaskell`` is also enabled, as well as ``⦇`` as opening and ``⦈``
+  ``-XTemplateHaskell`` is also enabled, as well as ``⦇`` as opening and ``⦈``
   as closing if ``-XArrows`` is also enabled.
 
 * Any unqualified ``varsym`` is interpreted as "prefix", "suffix", "tight
