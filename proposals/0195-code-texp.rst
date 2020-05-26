@@ -1,16 +1,13 @@
 Make Q (TExp a) into a newtype
 ==============
 
-.. proposal-number:: Leave blank. This will be filled in when the proposal is
-                     accepted.
-.. trac-ticket:: #16177
-.. implemented:: Leave blank. This will be filled in with the first GHC version which
-                 implements the described feature.
+
+.. author:: Matthew Pickering
+.. date-accepted:: 2020-05-26
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/16177
+.. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_.
-            **After creating the pull request, edit this file again, update the
-            number in the link, and delete this bold sentence.**
-.. sectnum::
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/195>`_.
 .. contents::
 
 I propose to modify the Typed Template Haskell API to make the ``Code`` type
