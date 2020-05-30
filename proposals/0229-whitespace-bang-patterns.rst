@@ -1,10 +1,10 @@
-Simplify parsing of (~) and (!)
-===============================
+Whitespace-sensitive operator parsing (~, !, @, $, $$, -)
+=========================================================
 
 .. date-accepted:: 2019-08-24
 .. author:: Vladislav Zavialov
 .. ticket-url::
-.. implemented::
+.. implemented:: 8.12
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/229>`_.
 .. contents::
@@ -153,8 +153,8 @@ Proposed Change Specification
   ``(-x)`` is prefix negation. This change is to be guarded behind a new
   language extension ``-XLexicalNegation``.
 
-* The prefix ``@`` override is guarded behind the ``-XTypeApplications``
-  extension flag.
+* The prefix ``@`` override is no longer guarded behind the ``-XTypeApplications``
+  extension flag for the sake of improved error messages.
 
 * The prefix ``$`` and ``$$`` overrides are guarded behind the
   ``-XTemplateHaskell`` extension flag.
