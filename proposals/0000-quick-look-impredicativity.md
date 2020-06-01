@@ -68,7 +68,7 @@ When `ImpredicativeTypes` is on we introduce an additional step between (2) and 
 
 Another way to look at this proposal is that each application is type checked *twice*: first the "quick look" pass tries to infer impredicative instantiation, which is then fed to the second, real pass. For simple expressions it is crystal clear how impredicative instantiation is threaded. On the contrary, it never looks at abstractions, pattern matching, `let`s, or any other expression.
 
-One important feature of Haskell's type system that "quick look" uses is the invariance of type constructors. In short, the subsumption rules ensure that if, for example, `Maybe t` is a more polymorphic than `Maybe s`, it must be the case that `t` equals `s`. This property holds for every type constructor except for function types, which require a slightly more complex handling. The proposed inference algorithm never tries to perform any complicated analysis on other types: impredicativity must be the *only obvious* solution to make the program type check (or as we say in the paper, "impredicativity is never guessed"). Note that since [proposal 287, *Simplify Subsumption*](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0287-simplify-subsumption.rst) has been accepted, function types are also considered invariant.
+One important feature of Haskell's type system that "quick look" uses is the invariance of type constructors. In short, the subsumption rules ensure that if, for example, `Maybe t` is a more polymorphic than `Maybe s`, it must be the case that `t` equals `s`. The proposed inference algorithm never tries to perform any complicated analysis on other types: impredicativity must be the *only obvious* solution to make the program type check (or as we say in the paper, "impredicativity is never guessed"). Note that since [proposal 287, *Simplify Subsumption*](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0287-simplify-subsumption.rst) has been accepted, function types are also considered invariant.
 
 ## Examples
 
@@ -105,7 +105,7 @@ In the releases of GHC prior to the introduction of levity polymorphism, the ans
   (a -> b) -> a -> b
 ```
 
-So the initial answer would be **yes**. This should be taken with a grain of salt, though, since the specification in the draft paper does not consider polymorphic type representations. However, for the usual case of `b` having kind `*`, the rule may be dropped. This also means that other combinators such as `(&)` or `(.)` no longer are second-class with respect to impredicativity.
+So we can (finally) remove that rule! This also means that other combinators such as `(&)` or `(.)` no longer are second-class with respect to impredicativity.
 
 Note however that currently GHC is very lenient about required extensions when using `($)`. For example, this code compiles today *without extensions*:
 
@@ -115,7 +115,7 @@ Note however that currently GHC is very lenient about required extensions when u
 0
 ```
 
-Even though the [current documentation about `RankNTypes`](https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-RankNTypes) does not make it clear whether the extension is required if you merely want to consume types of this form, it is clear that `($)` has to be impredicatively instantiated for the expression to type check. **Removing the special rule is thus backwards-incompatible, as users would be asked to enable `ImpredicativeTypes`.**
+Even though the [current documentation about `RankNTypes`](https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-RankNTypes) does not make it clear whether the extension is required if you merely want to consume types of this form, it is clear that `($)` has to be impredicatively instantiated for the expression to type check. Thus, it might be the case that now programmers are required to enable `ImpredicativeTypes` when it was not previously the case.
 
 ## Costs and Drawbacks
 
