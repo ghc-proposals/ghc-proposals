@@ -68,7 +68,7 @@ This section outlines what stages a proposal may go through. The stage is identi
    `Who is the committee? <#who-is-the-committee>`_   •
    `≡ List of proposals waiting for shepherd <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+shepherd+recommendation%22>`_ •
 
-5. Label: `Pending committee review <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+committee+review>`_.  One committee member steps up as a shepherd, and generates consensus within the committee within four or five weeks.
+5. Label: `Pending committee review <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+committee+review%22>`_.  One committee member steps up as a shepherd, and generates consensus within the committee within four or five weeks.
 
    `Committee process <#committee-process>`_ •
    `Review criteria <#review-criteria>`_ •
