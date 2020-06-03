@@ -62,7 +62,7 @@ This section outlines what stages a proposal may go through. The stage is identi
    `How to comment on a proposal <#how-to-comment-on-a-proposal>`_ •
    `≡ List of proposals under discussion <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+no%3Alabel>`_
 
-4. Label: `Pending shepherd recommendation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+shepherd+recommendation>`_.  Eventually *the proposal author* brings the proposal before the committee for review.
+4. Label: `Pending shepherd recommendation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+shepherd+recommendation%22>`_.  Eventually *the proposal author* brings the proposal before the committee for review.
 
    `How to bring a proposal before the committee <#how-to-bring-a-proposal-before-the-committee>`_ •
    `Who is the committee? <#who-is-the-committee>`_   •
