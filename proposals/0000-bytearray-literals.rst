@@ -31,15 +31,28 @@ This proposal addresses several shortcomings with string literals in GHC:
   terms (often wrapped in ``Data.Primitive.ByteArray`` at the top level).
   The ``ByteArray`` constructor that wraps the ``ByteArray#`` gets forced every
   time it is accessed.
-* There is no O(1) way to get the length of a primitive string
-  literal. `Trac 5218 <https://ghc.haskell.org/trac/ghc/ticket/5218>`_.
+* The ``text`` library produces unoptimizable Core that leads to bloated
+  binaries when creating ``Text`` literals with ``OverloadedStrings``
+  (or equivalently with ``pack``). This is explained in greater detail
+  on the `GitHub text library issue`_.
 * There is no syntactically simple way to write textual
   non-ASCII ``Addr#`` (e.g. literals in UTF-8 or UTF-16).
   Related ticket: `Trac 5877 <https://ghc.haskell.org/trac/ghc/ticket/5877>`_.
 * GHC has no mechanism for generating efficient instructions when
-  users want to case on ``ByteArray#``. Users cannot currently case on
+  users want to scrutinize a ``ByteArray#``. Users cannot currently case on
   ``ByteArray#`` at all and must often resort to performing a series
-  of equality tests.
+  of equality tests. Independently, various authors have reinvented gross
+  hacks to speed this up. Simon Jakobi has `discussed`_ accelerating
+  Dhall's decoding of builtins by `checking length before matching`_.
+  Andrew Martin (the author of this proposal) has `gone even further`_
+  by checking the length and hashing the tokens in a FortiOS log parser.
+  Doing this by hand is tedious and error prone. The compiler could
+  generate better code with less opportunity for mistakes.
+
+.. _GitHub text library issue: https://github.com/haskell/text/issues/287
+.. _discussed: https://github.com/haskell/bytestring/pull/191#issuecomment-633260238
+.. _checking length before matching: https://github.com/dhall-lang/dhall-haskell/blob/0cc0e9cf4f967c26f6e03cc0e0209a6e29a19047/dhall/src/Dhall/Binary.hs#L165-L200
+.. _gone even further: https://github.com/layer-3-communications/fortios-syslog/blob/2c27f91d58dcc03177ae28e69e5d5b41ac658c95/src/Fortios/Syslog/Unsafe.hs#L362
 
 This proposal introduces provides a mechanism for writing ``ByteArray#``
 literals. It does this with without extending the language
