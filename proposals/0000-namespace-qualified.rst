@@ -89,8 +89,27 @@ A way to remember the ordering in a compound alias ``{A,B}`` (data namespace on
 the left, type namespace on the right) is that in ``A :: B`` we also have data
 on the left, types on the right.
 
-This allows us to disambiguate names that come from other modules. But for names
-that come from the same module, we need one more piece of syntax: module aliases.
+It's possible to omit one component of a compound alias, writing ``{D,_}`` or
+``{_,T}``.
+
+This syntax does is not quite sufficient to achieve feature parity with
+``-XExplicitNamespaces``. How do we write an unqualified import of a name from
+a specific namespace?::
+
+  import Data.Proxy (type Proxy)
+
+For this, we introduce another minor feature, import from alias::
+
+  import qualified Data.Proxy as {_,T}
+  import T
+
+Here, we import ``Data.Proxy`` qualified, with an alias ``T`` for its type
+constructors.  And then we do an unqualified import from this alias, so the
+user can write ``Proxy`` instead of ``T.Proxy``.
+
+Compound aliases in imports allow us to disambiguate names that come from other
+modules. But for names that come from the same module, we need one more piece
+of syntax: module aliases.
 
 First, observe that Haskell already allows self-qualification in a module::
 
@@ -124,12 +143,20 @@ is to make it unnecessary.
 The solution is to export built-in type constructors from a new
 ``Prelude``-like module::
 
-  module Data.BuiltInTypes ((~), [], (), (,), (,,), ...) where
+  module Data.BuiltInSyntax
+    ( (~)  ()           -- the equality constraint
+    , []   ( (:), [] )  -- the list type and its constructors
+    , ()   ( ()   )     -- the unit type and its constructor
+    , (,)  ( (,)  )     -- the pair type and its constructor
+    , (,,) ( (,,) )     -- the triple type and its constructor
+    , ...               -- ... and tuples of other arities
+    ) where
 
 This module is imported by default, like ``Prelude``. And in the same manner,
 it can be imported qualified instead::
 
-  import qualified Data.BuiltInTypes as T
+  import qualified Data.BuiltInSyntax as {D, T}
+  import D
 
 With such an import, ``[]`` unambiguously refers to the nil data constructor,
 whereas the list type is written ``T.[]``.
@@ -150,11 +177,11 @@ rules for desugaring of ``[a]`` and ``(a,b)``:
 
 By default, today's behavior is preserved, and ``[a]`` means a single-element
 list when it's to the left of ``::``, and the type of a list when it is to the
-right of ``::``. But with ``-XNoImplicitBuiltInTypes`` or ``import qualified
-Data.BuiltInTypes``, ``[]`` refers to the nil data constructor, thus ``[a]``
-means a single-element list both at the term-level and at the type-level. The
-user is advised to define ``type List = T.[]`` to write the type of a list as
-``List a``.
+right of ``::``. But with the appropriate arrangement of imports, ``[]`` can
+unambiguosly refer to the nil data constructor, and ``[a]`` would mean
+single-element list both at the term-level and at the type-level. The user is
+advised to define ``type List = T.[]`` to write the type of a list as ``List
+a``.
 
 Note that Haskell 98 or Haskell 2010 programs are not affected, and only users
 of ``-XDataKinds`` will notice.
@@ -208,32 +235,39 @@ Proposed Change Specification
 4. A compound alias ``as M {D, T}`` introduces both a normal alias ``M`` and
    namespace-specific aliases ``D`` and ``T``.
 
-5. Extend Template Haskell name quotation ``'T`` to look in both type and data
+5. Allow importing from an alias defined in the same module::
+
+    import qualified Data.Proxy as {T,D}
+    import qualified Data.Functor as {T,D}
+    import D (Proxy, Identity)
+
+6. Extend Template Haskell name quotation ``'T`` to look in both type and data
    namespaces, with priority given to the data namespace in case of ambiguity.
 
-6. Add a new module, ``Data.BuiltInTypes``, imported by default unless the user
-   passes ``-XNoImplicitBuiltInTypes`` to the compiler. Its behavior mirrors
+7. Add a new module, ``Data.BuiltInSyntax``, imported by default unless the user
+   passes ``-XNoImplicitBuiltInSyntax`` to the compiler. Its behavior mirrors
    that of ``Prelude`` and ``-XNoImplicitPrelude``.
 
-7. Data constructors ``[]``, ``(:)``, ``()``, ``(,)``, ``(,,)``, ``(,,,)``, and
-   so on, continue to be built-ins, always in scope. Type constructors ``(~)``,
-   ``[]``, ``()``, ``(,)``, ``(,,)``, ``(,,,)``, and so on, are no longer built-ins,
-   and come into scope from ``Data.BuiltInTypes``.
+8. Type constructors ``(~)``, ``[]``, ``()``, ``(,)``, ``(,,)``, ``(,,,)``, and
+   so on, and their associated data constructors ``[]``, ``(:)``, ``()``,
+   ``(,)``, ``(,,)``, ``(,,,)``, and so on, are no longer built-ins, and come
+   into scope from ``Data.BuiltInSyntax``. The user is allowed to rebind those
+   constructors, e.g. ``data [a] = !a : ![a]`` defines a strict list.
 
-   This change is not observable by users who neither enable ``-XNoImplicitBuiltInTypes``
-   nor write an explicit import declaration for ``Data.BuiltInTypes``.
-
-8. The ``[a]`` syntax is treated as follows:
-
-   1. Look up ``[]`` according to the scoping rules in the given context.
-   2. If ``[]`` came from the type namespace, treat ``[a]`` as ``[] a``.
-   3. If ``[]`` came from the data namespace, treat ``[a]`` as ``a : []``.
+   This change is not observable by users who neither enable ``-XNoImplicitBuiltInSyntax``
+   nor write an explicit import declaration for ``Data.BuiltInSyntax``.
 
 9. The ``(a,b)`` syntax means ``(,) a b``, where ``(,)`` is according to the
    scoping rules in the given context. This also applies to tuples of other
    arities.
 
-10. Introduce a new warning, ``-Wold-namespace-qualifiers``, which warns on
+10. The ``[a]`` syntax is treated as follows:
+
+    1. Look up ``[]`` according to the scoping rules in the given context.
+    2. If ``[]`` came from the type namespace, treat ``[a]`` as ``[] a``.
+    3. If ``[]`` came from the data namespace, treat ``[a]`` as ``a : []``.
+
+11. Introduce a new warning, ``-Wold-namespace-qualifiers``, which warns on
     ``''`` (of ``-XTemplateHaskell``), ``'`` (of ``-XDataKinds``), ``pattern``
     (of ``-XPatternSynonyms``), ``type`` (of ``-XExplicitNamespaces``). Revert
     the part of #65 that introduces the ``value`` pseudo-keyword.
@@ -248,14 +282,16 @@ Proposed Change Specification
     * For five releases (7.5 years in), do nothing.
     * In the next release (8 years in), drop the support for the old syntax from GHC.
 
-11. When ``[a]`` is desugared into ``a : []``, and there's a kind mismatch such
+12. When ``[a]`` is desugared into ``a : []``, and there's a kind mismatch such
     that the expected kind is ``Type``, the error message must account for
     the possibility that the user meant a list type by that, and should include
     a useful hint::
 
-     $ ghci -XNoImplicitBuiltInTypes -XDataKinds
-     Prelude> data D a = MkD a
-     Prelude> :kind D [Int]
+     $ ghci -XDataKinds
+     ghci> import qualified Data.BuiltInSyntax as {D, _}
+     ghci> import D
+     ghci> data D a = MkD a
+     ghci> :kind D [Int]
 
      <interactive>:1:3: error:
          • Expected a type, but ‘[Int]’ has kind ‘[Type]’
@@ -282,7 +318,8 @@ New::
 
   module M where
     import Data.Proxy as {D,T}
-    import Data.BuiltInTypes ()
+    import qualified Data.BuiltInSyntax as {BuiltInData, _}
+    import BuiltInData
 
     p :: T.Proxy [(Int, D.Proxy)]
 
@@ -364,9 +401,6 @@ Alternatives
   new syntax, ``data.`` and ``type.`` to disambiguate namespaces at every
   occurrence. The main disadvantage is that it leads to verbose code, e.g. ``a
   : data.[]`` instead of ``[a]``.
-
-* We could also introduce a ``Data.BuiltInData`` module akin to
-  ``Data.BuiltInTypes``, but there's no strong motivation to do so.
 
 Unresolved Questions
 --------------------
