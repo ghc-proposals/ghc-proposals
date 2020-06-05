@@ -18,7 +18,7 @@ ByteArray# literals
 ===================
 
 This is a proposal to introduce ``ByteArray#`` literals. The user
-would be able to use write code like ``[utf8|Tag Team|]`` and
+would be able to write code like ``[utf8|Tag Team|]`` and
 ``[utf16le|Araña|]``, valid as either an expression or a pattern.
 This would not require turning on ``TemplateHaskell``.
 
@@ -113,7 +113,7 @@ characters, and the number of characters must be even. GHC will throw
 an error at compile-time if an odd number of hexadecimal characters
 are given as the argument to ``octets``.
 
-These literals can be used both as values and as a way to scrutize a
+These literals can be used both as values and as a way to scrutinize a
 ``ByteArray#`` that has been cased on. Casing would look like this:
 
 .. code-block:: haskell
@@ -138,8 +138,8 @@ constant-folding when ``sizeofByteArray#``, ``indexWord8Array#``, or
 Users in need of other less common textual encodings could use template
 haskell to provide additional non-built-in quasiquoters.
 
-Effect and Interactions
------------------------
+Effects and Interactions
+------------------------
 
 The template-haskell library
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
