@@ -199,7 +199,7 @@ Proposed Change Specification
     new non-terminals::
 
       alias -> modid
-             | [modid] ( modid', modid' )
+             | ( modid', modid' )
 
       modid' -> modid
               | _
@@ -232,23 +232,20 @@ Proposed Change Specification
    One (but not both) parts of a compound alias can be ``_``, which does not
    create a qualifier for that namespace.
 
-4. A compound alias ``as M (D, T)`` introduces both a normal alias ``M`` and
-   namespace-specific aliases ``D`` and ``T``.
-
-5. Allow importing from an alias defined in the same module::
+4. Allow importing from an alias defined in the same module::
 
     import qualified Data.Proxy as (T, D)
     import qualified Data.Functor as (T, D)
     import D (Proxy, Identity)
 
-6. Extend Template Haskell name quotation ``'T`` to look in both type and data
+5. Extend Template Haskell name quotation ``'T`` to look in both type and data
    namespaces, with priority given to the data namespace in case of ambiguity.
 
-7. Add a new module, ``Data.BuiltInSyntax``, imported by default unless the user
+6. Add a new module, ``Data.BuiltInSyntax``, imported by default unless the user
    passes ``-XNoImplicitBuiltInSyntax`` to the compiler. Its behavior mirrors
    that of ``Prelude`` and ``-XNoImplicitPrelude``.
 
-8. Type constructors ``(~)``, ``[]``, ``()``, ``(,)``, ``(,,)``, ``(,,,)``, and
+7. Type constructors ``(~)``, ``[]``, ``()``, ``(,)``, ``(,,)``, ``(,,,)``, and
    so on, and their associated data constructors ``[]``, ``(:)``, ``()``,
    ``(,)``, ``(,,)``, ``(,,,)``, and so on, are no longer built-ins, and come
    into scope from ``Data.BuiltInSyntax``. The user is allowed to rebind those
@@ -257,17 +254,17 @@ Proposed Change Specification
    This change is not observable by users who neither enable ``-XNoImplicitBuiltInSyntax``
    nor write an explicit import declaration for ``Data.BuiltInSyntax``.
 
-9. The ``(a,b)`` syntax means ``(,) a b``, where ``(,)`` is according to the
+8. The ``(a,b)`` syntax means ``(,) a b``, where ``(,)`` is according to the
    scoping rules in the given context. This also applies to tuples of other
    arities.
 
-10. The ``[a]`` syntax is treated as follows:
+9. The ``[a]`` syntax is treated as follows:
 
     1. Look up ``[]`` according to the scoping rules in the given context.
     2. If ``[]`` came from the type namespace, treat ``[a]`` as ``[] a``.
     3. If ``[]`` came from the data namespace, treat ``[a]`` as ``a : []``.
 
-11. Introduce a new warning, ``-Wold-namespace-qualifiers``, which warns on
+10. Introduce a new warning, ``-Wold-namespace-qualifiers``, which warns on
     ``''`` (of ``-XTemplateHaskell``), ``'`` (of ``-XDataKinds``), ``pattern``
     (of ``-XPatternSynonyms``), ``type`` (of ``-XExplicitNamespaces``). Revert
     the part of #65 that introduces the ``value`` pseudo-keyword.
@@ -282,7 +279,7 @@ Proposed Change Specification
     * For five releases (7.5 years in), do nothing.
     * In the next release (8 years in), drop the support for the old syntax from GHC.
 
-12. When ``[a]`` is desugared into ``a : []``, and there's a kind mismatch such
+11. When ``[a]`` is desugared into ``a : []``, and there's a kind mismatch such
     that the expected kind is ``Type``, the error message must account for
     the possibility that the user meant a list type by that, and should include
     a useful hint::
