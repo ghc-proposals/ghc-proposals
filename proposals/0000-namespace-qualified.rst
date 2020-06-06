@@ -400,6 +400,7 @@ Alternatives
   : data.[]`` instead of ``[a]``.
 
 * Other syntax is possible for compound aliases:
+
   * ``import M as {D,T}``
   * ``import M as {data D, type T}``
   * ``import M data as D type as T``
