@@ -74,25 +74,25 @@ aliases for the type namespace and the data namespace. For example::
 
   module M where
     import Data.Proxy
-    import E as {D,T}
+    import E as (D,T)
 
     p1 :: Proxy D.X
     p2 :: Proxy T.X
 
-Here, ``{D,T}`` is a compound alias, which qualifies every data constructor
+Here, ``(D,T)`` is a compound alias, which qualifies every data constructor
 from ``E`` with ``D`` and every type constructor from ``E`` with ``T``.
 
 Hence, ``D.X`` refers to the data constructor, and ``T.X`` refers to the type
 constructor.
 
-A way to remember the ordering in a compound alias ``{A,B}`` (data namespace on
+A way to remember the ordering in a compound alias ``(A,B)`` (data namespace on
 the left, type namespace on the right) is that in ``A :: B`` we also have data
 on the left, types on the right.
 
-It's possible to omit one component of a compound alias, writing ``{D,_}`` or
-``{_,T}``.
+It's possible to omit one component of a compound alias, writing ``(D,_)`` or
+``(_,T)``.
 
-This syntax does is not quite sufficient to achieve feature parity with
+This syntax is not quite sufficient to achieve feature parity with
 ``-XExplicitNamespaces``. How do we write an unqualified import of a name from
 a specific namespace?::
 
@@ -100,7 +100,7 @@ a specific namespace?::
 
 For this, we introduce another minor feature, import from alias::
 
-  import qualified Data.Proxy as {_,T}
+  import qualified Data.Proxy as (_, T)
   import T
 
 Here, we import ``Data.Proxy`` qualified, with an alias ``T`` for its type
@@ -129,7 +129,7 @@ We introduce the notion of a module alias::
 Here, we can use a shorter name ``M`` for a local reference. And then we extend
 this feature with the notion of compound aliases, as before::
 
-  module MyModule as {D,T} where
+  module MyModule as (D, T) where
     data X = X
     p1 :: Proxy D.X
     p2 :: Proxy T.X
@@ -155,7 +155,7 @@ The solution is to export built-in type constructors from a new
 This module is imported by default, like ``Prelude``. And in the same manner,
 it can be imported qualified instead::
 
-  import qualified Data.BuiltInSyntax as {D, T}
+  import qualified Data.BuiltInSyntax as (D, T)
   import D
 
 With such an import, ``[]`` unambiguously refers to the nil data constructor,
@@ -199,7 +199,7 @@ Proposed Change Specification
     new non-terminals::
 
       alias -> modid
-             | [modid] { modid', modid' }
+             | [modid] ( modid', modid' )
 
       modid' -> modid
               | _
@@ -221,7 +221,7 @@ Proposed Change Specification
 2. A module alias ``module MyModule as M`` allows qualification of entities defined
    in the current module.
 
-3. A compound alias ``as {D, T}`` introduces two aliases, ``D`` and ``T``.
+3. A compound alias ``as (D, T)`` introduces two aliases, ``D`` and ``T``.
 
    * Names qualified with ``D`` are unambiguously selected from the data
      namespace.
@@ -232,13 +232,13 @@ Proposed Change Specification
    One (but not both) parts of a compound alias can be ``_``, which does not
    create a qualifier for that namespace.
 
-4. A compound alias ``as M {D, T}`` introduces both a normal alias ``M`` and
+4. A compound alias ``as M (D, T)`` introduces both a normal alias ``M`` and
    namespace-specific aliases ``D`` and ``T``.
 
 5. Allow importing from an alias defined in the same module::
 
-    import qualified Data.Proxy as {T,D}
-    import qualified Data.Functor as {T,D}
+    import qualified Data.Proxy as (T, D)
+    import qualified Data.Functor as (T, D)
     import D (Proxy, Identity)
 
 6. Extend Template Haskell name quotation ``'T`` to look in both type and data
@@ -288,7 +288,7 @@ Proposed Change Specification
     a useful hint::
 
      $ ghci -XDataKinds
-     ghci> import qualified Data.BuiltInSyntax as {D, _}
+     ghci> import qualified Data.BuiltInSyntax as (D, _)
      ghci> import D
      ghci> data D a = MkD a
      ghci> :kind D [Int]
@@ -317,8 +317,8 @@ Old::
 New::
 
   module M where
-    import Data.Proxy as {D,T}
-    import qualified Data.BuiltInSyntax as {BuiltInData, _}
+    import Data.Proxy as (D, T)
+    import qualified Data.BuiltInSyntax as (BuiltInData, _)
     import BuiltInData
 
     p :: T.Proxy [(Int, D.Proxy)]
@@ -334,7 +334,7 @@ Old::
 
 New::
 
-  module M as {D,T} where
+  module M as (_, T) where
     data Foo = Foo
     $(makeLenses 'T.Foo)
 
@@ -348,7 +348,7 @@ Old::
 
 New::
 
-  import Data.Proxy as {D,T}
+  import Data.Proxy as (D, T)
 
 Namespace-specific exports
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -360,7 +360,7 @@ Old::
 
 New::
 
-  module M as {D,T} (T.Foo) where
+  module M as (_, T) (T.Foo) where
     data Foo = Foo
 
 Namespace-specific fixitiy declarations
@@ -374,7 +374,7 @@ Old (with #65)::
 
 New::
 
-  module M as {D,T} where
+  module M as (_, T) where
     type family a $ b
     infixr 0 T.$
 
@@ -401,6 +401,9 @@ Alternatives
   new syntax, ``data.`` and ``type.`` to disambiguate namespaces at every
   occurrence. The main disadvantage is that it leads to verbose code, e.g. ``a
   : data.[]`` instead of ``[a]``.
+
+* Other syntax is possible for compound aliases (an older version of this
+  proposal used ``{D,T}``, and ``{data D, type T}`` was also considered).
 
 Unresolved Questions
 --------------------
