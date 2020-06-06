@@ -405,11 +405,7 @@ Alternatives
 Unresolved Questions
 --------------------
 
-* The proposed syntax provides no way to do an unqualified import of an
-  entire namespace. That is, there's no way to say "import all type
-  constructors from M, and nothing else".
-
-  It's unclear whether this functionality would be useful.
+None at the moment.
 
 Implementation Plan
 -------------------
