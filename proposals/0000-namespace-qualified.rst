@@ -399,8 +399,10 @@ Alternatives
   occurrence. The main disadvantage is that it leads to verbose code, e.g. ``a
   : data.[]`` instead of ``[a]``.
 
-* Other syntax is possible for compound aliases (an older version of this
-  proposal used ``{D,T}``, and ``{data D, type T}`` was also considered).
+* Other syntax is possible for compound aliases:
+  * ``import M as {D,T}``
+  * ``import M as {data D, type T}``
+  * ``import M data as D type as T``
 
 Unresolved Questions
 --------------------
