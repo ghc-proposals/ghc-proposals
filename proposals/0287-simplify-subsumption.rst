@@ -4,7 +4,7 @@ Simplify subsumption
 .. author:: Simon PJ
 .. date-accepted:: 2020-01-24
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/17775
-.. implemented::
+.. implemented:: 8.12
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/287>`_.
 .. contents::
