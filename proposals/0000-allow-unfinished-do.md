@@ -9,7 +9,7 @@ This proposal is [discussed at this pull request](https://github.com/ghc-proposa
 
 # Defer parse errors
 
-The syntax of `do` blocks in Haskell requires a final expression in order to even *parse*, lists cannot start with a comma, these are all examples of errors which GHC recognizes as *parse* errors nowadays. This means that half-baked `do` blocks, or a misplaced comment before the first element of a list, stop the pipeline, and no feedback can be gathered about name resolution or typing. This scenario arises quite often during interactive development. This proposal introduces a new flag in the compiler, `-fdefer-parse-errors`, which essentially treats those unfinished elements are having holes filling the missing places.
+The syntax of `do` blocks in Haskell requires a final expression in order to even *parse*, lists cannot start with a comma, these are all examples of errors which GHC recognizes as *parse* errors nowadays. This means that half-baked `do` blocks, or a misplaced comment before the first element of a list, stop the pipeline, and no feedback can be gathered about name resolution or typing. This scenario arises quite often during interactive development. Our proposal is to treat those unfinished elements as having holes filling the missing places.
 
 ## Motivation
 
@@ -55,7 +55,7 @@ The type signature for ‘f’ lacks an accompanying binding
 
 ## Proposed Change Specification
 
-There is a new flag in the compiler, `-fdefer-parse-errors`, which allows such "unfinished" sequences of items to go over the parsing phase. Conceptually, they are treated as having a (typed) hole wherever the item is missing, but the error reports the location of the entire block instead. This is enough to allow the compiler to go until the typing phase, which is great for interactive development. These holes are can be taken until runtime if `-fdefer-type-errors` is also enabled.
+Instead of flagging a parse error, the compiler allows such "unfinished" sequences of items to go over the parsing phase. Conceptually, they are treated as having a (typed) hole wherever the item is missing, but the error reports the location of the entire block instead. This is enough to allow the compiler to continue until the typing phase, which is great for interactive development. These holes are can be taken until runtime if `-fdefer-type-errors` is also enabled.
 
 ### `do` blocks
 
@@ -72,13 +72,6 @@ The translation section is updated with the rule:
 
 ```diff
 + do { stmt } = do { stmt ; _end }  (where '_end' is a fresh hole)
-```
-
-At the end of the parsing phase, if `-fdefer-parse-errors` is *not* enabled, a parsing error is raised, as usual, but with a hint to enable the extension.
-
-```
-The last statement in a 'do' block must be an expression
-Use -fdefer-parse-errors to allow this
 ```
 
 As described below in the [implementation plan](#implementation-plan), GHC already allows unfinished `do` in its syntax.
@@ -104,10 +97,11 @@ For those cases in which there is a type signature, but not a binding, we also w
 
 ## Examples
 
-The first example in the [motivation](#motivation) section would produce the following error message when `-fdefer-parse-errors` is enabled:
+The first example in the [motivation](#motivation) section would produce the following error message instead of the current one:
 
 ```
 • Found unfinished do block
+  (the last statement must be an expression)
     with inferred type :: IO b
     at <interactive>:(2,1)-(4,7)
   Where: ‘b’ is a rigid type variable bound by
@@ -120,23 +114,19 @@ The first example in the [motivation](#motivation) section would produce the fol
 
 ## Effect and Interactions
 
-The effect of this proposal is that, when the flag is enabled, the programmer may get more useful feedback than the one given now by GHC in this kind of scenarios. Furthermore, tools for interactive development may switch on this flag by default, as they do now with other such as `-fdefer-type-errors`.
+The effect of this proposal is that the programmer may get more useful feedback than the one given now by GHC in this kind of scenarios. Furthermore, tools for interactive development may switch on this flag by default, as they do now with other such as `-fdefer-type-errors`.
 
 ## Costs and Drawbacks
 
 The maintenance cost seems quite low, given that the change is quite local.
 
-One drawback is that tools for interactive development sometime hard-code the shape of the error messages. If we change the message given by a missing final expression when this flag is off (to hint about enabling it), these tools may break.
+One drawback is that tools for interactive development sometime hard-code the shape of the error messages. If we change the message, some of these tools may break.
 
 ## Alternatives
 
 The main alternative is to keep the *status quo*. Some people (including myself) have learnt that whenever you start a `do` block you must immediately write `undefined` or a hole afterwards, in order not to break the interactive development cycle. However, it feels weird that this problem occurs given that GHC can detect the problem with a lot of precision.
 
 ## Unresolved Questions
-
-1. Should we treat completely empty `do` block in some special way? My feeling is **no**.
-2. Should we even have a flag to control this behavior? It feels that nothing wrong may happen if we allow the compiler pipeline to continue until the typing phase. Of course, we would be deviating from the Report.
-3. Should this behavior be controlled by a language extension instead? I think **no**, because this does not make more programs to be accepted (we still get an error, just a bit later than before).
 
 ### Other unfinished productions
 
@@ -175,4 +165,4 @@ lexps :: { forall b. DisambECP b => PV [Located b] }
         | ',' lexps
 ```
 
-should be enough to many this work.
+should be enough to make this work.
