@@ -6,7 +6,7 @@ Quick Look Impredicativity
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal sas `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/274>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/274>`_.
 .. contents::
 
 
