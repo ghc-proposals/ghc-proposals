@@ -50,7 +50,7 @@ different-OS requires harder to provision virtual machines or real devices.
 This is just more cumbersome, even ignoring worrying about build vs host effects.
 
 Another alternative is dumping and loading splices.
-This is where one first builds natively (host platform ≔ build platform) so TH can be evaluated, dumps the evaluated splices, and the builds cross (for the original host platform) by splicing in those dumped pre-evaluated splices rather than evaluating anything afresh::
+This is where one first builds natively (host platform ≔ build platform) so TH can be evaluated, dumps the evaluated splices, and then builds cross (for the original host platform) by splicing in those dumped pre-evaluated splices rather than evaluating anything afresh::
 
   -- build for build platform (local host platform := overall build platform, native)
   data MyType = ...
@@ -60,9 +60,9 @@ This is where one first builds natively (host platform ≔ build platform) so TH
 
   -- build for host platform (local host platform := overall host platform, cross)
   data MyType = ...
-  $(...) -- file in with dumped splice, no eval needed
+  $(...) -- fill in with dumped splice, no eval needed
 
-This became easier with `this patch <https://github.com/reflex-frp/reflex-platform/blob/master/splices-load-save.patch>`_.
+This became easier with the changes on `this branch of GHC <https://gitlab.haskell.org/obsidiansystems/ghc/-/tree/wip/abrar/splices-8.6.5>`_.
 Still, this requires building every package twice, since we redo the entire compilation on both platforms, and worse doesn't work if a top-level splice is target specific.
 For example, imagine some code like::
 
@@ -141,7 +141,7 @@ This solves all the problems of the first section:
 
 - No need to emulate any other platforms.
   Recall TH-induced evaluation only happens within top-level splices; splices within brackets just build bigger expressions.
-  That means only TH only induces build platform splicing, which is native by defintion!
+  That means TH only induces build platform splicing, which is native by defintion!
 
 - No need to build everything twice.
   Just what is needed in each phase is built, and just when it's needed.
@@ -191,8 +191,8 @@ GHC
 #. Let there be a notion of stages assigned to the integers.
    All existing rules outside of TH on binding/name resolution are retaken to act independently per stage.
    (i.e. identifiers in stage *n* resolve to bindings in stage *n*, all syntax in the rule is parameterized with the stage.)
-   bindings (with existing, regular syntax) on the top level are always in stage 0.
-   As a consequence, all non-TH syntax in is also stage 0.
+   Bindings (with existing, regular syntax) on the top level are always in stage 0.
+   As a consequence, all non-TH syntax is also in stage 0.
 
 #. Redefine quoting and splicing as acting on adjacent stages.
    Specifically, quoted code from the next stage:
@@ -586,8 +586,8 @@ Here is a rough plan:
 Appendix: "build", "host", and "target" terminology, and some opinions
 ------------------------------------------------------------------------
 
-These terms come from GNU Autoconf `<ttps://gcc.gnu.org/onlinedocs/gccint/Configure-Terms.html>`_.
-You may also want to compare Nixpkgs's documentation, `<https://nixos.org/nixpkgs/manual/#sec-cross-platform-parameters>`_, as Nixpkgs's use of these terms very much influenced this proposal.
+These terms come from GNU Autoconf `<https://gcc.gnu.org/onlinedocs/gccint/Configure-Terms.html>`_.
+You may also want to compare Nixpkgs's documentation, `<https://nixos.org/nixpkgs/manual/#ssec-cross-platform-parameters>`_, as Nixpkgs's use of these terms very much influenced this proposal.
 
 build
   The "build" platform is the platform on which the thing is built;
@@ -601,7 +601,7 @@ host
   Countless bugs have been caused by people gravitating towards build and target instead.
 
 target
-  The "target" platform is where a compiler's generated code will run.
+  The "target" platform of a compiler is where the code produced by the compiler will run.
   The target platform is, unlike the other two platforms, not actually fundamental to the process of building software.
   It is only relevant for [building] compilers.
   It is also not a primitive concept: the target platform is the emitted code's host platform.
