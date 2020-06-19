@@ -76,6 +76,62 @@ Some operations, such as `(<+>)`, are sufficiently polymorphic that they work un
 
 In other words, the original rules were carefully designed to align with the types programmers *naturally* write, allowing ordinary arrow combinators to be used as control operators. The current desugaring used by GHC falls flat precisely because it does *not* align with those types, making it significantly less useful (so much so that users seem confused about the notation’s purpose).
 
+## Aside: Understanding the GHC 7.8 behavior
+
+One might wonder *why* GHC 7.8 chose to make such an unhelpful change. Alas, I have been unable to find the precise rationale discussed anywhere: it is not mentioned in the changelog, nor have I found any issue tracker discussions. However, I’ve gathered enough hints to reconstruct the general rationale.
+
+The problems revolve wholly around the typing rule for arrow control operators. Recall that the original, pre-7.8 rule expected tuples of the following shape:
+
+```haskell
+((... ((e, s1), s2), ...), sn)
+```
+
+Also note that both the current and pre-7.8 typechecking rules pass the types of values on the stack as an *input* to the judgment. This means that the exact number of values on the stack must be known as the typechecker recurs through the program during constraint generation. For example, given a command like
+
+```haskell
+(| handle cmd1 cmd2 |)
+```
+
+the typechecker must deduce that no values are pushed onto the stack for `cmd1` but one value is pushed onto the stack for `cmd2`. It must deduce this information **from the type of `handle` alone, without even looking at `cmd1` or `cmd2`.** This is tricky, as the type of `handle` just looks like this:
+
+```haskell
+handle :: ArrowError e arr => arr a b -> arr (a, e) b -> arr a b
+```
+
+How can GHC figure this out? It must inspect the type of `handle` structurally:
+
+  1. It must deduce that `a` is a bound type variable that corresponds to the input environment.
+
+  2. With that information, it can discover that `arr a b` just takes `a` as an input, so no values are pushed onto the stack.
+
+  3. Likewise, it can discover that `arr (a, e) b` tuples `a` with one additional value, so it pushes a single value onto the stack.
+
+But this is somewhat unsatisfying. After all, we could instantiate `a` with `(c, d)` to get
+
+```haskell
+handle :: ArrowError e arr => arr (c, d) b -> arr ((c, d), e) b -> arr (c, d) b
+```
+
+Now suddenly `handle` appears to accept one value on the stack as input and provide one and two values on the stack to its argument commands. These are two simultaneously valid interpretations of `handle`’s type, so the old typechecker relied on the structure of the type GHC inferred, with foralls still in place.
+
+As the GHC type system grew increasingly sophisticated with the addition of GADTs and type families, this eager, structural approach became less and less viable. The type could have type family applications or existentially-bound skolems. Much of the structure of a type cannot be known until constraint solving, but the old approach required this information be discovered during constraint generation.
+
+So GHC 7.8 switched to a new representation that did not require so much groveling through delicately-preserved inferred types:
+
+  1. *All* arguments can be checked against a tuple of the shape `(e, si)`, where `e` is a skolem representing the environment, and `si` is a metavariable representing that argument’s stack.
+
+  2. Since the stack is now defined inductively, with a base case of `()`, GHC can simply emit unification constraints like `s1 ~ ()` or `s2 ~ (t1, s3)` in an entirely syntax-directed way. Much simpler!
+
+Unfortunately, as described in the motivation above, this leads to very user-unfriendly types.
+
+**The key idea behind this proposal is twofold:**
+
+  1. If we want to preserve the old types, we need a way to somehow **defer learning about the shape of the stack** to constraint solving type, *not* constraint generation time.
+
+  2. We can express these special “arrow stack constraints” as **ordinary equalities involving type families** that relate tuples and type-level lists.
+
+The following section describes this strategy in gory detail.
+
 ## Proposed Change Specification
 
 To restore the spirit of the original system, I propose the following modifications to GHC’s implementation of arrow notation.
