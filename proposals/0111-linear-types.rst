@@ -4,7 +4,7 @@
 .. author:: Arnaud Spiwack
 .. date-accepted:: 2018-10-22
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/15981
-.. implemented:: 
+.. implemented:: 8.12 (technology preview)
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/111>`_.
 .. contents::
