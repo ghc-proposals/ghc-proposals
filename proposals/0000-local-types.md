@@ -6,7 +6,7 @@ ticket-url: ""
 implemented: ""
 ---
 
-This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/273>).
+This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/273).
 
 # Locally declared types and instances
 
@@ -435,4 +435,3 @@ offer a warning when an instance can be floated.
 
 (Optional) If accepted who will implement the change? Which other resources
 and prerequisites are required for implementation?
-
