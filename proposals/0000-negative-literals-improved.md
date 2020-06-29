@@ -1,0 +1,52 @@
+---
+author: Vladislav Zavialov
+date-accepted: ""
+ticket-url: ""
+implemented: ""
+---
+
+This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/344).
+
+# Negative Literals Improved
+
+At the moment, `NegativeLiterals` has the following issue, documented in the
+User's Guide:
+
+> One pitfall is that with `NegativeLiterals`, `x-1` will be parsed as `x`
+> applied to the argument `-1`, which is usually not what you want. `x - 1` or
+> even `x- 1` can be used instead for subtraction.
+
+We propose to fix this.
+
+## Motivation
+
+1. Having `x-1` parsed as `x (-1)` may violate users' expectations.
+2. Fixing this infelicity would make `NegativeLiterals` a subset of `LexicalNegation`.
+
+## Proposed Change Specification
+
+When lexing a negative literal, require that it is *not preceded by a closing
+token*. See
+[#229](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0229-whitespace-bang-patterns.rst)
+for the definition of a closing token.
+
+## Effect and Interactions
+
+Code that relies on `x-1` being parsed as `x (-1)` will break.
+
+## Costs and Drawbacks
+
+Changing the behavior of an existing extension may not be the best practice.
+
+## Alternatives
+
+Don't change anything.
+
+## Unresolved Questions
+
+None at the moment.
+
+## Implementation Plan
+
+After the `LexicalNegation` patch is merged, the implementation will be
+trivial: modify `negLitPred` slightly.
