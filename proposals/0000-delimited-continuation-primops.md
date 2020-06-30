@@ -91,17 +91,23 @@ It’s worth reiterating that this benchmark is **not** evaluating the performan
 
 ## Proposed Change Specification
 
-The scope of the proposed change is limited to the RTS: no other part of the compiler needs to be touched. The user-facing interface consists of two new primops, `prompt#` and `control0#`, which have the following types:
+The scope of the proposed change is limited to the RTS: no other part of the compiler needs to be touched. The user-facing interface consists of one new primitive type and three new primops:
 
 ```haskell
+type PromptTag# (a :: Type)
+
+newPromptTag# :: forall (a :: Type). State# RealWorld -> (State# RealWorld, PromptTag a)
+
 prompt#
   :: forall (a :: Type)
-   . (State# RealWorld -> (# State# RealWorld, a #))
+   . PromptTag# a
+  -> (State# RealWorld -> (# State# RealWorld, a #))
   -> State# RealWorld -> (# State# RealWorld, a #)
 
 control0#
   :: forall (a :: Type) (r :: RuntimeRep) (b :: TYPE r)
-   . (((State# RealWorld -> (# State# RealWorld, b #))
+   . PromptTag# a
+  -> (((State# RealWorld -> (# State# RealWorld, b #))
        -> State# RealWorld -> (# State# RealWorld, a #))
       -> State# RealWorld -> (# State# RealWorld, a #))
   -> State# RealWorld -> (# State# RealWorld, b #)
@@ -110,8 +116,10 @@ control0#
 The type of `control0#` is rather intimidating, so it is more useful to consider the types in terms of `IO` rather than functions on `State#` tokens:
 
 ```haskell
-prompt :: IO a -> IO a
-control0 :: ((IO b -> IO a) -> IO a) -> IO b
+data PromptTag a = PromptTag (PromptTag# a)
+newPromptTag :: IO (PromptTag a)
+prompt :: PromptTag a -> IO a -> IO a
+control0 :: PromptTag a -> ((IO b -> IO a) -> IO a) -> IO b
 ```
 
 However, note that I do **not** propose actually providing the `IO` versions anywhere! There is **no** safe way to use these operations in arbitrary `IO` code, for reasons given below. The intended use of `prompt#` and `control0#` is in library code that can arrange for them to be used safely; an example is given in the Examples section.
@@ -135,38 +143,52 @@ The names and semantics of `prompt` and `control0` come from [the paper “Shift
 
 In other words, `control0` is the most general of the standard continuation operators, so it’s the obvious choice to implement as a primitive.
 
-The meaning of “the current evaluation context” is complicated in a call-by-need language, so the behavior of `prompt#` and `control0#` is only well-defined in strict `State#` threads (where each call to `control0#` has a corresponding call to `prompt#` in the same state thread). Furthermore, `control0#` is not type safe; it is the responsibility of the caller to ensure that the `a` type argument to `control0#` is representationally equivalent to the `a` type argument of the nearest enclosing `prompt#` call. Failing to preserve these invariants can lead to segfaults and other badness.
+#### Prompt tags
 
-In addition to these restrictions, `control0` includes a minor departure from its conventional semantics: the captured continuation accepts a *computation* as an argument rather than a *value*. That is, `prompt#` and `control0#` are properly defined by the following reduction rules:
+Also like the Monadic Framework paper, RTS continuation prompts are explicitly *tagged*. A `PromptTag#` serves two purposes:
 
-  * <code>prompt# (\s2 -> (# s2, *e* #)) *s1*</code> ⟶ <code>(# *s1*, *e* #)</code>
+  1. It provides a label that can be used to identify the prompt to capture up to, even if there are intervening uses of `prompt#` with different tags.
 
-  * <code>prompt# *E*[control0# *e*] *s1*</code> ⟶ <code>*e* (\m s2 -> *E*[m s2]) *s1*</code>  
-    where *`E`* contains no intervening `prompt#`
+  2. It connects the type expected by the `prompt#` call to the corresponding `control0#` call, preserving type safety.
+
+Prompt tags are created using the `newPromptTag#` primop, which produces a new prompt tag that is distinct from all other tags. Prompt tags can be compared for equality, but they are otherwise entirely opaque.
+
+#### Precise semantics
+
+In addition to the addition of tags, `control0` includes a minor departure from its conventional semantics: the captured continuation accepts a *computation* as an argument rather than a *value*. That is, `prompt#` and `control0#` are properly defined by the following reduction rules:
+
+  * <code>prompt# *tag* (\s2 -> (# s2, *e* #)) *s1*</code> ⟶ <code>(# *s1*, *e* #)</code>
+
+  * <code>prompt# *tag* *E*[control0# *tag* *e*] *s1*</code> ⟶ <code>*e* (\m s2 -> *E*[m s2]) *s1*</code>  
+    where *`E`* contains no intervening <code>prompt# *tag*</code>
 
 This mimics the semantics of the `pushPrompt` operator of Dybvig et al., and it allows a continuation to be restored before proceeding with further computation. In Haskell, this is useful for reinstalling exception handlers or interrupt masking state. For example, using the `IO`-wrapped operators,
 
 ```haskell
-prompt $ catch (control0 $ \k -> k $ throwIO (ErrorCall "bang"))
-               (\(ErrorCall msg) -> pure msg)
+prompt tag $ catch (control0 tag $ \k -> k $ throwIO (ErrorCall "bang"))
+                   (\(ErrorCall msg) -> pure msg)
 ```
 
 is equivalent to `pure "bang"`, since the application of `k` will reinstall the exception handler before executing the `throwIO` call. In contrast,
 
 ```haskell
-prompt $ catch (control0 $ \k -> k . pure =<< throwIO (ErrorCall "bang"))
-               (\(ErrorCall msg) -> pure msg)
+prompt tag $ catch (control0 tag $ \k -> k . pure =<< throwIO (ErrorCall "bang"))
+                   (\(ErrorCall msg) -> pure msg)
 ```
 
 raises an exception, since `k` is not restored until after the call to `throwIO` returns.
 
-**Note that prompts are not in any way tagged.** Each call to `control0#` captures up to the nearest `prompt#` and no further. This is an intentional design decision. There are many ways to implement prompt tagging, and implementing them in the RTS rather than in library code would require committing to an implementation strategy without much benefit. It is straightforward to implement tagged prompts as a derived concept; [`eff`][github:eff] provides one possible implementation.
+### Restrictions and error handling
 
-### Behavior of unwinding and rewinding
+Uses of `control0#` must obey the following restrictions:
 
-For the most part, capturing a continuation just involves copying a slice of the stack into the heap, and restoring it just involves copying it onto the current stack. However, continuation capture and restore requires extra care to respect modifications to the asynchronous exception masking state. When capturing a continuation that includes `maskAsyncExceptions#`, `maskUninterruptible#`, or `unmaskAsyncExceptions#` frames, the masking state is properly adjusted when the stack is unwound and rewound.
+  * There must be a matching call to `prompt#` with the same tag somewhere in the current evaluation context.
 
-Capturing a continuation that includes thunk update frames or STM frames is undefined behavior. The presence of a thunk update frame in the captured continuation implies the nearest `prompt#` frame was pushed by a different state thread than the one that called `control0#`, so the captured continuation would be unpredictable. Similarly, STM transactions are not re-entrant, so jumping back into an in-progress STM transaction has no meaning.
+  * The corresponding `prompt#` call must be a part of the current (strict) `State#` thread. In other words, it is illegal to capture a continuation that includes `unsafePerformIO` or `unsafeInterleaveIO` as a continuation frame.
+
+  * Similarly, STM transactions are not re-entrant, so it is illegal to capture a continuation that includes `atomically#`, `catchRetry#`, or `catchSTM#` as a continuation frame.
+
+If any of these restrictions are violated, and exception is raised at the point of the call to `control0#`. Together, these restrictions ensure a consistent, unambiguous meaning of “the current evaluation context,” even though Haskell is call-by-need.
 
 ### Runtime implementation
 
@@ -176,61 +198,44 @@ Dually, applying a continuation pushes the captured frames onto the stack, then 
 
 `CONTINUATION` is a new closure type. It is similar to the existing `AP_STACK`, but while an `AP_STACK` is a thunk with a chunk of stack attached to it, a `CONTINUATION` is a *function* represented by a chunk of stack. For the most part, a `CONTINUATION` behaves exactly like a `FUN` of arity 2 that accepts a pointer and a `RealWorld` token, but its representation requires some cooperation from the runtime to allow the garbage collector to traverse the captured stack frames.
 
-Some extra care is needed to handle capturing certain kinds of stack frames, such as underflow frames and frames that adjust the interrupt masking state. To accommodate these, `CONTINUATION`s use a special calling convention that allows a single continuation to actually be represented by a chain of separate `CONTINUATION` chunks; this strategy is described in gory detail in comments in the existing implementation linked at the end of this proposal.
-
 
 ## Examples
 
 The motivation section already mentions a significant worked example, [the `eff` effect library.][github:eff] That motivates the proposal’s usefulness, but it is rather complicated, so I present a much simpler example below as a simple illustration of the primops’ behavior.
 
-To start, we can define a safe interface for `prompt#` and `control0#`:
+To start, we can replicate the interface of the Monadic Framework paper using `prompt#` and `control0#` rather than CPS:
 
 ```haskell
-type role Cont representational representational
-newtype Cont r a = Cont (State# RealWorld -> (# State# RealWorld, a #))
+type role CC nominal representational
+newtype CC ans a = CC (State# RealWorld -> (# State# RealWorld, a #))
   deriving (Functor, Applicative, Monad) via IO
 
-reset :: Cont a a -> Cont r a
-reset (Cont m) = Cont $ prompt# m
+runCC :: (forall ans. CC ans a) -> a
+runCC (CC m) = case runRW# m of (# _, a #) -> a
 
-shift :: ((Cont r a -> Cont r r) -> Cont r r) -> Cont r a
-shift f = Cont $ control0# $ \k ->
-  case reset $ f $ \(Cont a) -> reset $ Cont $ k a of Cont b -> b
+type role Prompt nominal representational
+data Prompt ans a = Prompt (PromptTag# a)
 
-runCont :: Cont a a -> a
-runCont (Cont m) = case runRW# (prompt# m) of (# _, a #) -> a
+newPrompt :: CC ans (Prompt ans a)
+newPrompt = CC $ \s1 -> case newPromptTag# s1 of
+  (# s2, tag #) -> (# s2, Prompt tag #)
+
+pushPrompt :: Prompt ans a -> CC ans a -> CC ans a
+pushPrompt (Prompt tag) (CC m) = CC $ prompt# tag m
+
+type SubCont ans a b = CC ans a -> CC ans b
+
+withSubCont :: Prompt ans b -> (SubCont ans a b -> CC ans b) -> CC ans a
+withSubCont (Prompt tag) f = CC $ control0# tag $ \k ->
+  case f (\(CC m) -> CC (k m)) of CC m -> m
+
+pushSubCont :: SubCont ans a b -> CC ans a -> CC ans b
+pushSubCont = id
 ```
 
-I’ve chosen to implement the more traditional `shift` and `reset` operations because they’re much easier to safely statically type. `reset` is just `prompt#`, but `shift` wraps `control0#` to reinstall the prompt after both continuation capture and continuation application.
+We can now directly run all of the examples in the paper.
 
-We can define an `Alternative` instance for `Cont [r]` that combines the results of all branches of a computation, a la the `[]` monad:
-
-```haskell
-instance Alternative (Cont [r]) where
-  empty = shift $ \_ -> pure []
-  a <|> b = shift $ \k -> (++) <$> k a <*> k b
-```
-
-Using this, we can write a simple backtracking implementation of n-queens:
-
-```haskell
-choose :: Alternative f => [a] -> f a
-choose = asum . map pure
-
-nQueens :: Int -> [[Int]]
-nQueens n = runCont (go []) where
-  go queens
-    | length queens == n = pure [reverse queens]
-    | otherwise = do
-        i <- choose [1..n]
-        -- check vertical
-        traverse (guard . (i /=)) queens
-        -- check diagonal
-        for_ (zip [1..] queens) $ \(j, q) -> do
-          guard $ i /= q - j
-          guard $ i /= q + j
-        go (i:queens)
-```
+(TODO: Show some examples and their STG output side-by-side with the STG output from `CC-delcont`.)
 
 
 ## Effect and Interactions
@@ -240,7 +245,7 @@ The changes required to implement `prompt#` and `control0#` are relatively minim
 A more important consideration is how `control0#` might interact with user programs. As alluded to above, `control0#` is fundamentally dangerous when used with arbitrary `IO` code, as existing programs do not account for the possibility of re-entrant `IO` computations. For example, consider code such as the following:
 
 ```haskell
-m = withFile path ReadMode $ \h -> hGetLine h >> control0 f >> hGetContents h
+m = withFile path ReadMode $ \h -> hGetLine h >> control0 tag f >> hGetContents h
 ```
 
 Internally, `withFile` uses `bracket` to manage the lifetime of a `Handle`, but it isn’t clear what the behavior ought to be if a captured continuation includes a `withFile` frame. Several possibilities come to mind:
@@ -252,6 +257,16 @@ Internally, `withFile` uses `bracket` to manage the lifetime of a `Handle`, but 
   * A more satisfying approach would be to make `bracket` behave like Scheme’s `dynamic-wind`, where the “allocate” and “destroy” actions are executed upon every jump in or out of the delimited context. This might work better for some resources, like a mutex, but it doesn’t work for `withFile`, since any state of the `Handle` will be destroyed. (And even if it could somehow be recreated, the captured continuation already closes over the *old* `Handle`.)
 
 Existing code just isn’t equipped to deal with continuations. Furthermore, adequately handling these situations in general is not a solved problem. Therefore, this proposal punts the problem to library authors, who may experiment with different solutions outside of GHC proper.
+
+### Async exceptions
+
+Special care must be taken when capturing and restoring continuations that include `maskAsyncExceptions#`, `maskUninterruptible#`, or `unmaskAsyncExceptions#` frames. For example, the program
+
+```haskell
+prompt tag $ mask_ (control0 tag f >>= g)
+```
+
+must unmask async exceptions during continuation capture and re-mask them upon continuation restore. This ensures async exceptions remain masked during the evaluation of `g`, even if the continuation is restored in a context where they are not masked.
 
 
 ## Costs and Drawbacks
