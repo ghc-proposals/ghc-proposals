@@ -97,7 +97,7 @@ Effect and Interactions
 
 - `Proposal 319`_ proposes a ``-XNoFallibleDo`` to disable fail sugar in ``do``\ -notation, having incomplete patterns in bind statements throw ``PatternMatchFail`` just like other incomplete patterns.
   The idea isn't that ``PatternMatchFail`` is actually good, but just to be consistent with the rest of the language and avoid using a exhaustiveness heuristic weaker than the regular exhaustiveness checker.
-  The combination of ``-XNoFallibleDo`` and ``-XNoFallibleDo`` would make those incomplete patterns errors like all the others.
+  The combination of ``-XNoFallibleDo`` and ``-XNoSugaredIncompleteness`` would make those incomplete patterns errors like all the others under ``-XNoSugaredIncompleteness``.
 
 Costs and Drawbacks
 -------------------
