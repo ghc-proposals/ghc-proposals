@@ -48,5 +48,7 @@ None at the moment.
 
 ## Implementation Plan
 
-After the `LexicalNegation` patch is merged, the implementation will be
-trivial: modify `negLitPred` slightly.
+Implemented in [Merge Request 3624](https://gitlab.haskell.org/ghc/ghc/-/merge_requests/3624).
+
+The change is a trivial adjustment to `negLitPred` in `Lexer.x`.
+
