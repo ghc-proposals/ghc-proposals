@@ -3,8 +3,8 @@ Qualified do
 
 .. author:: Facundo Domínguez, Arnaud Spiwack, Matthías Páll Gissurarson
 .. date-accepted:: 2020-05-21
-.. ticket-url::
-.. implemented::
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/18214
+.. implemented:: 8.12
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/216>`_.
 .. contents::
