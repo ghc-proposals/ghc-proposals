@@ -18,9 +18,14 @@ User's Guide:
 
 We propose to fix this.
 
+Additionally, unboxed literals (e.g. `-1#`) have the same issue even without
+the `NegativeLiterals` extension. We propose to fix this, too.
+
 ## Motivation
 
 1. Having `x-1` parsed as `x (-1)` may violate users' expectations.
+   As evidence, see [#18022](https://gitlab.haskell.org/ghc/ghc/-/issues/18022).
+
 2. Fixing this infelicity would make `NegativeLiterals` a subset of `LexicalNegation`.
 
 ## Proposed Change Specification
@@ -49,6 +54,3 @@ None at the moment.
 ## Implementation Plan
 
 Implemented in [Merge Request 3624](https://gitlab.haskell.org/ghc/ghc/-/merge_requests/3624).
-
-The change is a trivial adjustment to `negLitPred` in `Lexer.x`.
-
