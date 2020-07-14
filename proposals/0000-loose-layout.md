@@ -25,8 +25,8 @@ foo = (
 In most other programming languages, it is commonplace to align closing
 parentheses, brackets, or braces with the statement that they belong to.
 In Haskell, due to the layout rule, this is not allowed most of the time.
-Because of this, Haskell has developed some unique formatting conventions,
-such as leading commas:
+Partly vecause of this, Haskell has developed some unique formatting
+conventions, such as leading commas:
 
 ```
 foo =
@@ -36,18 +36,17 @@ foo =
   )
 ```
 
-This is partly to work around the fact that more common styles from other
-languages don't work here.  Admittedly, some Haskell programmers have
-grown fond of these new styles.  This proposal doesn't prevent them from
-being used by choice.  However, it's not optimal to force programmers into
-unusual style choices when it's easy to fix the layout rule.  So let's
-fix the layout rule, and let people choose.
+Admittedly, some Haskell programmers have grown fond of these new styles.
+This proposal doesn't prevent them from being used by choice.  However,
+it's not optimal to force programmers into unusual style choices when it's
+easy to fix the layout rule.  So let's fix the layout rule, and let people
+choose.
 
 ## Proposed Change Specification
 
 A new language extension is added, called `LooseLayout`.  When enabled, the
 following rule is added to the beginning of the layout algorithm in
-section 10.3 of the Haskell 2010 Report:
+[section 10.3 of the Haskell 2010 Report](https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#x17-17800010.3):
 
 * L (\<n\> : t : ts) (m : ms) = L (t : ts) (m : ms), **if** m = n, and t is one of: ), ], or }.
 
