@@ -156,7 +156,8 @@ a solution.
 
 ## Unresolved Questions
 
-None so far.
+The extension name is terrible and doesn't communicate what it's doing very
+well.  I cannot yet think of a better name.
 
 ## Implementation Plan
 
