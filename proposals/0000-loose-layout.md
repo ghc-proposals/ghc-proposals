@@ -48,8 +48,8 @@ fix the layout rule, and let people choose.
 ## Proposed Change Specification
 
 A new language extension is added, called `LooseLayout`.  When enabled, the
-following rule is added to the beginnign of the layout algorithm from
-section 10.2 of the Haskell 2010 Report:
+following rule is added to the beginning of the layout algorithm in
+section 10.3 of the Haskell 2010 Report:
 
 * L (\<n\> : t : ts) (m : ms) = L (t : ts) (m : ms), **if** m = n, and t is one of: ), ], or }.
 
