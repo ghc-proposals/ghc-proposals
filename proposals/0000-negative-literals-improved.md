@@ -51,7 +51,8 @@ Changing the behavior of an existing extension may not be the best practice.
 
 ## Alternatives
 
-Don't change anything.
+* Don't change anything.
+* Deprecate `NegativeLiterals` in favor of `LexicalNegation`.
 
 ## Unresolved Questions
 
