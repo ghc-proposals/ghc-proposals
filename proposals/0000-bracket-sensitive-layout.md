@@ -22,34 +22,104 @@ foo = (
 
 ## Motivation
 
-In most other programming languages, it is commonplace to align closing
-parentheses, brackets, or braces with the statement that they belong to.
-In Haskell, due to the layout rule, this is not allowed most of the time.
-Partly vecause of this, Haskell has developed some unique formatting
-conventions, such as leading commas:
+In most other programming languages, it is very commonplace to
+align closing parentheses, brackets, or braces with the statement
+that they belong to.  These examples are all simplified from
+tutorials, documentation, etc., where the style is overwhelmingly
+used.
 
 ```
-foo =
+// C++
+int i[3][3] = {
+    { 1, 0, 0 },
+    { 0, 1, 0 },
+    { 0, 0, 1 }
+};
+```
+
+```
+// Java
+Arrays.sort(myArray, new Comparator<>() {
+    @Override
+    public int compare(Integer a, Integer b) {
+        return a - b;
+    }
+});
+```
+
+```
+// JavaScript
+const obj = {
+    strings: [
+        "one",
+        "two",
+        "three",
+        "four"
+    ],
+    innerObj: {
+        x: 40,
+        y: 300
+    },
+    f: function() {
+        return 42;
+    }
+};
+```
+
+```
+# Python
+mydict = {
+    "key1": 1,
+    "key2": 2,
+    "key3": 3,
+}
+
+mylist = [
+    (1, 'hello'),
+    (2, 'world'),
+]
+```
+
+In Haskell, due to the layout rule, this is not allowed most of the time.
+Haskell has, therefore, developed some unique formatting conventions,
+such as:
+
+```
+indentedCloseBracket = (
+  first,
+  second,
+  third,
+  )
+
+twoLevelIndent =
+  (
+    first,
+    second,
+    third
+  )
+
+leadingCommas =
   ( first
   , second
   , third
   )
 ```
 
-Admittedly, some Haskell programmers have grown fond of these new styles.
-This proposal doesn't prevent them from being used by choice.  However,
-it's not optimal to force programmers into unusual style choices when it's
-easy to fix the layout rule to not have that effect.
+Some Haskell programmers have grown fond of these new styles and prefer
+them on their own merits.  However, it's not optimal to force programmers
+into unusual style choices when it's easy to tweak the layout rule to not
+require them.
 
-This rule has also caused complexity in Haskell tooling.  See
-[here](https://www.tweag.io/blog/2019-10-11-ormolu-first-release/):
+This layout rule has also caused complexity in multiple pieces of Haskell
+tooling.  For example, comments [here](https://www.tweag.io/blog/2019-10-11-ormolu-first-release/):
 
 > That’s why we make an exception in our rendering rules—we move the
 > closing parenthesis one indentation level to the right on the rare
 > occasions it’s necessary.
 
-So let's fix the layout rule, and let people
-choose.
+and the workaround [here](https://github.com/google/codeworld/blob/master/web/js/codeworld-mode.js#L593).
+
+So let's fix the layout rule, and let people choose.
 
 ## Proposed Change Specification
 
@@ -65,14 +135,14 @@ With the `BracketSensitiveLayout` extension enabled, the following are all valid
 while they were previously syntax errors:
 
 ```
-foo = (
+example1 = (
   1,
   2
 )
 ```
 
 ```
-main = do
+example2 = do
   mapM_ print [
     1,
     2,
@@ -81,7 +151,7 @@ main = do
 ```
 
 ```
-foo = a ++ b
+example3 = a ++ b
   where
     a = [
       1,
@@ -95,10 +165,10 @@ foo = a ++ b
     ]
 ```
 
-The following also becomes legal, though I'm not sure it should be:
+The following two examples also becomes legal, though perhaps poorly formatted:
 
 ```
-names = [
+example4 = [
   "Abe",
   "Beth",
   "Charles"
@@ -109,29 +179,79 @@ names = [
 ]
 ```
 
-I'd suggest this would be considered bad style, at least.  But not
-all poor formatting is excluded by the parser.
+```
+example5 = [ (
+  1,
+  2,
+), (
+  3,
+  4
+)]
+```
 
-Note that the following is still **not** legal, because the indentation
-of the closing bracket is less than the current layout context, instead
-of equal to it:
+I'd suggest these would still be considered bad style, at least.  But it is
+already true that not all bad style is excluded by the parser.  It is still
+unambiguous what is meant by these expressions, and being able to parse them
+actually makes it easier for formatting tools based on GHC's parser to
+suggest better alignment.
+
+Note that the following are **not** legal:
 
 ```
-foo = a ++ b
+nonExample6 = (
+  1,
+  2,
+3 )  -- First character isn't a close-bracket, so ; is inserted.
+```
+
+```
+nonExample7 = ( (
+  1,
+  2
+),
+(  -- First character isn't a close-bracket, so ; is inserted.
+  3,
+  4
+) )
+```
+
+```
+nonExample8 = a ++ b
   where
     a = [
       1,
       2
-  ]
+  ]  -- Indent less than the layout context still inserts a }.
 ```
 
 ## Effect and Interactions
 
-I don't know what else there is to say.
-
-I am fairly sure that enabling this extension would not make
+I am fairly certain that enabling this extension would not make
 any change to the meaning of legal Haskell programs.  It would only
 make additional Haskell programs legal.
+
+The only effect this has, then, is on error messages.  I would suggest
+that implementing this change has the opportunity to improve error
+messages, because it detects a specific programmer mistake, which is
+quite common in my experience with beginners, presenting the
+opportunity to give a specific helpful message.  Specifically, this
+incorrect code:
+
+```
+foo = (
+  1, 2
+)
+```
+
+currently results in:
+
+```
+error:
+    parse error (possibly incorrect indentation or mismatched brackets)
+```
+
+which is correct, but fairly vague.  With this change, there would be
+a chance to add a more specific error message for this mistake.
 
 ## Costs and Drawbacks
 
