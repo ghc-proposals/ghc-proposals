@@ -7,12 +7,12 @@ implemented: ""
 
 This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/346).
 
-# Looser Layout Rules
+# Bracket-Sensitive Layout Rule
 
 This proposal makes the following valid Haskell code:
 
 ```
-{-# LANGUAGE LooseLayout #-}
+{-# LANGUAGE BracketSensitiveLayout #-}
 
 foo = (
   1,
@@ -44,16 +44,16 @@ choose.
 
 ## Proposed Change Specification
 
-A new language extension is added, called `LooseLayout`.  When enabled, the
-following rule is added to the beginning of the layout algorithm in
+A new language extension is added, called `BracketSensitiveLayout`.  When
+enabled, the following rule is added to the beginning of the layout algorithm in
 [section 10.3 of the Haskell 2010 Report](https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#x17-17800010.3):
 
 * L (\<n\> : t : ts) (m : ms) = L (t : ts) (m : ms), **if** m = n, and t is one of: ), ], or }.
 
 ## Examples
 
-With the `LooseLayout` extension enabled, the following are all valid, while
-they were previously syntax errors:
+With the `BracketSensitiveLayout` extension enabled, the following are all valid,
+while they were previously syntax errors:
 
 ```
 foo = (
@@ -162,8 +162,7 @@ a solution.
 
 ## Unresolved Questions
 
-The extension name is terrible and doesn't communicate what it's doing very
-well.  I cannot yet think of a better name.
+None yet.
 
 ## Implementation Plan
 
