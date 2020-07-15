@@ -37,7 +37,13 @@ for the definition of a closing token.
 
 ## Effect and Interactions
 
-Code that relies on `x-1` being parsed as `x (-1)` will break.
+* Code that relies on `x-1` being parsed as `x (-1)` will break.
+
+* Enabling `-XLexicalNegation -XNegativeLiterals` has the same effect as
+  enabling `-XLexicalNegation` alone; however, enabling `-XNegativeLiterals`
+  alone does not have the same effect, as it does not affect expressions such
+  as `-x`.
+  In other words, `NegativeLiterals` becomes a subset of `LexicalNegation`.
 
 ## Costs and Drawbacks
 
