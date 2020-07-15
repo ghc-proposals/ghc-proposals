@@ -334,7 +334,7 @@ Alternatives
 Do with builders
 ~~~~~~~~~~~~~~~~
 
-The initial version of the proposal was inspired by F♯'s `computational expressions <https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/computation-expressions>`_.
+The initial version of the proposal was inspired by F♯'s `computation expressions <https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/computation-expressions>`_.
 
 When ``-XQualifiedDo`` is activated, the syntax of the ``do`` notation would change to
 
