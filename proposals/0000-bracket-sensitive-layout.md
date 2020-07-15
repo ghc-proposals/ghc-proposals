@@ -39,7 +39,16 @@ foo =
 Admittedly, some Haskell programmers have grown fond of these new styles.
 This proposal doesn't prevent them from being used by choice.  However,
 it's not optimal to force programmers into unusual style choices when it's
-easy to fix the layout rule.  So let's fix the layout rule, and let people
+easy to fix the layout rule to not have that effect.
+
+This rule has also caused complexity in Haskell tooling.  See
+[here](https://www.tweag.io/blog/2019-10-11-ormolu-first-release/):
+
+> That’s why we make an exception in our rendering rules—we move the
+> closing parenthesis one indentation level to the right on the rare
+> occasions it’s necessary.
+
+So let's fix the layout rule, and let people
 choose.
 
 ## Proposed Change Specification
