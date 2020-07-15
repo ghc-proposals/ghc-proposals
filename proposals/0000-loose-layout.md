@@ -126,13 +126,19 @@ make additional Haskell programs legal.
 
 ## Costs and Drawbacks
 
-I suspect the implementation is not difficult, nor should the
-maintenance cost be significant.
+There are two drawbacks worth considering:
 
-The main drawback is that it makes the layout rule more complex.  However, I
-submit that these close-bracket tokens are already obviously not the starts
-of new statements, and the meanings of the new programs accepted by this
-rule are abundantly clear.
+1. It makes the layout rule more complex.  This is something Haskellers
+   should definitely be concerned about.  However, I believe that these
+   close-bracket tokens are already obviously not the starts of new
+   statements, and the meanings of the new programs accepted by this rule
+   are abundantly clear, which substantially mitigates the cost.
+2. Having more optional syntax means that GHC no longer enforces as much
+   consistency in style.  The intent here isn't to fork the layout rule
+   indefinitely.  This change should only be accepted if the committee
+   sees a real chance that it will be adopted in a future Haskell Report.
+
+The implementation and maintenance cost for GHC should not be significant.
 
 ## Alternatives
 
