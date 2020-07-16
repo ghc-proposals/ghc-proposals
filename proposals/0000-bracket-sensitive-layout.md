@@ -270,39 +270,56 @@ a chance to add a more specific error message for this mistake.
 
 ## Costs and Drawbacks
 
-There are two drawbacks worth considering:
+There are some (closely related) drawbacks worth considering:
 
-1. It makes the layout rule more complex.  This is something Haskellers
-   should definitely be concerned about.  However, I believe that these
-   close-bracket tokens are already obviously not the starts of new
-   statements, and the meanings of the new programs accepted by this rule
-   are abundantly clear, which substantially mitigates the cost.
+1. It makes the layout rule a little bit more complex.  This is something
+   Haskellers should be concerned about, lest it require more cognitive
+   load for programmers to read and understand the structure of code.
+   However, I believe that these closing bracket tokens are already
+   obviously not the starts of new statements, and the meanings of the new
+   programs accepted by this rule are abundantly clear, which substantially
+   mitigates the cost.  (This is, however, a good reason not to adopt
+   the alternative mentioned below.)
 2. Having more optional syntax means that GHC no longer enforces as much
-   consistency in style.  The intent here isn't to fork the layout rule
-   indefinitely.  This change should only be accepted if the committee
-   sees a real chance that it will be adopted in a future Haskell Report.
+   consistency in style.  However, GHC already accepts plenty of terrible
+   formatting.  Realistically, no one can rely on GHC to maintain consistent
+   style in Haskell code.  There are other tools, such as linters and
+   formatters, to do that job.  GHC's role is to accept programs when their
+   meaning is clear.
+3. There is a cost to having more language options, and two different
+   syntax rules.  This is an inherent cost in making any change.  The intent
+   here isn't to fork the layout rule in the long run.  This change should
+   only be accepted if the committee sees a real chance that it would be
+   adopted universally in a future Haskell Report.
 
 The implementation and maintenance cost for GHC should not be significant.
 
 ## Alternatives
 
-The main alternative today, mentioned above, is to adopt new formatting
-conventions different from other languages, as Haskell programmers currently
-do.  This is obviously possible, but they make the transition from other
-languages to Haskell more difficult.
+* The main alternative today, mentioned above, is to adopt new formatting
+  conventions different from other languages, as Haskell programmers currently
+  do.  This is obviously possible, but they make the transition from other
+  languages to Haskell more difficult.
 
-Another alternative would be to adopt this proposal, but even further expand
-the list of tokens that do *not* start new statements in layout.  Instead of
-just close brackets, one could for instance add `=`, `,`, `::`, `in`, and
-any infix operator.  I have not proposed to do so because it is less obvious
-which tokens are continuations of the previous statement, and it then becomes
-much harder to explain parsing rules.  Indeed, *which* tokens may occur at
-the beginning of a layout statement may depend on other language extensions
-in effect.  In the past, `deriving` was such a token, but now we have
-`-XStandaloneDeriving` and it much be removed from the list.  To avoid these
-unhappy effects, I propose to limit ourselves to close-brackets, which are
-both the most important part of the problem, and the least problematic as
-a solution.
+* Another alternative would be to adopt this proposal, but even further expand
+  the list of tokens that do *not* start new statements in layout.  Plenty of
+  other tokens, such as `=`, `,`, `::`, `in`, and any infix operator, cannot
+  appear at the start of any statement in any layout context.
+
+  This is a bad idea for two reasons.
+  
+  1. Even if these tokens cannot start a statement, it is less obvious that
+     this is so.  This adds cognitive load when reading code.
+  2. Which tokens may occur at the beginning of a layout statement may depend
+     on other language extensions in effect, and change over time.  In the
+     past, `deriving` was such a token, but now we have `-XStandaloneDeriving`
+     and it must be removed from the list.  The consequence of this is that
+     new syntax would potentially break code that doesn't even use it, by
+     requiring changes to the layout rule.  This is clearly unacceptable.
+
+  To avoid these unhappy effects, we should limit ourselves to close-brackets,
+  which are both the most important part of the problem to solve, and the one
+  that is most obviously not the start of a new layout statement.
 
 ## Unresolved Questions
 
