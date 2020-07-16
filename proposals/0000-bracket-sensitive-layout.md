@@ -127,7 +127,18 @@ A new language extension is added, called `BracketSensitiveLayout`.  When
 enabled, the following rule is added to the beginning of the layout algorithm in
 [section 10.3 of the Haskell 2010 Report](https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#x17-17800010.3):
 
-* L (\<n\> : t : ts) (m : ms) = L (t : ts) (m : ms), **if** m = n, and t is one of: ), ], or }.
+* L (\<n\> : t : ts) (m : ms) = L (t : ts) (m : ms), **if** m = n, and t is a closing bracket.
+
+Without language extensions, the phrase "is a closing bracket" means one of `}`, `)`, and `]`.  More
+generally, using the token classifications in
+[proposal 229](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0229-whitespace-bang-patterns.rst#proposed-change-specification),
+a closing bracket is defined as a token that is "closing", but not "opening".  This extends
+closing brackets to include:
+
+* `#)` when `UnboxedTuples` are enabled.
+* `|]` and `||]` when `TemplateHaskellQuotes` is enabled.
+* `|)` when `Arrows` is enabled.
+* `⟧` and `⦈` when `UnicodeSyntax` is enabled along with any of `TemplateHaskellQuotes` or `Arrows`, respectively.
 
 ## Examples
 
