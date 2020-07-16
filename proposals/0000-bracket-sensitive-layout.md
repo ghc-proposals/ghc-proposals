@@ -140,6 +140,10 @@ closing brackets to include:
 * `|)` when `Arrows` is enabled.
 * `⟧` and `⦈` when `UnicodeSyntax` is enabled along with any of `TemplateHaskellQuotes` or `Arrows`, respectively.
 
+Because proposal 229 already introduces the requirement that new tokens are correctly classified
+as opening or closing, this will automatically extend the new layout rule to additional kinds of
+closing brackets if they are added in the future.
+
 ## Examples
 
 With the `BracketSensitiveLayout` extension enabled, the following are all valid,
