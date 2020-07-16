@@ -81,8 +81,24 @@ mylist = [
 ```
 
 In Haskell, due to the layout rule, this is not allowed most of the time.
-Haskell has, therefore, developed some unique formatting conventions,
-such as:
+
+```
+foo = (
+  1,
+  2
+)
+
+test.hs:4:1: error:
+    parse error (possibly incorrect indentation or mismatched brackets)
+  |
+4 | )
+  | ^
+```
+
+There are two consequences of this:
+
+**Divergence in formatting:** Haskell has, therefore, developed some unique
+formatting conventions, such as:
 
 ```
 indentedCloseBracket = (
@@ -105,21 +121,31 @@ leadingCommas =
   )
 ```
 
-Some Haskell programmers have grown fond of these new styles and prefer
-them on their own merits.  However, it's not optimal to force programmers
-into unusual style choices when it's easy to tweak the layout rule to not
-require them.
+These aren't necessarily bad on their own.  Many Haskell programmers are fond
+of these new styles, and prefer them on their own merits.  However, it's not
+optimal to force programmers into unusual style choices just because of the
+limitations of layout.  It's easy to tweak the layout rule to not require them,
+letting programmers make their own choices.
 
-This layout rule has also caused complexity in multiple pieces of Haskell
-tooling.  For example, comments [here](https://www.tweag.io/blog/2019-10-11-ormolu-first-release/):
+**Tool complexity:** This layout rule has also caused complexity in multiple
+pieces of Haskell tooling, where applying natural rules consistently leads to
+syntax errors, and tools introduce ad hoc rules to work around it.
+
+I have not done a comprehensive search for tools that have had to react to this.
+But from memory, I know this is identified as an issue in the article
+[here](https://www.tweag.io/blog/2019-10-11-ormolu-first-release/):
 
 > That’s why we make an exception in our rendering rules—we move the
 > closing parenthesis one indentation level to the right on the rare
 > occasions it’s necessary.
 
-and the workaround [here](https://github.com/google/codeworld/blob/master/web/js/codeworld-mode.js#L593).
+and is also the cause of the workaround
+[here](https://github.com/google/codeworld/blob/43a3b947bfa57c7fc1b49c67090c3f569de80b8c/web/js/codeworld-mode.js#L593):
 
-So let's fix the layout rule, and let people choose.
+    minIndent = isBracket(parent) ? parent.column : parent.column + 1;
+
+Because of all this, I propose to fix the layout rule, so that formatting is
+not dictated by limitations of tools.
 
 ## Proposed Change Specification
 
