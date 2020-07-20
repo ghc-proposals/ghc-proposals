@@ -322,30 +322,142 @@ The implementation and maintenance cost for GHC should not be significant.
 
 ## Alternatives
 
-* The main alternative today, mentioned above, is to adopt new formatting
-  conventions different from other languages, as Haskell programmers currently
-  do.  This is obviously possible, but they make the transition from other
-  languages to Haskell more difficult.
+We consider three alternatives.
 
-* Another alternative would be to adopt this proposal, but even further expand
-  the list of tokens that do *not* start new statements in layout.  Plenty of
-  other tokens, such as `=`, `,`, `::`, `in`, and any infix operator, cannot
-  appear at the start of any statement in any layout context.
+### Alternative 1: Do Nothing
 
-  This is a bad idea for two reasons.
+The main alternative today is to adopt new formatting conventions different
+from other languages, as Haskell programmers currently do.  This is obviously
+possible, but the reasons to avoid it are mentioned in the motivation section
+already.
+
+### Alternative 2: Be More Liberal
+
+Another alternative would be to adopt this proposal, but further extend the list
+of tokens that are treated like closing brackets in the main proposal, and do
+not start new statements.
+
+Plenty of other tokens can never appear at the start of any statement in any
+layout context in a valid Haskell source file.  Among others, these include:
+`=`, `,`, `::`, `in`, or any infix operator.
+
+I believe this is a bad idea for two reasons.
   
-  1. Even if these tokens cannot start a statement, it is less obvious that
-     this is so.  This adds cognitive load when reading code.
-  2. Which tokens may occur at the beginning of a layout statement may depend
-     on other language extensions in effect, and change over time.  In the
-     past, `deriving` was such a token, but now we have `-XStandaloneDeriving`
-     and it must be removed from the list.  The consequence of this is that
-     new syntax would potentially break code that doesn't even use it, by
-     requiring changes to the layout rule.  This is clearly unacceptable.
+* First, even if these tokens cannot start a statement, it is less obvious that
+  this is so, sometimes requiring complex reasoning about the grammar.  This
+  adds cognitive load when reading code, and potentially surprises Haskell
+  programmers who expect the parse tree to be clear and obvious.
+* Second, and even more importantly, which tokens may occur at the beginning of
+  a layout statement may depend on other language extensions, and change over
+  time.  For example, in the past, `deriving` was such a token.  Now we have
+  `-XStandaloneDeriving`, which adds new syntax where `deriving` can start a
+  top-level declaration.
 
-  To avoid these unhappy effects, we should limit ourselves to close-brackets,
-  which are both the most important part of the problem to solve, and the one
-  that is most obviously not the start of a new layout statement.
+  In such situations, should tokens be removed from the list and possibly break
+  more existing code even when a new syntax extension is disabled?  Should the
+  resolution of layout depend on language extensions that affect higher-level
+  syntax?  Neither option is acceptable.
+
+By limiting this new behavior to closing brackets, which should obviously not
+start a new layout statement, one avoids both of these unhappy situations.  At
+the same time, one solves the entire motivating problem, which was about the
+placement of closing brackets.
+
+### Alternative #3: Be Less Liberal
+
+A third alternative is to rewrite the layout rule in a different way.  The
+existing layout rule is actually very unintuitive.  For example, it allows
+syntax like this:
+
+```
+data MyRecord = MyRecord { a :: Int }
+
+weirdButValid = 42
+  where record = MyRecord {
+a = 5
+                 }
+```
+
+The root of the problem here is that the layout algorithm consolidates too
+many states in an attempt to keep track of only one integer per layout
+context, and shoehorns two meanings into that same value.  If one instead
+separates the context type from the column, one gets this alternative
+layout algorithm:
+
+Assuming:
+```
+data Ctx = BracketCtx Token | LayoutCtx Int
+
+indent :: [Ctx] -> Int
+indent ctxs = head ([i | LayoutCtx i <- ctxs ] ++ [0])
+
+close :: Char -> Maybe Char
+close '{' = Just '}'
+close '[' = Just ']'
+close '(' = Just ')'
+close _   = Nothing
+
+isOpenBracket :: Char -> Bool
+isOpenBracket c = close c /= Nothing
+
+isCloseBracket :: Char -> Bool
+isCloseBracket c = (`elem` ['}', ']', ')'])
+```
+
+Then:
+
+```
+L ({n} : ts) ctxs
+  | n > indent ctxs       = '{' : L ts (LayoutCtx n : ctxs)
+  | otherwise             = '{' : '}' : L (<n> : ts) ctxs
+
+L (<n> : ts) (LayoutCtx m : ctxs)
+  | m == n                = ';' : L ts (LayoutCtx m : ctxs)
+  | n < m                 = '}' : L (<n> : ts) ctxs
+L (<n> : ts) ctxs
+  | n < indent ctxs       = parseError              -- (*)
+L (<n> : ts) ctxs         = L ts ctxs
+
+L (t : ts) ctxs
+  | isOpenBracket t       = t : L ts (BracketCtx t : ctxs)
+L (t : ts) (BracketCtx b : ctxs)
+  | t == close b          = t : L ts ctxs
+  | isCloseBracket b      = parseError
+L (t : ts) (LayoutCtx _ : ctxs)
+  | isParseError t        = '}' : L (t : ts) ctxs
+
+L (t : ts) ctxs           = t : L ts ctxs
+L [] []                   = []
+L [] (LayoutCtx _ : ctxs) = '}' : L [] ctxs
+L _ _                     = parseError
+```
+
+The advantage of this approach over the main proposal is that instead
+of adding an unusual exception for one specific style, this imposes
+minimal restrictions to keep layout meaningful when brackets are
+missing.  (The equation marked `(*)` imposes restrictions that are not
+necessary for parsing, but help with readability.  It could be
+omitted.)
+
+There are two big disadvantages to going this way:
+
+1. As written, this is **not** backward compatible with the Haskell
+   Report today.  I believe this could be fixed by omitting the
+   equation marked `(*)`, but at the cost of accepting code where it
+   is hard to parse layout indents.  However, I have not proven this.
+
+   If this were implemented as above, some work would be needed to analyze
+   large bodies of existing Haskell code to look for places where the
+   behavior differs.  I suspect the answer would be that almost nothing
+   breaks, but there's no way to verify that for proprietary code, for
+   instance.
+
+2. There's more metadata required than the main proposal.  GHC needs to
+   track not just categories of tokens (which is required by other accepted
+   proposals anyway), but which brackets match which others.
+
+I am interested in more feedback on the wisdom of adopting this approach
+versus the main proposal.
 
 ## Unresolved Questions
 
