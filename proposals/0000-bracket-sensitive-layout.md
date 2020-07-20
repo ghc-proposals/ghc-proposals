@@ -386,37 +386,37 @@ layout algorithm:
 
 Assuming:
 ```
-data Ctx = BracketCtx Token | LayoutCtx Int
+data Ctx = BracketCtx String | LayoutCtx Int
 
 indent :: [Ctx] -> Int
 indent ctxs = head ([i | LayoutCtx i <- ctxs ] ++ [0])
 
-close :: Char -> Maybe Char
-close '{' = Just '}'
-close '[' = Just ']'
-close '(' = Just ')'
+close :: String -> Maybe String
+close "{" = Just "}"
+close "[" = Just "]"
+close "(" = Just ")"
 close _   = Nothing
 
-isOpenBracket :: Char -> Bool
+isOpenBracket :: String -> Bool
 isOpenBracket c = close c /= Nothing
 
-isCloseBracket :: Char -> Bool
-isCloseBracket c = (`elem` ['}', ']', ')'])
+isCloseBracket :: String -> Bool
+isCloseBracket c = (`elem` ["}", "]", ")"])
 ```
 
 Then:
 
 ```
 L ({n} : ts) ctxs
-  | n > indent ctxs       = '{' : L ts (LayoutCtx n : ctxs)
-  | otherwise             = '{' : '}' : L (<n> : ts) ctxs
+  | n > indent ctxs       = "{" : L ts (LayoutCtx n : ctxs)
+  | otherwise             = "{" : "}" : L (<n> : ts) ctxs
 
 L (<n> : ts) (LayoutCtx m : ctxs)
-  | m == n                = ';' : L ts (LayoutCtx m : ctxs)
-  | n < m                 = '}' : L (<n> : ts) ctxs
+  | m == n                = ";" : L ts (LayoutCtx m : ctxs)
+  | n < m                 = "}" : L (<n> : ts) ctxs
 L (<n> : ts) ctxs
   | n < indent ctxs       = parseError              -- (*)
-L (<n> : ts) ctxs         = L ts ctxs
+  | otherwise             = L ts ctxs
 
 L (t : ts) ctxs
   | isOpenBracket t       = t : L ts (BracketCtx t : ctxs)
@@ -424,18 +424,18 @@ L (t : ts) (BracketCtx b : ctxs)
   | t == close b          = t : L ts ctxs
   | isCloseBracket b      = parseError
 L (t : ts) (LayoutCtx _ : ctxs)
-  | isParseError t        = '}' : L (t : ts) ctxs
+  | isParseError t        = "}" : L (t : ts) ctxs
 
 L (t : ts) ctxs           = t : L ts ctxs
 L [] []                   = []
-L [] (LayoutCtx _ : ctxs) = '}' : L [] ctxs
+L [] (LayoutCtx _ : ctxs) = "}" : L [] ctxs
 L _ _                     = parseError
 ```
 
 The advantage of this approach over the main proposal is that instead
 of adding an unusual exception for one specific style, this imposes
 minimal restrictions to keep layout meaningful when brackets are
-missing.  (The equation marked `(*)` imposes restrictions that are not
+missing.  (The case marked `(*)` imposes restrictions that are not
 necessary for parsing, but help with readability.  It could be
 omitted.)
 
@@ -443,7 +443,7 @@ There are two big disadvantages to going this way:
 
 1. As written, this is **not** backward compatible with the Haskell
    Report today.  I believe this could be fixed by omitting the
-   equation marked `(*)`, but at the cost of accepting code where it
+   case marked `(*)`, but at the cost of accepting code where it
    is hard to parse layout indents.  However, I have not proven this.
 
    If this were implemented as above, some work would be needed to analyze
