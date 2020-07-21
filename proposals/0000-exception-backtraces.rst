@@ -214,8 +214,7 @@ Alternatively, the community might rather choose one of the backtrace
 mechanisms discussed above and use this mechanism exclusively in exception
 backtraces. However, we suspect that a single mechanism won't be sufficient:
 
-* there have been `previous efforts
-   <https://gitlab.haskell.org/ghc/ghc/issues/17040>`_ to add ``HasCallStack``
+* there have been `previous efforts <https://gitlab.haskell.org/ghc/ghc/issues/17040>`_ to add ``HasCallStack``
   constraints to all partial functions in ``base``. While we believe that this is
   a worthwhile complementary goal, we don't believe that ``HasCallStack`` alone
   can address the full scope of the problem due to its invasive nature.
