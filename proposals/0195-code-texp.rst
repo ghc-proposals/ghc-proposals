@@ -5,7 +5,7 @@ Make Q (TExp a) into a newtype
 .. author:: Matthew Pickering
 .. date-accepted:: 2020-05-26
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/16177
-.. implemented::
+.. implemented:: 8.12
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/195>`_.
 .. contents::
