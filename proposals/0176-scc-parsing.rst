@@ -3,8 +3,8 @@ Meaning-preserving parsing rules for SCC annotations
 
 .. author:: Vladislav Zavialov
 .. date-accepted:: 2019-04-17
-.. ticket-url::
-.. implemented::
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/15730
+.. implemented:: 9.0
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/176>`_.
 .. contents::
