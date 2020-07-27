@@ -46,7 +46,7 @@ There is a lack of infrastructure to manage language extensions:
 
   It would be much more convenient if the user could just say ``{-# LANGUAGE Singletons #-}``
 
-* Beyond that, some libraries “extend” the syntax of Haskell using Template Haskell splices and/or GHCPlugins If a library-defined langauge extensions has the ability to not only enable ``LanguageHaskell``, but plugin flags (`-fplugin=foo`) and a list of modules to be imported by default, similar to the Prelude, then these top-level TH splices would feel indeed like a language extension. So instead of::
+* Beyond that, some libraries “extend” the syntax of Haskell using Template Haskell splices and/or GHCPlugins If a library-defined language extensions has the ability to not only enable ``LanguageHaskell``, but plugin flags (``-fplugin=foo``) and a list of modules to be imported by default, similar to the Prelude, then these top-level TH splices would feel indeed like a language extension. So instead of::
 
       {-# LANGUAGE TemplateHaskell #-}
       {-# OPTIONS_GHC -fplugin=Some.Foo.Plugin #-}
@@ -86,15 +86,14 @@ GHC’s package data base learns a new structured field of the following shape::
 
 The field ``name`` is required, the rest are optional. All fields are lists; multiple names define aliases (just like ``GeneralizedNewtypeDeriving`` and ``GeneralisedNewtypeDeriving`` is valid.)
 
-When the user specifies `{-# LANGUAGE InspectionTesting #-}, and the currently visible packages specify exactly one ``custom-extension`` with that name, then this then this has the obvious effects of enabling the given langauge extensions, flags, and treating the given ``imports`` just like the implicit prelude.
-
+When the user specifies ``{-# LANGUAGE InspectionTesting #-}``, and the currently visible packages specify exactly one ``custom-extension`` with that name, then this has the obvious effect of enabling the given language extensions, flags, and treating the given ``imports`` just like the implicit prelude.
 
 
 Effect and Interactions
 -----------------------
 * If the custom language extension is used together with conflicting language declarations, e.g::
 
-    {-# LANGUAGE InspectionTesting, NoTemplateHaskell #-} 
+    {-# LANGUAGE InspectionTesting, NoTemplateHaskell #-}
 
   then they are toggled in order. In this example, ``NoTemplateHaskell`` is in effect.
 
@@ -102,9 +101,10 @@ Effect and Interactions
 
 Costs and Drawbacks
 -------------------
+
 * The implementation requires support from ``Cabal``, including an extension of the ``.cabal`` file format, but ``Cabal`` would not have to do much with this.
 
-* Parsing Haskell code reqiures the tools  to be able to resolve these langauge extensions, and humans reading code may have to read about the language extension.
+* Parsing Haskell code reqiures the tools to be able to resolve these language extensions, and humans reading code may have to read about the language extension.
 
 * The namespace is unmanaged, and if you need two libraries who export an extension under the same name, then you cannot use it. (But you can always specify the effect manually.) Do we need package-qualified languages then?
 
@@ -116,6 +116,6 @@ Alternatives
 
 Unresolved questions
 --------------------
-* What will the precise format of langauge extensions in the package data base be.
+* What will the precise format of language extensions in the package data base be.
 * Are there language extensions that should not be toggleable this way?
 * Which other flags should be legal there. I expect we want a whitelist, and starting with only ``-fplugin`` and ``-fplugin-opt`` is a good start.
