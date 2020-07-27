@@ -4,7 +4,7 @@ Whitespace-sensitive operator parsing (~, !, @, $, $$, -)
 .. date-accepted:: 2019-08-24
 .. author:: Vladislav Zavialov
 .. ticket-url::
-.. implemented:: 8.12
+.. implemented:: 9.0
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/229>`_.
 .. contents::
