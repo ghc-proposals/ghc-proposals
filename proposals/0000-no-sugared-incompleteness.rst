@@ -38,12 +38,12 @@ I am asking that we switch our vantage point and instead of considering programs
 
 So, what's the practical upshot of this lawyering?
 And what mechanism might we use rather than ``-Werror=...``?
-There is another mechanism for controlling run-time errors which I think is a perfect model for how these programs should be dealt with: ``-fdefered-type-errors``.
+There is another mechanism for controlling run-time errors which I think is a perfect model for how these programs should be dealt with: ``-fdefer-type-errors``.
 As I mentioned above, nobody would propose type checking is some extraneous analysis a Haskell implementation need not do by default.
 The "defer" in the name makes clear we are taking what is normally a compile-time error and deferring it to run-time behind additional branching.
-Whether for quick slap-dash programming, or arguing with proponents of untyped languages, ``-fdefered-type-errors`` allows GHC to both express its opinion and yet also not straight-jacket the user into any one policy.
+Whether for quick slap-dash programming, or arguing with proponents of untyped languages, ``-fdefer-type-errors`` allows GHC to both express its opinion and yet also not straight-jacket the user into any one policy.
 
-My idea is to do the same thing for exhaustiveness checking: it should be mandatory, but as a debugging aid there are ``-fdefered-...`` flags to defer compile time errors into a run-time errors.
+My idea is to do the same thing for exhaustiveness checking: it should be mandatory, but as a debugging aid there are ``-fdefer-...`` flags to defer compile time errors into a run-time errors.
 
 Proposed Change Specification
 -----------------------------
