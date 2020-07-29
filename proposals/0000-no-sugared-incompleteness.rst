@@ -14,7 +14,7 @@
             number in the link, and delete this bold sentence.**
 .. contents::
 
-Provide an extension to disallow syntax that would desugar to run-time errors without a ``-fdeferred-*`` flag.
+Provide an extension to disallow syntax that would desugar to run-time errors without a ``-fdefer-*`` flag.
 
 Motivation
 ----------
@@ -88,9 +88,9 @@ Examples
 
 - ``-XNoSugaredIncompleteness -fdefer-incompleteness-errors -Werror``: errors
 
-- ``-XNoSugaredIncompleteness -fdefer-incompleteness-errors -Werror -Wno-defer-*``: quiet
+- ``-XNoSugaredIncompleteness -fdefer-incompleteness-errors -Werror -Wno-deferred-*``: quiet
 
-- ``-XNoSugaredIncompleteness -fdefer-incompleteness-errors -Wno-defer-* -Wincomplete-*``: warnings
+- ``-XNoSugaredIncompleteness -fdefer-incompleteness-errors -Wno-deferred-* -Wincomplete-*``: warnings
 
 Effect and Interactions
 -----------------------
