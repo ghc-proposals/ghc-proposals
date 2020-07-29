@@ -282,7 +282,7 @@ This proposal adds two new syntactical constructs:
     ::
 
       type family F (a :: *) :: Multiplicity
-      f ::  forall (a :: *). Int  :(F a)-> a -> a
+      f ::  forall (a :: *). Int  #(F a)-> a -> a
 - When ``-XScopedTypeVariables`` is switched on, binders can also be annotated with a multiplicity:
 
   ::
@@ -364,7 +364,7 @@ A new type constructor is added
 The linear and unrestricted arrows are aliases:
 
 - ``(->)`` is an alias for ``FUN 'Many``
-- ``(->.)`` (ASCII syntax) and ``(⊸)`` (Unicode syntax) are aliases
+- ``(#->)`` (ASCII syntax) and ``(⊸)`` (Unicode syntax) are aliases
   for ``FUN 'One``
 
 Printing
