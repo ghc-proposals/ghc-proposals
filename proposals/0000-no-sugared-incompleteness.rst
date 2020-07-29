@@ -14,7 +14,7 @@
             number in the link, and delete this bold sentence.**
 .. contents::
 
-Provide an extension to disallow syntax that would desugar to run-time errors to better reflect our values.
+Provide an extension to disallow syntax that would desugar to run-time errors without a ``-fdeferred-*`` flag.
 
 Motivation
 ----------
