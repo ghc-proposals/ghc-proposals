@@ -19,27 +19,31 @@ Provide an extension to disallow syntax that would desugar to run-time errors to
 Motivation
 ----------
 
-The culture around Haskell has become one striving for programming correctness, and avoiding run-time errors in particular.
-For those learning Haskell, learning this mindset is sometimes as important and novel as learning the language itself.
-We should help those learners by trying to guide in that direction every step of the code they right.
+Going back to Milner's "Well-Typed expressions do not go wrong", typed functional programmers, and Haskellers in particular, usually prefer their programs to be free of run-time failures stemming from programmer error.
+For those learning Haskell, learning this mindset of being fastidious and aiming for code that is correct-by-construction about even banal errors is sometimes as important and novel as learning the language itself.
+We should help those learners by trying to guide them in that direction every step of the code they write.
 
-Haskell's culture wasn't always that way, however, and we do however have old syntax that can not only introduce run-time errors, but does so implicitly.
-Incomplete pattern matches, incomplete record updates, etc., are all un-asked-for "conveniences" that just get in the way of a programmer trying to understand where their program can go wrong.
+Unfortunately, the compiler and language do always help with this.
+We have old syntax that can not only introduce run-time errors, but does so implicitly.
+Incomplete pattern matches, incomplete record updates, etc., are all seldom-asked-for "conveniences" that just get in the way of a programmer trying to understand where their program can "go wrong".
 
 I think most of us would agree with the above paragraph.
-But many of us also would say it's a solved problem, because we have ``-Werror`` to catch all these things.
-Why write yet another proposal for yet another extension when this is solved problem?
+But many of us also would say it's a solved problem, because we have ``-Werror=...`` to catch all these things.
+Why write yet another proposal, for yet another language extension, when this is solved problem?
 
-Well, I just don't think ``-Werror`` is the right thing to rely on.
-Partial code is to me just worse than the other things we warn for, valuable as I think those other warnings are.
-Also, whereas I think of most warnings as stemming from extra analysis to find flaws in otherwise good programs, partial sugar seams like the opposite case where the compiler does extra work adding the run-time error throwing to make broken program run.
+Well, I just don't think ``-Werror=...`` is the right mechanism to rely on.
+This is, of course, a matter of opinion, but to me warnings are for "extra" analyses, not "essential" ones like type checking which enforce the language proper.
+Deciding whether e.g. pattern matching is exhaustive feels to me like one of those essential analyses.
+I am asking that we switch our vantage point and instead of considering programs with implicit partiality well-formed programs that are iffy, consider them ill-formed programs that we can permissively accept anyways.
 
-There is another mechanism for controlling run-time errors which I think is a perfect model for how these things should work: ``-fdefered-type-errors``.
-Nobody would propose type checking is some extraneous analysis GHC need not do by default.
-The "defer" in the name makes clear we are getting what is normally a compile-time check and deferring it to run-time.
-Whether for quick slap-dash programming, or arguing with proponents of untyped languages, ``-fdefered-type-errors`` allows GHC to both express its opinion and yet also not straight-jacket-ing the user into any one policy.
+So, what's the practical upshot of this lawyering?
+And what mechanism might we use rather than ``-Werror=...``?
+There is another mechanism for controlling run-time errors which I think is a perfect model for how these programs should be dealt with: ``-fdefered-type-errors``.
+As I mentioned above, nobody would propose type checking is some extraneous analysis a Haskell implementation need not do by default.
+The "defer" in the name makes clear we are taking what is normally a compile-time error and deferring it to run-time behind additional branching.
+Whether for quick slap-dash programming, or arguing with proponents of untyped languages, ``-fdefered-type-errors`` allows GHC to both express its opinion and yet also not straight-jacket the user into any one policy.
 
-My idea is to do the same thing for incompleteness checking: it should be mandatory, but as a debugging aid their is a flag to defer the compile time error into a run-time error.
+My idea is to do the same thing for exhaustiveness checking: it should be mandatory, but as a debugging aid there are ``-fdefered-...`` flags to defer compile time errors into a run-time errors.
 
 Proposed Change Specification
 -----------------------------
@@ -53,10 +57,8 @@ Let there be a new extension ``SugaredIncompleteness``, which allows:
 
 - Missing items (without defaults) in instances
 
-- TODO other things?
-
 It is on by default.
-With ``NoSugaredIncompleteness`` those things are disabled, regardless of warnings.
+With ``NoSugaredIncompleteness`` those things are disallowed, regardless of warnings.
 
 Let there be a new flag ``-fdefer-incompleteness-errors``, which defers the errors from modules with ``NoSugaredIncompleteness``.
 Those will be warned under warning categories:
@@ -68,7 +70,7 @@ Those will be warned under warning categories:
 - ``deferred-incomplete-record-construction``
 - ``deferred-missing-methods``
 
-Those in turn can be ignored with ``-Wno-deferred-*``, or turned (back) into errors with ``-Werror=deferred-*``, like any other error category.
+Those in turn can be ignored with ``-Wno-deferred-*``, or turned (back) into errors with ``-Werror=deferred-*``, like any other warning category.
 Those warnings are on by default, so plain ``-Werror`` will suffice to make them all errors.
 
 Examples
@@ -127,7 +129,8 @@ Alternatives
 Unresolved Questions
 --------------------
 
-None at this time.
+Any other source of implicit partiality I forgot?
+I compiled this list by looking at the `instances`_ for the ``Exception`` class in ``base``.
 
 Implementation Plan
 -------------------
@@ -138,3 +141,4 @@ Endorsements
 -------------
 
 .. _`Proposal 319`: https://github.com/ghc-proposals/ghc-proposals/pull/319
+.. _`instances`: https://hackage.haskell.org/package/base-4.14.0.0/docs/Control-Exception-Base.html#t:Exception
