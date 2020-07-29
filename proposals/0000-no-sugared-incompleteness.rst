@@ -23,7 +23,7 @@ Going back to Milner's "Well-Typed expressions do not go wrong", typed functiona
 For those learning Haskell, learning this mindset of being fastidious and aiming for code that is correct-by-construction about even banal errors is sometimes as important and novel as learning the language itself.
 We should help those learners by trying to guide them in that direction every step of the code they write.
 
-Unfortunately, the compiler and language do always help with this.
+Unfortunately, the compiler and language do not always help with this.
 We have old syntax that can not only introduce run-time errors, but does so implicitly.
 Incomplete pattern matches, incomplete record updates, etc., are all seldom-asked-for "conveniences" that just get in the way of a programmer trying to understand where their program can "go wrong".
 
