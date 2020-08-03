@@ -205,7 +205,7 @@ At first glance, this seems like something which ought to subsume the solutions 
 One might want to use that to provide a ``fail`` expression with a custom type error (or "type warning", if that is proposed).
 However, due to the "Gordian knot", one would get spurious errors/warnings due to the conservatism of the heuristic before the desugar has a change to remove them.
 One would need to rig up a special warning pass that looked at the generated core, at which point `Proposal 216`_ isn't such a subsuming solution anymore.
-This is however a good fit for a desugaring using ``MonadZero`` instead of ``MonadFail``, imitating list comprehensions.
+This is however a good fit for a desugaring using ``MonadPlus`` instead of ``MonadFail``, imitating list comprehensions.
 
 A final option is a per-binding syntax, within ``do`` blocks.
 People usually care where failures might occur in a do block, not just that they do.
@@ -223,9 +223,22 @@ Also consider these two opposing opinions:
 Unresolved Questions
 --------------------
 
-If anyone wants to discuss other potential names for the extension, I'm not entirely sold on the name.
-But note that ``(No)MonadFailDesugaring`` is already a thing, which can make many options a bit awkward.
-Somewhat in line with ``RecursiveDo``, we ended up going with the name ``FallibleDo`` for the default behaviour of the ``do``\ -syntax which uses ``fail`` (this becomes an addition to the list of default-on extensions), and so ``NoFallibleDo`` turns the use of ``fail`` off.
+- Monad comprehensions perhaps should be changed, just not to throw ``PatternMatchFail``.
+  ``MonadPlus`` or ``Alternative`` seem clearly better for filtering, but how to use them is less clear:
+
+    - We could use the existing heuristic to decide when to use ``mzero``\ /\ ``zero`` and emit the constraints, but we just argued the heuristic is overly complex.
+
+    - We could always emit the constraint, but perhaps using comprehensions for monads that cannot filter is legitimate and should be preserved?
+
+    - We could introduce new syntax, e.g. ``if Pat = ...``, to indicate the pattern is intended to be a filter and the constraint should be emitted. But the ``|`` matches guards which already usually indicate filtering.
+
+    - We could always use ``Alternative``, or just with ``ApplicativeDo``.
+
+  There is no completely obvious winner among all the combinations of choices.
+
+- If anyone wants to discuss other potential names for the extension, I'm not entirely sold on the name.
+  But note that ``(No)MonadFailDesugaring`` is already a thing, which can make many options a bit awkward.
+  Somewhat in line with ``RecursiveDo``, we ended up going with the name ``FallibleDo`` for the default behaviour of the ``do``\ -syntax which uses ``fail`` (this becomes an addition to the list of default-on extensions), and so ``NoFallibleDo`` turns the use of ``fail`` off.
 
 Implementation Plan
 -------------------
