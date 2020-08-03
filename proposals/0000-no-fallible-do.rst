@@ -93,7 +93,7 @@ With ``NoFallibleDo`` the use of ``fail`` is replaced with the usual throwing of
 
 When the ``-Wincomplete-uni-patterns`` warning flag is enabled alongside ``NoFallibleDo``, we will warn about the incomplete pattern match.
 
-Monad comprehensions are effected by this extension, but list comprehension are not---fallible patterns always turn into ``[]`` / ``mzero`` there.
+Monad comprehensions are not affected by this extension.
 
 Examples
 --------
@@ -116,7 +116,7 @@ With FallibleDo turned on (the default), this presently translates to:
 
 which has an inferred type which is constrained by ``MonadFail m``
 
-with NoFallibleDo, this would become:
+with ``NoFallibleDo``, this would become:
 
 ::
 
@@ -133,27 +133,38 @@ Except for the exact error message in the ``PatternMatchFail``, this is just lik
 Effect and Interactions
 -----------------------
 
-This effectively sidesteps the issues where completeness checking is imperfect in the translations of ``do``\ -syntax by simply not making use of ``fail`` in the first place, which avoids the spurious ``MonadFail`` constraints.
+The "Gordian knot" is cut
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+With ``-XNoFallibleDo``, there is no more need for a heuristic exhaustiveness checker to break a cycle between type checking and exhaustiveness checking.
+``-XNoFallibleDo`` that issue by simply not making use of ``fail`` in the first place.
+That means no conditionally-emitted ``MonadFail`` constraint in particular, and that the typing rules no longer depend on the refutability of the pattern in general.
+That cuts the not, and we are back to simply type checking then exhaustiveness checking, as before.
+
+Comprehensions
+~~~~~~~~~~~~~~
+
+Monad comprehensions are not affected in order to match list comprehensions.
+More broadly the idea is that comprehensions are for filtering, so the use of incomplete patterns is far more common/idiomatic.
+That said, we don't think ``MonadFail`` is a great way to filter either;
+``mzero`` from ``MonadPlus`` / ``zero`` from ``Alternative`` are far better options, and also match list comprehensions
+We are still considering whether and how we might propose that monad comprehensions use those instead.
+
+Why ``PatternMatchFail``
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 The use of a ``PatternMatchFail`` might seem surprising.
 Who actually likes infallible pattern matching?
 Why not just ban fallible pattern outright so as to not pick and choose between bad static semantics (the pattern match heuristic) and bad dynamic semantics (some oft-maligned synchronous exception)?
 
-The first reason is consistency with the rest of the language.
+Simply, to be consistent with the rest of the language.
 Nowhere else are complete patterns always required, and the user can always get this behavior with ``-Werror=incomplete-uni-patterns``.
 (And soon ``-Wall -Werror``, too, once `Proposal 71`_ is implemented.)
 Is there truly a need to forge a different path here?
 
-The second reason is balancing the competing interests of programming in the small and programming in the large.
-For programming in the large, we do expect the vast majority users to strive for no implicit partiality using ``-Werror=...``, banning certain unfortunate ``Prelude`` functions, and what-not.
-But for programming in the small, one is often trying to throw together a happy path to get some job done in the next few minutes, never mind what failure modes exist provided we don't hit them right now.
-``fail`` sugar is useful because it allows you to defer thinking about those failure cases, and if your code does blow up, it says where.
-``PatternMatchFail`` sugar provides these same two benefits.
-Conversely, we don't think the difference between pure monadic failures, throwing synchronous exceptions in pure code, and throwing synchronous exceptions in impure code---the sorts of options  one would carefully chose between when programming in the large---matter terribly much when programming in the small.
-
-Perhaps in the future we would want to switch the defaults so all pattern matches must be total by default, and incomplete patterns with match failure exceptions are an opt-in debugging escape hatch akin to ``-fdeferred-type-errors``.
-(@Ericson2314 at least would love this.)
-But this applies to all pattern matching not just binds in ``do``\ -notation, and as such is out of scope of this proposal.
+`Proposal 351`_ is a proposal to change the defaults and "rhetoric" around *all* syntax that desugars to be partial.
+In that proposal's "Effect and Interactions" section, it is described out how this would apply to ``do``\ -notation with ``NoFallibleDo``.
+It is at least @Ericson2314's view that if the ``PatternMatchFail`` is disliked in this proposal, it is better to put up with it here and address the general issue in #351 instead.
 
 Costs and Drawbacks
 -------------------
@@ -233,3 +244,5 @@ Obsidian Systems did this work on behalf of MIRI.
 .. _`Proposal 216`: https://github.com/ghc-proposals/ghc-proposals/pull/216
 
 .. _`Proposal 327`: https://github.com/ghc-proposals/ghc-proposals/pull/327
+
+.. _`Proposal 351`: https://github.com/ghc-proposals/ghc-proposals/pull/351
