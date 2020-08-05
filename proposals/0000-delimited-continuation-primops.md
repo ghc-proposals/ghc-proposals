@@ -76,7 +76,7 @@ Note that this example is the best case scenario if `g` and `h` are not inlined.
 
   * The CPS transformation obscures the structure of the code from the simplifier and demand analyzer and makes user-defined `RULES` far trickier to write.
 
-Without support from the runtime, this overhead is inevitable. This is especially frustrating because GHC’s implementation presents no real obstacles to implementing continuation capture directly. What’s more, the needed primitive functionality is small: given only the ability to capture and restore a slice of the RTS stack, more complicated patterns (such as tagged continuation prompts) can be efficiently implemented as derived operations in library code.
+Without support from the runtime, this overhead is inevitable. This is especially frustrating because GHC’s implementation presents no real obstacles to implementing continuation capture directly. What’s more, the needed primitive functionality is small: given only the ability to capture and restore a slice of the RTS stack, more complicated patterns can be efficiently implemented as derived operations in library code.
 
 ### Putting numbers to the cost
 
