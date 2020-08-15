@@ -15,7 +15,7 @@ recognised <https://www.yesodweb.com/blog/2011/09/limitations-of-haskell>`__
 as being under-powered, with duplicate field names being particularly
 troublesome. We propose a new language extension ``RecordDotSyntax``
 that provides syntactic sugar to make the features introduced in `the
-``HasField``
+HasField
 proposal <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0158-record-set-field.rst>`__
 more accessible, improving the user experience.
 
@@ -48,8 +48,7 @@ We declare two records both having ``name`` as a field label. The user
 may then write ``c.name`` and ``c.owner.name`` to access those fields.
 We can also write ``c{name = x}`` as a record update, which works even
 though ``name`` is no longer unique. Under the hood, we make use of
-``getField`` and ``setField`` from `the ``HasField``
-proposal <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0158-record-set-field.rst>`__.
+``getField`` and ``setField`` from the `HasField proposal <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0158-record-set-field.rst>`__.
 
 An implementation of this proposal has been battle tested and hardened
 over two years in the enterprise environment as part of `Digital
@@ -92,11 +91,11 @@ Expression              Equivalent
 ``e{lbl₁ = val₁}.val₂`` ``(e{lbl₁ = val₁}).val₂``
 ======================= ==================================
 
-*[Note: ``e{lbl = val}`` is the syntax of a standard H98 record update.
+[Note: ``e{lbl = val}`` is the syntax of a standard H98 record update.
 It’s the nested form introduced by this proposal that is new :
 ``e{lbl1.lbl2 = val}``. However, in the event ``RecordDotSyntax`` is in
 effect, note that we propose that ``e{lbl = val}`` desugar to
-``setField @"lbl" e val``]*.
+``setField @"lbl" e val``].
 
 2.1.2 Precedence
 ^^^^^^^^^^^^^^^^
@@ -121,20 +120,18 @@ Expression     Interpretation
 We propose that dot notation isn’t available for fields whose names are
 operator symbols (for example, ``+``, ``.+.`` and so on).
 
-*[Note : For fields whose names are operator symbols, one can still
-write ``getField`` expressions (e.g. ``getField @".+." r``)]*.
+[Note : For fields whose names are operator symbols, one can still
+write ``getField`` expressions (e.g. ``getField @".+." r``)].
 
 2.2 Definitions
 ~~~~~~~~~~~~~~~
 
-For what follows, we use these informal definitions: \* A **field
-selector** is an expression like ``.a`` or ``.a.b``; \* A **field
-selection** is an expression like ``r.a`` or ``(f x).a.b``; \* A **field
-update** is an expression like ``r{a = 12}`` or ``r{a.b = "foo"}``; \* A
-**punned field update** is an expression like ``r{a}`` or ``r{a.b}``
-(here it is understood that ``b`` is a variable bound in the environment
-of the expression and only valid syntax if the ``NamedFieldPuns``
-language extension is in effect).
+For what follows, we use these informal definitions:
+
+* A **field selector** is an expression like ``.a`` or ``.a.b``;
+* A **field selection** is an expression like ``r.a`` or ``(f x).a.b``;
+* A **field update** is an expression like ``r{a = 12}`` or ``r{a.b = "foo"}``;
+* A **punned field update** is an expression like ``r{a}`` or ``r{a.b}`` (here it is understood that ``b`` is a variable bound in the environment of the expression and only valid syntax if the ``NamedFieldPuns`` language extension is in effect).
 
 2.3 Lexing and Parsing
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -178,40 +175,53 @@ Symbol Occurence
 ====== ===========
 
 2.3.2.1
-       
 
-[Field]      *field*   →   *varid*   |   *qvarid*
+.. role:: raw-html(raw)
+    :format: html
+
+[Field]
+:raw-html:`<br />`
+     *field*   →   *varid*   |   *qvarid*
 
 .. _section-1:
 
 2.3.2.2
-       
 
-[Field to update]      *fieldToUpdate*   →   *fieldToUpdate* *.ᵀ*
-*field*   |   *field*
+
+[Field to update]
+:raw-html:`<br />`
+     *fieldToUpdate*   →   *fieldToUpdate* *.ᵀ* *field*   |   *field*
 
 .. _section-2:
 
 2.3.2.3
-       
 
-[Field selectors]      *aexp*   →   *( projection )*      *projection*
-  →   *.ᴾ* *field*   |   *projection* *.ᵀ* *field*
+
+[Field selectors]
+:raw-html:`<br />`
+     *aexp*   →   *( projection )*
+:raw-html:`<br />`
+     *projection*   →   *.ᴾ* *field*   |   *projection* *.ᵀ* *field*
 
 .. _section-3:
 
 2.3.2.4
-       
 
-[Field selection]      *fexp*   →   *fexp* *.ᵀ* *field*
+
+[Field selection]
+:raw-html:`<br />`
+     *fexp*   →   *fexp* *.ᵀ* *field*
 
 .. _section-4:
 
 2.3.2.5
-       
 
-[Field update]      *fbind*   →    *field* *.ᵀ* *fieldToUpdate* *=*
-*exp*      *fbind*   →   *field* *.ᵀ* *fieldToUpdate*
+
+[Field update]
+:raw-html:`<br />`
+     *fbind*   →    *field* *.ᵀ* *fieldToUpdate* *=* *exp*
+:raw-html:`<br />`
+     *fbind*   →   *field* *.ᵀ* *fieldToUpdate*
 
 3. Examples
 -----------
@@ -269,8 +279,7 @@ difference a user is likely to experience is that the resulting type of
 ``a{b=c}`` is the same as the type ``a`` - you *cannot* change the type
 of the record by updating its fields. The removal of polymorphism is
 considered essential to preserve decent type inference, and is the only
-option supported by `the ``HasField``
-proposal <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0158-record-set-field.rst>`__.
+option supported by `the HasField proposal <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0158-record-set-field.rst>`__.
 Anyone wishing to use polymorphic updates can write
 ``let Foo{..} = a in Foo{polyField=[], ..}`` instead.
 
@@ -350,22 +359,23 @@ is possible to use the ``&`` function from ``Base`` or do either of:
 
 Instead of this proposal, we could do any of the following:
 
--  Using the ```lens``
-   library <https://hackage.haskell.org/package/lens>`__. While lenses
-   help both with accessors and overloaded names (e.g. ``makeFields``),
-   one still needs to use one of the techniques mentioned below (or
-   similar) to work around the problem of duplicate name selectors. In
-   addition, lens-based syntax is more verbose,
-   e.g. \ ``f $ record ^. field`` instead of possible
-   ``f record.field``. More importantly, while the concept of lenses is
-   very powerful, that power can be `complex to
-   use <https://twitter.com/fylwind/status/549342595940237312?lang=en>`__,
-   and for many projects that complexity is undesirable. In many ways
-   lenses let you abstract over record fields, but Haskell has neglected
-   the “unabstracted” case of concrete fields. Moreover, as it has been
-   `previously mentioned <#Effect-and-Interactions>`__, this proposal is
-   orthogonal to lens and can actually benefit lens users.
--  The ```DuplicateRecordFields``
+- Using the `lens library
+  <https://hackage.haskell.org/package/lens>`__. While lenses help
+  both with accessors and overloaded names (e.g. ``makeFields``), one
+  still needs to use one of the techniques mentioned below (or
+  similar) to work around the problem of duplicate name selectors. In
+  addition, lens-based syntax is more verbose, e.g. \ ``f $ record
+  ^. field`` instead of possible ``f record.field``. More importantly,
+  while the concept of lenses is very powerful, that power can be
+  `complex to use
+  <https://twitter.com/fylwind/status/549342595940237312?lang=en>`__,
+  and for many projects that complexity is undesirable. In many ways
+  lenses let you abstract over record fields, but Haskell has
+  neglected the “unabstracted” case of concrete fields. Moreover, as
+  it has been `previously mentioned <#Effect-and-Interactions>`__,
+  this proposal is orthogonal to lens and can actually benefit lens
+  users.
+-  The `DuplicateRecordFields
    extension <https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#duplicate-record-fields>`__
    is designed to solve similar problems. We evaluated this extension as
    the basis for DAML, but found it lacking. The rules about what types
@@ -484,5 +494,5 @@ file <https://gitlab.haskell.org/shayne-fletcher-da/ghc/-/blob/f74bb04d850c53e4b
 
 If accepted, the proposal authors would be delighted to provide an
 implementation. Implementation depends on the implementation of `the
-``HasField``
-proposal <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0158-record-set-field.rst>`__.
+HasField proposal
+<https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0158-record-set-field.rst>`__.
