@@ -112,7 +112,7 @@ See the section `Review criteria <#review-criteria>`_ below for more information
 
 To start a proposal, create a pull request that adds your proposal as ``proposals/0000-proposal-name.rst`` or ``proposals/0000-proposal-name.md``. Use the corresponding ``proposals/0000-template`` file as a template.
 
-If you are unfamiliar with git and github, you can use the GitHub web interface to perform these steps:
+If you are unfamiliar with git and GitHub, you can use the GitHub web interface to perform these steps:
 
 1. Load the proposal template using `this link (ReStructuredText)`__ or `this link (Markdown)`__.
 2. Change the filename and edit the proposal.
@@ -147,7 +147,7 @@ How to amend an accepted proposal
 
 Some proposals amend an existing proposal. Such an amendment :
 
-* Makes a significant (i.e. not just editorial or typographical) change, and hence warrants approval by the commitee
+* Makes a significant (i.e. not just editorial or typographical) change, and hence warrants approval by the committee
 * Is too small, or too closely tied to the existing proposal, to make sense as a new standalone proposal.
 
 Often, this happens
@@ -209,7 +209,7 @@ When the discussion has ebbed down and the author thinks the proposal is ready, 
 1. Review the discussion thread and ensure that the proposal text accounts for
    all salient points. *Remember, the proposal must stand by itself, and be understandable
    without reading the discussion thread.* 
-2. Add a comment to the a pull request, briefly summarizing the major points raised
+2. Add a comment to the pull request, briefly summarizing the major points raised
    during the discussion period and stating your belief that the proposal is
    ready for review. In this comment, tag the committee secretary (currently
    ``@nomeata``).
@@ -274,7 +274,7 @@ The steps below have timescales attached, so that everyone shares
 the same expectations.  But they are only reasonable expectations.
 The committee consists of volunteers with day jobs, who are reviewing
 proposals in their spare time.  If they do not meet the timescales
-indicated below (e.g they might be on holiday), a reasonable response
+indicated below (e.g. they might be on holiday), a reasonable response
 is a polite ping/enquiry.
 
 -  The secretary nominates a member of the committee, the *shepherd*, to oversee
@@ -329,7 +329,7 @@ is a polite ping/enquiry.
 
 -  For acceptance, a proposal must have at least *some* enthusiastic support
    from member(s) of the committee. The committee, fallible though its members may be,
-   is the guardian of the language.   If all of them are luke-warm about a change,
+   is the guardian of the language.   If all of them are lukewarm about a change,
    there is a presumption that it should be rejected, or at least "parked".
    (See "evidence of utility" above, under "What a proposal should look like".)
 
@@ -346,7 +346,7 @@ is a polite ping/enquiry.
    to be clear on these points".
 
    In fact, this should happen if *any* substantive technical debate
-   takes place.  The goal of the commitee review is to say yes/no to a
+   takes place.  The goal of the committee review is to say yes/no to a
    proposal *as it stands*.  If new issues come up, they should be
    resolved, incorporated in the proposal, and the revised proposal
    should then be re-submitted for timely yes/no decision.  In this way,
@@ -360,7 +360,7 @@ is a polite ping/enquiry.
    When a proposal is returned for revision, GitHub labels are updated accordingly
    and the ``(under review)`` suffix is removed from the title of the PR.
 
--  The decision is announced, by the shepherd or the secretary, on the Github
+-  The decision is announced, by the shepherd or the secretary, on the GitHub
    thread and the mailing list.
 
    Notwithstanding the return/resubmit cycle described above, it may be
@@ -430,7 +430,7 @@ Here are some characteristics that a good proposal should have.
 * *It should be self-standing*.  Some proposals accumulate a long and interesting discussion
   thread, but in ten years' time all that will be gone (except for the most assiduous readers).
   Before acceptance, therefore, the proposal should be edited to reflect the fruits of
-  that dicussion, so that it can stand alone.
+  that discussion, so that it can stand alone.
 
 * *It should be precise*, especially the "Proposed change specification"
   section.  Language design is complicated, with lots of
@@ -454,7 +454,7 @@ Here are some characteristics that a good proposal should have.
   * For future proposers:  most proposals consume syntactic design space add/or add new back-compat burdens, both of which make new proposals harder to fit in.
   * It is much, much harder subsequently to remove an extension than it is to add it.
 
-  All these costs constitute a permanent tax on every future programmer, langauge designer, and GHC maintainer.
+  All these costs constitute a permanent tax on every future programmer, language designer, and GHC maintainer.
   The tax may well be worth it (a language without polymorphism
   would be simpler but we don't want it), but the case should be made.
 
@@ -532,7 +532,7 @@ The proposals can be rendered by running::
 
    nix-shell shell.nix --run "make html"
 
-this will then create a directory ``_build`` which will contain an ``index.html``
+This will then create a directory ``_build`` which will contain an ``index.html``
 file and the other rendered proposals. This is useful when developing a proposal
 to ensure that your file is syntax correct.
 
