@@ -1,0 +1,152 @@
+GHC Steering Committee Bylaws
+=============================
+
+This document describes the GHC Steering Committee and the
+bylaws by which it operates.
+
+* `Current committee membership <https://github.com/ghc-proposals/ghc-proposals/#who-is-the-committee>`_
+
+Committee Composition
+---------------------
+
+The committee is formed of roughly 10 members of the Haskell community
+who wish to volunteer for this service. It is our aim that this committee
+be diverse; by representing different viewpoints, we will make decisions
+that benefit larger segments of our community.
+
+Specifically, we ideally would be able to represent the following
+constituencies:
+
+* GHC developers
+* Authors (whether in print or online)
+* Educators
+* Industrial users
+* Researchers
+* Tooling developers
+
+We recognize that we may not always live up to this ideal, but when
+choosing new members, we aim to correct any imbalances.
+
+Committee Roles
+---------------
+
+* The committee has two co-chairs. This role is more ceremonial
+  than practical, as all members of the committee have the right
+  to set the agenda and move our business forward. The co-chairs
+  are the stop of last resort for any issues of contention, but
+  are otherwise undistinguished from other members of the committee.
+
+  Agreement among the co-chairs can initiate a process to force a member off
+  the committee. If this happens, the co-chairs must explain their rationale
+  to the entire committee, including the member that has been removed. In
+  order to avoid public embarrassment, it is expected that this communication
+  be by private email, not via a mailing list of public record. (The chairs
+  may choose, however, to use public channels, in egregious circumstances.)
+  The committee does not need to weigh in during this process, though the
+  expectation is that if the co-chairs abuse their power, the committee will
+  vote them out of their chairships.
+
+* The committee has one secretary. The secretary is the first stop for keeping
+  our repository up-to-date and running our selection process.
+
+* The committee has one nudger. The nudger's job is to make sure other
+  committee members are fulfilling their duties by nudging them (often
+  in public) to do so.
+
+The co-chairs and secretary
+positions remain with an individual until they decide to relinquish the
+role, though a majority vote among the committee can strip a member of
+their co-chair/secretary position.
+
+The nudger position rotates among members every six months.
+In the event that the nudger ends up needing nudging (by any other member
+of the committee), the nudger should step down and volunteer to do a better
+job in some future six months; in the event that they still struggle to
+stay on top of their nudging duties, it may be a sign that they are too
+busy for committee work and should step down.
+
+The secretary is in charge of managing who the nudger is, by creating
+a rotation for this position.
+
+Guidelines for Communication
+----------------------------
+
+All members of the Steering Committee agree to abide by the
+`Guidelines for Respectful Communication <https://github.com/ghc-proposals/ghc-proposals/blob/master/GRC.rst>`_. As the guidelines document
+describes, if one of us errs in our communication, please
+opt to bring up the matter with that individual directly.
+If that is not feasible, then please bring it up with the
+(co-)chair of the committee. Everyone should feel welcomed
+to contribute to the growth of GHC and Haskell, and we eagerly
+want to know when our actions cause someone not to feel that
+way.
+
+Method of Communication
+-----------------------
+
+Most official committee business takes place via the
+`ghc-steering-commitee <https://mail.haskell.org/mailman/listinfo/ghc-steering-committee>`_ mailing list. The archives of this list are public, and
+any member of the community may subscribe. It is intended that the list
+be used by the committee, though community members might be asked
+to post there during relevant conversations.
+
+Any business not on the public mailing list will be of a sensitive nature,
+most likely pertaining to individuals. In particular, discussions of selecting
+new members and of violations of the guidelines for respectful communication
+will not appear on the mailing list.
+
+Term Limits and Committee Selection
+-----------------------------------
+
+Any community thrives best by continuing to refresh itself with new members.
+Accordingly, membership on the committee comes with a three-year term. Terms
+begin/end in October. Toward the end of an individual's term, the secretary of
+the committee will put out a public call for nominations for people to join
+the committee. Self-nominations are welcome and expected. The member whose
+term is ending is free to re-nominate themselves. Nominations include a brief
+bio of the nominee and reasons why they would be appropriate for the
+committee.
+
+Continuing members of the committee vote on new membership via a ranked voting
+system; the precise details (i.e. election algorithm) are recommended by the
+secretary but can be vetoed by a majority vote. The ranking system includes a
+method for choosing multiple winners. It is expected that the committee
+favor newcomers in preference to re-nominated continuing members. If
+an expiring member continues, the secretary shall ensure that a
+rationale for this decision be published to the community.
+
+The voting process may result in a number of new members not equal to
+the number of outgoing members. This is fine; the size of the committee
+is not fixed. However, a new nomination process begins only when
+membership drops below nine members.
+
+The nomination and voting process is kept private, by using direct
+email to committee members, not the mailing list. When the secretary's
+term is expiring (but that individual wishes to stay on the committee),
+one co-chair fills in for the secretary to run this process.
+
+Any member of the committee is free to step down at any time. Doing so
+causes a nomination process to begin (if the resulting size of the committee
+would be less than nine).
+
+There are two exceptions to the three-year term rule for two "key members"
+of the committee: in recognition of
+their historical and current importance to GHC, both Simon Peyton Jones
+and Simon Marlow will be expected to be retained on the committee when
+their terms end. If either wishes to continue serving on the committee
+when their terms end, and with the support of the majority of the committee,
+no public nomination process needs to take place to replace them.
+
+These key members can be stripped of their status as key members by a
+majority vote of the committee, and other individuals can be made into
+key members by a unanimous decision of the committee. In both cases,
+changes to the list of key members will be accompanied by a public
+rationale.
+
+Note that there is no process for members of the public at large to
+directly add or remove committee members. (That is, there is no public
+vote.) Representative voting across the internet is fraught, and the
+drawbacks to such a system seem to outweigh any benefits. It is expected
+that a misbehaving committee (say, one that selects only its friends and
+ignores other nominations) loses legitimacy and is publicly called into
+question in an attempt to make changes for the better in its operation.
