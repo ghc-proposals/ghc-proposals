@@ -92,8 +92,8 @@ the reasons for choosing the proposed change over these alternative:
 *e.g.* they can be cheaper but insufficient, or better but too
 expensive. Or something else.
 
-The PR discussion often raises other potential designs, they should be
-added to this section. And, similarly, if the proposed change
+The PR discussion often raises other potential designs, and they should be
+added to this section. Similarly, if the proposed change
 specification changes significantly, the old one should be listed in
 this section.
 
