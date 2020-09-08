@@ -636,7 +636,7 @@ details of the proposal.
 
     but is rejected under the current proposal due to its unannotated return
     kind. Since the matchability is not annotated, the type no longer has a
-    CUSK, so the ``k`` would need to unify with the ``*`` of ``Maybe, so it is
+    CUSK, so the ``k`` would need to unify with the ``*`` of ``Maybe``, so it is
     rejected.  An alternative consideration would be to introduce a notion of a
     "partial CUSK" that mentions all arguments except for the matchability ones.
 
