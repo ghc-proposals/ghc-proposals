@@ -124,9 +124,9 @@ Consider a classic (ephemeral) array-doubling stack:
 
 ```haskell
 data Stack s a = Stack
-  { top :: !Int
-  , size :: !Int
-  , elements :: !(IORef (MutableArray s a))  -- length size
+  { top :: !(STRef s Int)
+  , size :: !(STRef s Int)
+  , elements :: !(STRef s (MutableArray s a))  -- length size
   }
 ```
 
@@ -137,11 +137,11 @@ array allocation and array copying incrementally:
 
 ```haskell
 data Stack s a = Stack
-  { top :: !Int
-  , size :: !Int
-  , elements :: !(IORef (MutableArray s a)) -- length size
-  , copying :: !(IORef (MutableArray s a)) -- length 2 * size
-  , initializing :: !(IORef (IncrementallyClearedArray s)) -- length 4 * size
+  { top :: !(STRef Int)
+  , size :: !(STRef Int)
+  , elements :: !(STRef s (MutableArray s a)) -- length size
+  , copying :: !(STRef s (MutableArray s a)) -- length 2 * size
+  , initializing :: !(STRef s (IncrementallyClearedArray s)) -- length 4 * size
   }
 ```
 
