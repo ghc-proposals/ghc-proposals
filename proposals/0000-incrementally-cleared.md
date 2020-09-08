@@ -95,17 +95,28 @@ actually `ByteArray#` in disguise. Creating one involves allocating a
 `ByteArray#` large enough to accommodate both the array elements and (in the
 case of `IncrementallyClearedArray#`) the card table. For
 `IncrementallyClearedArray#`, we also initialize the card table to indicate
-that it does *not* need to be scanned. The clearing operations write "null
+that it does *not* need to be scanned.
+
+The clearing operations write "null
 pointers" into the array slots. These are actually pointers to a statically
 allocated object. Ideally, that object would be a thunk that throws an
 exception. Since well-behaved exceptions don't really exist in `GHC.Prim`, we
 should just make it a thunk that fails with an unchecked exception (like
-`quotInt#` does when passed `0#`). `completeIncrementallyClearedArray#` changes
+`quotInt#` does when passed `0#`).
+
+`completeIncrementallyClearedArray#` changes
 the heap object type to indicate that it is now an `MutableArray#` and not a
 `MutableByteArray#`. `getSizeofIncrementallyClearedArray#` and
 `shrinkIncrementallyClearedArray#` work just like the corresponding operations
 for byte arrays except that they make the necessary adjustments for the card
 table in the `IncrementallyClearedArray#` case.
+
+Why do we write the card table when we create the `IncrementallyClearedArray#`
+and not when we complete it? This way, it's safe for multiple threads to
+complete the same array; the second time the array is completed nothing changes.
+If we wrote the card table on completion, then garbage collection would go
+haywire if one thread wrote to the completed array and then another thread
+cleared its card table.
 
 ## Examples
 
