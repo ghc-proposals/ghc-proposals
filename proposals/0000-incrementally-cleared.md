@@ -77,8 +77,8 @@ threadSafeClearSmallIncrementallyClearedArray# :: SmallIncrementallyClearedArray
 completeIncrementallyClearedArray# :: IncrementallyClearedArray# s -> State# s -> (# State# s, MutableArray# s a #)
 completeSmallIncrementallyClearedArray# :: SmallIncrementallyClearedArray# s -> State# s -> (# State# s, SmallMutableArray# s a #)
 
-getSizeofSmallIncrementallyClearedArray# :: SmallIncrementallyClearedArray# s -> State# s -> (# State# s, Int# #)
 getSizeofIncrementallyClearedArray# :: IncrementallyClearedArray# s -> State# s -> (# State# s, Int# #)
+getSizeofSmallIncrementallyClearedArray# :: SmallIncrementallyClearedArray# s -> State# s -> (# State# s, Int# #)
 
 shrinkIncrementallyClearedArray# :: IncrementallyClearedArray# s -> Int# -> State# s -> State# s
 shrinkSmallIncrementallyClearedArray# :: SmallIncrementallyClearedArray# s -> Int# -> State# s -> State# s
