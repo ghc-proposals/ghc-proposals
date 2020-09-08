@@ -18,7 +18,6 @@ described in the paper
 `Higher-Order Type-level Programming in Haskell <https://www.microsoft.com/en-us/research/publication/higher-order-type-level-programming-in-haskell>`_,
 and is presented here with a few tweaks and refinements.
 
-
 Motivation
 ----------
 
@@ -35,7 +34,7 @@ What this means is that while it's possible to write a type-level
      Map _ '[]       = '[]
      Map f (x ': xs) = f x ': Map f xs
 
-it is not possible to pass another type function as the first argument,
+it is not possible to pass another type function as the first argument
 to ``Map`` because that would require partial (unsaturated) application of the
 function argument.
 It is, however, possible to pass a type constructor, such as ``Maybe``.
@@ -114,11 +113,18 @@ We could even define ``M`` and ``U`` as synonyms of ``'Matchable`` and
 We could export these types from a new ``GHC.Matchability`` module,
 or perhaps ``GHC.Types``.
 
-There would then be a single primitive arrow constructor, called ``ARROW``:::
+The full kind of the ``(->)`` constructor becomes:::
 
-  ARROW :: forall (m :: Matchability) ->
-           forall (q :: RuntimeRep) (r :: RuntimeRep).
-           TYPE q -> TYPE r -> Type
+  (->) :: forall (m :: Matchability)
+                 {q :: RuntimeRep} {r :: RuntimeRep}.
+          TYPE q -> TYPE r -> Type
+
+The matchability part of the arrow can be instantiated using visible type
+application in types, a recent addition to GHC.
+
+The ``a -> @m b`` syntax is thus syntactic sugar for ``(->) @m a b``.
+This proposed syntax hints at the optionality of manually specifying the
+matchability, a point discussed later in this proposal.
 
 Matchability polymorphism
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -131,7 +137,7 @@ quantified over, thus enabling polymorphism in the matchability of arrows.
 This way, ``Map`` can be defined to be *matchability polymorphic* (in
 its first argument) ::
 
-   type family Map (f :: ARROW m a b) (xs :: [a]) :: [b] where
+   type family Map (f :: (->) @m a b) (xs :: [a]) :: [b] where
      Map _ '[]       = '[]
      Map f (x ': xs) = f x ': Map f xs
 
@@ -166,6 +172,8 @@ We could optionally add reserved operators for ``-> @U`` and ``-> @M``, e.g
 because GHC would have to treat them like ``->`` and GHC's parser handles this
 operator in a special way
 (see `here <https://gitlab.haskell.org/ghc/ghc/issues/10056#note_157509>`_).
+
+.. _Inference:
 
 Meaning of an annotation-free ``->``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -242,6 +250,97 @@ We therefore propose the following plan:
 3. Document and summarize the final behaviour in a specification that would be
    included in the GHC manual.
 
+Without claiming completeness, we mention some of these special cases:
+
+Term-level arrows
+#################
+
+Term-level arrows are always unmatchable. ::
+
+  id :: a -> a
+
+always means ``id :: a -> @U a``.
+
+It is an error to write ::
+
+  id :: a -> @M a
+
+Kind-arrows in type signatures
+##############################
+
+Whenever an arrow kind arises from the type signature of a term, they are
+defaulted to matchable ::
+
+  foo :: forall (m :: Type -> Type) a. m a
+  foo = undefined
+
+Here ``m :: Type -> @M Type``. The rule is that matchability variables are never
+generalised in terms: if it's a "term-level" arrow, it's assigned unmatchable,
+if it's a "type-level" arrow, it's assigned matchable. This happens regardless
+of whether the arrow is spelled out, viz: ::
+  bar :: m a
+  bar = undefined
+
+This behaviour is the most conservative, as we don't trigger ambiguity errors,
+and still allow decomposition of equality constraints. Users can override this behaviour
+by specifying an explicit matchability annotation::
+
+  bar :: forall (m :: Type -> @U Type) a. m a
+
+Note that this type signature is now ambiguous.
+
+Kind-arrows in classes
+######################
+
+When an arrow kind arises from a type class parameter, it's assumed to be
+matchable ::
+
+  class Functor f where
+    fmap :: (a -> b) -> f a -> f b
+
+Similarly in instances ::
+
+  instance Functor f
+  instance Show (g a)
+
+both ``f`` and ``g`` are inferred to have matchable kinds.
+
+Arrow-type in type class instances
+##################################
+
+When defining an instance, the arrow type can turn up directly
+in the instance head, for example::
+
+  instance Monad ((->) r)
+  instance Category (->)
+  instance Semigroup (a -> b)
+
+To retain compability, all of these arrows are assumed to mean the term-level
+arrow, in other words unmatchable. This default can be overridden ::
+
+  instance Foo ((->) @M)
+
+Kind-arrows in type family patterns
+###################################
+
+In the pattern::
+
+  type family UnApp a where
+    UnApp (f x) = x
+
+``f`` is inferred to have a matchable kind. Indeed, it must have a matchable
+kind, and declaring otherwise is an error.
+
+RHS of type synonyms
+####################
+
+When writing::
+
+  type Arrow = (->)
+
+the arrow is defaulted to mean ``(->) @U``.
+
+.. _Syntax:
 
 Syntax changes
 ~~~~~~~~~~~~~~
@@ -290,6 +389,12 @@ saturated.
 Effects and interactions
 ------------------------
 
+Type synonyms
+~~~~~~~~~~~~~
+
+While the proposal's main focus is type families, it also enables partial
+application of type synonyms, treated in the same way as type families.
+
 Term-level functions
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -298,8 +403,20 @@ the same arrow ``->``. Consequently, as a result of this proposal, term-level
 functions inevitably need to have a matchability. They are assigned
 the unmatchable arrow ``-> @U``.
 
-Inferred arguments
-~~~~~~~~~~~~~~~~~~
+Visible dependent quantification
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Another place where the ``->`` shows up today is visible dependent
+quantification, for example in the kind of ::
+
+  -- P :: forall k -> k -> Type
+  data P k (a :: k) = P
+
+We propose to annotate such arrows with matchabilities too, so the full
+kind of ``P`` becomes ``forall k -> @M -> k -> @M Type``.
+
+Explicit specificity
+~~~~~~~~~~~~~~~~~~~~
 
 When supplying type arguments to matchability-polymorphic functions such as ::
 
@@ -309,17 +426,147 @@ the user needs to provide either a concrete matchability or a wildcard before
 supplying the instantiation for ``f``, as in ``qux @_ @Id``. This is tiresome,
 because ``m`` can *always* be inferred from the kind of ``f``, so it would be
 preferable to write ``qux @Id`` instead.
+
 The `explicit specificity <https://github.com/ghc-proposals/ghc-proposals/pull/99>`_
-proposal would make this possible.
+feature greatly improves the usability of unsaturated type families, as now the signature
+can be written as ::
+
+   qux :: forall {m} (f :: * -> @m *) a. f a -> f a
+
+Standalone Kind Signatures
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``StandaloneKindSignatures`` feature has the largest user-facing interaction
+surface with the current proposal. Before ``StandaloneKindSignatures``, the kind
+of a type family was never written in the source language, and was only hinted at by
+GHCi. Today this is no longer the case ::
+
+  type Id :: Type -> Type
+  type family Id a where
+    Id a = a
+
+The meaning of this kind signature is ``type Id :: Type -> @U Type``. However,
+requiring the user to spell out the full signature incurs a considerable amount
+of mental burden, so instead we propose to infer it from the definition.
+
+Another example ::
+
+  type Foo :: Type -> Type
+  type family Foo where
+    Foo = Maybe
+
+  type Bar :: Type -> Type
+  type family Bar where
+    Bar = Id
+
+will get inferred to be ``Foo :: Type -> @M Type`` and ``Bar :: Type -> @U Type`` respectively.
+We can also infer polymorphism, for example ::
+
+  type Map :: (a -> b) -> [a] -> [b]
+  type family Map f xs where
+    Map f       '[] =             '[]
+    Map f (x ': xs) = f x ': Map f xs
+
+can be inferred the kind ``forall {t :: Matchability} {k :: Type} (a b :: k). (a -> @t b) -> @U [a] -> @U [b]``.
+
+When such inference is not possible, we propose to use a defaulting strategy
+that is in line with existing behaviour. For example, in the case of open type
+families ::
+
+  type Open :: Type -> Type
+  type family Open
+
+we can not tell up front which arrow the user meant, so we default it to mean
+matchable. Doing so disallows defining ``type instance Open = Id``, but such
+instances are already disallowed today due to the saturation restriction.
+
+The proposed solution requires some inference to happen even in checking
+mode. Kind inference is notoriously hard due to issues like kind-indexed type
+families and polymorphic recursion. However, we propose only to infer
+matchabilities and not arbitary kinds, which is a conservative extension of the
+status quo. In particular, we never infer non-parametric polymorphism so the following
+is rejected ::
+
+  type FooBar :: Type -> Type
+  type family FooBar where
+    FooBar = Maybe
+    FooBar = Id
+
+To be accepted, an annotation is required::
+
+  type FooBar' :: Type -> @m Type
+  type family FooBar' where
+    FooBar' = Maybe
+    FooBar' = Id
+
+It means that in type families, users only need to provide an explicit signature
+if they desire the matchability-indexed definition, which we predict is going to
+be restricted to a small fraction of advanced users.
+
+CUSKs
+~~~~~
+
+In the proposed solution the requirements to have a CUSK_ changes.
+Today, the following type is considered to have a CUSK::
+
+  type family Cusk :: Type -> Type where
+    Cusk = Maybe
+
+Under this proposal, ``Cusk`` requires an explicit annotation on its
+matchability to be considered having a CUSK::
+
+  type family Cusk :: Type -> @m Type where
+    Cusk = Maybe
+
+
+.. _CUSK: https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#complete-user-supplied-kind-signatures-and-polymorphic-recursion
+
+DataKinds
+~~~~~~~~~
+
+Promoted data constructors get matchable kinds. This means that ::
+
+  :type Just  :: a -> @U a
+  :kind 'Just :: Type -> @M Type
 
 Linear Haskell
 ~~~~~~~~~~~~~~
 
-Under the Linear Haskell proposal, the arrow type is decorated with a
-different kind of information: multiplicity. Happily, multiplicities
-are only used in *types*, whereas matchabilities only appear in
-*kinds*. As a result, these features are completely orthogonal.
+Under ``LinearTypes``, the arrow type is decorated with a different kind of
+information: multiplicity. Happily, multiplicities are only used in *types*,
+whereas matchabilities only appear in *kinds*. As a result, these features are
+in theory completely orthogonal.
 
+In practice, the arrow annotation requires careful thought. In ``LinearTypes``,
+the ``(->)`` type is defined as a synonym for a more general constructor ``FUN``
+that takes a multiplicity argument: ::
+
+  type FUN :: forall (n :: Multiplicity) ->
+              forall {q :: RuntimeRep} {r :: RuntimeRep}. TYPE q -> TYPE r -> Type
+
+  type (->) :: forall {q :: RuntimeRep} {r :: RuntimeRep}. TYPE q -> TYPE r -> Type
+  type (->) =
+    FUN 'Many
+
+Here we propose yet another annotation, which turns the kinds of the two
+constructors to the following: ::
+
+  type FUN :: forall (m :: Matchability).
+              forall (n :: Multiplicity) ->
+              forall {q :: RuntimeRep} {r :: RuntimeRep}. TYPE q -> TYPE r -> Type
+
+  type (->) :: forall (m :: Matchability).
+               forall {q :: RuntimeRep} {r :: RuntimeRep}. TYPE q -> TYPE r -> Type
+  type (->) = FUN 'Many
+
+The synonym morally translates to::
+
+  type (->) @m = FUN @m 'Many
+
+
+Since the matchability argument is invisible, this synonym works just like one
+would expect (in particular, there's no unexpected interaction from the fact
+that ``(->)`` needs to bind the matchability argument to apply it out-of-order).
 
 Costs and Drawbacks
 -------------------
@@ -329,11 +576,14 @@ compiler and some new complexity *would* be introduced, most of it
 concentrated in the implementation of the hybrid matchability
 inference/defaulting scheme in the typechecker.
 
-Another potential drawback is that users will now need to be aware of the
-arrow dichotomy. However, this only concerns advanced users, and
-the feature aims to be backwards-compatible. Notably, before this feature,
-the kind of a type family never shows up in source Haskell, and is only
-printed by GHCi with the ``:kind`` command.
+Another potential drawback is that users will now need to be aware of the arrow
+dichotomy. However, this only concerns advanced users, and the feature aims to
+be backwards-compatible. Notably, before this feature, the kind of a type family
+only shows up when using ``StandaloneKindSignatures`` or in GHCi when using the
+``:kind`` command. A new flag ``-fprint-explicit-matchabilities`` can be added,
+similar to ``-fprint-explicit-runtime-reps``, that only shows the matchability
+information to users who ask. This, together with the inference scheme proposed
+above means no changes to most users.
 
 Alternatives
 ------------
@@ -348,13 +598,13 @@ details of the proposal.
     The main drawback of that approach is that inference would suffer compared
     to the scheme outlined above. Matchability polymorphism also fits more
     cleanly into the existing constraint solver mechanism. Alternatively, we
-    could stick to the simple defaulting scheme mentionned in the section about
+    could stick to the simple defaulting scheme mentioned in the section about
     annotation-free arrows. But...
 
 2.  Type inference with the "simple" matchability defaulting scheme is
     incomplete. Take following program ::
-	nested :: a b ~ c Id => b Bool
-	nested = False
+      nested :: a b ~ c Id => b Bool
+      nested = False
 
     initially, the matchabilities of ``a``, ``b`` and ``c`` are all
     instantiated with unification variables, and there are no further
@@ -370,6 +620,26 @@ details of the proposal.
 3.  We could make different choices for the syntax, regarding how we annotate
     arrows with matchabilities or the particular names around the
     ``Matchability`` type.
+
+4.  Data constructors could be considered to have matchable types. This would
+    make promotion more unified, as promoted constructors have matchable kinds.
+    This is quite appealing, but doing so would require additional engineering
+    effort. Either we would need to introduce matchability-polymorphic
+    term-level functions, or, perhaps more realistically, eta-expand all data
+    constructor applications to demote them to unmatchable.
+
+5.  The currently proposed change to CUSKs is not backwards compatible. For example,
+    the following program compiles today as it has a CUSK ::
+
+      type family Cusk :: Type -> k where
+        Cusk = Maybe
+
+    but is rejected under the current proposal due to its unannotated return
+    kind. Since the matchability is not annotated, the type no longer has a
+    CUSK, so the ``k`` would need to unify with the ``*`` of ``Maybe, so it is
+    rejected.  An alternative consideration would be to introduce a notion of a
+    "partial CUSK" that mentions all arguments except for the matchability ones.
+
 
 Unresolved Questions
 --------------------
@@ -388,5 +658,5 @@ Implementation Plan
 -------------------
 
 I have implemented a
-`prototype <https://gitlab.haskell.org/kcsongor/ghc/tree/unsaturated_type_families>`_
-of this feature, following a prior version of this proposal.
+`prototype <https://gitlab.haskell.org/kcsongor/ghc/tree/master>`_
+of this feature, as described in this proposal.
