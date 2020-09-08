@@ -55,8 +55,8 @@ completeSmallIncrementallyClearedArray :: SmallIncrementallyClearedArray s -> ST
 shrinkIncrementallyClearedArray :: IncrementallyClearedArray s -> Int -> ST s ()
 shrinkSmallIncrementallyClearedArray :: SmallIncrementallyClearedArray s -> Int -> ST s ()
 
+getSizeofIncrementallyClearedArray :: IncrementallyClearedArray s -> ST s Int
 getSizeofSmallIncrementallyClearedArray :: SmallIncrementallyClearedArray s -> ST s Int
-getSizeofSmallSmallIncrementallyClearedArray :: SmallSmallIncrementallyClearedArray s -> ST s Int
 ```
 
 ### Primitive API
