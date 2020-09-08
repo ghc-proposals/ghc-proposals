@@ -46,6 +46,9 @@ newSmallIncrementallyClearedArray :: Int -> ST s (SmallIncrementallyClearedArray
 clearIncrementallyClearedArray :: IncrementallyClearedArray s -> Int -> Int -> ST s ()
 clearSmallIncrementallyClearedArray :: SmallIncrementallyClearedArray s -> Int -> Int -> ST s ()
 
+threadSafeClearIncrementallyClearedArray :: IncrementallyClearedArray s -> Int -> Int -> ST s Bool
+threadSafeClearSmallIncrementallyClearedArray :: SmallIncrementallyClearedArray s -> Int -> Int -> ST s Bool
+
 completeIncrementallyClearedArray :: IncrementallyClearedArray s -> ST s (MutableArray s a)
 completeSmallIncrementallyClearedArray :: SmallIncrementallyClearedArray s -> ST s (SmallMutableArray s a)
 
@@ -65,8 +68,11 @@ data SmallIncrementallyClearedArray# :: Type -> TYPE 'UnliftedRep
 newIncrementallyClearedArray# :: Int# -> State# s -> (# State# s, IncrementallyClearedArray# s #)
 newSmallIncrementallyClearedArray# :: Int# -> State# s -> (# State# s, SmallIncrementallyClearedArray# s #)
 
-clearIncrementallyClearedArray# :: IncrementallyClearedArray# s -> Int# -> Int# -> State# s -> State# s
-clearSmallIncrementallyClearedArray# :: SmallIncrementallyClearedArray# s -> Int# -> Int# -> State# s -> State# s
+clearIncrementallyClearedArray# :: IncrementallyClearedArray# s -> Int# -> Int# -> State# s -> (# State# s, Int# #)
+clearSmallIncrementallyClearedArray# :: SmallIncrementallyClearedArray# s -> Int# -> Int# -> State# s -> (# State# s, Int# #)
+
+threadSafeClearIncrementallyClearedArray# :: IncrementallyClearedArray# s -> Int# -> Int# -> State# s -> State# s
+threadSafeClearSmallIncrementallyClearedArray# :: SmallIncrementallyClearedArray# s -> Int# -> Int# -> State# s -> State# s
 
 completeIncrementallyClearedArray# :: IncrementallyClearedArray# s -> State# s -> (# State# s, MutableArray# s a #)
 completeSmallIncrementallyClearedArray# :: SmallIncrementallyClearedArray# s -> State# s -> (# State# s, SmallMutableArray# s a #)
@@ -81,10 +87,11 @@ shrinkSmallIncrementallyClearedArray# :: SmallIncrementallyClearedArray# s -> In
 Except when necessary, I will describe only the `Array` version; `SmallArray` is
 mostly identical.
 
-An incremental array is created using `newIncrementallyClearedArray`. Slices of it
-are cleared using `clearIncrementalArray`, which takes the first element to be
-cleared and the number of elements to clear. Once all elements have been cleared,
-it can be converted to a `MutableArray` using `completeIncrementalArray`.
+An incremental array is created using `newIncrementallyClearedArray`. Slices of
+it are cleared using `clearIncrementalArray` or
+`threadSafeClearIncrementalArray`, which takes the first element to be cleared
+and the number of elements to clear. Once all elements have been cleared, it
+can be converted to a `MutableArray` using `completeIncrementalArray`.
 `getSizeofIncrementallyClearedArray` and `shrinkIncrementallyClearedArray` work
 just like the corresponding operations for `MutableByteArray`.
 
@@ -97,19 +104,22 @@ case of `IncrementallyClearedArray#`) the card table. For
 `IncrementallyClearedArray#`, we also initialize the card table to indicate
 that it does *not* need to be scanned.
 
-The clearing operations write "null
-pointers" into the array slots. These are actually pointers to a statically
-allocated object. Ideally, that object would be a thunk that throws an
-exception. Since well-behaved exceptions don't really exist in `GHC.Prim`, we
-should just make it a thunk that fails with an unchecked exception (like
-`quotInt#` does when passed `0#`).
+The clearing operations write "null pointers" into the array slots. These are
+actually pointers to a statically allocated object. Ideally, that object would
+be a thunk that throws an exception. Since well-behaved exceptions don't really
+exist in `GHC.Prim`, we should just make it a thunk that fails with an
+unchecked exception (like `quotInt#` does when passed `0#`). The thread safe
+versions work with the heap object locked and do nothing (returning `0#`) if
+the array has already been completed. This is important if one thread may
+complete the array and begin writing to it while another thread is still
+clearing.
 
-`completeIncrementallyClearedArray#` changes
-the heap object type to indicate that it is now an `MutableArray#` and not a
-`MutableByteArray#`. `getSizeofIncrementallyClearedArray#` and
-`shrinkIncrementallyClearedArray#` work just like the corresponding operations
-for byte arrays except that they make the necessary adjustments for the card
-table in the `IncrementallyClearedArray#` case.
+`completeIncrementallyClearedArray#` changes the heap object type to indicate
+that it is now an `MutableArray#` and not a `MutableByteArray#`.
+`getSizeofIncrementallyClearedArray#` and `shrinkIncrementallyClearedArray#`
+work just like the corresponding operations for byte arrays except that they
+make the necessary adjustments for the card table in the
+`IncrementallyClearedArray#` case.
 
 Why do we write the card table when we create the `IncrementallyClearedArray#`
 and not when we complete it? This way, it's safe for multiple threads to
