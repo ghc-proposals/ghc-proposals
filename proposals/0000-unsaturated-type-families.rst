@@ -413,7 +413,7 @@ quantification, for example in the kind of ::
   data P k (a :: k) = P
 
 We propose to annotate such arrows with matchabilities too, so the full
-kind of ``P`` becomes ``forall k -> @M -> k -> @M Type``.
+kind of ``P`` becomes ``forall k -> @M k -> @M Type``.
 
 Explicit specificity
 ~~~~~~~~~~~~~~~~~~~~
