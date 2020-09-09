@@ -52,12 +52,23 @@ may include,
 * how the proposed change interacts with existing language or compiler
   features, in case that is otherwise ambiguous
 
-The ideal specification is described as a modification of the
-`Haskell 2010 report <https://www.haskell.org/definition/haskell2010.pdf>`_.
+Strive for *precision*. The ideal specification is described as a
+modification of the `Haskell 2010 report
+<https://www.haskell.org/definition/haskell2010.pdf>`_. Where that is
+not possible (e.g. because the specification relates to a feature that
+is not in the Haskell 2010 report), try to adhere its style and level
+of detail. Think about corner cases. Write down general rules and
+invariants.
 
-Note, however, that this section need not describe details of the
-implementation of the feature or examples. The proposal is merely supposed to
-give a conceptual specification of the new feature and its behavior.
+Note, however, that this section should focus on a precise
+*specification*; it need not (and should not) devote space to
+*implementation* details -- there is a separate section for that.
+
+The specification can, and almost always should, be illustrated with
+*examples* that illustrate corner cases. But it is not sufficient to
+give a couple of examples and regard that as the specification! The
+examples should illustrate and elucidate a clearly-articulated
+specification that covers the general case.
 
 Examples
 --------
