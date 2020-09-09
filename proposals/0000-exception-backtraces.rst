@@ -160,7 +160,7 @@ for backtrace collection in ``throw`` and similar functions: ::
     -- (this state would be represented internally as a simple global IORef.
     setGlobalBacktraceMechanisms :: [BacktraceMechanism] -> IO ()
 
-A ``collectBacktrace`` primitive used by ``throw``
+A ``collectBacktrace`` primitive used by ``throw`` (and likewise ``throwIO``)
 simply dispatches to the appropriate backtrace collection scheme as determined
 by the currently selected ``BacktraceMechanism``s: ::
 
@@ -172,6 +172,9 @@ by the currently selected ``BacktraceMechanism``s: ::
           bt <- collectBacktrace
           let SomeExceptionWithBacktrace bts e' = toException e
           return (raise# (SomeExceptionWithBacktrace (bt:bts) e'))
+
+Note that this proposed change to ``throw`` (and likewise ``throwIO``) includes
+adding a ``HasCallStack`` constraint.
 
 Examples
 --------
