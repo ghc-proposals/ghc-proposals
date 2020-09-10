@@ -1,4 +1,4 @@
-``NoSugaredIncompleteness``
+``NoIncomplete``
 ==============
 
 .. author:: John Ericson
@@ -48,7 +48,7 @@ My idea is to do the same thing for exhaustiveness checking: it should be mandat
 Proposed Change Specification
 -----------------------------
 
-Let there be a new extension ``SugaredIncompleteness``, which allows:
+Let there be a new extension ``Incomplete``, which allows:
 
 - Incomplete pattern matching, except in ``do``\ -notation where it is always allowed, but including lambdas parameters and other "uni-patterns" where only one pattern is allowed.
 
@@ -58,9 +58,9 @@ Let there be a new extension ``SugaredIncompleteness``, which allows:
 - Missing items (without defaults) in instances
 
 It is on by default.
-With ``NoSugaredIncompleteness`` those things are disallowed, regardless of warnings.
+With ``NoIncomplete`` those things are disallowed, regardless of warnings.
 
-Let there be a new flag ``-fdefer-incompleteness-errors``, which defers the errors from modules with ``NoSugaredIncompleteness``.
+Let there be a new flag ``-fdefer-incompleteness-errors``, which defers the errors from modules with ``NoIncomplete``.
 Those will be warned under warning categories:
 
 - ``deferred-incomplete-patterns``
@@ -80,17 +80,17 @@ Examples
 
 - ``-Wall``: warnings
 
-- ``NoSugaredIncompleteness``: errors
+- ``NoIncomplete``: errors
 
 - ``-Wincomplete-*``: warnings
 
-- ``-XNoSugaredIncompleteness -fdefer-incompleteness-errors``: warnings
+- ``-XNoIncomplete -fdefer-incompleteness-errors``: warnings
 
-- ``-XNoSugaredIncompleteness -fdefer-incompleteness-errors -Werror``: errors
+- ``-XNoIncomplete -fdefer-incompleteness-errors -Werror``: errors
 
-- ``-XNoSugaredIncompleteness -fdefer-incompleteness-errors -Werror -Wno-deferred-*``: quiet
+- ``-XNoIncomplete -fdefer-incompleteness-errors -Werror -Wno-deferred-*``: quiet
 
-- ``-XNoSugaredIncompleteness -fdefer-incompleteness-errors -Wno-deferred-* -Wincomplete-*``: warnings
+- ``-XNoIncomplete -fdefer-incompleteness-errors -Wno-deferred-* -Wincomplete-*``: warnings
 
 Effect and Interactions
 -----------------------
@@ -99,13 +99,13 @@ Effect and Interactions
 
 - `Proposal 319`_ proposes a ``-XNoFallibleDo`` to disable fail sugar in ``do``\ -notation, having incomplete patterns in bind statements throw ``PatternMatchFail`` just like other incomplete patterns.
   The idea isn't that ``PatternMatchFail`` is actually good, but just to be consistent with the rest of the language and avoid using a exhaustiveness heuristic weaker than the regular exhaustiveness checker.
-  The combination of ``-XNoFallibleDo`` and ``-XNoSugaredIncompleteness`` would make those incomplete patterns errors like all the others under ``-XNoSugaredIncompleteness``.
+  The combination of ``-XNoFallibleDo`` and ``-XNoIncomplete`` would make those incomplete patterns errors like all the others under ``-XNoIncomplete``.
 
 Costs and Drawbacks
 -------------------
 
 - In the short term, we have far too many knobs to control the same thing.
-  But, my hope is that in future versions of the language ``SugaredIncompleteness`` can be deprecated and then removed, reducing the number of knobs back to something sane.
+  But, my hope is that in future versions of the language ``Incomplete`` can be deprecated and then removed, reducing the number of knobs back to something sane.
 
 - Somebody is going to think this has something to do with Kurt Gödel unless we choose a different name.
 
@@ -124,7 +124,7 @@ Alternatives
 - Have no defer mechanism at all, forcing the user to write a manual error message themselves like in ML or Rust.
   I am not really that opposed, but I think this would just make the proposal more controversial to little benefit.
 
-- Deprecate ``SugaredIncompleteness`` immediately.
+- Deprecate ``Incomplete`` immediately.
 
 Unresolved Questions
 --------------------
