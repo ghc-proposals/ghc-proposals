@@ -340,6 +340,24 @@ When writing::
 
 the arrow is defaulted to mean ``(->) @U``.
 
+Note that making either choice here is a breaking change.
+For example, today one can write ::
+
+  data Maybe :: Arrow Type Type where ...
+
+but this will no longer typecheck because the arrow means unmatchable. The
+decision to default to matchable in this case is grounded in the observation
+that most such synonyms today refer to term-level, thus unmatchable arrows.
+
+A notable exception is the defunctionalisation arrow from the
+`singletons <https://hackage.haskell.org/package/singletons-2.7/docs/Data-Singletons.html#t:-126--62->`_ library::
+
+  type (~>) a b = TyFun a b -> Type
+
+which really refers to a kind-level matchable arrow. However, we expect many
+such use cases to be subsumed by first class higher-order functions introduced
+by this proposal.
+
 .. _Syntax:
 
 Syntax changes
@@ -402,6 +420,29 @@ Since ``TypeInType``, the types of terms and the kinds of types share
 the same arrow ``->``. Consequently, as a result of this proposal, term-level
 functions inevitably need to have a matchability. They are assigned
 the unmatchable arrow ``-> @U``.
+
+Promotion
+~~~~~~~~~
+
+The strategy to always assign an unmatchable arrow to term-level arrows
+interacts with promotion::
+
+  data T = MkT (Type -> Type)
+
+  type S = 'MkT Maybe
+
+This program is accepted today, but will be rejected under the current proposal.
+The reason is that when defining ``T``, it is considered to be a term-level
+entity, thus the field's type is assigned a matchable arrow type.
+
+Then, ``Maybe`` cannot be used as an argument to it. A potential fix is
+to turn the constructor matchability-polymorphic::
+
+  data T = forall m. MkT (Type -> @m Type)
+
+This is not done automatically in order to avoid confusion around
+existential varibles.
+
 
 Visible dependent quantification
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -506,17 +547,40 @@ be restricted to a small fraction of advanced users.
 CUSKs
 ~~~~~
 
-In the proposed solution the requirements to have a CUSK_ changes.
-Today, the following type is considered to have a CUSK::
+In the proposed solution the treatment of types with a CUSK_ changes slightly.
+The goal is that every program written today with a CUSK should be still
+kind-check with ``UnsaturatedTypeFamilies``.
 
-  type family Cusk :: Type -> Type where
+Consider the following type family, which has a CUSK::
+
+  type family Cusk :: k -> k where
     Cusk = Maybe
+    Cusk = 'Succ -- :: Nat -> Nat
 
-Under this proposal, ``Cusk`` requires an explicit annotation on its
-matchability to be considered having a CUSK::
+This program is accepted today, and it should be accepted under this proposal.
+However, the return kind of ``Cusk`` has an ambiguous matchability, which,
+without an annotation, we infer to mean ``Matchable``, based on the defining
+equations.
 
-  type family Cusk :: Type -> @m Type where
-    Cusk = Maybe
+In particular, this means that the following program is rejected::
+
+  type family Cusk' :: k -> k where
+    Cusk' = Maybe
+    Cusk' = Id -- k -> @U k
+
+since the matchabilities of the RHSs disagree. Should the user wish
+to have a matchability-indexed definition, they can provide an
+explicit annotation::
+
+  type family Cusk'' :: k -> @m k where
+    Cusk'' = Maybe
+    Cusk'' = Id
+
+Crucially, both in the case of ``StandaloneKindSignatures`` and ``CUSKs`` we
+only infer the matchabilities from the definitions, and check against
+the otherwise fully generalised kind signatures. This means that every
+program that kind-checks today (including polymorphic recursive definitions
+and mutual recursion) should kind-check under the proposal.
 
 
 .. _CUSK: https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#complete-user-supplied-kind-signatures-and-polymorphic-recursion
@@ -545,8 +609,7 @@ that takes a multiplicity argument: ::
               forall {q :: RuntimeRep} {r :: RuntimeRep}. TYPE q -> TYPE r -> Type
 
   type (->) :: forall {q :: RuntimeRep} {r :: RuntimeRep}. TYPE q -> TYPE r -> Type
-  type (->) =
-    FUN 'Many
+  type (->) = FUN 'Many
 
 Here we propose yet another annotation, which turns the kinds of the two
 constructors to the following: ::
@@ -583,7 +646,8 @@ only shows up when using ``StandaloneKindSignatures`` or in GHCi when using the
 ``:kind`` command. A new flag ``-fprint-explicit-matchabilities`` can be added,
 similar to ``-fprint-explicit-runtime-reps``, that only shows the matchability
 information to users who ask. This, together with the inference scheme proposed
-above means no changes to most users.
+above means no changes to most users, even those who wish to take advantage
+of matchability-polymorphism.
 
 Alternatives
 ------------
@@ -628,18 +692,6 @@ details of the proposal.
     term-level functions, or, perhaps more realistically, eta-expand all data
     constructor applications to demote them to unmatchable.
 
-5.  The currently proposed change to CUSKs is not backwards compatible. For example,
-    the following program compiles today as it has a CUSK ::
-
-      type family Cusk :: Type -> k where
-        Cusk = Maybe
-
-    but is rejected under the current proposal due to its unannotated return
-    kind. Since the matchability is not annotated, the type no longer has a
-    CUSK, so the ``k`` would need to unify with the ``*`` of ``Maybe``, so it is
-    rejected.  An alternative consideration would be to introduce a notion of a
-    "partial CUSK" that mentions all arguments except for the matchability ones.
-
 
 Unresolved Questions
 --------------------
@@ -653,6 +705,12 @@ Unresolved Questions
 
 2. Precise inference/defaulting strategy.
    This is part of the work involved in implementing this proposal.
+   In particular, the proposed matchability inference strategy slightly changes
+   the way ``StandaloneKindSignatures`` and ``CUSKs`` are handled.
+   Today, these signatures are first fully generalised (and zonked, in the
+   terminology of GHC), and then the declarations are checked against them.
+   Here we propose a modest change to the checking strategy by allowing
+   matchability metavariables to enter unsolved in checking mode.
 
 Implementation Plan
 -------------------
