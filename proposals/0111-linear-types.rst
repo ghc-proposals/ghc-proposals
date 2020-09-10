@@ -1351,6 +1351,9 @@ process. They are listed here for the records.
   - This syntax proposal is also accompanied by a new non-GADT syntax
     to annotate fields of data constructors with a multiplicity:
     ``data Unrestricted a = Unrestricted (a ^'Many)``.
+- ``%p ->``, proposed by @int-index. It's the same as the previous
+  alternative, but with ``%`` instead of ``^`` because the latter is
+  hard to see / not visible enough in some fonts.
 - ``->{p}``, proposed by @niobium0
 - A meta-proposal is any of the above, but using ``->.`` (or whatever
   the linear arrow ends up being). This was proposed by @monoidal. The
