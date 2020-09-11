@@ -57,10 +57,12 @@ Let there be a new extension ``Incomplete``, which allows:
 
 This extension is on by default, as all those things are currently allowed.
 
-With ``NoIncomplete`` those things are disallowed.
+With ``NoIncomplete`` those things are disallowed, so these forms of incomplete syntax are compile-time errors.
 
-Let there be a new flag ``-fdefer-incompleteness-errors``, which defers the errors from modules with ``NoIncomplete``.
-Those will be warned under warning categories:
+Let there be a new flag ``-fdefer-incompleteness-errors``, which defers these new compile-time errors from modules with ``NoIncomplete`` to be run-time errors.
+
+The deferred errors still exist at compile time, but as warnings.
+Warnings will be categorized under the new warning categories:
 
 - ``deferred-incomplete-patterns``
 - ``deferred-incomplete-uni-patterns``
