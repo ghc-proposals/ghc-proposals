@@ -46,33 +46,35 @@ My idea is to do the same thing for exhaustiveness checking: it should be mandat
 Proposed Change Specification
 -----------------------------
 
-Let there be a new extension ``Incomplete``, which allows:
+#. Let there be a new extension ``Incomplete``, which allows:
 
-- Incomplete pattern matching, excluding ``do``\ -notation where it is always allowed, but including lambdas parameters and other "uni-patterns" where only one pattern is allowed.
+   - Incomplete pattern matching, excluding ``do``\ -notation where it is always allowed, but including lambdas parameters and other "uni-patterns" where only one pattern is allowed.
 
-- Incomplete record construction, field selection, or update.
-  We cannot get rid of accessor functions defined in other modules, but we can at least limit record syntax in the current module, and also related syntax like overloaded labels and record dot update.
+   - Incomplete record construction, field selection, or update.
+     We cannot get rid of accessor functions defined in other modules, but we can at least limit record syntax in the current module, and also related syntax like overloaded labels and record dot update.
 
-- Missing items (without defaults) in type class instances
+   - Missing items (without defaults) in type class instances
 
-This extension is on by default, as all those things are currently allowed.
+   This extension is on by default, as all those things are currently allowed.
+   There already exist warnings for these, which remain the same as today with ``Incomplete``.
 
-With ``NoIncomplete`` those things are disallowed, so these forms of incomplete syntax are compile-time errors.
+   With ``NoIncomplete`` those things are disallowed, so these forms of incomplete syntax are compile-time errors.
+   The existing warning categories for these have no effect with ``NoIncomplete``.
 
-Let there be a new flag ``-fdefer-incompleteness-errors``, which defers these new compile-time errors from modules with ``NoIncomplete`` to be run-time errors.
+#. Let there be a new flag ``-fdefer-incompleteness-errors``, which defers these new compile-time errors from modules with ``NoIncomplete`` to be run-time errors.
 
-The deferred errors still exist at compile time, but as warnings.
-Warnings will be categorized under the new warning categories:
+   The deferred errors still exist at compile time, but as warnings.
+   Warnings will be categorized under the new warning categories:
 
-- ``deferred-incomplete-patterns``
-- ``deferred-incomplete-uni-patterns``
-- ``deferred-incomplete-record-updates``
-- ``deferred-incomplete-record-selection``
-- ``deferred-incomplete-record-construction``
-- ``deferred-missing-methods``
+   - ``deferred-incomplete-patterns``
+   - ``deferred-incomplete-uni-patterns``
+   - ``deferred-incomplete-record-updates``
+   - ``deferred-incomplete-record-selection``
+   - ``deferred-incomplete-record-construction``
+   - ``deferred-missing-methods``
 
-Those in turn can be ignored with ``-Wno-deferred-*``, or turned (back) into errors with ``-Werror=deferred-*``, like any other warning category.
-Those warnings are on by default, so plain ``-Werror`` will suffice to make them all errors.
+   Those in turn can be ignored with ``-Wno-deferred-*``, or turned (back) into errors with ``-Werror=deferred-*``, like any other warning category.
+   Those warnings are on by default, so plain ``-Werror`` will suffice to make them all errors.
 
 Examples
 --------
@@ -85,13 +87,21 @@ Examples
 
 - ``-Wincomplete-*``: warnings
 
+- ``-XIncomplete -Wincomplete-* -Werror=deferred-*``: warnings, new warning categories don't matter with ``-XNoIncomplete``
+
+- ``-XIncomplete -Wno-incomplete-* -Wdeferred-*``: quite, new warning categories don't matter with ``-XNoIncomplete``
+
+- ``-XNoIncomplete``: warnings
+
+- ``-XNoIncomplete -Werror``: errors
+
 - ``-XNoIncomplete -fdefer-incompleteness-errors``: warnings
 
 - ``-XNoIncomplete -fdefer-incompleteness-errors -Werror``: errors
 
 - ``-XNoIncomplete -fdefer-incompleteness-errors -Werror -Wno-deferred-*``: quiet
 
-- ``-XNoIncomplete -fdefer-incompleteness-errors -Wno-deferred-* -Wincomplete-*``: warnings
+- ``-XNoIncomplete -fdefer-incompleteness-errors -Wno-deferred-* -Wincomplete-*``: quite, legacy warning categories don't matter with ``-XNoIncomplete``.
 
 Effect and Interactions
 -----------------------
