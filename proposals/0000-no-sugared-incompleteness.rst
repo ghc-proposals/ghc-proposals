@@ -48,15 +48,16 @@ Proposed Change Specification
 
 Let there be a new extension ``Incomplete``, which allows:
 
-- Incomplete pattern matching, except in ``do``\ -notation where it is always allowed, but including lambdas parameters and other "uni-patterns" where only one pattern is allowed.
+- Incomplete pattern matching, excluding ``do``\ -notation where it is always allowed, but including lambdas parameters and other "uni-patterns" where only one pattern is allowed.
 
 - Incomplete record construction, field selection, or update.
   We cannot get rid of accessor functions defined in other modules, but we can at least limit record syntax in the current module, and also related syntax like overloaded labels and record dot update.
 
-- Missing items (without defaults) in instances
+- Missing items (without defaults) in type class instances
 
-It is on by default.
-With ``NoIncomplete`` those things are disallowed, regardless of warnings.
+This extension is on by default, as all those things are currently allowed.
+
+With ``NoIncomplete`` those things are disallowed.
 
 Let there be a new flag ``-fdefer-incompleteness-errors``, which defers the errors from modules with ``NoIncomplete``.
 Those will be warned under warning categories:
