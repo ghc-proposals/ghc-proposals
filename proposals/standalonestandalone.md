@@ -9,7 +9,7 @@ implemented: ""
 This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/363).
 # Standalone StandaloneKindSignatures
 
-Many papers like [A Monadic Framework for Delimited Continuations(https://legacy.cs.indiana.edu/~dyb/pubs/monadicDC.pdf) introduce a library like this
+Many papers like [A Monadic Framework for Delimited Continuations](https://legacy.cs.indiana.edu/~dyb/pubs/monadicDC.pdf) introduce a library like this
 
 ```haskell
 data CC a -- Abstract
