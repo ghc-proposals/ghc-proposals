@@ -265,10 +265,8 @@ Christopher Allen       `@bitemyapp <https://github.com/bitemyapp>`_          20
 ======================  ====================================================  =================
 
 
-Committee process
------------------
-
-The `committee bylaws <https://github.com/ghc-proposals/ghc-proposals/blob/master/committee.rst>`_ are posted.
+Committee process for responding to a proposal
+----------------------------------------------
 
 The committee process starts once the secretary has been notified that a
 proposal is ready for decision.

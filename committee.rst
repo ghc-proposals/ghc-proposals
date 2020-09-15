@@ -14,7 +14,7 @@ who wish to volunteer for this service. It is our aim that this committee
 be diverse; by representing different viewpoints, we will make decisions
 that benefit larger segments of our community.
 
-Specifically, we ideally would be able to represent the following
+Specifically, we would like the committee to represent at least the following
 constituencies:
 
 * GHC developers
@@ -30,13 +30,13 @@ choosing new members, we aim to correct any imbalances.
 Committee Roles
 ---------------
 
-* The committee has two co-chairs. This role is more ceremonial
+* **Co-chairs.** The committee has two co-chairs. This role is more ceremonial
   than practical, as all members of the committee have the right
   to set the agenda and move our business forward. The co-chairs
-  are the stop of last resort for any issues of contention, but
-  are otherwise undistinguished from other members of the committee.
+  are the stop of last resort for any issues of contention, but are
+  not otherwise distinguished from other members of the committee.
 
-  Agreement among the co-chairs can initiate a process to force a member off
+  Agreement among the co-chairs can initiate a process to remove a member from
   the committee. If this happens, the co-chairs must explain their rationale
   to the entire committee, including the member that has been removed. In
   order to avoid public embarrassment, it is expected that this communication
@@ -46,10 +46,10 @@ Committee Roles
   expectation is that if the co-chairs abuse their power, the committee will
   vote them out of their chairships.
 
-* The committee has one secretary. The secretary is the first stop for keeping
+* **Secretary.** The committee has one secretary. The secretary is the first stop for keeping
   our repository up-to-date and running our selection process.
 
-* The committee has one nudger. The nudger's job is to make sure other
+* **Nudger.** The committee has one nudger. The nudger's job is to make sure other
   committee members are fulfilling their duties by nudging them (often
   in public) to do so.
 
@@ -107,6 +107,16 @@ term is ending is free to re-nominate themselves. Nominations include a brief
 bio of the nominee and reasons why they would be appropriate for the
 committee.
 
+The main criteria for becoming a member of the committee are:
+
+ * A track record of constructive contribution to public discussion of GHC proposals
+ * A track record of constructive contribution to one or more of the communities outlined above (users, tool authors etc)
+ * An expressed willingness to respond to GHC proposals in a timely manner.
+
+These criteria are not exhaustive -- nominations and self-nominations are free
+to strengthen the case in whatever way they deem appropriate --- but a record
+of thoughtful contribution in a public space carries the most weight.
+
 Continuing members of the committee vote on new membership via a ranked voting
 system; the precise details (i.e. election algorithm) are recommended by the
 secretary but can be vetoed by a majority vote. The ranking system includes a
@@ -118,7 +128,7 @@ rationale for this decision be published to the community.
 The voting process may result in a number of new members not equal to
 the number of outgoing members. This is fine; the size of the committee
 is not fixed. However, a new nomination process begins only when
-membership drops below nine members.
+membership is expected to drop below nine members.
 
 The nomination and voting process is kept private, by using direct
 email to committee members, not the mailing list. When the secretary's
@@ -134,7 +144,7 @@ of the committee: in recognition of
 their historical and current importance to GHC, both Simon Peyton Jones
 and Simon Marlow will be expected to be retained on the committee when
 their terms end. If either wishes to continue serving on the committee
-when their terms end, and with the support of the majority of the committee,
+when their terms end, and if the majority of the rest of the committee supports this outcome,
 no public nomination process needs to take place to replace them.
 
 These key members can be stripped of their status as key members by a
@@ -143,10 +153,11 @@ key members by a unanimous decision of the committee. In both cases,
 changes to the list of key members will be accompanied by a public
 rationale.
 
-Note that there is no process for members of the public at large to
+There is no process for members of the public at large to
 directly add or remove committee members. (That is, there is no public
 vote.) Representative voting across the internet is fraught, and the
 drawbacks to such a system seem to outweigh any benefits. It is expected
 that a misbehaving committee (say, one that selects only its friends and
 ignores other nominations) loses legitimacy and is publicly called into
 question in an attempt to make changes for the better in its operation.
+
