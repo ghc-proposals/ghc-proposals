@@ -69,15 +69,15 @@ Proposed Change Specification
 
    With ``Incomplete`` enabled, the guiding principle is relaxed, and GHC works as it does today.
 
-   > While this is enough to specify ``NoIncomplete`` and ``Incomplete`` for GHC, language extensions are supposed to be proposed in a more implementation agnostic manner, so that they are eligible for inclusion in future Haskell reports.
-   > The field and method restrictions are fairly clear cut and easy to specify from first principles, but the pattern match completeness checking GHC does today is not.
+     While this is enough to specify ``NoIncomplete`` and ``Incomplete`` for GHC, language extensions are supposed to be proposed in a more implementation agnostic manner, so that they are eligible for inclusion in future Haskell reports.
+     The field and method restrictions are fairly clear cut and easy to specify from first principles, but the pattern match completeness checking GHC does today is not.
 
    For a report, the guiding principle behind ``NoIncomplete`` only requires that the Haskell implementation's pattern match completeness checking by sound, not sophisticated.
    Even banning all pattern matching would abide by the principle.
    We do want some programs to be guaranteed to be valid Haskell, of course.
    So if and when ``NoIncomplete`` were submitted to become Orthodox Haskell, as simple and conservative completness checking algorithm would be specified.
 
-   To be clear, punting on that spec doesn't block implementing for ``NoIncomplete`` for GHC, as GHC can always accept more programs than the spec.
+     To be clear, punting on that spec need not block implementing for ``NoIncomplete`` for GHC, as GHC can always accept more programs than the spec.
 
 #. Let there be a new flag ``-fdefer-incompleteness-errors``, which defers these new compile-time errors from modules with ``NoIncomplete`` to be run-time errors.
 
