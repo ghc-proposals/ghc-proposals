@@ -141,10 +141,40 @@ Effect and Interactions
 Costs and Drawbacks
 -------------------
 
-- In the short term, we have far too many knobs to control the same thing.
+- While Haskell 2010 works well with a simple completeness checker that wouldn't be too hard to specify, extensions like ``GADTs`` that could be standardized in the future immediately ramp up the desire for a far more sophisticated pattern match completeness checker.
+  Standardizing ``Incomplete`` could make it harder standardize ``GADTs`` and those other extensions later.
+
+  See the future work section for how this is mitigated.
+
+- This proposal effectively promotes some GHC warnings to a language extension.
+  While GHC strives for comparability, ensuring programs with ``-Werror=...``, once accepted, continue to be accepted in future releases was lower down on the prioritization of aspects of compatibility GHC sought to ensure.
+  This makes the completeness checker improvements changes more risky, as they now entail somewhat stronger comparability guarantees.
+
+  See the future work section for how this is mitigated.
+
+- In the short term, we have far too many knobs to control the same thing with each new ``-fdefer-*`` flag corresponding to an existing warning.
   But, my hope is that in future versions of the language ``Incomplete`` can be deprecated and then removed, reducing the number of knobs back to something sane.
 
 - Somebody is going to think this has something to do with Kurt Gödel unless we choose a different name.
+
+Possible Future Work
+--------------------
+
+The drawbacks are serious enough that I feel compelled to sketch some future plans that would mitigate them.
+
+The chief drawback with pattern matching today as it relates to completeness checking is that the Haskell implementation cannot tell whether a user skipped a pattern because they think it's impossible or because they forgot.
+If we had something like Agda's "absurd patterns", however, the user could use those to use those cover the impossible the cases, making clear that anything else the user really did forget.
+Firstly, this should help make code more self-documenting and error/warning messages better.
+But especially relevant to the problem at hand, this allows simpler Haskell implementations that aren't so sophisticated that they can derive proofs of pattern impossibility very well on their own, but can verify user-written arguments.
+This allows extension conjunctions like ``NoIncomplete`` and ``GADTs`` to be specified in ways that are less onerous on the Haskell implementation.
+
+While offering "absurd patterns" is the lowest hanging fruit to improve the situation, we may soon to have an opportunity to better specify the advanced analyses that GHC does so absurd patterns are not the only defense against different Haskell implementations differing in behavior.
+With Dependent Haskell, we should have an opportunity for pattern matching to introduce equality constraints between *terms* just as it already does with equality constraints on types.
+This would allow reformalizing e.g. the recent analysis allowing incomplete-seeming scrutinizing of a value within an alternative of a previous scrutinizing of that value.
+Now, the proof obligation on the impossibility of the other branches can be solved by the constraint solver not an ad-hoc extra compilation pass.
+If we find some way to introduce *in*\ equality constraints, we might accumulate proofs of pattern refutations and desugar *most or all* pattern match exhaustiveness checking into problems for the constraint solver.
+This is all quite advanced, but hopefully demonstrates show how we could have more powerful and yet easier pattern match completeness checking today.
+We certainly don't have to do this, but I hope to show it might at least be possible to have our cake and at it too, codifying ``NoIncomplete`` and advanced type system features, not relying on user-written proofs with absurd pattern, and also not dumping ad-hoc static analyses in a Haskell Report.
 
 Alternatives
 ------------
