@@ -4,7 +4,7 @@ Clean up printing of foralls
 .. author:: Richard Eisenberg
 .. date-accepted:: 2019-04-17
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/16320
-.. implemented::
+.. implemented:: change (1) in 9.0, changes (2) and (3) in 9.2
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/179>`_.
 .. contents::
@@ -67,7 +67,7 @@ There are two problems with the status quo:
      map :: forall {a} {b}. (a -> b) -> [a] -> [b]
 
    Both of ``map``\s type variables are *specified*, yet GHC does not print it accordingly. This is
-   because the varibales are instantiated and then rengeneralized. In the process, GHC declares them
+   because the variables are instantiated and then regeneralized. In the process, GHC declares them
    to be *inferred*, because they were regeneralized. To override this behavior, we must use ``:t +v``::
 
      Prelude Type.Reflection> :t +v map

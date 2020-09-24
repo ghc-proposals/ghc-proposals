@@ -4,7 +4,7 @@ Quick Look Impredicativity
 .. author:: Alejandro Serrano Mena
 .. date-accepted:: 2020-06-15
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/18126
-.. implemented::
+.. implemented:: 9.2
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/274>`_.
 .. contents::
