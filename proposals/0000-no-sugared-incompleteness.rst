@@ -166,11 +166,63 @@ Possible Future Work
 
 The drawbacks are serious enough that I feel compelled to sketch some future plans that would mitigate them.
 
+Missing vs intentionally omitted patterns
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 The chief drawback with pattern matching today as it relates to completeness checking is that the Haskell implementation cannot tell whether a user skipped a pattern because they think it's impossible or because they forgot.
-If we had something like Agda's "absurd patterns", however, the user could use those to use those cover the impossible the cases, making clear that anything else the user really did forget.
+If we had something vaguely like Agda's "absurd patterns", however, the user could use those to use those cover the impossible the cases, making clear that anything else the user really did forget.
+
+  The following examples use a completely strawman syntax.
+  As this isn't part of the proposal proper I don't wish to take up more space in this proposal working out a proper spec.
+
+Using absurd patterns for types like plain ``Void`` may seem low value::
+
+  \case {}
+
+Is hardly worse than::
+
+  \case ABSURD
+
+Laziness also helps, my making one have to force nested patterns anyways.
+But therein we also get a new shorthand::
+
+  \case Identity (v :: Void) -> case v of {}
+
+can become::
+
+  \case Identity !ABSURD
+
+
+Finally, the real benefit is with absurdities stemming from type equalities.
+For example, given:
+
+::
+
+  data G :: Type -> Type where
+    GBool :: G Bool
+    GInt :: G Int
+
+instead of:
+
+::
+
+  f :: G Bool -> ...
+  f GBool -> ...
+
+do something like:
+
+::
+
+  f :: G Bool -> ...
+  f GBool -> ...
+  f ABSURD @ GInt
+
 Firstly, this should help make code more self-documenting and error/warning messages better.
 But especially relevant to the problem at hand, this allows simpler Haskell implementations that aren't so sophisticated that they can derive proofs of pattern impossibility very well on their own, but can verify user-written arguments.
 This allows extension conjunctions like ``NoIncomplete`` and ``GADTs`` to be specified in ways that are less onerous on the Haskell implementation.
+
+Desugaring advanced completeness checks with Dependent Haskell
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 While offering "absurd patterns" is the lowest hanging fruit to improve the situation, we may soon to have an opportunity to better specify the advanced analyses that GHC does so absurd patterns are not the only defense against different Haskell implementations differing in behavior.
 With Dependent Haskell, we should have an opportunity for pattern matching to introduce equality constraints between *terms* just as it already does with equality constraints on types.
@@ -211,5 +263,6 @@ This should be very easy to implement since all the analyses exist in warnings a
 Endorsements
 -------------
 
+.. _`Proposal 126`: https://github.com/ghc-proposals/ghc-proposals/pull/126
 .. _`Proposal 319`: https://github.com/ghc-proposals/ghc-proposals/pull/319
 .. _`instances`: https://hackage.haskell.org/package/base-4.14.0.0/docs/Control-Exception-Base.html#t:Exception
