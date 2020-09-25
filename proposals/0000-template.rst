@@ -52,9 +52,23 @@ may include,
 * how the proposed change interacts with existing language or compiler
   features, in case that is otherwise ambiguous
 
-Note, however, that this section need not describe details of the
-implementation of the feature or examples. The proposal is merely supposed to
-give a conceptual specification of the new feature and its behavior.
+Strive for *precision*. The ideal specification is described as a
+modification of the `Haskell 2010 report
+<https://www.haskell.org/definition/haskell2010.pdf>`_. Where that is
+not possible (e.g. because the specification relates to a feature that
+is not in the Haskell 2010 report), try to adhere its style and level
+of detail. Think about corner cases. Write down general rules and
+invariants.
+
+Note, however, that this section should focus on a precise
+*specification*; it need not (and should not) devote space to
+*implementation* details -- there is a separate section for that.
+
+The specification can, and almost always should, be illustrated with
+*examples* that illustrate corner cases. But it is not sufficient to
+give a couple of examples and regard that as the specification! The
+examples should illustrate and elucidate a clearly-articulated
+specification that covers the general case.
 
 Examples
 --------
@@ -67,11 +81,11 @@ thing is to do with the proposal.
 
 Effect and Interactions
 -----------------------
-Detail how the proposed change addresses the original problem raised in the
-motivation.
+Your proposed change addresses the issues raised in the motivation. Explain how.
 
-Discuss possibly contentious interactions with existing language or compiler
-features.
+Also, discuss possibly contentious interactions with existing language or compiler
+features. Complete this section with potential interactions raised
+during the PR discussion.
 
 
 Costs and Drawbacks
@@ -83,9 +97,16 @@ drawbacks that cannot be resolved.
 
 Alternatives
 ------------
-List existing alternatives to your proposed change as they currently exist and
-discuss why they are insufficient.
+List alternative designs to your proposed change. Both existing
+workarounds, or alternative choices for the changes. Explain
+the reasons for choosing the proposed change over these alternative:
+*e.g.* they can be cheaper but insufficient, or better but too
+expensive. Or something else.
 
+The PR discussion often raises other potential designs, and they should be
+added to this section. Similarly, if the proposed change
+specification changes significantly, the old one should be listed in
+this section.
 
 Unresolved Questions
 --------------------
