@@ -215,7 +215,7 @@ do something like:
 
   f :: G Bool -> ...
   f GBool -> ...
-  f ABSURD @ GInt
+  f (ABSURD @ GInt)
 
 Firstly, this should help make code more self-documenting and allow for better error/warning messages.
 But more relevant to the problem at hand, this allows simpler Haskell implementations that aren't so sophisticated that they can derive proofs of pattern impossibility very well on their own, but can verify user-written arguments.
