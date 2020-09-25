@@ -217,9 +217,9 @@ do something like:
   f GBool -> ...
   f (ABSURD @ GInt)
 
-Firstly, this should help make code more self-documenting and allow for better error/warning messages.
-But more relevant to the problem at hand, this allows simpler Haskell implementations that aren't so sophisticated that they can derive proofs of pattern impossibility very well on their own, but can verify user-written arguments.
-This allows extension conjunctions like ``NoIncomplete`` and ``GADTs`` to be specified in ways that are less onerous on the Haskell implementation.
+Firstly, this should help make code more self-documenting and should allow for better error/warning messages.
+But more relevant to the problem at hand, this could possibly allow simpler Haskell implementations that aren't so sophisticated that they can derive proofs of pattern impossibility very well on their own, but can verify user-written arguments.
+If that works out, this would allow extension conjunctions like ``NoIncomplete`` and ``GADTs`` to be specified in ways that are less onerous on the Haskell implementation.
 
 Desugaring advanced completeness checks with Dependent Haskell
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
