@@ -58,7 +58,7 @@ Proposed Change Specification
 
    For GHC, that means to prohibit any program for which GHC would need to emit a synchronous exception throw not specified by the user.
 
-   To accomplish this, we will mainly rely on existing analysis.
+   To accomplish this, we will mainly rely on existing analyses.
    Any program that would emit warnings from the following warning categories is prohibited:
 
    - ``incomplete-patterns``
@@ -68,7 +68,7 @@ Proposed Change Specification
    - ``missing-methods``
 
    Additionally, with ``-XFieldSelectors`` (also on by default), any program that would emit warnings with ``-Wpartial-fields`` is also prohibited.
-   Finally, ``HasField`` can only be emitted for fields and types when that field is present in all variants for the type.
+   Finally, ``HasField`` is only emitted for fields and types when that field is present in all variants for the type.
 
    With ``Incomplete`` enabled, the guiding principle is relaxed, and GHC works as it does today.
 
@@ -78,14 +78,15 @@ Proposed Change Specification
    For a report, the guiding principle behind ``NoIncomplete`` only requires that the Haskell implementation's pattern match completeness checking by sound, not sophisticated.
    Even banning all pattern matching would abide by the principle.
    We do want some programs to be guaranteed to be valid Haskell, of course.
-   So if and when ``NoIncomplete`` were submitted to become Orthodox Haskell, as simple and conservative completness checking algorithm would be specified.
+   So if and when ``NoIncomplete`` were submitted to be the official default, a simple and conservative completness checking algorithm would be specified in the report.
 
      To be clear, punting on that spec need not block implementing for ``NoIncomplete`` for GHC, as GHC can always accept more programs than the spec.
 
 #. Let there be a new flag ``-fdefer-incompleteness-errors``, which defers these new compile-time errors from modules with ``NoIncomplete`` to be run-time errors.
+   It has no effect on ``Incomplete`` modules.
 
    The deferred errors still exist at compile time, but as warnings.
-   Warnings will be categorized under the new warning categories:
+   Warnings will be categorized under these new warning categories:
 
    - ``deferred-incomplete-patterns``
    - ``deferred-incomplete-uni-patterns``
@@ -94,8 +95,8 @@ Proposed Change Specification
    - ``deferred-incomplete-record-construction``
    - ``deferred-missing-methods``
 
-   Those in turn can be ignored with ``-Wno-deferred-*``, or turned (back) into errors with ``-Werror=deferred-*``, like any other warning category.
-   Those warnings are on by default, so plain ``-Werror`` will suffice to make them all errors.
+   These warning categories in turn can be ignored with ``-Wno-deferred-*``, or turned (back) into errors with ``-Werror=deferred-*``, like any other warning category.
+   They are enabled by default, so plain ``-Werror`` will suffice to make them all errors.
 
 Examples
 --------
@@ -127,17 +128,17 @@ Examples
 Effect and Interactions
 -----------------------
 
-- ``NoMethodError``, ``RecUpdError``, ``RecConError``, ``RecSelError``, and ``PatternMatchFail`` should all be thought of as debugging aids like ``TypeError``.
+- With ``NoIncomplete``, The exception types ``NoMethodError``, ``RecUpdError``, ``RecConError``, ``RecSelError``, and ``PatternMatchFail`` should all be thought of as debugging aids like ``TypeError``.
 
 - Note that ``NoIncomplete`` as specified for GHC allows incomplete patterns in ``do``\ notation.
-  This is most immediately a consequence of none of the ``-Werror`` analyses mentioned catching it, and may seem like an oversight.
-  But, it is actual intentional, as the failure case is a call to ``fail``, rather than the direct emission of an exception throw, which is the red line we chose when translate ``NoIncomplete``\ 's guiding principle into a GHC-specific maxim.
+  This is, most imminently, a consequence of none of the ``-Werror`` analyses mentioned catching it, and thus may seem like an oversight.
+  But, it is actually intentional, as the failure case is a call to ``fail``, rather than the direct emission of an exception throw that is the red line we chose when translate ``NoIncomplete``\ 's guiding principle into a GHC-specific maxim.
 
   Still, one could reasonably argue that this still violates the guiding principle, demonstrating that the GHC-specific maxim is too narrow a reading.
   The intended solution is to use ``-XNoIncomplete`` in conjunction with ``-XNoFallibleDo`` from `Proposal 319`_.
 
-  Perhaps surprisingly, `Proposal 319`_ that ``-XNoFallibleDo`` disables fail sugar in ``do``\ -notation by having incomplete patterns in bind statements throw ``PatternMatchFail`` just like other incomplete patterns today.
-  The idea isn't that ``PatternMatchFail`` is actually good, but just to be consistent with the rest of the language and avoid using a exhaustiveness heuristic weaker than the regular exhaustiveness checker.
+  Perhaps surprisingly, `Proposal 319`_ has ``-XNoFallibleDo`` disable fail sugar in ``do``\ -notation by having incomplete patterns in bind statements throw ``PatternMatchFail`` just like other incomplete patterns today.
+  The idea isn't that ``PatternMatchFail`` is actually good, but rather just to be consistent with the rest of the language.
   The combination of ``-XNoFallibleDo`` and ``-XNoIncomplete`` would make those incomplete patterns errors like all the others under ``-XNoIncomplete``.
   This keeps the "knobs" orthogonal, and also keeps the language consistent whether ``Incomplete`` is disabled or not.
 
