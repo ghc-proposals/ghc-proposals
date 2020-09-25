@@ -52,7 +52,10 @@ Proposed Change Specification
    We first describe the behavior of ``NoIncomplete``.
    This restricts the programs accepted compared to the status quo.
    More important than the specific specification is the guiding principle behind that specification.
-   It is this: to prohibit any program that can fail for reasons not explicitly specified by the programmer except for non-termination and exhaustion of resources.
+   It is this:
+
+     Prohibit any program that can fail for reasons not explicitly specified by the programmer, except non-termination and exhaustion of resources.
+
    For GHC, that means to prohibit any program for which GHC would need to emit a synchronous exception throw not specified by the user.
 
    To accomplish this, we will mainly rely on existing analysis.
