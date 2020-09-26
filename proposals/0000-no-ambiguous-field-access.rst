@@ -1,5 +1,5 @@
-DuplicateRecordFields without ambiguous selectors
-=================================================
+DuplicateRecordFields without ambiguous field access
+====================================================
 
 .. author:: Adam Gundry
 .. date-accepted:: Leave blank. This will be filled in when the proposal is accepted.
@@ -171,7 +171,7 @@ Alternatives
 ------------
 Keeping the status quo is entirely feasible, even though the current design is not completely satisfactory.  This would allow us to wait until ``NoFieldSelectors`` and ``RecordDotSyntax`` have been tested in practice, before starting changes to ``DuplicateRecordFields``.
 
-We could take the opposite approach, and increase the use of type inference to resolve ambiguous selector occurrences, as requested by some users.  However, it is not clear how to do this in anything other than an essentially ad hoc manner, so the extension is likely to become even more complex to specify and implement.
+We could take the opposite approach, and increase the use of type inference to resolve ambiguous field occurrences, as requested by some users.  However, it is not clear how to do this in anything other than an essentially ad hoc manner, so the extension is likely to become even more complex to specify and implement.
 
 
 Unresolved Questions
