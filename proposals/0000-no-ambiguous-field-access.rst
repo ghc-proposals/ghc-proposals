@@ -44,6 +44,8 @@ When ``DuplicateRecordFields`` is disabled, ambiguous field selector/update occu
 
 Note that if an identifier refers to both non-fields and fields, it is always rejected by the renamer as excessively ambiguous, regardless of ``DuplicateRecordFields``.
 
+This proposal does not affect field selector/update occurrences that are not ambiguous.
+
 
 Existing rules for selectors
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
