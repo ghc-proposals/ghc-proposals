@@ -11,7 +11,10 @@ This proposal is [discussed at this pull request](https://github.com/ghc-proposa
 
 Several primops are expressed rather awkwardly, because they naturally
 produce sum types, and historically those have not been available to
-primops. Now that we have unboxed sums, we can use those.
+primops. Now that we have unboxed sums, we can use those. The underlying
+primop implementations will remain pretty much the same, except that
+they'll have to produce `1` where they now produce `0` and `2` where
+they now produce `1`.
 
 ## Motivation
 
@@ -44,22 +47,23 @@ wrappers in `GHC.Exts` with the old types.
 
 The primop `addCFinalizerToWeak#` effectively takes an unboxed sum as
 an argument. For simplicity and clarity, I propose to split it into
-two functions instead.
+two primops instead.
 
 ### The full list
 
-I give the proposed type signature of the new primop and its implementation
-in terms of the old one. The definitions of the compatibility wrappers are
+I give the proposed type signature of the new primop and its implementation in
+terms of the old one, where the old primop is renamed to add the `Old` suffix
+where required.  The definitions of the compatibility wrappers are fairly
 trivial.
 
 ```haskell
-tryTakeMVarS# :: MVar# s a -> State# s -> (# State# s, (# (# #) | a #) #)
-tryTakeMVarS# mv s = case tryTakeMVar# mv s of
+tryTakeMVar# :: MVar# s a -> State# s -> (# State# s, (# (# #) | a #) #)
+tryTakeMVar# mv s = case tryTakeMVarOld# mv s of
   (# s', 0#, _ #) -> (# s', (# (# #) | #) #)
   (# s', _, a #) -> (# s', (# | a #) #)
 
-tryReadMVarS# :: MVar# s a -> State# s -> (# State# s, (# (# #) | a #) #)
-tryReadMVarS# mv s = case tryReadMVar# mv s of
+tryReadMVar# :: MVar# s a -> State# s -> (# State# s, (# (# #) | a #) #)
+tryReadMVar# mv s = case tryReadMVarOld# mv s of
   (# s', 0#, _ #) -> (# s', (# (# #) | #) #)
   (# s', _, a #) -> (# s', (# | a #) #)
 
@@ -73,18 +77,18 @@ addCFinalizerToWeak2# fptr eptr ptr w
   -- arguments *backwards*.
   = addCFinalizerToWeak# fptr ptr 1# eptr# w
 
-deRefWeakS# :: Weak# a -> State# RealWorld -> (# State# RealWorld, (# (# #) | a #) #)
-deRefWeakS# w s = case deRefWeak# w s of
+deRefWeak# :: Weak# a -> State# RealWorld -> (# State# RealWorld, (# (# #) | a #) #)
+deRefWeak# w s = case deRefWeakOld# w s of
   (# s', 0#, _ #) -> (# s', (# (# #) | #) #)
   (# s', _, a #) -> (# s', (# | a #) #)
 
-finalizeWeakS# :: Weak# a -> State# RealWorld -> (# State# RealWorld, (# (# #) | State# RealWorld -> (# State# RealWorld, b #) #) #)
-finalizeWeakS# w s = case finalizeWeak# w s of
+finalizeWeak# :: Weak# a -> State# RealWorld -> (# State# RealWorld, (# (# #) | State# RealWorld -> (# State# RealWorld, b #) #) #)
+finalizeWeak# w s = case finalizeWeakOld# w s of
   (# s', 0#, _ #) -> (# s', (# (# #) | #) #)
   (# s', _, f #) -> (# s', (# | f #) #)
 
-getSparkS# :: State# s -> (# State# s, (# (# #) | a #) #)
-getSparkS# s = case getSpark# s of
+getSpark# :: State# s -> (# State# s, (# (# #) | a #) #)
+getSpark# s = case getSparkOld# s of
   (# s', 0#, _ #) -> (# s', (# (# #) | #) #)
   (# s', _, spark #) -> (# s', (# | spark #) #)
 ```
@@ -93,6 +97,24 @@ Additionally, the source code of `getApStackVal#` seems to suggest that it
 naturally returns an unboxed sum. Unfortunately, it is not documented in
 `GHC.Prim` and I have not been able to figure out what it does.
 
+### Migration plan
+
+In version `v`, GHC will add the new primops using names suffixed with the
+letter "S" (except for the finalizer adding primops): `tryTakeMVarS#`,
+`tryReadMVarS#`, `deRefWeakS#`, `finalizeWeakS#`, and `getSparkS#`. Compatibility
+wrappers will be added to `GHC.Exts`.
+
+In version `v+1`, the wrappers will be deprecated.
+
+In version `v+2`, the wrappers will be removed.
+
+In version `v+3`, the new primops will be renamed to remove the final "S", with
+"S"-suffixed synonyms added to `GHC.Exts` for compatibility.
+
+In version `v+4` the "S"-suffixed synonyms will be deprecated.
+
+In version `v+5`, the "S"-suffixed synonyms will be removed.
+
 ## Examples
 
 The implementation of `tryTakeMVar` will be simplified from the current
@@ -100,7 +122,7 @@ The implementation of `tryTakeMVar` will be simplified from the current
 ```haskell
 tryTakeMVar :: MVar a -> IO (Maybe a)
 tryTakeMVar (MVar m) = IO $ \ s ->
-  case tryTakeMVar# m s of
+  case tryTakeMVarOld# m s of
     (# s', 0#, _ #) -> (# s', Nothing #)      -- MVar is empty
     (# s', _,  a #) -> (# s', Just a  #)      -- MVar is full
 ```
@@ -110,10 +132,14 @@ to the much more obvious
 ```haskell
 tryTakeMVar :: MVar a -> IO (Maybe a)
 tryTakeMVar (MVar m) = IO $ \ s ->
-  case tryTakeMVarS# m s of
+  case tryTakeMVar# m s of
     (# s', (# (# #) | #) #) -> (# s', Nothing #) -- MVar is empty
     (# s', (# | a #) #) -> (# s', Just a #)      -- MVar is full
 ```
+
+`GHC.ForeignPtr` will require a few minor changes, splitting `insertCFinalizer`
+into two functions and using those in `addForeignPtrFinalizer` and
+`addPtrForeignPtrFinalizerEnv`.
 
 ## Effect and Interactions
 
@@ -128,7 +154,9 @@ during the PR discussion.
 ## Costs and Drawbacks
 
 The mechanism for generating primops will have to be updated to support
-unboxed sums.
+unboxed sums. Any future changes to the representation of unboxed sums
+will have to be propagated to the primop implementations. Fortunately,
+not many will be affected.
 
 ## Alternatives
 
@@ -137,22 +165,31 @@ This would match the current API a little more closely, but the ergonomics seem
 fairly lousy compared to the splitting option:
 
 ```haskell
-addCFinalizerToWeakS# :: Addr# -> (# Addr# | (# Addr#, Addr# #) #) -> Weak# b -> State# RealWorld -> (# State# RealWorld, Int# #)
-addCFinalizerToWeakS# fptr (# ptr | #) w
+addCFinalizerToWeakS# :: (# (# Addr#, Addr# #) | (# Addr#, Addr#, Addr# #) #) -> Weak# b -> State# RealWorld -> (# State# RealWorld, Int# #)
+addCFinalizerToWeakS# (# (# fptr, ptr #) | #) w
   = addCFinalizerToWeak# fptr ptr 0# nullAddr# w
-addCFinalizerToWeakS# fptr (# | (# eptr, ptr #) #)
+addCFinalizerToWeakS# (# | (# fptr, eptr, ptr #) #)
   = addCFinalizerToWeak# fptr ptr 1# eptr w
 ```
 
+The best ergonomics and maximal flexibility would come from using something
+like the idea in
+[#361 (Variadic Array Creation Primops)](https://github.com/ghc-proposals/ghc-proposals/pull/361),
+but it's hard to justify the effort to do so for an operation that cannot be
+expected to be used very heavily.
+
 ## Unresolved Questions
 
-Explicitly list any remaining issues that remain in the conceptual design and
-specification. Be upfront and trust that the community will help. Please do
-not list *implementation* issues.
+What is `getApStackVal#`? Would it make sense to represent its result
+using an unboxed sum?
 
-Hopefully this section will be empty by the time the proposal is brought to
-the steering committee.
-
+What about all the primops that use `Int#` to represent a Boolean result?
+Should these all be changed to return `(# (# #) | (# #) #)`? If so, we
+might want to change the tag values from 1-indexed to 0-indexed to better
+match the current conventions. Furthermore, it would probably be helpful
+in that case to offer a sort of unboxed-sum version of `dataToTag#` to
+extract the `Int#` value if that is specifically desired (indeed, that
+might be useful regardless).
 
 ## Implementation Plan
 
