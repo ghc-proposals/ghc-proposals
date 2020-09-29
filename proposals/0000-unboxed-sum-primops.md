@@ -42,8 +42,7 @@ I think we should bring that clarity to the primops.
 ## Proposed Change Specification
 
 I propose to replace the primops that produce product-encoded sums
-with ones that produce proper unboxed sums, and to add compatibility
-wrappers in `GHC.Exts` with the old types.
+with ones that produce proper unboxed sums.
 
 The primop `addCFinalizerToWeak#` effectively takes an unboxed sum as
 an argument. For simplicity and clarity, I propose to split it into
