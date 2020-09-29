@@ -50,7 +50,7 @@ steps:
 
 3. Update the PR description to start
    with the text "The proposal has been accepted; the following discussion is mostly of historic interest."
-   where the word "proposal" links to the final rendered version pushed above.
+   where the word "proposal" links to the final rendered version, as found on https://github.com/ghc-proposals/ghc-proposals/tree/master/proposals
 
 4. If the PR title has "(under review)", remove it.
    
