@@ -99,8 +99,8 @@ Term Limits and Committee Selection
 -----------------------------------
 
 Any community thrives best by continuing to refresh itself with new members.
-Accordingly, membership on the committee comes with a three-year term. Terms
-begin/end in October. Toward the end of an individual's term, the secretary of
+Accordingly, membership on the committee comes with a three-year term.
+Toward the end of an individual's term, the secretary of
 the committee will put out a public call for nominations for people to join
 the committee. Self-nominations are welcome and expected. The member whose
 term is ending is free to re-nominate themselves. Nominations include a brief
@@ -137,7 +137,8 @@ one co-chair fills in for the secretary to run this process.
 
 Any member of the committee is free to step down at any time. Doing so
 causes a nomination process to begin (if the resulting size of the committee
-would be less than nine).
+would be less than nine). Member(s) selected to the committee in this process
+serve a full three-year term.
 
 There are two exceptions to the three-year term rule for two "key members"
 of the committee: in recognition of
