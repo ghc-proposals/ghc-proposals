@@ -140,11 +140,11 @@ Since this proposal will break existing code using ``DuplicateRecordFields``, we
 
 1. Introduce a new warning ``-Wambiguous-fields``, enabled by default.  This will make the compiler emit a warning for every ambiguous field selector/update occurrence it resolves under the rules described above.  The warning should explain that support for such occurrences will be removed in a future GHC release.
 
-2. In a subsequent GHC release, enable ``-Werror=ambiguous-fields``.  This will mean that ambiguous field selector/update occurrences cause compilation to fail unless the user explicitly silences the warning.
+2. In a subsequent GHC release, remove support for ambiguous field selector/update occurrences entirely and remove the warning.  This step should not be taken until ``RecordDotSyntax`` is available, to provide users with a clear alternative.
 
-3. In a subsequent GHC release, remove support for ambiguous field selector/update occurrences entirely and remove the warning.  This step should not be taken until ``RecordDotSyntax`` is available, to provide users with a clear alternative.
+This transition period will give time for users of ``DuplicateRecordFields`` to adapt their code (using ``RecordDotSyntax`` or otherwise), or raise concerns about the proposed changes and request a stay of execution.  Our expectation is that step 2 will be taken in the GHC release immediately following step 1, but this can be changed if feedback from users indicates that the removal of the feature is causing substantial pain.
 
-This transition period will give time for users of ``DuplicateRecordFields`` to adapt their code (using ``RecordDotSyntax`` or otherwise), or raise concerns about the proposed changes and request a stay of execution.
+The warning produced by ``-Wambiguous-fields`` should mention the specific selector and type that were determined by the disambiguation rules, rather than just complaining about the ambiguity.  This should make it easier for affected users to adapt their code.
 
 
 Effect and Interactions
@@ -175,10 +175,12 @@ Keeping the status quo is entirely feasible, even though the current design is n
 
 We could take the opposite approach, and increase the use of type inference to resolve ambiguous field occurrences, as requested by some users.  However, it is not clear how to do this in anything other than an essentially ad hoc manner, so the extension is likely to become even more complex to specify and implement.
 
+We could extend or shorten the transition period. The current proposal strikes a balance between the desire to not break users' code without warning, and the desire to simplify the implementation.
+
 
 Unresolved Questions
 --------------------
-Is the proposed transition period, with the new ``-Wambiguous-fields`` warning, appropriate?  We could deprecate the feature even more gradually, or disable it without warning users first.
+None.
 
 
 Implementation Plan
