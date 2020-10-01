@@ -24,6 +24,35 @@ redundant types with ``Nat`` fields in their constructors (making these types
 uninhabited at runtime) only for use at compile time. This is more cumbersome
 than the promotion of ordinary data types.
 
+Consider this data type with fields of type ``Natural``::
+
+  data Point = MkPoint Natural Natural
+
+``Point`` is inhabited by terms, but not by types::
+
+  p = MkPoint 3 5       -- ok
+  type P = MkPoint 3 5  -- not ok
+
+Alternatively, we could declare it with fields of type ``Nat``::
+
+  data Point = MkPoint Nat Nat
+
+Then it would have the opposite issue::
+
+  p = MkPoint 3 5        -- not ok
+  type P = MkPoint 3 5   -- ok
+
+To avoid declaring two incompatible data types, we could add a parameter to ``Point``::
+
+  data Point n = MkPoint n n
+  type PointT = Point Natural  -- inhabited by terms
+  type PointK = Point Nat      -- inhabited by types
+
+However, this is a roundabout way to go about it, and in more involved
+scenarios requires additional machinery to support it (such as the ``Demote``
+type family in the ``singletons`` package). By unifying ``Nat`` and
+``Natural``, we avoid this issue entirely.
+
 Proposed Change Specification
 -----------------------------
 * Add ``type Nat = Natural`` in ``GHC.TypeNats``.
