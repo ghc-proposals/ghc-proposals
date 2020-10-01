@@ -136,8 +136,8 @@ term is expiring (but that individual wishes to stay on the committee),
 one co-chair fills in for the secretary to run this process.
 
 Any member of the committee is free to step down at any time. Doing so
-causes a nomination process to begin (if the resulting size of the committee
-would be less than nine). Member(s) selected to the committee in this process
+causes a nomination process to begin, if the resulting size of the committee
+would be less than nine. Member(s) selected to the committee in this process
 serve a full three-year term.
 
 There are two exceptions to the three-year term rule for two "key members"
