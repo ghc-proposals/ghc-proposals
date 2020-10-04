@@ -122,6 +122,20 @@ case a of
   (# ||_ #) -> e2
 ```
 
+One long-term option this primop gives us is to stop returning
+`Int#` from primops whose values represent only two or three
+specific values. For example, we would have the option of
+writing
+
+```haskell
+(==#) :: Int# -> Int# -> (# (##) | (##) #)
+```
+
+which more faithfully represents what the return value can be,
+while still being able to work with the `Int#` representation
+directly using `sumToTag#`. I do *not* propose making such a
+change at this time.
+
 ## Costs and Drawbacks
 
 Implementing this primop should be extremely cheap. Implementing
