@@ -179,19 +179,6 @@ like the idea in
 but it's hard to justify the effort to do so for an operation that cannot be
 expected to be used very heavily.
 
-### Unit type
-
-I've used `(# #)` as the "unboxed unit type", which strikes me as the
-most logical. We *could* instead use `Void#`, which is somewhat more
-traditional for `GHC.Prim`. It has two downsides, however:
-
-1. It's impossible to match on a value of type `Void#`, so users are
-   forced to use a wildcard. `f (# _ :: Void# | #) = ...` doesn't seem
-   as nice as `f (# (# #) | #)` for making the type apparent.
-
-2. The name `Void#` seems to suggest an unboxed version of `Data.Void.Void`,
-   but it is not one.
-
 ## Unresolved Questions
 
 What is `getApStackVal#`? Would it make sense to represent its result
