@@ -15,27 +15,27 @@ Local Modules
 
 Haskell currently has three related restrictions:
 
- * *Modules*, a set of declarations that share a namespace and perhaps are
-   surrounded by an abstraction barrier, coincide with *source files*, the
-   `.hs` files on disk. This is limiting if one region of a source file has
-   local definitions that the programmer wishes to restrict. It is also
-   limiting if a user wants to declare multiple types with the same, e.g.,
-   constructors and record names in the same file.
+* *Modules*, a set of declarations that share a namespace and perhaps are
+  surrounded by an abstraction barrier, coincide with *source files*, the
+  `.hs` files on disk. This is limiting if one region of a source file has
+  local definitions that the programmer wishes to restrict. It is also
+  limiting if a user wants to declare multiple types with the same, e.g.,
+  constructors and record names in the same file.
 
- * When a user declares an algebraic datatype or a class, all the
-   constructors, record selectors, methods, associated types, associated
-   datatype instance constructors, and associated datatype instance record
-   selectors get *bundled* with the type name, allowing you to export, e.g.,
-   ``T(..)``. Pattern synonyms allow for a small, ad-hoc extension to
-   bundling, but the user has no way to expand this feature. This is limiting
-   if a user wants to, say, change a class into a type family that returns a
-   constraint; downstream users have to change their import statements for
-   what was meant to be a local refactoring.
-   
- * Despite common idioms like ``import qualified Data.Set as S``, if a user
-   wants to have ``Data.Set`` imported this way throughout their project, they
-   must repeat this line in every file. There is no way to abstract over this
-   idiom.
+* When a user declares an algebraic datatype or a class, all the
+  constructors, record selectors, methods, associated types, associated
+  datatype instance constructors, and associated datatype instance record
+  selectors get *bundled* with the type name, allowing you to export, e.g.,
+  ``T(..)``. Pattern synonyms allow for a small, ad-hoc extension to
+  bundling, but the user has no way to expand this feature. This is limiting
+  if a user wants to, say, change a class into a type family that returns a
+  constraint; downstream users have to change their import statements for
+  what was meant to be a local refactoring.
+  
+* Despite common idioms like ``import qualified Data.Set as S``, if a user
+  wants to have ``Data.Set`` imported this way throughout their project, they
+  must repeat this line in every file. There is no way to abstract over this
+  idiom.
 
 This proposal describes a mechanism for *local modules* which lifts all the
 above restrictions through a backward-compatible generalization to the
