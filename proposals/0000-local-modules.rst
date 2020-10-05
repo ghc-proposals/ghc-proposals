@@ -183,10 +183,13 @@ Motivation
    This example shows that modules may be *extended*. The ``class C``
    declaration implicitly creates module ``C``, which is then extended below.
 
-   Import statements *do* have to change here: instead of ``C(..)``, they must
-   become ``import module C``. However, this new import statement is a drop-in
-   replacement for ``C(..)`` and may become preferable (as it is customizable
-   in the way demonstrated here).
+   An import specifier of ``C(..)`` will not import ``meth`` after this
+   change. Instead, importers must say ``import module C``. However, this new
+   import statement is a drop-in replacement for ``C(..)`` and may become
+   preferable (as it is customizable in the way demonstrated here). Thus,
+   it is reasonable that Haskellers would learn to write ``import module C``
+   in import lists instead of ``C(..)``, as the former (new form) is
+   extensible.
 
 Proposed Change Specification
 -----------------------------
@@ -197,8 +200,8 @@ Proposed Change Specification
    module -- i.e. not in a ``let`` or ``where``)
    to declare new modules called *local modules*. Here is the BNF::
 
-     decl ::= ... | [ 'import' ] 'module' modname [ export_spec ] 'where' decls
-     modname ::= conid | '_'
+     topdecl ::= ... | [ 'import' ] 'module' modname [ exports ] 'where' decls
+     modname ::= modid | '_'
 
    Using ``_`` as the module name indicates an *anonymous local module*.
 
@@ -234,13 +237,22 @@ Proposed Change Specification
    that begin the declaration, these internal definitions are not brought into
    the outer scope. Otherwise, they are (just like usual). Exception: the type
    itself is always brought into scope unqualified. This feature is enabled
-   only when ``-XLocalModules`` is in effect.
+   only when ``-XLocalModules`` is in effect, and it changes the BNF as follows
+   (cf. the Haskell 2010 Report; this ignores other extensions, but it is easy
+   to map this BNF to a more realistic one)::
+
+     topdecl ::= 'data' ['qualified'] [context '=>'] simpletype ['=' constrs] [deriving]
+               | 'newtype' ['qualified'] [context '=>'] simpletype '=' newconstr [deriving]
+               | 'class' ['qualified'] [scontext '=>'] tycls tyvar ['where' cdecls]
+               | 'data' 'instance' ['qualified'] [context '=>'] type ['=' constrs] [deriving]
+               | 'newtype' 'instance' ['qualified'] [context '=>'] type '=' newconstr [deriving]
+               | ...
 
    Associated ``data`` and ``newtype`` instances create modules at the level
    of the enclosing ``instance`` declaration: the ``data``\/\ ``newtype``
    module is *not* nested within the class module.
 
-8. Local modules may be extended via the declaration or importing of another
+8. Modules may be extended via the declaration or importing of another
    local module of the same name. If local modules with the same name are in
    scope at the same time (either through importation or declaration) their
    contents are simply merged. Individual identifiers that are multiply
@@ -248,12 +260,14 @@ Proposed Change Specification
 
 9. A new declaration form is introduced with the following BNF::
 
-     decl ::= ... | 'import' 'module' conid [ import_spec ]
+     decl ::= ... | 'import' 'module' modid [ impspec ]
 
    This declaration takes all entities (or those entities named in the
-   ``import_spec``) in scope with a *conid*\ ``.`` and brings them into scope
-   into the local context without that qualification. (They may be more deeply
-   qualified, if *conid* exports local modules.)
+   ``impspec``) in scope with a *modid*\ ``.`` and brings them into scope
+   into the local context (that is, the part of the program that other
+   declarations in the ``let`` or ``where`` scope over) without that
+   qualification. (They may be more deeply qualified, if *modid* exports local
+   modules.)
 
    The declaration is allowed in ``let`` and ``where`` clauses.
 
@@ -265,15 +279,15 @@ Proposed Change Specification
 
 10. Local modules may be imported with this import item::
 
-      import_item ::= ... | [ 'import' ] 'module' conid [ import_spec ]
+      import ::= ... | [ 'import' ] 'module' modid [ impspec ]
 
-    This brings the local module named *conid* into scope. It is an error if
+    This brings the local module named *modid* into scope. It is an error if
     this import item appears in a list of imports from a module that does not
-    export the local module *conid*.
+    export the local module *modid*.
 
-    Also brought into scope are the entities listed in the *import_spec*;
-    these are brought into scope qualified with the *conid*\ ``.`` prefix. If
-    the *import_spec* is not provided, then all entities in *conid* are
+    Also brought into scope are the entities listed in the *impspec*;
+    these are brought into scope qualified with the *modid*\ ``.`` prefix. If
+    the *impspec* is not provided, then all entities in *modid* are
     brought into scope (qualified).
 
     If the ``import`` keyword is included, then all entities brought into
@@ -283,23 +297,23 @@ Proposed Change Specification
 
 11. Local modules may be exported with this export item::
 
-      export_item ::= ... | [ 'qualified' ] 'module' conid [ export_spec ]
+      export ::= ... | [ 'qualified' ] 'module' modid [ exports ]
 
     The meaning of this export item depends on the presence of the ``qualified``
     keyword in the export item.
 
-    With ``qualified``: This exports the local module *conid* and all entities
-    in scope qualified with the *conid*\ ``.`` prefix. If no local module
-    *conid* exists but entities are in scope with the *conid*\ ``.`` prefix
-    (because a top-level module *conid* exists or *conid* is after the ``as`` in
-    a top-level module import declaration), then a local module *conid* is created
-    for export. In all cases, if an *export_spec* is specified, only those entities
-    are exported. Names in the *export_spec* can be written unqualified.
+    With ``qualified``: This exports the local module *modid* and all entities
+    in scope qualified with the *modid*\ ``.`` prefix. If no local module
+    *modid* exists but entities are in scope with the *modid*\ ``.`` prefix
+    (because a top-level module *modid* exists or *modid* is after the ``as`` in
+    a top-level module import declaration), then a local module *modid* is created
+    for export. In all cases, if an *exports* is specified, only those entities
+    are exported. Names in the *exports* can be written unqualified.
 
-    Without ``qualified``: This exports the local module *conid* (if one exists).
+    Without ``qualified``: This exports the local module *modid* (if one exists).
     As specified in the `Haskell Report <https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1000005.2>`_,
     point (5), this also exports (unqualified) all identifiers in scope both with
-    and without the *conid*\ ``.`` prefix. If an *export_spec* is included, then
+    and without the *modid*\ ``.`` prefix. If an *exports* is included, then
     only those identifiers are included. Note that, because this exports identifiers
     unqualified, if this form is used with a local module, those identifiers become
     both available unqualified and within the local module in importing modules
@@ -349,7 +363,7 @@ Further Examples
 Effect and Interactions
 -----------------------
 
-* Modules are now compositional.
+* Modules can now be defined other modules.
 
 * The examples in the Motivation_ section are accepted.
 
@@ -357,6 +371,7 @@ Effect and Interactions
   happen between the implicit local module of a type declaration and a top-level module. For example::
 
     -- top of file:
+    {-# LANGUAGE LocalModules #-}
     module A where
 
     import qualified T ( x )
@@ -405,7 +420,12 @@ Effect and Interactions
   This proposal would allow a different way to crack this nut, by giving users fine control
   over the scope of the selectors. This proposal might obviate ``-XDuplicateRecordFields``, but
   ``-XDisambiguateRecordFields`` is still useful with this proposal.
-  
+
+* A Template Haskell declaration splice can occur within a local module. Just as a top-level
+  splice marks a scope boundary (declarations above the splice cannot refer to declarations
+  below the splice), declaration splices within local modules do, too. The guideline here
+  is that the local module system affects only the names that are in scope (and their qualifications
+  and import/export), not any other aspect of the program.
   
 Costs and Drawbacks
 -------------------
@@ -413,12 +433,20 @@ Costs and Drawbacks
 * This is a significant new bit of implementation and specification, and it should require the
   requisite level of support from the community to be accepted.
 
+* As highlighted in the "potential ambiguity" effect, above, this extension will rule out
+  a few existing programs, when an import whose identifiers are used with qualifications
+  shares a name with a locally defined type. The problem only arises with ``-XLocalModules``,
+  though, and is easily remedied through a (local) renaming.
+
 * This proposal does not really make a module into a first-class entity. Instead, it
   interprets a module essentially as the set of names that can be written qualified
   by the module name. This design is keeping in the spirit of the existing language,
   where we can have multiple ``import`` statements with the same ``qualified``
   abbreviation. But perhaps a different design, making modules more self-aware would
   be better. (Credit to @michaelpj for pointing this out.)
+
+  See `#295`_ for a more complete treatment of the idea of making a module into a
+  first-class entity.
   
 Related Work
 ------------
@@ -455,7 +483,8 @@ Alternatives
 Beyond the `Related Work`_, there is wiggle room within this proposal for alternatives.
 
 A. Drop specification point (7) making implicit modules for each type declaration. It's
-   not required by the rest of the proposal. I like it, though.
+   not required by the rest of the proposal. I like it, though. Removing this part
+   would make ``-XLocalModules`` fully conservative with respect to today's Haskell.
 
 B. Drop the possibility of the ``import`` keyword in the ``module`` import
    item. Users can always just write one more ``import module`` statement to
@@ -465,13 +494,24 @@ B. Drop the possibility of the ``import`` keyword in the ``module`` import
 C. Drop point (8) allowing extension of existing local modules. That was added so that
    definitions could be mixed in with, e.g., constructors of an implicit local module
    surrounding a type declaration. But it also seems like a nice way of flexibly mixing
-   modules together. It's an inessential feature.
+   modules together. It's an inessential feature. Without it: if there exist any
+   identifiers ``M.``\ *identifier* in scope, then declaring a local module named ``M``
+   is an error.
 
 D. This proposal does not allow the export of a qualified local module such that
    importers get the identifiers unqualified. We could imagine a new export item
    ``import module M`` that exports all identifiers in scope with a ``M.`` prefix
    unqualified. I don't find this feature necessary, but it would fit with the
    rest of this proposal.
+
+   For example, if a local module introduces ``M.x`` and ``M.y``
+   into the top-level scope (but not ``x`` or ``y``), then this proposal offers no
+   way of exporting ``M.x`` and ``M.y`` by listing only something about module ``M``
+   such that importers get ``x`` and ``y`` unqualified. This is because exporting
+   ``module M`` would *not* export ``x`` or ``y`` (because they are not in scope unqualified)
+   and exporting ``qualified module M`` would give importers access to ``M.x`` and
+   ``M.y``, but not ``x`` and ``y`` (unless an importer also said ``import module M``).
+   A hypothetical ``import module M`` export item could satisfy this need.
 
 E. Drop the possibility of anonymous local modules; that is, remove ``_`` as a possibility
    of ``modname``. However, I like the idea of anonymous modules, as they serve to reduce
@@ -498,17 +538,17 @@ G. Counter-proposal `#295`_ rightly observes that the export specifiers in this 
 
      * With ``-XLocalModules``, add this export item::
 
-         export_item ::= ... | 'module' conid [ export_spec ]
+         export_item ::= ... | 'module' modid [ exports ]
 
-       This exports the local module *conid* and all entities in scope
-       with the *conid*\ ``.`` prefix. If no local module *conid* exists
-       but entities are in scope with the *conid*\ ``.`` prefix
-       (because a top-level module *conid* exists or *conid* is after the ``as``
-       in a top-level module import declaration), then a local module *conid*
-       is created for export. If an *export_spec* is included, all entities
+       This exports the local module *modid* and all entities in scope
+       with the *modid*\ ``.`` prefix. If no local module *modid* exists
+       but entities are in scope with the *modid*\ ``.`` prefix
+       (because a top-level module *modid* exists or *modid* is after the ``as``
+       in a top-level module import declaration), then a local module *modid*
+       is created for export. If an *exports* is included, all entities
        listed are exported unqualified; these entities must be in scope with
-       the *conid*\ ``.`` prefix. An *export_spec* of ``..`` exports all entities
-       with the *conid*\ ``.`` prefix unqualified.
+       the *modid*\ ``.`` prefix. An *exports* of ``..`` exports all entities
+       with the *modid*\ ``.`` prefix unqualified.
 
        This interpretation replaces the meaning of a ``module`` export item
        in standard Haskell.
