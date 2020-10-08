@@ -145,7 +145,35 @@ structure should generally follow that of the rule for `case` of
 
 ## Alternatives
 
-I do not know of any alternative approach.
+Joachim Breitner asks, "Could this be solved by an optimization in a later
+phase that detects this pattern, and produces the code that you want?"
+Perhaps. Such an optimization would have to be in the C-- stage, which
+is rather late in the game. It would have to be reminiscent of
+common subexpression elimination, but I believe it would be considerably
+more complicated. Imagine what this would look like in Haskell: If we
+saw
+
+```haskell
+case a of
+  (# (##) | #) -> b
+  (# | (##) #) -> b + 1
+```
+
+then we'd have to somehow figure out that we should transform to
+
+```haskell
+case a of
+  (# (##) | #) -> b + 0
+  (# | (##) #) -> b + 1
+```
+
+so we can achieve the equivalent of
+
+```haskell
+b + sumToTag# a
+```
+
+This all seems much too hard.
 
 ## Unresolved Questions
 
