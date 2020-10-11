@@ -98,21 +98,14 @@ naturally returns an unboxed sum. Unfortunately, it is not documented in
 
 ### Migration plan
 
-In version `v`, GHC will add the new primops using names suffixed with the
-letter "S" (except for the finalizer adding primops): `tryTakeMVarS#`,
-`tryReadMVarS#`, `deRefWeakS#`, `finalizeWeakS#`, and `getSparkS#`. Compatibility
-wrappers will be added to `GHC.Exts`.
+In version `v`, we will add a module `GHC.NewPrimops` with implementations
+of the future primops using the current ones. We will deprecate the current
+primops.
 
-In version `v+1`, the wrappers will be deprecated.
+In version `v+1`, we will make the new primops actual primitives, and deprecate
+the `GHC.NewPrimops` module.
 
-In version `v+2`, the wrappers will be removed.
-
-In version `v+3`, the new primops will be renamed to remove the final "S", with
-"S"-suffixed synonyms added to `GHC.Exts` for compatibility.
-
-In version `v+4` the "S"-suffixed synonyms will be deprecated.
-
-In version `v+5`, the "S"-suffixed synonyms will be removed.
+In version `v+2`, we will remove the `GHC.NewPrimops` module.
 
 ## Examples
 
