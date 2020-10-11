@@ -194,10 +194,8 @@ tagToSum# 0# = (# (##) || #)
 tagToSum# 1# = (# | (##) | #)
 ```
 
-where the type-level list has at least one element. Including `tagToSum#` seems
-nice for symmetry's sake, but I have not yet found a situation where it's truly
-necessary. Note that unlike `sumToTag#`, `tagToSum#` would be unsafe in two
-different ways:
+where the type-level list has at least one element. Unlike
+`sumToTag#`, `tagToSum#` would be unsafe in two different ways:
 
 1. The user could supply an out-of-bounds `Int#` value.
 2. The user could supply an uninhabited type:
@@ -207,6 +205,20 @@ different ways:
                                       , 'TupleRep '[]]) where
       Uninhab :: Uninhab -> Uninhab
     ```
+
+Including `tagToSum#` seems nice for symmetry's sake, but I have not yet found
+a situation where it's truly necessary. In the `Trit#` example above, it would
+be a natural way to deal with certain arithmetic results:
+
+```haskell
+lowTrit :: Int# -> Trit#
+lowTrit x = tagToSum# (x `remInt#` 3#)
+```
+
+But when would we really benefit from this? Most of the time we'll just
+perform a `case` match, and case-of-case will clean everything up. The
+rest of the time, we'll probably be allocating memory and the conversion
+will be the least of our worries.
 
 ## Implementation Plan
 
