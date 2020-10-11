@@ -81,10 +81,12 @@ argument.
 ## Examples
 
 ```haskell
-sumToTag# ((# | 2# | #) :: (# (# Int, Char #) | Int# | Bool #)) = 1#
+sumToTag# ((# | 2# | #)
+             :: (# (# Int, Char #) | Int# | Bool #)) = 1#
 
 -- No need to pin down specific types
-sumToTag# ((# | x | #) :: (# a | x | b :: TYPE 'UnliftedRep #)) = 1#
+sumToTag# ((# | x | #)
+             :: (# a | x | b :: TYPE 'UnliftedRep #)) = 1#
 ```
 
 This will compile, but can never ever be called:
@@ -176,6 +178,35 @@ b + sumToTag# a
 This all seems much too hard.
 
 ## Unresolved Questions
+
+Should we also offer `tagToSum#`, mirroring `tagToEnum#`? Conceptually,
+
+```haskell
+tagToSum#
+  :: forall (a :: TYPE ('SumRep '[ 'TupleRep '[]
+                                 , 'TupleRep '[], ...])).
+  Int# -> a
+
+-- For example:
+
+tagToSum# :: Int# -> (# (##) | (##) | (##) #)
+tagToSum# 0# = (# (##) || #)
+tagToSum# 1# = (# | (##) | #)
+```
+
+where the type-level list has at least one element. Including `tagToSum#` seems
+nice for symmetry's sake, but I have not yet found a situation where it's truly
+necessary. Note that unlike `sumToTag#`, `tagToSum#` would be unsafe in two
+different ways:
+
+1. The user could supply an out-of-bounds `Int#` value.
+2. The user could supply an uninhabited type:
+
+    ```haskell
+    newtype Uninhab :: TYPE ('SumRep '[ 'TupleRep '[]
+                                      , 'TupleRep '[]]) where
+      Uninhab :: Uninhab -> Uninhab
+    ```
 
 ## Implementation Plan
 
