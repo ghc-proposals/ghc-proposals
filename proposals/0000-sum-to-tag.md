@@ -145,6 +145,13 @@ the special `case` rule will probably not be terribly hard; its
 structure should generally follow that of the rule for `case` of
 `dataToTag#`.
 
+The main (theoretical) drawback I see is that `sumToTag#` weakens
+parametricity. Today, we can reason that a function polymorphic over its type
+can't inspect its argument. With `sumToTag#`, it can do so, to a limited
+extent. In practice, however, primops already break parametricity, and users
+who don't have access to principled ones like `tagToSum#` may well reach for
+more dangerous unsafe coercions to get the job done.
+
 ## Alternatives
 
 Joachim Breitner asks, "Could this be solved by an optimization in a later
