@@ -2,11 +2,11 @@ Unify ``Nat`` and ``Natural``
 =============================
 
 .. author:: Richard Eisenberg, inspired by Rinat Striungis
-.. date-accepted:: 
-.. ticket-url:: 
-.. implemented:: 
+.. date-accepted:: 2020-10-12
+.. ticket-url::
+.. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/364>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/364>`_.
 .. contents::
 
 GHC currently uses ``GHC.TypeLits.Nat`` to describe compile-time natural numbers
