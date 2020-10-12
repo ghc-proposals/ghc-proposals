@@ -203,3 +203,4 @@ Unresolved Questions
   to consider this idea separate from the quite considerable complexity of `#242`_,
   and so I have made it a separate proposal.
 
+.. _`#242`: https://github.com/ghc-proposals/ghc-proposals/pull/242
