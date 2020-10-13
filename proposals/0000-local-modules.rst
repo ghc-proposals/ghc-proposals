@@ -119,7 +119,7 @@ Motivation
 
    With this proposal, we can model this situation nicely::
 
-     import module _ (f, g) where
+     import module (f, g) where
        f :: ...
        f = ...
 
@@ -139,7 +139,7 @@ Motivation
 
    With this proposal, we can do this easily::
 
-     import module _ (f) where
+     import module (f) where
        f :: ...
        f = ...
 
@@ -200,8 +200,7 @@ Proposed Change Specification
    module -- i.e. not in a ``let`` or ``where``)
    to declare new modules called *local modules*. Here is the BNF::
 
-     topdecl ::= ... | [ 'import' ] 'module' [ modname ] [ exports ] 'where' decls
-     modname ::= modid | '_'
+     topdecl ::= ... | [ 'import' ] 'module' [ modid ] [ exports ] 'where' decls
 
    Omitting the module name indicates an *anonymous local module*. This form
    is useful with the ``import`` keyword and an export list to hide some
@@ -219,13 +218,13 @@ Proposed Change Specification
    
 5. A local module declaration brings into scope names listed in its export
    list. These names are always brought into scope qualified by the local
-   module name, unless that module name is ``_``. If the declaration includes
+   module name, unless that module is anonymous. If the declaration includes
    the ``import`` keyword, the names are also brought into scope unqualified
    by the local module name. (In the case of nested local modules, the names
    might be qualified by inner module names.)
 
-6. It is an error to specify a non-empty export list, name a module ``_``, and
-   not include the ``import`` keyword. (Modules named ``_`` without an
+6. It is an error to specify a non-empty export list, omit a module's name, and
+   not include the ``import`` keyword. (Anonymous modules without an
    non-empty export list but without the ``import`` keyword are still useful
    as a way of declaring instances that use local definitions.)
 
