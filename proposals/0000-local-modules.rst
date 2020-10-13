@@ -200,10 +200,12 @@ Proposed Change Specification
    module -- i.e. not in a ``let`` or ``where``)
    to declare new modules called *local modules*. Here is the BNF::
 
-     topdecl ::= ... | [ 'import' ] 'module' modname [ exports ] 'where' decls
+     topdecl ::= ... | [ 'import' ] 'module' [ modname ] [ exports ] 'where' decls
      modname ::= modid | '_'
 
-   Using ``_`` as the module name indicates an *anonymous local module*.
+   Omitting the module name indicates an *anonymous local module*. This form
+   is useful with the ``import`` keyword and an export list to hide some
+   definitions.
 
    This declaration form is allowed only with ``-XLocalModules``.
      
@@ -513,8 +515,9 @@ D. This proposal does not allow the export of a qualified local module such that
    ``M.y``, but not ``x`` and ``y`` (unless an importer also said ``import module M``).
    A hypothetical ``import module M`` export item could satisfy this need.
 
-E. Drop the possibility of anonymous local modules; that is, remove ``_`` as a possibility
-   of ``modname``. However, I like the idea of anonymous modules, as they serve to reduce
+E. Drop the possibility of anonymous local modules; that is, require the
+   module name in the new form of declaration.
+   However, I like the idea of anonymous modules, as they serve to reduce
    the scope of some declarations without bothering the programmer to write a name for
    the module.
 
