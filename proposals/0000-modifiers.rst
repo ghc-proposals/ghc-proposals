@@ -50,45 +50,54 @@ their special status more explicit by writing them ``%inline`` or ``%oneShot``.
 Proposed Change Specification
 -----------------------------
 
-* Introduce a new extension ``-XModifiers``.
+1. Introduce a new extension ``-XModifiers``.
 
-* With ``-XModifiers``, introduce modifier syntax on arrows as follows (cf.
-  the Haskell 2010 Report for all BNF syntax, and recall that we use braces
-  to denote "zero or more")::
+2. With ``-XModifiers``, introduce modifier syntax on arrows as follows (cf.
+   the Haskell 2010 Report for all BNF syntax, and recall that we use braces
+   to denote "zero or more")::
 
-    type     ::= btype [ {modifier} -> type ]
-    prefix%  ::= '%'    -- only in prefix position
-    modifier ::= prefix% atype
+     type     ::= btype [ {modifier} -> type ]
+     prefix%  ::= '%'    -- only in prefix position
+     modifier ::= prefix% atype
 
-* With ``-XModifiers``, introduce modifier syntax on types as follows::
+3. With ``-XModifiers``, introduce modifier syntax on types as follows::
 
-    btype    ::= {modifier} atype | btype atype
+     btype    ::= {modifier} atype | btype atype
 
-* With ``-XModifiers``, introduce modifier syntax on the term level as follows::
+4. With ``-XModifiers``, introduce modifier syntax on the term level as follows::
 
-    fexp     ::= {modifier} aexp | fexp aexp
+     fexp     ::= {modifier} aexp | fexp aexp
 
-* Reserve the use of ``%`` in a prefix occurrence to be used only for modifiers;
-  though this proposal does not do so, we can imagine extending the modifier syntax
-  to apply to further syntactic situations (e.g. term-level operators, declarations,
-  import lists, etc.). The one exception is the syntax ``%1`` for a linear function,
-  which continues to be allowed.
+5. With ``-XModifiers``, introduce postfix modifier syntax on patterns as follows::
 
-* The use of a modifier on anything but a type-level arrow is an error.
+     lpat     ::= apat {modifier}
 
-* Introduce a new type-level constant ``Modifier :: Type -> Constraint``, exported
-  from ``GHC.Exts``.
+6. With ``-XModifiers``, introduce postfix modifier syntax on record field declarations as follows::
+     
+     fielddecl ::= vars '::' (type | '!' atype) {modifier}
+     
+7. Reserve the use of ``%`` in a prefix occurrence to be used only for modifiers;
+   though this proposal does not do so, we can imagine extending the modifier syntax
+   to apply to further syntactic situations (e.g. term-level operators, declarations,
+   import lists, etc.). The one exception is the syntax ``%1`` for a linear function,
+   which continues to be allowed.
 
-* Let the constraint ``Modifier Multiplicity`` be satisfiable; let no other
-  ``Modifier`` constraint be satisfiable.
+8. Introduce a new type-level constant ``Modifier :: Type -> Constraint``, exported
+   from ``GHC.Exts``.
 
-* During constraint generation, let an occurrence ``%(ty)``, where ``ty :: ki``,
-  emit a constraint ``Modifier ki``.
+9. Let the constraint ``Modifier Multiplicity`` be satisfiable; let no other
+   ``Modifier`` constraint be satisfiable.
 
-* A modifier of type ``Multiplicity`` changes the multiplicity of the following arrow.
-  Multiple modifiers of type ``Multiplicity`` on the same arrow are not allowed.
+10. During constraint generation, let an occurrence ``%(ty)``, where ``ty :: ki``,
+    emit a constraint ``Modifier ki``.
 
-* ``-XLinearTypes`` implies ``-XModifiers``.
+11. A modifier of type ``Multiplicity`` changes the multiplicity of the following arrow,
+    preceding pattern-bound variable (but only on the top level of a lambda pattern),
+    or preceding record field.
+    Multiple modifiers of type ``Multiplicity`` on the same arrow are not allowed.
+    Any other use of a modifier is an error.
+
+12. ``-XLinearTypes`` implies ``-XModifiers``.
   
 Examples
 --------
@@ -102,6 +111,14 @@ Here are some examples that will be accepted or rejected with this proposal::
   f5 :: Int %One %Many -> Bool   -- rejected (although it will parse)
   f6 :: Int %Many %Many -> Bool  -- rejected
 
+  map :: forall (m :: Multiplicity). (a %m -> b) -> [a] %m -> [b]
+    -- the kind annotation is really on m, not on the modifier
+
+The syntax (and semantics) for modifiers on patterns and record fields is exactly
+as described in the `linear types proposal`_.
+
+.. _`linear types proposal`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0111-linear-types.rst#syntax
+  
 Effect and Interactions
 -----------------------
 * It is expected that the matchability of `#242`_ will have a kind ``Matchability``,
@@ -191,8 +208,16 @@ Alternatives
   and being explicit about multiplicity polymorphism.
 
 * There does not seem to be much point in introducing modifier
-  syntax beyond the ``->`` syntax, but it seemed helpful to do so here.
+  syntax beyond the linear-types syntax, but it seemed helpful to do so here.
   We can drop that.
+
+* We might imagine having ``Modifier :: ModifierContext -> Type -> Constraint``,
+  where a ``ModifierContext`` distinguishes between the different syntactic
+  contexts a modifier may appear. However, this just seems to add complexity.
+  Even with this extra checking, each individual modifier is likely sensible
+  only sometimes (leading to errors at other times), and so the extra
+  complexity doesn't fully specify where a modifier can go. I don't think
+  it's worth it.
 
 Unresolved Questions
 --------------------
