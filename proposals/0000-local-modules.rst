@@ -364,7 +364,7 @@ Further Examples
 Effect and Interactions
 -----------------------
 
-* Modules can now be defined other modules.
+* Modules can now be defined inside other modules.
 
 * The examples in the Motivation_ section are accepted.
 
