@@ -582,6 +582,12 @@ I. When exporting a module ``qualified``, we may also want to rename it. Here is
 
    Note the ``as Set`` in the export list. Adding this feature to the proposal would be
    easy, at the risk of further complicating export items.
+
+J. Anonymous modules are written by omitting the module name:
+   ``import module (x, y) where ...``. An earlier version of this proposal denoted
+   an anonymous module by using an ``_``: ``import module _ (x, y) where``. After
+   seeing the suggestion, I have a mild preference for the "omit module name" version,
+   but perhaps others feel differently.
    
 Future Work
 -----------
