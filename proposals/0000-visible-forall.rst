@@ -358,7 +358,7 @@ information has been fully determined:
   for an empty list ``[]ₑ`` or the list type constructor ``[]ₜ``.
 
   With ``DataKinds``, the ``'[a]`` syntax in a type-level context is
-  resolved as ``[a]ₜ``; in a term-level context, this syntax is not
+  resolved as ``[a]ₑ``; in a term-level context, this syntax is not
   available.
 
 * The meaning of ``*`` has been determined. It can stand for one of the following:
@@ -514,7 +514,7 @@ Primary Change
    the type checking environment it is possible that such a variable will map
    to a type variable (irrelevant).
 
-   Extend the syntactic categories of types and kinds with type variables::
+   Extend the syntactic categories of types and kinds with term variables::
 
      t, k ::=
             | *                   -- the kind of inhabited types
@@ -819,7 +819,7 @@ Definition site::
   class KnownRGB c where
     _rgbVal :: (Word8, Word8, Word8)
 
-  rgb :: forall s -> KnownRGB (ParseRGB c) => (Word8, Word8, Word8)
+  rgb :: forall s -> KnownRGB (ParseRGB s) => (Word8, Word8, Word8)
   rgb s = _rgbVal @(ParseRGB s)
 
 Use site::
