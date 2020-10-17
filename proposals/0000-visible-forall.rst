@@ -647,8 +647,8 @@ operates on the resolved syntax tree (defined above).
 * An unboxed tuple ``(# a, b #)`` cannot be mapped at the moment, as we do not
   have promoted unboxed types.
 
-* A list literal ``[e₀, e₁, ...]`` is mapped to a promoted list ``[t₀, t₁, ...]``
-  and requires the ``DataKinds`` extension, where ``t₀ = t2t(e₀)``, ``t₁ = t2t(e₁)``.
+* With ``DataKinds``, a list literal ``[e₀, e₁, ...]`` is mapped to a promoted
+  list ``[t₀, t₁, ...]``, where ``t₀ = t2t(e₀)``, ``t₁ = t2t(e₁)``.
 
 * With ``TypeApplications``, type application ``e₀ @t₁`` is mapped to
   type-level type application ``t₀ @t₁``, where ``t₀ = t2t(e₀)``.
@@ -1109,7 +1109,7 @@ Alternatives
    ``forall`` in terms bind variables in the type namespace.
 
    The parsing and name resolution rules of these alternatives were deemed to
-   subtle, so we opted for a design where terms-in-types are parsed and renamed
+   subtle, so we opted for a design where types-in-terms are parsed and renamed
    as ordinary terms.
 
 7. We could error on ambiguous variable occurrences earlier in the pipeline, in
