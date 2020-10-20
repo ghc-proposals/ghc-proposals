@@ -44,6 +44,9 @@ namespacing and import/export mechanism. This proposal is an alternative to
 provides a tempting way toward a resurrection of rejected proposal `#40`_
 ("context fixes").
 
+This proposal affects only naming, and the impact within GHC would be
+entirely in the renamer (and, naturally, the AST and interface-file format).
+
 .. _`#205`: https://github.com/ghc-proposals/ghc-proposals/pull/205
 .. _`#273`: https://github.com/ghc-proposals/ghc-proposals/pull/273
 .. _`#40`: https://github.com/ghc-proposals/ghc-proposals/blob/context-fixes/proposals/0000-context-fixes.rst
