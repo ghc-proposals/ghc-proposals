@@ -98,6 +98,9 @@ Proposed Change Specification
     Any other use of a modifier is an error.
 
 12. ``-XLinearTypes`` implies ``-XModifiers``.
+
+13. GHC will never infer quantifying over a ``Modifier`` constraint. No modifier
+    polymorphism!
   
 Examples
 --------
@@ -166,7 +169,7 @@ Effect and Interactions
 * Some other features that have had tortuous and torturous syntax
   discussions may have enjoyed having the modifier option. For example,
   this might have been used instead of ``type role`` for role annotations:
-  ``data Tagged (%nominal t) a = Tagged a``. Or it might have been an
+  ``data Tagged (%Nominal t) a = Tagged a``. Or it might have been an
   alternative for ``-XDerivingStrategies``.
 
 * Though not proposed here, we can imagine extensions allowing abstractions
@@ -187,7 +190,8 @@ Costs and Drawbacks
 -------------------
 * The loss of the inferred kind of ``m`` in multiplicity polymorphism is a
   drawback. However, a user seeing ``Int %m -> Bool`` is hard-pressed to
-  understand what is going on. On the other hand, ``Int %(m :: Multiplicity) -> Bool``
+  understand what is going on. On the other hand, labeling ``m :: Multiplicity``
+  explicitly (either in the binding for ``m`` or in a usage site)
   is much more perspicuous.
 
 * Any feature has a maintenance burden, but this one should be fairly small.
