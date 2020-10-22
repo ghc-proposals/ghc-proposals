@@ -71,12 +71,21 @@ needed is a simple decrement operation.
 
 ## Proposed Change Specification
 
-Add a `sumToTag#` primop much like `dataToTag#`. Much like `dataToTag#` can be
-compiled only when the *type constructor* of its argument is known and is an
-algebraic datatype, `sumToTag#` can be compiled only when the *runtime
-representation* of its argument is known and is `'SumRep xs` for some known
-`xs`. `sumToTag#` will return the 0-based index of the sum alternative of its
+Add a `sumToTag#` inline primop, analogous to `dataToTag#`. Approximately,
+
+```haskell
+sumToTag# :: forall (xs :: RuntimeRep) (a :: TYPE ('SumRep xs)). a -> Int#
+```
+
+`sumToTag#` will return the 0-based index of the sum alternative of its
 argument.
+
+The `forall` is a bit of a lie: much like `tagToEnum#` can be compiled only
+when the *type constructor* of its argument is known and is an algebraic
+datatype, `sumToTag#` can be compiled only when the *runtime representation* of
+its argument is known and is `'SumRep xs` for some known `xs`. This restriction
+doesn't really hurt in practice, because bindings can't be
+representation-polymorphic anyway.
 
 ## Examples
 
@@ -106,9 +115,16 @@ bar = sumToTag#
 
 ## Effect and Interactions
 
-It will be possible to extract tags efficiently. It would be
-beneficial to implement a special rule for `case` of `sumToTag#`, in
-case that should appear in the course of optimization.
+It will be possible to extract tags efficiently. With the current
+implementation of unboxed sums, we would compile to code looking
+something like
+
+```haskell
+sumToTag# (# tg1, ... #) = tg1 -# 1#
+```
+
+It would be beneficial to implement a special rule for `case` of `sumToTag#`,
+in case that should appear in the course of optimization.
 
 ```haskell
 case sumToTag# a of
