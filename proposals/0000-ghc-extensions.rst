@@ -43,7 +43,7 @@ We define a set of criteria that an extension should guide the committee members
 2. *New failure modes* that become possible with the extension are *rare* and/or easy to diagnose. These failure modes include new error messages, wrong inferred types, and runtime errors, for example. In other words, the *developer experience* should not get worse by adding this extension to the default mix.
 3. The extensions *complement* the design of standard Haskell. For example, ``MultiParamTypeClasses`` extends what's already there, and works well with the rest of features. If we suddenly decided you can use Lisp-like syntax, that would not complement the current design.
 4. The extension has been – and can reasonably be predicted to remain – *stable*.
-5. The extension is *not* intentional opt-in as a *gate-keeper* of advanced or potentially-unsafe feature. ``IncoherentInstances`` should not be enabled by default because of its potential unsafety, and the point of ``MagicHash`` is precisely that it it unlocks names not there by default.
+5. The extension is one that users might plausibly want to be on all the time. This excludes experimental extensions that deliberately enable potentially-unsafe or unstable features, such as ``IncoherentInstances`` or ``MagicHash``.
 6. The extension has *widespread* usage.
 7. The extension is favored by the community, with many in favor, and very few opposed to its inclusion.
 
