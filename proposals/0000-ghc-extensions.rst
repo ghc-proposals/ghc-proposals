@@ -11,7 +11,7 @@ The GHC20XX process
 .. sectnum::
 .. contents::
 
-This proposal sets up a process to introduce new language versions `GHC20XX`, extending `Haskell2010` as defined by the Report with several extensions that are considerd harmless, helpfun and uncontroversial.
+This proposal sets up a process to introduce new language versions `GHC20XX`, extending `Haskell2010` as defined by the Report with several extensions that are considerd harmless, helpful and uncontroversial.
 
 
 Motivation
