@@ -53,7 +53,7 @@ Process
 
 * 4 months before the expected GHC spring release day of 202x, the committee Secretary starts the GHC202x process.
 
-  They inform the committe, in an email to the mailing list, of all language extensions supported by the latest released GHC that are not in GHC202(x-1), which could be added. They also list all extensions *in* GHC202(x-1), which could be removed.
+  They inform the committee, in an email to the mailing list, of all language extensions supported by the latest released GHC that are not in GHC202(x-1), which could be added. They also list all extensions *in* GHC202(x-1), which might be omitted in GHC202(x-1) (likely a rare thing).
 
   The secretary also creates a PR with a proposal saying (roughly) 
    
