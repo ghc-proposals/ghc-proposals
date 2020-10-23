@@ -939,6 +939,28 @@ Corner Cases
    Resolved with the ``type`` herald or by renaming one of the ``StrictPair``
    constructors.
 
+9. Type variables as function parameters:
+   ::
+
+     f :: forall a -> a -> a
+     f x y = g True
+       where
+         g :: b -> x
+         g _ = y
+
+   Here, ``x`` is a name in the term namespace, but it is in fact a type
+   variable, later used used in the type signature of ``g``.
+
+   The ``b`` is bound implicitly in this example, assuming there's no top-level
+   definition of ``b``. To make it clean, one can use an explicit ``forall``::
+
+     ... where
+             g :: forall b. b -> x
+             g _ = y
+
+   This is similar to the situation with ``ScopedTypeVariables``, where we also
+   cannot assume that all lowercase variables in a signature are free.
+
 Effect and Interactions
 -----------------------
 
