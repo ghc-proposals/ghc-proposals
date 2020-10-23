@@ -22,7 +22,7 @@ It has almost become a meme that any slightly-complex Haskell module starts with
 - beginners often see features behind an extension as "advanced" or "obscure", even though some like ``LambdaCase`` or ``NamedFieldPuns`` are quite simple;
 - some sorts of programming in Haskell – mostly type-level oriented – require enables lots of extensions (think of the usual combo ``MultiParamTypeClasses`` + ``FlexibleInstances`` + ``FlexibleContexts``). Sometimes the fact that there are different extensions, instead of a single `ExtendedTypeClasses` is mostly historical.
 
-For that reason, it's benefitial to pack those extensions which have "graduated" in terms of stability and usefulness into a single language version.
+For that reason, it's beneficial to pack those extensions which have "graduated" in terms of stability and usefulness into a single language version.
 
 We aim to lean on the conservative side in our selection of extensions: Not including an extension that we should have is relatively harmless (users of that extension will have to still set that manually, but they already have to do that, and we can add it alter). Conversely, including an extension that we should not have hurts more (any detriminal effect on developer experience now affects many users).
 
