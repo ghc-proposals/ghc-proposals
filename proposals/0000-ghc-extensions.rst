@@ -72,7 +72,7 @@ Process
 
 * Within two weeks of the start of the process, every committee member is expected to send an initial list of which extensions they expect to be in GHC202x to the mailing list.
    
-  Committe members are expected to take the Hackage statistics and the community vote into account.
+  Committee members are expected to take the Hackage statistics and the community vote into account.
    
   These mails may contain justifications for why a certain extension is or is not included, but not required (or even expected).
 
