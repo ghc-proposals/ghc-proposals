@@ -32,7 +32,7 @@ We also aim to have a process that is efficient. For each extension, we are all 
 Proposed Change Specification
 -----------------------------
 
-We propose to introduce a process to develop new "language versions", dubbed ``GHC20XX``, which extend ``Haskell2010`` with some default extensions. This proposal does not set *which* extensions are included in the first version,, rather seeks to provide a framework to reach a conclusion in a constructive and timely manner.
+We propose to introduce a process to develop new "language versions", dubbed ``GHC20XX``, which extend ``Haskell2010`` with some default extensions. This proposal does not set *which* extensions are included in the first version, but rather seeks to provide a framework to reach a conclusion in a constructive and timely manner.
 
 Criteria
 ^^^^^^^^
