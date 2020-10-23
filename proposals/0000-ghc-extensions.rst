@@ -74,7 +74,7 @@ Process
    
   Committee members are expected to take the Hackage statistics and the community vote into account.
    
-  These mails may contain justifications for why a certain extension is or is not included, but not required (or even expected).
+  These mails may contain justifications for why a certain extension is or is not included, but this is not required (or even expected).
 
   After these two weeks, the PR is continuously updated by the secretary to reflect the *current* tally of votes: An extension is included if it is listed by at least ⅔ (rounded up) of committee members.
 
