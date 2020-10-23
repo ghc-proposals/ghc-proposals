@@ -24,7 +24,7 @@ It has almost become a meme that any slightly-complex Haskell module starts with
 
 For that reason, it's benefitial to pack those extensions which have "graduated" in terms of stability and usefulness into a single language version.
 
-We aim to lean on the conservative side in our selection of extensions: Not including an extension that we should have is relatively harmless (users of that extension will have to still set that manually, but they alreay have to do that, and we can add it alter), while including an extension that we should not have hurts more (any detriminal effect on developer experience now affects many users).
+We aim to lean on the conservative side in our selection of extensions: Not including an extension that we should have is relatively harmless (users of that extension will have to still set that manually, but they already have to do that, and we can add it alter). Conversely, including an extension that we should not have hurts more (any detriminal effect on developer experience now affects many users).
 
 We also aim to have a process that is efficient. For each extension, we are all very capable of having very long discussions about the merits, up-sides and downsides, and almost anybody will have an opinion on almost any extensions. But aiming to include only _uncontroversial_ extensions, we aim to avoid much of these discussion by construction. The process deliberately does not provide room for long per-extensions deliberations, neither within the committee or with the overall community, while still involving the community.
 
