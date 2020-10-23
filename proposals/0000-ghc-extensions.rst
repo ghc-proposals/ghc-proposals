@@ -100,7 +100,7 @@ The implementation cost seems small.
 
 The cost of a GHC20xx extension is that, upon reading a file with ``{-# LANGUAGE GHC20xx #-}``, the reader does not immediatelly know the set of enabled extensions; this may hamper readability of code.
 
-The costs of this process is that it binds volunteer time, and there is is risk of unpleasant, heated debates, because everybody has opinions. The process tries to err on the conversative side and rather add too few than too many extensions.
+The costs of this process is that it binds volunteer time, and there is is risk of unpleasant, heated debates, because everybody has opinions. The process tries to err on the conservative side and rather add too few than too many extensions.
 
 Alternatives
 ------------
