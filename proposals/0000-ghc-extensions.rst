@@ -11,8 +11,8 @@ The GHC20XX process
 .. sectnum::
 .. contents::
 
-This proposal sets up a process to introduce new language versions `GHC20XX`,
-extending `Haskell2010` as defined by the Report with several extensions that
+This proposal sets up a process to introduce new language versions ``GHC20XX``,
+extending ``Haskell2010`` as defined by the Report with several extensions that
 are considerd harmless, helpful and uncontroversial.
 
 
@@ -29,7 +29,7 @@ problems:
   enables lots of extensions (think of the usual combo
   ``MultiParamTypeClasses`` + ``FlexibleInstances`` + ``FlexibleContexts``).
   Sometimes the fact that there are different extensions, instead of a single
-  `ExtendedTypeClasses` is mostly historical.
+  ``ExtendedTypeClasses`` is mostly historical.
 
 For that reason, it's beneficial to pack those extensions which have
 "graduated" in terms of stability and usefulness into a single language
@@ -100,7 +100,6 @@ criteria, but often subjective, and not all need to be satisfied in all cases.
 7. The extension is favored by the community, with many in favor, and very few
    opposed to its inclusion.
 
-
 Process
 ^^^^^^^
 
@@ -112,7 +111,17 @@ Process
   which could be added. They also list all extensions *in* GHC20(xx-1), which
   might be omitted in GHC202(xx-1) (likely a rare thing).
 
-  The secretary also creates a PR with a proposal saying (roughly)
+* In order to gather data on the criterium “widespread usage”, the secretary
+  creates a tally of which extensions are used how often on Hackage.
+
+* In order to gather data on the criterium “community support”, the secretary
+  runs a public poll on a suitable platform for one week where anyone can vote
+  in favor or against the inclusion of a given extension, or points the
+  committee to a suitable existing survey result.
+
+**Alternative 1:**
+
+* At the start of the process, the secretary creates a PR with a proposal saying (roughly)
    
     GHC20xx contains the following extensions in addition to those in
     GHC20(xx-1):
@@ -122,14 +131,6 @@ Process
     and removes these extensions
    
     * (none yet)
-
-* In order to gather data on the criterium “widespread usage”, the secretary
-  creates a tally of which extensions are used how often on Hackage.
-
-* In order to gather data on the criterium “community support”, the secretary
-  runs a public poll on a suitable platform for one week where anyone can vote
-  in favor or against the inclusion of a given extension, or points the
-  committee to a suitable existing survey result.
 
 * Within two weeks of the start of the process, every committee member is
   expected to send an initial list of which extensions they expect to be in
@@ -158,6 +159,52 @@ Process
 * After these four weeks, the proposal with the current tally gets accepted by
   the secretary, and defines GHC20xx
 
+**Alternative 2:**
+
+* Create a new repo ``ghc-proposals/ghc-language``.
+
+* Within two weeks of the start of the process, every committee member is
+  expected to send an initial list of which extensions they expect to be in
+  GHC20xx to the mailing list.
+   
+  Committee members are expected to take the Hackage statistics and the
+  community vote into account.
+   
+  These mails should *not* contain justifications for why a certain extension is or is
+  not included.
+
+* After these two weeks, the Secretary creates a new branch in the
+  ``ghc-proposals/ghc-language`` repo, adding a new top-level file named
+  ``ghc20xx.md`` (where ``xx`` has been instantiated appropriately). This file would
+  contain a list of all the extensions receiving at least ⅔ (rounded up) of
+  the responding members of the committee.
+
+* The Secretary would then create a PR in ``ghc-proposals/ghc-language`` to merge
+  the branch. This PR would state loudly not to comment on individual
+  extensions in the PR.
+
++ Members of the community would then have 4 weeks to open Issues in the
+  ``ghc-language`` repo to discuss individual extensions. Issue titles are
+  required to include the extension name. When conversation reaches general
+  consensus, the Issue would be closed, but memorialized in the ``ghc20xx.md``
+  file with a link to the discussion. If the discussion suggests that an
+  extension *not* be included, that is still memorialized in the file, in a
+  separate section of proposed-but-rejected extensions. (In this paragraph,
+  "general consensus" does not mean unanimity, but a clear preponderance of
+  opinion in one direction.)
+
++ After four weeks, any extensions still under broad debate would be rejected
+  for inclusion as controversial. The Secretary would move these to the
+  "rejected" section of the .md file with a link to the debate. Debates are
+  encouraged to continue, with the expectation that the resolution of the
+  debate would inform the next GHC20xx process.
+
++ The Secretary then merges the branch into the ``ghc-language`` repo, and the new
+  language is implemented.
+
++ After another 2 months, any remaining open Issues in the repo are closed,
+  for cleanliness.
+  
 Cadence
 ^^^^^^^
 
