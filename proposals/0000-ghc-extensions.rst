@@ -15,6 +15,8 @@ This proposal sets up a process to introduce new language versions ``GHC20XX``,
 extending ``Haskell2010`` as defined by the Report with several extensions that
 are considerd harmless, helpful and uncontroversial.
 
+This proposal lists two alternatives in its specification. Listing these together
+will help inform debate in advance of a committee decision.
 
 Motivation
 ----------
