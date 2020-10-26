@@ -38,7 +38,7 @@ version.
 We aim to lean on the conservative side in our selection of extensions: Not
 including an extension that we should have is relatively harmless (users of
 that extension will have to still set that manually, but they already have to
-do that, and we can add it alter). Conversely, including an extension that we
+do that, and we can add it later). Conversely, including an extension that we
 should not have hurts more (any detriminal effect on developer experience now
 affects many users).
 
@@ -104,18 +104,18 @@ criteria, but often subjective, and not all need to be satisfied in all cases.
 Process
 ^^^^^^^
 
-* 4 months before the expected GHC spring release day of 202x, the committee
-  Secretary starts the GHC202x process.
+* 4 months before the expected GHC spring release day of 20xx, the committee
+  Secretary starts the GHC20xx process.
 
   They inform the committee, in an email to the mailing list, of all language
-  extensions supported by the latest released GHC that are not in GHC202(x-1),
-  which could be added. They also list all extensions *in* GHC202(x-1), which
-  might be omitted in GHC202(x-1) (likely a rare thing).
+  extensions supported by the latest released GHC that are not in GHC20(xx-1),
+  which could be added. They also list all extensions *in* GHC20(xx-1), which
+  might be omitted in GHC202(xx-1) (likely a rare thing).
 
   The secretary also creates a PR with a proposal saying (roughly)
    
-    GHC202x contains the following extensions in addition to those in
-    GHC202(x-1):
+    GHC20xx contains the following extensions in addition to those in
+    GHC20(xx-1):
     
     * (none yet)
     
@@ -124,7 +124,7 @@ Process
     * (none yet)
 
 * In order to gather data on the criterium “widespread usage”, the secretary
-  creates a tally of which extensions are used how often on hackage.
+  creates a tally of which extensions are used how often on Hackage.
 
 * In order to gather data on the criterium “community support”, the secretary
   runs a public poll on a suitable platform for one week where anyone can vote
@@ -133,7 +133,7 @@ Process
 
 * Within two weeks of the start of the process, every committee member is
   expected to send an initial list of which extensions they expect to be in
-  GHC202x to the mailing list.
+  GHC20xx to the mailing list.
    
   Committee members are expected to take the Hackage statistics and the
   community vote into account.
@@ -156,7 +156,7 @@ Process
   simply not be included.
 
 * After these four weeks, the proposal with the current tally gets accepted by
-  the secretary, and defines GHC202x
+  the secretary, and defines GHC20xx
 
 Cadence
 ^^^^^^^
@@ -167,7 +167,7 @@ uncontroversial extensions; so the next iteration will likely only make a
 smaller, but more controversial change.
 
 Therefore, this proposal does *not* commit to a fixed cadence. Instead, 6
-months after the first release of a version of GHC that supports a GHC20XX
+months after the first release of a version of GHC that supports a GHC20xx
 set, we evaluate the outcome, the process, and the perceived need of a next
 release. At that time we will refine the processes, if needed, and set a
 cadence.
