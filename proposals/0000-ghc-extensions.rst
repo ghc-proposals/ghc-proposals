@@ -34,6 +34,11 @@ Proposed Change Specification
 
 We propose to introduce a process to develop new "language versions", dubbed ``GHC20XX``, which extend ``Haskell2010`` with some default extensions. This proposal does not set *which* extensions are included in the first version, but rather seeks to provide a framework to reach a conclusion in a constructive and timely manner.
 
+This language version can be used as a language extension (with the sole effect of implying other language extensions), but also as a language versions in places where ``Haskell98`` or ``Haskell2010`` is valid (e.g. via Cabal’s ``default-language`` field).
+
+When ``ghc`` is used without an explicit language choice, the latest ``GHC20xx`` known to GHC is used. This applies in particular to uses of ``ghci``.
+
+
 Criteria
 ^^^^^^^^
 
@@ -107,12 +112,7 @@ Alternatives
 
 * We could fix a cadence already; one, two or three years have been proposed.
 
-Unresolved Questions
---------------------
-
-* Shoud ``GHC20xx`` only work like a language extension, or also work in the Cabal field ``default-language``?
-
-* When running ``ghc`` or ``ghci`` without an explicit ``Haskell2010`` setting, should it default to ``GHC20xx``?
+* We could be a tad less aggressive and *not* make it on by default in, say, ``ghci``. But it would defeat a bit of the purpose.
 
 Implementation Plan
 -------------------
