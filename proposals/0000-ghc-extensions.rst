@@ -68,7 +68,7 @@ Process
 * In order to gather data on the criterium “widespread usage”, the secretary creates a tally of which extensions are used how often on hackage.
 
 * In order to gather data on the criterium “community support”, the secretary runs a public poll on a suitable platform for one week where anyone
-  can vote in favor or against the inclusion of a given extension.  
+  can vote in favor or against the inclusion of a given extension, or points the committee to a suitable existing survey result.
 
 * Within two weeks of the start of the process, every committee member is expected to send an initial list of which extensions they expect to be in GHC202x to the mailing list.
    
