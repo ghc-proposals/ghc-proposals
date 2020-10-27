@@ -140,7 +140,7 @@ Since this proposal will break existing code using ``DuplicateRecordFields``, we
 
 1. Introduce a new warning ``-Wambiguous-fields``, enabled by default.  This will make the compiler emit a warning for every ambiguous field selector/update occurrence it resolves under the rules described above.  The warning should explain that support for such occurrences will be removed in a future GHC release.
 
-2. In a subsequent GHC release, remove support for ambiguous field selector/update occurrences entirely and remove the warning.  This step should not be taken until ``RecordDotSyntax`` is available, to provide users with a clear alternative.
+2. In a subsequent GHC release, remove support for ambiguous field selector/update occurrences entirely and remove the warning.  This step should not be taken until ``RecordDotSyntax`` or another generally-accepted mechanism for disambiguation is available, to provide users with a clear alternative.
 
 This transition period will give time for users of ``DuplicateRecordFields`` to adapt their code (using ``RecordDotSyntax`` or otherwise), or raise concerns about the proposed changes and request a stay of execution.  Our expectation is that step 2 will be taken in the GHC release immediately following step 1, but this can be changed if feedback from users indicates that the removal of the feature is causing substantial pain.
 
@@ -219,7 +219,7 @@ Costs and Drawbacks
 -------------------
 This change may be disappointing for users who would prefer more use of type information to resolve ambiguous names.  Some users have already expressed this desire (e.g. see `issue #11343 <https://gitlab.haskell.org/ghc/ghc/-/issues/11343>`_).
 
-The change is backwards-incompatible for code that makes use of the ``DuplicateRecordFields`` extension. Accordingly we propose a transition period with a compatibility warning.
+The change is backwards-incompatible for code that makes use of the ``DuplicateRecordFields`` extension. Accordingly we propose a transition period with a compatibility warning. Even so, removing the feature may `cause user dissatisfaction <https://github.com/ghc-proposals/ghc-proposals/pull/366#issuecomment-702996205>`_.
 
 The development cost of this change is relatively low (the new warning should be easy to implement, and the new specification mostly involves removing code).  It should reduce maintenance costs of GHC overall.  Moreover, since the specification of ``DuplicateRecordFields`` will be simpler, its behaviour will become easier to understand.
 
@@ -240,4 +240,4 @@ None.
 
 Implementation Plan
 -------------------
-If accepted, Adam Gundry will implement.  The implementation does not depend on the implementation of any other proposals, although the proposed transition period will not end until ``RecordDotSyntax`` has been implemented and included in a GHC release.
+If accepted, Adam Gundry will implement.  A `draft implementation of the warning <https://gitlab.haskell.org/ghc/ghc/-/commit/abf0fb3138bd05a94fe69fb887cf308e51d3a7d4>`_ exists already.  The implementation of the warning does not depend on the implementation of any other proposals, although the proposed transition period depends on the implementation of ``RecordDotSyntax``.
