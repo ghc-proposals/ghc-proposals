@@ -98,14 +98,42 @@ naturally returns an unboxed sum. Unfortunately, it is not documented in
 
 ### Migration plan
 
-In version `v`, we will add a module `GHC.NewPrimops` with implementations
-of the future primops using the current ones. We will deprecate the current
+In version `v`, we will add a module `GHC.NewPrimops` with library implementations
+of the future primops using the current ones. These primops will have the same
+names as the current ones, but different types. We will deprecate the current
 primops.
 
-In version `v+1`, we will make the new primops actual primitives, and deprecate
-the `GHC.NewPrimops` module.
+In version `v+1`, we will make the new primops actual primitives, exported from
+`GHC.Prim`
 
-In version `v+2`, we will remove the `GHC.NewPrimops` module.
+In version `v+3`, we will deprecate the `GHC.NewPrimops` module.
+
+In version `v+4`, we will remove the `GHC.NewPrimops` module.
+
+Exceptions: `addCFinalizerToWeak1#` and `addCFinalizerToWeak2#` will be added as
+primops in `GHC.Prim` in version `v`, and `addCFinalizerToWeak#` deprecated. In version
+`v+1`, `addCFinalizerToWeak#` will be removed.
+
+From a user's standpoint:
+
+* In version `v`, users of the primops will respond to deprecation warnings by
+  importing the new operations from `GHC.NewPrimops` and adjusting their code
+  accordingly.
+
+* In version `v+3`, users will again respond to deprecation warnings by
+  changing their import declaration from `GHC.NewPrimops` to `GHC.Prim` with no
+  further changes.
+
+* Users of `addCFinalizerToWeak#` will respond to deprecation warnings in
+  version `v` by changing their code to use `addCFinalizerToWeak1#` or
+  `addCFinalizerToWeak2#`.
+
+Why not deprecate `GHC.NewPrimops` immediately in version `v+1`? This would
+force users to use unpleasant three-way-branching CPP to support multiple GHC
+versions without warnings. With the proposed plan, exactly the same code will
+work without warnings in versions `v`, `v+1`, and `v+2`. Users wishing to
+support both GHC versions `v-1` and `v` will need only a two-way branch in
+CPP.
 
 ## Examples
 
@@ -142,7 +170,6 @@ Also, discuss possibly contentious interactions with existing language or compil
 features. Complete this section with potential interactions raised
 during the PR discussion.
 
-
 ## Costs and Drawbacks
 
 The mechanism for generating primops will have to be updated to support
@@ -172,18 +199,37 @@ like the idea in
 but it's hard to justify the effort to do so for an operation that cannot be
 expected to be used very heavily.
 
+### Migration timing
+
+It would be possible to extend the migration path by waiting a version (or even
+two) after adding the `GHC.NewPrimops` module before deprecating the old
+primops. This would allow code to support both version `v-1` and version `v`
+with neither CPP nor primops. Since relatively few people use these primops
+directly, I'm not sure it's worth delaying the process for this.
+
 ## Unresolved Questions
 
 What is `getApStackVal#`? Would it make sense to represent its result
-using an unboxed sum?
+using an unboxed sum? If so, what sort?
 
 What about all the primops that use `Int#` to represent a Boolean result?
-Should these all be changed to return `(# (# #) | (# #) #)`? If so, we
-might want to change the tag values from 1-indexed to 0-indexed to better
-match the current conventions. Furthermore, it would probably be helpful
-in that case to offer a sort of unboxed-sum version of `dataToTag#` to
-extract the `Int#` value if that is specifically desired (indeed, that
-might be useful regardless).
+Should these all be changed, eventually, to return `(# (# #) | (# #) #)`?
+Today, users can write nonsense like
+
+```haskell
+case x ==# y of
+  3# -> True
+  _ -> False
+```
+
+GHC won't tell the user that this is nonsense, and will actually generate
+code that performs this bogus calculation.
+
+If we eventually change those Boolean-result primops, we might want to change
+the tag values from 1-indexed to 0-indexed to better match the current
+conventions. Furthermore, it would probably be helpful in that case to offer a
+sort of unboxed-sum version of `dataToTag#` to extract the `Int#` value if that
+is specifically desired. Indeed, these changes might be useful regardless.
 
 ## Implementation Plan
 
