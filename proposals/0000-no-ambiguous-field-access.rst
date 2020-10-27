@@ -23,7 +23,7 @@ The ``DuplicateRecordFields`` extension is useful to allow multiple datatypes to
   module M where
 
   data Person = MkPerson { name :: String, pets :: [Pet] }
-  data Pet    = MkPet    { name :: Text   }
+  data Pet    = MkPet    { name :: Int }
 
 It is now entirely unproblematic to use ``name`` in a record construction or pattern match, because the constructor name disambiguates which field is meant::
 
@@ -145,6 +145,61 @@ Since this proposal will break existing code using ``DuplicateRecordFields``, we
 This transition period will give time for users of ``DuplicateRecordFields`` to adapt their code (using ``RecordDotSyntax`` or otherwise), or raise concerns about the proposed changes and request a stay of execution.  Our expectation is that step 2 will be taken in the GHC release immediately following step 1, but this can be changed if feedback from users indicates that the removal of the feature is causing substantial pain.
 
 The warning produced by ``-Wambiguous-fields`` should mention the specific selector and type that were determined by the disambiguation rules, rather than just complaining about the ambiguity.  This should make it easier for affected users to adapt their code.
+
+
+Migration strategy
+^^^^^^^^^^^^^^^^^^
+Code that is broken by this proposal because it relies on ambiguous field occurrences can be fixed in one of the following ways:
+
+1. Where the field is defined in a different module, use qualified imports, import hiding and/or aliases to remove the ambiguity.  For example, here is a `technique using import aliases <https://gist.github.com/chrisdone/d7a8f9e91e2ac111fac6ab72cc480f78>`_::
+
+    {-# LANGUAGE DuplicateRecordFields #-}
+    module M1 where
+      data Person = MkPerson { name :: String, pets :: [Pet] }
+      data Pet    = MkPet    { name :: Int }
+
+    module N where
+      import M1 as Person (Person(..))
+      import M1 as Pet (Pet(..))
+
+      getPersonName :: Person -> String
+      getPersonName = Person.name
+
+      setPersonName :: String -> Person -> Person
+      setPersonName n p = p { Person.name = n }
+
+   The new version of the code is completely backwards-compatible, and its meaning is clear. The downsides are that this approach cannot be used within a single module, barring enhancements to the module system, and it requires boilerplate imports.
+
+2. Use ``RecordDotSyntax`` when it is available::
+
+    {-# LANGUAGE DuplicateRecordFields, RecordDotSyntax #-}
+    module M2 where
+      data Person = MkPerson { name :: String, pets :: [Pet] }
+      data Pet    = MkPet    { name :: Int }
+
+      getPersonName :: Person -> String
+      getPersonName p = p.name
+
+      setPersonName :: String -> Person -> Person
+      setPersonName n p = p { name = n }
+
+   This works within a single module. However it requires a new as-yet-unreleased extension, and will not work for fields with higher-rank or unboxed types.
+
+3. Use explicit pattern-matching and record construction, possibly in combination with ``NamedFieldPuns`` or ``RecordWildCards``::
+
+    {-# LANGUAGE DuplicateRecordFields, NamedFieldPuns #-}
+    module M2 where
+      data Person = MkPerson { name :: String, pets :: [Pet] }
+      data Pet    = MkPet    { name :: Int }
+
+      getPersonName :: Person -> String
+      getPersonName MkPerson{name} = name
+
+      setPersonName :: String -> Person -> Person
+      setPersonName n MkPerson{pets} = MkPerson {name = n, pets }
+
+   This works in a single module and does not require any new extensions, but it may require additional boilerplate, especially if a type has many constructors and/or fields.
+
 
 
 Effect and Interactions
