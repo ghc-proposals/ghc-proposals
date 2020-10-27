@@ -74,17 +74,17 @@ needed is a simple decrement operation.
 Add a `sumToTag#` inline primop, analogous to `dataToTag#`. Approximately,
 
 ```haskell
-sumToTag# :: forall (xs :: RuntimeRep) (a :: TYPE ('SumRep xs)). a -> Int#
+sumToTag# :: forall (xs :: [RuntimeRep]) (a :: TYPE ('SumRep xs)). a -> Int#
 ```
 
 `sumToTag#` will return the 0-based index of the sum alternative of its
 argument.
 
-The `forall` is a bit of a lie: much like `tagToEnum#` can be compiled only
-when the *type constructor* of its argument is known and is an algebraic
+The `forall` feels like a bit of a lie: much like `tagToEnum#` can be compiled
+only when the *type constructor* of its argument is known and is an algebraic
 datatype, `sumToTag#` can be compiled only when the *runtime representation* of
 its argument is known and is `'SumRep xs` for some known `xs`. This restriction
-doesn't really hurt in practice, because bindings can't be
+doesn't actually have any effect in practice, because bindings can't be
 representation-polymorphic anyway.
 
 ## Examples
