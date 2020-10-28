@@ -63,6 +63,9 @@ A parameter assigned a particular role must be used in that role on every
 right-hand side of an instance. Furthermore, a parameter with a phantom
 or representational role may not be matched on the left-hand side.
 
+The proposed change would be enabled by a `TypeFamilyRoles` language
+extension, which would imply both `TypeFamilies` and `RoleAnnotations`.
+
 ## Examples
 
 In the motivating example, we can just write
