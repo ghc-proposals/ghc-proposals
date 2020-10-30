@@ -154,20 +154,19 @@ The visible dependent quantifier is analogous ::
   type DVis :: forall k -> @M k -> @M Type
   data DVis k (a :: k) :: Type
 
-Now consider the invisible dependent version of the above two types (the kind
-variable ``k`` is implicitly quantified) ::
+Now consider the invisible dependent version of the above two types ::
 
   type FInvis :: forall k. @U -> k -> @U Type
   type family FInvis (a :: k) :: Type
 
-  type fInvis :: forall k. @M -> k -> @M Type
+  type DInvis :: forall k. @M -> k -> @M Type
   data DInvis (a :: k) :: Type
 
 Notice that the forall itself is annotated in both cases. The treatment of
 invisible quantifiers is necessary to properly handle higher-rank programs. To
 illustrate why, consider the following program ::
 
-  type D :: forall (f :: forall k. @U k -> @U Type) -> @U Type
+  type D :: forall (f :: forall k. @U k -> @U Type) -> @M Type
   data D f = D (f Bool) (f 0)
 
   type F :: forall k. @U k -> @U Type
@@ -176,15 +175,13 @@ illustrate why, consider the following program ::
     F Bool = Char
 
   p :: D F
-  p = D 0 'c'
+  p = D 'c' 0
 
 Here, ``D`` has a rank-2 kind and its argument is a function. To be able to
 pass in ``F``, the forall must be unmatchable in ``D``'s argument.
 
 We also include invisible non-dependent quantification (``ty =>``), mainly for
-the sake of completeness, as in today's Haskell, only unmatchable instances of
-this quantifier exist. This may change in the future, once kinds can also be
-qualified.
+the sake of completeness.
 
 .. _Inference:
 
@@ -201,51 +198,84 @@ a list of the different contexts with examples.
 Data types
 ##########
 
+The kind arrows of data types (and data families) are all matchable.
+
 ::
 
+  -- inferred:  Type -> @M Type
   type Maybe :: Type -> Type
   data Maybe a = ...
 
 here, users are not required to specify ``Type -> @M Type``, as this information
 can be inferred from the data declaration itself.
 
+Higher-order arguments also get assigned matchable
+
+::
+
+  -- inferred: (Type -> @M Type) -> @M Type
+  type HK :: (Type -> Type) -> Type
+  type HK f = ...
+
 Type families
 #############
 
+Type family (and type synonym) *arguments* are unmatchable
+
 ::
 
+  -- inferred: Type -> @U Type
   type Id :: Type -> Type
   type Id a = a
 
-is unambiguously ``Type -> @U Type``, and no such annotation is required.
+is unambiguous, and no annotation is required. However, the unambiguity here
+arises not solely of the fact that ``Id`` is a type synonym, but also that it
+binds its argument on the left-hand side. The arrows not corresponding to arguments
+bound on the LHS are inferred to be matchable ::
 
-Higher-order kinds
-##################
+  -- inferred: Type -> @M Type
+  type MyMaybe :: Type -> Type
+  type family MyMaybe where
+    MyMaybe = Maybe
 
+``MyMaybe`` is a nullary type family, and its return kind is thus matchable (see
+the *Arity of type families* section for more details about type family arities).
+
+Even for type families, higher-order arguments get assigned matchable kinds
+unless specified otherwise
 ::
 
+  -- inferred: forall a b. @U (a -> @M b) -> @U [a] -> @U [b]
   type Map :: (a -> b) -> [a] -> [b]
   type family Map f xs where ...
 
-The inferred kind here is ::
-
-  type Map :: forall a b. @U (a -> @M b) -> @U [a] -> @U [b]
-
 Note that the forall is unmatchable, as discussed previously. The function
 argument is matchable, which is consistent with the behaviour today.
+
+Also note that this higher-order defaulting mechanism only applies when a kind
+signature is given. When no signature is given, the inferred kind may be
+matchability-polymorphic ::
+
+  -- inferred: Map :: forall a b m. @U (a -> @m b) -> @U [a] -> @U [b]
+  type family Map f xs where
+    Map f '[] = '[]
+    Map f (x ': xs) = f x ': Map f xs
 
 Term-level arrows
 #################
 
 Term-level arrows are always unmatchable. ::
 
+  -- inferred: a -> @U a
   id :: a -> a
+  id x = x
 
-always means ``id :: a -> @U a``.
+One can write ::
 
-It is an error to write ::
+  f :: a -> @M a
+  f = undefined
 
-  id :: a -> @M a
+but this type has no interesting inhabitants.
 
 Kind-arrows in type signatures
 ##############################
@@ -253,6 +283,7 @@ Kind-arrows in type signatures
 Whenever an arrow kind arises from the type signature of a term, they are
 defaulted to matchable ::
 
+  -- inferred: forall (m :: Type -> @M Type) a. @U m a
   foo :: forall (m :: Type -> Type) a. m a
   foo = undefined
 
@@ -289,8 +320,8 @@ Kind-arrows in classes
 When an arrow kind arises from a type class parameter, it's assumed to be
 matchable ::
 
+  -- inferred: Functor :: (Type -> @M Type) -> @M Constraint
   class Functor (f :: Type -> Type) where
-    fmap :: (a -> b) -> f a -> f b
 
 Similarly in instances ::
 
@@ -355,8 +386,10 @@ by this proposal.
 Arity of type families
 ~~~~~~~~~~~~~~~~~~~~~~
 
-A technical consequence of the proposed framework is that the arity of a type
-family can not be directly deduced from its kind.
+A technical consequence of the proposed framework is that the `arity
+<https://downloads.haskell.org/~ghc/8.10.2/docs/html/users_guide/glasgow_exts.html?highlight=typefamilies#type-family-declarations>`_
+of a type family can not be directly deduced from its kind (although even before
+this proposal that was already the case).
 
 Consider the following two type families ::
 
@@ -386,6 +419,10 @@ Thus the following definition is invalid ::
 
 This is because type families can only be reduced when they are fully
 saturated.
+
+Thus, the relationship between the arity and the kind can be summarised as follows:
+If a type family's arity is ``n``, then its kind will have /at least/ its first
+``n`` arrows unmatchable.
 
 Proposed Change Specification
 -----------------------------
@@ -519,7 +556,7 @@ interacts with promotion::
 
 This program is accepted today, but will be rejected under the current proposal.
 The reason is that when defining ``T``, it is considered to be a term-level
-entity, thus the field's type is assigned a matchable arrow type.
+entity, thus the field's type is assigned an unmatchable arrow type.
 
 Then, ``Maybe`` cannot be used as an argument to it. A potential fix is
 to turn the constructor matchability-polymorphic::
@@ -556,17 +593,14 @@ Linear Haskell
 ~~~~~~~~~~~~~~
 
 Under ``LinearTypes``, the arrow type is decorated with a different kind of
-information: multiplicity. Happily, multiplicities are only used in *types*,
-whereas matchabilities only appear in *kinds*. As a result, these features are
-in theory completely orthogonal. In practice, types and kinds share the same
-syntax in GHC, and so it is possible to write down an unmatchable linear kind
-arrow, although such kinds will not have interesting inhabitants. In any case,
-there is no interaction between matchability and multiplicity.
+information: multiplicity. Other than syntactic considerations and somewhat
+overlapping implementations, there is no interaction between matchability and
+multiplicity.
 
 Dependent Haskell
 ~~~~~~~~~~~~~~~~~
 
-Finally, a few words on future compatibility. The ``UnsaturatedTypefamilies``
+Finally, a few words on future compatibility. The ``UnsaturatedTypeFamilies``
 extension is compatible with Dependent Haskell, indeed tracking matchability
 information is already part of design for Dependent Haskell (for more details see Section 4.2 of `Richard Eisenberg's thesis <https://richarde.dev/papers/2016/thesis/eisenberg-thesis.pdf>`_).
 Nevertheless, some of the choices in this proposal were made to ease the
@@ -612,7 +646,7 @@ details of the proposal.
       nested :: a b ~ c Id => b Bool
       nested = False
 
-    initially, the matchabilities of ``a``, ``b`` and ``c`` are all
+    Initially, the matchabilities of ``a``, ``b`` and ``c`` are all
     instantiated with unification variables, and there are no further
     steps. So they are all defaulted to be matchable, at which point
     the equality can be decomposed, and we learn that
