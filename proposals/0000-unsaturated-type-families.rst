@@ -668,6 +668,70 @@ details of the proposal.
     term-level functions, or, perhaps more realistically, eta-expand all data
     constructor applications to demote them to unmatchable.
 
+5.  When a kind signature is given, we make the choice of not generalising the
+    matchabilities, which differs from the treatment of kind variables. Consider
+    the following program ::
+
+      type A :: Proxy a -> Type
+      type family A
+
+    The inferred kind is ``A :: forall {k} (a :: k). Proxy a -> @M Type``, so the
+    kind of the type variable ``a`` did get generalised, but the matchability of
+    the arrow didn't (note that ``A`` is nullary). An alternative option would be
+    to simply generalise these matchability variables too, and arrive at the more
+    general ``A :: forall {k} {m} (a :: k). Proxy a -> @m Type`` kind.
+
+    But we don't do this, because doing so would result in counterintuitive
+    behaviour in many common cases, in particular, type variables introduced in
+    this way could block type family reduction. Consider the following examples ::
+
+      type B :: Type -> Type
+      type family B where
+        B = Maybe
+
+      type C :: (Type -> Type) -> Type -> Type
+      type family C f where
+        C f = f
+
+   If we infer ``B :: forall {m}. Type -> @m Type``, then ``:kind! B`` is stuck! This is
+   because type variables have computational relevance in type family reduction. In other
+   words, ``B`` becomes a matchability-indexed type family, which is likely not what the user
+   intended.
+
+   Similarly, the generalised kind of ``C`` would be
+   ``C :: forall {m} {n}. (Type -> @m Type) -> (Type -> @n Type)``, then ``:kind! C Maybe`` is stuck,
+   and so is ``:kind! C Id``.
+
+   The treatment in generalisation of matchability variables is thus different
+   from ordinary kind variables. In fact, the way kind variables are treated can also lead to unintuitive
+   behaviour ::
+
+     type T :: Proxy a
+     type family T where
+       T = 'Proxy
+
+   ``:kind! T`` is stuck, because ``T`` is indexed in the kind of ``a``, which
+   is implicitly introduced during generalisation. Thus it would be more
+   consistent to also generalise matchabilities, but while this confusing
+   behaviour is rare in the context of kind-variables, it is a much more common
+   occurrence with matchability variables.
+
+   To conclude the discussion, there are at least two alternatives to the
+   proposed strategy:
+     a. Generalise the matchability variables in the same way kind variables are
+        generalised. The downsides of this approach are outlined above.
+     b. Change the way type family reduction works, such that implicitly
+        quantified type variables may never be computationally relevant, then
+        generalise matchability variables. This would be a small win,
+        because computations would not get stuck, and we could infer more polymorphism, such as ::
+
+          type Map :: (a -> b) -> [a] -> [b]
+          type family Map f xs where ...
+
+        could be inferred to have a polymorphic argument. However, neither ``B``
+        nor ``C`` above would typecheck, because in both cases the matchabilities are
+        computationally relevant.
+
 Unresolved Questions
 --------------------
 
