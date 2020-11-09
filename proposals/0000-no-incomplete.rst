@@ -70,6 +70,53 @@ Proposed Change Specification
    Additionally, with ``-XFieldSelectors`` (also on by default), any program that would emit warnings with ``-Wpartial-fields`` is also prohibited.
    Finally, ``HasField`` is only emitted for fields and types when that field is present in all variants for the type.
 
+   More specifically, the cases we intend to make illegal are:
+   
+   - Function definitions that fail to match some value, e.g.::
+   
+      f (Just x) = rhs
+      -- but no Nothing case
+   
+   - Case expressions that fail to match some value, e.g.::
+   
+      case m of
+        Just x -> rhs
+        -- no Nothing case
+   
+   - Pattern bindings that may fail to match, e.g.::
+   
+      let Just x = m
+      in body
+   
+   - Lambdas that may fail to match, e.g.::
+   
+      (\(Just x) -> x)
+   
+   - A record construction which is incomplete because there are missing fields, e.g.::
+   
+      data T = MkT { x :: Int, y :: Bool }
+      t = MkT { x = 5 } -- No specification of y.
+   
+   - A record update where the field to be updated does not occur in every constructor of the record type, e.g.::
+      
+      data T = T1 { x :: Int } | T2
+      f r = r { x = 3 } -- Would fail if T2 were passed to f
+
+   - An instance declaration where a method goes unspecified despite no default in the corresponding class declaration, e.g.::
+   
+      class C a where
+        op1 :: a -> a
+        op2 :: a -> [a]
+
+      instance C Int where
+        op1 = rhs
+        -- No definition for op2, and no default method in the class declaration.
+
+   - With -XFieldSelectors, a data declaration using record syntax which defines fields that fail to occur in every constructor, e.g.::
+   
+      data T = T1 { x :: Int } | T2
+      -- The defined field selector function x :: T -> Int would have been incomplete.
+
    With ``Incomplete`` enabled, the guiding principle is relaxed, and GHC works as it does today.
 
      While this is enough to specify ``NoIncomplete`` and ``Incomplete`` for GHC, language extensions are supposed to be proposed in a more implementation agnostic manner, so that they are eligible for inclusion in future Haskell reports.
