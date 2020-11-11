@@ -538,7 +538,7 @@ it is optional.
 Inference
 ~~~~~~~~~
 
-The meaning of unannotated ``forall``s and ``->`` is inferred, using the
+The meaning of unannotated ``forall``\s and ``->``\s is inferred, using the
 following rules (for more details see the *Overview* section):
 
 1. Data types and data families have matchable kinds.
@@ -641,7 +641,9 @@ two features, but there are noteworthy differences between the way matchability 
 are inferred compared to runtime representation variables.
 
 In *types*, runtime representation variables are all defaulted to ``LiftedRep``, and
-matchability variables are all defaulted to ``Matchable`` (see the *Kind-arrows in type signatures* section above).
+matchability variables are all defaulted depending on where the variables appear
+(see the *Term-level arrows* and *Kind-arrows in type signatures* sections
+above).
 
 In *kinds*, runtime representation variables are all defaulted to ``LiftedRep``,
 but matchability variables are only defaulted when a signature is given, and
@@ -655,7 +657,7 @@ As a simple example, consider the following two type families ::
   -- inferred: Bar :: forall {m :: Matchability}. Type -> @m Type
   type Bar = Foo
 
-``Foo`` is both levity-polymorhic and matchability-polymorphic. However, in
+``Foo`` is both levity-polymorphic and matchability-polymorphic. However, in
 ``Bar``'s kind, the ``RuntimeRep`` variable is defaulted, but the
 ``Matchability`` variable is generalised.
 
@@ -796,7 +798,7 @@ details of the proposal.
     Thus it would be more consistent to also generalise matchabilities, but while
     this confusing behaviour is rare in the context of kind-variables, it is a
     much more common occurrence with matchability variables. For kind variables
-    to trigger this behaviour, there needs to be a kind-polymorhic type (such as
+    to trigger this behaviour, there needs to be a kind-polymorphic type (such as
     a type variable, or a type like ``Any``) applied to a kind-polymorphic type
     constructor (such as ``Proxy``). But since matchability variables arise from any
     higher-kinded argument, every higher-order type family like ``B`` and ``C``
