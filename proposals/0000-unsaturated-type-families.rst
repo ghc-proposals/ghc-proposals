@@ -507,8 +507,8 @@ FUN
 The full kind of the ``(->)`` constructor becomes ::
 
   (->) :: forall (m :: Matchability)
-                 {q :: RuntimeRep} {r :: RuntimeRep}.
-          TYPE q -> TYPE r -> Type
+                 {q :: RuntimeRep} {r :: RuntimeRep}. @M
+          TYPE q -> @M TYPE r -> @M Type
 
 The matchability part of the arrow can be instantiated using visible type
 application in types, a recent addition to GHC.
@@ -519,9 +519,9 @@ Since the ``LinearTypes`` extension has landed in GHC, the `(->)` constructor is
 as a synonym for a more general constructor ``FUN`` that takes a multiplicity
 argument. The full kind of ``FUN`` under the current proposal becomes ::
 
-  type FUN :: forall (m :: Matchability).
-              forall (n :: Multiplicity) ->
-              forall {q :: RuntimeRep} {r :: RuntimeRep}. TYPE q -> TYPE r -> Type
+  type FUN :: forall (m :: Matchability). @M
+              forall (n :: Multiplicity) -> @M
+              forall {q :: RuntimeRep} {r :: RuntimeRep}. @M TYPE q -> @M TYPE r -> @M Type
 
 which now accounts for both matchability and multiplicity annotations.
 Then ``(->)`` is defined morally as::
@@ -530,7 +530,7 @@ Then ``(->)`` is defined morally as::
 
 Since the matchability argument is invisible, this synonym works just like one
 would expect (in particular, there's no unexpected interaction from the fact
-that ``(->)`` needs to bind the matchability argument to apply it out-of-order.
+that ``(->)`` needs to bind the matchability argument to apply it out-of-order).
 
 Note that the matchability argument is invisible, therefore manually specifying
 it is optional.
@@ -700,9 +700,7 @@ details of the proposal.
     `thesis <http://www.cis.upenn.edu/~sweirich/papers/eisenberg-thesis.pdf>`_,
     The main drawback of that approach is that inference would suffer compared
     to the scheme outlined above. Matchability polymorphism also fits more
-    cleanly into the existing constraint solver mechanism. Alternatively, we
-    could stick to the simple defaulting scheme mentioned in the section about
-    annotation-free arrows. But...
+    cleanly into the existing constraint solver mechanism.
 
 2.  Type inference with the "simple" matchability defaulting scheme is
     incomplete. Take following program ::
@@ -854,6 +852,11 @@ details of the proposal.
         BadIndex = Id
 
     because the two equations have different kinds.
+
+    The alternative choice here would be to default matchabilities also when no
+    signature is given, but that seems to offer no benefits, other than a minor
+    simplification of the specification.
+
 
 Unresolved Questions
 --------------------
