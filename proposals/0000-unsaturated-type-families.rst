@@ -541,19 +541,21 @@ Inference
 The meaning of unannotated ``forall``s and ``->`` is inferred, using the
 following rules (for more details see the *Overview* section):
 
- 1. Data types and data families have matchable kinds.
- 2. Type families and type synonyms have unmatchable kinds.
- 3. Higher-order kinds are
-    a. inferred to be matchable when a signature is given
-    b. generalised when no signature given
- 4. Term-level functions have unmatchable arrows.
- 5. Kind arrows written in type signatures default to matchable if they cannot
-    be inferred by the constraint solver.
- 6. Type class arguments have matchable kinds by default in both class
-    declarations and instance declarations.
- 7. Instances for the ``(->)`` are assumed to be for the unmatchable arrow by
-    default.
- 8. Arrows written in the RHS of type synonyms are assumed to be unmatchable.
+1. Data types and data families have matchable kinds.
+2. Type families and type synonyms have unmatchable kinds.
+3. Higher-order kinds are
+
+   a. inferred to be matchable when a signature is given
+   b. generalised when no signature given
+
+4. Term-level functions have unmatchable arrows.
+5. Kind arrows written in type signatures default to matchable if they cannot
+   be inferred by the constraint solver.
+6. Type class arguments have matchable kinds by default in both class
+   declarations and instance declarations.
+7. Instances for the ``(->)`` are assumed to be for the unmatchable arrow by
+   default.
+8. Arrows written in the RHS of type synonyms are assumed to be unmatchable.
 
 Generalisation only occurs in kinds (and never types), and only when no
 signature is given.
@@ -801,20 +803,21 @@ details of the proposal.
 
     To conclude the discussion, there are at least two alternatives to the
     proposed strategy:
-      a. Generalise the matchability variables in the same way kind variables are
-         generalised. The downsides of this approach are outlined above.
-      b. Change the way type family reduction works, such that implicitly
-         quantified type variables may never be computationally relevant, then
-         generalise matchability variables. This would be a small win,
-         because computations would not get stuck, and we could infer more
-         polymorphism, such as ::
 
-           type Map :: (a -> b) -> [a] -> [b]
-           type family Map f xs where ...
+    a. Generalise the matchability variables in the same way kind variables are
+       generalised. The downsides of this approach are outlined above.
+    b. Change the way type family reduction works, such that implicitly
+       quantified type variables may never be computationally relevant, then
+       generalise matchability variables. This would be a small win,
+       because computations would not get stuck, and we could infer more
+       polymorphism, such as ::
 
-         could be inferred to have a polymorphic argument. However, neither ``B``
-         nor ``C`` above would typecheck, because in both cases the matchabilities are
-         computationally relevant.
+         type Map :: (a -> b) -> [a] -> [b]
+         type family Map f xs where ...
+
+       could be inferred to have a polymorphic argument. However, neither ``B``
+       nor ``C`` above would typecheck, because in both cases the matchabilities are
+       computationally relevant.
 
 6.  When a kind signature is *not* given, we make the choice of generalising the
     matchabilities. An example from the *Type families* section above ::
