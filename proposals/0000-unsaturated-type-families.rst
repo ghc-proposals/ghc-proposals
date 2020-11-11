@@ -607,6 +607,42 @@ Nevertheless, some of the choices in this proposal were made to ease the
 transitionary period, with a preference for backwards-compatibility. Notably,
 matchability inference and defaulting.
 
+Comparison with levity polymorphism
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Here we draw a comparsion between matchability polymorphism and `levity polymorphism <https://www.microsoft.com/en-us/research/wp-content/uploads/2016/11/levity-pldi17.pdf>`_,
+from the perspective of type inference. There is no notable interaction between these
+two features, but there are noteworthy differences between the way matchability variables
+are inferred compared to runtime representation variables.
+
+In *types*, runtime representation variables are all defaulted to ``LiftedRep``, and
+matchability variables are all defaulted to ``Matchable`` (see the *Kind-arrows in type signatures* section above).
+
+In *kinds*, runtime representation variables are all defaulted to ``LiftedRep``,
+but matchability variables are only defaulted when a signature is given, and
+generalised otherwise.
+
+As a simple example, consider the following two type families ::
+
+  type Foo :: forall {r :: RuntimeRep} {m :: Matchability}. TYPE r -> @m TYPE r
+  type Foo = ...
+
+  -- inferred: Bar :: forall {m :: Matchability}. Type -> @m Type
+  type Bar = Foo
+
+``Foo`` is both levity-polymorhic and matchability-polymorphic. However, in
+``Bar``'s kind, the ``RuntimeRep`` variable is defaulted, but the
+``Matchability`` variable is generalised.
+
+The rationale behind defaulting runtime rep variables in types is that inferring
+polymorphism would trip up code generation. The rationale behind defaulting
+matchabilities in types is that inferring polymorphism would lead to ambiguous
+types. In kinds, however, we take a more nuanced approach, because
+generalisation there is desirable.
+
+See the *Type families* section above and the *Alternatives* section below for
+more details behind this approach.
+
 Costs and Drawbacks
 -------------------
 
