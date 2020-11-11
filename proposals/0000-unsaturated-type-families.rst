@@ -229,7 +229,7 @@ Type family (and type synonym) *arguments* are unmatchable
   type Id a = a
 
 is unambiguous, and no annotation is required. However, the unambiguity here
-arises not solely of the fact that ``Id`` is a type synonym, but also that it
+arises not solely due to the fact that ``Id`` is a type synonym, but also that it
 binds its argument on the left-hand side. The arrows not corresponding to arguments
 bound on the LHS are inferred to be matchable ::
 
@@ -240,6 +240,22 @@ bound on the LHS are inferred to be matchable ::
 
 ``MyMaybe`` is a nullary type family, and its return kind is thus matchable (see
 the *Arity of type families* section for more details about type family arities).
+
+The following is rejected ::
+
+  -- inferred: Type -> @M Type
+  type MyId :: Type -> Type
+  type family MyId where
+    MyId = Id -- rejected
+
+because, as above, the kind of ``MyId`` is defaulted to ``Type -> @M Type`` as
+the arrow occurs in the return kind. Then the equation does not match the kind
+signature, and is thus rejected. This is one of the rare occasions where users
+explicitly need to assign an unmatchable arrow for the program to be accepted ::
+
+  type MyIdGood :: Type -> @U Type
+  type family MyIdGood where
+    MyIdGood = Id
 
 Even for type families, higher-order arguments get assigned matchable kinds
 unless specified otherwise
@@ -260,6 +276,8 @@ matchability-polymorphic ::
   type family Map f xs where
     Map f '[] = '[]
     Map f (x ': xs) = f x ': Map f xs
+
+**This is the only scenario where matchability generalisation occurs.**
 
 Term-level arrows
 #################
@@ -287,8 +305,8 @@ defaulted to matchable ::
   foo :: forall (m :: Type -> Type) a. m a
   foo = undefined
 
-Here ``m :: Type -> @M Type``. The rule is that matchability variables are never
-generalised in terms: if it's a "term-level" arrow, it's assigned unmatchable,
+Here ``m :: Type -> @M Type``. **The rule is that matchability variables are never
+generalised in terms**: if it's a "term-level" arrow, it's assigned unmatchable,
 if it's a "type-level" arrow, it's assigned matchable. This happens regardless
 of whether the arrow is spelled out, viz: ::
   bar :: f a
@@ -421,7 +439,7 @@ This is because type families can only be reduced when they are fully
 saturated.
 
 Thus, the relationship between the arity and the kind can be summarised as follows:
-If a type family's arity is ``n``, then its kind will have /at least/ its first
+If a type family's arity is ``n``, then its kind will have *at least* its first
 ``n`` arrows unmatchable.
 
 Proposed Change Specification
@@ -525,7 +543,9 @@ following rules (for more details see the *Overview* section):
 
  1. Data types and data families have matchable kinds.
  2. Type families and type synonyms have unmatchable kinds.
- 3. Higher-order kinds are inferred to be matchable.
+ 3. Higher-order kinds are
+    a. inferred to be matchable when a signature is given
+    b. generalised when no signature given
  4. Term-level functions have unmatchable arrows.
  5. Kind arrows written in type signatures default to matchable if they cannot
     be inferred by the constraint solver.
@@ -534,6 +554,9 @@ following rules (for more details see the *Overview* section):
  7. Instances for the ``(->)`` are assumed to be for the unmatchable arrow by
     default.
  8. Arrows written in the RHS of type synonyms are assumed to be unmatchable.
+
+Generalisation only occurs in kinds (and never types), and only when no
+signature is given.
 
 Effects and interactions
 ------------------------
@@ -713,7 +736,8 @@ details of the proposal.
 
     The inferred kind is ``A :: forall {k} (a :: k). Proxy a -> @M Type``, so the
     kind of the type variable ``a`` did get generalised, but the matchability of
-    the arrow didn't (note that ``A`` is nullary). An alternative option would be
+    the arrow didn't (note that ``A`` takes no visible arguments, the arrow is in its return kind).
+    An alternative option would be
     to simply generalise these matchability variables too, and arrive at the more
     general ``A :: forall {k} {m} (a :: k). Proxy a -> @m Type`` kind.
 
@@ -729,44 +753,69 @@ details of the proposal.
       type family C f where
         C f = f
 
-   If we infer ``B :: forall {m}. Type -> @m Type``, then ``:kind! B`` is stuck! This is
-   because type variables have computational relevance in type family reduction. In other
-   words, ``B`` becomes a matchability-indexed type family, which is likely not what the user
-   intended.
+    If we infer ``B :: forall {m}. Type -> @m Type``, then ``:kind! B`` is stuck! This is
+    because type variables have computational relevance in type family reduction. In other
+    words, ``B`` becomes a matchability-indexed type family, which is likely not what the user
+    intended. To reduce to ``Maybe``, the user would need to provide an explicit
+    return kind ``:kind! B :: Type -> @M Type``.
 
-   Similarly, the generalised kind of ``C`` would be
-   ``C :: forall {m} {n}. (Type -> @m Type) -> (Type -> @n Type)``, then ``:kind! C Maybe`` is stuck,
-   and so is ``:kind! C Id``.
+    Similarly, the generalised kind of ``C`` would be
+    ``C :: forall {m} {n}. (Type -> @m Type) -> (Type -> @n Type)``, then ``:kind! C Maybe`` is stuck,
+    and so is ``:kind! C Id`` without explicit return kinds.
 
-   The treatment in generalisation of matchability variables is thus different
-   from ordinary kind variables. In fact, the way kind variables are treated can also lead to unintuitive
-   behaviour ::
+    It is important to note here that in *kind checking mode*, GHC decides on a
+    generalisation strategy *before* it looks at the equations of ``B`` and
+    ``C``, making the decision purely based on the provided kind signature.
+    Thus, in the presence of a kind signature, the bodies are only kind checked,
+    but no new information is learned from doing so. Thus, there is no hope of
+    inferring the kind ``C :: forall {m}. (Type -> @m Type) -> @U Type -> @m
+    Type`` (doing so would require looking at the equation), and the next best
+    thing, short of a signature, is to conservatively default to matchable.
 
-     type T :: Proxy a
-     type family T where
-       T = 'Proxy
+    The treatment of matchability variables in generalisation is thus different
+    from ordinary kind variables. In fact, the way kind variables are treated
+    can also lead to unintuitive behaviour ::
 
-   ``:kind! T`` is stuck, because ``T`` is indexed in the kind of ``a``, which
-   is implicitly introduced during generalisation. Thus it would be more
-   consistent to also generalise matchabilities, but while this confusing
-   behaviour is rare in the context of kind-variables, it is a much more common
-   occurrence with matchability variables.
+      type ProxyType :: Proxy (a :: Type)
+      type ProxyType = 'Proxy
 
-   To conclude the discussion, there are at least two alternatives to the
-   proposed strategy:
-     a. Generalise the matchability variables in the same way kind variables are
-        generalised. The downsides of this approach are outlined above.
-     b. Change the way type family reduction works, such that implicitly
-        quantified type variables may never be computationally relevant, then
-        generalise matchability variables. This would be a small win,
-        because computations would not get stuck, and we could infer more polymorphism, such as ::
+      -- generalised to
+      --   T :: forall {k} (a :: k). Proxy a
+      type T :: Proxy a
+      type family T where
+        T = ProxyType
 
-          type Map :: (a -> b) -> [a] -> [b]
-          type family Map f xs where ...
+    Here, the ``a`` argument's kind in ``T``'s kind gets generalised, so ``T`` is
+    indexed in the kind of ``a``. Then the given equation only matches when this
+    kind is ``Type``, given by ``ProxyType``'s signature. Then ``T @Int`` reduces,
+    but ``T @Maybe`` gets stuck.
 
-        could be inferred to have a polymorphic argument. However, neither ``B``
-        nor ``C`` above would typecheck, because in both cases the matchabilities are
-        computationally relevant.
+    Thus it would be more consistent to also generalise matchabilities, but while
+    this confusing behaviour is rare in the context of kind-variables, it is a
+    much more common occurrence with matchability variables. For kind variables
+    to trigger this behaviour, there needs to be a kind-polymorhic type (such as
+    a type variable, or a type like ``Any``) applied to a kind-polymorphic type
+    constructor (such as ``Proxy``). But since matchability variables arise from any
+    higher-kinded argument, every higher-order type family like ``B`` and ``C``
+    would be affected.
+
+    To conclude the discussion, there are at least two alternatives to the
+    proposed strategy:
+      a. Generalise the matchability variables in the same way kind variables are
+         generalised. The downsides of this approach are outlined above.
+      b. Change the way type family reduction works, such that implicitly
+         quantified type variables may never be computationally relevant, then
+         generalise matchability variables. This would be a small win,
+         because computations would not get stuck, and we could infer more
+         polymorphism, such as ::
+
+           type Map :: (a -> b) -> [a] -> [b]
+           type family Map f xs where ...
+
+         could be inferred to have a polymorphic argument. However, neither ``B``
+         nor ``C`` above would typecheck, because in both cases the matchabilities are
+         computationally relevant.
+
 6.  When a kind signature is *not* given, we make the choice of generalising the
     matchabilities. An example from the *Type families* section above ::
 
