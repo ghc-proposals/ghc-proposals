@@ -767,6 +767,38 @@ details of the proposal.
         could be inferred to have a polymorphic argument. However, neither ``B``
         nor ``C`` above would typecheck, because in both cases the matchabilities are
         computationally relevant.
+6.  When a kind signature is *not* given, we make the choice of generalising the
+    matchabilities. An example from the *Type families* section above ::
+
+      -- inferred: Map :: forall a b m. @U (a -> @m b) -> @U [a] -> @U [b]
+      type family Map f xs where
+        Map f '[] = '[]
+        Map f (x ': xs) = f x ': Map f xs
+
+    Note that the ``f`` argument is inferred to be matchability polymorphic.
+    So why generalise here, but not when a signature is given? As discussed above,
+    in *kind checking mode*, GHC decides on generalisation before looking at any of
+    the type family equations. However, in *kind inference mode*, the equations
+    are consulted first, since that is where all the kind information comes from, and
+    generalisation happens only when the variable in question is unconstrained.
+    Thus, in the case of ``Map``, it is safe to generalise, since none of the equations
+    match on the matchability, thus variable is computationally irrelevant.
+
+    ``B`` is accepted without a signature ::
+
+      -- inferred: B :: Type -> @M Type
+      type family B where
+        B = Maybe
+
+    but this time not because of defaulting, but because it can be inferred.
+    Finally, when the equations would require matchability indexing, the definition is
+    rejected ::
+
+      type BadIndex where
+        BadIndex = Maybe
+        BadIndex = Id
+
+    because the two equations have different kinds.
 
 Unresolved Questions
 --------------------
