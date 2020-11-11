@@ -765,14 +765,15 @@ details of the proposal.
     ``C :: forall {m} {n}. (Type -> @m Type) -> (Type -> @n Type)``, then ``:kind! C Maybe`` is stuck,
     and so is ``:kind! C Id`` without explicit return kinds.
 
-    It is important to note here that in *kind checking mode*, GHC decides on a
-    generalisation strategy *before* it looks at the equations of ``B`` and
-    ``C``, making the decision purely based on the provided kind signature.
-    Thus, in the presence of a kind signature, the bodies are only kind checked,
-    but no new information is learned from doing so. Thus, there is no hope of
-    inferring the kind ``C :: forall {m}. (Type -> @m Type) -> @U Type -> @m
-    Type`` (doing so would require looking at the equation), and the next best
-    thing, short of a signature, is to conservatively default to matchable.
+    It is important to note here that in *checking mode* (against a signature),
+    GHC decides on a generalisation strategy *before* it looks at the equations
+    of ``B`` and ``C``, making the decision purely based on the provided kind
+    signature.  Thus, in the presence of a kind signature, the bodies are only
+    kind checked, but no new information is learned from doing so. Thus, there
+    is no hope of inferring the kind ``C :: forall {m}. (Type -> @m Type) -> @U
+    Type -> @m Type`` (doing so would require looking at the equation), and the
+    next best thing, short of a signature, is to conservatively default to
+    matchable.
 
     The treatment of matchability variables in generalisation is thus different
     from ordinary kind variables. In fact, the way kind variables are treated
@@ -829,9 +830,9 @@ details of the proposal.
 
     Note that the ``f`` argument is inferred to be matchability polymorphic.
     So why generalise here, but not when a signature is given? As discussed above,
-    in *kind checking mode*, GHC decides on generalisation before looking at any of
-    the type family equations. However, in *kind inference mode*, the equations
-    are consulted first, since that is where all the kind information comes from, and
+    in *checking mode*, GHC decides on generalisation before looking at any of
+    the type family equations. However, in *inference mode*, the equations
+    are consulted first, since that is where all the type/kind information comes from, and
     generalisation happens only when the variable in question is unconstrained.
     Thus, in the case of ``Map``, it is safe to generalise, since none of the equations
     match on the matchability, thus variable is computationally irrelevant.
