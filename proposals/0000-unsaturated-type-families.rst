@@ -330,7 +330,8 @@ before it resorts to defaulting ::
   baz x = x
 
 Here, ``f`` is inferred to have kind ``Type -> @U Type`` through the equality
-constraints. Note here that the type of ``baz`` is unambiguous.
+constraints. Note here that the type of ``baz`` is unambiguous (because it
+reduces to ``a -> a``).
 
 Kind-arrows in classes
 ######################
@@ -433,7 +434,7 @@ type family on its RHS ::
 Thus the following definition is invalid ::
 
   type family Bad :: Type -> @U Type where
-    Bad = Foo
+    Bad x = Foo x
 
 This is because type families can only be reduced when they are fully
 saturated.
@@ -493,7 +494,7 @@ Matchability is a first-class type, and is defined in ``GHC.Exts`` as ::
   data Matchability = Matchable | Unmatchable
 
 We use these long names to improve the discoverability of the feature,
-but also provide shorter synonyms, which are used in the example above::
+but also provide shorter synonyms, which are used in the examples above::
 
   type M = 'Matchable
   type U = 'Unmatchable
@@ -545,8 +546,8 @@ following rules (for more details see the *Overview* section):
 2. Type families and type synonyms have unmatchable kinds.
 3. Higher-order kinds are
 
-   a. inferred to be matchable when a signature is given
-   b. generalised when no signature given
+   a. defaulted to matchable when a signature is given
+   b. generalised when no signature is given
 
 4. Term-level functions have unmatchable arrows.
 5. Kind arrows written in type signatures default to matchable if they cannot
@@ -625,7 +626,7 @@ multiplicity.
 Dependent Haskell
 ~~~~~~~~~~~~~~~~~
 
-Finally, a few words on future compatibility. The ``UnsaturatedTypeFamilies``
+A few words on future compatibility: the ``UnsaturatedTypeFamilies``
 extension is compatible with Dependent Haskell, indeed tracking matchability
 information is already part of design for Dependent Haskell (for more details see Section 4.2 of `Richard Eisenberg's thesis <https://richarde.dev/papers/2016/thesis/eisenberg-thesis.pdf>`_).
 Nevertheless, some of the choices in this proposal were made to ease the
@@ -697,7 +698,7 @@ details of the proposal.
 1.  Instead of matchability polymorphism,
     a subsumption relationship could be considered between the two arrows.
     This approach has been fully formalised by Richard Eisenberg in his
-    `thesis <http://www.cis.upenn.edu/~sweirich/papers/eisenberg-thesis.pdf>`_,
+    `thesis <http://www.cis.upenn.edu/~sweirich/papers/eisenberg-thesis.pdf>`_.
     The main drawback of that approach is that inference would suffer compared
     to the scheme outlined above. Matchability polymorphism also fits more
     cleanly into the existing constraint solver mechanism.
@@ -712,15 +713,13 @@ details of the proposal.
     steps. So they are all defaulted to be matchable, at which point
     the equality can be decomposed, and we learn that
     ``(b :: Type -> @M Type) ~ (Id :: Type -> @U Type)``. This way, ``nested`` cannot be
-    called, because no such ``b`` exists.
+    called, because no such ``b`` exists. Note that ``b`` has a matchable kind, because
+    it was defaulted so, together with ``a`` and ``c``.
 
-    Instead, we could do something more clever by defaulting
-    matchabilities in dependency order, but it's not obvious if this
+    Instead, we could do something more clever by defaulting matchabilities in
+    dependency order (so only ``a`` and ``c`` are defaulted, as doing so might
+    uncover more information about ``b``), but it's not obvious if this
     additional complexity would be worth it.
-
-3.  We could make different choices for the syntax, regarding how we annotate
-    arrows with matchabilities or the particular names around the
-    ``Matchability`` type.
 
 4.  Data constructors could be considered to have matchable types. This would
     make promotion more unified, as promoted constructors have matchable kinds.
@@ -772,7 +771,7 @@ details of the proposal.
     kind checked, but no new information is learned from doing so. Thus, there
     is no hope of inferring the kind ``C :: forall {m}. (Type -> @m Type) -> @U
     Type -> @m Type`` (doing so would require looking at the equation), and the
-    next best thing, short of a signature, is to conservatively default to
+    next best thing, short of an annotation, is to conservatively default to
     matchable.
 
     The treatment of matchability variables in generalisation is thus different
@@ -835,7 +834,7 @@ details of the proposal.
     are consulted first, since that is where all the type/kind information comes from, and
     generalisation happens only when the variable in question is unconstrained.
     Thus, in the case of ``Map``, it is safe to generalise, since none of the equations
-    match on the matchability, thus variable is computationally irrelevant.
+    match on the matchability, thus the variable is computationally irrelevant.
 
     ``B`` is accepted without a signature ::
 
@@ -843,7 +842,17 @@ details of the proposal.
       type family B where
         B = Maybe
 
-    but this time not because of defaulting, but because it can be inferred.
+    But this time, not because of defaulting, but because the signature can be inferred.
+    Similarly, ``C`` is also accepted without a signature ::
+
+      -- inferred: C :: Type -> @U Type
+      type family C where
+        C = Id
+
+    Note that ``B`` would also be accepted with the ``B :: Type -> Type``
+    signature, but ``C`` would not (as the unannotated arrow in the return kind
+    of a type family defaults to matchable).
+
     Finally, when the equations would require matchability indexing, the definition is
     rejected ::
 
@@ -851,7 +860,8 @@ details of the proposal.
         BadIndex = Maybe
         BadIndex = Id
 
-    because the two equations have different kinds.
+    because the two equations have different kinds. To have ``BadIndex`` accepted, the
+    user needs to write a polymorphic signature ``BadIndex :: Type -> @m Type``.
 
     The alternative choice here would be to default matchabilities also when no
     signature is given, but that seems to offer no benefits, other than a minor
@@ -862,6 +872,7 @@ Unresolved Questions
 --------------------
 
 1. Syntax
+
    We stick to just one operator, ``->``, but take the spot on the right of
    the arrow to specify matchability annotations, while the Linear Haskell work
    uses the spot on the left. Possibly two predefined operators that would stand
@@ -877,4 +888,4 @@ Implementation Plan
 
 I have implemented a `prototype
 <https://gitlab.haskell.org/kcsongor/ghc/tree/master>`_ of this feature, as
-described in this proposal.
+described in an earlier version of proposal.
