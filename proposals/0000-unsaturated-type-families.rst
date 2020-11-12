@@ -888,4 +888,4 @@ Implementation Plan
 
 I have implemented a `prototype
 <https://gitlab.haskell.org/kcsongor/ghc/tree/master>`_ of this feature, as
-described in an earlier version of proposal.
+described in an earlier version of this proposal.
