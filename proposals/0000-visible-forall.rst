@@ -1130,7 +1130,7 @@ Alternatives
    the right-hand side of ``forall a. t`` as a type; and we could map the
    ``forall`` in terms bind variables in the type namespace.
 
-   The parsing and name resolution rules of these alternatives were deemed to
+   The parsing and name resolution rules of these alternatives were deemed too
    subtle, so we opted for a design where types-in-terms are parsed and renamed
    as ordinary terms.
 
