@@ -134,6 +134,21 @@ Process
    
     * (none yet)
 
+    This PR is a suitable place, besides the poll, for the wider
+    community to weigh in. The community is invited to follow the
+    committee votes, rationales and discussion on the public email
+    archive, and if the committee is missing an important piece of
+    information (e.g. more code breaking than expected), to raise
+    such a point.
+ 
+    We hope, however, that the community poll is sufficient to convey
+    the level of community support and demand for specific extensions
+    have, and want to discourage lengthy, opinion-based discussions of
+    the merits of extensions.
+
+    If you miss your favorite extension in the list, please remember
+    that you can still use it (by setting the flag explicitly), and
+    that it can still go in next round.
 * Within two weeks of the start of the process, every committee member is
   expected to send an initial list of which extensions they expect to be in
   GHC20xx to the mailing list.
