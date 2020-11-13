@@ -47,7 +47,7 @@ affects many users).
 We also aim to have a process that is efficient. For each extension, we are
 all very capable of having very long discussions about the merits, up-sides
 and downsides, and almost anybody will have an opinion on almost any
-extensions. But aiming to include only _uncontroversial_ extensions, we aim to
+extensions. But aiming to include only *uncontroversial* extensions, we aim to
 avoid much of these discussion by construction. The process deliberately does
 not provide room for long per-extensions deliberations, neither within the
 committee or with the overall community, while still involving the community.
