@@ -867,7 +867,6 @@ details of the proposal.
     signature is given, but that seems to offer no benefits, other than a minor
     simplification of the specification.
 
-
 Unresolved Questions
 --------------------
 
@@ -882,6 +881,44 @@ Unresolved Questions
    A promising new direction is the `Syntax for Modifiers <https://github.com/ghc-proposals/ghc-proposals/pull/370>`_
    proposal, which aims to provide a general framework for modifiers such as
    multiplicity and matchability, and potential future extensions.
+
+2.  Backwards compatibility is mentioned in several parts of this proposal, most
+    notably the matchability defaulting scheme in kind signatures always
+    defaults to matchable (see the *Data types* and *Type families*  sections in
+    the *Overview*). This is so that declarations such as ::
+
+      -- T :: (Type -> @M Type) -> @M Type
+      data T (f :: Type -> Type) = MkT (f Int)
+
+      -- F :: (Type -> @M Type) -> Type -> @M Type
+      type family F (f :: Type -> Type) :: Type -> Type where ...
+
+    retain their current meanings even when the extension is turned on.
+
+    There is a tension between backwards compatibility and future compatibility
+    here. Unsaturated type families are on the path towards dependent types, and
+    as the language as a whole moves towards that goal, we can expect this tension
+    to grow further. In concrete terms, a vast majority of functions passed into
+    higher-order arguments are going to be unmatchable, so more often than not, users
+    will want ::
+
+      -- F' :: (Type -> @U Type) -> Type -> @U Type
+      type family F' (f :: Type -> Type) :: Type -> Type
+
+    This would mean that users would have to annotate only the arrows that they
+    want to be matchable (opposite to the current proposal), which is arguably the
+    more important to be explicit about. It would even mean being able to infer
+    more polymorphism, since an arrow that users expect to be unmatchable is
+    safe to generalise.
+
+    The exact defaulting strategy is a minor implementation detail of the current
+    proposal that has a major impact on ergonomics, and the decision should be made based
+    on whether we want to favour backwards or forward compatibility.
+    The current proposal thus can be thought of as being parameterised in this
+    decision. The `Support ergonomic dependent types
+    <https://github.com/ghc-proposals/ghc-proposals/pull/378>`_ proposal
+    discusses the general philosophy in more detail, and its result should
+    directly influence the decisions made here.
 
 Implementation Plan
 -------------------
