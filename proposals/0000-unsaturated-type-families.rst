@@ -911,6 +911,11 @@ Unresolved Questions
     more polymorphism, since an arrow that users expect to be unmatchable is
     safe to generalise.
 
+    Furthermore, making the decision to default to unmatchable arrows will allow
+    for a much cleaner transition for promoting term-level higher-order
+    functions to replace type families, since these functions already take
+    unmatchable arguments.
+
     The exact defaulting strategy is a minor implementation detail of the current
     proposal that has a major impact on ergonomics, and the decision should be made based
     on whether we want to favour backwards or forward compatibility.
