@@ -97,7 +97,7 @@ Existing proposals in contention
   at ``K @a x :: ty``, do we consider the ``a`` to be more similar to ``x`` or
   to ``ty``? Put another way, is the ``@`` marker something that says "a type
   comes next" or something that says "an visible instantiation of an invisible
-  argument coems next"?
+  argument comes next"?
 
   Rejecting `#291`_ amounts to prioritizing criterion 1; accepting it amounts
   to prioritizing criterion 2.
@@ -229,6 +229,13 @@ some of these may help put this all in context.
   each other (and thus satisfy both criteria 1 and 2), but this choice had to be
   made intentionally.
 
+  A separate question is one of defaults: when we write ``Type -> Type``, should
+  that arrow be matchable or unmatchable? The proposal describes the choice here
+  as a tension between backward compatibility and forward compatibility. (To be
+  fair, though, there isn't a true backward-compatibility problem, as the matter
+  of defaults arises only when a new extension is enabled. No existing programs
+  will break.) See point (2) under the `Unresolved Questions <https://github.com/kcsongor/ghc-proposals/blob/unsaturated-type-families/proposals/0000-unsaturated-type-families.rst#7unresolved-questions>`_ section of `#242`_.
+
 The history of these proposals suggest that we indeed have been worried about criterion
 2 for some time, without ever being very explicit about it. This current proposal
 is about making this choice more explicit -- and committing to continue to honor
@@ -278,12 +285,30 @@ in evaluating other proposals.
 
 Examples
 --------
-If this current proposal is accepted, I would expect the committee to accept
-`#291`_ (with significant revisions to the text, but not the spirit) and
-`#270`_ (perhaps with significant revisions to the details). `#281`_ could
-then be drastically simplified and designed to work only in the subset of
-the language that contains no puns; my hope is then that `#281`_, too, would
-be accepted.
+* If this current proposal is accepted, I would expect the committee to accept
+  `#291`_ (with significant revisions to the text, but not the spirit) and
+  `#270`_ (perhaps with significant revisions to the details). `#281`_ could
+  then be drastically simplified and designed to work only in the subset of
+  the language that contains no puns; my hope is then that `#281`_, too, would
+  be accepted.
+
+* This proposal frequently talks about *ergonomic* dependent types, but it does
+  not define those terms. I will not attempt to define them here, because what
+  counts as ergonomic is generally a matter of taste. (What counts as dependent
+  types is also surprisingly flexible; some have claimed that Haskell already
+  has dependent types.) However, one key component of ergonomics for dependent
+  types is (for me) that users do not need to think about a syntactic difference
+  between types and terms.
+
+  Haskell will always have (I sure hope) a separation
+  between compile-time computation and runtime computation, and we will always
+  (I sure hope) erase irrelevant compile-time terms. (More simply: Haskell has
+  and will keep *type erasure*. It's just that the word "type" is becoming harder
+  to pin down, so I have to say "compile-time terms".) Yet my hope for dependent
+  types in Haskell should not require a syntactic distinction between types and
+  terms. While such a distinction is not wholly incompatible with dependency,
+  I think it would add significant complication and cognitive overhead to understanding
+  dependent types in Haskell.
 
 Effect and Interactions
 -----------------------
@@ -308,7 +333,27 @@ Effect and Interactions
 * This proposal does *not* say anything about *backward* compatibility. Specifically,
   it does not propose that we sacrifice backward compatibility in the service
   of forward compatibility. It is every expectation that proposals building
-  dependently typed features would maintain backward compatibility.
+  dependently typed features would maintain backward compatibility. Where that
+  is impossible, a gentle migration strategy would be paramount.
+
+* This proposal does *not* address approachability or the new-Haskeller experience.
+  Keeping Haskell learnable (or, indeed, making it more learnable) should be
+  a key criterion when evaluating proposals. This proposal does not attempt to
+  change our stance toward learnability.
+
+  In my opinion, we as a committee have paid too little attention to learnability,
+  and I explicitly implicate myself as a contributor to this problem. Yet there
+  appears to be no reason, a priori, that dependent types should make a language
+  more or less learnable. As proposals arise for adding components of dependent
+  types, we should strive to do better at considering what the proposal means
+  for learnability.
+
+  In particular, `#270`_ suggests introducing new syntax for list types and tuple
+  types. (The old syntax would remain, but someone enabling ``-Wpuns`` would get
+  lots of warnings.) How would this new syntax affect learners who are using
+  materials (e.g. books, blog posts, etc.) that were written with the traditional
+  syntax? This is a good question, and would be an interesting point of debate
+  on `#270`_.
   
 Costs and Drawbacks
 -------------------
