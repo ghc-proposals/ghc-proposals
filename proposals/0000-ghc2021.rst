@@ -49,6 +49,8 @@ The columns are:
 
 * Contentionsness: #(users who don’t want this)/#(users who want this)
 
+The raw data is found at <https://github.com/nomeata/ghc-proposals-stats/blob/master/ext-stats/GHC2021> and the steps to produce them are noted in <https://github.com/nomeata/ghc-proposals-stats/blob/master/ext-stats/README.md>.
+
 Caveats: 
 
 * The hackage data is based on the the latest version of each hackage package. This skews heavily towards libraries, which are more likely to be found on Hackage than executable. It also puts higher weight on projects that are split into many haskell packages (e.g. amazonka).
