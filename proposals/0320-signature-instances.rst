@@ -3,7 +3,7 @@ Defaults and backpack/hs-boot
 
 .. author:: John Ericson and Cale Gibbard on behalf of Obsidian Systems
 .. date-accepted:: 2020-05-14
-.. ticket-url::
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/17190
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/320>`_.
