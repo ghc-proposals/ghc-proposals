@@ -9,7 +9,7 @@ GHC 2021
 .. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/380>`_.
 .. contents::
 
-This this the PR accompanying the process to define the ``GHC2021`` language set, as outlined in <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0372-ghc-extensions.rst>
+This this the PR accompanying the process to define the ``GHC2021`` language set, as outlined in https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0372-ghc-extensions.rst.
 
 Proposed Change
 ---------------
@@ -49,7 +49,7 @@ The columns are:
 
 * Contentionsness: #(users who don’t want this)/#(users who want this)
 
-The raw data is found at <https://github.com/nomeata/ghc-proposals-stats/blob/master/ext-stats/GHC2021> and the steps to produce them are noted in <https://github.com/nomeata/ghc-proposals-stats/blob/master/ext-stats/README.md>.
+The raw data (input and aggregated) is found at https://github.com/nomeata/ghc-proposals-stats/blob/master/ext-stats/GHC2021 and the steps to produce them are noted in https://github.com/nomeata/ghc-proposals-stats/blob/master/ext-stats/README.md.
 
 Caveats: 
 
