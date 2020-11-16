@@ -22,7 +22,7 @@ The ``GHC2021`` language extension set comprises of the following language exten
 Data
 ----
 
-The following table contains the information that was gathered to help the committee decide, based on an analysis of hackage and a community poll, as well as the tallied votes. At a committe size of 11, **8** votes are necessary to inclue an extension in ``GHC2021``:
+The following table contains the information that was gathered to help the committee decide, based on an analysis of hackage and a community poll, as well as the tallied votes. At a committe size of 11, **8** votes are necessary to include an extension in ``GHC2021``:
 
 The columns are:
 
@@ -60,4 +60,3 @@ Extension In GHC Since Proliferation Innocuousness Aloofness Popularity Contenti
 ========= ============ ============= ============= ========= ========== =============== =====
 TBD
 ========= ============ ============= ============= ========= ========== =============== =====
-
