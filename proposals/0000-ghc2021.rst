@@ -6,9 +6,7 @@ GHC 2021
 .. ticket-url:: 
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_.
-            **After creating the pull request, edit this file again, update the
-            number in the link, and delete this bold sentence.**
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/380>`_.
 .. contents::
 
 This this the PR accompanying the process to define the ``GHC2021`` language set, as outlined in <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0372-ghc-extensions.rst>
@@ -50,6 +48,12 @@ The columns are:
 * Popularity: #(users who want this)/#(users who filled out the poll)
 
 * Contentionsness: #(users who don’t want this)/#(users who want this)
+
+Caveats: 
+
+ * The hackage data is based on the the latest version of each hackage package. This skews heavily towards libraries, which are more likely to be found on Hackage than executable. It also puts higher weight on projects that are split into many haskell packages (e.g. amazonka).
+ 
+ * The poll data has no serious protection aginst double voting, and skews heavily towards the part of the communit that is reached by the poll announcemnt.
 
 ========= ============ ============= ============= ========= ========== =============== =====
 Extension In GHC Since Proliferation Innocuousness Aloofness Popularity Contentionsness Votes
