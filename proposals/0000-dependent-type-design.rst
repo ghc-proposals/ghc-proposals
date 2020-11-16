@@ -270,6 +270,15 @@ be affected by this current one is to make them easier to work with.
   example of well-typed database access using dependent types; it would be
   possible to skip certain dynamic type checks if we could rely on the
   dependent types instead.
+* These blog posts show off effective uses of dependent types in Haskell
+  (such as we can use them today):
+
+  - https://www.poberezkin.com/posts/2020-06-29-modeling-state-machine-dependent-types-haskell-1.html
+  - https://www.poberezkin.com/posts/2020-09-04-dependent-types-to-code-are-what-static-types-to-data.html
+  - https://blog.jle.im/entry/introduction-to-singletons-1.html
+  - https://blog.jle.im/entry/introduction-to-singletons-2.html
+  - https://blog.jle.im/entry/introduction-to-singletons-3.html
+  - https://blog.jle.im/entry/introduction-to-singletons-4.html
 
 Any reader is invited to add more links to this list via a pull request.
 
