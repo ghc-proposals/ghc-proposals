@@ -2,13 +2,11 @@ The GHC20XX process
 ===================
 
 .. author:: Alejandro Serrano, Joachim Breitner
-.. date-accepted::
-.. proposal-number::
+.. date-accepted:: 2011-11-16
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/372>`_.
-.. sectnum::
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/372>`_.
 .. contents::
 
 This proposal sets up a process to introduce new language versions ``GHC20XX``,
