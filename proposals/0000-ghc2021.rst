@@ -1,0 +1,59 @@
+GHC 2021
+========
+
+.. author:: Joachim Breitner
+.. date-accepted:: 
+.. ticket-url:: 
+.. implemented::
+.. highlight:: haskell
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_.
+            **After creating the pull request, edit this file again, update the
+            number in the link, and delete this bold sentence.**
+.. contents::
+
+This this the PR accompanying the process to define the ``GHC2021`` language set, as outlined in <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0372-ghc-extensions.rst>
+
+Proposed Change
+---------------
+
+The ``GHC2021`` language extension set comprises of the following language extensions:
+
+* Everything in ``Haskell2010``, plus
+* TBD 
+
+Data
+----
+
+The following table contains the information that was gathered to help the committee decide, based on an analysis of hackage and a community poll, as well as the tallied votes. At a committe size of 11, **8** votes are necessary to inclue an extension in ``GHC2021``:
+
+The columns are:
+
+* In GHC since: First version that ships this extension
+
+  Some Extension may have had serious changes since then.
+
+* Proliferation:   #(packages using that extensions)/#(packages parsed)
+ 
+* Innocuousness:  #(packages enable it in .cabal)/#(packages using default-extensions)
+
+  A high number here indicates that many developers want this on by default in their project, across all modules.
+
+* Aloofness: #(packages using this, but _only_ in modules, despite using  default-extensions) /#(packages using default-extensions)
+
+  A high number here indicates that, although a developer was in
+  principle happy with putting extensions into the default-extensions
+  field, they did not include this particular one. I take this as an
+  indication that this extension does _not_ make a great on-by-default
+  extension. (Matching my expectation, TemplateHaskell and CPP make
+  the highest here)
+
+* Popularity: #(users who want this)/#(users who filled out the poll)
+
+* Contentionsness: #(users who don’t want this)/#(users who want this)
+
+========= ============ ============= ============= ========= ========== =============== =====
+Extension In GHC Since Proliferation Innocuousness Aloofness Popularity Contentionsness Votes
+========= ============ ============= ============= ========= ========== =============== =====
+TBD
+========= ============ ============= ============= ========= ========== =============== =====
+
