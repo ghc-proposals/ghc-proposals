@@ -275,13 +275,19 @@ Any reader is invited to add more links to this list via a pull request.
 
 Proposed Change Specification
 -----------------------------
-The GHC committee would consider compatibility with ergonomic dependent types
-when evaluating new proposals. A proposal that would worsen compatibility
-with ergonomic dependent types would be considered to be fork-like, even if
-it would not be fork-like today.
+* The GHC committee would consider compatibility with ergonomic dependent types
+  when evaluating new proposals. A proposal that would worsen compatibility
+  with ergonomic dependent types would be considered to be fork-like, even if
+  it would not be fork-like today.
 
-Put another way: this proposal elevates criterion 2 to an important criterion
-in evaluating other proposals.
+  Put another way: this proposal elevates criterion 2 to an important criterion
+  in evaluating other proposals.
+
+* Dependent types will add new features that will overlap with some existing
+  ones (notably, type families, which should be subsumed by the use of ordinary
+  functions in types). The committee should consider whether new features
+  would allow for the possibility of removing existing ones (once the new
+  feature has settled down).
 
 Examples
 --------
@@ -310,11 +316,29 @@ Examples
   I think it would add significant complication and cognitive overhead to understanding
   dependent types in Haskell.
 
+* As the specification part suggests, it would be nice to remove type families
+  once we allow ordinary functions to be used in types. The design in a proposal
+  adding the ability to use functions in types should therefore address deprecation
+  and removal (over a painstakingly slow timeline) of type families.
+
 Effect and Interactions
 -----------------------
 * By accepting this proposal, the committee reaffirms Haskell's status as
   an evolving, forward-thinking language, excited to adopt new ideas.
 
+* @simonpj has asked for a "list of the things [we] might have to give up".
+  Here is an attempt at this list:
+
+  - One namespace for types and another for terms. As `#270`_ points out, we can
+    keep this distinction for those that want it, but it seems quite painful
+    to mix this feature with dependent types.
+    
+  - The use of ``'`` to use the term-level namespace in types. Instead, ``'``
+    would unambiguously be used to denote a Template Haskell ``Name``.
+    
+  - The use of ``forall`` (and perhaps ``foreach``) as term-level variable names
+
+  
 * This proposal does *not* invalidate any current syntax, nor does it mean
   that GHC will not consider non-dependent-type proposals. This proposal is
   all about informing judgment calls, mostly around concrete syntax, in other
@@ -354,7 +378,7 @@ Effect and Interactions
   materials (e.g. books, blog posts, etc.) that were written with the traditional
   syntax? This is a good question, and would be an interesting point of debate
   on `#270`_.
-  
+
 Costs and Drawbacks
 -------------------
 * Accepting this proposal would mean that, sometimes, we may accept a proposal
