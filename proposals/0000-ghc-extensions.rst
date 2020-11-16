@@ -2,7 +2,7 @@ The GHC20XX process
 ===================
 
 .. author:: Alejandro Serrano, Joachim Breitner
-.. date-accepted:: 
+.. date-accepted::
 .. proposal-number::
 .. ticket-url::
 .. implemented::
@@ -121,17 +121,15 @@ Process
   in favor or against the inclusion of a given extension, or points the
   committee to a suitable existing survey result.
 
-**Alternative 1:**
-
 * At the start of the process, the secretary creates a PR with a proposal saying (roughly)
-   
+
     GHC20xx contains the following extensions in addition to those in
     GHC20(xx-1):
-    
+
     * (none yet)
-    
+
     and removes these extensions
-   
+
     * (none yet)
 
     This PR is a suitable place, besides the poll, for the wider
@@ -140,7 +138,7 @@ Process
     archive, and if the committee is missing an important piece of
     information (e.g. more code breaking than expected), to raise
     such a point.
- 
+
     We hope, however, that the community poll is sufficient to convey
     the level of community support and demand for specific extensions
     have, and want to discourage lengthy, opinion-based discussions of
@@ -152,10 +150,10 @@ Process
 * Within two weeks of the start of the process, every committee member is
   expected to send an initial list of which extensions they expect to be in
   GHC20xx to the mailing list.
-   
+
   Committee members are expected to take the Hackage statistics and the
   community vote into account.
-   
+
   These mails may contain justifications for why a certain extension is or is
   not included, but this is not required (or even expected).
 
@@ -168,7 +166,7 @@ Process
 
   It is absolutely ok to change one’s mind based on the explanations in the
   other members’ emails, or the general comments on the PR.
-   
+
   Long discussions of individual extensions are discouraged at this point. If
   there is controversy around an extension, it is a strong sign that it should
   simply not be included.
@@ -176,52 +174,6 @@ Process
 * After these four weeks, the proposal with the current tally gets accepted by
   the secretary, and defines GHC20xx
 
-**Alternative 2:**
-
-* Create a new repo ``ghc-proposals/ghc-language``.
-
-* Within two weeks of the start of the process, every committee member is
-  expected to send an initial list of which extensions they expect to be in
-  GHC20xx to the mailing list.
-   
-  Committee members are expected to take the Hackage statistics and the
-  community vote into account.
-   
-  These mails should *not* contain justifications for why a certain extension is or is
-  not included.
-
-* After these two weeks, the Secretary creates a new branch in the
-  ``ghc-proposals/ghc-language`` repo, adding a new top-level file named
-  ``ghc20xx.md`` (where ``xx`` has been instantiated appropriately). This file would
-  contain a list of all the extensions receiving at least ⅔ (rounded up) of
-  the responding members of the committee.
-
-* The Secretary would then create a PR in ``ghc-proposals/ghc-language`` to merge
-  the branch. This PR would state loudly not to comment on individual
-  extensions in the PR.
-
-+ Members of the community would then have 4 weeks to open Issues in the
-  ``ghc-language`` repo to discuss individual extensions. Issue titles are
-  required to include the extension name. When conversation reaches general
-  consensus, the Issue would be closed, but memorialized in the ``ghc20xx.md``
-  file with a link to the discussion. If the discussion suggests that an
-  extension *not* be included, that is still memorialized in the file, in a
-  separate section of proposed-but-rejected extensions. (In this paragraph,
-  "general consensus" does not mean unanimity, but a clear preponderance of
-  opinion in one direction.)
-
-+ After four weeks, any extensions still under broad debate would be rejected
-  for inclusion as controversial. The Secretary would move these to the
-  "rejected" section of the .md file with a link to the debate. Debates are
-  encouraged to continue, with the expectation that the resolution of the
-  debate would inform the next GHC20xx process.
-
-+ The Secretary then merges the branch into the ``ghc-language`` repo, and the new
-  language is implemented.
-
-+ After another 2 months, any remaining open Issues in the repo are closed,
-  for cleanliness.
-  
 Cadence
 ^^^^^^^
 
