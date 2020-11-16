@@ -2,7 +2,7 @@ The GHC20XX process
 ===================
 
 .. author:: Alejandro Serrano, Joachim Breitner
-.. date-accepted:: 2011-11-16
+.. date-accepted:: 2020-11-16
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
