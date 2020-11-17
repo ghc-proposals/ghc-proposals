@@ -41,7 +41,7 @@ But this is in fact not the same: the ``k`` parameter comes before the ``a`` in 
 At least, we can use standalone kind signatures to illustrate the difference if not fix the problem::
 
   type Foo_0, Foo_1, Foo_2 ::
-    forall k. Type -> Type -> forall (b :: k). Type
+    forall k. Type -> forall (b :: k). Type
 
 versus::
 
