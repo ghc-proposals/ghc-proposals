@@ -23,11 +23,11 @@ Scoping and parameter order in declaration heads
 
 When someone sees declarations like::
 
-  data Foo_0 a :: Type -> forall (b :: k). Type
+  data Foo_0 a :: forall (b :: k). Type
 
-  data family Foo_1 a :: Type -> forall (b :: k). Type
+  data family Foo_1 a :: forall (b :: k). Type
 
-  type family Foo_2 a :: Type -> forall (b :: k). Type
+  type family Foo_2 a :: forall (b :: k). Type
 
 They might think the signature works just like a term signature, and they can explicitly bind ``k`` without changing the meaning like::
 
