@@ -349,6 +349,7 @@ Here ``m :: Type -> @M Type``. **The rule is that matchability variables are nev
 generalised in terms**: if it's a "term-level" arrow, it's assigned unmatchable,
 if it's a "type-level" arrow, it's assigned matchable. This happens regardless
 of whether the arrow is spelled out, viz: ::
+
   bar :: f a
   bar = undefined
 
@@ -482,6 +483,27 @@ saturated.
 Thus, the relationship between the arity and the kind can be summarised as follows:
 If a type family's arity is ``n``, then its kind will have *at least* its first
 ``n`` arrows unmatchable.
+
+Apartness of type families
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+GHC has a notion of "apartness": when matching a type family equation, it needs
+to make sure that no previous equations match or when matching a type class
+instance, that no other instances match. Two types don't match when they are
+apart. The apartness check has three possible outcomes: two types can "unify",
+be "surely apart", or be "maybe apart".
+
+We propose that type families unify with themselves, but they are "maybe apart"
+from every other type. The consequence of this is that writing type families in
+positions where apartness is considered is illegal. That is, both
+
+::
+
+  instance C Id where ...
+
+   type instance F Id = ...
+
+are illegal when ``Id`` is a type family.
 
 Proposed Change Specification
 -----------------------------
@@ -738,6 +760,7 @@ details of the proposal.
 
 2.  Type inference with the "simple" matchability defaulting scheme is
     incomplete. Take following program ::
+
       nested :: a b ~ c Id => b Bool
       nested = False
 
@@ -913,6 +936,19 @@ today (i.e. a type family might be injective if its argument is injective, but
 not otherwise). One question that arises is how to fit injectivity into the
 current matchable/unmatchable dichotomy. We've avoided subtyping so far, but
 maybe it would be fine here?
+
+Type class instances for type families
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The *Apartness of type families* section prescribes that type families can not
+be used in type class instance heads. It would actually be possible to do so,
+and I intend to pursue another proposal if this one gets accepted to allow for
+writing class instances for type families. Happily, the choice to make type
+families "maybe apart" is both backwards and forward compatible. Backward,
+because no existing program can even ask the question of whether two partially
+applied type families are equal, and forward, because "maybe apart" leaves the
+possibility open to later arrive at a more specific result ("unify" or "surely
+apart").
 
 Unresolved Questions
 --------------------
