@@ -209,6 +209,11 @@ illustrate why, consider the following program ::
 Here, ``D`` has a rank-2 kind and its argument is a function. To be able to
 pass in ``F``, the forall must be unmatchable in ``D``'s argument.
 
+A matchability variable introduced in a ``forall`` telescope is in scope in the
+body of the ``forall``, but not in its matchability. That is, ``forall m x. @m x``
+is invalid, but ``forall m. @U forall x. @m x`` is valid. The same applies to the
+visible case: ```forall m -> @m Type``` is rejected.
+
 .. _Inference:
 
 Meaning of an annotation-free ``->``
