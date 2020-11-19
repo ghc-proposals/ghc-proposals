@@ -592,12 +592,6 @@ signature is given.
 Effects and interactions
 ------------------------
 
-Type synonyms
-~~~~~~~~~~~~~
-
-While the proposal's main focus is type families, it also enables partial
-application of type synonyms, treated in the same way as type families.
-
 Promotion
 ~~~~~~~~~
 
