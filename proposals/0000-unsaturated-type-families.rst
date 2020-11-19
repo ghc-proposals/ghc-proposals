@@ -224,7 +224,12 @@ annotations can be inferred. The primary aim of inference is to ease the
 transition as most programs written today can be unambiguously inferred.
 
 The meaning of ``(->)`` depends on the context in which it is written. Below is
-a list of the different contexts with examples.
+a list of the different contexts with examples. Some of these are a result of a
+*defaulting* mechanism, and some are *hard rules*. The first category can be
+overridden with an appropriate annotation, but the second can not. The
+defaulting mechanism first invents a unification variable for the matchability,
+and only applies the defaulting rule here when the variable remains
+unconstrained after constraint solving.
 
 Data types
 ##########
@@ -238,15 +243,11 @@ The kind arrows of data types (and data families) are all matchable.
   data Maybe a = ...
 
 here, users are not required to specify ``Type -> @M Type``, as this information
-can be inferred from the data declaration itself.
+can be inferred from the data declaration itself. This is a *hard rule*, and
+it is an error to write ::
 
-Higher-order arguments also get assigned matchable
-
-::
-
-  -- inferred: (Type -> @M Type) -> @M Type
-  type HK :: (Type -> Type) -> Type
-  type HK f = ...
+  type Maybe :: Type -> @U Type
+  data Maybe a = ...
 
 Data constructors
 #################
@@ -265,6 +266,8 @@ an unmatchable argument, because ``Just`` will be elaborated to ``(\x -> Just x)
 which is an unmatchable lambda. Promoting ``Just`` thus results in a matchable
 constructor ``'Just :: a -> @M Maybe a``.
 
+This is a *hard rule*.
+
 Type families
 #############
 
@@ -278,8 +281,10 @@ Type family (and type synonym) *arguments* are unmatchable
 
 is unambiguous, and no annotation is required. However, the unambiguity here
 arises not solely due to the fact that ``Id`` is a type synonym, but also that it
-binds its argument on the left-hand side. The arrows not corresponding to arguments
-bound on the LHS are inferred to be matchable ::
+binds its argument on the left-hand side. This is a *hard rule*.
+
+The arrows not corresponding to arguments
+bound on the LHS are inferred to be matchable (by *default*) ::
 
   -- inferred: Type -> @M Type
   type MyMaybe :: Type -> Type
@@ -305,8 +310,20 @@ explicitly need to assign an unmatchable arrow for the program to be accepted ::
   type family MyIdGood where
     MyIdGood = Id
 
-Even for type families, higher-order arguments get assigned matchable kinds
-unless specified otherwise
+Higher-order arguments
+######################
+
+When a higher-order king signature is given, the function arrow is assumed to
+mean matchable *by default*
+::
+
+  -- inferred: (Type -> @M Type) -> @M Type
+  type HK :: (Type -> Type) -> Type
+  data HK f = ...
+
+This is irrespective of the flavour of type function the signature belongs to.
+That is, even for type families, higher-order arguments get assigned matchable
+kinds unless specified otherwise
 ::
 
   -- inferred: forall a b. @U (a -> @M b) -> @U [a] -> @U [b]
@@ -317,20 +334,26 @@ Note that the forall is unmatchable, as discussed previously. The function
 argument is matchable, which is consistent with the behaviour today.
 
 Also note that this higher-order defaulting mechanism only applies when a kind
-signature is given. When no signature is given, the inferred kind may be
-matchability-polymorphic ::
+signature is given. When no signature is given, the matchability gets
+instantiated with a unification variable, and generalised at the end of type
+checking ::
 
   -- inferred: Map :: forall a b m. @U (a -> @m b) -> @U [a] -> @U [b]
   type family Map f xs where
     Map f '[] = '[]
     Map f (x ': xs) = f x ': Map f xs
 
-**This is the only scenario where matchability generalisation occurs.**
+  -- inferred: HK :: forall m. @M (Type -> @m Type) -> @M Type
+  data HK f = MkHK (f Int)
+
+**This is the only scenario where matchability generalisation occurs.** That is,
+when no signature is given and the arrow is a higher-order argument to a type
+function of any flavour.
 
 Term-level functions
 ####################
 
-Term-level functions are always unmatchable. ::
+Term-level functions are *always* unmatchable. ::
 
   -- inferred: a -> @U a
   id :: a -> a
@@ -344,7 +367,7 @@ Kind-arrows in type signatures
 ##############################
 
 Whenever an arrow kind arises from the type signature of a term, they are
-defaulted to matchable ::
+*defaulted* to matchable ::
 
   -- inferred: forall (m :: Type -> @M Type) a. @U m a
   foo :: forall (m :: Type -> Type) a. m a
@@ -383,17 +406,10 @@ Kind-arrows in classes
 ######################
 
 When an arrow kind arises from a type class parameter, it's assumed to be
-matchable ::
+matchable *by default* ::
 
   -- inferred: Functor :: (Type -> @M Type) -> @M Constraint
   class Functor (f :: Type -> Type) where
-
-Similarly in instances ::
-
-  instance Functor f
-  instance Show (g a)
-
-both ``f`` and ``g`` are inferred to have matchable kinds.
 
 Arrow-type in type class instances
 ##################################
@@ -410,15 +426,18 @@ arrow, in other words unmatchable. This default can be overridden ::
 
   instance Foo ((->) @M)
 
-Kind-arrows in type family patterns
-###################################
+Application in pattern position
+###############################
 
-In the pattern::
+When a kind arrow arises from an application in either a type family pattern or
+a type class instance head, the arrows must be matchable as a *hard rule*  ::
 
   type family UnApp a where
-    UnApp ((f :: Type -> Type) x) = x
+    UnApp (f x) = x
 
-``f`` is inferred to have a matchable kind. Indeed, it must have a matchable
+  instance Show (g b)
+
+``f`` and ``g`` are inferred to have a matchable kind. Indeed, they must have a matchable
 kind, and declaring otherwise is an error.
 
 RHS of type synonyms
@@ -428,7 +447,7 @@ When writing::
 
   type Arrow = (->)
 
-the arrow is defaulted to mean ``(->) @U``.
+the arrow is *defaulted* to mean ``(->) @U``.
 
 Note that making either choice here is a breaking change.
 For example, today one can write ::
@@ -704,7 +723,7 @@ are inferred compared to runtime representation variables.
 
 In *types*, runtime representation variables are all defaulted to ``LiftedRep``, and
 matchability variables are all defaulted depending on where the variables appear
-(see the *Term-level arrows* and *Kind-arrows in type signatures* sections
+(see the *Term-level functions* and *Kind-arrows in type signatures* sections
 above).
 
 In *kinds*, runtime representation variables are all defaulted to ``LiftedRep``,
@@ -729,7 +748,7 @@ matchabilities in types is that inferring polymorphism would lead to ambiguous
 types. In kinds, however, we take a more nuanced approach, because
 generalisation there is desirable.
 
-See the *Type families* section above and the *Alternatives* section below for
+See the *Higher-order arguments* section above and the *Alternatives* section below for
 more details behind this approach.
 
 Costs and Drawbacks
@@ -874,7 +893,7 @@ details of the proposal.
        computationally relevant.
 
 6.  When a kind signature is *not* given, we make the choice of generalising the
-    matchabilities. An example from the *Type families* section above ::
+    matchabilities. An example from the *Higher-order arguments* section above ::
 
       -- inferred: Map :: forall a b m. @U (a -> @m b) -> @U [a] -> @U [b]
       type family Map f xs where
@@ -972,7 +991,7 @@ Unresolved Questions
 
 2.  Backwards compatibility is mentioned in several parts of this proposal, most
     notably the matchability defaulting scheme in kind signatures always
-    defaults to matchable (see the *Data types* and *Type families*  sections in
+    defaults to matchable (see the *Higher-order arguments*  section in
     the *Overview*). This is so that declarations such as ::
 
       -- T :: (Type -> @M Type) -> @M Type
