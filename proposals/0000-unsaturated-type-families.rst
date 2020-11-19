@@ -101,6 +101,29 @@ The kind of ``Map`` itself becomes ``(a -> @U b) -> @U [a] -> @U [b]``.
 
 ``M`` and ``U`` are both types of kind ``Matchability`` defined in ``GHC.Exts``.
 
+
+Matchability (due to `Richard Eisenberg <https://richarde.dev/papers/2016/thesis/eisenberg-thesis.pdf>`_) is
+defined as the union of two properties, *generativity* and *injectivity*.
+
+:Generativity: ``f`` and ``g`` are generative when ``f a ~ g b`` implies ``f ~ g``
+:Injectivity: ``f`` is injective when ``f a ~ f b`` implies ``a ~ b``
+:Matchability: ``f`` is when it is both generative and injective
+
+Technically, generativity is a binary relation on type functions, but we
+define matchability as a property of a single type function and say that
+generativity holds for two type functions when they are both matchable.
+
+For example, with ``f :: Type -> @M Type``, ``g :: Type -> @M Type``, and ``h :: Type -> @U Type``:
+
+- ``f a ~ g b`` => ``f ~ g`` and ``a ~ b`` because both ``f`` and ``g`` are matchable
+- ``f a ~ h b`` =/> ``f ~ h`` or ``a ~ b`` because ``h`` is unmatchable
+
+Thus matchability characterises GHC's existing equality decomposition behaviour.
+By adding this information to the kind system, we can keep all the type
+inference behaviour for type constructors, while also allowing partial
+application of unmatchable type functions. All of the discussion in this proposal
+applies only at the *nominal* role.
+
 Matchability polymorphism
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
