@@ -170,7 +170,8 @@ dependent (``forall ty.``).
 `An earlier proposal <https://github.com/ghc-proposals/ghc-proposals/pull/102>`_
 discussed the full range of quantifiers present in Dependent Haskell. This
 current proposal addresses a subset of the ones included there: namely,
-annotating each of the four existing quantifiers with matchability information.
+annotating three of the four existing quantifiers with matchability information
+(``ty =>`` will always mean unmatchable).
 
 The proposal up to this point has introduced the visible non-dependent case.
 The visible dependent quantifier is analogous ::
@@ -207,9 +208,6 @@ illustrate why, consider the following program ::
 
 Here, ``D`` has a rank-2 kind and its argument is a function. To be able to
 pass in ``F``, the forall must be unmatchable in ``D``'s argument.
-
-We also include invisible non-dependent quantification (``ty =>``), mainly for
-the sake of completeness.
 
 .. _Inference:
 
@@ -505,7 +503,6 @@ GHC's parser includes the following production rules for types::
 
   ctype ::= 'forall' tv_bndrs '->' ctype
         |   'forall' tv_bndrs '.' ctype
-        |   'context '=>' ctype
 
 This proposal adds the following rules::
 
@@ -518,8 +515,6 @@ This proposal adds the following rules::
         |   'forall' tv_bndrs '->' PREFIX_AT atype ctype
         |   'forall' tv_bndrs '.' ctype
         |   'forall' tv_bndrs '.' PREFIX_AT atype ctype
-        |   'context '=>' ctype
-        |   'context '=>' PREFIX_AT atype ctype
         | ...
 
 Where ``PREFIX_AT`` stands for the lexer token ``@`` that is to be parsed as a
