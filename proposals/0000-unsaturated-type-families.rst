@@ -603,6 +603,14 @@ following rules (for more details see the *Overview* section):
 Generalisation only occurs in kinds (and never types), and only when no
 signature is given.
 
+Showing matchabilities
+~~~~~~~~~~~~~~~~~~~~~~
+
+We propose a new flag, ``-fprint-explicit-matchabilities``, similar to
+``-fprint-explicit-runtime-reps``, that only shows the matchability information
+to users who ask. ``-XUnsaturatedTypeFamilies`` implies
+``-fprint-explicit-matchabilities``.
+
 Effects and interactions
 ------------------------
 
@@ -716,9 +724,8 @@ be backwards-compatible. Notably, before this feature, the kind of a type family
 only shows up when using ``StandaloneKindSignatures`` or in GHCi when using the
 ``:kind`` command.
 
-We propose a new flag, ``-fprint-explicit-matchabilities``, similar to
-``-fprint-explicit-runtime-reps``, that only shows the matchability information
-to users who ask.
+The proposed default of not showing matchabilities and the
+``-fprint-explicit-matchabilities`` flag aim to reduce this overhead.
 
 Alternatives
 ------------
