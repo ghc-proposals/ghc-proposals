@@ -782,9 +782,9 @@ details of the proposal.
     instantiated with unification variables, and there are no further
     steps. So they are all defaulted to be matchable, at which point
     the equality can be decomposed, and we learn that
-    ``(b :: Type -> @M Type) ~ (Id :: Type -> @U Type)``. This way, ``nested`` cannot be
-    called, because no such ``b`` exists. Note that ``b`` has a matchable kind, because
-    it was defaulted so, together with ``a`` and ``c``.
+    ``(b :: Type -> @M Type) ~ (Id :: Type -> @U Type)``, which yields an error as the two kinds mismatch.
+    Note that ``b`` has a matchable kind, because it was defaulted so, together
+    with ``a`` and ``c``.
 
     Instead, we could do something more clever by defaulting matchabilities in
     dependency order (so only ``a`` and ``c`` are defaulted, as doing so might
