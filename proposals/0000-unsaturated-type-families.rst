@@ -703,16 +703,6 @@ information: multiplicity. Other than syntactic considerations and somewhat
 overlapping implementations, there is no interaction between matchability and
 multiplicity.
 
-Dependent Haskell
-~~~~~~~~~~~~~~~~~
-
-A few words on future compatibility: the ``UnsaturatedTypeFamilies``
-extension is compatible with Dependent Haskell, indeed tracking matchability
-information is already part of design for Dependent Haskell (for more details see Section 4.2 of `Richard Eisenberg's thesis <https://richarde.dev/papers/2016/thesis/eisenberg-thesis.pdf>`_).
-Nevertheless, some of the choices in this proposal were made to ease the
-transitionary period, with a preference for backwards-compatibility. Notably,
-matchability inference and defaulting.
-
 Comparison with levity polymorphism
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -973,6 +963,23 @@ because no existing program can even ask the question of whether two partially
 applied type families are equal, and forward, because "maybe apart" leaves the
 possibility open to later arrive at a more specific result ("unify" or "surely
 apart").
+
+Dependent Haskell
+~~~~~~~~~~~~~~~~~
+
+A few words on future compatibility: the ``UnsaturatedTypeFamilies``
+extension is compatible with Dependent Haskell, indeed tracking matchability
+information is already part of design for Dependent Haskell (for more details see Section 4.2 of `Richard Eisenberg's thesis <https://richarde.dev/papers/2016/thesis/eisenberg-thesis.pdf>`_).
+Nevertheless, some of the choices in this proposal were made to ease the
+transitionary period, with a preference for backwards-compatibility. Notably,
+matchability inference and defaulting. As explained in the *Alternatives* section
+above and in the *Unresolved Questions* section below, there is a tension here
+between backward and future compatibility.
+
+Higher-order arguments in kinds are defaulted to matchable, while higher-order
+arguments in types are unmatchable. Dependent Haskell is most certainly going
+to merge these two notions, which means that it is going to introduce a breaking
+change around matchability inference.
 
 Unresolved Questions
 --------------------
