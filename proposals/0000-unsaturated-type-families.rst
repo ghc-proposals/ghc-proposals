@@ -245,6 +245,23 @@ Higher-order arguments also get assigned matchable
   type HK :: (Type -> Type) -> Type
   type HK f = ...
 
+Data constructors
+#################
+
+Data constructors are matchable. This means that using either syntax ::
+
+  data Maybe a = Nothing | Just a
+
+  data Maybe a where
+    Nothing :: Maybe a
+    Just :: a -> Maybe a
+
+``Just :: a -> @M Maybe a``. GHC already eta-expands data constructors
+automatically, so writing ``map Just xs`` will work even though ``map`` expects
+an unmatchable argument, because ``Just`` will be elaborated to ``(\x -> Just x)``
+which is an unmatchable lambda. Promoting ``Just`` thus results in a matchable
+constructor ``'Just :: a -> @M Maybe a``.
+
 Type families
 #############
 
@@ -307,21 +324,18 @@ matchability-polymorphic ::
 
 **This is the only scenario where matchability generalisation occurs.**
 
-Term-level arrows
-#################
+Term-level functions
+####################
 
-Term-level arrows are always unmatchable. ::
+Term-level functions are always unmatchable. ::
 
   -- inferred: a -> @U a
   id :: a -> a
   id x = x
 
-One can write ::
-
-  f :: a -> @M a
-  f = undefined
-
-but this type has no interesting inhabitants.
+  -- inferred: a -> @U Maybe a
+  just :: a -> Maybe a
+  just = Just -- eta-expanded
 
 Kind-arrows in type signatures
 ##############################
@@ -614,11 +628,6 @@ to turn the constructor matchability-polymorphic::
 This is not done automatically in order to avoid confusion around
 existential varibles.
 
-Promoted data constructors get matchable kinds. This means that ::
-
-  :type Just  :: a -> @U a
-  :kind 'Just :: Type -> @M Type
-
 Explicit specificity
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -742,13 +751,6 @@ details of the proposal.
     dependency order (so only ``a`` and ``c`` are defaulted, as doing so might
     uncover more information about ``b``), but it's not obvious if this
     additional complexity would be worth it.
-
-4.  Data constructors could be considered to have matchable types. This would
-    make promotion more unified, as promoted constructors have matchable kinds.
-    This is quite appealing, but doing so would require additional engineering
-    effort. Either we would need to introduce matchability-polymorphic
-    term-level functions, or, perhaps more realistically, eta-expand all data
-    constructor applications to demote them to unmatchable.
 
 5.  When a kind signature is given, we make the choice of not generalising the
     matchabilities, which differs from the treatment of kind variables. Consider
