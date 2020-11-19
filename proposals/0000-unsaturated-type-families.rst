@@ -104,7 +104,7 @@ abstracts over type families ::
 
 The kind of ``Map`` itself becomes ``(a -> @U b) -> @U [a] -> @U [b]``.
 
-``M`` and ``U`` are both types of kind ``Matchability`` defined in ``GHC.Exts``.
+``M`` and ``U`` are both types of kind ``Matchability`` defined in ``GHC.Matchability``.
 
 
 Matchability (due to `Richard Eisenberg <https://richarde.dev/papers/2016/thesis/eisenberg-thesis.pdf>`_) is
@@ -517,7 +517,7 @@ matchability information.
 Matchabilities
 ~~~~~~~~~~~~~~
 
-Matchability is a first-class type, and is defined in ``GHC.Exts`` as ::
+Matchability is a first-class type, and is defined in ``GHC.Matchability`` as ::
 
   data Matchability = Matchable | Unmatchable
 
@@ -528,7 +528,7 @@ but also provide shorter synonyms, which are used in the examples above::
   type U = 'Unmatchable
 
 The ``Matchability`` type and the ``M`` and ``U`` synonyms are exported from
-the ``GHC.Exts`` module.
+the ``GHC.Matchability`` module.
 
 FUN
 ~~~
