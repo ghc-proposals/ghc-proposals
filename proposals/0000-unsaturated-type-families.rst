@@ -179,10 +179,10 @@ The visible dependent quantifier is analogous ::
 
 Now consider the invisible dependent version of the above two types ::
 
-  type FInvis :: forall k. @U -> k -> @U Type
+  type FInvis :: forall k. @U k -> @U Type
   type family FInvis (a :: k) :: Type
 
-  type DInvis :: forall k. @M -> k -> @M Type
+  type DInvis :: forall k. @M k -> @M Type
   data DInvis (a :: k) :: Type
 
 Notice that the forall itself is annotated in both cases. The treatment of
