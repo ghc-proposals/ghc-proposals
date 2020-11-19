@@ -42,12 +42,11 @@ It is, however, possible to pass a type constructor, such as ``Maybe``.
 This is because unlike type families, type constructors can be
 unsaturated.
 
-The aim of this proposal is to remove this limitation of the type language
-by enabling partial application of type functions,
-thereby making the type language higher-order. Thanks to this
-feature, type-level programs are easier to understand and
-maintain, as common abstractions like ``Map`` can be defined in
-a standard library.
+The aim of this proposal is to remove this limitation of the type language by
+enabling partial application of type functions (both type families and type
+synonyms), thereby making the type language higher-order. Thanks to this
+feature, type-level programs are easier to understand and maintain, as common
+abstractions like ``Map`` can be defined in a standard library.
 
 Recap: saturation restriction
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -81,7 +80,13 @@ type functions in the *kind system*. That is, a type family such as identity ::
     Id a = a
 
 will have kind ``k -> @U k`` instead of ``k -> k`` -- the kind that GHC would
-infer today. The ``U`` means "unmatchable". Type constructors such as ``Maybe``
+infer today. The ``U`` means "unmatchable". Similarly, type synonyms such as constant ::
+
+  type Const a b = a
+
+will have kind ``k -> @U j -> @U k``, and is also possible to partially apply.
+
+Type constructors such as ``Maybe``
 or ``[]`` would instead have kind ``Type -> @M Type``, meaning they are
 matchable. Matchability is a property of the arrow that appears in the kind.
 The saturation restriction for ``Map`` from earlier can now essentially be
