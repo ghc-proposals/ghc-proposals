@@ -890,6 +890,27 @@ details of the proposal.
     signature is given, but that seems to offer no benefits, other than a minor
     simplification of the specification.
 
+Future directions
+-----------------
+
+There are several avenues that would be interesting to explore that either build
+on the current proposal, or have interesting interactions with it. These are
+outside of the scope of this proposal, but mentioning them here is worthwhile to
+keep track of them and also to evaluate the proposal with future extensions in
+mind.
+
+Injectivity
+~~~~~~~~~~~
+
+Matchable type functions are a subset of injective type functions, and it might
+be worthwhile to investigate first-class injectivity annotations in the kind
+system alongside matchabilities. Doing so would also allow higher-order
+injectivity annotations, which are not possible with ``TypeFamiliyDependencies``
+today (i.e. a type family might be injective if its argument is injective, but
+not otherwise). One question that arises is how to fit injectivity into the
+current matchable/unmatchable dichotomy. We've avoided subtyping so far, but
+maybe it would be fine here?
+
 Unresolved Questions
 --------------------
 
