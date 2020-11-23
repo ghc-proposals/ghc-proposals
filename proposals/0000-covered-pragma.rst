@@ -1,5 +1,5 @@
-COVERED per-instance pragma
-===========================
+DYSFUNCTIONAL per-instance pragma
+=================================
 
 .. author:: Andrzej Rybczak
 .. date-accepted:: Leave blank. This will be filled in when the proposal is accepted.
@@ -12,8 +12,9 @@ COVERED per-instance pragma
 .. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/374>`_.
 .. contents::
 
-Provide a per-instance ``{-# COVERED #-}`` pragma that allows disabling the
-coverage condition for specified type variables.
+Provide a per-instance ``{-# DYSFUNCTIONAL #-}`` pragma that allows disabling
+the coverage condition for a specific instance of a class with functional
+dependencies.
 
 Motivation
 ----------
@@ -39,43 +40,35 @@ instance head in its context, e.g.
   {-# LANGUAGE FunctionalDependencies #-}
   {-# LANGUAGE UndecidableInstances #-}
 
-  class Covered a | -> a
-  instance Covered a => Covered a -- compiles
-
-What is more, ``Covered`` can now be used in other instances to lift the
-coverage condition for a specific type variable:
-
-.. code-block:: haskell
-
   class F a b | a -> b
-  instance Covered a => F Int a -- compiles
+  instance F Int a => F Int a -- compiles
 
-However, since the definition of the ``Covered`` instance is circular, it
+However, since the definition of the ``F Int a`` instance is circular, it
 *sometimes* makes GHC loop during type inference (e.g. when it tries to
 determine a type of a local binding without type signature with
 ``MonomorphismRestriction`` turned on). Sometimes, because usually GHC caches
 solved constraints to not repeat the work it already did.
 
-The proposed ``{-# COVERED #-}`` pragma does exactly what the ``Covered`` class
-does:
+The proposed ``{-# DYSFUNCTIONAL #-}`` pragma does exactly what the circular
+trick does:
 
 .. code-block:: haskell
 
   class F a b | a -> b
-  instance {-# COVERED a #-} F Int a -- compiles
+  instance {-# DYSFUNCTIONAL #-} F Int a -- compiles
 
 in a reliable way.
 
 Proposed Change Specification
 -----------------------------
 
-The ``{-# COVERED #-}`` pragma appears in an instance definition after the ``instance``
-keyword and optional pragma specifying the overlap mode, but before the instance
-context.
+The ``{-# DYSFUNCTIONAL #-}`` pragma appears in an instance declaration after
+the ``instance`` keyword and optional pragma specifying the overlap mode, but
+before the instance context:
 
-After ``{-# COVERED`` there is a white-space separated list of type variables
-from the instance head and its context that will be exempt from the coverage
-condition. If the list of type variables is empty, the pragma is a no-op.
+.. code-block::
+
+  instdecl → instance overlap_mode [ {-# DYSFUNCTIONAL #-} ] [context =>] type [where]
 
 Examples
 --------
@@ -87,16 +80,13 @@ Basic examples:
   class F (a :: k1) (b :: k2) | a -> b
 
   -- a and b are exempt from the coverage condition
-  instance {-# COVERED a b #-} F Int (a, b)
+  instance {-# DYSFUNCTIONAL #-} F Int (a, b)
 
   -- interaction with the overlap mode pragma
-  instance {-# OVERLAPPABLE #-} {-# COVERED a #-} F Char (a, Int)
+  instance {-# OVERLAPPABLE #-} {-# DYSFUNCTIONAL #-} F Char (a, Int)
 
   -- instance involving coverage of a kind variable
-  instance {-# COVERED a k #-} F () (Proxy (a :: k))
-
-  -- no-op pragma
-  instance {-# COVERED #-} F (a, Int) a
+  instance {-# DYSFUNCTIONAL #-} F () (Proxy (a :: k))
 
 Consider the `HasField` type class from `GHC.Records`:
 
@@ -123,7 +113,7 @@ trick or the pragma:
 
      data Opaque
 
-     instance {-# COVERED a #-}
+     instance {-# DYSFUNCTIONAL #-}
        ( TypeError ('Text "Can't access fields of the Opaque data type")
        ) => HasField name Opaque a where
        getField = error "unreachable"
@@ -135,7 +125,7 @@ trick or the pragma:
 
      newtype X = X { x :: forall a. a -> a }
 
-     instance {-# COVERED a #-} HasField "x" X (a -> a) where
+     instance {-# DYSFUNCTIONAL #-} HasField "x" X (a -> a) where
        getField X{x} = x
 
 Now, consider the improved version of the `HasField` type class that also allows
@@ -168,7 +158,7 @@ nested fields or updating multiple fields:
   g :: (HasField "name" s u a1 String, HasField "age" u t a2 Int) => s -> t
   g = setField @"age" 21 . setField @"name" "Tom"
 
-It's now impossible (without the circular trick or the ``{-# COVERED #-}``
+It's now impossible (without the circular trick or the ``{-# DYSFUNCTIONAL #-}``
 pragma) to write:
 
 1) Instance that changes a phantom type parameter:
@@ -177,7 +167,7 @@ pragma) to write:
 
      newtype Phantom ph = Phantom { phantom :: Int }
 
-     instance {-# COVERED ph1 ph2 #-}
+     instance {-# DYSFUNCTIONAL #-}
        HasField "phantom" (Phantom ph1) (Phantom ph2) Int Int where
        hasField ph = (\n -> ph { phantom = n }, phantom ph)
 
@@ -190,7 +180,7 @@ pragma) to write:
 
      newtype FamRec a = FamRec { fam :: Fam a }
 
-     instance {-# COVERED a b #-}
+     instance {-# DYSFUNCTIONAL #-}
        ( x ~ Fam a
        , y ~ Fam b
        ) => HasField "fam" (FamRec a) (FamRec b) x y where
@@ -205,16 +195,37 @@ These are issues that I personally encountered. For completeness there's also th
   data D0
 
   class Succ' xh xl yh yl (yz::Bool) | xh xl -> yh yl yz, yh yl yz -> xh xl
-  instance {-# COVERED x #-}
+  instance {-# DYSFUNCTIONAL #-}
     ( Failure (PredecessorOfZeroError x)
     ) => Succ' (x,x) (x,x) D0 D0 'True
 
 Effect and Interactions
 -----------------------
 
-The change merely provides a reliable way to lift the coverage condition on a
-per-instance, per-variable basis without relying on internal details of GHC for
-termination of the type checking process.
+The change provides a reliable way to lift the coverage condition on a
+per-instance basis without relying on the circular trick and the internal
+details of GHC for termination of the type checking process.
+
+Moreover, having the pragma (apart from resolution of `#8634
+<https://gitlab.haskell.org/ghc/ghc/-/issues/8634>`_) would allow to tidy up the
+default behaviour of functional dependencies as currently implemented in
+GHC. There are a couple of long-standing tickets that highlight surprises one
+might encounter when dealing with them:
+
+- `GHC does not check the functional dependency consistency condition correctly <https://gitlab.haskell.org/ghc/ghc/-/issues/10675>`_
+
+- `"overlapping instances" through FunctionalDependencies <https://gitlab.haskell.org/ghc/ghc/-/issues/9210>`_
+
+- `Instances do not respect functional dependency, yet are accepted <https://gitlab.haskell.org/ghc/ghc/-/issues/18400>`_
+
+- `Non-confluence around functional dependencies <https://gitlab.haskell.org/ghc/ghc/-/issues/18851>`_
+
+All of these (apart from the last one) have a `simple solution
+<https://gitlab.haskell.org/ghc/ghc/-/issues/9210#note_84081>`_, but it hasn't
+been done for the fear of breaking existing code that relies on the quirkiness
+of the current implementation without any workaround.
+
+However, the `DYSFUNCTIONAL` pragma is exactly the missing workaround.
 
 Costs and Drawbacks
 -------------------
@@ -224,29 +235,54 @@ maintenance cost of GHC (see `!4356
 <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/4356>`_ for the
 proof-of-concept).
 
-People not using the pragma are not affected.
+While most of the code using `DYSFUNCTIONAL` instances won't lead to any
+surprising results, it's possible to construct contrived examples that
+demonstrate e.g. loss of confluence. However, the same can be said about using
+`INCOHERENT` or `OVERLAPS` pragmas. Most of the time their usages is perfectly
+fine, yet when abused might lead to extreme confusion.
 
-It can be argued that this change takes us further from the word `Functional` in
-`FunctionalDependencies`, but:
-
-- The desired behavior can already be obtained without the pragma (just not 100%
-  reliably).
-- Functional dependencies as implemented in GHC aren't really functional in the
-  mathematical sense as the following code is accepted:
-
-  .. code-block:: haskell
-
-    class C a b | a -> b
-
-    instance C Int Int
-    instance {-# OVERLAPPABLE #-} a ~ Char => C Int a
-
-  They simply guide type inference.
+In any case, existing Haskell tooling can adapt to the proposed change, detect
+usage of `DYSFUNCTIONAL` pragma and warn users (or outright reject these
+instances). It's also worth noting that it's much harder (if not impossible) for
+the tooling to detect the circular trick (which can be freely used as of today)
+than the pragma.
 
 Alternatives
 ------------
 
-Do nothing and keep using the almost-working `Covered` type class when needed.
+1. Do nothing and keep using the almost-always-working circular trick when
+   needed.
+
+2. Use a different syntax instead of a pragma, e.g.
+
+   .. code-block:: haskell
+
+     instance forall (%covered a). C Int a
+
+   instead of
+
+   .. code-block:: haskell
+
+      instance {-# DYSFUNCTIONAL #-} C Int a
+
+3. Introduce new language extension and/or syntax for "dysfunctional
+   dependencies" and use them on a per-class basis.
+
+My answers:
+
+- (1) is not an enticing perspective.
+- I'd argue that (2) will unnecessarily complicate the implementation without a
+  substantial gain.
+- As for (3), there are cases when marking dependencies "dysfunctional"
+  class-wide is too big of a hammer, e.g. when:
+    - `DYSFUNCTIONAL` instances are used for custom type errors, or
+    - functional dependencies are morally correct, yet this cannot be proved to
+      GHC (or doing so would incur a major compile time performance loss).
+
+  This is also similar to the situation with `OverlappingInstances` and
+  `IncoherentInstances` language extensions that were deprecated and
+  reintroduced as per-instance pragmas.
+
 
 Unresolved Questions
 --------------------
@@ -256,6 +292,6 @@ None for now.
 Implementation Plan
 -------------------
 
-It's already implemented (see `!4356
+It's already implemented by me (Andrzej Rybczak) (see `!4356
 <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/4356>`_), all that remains
 is adding documentation and Template Haskell support.
