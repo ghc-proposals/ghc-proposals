@@ -117,6 +117,11 @@ Proposed Change Specification
       data T = T1 { x :: Int } | T2
       -- The defined field selector function x :: T -> Int would have been incomplete.
 
+   - With -XMultiWayIf, any multi-way if expression that is not guaranteed to match in some way (i.e. by having an ``otherwise`` or ``True`` branch), e.g.::
+   
+      if | x == 1 -> "a"
+         | y < 7  -> "b"
+
    With ``Incomplete`` enabled, the guiding principle is relaxed, and GHC works as it does today.
 
      While this is enough to specify ``NoIncomplete`` and ``Incomplete`` for GHC, language extensions are supposed to be proposed in a more implementation agnostic manner, so that they are eligible for inclusion in future Haskell reports.
