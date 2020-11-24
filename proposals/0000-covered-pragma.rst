@@ -73,7 +73,8 @@ before the instance context:
 Examples
 --------
 
-Basic examples:
+Basic examples
+**************
 
 .. code-block:: haskell
 
@@ -87,6 +88,9 @@ Basic examples:
 
   -- instance involving coverage of a kind variable
   instance {-# DYSFUNCTIONAL #-} F () (Proxy (a :: k))
+
+HasField
+********
 
 Consider the `HasField` type class from `GHC.Records`:
 
@@ -128,8 +132,11 @@ trick or the pragma:
      instance {-# DYSFUNCTIONAL #-} HasField "x" X (a -> a) where
        getField X{x} = x
 
-Now, consider the improved version of the `HasField` type class that also allows
-to update the field and change the type of the structure:
+Extended HasField
+*****************
+
+Consider the improved version of the `HasField` type class that also allows to
+update the field and change the type of the structure:
 
 .. code-block:: haskell
 
@@ -186,7 +193,8 @@ pragma) to write:
        ) => HasField "fam" (FamRec a) (FamRec b) x y where
        hasField fr = (\x -> fr { fam = x }, fam fr)
 
-These are issues that I personally encountered. For completeness there's also the one from `#9103 <https://gitlab.haskell.org/ghc/ghc/-/issues/9103>`_:
+Resolution of `#9103 <https://gitlab.haskell.org/ghc/ghc/-/issues/9103>`_
+*************************************************************************
 
 .. code-block:: haskell
 
@@ -206,7 +214,7 @@ The change provides a reliable way to lift the coverage condition on a
 per-instance basis without relying on the circular trick and the internal
 details of GHC for termination of the type checking process.
 
-Moreover, having the pragma (apart from resolution of `#8634
+Moreover, having the pragma (apart from the resolution of `#8634
 <https://gitlab.haskell.org/ghc/ghc/-/issues/8634>`_) would allow to tidy up the
 default behaviour of functional dependencies as currently implemented in
 GHC. There are a couple of long-standing tickets that highlight surprises one
@@ -225,7 +233,46 @@ All of these (apart from the last one) have a `simple solution
 been done for the fear of breaking existing code that relies on the quirkiness
 of the current implementation without any workaround.
 
-However, the `DYSFUNCTIONAL` pragma is exactly the missing workaround.
+However, the `DYSFUNCTIONAL` pragma is exactly the missing workaround at it
+effectively allows to locally lift functional dependencies and can be used to
+encode most (if not all) of the problematic instances presented in the tickets
+above.
+
+E.g. the example from `#18400 <https://gitlab.haskell.org/ghc/ghc/-/issues/18400>`_:
+
+.. code-block:: haskell
+
+  class Het a b | a -> b where
+    het :: m (f c) -> a -> m b
+
+  class GHet (a :: Type -> Type) (b :: Type -> Type) | a -> b
+  instance            GHet (K a) (K [a])
+  instance Het a b => GHet (K a) (K b)
+
+  data K x a = K x
+
+would become
+
+.. code-block:: haskell
+
+  class Het a b | a -> b where
+  het :: m (f c) -> a -> m b
+
+  class GHet (a :: Type -> Type) (b :: Type -> Type) | a -> b
+  instance {-# DYSFUNCTIONAL #-} DysFun a b => GHet (K a) b
+
+  class DysFun (a :: Type) (b :: Type -> Type)
+  instance DysFun a (K [a])
+  instance Het a b => DysFun a (K b)
+
+  data K x a = K x
+
+In fact, `the comment from #9210
+<https://gitlab.haskell.org/ghc/ghc/-/issues/9210#note_84081>`_ mentions 4 test
+failures as a result of an attempt of fixing the issue. The above snippet is one
+of them, but the remaining 3 can be fixed in the same manner, i.e. by moving the
+offending instances to the helper class without functional dependencies and
+delegate to it via a single `DYSFUNCTIONAL` instance.
 
 Costs and Drawbacks
 -------------------
@@ -237,9 +284,18 @@ proof-of-concept).
 
 While most of the code using `DYSFUNCTIONAL` instances won't lead to any
 surprising results, it's possible to construct contrived examples that
-demonstrate e.g. loss of confluence. However, the same can be said about using
-`INCOHERENT` or `OVERLAPS` pragmas. Most of the time their usages is perfectly
-fine, yet when abused might lead to extreme confusion.
+demonstrate e.g. loss of confluence. It needs to be noted however that loss of
+confluence can be currently obtained even without the circular trick or the
+`DYSFUNCTIONAL` pragma, as demonstrated `here
+<https://gitlab.haskell.org/ghc/ghc/-/issues/18851#note_310088>`_. This is the
+consequence of unresolved `#10675
+<https://gitlab.haskell.org/ghc/ghc/-/issues/10675>`_, which as explained in
+`Effect and Interactions`_ could be comfortably fixed if this proposal is
+accepted.
+
+Moreover, the same can be said about using `INCOHERENT` or `OVERLAPS`
+pragmas. Most of the time their usages is perfectly fine, yet when abused might
+lead to extreme confusion.
 
 In any case, existing Haskell tooling can adapt to the proposed change, detect
 usage of `DYSFUNCTIONAL` pragma and warn users (or outright reject these
@@ -268,16 +324,21 @@ Alternatives
 3. Introduce new language extension and/or syntax for "dysfunctional
    dependencies" and use them on a per-class basis.
 
-My answers:
+Answers:
 
-- (1) is not an enticing perspective.
-- I'd argue that (2) will unnecessarily complicate the implementation without a
-  substantial gain.
-- As for (3), there are cases when marking dependencies "dysfunctional"
-  class-wide is too big of a hammer, e.g. when:
-    - `DYSFUNCTIONAL` instances are used for custom type errors, or
-    - functional dependencies are morally correct, yet this cannot be proved to
-      GHC (or doing so would incur a major compile time performance loss).
+- The first point is not an enticing perspective because of the "almost" bit.
+
+- I'd argue that the second point will unnecessarily complicate the
+  implementation without a substantial gain and is inconsistent with existing
+  `INCOHERENT` and `OVERLAPS` pragmas.
+
+- As for the third point, there are cases when marking dependencies
+  "dysfunctional" class-wide is too big of a hammer, e.g. when:
+
+  - `DYSFUNCTIONAL` instances are used for custom type errors, or
+
+  - functional dependencies are morally correct, yet this cannot be proved to
+    GHC (or doing so would incur a major compile time performance loss).
 
   This is also similar to the situation with `OverlappingInstances` and
   `IncoherentInstances` language extensions that were deprecated and
