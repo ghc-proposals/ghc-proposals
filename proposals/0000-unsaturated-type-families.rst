@@ -126,8 +126,12 @@ For example, with ``f :: Type -> @M Type``, ``g :: Type -> @M Type``, and ``h ::
 Thus matchability characterises GHC's existing equality decomposition behaviour.
 By adding this information to the kind system, we can keep all the type
 inference behaviour for type constructors, while also allowing partial
-application of unmatchable type functions. All of the discussion in this proposal
-applies only at the *nominal* role.
+application of unmatchable type functions.
+
+All of the discussion in this proposal applies only at the `nominal role <https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#roles>`_.
+In particular, this means that the matchability information tells GHC whether a nominal
+equality can be decomposed, but there is no way to say that a type function is
+matchable at the representational role or phantom role.
 
 Matchability polymorphism
 ~~~~~~~~~~~~~~~~~~~~~~~~~
