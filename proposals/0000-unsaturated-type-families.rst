@@ -108,7 +108,7 @@ The kind of ``Map`` itself becomes ``(a -> @U b) -> @U [a] -> @U [b]``.
 
 
 Matchability (due to `Richard Eisenberg <https://richarde.dev/papers/2016/thesis/eisenberg-thesis.pdf>`_) is
-defined as the union of two properties, *generativity* and *injectivity*.
+defined as the conjunction of two properties, *generativity* and *injectivity*.
 
 :Generativity: ``f`` and ``g`` are generative when ``f a ~ g b`` implies ``f ~ g``
 :Injectivity: ``f`` is injective when ``f a ~ f b`` implies ``a ~ b``
