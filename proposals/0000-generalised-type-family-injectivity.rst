@@ -144,7 +144,7 @@ With regard to learnability, I think this removes an inconsistency given the sim
 functional dependencies might not expect the restriction on injectivity specifications for type families. That said, it enables clever
 applications of these constraints to discover the instantiations of type variables from type family instances in a way that might be
 tricky to do in one's head. Haskell users will need to exercise some care that they're not making life any harder for others who read their 
-code. (This concern could already be levelled against functional dependencies in general though.)
+code. (This concern could already be levelled against tricky uses of functional dependencies in general though.)
 
 Alternatives
 ------------
