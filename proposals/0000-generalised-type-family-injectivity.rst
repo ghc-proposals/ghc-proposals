@@ -18,6 +18,10 @@ Type families presently enjoy a very restricted form of functional dependency / 
 namely, one is only allowed to specify that the result of the type family uniquely determines some of its
 arguments. We propose to extend this to allow arbitrary functional dependencies.
 
+There was an attempt to implement this 4 years ago, and we're interested in reviving the effort. There's
+`a GHC wiki page <https://gitlab.haskell.org/ghc/ghc/-/wikis/injective-type-families#user-content-type-c-injectivity-aka-generalized-injectivity>`_
+as well as an existing `GHC issue (#10832)<https://gitlab.haskell.org/ghc/ghc/-/issues/10832>`_ regarding
+the aim of this proposal.
 
 Motivation
 ----------
@@ -161,6 +165,44 @@ The explanation provided is informal and might be somewhat open to interpretatio
 as possible to class functional dependencies.
 
 In addition to that, formally specifying the change to unification might be helpful.
+
+Consider the type family and instance::
+
+  type family F a b = c | a -> b
+  type instance F Int Char = Bool
+
+Given::
+
+  x :: F Int b
+
+we know that there can be no other instance than the one for F Int Char, so from this, we might deduce that b ~ Char and x :: Bool.
+However, an interesting thing about this is that a similar-looking signature::
+
+  y :: forall b. F Int b
+
+must surely be invalid, as no other b will do. There are some questions about when exactly these constraints are generated and how to apply them in all cases.
+
+Consider as well::
+
+  z :: forall b. F Bool b
+
+where there is no instance matching F Bool b, but the functional dependency seems to indicate that at most one type b would do.
+Presumably if the signature for y is invalid, then so should be the signature for z, so perhaps looking at instances is irrelevant, and only the functional
+dependency itself restricts our ability to quantify the variable.
+
+Existential quantification may be fine though::
+
+  data SomeF a = forall b. MkSomeF (F a b)
+  
+  e :: SomeF Int
+
+and we can presumably recover the quantified variable when pattern matching::
+
+  case e of
+    MkSomeF (u :: F Int b) -> {- b ~ Char here because of the functional dependency on F -}
+      Refl :: (b :~: Char)
+
+While this looks sensible, we're not entirely sure how to specify things in a way that makes it entirely clear what is valid.
 
 Implementation Plan
 -------------------
