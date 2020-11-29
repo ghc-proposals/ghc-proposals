@@ -26,17 +26,17 @@ The following table contains the information that was gathered to help the commi
 
 The columns are:
 
-* Since: First version that ships this extension
+* **Since**: First version that ships this extension
 
   Some Extension may have had serious changes since then.
 
-* Proliferation:   #(packages using that extensions)/#(packages parsed)
+* **Proliferation**:   #(packages using that extensions)/#(packages parsed)
  
-* Innocuousness:  #(packages enable it in .cabal)/#(packages using default-extensions)
+* **Innocuousness**:  #(packages enable it in .cabal)/#(packages using default-extensions)
 
   A high number here indicates that many developers want this on by default in their project, across all modules.
 
-* Aloofness: #(packages using this, but _only_ in modules, despite using  default-extensions) /#(packages using default-extensions)
+* **Aloofness**: #(packages using this, but _only_ in modules, despite using  default-extensions) /#(packages using default-extensions)
 
   A high number here indicates that, although a developer was in
   principle happy with putting extensions into the default-extensions
@@ -45,11 +45,11 @@ The columns are:
   extension. (Matching my expectation, TemplateHaskell and CPP make
   the highest here)
 
-* Popularity: #(users who want this)/#(users who filled out the poll)
+* **Popularity**: #(users who want this)/#(users who filled out the poll)
 
-* Contentionsness: #(users who don’t want this)/#(users who want this)
+* **Contentionsness**: #(users who don’t want this)/#(users who want this)
 
-* Votes: #(committee members in favor)/#(commitee members already votes)
+* **Votes**: #(committee members in favor)/#(commitee members already votes)
 
   Once all votes are in, 66.6% here indicate that the extension would be accepted.
 
