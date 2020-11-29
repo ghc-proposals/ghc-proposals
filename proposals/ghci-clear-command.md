@@ -5,14 +5,12 @@ ticket-url: ""
 implemented: ""
 ---
 
-This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/0>).
-**After creating the pull request, edit this file again, update the number in
-the link, and delete this bold sentence.**
+This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/382).
+
 
 # Make learning and playing with Haskell through GHCi easier through adding `:clear [variable identifier]`.  
 
-Here you should write a short abstract motivating and briefly summarizing the
-proposed change.
+Adding :clear [variable identifier] that only applies to variable identifiers or functions defined in GHCi.
 
 ## Motivation
 
