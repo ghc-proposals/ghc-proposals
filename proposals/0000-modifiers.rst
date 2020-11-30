@@ -13,8 +13,8 @@ Syntax for Modifiers: a generalization of linear-types syntax
 .. contents::
 
 This proposal introduces a new form of syntax ``%blah`` that defines a *modifier*.
-Modifiers somehow change the meaning of the next token. The ``blah`` must have
-a type which is a member of the new class ``Modifier``. For now, all modifiers
+Modifiers somehow change the meaning of the next token. The ``blah`` is parsed
+and renamed as a type. For now, all modifiers
 will be built in, but we might imagine making an extensible feature later.
 
 As of the writing of this proposal, there will be precisely one modifier: the
@@ -79,28 +79,24 @@ Proposed Change Specification
 7. Reserve the use of ``%`` in a prefix occurrence to be used only for modifiers;
    though this proposal does not do so, we can imagine extending the modifier syntax
    to apply to further syntactic situations (e.g. term-level operators, declarations,
-   import lists, etc.). The one exception is the syntax ``%1`` for a linear function,
-   which continues to be allowed.
+   import lists, etc.).
 
-8. Introduce a new type-level constant ``Modifier :: Type -> Constraint``, exported
-   from ``GHC.Exts``.
+8. The type of a modifier is determined only by synthesis, never by checking.
+   That is, in the bidirectional type-checking scheme used by GHC, we find the
+   type of the modifier by running the synthesis judgment. Effectively, this
+   means that if we consider a modifier to be some head (constructor or
+   variable) applied to a sequence of arguments (possibly none), the head must
+   have a known type: constructors always have a known type, and variables
+   have a known type if declared with a type signature. Alternatively, the
+   modifier may have a top-level type signature.
 
-9. Let the constraint ``Modifier Multiplicity`` be satisfiable; let no other
-   ``Modifier`` constraint be satisfiable.
+9. A modifier of type ``Multiplicity`` changes the multiplicity of the following arrow,
+   preceding pattern-bound variable (but only on the top level of a lambda pattern),
+   or preceding record field.
+   Multiple modifiers of type ``Multiplicity`` on the same arrow are not allowed.
+   Any other use of a modifier is an error.
 
-10. During constraint generation, let an occurrence ``%(ty)``, where ``ty :: ki``,
-    emit a constraint ``Modifier ki``.
-
-11. A modifier of type ``Multiplicity`` changes the multiplicity of the following arrow,
-    preceding pattern-bound variable (but only on the top level of a lambda pattern),
-    or preceding record field.
-    Multiple modifiers of type ``Multiplicity`` on the same arrow are not allowed.
-    Any other use of a modifier is an error.
-
-12. ``-XLinearTypes`` implies ``-XModifiers``.
-
-13. GHC will never infer quantifying over a ``Modifier`` constraint. No modifier
-    polymorphism!
+10. ``-XLinearTypes`` implies ``-XModifiers``.
   
 Examples
 --------
@@ -108,14 +104,16 @@ Here are some examples that will be accepted or rejected with this proposal::
 
   f1 :: Int %1 -> Bool    -- unaffected, actually: that "%1" is one lexeme, and
                           -- is not a modifier. See more on this below.
-  f2 :: Int %Many -> Bool -- accepted: Many :: Multiplicity, and Modifier Multiplicity holds
-  f3 :: Int %m -> Bool    -- rejected: the kind of m is ambiguous
-  f4 :: Int %(m :: Multiplicity) -> Bool   -- accepted
+  f2 :: Int %Many -> Bool -- accepted: Many :: Multiplicity
+  f3 :: Int %m -> Bool    -- rejected: the kind of m is undeclared
+  f4 :: Int %(m :: Multiplicity) -> Bool   -- accepted with a type signature
   f5 :: Int %One %Many -> Bool   -- rejected (although it will parse)
   f6 :: Int %Many %Many -> Bool  -- rejected
+  f7 :: Int %(m :: Multiplicity) -> Int %m -> Int
+    -- rejected: the second use of '%m' has an unknown type
 
   map :: forall (m :: Multiplicity). (a %m -> b) -> [a] %m -> [b]
-    -- the kind annotation is really on m, not on the modifier
+    -- accepted: m has a known type
 
 The syntax (and semantics) for modifiers on patterns and record fields is exactly
 as described in the `linear types proposal`_.
@@ -124,8 +122,8 @@ as described in the `linear types proposal`_.
   
 Effect and Interactions
 -----------------------
-* It is expected that the matchability of `#242`_ will have a kind ``Matchability``,
-  and that ``Modifier Matchability`` will be satisfiable. Then, users will be able
+* It is expected that the matchability of `#242`_ will have a kind ``Matchability``.
+  Then, users will be able
   to write ``Int %Many %Matchable -> Bool`` or ``Int %Matchable %Many -> Bool``.
   The details are left to `#242`_ (assuming this proposal is accepted first).
   The author of `#242`_, Csongor Kiss, was involved in the conceptualization of
@@ -135,15 +133,15 @@ Effect and Interactions
   is not expected to matter (though that would be up to other proposals to
   spell out).
 
-* Let's assume we have overloaded numbers at the type level, and then consider
-  ``%1``. Under this proposal, we would have ``1 :: a`` where ``Num a`` and
-  ``Modifier a`` must hold. If we have ``Multiplicity`` specified at the end of
-  the ambient ``default``\ing list, then ``Multiplicity`` will be the first
-  (and only) member of that list that satisfies both ``Num`` and ``Modifier``.
-  Accordingly, GHC will default ``a`` to be ``Multiplicity``, and all will be
-  well. (We may want this case to avoid activating ``-Wtype-defaults``, but
-  that's a conversation for later.)
+* The ``%1`` will remain a single lexeme and does not participate with this
+  proposal. We may want more exceptions to the general scheme in the future.
 
+* The key action of this proposal is to carve out a new syntax space, anchored
+  by a prefix occurrence of ``%``. Ideally, there would be few exceptions to
+  the general scheme (but ``%1`` is one such exception). It is possible that
+  future extensions to this idea will be disambiguated before the type checker
+  gets a chance to do its work.
+  
 * This proposal means that ``Int %m -> Bool``, acceptable today as a
   multiplicity-polymorphic function, would be rejected. The user would need
   to add a kind annotation to tell us that ``m`` is a multiplicity (and not,
@@ -172,14 +170,9 @@ Effect and Interactions
   ``data Tagged (%Nominal t) a = Tagged a``. Or it might have been an
   alternative for ``-XDerivingStrategies``.
 
-* Though not proposed here, we can imagine extensions allowing abstractions
-  over ``Modifiers``. This might allow being able to solve ``Modifier (a,b)``
-  when ``Modifier a`` and ``Modifier b`` holds, thus allowing something
-  like ``type ManyMatch = '(Many, Matchable); foo :: Int %ManyMatch -> Bool``.
-
 * Though not proposed here, we can imagine a large extension to this
-  mechanism allowing for *user-written* ``Modifier``\s. Perhaps a
-  ``Modifier`` type supports some function call to the GHC API that
+  mechanism allowing for *user-written* modifiers, giving meanings
+  via a plugin. Perhaps some modifier supports some function call to the GHC API that
   transforms the meaning of bit of syntax. The possibilities are
   tantalizing.
   
@@ -195,8 +188,6 @@ Costs and Drawbacks
   is much more perspicuous.
 
 * Any feature has a maintenance burden, but this one should be fairly small.
-  In particular, the ``Modifier`` scheme dovetails perfectly with the existing
-  class-based overloading machinery within GHC.
 
 * Having yet another special symbol in a special position is a drawback.
   Yet ``%`` is *already* such a symbol (due to ``-XLinearTypes``), and the
@@ -205,23 +196,13 @@ Costs and Drawbacks
 
 Alternatives
 ------------
-* If we label ``Modifier`` an "interactive class", we can use
-  ``-XExtendedDefaultRules`` to allow GHC to default the type of ``m``
-  in ``Int %m -> Bool`` to be ``Multiplicity``. See `the documentation <https://ghc.gitlab.haskell.org/ghc/doc/users_guide/ghci.html#type-defaulting-in-ghci>`_ for
-  more details. This will work well, but I actually prefer not doing this,
-  and being explicit about multiplicity polymorphism.
+* A previous version of this proposal described that modifiers would work
+  via a ``Modifier`` class-like constraint. However, type inference seemed,
+  well, challenging. So this simplifies the proposal to be more syntactic.
 
 * There does not seem to be much point in introducing modifier
   syntax beyond the linear-types syntax, but it seemed helpful to do so here.
   We can drop that.
-
-* We might imagine having ``Modifier :: ModifierContext -> Type -> Constraint``,
-  where a ``ModifierContext`` distinguishes between the different syntactic
-  contexts a modifier may appear. However, this just seems to add complexity.
-  Even with this extra checking, each individual modifier is likely sensible
-  only sometimes (leading to errors at other times), and so the extra
-  complexity doesn't fully specify where a modifier can go. I don't think
-  it's worth it.
 
 Unresolved Questions
 --------------------
