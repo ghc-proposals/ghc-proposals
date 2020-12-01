@@ -13,7 +13,8 @@ Syntax for Modifiers: a generalization of linear-types syntax
 .. contents::
 
 This proposal introduces a new form of syntax ``%blah`` that defines a *modifier*.
-Modifiers somehow change the meaning of the next token. The ``blah`` is parsed
+Modifiers somehow change the meaning of the next token or of the construct they
+appear in. The ``blah`` is parsed
 and renamed as a type. For now, all modifiers
 will be built in, but we might imagine making an extensible feature later.
 
@@ -210,5 +211,9 @@ Unresolved Questions
   the combination of multiplicity and matchability. Yet, it seems much easier
   to consider this idea separate from the quite considerable complexity of `#242`_,
   and so I have made it a separate proposal.
+
+* This proposal floats the idea of ``%oneShot`` and ``%inline``, but these
+  might fit better as pragmas than modifiers. In any case, they are not
+  proposed concretely here and would be subject to a future proposal.
 
 .. _`#242`: https://github.com/ghc-proposals/ghc-proposals/pull/242
