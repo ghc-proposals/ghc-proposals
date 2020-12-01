@@ -91,6 +91,7 @@ Data based on 13951 hackage packages, 1348 survey responses and 8 committee vote
               `ViewPatterns`_ 6.10.1      7%    10%     6%  20%   22%   88%
  `ExistentialQuantification`_  6.8.1      7%     7%     6%  15%   30%   75%
 `GeneralisedNewtypeDeriving`_  6.8.1     19%    31%    14%  28%   12%   75%
+       `ImportQualifiedPost`_ 8.10.1       0      0      0   4%   70%   75%
               `InstanceSigs`_  7.6.1      3%    11%     2%  19%   16%   75%
                 `RankNTypes`_  6.8.1     21%    31%    12%  39%   22%   75%
           `TypeApplications`_  8.0.1      6%    14%     5%  29%   11%   75%
@@ -99,7 +100,6 @@ Data based on 13951 hackage packages, 1348 survey responses and 8 committee vote
    `ConstrainedClassMethods`_  6.8.1      0%     0%     0%   4%  138%   62%
         `DerivingStrategies`_  8.2.1      1%     3%     1%  27%   11%   62%
                      `GADTs`_  6.8.1     13%    25%     8%  34%   13%   62%
-       `ImportQualifiedPost`_ 8.10.1       0      0      0   4%   70%   62%
           `NegativeLiterals`_  7.8.1      0%     2%     0%   7%   58%   62%
            `RecordWildCards`_  6.8.1     17%    28%     9%  16%   39%   62%
        `ScopedTypeVariables`_  6.8.1     29%    41%    14%  33%    8%   62%
@@ -109,6 +109,7 @@ Data based on 13951 hackage packages, 1348 survey responses and 8 committee vote
                `DerivingVia`_  8.6.1      0%     1%     1%  30%   10%   50%
                 `LambdaCase`_  7.6.1     14%    34%     5%  46%    6%   50%
  `NoMonomorphismRestriction`_  6.8.1      4%    11%     3%   4%  131%   50%
+         `OverloadedStrings`_  6.8.1     37%    53%    12%  45%   12%   50%
                  `PolyKinds`_  7.4.1      5%    11%     4%  11%   41%   50%
           `PostfixOperators`_ 7.10.1      0%     0%     0%   3%  229%   50%
                 `StarIsType`_  8.6.1       0     0%      0    0   N/A   50%
@@ -116,27 +117,26 @@ Data based on 13951 hackage packages, 1348 survey responses and 8 committee vote
             `MonoLocalBinds`_ 6.12.1      1%     1%     1%   2%  279%   38%
         `NullaryTypeClasses`_  7.8.1      0%      0      0   3%  145%   38%
                `NumDecimals`_  7.8.1      0%     1%     0%   4%  107%   38%
-         `OverloadedStrings`_  6.8.1     37%    53%    12%  45%   12%   38%
           `ParallelListComp`_  6.8.1      1%     9%     0%   4%  175%   38%
            `RoleAnnotations`_  7.8.1      1%     1%     1%   6%   75%   38%
+  `StandaloneKindSignatures`_ 8.10.1      0%      0     0%   8%   28%   38%
              `UnicodeSyntax`_  6.8.1      2%     7%     0%   7%   99%   38%
             `BlockArguments`_  8.6.1      0%     2%     0%  12%   63%   25%
          `DefaultSignatures`_  7.2.1      6%    19%     4%  16%   26%   25%
-            `DeriveAnyClass`_ 7.10.1      3%     2%     5%  17%   43%   25%
         `ExplicitNamespaces`_  7.6.1      1%     0%     1%   4%  138%   25%
                 `MultiWayIf`_  7.6.1      4%    17%     2%  22%   20%   25%
             `NamedWildCards`_ 7.10.1      0%     1%      0   8%   65%   25%
   `NondecreasingIndentation`_      ?      0%     1%     0%    0   N/A   25%
+           `OverloadedLists`_  7.8.1      1%     1%     2%  10%   81%   25%
                `RecursiveDo`_  6.8.1      1%     2%     1%   5%  135%   25%
-  `StandaloneKindSignatures`_ 8.10.1      0%      0     0%   8%   28%   25%
           `UnliftedNewtypes`_ 8.10.1      0%      0      0   3%  121%   25%
                     `Arrows`_  6.8.1      2%     9%     0%   4%  284%   12%
+            `DeriveAnyClass`_ 7.10.1      3%     2%     5%  17%   43%   12%
   `DisambiguateRecordFields`_  6.8.1      0%     1%     0%   6%  105%   12%
   `ForeignFunctionInterface`_  6.8.1       0     4%      0   3%  211%   12%
     `FunctionalDependencies`_  6.8.1      9%    22%     6%  17%   27%   12%
            `LexicalNegation`_  9.0.1       0      0      0    0   N/A   12%
        `LiberalTypeSynonyms`_  6.8.1      1%     9%     0%   5%  105%   12%
-           `OverloadedLists`_  7.8.1      1%     1%     2%  10%   81%   12%
      `PartialTypeSignatures`_ 7.10.1      1%     6%     1%   7%   84%   12%
            `PatternSynonyms`_  7.8.1      3%     6%     4%  14%   24%   12%
      `TemplateHaskellQuotes`_  8.0.1      0%     0%     0%   2%  446%   12%
