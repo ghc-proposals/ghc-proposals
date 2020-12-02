@@ -330,6 +330,214 @@ Examples
   adding the ability to use functions in types should therefore address deprecation
   and removal (over a painstakingly slow timeline) of type families.
 
+Design of Dependent Types
+-------------------------
+This section will contain a hypothetical design for dependent types in GHC.
+For now, though, it will contain examples of what dependent types are *not*,
+in order to disabuse certain common notions. Watch this space for more detail
+later.
+
+Non-design of dependent types
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* False: **Dependent Haskell and/or this proposal is trying to ban definitions like `data T = T`.**
+
+  There is no effort as far as I'm aware to eliminate code containing
+  definitions like ``data T = T``. This is an example of *punning*, where
+  identifiers of the same spelling are used at the term level and at the type
+  level. The design of DH I've been thinking about, and every concrete
+  description I've seen, continues to allow ``data T = T``, into perpetuity.
+
+  Instead, the leading design for DH introduces warnings ``-Wpuns`` and
+  ``-Wpun-bindings`` that warn at either occurrences or binding sites
+  (respectively) of punned identifiers. This is (in my view) the main payload
+  of `#270`_. (The rest of `#270`_ is just about giving users a way to silence the
+  warnings.) No one has to enable these warnings. All DH features work with
+  punned identifiers, perhaps at the expense of requiring a little more
+  disambiguation. `#270`_ has the details.
+
+  It is true that we believe that idiomatic DH will tend to avoid punning, but
+  it will be up to the community to see how it will all play out. Maybe the
+  disambiguation means are easy enough (at a minimum, prefixes like ``D.`` or
+  ``T.``) that punning remains commonplace.
+
+* Overstated: **Dependent Haskell is complicated.**
+
+  @simonpj's `comment
+  <https://github.com/ghc-proposals/ghc-proposals/pull/281#issuecomment-733715402>`_
+  is the source of this one. According to my understanding, the complication
+  he refers to is twofold: (1) the need to think about two namespaces, and (2)
+  the need for the T2T translation.
+
+  1. In corner cases, we do need to worry about the two namespaces -- but only
+     when the user binds an identifier in both. Proposal `#281`_ thus
+     irons out which namespace takes precedence. However, if a name is not
+     punned, then the user may remain blissfully unaware of the distinction.
+     Thus, when I say DH is not complicated in this way, I mean that idiomatic
+     DH -- where the user disambiguates between the namespaces instead of
+     using punning -- is not.
+
+     Even a user who does use punning is OK: names bound to the left of a ``::``
+     are term-level names; those bound to the right of one are type-level
+     names. Occurrences to the left of a ``::`` look in the term-level namespace
+     first; those to the right of one look in the type-level namespace first.
+     Of course, there are subtleties here, as spelled out in the proposal, but
+     that summary is morally all there is to it.
+
+  2. The T2T translation of `#281`_ is needed only until we merge terms and types. Note
+     that this merger is *independent* of the namespace issue: we can imagine
+     identical ASTs for terms and for types, but with different
+     name-resolution characteristics. There are relatively few barriers to
+     merging terms and types: essentially, we have to sort out the fact that
+     ``'`` means something different in the two ASTs (it selects the term-level
+     namespace in types, while it denotes a TH name quote in terms) and we
+     will have to be able to parse type-like things such as ``forall`` and ``->``
+     in terms. Happily, ``->`` is *already* illegal in terms, so this probably
+     boils down to making ``forall`` a keyword.
+
+     There may be a stretch of time that we retain the complexity of T2T, but
+     my hope is that this time will be limited. One of the reasons I wrote
+     `#378`_ is to motivate us to deal with that temporary complexity.
+
+  So I claim things are not as bad as they appear here.
+
+* Likely False: **It would work just fine to have dependent types but keep
+  terms as terms and types as types.**
+
+  It is possible to have a dependently typed language that keeps terms and
+  types separate. For example `Twelf <http://twelf.org/wiki/Main_Page>`_ is such
+  a language. I agree that this is possible. But I claim such a language is
+  complicated in precisely the way that @simonpj is worried about for DH, and
+  thus a design to avoid.
+
+  Twelf works by having a notion of type *indices*, distinct from type
+  parameters. (I am not a Twelf expert; please correct me if I go wrong here.)
+  Indices are terms. Thus, if we say (adapting to Haskell syntactic
+  conventions) ``x :: T (a b c)``, that ``a b c`` is a *term*, not a type. This is
+  because Twelf types are indexed by terms. We thus have a clear separation
+  between types and terms: the thing right after a ``::`` is a type, and all of
+  its arguments are terms. Yet, we have dependent types.
+
+  However, Twelf is missing a feature crucial in Haskell: polymorphism. That
+  is, Haskellers like to talk about ``Maybe Int``, where the argument to a type
+  ``Maybe`` is another type ``Int``. This is impossible in Twelf.
+
+  To mix type arguments and term arguments, we can imagine (at least) two strategies:
+
+  1. Disambiguate according to a type's kind. That is, if we see ``T (a b c) (d e f)``,
+     we can look at ``T``\'s kind to determine whether each of ``a b c`` and
+     ``d e f`` are types or terms. This is challenging for several reasons.
+     Firstly, it would be impossible to parse using a parser generator, if
+     types and terms have separate parsers. Let's assume we get around that
+     hurdle by combining syntaxes. Then, it would be very hard to do name
+     resolution. It means we would need the kind of ``T`` before we can do name
+     resolution on ``a b c`` or ``d e f``. Maybe it seems that this is not
+     unreasonable for a type constructor like ``T``. But what about ``t (a b c) (d e f)``,
+     where ``t`` is a type variable, perhaps subject to kind
+     inference? We are now sliding down a slippery slope. Either we say we
+     can't abstract over types that take terms as argument (and hobble our
+     type system) or have strict requirements on kind annotations, etc., to
+     make sure we know ``t``\'s kind before ever even doing name resolution on
+     its arguments. I don't envy someone trying to implement this.
+
+  2. Disambiguate with syntactic markers. That is, we require users to write
+     ``T (a b c) (data d e f)`` where the ``data`` keyword indicates that a term
+     comes next. This would mean that *every* use of ``T`` would need the ``data``
+     keyword right there, which would quickly become annoying to users. It's
+     especially annoying when there is no semantic difference between a type
+     argument and a term argument: both would be erased during compilation.
+     The ``data`` keyword would just be there to select a different
+     sub-language, but with no semantic distinction.
+
+  Either design *also* requires a considerable amount of duplication. We would
+  need type families in order to do computation on types, alongside functions
+  to do computation on terms. (We already have this, and it's already painful,
+  in my opinion.) Consider also the desire for propositional equality (i.e.
+  ``Data.Type.Equality.:~:``). Is it parameterized by types or terms? We'd need
+  both variants, in practice. Would we need basic datatypes that work over
+  both terms and types? Quite possibly.
+
+  So, my claim here is that, while possible, this design is unappealing. If
+  the costs of going to a unified language were very high, then maybe it would
+  be worth it. But I claim that the costs are small: we introduce a way to
+  disambiguate puns (as well as a way to control the built-in puns around
+  lists tuples), and we merge the syntaxes. Disambiguating puns is relatively
+  low-cost: it is an opt-in feature (see my first refutation above -- no one
+  is proposing to ban puns), and the designs for disambiguation hook nicely
+  into the module system (another disambiguation mechanism). Unifying the
+  syntaxes is also relatively low-cost: it means making ``forall`` (and perhaps
+  ``foreach``) unconditionally a keyword, and it means changing the meaning of
+  ``'`` in types. These costs are non-zero. But I think they are worth paying in
+  order to avoid having a distinction among sub-languages without a
+  difference.
+
+* False: **Dependent Haskell destroys the phase distinction and/or type erasure.**
+
+  Other dependently typed languages (notably, Agda and Idris 1) have a murky
+  notion of what information is kept around at runtime, and what is erased
+  during compilation. For example, I can write this in Agda::
+
+    quickLength : ∀ {a : Set} {n : ℕ} → Vec a n → ℕ
+    quickLength {n = n} _ = n
+
+  This function returns the length of a vector simply by looking at the index
+  it is parameterized by. By contrast, we cannot write this function in
+  Haskell, because the ``n`` stored as the length of the vector is a
+  compile-time quantity, not available at runtime. To get the length of a
+  length-indexed vector in Haskell, we must traverse the entire vector, just
+  as we do for lists.
+
+  In the design for Dependent Haskell, this phase distinction (the fact that
+  some data is compile-time and some data is run-time) remains, unlike in
+  Agda. Every argument to a function, both implicit and explicit, must somehow
+  be marked as *relevant* or *irrelevant*.
+
+  Continuing our example, we could write ::
+
+    quickLength :: forall (a :: Type). foreach (n :: Nat). Vec a n -> Nat
+    quickLength @_ @n _ = n
+
+    slowLength :: forall (a :: Type) (n :: Nat). Vec a n -> Nat
+    slowLength Nil = Zero
+    slowLength (_ :> v) = Succ (slowLength v)
+
+  Note that ``quickLength`` uses ``foreach (n :: Nat)``. The ``foreach`` quantifier
+  (also known as ``pi`` or ``∏``) tells us that its argument is relevant and must
+  be passed at runtime. Accordingly, the caller of ``quickLength`` must somehow
+  already know (at run-time!) the length of the vector before calling. If we
+  were to write the implementation of ``quickLength`` with the type of
+  ``slowLength``, we would get an error, saying that we cannot return an input
+  that is known only at compile-time.
+
+  A few other notes on this example:
+
+  * The kind annotations (``:: Type`` and ``:: Nat``) are unnecessary and could be inferred.
+
+  * Leaving off any quantification would yield ``slowLength``\'s type. That
+    is, we assume irrelevant quantification in types.
+
+  * The ``forall a.`` is necessary in ``quickLength`` is necessary because of
+    the forall-or-nothing rule.
+
+  * We could reverse the order of implicit arguments in both examples.
+
+  If a function is missing a type signature, it is actually easy to infer
+  relevance: just look at the usages of a variable. If every usage is as an
+  irrelevant argument, then the variable can be quantified irrelevantly.
+  Otherwise, it must be relevant. Relevance inference could be done over a
+  mutually recursive group much like role inference works today, by finding a
+  fixpoint. Also, note that role inference just works -- it has needed
+  essentially no maintenance since being written with the original
+  implementation of roles. I would expect similar of relevance inference.
+
+* False: **Dependent Haskell will require functions to terminate.**
+
+  This has not come up much recently, but it's a misconception I've heard. I
+  won't refute it longhand here. But it's not true. No one is proposing a
+  termination checker. Dependent types without a termination checker is not
+  suitable for use as a proof assistant, but it makes for a wonderfully
+  type-safe language.
+
 Effect and Interactions
 -----------------------
 * By accepting this proposal, the committee reaffirms Haskell's status as
