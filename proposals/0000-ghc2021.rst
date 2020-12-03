@@ -100,6 +100,7 @@ Data based on 13951 hackage packages, 1348 survey responses and 9 committee vote
              `TypeOperators`_  6.8.1     14%    28%     6%  20%   17%   78%
       `TypeSynonymInstances`_  6.8.1     10%     8%     7%   7%   74%   78%
         `DerivingStrategies`_  8.2.1      1%     3%     1%  27%   11%   67%
+                     `GADTs`_  6.8.1     13%    25%     8%  34%   13%   67%
           `NegativeLiterals`_  7.8.1      0%     2%     0%   7%   58%   67%
                  `PolyKinds`_  7.4.1      5%    11%     4%  11%   41%   67%
            `RecordWildCards`_  6.8.1     17%    28%     9%  16%   39%   67%
@@ -108,7 +109,6 @@ Data based on 13951 hackage packages, 1348 survey responses and 9 committee vote
               `TypeFamilies`_  6.8.1     23%    33%    11%  24%   18%   67%
                  `DataKinds`_  7.4.1     13%    28%     8%  26%   21%   56%
                `DerivingVia`_  8.6.1      0%     1%     1%  30%   10%   56%
-                     `GADTs`_  6.8.1     13%    25%     8%  34%   13%   56%
                 `LambdaCase`_  7.6.1     14%    34%     5%  46%    6%   56%
             `MonoLocalBinds`_ 6.12.1      1%     1%     1%   2%  279%   56%
             `NamedWildCards`_ 7.10.1      0%     1%      0   8%   65%   56%
