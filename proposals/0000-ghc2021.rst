@@ -90,7 +90,6 @@ Data based on 13951 hackage packages, 1348 survey responses and 9 committee vote
             `NamedFieldPuns`_ 6.10.1      5%    10%     3%  18%   24%   89%
         `NumericUnderscores`_  8.6.1      0%     0%     0%  18%   15%   89%
           `PostfixOperators`_ 7.10.1      0%     0%     0%   3%  229%   89%
-              `ViewPatterns`_ 6.10.1      7%    10%     6%  20%   22%   89%
    `ConstrainedClassMethods`_  6.8.1      0%     0%     0%   4%  138%   78%
  `ExistentialQuantification`_  6.8.1      7%     7%     6%  15%   30%   78%
 `GeneralisedNewtypeDeriving`_  6.8.1     19%    31%    14%  28%   12%   78%
@@ -99,6 +98,7 @@ Data based on 13951 hackage packages, 1348 survey responses and 9 committee vote
           `TypeApplications`_  8.0.1      6%    14%     5%  29%   11%   78%
              `TypeOperators`_  6.8.1     14%    28%     6%  20%   17%   78%
       `TypeSynonymInstances`_  6.8.1     10%     8%     7%   7%   74%   78%
+              `ViewPatterns`_ 6.10.1      7%    10%     6%  20%   22%   78%
         `DerivingStrategies`_  8.2.1      1%     3%     1%  27%   11%   67%
                      `GADTs`_  6.8.1     13%    25%     8%  34%   13%   67%
           `NegativeLiterals`_  7.8.1      0%     2%     0%   7%   58%   67%
