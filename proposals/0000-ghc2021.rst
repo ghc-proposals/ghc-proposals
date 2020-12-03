@@ -90,17 +90,18 @@ Data based on 13951 hackage packages, 1348 survey responses and 9 committee vote
             `NamedFieldPuns`_ 6.10.1      5%    10%     3%  18%   24%   89%
         `NumericUnderscores`_  8.6.1      0%     0%     0%  18%   15%   89%
           `PostfixOperators`_ 7.10.1      0%     0%     0%   3%  229%   89%
+                `RankNTypes`_  6.8.1     21%    31%    12%  39%   22%   89%
    `ConstrainedClassMethods`_  6.8.1      0%     0%     0%   4%  138%   78%
  `ExistentialQuantification`_  6.8.1      7%     7%     6%  15%   30%   78%
 `GeneralisedNewtypeDeriving`_  6.8.1     19%    31%    14%  28%   12%   78%
               `InstanceSigs`_  7.6.1      3%    11%     2%  19%   16%   78%
-                `RankNTypes`_  6.8.1     21%    31%    12%  39%   22%   78%
           `TypeApplications`_  8.0.1      6%    14%     5%  29%   11%   78%
              `TypeOperators`_  6.8.1     14%    28%     6%  20%   17%   78%
       `TypeSynonymInstances`_  6.8.1     10%     8%     7%   7%   74%   78%
               `ViewPatterns`_ 6.10.1      7%    10%     6%  20%   22%   78%
         `DerivingStrategies`_  8.2.1      1%     3%     1%  27%   11%   67%
                      `GADTs`_  6.8.1     13%    25%     8%  34%   13%   67%
+            `MonoLocalBinds`_ 6.12.1      1%     1%     1%   2%  279%   67%
           `NegativeLiterals`_  7.8.1      0%     2%     0%   7%   58%   67%
                  `PolyKinds`_  7.4.1      5%    11%     4%  11%   41%   67%
            `RecordWildCards`_  6.8.1     17%    28%     9%  16%   39%   67%
@@ -109,19 +110,18 @@ Data based on 13951 hackage packages, 1348 survey responses and 9 committee vote
               `TypeFamilies`_  6.8.1     23%    33%    11%  24%   18%   67%
                  `DataKinds`_  7.4.1     13%    28%     8%  26%   21%   56%
                `DerivingVia`_  8.6.1      0%     1%     1%  30%   10%   56%
+  `ForeignFunctionInterface`_  6.8.1       0     4%      0   3%  211%   56%
                 `LambdaCase`_  7.6.1     14%    34%     5%  46%    6%   56%
-            `MonoLocalBinds`_ 6.12.1      1%     1%     1%   2%  279%   56%
             `NamedWildCards`_ 7.10.1      0%     1%      0   8%   65%   56%
          `OverloadedStrings`_  6.8.1     37%    53%    12%  45%   12%   56%
-  `ForeignFunctionInterface`_  6.8.1       0     4%      0   3%  211%   44%
+                `StarIsType`_  8.6.1       0     0%      0    0   N/A   56%
+             `UnicodeSyntax`_  6.8.1      2%     7%     0%   7%   99%   56%
  `NoMonomorphismRestriction`_  6.8.1      4%    11%     3%   4%  131%   44%
         `NullaryTypeClasses`_  7.8.1      0%      0      0   3%  145%   44%
                `NumDecimals`_  7.8.1      0%     1%     0%   4%  107%   44%
           `ParallelListComp`_  6.8.1      1%     9%     0%   4%  175%   44%
            `RoleAnnotations`_  7.8.1      1%     1%     1%   6%   75%   44%
   `StandaloneKindSignatures`_ 8.10.1      0%      0     0%   8%   28%   44%
-                `StarIsType`_  8.6.1       0     0%      0    0   N/A   44%
-             `UnicodeSyntax`_  6.8.1      2%     7%     0%   7%   99%   44%
             `BlockArguments`_  8.6.1      0%     2%     0%  12%   63%   33%
          `DefaultSignatures`_  7.2.1      6%    19%     4%  16%   26%   33%
         `ExplicitNamespaces`_  7.6.1      1%     0%     1%   4%  138%   33%
