@@ -124,11 +124,11 @@ Data based on 13951 hackage packages, 1348 survey responses and 9 committee vote
             `BlockArguments`_  8.6.1      0%     2%     0%  12%   63%   33%
          `DefaultSignatures`_  7.2.1      6%    19%     4%  16%   26%   33%
         `ExplicitNamespaces`_  7.6.1      1%     0%     1%   4%  138%   33%
+  `ForeignFunctionInterface`_  6.8.1       0     4%      0   3%  211%   33%
        `MonadFailDesugaring`_  8.0.1      0%     2%      0   7%   15%   33%
                 `MultiWayIf`_  7.6.1      4%    17%     2%  22%   20%   33%
           `UnliftedNewtypes`_ 8.10.1      0%      0      0   3%  121%   33%
   `DisambiguateRecordFields`_  6.8.1      0%     1%     0%   6%  105%   22%
-  `ForeignFunctionInterface`_  6.8.1       0     4%      0   3%  211%   22%
     `FunctionalDependencies`_  6.8.1      9%    22%     6%  17%   27%   22%
            `LexicalNegation`_  9.0.1       0      0      0    0   N/A   22%
        `LiberalTypeSynonyms`_  6.8.1      1%     9%     0%   5%  105%   22%
