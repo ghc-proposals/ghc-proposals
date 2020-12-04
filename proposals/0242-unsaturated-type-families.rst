@@ -1,22 +1,39 @@
 Unsaturated Type Families
 =========================
 
-.. proposal-number:: Leave blank. This will be filled in when the proposal is
-                     accepted.
+.. author:: Csongor Kiss
+.. date-accepted:: 2020-12-04
 .. ticket-url:: Leave blank. This will eventually be filled with the
                 ticket URL which will track the progress of the
                 implementation of the feature.
 .. implemented:: Leave blank. This will be filled in with the first GHC version which
                  implements the described feature.
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/242>`_.
-.. sectnum::
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/242>`_.
 .. contents::
 
 This is a proposal to allow partial application of type families. The idea is
 described in the paper
 `Higher-Order Type-level Programming in Haskell <https://www.microsoft.com/en-us/research/publication/higher-order-type-level-programming-in-haskell>`_,
 and is presented here with a few tweaks and refinements.
+
+Committee Decision
+------------------
+The committee has accepted this proposal on an *experimental* basis. This
+feature is wholly new to Haskell (and to programming, more generally), and
+we will learn more from experience. But we cannot gain the experience without
+incorporating and releasing the feature. We thus label it as subject to change.
+Changes will be incorporated into this document before they are released.
+
+In particular, the following aspects are subject to change:
+
+* Syntax (especially in light of `Proposal #370 <https://github.com/ghc-proposals/ghc-proposals/pull/370>`_).
+
+* The defaulting rules.
+
+These changes might continue (without prior debate here) even after a release, but
+all changes will be made in consultation with the GHC developer team, via debate
+at `GitLab <https://gitlab.haskell.org/ghc/ghc/>`_.
 
 Motivation
 ----------
