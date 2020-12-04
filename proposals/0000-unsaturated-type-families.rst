@@ -292,7 +292,7 @@ This is a *hard rule*.
 The *Term-level functions* section specifies that term-level function are all
 unmatchable.  GHC already eta-expands data constructors automatically, so in any
 term context, `Just` is elaborated to ``(\x -> Just x)`` and thus gets an
-unmatchable arrow type, just like any other term-level function.
+unmatchable arrow type, just like any other term-level function. ::
 
   -- inferred: a -> @U Maybe a
   just :: a -> Maybe a
