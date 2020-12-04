@@ -284,7 +284,7 @@ Type family (and type synonym) *arguments* are unmatchable
   type Id a = a
 
 is unambiguous, and no annotation is required. However, the unambiguity here
-arises not solely due to the fact that ``Id`` is a type synonym, but also that it
+arises not solely due to the fact that ``Id`` is a type function, but also that it
 binds its argument on the left-hand side. This is a *hard rule*.
 
 The arrows not corresponding to arguments
@@ -297,6 +297,7 @@ bound on the LHS are inferred to be matchable (by *default*) ::
 
 ``MyMaybe`` is a nullary type family, and its return kind is thus matchable (see
 the *Arity of type families* section for more details about type family arities).
+Open type families are treated the same as closed type families.
 
 The following is rejected ::
 
@@ -307,17 +308,22 @@ The following is rejected ::
 
 because, as above, the kind of ``MyId`` is defaulted to ``Type -> @M Type`` as
 the arrow occurs in the return kind. Then the equation does not match the kind
-signature, and is thus rejected. This is one of the rare occasions where users
+signature, and is thus rejected.
+This is one of the rare occasions where users
 explicitly need to assign an unmatchable arrow for the program to be accepted ::
 
   type MyIdGood :: Type -> @U Type
   type family MyIdGood where
     MyIdGood = Id
 
+Importantly, when a signature is given, we do
+not look at the equations to infer matchabilities, as in this case GHC only
+checks kinds, but does no inference.
+
 Higher-order arguments
 ######################
 
-When a higher-order king signature is given, the function arrow is assumed to
+When a higher-order kind signature is given, the function arrow is assumed to
 mean matchable *by default*
 ::
 
@@ -795,7 +801,7 @@ details of the proposal.
     uncover more information about ``b``), but it's not obvious if this
     additional complexity would be worth it.
 
-5.  When a kind signature is given, we make the choice of not generalising the
+3.  When a kind signature is given, we make the choice of not generalising the
     matchabilities, which differs from the treatment of kind variables. Consider
     the following program ::
 
@@ -886,7 +892,7 @@ details of the proposal.
        nor ``C`` above would typecheck, because in both cases the matchabilities are
        computationally relevant.
 
-6.  When a kind signature is *not* given, we make the choice of generalising the
+4.  When a kind signature is *not* given, we make the choice of generalising the
     matchabilities. An example from the *Higher-order arguments* section above ::
 
       -- inferred: Map :: forall a b m. @U (a -> @m b) -> @U [a] -> @U [b]
