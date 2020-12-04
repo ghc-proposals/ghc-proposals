@@ -253,6 +253,26 @@ it is an error to write ::
   type Maybe :: Type -> @U Type
   data Maybe a = ...
 
+Term-level functions
+####################
+
+The syntax of types and kinds is shared in GHC, so once we assign matchabilities to
+kinds, we also have to assign matchabilities to types. Term-level functions are
+*always* unmatchable. ::
+
+  -- inferred: a -> @U a
+  id :: a -> a
+  id x = x
+
+  -- inferred: (a -> @U b) -> @U [a] -> @U b
+  map :: (a -> b) -> [a] -> [b]
+
+That said, matchability information is not relevant in terms today, because its
+sole purpose is in guarding application decomposition in equalities, and today
+we only have type equalities but not term equalities. Defaulting everything to
+unmatchable is thus a convenient step, but this situation will change with
+Dependent Haskell.
+
 Data constructors
 #################
 
@@ -267,15 +287,17 @@ Data constructors are matchable. This means that using either syntax ::
 ``Just :: a -> @M Maybe a``. Promoting ``Just`` thus results in a matchable
 type constructor ``'Just :: a -> @M Maybe a``.
 
-Matchabilities are only relevant in kinds, and not in types, so having the data
-constructor ``Just`` have a matchable type makes no difference, only for future
-compatbility with Dependent Haskell and promotion.
-
-GHC already eta-expands data constructors automatically, so in any term context,
-`Just` is elaborated to ``(\x -> Just x)`` and thus gets an unmatchable arrow
-type, just like any other term-level function.
-
 This is a *hard rule*.
+
+The *Term-level functions* section specifies that term-level function are all
+unmatchable.  GHC already eta-expands data constructors automatically, so in any
+term context, `Just` is elaborated to ``(\x -> Just x)`` and thus gets an
+unmatchable arrow type, just like any other term-level function.
+
+  -- inferred: a -> @U Maybe a
+  just :: a -> Maybe a
+  just = Just -- eta-expanded
+
 
 Type families
 #############
@@ -364,19 +386,6 @@ checking ::
 **This is the only scenario where matchability generalisation occurs.** That is,
 when no signature is given and the arrow is a higher-order argument to a type
 function of any flavour.
-
-Term-level functions
-####################
-
-Term-level functions are *always* unmatchable. ::
-
-  -- inferred: a -> @U a
-  id :: a -> a
-  id x = x
-
-  -- inferred: a -> @U Maybe a
-  just :: a -> Maybe a
-  just = Just -- eta-expanded
 
 Kind-arrows in type signatures
 ##############################
