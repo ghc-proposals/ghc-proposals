@@ -264,11 +264,16 @@ Data constructors are matchable. This means that using either syntax ::
     Nothing :: Maybe a
     Just :: a -> Maybe a
 
-``Just :: a -> @M Maybe a``. GHC already eta-expands data constructors
-automatically, so writing ``map Just xs`` will work even though ``map`` expects
-an unmatchable argument, because ``Just`` will be elaborated to ``(\x -> Just x)``
-which is an unmatchable lambda. Promoting ``Just`` thus results in a matchable
-constructor ``'Just :: a -> @M Maybe a``.
+``Just :: a -> @M Maybe a``. Promoting ``Just`` thus results in a matchable
+type constructor ``'Just :: a -> @M Maybe a``.
+
+Matchabilities are only relevant in kinds, and not in types, so having the data
+constructor ``Just`` have a matchable type makes no difference, only for future
+compatbility with Dependent Haskell and promotion.
+
+GHC already eta-expands data constructors automatically, so in any term context,
+`Just` is elaborated to ``(\x -> Just x)`` and thus gets an unmatchable arrow
+type, just like any other term-level function.
 
 This is a *hard rule*.
 
@@ -477,47 +482,6 @@ which really refers to a kind-level matchable arrow. However, we expect many
 such use cases to be subsumed by first class higher-order functions introduced
 by this proposal.
 
-Arity of type families
-~~~~~~~~~~~~~~~~~~~~~~
-
-A technical consequence of the proposed framework is that the `arity
-<https://downloads.haskell.org/~ghc/8.10.2/docs/html/users_guide/glasgow_exts.html?highlight=typefamilies#type-family-declarations>`_
-of a type family can not be directly deduced from its kind (although even before
-this proposal that was already the case).
-
-Consider the following two type families ::
-
-  type family Foo (a :: Type) :: Type
-  type family Bar :: Type -> @U Type
-
-Both have the same kind, namely ``Type -> @U Type``, but  the arity of ``Foo``
-is 1, whereas ``Bar`` is nullary. Since partial application is now possible, the
-arities no longer play such an important role. The main place where they still
-show up is in the definitions of type families. Type family equations must bind
-all of their arguments on the left-hand side ::
-
-  type family Foo (a :: Type) :: Type where
-    Foo Int  = Bool
-    Foo Char = Int
-
-but ``Bar``, a nullary type family, can only be defined without arguments and a
-type family on its RHS ::
-
-  type family Bar :: Type -> @U Type where
-    Bar = Foo
-
-Thus the following definition is invalid ::
-
-  type family Bad :: Type -> @U Type where
-    Bad x = Foo x
-
-This is because type families can only be reduced when they are fully
-saturated.
-
-Thus, the relationship between the arity and the kind can be summarised as follows:
-If a type family's arity is ``n``, then its kind will have *at least* its first
-``n`` arrows unmatchable.
-
 Apartness of type families
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -545,6 +509,10 @@ Proposed Change Specification
 The following sections describe a new GHC extension, which can be
 enabled with the pragma ``{-# LANGUAGE UnsaturatedTypeFamilies #-}``.
 The pragma implies ``TypeFamilies``.
+
+When the ``UnsaturatedTypeFamilies`` extension is enabled, partial application
+of type families and type synonyms is allowed. When it is disabled, partial
+application produces a type error suggesting the extension to be turned on.
 
 .. _Syntax:
 
@@ -686,6 +654,51 @@ to turn the constructor matchability-polymorphic::
 
 This is not done automatically in order to avoid confusion around
 existential varibles.
+
+Arity of type families
+~~~~~~~~~~~~~~~~~~~~~~
+
+GHC today determines the arity of a type family syntactically `arity
+<https://downloads.haskell.org/~ghc/8.10.2/docs/html/users_guide/glasgow_exts.html?highlight=typefamilies#type-family-declarations>`_
+by looking at the number of bound arguments in the type family header.
+
+GHC then uses the arity to determine when can a type family be reduced (only
+when it's fully saturated).
+
+It is tempting to think that the matchability information alone is sufficient to
+determine the arity of a type family, but in fact it is not.
+
+Consider the following two type families ::
+
+  type family Foo (a :: Type) :: Type
+  type family Bar :: Type -> @U Type
+
+Both have the same kind, namely ``Type -> @U Type``, but  the arity of ``Foo``
+is 1, whereas ``Bar`` is nullary. Since partial application is now possible, the
+arities no longer play such an important role. The main place where they still
+show up is in the definitions of type families. Type family equations must bind
+all of their arguments on the left-hand side ::
+
+  type family Foo (a :: Type) :: Type where
+    Foo Int  = Bool
+    Foo Char = Int
+
+but ``Bar``, a nullary type family, can only be defined without arguments and a
+type family on its RHS ::
+
+  type family Bar :: Type -> @U Type where
+    Bar = Foo
+
+Thus the following definition is invalid ::
+
+  type family Bad :: Type -> @U Type where
+    Bad x = Foo x
+
+Thus, the relationship between the arity and the kind can be summarised as follows:
+If a type family's arity is ``n``, then its kind will have *at least* its first
+``n`` arrows unmatchable. Notably, the proposal doesn't change the existing
+behaviour whereby every argument of a type family must be bound on the LHS.
+
 
 Explicit specificity
 ~~~~~~~~~~~~~~~~~~~~
