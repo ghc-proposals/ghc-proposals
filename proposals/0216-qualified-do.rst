@@ -410,7 +410,6 @@ For instance we could write operations for monoids:
 ::
 
   module Data.Monoid.QualifiedDo where
-    import Prelude hiding ((>>))
 
     (>>) :: Monoid a => a -> a -> a
     (>>) = (<>)
