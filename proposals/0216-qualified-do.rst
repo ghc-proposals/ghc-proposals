@@ -389,15 +389,15 @@ Monoids
   {-# LANGUAGE OverloadedLabels #-}
   module Y where
     import Data.Monoid.QualifiedDo as Monoid
-    import SomeHTML
+    import SomeFictitiousHTML
 
     htmlPage :: HTML
     htmlPage = Monoid.do
-      #head H.do
+      #head Monoid.do
         #title "Welcome visitor!"
-        #body H.do
-      #h1 "This is a webpage"
-      #p H.do "(Ugly one, but "; #em "it works!"; ")"
+      #body Monoid.do
+        #h1 "This is a webpage"
+        #p Monoid.do "(Ugly one, but "; #em "it works!"; ")"
 
 
 Effect and Interactions
