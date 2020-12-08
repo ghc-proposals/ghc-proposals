@@ -39,7 +39,7 @@ Proposed Change Specification
   (Implementation note: see ``Note [Implicit quantification in type synonyms]`` in ``GHC.Rename.HsType``.)
 
 * Change #2.   Introduce the following rule: in a type family instance declaration,
-  the instantiation of the family instance fully determined by the left hand side, without
+  the instantiation of the family instance is fully determined by the left hand side, without
   looking at the right hand side.
 
 Examples and motivation
