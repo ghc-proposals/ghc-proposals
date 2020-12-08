@@ -29,6 +29,9 @@ Proposal title
             number in the link, and delete this bold sentence.**
 .. contents::
 
+Summary
+---------
+
 In a couple of places GHC is being too clever when dealing with type synonym
 or type-family instance declarations.  This proposal suggests two
 related simplifications, that make the language easier to read, less ad hoc,
@@ -40,22 +43,23 @@ This proposal has a draft implementation in MR !3145.
 Proposed Change Specification
 -----------------------------
 
-1. Introduce the following rule: in
-   * a type synonym declaration, or
-   * a type family instance declaration
-   every type variable mentioned on the RHS must be bound on the LHS.
+* Change #1.  Introduce the following rule: in
 
-   To match this change, in the user manual, remove the text in
-   `Implicit quantification in type synonyms and type family instances
-   <https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/poly_kinds.html>`_.
-   from the beginning down to
-   "Kind variables can also be quantified in visible positions...".
+  * a type synonym declaration, or
+  * a type family instance declaration
+  every type variable mentioned on the RHS must be bound on the LHS.
 
-   (Implementation note: see ``Note [Implicit quantification in type synonyms]`` in ``GHC.Rename.HsType``.)
+  To match this change, in the user manual, remove the text in
+  `Implicit quantification in type synonyms and type family instances (6.4.11.12)
+  <https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/poly_kinds.html>`_,
+  from the beginning of that section down to
+  "Kind variables can also be quantified in visible positions...".
 
-2. Introduce the following rule: in a type family instance declaration,
-   the instantiation of the left hand side is fully determined, without
-   looking at the right hand side.
+  (Implementation note: see ``Note [Implicit quantification in type synonyms]`` in ``GHC.Rename.HsType``.)
+
+* Change #2.   Introduce the following rule: in a type family instance declaration,
+  the instantiation of the family instance fully determined by the left hand side, without
+  looking at the right hand side.
 
 Examples and motivation
 -----------------------
@@ -72,7 +76,7 @@ Consider::
 free variables of a *top-level* kind signature on the RHS are brought into scope
 implicitly, and will be quantified in the final kind of the type constructor.
 
-So ``T2`` is currently illegal, because the kind signature is not at the top level.
+In constrast, ``T2`` is currently illegal, because the kind signature is not at the top level.
 
 With this proposal, both declarations woudl be illegal.  Instead you must write:::
 
@@ -80,6 +84,10 @@ With this proposal, both declarations woudl be illegal.  Instead you must write:
   type T2 @a = 'Just ('Nothing :: Maybe a)
 
 so that all the variables occurring on the RHS are bound on the LHS.
+
+This proposal exploits #326 to allow a nice, simple, uniform rule.
+As the manual says, "The reason for this exception [the strange, ad-hoc,
+top-level-kind-signature rule] is that there may be no other way to bind k".
 
 
 Change #2
