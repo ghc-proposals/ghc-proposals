@@ -73,12 +73,12 @@ The same rule applies to type family instances::
 
    type family F a :: k
 
-   type instance F Int = Any :: k -> k
+   type instance F Int = Any :: j -> j
 
-(where ``Any :: forall j. j``). This type instance is current legal, but under
-this proposal ``k`` would not be in scope.  You would have to write::
+(where ``Any :: forall p. p``). This type instance is current legal, but under
+this proposal ``j`` would not be in scope.  You would have to write::
 
-   type instance F @(k->k) Int = Any :: k -> k
+   type instance F @(j->j) Int = Any :: j -> j
 
 This form is already allowed today; it does not require #326.
 
@@ -92,7 +92,7 @@ Consider::
   type instance F Int = Char
   type instance F Int = Maybe
 
-From the family declaration we see that ``F :: forall k. Type -> k`.
+From the family declaration we see that ``F :: forall k. Type -> k``.
 The two ``type instance`` declarations appear to have an identical head, but by
 looking at the RHS we can infer that the invisible kind argument of ``F`` is
 ``Type`` in the first instance, and ``Type -> Type`` in the second.  It would
@@ -148,6 +148,41 @@ thus::
 (It might be specialised differently in some other data constructor ``MkD2``).
 GHC avoids this question by determining the instance header solely from the
 header.  This proposal simply extends the same principle to type family instances.
+
+More examples
+-------------
+
+Here's an example from the wild (thanks Jakob Bruenker)::
+
+  data Relation n m = MkR
+
+  type Trans :: forall a b c . Relation a b -> Relation b c -> Relation a c
+  type family Trans pa pb where
+    Trans rel MkR = rel -- this type checks but is a partial type family
+
+In current GHC this typechecks, but the type family is not total?  Why?
+Because the fully-explicit version is::
+
+  type family Trans pa pb where
+    Trans @a @b @b rel MkR = rel
+
+Notice the repeated ``b`` on the LHS. The author was entirely unaware
+that the resulting type family was partial, because the equation he wrote
+looked total.  With Change #2, the original program::
+
+    type family Trans pa pb where
+      Trans rel MkR = rel
+
+would be rejected. WHy? Because the LHS imposes no kind constraints, so
+we get::
+
+    type family Trans pa pb where
+      Trans @a @b @c (rel :: Relation a b) (MkR :: Relation b c) = ...
+
+so the RHS must have kind ``Relation a c``.  But it doesn't; ``rel``
+has kind ``Relation a b``.  So the declaration is rejected, which would
+have saved Jakob some time.
+
 
 Effect and Interactions
 -----------------------
