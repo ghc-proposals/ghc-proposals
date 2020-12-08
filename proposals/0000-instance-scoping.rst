@@ -1,32 +1,13 @@
-Notes on reStructuredText - delete this section before submitting
-==================================================================
-
-The proposals are submitted in reStructuredText format.  To get inline code, enclose text in double backticks, ``like this``.  To get block code, use a double colon and indent by at least one space
-
-::
-
- like this
- and
-
- this too
-
-To get hyperlinks, use backticks, angle brackets, and an underscore `like this <http://www.haskell.org/>`_.
-
-
-Proposal title
-==============
+Simplify type synonym and type instance declarations
+=======================================================
 
 .. author:: Simon Peyton Jones
-.. date-accepted:: Leave blank. This will be filled in when the proposal is accepted.
-.. ticket-url:: Leave blank. This will eventually be filled with the
-                ticket URL which will track the progress of the
-                implementation of the feature.
-.. implemented:: Leave blank. This will be filled in with the first GHC version which
-                 implements the described feature.
-.. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_.
-            **After creating the pull request, edit this file again, update the
-            number in the link, and delete this bold sentence.**
+.. date-accepted::
+.. ticket-url::
+.. implemented::
+.. highlight::
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/386>`_.
+.. sectnum::
 .. contents::
 
 Summary
