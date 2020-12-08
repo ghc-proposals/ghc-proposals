@@ -1,0 +1,190 @@
+Notes on reStructuredText - delete this section before submitting
+==================================================================
+
+The proposals are submitted in reStructuredText format.  To get inline code, enclose text in double backticks, ``like this``.  To get block code, use a double colon and indent by at least one space
+
+::
+
+ like this
+ and
+
+ this too
+
+To get hyperlinks, use backticks, angle brackets, and an underscore `like this <http://www.haskell.org/>`_.
+
+
+Proposal title
+==============
+
+.. author:: Simon Peyton Jones
+.. date-accepted:: Leave blank. This will be filled in when the proposal is accepted.
+.. ticket-url:: Leave blank. This will eventually be filled with the
+                ticket URL which will track the progress of the
+                implementation of the feature.
+.. implemented:: Leave blank. This will be filled in with the first GHC version which
+                 implements the described feature.
+.. highlight:: haskell
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_.
+            **After creating the pull request, edit this file again, update the
+            number in the link, and delete this bold sentence.**
+.. contents::
+
+In a couple of places GHC is being too clever when dealing with type synonym
+or type-family instance declarations.  This proposal suggests two
+related simplifications, that make the language easier to read, less ad hoc,
+and simpler to implement.
+
+It depends on proposal #326 (Inivisible parameters for declarations).
+This proposal has a draft implementation in MR !3145.
+
+Proposed Change Specification
+-----------------------------
+
+1. Introduce the following rule: in
+   * a type synonym declaration, or
+   * a type family instance declaration
+   every type variable mentioned on the RHS must be bound on the LHS.
+
+   To match this change, in the user manual, remove the text in
+   `Implicit quantification in type synonyms and type family instances
+   <https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/poly_kinds.html>`_.
+   from the beginning down to
+   "Kind variables can also be quantified in visible positions...".
+
+   (Implementation note: see ``Note [Implicit quantification in type synonyms]`` in ``GHC.Rename.HsType``.)
+
+2. Introduce the following rule: in a type family instance declaration,
+   the instantiation of the left hand side is fully determined, without
+   looking at the right hand side.
+
+Examples and motivation
+-----------------------
+
+Change #1
+~~~~~~~~~
+
+Consider::
+
+  type T1 = 'Nothing :: Maybe a
+  type T2 = 'Just ('Nothing :: Maybe a)
+  
+``T1`` is currently legal, yielding ``T :: forall a. Maybe a``. The general rule is that the
+free variables of a *top-level* kind signature on the RHS are brought into scope
+implicitly, and will be quantified in the final kind of the type constructor.
+
+So ``T2`` is currently illegal, because the kind signature is not at the top level.
+
+With this proposal, both declarations woudl be illegal.  Instead you must write:::
+
+  type T1 @a = 'Nothing :: Maybe a
+  type T2 @a = 'Just ('Nothing :: Maybe a)
+
+so that all the variables occurring on the RHS are bound on the LHS.
+
+
+Change #2
+~~~~~~~~~
+
+Consider::
+
+  type family F a :: k
+
+  type instance F Int = Char
+  type instance F Int = Maybe
+
+From the family declaration we see that ``F :: forall k. Type -> k`.
+The two ``type instance`` declarations appear to have an identical head, but by
+looking at the RHS we can infer that the invisible kind argument of ``F`` is
+``Type`` in the first instance, and ``Type -> Type`` in the second.  It would
+be much clearer to write::
+
+  type instance F @Type         Int = Char
+  type instance F @(Type->Type) Int = Maybe
+
+and indeed this is already legal.
+
+This proposal requires that the type instance be fully determined by the LHS,
+so that the programmer sees two visibly distinct instance heads.  For the purpose
+of determining the LHS, the RHS is ignored.  So under this proposal the
+instance::
+
+   type instance F Int = Char
+
+would mean::
+
+   type instance F @k Int = Char
+
+(where the LHS instantation is at an unconstrained kind ``k``).
+Now the kind of the RHS if fixed to be ``k``, and the kind of ``Char`` does
+not match that, so the declaration is rejected.
+
+The principle is that it should be possible to see what instance the
+programmer intended by looking only at the instance head (the LHS).
+This property already holds for *data* family instances.  Suppose
+``D`` is a data family of kind::
+
+   D :: forall k. (k->Type) -> k -> Type
+
+Now consider ::
+
+   data instance D p q where
+      MkD :: forall r. r Int -> T r Int
+
+So what kind do ``p`` and ``q`` have?  No clues from the header, but from
+the data constructor we can clearly see that ``r :: Type->Type``.  Does
+that mean that the the *entire data instance* is instantiated at ``Type``
+like this::
+
+   data instance D @Type (p :: Type->Type) (q :: Type) where
+      ...
+
+Or does it mean that the GADT data constructor specialises that kind argument,
+thus::
+
+   data instance D @k (p :: k->Type) (q :: k) where
+     MkD :: forall (r :: Type -> Type).
+            r Int -> T @Type r Int
+
+(It might be specialised differently in some other data constructor ``MkD2``).
+GHC avoids this question by determining the instance header solely from the
+header.  This proposal simply extends the same principle to type family instances.
+
+Effect and Interactions
+-----------------------
+
+These changes will make fewer programs compile.
+
+* For change #1 the approved new programming style requires proposal #326,
+  and there is no backward compatible workaround.  So the phase-in will
+  need to be planned.
+
+* For change #2 there is a backward-compatible workaround, so we could
+  perhaps bring it in immediately.  It would be somwhat tricky to implement
+  a deprecation cycle, beucause we'd have to figure out whether the instantiaon
+  was driven by the RHS
+
+
+Costs and Drawbacks
+-------------------
+
+
+Alternatives
+------------
+
+Unresolved Questions
+--------------------
+
+
+Implementation Plan
+-------------------
+
+Easy to implement.
+
+Endorsements
+-------------
+(Optional) This section provides an opportunty for any third parties to express their
+support for the proposal, and to say why they would like to see it adopted.
+It is not mandatory for have any endorsements at all, but the more substantial
+the proposal is, the more desirable it is to offer evidence that there is
+significant demand from the community.  This section is one way to provide
+such evidence.
