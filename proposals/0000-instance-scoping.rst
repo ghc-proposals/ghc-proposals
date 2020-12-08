@@ -84,11 +84,22 @@ With this proposal, both declarations woudl be illegal.  Instead you must write:
   type T2 @a = 'Just ('Nothing :: Maybe a)
 
 so that all the variables occurring on the RHS are bound on the LHS.
-
 This proposal exploits #326 to allow a nice, simple, uniform rule.
 As the manual says, "The reason for this exception [the strange, ad-hoc,
 top-level-kind-signature rule] is that there may be no other way to bind k".
 
+The same rule applies to type family instances::
+
+   type family F a :: k
+
+   type instance F Int = Any :: k -> k
+
+(where ``Any :: forall j. j``). This type instance is current legal, but under
+this proposal ``k`` would not be in scope.  You would have to write::
+
+   type instance F @(k->k) Int = Any :: k -> k
+
+This form is already allowed today; it does not require #326.
 
 Change #2
 ~~~~~~~~~
