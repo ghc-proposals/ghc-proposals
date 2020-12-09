@@ -215,10 +215,8 @@ per-instance basis without relying on the circular trick and the internal
 details of GHC for termination of the type checking process.
 
 Moreover, having the pragma (apart from the resolution of `#8634
-<https://gitlab.haskell.org/ghc/ghc/-/issues/8634>`_) would allow to tidy up the
-default behaviour of functional dependencies as currently implemented in
-GHC. There are a couple of long-standing tickets that highlight surprises one
-might encounter when dealing with them:
+<https://gitlab.haskell.org/ghc/ghc/-/issues/8634>`_) gives a future possibility
+for fixing the following tickets:
 
 - `GHC does not check the functional dependency consistency condition correctly <https://gitlab.haskell.org/ghc/ghc/-/issues/10675>`_
 
@@ -226,53 +224,10 @@ might encounter when dealing with them:
 
 - `Instances do not respect functional dependency, yet are accepted <https://gitlab.haskell.org/ghc/ghc/-/issues/18400>`_
 
-- `Non-confluence around functional dependencies <https://gitlab.haskell.org/ghc/ghc/-/issues/18851>`_
-
-All of these (apart from the last one) have a `simple solution
-<https://gitlab.haskell.org/ghc/ghc/-/issues/9210#note_84081>`_, but it hasn't
-been done for the fear of breaking existing code that relies on the quirkiness
-of the current implementation without any workaround.
-
-However, the `DYSFUNCTIONAL` pragma is exactly the missing workaround at it
-effectively allows to locally lift functional dependencies and can be used to
-encode most (if not all) of the problematic instances presented in the tickets
-above.
-
-E.g. the example from `#18400 <https://gitlab.haskell.org/ghc/ghc/-/issues/18400>`_:
-
-.. code-block:: haskell
-
-  class Het a b | a -> b where
-    het :: m (f c) -> a -> m b
-
-  class GHet (a :: Type -> Type) (b :: Type -> Type) | a -> b
-  instance            GHet (K a) (K [a])
-  instance Het a b => GHet (K a) (K b)
-
-  data K x a = K x
-
-would become
-
-.. code-block:: haskell
-
-  class Het a b | a -> b where
-  het :: m (f c) -> a -> m b
-
-  class GHet (a :: Type -> Type) (b :: Type -> Type) | a -> b
-  instance {-# DYSFUNCTIONAL #-} DysFun a b => GHet (K a) b
-
-  class DysFun (a :: Type) (b :: Type -> Type)
-  instance DysFun a (K [a])
-  instance Het a b => DysFun a (K b)
-
-  data K x a = K x
-
-In fact, `the comment from #9210
-<https://gitlab.haskell.org/ghc/ghc/-/issues/9210#note_84081>`_ mentions 4 test
-failures as a result of an attempt of fixing the issue. The above snippet is one
-of them, but the remaining 3 can be fixed in the same manner, i.e. by moving the
-offending instances to the helper class without functional dependencies and
-delegate to it via a single `DYSFUNCTIONAL` instance.
+by tightening the so-called `bogus consistency check
+<https://gitlab.haskell.org/ghc/ghc/-/blob/0abe3ddf85a915ab99ae4f87a85faf6ee5466ad3/compiler/GHC/Tc/Instance/FunDeps.hs#L610>`_. However,
+the exact details of doing so are considered out of scope for this proposal, as the
+coverage condition check and consistency check are orthogonal.
 
 Costs and Drawbacks
 -------------------
@@ -290,8 +245,7 @@ confluence can be currently obtained even without the circular trick or the
 <https://gitlab.haskell.org/ghc/ghc/-/issues/18851#note_310088>`_. This is the
 consequence of unresolved `#10675
 <https://gitlab.haskell.org/ghc/ghc/-/issues/10675>`_, which as explained in
-`Effect and Interactions`_ could be comfortably fixed if this proposal is
-accepted.
+`Effect and Interactions`_ could be fixed if this proposal is accepted.
 
 Moreover, the same can be said about using `INCOHERENT` or `OVERLAPS`
 pragmas. Most of the time their usages is perfectly fine, yet when abused might
