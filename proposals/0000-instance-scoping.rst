@@ -18,7 +18,7 @@ or type-family instance declarations.  This proposal suggests two
 related simplifications, that make the language easier to read, less ad hoc,
 and simpler to implement.
 
-It depends on proposal #326 (Inivisible parameters for declarations).
+It depends on proposal #326 (Invisible parameters for declarations).
 This proposal has a draft implementation in MR !3145.
 
 Proposed Change Specification
@@ -160,7 +160,7 @@ Here's an example from the wild (thanks Jakob Bruenker)::
   type family Trans pa pb where
     Trans rel MkR = rel -- this type checks but is a partial type family
 
-In current GHC this typechecks, but the type family is not total?  Why?
+In current GHC this typechecks, but the type family is not total.  Why?
 Because the fully-explicit version is::
 
   type family Trans pa pb where
@@ -173,7 +173,7 @@ looked total.  With Change #2, the original program::
     type family Trans pa pb where
       Trans rel MkR = rel
 
-would be rejected. WHy? Because the LHS imposes no kind constraints, so
+would be rejected. Why? Because the LHS imposes no kind constraints, so
 we get::
 
     type family Trans pa pb where
@@ -194,9 +194,9 @@ These changes will make fewer programs compile.
   need to be planned.
 
 * For change #2 there is a backward-compatible workaround, so we could
-  perhaps bring it in immediately.  It would be somwhat tricky to implement
-  a deprecation cycle, beucause we'd have to figure out whether the instantiaon
-  was driven by the RHS
+  perhaps bring it in immediately.  It would be somewhat tricky to implement
+  a deprecation cycle, because we'd have to figure out whether the instantiation
+  was driven by the RHS.
 
 
 Costs and Drawbacks
