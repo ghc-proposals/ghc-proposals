@@ -142,13 +142,16 @@ Proposed Change Specification
 
    With ``Incomplete`` enabled, the guiding principle is relaxed, and GHC works as it does today.
 
-     While this is enough to specify ``NoIncomplete`` and ``Incomplete`` for GHC, language extensions are supposed to be proposed in a more implementation agnostic manner, so that they are eligible for inclusion in future Haskell reports.
-     The field and method restrictions are fairly clear cut and easy to specify from first principles, but the pattern match completeness checking GHC does today is not.
+   The implementation must have no false negatives.
+   That is, with ``-XNoIncomplete`` if the program compiles without error, it must not fail at runtime with any of the above errors.
+   However, the implementation is permitted to have false positives: it may report an error when in fact the pattern match is complete.
+   A good implementation will strive to reduce the number of false positives.
 
-   For a report, the guiding principle behind ``NoIncomplete`` only requires that the Haskell implementation's pattern match completeness checking by sound, not sophisticated.
-   Even banning all pattern matching would abide by the principle.
-   We do want some programs to be guaranteed to be valid Haskell, of course.
-   So if and when ``NoIncomplete`` were submitted to be the official default, a simple and conservative completness checking algorithm would be specified in the report.
+     While this is enough to specify ``NoIncomplete`` and ``Incomplete`` for GHC, language extensions are supposed to be proposed in a more implementation agnostic manner, so that they are eligible for inclusion in future Haskell reports.
+     The field and method restrictions are fairly clear cut and easy to specify from first principles, but the pattern match completeness checking GHC does today is not easy to specify.
+
+   If and when ``NoIncomplete`` were submitted to be the official default, or part of a Haskell report, we first promise to define the extension more formally: we would specify a simple and conservative completness checking algorithm.
+   That way, users know exactly what sort of false positives to expect from an implementation that does no less and no more than what the standard requires.
 
      To be clear, punting on that spec need not block implementing for ``NoIncomplete`` for GHC, as GHC can always accept more programs than the spec.
 
