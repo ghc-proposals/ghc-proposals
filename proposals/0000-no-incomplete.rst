@@ -70,37 +70,49 @@ Proposed Change Specification
    Additionally, with ``-XFieldSelectors`` (also on by default), any program that would emit warnings with ``-Wpartial-fields`` is also prohibited.
    Finally, ``HasField`` is only emitted for fields and types when that field is present in all variants for the type.
 
-   More specifically, the cases we intend to make illegal are:
+   More specifically, these are cases we intend to make illegal are, along with the warning from the list above that currently catches each case:
    
    - Function definitions that fail to match some value, e.g.::
    
       f (Just x) = rhs
       -- but no Nothing case
+
+     Existing warning: ``incomplete-patterns``.
    
    - Case expressions that fail to match some value, e.g.::
    
       case m of
         Just x -> rhs
         -- no Nothing case
+
+     Existing warning: ``incomplete-patterns``.
    
    - Pattern bindings that may fail to match, e.g.::
    
       let Just x = m
       in body
+
+     Existing warning: ``incomplete-uni-patterns``.
    
    - Lambdas that may fail to match, e.g.::
    
       (\(Just x) -> x)
+
+     Existing warning: ``incomplete-uni-patterns``.
    
    - A record construction which is incomplete because there are missing fields, e.g.::
    
       data T = MkT { x :: Int, y :: Bool }
       t = MkT { x = 5 } -- No specification of y.
+
+     Existing warning: ``missing-fields``.
    
    - A record update where the field to be updated does not occur in every constructor of the record type, e.g.::
       
       data T = T1 { x :: Int } | T2
       f r = r { x = 3 } -- Would fail if T2 were passed to f
+
+     Existing warning: ``incomplete-record-updates``.
 
    - An instance declaration where a method goes unspecified despite no default in the corresponding class declaration, e.g.::
    
@@ -112,15 +124,21 @@ Proposed Change Specification
         op1 = rhs
         -- No definition for op2, and no default method in the class declaration.
 
-   - With -XFieldSelectors, a data declaration using record syntax which defines fields that fail to occur in every constructor, e.g.::
+     Existing warning: ``missing-methods``.
+
+   - With ``-XFieldSelectors``, a data declaration using record syntax which defines fields that fail to occur in every constructor, e.g.::
    
       data T = T1 { x :: Int } | T2
       -- The defined field selector function x :: T -> Int would have been incomplete.
 
-   - With -XMultiWayIf, any multi-way if expression that is not guaranteed to match in some way (i.e. by having an ``otherwise`` or ``True`` branch), e.g.::
+     Existing warning: ``partial-fields``.
+
+   - With ``-XMultiWayIf``, any multi-way if expression that is not guaranteed to match in some way (i.e. by having an ``otherwise`` or ``True`` branch), e.g.::
    
       if | x == 1 -> "a"
          | y < 7  -> "b"
+
+     Existing warning: ``incomplete-patterns``.
 
    With ``Incomplete`` enabled, the guiding principle is relaxed, and GHC works as it does today.
 
