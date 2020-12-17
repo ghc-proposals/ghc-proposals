@@ -100,11 +100,11 @@ Data based on 13951 hackage packages, 1348 survey responses and 11 committee vot
                 `StarIsType`_     **9**      ✔      ✔      ✔      ✔             ✔      ✔      ✔      ✔             ✔     8.6.1        0       N/A           0         0%          0
       `TypeSynonymInstances`_     **9**      ✔             ✔      ✔      ✔             ✔      ✔      ✔      ✔      ✔     6.8.1       7%       74%         10%         8%         7%
  `ExistentialQuantification`_     **8**      ✔             ✔      ✔      ✔             ✔      ✔      ✔      ✔            6.8.1      15%       30%          7%         7%         6%
+  `ForeignFunctionInterface`_     **8**      ✔      ✔                    ✔      ✔      ✔      ✔      ✔             ✔     6.8.1       3%      211%           0         4%          0
             `NamedWildCards`_     **8**      ✔             ✔      ✔             ✔      ✔             ✔      ✔      ✔    7.10.1       8%       65%          0%         1%          0
   `StandaloneKindSignatures`_     **8**      ✔             ✔      ✔             ✔      ✔      ✔      ✔      ✔           8.10.1       8%       28%          0%          0         0%
              `TypeOperators`_     **8**      ✔      ✔             ✔             ✔      ✔      ✔             ✔      ✔     6.8.1      20%       17%         14%        28%         6%
         `DerivingStrategies`_         7      ✔      ✔      ✔                    ✔      ✔                    ✔      ✔     8.2.1      27%       11%          1%         3%         1%
-  `ForeignFunctionInterface`_         7      ✔      ✔                    ✔      ✔      ✔             ✔             ✔     6.8.1       3%      211%           0         4%          0
                      `GADTs`_         7      ✔      ✔      ✔      ✔                                  ✔      ✔      ✔     6.8.1      34%       13%         13%        25%         8%
             `MonoLocalBinds`_         7      ✔      ✔      ✔      ✔                           ✔      ✔             ✔    6.12.1       2%      279%          1%         1%         1%
                 **Extension** **Votes** **AM** **AS** **CC** **ES** **ID** **JB** **RE** **SJ** **SM** **TH** **VB** **Since** **Pop…** **Cont…** **Prolif…** **Innoc…** **Aloof…**
