@@ -286,6 +286,119 @@ An example of super monad follows.
     c <- anotherLinearFunction b
     Linear.return c
 
+Other examples
+~~~~~~~~~~~~~~
+
+Composing functions
+
+::
+
+  module Control.Category.QualifiedDo where
+    import Control.Category
+
+    (>>) :: Category cat => cat a b -> cat b c -> cat a c
+    (>>) = (>>>)
+
+  -----------------
+
+  module X where
+    import Control.Category.QualifiedDo as Cat
+
+    k = Cat.do f; g; h
+
+    k2 :: Double -> String
+    k2 = Cat.do
+      (*3)
+      show
+      map ord
+      maximum
+      show
+
+Constructing lists
+
+::
+
+  module List where
+
+    (>>) :: a -> [a] -> [a]
+    (>>) = (:)
+
+  -----------------
+
+  import qualified List
+
+  list :: [String]
+  list = List.do
+    "I"
+    "am"
+    "lazy"
+    []
+
+Constructing heterogeneous lists
+
+::
+
+  {-# LANGUAGE DataKinds #-}
+  {-# LANGUAGE GADTs #-}
+  {-# LANGUAGE KindSignatures #-}
+  {-# LANGUAGE TypeOperators #-}
+  module HList where
+
+    import qualified Data.Kind
+
+    data HList (xs :: [Data.Kind.Type]) where
+      HNil :: HList '[]
+      HCons :: x -> HList xs -> HList (x ': xs)
+
+    (>>) :: x -> HList xs -> HList (x ': xs)
+    (>>) = HCons
+
+  -----------------
+
+  import HList
+
+  list :: HList '[Char, String, Bool]
+  list = HList.do
+    'c'
+    "is smaller than"
+    True
+    HNil
+
+Monoids
+
+::
+
+  module Data.Monoid.QualifiedDo where
+
+    (>>) :: Monoid a => a -> a -> a
+    (>>) = (<>)
+
+  -----------------
+
+  module X where
+    import Data.Monoid.QualifiedDo as Monoid
+    import Data.Map (singleton)
+
+    f = Monoid.do
+      singleton "one" 1
+      singleton "two" 2
+      singleton "three" 3
+
+  -----------------
+
+  {-# LANGUAGE OverloadedLabels #-}
+  module Y where
+    import Data.Monoid.QualifiedDo as Monoid
+    import SomeFictitiousHTML
+
+    htmlPage :: HTML
+    htmlPage = Monoid.do
+      #head Monoid.do
+        #title "Welcome visitor!"
+      #body Monoid.do
+        #h1 "This is a webpage"
+        #p Monoid.do "(Ugly one, but "; #em "it works!"; ")"
+
 
 Effect and Interactions
 -----------------------
@@ -297,7 +410,6 @@ For instance we could write operations for monoids:
 ::
 
   module Data.Monoid.QualifiedDo where
-    import Prelude hiding ((>>))
 
     (>>) :: Monoid a => a -> a -> a
     (>>) = (<>)
