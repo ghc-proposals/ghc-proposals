@@ -1,15 +1,12 @@
 Syntax for Modifiers: a generalization of linear-types syntax
 ==============
 
-.. author:: Your name
-.. date-accepted:: Leave blank. This will be filled in when the proposal is accepted.
-.. ticket-url:: Leave blank. This will eventually be filled with the
-                ticket URL which will track the progress of the
-                implementation of the feature.
-.. implemented:: Leave blank. This will be filled in with the first GHC version which
-                 implements the described feature.
+.. author:: Richard Eisenberg
+.. date-accepted:: 2020-12-18
+.. ticket-url::
+.. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/370>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/370>`_.
 .. contents::
 
 This proposal introduces a new form of syntax ``%blah`` that defines a *modifier*.
