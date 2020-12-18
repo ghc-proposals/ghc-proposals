@@ -157,6 +157,10 @@ This is fine, but doesn't allow us to take advantage of ``γ`` being absurd.
 By extending the context, we take a more "black box" approach which, at the very least, allows ``contra`` to be used when ``γ`` is absurd.
 This is useful to discharge obligations on impossible variants in GADTs, which is what makes our "werewolf param" example in the motivation work.
 
+The cost to the above is that we need twice as many rules, as we have to be able to start with the coercisons of either constructor application, and derive the other.
+This is stupid as the proofs "should" be basically identical in both directions, but I do not want to invent a calculus of bi-implications and drift further from the paper.
+So, 2x blow up for now.
+
 The new ``Co_TyConApp`` family is never weaker than the old ``Co_TyConApp`` with inferred roles, so we can be sure that any proof step involving it is still valid.
 The old lift axiom in fact describes exactly how to transform premises for the old ``Co_TyConApp`` invocation into premises for the new ``Co_TyConApp`` family invocations.
 
