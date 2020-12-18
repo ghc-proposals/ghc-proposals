@@ -15,109 +15,105 @@ Coercions without Type Constructor Roles
 .. sectnum::
 .. contents::
 
-Roles effectively dictate that the coercion language is first order.
-In a language with higher kinds, this means that we are missing coercions.
-The "higher order role" proposal fundamentally doesn't change this.
-It instead allows restricting the domain of type constructors so that the still-first-order assumptions can be relaxed.
-This proposal instead piggybacks on quantified constraints to dispense with roles entirely.
+The rules for coercions for parameterized data types currently are inflexible.
+Assigning roles to type parameters has all the same limitations as restricting instances to ``Haskell98``-allowed.
+This proposal allows writing the rules using standalone deriving syntax, and piggybacking on extensions effecting instances to limit what coercible pseudo-instanes are allowed.
 
 Motivation
 ------------
 Give a strong reason for why the community needs this change. Describe the use case as clearly as possible and give an example. Explain how the status quo is insufficient or not ideal.
 
+Types are erased. Decomposing applied type constructors to that on the pameraters is on the face of it silly be cause we are tying to push coercions up through erased applications, when coercibility is the preimage of equality post erasure.a
+
+GADTS
+~~~~~
+
+Given a definition like::
+
+  data Foo a b (c :: Bool) where
+    A :: Foo a   () True
+    B :: Foo ()  b  False
+
+We want
+
+::
+  Coercible (Foo l  () True)  (Foo r () True)
+  Coercible (Foo () l  False) (Foo () r False)
+
+Neither of the first two variables is absolutely phantom, but given enough about the others, the conditional phantom reveals itself.
+
+We will call these parameters "werewolf" instead "phantom" because they are only supernatural sometimes.
 
 Proposed Change Specification
 -----------------------------
 
-Core Coercions
-~~~~~~~~~~~~~~~~
+Formalism follow [paper16]_ unless otherwise noted.
 
-#. The grammar of constraint propositions is considered higher-order.
-   This is in fact not an implementation change, But rather just a specification change.
-   GHC already lumps coercions under ``Type``, has quantified constraints, and can already be tricked with ``unsafeCoerce`` on ``Dict`` into inhabiting everything following this grammar.
-   ::
-     coProp ::= t0 ~_r t1 -- old
-             -- new
-             | forall (a : k)*. coProp
-             | '(' coProp, coProp (, coProp)* ')'
-             | coProp => coProp
-   We are just deeming a larger portion of ``Type`` the constraint proposition language then before.
+Core language
+~~~~~~~~~~~~~
 
-#. Instead of roles, we associate an axiom with (both regular and newtype) data types.
-   newtypes and type families already come with built-in axioms, so now all type constants have at least one.
-   (However, that doesn't mean we can now treat all three sorts of type constants uniformly, as we still only allow axioms from regular data types to be eligible for reverse reasoning.)
-   These new data type axioms are admissible under the following conditions:
+No more ``nth`` for data
+^^^^^^^^^^^^^^^^^^^^^^^^
 
-   Shape
-     The axiom (hereafter wbound as ``CP``) must be in the form
-     ::
-       CP := forall a* b*. coProp => H a* ~_R H b*
-     In other words, it has head of representational equality constraint of same type constructor applied to some variable arguments on each side.
+The ``nth`` decomposition rule to derive coercions between parameters from coersions on type constructor application is almost no more.
 
-   Saturation
-     The ``H`` must be saturated on both sides.
-     Likewise, one cannot just skip assigning a role today.
+Instead of decomposition to *paremeters*, we decompose to *fields*. We have the following rules:
 
-   Soundness
-     The following must be derivable:
-     ::
-       ft is a type of a field of H
-       -----------------------------------------------
-       CP => (forall a* b*. ft[t* / a*] ~_R ft[t* / b*])
-     In other words:
-     Take the two substitutions of the types of each of the fields corresponding the two applications ``H a*`` and ``H b*``.
-     Zipping the fields in each substitution, accumulate per-field ``f_n ~_R f'_n`` constraints.
-     The axiom's premise must be sufficient to derive all of those constraints.
+::
+  Γ ⊢ K ∀(a:κ)*. ∀(b:κ′)*. (σ_l ∼_ρ σ_r)* ⇒ τ → T a*
+  Γ ⊢ γ : T υ_l* ~R# T υ_r*
+  ------------------------------------------------ CO_liftNthFieldTo
+  Γ (γ' : σ_l[υ_l*/a*] ∼_ρ σ_r[υ_l*/a*])*
+    ⊢ liftNthField^n K co σ1* σ1* : ∀b* : κ′. τ^n[υ_r*/a*] ~_R τ^n[υ_r*/a*]
 
-   Not-too-incompleteness
-     The axiom can't be stricter than all nominal roles today.
-     Formally:
-     ::
-       (forall a* b*. (a ~_N b)* => H a* ~_R H b*) => CP
+::
+  Γ ⊢ K ∀(a:κ)*. ∀(b:κ′)*. (σ_l ∼_ρ σ_r)* ⇒ τ → T a*
+  Γ ⊢ γ : T υ_l* ~R# T υ_r*
+  ------------------------------------------------ CO_liftNthFieldFrom
+  Γ (γ' : σ_l[υ_r*/a*] ∼_ρ σ_r[υ_r*/a*])*
+    ⊢ liftNthField^n K co σ1* σ1* : ∀b* : κ′. τ^n[υ_l*/a*] ~_R τ^n[υ_l*/a*]
 
-     This allows us to continue with the current treatment of unsaturated ``H`` and variable type constructors in the typing rules.
+::
+  Γ ⊢ K ∀(a:κ)*. ∀(b:κ′)*. (σ_l ∼_ρ σ_r)* ⇒ τ → T a*
+  Γ ⊢ γ : T υ_l* ~R# T υ_r* a
+  ------------------------------------------------ CO_liftNthCoercionTo
+  Γ (γ' : σ_l[υ_l*/a*] ∼_ρ σ_r[υ_l*/a*])*
+    ⊢ liftNthField^n K co σ1* σ1* : ∀(b*:κ′)*. (σ_l[υ_r*/a*] ∼_ρ σ_r[υ_r*/a*])*
 
-   Uniqueness
-     There is only such axiom per ``H``.
-     (Newtypes keep their existing unwrapping axioms, but those have a disjoint form.)
-     This matches how there is one assignment of roles to type constructor parameters in the old system.
+::
+  Γ ⊢ K ∀(a:κ)*. ∀(b:κ′)*. (σ_l ∼_ρ σ_r)* ⇒ τ → T a*
+  Γ ⊢ γ : T υ_l* ~R# T υ_r* a
+  ------------------------------------------------ CO_liftNthCoercionFrom
+  Γ (γ' : σ_l[υ_r*/a*] ∼_ρ σ_r[υ_r*/a*])*
+    ⊢ liftNthField^n K co σ1* σ1* : ∀(b:κ′)*. (σ_l[υ_l*/a*] ∼_ρ σ_r[υ_l*/a*])*
 
-#. ``coTyConApp``, the first typing judgement involving roles that must be rewritten
-   ::
-     C : forall a* b*. coProp => H a* ~_R H b*
-     |- G
-     (G |- t : k)*
-     G |- c : forall (r : k)*. coProp[t* / a*][r* / a*][s* / b*][r* / b*]
-     -------------------------------------------------------------------------------- Co_TyConAp'
-     G |- C(t*, s*, c) : H t* ~_R H s*
+The idea is that given a coercion between (non-newtype) data types, and a constructor for that new type, one can push that coerion into the coercions for each regular field and coercion field.
+Note that the existential type parameters are not substituted, so we can't conclude spurious things about them.
+The ``n`` superscript indicates which coercion or field we wish to project the coercion for.
 
-   ``r`` is the remaining arguments to saturate the axiom.
-   ``r*`` appears twice because we are applying the same fresh vars twice for each side.
-   Because of _Not-too-incompleteness_ these duplicated abstract types are never "to blame" if the premises cannot be derived.
-   The user-supplied arguments are to be blamed instead.
+For types types like ``(=>)`` and ``((->))``, ``nth`` remains, because those are not (generalized) abstract data types.
 
-#. ``coNth``, the second such judgement is replaced with ``coPremise``.
-   The name is changed because we no longer take a parameter index, but just get the whole premise back in one lump.
-   ::
-     C : forall a* b*. coProp => H a* ~_R H b*
-     G |- c : H t* ~_R H s*
-     H is not a newtype
-     -------------------------------------------------------------------------------- Co_Premise
-     G |- premise c : forall r*. coProp[t* / a*][r* / a*][s* / b*][r* / b*]
+TODO ``Co_TyConApp``. which is now exploded into a family of rules whose only constraint is that the ``liftNth*`` rules are admissible given the ``Co_TyConApp``-replaced axioms.
 
 Surface language
 ~~~~~~~~~~~~~~~~
 
-#. We steal the ``deriving instance`` syntax for ``Coercible``:
-   ::
+#. We steal the ``deriving instance`` syntax for ``Coercible``::
+
      data T ... = ...
 
      deriving instance ... => Coercible (T ...) (T ...)
 
-   These "instaces" are subject to analogous restrictions as the core axioms.
+   There are no fields of Coercible, but instead the compiler checks that all the projections from the ``liftNth`` rules are satisfied from the instance constraints.
 
-   ``-XUndecidableInstance`` has no effect, as we really need all coersions to terminate so they are safe to erase.
-   (Normal classes have non-erased methods so we safely diverge at run time.)
+#. These pseduo-isnstances are subject to the rules of normal instance heads and contexts, and relaxed by:
+
+   - ``FlexibleInstances``
+   - ``FlexibleContexts``
+   - ``UndecidableInstances``
+   - ``QuantifiedConstraints``
+
+   But not ``MultiParmTypeClasses``.
 
 #. Absent an explicit "instance", we derive the first order axiom we effectively do today.
    ::
@@ -125,7 +121,7 @@ Surface language
        deriving (Coercible)
 
    gives a warning because we derive ``Coercible`` by default, and this cannot be prevented.
-   (Or else ``t ~_N s => t ~_R s`` would not be true.)
+   (Or else ``sub (γ : t ~_N s) : t ~_R s`` would not be admissible.)
 
 #. Explicit role applications are deprecated.
 
@@ -139,13 +135,52 @@ Discuss possibly contentious interactions with existing language or compiler fea
 Proof Sketch
 ~~~~~~~~~~~~
 
-``Co_TyConAp'`` and ``Co_Premise`` are nearly dual.
-The key difference is the ``C(t*, s*)`` use of the axiom in the former, gets replaced with an abstract constraint ``c`` in the latter.
-This is OK because we can rewrite any closed term coercion with the correct type into one where ``H``'s axiom is at it's head!
-All the other coercion type formers distribute over the axiom application, so we can always push the other formers deeper, and pull ``H``'s axiom applications to the front.
-\[One can think of the preexisting prohibition against newtypes in terms of this, too. The rewrite is not possible if ``H`` is a newtype.]
+Core language
+~~~~~~~~~~~~~
 
-I must rigorously show that this is true, but for now intuition.
+In ``[paper16]``, ``nth`` is only used for the push rules.
+This is because we only need to decompose coercions when we push them deeper in expressions.
+The paper uses ``nth`` to project out a coercion on type parameters, but then uses the lifting meta-function / lemma to rebuild the constraint for each field.
+With the formalisms in this proposal, all the lifting + "nth"-ing in the proof steps involving ``S_KPUSH`` instead use these new rules.
+I hope this is a fairly wrote transformation of those proofs".
+
+When a given constructor is not in scope, the relevant ``LiftNth*`` usages become impossible, but this is fine because we also won't to use ``S_KPUSH`` with that constructor.
+In core we less often don't think about constructors as going out of scope, but this property becomes important for the surface language where we wish to contextually allow or disallow the use of sketchy coercions.
+
+There is another difference in that the coercions of the data constructor are put into the context for the conclusion.
+The point of this is subtle.
+In the paper, to "coerce the coersions", it does::
+
+  sym (σ[nth η/a]ρ) ; γ ; σ[nth η/a]ρ
+
+This is fine, but doesn't allow us to take advantage of ``γ`` being absurd.
+By extending the context, we take a more "black box" approach which, at the very least, allows ``contra`` to be used when ``γ`` is absurd.
+This is useful to discharge obligations on impossible variants in GADTs, which is what makes our "werewolf param" example in the motivation work.
+
+The new ``Co_TyConApp`` family is never weaker than the old ``Co_TyConApp`` with inferred roles, so we can be sure that any proof step involving it is still valid.
+The old lift axiom in fact describes exactly how to transform premises for the old ``Co_TyConApp`` invocation into premises for the new ``Co_TyConApp`` family invocations.
+
+Surface language
+~~~~~~~~~~~~~~~~
+
+First of all, note that this proposal does *not* introduce "quantified coersions" / "high-order coersions" / internal implication to the constraint language.
+When we write::
+
+  deriving Coercible Sigma => Coercible Tau
+
+this refers to boxed ``Coercible`` not magic ``~#R``.
+
+Because the obligations of the instances are the results of the ``LiftNth*`` rules, rather than the end ``~#R`` superclass, we ensure the instances are in a sense productive.
+This ensures that the coinduction the constraint solver does is actually valid, even in the case of undecidable instances.
+For example::
+
+  instance Coercible (X a) => Coercible (X a)
+
+looks very dangerous, but is in fact the most natural, if not minimal, instance for::
+
+  newtype X a = X (X a)
+
+Even
 
 Costs and Drawbacks
 -------------------
@@ -180,5 +215,7 @@ Hopefully this section will be empty by the time the proposal is brought to the 
 Implementation Plan
 -------------------
 
-I think I can implement this.
-However I've started a bunch of project mucking around with GHC lately and I don't want to bite off more than I can chew and get none of them done.
+No idea yet.
+
+.. [paper16] "Safe zero-cost coercions for Haskell"
+  https://repository.brynmawr.edu/cgi/viewcontent.cgi?article=1010&context=compsci_pubs
