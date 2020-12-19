@@ -8,74 +8,135 @@ The ``Char`` kind
 .. highlight:: haskell
 .. contents::
 
-At the moment, we have built-in type-level strings and natural numbers in GHC.TypeLits and
-GHC.TypeNats respectively. We also would like to introduce the ``Char`` kind.
-This proposal describes our updates that introduce the build-in character kind.
-This proposal also provides a solution for the issue `#11342 <https://gitlab.haskell.org/ghc/ghc/-/issues/11342>`_.
-Here we only provide changes making the character kind built-in as `Nat` and `Symbol`.
-This affects the type-checker, the parser, GHC core, and several libraries such as Template Haskell,
-Typeable, and TypeLits.
+Haskell has support for type-level data in the form of the ``DataKinds``
+extension, which promotes algebraic data types such as ``Bool``, ``Maybe``, or
+even user-defined ADTs. It also has special support for two non-algebraic
+data types: ``Symbol`` and ``Natural``, representing type-level strings and
+type-level numbers respectively.
 
+We propose to add support for one more non-algebraic data type, namely
+``Char``, thereby resolving the long-standing issue `#11342
+<https://gitlab.haskell.org/ghc/ghc/-/issues/11342>`_.
 
 Motivation
 ----------
 
-The purpose of the proposed changes is to provide a possibility of analysing type-level strings
-as we can make it with term-level ones. This feature allows users to implement such programs as
-type-level parsers. See examples above.
+The existing support for type-level strings is limited to:
 
-At the moment, we have no instruments allowing one to process type-level strings
-addressing to their characters. ``Symbol`` is a promoted ``FastString`` data type, not a usual
-list of chars for efficiency reasons. However, we still have no direct access to characters of a
-type-level string since there is no ability for pattern matching as in the term-level case. For that,
-one needs to have the full-fledged support for type-level characters similarly to strings and natural numbers.
-We are going to introduce the built-in ``Char`` kind. Secondly, we are going to provide several type families
-for the built-in ``Char`` kind. At this stage, we decided to include ``CmpChar`` for
-type-level comparison of type-level characters. We also introduce the type families called
-``ConsSymbol`` and ``UnconsSymbol`` that connect `Char` and `Symbol` with each other.
+1. String literals::
+
+     ghci> :kind "myString"
+     "myString" :: Symbol
+
+2. String concatenation::
+
+     ghci> :kind! AppendSymbol "hello" "world"
+     AppendSymbol "hello" "world" :: Symbol
+     = "helloworld"
+
+3. String comparison::
+
+     ghci> :kind! CmpSymbol "hello" "world"
+     CmpSymbol "hello" "world" :: Ordering
+     = 'LT
+
+There are no ways to decompose or analyse a type-level string in terms of its
+constituent characters. Constrast that with the API of `Text
+<https://hackage.haskell.org/package/text/docs/Data-Text.html>`_, which offers
+a multitude of functions such as ``uncons``, ``map``, ``splitAt``, and so on.
+
+We could try to extend the API of ``Symbol`` accordingly. For example, the
+type-level counterpart of ``uncons :: Text -> Maybe (Char, Text)`` could be a
+built-in type family such as ``UnconsSymbol :: Symbol -> Maybe (Char,
+Symbol)``.
+
+Notice that the return type of the proposed ``UnconsSymbol`` mentions ``Char``.
+However, there's currently no support for type-level characters::
+
+  ghci> :kind! 'x'
+  <interactive>:1:1: error: parse error on input ‘'’
+
+We propose to fix this omission. The ``Char`` kind and the accompanying
+built-in type families will make it possible to implement type-level parsers
+(see the "Examples" section below).
 
 Proposed Change Specification
 -----------------------------
 
-Proposed changes are the following:
+1. Extend the grammar of type-level literals
+   with character literals::
 
-1. That's how the grammar of type literals looks like with our changes::
+     tylit ::=
+         INTEGER
+       | STRING
+       | CHAR       (NEW)
 
-    tylit ::= nat | symbol | char
+   The lexical syntax matches that of term-level character literals: the
+   character enclosed in single quotes, e.g. ``'X'`` or ``'\n'``.
 
+2. Extend the ``GHC.TypeLits`` module
+   with the following built-in type families::
 
-2. We extend the GHC.TypeLits module with the following built-in type families::
+     type family CmpChar (a :: Char) (b :: Char) :: Ordering
+     type family ConsSymbol (a :: Char) (b :: Symbol) :: Symbol
+     type family UnconsSymbol (a :: Symbol) :: Maybe (Char, Symbol)
 
-    type family CmpChar (a :: Char) (b :: Char) :: Ordering
+   * The semantics of ``CmpChar`` match that of ``compare @Char``.
+   * The semantics of ``ConsSymbol`` and ``UnconsSymbol`` match that of
+     ``Data.Text.cons`` and ``Data.Text.uncons`` respectively.
 
-    type family ConsSymbol (a :: Char) (b :: Symbol) :: Symbol
+3. Introduce the class ``KnownChar`` that allows the user to get hold of the
+   type-level character in a term-level context by means of the ``charVal``
+   function::
 
-    type family UnconsSymbol (a :: Symbol) :: Maybe (Char, Symbol)
+     class KnownChar (n :: Char) where
+       ...
 
+     charVal :: forall n proxy. KnownChar n => proxy n -> Char
+     charVal' :: forall n. KnownChar n => Proxy# n -> Char
 
-3. Introduce the class ``KnownChar`` with such as additional helpers as ``charVal``::
+   Cf. ``KnownSymbol`` and ``KnownNat``
 
-    class KnownChar (n :: Char) where
-      charSing :: SChar n
+4. Introduce the data type ``SomeChar`` with a conversion function called
+   ``someCharVal``. This data type also has ``Ord``, ``Eq``, ``Show``, and
+   ``Read`` instances::
 
+     data SomeChar = forall n. KnownChar n => SomeChar (Proxy n)
+     someCharVal :: Char -> SomeChar
 
-4. Introduce the data type ``SomeChar`` with a converting function called
-``someCharVal``. This data type also has ``Ord``, ``Eq``, ``Show``, and ``Read`` instances::
+     instance Eq SomeChar
+     instance Ord SomeChar
+     instance Show SomeChar
+     instance Read SomeChar
 
-    data SomeChar = forall n. KnownChar n => SomeChar (Proxy n)
+   Cf. ``SomeSymbol`` and ``SomeNat``
 
-    someCharVal :: Char -> SomeChar
-    someCharVal n   = withSChar SomeChar (SChar n) Proxy
+5. Extend Template Haskell as follows::
 
+     data TyLit =
+         NumTyLit Integer
+       | StrTyLit String
+       | CharTyLit Char     (NEW)
 
 Examples
 --------
 
-We show how one can implement type-safe formatters using the character kind.
-The example is a type-safe version of ``format`` from the ``formatting`` library.
-There are several extensions and imports that we omit for brevity. See the full version in Appendix::
+The ``formatting`` library is a type-safe implementation of ``printf``.
+However, instead of a formatting string, it introduces special combinators to
+construct a formatter::
 
-    data FmtPart = Lit Symbol | PctS | PctD
+  > format ("Person's name is " % text % " and age is " % int) "Dave" 54
+  "Person's name is Dave and age is 54"
+
+In Appendix I we offer a proof-of-concept implementation of a type-safe
+``printf`` that builds upon the ``formatting`` library but adds support for
+formatting strings by parsing it at compile-time::
+
+    > formatS @"Person's name is %s and age is %d" "Danya" 26
+    "Person's name is Danya and age is 26"
+
+A crucial part of the implementation is the use of the proposed
+``UnconsSymbol`` type family::
 
     type ParseFormat :: Symbol -> [FmtPart]
     type ParseFormat s = ParseFormat1 '[] (UnconsSymbol s)
@@ -86,52 +147,24 @@ There are several extensions and imports that we omit for brevity. See the full 
       ParseFormat1 acc (Just '( '%', s)) = AddLit acc (ParseFormat2 (UnconsSymbol s))
       ParseFormat1 acc (Just '(c, s)) = ParseFormat1 (c : acc) (UnconsSymbol s)
 
-    type ParseFormat2 :: Maybe (Char, Symbol) -> [FmtPart]
-    type family ParseFormat2 s where
-      ParseFormat2 Nothing = TypeError ('Text "Expected a formatter after '%'")
-      ParseFormat2 (Just '( 'd', s)) = PctD : ParseFormat s
-      ParseFormat2 (Just '( 's', s)) = PctS : ParseFormat s
-      ParseFormat2 (Just '(c, _)) = TypeError ('Text "Not a valid formatter: " :<>: ShowType c)
-
-    -- AddLit and FromReversedString are intermediate type families. The signatures are the following:
-    type AddLit :: [Char] -> [FmtPart] -> [FmtPart]
-
-    type FromReversedString :: [Char] -> Symbol -> Symbol
-
-
-    class ToFmtElem (x :: FmtPart) where
-      type FmtElemFn x r
-      transformElem :: Proxy x -> Format r (FmtElemFn x r)
-
-    formatSafe
-      :: forall symb. (KnownSymbol symb, ToFmt (ParseFormat symb))
-      => FmtFn (ParseFormat symb) Text
-    formatSafe = runFormat (transform (Proxy :: Proxy (ParseFormat symb))) toLazyText
-    -- Here we assume that we have all required instances
-
-    {-
-    > formatSafe @"Person's name is %s and age is %d" "Danya" 26
-    "Person's name is Danya and age is 26"
-    -}
-
 Effect and Interactions
 -----------------------
 
-1. The example above demonstrate that our changes make type-level text processing more convenient.
-In particular, we may type-level parsers more simply and efficiently.
+1. Type-level text processing becomes more convenient. The users can do
+   compile-time parsing without the use of Template Haskell.
 
-2. Moreover, types containing ``Char`` become promotable. A simple example:
+2. Types containing ``Char`` become promotable. A simple example:
 
-Before::
+   Before::
 
-    ghci> :kind! [ 'a', 'b']
-    <interactive>:1:3: error: parse error on input ‘'’
+       ghci> :kind! [ 'a', 'b' ]
+       <interactive>:1:3: error: parse error on input ‘'’
 
-Now::
+   Now::
 
-    ghci> :kind! [ 'a', 'b']
-    [ 'a', 'b'] :: [Char]
-    = '['a', 'b']
+       ghci> :kind! [ 'a', 'b' ]
+       [ 'a', 'b' ] :: [Char]
+       = '['a', 'b']
 
 3. GHC would accept type declarations like the following one::
 
@@ -141,7 +174,6 @@ Now::
 
     t :: 'x' :~: 'x'
     t = Refl
-
 
 5. This feature also works with ``Template Haskell`` and ``Typeable``. A couple of simple examples::
 
@@ -155,53 +187,38 @@ Now::
 
 Costs and Drawbacks
 -------------------
-Proposed changes increase the API surface, but this increasing doesn't look critical.
-Our type families will be deprecated in the presence of full dependent types.
 
-If you notice any other drawbacks, we'll mention them as well.
-
+The API surface of ``GHC.TypeLits`` is increased. The added type families will
+become redundant with full-fledged support for dependent types.
 
 Alternatives
 ------------
-1. Previously, there was a quite similar patch by Vieth, see `here <https://gitlab.haskell.org/ghc/ghc/-/issues/11342#note_173991>`_.
-In contrast to this approach, we use the same ``Char`` and don't introduce the different `Character` kind.
+1. Previously, there was a quite similar patch by Alexander Vieth, see `here
+   <https://gitlab.haskell.org/ghc/ghc/-/issues/11342#note_173991>`_.  In
+   contrast to this approach, we use the same ``Char`` and don't introduce a
+   distinct ``Character`` kind.
 
 2. The `symbols <https://hackage.haskell.org/package/symbols>`_
-library provides a slightly different approach for parsing type-level strings.
-See also `this blog post <https://kcsongor.github.io/symbol-parsing-haskell/>`_ to read more.
-The difference between our approach and Csongor's one is decomposition.
-In ``symbols``, there is a type class ``Uncons`` that uses ``Proxy``::
+   library offers a different approach to parsing type-level strings.
+   See `"Parsing type-level strings in Haskell" <https://kcsongor.github.io/symbol-parsing-haskell/>`_ by Csongor Kiss.
 
-    class Uncons (sym :: Symbol) (h :: Symbol) (t :: Symbol) where
-      uncons :: Proxy '(h, t)
-
-One needs to have an instance of ``Uncons`` with several constraints
-to decompose a non-empty type-level string::
-
-    instance ( h ~ Head sym , AppendSymbol h t ~ sym ) => Uncons sym h t where
-      uncons = Proxy
-
-where ``Head`` is a type family that maps every non-empty ``Symbol`` to its first character
-(which is also ``Symbol``). This type family is implemented using binary search in a binary tree.
-
-In our approach, we do not use any constraints to split a type-level string into
-its head and tail. That makes decomposition of symbols with ``UnconsSymbol`` more straightforward.
-Our changes would also simplify the functionality from the ``symbols`` package and
-make it less intricate and more efficient.
-
+   ``symbols`` is based on a clever use of ``AppendSymbol`` and ``CmpSymbol``
+   to work around the lack of ``UnconsSymbol``. Our approach offers better
+   compile-time performance and scales beyond the ASCII character range.
 
 Unresolved Questions
 --------------------
 
-We suppose that the issue is done.
-The possible direction for further development is the implementation of type-level Unicode classifiers as a plugin.
+1. Should we include more built-in type families, and if so, then which ones?
+   (Can be resolved later)
 
-Implementation plan
+Implementation Plan
 -------------------
-See `this merge request <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/4351>`_.
 
-Appendix
---------
+See `Merge Request !4351 <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/4351>`_.
+
+Appendix I
+----------
 
 The full version of the example with formatters::
 
@@ -220,7 +237,7 @@ The full version of the example with formatters::
   {-# LANGUAGE TypeOperators #-}
   {-# LANGUAGE UndecidableInstances #-}
 
-  module FormatSafe where
+  module FormatS where
 
   import Data.String ( IsString(..) )
   import Data.Text.Lazy
@@ -290,9 +307,9 @@ The full version of the example with formatters::
     type FmtFn (x : xs) r = FmtElemFn x (FmtFn xs r)
     transform (Proxy :: Proxy (x : xs)) = transformElem (Proxy :: Proxy x) % transform (Proxy :: Proxy xs)
 
-  formatSafe :: forall symb. (KnownSymbol symb, ToFmt (ParseFormat symb)) => FmtFn (ParseFormat symb) Text
-  formatSafe = runFormat (transform (Proxy :: Proxy (ParseFormat symb))) toLazyText
+  formatS :: forall symb. (KnownSymbol symb, ToFmt (ParseFormat symb)) => FmtFn (ParseFormat symb) Text
+  formatS = runFormat (transform (Proxy :: Proxy (ParseFormat symb))) toLazyText
 
   example :: Text
-  example = formatSafe @"Person's name is %s and age is %d" "Danya" 26
+  example = formatS @"Person's name is %s and age is %d" "Danya" 26
   -- "Person's name is Danya and age is 26"
