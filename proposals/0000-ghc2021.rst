@@ -60,9 +60,72 @@ Caveats:
 * The hackage data is based on the the latest version of each hackage package. This skews heavily towards libraries, which are more likely to be found on Hackage than executable. It also puts higher weight on projects that are split into many haskell packages (e.g. amazonka).
 
 * The poll data has no serious protection aginst double voting, and skews heavily towards the part of the communit that is reached by the poll announcemnt.
+Executive summary
+=================
 
-Results
--------
+* Bindings and generalisation
+
+  * Barely out: `MonoLocalBinds`_
+
+* Class and instances declarations
+
+  * Safely in: `FlexibleContexts`_ `FlexibleInstances`_ `MultiParamTypeClasses`_ `ConstrainedClassMethods`_ `InstanceSigs`_ `TypeSynonymInstances`_
+
+* Constraints
+
+  * Safely in: `ConstraintKinds`_
+
+* Deriving mechanism
+
+  * Safely in: `DeriveDataTypeable`_ `DeriveFoldable`_ `DeriveFunctor`_ `DeriveTraversable`_ `StandaloneDeriving`_ `EmptyDataDeriving`_ `DeriveLift`_ `GeneralisedNewtypeDeriving`_
+  * Barely out: `DerivingStrategies`_
+
+* Import and export
+
+  * Safely in: `ImportQualifiedPost`_
+
+* Literals
+
+  * Safely in: `BinaryLiterals`_ `HexFloatLiterals`_ `NumericUnderscores`_
+  * Barely out: `OverloadedStrings`_
+
+* Miscellaneous
+
+  * Safely in: `DeriveGeneric`_
+
+* Other
+
+  * Safely in: `BangPatterns`_
+  * Barely in: `ForeignFunctionInterface`_
+
+* Patterns
+
+  * Safely in: `TypeApplications`_
+
+* Records
+
+  * Safely in: `NamedFieldPuns`_
+  * Barely out: `RecordWildCards`_
+
+* Syntax
+
+  * Safely in: `EmptyCase`_ `PostfixOperators`_
+  * Barely in: `TupleSections`_
+
+* Type signatures
+
+  * Safely in: `ExplicitForAll`_ `KindSignatures`_
+  * Barely in: `NamedWildCards`_ `ScopedTypeVariables`_
+
+* Types
+
+  * Safely in: `EmptyDataDecls`_ `GADTSyntax`_ `RankNTypes`_ `StarIsType`_ `PolyKinds`_ `StandaloneKindSignatures`_
+  * Barely in: `ExistentialQuantification`_ `TypeOperators`_
+  * Barely out: `GADTs`_ `TypeFamilies`_
+
+Full Results
+============
+
 Data based on 13951 hackage packages, 1348 survey responses and 11 committee votes. (Votes may be changed. Bold votes are currently above 2/3.)
 
 ============================= ========= ====== ====== ====== ====== ====== ====== ====== ====== ====== ====== ====== ========= ======== ========= =========== ========== ==========
@@ -191,119 +254,119 @@ Data based on 13951 hackage packages, 1348 survey responses and 11 committee vot
                     `Unsafe`_         0                                                                                  7.4.1       0%     3475%           0          0          0
 ============================= ========= ====== ====== ====== ====== ====== ====== ====== ====== ====== ====== ====== ========= ======== ========= =========== ========== ==========
 
-.. _AllowAmbiguousTypes: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-AllowAmbiguousTypes
-.. _ApplicativeDo: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-ApplicativeDo
-.. _Arrows: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-Arrows
-.. _BangPatterns: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-BangPatterns
-.. _BinaryLiterals: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-BinaryLiterals
-.. _BlockArguments: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-BlockArguments
-.. _CApiFFI: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-CApiFFI
-.. _CPP: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-CPP
-.. _CUSKs: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-CUSKs
-.. _ConstrainedClassMethods: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-ConstrainedClassMethods
-.. _ConstraintKinds: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-ConstraintKinds
-.. _DataKinds: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-DataKinds
-.. _DatatypeContexts: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-DatatypeContexts
-.. _DefaultSignatures: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-DefaultSignatures
-.. _DeriveAnyClass: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-DeriveAnyClass
-.. _DeriveDataTypeable: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-DeriveDataTypeable
-.. _DeriveFoldable: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-DeriveFoldable
-.. _DeriveFunctor: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-DeriveFunctor
-.. _DeriveGeneric: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-DeriveGeneric
-.. _DeriveLift: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-DeriveLift
-.. _DeriveTraversable: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-DeriveTraversable
-.. _DerivingStrategies: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-DerivingStrategies
-.. _DerivingVia: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-DerivingVia
-.. _DisambiguateRecordFields: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-DisambiguateRecordFields
-.. _DuplicateRecordFields: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-DuplicateRecordFields
-.. _EmptyCase: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-EmptyCase
-.. _EmptyDataDecls: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-EmptyDataDecls
-.. _EmptyDataDeriving: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-EmptyDataDeriving
-.. _ExistentialQuantification: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-ExistentialQuantification
-.. _ExplicitForAll: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-ExplicitForAll
-.. _ExplicitNamespaces: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-ExplicitNamespaces
-.. _ExtendedDefaultRules: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-ExtendedDefaultRules
-.. _FlexibleContexts: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-FlexibleContexts
-.. _FlexibleInstances: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-FlexibleInstances
-.. _ForeignFunctionInterface: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-ForeignFunctionInterface
-.. _FunctionalDependencies: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-FunctionalDependencies
-.. _GADTSyntax: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-GADTSyntax
-.. _GADTs: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-GADTs
-.. _GHCForeignImportPrim: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-GHCForeignImportPrim
-.. _GeneralisedNewtypeDeriving: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-GeneralisedNewtypeDeriving
-.. _HexFloatLiterals: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-HexFloatLiterals
-.. _ImplicitParams: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-ImplicitParams
-.. _ImportQualifiedPost: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-ImportQualifiedPost
-.. _ImpredicativeTypes: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-ImpredicativeTypes
-.. _IncoherentInstances: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-IncoherentInstances
-.. _InstanceSigs: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-InstanceSigs
-.. _InterruptibleFFI: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-InterruptibleFFI
-.. _KindSignatures: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-KindSignatures
-.. _LambdaCase: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-LambdaCase
-.. _LexicalNegation: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-LexicalNegation
-.. _LiberalTypeSynonyms: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-LiberalTypeSynonyms
-.. _LinearTypes: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-LinearTypes
-.. _MagicHash: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-MagicHash
-.. _MonadComprehensions: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-MonadComprehensions
-.. _MonadFailDesugaring: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-MonadFailDesugaring
-.. _MonoLocalBinds: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-MonoLocalBinds
-.. _MultiParamTypeClasses: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-MultiParamTypeClasses
-.. _MultiWayIf: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-MultiWayIf
-.. _NPlusKPatterns: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-NPlusKPatterns
-.. _NamedFieldPuns: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-NamedFieldPuns
-.. _NamedWildCards: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-NamedWildCards
-.. _NegativeLiterals: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-NegativeLiterals
-.. _NoImplicitPrelude: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-NoImplicitPrelude
-.. _NoMonomorphismRestriction: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-NoMonomorphismRestriction
-.. _NoPatternGuards: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-NoPatternGuards
-.. _NoTraditionalRecordSyntax: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-NoTraditionalRecordSyntax
-.. _NondecreasingIndentation: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-NondecreasingIndentation
-.. _NullaryTypeClasses: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-NullaryTypeClasses
-.. _NumDecimals: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-NumDecimals
-.. _NumericUnderscores: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-NumericUnderscores
-.. _OverlappingInstances: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-OverlappingInstances
-.. _OverloadedLabels: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-OverloadedLabels
-.. _OverloadedLists: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-OverloadedLists
-.. _OverloadedStrings: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-OverloadedStrings
-.. _PackageImports: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-PackageImports
-.. _ParallelListComp: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-ParallelListComp
-.. _PartialTypeSignatures: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-PartialTypeSignatures
-.. _PatternSynonyms: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-PatternSynonyms
-.. _PolyKinds: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-PolyKinds
-.. _PostfixOperators: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-PostfixOperators
-.. _QualifiedDo: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-QualifiedDo
-.. _QuantifiedConstraints: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-QuantifiedConstraints
-.. _QuasiQuotes: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-QuasiQuotes
-.. _RankNTypes: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-RankNTypes
-.. _RebindableSyntax: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-RebindableSyntax
-.. _RecordWildCards: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-RecordWildCards
-.. _RecursiveDo: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-RecursiveDo
-.. _RoleAnnotations: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-RoleAnnotations
-.. _Safe: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-Safe
-.. _ScopedTypeVariables: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-ScopedTypeVariables
-.. _StandaloneDeriving: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-StandaloneDeriving
-.. _StandaloneKindSignatures: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-StandaloneKindSignatures
-.. _StarIsType: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-StarIsType
-.. _StaticPointers: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-StaticPointers
-.. _Strict: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-Strict
-.. _StrictData: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-StrictData
-.. _TemplateHaskell: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-TemplateHaskell
-.. _TemplateHaskellQuotes: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-TemplateHaskellQuotes
-.. _TransformListComp: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-TransformListComp
-.. _Trustworthy: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-Trustworthy
-.. _TupleSections: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-TupleSections
-.. _TypeApplications: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-TypeApplications
-.. _TypeFamilies: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-TypeFamilies
-.. _TypeFamilyDependencies: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-TypeFamilyDependencies
-.. _TypeInType: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-TypeInType
-.. _TypeOperators: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-TypeOperators
-.. _TypeSynonymInstances: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-TypeSynonymInstances
-.. _UnboxedSums: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-UnboxedSums
-.. _UnboxedTuples: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-UnboxedTuples
-.. _UndecidableInstances: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-UndecidableInstances
-.. _UndecidableSuperClasses: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-UndecidableSuperClasses
-.. _UnicodeSyntax: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-UnicodeSyntax
-.. _UnliftedFFITypes: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-UnliftedFFITypes
-.. _UnliftedNewtypes: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-UnliftedNewtypes
-.. _Unsafe: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-Unsafe
-.. _ViewPatterns: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-ViewPatterns
+.. _AllowAmbiguousTypes: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/ambiguous_types.html#extension-AllowAmbiguousTypes
+.. _ApplicativeDo: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/applicative_do.html#extension-ApplicativeDo
+.. _Arrows: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/arrows.html#extension-Arrows
+.. _BangPatterns: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/strict.html#extension-BangPatterns
+.. _BinaryLiterals: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/binary_literals.html#extension-BinaryLiterals
+.. _BlockArguments: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/block_arguments.html#extension-BlockArguments
+.. _CApiFFI: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/ffi.html#extension-CApiFFI
+.. _CPP: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/phases.html#extension-CPP
+.. _CUSKs: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/poly_kinds.html#extension-CUSKs
+.. _ConstrainedClassMethods: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/constrained_class_methods.html#extension-ConstrainedClassMethods
+.. _ConstraintKinds: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/constraint_kind.html#extension-ConstraintKinds
+.. _DataKinds: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/data_kinds.html#extension-DataKinds
+.. _DatatypeContexts: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/datatype_contexts.html#extension-DatatypeContexts
+.. _DefaultSignatures: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/default_signatures.html#extension-DefaultSignatures
+.. _DeriveAnyClass: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/derive_any_class.html#extension-DeriveAnyClass
+.. _DeriveDataTypeable: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/deriving_extra.html#extension-DeriveDataTypeable
+.. _DeriveFoldable: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/deriving_extra.html#extension-DeriveFoldable
+.. _DeriveFunctor: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/deriving_extra.html#extension-DeriveFunctor
+.. _DeriveGeneric: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/generics.html#extension-DeriveGeneric
+.. _DeriveLift: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/deriving_extra.html#extension-DeriveLift
+.. _DeriveTraversable: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/deriving_extra.html#extension-DeriveTraversable
+.. _DerivingStrategies: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/deriving_strategies.html#extension-DerivingStrategies
+.. _DerivingVia: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/deriving_via.html#extension-DerivingVia
+.. _DisambiguateRecordFields: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/disambiguate_record_fields.html#extension-DisambiguateRecordFields
+.. _DuplicateRecordFields: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/duplicate_record_fields.html#extension-DuplicateRecordFields
+.. _EmptyCase: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/empty_case.html#extension-EmptyCase
+.. _EmptyDataDecls: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/nullary_types.html#extension-EmptyDataDecls
+.. _EmptyDataDeriving: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/empty_data_deriving.html#extension-EmptyDataDeriving
+.. _ExistentialQuantification: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/existential_quantification.html#extension-ExistentialQuantification
+.. _ExplicitForAll: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/explicit_forall.html#extension-ExplicitForAll
+.. _ExplicitNamespaces: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/explicit_namespaces.html#extension-ExplicitNamespaces
+.. _ExtendedDefaultRules: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/ghci.html#extension-ExtendedDefaultRules
+.. _FlexibleContexts: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/flexible_contexts.html#extension-FlexibleContexts
+.. _FlexibleInstances: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/instances.html#extension-FlexibleInstances
+.. _ForeignFunctionInterface: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/ffi.html#extension-ForeignFunctionInterface
+.. _FunctionalDependencies: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/functional_dependencies.html#extension-FunctionalDependencies
+.. _GADTSyntax: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/gadt_syntax.html#extension-GADTSyntax
+.. _GADTs: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/gadt.html#extension-GADTs
+.. _GHCForeignImportPrim: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/ffi.html#extension-GHCForeignImportPrim
+.. _GeneralisedNewtypeDeriving: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/newtype_deriving.html#extension-GeneralisedNewtypeDeriving
+.. _HexFloatLiterals: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/hex_float_literals.html#extension-HexFloatLiterals
+.. _ImplicitParams: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/implicit_parameters.html#extension-ImplicitParams
+.. _ImportQualifiedPost: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/import_qualified_post.html#extension-ImportQualifiedPost
+.. _ImpredicativeTypes: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/impredicative_types.html#extension-ImpredicativeTypes
+.. _IncoherentInstances: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/instances.html#extension-IncoherentInstances
+.. _InstanceSigs: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/instances.html#extension-InstanceSigs
+.. _InterruptibleFFI: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/ffi.html#extension-InterruptibleFFI
+.. _KindSignatures: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/kind_signatures.html#extension-KindSignatures
+.. _LambdaCase: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/lambda_case.html#extension-LambdaCase
+.. _LexicalNegation: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/lexical_negation.html#extension-LexicalNegation
+.. _LiberalTypeSynonyms: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/liberal_type_synonyms.html#extension-LiberalTypeSynonyms
+.. _LinearTypes: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/linear_types.html#extension-LinearTypes
+.. _MagicHash: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/magic_hash.html#extension-MagicHash
+.. _MonadComprehensions: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/monad_comprehensions.html#extension-MonadComprehensions
+.. _MonadFailDesugaring: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/monadfail_desugaring.html#extension-MonadFailDesugaring
+.. _MonoLocalBinds: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/let_generalisation.html#extension-MonoLocalBinds
+.. _MultiParamTypeClasses: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/multi_param_type_classes.html#extension-MultiParamTypeClasses
+.. _MultiWayIf: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/multiway_if.html#extension-MultiWayIf
+.. _NPlusKPatterns: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/nk_patterns.html#extension-NPlusKPatterns
+.. _NamedFieldPuns: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/record_puns.html#extension-NamedFieldPuns
+.. _NamedWildCards: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/partial_type_signatures.html#extension-NamedWildCards
+.. _NegativeLiterals: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/negative_literals.html#extension-NegativeLiterals
+.. _NoImplicitPrelude: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/rebindable_syntax.html#extension-NoImplicitPrelude
+.. _NoMonomorphismRestriction: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/monomorphism.html#extension-NoMonomorphismRestriction
+.. _NoPatternGuards: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/pattern_guards.html#extension-NoPatternGuards
+.. _NoTraditionalRecordSyntax: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/traditional_record_syntax.html#extension-NoTraditionalRecordSyntax
+.. _NondecreasingIndentation: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/bugs.html#extension-NondecreasingIndentation
+.. _NullaryTypeClasses: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/nullary_type_classes.html#extension-NullaryTypeClasses
+.. _NumDecimals: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/num_decimals.html#extension-NumDecimals
+.. _NumericUnderscores: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/numeric_underscores.html#extension-NumericUnderscores
+.. _OverlappingInstances: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/instances.html#extension-OverlappingInstances
+.. _OverloadedLabels: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/overloaded_labels.html#extension-OverloadedLabels
+.. _OverloadedLists: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/overloaded_lists.html#extension-OverloadedLists
+.. _OverloadedStrings: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/overloaded_strings.html#extension-OverloadedStrings
+.. _PackageImports: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/package_qualified_imports.html#extension-PackageImports
+.. _ParallelListComp: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/parallel_list_comprehensions.html#extension-ParallelListComp
+.. _PartialTypeSignatures: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/partial_type_signatures.html#extension-PartialTypeSignatures
+.. _PatternSynonyms: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/pattern_synonyms.html#extension-PatternSynonyms
+.. _PolyKinds: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/poly_kinds.html#extension-PolyKinds
+.. _PostfixOperators: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/rebindable_syntax.html#extension-PostfixOperators
+.. _QualifiedDo: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/qualified_do.html#extension-QualifiedDo
+.. _QuantifiedConstraints: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/quantified_constraints.html#extension-QuantifiedConstraints
+.. _QuasiQuotes: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/template_haskell.html#extension-QuasiQuotes
+.. _RankNTypes: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/rank_polymorphism.html#extension-RankNTypes
+.. _RebindableSyntax: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/rebindable_syntax.html#extension-RebindableSyntax
+.. _RecordWildCards: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/record_wildcards.html#extension-RecordWildCards
+.. _RecursiveDo: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/recursive_do.html#extension-RecursiveDo
+.. _RoleAnnotations: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/roles.html#extension-RoleAnnotations
+.. _Safe: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/safe_haskell.html#extension-Safe
+.. _ScopedTypeVariables: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/scoped_type_variables.html#extension-ScopedTypeVariables
+.. _StandaloneDeriving: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/standalone_deriving.html#extension-StandaloneDeriving
+.. _StandaloneKindSignatures: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/poly_kinds.html#extension-StandaloneKindSignatures
+.. _StarIsType: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/poly_kinds.html#extension-StarIsType
+.. _StaticPointers: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/static_pointers.html#extension-StaticPointers
+.. _Strict: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/strict.html#extension-Strict
+.. _StrictData: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/strict.html#extension-StrictData
+.. _TemplateHaskell: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/template_haskell.html#extension-TemplateHaskell
+.. _TemplateHaskellQuotes: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/template_haskell.html#extension-TemplateHaskellQuotes
+.. _TransformListComp: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/generalised_list_comprehensions.html#extension-TransformListComp
+.. _Trustworthy: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/safe_haskell.html#extension-Trustworthy
+.. _TupleSections: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/tuple_sections.html#extension-TupleSections
+.. _TypeApplications: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/type_applications.html#extension-TypeApplications
+.. _TypeFamilies: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/type_families.html#extension-TypeFamilies
+.. _TypeFamilyDependencies: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/type_families.html#extension-TypeFamilyDependencies
+.. _TypeInType: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/poly_kinds.html#extension-TypeInType
+.. _TypeOperators: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/type_operators.html#extension-TypeOperators
+.. _TypeSynonymInstances: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/instances.html#extension-TypeSynonymInstances
+.. _UnboxedSums: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/primitives.html#extension-UnboxedSums
+.. _UnboxedTuples: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/primitives.html#extension-UnboxedTuples
+.. _UndecidableInstances: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/type_families.html#extension-UndecidableInstances
+.. _UndecidableSuperClasses: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/undecidable_super_classes.html#extension-UndecidableSuperClasses
+.. _UnicodeSyntax: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/unicode_syntax.html#extension-UnicodeSyntax
+.. _UnliftedFFITypes: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/ffi.html#extension-UnliftedFFITypes
+.. _UnliftedNewtypes: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/primitives.html#extension-UnliftedNewtypes
+.. _Unsafe: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/safe_haskell.html#extension-Unsafe
+.. _ViewPatterns: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/view_patterns.html#extension-ViewPatterns
