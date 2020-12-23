@@ -63,65 +63,64 @@ Caveats:
 Executive summary
 -----------------
 
-* Bindings and generalisation
+* Syntax
 
-  * Barely out: `MonoLocalBinds`_
-
-* Class and instances declarations
-
-  * Safely in: `FlexibleContexts`_, `FlexibleInstances`_, `MultiParamTypeClasses`_, `ConstrainedClassMethods`_, `InstanceSigs`_, `TypeSynonymInstances`_
-
-* Constraints
-
-  * Safely in: `ConstraintKinds`_
-
-* Deriving mechanism
-
-  * Safely in: `DeriveDataTypeable`_, `DeriveFoldable`_, `DeriveFunctor`_, `DeriveTraversable`_, `StandaloneDeriving`_, `EmptyDataDeriving`_, `DeriveLift`_, `GeneralisedNewtypeDeriving`_
-  * Barely out: `DerivingStrategies`_
+  * Safely in: `EmptyCase`_, `PostfixOperators`_
+  * Barely in: `TupleSections`_
 
 * Import and export
 
   * Safely in: `ImportQualifiedPost`_
 
-* Literals
+* Types
 
-  * Safely in: `BinaryLiterals`_, `HexFloatLiterals`_, `NumericUnderscores`_
-  * Barely out: `OverloadedStrings`_
-
-* Miscellaneous
-
-  * Safely in: `DeriveGeneric`_
-
-* Other
-
-  * Safely in: `BangPatterns`_
-  * Barely in: `ForeignFunctionInterface`_
-
-* Patterns
-
-  * Safely in: `TypeApplications`_
+  * Safely in: `EmptyDataDecls`_, `GADTSyntax`_, `RankNTypes`_, `StarIsType`_, `TypeApplications`_, `PolyKinds`_, `StandaloneKindSignatures`_
+  * Barely in: `ExistentialQuantification`_, `TypeOperators`_
+  * Barely out: `GADTs`_, `TypeFamilies`_
 
 * Records
 
   * Safely in: `NamedFieldPuns`_
   * Barely out: `RecordWildCards`_
 
-* Syntax
+* Deriving mechanism
 
-  * Safely in: `EmptyCase`_, `PostfixOperators`_
-  * Barely in: `TupleSections`_
+  * Safely in: `DeriveDataTypeable`_, `DeriveFoldable`_, `DeriveFunctor`_, `DeriveTraversable`_, `StandaloneDeriving`_, `EmptyDataDeriving`_, `DeriveLift`_, `GeneralisedNewtypeDeriving`_
+  * Barely out: `DerivingStrategies`_
+
+* Class and instances declarations
+
+  * Safely in: `FlexibleContexts`_, `FlexibleInstances`_, `MultiParamTypeClasses`_, `ConstrainedClassMethods`_, `InstanceSigs`_, `TypeSynonymInstances`_
+
+* Literals
+
+  * Safely in: `BinaryLiterals`_, `HexFloatLiterals`_, `NumericUnderscores`_
+  * Barely out: `OverloadedStrings`_
+
+* Constraints
+
+  * Safely in: `ConstraintKinds`_
 
 * Type signatures
 
   * Safely in: `ExplicitForAll`_, `KindSignatures`_
   * Barely in: `NamedWildCards`_, `ScopedTypeVariables`_
 
-* Types
+* Bindings and generalisation
 
-  * Safely in: `EmptyDataDecls`_, `GADTSyntax`_, `RankNTypes`_, `StarIsType`_, `PolyKinds`_, `StandaloneKindSignatures`_
-  * Barely in: `ExistentialQuantification`_, `TypeOperators`_
-  * Barely out: `GADTs`_, `TypeFamilies`_
+  * Barely out: `MonoLocalBinds`_
+
+* Bang patterns and Strict Haskell
+
+  * Safely in: `BangPatterns`_
+
+* Foreign function interface (FFI)
+
+  * Barely in: `ForeignFunctionInterface`_
+
+* Miscellaneous
+
+  * Safely in: `DeriveGeneric`_
 
 Full Results
 ------------
