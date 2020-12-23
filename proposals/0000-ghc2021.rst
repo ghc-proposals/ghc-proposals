@@ -61,7 +61,7 @@ Caveats:
 
 * The poll data has no serious protection aginst double voting, and skews heavily towards the part of the communit that is reached by the poll announcemnt.
 Executive summary
-=================
+-----------------
 
 * Bindings and generalisation
 
@@ -124,7 +124,7 @@ Executive summary
   * Barely out: `GADTs`_, `TypeFamilies`_
 
 Full Results
-============
+------------
 
 Data based on 13951 hackage packages, 1348 survey responses and 11 committee votes. (Votes may be changed. Bold votes are currently above 2/3.)
 
