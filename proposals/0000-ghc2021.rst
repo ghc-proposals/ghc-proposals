@@ -66,8 +66,7 @@ Executive summary
 * Syntax
 
   * Safely in: `EmptyCase`_, `PostfixOperators`_
-  * Barely in: `TupleSections`_
-  * Barely out: `MonadFailDesugaring`_
+  * Barely in: `MonadFailDesugaring`_, `TupleSections`_
 
 * Import and export
 
@@ -167,14 +166,14 @@ Data based on 13951 hackage packages, 1348 survey responses and 11 committee vot
       `TypeSynonymInstances`_     **9**      ✔             ✔      ✔      ✔             ✔      ✔      ✔      ✔      ✔     6.8.1       7%       74%         10%         8%         7%
  `ExistentialQuantification`_     **8**      ✔             ✔      ✔      ✔             ✔      ✔      ✔      ✔            6.8.1      15%       30%          7%         7%         6%
   `ForeignFunctionInterface`_     **8**      ✔      ✔                    ✔      ✔      ✔      ✔      ✔             ✔     6.8.1       3%      211%           0         4%          0
+       `MonadFailDesugaring`_     **8**      ✔      ✔      ✔      ✔      ✔      ✔      ✔                           ✔     8.0.1       7%       15%          0%         2%          0
             `NamedWildCards`_     **8**      ✔             ✔      ✔             ✔      ✔             ✔      ✔      ✔    7.10.1       8%       65%          0%         1%          0
        `ScopedTypeVariables`_     **8**      ✔             ✔      ✔      ✔                    ✔      ✔      ✔      ✔     6.8.1      33%        8%         29%        41%        14%
              `TupleSections`_     **8**      ✔             ✔             ✔      ✔      ✔             ✔      ✔      ✔      6.12      27%       12%         10%        27%         7%
              `TypeOperators`_     **8**      ✔      ✔             ✔             ✔      ✔      ✔             ✔      ✔     6.8.1      20%       17%         14%        28%         6%
-        `DerivingStrategies`_         7      ✔      ✔      ✔                    ✔      ✔                    ✔      ✔     8.2.1      27%       11%          1%         3%         1%
                 **Extension** **Votes** **AM** **AS** **CC** **ES** **ID** **JB** **RE** **SJ** **SM** **TH** **VB** **Since** **Pop…** **Cont…** **Prolif…** **Innoc…** **Aloof…**
+        `DerivingStrategies`_         7      ✔      ✔      ✔                    ✔      ✔                    ✔      ✔     8.2.1      27%       11%          1%         3%         1%
                      `GADTs`_         7      ✔      ✔      ✔      ✔                                  ✔      ✔      ✔     6.8.1      34%       13%         13%        25%         8%
-       `MonadFailDesugaring`_         7      ✔      ✔      ✔      ✔      ✔      ✔                                  ✔     8.0.1       7%       15%          0%         2%          0
             `MonoLocalBinds`_         7      ✔      ✔      ✔      ✔                           ✔      ✔             ✔    6.12.1       2%      279%          1%         1%         1%
          `OverloadedStrings`_         7      ✔             ✔      ✔      ✔                    ✔      ✔             ✔     6.8.1      45%       12%         37%        53%        12%
            `RecordWildCards`_         7      ✔                    ✔      ✔      ✔                    ✔      ✔      ✔     6.8.1      16%       39%         17%        28%         9%
