@@ -6,13 +6,11 @@ ticket-url: ""
 implemented: ""
 ---
 
-This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/0>).
-**After creating the pull request, edit this file again, update the number in
-the link, and delete this bold sentence.**
+This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/389).
 
 # Better ambiguous variables
 
-Right now the extension `AllowAmbiguousTypes` is too invasive. This document proposed a more fine-grained annotation `{-# AMBIGUOUS #-}` which can be applied to variable in a type signature.
+Right now the extension `AllowAmbiguousTypes` is too invasive. This document proposes a more fine-grained annotation `{-# AMBIGUOUS #-}` which can be applied to variable in a type signature.
 
 ## Motivation
 
