@@ -5,9 +5,7 @@ ticket-url: ""
 implemented: ""
 ---
 
-This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/0>).
-**After creating the pull request, edit this file again, update the number in
-the link, and delete this bold sentence.**
+This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/390).
 
 # Fine-grained pragmas for undecidability
 
@@ -51,7 +49,7 @@ instance (Sum 'Z m m) => Sum 'Z m m
 
 Type classes, instances, or type families can be annotated with `{-# UNDECIDABLE #-}` to signal that the termination and coverage checks should be waived for that particular definition.
 
-This proposal subsumes the job of `UndecidableInstances` and `UndecidableSuperClasses`, but makes it more fine-grained. This has been done in the past with the `OverlappingInstances` extension, which was refined into a series of instance pragmas.
+This proposal subsumes the job of `UndecidableInstances` and `UndecidableSuperClasses`, making it more fine-grained. This has been done in the past with the `OverlappingInstances` extension, which was refined into a series of instance pragmas.
 
 ## Examples
 
