@@ -73,37 +73,48 @@ Proposed Change Specification
 6. With ``-XModifiers``, introduce modifier syntax on record field declarations as follows::
      
      fielddecl ::= vars {modifier} '::' (type | '!' atype)
-     
-7. Reserve the use of ``%`` in a prefix occurrence to be used only for modifiers;
+
+7. With ``-XModifiers``, introduce modifier syntax on top-level declarations as follows::
+
+     topdecl ::= {modifier} 'type' simpletype '=' type
+             |   {modifier} 'data' [context '=>'] simpletype ['=' constrs] [deriving]
+             |   {modifier} 'newtype' [context '=>'] simpletype = newconstr [deriving]
+             |   {modifier} 'class' [scontext '=>'] tycls tyvar ['where' cdecls]
+             |   {modifier} 'instance' [scontext '=>'] qtycls inst ['where' idecls]
+             |   {modifier} 'default' '(' type1 ',' ... ',' typen ')'
+             |   {modifier} 'foreign' fdecl
+             |   decl                            -- unchanged
+
+8. Reserve the use of ``%`` in a prefix occurrence to be used only for modifiers;
    though this proposal does not do so, we can imagine extending the modifier syntax
    to apply to further syntactic situations (e.g. term-level operators, declarations,
    import lists, etc.).
 
-8. Modifiers are parsed, renamed, and type-checked as *types*.
+9. Modifiers are parsed, renamed, and type-checked as *types*.
    
-9. The type of a modifier is determined only by synthesis, never by checking.
-   That is, in the bidirectional type-checking scheme used by GHC, we find the
-   type of the modifier by running the synthesis judgment. Effectively, this
-   means that if we consider a modifier to be some head (constructor or
-   variable) applied to a sequence of arguments (possibly none), the head must
-   have a known type: constructors always have a known type, and variables
-   have a known type if declared with a type signature. Alternatively, the
-   modifier may have a top-level type signature.
+10. The type of a modifier is determined only by synthesis, never by checking.
+    That is, in the bidirectional type-checking scheme used by GHC, we find the
+    type of the modifier by running the synthesis judgment. Effectively, this
+    means that if we consider a modifier to be some head (constructor or
+    variable) applied to a sequence of arguments (possibly none), the head must
+    have a known type: constructors always have a known type, and variables
+    have a known type if declared with a type signature. Alternatively, the
+    modifier may have a top-level type signature.
 
-10. A modifier of type ``Multiplicity`` changes the multiplicity of the following arrow,
+11. A modifier of type ``Multiplicity`` changes the multiplicity of the following arrow,
     preceding pattern-bound variable of a lambda (but only when the lambda binds just one
     variable),
     or preceding record field.
     Multiple modifiers of type ``Multiplicity`` on the same arrow are not allowed.
     Any other use of a modifier is an error.
 
-11. ``-XLinearTypes`` implies ``-XModifiers``.
+12. ``-XLinearTypes`` implies ``-XModifiers``.
 
-12. Future modifiers will be put *before* the element they modify. Alternatively,
+13. Future modifiers will be put *before* the element they modify. Alternatively,
     a modifier can be put directly before a syntactic closer or separator, such
     as ``;`` or ``where`` or ``)``.
 
-13. Modifiers with an unknown meaning produce a warning, controlled by
+14. Modifiers with an unknown meaning produce a warning, controlled by
     ``-Wunknown-modifiers``. They are otherwise ignored. (However, in order to
     know that a modifier is unknown, it still must be parsed, renamed, and type-checked.)
 
@@ -128,7 +139,22 @@ The syntax (and semantics) for modifiers on patterns and record fields is exactl
 as described in the `linear types proposal`_.
 
 .. _`linear types proposal`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0111-linear-types.rst#syntax
-  
+
+Further examples:
+
+* Types: ``%Mod1 T (%Mod2 a) (%Mod3 (S b))``; ``Mod1`` applies to ``T``, ``Mod2`` applies to ``a``, and ``Mod3`` applies to ``S b``.
+  Note that this proposal does not introduce any valid modifiers for types.
+
+* Terms: Same as the example above.
+
+* Lambda expressions: ``\ x %Many -> ...`` or ``\ x %One -> ...``. This would be parsed but rejected, because
+  the new syntax applies only for lambda that bind a single, top-level variable: ``\ x y %One -> ...``.
+
+* Field declaration: ``data T = MkT { field %Many :: Int }``.
+
+* Class declaration: ``%Mod class C a where ...``. Other declaration forms are similar. This proposal
+  does not introduce any valid modifiers for types, but `#390 <https://github.com/ghc-proposals/ghc-proposals/pull/390>`_ does.
+
 Effect and Interactions
 -----------------------
 * It is expected that the matchability of `#242`_ will have a kind ``Matchability``.
@@ -203,6 +229,10 @@ Effect and Interactions
   the entire Haskell grammar putting modifiers wherever they could potentially
   make sense (and thus be more future compatible), but this proposal covers
   only types and terms (and not, say, class declarations).
+
+* Because modifiers are treated as types, they will typically begin with
+  a capital letter. (Note that a polymorphic multiplicity is a type variable,
+  and this is fine.)
   
 Costs and Drawbacks
 -------------------
@@ -229,6 +259,9 @@ Alternatives
   syntax beyond the linear-types syntax, but it seemed helpful to do so here.
   We can drop that.
 
+* We could avoid ambiguity using extra punctuation (e.g. ``class ( %Mod1, %Mod2 ) C a b => D a b c where ...``),
+  but "modifiers come before what they modify" is simple and uniform.
+  
 Unresolved Questions
 --------------------
 * Is it too soon? That is, this proposal solves a problem we do not yet have:
