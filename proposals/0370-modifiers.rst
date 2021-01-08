@@ -66,20 +66,22 @@ Proposed Change Specification
 
      fexp     ::= {modifier} aexp | fexp aexp
 
-5. With ``-XModifiers``, introduce postfix modifier syntax on patterns as follows::
+5. With ``-XModifiers``, introduce modifier syntax in lambda expressions as follows::
 
-     lpat     ::= apat {modifier}
+     lexp     ::= \ apat1 ... apatn {modifier} -> exp
 
-6. With ``-XModifiers``, introduce postfix modifier syntax on record field declarations as follows::
+6. With ``-XModifiers``, introduce modifier syntax on record field declarations as follows::
      
-     fielddecl ::= vars '::' (type | '!' atype) {modifier}
+     fielddecl ::= vars {modifier} '::' (type | '!' atype)
      
 7. Reserve the use of ``%`` in a prefix occurrence to be used only for modifiers;
    though this proposal does not do so, we can imagine extending the modifier syntax
    to apply to further syntactic situations (e.g. term-level operators, declarations,
    import lists, etc.).
 
-8. The type of a modifier is determined only by synthesis, never by checking.
+8. Modifiers are parsed, renamed, and type-checked as *types*.
+   
+9. The type of a modifier is determined only by synthesis, never by checking.
    That is, in the bidirectional type-checking scheme used by GHC, we find the
    type of the modifier by running the synthesis judgment. Effectively, this
    means that if we consider a modifier to be some head (constructor or
@@ -88,14 +90,23 @@ Proposed Change Specification
    have a known type if declared with a type signature. Alternatively, the
    modifier may have a top-level type signature.
 
-9. A modifier of type ``Multiplicity`` changes the multiplicity of the following arrow,
-   preceding pattern-bound variable (but only on the top level of a lambda pattern),
-   or preceding record field.
-   Multiple modifiers of type ``Multiplicity`` on the same arrow are not allowed.
-   Any other use of a modifier is an error.
+10. A modifier of type ``Multiplicity`` changes the multiplicity of the following arrow,
+    preceding pattern-bound variable of a lambda (but only when the lambda binds just one
+    variable),
+    or preceding record field.
+    Multiple modifiers of type ``Multiplicity`` on the same arrow are not allowed.
+    Any other use of a modifier is an error.
 
-10. ``-XLinearTypes`` implies ``-XModifiers``.
-  
+11. ``-XLinearTypes`` implies ``-XModifiers``.
+
+12. Future modifiers will be put *before* the element they modify. Alternatively,
+    a modifier can be put directly before a syntactic closer or separator, such
+    as ``;`` or ``where`` or ``)``.
+
+13. Modifiers with an unknown meaning produce a warning, controlled by
+    ``-Wunknown-modifiers``. They are otherwise ignored. (However, in order to
+    know that a modifier is unknown, it still must be parsed, renamed, and type-checked.)
+
 Examples
 --------
 Here are some examples that will be accepted or rejected with this proposal::
@@ -176,6 +187,22 @@ Effect and Interactions
   
 * These modifiers recall Java's `Annotations <https://en.wikipedia.org/wiki/Java_annotation>`_
   mechanism, which were a direct inspiration.
+
+* A key design principle here is that modifiers affect the next item in the AST (if
+  one exists). By keeping with this principle, we avoid the possibility of ambiguity:
+  if some modifiers affected a previous element and some affected the next, then we
+  could find ourselves in trouble.
+
+* The ``-Wunknown-modifiers`` warning is meant to enable future compatibility. For
+  example, suppose we want to label ambiguous types with ``%Ambiguous``. It would
+  be very annoying to use, say, CPP to remove the modifier for GHCs that do not
+  support it. Instead, this proposal allows the modifier to be accepted and
+  ignored. This would only work if ``Ambiguous`` is in scope in the type namespace.
+  Additionally, a given GHC must know how to parse modifiers at the
+  location where they are written. Perhaps a more complete design would modify
+  the entire Haskell grammar putting modifiers wherever they could potentially
+  make sense (and thus be more future compatible), but this proposal covers
+  only types and terms (and not, say, class declarations).
   
 Costs and Drawbacks
 -------------------
