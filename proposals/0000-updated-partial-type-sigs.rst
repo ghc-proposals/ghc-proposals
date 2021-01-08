@@ -31,6 +31,8 @@ numbered for back-reference).
         const x _ = x
         type instance IsJust (Just _) = True   -- happens in types, too!
 
+      I will call these underscores "ignoreds". (Please suggest a better name.)
+
    b. In expressions, a ``_`` means a part of an expression for which you want GHC to print its type. Example::
 
         tuple :: (Int, Double, Bool, Char, Float, ShowS)
@@ -41,6 +43,8 @@ numbered for back-reference).
         foo :: SomeMajorTypeFamily Nat Bool (_ 5) -> Bool  -- I forget: should I use 'Just or 'Left there??
 
       There is no way to get this behavior in types today.
+
+      I will call these underscores "holes".
 
    c. In type signature declarations, a ``_`` means a part of a type for which you want GHC to infer its value using
       the definition of the variable being declared. Example::
@@ -85,7 +89,8 @@ numbered for back-reference).
 .. _`visible kind application`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0015-type-level-type-applications.rst
 
    These four meanings of underscores are distinct; we should allow programmers direct control over
-   which behavior they want.
+   which behavior they want. Holes are very much like elisions, though: the different is that GHC does
+   not try to fill in a hole.
 
 2. Visible kind applications don't fit well with partial type signatures. As recently merged into HEAD,
    the `visible kind application`_ implementation treats underscores as a combination of wildcard and elision:
@@ -116,6 +121,9 @@ numbered for back-reference).
    The feature is undiscoverable. If I write the code above in a module without ``-XNamedWildCards``, I get a type
    error. This is because ``_w`` is a legal type variable name in standard Haskell. No error message in GHC suggests enabling this
    extension.
+
+   Naming is useful for all form of underscore except for ignoreds, as knowing that several different
+   underscores mean the same thing can aid inference.
 
 4. The current design of partial type signatures treats type generalization and constraint generalization differently.
    Consider these examples::
@@ -187,17 +195,29 @@ numbered for back-reference).
    an underscore (and then asking our dear users to enable ``-XPartialTypeSignatures -Wno-partial-type-signatures``),
    there is no way of getting the behavior we want.
 
+6. Control over partial type signatures vs complete type signatures is based on the presence or absence of
+   a wildcard. This means that GHC sometimes makes the wrong decision: it is conceivable to want a partial
+   type signature without a wildcard, and to write a complete signature with one.
+
+   Here is a desired-complete signature that has a missing piece::
+
+     foo :: Proxy @_ True -> ()
+
+   We can infer the value of the elided kind argument to ``Proxy`` from the kind of ``True``.
+
+   For an example of a desired-partial signature without a wildcard, see the examples below_.
+   
 **Summary**
 
 Missing bits of programs vary along quite a few different axes.
 
 Axis 1: how to fill the missing bit in?
 
-A. Nothing/don't care (``_`` in patterns)
+A. Fresh variable; these are "ignored" underscores.
 
-B. Figure it out by local context (``const @_ @Bool 'x'``)
+B. Figure it out by local context (``const @_ @Bool 'x'``); these are "elisions".
 
-C. Figure it out by looking at an expression nearby (``foo :: _ -> Int``)
+C. Figure it out by looking at an expression nearby (``foo :: _ -> Int``); these are "wildcards".
 
 Axis 2: do we report information to the user?
 
@@ -422,23 +442,23 @@ Proposed Change Specification
      
 4. Enabling ``-XPartialTypeSignatures`` is necessary in order for GHC to accept a program with
    named wildcards in type signatures. These signatures must also be written using the new
-   separator ``::?`` instead of the typical ``::``. That is, we would now write ::
+   modifier ``%Partial`` instead of the typical ``::``. That is, we would now write ::
 
-     quux ::? _w -> Bool
+     quux %Partial :: _w -> Bool
      quux x = not x
 
-   The new separator would be a loud indication that the signature is *partial*. It induces GHC
+   The modifier would be a loud indication that the signature is *partial*. It induces GHC
    to use its partial-type-signature algorithm instead of its typical type-checking algorithm.
 
    Partial type signatures would work with elisions, too, allowing ::
 
-     wurble ::? _ -> _
+     wurble %Partial :: _ -> _
      wurble x = not x
 
    Partial type signatures would be kind-generalized *after* checking the function body. This would
    allow something like the following to be accepted::
 
-     silly ::? Proxy a -> ()
+     silly %Partial :: Proxy a -> ()
      silly (_ :: Proxy @Bool _) = ()
 
    Note that the expression would be more specific than its type signature, if we kind-generalized
@@ -455,10 +475,10 @@ Proposed Change Specification
    generalize over more variables than have been written in the type signature. As usual, an elision
    produces no diagnostic, while a named wildcard does. Here are two examples::
 
-     ex4 ::? _w -> _w
+     ex4 %Partial :: _w -> _w
      ex4 x = x
 
-     ex5 ::? forall _. _w -> _w
+     ex5 %Partial :: forall _. _w -> _w
      ex5 x = x
 
    Here, ``ex4`` is rejected, because we do not know what type ``x`` should have and we cannot
@@ -470,15 +490,17 @@ Proposed Change Specification
 
    Note that any ordinary type variables mentioned in a type are generalized as usual. Thus, ::
 
-     ex6 ::? _w -> a
+     ex6 %Partial :: _w -> a
      ex6 x = x
 
    is accepted, as the ``a`` is already a quantified type variable. On the other hand, ::
 
-     ex7 ::? _w -> a -> a
+     ex7 %Partial :: _w -> a -> a
      ex7 _ x = x
 
    is rejected, as we have no type for the first argument of ``ex7``.
+
+6. The ``Partial`` modifier will be exported from ``GHC.Exts``.
 
 Here is a summary:
 
@@ -545,23 +567,19 @@ Here is a summary:
 Effect and Interactions
 -----------------------
 * All positions marked **Not allowed** (outside of patterns 5A)
-  in the Motivation are now allowed but with the caveat
-  that users must provide names when they want a diagnostic.
-
-* Using a name now prints a diagnostic (these can be suppressed with a module-wide flag); there
-  is no way to get a repeated missing bit without a diagnostic without using a module-wide flag.
+  in the Motivation are now allowed.
 
 * The new design allows the user to control whether they want an elision or a named wildcard, using
   a convenient naming convention.
 
-* The new design gives users fine control over generalization, through the use of ``::?`` to
+* The new design gives users fine control over generalization, through the use of ``%Partial`` to
   suppress kind generalization and the use of ``forall a b c _.`` to explicitly enable type
   generalization.
 
 * Visible kind application now fits in nicely. Users can control whether they want elisions
   or wildcards.
 
-* Partial type signatures have become louder, through the addition of ``::?``. This makes it
+* Partial type signatures have become louder, through the addition of ``%Partial``. This makes it
   more sensible to keep partial type signatures in released code. The new syntax also
   allows users to write elisions in type signatures without causing the signature to
   become partial.
@@ -580,15 +598,12 @@ Costs and Drawbacks
   design seems no simpler nor more complicated than the current, but it will take a fair amount
   of work to re-engineer.
 
-* It is conceivable to want a repeated name without a diagnostic; this proposal does not support
-  such a usage.
-  
 * The new design does not adequately treat patterns. It is conceivable that a user would want
   a wildcard (with diagnostic information) in a pattern, and this is no more achievable with this
   proposal than it was previously.
 
-* This proposal is not backward compatible. However, migration would be straightforward, and I
-  do not expect much released code to be using partial type signatures.
+* This proposal is not backward compatible, as it requires the ``%Partial`` modifier for partial
+  type signatures.
 
 * This proposal warns on the Haskell98 program ::
 
@@ -598,39 +613,12 @@ Costs and Drawbacks
   Thus, this standards-conforming program would now cause GHC to bleat (but still accept,
   with its original meaning).
   
-* This proposal introduces new, wild syntax ``::?``. With two far-flung exceptions, this new
-  syntax does not replace any existing syntax, as ``::?`` cannot be the name of a function: it
-  starts with a ``:`` and is thus data-constructor-like. Thus, a line like ``x ::? ty`` cannot
-  be mistaken for a top-level Template Haskell declaration splice, as it would have the wrong
-  type.
-
-  Exception 1: It is conceivable to define a pattern synonym named ``::?`` that would have the
-  right type to be a top-level Template Haskell declaration splice.
-
-  Exception 2: It is conceivable to have ``::?`` as a data constructor pattern-matched against
-  as the left-hand argument to another infix operator::
-
-    data PleaseDon't a b = a ::? b
-    a ::? b /\ _ = (a, b)
-
-  In theory, this is disambiguated by the ``=`` (or guard, I suppose), but it would be hard
-  to parse.
-
-* It's unclear how to generalize this syntax to places without a ``::`` marker. For example,
-  perhaps we want to allow wildcards in the context of an instance declaration, asking GHC
-  to infer the context. There would be no obvious syntactic generalization to that scenario.
-
 * Elisions in types (``const :: a -> _ -> a``) seem less useful than other aspects of this
   proposal, and yet they occupy prime syntactic real estate. Is there a better design around
   this issue?
   
 Alternatives
 ------------
-* Instead of having ``::?``, we could have ``:: {-# PARTIAL #-}`` or similar. A quick grep
-  of all of Hackage (as it was last summer) finds no usage, at all, of the lexeme ``::?``.
-  We could also keep both. This would allow us to label types as ``{-# PARTIAL #-}`` even
-  when there is no ``::`` nearby.
-
 * Though specification parts (1), (2), and (3) are tightly linked, the others are not, and could be
   usefully removed from this proposal while not losing other parts.
 
@@ -645,15 +633,12 @@ Alternatives
   this because a user who justs wants to make a quick query won't want to write ``{-# PRINT #-}``
   to get it.
 
-* Instead of printing diagnostics or not based on the presence of a name, we could say that
-  ``_`` (a single underscore) means no diagnostic, while two or more underscores means to
-  print something. This would separate out the choice of duplicate occurrences (which require
-  a name) from whether or not something is printed. I actually like this more than what is
-  proposed above, but I will wait for more consensus before editing the proposal further.
+* This proposal uses one underscore to mean "don't print" and two (or more) to mean "print".
+  This decision could be reversed.
 
 Resolved Questions
 ------------------
-* Q: "Aha! So what you really mean is that ``_`` is univeral in complete type signatures
+* Q: "Aha! So what you really mean is that ``_`` is universal in complete type signatures
   and existential in partial ones."
 
   A: Not quite. If we have ``data Prox k (a :: k)``, then ``f :: Prox _ True`` is perfectly
@@ -664,8 +649,7 @@ Resolved Questions
 
 Unresolved Questions
 --------------------
-* Is this really the best syntax? I am uncomfortable at stealing both underscored-identifiers and ``::?``.
-  How painful is it to do so?
+* Is this really the best syntax? 
 
 * Is this design too elaborate? I have a tendency to build elaborate but expressive edifices. Perhaps
   there is a sweet spot closer to the ground here.
@@ -680,7 +664,7 @@ Further examples
 
 * Let's dive deeper into this example::
 
-    silly ::? Proxy a -> ()
+    silly %Partial :: Proxy a -> ()
     silly (_ :: Proxy @Bool _) = ()
 
   Actually, let's first consider something very closely related::
@@ -701,14 +685,14 @@ Further examples
   In both ``sillier`` and ``silliest``, the type signature is *more general* than the definition. It's
   just that ``sillier`` is harder to see that.
 
-  Returning to ``silly``, with the partial type signature marker ``::?``, GHC will *not* kind-generalize
-  the type. It will effectively infer ``silly ::? forall (a :: _k). Proxy @_k a -> ()``, where ``_k``
+  Returning to ``silly``, with the partial type signature marker ``%Partial``, GHC will *not* kind-generalize
+  the type. It will effectively infer ``silly :: forall (a :: _k). Proxy @_k a -> ()``, where ``_k``
   behaves like a named wildcard. (I say "behaves like" because named wildcards become unification variables
   internally; in this case, the kind of ``a`` really would just be a unification variable.) Now, when
   checking the definition of ``silly``, GHC is free to discover that ``_k`` should be ``Bool``, and all is
   well.
 
-  Note that I did *not* mean to write ``silly ::? Proxy _a -> ()``. I want ``a`` to be a skolem here. It's
+  Note that I did *not* mean to write ``silly %Partial :: Proxy _a -> ()``. I want ``a`` to be a skolem here. It's
   ``a``\s *kind* that I want not to be a skolem.
 
   Thus, ``silly`` is silly only because it is contrived, not because it is wrong.
