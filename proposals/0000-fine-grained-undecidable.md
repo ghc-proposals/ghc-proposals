@@ -9,7 +9,7 @@ This proposal is [discussed at this pull request](https://github.com/ghc-proposa
 
 # Fine-grained pragmas for termination
 
-Currently when one needs to "escape" the termination checker, this is only possible by enabling `UndecidableInstances` and `UndecidableSuperClasses` in a per-module basis. However, this means losing those checks for every single type class, family, or instance defined in that module. This proposal introduces new `%terminating` and `%covered` modifiers to mark a specific definition, instead of the whole module.
+Currently when one needs to "escape" the termination checker, this is only possible by enabling `UndecidableInstances` and `UndecidableSuperClasses` in a per-module basis. However, this means losing those checks for every single type class, family, or instance defined in that module. This proposal introduces new `%NoTerminationCheck`, `%LiberalCoverage`, and `%LiberalInjectivity` modifiers to mark a specific definition, instead of the whole module.
 
 ## Motivation
 
@@ -52,44 +52,85 @@ There are also tweaks to the coverage conditions for coverage / injectivity in t
 
 ## Proposed Change Specification
 
-We introduce new modifiers `%terminating` and `%covered`, which are used _before_ the definition where we want to lift the corresponding restriction.
+We introduce new modifiers `%NoTerminationCheck`, `%LiberalCoverage`, and `%LiberalInjectivity` which are used _after_ the keyword introducing the definition where we want to lift the corresponding restriction.
 
-1. Putting `%terminating` before a class declaration skips its superclass-cycle check.
+```
+ntc : '%NoTerminationCheck' | {- empty -}
+lcv : '%LiberalCoverage'    | {- empty -}
+lin : '%LiberalInjectivity' | {- empty -}
+
+ncv : ntc lcv | lcv ntc
+nin : ntc lin | lin ntc
+```
+
+1. Putting `%NoTerminationCheck` before a class declaration skips its superclass-cycle check.
 
     ```haskell
-    %terminating class C (F a) => C a where ...
+    class %NoTerminationCheck C (F a) => C a where ...
     ```
 
-2. Putting `%terminating` before the forall in a quantified constraint skips its termination check. 
+    ```diff
+    cl_decl :
+    - : 'class' tycl_hdr fds where_cls
+    + : 'class' ntc tycl_hdr fds where_cls
+    ```
+
+2. Putting `%NoTerminationCheck` before the forall in a quantified constraint skips its termination check. 
 
     ```haskell
-    f :: forall a. (%terminating forall b. C b a => C a a) => a -> a
+    f :: forall a. (forall %NoTerminationCheck b. C b a => C a a) => a -> a
 
     -- Note the empty forall to have a target for the modifier
-    g :: forall a. (%terminating forall . D a a => C a) => a -> a
+    g :: forall a. (forall %NoTerminationCheck. D a a => C a) => a -> a
     ```
 
-3. Putting `%terminating` before an instance declaration skips its termination check. Putting `%covered` allows for the more liberal coverage condition.
+    ```diff
+    forall_telescope : 
+    - : 'forall' tv_bndrs '.'
+    + : 'forall' tv_bndrs ntc '.'
+    - | 'forall' tv_bndrs '->'
+    + | 'forall' tv_bndrs ntc '->'
+
+3. Putting `%NoTerminationCheck` before an instance declaration skips its termination check. Putting `%LiberalCoverage` allows for the more liberal coverage condition.
 
     ```haskell
-    %terminating instance Eq (Tree a a) => Eq (Rose a) where ..
+    instance %NoTerminationCheck Eq (Tree a a) => Eq (Rose a) where ..
     ```
 
-5. Putting `%terminating` before a type instance (or type in an associated type instance) skips the equation's termination check. Putting `%covered` allows for the more liberal injectivity consistency check.
+5. Putting `%NoTerminationCheck` within a type instance (or type in an associated type instance) skips the equation's termination check. Putting `%LiberalInjectivity` allows for the more liberal injectivity consistency check.
 
     ```haskell
-    %terminating type instance F [a] = G a a
+    type instance %NoTerminationCheck F [a] = G a a
 
     instance D (Maybe a) where
-      %terminating type F (Maybe a) = G a a
+      type %NoTerminationCheck F (Maybe a) = G a a
     ```
 
-6. Putting `%terminating` before a closed type family declaration skips the termination check for all of its equations. Putting `%covered` allows for the more liberal injectivity consistency check.
+    ```diff
+    inst_decl
+    - : 'instance' overlap_pragma inst_type where_inst
+    + : 'instance' lcv overlap_pragma inst_type where_inst
+    - | 'type' 'instance' ty_fam_inst_eqn
+    + | 'type' 'instance' lin ty_fam_inst_eqn
+    - | data_or_newtype 'instance' capi_ctype datafam_inst_hdr ...
+    + | data_or_newtype 'instance' lin capi_ctype datafam_inst_hdr ...
+
+    decls_inst
+    - | 
+    ```
+
+6. Putting `%NoTerminationCheck` within a closed type family declaration skips the termination check for all of its equations. Putting `%LiberalInjectivity` allows for the more liberal injectivity consistency check.
 
     ```haskell
-    %terminating type family F a where
+    type family %NoTerminationCheck F a where
       F [a] = G a a
       F Int = Bool
+    ```
+
+    ```diff
+    ty_decl
+    - | 'type' 'family' type opt_tyfam_kind_sig opt_injective_info where_type_family
+    + | 'type' 'family' lin type opt_tyfam_kind_sig opt_injective_info where_type_family
     ```
 
 ## Examples
@@ -97,14 +138,14 @@ We introduce new modifiers `%terminating` and `%covered`, which are used _before
 The instance in the previous example would be written as follows:
 
 ```haskell
-%terminating instance Show (a, a) => Show (Pair a)
+instance %NoTerminationCheck Show (a, a) => Show (Pair a)
 ```
 
 The [example in the documentation](https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-UndecidableSuperClasses) for `UndecidableSuperClasses` would now be written:
 
 ```haskell
 type family F a :: Constraint
-%terminating class F a => C a where
+class %NoTerminationCheck F a => C a where
 ```
 
 ## Effect and Interactions
