@@ -123,7 +123,8 @@ secretary but can be vetoed by a majority vote. The ranking system includes a
 method for choosing multiple winners. It is expected that the committee
 favor newcomers in preference to re-nominated continuing members. If
 an expiring member continues, the secretary shall ensure that a
-rationale for this decision be published to the community.
+rationale for this decision be published to the community. In all cases,
+an expiring member stays on the committee until the nomination process is complete.
 
 The voting process may result in a number of new members not equal to
 the number of outgoing members. This is fine; the size of the committee
