@@ -1,7 +1,7 @@
 The ``Char`` kind
 ==================
 
-.. author:: Daniel Rogozin
+.. author:: Daniel Rogozin (with thanks to Vladislav Zavialov)
 .. date-accepted:: ""
 .. ticket-url:: `#11342 <https://gitlab.haskell.org/ghc/ghc/-/issues/11342>`_
 .. implemented:: `!4351 <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/4351>`_
@@ -205,6 +205,13 @@ Alternatives
    ``symbols`` is based on a clever use of ``AppendSymbol`` and ``CmpSymbol``
    to work around the lack of ``UnconsSymbol``. Our approach offers better
    compile-time performance and scales beyond the ASCII character range.
+
+3. We may also define `Symbol` as a synonym for `[Char]` since `Char` becomes promotable with our patch.
+   This way we wouldn't need any built-in type families since `UnconsSymbol` and `ConsSymbol`
+   could be defined by the user.
+   We reject this alternative for several reasons. First of all, we keep `Symbol` for type-checking efficiency.
+   Moreover, we would also handle type families inside cons cells when solving `HasField` constraints.
+   For example, `HasField T ('x' : F y : G z) ty`.
 
 Unresolved Questions
 --------------------
