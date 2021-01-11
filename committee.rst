@@ -128,7 +128,10 @@ rationale for this decision be published to the community.
 The voting process may result in a number of new members not equal to
 the number of outgoing members. This is fine; the size of the committee
 is not fixed. However, a new nomination process begins only when
-membership is expected to drop below nine members.
+membership is expected to drop below nine members. (Exception: if an
+existing member's term is expiring and they wish to re-nominate themselves,
+a public nomination process is triggered, even if the committee is larger
+than nine members.)
 
 The nomination and voting process is kept private, by using direct
 email to committee members, not the mailing list. When the secretary's
