@@ -40,7 +40,8 @@ Haskell currently has three related restrictions:
 This proposal describes a mechanism for *local modules* which lifts all the
 above restrictions through a backward-compatible generalization to the
 namespacing and import/export mechanism. This proposal is an alternative to
-`#205`_ (Structured module exports/imports), `#273`_ (local types) and
+`#205`_ (Structured module exports/imports), `#273`_ (local types), and
+`#295`_ (first-class mdoules), and it
 provides a tempting way toward a resurrection of rejected proposal `#40`_
 ("context fixes").
 
@@ -194,6 +195,53 @@ Motivation
    in import lists instead of ``C(..)``, as the former (new form) is
    extensible.
 
+Background
+----------
+
+In order to precisely specify local modules, we must fix a number of items
+of vocabulary. All descriptions of Haskell are true today; this is not part of the
+proposed change.
+
+* **Namespace**: There are five namespaces in Haskell:
+
+  1. The term variable namespace, inhabited by e.g. ``length`` and ``(+)``.
+
+  2. The data constructor namespace, inhabited by e.g. ``Left`` and ``(:)``.
+
+  3. The type variable namespace, inhabited by e.g. ``a`` and ``m`` (when written in
+     a type).
+
+  4. The type constant namespace, inhabited by e.g. ``Maybe``, ``Int``, and ``Eq``.
+
+  5. The module namespace, inhabited by e.g. ``Prelude`` and ``Data.List``.
+
+  The choice of namespace for a given identifier is controlled by whether
+  the identifier has an initial capital letter and where the identifier appears.
+  Occurrences of a capitalized alphanumeric identifier before a ``.``
+  (without any intervening space) denote the module namespace. Other occurrences
+  of a capitalized identifier denote either the data constructor or type constant
+  namespaces, depending on whether the occurrence is in a type or not. Occurrences
+  of uncapitalized identifiers denote either the term variable or type variable
+  namespace, depending on whether the occurrence is in a type or not.
+
+* **Name**: A name is an identifier written in a program. Names can be
+  alphanumeric or symbolic. Symbolic names, such as ``+`` or ``!@!`` can
+  be written in parentheses (``(+)`` or ``(!@!)``); a symbolic name in
+  parentheses is treated identically to an alphanumeric name. Because of
+  this correspondence, we do not treat symbolic identifiers specially in this
+  proposal. Names belong to a namespace, as described in the entry for namespaces.
+
+  In a type, a symbolic name is always in the type constant namespace.
+
+  In a term, a symbolic name that begins with a ``:`` is in the data constructor
+  namespace; otherwise, it is in the term variable namespace.
+
+  Symbolic names do not exist in the module namespace.
+
+**Entity**: An entity is a definition that can be exported and imported.
+An entity has a name. Entities include variables, classes, datatypes, and
+constructors, among a few other constructs.
+   
 Proposed Change Specification
 -----------------------------
 
