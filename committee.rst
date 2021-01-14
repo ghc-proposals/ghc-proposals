@@ -99,14 +99,6 @@ Term Limits and Committee Selection
 -----------------------------------
 
 Any community thrives best by continuing to refresh itself with new members.
-Accordingly, membership on the committee comes with a three-year term.
-Toward the end of an individual's term, the secretary of
-the committee will put out a public call for nominations for people to join
-the committee. Self-nominations are welcome and expected. The member whose
-term is ending is free to re-nominate themselves. Nominations include a brief
-bio of the nominee and reasons why they would be appropriate for the
-committee.
-
 The main criteria for becoming a member of the committee are:
 
  * A track record of constructive contribution to public discussion of GHC proposals
@@ -116,6 +108,19 @@ The main criteria for becoming a member of the committee are:
 These criteria are not exhaustive -- nominations and self-nominations are free
 to strengthen the case in whatever way they deem appropriate --- but a record
 of thoughtful contribution in a public space carries the most weight.
+
+Membership on the committee comes with a three-year term, extended so
+that a term expires only at the end of a nomination process. Call a
+member who has served for over three years an "expiring" member.
+A nomination process is triggered when the number of unexpiring members is
+about to drop below 9.
+
+When a nomination process is triggered, the secretary of
+the committee will put out a public call for nominations for people to join
+the committee. Self-nominations are welcome and expected. Expiring members are
+free to re-nominate themselves. Nominations include a brief
+bio of the nominee and reasons why they would be appropriate for the
+committee.
 
 Continuing members of the committee vote on new membership via a ranked voting
 system; the precise details (i.e. election algorithm) are recommended by the
@@ -128,21 +133,17 @@ an expiring member stays on the committee until the nomination process is comple
 
 The voting process may result in a number of new members not equal to
 the number of outgoing members. This is fine; the size of the committee
-is not fixed. However, a new nomination process begins only when
-membership is expected to drop below nine members. (Exception: if an
-existing member's term is expiring and they wish to re-nominate themselves,
-a public nomination process is triggered, even if the committee is larger
-than nine members.)
+is not fixed.
 
 The nomination and voting process is kept private, by using direct
 email to committee members, not the mailing list. When the secretary's
 term is expiring (but that individual wishes to stay on the committee),
 one co-chair fills in for the secretary to run this process.
 
-Any member of the committee is free to step down at any time. Doing so
-causes a nomination process to begin, if the resulting size of the committee
-would be less than nine. Member(s) selected to the committee in this process
-serve a full three-year term.
+Any member of the committee is free to step down at any time; such a member
+may choose to leave the committee immediately or to wait until the
+end of a nominating process (which would be triggered only when the number
+of unexpiring members drops below 9).
 
 There are two exceptions to the three-year term rule for two "key members"
 of the committee: in recognition of
