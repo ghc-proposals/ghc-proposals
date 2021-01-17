@@ -77,10 +77,10 @@ Motivation
 
    With this proposal, the user will be able to write ::
 
-     module MyPrelude ( qualified module BL
-                      , qualified module BS
+     module MyPrelude ( module qualified BL
+                      , module qualified BS
                       , Set
-                      , qualified module Set ) where
+                      , module qualified Set ) where
 
      import qualified Data.ByteString.Lazy as BL
      import qualified Data.ByteString as BS
@@ -160,7 +160,6 @@ Motivation
      -- top of file:
      module Data.Set ( Set, qualified module Set ) where
 
-       import module Set ( Set )
        module Set ( Set, fromList ) where
          data Set = ...
          fromList = ...
@@ -238,49 +237,214 @@ proposed change.
 
   Symbolic names do not exist in the module namespace.
 
-**Entity**: An entity is a definition that can be exported and imported.
-An entity has a name. Entities include variables, classes, datatypes, and
-constructors, among a few other constructs.
+  In a module import/export list, a symbolic name that begins with a ``:`` is
+  in the type constructor namespace; otherwise, it is in the term variable
+  namespace. (This is an unusual juxtaposition.)
+
+* **Qualified name**: A qualified name is a name prepended with a module name
+  followed by a ``.``, with no intervening whitespace. Both alphanumeric and
+  symbolic names can be qualified.
+  
+* **Entity**: An entity is a definition that can be exported and imported.
+  An entity has a name. Entities include variables, classes, datatypes, and
+  constructors, among a few other constructs.
+
+* **Environment**: An environment is a set of names and qualified names,
+  used for validating name occurrences.
+
+* **in scope**: A name is said to be **in scope** when it is in the current
+  environment.
+  
+* **Scope**: A scope is a lexical region of a program where all name occurrences are
+  looked up in an environment (or a superset of an environment).
+
+* **Module**: A module is a set of declarations of entities, along with a set
+  of exported names.
+  
+* **Exports**: The exports from a module is a set of names. Exports are always *unqualified* names.
+  (These names can be written with a qualification
+  to disambiguate, if the unqualified name has multiple entries in the environment
+  of the exporting module. But the exported name itself is unqualified.)
+
+* **Imports**: An ``import`` statement names a module and (optionally) a set
+  of *unqualified* names. (This set may be specified via complement, using ``hiding``;
+  this proposal will not worry about this detail.)
+  These names are brought into scope in some fashion:
+
+  * If the import uses ``as``, the module name appearing after the ``as``
+    is known as the module alias. If there is no ``as``, the module name itself
+    is used as the alias.
+
+  * The set of names indicated is brought into scope (that is, put into the
+    global environment), qualified by the module alias in the import.
+
+  * If the import does not use ``qualified``, the names are additionally
+    brought into scope unqualified.
+
+Core Proposal Change Specification
+----------------------------------
+
+This proposal's specification is divided into pieces. This core piece is a necessary
+component of the overall proposal. Later pieces can be chosen piecemeal.
+
+1. A qualified name can now have any number of module qualifications, each
+   separated by a ``.`` and with no intervening whitespace. This can lead
+   to potential ambiguity: is the name ``Data.List.length`` qualified by
+   ``Data.List`` (a well-formed module name) or qualified both by ``Data``
+   and by ``List``? If ``length`` is in scope qualified both by ``Data.List``
+   and by both ``Data`` and ``List``, the occurrence ``Data.List.length`` is
+   an error. There is no way to disambiguate locally without using module
+   aliases or other renamings. (Programmers should seek to avoid this scenario.)
+
+#. Introduce a new extension ``-XLocalModules``.
+
+#. Introduce a new concept *export-module*, which is a set of unqualified names
+   and export-modules. Export-modules have names chosen from the module namespace.
+   Instead of exporting a set of unqualified names, modules now export a set of
+   unqualified names and export-modules.
+
+#. Export-modules may be imported with this import item::
+
+     import ::= ... | 'module' modid [ impspec ]
+
+   This import item adds to the environment all unqualified names and export-modules indicated
+   by *impspec*, each additionally qualified by *modid*. If *impspec* is omitted,
+   this adds all unqualified names and export-modules exported by *modid*.
+
+   It is an error if *modid* does not export an export-module named *modid*.
+     
+   This new form of import is allowed only with ``-XLocalModules``.
+
+   (We do not yet have a way of exporting an export-module; this comes later in this proposal.)
    
-Proposed Change Specification
------------------------------
-
-1. Introduce a new extension ``-XLocalModules``.
-
-2. Introduce a new declaration form (allowed only at the top level of a
+#. Introduce a new declaration form (allowed only at the top level of a
    module -- i.e. not in a ``let`` or ``where``)
    to declare new modules called *local modules*. Here is the BNF::
 
-     topdecl ::= ... | [ 'import' ] 'module' [ modid ] [ exports ] 'where' decls
-
-   Omitting the module name indicates an *anonymous local module*. This form
-   is useful with the ``import`` keyword and an export list to hide some
-   definitions.
+     topdecl ::= ... | 'module' [ 'qualified' ] modid [ exports ] 'where' decls
 
    This declaration form is allowed only with ``-XLocalModules``.
-     
-3. All
-   declarations in scope at the declaration point of a local module (that is,
-   outside the module itself) are in scope for the entire local module.
 
-4. Definitions in a local module may be mutually recursive with definitions
+   The ``module`` keyword in a local module declaration may not be the first
+   lexeme in a file. (This is to avoid ambiguity with top-level, file-sized modules.)
+
+#. The environment within the local module is an extension (superset) of the
+   environment of the enclosing module. That is, all entities in scope in the
+   enclosing module are in scope in the local module.
+
+#. Definitions in a local module may be mutually recursive with definitions
    in other local modules or outside of any local module. That is, local
    modules influence scoping only, but not type-checking or dependency.
    
-5. A local module declaration brings into scope names listed in its export
-   list. These names are always brought into scope qualified by the local
-   module name, unless that module is anonymous. If the declaration includes
-   the ``import`` keyword, the names are also brought into scope unqualified
-   by the local module name. (In the case of nested local modules, the names
-   might be qualified by inner module names.)
+#. A local module exports a set of unqualified names and export-modules. This set
+   is imported into the environment of the enclosing module, qualified by the
+   local module name.
 
-6. It is an error to specify a non-empty export list, omit a module's name, and
+   A. The local module may include an export list; if so, this export list
+      defines the set of exports from the local module.
+
+   B. If the local module ``M`` omits an export list, it exports the names of all declarations
+      made inside ``M``. For each nested local module ``N``, an export-module ``N``
+      is exported; this export-module contains all names in scope within ``M`` with a ``N.``
+      prefix (including any further nested local modules).
+
+   C. If the keyword ``qualified`` is missing, then all names exported by
+      the local module are also added to the enclosing scope unqualified.
+
+#. Modules may be extended via the declaration or importing of another
+   local module of the same name. If local modules with the same name are in
+   scope at the same time (either through importation or declaration) their
+   contents are simply merged. Individual identifiers that are multiply
+   defined will be an error if used ambiguously.
+
+   In other words, local modules are not entities of themselves: module
+   names are simply prefixes used in qualified names. This merging behavior
+   is thus a natural consequence of the overall design and agrees with
+   the behavior of standard Haskell (which allows multiple module aliases
+   to be the same).
+   
+#. A new declaration form is introduced with the following BNF::
+
+     decl ::= ... | 'import' 'module' modid [ impspec ]
+
+   A. Without an ``impspec``: Consider all qualified names in scope with a
+      *modid*\ ``.`` qualification. These names are brought into scope (that is,
+      added to the local environment) without this *modid*\ ``.`` qualification.
+
+   #. With an ``impspec``: Each name included in the ``impspec`` must be in scope
+      with a *modid*\ ``.`` qualification. It is brought additionally into scope
+      without that qualification.
+
+      If a ``module N`` import item is included: Each name with a *modid*\ ``.N.``
+      qualification is brought into scope without the *modid*\ ``.`` qualification.
+      If an ``impspec`` is specified in a ``module N`` import item: apply this
+      approach recursively.
+     
+   The declaration is allowed in ``let`` and ``where`` clauses.
+
+   Note that the declaration form includes the word ``module`` to distinguish
+   it from a normal ``import`` which induces a dependency on another file. An
+   ``import module`` declaration cannot induce a dependency.
+
+   This declaration form is allowed only with ``-XLocalModules``.
+
+#. Local modules may be exported with this export item::
+
+     export ::= ... | 'module' [ 'qualified' ] modid [ exports ]
+
+   The meaning of this export item depends on the presence of the ``qualified``
+   keyword in the export item.
+
+   A. With ``qualified``: This exports an export-module containing all names
+      in scope with the *modid*\ ``.`` qualification. If qualified names are in scope
+      further qualified by *modid*\ ``.``, export-modules for those further qualifications
+      are added to the export-module for *modid*. If an *exports* is specified, only those entities
+      are exported. Names in the *exports* can be written unqualified.
+
+      The new behavior is allowed only with ``-XLocalModules``.
+
+   #. Without ``qualified``: As specified in the `Haskell Report <https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1000005.2>`_,
+      point (5), this also exports (unqualified) all identifiers in scope both with
+      and without the *modid*\ ``.`` prefix. If an *exports* is included, then
+      only those identifiers are included.
+
+Optional Change Specifications
+------------------------------
+
+Each numbered item in this section can be considered separately.
+
+1. A local module declaration can be preceded by the keyword ``import``.
+   The use of this keyword means that all names and qualified names
+   exported by the declared module are brought into scope in the enclosing
+   module without further qualification.
+
+   New BNF::
+
+     topdecl ::= ... | [ 'import' ] 'module' modid [ exports ] 'where' decls
+
+#. A local module declaration can omit the module name,
+   making an anonymous local module. The names exported
+   by an anonymous module are not added to the enclosing environment qualified,
+   as there is no name to qualify by.
+
+   New BNF::
+
+     topdecl ::= ... | 'module' [ modid ] [ exports ] 'where' decls
+
+   It is an error to specify a non-empty export list, omit a module's name, and
    not include the ``import`` keyword. (Anonymous modules without an
    non-empty export list but without the ``import`` keyword are still useful
    as a way of declaring instances that use local definitions.)
 
-7. Every ``class``, ``data``, ``newtype``, ``data instance``, and ``newtype
-   instance`` declaration implicitly creates a new local module. The name of
+#. A module import can be preceded by the keyword ``import``::
+
+     import ::= ... | [ 'import' ] 'module' modid [ impspec ]
+
+   A module import with the ``import`` keyword additionally brings the named
+   entities into scope without the *modid*\ ``.`` qualification.
+   
+#. Every ``class``, ``data``, ``newtype``, ``data instance``, and ``newtype
+   instance`` declaration with an alphanumeric name implicitly creates a new local module. The name of
    the local module matches the name of the declared type. All entities (e.g.,
    method names, constructors, record selectors) brought into scope within the
    declaration, including the type itself, are put into this local module.
@@ -303,82 +467,13 @@ Proposed Change Specification
    Associated ``data`` and ``newtype`` instances create modules at the level
    of the enclosing ``instance`` declaration: the ``data``\/\ ``newtype``
    module is *not* nested within the class module.
-
-8. Modules may be extended via the declaration or importing of another
-   local module of the same name. If local modules with the same name are in
-   scope at the same time (either through importation or declaration) their
-   contents are simply merged. Individual identifiers that are multiply
-   defined will be an error if used ambiguously.
-
-9. A new declaration form is introduced with the following BNF::
-
-     decl ::= ... | 'import' 'module' modid [ impspec ]
-
-   This declaration takes all entities (or those entities named in the
-   ``impspec``) in scope with a *modid*\ ``.`` and brings them into scope
-   into the local context (that is, the part of the program that other
-   declarations in the ``let`` or ``where`` scope over) without that
-   qualification. (They may be more deeply qualified, if *modid* exports local
-   modules.)
-
-   The declaration is allowed in ``let`` and ``where`` clauses.
-
-   Note that the declaration form includes the word ``module`` to distinguish
-   it from a normal ``import`` which induces a dependency on another file. An
-   ``import module`` declaration cannot induce a dependency.
-
-   This declaration form is allowed only with ``-XLocalModules``.
-
-10. Local modules may be imported with this import item::
-
-      import ::= ... | [ 'import' ] 'module' modid [ impspec ]
-
-    This brings the local module named *modid* into scope. It is an error if
-    this import item appears in a list of imports from a module that does not
-    export the local module *modid*.
-
-    Also brought into scope are the entities listed in the *impspec*;
-    these are brought into scope qualified with the *modid*\ ``.`` prefix. If
-    the *impspec* is not provided, then all entities in *modid* are
-    brought into scope (qualified).
-
-    If the ``import`` keyword is included, then all entities brought into
-    scope qualified are also brought into scope unqualified.
-
-    This new form of import is allowed only with ``-XLocalModules``.
-
-11. Local modules may be exported with this export item::
-
-      export ::= ... | [ 'qualified' ] 'module' modid [ exports ]
-
-    The meaning of this export item depends on the presence of the ``qualified``
-    keyword in the export item.
-
-    With ``qualified``: This exports the local module *modid* and all entities
-    in scope qualified with the *modid*\ ``.`` prefix. If no local module
-    *modid* exists but entities are in scope with the *modid*\ ``.`` prefix
-    (because a top-level module *modid* exists or *modid* is after the ``as`` in
-    a top-level module import declaration), then a local module *modid* is created
-    for export. In all cases, if an *exports* is specified, only those entities
-    are exported. Names in the *exports* can be written unqualified.
-
-    Without ``qualified``: This exports the local module *modid* (if one exists).
-    As specified in the `Haskell Report <https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1000005.2>`_,
-    point (5), this also exports (unqualified) all identifiers in scope both with
-    and without the *modid*\ ``.`` prefix. If an *exports* is included, then
-    only those identifiers are included. Note that, because this exports identifiers
-    unqualified, if this form is used with a local module, those identifiers become
-    both available unqualified and within the local module in importing modules
-    (depending on whether they import the local module).
-
-    The new behavior is allowed only with ``-XLocalModules``.
-
+   
 Further Examples
 ----------------
 
 ::
 
-   module A ( module M1, module M2, qualified module M3, qualified module M4, module A ) where
+   module A ( module M1, module M2, module qualified M3, module qualified M4, module A ) where
 
    import Import1 as M1
    import qualified Import2 as M3
@@ -387,30 +482,37 @@ Further Examples
      m2a = ...
      m2b = ...
 
-   import module M2 ( m2a )
-
-   import module M4 ( m4a, m4b ) where
+   module qualified M4 ( m4a, m4b ) where
      m4a = ...
      m4b = ...
 
-* The ``module M1`` exports all the identifiers from ``Import1``.
+* The ``module M1`` export item exports all the identifiers from ``Import1``.
 
-* The ``module M2`` exports ``m2a``, ``M2`` (as a local module), ``M2.m2a``, and ``M2.m2b``.
+* The ``module M2`` export item exports ``m2a`` and ``m2b``.
 
-* The ``qualified module M3`` exports ``M3`` (as a local module) and all the identifiers from ``Import2``, qualified with ``M3.``.
+* The ``qualified module M3`` export item exports an export-module ``M3``, containing all the exports from ``Import2``.
 
-* The ``qualified module M4`` exports ``M4`` (as a local module), ``M4.m4a``, and ``M4.m4b``.
+* The ``qualified module M4`` export item exports and export-module ``M4`` (containing ``m4a`` and ``m4b``).
 
-* The ``module A`` exports ``M2`` (as a local module), ``m2a``, ``M4`` (as a local module), ``m4a``, and ``m4b``.
+* The ``module A`` export item exports an export-module ``M2`` (containing ``m2a`` and ``m2b``),
+  ``m2a``, ``m2b``, and an export-module ``M4`` (containing ``m4a`` and ``m4b``).
 
 ::
 
    module B where
 
-   import A ( module M2, import module M3, m4a )
+   import A ( module M2, module M3, module M4, m4a )
 
-* The following identifiers will be available: ``M2`` (as a local module), ``M2.m2a``, ``M2.m2b``, ``M3`` (as a local module), all
-  the identifiers from ``Import2`` (which was exported as ``M3``) both qualified with ``M3.`` and unqualified, and ``m4a``.
+* The import of ``module M2`` is an error: no export-module named ``M2`` is exported
+  from ``A``.
+
+* The import of ``module M3`` makes all the names exported by ``Import2`` available, qualified
+  by ``M3.``. (As usual, an additional qualification of ``A.`` is allowed.)
+
+* The import of ``module M4`` makes ``M4.m4a`` and ``M4.m4b`` available, along with ``A.M4.m4a``
+  and ``A.M4.m4b``.
+
+* The import of ``m4a`` is an error; ``A`` does not export ``m4a``.
     
 Effect and Interactions
 -----------------------
@@ -534,23 +636,7 @@ Alternatives
 
 Beyond the `Related Work`_, there is wiggle room within this proposal for alternatives.
 
-A. Drop specification point (7) making implicit modules for each type declaration. It's
-   not required by the rest of the proposal. I like it, though. Removing this part
-   would make ``-XLocalModules`` fully conservative with respect to today's Haskell.
-
-B. Drop the possibility of the ``import`` keyword in the ``module`` import
-   item. Users can always just write one more ``import module`` statement to
-   unqualify the module's contents. Yet, to me, it just seems more ergonomic
-   to get to the chase right away here.
-
-C. Drop point (8) allowing extension of existing local modules. That was added so that
-   definitions could be mixed in with, e.g., constructors of an implicit local module
-   surrounding a type declaration. But it also seems like a nice way of flexibly mixing
-   modules together. It's an inessential feature. Without it: if there exist any
-   identifiers ``M.``\ *identifier* in scope, then declaring a local module named ``M``
-   is an error.
-
-D. This proposal does not allow the export of a qualified local module such that
+A. This proposal does not allow the export of a qualified local module such that
    importers get the identifiers unqualified. We could imagine a new export item
    ``import module M`` that exports all identifiers in scope with a ``M.`` prefix
    unqualified. I don't find this feature necessary, but it would fit with the
@@ -565,13 +651,7 @@ D. This proposal does not allow the export of a qualified local module such that
    ``M.y``, but not ``x`` and ``y`` (unless an importer also said ``import module M``).
    A hypothetical ``import module M`` export item could satisfy this need.
 
-E. Drop the possibility of anonymous local modules; that is, require the
-   module name in the new form of declaration.
-   However, I like the idea of anonymous modules, as they serve to reduce
-   the scope of some declarations without bothering the programmer to write a name for
-   the module.
-
-F. Disallow local modules to be mutually recursive. The current proposal says (point 4)
+#. Disallow local modules to be mutually recursive. The current proposal says
    that the local module system affects scoping only. However, we could instead declare
    that a mutual-dependency strongly-connected component (SCC) cannot include definitions
    in more than one module. This would disable mutual recursion between modules, but open
@@ -584,21 +664,17 @@ F. Disallow local modules to be mutually recursive. The current proposal says (p
    via a mechanism specifically suited for compilation dependencies, such as explicit
    staging like `#243`_.
 
-G. Counter-proposal `#295`_ rightly observes that the export specifiers in this proposal
+#. Counter-proposal `#295`_ rightly observes that the export specifiers in this proposal
    are complicated. At the risk of making this proposal fork-like (that is, by changing the
    meaning of legacy constructs), these specifiers can be simplified. Here is an alternate
-   formulation, replacing the point (11) in the specification section:
+   formulation, replacing the last point in the specification section:
 
      * With ``-XLocalModules``, add this export item::
 
          export_item ::= ... | 'module' modid [ exports ]
 
-       This exports the local module *modid* and all entities in scope
-       with the *modid*\ ``.`` prefix. If no local module *modid* exists
-       but entities are in scope with the *modid*\ ``.`` prefix
-       (because a top-level module *modid* exists or *modid* is after the ``as``
-       in a top-level module import declaration), then a local module *modid*
-       is created for export. If an *exports* is included, all entities
+       This exports an export-module *modid*, containing all entities in scope
+       with the *modid*\ ``.`` prefix. If an *exports* is included, all entities
        listed are exported unqualified; these entities must be in scope with
        the *modid*\ ``.`` prefix. An *exports* of ``..`` exports all entities
        with the *modid*\ ``.`` prefix unqualified.
@@ -617,13 +693,13 @@ G. Counter-proposal `#295`_ rightly observes that the export specifiers in this 
    I am agnostic on whether I prefer the meaning for ``module`` export items above,
    or whether I prefer this alternative.
 
-H. Counter-proposal `#295`_ includes module aliases, stating that its approach
+#. Counter-proposal `#295`_ includes module aliases, stating that its approach
    makes such a definition possible. Module aliases work under this proposal, too:
    A declaration ``module New = Old`` could simply allow ``New.`` to work as a qualifier
    for any entity in scope with an ``Old.`` prefix. I don't find module aliases to
    be useful, but they could be added to this proposal if there is a desire to.
 
-I. When exporting a module ``qualified``, we may also want to rename it. Here is an
+#. When exporting a module ``qualified``, we may also want to rename it. Here is an
    example, thanks to @evincarofautumn::
 
      module Data.Set (Set, qualified module Data.Set as Set) where
@@ -634,7 +710,7 @@ I. When exporting a module ``qualified``, we may also want to rename it. Here is
    Note the ``as Set`` in the export list. Adding this feature to the proposal would be
    easy, at the risk of further complicating export items.
 
-J. Anonymous modules are written by omitting the module name:
+#. Anonymous modules are written by omitting the module name:
    ``import module (x, y) where ...``. An earlier version of this proposal denoted
    an anonymous module by using an ``_``: ``import module _ (x, y) where``. After
    seeing the suggestion, I have a mild preference for the "omit module name" version,
@@ -649,7 +725,7 @@ I see a few future directions along these lines, but I leave it to others to fle
    a sequence of parameters. This would resurrect the ideas behind `#40`_. This would bring
    us close to ML-style functors.
 
-2. Haskell currently requires three distinct concepts to coincide: *compilation units* are the
+#. Haskell currently requires three distinct concepts to coincide: *compilation units* are the
    chunks that go through the compiler all at once, *source files* are distinct files on disk,
    and *modules* are groups of related definitions and can define an abstraction barrier.
 
@@ -662,24 +738,19 @@ I see a few future directions along these lines, but I leave it to others to fle
    also allow for easy mutual dependency between files: just put the SCC of definitions into
    a multi-file compilation unit.
 
-3. Some language extensions and other compiler settings, such as warning flags,
+#. Some language extensions and other compiler settings, such as warning flags,
    might make sense on a per-module basis. We can imagine setting these on local
    modules instead of only at the top-level module in a file. With such an extension
    to this design, we might nab abandoned proposal `#88`_ on language extensions
    or tabled proposal `#234`_ on warning flags.
 
-4. Formalise all of this along the lines of `A Formal Specification of the Haskell 98 Module
+#. Formalise all of this along the lines of `A Formal Specification of the Haskell 98 Module
    System <https://web.cecs.pdx.edu/~mpj/pubs/hsmods.pdf>`_, by Diatchki, Jones, and Hallgren.
    
 Unresolved questions
 --------------------
 
-1. Would it be equivalent to say that all traditional ``import`` declarations create
-   local modules? That is, after I say ``import M (foo)``, then I can say ``M.foo``.
-   Does that mean we have a local module ``M``? I *think* such a treatment is consistent
-   with this proposal, but I'm somehow not sure.
-
-2. Should ``-XLocalModules`` be required to *import* a local module? Paraphrased from
+1. Should ``-XLocalModules`` be required to *import* a local module? Paraphrased from
    a `comment <https://github.com/ghc-proposals/ghc-proposals/pull/283#issuecomment-548804545>`_
    by @maralorn:
 
@@ -700,7 +771,7 @@ Unresolved questions
    not usages"), but the point above is a good one. I'm happy to let the committee
    decide on this point.
 
-3. What is the grand plan here? There are several other proposals that interact
+#. What is the grand plan here? There are several other proposals that interact
    with this one (such as local types `#273`_ and ``-XNoFieldSelectors`` `#160`_)
    and possibilities of future proposals addressing further breaking up the triple
    confluence of (file = module = compilation unit). This current proposal is just
