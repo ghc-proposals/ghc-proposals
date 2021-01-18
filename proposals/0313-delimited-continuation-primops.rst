@@ -2,7 +2,7 @@ Delimited continuation primops
 ==============================
 
 .. author:: Alexis King
-.. date-accepted:: 2020-01-18
+.. date-accepted:: 2021-01-18
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
