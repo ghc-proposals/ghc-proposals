@@ -11,13 +11,35 @@ GHC 2021
 
 This this the PR accompanying the process to define the ``GHC2021`` language set, as outlined in https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0372-ghc-extensions.rst.
 
+Motivation
+----------
+
+The `GHC20xx process proposal <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0372-ghc-extensions.rst#motivation>`_ motivates why we feel the need for ``GHC20xx`` extensions in general.
+
+``GHC2021`` is the first iteration of this process, which makes it a bit special: It is large, as it includes all the obvious, low-hanging fruit. And because it introduces the concept to our users, it heavily influences acceptance and adoption of the whole idea. Therefore, this iteration is on the slightly conservative side, excluding some extensions that almost made it.
+
+
 Proposed Change
 ---------------
 
-The ``GHC2021`` language extension set comprises of the following language extensions:
+The ``GHC2021`` language extension set comprises of the following language extensions, relative to `Haskell200`_:
 
-* Everything in ``Haskell2010``, plus
-* TBD
+* Syntax: `EmptyCase`_, `PostfixOperators`_, `MonadFailDesugaring`_, `TupleSections`_, `ImportQualifiedPost`_,  `NamedFieldPuns`_, `BangPatterns`_
+* Literals: `BinaryLiterals`_, `HexFloatLiterals`_, `NumericUnderscores`_
+* Types:  `GADTSyntax`_, `RankNTypes`_, `StarIsType`_, `TypeApplications`_, `PolyKinds`_, `StandaloneKindSignatures`_, `ExistentialQuantification`_, `TypeOperators`_, `ConstraintKinds`_
+* Type signatures: `ExplicitForAll`_, `KindSignatures`_, `NamedWildCards`_, `ScopedTypeVariables`_
+* Class and instances declarations: `FlexibleContexts`_, `FlexibleInstances`_, `MultiParamTypeClasses`_, `ConstrainedClassMethods`_, `InstanceSigs`_, `TypeSynonymInstances`_
+* Deriving mechanism: `DeriveDataTypeable`_, `DeriveFoldable`_, `DeriveFunctor`_, `DeriveTraversable`_, `StandaloneDeriving`_, `EmptyDataDeriving`_, `DeriveLift`_, `GeneralisedNewtypeDeriving`_, `DeriveGeneric`_
+
+As a reminder, the following extensions are part of `Haskell2010`_, and continue to be enabled:
+
+* ``ImplicitPrelude``, ``StarIsType``, ``MonomorphismRestriction``, ``TraditionalRecordSyntax``, `EmptyDataDecls`_, `ForeignFunctionInterface`_, ``PatternGuards``, ``DoIfThenElse``,  ``RelaxedPolyRec``.
+
+The following deprecated extensions, which are part of `Haskell2010`_, are _not_ included in ``GHC2021``:
+* `CUSKs`_ (replaced by `StandaloneKindSignatures`_)
+* `DatatypeContexts`_ (deprecated)
+
+.. _Haskell2010: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/control.html?highlight=haskell2010#extension-Haskell2010
 
 Data
 ----
@@ -59,71 +81,7 @@ Caveats:
 
 * The hackage data is based on the the latest version of each hackage package. This skews heavily towards libraries, which are more likely to be found on Hackage than executable. It also puts higher weight on projects that are split into many haskell packages (e.g. amazonka).
 
-* The poll data has no serious protection aginst double voting, and skews heavily towards the part of the communit that is reached by the poll announcemnt.
-Executive summary
------------------
-
-* Syntax
-
-  * Safely in: `EmptyCase`_, `PostfixOperators`_
-  * Barely in: `MonadFailDesugaring`_, `TupleSections`_
-
-* Import and export
-
-  * Safely in: `ImportQualifiedPost`_
-
-* Types
-
-  * Safely in: `EmptyDataDecls`_, `GADTSyntax`_, `RankNTypes`_, `StarIsType`_, `TypeApplications`_, `PolyKinds`_, `StandaloneKindSignatures`_
-  * Barely in: `ExistentialQuantification`_, `TypeOperators`_
-  * Barely out: `GADTs`_, `TypeFamilies`_
-
-* Records
-
-  * Safely in: `NamedFieldPuns`_
-  * Barely out: `RecordWildCards`_
-
-* Deriving mechanism
-
-  * Safely in: `DeriveDataTypeable`_, `DeriveFoldable`_, `DeriveFunctor`_, `DeriveTraversable`_, `StandaloneDeriving`_, `EmptyDataDeriving`_, `DeriveLift`_, `GeneralisedNewtypeDeriving`_
-  * Barely out: `DerivingStrategies`_
-
-* Class and instances declarations
-
-  * Safely in: `FlexibleContexts`_, `FlexibleInstances`_, `MultiParamTypeClasses`_, `ConstrainedClassMethods`_, `InstanceSigs`_, `TypeSynonymInstances`_
-
-* Literals
-
-  * Safely in: `BinaryLiterals`_, `HexFloatLiterals`_, `NumericUnderscores`_
-  * Barely out: `OverloadedStrings`_
-
-* Constraints
-
-  * Safely in: `ConstraintKinds`_
-
-* Type signatures
-
-  * Safely in: `ExplicitForAll`_, `KindSignatures`_
-  * Barely in: `NamedWildCards`_, `ScopedTypeVariables`_
-
-* Bindings and generalisation
-
-  * Barely out: `MonoLocalBinds`_
-
-* Bang patterns and Strict Haskell
-
-  * Safely in: `BangPatterns`_
-
-* Foreign function interface (FFI)
-
-  * Safely in: `ForeignFunctionInterface`_
-
-* Miscellaneous
-
-  * Safely in: `DeriveGeneric`_
-
-Full Results
-------------
+* The poll data has no serious protection aginst double voting, and skews heavily towards the part of the community that is reached by the poll announcemnt.
 
 Data based on 13951 hackage packages, 1348 survey responses and 11 committee votes. (Votes may be changed. Bold votes are currently above 2/3.)
 
