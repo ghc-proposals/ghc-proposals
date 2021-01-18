@@ -22,7 +22,7 @@ The `GHC20xx process proposal <https://github.com/ghc-proposals/ghc-proposals/bl
 Proposed Change
 ---------------
 
-The ``GHC2021`` language extension set comprises of the following language extensions, relative to `Haskell200`_:
+The ``GHC2021`` language extension set comprises of the following language extensions, relative to `Haskell2010`_:
 
 * Syntax: `EmptyCase`_, `PostfixOperators`_, `MonadFailDesugaring`_, `TupleSections`_, `ImportQualifiedPost`_,  `NamedFieldPuns`_, `BangPatterns`_
 * Literals: `BinaryLiterals`_, `HexFloatLiterals`_, `NumericUnderscores`_
