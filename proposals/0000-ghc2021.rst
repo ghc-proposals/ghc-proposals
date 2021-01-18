@@ -26,14 +26,14 @@ The ``GHC2021`` language extension set comprises of the following language exten
 
 * Syntax: `EmptyCase`_, `PostfixOperators`_, `MonadFailDesugaring`_, `TupleSections`_, `ImportQualifiedPost`_,  `NamedFieldPuns`_, `BangPatterns`_
 * Literals: `BinaryLiterals`_, `HexFloatLiterals`_, `NumericUnderscores`_
-* Types:  `GADTSyntax`_, `RankNTypes`_, `StarIsType`_, `TypeApplications`_, `PolyKinds`_, `StandaloneKindSignatures`_, `ExistentialQuantification`_, `TypeOperators`_, `ConstraintKinds`_
+* Types:  `GADTSyntax`_, `RankNTypes`_, `TypeApplications`_, `PolyKinds`_, `StandaloneKindSignatures`_, `ExistentialQuantification`_, `TypeOperators`_, `ConstraintKinds`_
 * Type signatures: `ExplicitForAll`_, `KindSignatures`_, `NamedWildCards`_, `ScopedTypeVariables`_
 * Class and instances declarations: `FlexibleContexts`_, `FlexibleInstances`_, `MultiParamTypeClasses`_, `ConstrainedClassMethods`_, `InstanceSigs`_, `TypeSynonymInstances`_
 * Deriving mechanism: `DeriveDataTypeable`_, `DeriveFoldable`_, `DeriveFunctor`_, `DeriveTraversable`_, `StandaloneDeriving`_, `EmptyDataDeriving`_, `DeriveLift`_, `GeneralisedNewtypeDeriving`_, `DeriveGeneric`_
 
 As a reminder, the following extensions are part of `Haskell2010`_, and continue to be enabled:
 
-* ``ImplicitPrelude``, ``StarIsType``, ``MonomorphismRestriction``, ``TraditionalRecordSyntax``, `EmptyDataDecls`_, `ForeignFunctionInterface`_, ``PatternGuards``, ``DoIfThenElse``,  ``RelaxedPolyRec``.
+* ``ImplicitPrelude``, `StarIsType`_, ``MonomorphismRestriction``, ``TraditionalRecordSyntax``, `EmptyDataDecls`_, `ForeignFunctionInterface`_, ``PatternGuards``, ``DoIfThenElse``,  ``RelaxedPolyRec``.
 
 The following deprecated extensions, which are part of `Haskell2010`_, are _not_ included in ``GHC2021``:
 * `CUSKs`_ (replaced by `StandaloneKindSignatures`_)
