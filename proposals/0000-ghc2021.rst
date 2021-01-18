@@ -40,6 +40,8 @@ The following deprecated extensions, which are part of `Haskell2010`_, are _not_
 * `CUSKs`_ (replaced by `StandaloneKindSignatures`_)
 * `DatatypeContexts`_ (deprecated)
 
+The ``GHC2021`` language set works analogously to the existing ``Haskell98`` and ``Haskell2020`` language set. In particular, there is no ``-XNoGHC2021``.
+
 .. _Haskell2010: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/control.html?highlight=haskell2010#extension-Haskell2010
 
 Data
