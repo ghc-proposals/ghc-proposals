@@ -35,6 +35,7 @@ As a reminder, the following extensions are part of `Haskell2010`_, and continue
 * GHC already treats `MonadFailDesugaring`_ as if it were part of `Haskell2010`_ (see _documented divergences <https://ghc.gitlab.haskell.org/ghc/doc/users_guide/bugs.html#divergence-from-haskell-98-and-haskell-2010>_, and the same holds for ``GHC2021``.
 
 The following deprecated extensions, which are part of `Haskell2010`_, are _not_ included in ``GHC2021``:
+
 * `CUSKs`_ (replaced by `StandaloneKindSignatures`_)
 * `DatatypeContexts`_ (deprecated)
 
