@@ -11,6 +11,8 @@ This proposal is [discussed at this pull request](https://github.com/ghc-proposa
 
 Currently when one needs to "escape" the termination checker, this is only possible by enabling `UndecidableInstances` and `UndecidableSuperClasses` in a per-module basis. However, this means losing those checks for every single type class, family, or instance defined in that module. This proposal introduces new `%NoTerminationCheck`, `%LiberalCoverage`, and `%LiberalInjectivity` modifiers to mark a specific definition, instead of the whole module.
 
+In addition, it regularizes `OVERLAPPING` to use the same modifier syntax.
+
 ## Motivation
 
 When working with type classes and families, sometimes we write definitions which lay outside the [Paterson conditions](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/jfp06.pdf). Roughly speaking, that means that GHC is not able to prove the termination of the resolution / constraint solving process, and thus rejects the definition. One particular case is when the context of an instance mentions a variable more often than its head.
@@ -52,68 +54,71 @@ There are also tweaks to the coverage conditions for coverage / injectivity in t
 
 ## Proposed Change Specification
 
-We introduce new modifiers `%NoTerminationCheck`, `%LiberalCoverage`, and `%LiberalInjectivity` which are used _after_ the keyword introducing the definition where we want to lift the corresponding restriction.
-
-```
-ntc : '%NoTerminationCheck' | {- empty -}
-lcv : '%LiberalCoverage'    | {- empty -}
-lin : '%LiberalInjectivity' | {- empty -}
-
-ncv : ntc lcv | lcv ntc
-nin : ntc lin | lin ntc
-```
+We introduce new modifiers `%NoTerminationCheck`, `%LiberalCoverage`, and `%LiberalInjectivity` which are used _before_ the keyword introducing the definition where we want to lift the corresponding restriction.
 
 1. Putting `%NoTerminationCheck` before a class declaration skips its superclass-cycle check.
 
     ```haskell
-    class %NoTerminationCheck C (F a) => C a where ...
+    %NoTerminationCheck ; class C (F a) => C a where ...
     ```
 
     ```diff
+    +cls_mod  : '%NoTerminationCheck' ;
+    +cls_mods : {- empty -} | cls_mods cls_mod ;
+
     cl_decl :
     - : 'class' tycl_hdr fds where_cls
-    + : 'class' ntc tycl_hdr fds where_cls
+    + : class_mods ';' 'class' tycl_hdr fds where_cls
     ```
 
 2. Putting `%NoTerminationCheck` before the forall in a quantified constraint skips its termination check. 
 
     ```haskell
-    f :: forall a. (forall %NoTerminationCheck b. C b a => C a a) => a -> a
+    f :: forall a. (%NoTerminationCheck forall b. C b a => C a a) => a -> a
 
     -- Note the empty forall to have a target for the modifier
-    g :: forall a. (forall %NoTerminationCheck. D a a => C a) => a -> a
+    g :: forall a. (%NoTerminationCheck forall. D a a => C a) => a -> a
     ```
 
     ```diff
+    +forall_mod  : '%NoTerminationCheck' ;
+    +forall_mods : {- empty -} | forall_mods forall_mod ;
+
     forall_telescope : 
-    - : 'forall' tv_bndrs '.'
-    + : 'forall' tv_bndrs ntc '.'
-    - | 'forall' tv_bndrs '->'
-    + | 'forall' tv_bndrs ntc '->'
+    - :             'forall' tv_bndrs '.'
+    + : forall_mods 'forall' tv_bndrs '.'
+    - |             'forall' tv_bndrs '->'
+    + | forall_mods 'forall' tv_bndrs '->'
 
 3. Putting `%NoTerminationCheck` before an instance declaration skips its termination check. Putting `%LiberalCoverage` allows for the more liberal coverage condition.
 
     ```haskell
-    instance %NoTerminationCheck Eq (Tree a a) => Eq (Rose a) where ..
+    %NoTerminationCheck ; instance Eq (Tree a a) => Eq (Rose a) where ..
     ```
 
 5. Putting `%NoTerminationCheck` within a type instance (or type in an associated type instance) skips the equation's termination check. Putting `%LiberalInjectivity` allows for the more liberal injectivity consistency check.
 
     ```haskell
-    type instance %NoTerminationCheck F [a] = G a a
+    %NoTerminationCheck ; type instance F [a] = G a a
 
     instance D (Maybe a) where
-      type %NoTerminationCheck F (Maybe a) = G a a
+      %NoTerminationCheck type F (Maybe a) = G a a
     ```
 
     ```diff
+    +cls_inst_mod  : '%NoTerminationCheck' | '%LiberalCoverage'
+              | '%Overlapping' | '%Overlaps' | '%Overlappable' ;
+    +cls_inst_mods : {- empty -} | cls_inst_mods cls_inst_mod ;
+    +ty_fam_mod    : '%NoTerminationCheck' | '%LiberalInjectivity' ;
+    +ty_fam_mods   : {- empty -} | ty_fam_mods ty_fam_mod ;
+
     inst_decl
-    - : 'instance' overlap_pragma inst_type where_inst
-    + : 'instance' lcv overlap_pragma inst_type where_inst
-    - | 'type' 'instance' ty_fam_inst_eqn
-    + | 'type' 'instance' lin ty_fam_inst_eqn
-    - | data_or_newtype 'instance' capi_ctype datafam_inst_hdr ...
-    + | data_or_newtype 'instance' lin capi_ctype datafam_inst_hdr ...
+    - :               'instance' overlap_pragma inst_type where_inst
+    + : inst_mods ';' 'instance' overlap_pragma inst_type where_inst
+    - |                 'type' 'instance' ty_fam_inst_eqn
+    + | ty_fam_mods ';' 'type' 'instance' ty_fam_inst_eqn
+    - |                 data_or_newtype 'instance' capi_ctype datafam_inst_hdr ...
+    + | ty_fam_mods ';' data_or_newtype 'instance' capi_ctype datafam_inst_hdr ...
 
     decls_inst
     - | 
@@ -122,30 +127,35 @@ nin : ntc lin | lin ntc
 6. Putting `%NoTerminationCheck` within a closed type family declaration skips the termination check for all of its equations. Putting `%LiberalInjectivity` allows for the more liberal injectivity consistency check.
 
     ```haskell
-    type family %NoTerminationCheck F a where
+    %NoTerminationCheck ; type family F a where
       F [a] = G a a
       F Int = Bool
     ```
 
     ```diff
     ty_decl
-    - | 'type' 'family' type opt_tyfam_kind_sig opt_injective_info where_type_family
-    + | 'type' 'family' lin type opt_tyfam_kind_sig opt_injective_info where_type_family
+    - |                 'type' 'family' type opt_tyfam_kind_sig ...
+    + | ty_fam_mods ';' 'type' 'family' type opt_tyfam_kind_sig ...
     ```
+
+In addition, the warning messages in GHC should be rephrased to point to this new constructs instead of the per-module extensions.
 
 ## Examples
 
 The instance in the previous example would be written as follows:
 
 ```haskell
-instance %NoTerminationCheck Show (a, a) => Show (Pair a)
+%NoTerminationCheck
+instance Show (a, a) => Show (Pair a)
 ```
 
 The [example in the documentation](https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#extension-UndecidableSuperClasses) for `UndecidableSuperClasses` would now be written:
 
 ```haskell
 type family F a :: Constraint
-class %NoTerminationCheck F a => C a where
+
+%NoTerminationCheck
+class F a => C a where
 ```
 
 ## Effect and Interactions
@@ -161,6 +171,8 @@ For modules using a lot of type level computation, there might be a large amount
 This proposal overlaps in part with [#374](https://github.com/ghc-proposals/ghc-proposals/pull/374) (_DYSFUNCTIONAL per-instance pragma for selective lifting of the coverage condition_). Note however that this proposal only concerns with enabling the more liberal conditions.
 
 There's another level of flexibility in GHC by allowing to use the more liberal Paterson conditions instead of the restrictive conditions in the Report; one could think of also selectively enabling those. Given that it seems quite plausible that [`GHC2021`](https://github.com/ghc-proposals/ghc-proposals/pull/380) would get `FlexibleInstances` and `FlexibleContexts` in the default mix, I think we should not go that way.
+
+Should we also take the chance to reguralize the [`AMBIGUOUS`](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0232-AmbiguousType-pragma.rst) syntax before it is implemented?
 
 ## Implementation Plan
 
