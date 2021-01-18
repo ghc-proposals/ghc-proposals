@@ -24,7 +24,7 @@ Proposed Change
 
 The ``GHC2021`` language extension set comprises of the following language extensions, relative to `Haskell2010`_:
 
-* Syntax: `EmptyCase`_, `PostfixOperators`_, `MonadFailDesugaring`_, `TupleSections`_, `ImportQualifiedPost`_,  `NamedFieldPuns`_, `BangPatterns`_
+* Syntax: `EmptyCase`_, `PostfixOperators`_, `TupleSections`_, `ImportQualifiedPost`_,  `NamedFieldPuns`_, `BangPatterns`_
 * Literals: `BinaryLiterals`_, `HexFloatLiterals`_, `NumericUnderscores`_
 * Types:  `GADTSyntax`_, `RankNTypes`_, `TypeApplications`_, `PolyKinds`_, `StandaloneKindSignatures`_, `ExistentialQuantification`_, `TypeOperators`_, `ConstraintKinds`_
 * Type signatures: `ExplicitForAll`_, `KindSignatures`_, `NamedWildCards`_, `ScopedTypeVariables`_
@@ -34,6 +34,7 @@ The ``GHC2021`` language extension set comprises of the following language exten
 As a reminder, the following extensions are part of `Haskell2010`_, and continue to be enabled:
 
 * ``ImplicitPrelude``, `StarIsType`_, ``MonomorphismRestriction``, ``TraditionalRecordSyntax``, `EmptyDataDecls`_, `ForeignFunctionInterface`_, ``PatternGuards``, ``DoIfThenElse``,  ``RelaxedPolyRec``.
+* GHC already treats `MonadFailDesugaring`_ as if it were part of `Haskell2010`_ (see _documented divergences `https://ghc.gitlab.haskell.org/ghc/doc/users_guide/bugs.html#divergence-from-haskell-98-and-haskell-2010`_, and the same holds for ``GHC2021``.
 
 The following deprecated extensions, which are part of `Haskell2010`_, are _not_ included in ``GHC2021``:
 * `CUSKs`_ (replaced by `StandaloneKindSignatures`_)
