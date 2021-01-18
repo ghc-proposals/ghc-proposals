@@ -1,7 +1,7 @@
 GHC 2021
 ========
 
-.. author:: Joachim Breitner
+.. author:: The committee
 .. date-accepted::
 .. ticket-url::
 .. implemented::
