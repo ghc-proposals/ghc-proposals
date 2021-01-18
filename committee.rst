@@ -117,10 +117,10 @@ about to drop below 9.
 
 When a nomination process is triggered, the secretary of
 the committee will put out a public call for nominations for people to join
-the committee. Self-nominations are welcome and expected. Expiring members are
-free to re-nominate themselves. Nominations include a brief
+the committee. Nominations include a brief
 bio of the nominee and reasons why they would be appropriate for the
-committee.
+committee. Self-nominations are welcome and expected. Expiring members are
+free to re-nominate themselves. 
 
 Continuing members of the committee vote on new membership via a ranked voting
 system; the precise details (i.e. election algorithm) are recommended by the
@@ -166,4 +166,3 @@ drawbacks to such a system seem to outweigh any benefits. It is expected
 that a misbehaving committee (say, one that selects only its friends and
 ignores other nominations) loses legitimacy and is publicly called into
 question in an attempt to make changes for the better in its operation.
-
