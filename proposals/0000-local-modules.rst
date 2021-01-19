@@ -111,9 +111,10 @@ Motivation
    would be disambiguated with module prefixes, like ``Nat.Zero`` and
    ``Elem.Succ``. (The ``Fin`` declaration would need to say ``Nat.Succ`` in
    place of ``Succ``.) An unqualified use of a constructor would be an error.
-   Alternatively, the user could declare ``data qualified Fin ...`` and
-   ``data qualified Elem ...`` to make ``Nat``\'s constructors available in
-   the global scope but not the others.
+   Alternatively, to prevent ``Fin``\'s and ``Elem``\'s constructors from
+   being available unqualified in the global scope, the user could declare
+   ``data qualified Fin ...`` and
+   ``data qualified Elem ...``.
 
 3. When a function ``f`` needs a helper ``h``, we can declare ``h`` in a
    ``where`` clause. However, suppose both ``f`` and ``g`` need ``h``. Now,
@@ -330,11 +331,13 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
 
 #. The environment within the local module is an extension (superset) of the
    environment of the enclosing module. That is, all entities in scope in the
-   enclosing module are in scope in the local module.
+   enclosing module are in scope in the local module, but some entities may
+   be in scope within the local module that are not in scope beyond it.
 
 #. Definitions in a local module may be mutually recursive with definitions
    in other local modules or outside of any local module. That is, local
-   modules influence scoping only, but not type-checking or dependency.
+   modules influence scoping only, but not type-checking or dependency
+   (which remain constrained by compilation units, as they are today).
    
 #. A local module exports a set of unqualified names and export-modules. This set
    is imported into the environment of the enclosing module, qualified by the
@@ -386,6 +389,9 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
    it from a normal ``import`` which induces a dependency on another file. An
    ``import module`` declaration cannot induce a dependency.
 
+   If the declaration brings no new identifiers into scope (because, for example,
+   the module name is not used to qualify any identifiers), it is an error.
+
    This declaration form is allowed only with ``-XLocalModules``.
 
 #. Local modules may be exported with this export item::
@@ -413,16 +419,7 @@ Optional Change Specifications
 
 Each numbered item in this section can be considered separately.
 
-1. A local module declaration can be preceded by the keyword ``import``.
-   The use of this keyword means that all names and qualified names
-   exported by the declared module are brought into scope in the enclosing
-   module without further qualification.
-
-   New BNF::
-
-     topdecl ::= ... | [ 'import' ] 'module' modid [ exports ] 'where' decls
-
-#. A local module declaration can omit the module name,
+1. A local module declaration can omit the module name,
    making an anonymous local module. The names exported
    by an anonymous module are not added to the enclosing environment qualified,
    as there is no name to qualify by.
@@ -467,6 +464,18 @@ Each numbered item in this section can be considered separately.
    Associated ``data`` and ``newtype`` instances create modules at the level
    of the enclosing ``instance`` declaration: the ``data``\/\ ``newtype``
    module is *not* nested within the class module.
+
+#. The ``import module`` declaration can unqualify multiple levels of qualification
+   at once. This changes the BNF to ::
+
+     decl ::= ... | 'import' 'module' modid { '.' modid } [ impspec ]
+
+   where, following the Haskell Report, braces mean "0 or more". The semantics
+   is the same as specified above, but looking under multiple levels of qualification
+   at once.
+
+   (Recall that ``modid`` contains module names like ``Data.Set``, which is
+   considered as one qualification, just as it is currently.)
    
 Further Examples
 ----------------
@@ -580,6 +589,17 @@ Effect and Interactions
   below the splice), declaration splices within local modules do, too. The guideline here
   is that the local module system affects only the names that are in scope (and their qualifications
   and import/export), not any other aspect of the program.
+
+* This proposal does not introduce any hierarchy into module names as the currently exist.
+  For example, if we have ::
+
+    import qualified Data.Set ( Set )
+    import qualified Data.Map ( Map )
+
+    import module Data
+
+  will not bring ``Set.Set`` or ``Map.Map`` into scope. Those identifiers are qualified
+  by ``Data.Set`` and ``Data.Map`` respectively.
   
 Costs and Drawbacks
 -------------------
@@ -715,6 +735,12 @@ A. This proposal does not allow the export of a qualified local module such that
    an anonymous module by using an ``_``: ``import module _ (x, y) where``. After
    seeing the suggestion, I have a mild preference for the "omit module name" version,
    but perhaps others feel differently.
+
+#. This proposal automatically imports all names from a local module, unless that
+   module specifies the ``qualified`` keyword. Alternatively, we could have local
+   modules default to the ``qualified`` behavior, requiring an ``import`` to
+   get the names unqualified. (Earlier versions of this proposal indeed defaulted
+   to ``qualified``.)
    
 Future Work
 -----------
