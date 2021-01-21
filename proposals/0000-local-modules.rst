@@ -412,7 +412,7 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
    #. Without ``qualified``: As specified in the `Haskell Report <https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1000005.2>`_,
       point (5), this also exports (unqualified) all identifiers in scope both with
       and without the *modid*\ ``.`` prefix. If an *exports* is included, then
-      only those identifiers are included.
+      only those identifiers are included. (This is not a change from the current behavior.)
 
 Optional Change Specifications
 ------------------------------
@@ -426,11 +426,12 @@ Each numbered item in this section can be considered separately.
 
    New BNF::
 
-     topdecl ::= ... | 'module' [ modid ] [ exports ] 'where' decls
+     topdecl ::= ... | 'module' [ 'qualified' ] [ modid ] [ exports ] 'where' decls
 
-   It is an error to specify a non-empty export list, omit a module's name, and
-   not include the ``import`` keyword. (Anonymous modules without an
-   non-empty export list but without the ``import`` keyword are still useful
+   It is an error to omit a module's name and
+   include the ``qualified`` keyword, unless there is also an empty export list.
+   (Anonymous qualified modules with an
+   empty export list but are still useful
    as a way of declaring instances that use local definitions.)
 
 #. A module import can be preceded by the keyword ``import``::
