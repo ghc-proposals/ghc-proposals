@@ -9,9 +9,7 @@ This proposal is [discussed at this pull request](https://github.com/ghc-proposa
 
 # Fine-grained pragmas for termination
 
-Currently when one needs to "escape" the termination checker, this is only possible by enabling `UndecidableInstances` and `UndecidableSuperClasses` in a per-module basis. However, this means losing those checks for every single type class, family, or instance defined in that module. This proposal introduces new `%NoTerminationCheck`, `%LiberalCoverage`, and `%LiberalInjectivity` modifiers to mark a specific definition, instead of the whole module.
-
-In addition, it regularizes `OVERLAPPING` to use the same modifier syntax.
+Currently when one needs to "escape" the termination checker, this is only possible by enabling `UndecidableInstances` and `UndecidableSuperClasses` in a per-module basis. However, this means losing those checks for every single type class, family, or instance defined in that module. This proposal introduces new `%NoTerminationCheck`, `%LiberalCoverage`, and `%LiberalInjectivity` modifiers to mark a specific definition, instead of the whole module. In addition, it regularizes `OVERLAPPING` to use the same modifier syntax.
 
 ## Motivation
 
@@ -54,7 +52,15 @@ There are also tweaks to the coverage conditions for coverage / injectivity in t
 
 ## Proposed Change Specification
 
-We introduce new modifiers `%NoTerminationCheck`, `%LiberalCoverage`, and `%LiberalInjectivity` which are used _before_ the keyword introducing the definition where we want to lift the corresponding restriction.
+We introduce new modifiers `%NoTerminationCheck`, `%LiberalCoverage`, and `%LiberalInjectivity` which are used _before_ the keyword introducing the definition where we want to lift the corresponding restriction. The modifier syntax is taken from this [approved proposal](https://github.com/ghc-proposals/ghc-proposals/pull/370), with the additional [change](https://github.com/ghc-proposals/ghc-proposals/pull/392) of modifiers appearing _before_ the modified thing.
+
+One side effect of only adding those changes would be weird syntax for adding `OVERLAPPING` information in addition to these modifiers.
+
+```haskell
+%NoTerminationCheck ; instance {-# OVERLAPS #-} ...
+```
+
+For that reason, this proposal also regularizes the syntax, turning those pragmas into modifiers. Note that the old pragmas are _not_ deprecated by this proposal.
 
 1. Putting `%NoTerminationCheck` before a class declaration skips its superclass-cycle check.
 
@@ -68,7 +74,7 @@ We introduce new modifiers `%NoTerminationCheck`, `%LiberalCoverage`, and `%Libe
 
     cl_decl :
     - : 'class' tycl_hdr fds where_cls
-    + : class_mods ';' 'class' tycl_hdr fds where_cls
+    + : cls_mods ';' 'class' tycl_hdr fds where_cls
     ```
 
 2. Putting `%NoTerminationCheck` before the forall in a quantified constraint skips its termination check. 
