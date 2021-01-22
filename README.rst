@@ -4,7 +4,7 @@ GHC Proposals
 This repository contains specifications for proposed changes to the
 `Glasgow Haskell Compiler <https://www.haskell.org/ghc>`_.
 The purpose of the GHC proposal process and of
-the GHC Steering Committee, is to broaden the discussion of the evolution of
+the GHC Steering Committee is to broaden the discussion of the evolution of
 GHC.
 
 * `≡ List of proposals under discussion <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+no%3Alabel>`_
@@ -14,7 +14,7 @@ GHC.
 * `≡ List of rejected proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Rejected%22>`_
 * `≡ List of implemented proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`_
 * `≡ List of all proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=>`_
-
+  
 What is a proposal?
 -------------------
 
@@ -250,7 +250,8 @@ Alejandro Serrano       `@serras <https://github.com/serras/>`_               20
 Arnaud Spiwack          `@aspiwack <https://github.com/aspiwack/>`_           2019/07
 ======================  ====================================================  =======  =========
 
-The committee members have committed to adhere to the `Haskell committee guidelines for respectful communication <GRC.rst>`_.
+The committee members have committed to adhere to the `Haskell committee guidelines for respectful communication <GRC.rst>`_ and are subject to the
+`committee bylaws <https://github.com/ghc-proposals/ghc-proposals/blob/master/committee.rst>`_.
 
 We would also like to thank our former members:
 
@@ -264,8 +265,8 @@ Christopher Allen       `@bitemyapp <https://github.com/bitemyapp>`_          20
 ======================  ====================================================  =================
 
 
-Committee process
------------------
+Committee process for responding to a proposal
+----------------------------------------------
 
 The committee process starts once the secretary has been notified that a
 proposal is ready for decision.
@@ -395,33 +396,9 @@ is a polite ping/enquiry.
       proposal with the implementation status (i.e. ticket URL and the
       first version of GHC implementing it.)
 
-      Concretely, a committee member must perform the following steps:
-
-      1. Add a new commit on top of the PR branch that:
-
-         a. Changes the filename of the proposal to correspond to the PR number.
-
-         b. Updates any metadata fields that may have changed in the template on ``master`` since
-            the PR branch split off.
-
-         c. Fills in these metadata fields as appropriate, including changing "is discussed"
-            to "was discussed".
-
-      2. Merge the PR branch into master, and push.
-
-      3. Update the PR description to start
-         with the text "The proposal has been accepted; the following discussion is mostly of historic interest."
-         where the word "proposal" links to the final rendered version pushed above.
-
-      4. If the PR title has "(under review)", remove it.
-         
-      5. Set the PR to have the "Accepted" label.
-
-      6. Comment on the PR that the proposal was accepted.
-
-      7. Close the PR if GitHub has not detected the merge.
-
-      8. Announce on the committee mailing list.
+      Committee members should see the `acceptance page <https://github.com/ghc-proposals/ghc-proposals/blob/master/acceptance.rst>`_ for a checklist
+      to be applied to accepted proposals and the steps necessary in
+      order to mark a proposal as accepted.
 
 Review criteria
 ---------------
