@@ -214,11 +214,12 @@ Alternatives
    Moreover, we would also handle type families inside cons cells when solving ``HasField`` constraints.
    For example, ``HasField T ('x' : F y : G z) ty``.
 
+4. We can include a different set of built-in type families.
+
 Unresolved Questions
 --------------------
 
-1. Should we include more built-in type families, and if so, then which ones?
-   (Can be resolved later)
+None.
 
 Implementation Plan
 -------------------
