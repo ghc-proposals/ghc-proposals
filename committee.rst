@@ -120,9 +120,13 @@ the committee will put out a public call for nominations for people to join
 the committee. Nominations include a brief
 bio of the nominee and reasons why they would be appropriate for the
 committee. Self-nominations are welcome and expected. Expiring members are
-free to re-nominate themselves. 
+free to re-nominate themselves. When the secretary's
+term is expiring,
+another (unexpiring) member of the committee
+fills in for the secretary to run this process, unless the secretary is not
+being re-nominated and wishes to run the process one last time.
 
-Continuing members of the committee vote on new membership via a ranked voting
+Unexpiring members of the committee vote on new membership via a ranked voting
 system; the precise details (i.e. election algorithm) are recommended by the
 secretary but can be vetoed by a majority vote. The ranking system includes a
 method for choosing multiple winners. It is expected that the committee
@@ -136,9 +140,7 @@ the number of outgoing members. This is fine; the size of the committee
 is not fixed.
 
 The nomination and voting process is kept private, by using direct
-email to committee members, not the mailing list. When the secretary's
-term is expiring (but that individual wishes to stay on the committee),
-one co-chair fills in for the secretary to run this process.
+email to committee members, not the mailing list. 
 
 Any member of the committee is free to step down at any time; such a member
 may choose to leave the committee immediately or to wait until the
