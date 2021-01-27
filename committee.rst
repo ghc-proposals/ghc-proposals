@@ -154,6 +154,8 @@ and Simon Marlow will be expected to be retained on the committee when
 their terms end. If either wishes to continue serving on the committee
 when their terms end, and if the majority of the rest of the committee supports this outcome,
 no public nomination process needs to take place to replace them.
+At that point, the key members are retained on the committee for another
+three-year term.
 
 These key members can be stripped of their status as key members by a
 majority vote of the committee, and other individuals can be made into
