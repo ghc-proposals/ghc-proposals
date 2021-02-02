@@ -208,7 +208,7 @@ When the discussion has ebbed down and the author thinks the proposal is ready, 
 
 1. Review the discussion thread and ensure that the proposal text accounts for
    all salient points. *Remember, the proposal must stand by itself, and be understandable
-   without reading the discussion thread.* 
+   without reading the discussion thread.*
 2. Add a comment to the pull request, briefly summarizing the major points raised
    during the discussion period and stating your belief that the proposal is
    ready for review. In this comment, tag the committee secretary (currently
@@ -234,21 +234,21 @@ Who is the committee?
 --------------------
 You can reach the committee by email at ghc-steering-committee@haskell.org.
 
-The current members, including their GitHub handle, when they joined and their role, are listed at:
+The current members, including their GitHub handle, when they joined first, when their term last renewed and their role, are listed at:
 
-======================  ====================================================  =======  =========
+======================  ====================================================  =======  =======  =========
 Vitaly Bragilevsky      `@bravit <https://github.com/bravit>`_                2018/09
-Joachim Breitner        `@nomeata <https://github.com/nomeata>`_              2017/02  secretary
+Joachim Breitner        `@nomeata <https://github.com/nomeata>`_              2017/02           secretary
 Iavor Diatchki          `@yav <https://github.com/yav>`_                      2017/02
 Richard Eisenberg       `@goldfirere <https://github.com/goldfirere>`_        2017/02
 Cale Gibbard            `@cgibbard <https://github.com/cgibbard/>`_           2020/01
 Tom Harding             `@i-am-tom <https://github.com/i-am-tom/>`_           2020/01
-Simon Marlow            `@simonmar <https://github.com/simonmar>`_            2017/02  co-chair
-Simon Peyton-Jones      `@simonpj <https://github.com/simonpj>`_              2017/02  co-chair
+Simon Marlow            `@simonmar <https://github.com/simonmar>`_            2017/02  2021/02  co-chair
+Simon Peyton-Jones      `@simonpj <https://github.com/simonpj>`_              2017/02  2021/02  co-chair
 Eric Seidel             `@gridaphobe <https://github.com/gridaphobe>`_        2018/09
 Alejandro Serrano       `@serras <https://github.com/serras/>`_               2020/01
 Arnaud Spiwack          `@aspiwack <https://github.com/aspiwack/>`_           2019/07
-======================  ====================================================  =======  =========
+======================  ====================================================  =======  =======  =========
 
 The committee members have committed to adhere to the `Haskell committee guidelines for respectful communication <GRC.rst>`_ and are subject to the
 `committee bylaws <https://github.com/ghc-proposals/ghc-proposals/blob/master/committee.rst>`_.
@@ -473,7 +473,7 @@ and any other relevant considerations, appropriately.
 
 -  *Does not create a language fork*.  By a "fork" we mean
 
-  * It fails the test "Is this extension something that most people would be happy to enable, even if they don't want to use it?"; 
+  * It fails the test "Is this extension something that most people would be happy to enable, even if they don't want to use it?";
   * And it also fails the test "Do we think there's a reasonable chance this extension will make it into a future language standard?"; that is, the proposal reflects the stylistic preferences of a subset of the Haskell community, rather than a consensus about the direction that (in the committee's judgement) we want to push the whole language.
 
    The idea is that unless we can see a path to a point where everyone has the extension turned on, we're left with different groups of people using incompatible dialects of the language. A similar problem arises with extensions that are mutually incompatible.
