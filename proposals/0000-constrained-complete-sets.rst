@@ -30,7 +30,7 @@ Motivation
 ----------
 
 Imagine writing a library about list-like data structures (from
-`ticket #14422<https://gitlab.haskell.org/ghc/ghc/-/issues/14422#note_313198>`_):
+`ticket 14422 <https://gitlab.haskell.org/ghc/ghc/-/issues/14422#note_313198>`_):
 
 ::
 
