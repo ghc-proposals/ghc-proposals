@@ -1,5 +1,5 @@
 Constrained COMPLETE sets
-=========================
+*************************
 
 .. author:: Sebastian Graf
 .. date-accepted:: Leave blank. This will be filled in when the proposal is accepted.
@@ -34,21 +34,26 @@ Imagine writing a library about list-like data structures (from
 
 ::
 
- class ListLike l where
-   pattern (:<) :: a -> l a -> l a
-   pattern Empty :: l a
-   ...
+ class IsList l where
+   viewCons :: l a -> Maybe (a, l a)
 
- instance ListLike [] where ...
+ pattern (:<) :: IsList l => a -> l a -> l a
+ pattern x :< xs <- (viewCons -> Just (x,xs))
+ pattern Empty :: IsList l => l a
+ pattern Empty <- (viewCons -> Nothing)
 
- f :: ListLike l => l Int -> Int
+ instance IsList [] where
+   viewCons []     = Nothing
+   viewCons (x:xs) = Just (x,xs)
+
+ f :: IsList l => l Int -> Int
  f Empty    = 0
  f (x :< _) = x
 
 We declared a type class that abstracts pattern matching for such
-``ListLike`` data structure, as if it was, well, a list. There are
+``IsList`` data structure, as if it was, well, a list. There are
 two pattern synonyms to this purpose, ``(:<)`` and ``Empty``, so that
-pattern matches on a ``ListLike`` have the syntactic sweetness of data
+pattern matches on a ``IsList`` have the syntactic sweetness of data
 constructor matches. Nice. But GHC's pattern match checker will warn
 that ``f`` lacks a wildcard match! Lucky for us, we can communicate
 that having matched on ``Empty`` and ``(:<)`` makes the pattern match
@@ -65,7 +70,7 @@ constructor it should attach the COMPLETE set to:
 
  {-# COMPLETE (:<), Empty :: [] #-}
 
-But that doesn't help us with ``f``, which is constrained on ``ListLike``!
+But that doesn't help us with ``f``, which is constrained on ``IsList``!
 Moreover, we have to repeat that COMPLETE set for every data constructor.
 But isn't it evident that we just want to say "don't warn whenever both
 pattern synonyms are matched", regardless of the involved types? This is
@@ -78,19 +83,24 @@ COMPLETE set by itself, so we can just write
 
  {-# COMPLETE (:<), Empty #-}
 
-And users of the library can now declare ``ListLike`` instances for ``Array``,
+And users of the library can now declare ``IsList`` instances for ``Array``,
 use the pattern snonyms and get accurate pattern match warnings. All seems well.
 (This is what's implemented in GHC master at the moment.)
 
-But imagine we also are aware of ``NonEmpty`` and want to broaden the scope and
-usefulness of our library:
+But imagine we want to broaden the scope and usefulness of our library and
+support infinite containers:
 
 ::
 
- class ListLike l => NonEmptyLike l where ...
- instance NonEmptyLike NonEmpty where ...
+ class IsList l => IsInfinite l where
+   -- INVARIANT: `viewCons` always returns `Just`
 
- safeHead :: NonEmptyLike l => l a -> a
+ data Stream a = S a (Stream a)
+ instance IsList Stream where
+   viewCons (S x xs) = Just (x, xs)
+ instance IsInfinite Stream where
+
+ safeHead :: IsInfinite l => l a -> a
  safeHead (x :< _) = x
 
  {-# COMPLETE (:<) #-}
@@ -105,22 +115,23 @@ warning anymore:
  unsafeHead :: [a] -> a
  unsafeHead (x :< _) = x
 
-Urgh! We somehow want to say that the singleton COMPLETE set only applies to
-``NonEmptyLike``s. But the type signature syntax doesn't allow us to constrain
-on ``NonEmptyLike``! The only way out is to declare the COMPLETE signature for
-all concrete data constructors such as ``NonEmpty``:
+Urgh! We somehow want to say that the singleton COMPLETE set only applies
+to type constructors satisfying ``IsInfinite``. But the type signature
+syntax doesn't allow us to constrain on ``IsInfinite``! The only way out
+is to declare the COMPLETE signature for all concrete data constructors
+such as ``Stream``:
 
 ::
 
- {-# COMPLETE (:<) :: NonEmpty #-}
+ {-# COMPLETE (:<) :: Stream #-}
 
 And here goes repeating that declaration for all data constructors again, for us
 as well as the users of our library. I'd much rather write
 
 ::
 
- {-# COMPLETE[forall f. ListLike f] (:<), Empty #-}
- {-# COMPLETE[forall f. NonEmptyLike f] (:<) #-}
+ {-# COMPLETE[forall f. IsList f] (:<), Empty #-}
+ {-# COMPLETE[forall f. IsInfinite f] (:<) #-}
 
 Once, inside the library. And that is the new feature that I propose. And also I
 want to deprecate the "type signature" vestige in the process.
@@ -135,8 +146,8 @@ Extend Syntax so that we are able to write the example from the previous section
 
 ::
 
- {-# COMPLETE[forall f. ListLike f] (:<), Empty #-}
- {-# COMPLETE[NonEmptyLike] (:<) #-}
+ {-# COMPLETE[forall f. IsList f] (:<), Empty #-}
+ {-# COMPLETE[IsInfinite] (:<) #-}
 
 Since there is no formal grammar for COMPLETE pragmas, here's how I propose to
 change the happy grammar from
@@ -179,7 +190,7 @@ Examples for valid ``tc_ct``s:
 
 ::
 
- NonEmptyLike
+ IsInfinite
  forall f. () ~ f
  forall f. MPTC a f
  Monad
@@ -221,27 +232,38 @@ The example from the introduction:
 
 ::
 
- class ListLike l where
-   pattern (:<) :: a -> l a -> l a
-   pattern Empty :: l a
-   ...
- {-# COMPLETE[ListLike] (:<), Empty #-} -- (1)
+ class IsList l where
+   viewCons :: l a -> Maybe (a, l a)
 
- instance ListLike [] where ...
+ pattern (:<) :: IsList l => a -> l a -> l a
+ pattern x :< xs <- (viewCons -> Just (x,xs))
+ pattern Empty :: IsList l => l a
+ pattern Empty <- (viewCons -> Nothing)
 
- f :: ListLike l => l Int -> Int
+ {-# COMPLETE[IsList] (:<), Empty #-} -- (1)
+
+ instance IsList [] where ...
+
+ f :: IsList l => l Int -> Int
  f Empty    = 0
  f (x :< _) = x
 
- class ListLike l => NonEmptyLike l where ...
- {-# COMPLETE[forall l. NonEmptyLike l] (:<) #-} -- (2)
+ class IsList l => IsInfinite l where
+   -- INVARIANT: `viewCons` always returns `Just`
 
- instance NonEmptyLike NonEmpty where ...
+ data Stream a = S a (Stream a)
+ instance IsList Stream where
+   viewCons (S x xs) = Just (x, xs)
+ instance IsInfinite Stream where
 
- safeHead :: NonEmptyLike l => l a -> a
+ {-# COMPLETE[forall l. IsInfinite l] (:<) #-} -- (2)
+
+ instance IsInfinite Stream where ...
+
+ safeHead :: IsInfinite l => l a -> a
  safeHead (x :< _) = x
 
- safeHead2 :: NonEmpty a -> a
+ safeHead2 :: Stream a -> a
  safeHead2 (x :< _) = x
 
  unsafeHead :: [a] -> a
@@ -253,20 +275,30 @@ the definition of ``unsafeHead`` being incomplete, but not for ``f``,
 
   - ``f`` has a case for ``Empty`` and ``(:<)``. COMPLETE set (1) applies, because
     the TyCon of the type of the pattern match is ``l``, for which the constraint
-    ``tc_ct @l === ListLike l`` is satisfiable.
+    ``tc_ct @l === IsList l`` is satisfiable.
     (See Unresolved Questions for ``@l`` vs. ``l``)
   - ``f`` has a case for ``Empty`` and ``(:<)``. COMPLETE set (2) does *not* apply,
     because the TyCon of the type of the pattern match is ``l``, for which the
-    constraint ``tc_ct @l === NonEmptyLike l`` is not satisfiable.
+    constraint ``tc_ct @l === IsInfinite l`` is not satisfiable.
   - ``safeHead`` has a case for ``(:<)``. COMPLETE set (2) applies, because
     the TyCon of the type of the pattern match is ``l``, for which the constraint
-    ``tc_ct @l === NonEmptyLike l`` is satisfiable.
+    ``tc_ct @l === IsInfinite l`` is satisfiable.
   - ``safeHead2`` has a case for ``(:<)``. COMPLETE set (2) applies, because
-    the TyCon of the type of the pattern match is ``NonEmpty``, for which the constraint
-    ``tc_ct @NonEmpty === NonEmptyLike NonEmpty`` is satisfiable.
+    the TyCon of the type of the pattern match is ``Stream``, for which the constraint
+    ``tc_ct @Stream === IsInfinite Stream`` is satisfiable.
   - ``unsafeHead`` has a case for ``(:<)``. COMPLETE set (2) does *not* apply,
     because the TyCon of the type of the pattern match is ``[]``, for which the constraint
-    ``tc_ct @[] === NonEmptyLike []`` is not satisfiable.
+    ``tc_ct @[] === IsInfinite []`` is not satisfiable.
+
+#399
+====
+
+The examples from #399 would have the following COMPLETE pragmas:
+
+::
+
+ {-# COMPLETE[forall p. (p ~ Proxy a)] Empty #-}
+ {-# COMPLETE[forall l. (l ~ [a])] Empty, Cons #-}
 
 Effect and Interactions
 -----------------------
@@ -289,34 +321,57 @@ that isn't just a leak of implementational detail.
 Alternatives
 ------------
 
-Syntax
-======
+We could just beef "type signature" syntax. Currently, ``opt_tyonsig`` only
+allows the name of a type constructor. We could allow a general ``ctype``
+there that should denote the *return type* of the pattern match where it
+is applicable and write
 
-Syntactically, we could repurpose the old "type signature" syntax instead of
-placing the ``ctype`` in brackets after ``COMPLETE``.
+::
 
-I'm not strongly against that. Currently, GHC expects the name of a
-data type constructor to the right of ``::``. But the ``tc_ct`` is
-a *constraint* at its base! E.g., ``ListLike`` instead of ``[]``,
-``NonEmptyLike`` instead of ``NonEmpty``. So arguably, the fact that
-*no* old "type signature" has a valid semantics in the new syntax
-makes the transition to the new semantics rather mechanic.
+ {-# COMPLETE (:<), Empty :: IsList l => l a #-}
+ {-# COMPLETE (:<) :: IsInfinite l => l a #-}
 
-But one of the biggest drawbacks of the old syntax is that I find the analogy to
-type signatures misleading, and that still is the case if we expect something of
-kind ``k -> Constraint`` to the right of ``::``.
+That is what #399 proposes.
+I'm not strongly against that. The only drawback is that it doesn't admit a proper
+deprecation story for the old mechanism. E.g., today we write
+``{-# COMPLETE (:<) :: Stream #-}``, but according to this alternative design,
+that syntax will be ill-kinded: ``Stream`` has kind ``Type -> Type``.
+The transition is rather mechanic, though, and coincides for monomorphic data
+constructors.
+
+To show that both approaches are equally expressive, realise the following
+correspondence:
+
+::
+
+ {-# COMPLETE[forall t. p t] P #-}
+ <=> (A)
+ {-# COMPLETE P :: p t => t a b c #-}
+
+ {-# COMPLETE Q :: T y z #-}
+ <=> (B)
+ {-# COMPLETE[forall t. (t ~ T y z)] Q #-}
+
+Meaning: The two different syntaxes are intertranslatable by the
+given correspondences. My syntax is terser if the COMPLETE set is
+constrained by a type class (correspondence (A)), whereas #399 is
+terser if the COMPLETE set is constrained by an equality constraint
+(correspondence (B), e.g., if the return type in the type signature
+is a concrete data type).
 
 Unresolved Questions
 --------------------
 The design pretty much determines the implementation.
 
 While writing up this proposal, I had to pause quite often and ask myself
-"Is ``forall l. ListLike l`` really the same as ``ListLike``?" Well, one
+"Is ``forall l. IsList l`` really the same as ``IsList``?" Well, one
 quantifier is visible whereas the other is not, obviously. But at the time
 of this writing, I'm not completely sure if I got the kinding right. If I
 didn't, I'm sure someone of you will point that out :)
 I'm open for other, maybe less ad-hoc constraint descriptions (e.g. what is
 encoded in ``tc_ct``).
+
+Maybe the alternative syntax is the better one.
 
 Implementation Plan
 -------------------
