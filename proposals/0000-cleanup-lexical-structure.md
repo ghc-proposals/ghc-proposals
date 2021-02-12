@@ -7,7 +7,7 @@ implemented: ""
 
 This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/403)
 
-# Proposal title
+# Cleanup lexical structure of numbers and identifiers
 
 This proposal cleanups and clarifies lexical structure of numbers and identifiers.
 
@@ -51,10 +51,10 @@ conid   →   large {small | large | digit | ' }
 
 There are two problems:
 
-- There are plenty of [Decimal Numbers](https://www.compart.com/en/unicode/category/Nd), not only 0..9.
-- There are plenty of letters which are not upper, lower or titlecase. For example Asian scripts.
+- There are plenty of [Decimal Numbers](https://www.compart.com/en/unicode/category/Nd), not only 0..9. Also there are plenty of non-decimal numbers, e.g. [Other Numbers](https://www.compart.com/en/unicode/category/No) and [Letter Numbers](https://www.compart.com/en/unicode/category/Nl)
+- There are plenty of letters which are not upper, lower or titlecase. For example Asian scripts, see [Other Letter](https://www.compart.com/en/unicode/category/Lo)
 
-These issues are partially fixed but not documented.
+These issues are already partially fixed but not fully nor documented.
 
 ## Proposed Change Specification
 
@@ -72,10 +72,17 @@ All four can be used as trailing characters in the identifiers.
 
 More precisely:
 
-Introduce two new character groups, `uniIdchar` (more correctly *other char*) and `idchar`
+Extend the `small` character class to allow scripts without small/large
+character distinction (see [Other Letter](https://www.compart.com/en/unicode/category/Lo))
 
 ```
-uniIdchar  →  any Unicode Modifier Letter or Other Letter
+uniSmall    →   any Unicode lowercase letter or Other Letter
+```
+
+Introduce two new character groups, `uniIdchar` and `idchar`
+
+```
+uniIdchar  →  any Unicode Modifier Letter or NonSpacingMark
 idchar     →  small | large | digit | uniidchar | '
 ```
 
@@ -98,13 +105,6 @@ hexit       →   ascDigit | A | … | F | a | … | f  -- digit to ascDigit
 decimal     →   ascDigit{ascDigit}  -- digit to ascDigit
 octal       →   octit{octit}
 hexadecimal →   hexit{hexit}
-```
-
-Also extend the `small` character class to allow scripts without small/large
-character distinction (see [Other Letter](https://www.compart.com/en/unicode/category/Lo))
-
-```
-uniSmall    →   any Unicode lowercase letter or Other Letter
 ```
 
 Additionally, the `graphic` token is extended with new `uniIdchar`:
