@@ -34,7 +34,7 @@ Can you see the problem? The author certainly couldn't! This program compiles fi
 The problem is that when `side /= Bot`, we actually have:
 
 ```haskell
-let panelisation = panesilation
+let panelisation = panelisation
 ```
 
 This was not intended at all! The intended code was:
