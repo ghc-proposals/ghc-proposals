@@ -100,6 +100,13 @@ octal       →   octit{octit}
 hexadecimal →   hexit{hexit}
 ```
 
+Also extend the `small` character class to allow scripts without small/large
+character distinction (see [Other Letter](https://www.compart.com/en/unicode/category/Lo))
+
+```
+uniSmall    →   any Unicode lowercase letter or Other Letter
+```
+
 Additionally, the `graphic` token is extended with new `uniIdchar`:
 
 ```
@@ -114,7 +121,7 @@ $pragmachar = [$small $large $digit $uniidchar ]
 
 
 The two truly new changes are abandoning an idea of "decimal digit"
-commented with a ToDo in GHC's `Lexer.x` (there would be ascii digits and the rest)
+commented with a ToDo in GHC's `Lexer.x` (there would be just ascii digits and all others number characaters)
 and adding of *Letter Number* category to the `uniDigit` class (Other Number is already there).
 In the `graphic` token  GHC already allows Letter Numbers,
 as that token is parsed manually and not by its Alex rule (this is performance optimization).
