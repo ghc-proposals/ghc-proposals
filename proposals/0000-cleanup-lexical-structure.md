@@ -5,9 +5,7 @@ ticket-url: ""
 implemented: ""
 ---
 
-This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/0>).
-**After creating the pull request, edit this file again, update the number in
-the link, and delete this bold sentence.**
+This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/403)
 
 # Proposal title
 
@@ -15,8 +13,7 @@ This proposal cleanups and clarifies lexical structure of numbers and identifier
 
 ## Motivation
 
-[The Haskell2010 report]
-(https://www.haskell.org/onlinereport/haskell2010/haskellch2.html#x7-180002.4)
+[The Haskell2010 report](https://www.haskell.org/onlinereport/haskell2010/haskellch2.html#x7-180002.4)
 specifies lexical structure of numbers and identifiers as follows.
 
 First character classes:
@@ -43,7 +40,7 @@ then numeric literals as
 decimal      →   digit{digit}
 octal        →   octit{octit}
 hexadecimal  →   hexit{hexit}
-``
+```
 
 and identifiers as
 
