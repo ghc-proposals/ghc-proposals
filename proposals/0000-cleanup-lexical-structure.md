@@ -56,6 +56,10 @@ There are two problems:
 
 These issues are already partially fixed but not fully nor documented.
 
+Some people read the report, try out things in GHC, and it doesn't work,
+[as this StackOverflow question shows](https://stackoverflow.com/questions/59923193/should-a-haskell-parser-allow-unicode-digits-in-numeric-literals).
+The answer should be in the manual, not only in the source code.
+
 ## Proposed Change Specification
 
 A short summary: the collection of alphanumerical characters
