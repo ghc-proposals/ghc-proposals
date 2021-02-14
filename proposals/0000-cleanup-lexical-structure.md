@@ -210,6 +210,26 @@ and fixes
 
 - [#18158: Lexer is confused by suzhou numeral](https://gitlab.haskell.org/ghc/ghc/-/issues/18158)
 
+### Numeric Underscores
+
+This proposal doesn't interfere with numeric underscores.
+While [the corresponding proposal](https://github.com/ghc-proposals/ghc-proposals/pull/76)
+specifies the change as
+
+```diff
+-decimal     →  digit{digit}
++decimal     →  digit{numSpacer digit}
+```
+
+it is in practice:
+
+```diff
+-decimal     →  ascDigit{ascDigit}
++decimal     →  ascDigit{numSpacer ascDigit}
+```
+
+so there is no conflict.
+
 ## Costs and Drawbacks
 
 The development costs are minimal, the code patch is inline
