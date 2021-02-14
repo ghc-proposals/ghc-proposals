@@ -205,6 +205,7 @@ This proposal documents changes from
 - [#10196: Regression regarding Unicode subscript characters in identifiers](https://gitlab.haskell.org/ghc/ghc/-/issues/10196)
 - [#7650: Can't use combining characters in identifiers](https://gitlab.haskell.org/ghc/ghc/-/issues/7650)
 - [#4373: Lexer does not handle unicode numeric subscripts](https://gitlab.haskell.org/ghc/ghc/-/issues/4373)
+- [#1103: Japanese Unicode](https://gitlab.haskell.org/ghc/ghc/-/issues/1103)
 
 and fixes
 
