@@ -71,7 +71,7 @@ needed is a simple decrement operation.
 
 ## Proposed Change Specification
 
-Add a `sumToTag#` inline primop, analogous to `dataToTag#`. Approximately,
+Add a `sumToTag#` inline primop, analogous to `dataToTag#`, with the following type.
 
 ```haskell
 sumToTag# :: forall (xs :: [RuntimeRep]) (a :: TYPE ('SumRep xs)). a -> Int#
@@ -80,12 +80,9 @@ sumToTag# :: forall (xs :: [RuntimeRep]) (a :: TYPE ('SumRep xs)). a -> Int#
 `sumToTag#` will return the 0-based index of the sum alternative of its
 argument.
 
-The `forall` feels like a bit of a lie: much like `tagToEnum#` can be compiled
-only when the *type constructor* of its argument is known and is an algebraic
-datatype, `sumToTag#` can be compiled only when the *runtime representation* of
-its argument is known and is `'SumRep xs` for some known `xs`. This restriction
-doesn't actually have any effect in practice, because bindings can't be
-representation-polymorphic anyway.
+It may seem bizarre to have a function that is polymorphic in the runtime representation of its argument; we could only call such a function when we know the concrete representation of its argument, i.e. when the `xs :: [RuntimeRep]` type argument is *closed*. However, GHC already imposes a universal ban on levity-polymorphic arguments (see Section 5.1 of [Levity Polymorphism][]) so we do not have to worry about this case.
+
+[Levity Polymorphism]: https://www.microsoft.com/en-us/research/publication/levity-polymorphism/
 
 ## Examples
 
@@ -256,4 +253,3 @@ It is not mandatory for have any endorsements at all, but the more substantial
 the proposal is, the more desirable it is to offer evidence that there is
 significant demand from the community.  This section is one way to provide
 such evidence.
-
