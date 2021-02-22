@@ -125,7 +125,7 @@ such as ``Stream``:
 
  {-# COMPLETE (:<) :: Stream #-}
 
-And here goes repeating that declaration for all data constructors again, for us
+And here goes repeating that declaration for all type constructors again, for us
 as well as the users of our library. I'd much rather write
 
 ::
