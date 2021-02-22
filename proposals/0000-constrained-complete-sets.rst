@@ -118,7 +118,7 @@ warning anymore:
 Urgh! We somehow want to say that the singleton COMPLETE set only applies
 to type constructors satisfying ``IsInfinite``. But the type signature
 syntax doesn't allow us to constrain on ``IsInfinite``! The only way out
-is to declare the COMPLETE signature for all concrete data constructors
+is to declare the COMPLETE signature for all concrete type constructors
 such as ``Stream``:
 
 ::
