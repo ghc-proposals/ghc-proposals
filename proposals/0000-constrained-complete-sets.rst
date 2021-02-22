@@ -71,7 +71,7 @@ constructor it should attach the COMPLETE set to:
  {-# COMPLETE (:<), Empty :: [] #-}
 
 But that doesn't help us with ``f``, which is constrained on ``IsList``!
-Moreover, we have to repeat that COMPLETE set for every data constructor.
+Moreover, we have to repeat that COMPLETE set for every type constructor.
 But isn't it evident that we just want to say "don't warn whenever both
 pattern synonyms are matched", regardless of the involved types? This is
 very non-modular and an implementational smell of GHC 9.0 and before.
