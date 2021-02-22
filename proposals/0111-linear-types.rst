@@ -607,15 +607,6 @@ implementing linear variants of ``base`` functions remain compatible
 with ``base`` (e.g. there need not be two ``Maybe`` types, two list
 types etc).
 
-The only function which will need to change is ``($)`` because its
-typing rule is built in the type checker. Ignoring the details about
-levity and higher-rank polymorphism in the typing rule, the type
-``($)`` will be:
-
-::
-
-  ($) :: (a %p -> b) ⊸ a %p -> b
-
 Defining a linear variant of ``base`` is out of scope of this
 proposal. Possible future standardisation of the library content is
 the competence of the Core Libraries Committee (CLC). For expository
