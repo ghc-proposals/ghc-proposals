@@ -105,9 +105,10 @@ of rejected constructs):
 
     isJust (x :: forall a -> Maybe a) = ...
 
-A data constructor *can* use ``forall ... ->`` in its type (as given in
-GADT-syntax) or arguments, but any use of such a constructor in terms (as
-opposed to in a type) will be an error.
+* A GADT data constructor type::
+
+    data T where
+      MkT :: forall a -> a -> T
 
 Naturally, the new syntax is forbidden anywhere that ``forall`` is currently
 forbidden (for example, in an argument position of a type family).
