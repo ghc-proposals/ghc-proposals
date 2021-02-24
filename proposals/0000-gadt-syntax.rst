@@ -272,10 +272,22 @@ Field types::
   strictness_sigil ::= '!'
                     |  '~'
 
-Side conditions:
+Clarifications and side conditions:
 
-* In ``gadt_record_sig``, the ``opt_forall`` must be of the ``forall tvs.`` form, not ``forall tvs ->``.
-* In ``strictness_sigil``, the ``!`` and ``~`` are assumed to be prefix occurrences.
+1. In ``gadt_record_sig``, the ``opt_forall`` must be of the ``forall tvs.`` form, not ``forall tvs ->``.
+2. In ``strictness_sigil``, the ``!`` and ``~`` are assumed to be prefix occurrences.
+3. In ``strictness_sigil``, the ``~`` is guarded behind ``-XStrictData``.
+4. Under ``UnicodeSyntax``, the ``::``, ``->``, and ``=>`` terminals can be
+   written as ``∷``, ``→``, and ``⇒`` respectively.
+5. The ``btype`` production in ``gadt_prefix_sig`` and ``gadt_record_sig`` is
+   taken as the result type of the GADT constructor; it must be a substitution
+   instance of the type being declared. This implies that ``data T where T1 ::
+   (Int -> T)`` is rejected. The error message should not only say that ``(Int
+   -> T)`` is not an instance of ``T`` but also helpfully explain where
+   parentheses are and are not allowed in constructor signatures.
+6. While not a matter of syntax, we find it relevant to point out that type
+   synonym expansion is allowed in result types, while type family expansion is
+   not allowed. This matches the status quo.
 
 Effect and Interactions
 -----------------------
@@ -312,6 +324,16 @@ Costs and Drawbacks
 * The free order of quantifiers in prefix-style constructors will have major
   effect on the implementation.
 
+* The fixed order of quantifiers in record-style constructors makes it more
+  limited than prefix-style constructors. We defer this concern to future work,
+  as it is not obvious which syntax would be best and there is no pressing need
+  to address this.
+
+Future Work
+-----------
+
+* Generalize the record syntax to allow flexible quantification.
+* Fix pattern synonym signatures in a similar way.
 
 Alternatives
 ------------
