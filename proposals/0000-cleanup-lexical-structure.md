@@ -124,9 +124,9 @@ $pragmachar = [$small $large $digit $uniidchar ]
 ```
 
 
-The two truly new changes are abandoning an idea of "decimal digit"
+The two truly new changes are abandoning the idea of "decimal digit"
 commented with a ToDo in GHC's `Lexer.x` (there would be just ascii digits and all others number characaters)
-and adding of *Letter Number* category to the `uniDigit` class (Other Number is already there).
+and adding the *Letter Number* category to the `uniDigit` class (Other Number is already there).
 In the `graphic` token  GHC already allows Letter Numbers,
 as that token is parsed manually and not by its Alex rule (this is performance optimization).
 
