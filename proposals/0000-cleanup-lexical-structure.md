@@ -111,7 +111,7 @@ octal       →   octit{octit}
 hexadecimal →   hexit{hexit}
 ```
 
-Additionally, the `graphic` token is extended with new `uniIdchar`:
+Additionally, the `graphic` token (which is used in rules for character and string literals) is extended with the new `uniIdchar`:
 
 ```
 graphic	→	small | large | symbol | digit | uniIdchar | special | " | '
@@ -305,5 +305,10 @@ Alternatively Decimal Numbers should be allowed in numeric literals, as report s
 Maybe only with `UnicodeSyntax` extension enabled though.
 If Decimal Numbers cannot lead identifier tokens, this wont cause language fork.
 
-This proposal takes a conservative option.
-Relaxing is easier than restricting.
+Relatedly, we may ask why [Other Letter](https://www.compart.com/en/unicode/category/Lo) are considered `small`, and not just `idchar` (i.e caseless character).
+This was an arbitrary choice made 14 years ago, [see GHC issue #1103](https://gitlab.haskell.org/ghc/ghc/-/issues/1103).
+
+Again, this proposal makes conservative choice and doesn't propose any change there.
+
+There are also ideas more comprehensive lexical overhaul of the language
+(e.g. https://github.com/blamario/rfcs/blob/unicode-identifers/0000-unicode-identifers.rst) but they are a lot more controversial.
