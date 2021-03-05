@@ -85,13 +85,13 @@ further names to be imported or hidden.
 We can rename with `ExplicitNamespaces`
 
 ```haskell
-import GHC.Generics (type (:*:) to Prod)
+import GHC.Generics renaming (type (:*:) to Prod)
 ```
 
 We can rename import declaration
 
 ```haskell
-import Data.Maybe (Maybe (Just, Nothing) to Option (Some, None))
+import Data.Maybe renaming (Maybe (Just, Nothing) to Option (Some, None))
 ```
 
 ## Effect and Interactions
