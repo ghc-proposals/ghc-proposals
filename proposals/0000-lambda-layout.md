@@ -459,7 +459,7 @@ case Just 34, Right [] of
   </td>
   <td>
     <ul>
-      <li>Different from function equation syntax and from function application syntax: you apply as <tt>f (Just 34) (Right [])</tt> but pattern match as with <tt>\case Just 23, Right []</tt></li>
+      <li>Different from function equation syntax and from function application syntax: you apply as <tt>f (Just 34) (Right [])</tt> but pattern match with <tt>\case Just 23, Right []</tt></li>
     </ul>
   </td>
 </tr>
