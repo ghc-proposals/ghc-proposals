@@ -14,7 +14,7 @@ the link, and delete this bold sentence.**
 We propose to add `-XRenamingImports` to extend import syntax such that it is possible to rename definitions.
 
 ```haskell
-import Distribution.Simple renaming (defaultMain) to (main)
+import Distribution.Simple renaming (defaultMain to main)
 ```
 
 ## Motivation
