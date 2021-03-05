@@ -492,6 +492,28 @@ case [1,2,3] of
     </ul>
   </td>
 </tr>
+<tr>
+  <td>(4) Multi-pattern <tt>\case</tt> with parens</td>
+  <td>
+     <pre style="display: inline">
+       <code>
+\case
+  (Just a) (Left b) -> ...
+  _        _        -> ...</code>
+    </pre>
+  </td>
+  <td>
+    <ul>
+      <li>Doesn't introduce a new construct, and doesn't introduce any overlap with others</li>
+      <li>Parity with function equation syntax</li>
+    </ul>
+  </td>
+  <td>
+    <ul>
+      <li>Not backwards compatible - can be mitigated by using (possibly temporary) compiler magic to allow single-scrutinee <tt>\case</tt> without parens, as well as providing an automatic refactoring tool to update existing code</li>
+    </ul>
+  </td>
+</tr>
 </table>
 
 ## Implementation Plan
