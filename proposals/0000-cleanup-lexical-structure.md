@@ -87,7 +87,7 @@ Introduce two new character groups, `uniIdchar` and `idchar`
 
 ```
 uniIdchar  →  any Unicode Modifier Letter or NonSpacingMark
-idchar     →  small | large | digit | uniidchar | '
+idchar     →  small | large | digit | uniIdchar | '
 ```
 
 Change identifiers to
