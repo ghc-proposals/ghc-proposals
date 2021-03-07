@@ -455,6 +455,7 @@ case Just 34, Right [] of
       <li>Conceptually, the smallest change that achieves the goal: Just a minor extension to one or two existing constructs</li>
       <li>That means no demand for or concerns about potential deprecation</li>
       <li>Parity with extended <tt>case ... of</tt> syntax</li>
+      <li>Like current <tt>\case</tt>, single pattern uses are concise due to lack of parentheses</li>
     </ul>
   </td>
   <td>
