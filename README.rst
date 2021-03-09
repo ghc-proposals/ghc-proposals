@@ -478,6 +478,10 @@ and any other relevant considerations, appropriately.
 
    The idea is that unless we can see a path to a point where everyone has the extension turned on, we're left with different groups of people using incompatible dialects of the language. A similar problem arises with extensions that are mutually incompatible.
 
+   In accordance with accepted proposal `#378 <https://github.com/ghc-proposals/ghc-proposals/pull/378>`_, a proposal
+   is considered to create a "fork" if it would be mutually incompatible with the design for dependent
+   types described on the `GHC wiki page <https://gitlab.haskell.org/ghc/ghc/-/wikis/dependent-haskell>`_.
+
 -  *Fit with the language.* If we just throw things into GHC
    willy-nilly, it will become a large ball of incoherent and
    inconsistent mud. We strive to add features that are consistent with

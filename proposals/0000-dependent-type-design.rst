@@ -32,6 +32,11 @@ proposal is support for such a design; disagreement with this proposal advocates
 for prioritizing other design goals over allowing further growth toward
 ergonomic dependent types.
 
+To flesh out the meaning of "ergonomic dependent types", Simon PJ and I wrote
+a `design sketch <https://gitlab.haskell.org/ghc/ghc/-/wikis/dependent-haskell>`_
+that gives the basic idea. Examples of this in action are in a `repo <https://gitlab.haskell.org/rae/dependent>`_
+I maintain.
+
 To be clear where I stand: I strongly advocate for acceptance, based on the
 usefulness of dependent types (with links to supporting evidence below).
 
@@ -284,19 +289,14 @@ Any reader is invited to add more links to this list via a pull request.
 
 Proposed Change Specification
 -----------------------------
-* The GHC committee would consider compatibility with ergonomic dependent types
+* The GHC committee would consider compatibility with `the proposed design
+  sketch of dependent types on the GHC wiki <https://gitlab.haskell.org/ghc/ghc/-/wikis/dependent-haskell>`_
   when evaluating new proposals. A proposal that would worsen compatibility
   with ergonomic dependent types would be considered to be fork-like, even if
   it would not be fork-like today.
 
   Put another way: this proposal elevates criterion 2 to an important criterion
   in evaluating other proposals.
-
-* Dependent types will add new features that will overlap with some existing
-  ones (notably, type families, which should be subsumed by the use of ordinary
-  functions in types). The committee should consider whether new features
-  would allow for the possibility of removing existing ones (once the new
-  feature has settled down).
 
 Examples
 --------
@@ -306,29 +306,6 @@ Examples
   then be drastically simplified and designed to work only in the subset of
   the language that contains no puns; my hope is then that `#281`_, too, would
   be accepted.
-
-* This proposal frequently talks about *ergonomic* dependent types, but it does
-  not define those terms. I will not attempt to define them here, because what
-  counts as ergonomic is generally a matter of taste. (What counts as dependent
-  types is also surprisingly flexible; some have claimed that Haskell already
-  has dependent types.) However, one key component of ergonomics for dependent
-  types is (for me) that users do not need to think about a syntactic difference
-  between types and terms.
-
-  Haskell will always have (I sure hope) a separation
-  between compile-time computation and runtime computation, and we will always
-  (I sure hope) erase irrelevant compile-time terms. (More simply: Haskell has
-  and will keep *type erasure*. It's just that the word "type" is becoming harder
-  to pin down, so I have to say "compile-time terms".) Yet my hope for dependent
-  types in Haskell should not require a syntactic distinction between types and
-  terms. While such a distinction is not wholly incompatible with dependency,
-  I think it would add significant complication and cognitive overhead to understanding
-  dependent types in Haskell.
-
-* As the specification part suggests, it would be nice to remove type families
-  once we allow ordinary functions to be used in types. The design in a proposal
-  adding the ability to use functions in types should therefore address deprecation
-  and removal (over a painstakingly slow timeline) of type families.
 
 Design of Dependent Types
 -------------------------
