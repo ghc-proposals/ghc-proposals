@@ -107,14 +107,14 @@ Proposed Change Specification
   ``-XTemplateHaskell`` is also enabled, as well as ``⦇`` as opening and ``⦈``
   as closing if ``-XArrows`` is also enabled.
 
-* Any unqualified ``varsym`` is interpreted as "prefix", "suffix", "tight
-  infix", or "loose infix", based on the preceding and following lexical
-  non-terminals:
+* Any unqualified operator (``varsym`` or ``consym``) is interpreted as
+  "prefix", "suffix", "tight infix", or "loose infix", based on the preceding
+  and following lexical non-terminals:
 
-  * Prefix occurrence: not(closing), ``varsym``, opening
-  * Suffix occurrence: closing, ``varsym``, not(opening)
-  * Tight infix occurrence: closing, ``varsym``, opening
-  * Loose infix occurrence: not(closing), ``varsym``, not(opening)
+  * Prefix occurrence: not(closing), operator, opening
+  * Suffix occurrence: closing, operator, not(opening)
+  * Tight infix occurrence: closing, operator, opening
+  * Loose infix occurrence: not(closing), operator, not(opening)
 
   The general principle can be demonstrated as follows::
 
@@ -172,7 +172,8 @@ Proposed Change Specification
   on prefix, suffix, and tight infix uses of operators that do not have a
   meaning override at the moment. Users who desire forward compatibility may
   enable this warning in case we create new operator meaning overrides in the
-  future. Enabled by ``-Weverything`` but not ``-Wall`` or ``-Wcompat``.
+  future. Enabled by ``-Wall`` and ``-Wcompat``, but not by ``-W`` or on
+  by default.
 
 * The operator meaning override system has lower precedence than other lexical
   rules that steal operator syntax:
@@ -181,8 +182,8 @@ Proposed Change Specification
   * ``?`` under ``-XImplicitParams``
   * ``.`` as module qualification
 
-  These are not subject to a meaning override as there is no ``varsym`` to
-  reinterpret.
+  These are not subject to a meaning override as there is no ``varsym`` or
+  ``consym`` to reinterpret.
 
 * In the grammar, a bang/lazy pattern must be followed by ``aexp1``, a
   strictness annotation must be followed by ``atype``.

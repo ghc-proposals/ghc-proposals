@@ -2,21 +2,22 @@ Record Dot Syntax
 =================
 
 .. author:: Neil Mitchell and Shayne Fletcher
-.. date-accepted:: 2020-05-03
+.. date-accepted:: 2020-05-03, amended 2021-03-09
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/18599
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/282>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/282>`_ and  `amended by this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/405>`_.
 .. contents::
 
 
-Records in Haskell are `widely
-recognised <https://www.yesodweb.com/blog/2011/09/limitations-of-haskell>`__
-as being under-powered, with duplicate field names being particularly
-troublesome. We propose a new language extension ``RecordDotSyntax``
-that provides syntactic sugar to make the features introduced in `the
-HasField
-proposal <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0158-record-set-field.rst>`__
+Records in Haskell are `widely recognised
+<https://www.yesodweb.com/blog/2011/09/limitations-of-haskell>`__ as
+being under-powered, with duplicate field names being particularly
+troublesome. We propose new language extensions
+``OverloadedRecordDot`` and ``OverloadedRecordUpdate`` that provide
+syntactic sugar to make the features introduced in `the HasField
+proposal
+<https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0158-record-set-field.rst>`__
 more accessible, improving the user experience.
 
 1. Motivation
@@ -33,7 +34,7 @@ Here’s a simple example of what is on offer:
 
 .. code:: haskell
 
-   {-# LANGUAGE RecordDotSyntax #-}
+   {-# LANGUAGE OverloadedRecordDot, OverloadedRecordUpdate #-}
 
    data Company = Company {name :: String, owner :: Person}
    data Person = Person {name :: String, age :: Int}
@@ -68,15 +69,37 @@ For the specification we focus on the changes to the parsing rules, and
 the desugaring, with the belief the type checking and renamer changes
 required are an unambiguous consequences of those.
 
-2.1 ``RecordDotSyntax`` language extension
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+2.1 Language extensions
+~~~~~~~~~~~~~~~~~~~~~~~
 
-This change adds a new language extension ``RecordDotSyntax``.
+This change adds new language extensions ``OverloadedRecordDot`` and
+``OverloadedRecordUpdate``.
+
+If ``OverloadedRecordDot`` is on:
+
+- The expression ``.lbl`` means ``getField @"lbl"``;
+- The expression ``e.lbl`` means ``getField @"lbl" e``.
+
+If ``OverloadedRecordDot`` is not on, these expressions are parsed as
+uses of the function ``(.)``.
+
+If ``OverloadedRecordUpdate`` is on:
+
+- The expression ``e{lbl = val}`` means ``setField @"lbl" val``;
+- Update expressions with qualified labels like ``r{M.x = val}`` are disallowed.
+
+If ``OverloadedRecordUpdate`` is not on, ``e{lbl = val}`` means just
+what it does in Haskell98.
+
+If ``OverloadedRecordDot`` and ``OverloadedRecordUpdate`` are both on
+the expression ``e{lbl₁.lbl₂ = val}`` means ``e{lbl₁ = (e.lbl₁){lbl2 =
+val}}`` otherwise the expression ``e{lbl₁.lbl₂ = val}`` is illegal.
 
 2.1.1 Syntax
 ^^^^^^^^^^^^
 
-In the event the language extension is enabled:
+In the event the language extensions ``OverloadedRecordDot`` and
+``OverloadedRecordUpdate`` are enabled:
 
 ======================= ==================================
 Expression              Equivalent
@@ -93,12 +116,20 @@ Expression              Equivalent
 
 [Note: ``e{lbl = val}`` is the syntax of a standard H98 record update.
 It’s the nested form introduced by this proposal that is new :
-``e{lbl1.lbl2 = val}``. However, in the event ``RecordDotSyntax`` is in
-effect, note that we propose that ``e{lbl = val}`` desugar to
-``setField @"lbl" e val``].
+``e{lbl1.lbl2 = val}``. However, in the event
+``OverloadedRecordUpdate`` is in effect, note that ``e{lbl = val}``
+desugars to ``setField @"lbl" e val``].
 
 2.1.2 Precedence
 ^^^^^^^^^^^^^^^^
+
+``M.N.x`` looks ambiguous. It could mean:
+
+- ``(M.N).x`` that is, select the ``x`` field from the (presumably nullary) data constructor ``M.N``, or
+- The qualifed name ``M.N.x``, meaning the ``x`` imported from ``M.N``.
+
+The ambiguity is resolved in favor of ``M.N.x`` as a qualified name.
+If the other interpretation is desired you can still write ``(M.N).x``
 
 We propose that ``.`` “bind more tightly” than function application
 thus, ``f r.a.b`` parses as ``f (r.a.b)``.
@@ -107,11 +138,11 @@ thus, ``f r.a.b`` parses as ``f (r.a.b)``.
 Expression     Interpretation
 ============== ===================
 ``f r.x``      means ``f (r.x)``
-``f M.n.x``    means ``f (M.n.x)``
-``f M.N.x``    means ``f (M.N.x)``
 ``f r .x``     is illegal
 ``f (g r).x``  ``f ((g r).x)``
 ``f (g r) .x`` is illegal
+``f M.n.x``    means ``f (M.n.x)`` (that is, ``f (getField @"x" M.n)``)
+``f M.N.x``    means ``f (M.N.x)`` (``M.N.x`` is a qualified name, not a record field selection)
 ============== ===================
 
 2.1.3 Fields whose names are operator symbols
@@ -143,9 +174,10 @@ section <#91-prototype>`__.
 2.3.1 Lexer
 ^^^^^^^^^^^
 
-A new token case ``ITproj Bool`` is introduced. When the extension is
-enabled occurences of operator ``.`` are classified using the whitespace
-sensitive operator mechanism from `this (accepted) GHC
+A new token case ``ITproj Bool`` is introduced. When the
+``OverloadedRecordDot`` extension is enabled occurences of operator
+``.`` not as part of a qualified name are classified using the
+whitespace sensitive operator mechanism from `this (accepted) GHC
 proposal <https://github.com/ghc-proposals/ghc-proposals/pull/229>`__.
 The rules are:
 
@@ -158,8 +190,8 @@ suffix      ``ITdot``        function composition ``f. g``
 loose infix ``ITdot``        function composition ``f . g``
 =========== ================ ==================== =========
 
-No ``ITproj`` tokens will ever be issued if ``RecordDotSyntax`` is not
-enabled.
+No ``ITproj`` tokens will ever be issued if ``OverloadedRecordDot`` is
+not enabled.
 
 2.3.2 Parsing
 ^^^^^^^^^^^^^
@@ -181,7 +213,7 @@ Symbol Occurence
 
 [Field]
 :raw-html:`<br />`
-     *field*   →   *varid*   |   *qvarid*
+     *field*   →   *varid*
 
 .. _section-1:
 
@@ -314,10 +346,10 @@ desugaring) remains the ``Prelude`` version (we see the ``.`` as a
 syntactic shortcut for an explicit lambda, and believe that whether the
 implementation uses literal ``.`` or a lambda is an internal detail).
 
-**Enabled extensions:** The ``RecordDotSyntax`` extension does not imply
-enabling/disabling any other extensions. It is often likely to be used
-in conjunction with either the ``NoFieldSelectors`` extension
-or\ ``DuplicateRecordFields``.
+**Enabled extensions:** The extensions do not imply enabling/disabling
+any other extensions. It is often likely to be used in conjunction
+with either the ``NoFieldSelectors`` extension or\
+``DuplicateRecordFields``.
 
 5. Costs and Drawbacks
 ----------------------
@@ -418,17 +450,17 @@ where Haskell records are considered not fit for purpose.
 7. Alternatives within this proposal
 ------------------------------------
 
-7.1 Should ``RecordDotSyntax`` imply ``NoFieldSelectors`` or another extension?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+7.1 Should the extensions imply ``NoFieldSelectors`` or another extension?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Typically ``RecordDotSyntax`` will be used in conjunction with
+Typically the extensions will be used in conjunction with
 ``NoFieldSelectors``, but ``DuplicateRecordFields`` would work too. Of
 those two, ``DuplicateRecordFields`` complicates GHC, while
 ``NoFieldSelectors`` conceptually simplifies it, so we prefer to bias
 the eventual outcome. However, there are lots of balls in the air, and
-enabling ``RecordDotSyntax`` should ideally not break normal code, so we
-leave everything distinct (after `being
-convinced <https://github.com/ghc-proposals/ghc-proposals/pull/282#issuecomment-547641588>`__).
+enabling the extensions should ideally not break normal code, so
+we leave everything distinct (after `being convinced
+<https://github.com/ghc-proposals/ghc-proposals/pull/282#issuecomment-547641588>`__).
 
 7.2 Should a syntax be provided for modification?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -467,6 +499,39 @@ possible, we believe that option leads to a confusing result, with two
 forms of update both of which fail in different corner cases. Instead,
 we recommend use of ``C{foo}`` as a pattern (with ``-XNamedFieldPuns``)
 to extract fields if necessary.
+
+7.7 Why two extensions and not just one?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Things we could have done instead:
+
+1. Add two extensions, as proposed here.
+
+- **Pro**: flexibility for people who want type-changing update, but would still like dot-notation. Breaking back on type-changing update, like ``OverloadedRecordUpdate`` does, has proved to be controversial, and we don’t want it to hold back the integration of this proposal in GHC.
+- **Pro**: orthogonal things are controlled by separate flags.
+- **Con**: each has to be documented separately: two flags with one paragraph each, instead of one flag with two paragraphs. (The implementation cost is zero: it's only a question of which flag to test.)
+2. Add a single extension (``OverloadedRecordFields``, say) to do what ``OverloadedRecordDot`` and ``OverloadedRecordUpdate`` do in this proposal.
+
+- **Pro**: only one extension.
+- **Con**: some users might want dot-notation, but not want to give up type-changing update.
+3. Make this modification a no-op, doing nothing. Instead adopt precisely the previous proposal. Use ``RecordDotSyntax`` as the extension, covering both record dot and update.  However, we should then be prepared to change what ``RecordDotSyntax`` means later.  In particular, it is very likely that we’ll want ``RecordDotSyntax`` to imply ``NoFieldSelectors``.
+
+- **Pro**: only one extension
+- **Con**:  changing the meaning of an extension will break programs.
+4. Use ``RecordDotSyntax``, just as in the original proposal, but add ``NoFieldSelectors`` immediately
+
+- **Con**: it’s too early to standardize this, we’re not really sure that it’s what we want (e.g. we may want ``DuplicatRecordFields`` instead).
+
+NB: the difference between (2) and (3) is tiny: only whether we have ``OverloadedRecordFields`` now and ``RecordDotSyntax`` later; or ``RecordDotSyntax`` now and <something else> later.
+
+
+
+7.8 Why not make ``RecordDotSyntax`` part of this proposal?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We think ``RecordDotSyntax`` will enable these extensions plus some
+extension that allows multiple field names, e.g. ``NoFieldSelectors``.
+Which final extension that is has not yet been determined.
 
 8. Unresolved issues
 --------------------
