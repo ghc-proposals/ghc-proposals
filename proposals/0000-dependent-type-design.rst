@@ -340,7 +340,7 @@ this proposal were accepted. Of course, each individual piece will have to be
 separately proposed later, as this proposal does not include any specific new features
 for GHC.
 
-The repo at `https://gitlab.haskell.org/rae/dependent`_ includes (in the ``dh``
+The repo at `<https://gitlab.haskell.org/rae/dependent>`_ includes (in the ``dh``
 directory) some examples of what dependent Haskell might look like. If there is
 demand, I can expand this.
 
