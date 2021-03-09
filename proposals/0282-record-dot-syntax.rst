@@ -2,11 +2,11 @@ Record Dot Syntax
 =================
 
 .. author:: Neil Mitchell and Shayne Fletcher
-.. date-accepted:: 2020-05-03
+.. date-accepted:: 2020-05-03, amended 2021-03-09
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/18599
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/282>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/282>`_ and  `amended by this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/405>`_.
 .. contents::
 
 
