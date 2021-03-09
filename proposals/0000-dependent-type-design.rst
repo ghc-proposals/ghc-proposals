@@ -332,10 +332,21 @@ Examples
 
 Design of Dependent Types
 -------------------------
-This section will contain a hypothetical design for dependent types in GHC.
-For now, though, it will contain examples of what dependent types are *not*,
-in order to disabuse certain common notions. Watch this space for more detail
-later.
+The GHC wiki has a page with a `design for dependent types in Haskell <https://gitlab.haskell.org/ghc/ghc/-/wikis/dependent-haskell>`_. This design describes a way we could incrementally add
+features to Haskell in a way that could grow to encompass full dependent types.
+
+That linked wiki page serves as an understanding of what we might achieve if
+this proposal were accepted. Of course, each individual piece will have to be
+separately proposed later, as this proposal does not include any specific new features
+for GHC.
+
+The repo at `https://gitlab.haskell.org/rae/dependent`_ includes (in the ``dh``
+directory) some examples of what dependent Haskell might look like. If there is
+demand, I can expand this.
+
+In addition, because it is easy to make mistakes in this area, this proposal
+includes the following subsection, describing what is *not* a part of dependent
+types.
 
 Non-design of dependent types
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -617,6 +628,41 @@ proposals have a design that satisfies both criteria; if they do, we should
 pursue that design. However, it is not clear that every proposal has such
 a happy design point, and so a decision here can help inform committee debate
 on such proposals.
+
+Summary of Discussion
+---------------------
+The `GitHub PR <https://github.com/ghc-proposals/ghc-proposals/pull/378>`_ has a
+great deal of discussion. Here are a few takeaways:
+
+* Many industrial Haskellers came out of the woodwork to support this proposal.
+
+* There are lots of areas of uncertainty around what the design is. The `wiki page <https://gitlab.haskell.org/ghc/ghc/-/wikis/dependent-haskell>`_ hopefully answers many of these.
+
+* There are a number of misconceptions out there, hopefully addressed by the "non-design",
+  above.
+
+* There is worry that dependent types will somehow, non-specifically make Haskell worse.
+  I `responded <https://github.com/ghc-proposals/ghc-proposals/pull/378#issuecomment-788536398>`_
+  in the thread.
+
+* A concern was raised about the word "quantifier" in the way it is used in my thesis,
+  where it describes things like ``forall a.`` or ``foreach (b :: Nat) ->`` or ``Show a =>``.
+  I am agnostic on the choice of vocabulary here. In any case, this proposal does not
+  fix that vocabulary item.
+
+* There remain a few individuals who appear to remain deeply unconvinced. However, these seem to
+  be a small minority. The reasons they are not convinced appear to be around lack of
+  understanding of the proposal/design and general worry about unintended consequences.
+  I have tried to address both of these, but I do not believe my efforts have been fully
+  successful.
+
+* There is some concern that we should spend our collective energy elsewhere, away
+  from dependent types.
+
+* There was an observation that irrelevant class constraints are useful; current
+  designs do not allow any syntax for irrelevant class constraints. We should indeed revisit
+  this if/when `#102 <https://github.com/ghc-proposals/ghc-proposals/pull/102>`_ gets
+  reopened; I agree that this is a small problem with current designs.
 
 Unresolved Questions
 --------------------
