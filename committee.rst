@@ -101,9 +101,9 @@ Term Limits and Committee Selection
 Any community thrives best by continuing to refresh itself with new members.
 The main criteria for becoming a member of the committee are:
 
- * A track record of constructive contribution to public discussion of GHC proposals
- * A track record of constructive contribution to one or more of the communities outlined above (users, tool authors etc)
- * An expressed willingness to respond to GHC proposals in a timely manner.
+* A track record of constructive contribution to public discussion of GHC proposals
+* A track record of constructive contribution to one or more of the communities outlined above (users, tool authors etc)
+* An expressed willingness to respond to GHC proposals in a timely manner.
 
 These criteria are not exhaustive -- nominations and self-nominations are free
 to strengthen the case in whatever way they deem appropriate --- but a record
