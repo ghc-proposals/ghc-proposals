@@ -289,23 +289,25 @@ Any reader is invited to add more links to this list via a pull request.
 
 Proposed Change Specification
 -----------------------------
-* The GHC committee would consider compatibility with `the proposed design
-  sketch of dependent types on the GHC wiki <https://gitlab.haskell.org/ghc/ghc/-/wikis/dependent-haskell>`_
-  when evaluating new proposals. A proposal that would worsen compatibility
-  with ergonomic dependent types would be considered to be fork-like, even if
-  it would not be fork-like today.
 
-  Put another way: this proposal elevates criterion 2 to an important criterion
-  in evaluating other proposals.
+When evaluating new proposals,
+the GHC committee would consider compatibility with `the proposed design
+sketch of dependent types on the GHC wiki <https://gitlab.haskell.org/ghc/ghc/-/wikis/dependent-haskell>`_. Generally speaking, new proposals should be forward-compatible
+with the design sketch; that is, the new features proposed would continue to
+be at home when surrounded by other dependent-type features.
 
-Examples
---------
-* If this current proposal is accepted, I would expect the committee to accept
-  `#291`_ (with significant revisions to the text, but not the spirit) and
-  `#270`_ (perhaps with significant revisions to the details). `#281`_ could
-  then be drastically simplified and designed to work only in the subset of
-  the language that contains no puns; my hope is then that `#281`_, too, would
-  be accepted.
+Of course, the committee remains free to revise the design sketch or to accept
+proposals that encroach upon it (i.e. contradicting this guidance), but such choices
+should be made explicitly.
+
+See also the committee's `Review Criteria <https://github.com/ghc-proposals/ghc-proposals/#review-criteria>`_: put another way, this proposal says that we consider
+the design sketch alongside other features of today's Haskell when assessing
+a new proposal's fit with the language.
+
+Note that compatibility with dependent types is far from the only criterion
+the committee would use to evaluate a proposal. Other review criteria, such
+as learnability, clarity of error messages, performance, etc., remain just
+as ever.
 
 Design of Dependent Types
 -------------------------
@@ -530,6 +532,13 @@ Effect and Interactions
 -----------------------
 * By accepting this proposal, the committee reaffirms Haskell's status as
   an evolving, forward-thinking language, excited to adopt new ideas.
+
+* If this current proposal is accepted, I would expect the committee to accept
+  `#291`_ (with significant revisions to the text, but not the spirit) and
+  `#270`_ (perhaps with significant revisions to the details). `#281`_ could
+  then be drastically simplified and designed to work only in the subset of
+  the language that contains no puns; my hope is then that `#281`_, too, would
+  be accepted.
 
 * @simonpj has asked for a "list of the things [we] might have to give up".
   Here is an attempt at this list:
