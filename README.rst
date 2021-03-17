@@ -420,7 +420,9 @@ Here are some characteristics that a good proposal should have.
   machine-checked proof.  There is no such baseline to work from, and
   it would set the bar far too high.  On the other hand, for
   proposals involving syntactic changes, it is very reasonable to ask for
-  a BNF for the changes.
+  a BNF for the changes. (Use the `Haskell 2010 Report <https://www.haskell.org/onlinereport/haskell2010/>`_ or GHC's ``alex``\- or ``happy``\-formatted files
+  for the `lexer <https://gitlab.haskell.org/ghc/ghc/-/blob/master/compiler/GHC/Parser/Lexer.x>`_ or `parser <https://gitlab.haskell.org/ghc/ghc/-/blob/master/compiler/GHC/Parser.y>`_
+  for a good starting point.)
 
   Ultimately, the necessary degree of precision is a judgement that the committee
   must make; but authors should try hard to offer precision.

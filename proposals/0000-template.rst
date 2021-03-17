@@ -48,6 +48,9 @@ like "should" or "could". Strive for a complete definition. Your specification
 may include,
 
 * BNF grammar and semantics of any new syntactic constructs
+  (Use the `Haskell 2010 Report <https://www.haskell.org/onlinereport/haskell2010/>`_ or GHC's ``alex``\- or ``happy``\-formatted files
+  for the `lexer <https://gitlab.haskell.org/ghc/ghc/-/blob/master/compiler/GHC/Parser/Lexer.x>`_ or `parser <https://gitlab.haskell.org/ghc/ghc/-/blob/master/compiler/GHC/Parser.y>`_
+  for a good starting point.)
 * the types and semantics of any new library interfaces
 * how the proposed change interacts with existing language or compiler
   features, in case that is otherwise ambiguous
