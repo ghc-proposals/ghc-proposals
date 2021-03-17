@@ -25,9 +25,10 @@ actually be used in a top-level splice.
 
 1. Using ``-fno-code``, any module imported by a module using ``TemplateHaskell`` has to be compiled to object
    code, this causes a significant slow down.
-2. IDEs such as haskell-language-server face a similar problem where all imports
-   have to be compiled.
-3. Proposals such as #14905 to increase build parrelism are far less effective
+2. IDEs such as haskell-language-server face a similar problem where normally
+   modules are just typechecked, but when ``TemplateHaskell`` is enabled, a large
+   number of modules have to be cautiously compiled to bytecode.
+3. Proposals such as `#14905 <https://gitlab.haskell.org/ghc/ghc/-/issues/14095>`_ to increase build parrelism are far less effective
    in projects which use ``TemplateHaskell``.
 
 
@@ -36,25 +37,27 @@ Proposed Change
 
 When the new language extension ``ExplicitSpliceImports`` is enabled then a
 new import modifier is added to the import syntax. An import is marked as a "splice"
-import when it is prefixed with ``splice``.
+import when it is prefixed with ``splice``::
 
-::
   {-# LANGUAGE ExplicitSpliceImports #-}
+  module C where
 
   import A
 
   import splice B
 
-Identifiers arising from splice imports are allowed to be used at negative levels, ie, unquoted in a top-level splice.
+The splice modifier indicates to the compiler that a dependent module needs to be compiled
+to object code before the current module can be renamed. A normal, non-splice, import
+needs to only be typechecked before the current module can be renamed.
 
-::
+Identifiers arising from splice imports are allowed to be used at negative levels, ie, unquoted in a top-level splice::
 
+  -- Accepted because B is a splice import
   foo = $(B.qux)
 
 
-But identifers from normal imports are rejected
+But identifers from normal imports are rejected::
 
-::
   -- Rejected, as A is not a splice import
   baz = $(A.zee)
 
@@ -63,13 +66,13 @@ level. For example, the following is legal::
 
   foo = $(B.qid [| A.zee |] )
 
-Because ``A.zee`` is used at level 0.
+Because ``A.zee`` is used at level 0 it doesn't need to be imported using a splice import.
 
 
-When ``TemplateHaskell`` is enabled but NOT ``SpliceImports``, then all imports
+When ``TemplateHaskell`` is enabled but NOT ``ExplicitSpliceImports``, then all imports
 are implicitly treated as splice imports, which matches the current behaviour.
 
-The prelude module is implicitly imported as a splice module so the following is
+The ``Prelude`` module is implicitly imported as a splice module so the following is
 allowed::
 
   zero = $(id [| 0 |])
@@ -90,9 +93,15 @@ Alternatives
   principle that we can learn about what's needed for a module just by looking
   at the import list.
 
+* The extension could only apply to **home** modules, because the benefits of
+  splice imports are when using GHC's ``--make`` mode. As the proposal stands,
+  for uniformity, any module used inside a top-level splice must be marked as
+  a splice module, even if it's an external module.
+
 * Another alternative would be to allow even finer grained control of splice
   imports so that the cases of usage at levels -1 or -2 could be distinguished.
-  This could be useful in some cross-compilation situations.
+  This could be useful in some cross-compilation situations. This is the approach
+  suggested in the `Stage Hygience for Template Haskell proposal <https://github.com/ghc-proposals/ghc-proposals/pull/243>`_.
 
 
 Unresolved Questions
