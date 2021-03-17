@@ -281,13 +281,13 @@ Clarifications and side conditions:
    written as ``∷``, ``→``, and ``⇒`` respectively.
 5. The ``btype`` production in ``gadt_prefix_sig`` and ``gadt_record_sig`` is
    taken as the result type of the GADT constructor; it must be a substitution
-   instance of the type being declared. This implies that ``data T where T1 ::
+   instance (allowing expansion of type synonyms, but not type families)
+   of the type being declared. This implies that ``data T where T1 ::
    (Int -> T)`` is rejected. The error message should not only say that ``(Int
    -> T)`` is not an instance of ``T`` but also helpfully explain where
    parentheses are and are not allowed in constructor signatures.
-6. While not a matter of syntax, we find it relevant to point out that type
-   synonym expansion is allowed in result types, while type family expansion is
-   not allowed. This matches the status quo.
+   (Note that the treatment of type synonyms vs. type families matches the
+   status quo.)
 
 Effect and Interactions
 -----------------------
