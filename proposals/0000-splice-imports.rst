@@ -28,37 +28,75 @@ actually be used in a top-level splice.
 2. IDEs such as haskell-language-server face a similar problem where normally
    modules are just typechecked, but when ``TemplateHaskell`` is enabled, a large
    number of modules have to be cautiously compiled to bytecode.
-3. Proposals such as `#14905 <https://gitlab.haskell.org/ghc/ghc/-/issues/14095>`_ to increase build parrelism are far less effective
-   in projects which use ``TemplateHaskell``.
+3. Proposals such as `#14905 <https://gitlab.haskell.org/ghc/ghc/-/issues/14095>`_ to increase build parallelism are far less effective
+   in projects which use ``TemplateHaskell`` because renaming depends on code generation
+   for all dependencies.
+4. When cross-compiling, all packages need to be compiled for both host and target.
+
 
 
 Proposed Change
 ---------------
 
-When the new language extension ``ExplicitSpliceImports`` is enabled then a
-new import modifier is added to the import syntax. An import is marked as a "splice"
+We would like to distinguish between three ways that an imported identifier can
+used.
+
+1. Only available in splices
+2. Not available in splices
+3. Available everwhere
+
+In order to do this
+the new language extension ``ExplicitSpliceImports`` is introduced which adds a
+new import modifier to the import syntax. An import is marked as a "splice"
 import when it is prefixed with ``splice``::
 
   {-# LANGUAGE ExplicitSpliceImports #-}
-  module C where
+  {-# LANGUAGE TemplateHaskell #-}
+  module Main where
 
+  -- (1)
   import A
 
+  -- (2)
   import splice B
 
-The splice modifier indicates to the compiler that a dependent module needs to be compiled
-to object code before the current module can be renamed. A normal, non-splice, import
-needs to only be typechecked before the current module can be renamed.
 
-Identifiers arising from splice imports are allowed to be used at negative levels, ie, unquoted in a top-level splice::
+The splice modifier indicates to the compiler that identifiers imported from
+the module can **only** be used inside splices (1). When the extension is enabled,
+imports without the splice modifier are not available to be used in splices (2).
+Therefore, in this example, identifiers from ``B`` can **only** be used in top-level splices
+and identifiers from ``A`` can be used everywhere, apart from in top-level splices.
 
-  -- Accepted because B is a splice import
+This distinction is important for two reasons:
+
+1. Now when compiling module ``Main``, despite the fact ``TemplateHaskell`` is enabled,
+   we know that only identifers from module ``B`` will be used in top-level splices so
+   only ``B`` needs to compiled to object code before starting to compile ``Main``.
+2. When cross-compiling, only ``A`` needs to be built for the target and ``B``
+   only for the host as it is only used at build-time.
+
+If you require scenario (3) then two imports declarations can be used::
+
+  -- (3)
+  import C
+  import splice C
+
+
+Specification of ``splice``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Identifiers arising from splice imports can only be used at negative levels, ie, unquoted in a top-level splice::
+
+  -- Accepted, because B is a splice import and B.qux is used at level -1
   foo = $(B.qux)
+
+  -- Rejected, because B is a splice import and B.qux is used at level 0
+  foo' =  B.qux
 
 
 But identifers from normal imports are rejected::
 
-  -- Rejected, as A is not a splice import
+  -- Rejected, as A is not a splice import and used at level -1
   baz = $(A.zee)
 
 An identifier can appear inside a top-level splice, if it is at a non-negative
@@ -70,9 +108,9 @@ Because ``A.zee`` is used at level 0 it doesn't need to be imported using a spli
 
 
 When ``TemplateHaskell`` is enabled but NOT ``ExplicitSpliceImports``, then all imports
-are implicitly treated as splice imports, which matches the current behaviour.
+are implicitly additionally imported as splice imports, which matches the current behaviour.
 
-The ``Prelude`` module is implicitly imported as a splice module so the following is
+The ``Prelude`` module is implicitly also imported as a splice module so the following is
 allowed::
 
   zero = $(id [| 0 |])
@@ -88,6 +126,11 @@ Drawbacks
 Alternatives
 ------------
 
+* Using a pragma rather than a syntactic modifier would fix in better with
+  how ``SOURCE`` imports work and make writing backwards compatible code easier::
+
+    import {-# SPLICE #-} B
+
 * It might be proposed that an alternative would be to work out which modules
   need to be compiled based on usage inside a module. This would compromise the
   principle that we can learn about what's needed for a module just by looking
@@ -102,6 +145,16 @@ Alternatives
   imports so that the cases of usage at levels -1 or -2 could be distinguished.
   This could be useful in some cross-compilation situations. This is the approach
   suggested in the `Stage Hygience for Template Haskell proposal <https://github.com/ghc-proposals/ghc-proposals/pull/243>`_.
+
+  The syntax can be extended in a natural way to allow for this by adding an optional
+  integer component which specificies precisely what level the import should be allowed at::
+
+    -- Can be used at -1
+    import splice 1 A
+    -- Can be used at -2
+    import splice 2 A
+
+  Practically, by far the most common situation is 2 stages.
 
 
 Unresolved Questions
