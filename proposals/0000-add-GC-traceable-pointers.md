@@ -87,13 +87,17 @@ It seems we already have a slab allocator for the older generation in low pause 
 
 A drawback of `GAddr#` is that the allocation cost compared with `ByteArray#` may be higher, we have to find a suitable slab, and do some bit twiddling work.
 
+Under certain allocation pattern, slab based solution may lead to more memory fragmentation, but this is not an issue in realworld use case, and many other runtime systems use similar memory allocation scheme.
+
 ## Alternatives
 
 Don't do it, and continue to use `ByteArray#` as the main byte array type.
 
 ## Unresolved Questions
 
-How does this `GAddr#` interact with previous compact region works? Probably can't support compact operations.
++ How does this `GAddr#` interact with previous compact region works? Probably can't support compact operations.
+
++ Do we have to provide primitive operations to copy data back and forth between `Addr#`, `GAddr#` and `MutableByteArray#/ByteArray#`? That will be a lot of work.
 
 ## Implementation Plan
 
