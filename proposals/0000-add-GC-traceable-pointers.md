@@ -6,8 +6,6 @@ implemented: ""
 ---
 
 This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/414).
-**After creating the pull request, edit this file again, update the number in
-the link, and delete this bold sentence.**
 
 # Add GC traceable pointers backed by a threaded slab allocator
 
