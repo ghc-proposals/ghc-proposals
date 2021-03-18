@@ -288,6 +288,9 @@ Clarifications and side conditions:
    parentheses are and are not allowed in constructor signatures.
    (Note that the treatment of type synonyms vs. type families matches the
    status quo.)
+6. If ``forall tvs ->`` quantification is used in a constructor's type, the use
+   of such constructor in an expression or a pattern is an error.  However, it
+   can be promoted and used in types under ``DataKinds``.
 
 Effect and Interactions
 -----------------------
