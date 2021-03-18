@@ -62,8 +62,8 @@ data PrimArray a = PrimArray GAddr# Int#
 We don't need another slice type: the slicing operation can be implemented like:
 
 ```
-take :: Int -> PrimArray Word8 -> PrimArray Word8
-take (PrimArray gaddr len) (I# n) | n <=# len = PrimArray (gaddr `plusGAddr#` n) (len -# n)
+drop :: Int -> PrimArray Word8 -> PrimArray Word8
+drop (PrimArray gaddr len) (I# n) | n <=# len = PrimArray (gaddr `plusGAddr#` n) (len -# n)
                                   | otherwise = error "..."
 ```
 
