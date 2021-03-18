@@ -28,9 +28,16 @@ Oh my!
 
 We propose adding a new primitive type `GAddr#`, which is:
 
-+ Allocated from a threaded local slab allocator, here slab means memory pool classified by size(16, 32, 64...).
-+ It's GC traceable.
++ Allocated from a threaded local slab allocator, here slab means memory pool classified by size(16, 32, 64...), allocation consisted by three steps: 
+    1. Find a suitable slab pool, which can be a block with special descriptor.
+    2. Find an empty mark bit/slab.
+    3. Set the mark bit and return slab address.
++ `GAddr#` is GC traceable, GC should consist two parts:
+    1. Clear all mark bits in a slab pool.
+    2. If a `GAddr#` traces back to a slab pool, set corresponding mark bit.
++ Large `GAddr#` could still go through the old large object allocation routine.
 + It can be added or substracted with offset, the result is still a `GAddr#`, which is traceable.
++ It's users' responsibility to ensure don't produce a `GAddr#` across slab boundary.
 + It can be passed to FFI like a pointer type, such as `char*` or `int16_t*` depend on types.
 
 An additional change is to change default string literal's type to use `GAddr#`, i.e. the following functions from `GHC.CString` will be changed to:
@@ -42,6 +49,7 @@ unpackCStringUtf8# :: GAddr# -> [Char]
 ```
 
 User could continue to use rules to rewrite custom string type to use `GAddr#`. This change is breaking, and not necessarily to be implemented in this proposal.
+
 
 ## Effect and Interactions
 
@@ -85,9 +93,8 @@ Don't do it, and continue to use `ByteArray#` as the main byte array type.
 
 ## Unresolved Questions
 
-I have none.
+How does this `GAddr#` interact with previous compact region works? Probably can't support compact operations.
 
 ## Implementation Plan
 
 I hope the Haskell foundation could help.
- 
