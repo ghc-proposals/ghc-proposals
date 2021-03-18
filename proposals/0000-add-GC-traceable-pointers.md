@@ -35,7 +35,7 @@ We propose adding a new primitive type `GAddr#`, which is:
 + It can be added or substracted with offset, the result is still a `GAddr#`, which is traceable.
 + It can be passed to FFI like a pointer type, such as `char*` or `int16_t*` depend on types.
 
-An additional change is to change default string literals's type to use `GAddr#`, i.e. the following functions from `GHC.CString` will be changed to:
+An additional change is to change default string literal's type to use `GAddr#`, i.e. the following functions from `GHC.CString` will be changed to:
 
 ```
 unpackCString# :: GAddr# -> [Char]
@@ -43,7 +43,7 @@ unpackCStringUtf8# :: GAddr# -> [Char]
 ...
 ```
 
-User could continue to use rules to rewrite custom string type to use `GAddr#`. This change is breaking, and not necessary to be implemented in this proposal.
+User could continue to use rules to rewrite custom string type to use `GAddr#`. This change is breaking, and not necessarily to be implemented in this proposal.
 
 ## Effect and Interactions
 
