@@ -47,7 +47,7 @@ We don't need another slice type: the slicing operation can be implemented like:
 
 ```
 take :: Int -> PrimArray Word8 -> PrimArray Word8
-take (PrimArray gaddr len) (I# n) | n <=# len = PrimArray (gaddr +# n) (len -# n)
+take (PrimArray gaddr len) (I# n) | n <=# len = PrimArray (gaddr `plusGAddr#` n) (len -# n)
                                   | otherwise = error "..."
 ```
 
@@ -57,9 +57,9 @@ The new slice type could:
 + Save a closure length word.
 + Save an offset word.
 
-Which would be `3*8 = 16` bytes a 64bit machine!
+Which would be `3*8 = 16` bytes on a 64bit machine!
 
-For FFI code, we should be able write:
+For FFI code, we should be able to write:
 
 ```
 memcpy :: GAddr# -> GAddr# -> Int# -> IO ()
@@ -67,7 +67,7 @@ memcpy :: GAddr# -> GAddr# -> Int# -> IO ()
 
 ## Costs and Drawbacks
 
-It seems we already have a slab allocator for the older generation in low pause GC work, so the extra work is adding new primitive types mainly.
+It seems we already have a slab allocator for the older generation in low pause GC work, so the extra work is adding new primitive types mainly, but I'm not sure.
 
 A drawback of `GAddr#` is that the allocation cost compared with `ByteArray#` may be higher, we have to find a suitable slab, and do some bit twiddling work.
 
