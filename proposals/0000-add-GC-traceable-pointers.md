@@ -57,7 +57,7 @@ The new slice type could:
 + Save a closure length word.
 + Save an offset word.
 
-Which would be `3*8 = 16` bytes on a 64bit machine!
+Which would be `3*8 = 24` bytes on a 64bit machine!
 
 For FFI code, we should be able to write:
 
