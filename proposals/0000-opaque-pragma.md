@@ -19,8 +19,13 @@ Being able to mark a (global) binder _opaque_, thus:
 What does OPAQUE mean?
 
 * Don't inline it
-* Don't expose its strictness -- e.g. if `f :: Int -> Int -> blah` was strict, callers would expect its wrapper to inline and unbox, but it won't (For NOINLINE GHC carefully does w/w for this reason! See `Note [Worker-wrapper for NOINLINE functions]` in `GHC.Core.Opt.WorkWrap`)
+* Type-class specialisation is a no-op, as is SpecConstr
 * Don't perform any w/w on it, not even cast w/w in the early stage simplifier.
+* Let any caller know that while the annotated function might be head strict, it will not unbox its arguments -- e.g. if `f :: Int -> Int -> blah` was strict, callers would expect its wrapper to inline and unbox, but it won't (For NOINLINE GHC carefully does w/w for this reason! See `Note [Worker-wrapper for NOINLINE functions]` in `GHC.Core.Opt.WorkWrap`).
+
+To quote https://github.com/ghc-proposals/ghc-proposals/pull/415#issuecomment-802650289:
+
+> The ultimate goal is that every call of `f` generates, well, a call of `f`, not of some name-mangled variant.
 
 ## Motivation
 
@@ -62,10 +67,12 @@ All of this is framed in the Clash use case, but I can image that other GHC (API
 
 * Add a new `OPAQUE` pragma
 * Binders with an `OPAQUE` pragma are not inlined, just like `NOINLINE`.
-* Binders with an `OPAQUE` pragma do not have their strictness exposed, unlike `NOINLINE`
-* Binders with an `OPAQUE` pragma are not w/w transformed, not even the cast w/w that happens in the early stage simplifier (that normally even happens for `-O0` runs).
-* Unlike `NOINLINE`, `OPAQUE` does _not_ form a two word pragma together with `SPECIALIZE` _nor_ does it form a two word pragma with `CONLIKE`.
-* `OPAQUE[n]` respects the activation phase `n` in the same way as `NOINLINE[n]` with regards to when the annotated binder is allowed to be inlined.
+* Unlike `NOINLINE`, binders with an `OPAQUE` pragma are not w/w transformed, not even the cast w/w that happens in the early stage simplifier (which even happens for `-O0` runs).
+* Unlike `NOINLINE`, `OPAQUE` pragmas can _not_ have a phase activation, i.e. there is no `OPAQUE[1]`.
+* Type-class specialisation is a no-op for binders annotated with an `OPAQUE` pragma, as is SpecConstr.
+* Let any caller of an `OPAQUE` annotated function know that while the annotated function might be head strict, it will not unbox its arguments.
+* `OPAQUE` is mutually exclusive with any of: `INLINE`, `NOINLINE`, `SPECIALISE`, `CONLIKE`
+* For the reason above, and unlike `NOINLINE`, `OPAQUE` does _not_ form a two word pragma together with `SPECIALIZE` _nor_ does it form a two word pragma with `CONLIKE`.
 
 ## Examples
 
@@ -84,6 +91,8 @@ times# (S a) (S b) = S (a * b)
 
 We can now have binders that will:
 * Not be inlined
+* Not be type-class specialised
+* Not be specialised by SpecConstr
 * Not be w/w transformed, and thus not have a w/w wrapper that can be inlined
 
 In addition, callers of that binding will:
@@ -92,11 +101,11 @@ In addition, callers of that binding will:
 ## Costs and Drawbacks
 
 Implementation should be straightforward:
-* Add a `Opaque` constructor to `GHC.Types.Basic.InlineSpec`
+* Add an `Opaque` constructor to `GHC.Types.Basic.InlineSpec`
 * Extend the parser and lexer to process the `OPAQUE` pragma
-* Treat `Opaque` like `NoInline` throughout the rest of the GHC compiler, with the exception of W/W related code
+* Treat `Opaque` like `NoInline` throughout the rest of the GHC compiler, with the exception of W/W and specialisation related code.
 * Add guards to W/W related code to not transform `Opaque` annotated binders
-* Add guards to strictness-analysis related code so that strictness is not exposed in `Opaque` annotated binders.
+* Add guards to specialisation related code to not specialise `Opaque` annotated binders.
 
 Drawbacks:
 * W/W transformation is quite important for performance, and disabling it seems like something you need extremely rarely. This pragma will only make sense for those with "deep" knowledge of GHC.
@@ -109,7 +118,11 @@ In addition, as highlighted in https://gitlab.haskell.org/ghc/ghc/-/issues/19553
 
 ## Unresolved Questions
 
-* Should there be the two-word pragma combinations `OPAQUE SPECIALIZE` and `OPAQUE CONLIKE`? They do not make sense for the original motivation.
+~~* Should there be the two-word pragma combinations `OPAQUE SPECIALIZE` and `OPAQUE CONLIKE`? They do not make sense for the original motivation.~~
+
+They do not make sense, given that:
+
+> The ultimate goal is that every call of `f` generates, well, a call of `f`, not of some name-mangled variant.
 
 ## Implementation Plan
 
