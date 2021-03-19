@@ -33,6 +33,24 @@ actually be used in a top-level splice.
    for all dependencies.
 4. When cross-compiling, all packages need to be compiled for both host and target.
 
+Definitions
+-----------
+
+level
+  Each expression exists at a level. The level is increased by 1 when
+  inside a quote and decreased by 1 inside a splice. Therefore the level of
+  an expression can be calcated as the number of quotes surrounding an expression
+  subtract the number of splices.
+
+top-level splice
+  A splice, where the body is at a negative level or a top-level unadorned
+  declaration splice.
+
+
+home module
+  A module from the package that is currently being compiled.
+
+
 
 
 Proposed Change
@@ -81,6 +99,15 @@ If you require scenario (3) then two imports declarations can be used::
   import C
   import splice C
 
+The syntax for imports is changed in the follow way::
+
+  importdecl :: { LImportDecl GhcPs }
+     : 'import' maybe_src maybe_safe optsplice optqualified maybe_pkg modid optqualified maybeas maybeimpspec
+
+
+The ``splice`` keyword appears before the ``qualified`` keyword but after ``SOURCE``
+and ``SAFE`` pragmas.
+
 
 Specification of ``splice``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -110,10 +137,20 @@ Because ``A.zee`` is used at level 0 it doesn't need to be imported using a spli
 When ``TemplateHaskell`` is enabled but NOT ``ExplicitSpliceImports``, then all imports
 are implicitly additionally imported as splice imports, which matches the current behaviour.
 
-The ``Prelude`` module is implicitly also imported as a splice module so the following is
+If the ``Prelude`` module is implicitly imported then it is also imported as a splice module so the following is
 allowed::
 
   zero = $(id [| 0 |])
+
+If ``NoImplicitPrelude`` is enabled then you have to import ``Prelude`` as a splice
+module as well::
+
+  {-# LANGUAGE NoImplicitPrelude #-}
+
+  import splice Prelude
+
+
+Splice imports can't be rexported, unless they are also imported normally.
 
 
 Drawbacks
