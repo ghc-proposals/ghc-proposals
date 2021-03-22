@@ -43,7 +43,7 @@ level
   subtract the number of splices.
 
 top-level splice
-  A splice, where the body is at a negative level or a top-level unadorned
+  A splice, where the body is at a negative level or a unadorned
   declaration splice.
 
 
@@ -133,6 +133,55 @@ level. For example, the following is legal::
 
 Because ``A.zee`` is used at level 0 it doesn't need to be imported using a splice import.
 
+Ambiguity of instances and variables
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The same ambiguity rules that apply to identifiers, type classes and type family
+instances are applied to splice imports just as they are for normal imports.
+
+In the case of variables, variables which are splice imported can only be used
+inside a top-level quotation but reported as ambiguous if they clash with any
+other variable in scope, for example::
+
+  import A ( x )
+  import splice B ( x )
+
+  foo = $( x ) x
+
+In this case, there is no ambiguity because ``A.x`` isn't allowed to be used in
+the top-level splice, but we still produce an ambiguity error to prevent any confusing
+situations about what is in scope. This position is conservative and allows more
+flexibility in future if it's deemed the restriction should be relaxed.
+
+For instances, a similar situation applies, splice and non-splice imports must
+have a consistent view of imported instances::
+
+  module X where
+  data X = MkX
+
+  module Normal where
+  import X
+  instance Show X where show _ = "normal"
+
+  module Splice where
+  import X
+  instance Show X where show _ = "splice"
+
+  module Bottom where
+  import X (X(..))
+  import splice X (X(..))
+  import Normal ()
+  import splice Splice ()
+  import splice Language.Haskell.TH.Lib ( stringE )
+
+  s1 = show MkX
+  s2 = $( stringE (show MkX) )
+
+This program is also rejected because the instances defined in ``Normal`` and ``Splice`` overlap.
+
+
+Other Considerations
+~~~~~~~~~~~~~~~~~~~~
 
 When ``TemplateHaskell`` is enabled but NOT ``ExplicitSpliceImports``, then all imports
 are implicitly additionally imported as splice imports, which matches the current behaviour.
