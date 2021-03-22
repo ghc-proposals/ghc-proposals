@@ -1,5 +1,5 @@
-Constrained COMPLETE sets
-*************************
+COMPLETE set signatures
+***********************
 
 .. author:: Sebastian Graf
 .. date-accepted:: Leave blank. This will be filled in when the proposal is accepted.
@@ -12,19 +12,27 @@ Constrained COMPLETE sets
 .. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/400>`_.
 .. contents::
 
-GHC allows users to add what looks like a type signature to a COMPLETE set declaration.
+GHC allows users to add what looks like a type signature to a COMPLETE set declaration: ::
+
+ {-# COMPLETE P, Q :: Either #-}
+
 While this is documented purely as a means of disambiguation with the goal of convenient
 implementation within GHC, it since has been abused by users, for its refining effect:
-It allows a COMPLETE set to only apply at a concrete data type constructor.
+It allows the COMPLETE set ``{P,Q}``to only apply at the concrete data type constructor
+``[]``.
 
 It's impossible to bend the "type signature" to accomodate some legitimate
 use cases, like requiring the type constructor to satisfy a type class. At
 the same time, it is strictly an implementational vestige of the past: The
-implementation to land in GHC 9.2 does not even look at it anymore!
+implementation to land in GHC 9.2 would not even need to look at it anymore!
+It still will look at it for backwards-compatilibity, though.
 
-Hence I propose to deprecate COMPLETE set "type signatures" and offer a new
-mechanism instead that allows the user to express arbitrary constraints on
-the type constructor.
+Hence I propose to replace the strange COMPLETE set "type signatures" by a
+mechanism that deserves to be called COMPLETE type signatures, requiring users to write ::
+
+ {-# COMPLETE P, Q :: Either l r #-}
+
+instead, e.g. with a regular type to the right of ``::``.
 
 Motivation
 ----------
@@ -250,6 +258,12 @@ match, we
 If *any* COMPLETE set is covered by a pattern match, then the pattern match is
 exhaustive.
 
+(This is very similar to how a pattern synonym with required constraints is
+tested for applicability at a certain match type,
+see `Note [Matching against a ConLike result type]`_.
+The constraints of ``sig_ty`` should be handled very much like the required
+constraints of a pattern snyonym.)
+
 Examples
 --------
 
@@ -396,7 +410,11 @@ The design pretty much determines the implementation.
 Implementation Plan
 -------------------
 @cgibbard has a promising prototype at
-`!5095 <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/5095>`_.
+`!5095 <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/5095>`_
+that I, Sebastian Graf, will shepherd.
 
 Endorsements
 ------------
+
+.. _`Note [Matching against a ConLike result type]`: https://gitlab.haskell.org/ghc/ghc/-/blob/a9129f9fdfbd358e76aa197ba00bfe75012d6b4f/compiler/GHC/HsToCore/Pmc/Solver.hs#L1712
+
