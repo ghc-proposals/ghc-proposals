@@ -1,12 +1,14 @@
-.. proposal-number:: Leave blank. This will be filled in when the proposal is
-                     accepted.
-
-.. trac-ticket:: Leave blank. This will eventually be filled with the Trac
-                 ticket number which will track the progress of the
-                 implementation of the feature.
-
+.. author:: Matthew Pickering
+.. date-accepted:: Leave blank. This will be filled in when the proposal is accepted.
+.. ticket-url:: Leave blank. This will eventually be filled with the
+                ticket URL which will track the progress of the
+                implementation of the feature.
 .. implemented:: Leave blank. This will be filled in with the first GHC version which
                  implements the described feature.
+.. highlight:: haskell
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/412>`_.
+.. contents::
+.. sectnum::
 
 Explicit Splice Imports Extension
 ==============
@@ -59,8 +61,8 @@ Proposed Change
 We would like to distinguish between three ways that an imported identifier can
 used.
 
-1. Only available in splices
-2. Not available in splices
+1. Only available in top-level splices
+2. Not available in top-level splices
 3. Available everwhere
 
 In order to do this
@@ -73,15 +75,15 @@ import when it is prefixed with ``splice``::
   module Main where
 
   -- (1)
-  import A
+  import splice B
 
   -- (2)
-  import splice B
+  import A
 
 
 The splice modifier indicates to the compiler that identifiers imported from
-the module can **only** be used inside splices (1). When the extension is enabled,
-imports without the splice modifier are not available to be used in splices (2).
+the module can **only** be used inside top-level splices (1). When the extension is enabled,
+imports without the splice modifier are not available to be used in top-level splices (2).
 Therefore, in this example, identifiers from ``B`` can **only** be used in top-level splices
 and identifiers from ``A`` can be used everywhere, apart from in top-level splices.
 
@@ -89,7 +91,7 @@ This distinction is important for two reasons:
 
 1. Now when compiling module ``Main``, despite the fact ``TemplateHaskell`` is enabled,
    we know that only identifers from module ``B`` will be used in top-level splices so
-   only ``B`` needs to compiled to object code before starting to compile ``Main``.
+   only ``B`` (and its dependencies) needs to compiled to object code before starting to compile ``Main``.
 2. When cross-compiling, only ``A`` needs to be built for the target and ``B``
    only for the host as it is only used at build-time.
 
@@ -109,7 +111,7 @@ The ``splice`` keyword appears before the ``qualified`` keyword but after ``SOUR
 and ``SAFE`` pragmas.
 
 
-Specification of ``splice``
+Intuitive Specification of ``splice``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Identifiers arising from splice imports can only be used at negative levels, ie, unquoted in a top-level splice::
@@ -133,11 +135,17 @@ level. For example, the following is legal::
 
 Because ``A.zee`` is used at level 0 it doesn't need to be imported using a splice import.
 
+Level Specification of ``splice``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Ordinary imports introduce variables at all non-negative levels (>= 0)
+* Splice variables introduce variables at all negative levels. (< 0)
+
 Ambiguity of instances and variables
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The same ambiguity rules that apply to identifiers, type classes and type family
-instances are applied to splice imports just as they are for normal imports.
+Resolution of scopes (often called "renaming") is blind to whether or not an
+identifier was imported with ``splice``.
 
 In the case of variables, variables which are splice imported can only be used
 inside a top-level quotation but reported as ambiguous if they clash with any
@@ -199,7 +207,11 @@ module as well::
   import splice Prelude
 
 
-Splice imports can't be rexported, unless they are also imported normally.
+Splice imports can't be rexported, unless they are also imported normally. Allowing
+splice imports to be exported would turn a built-time only import into a runtime
+export. Maintaining the distinction between things only needed at build-time and
+things only needed at run-time is an important part of this proposal.
+
 
 
 Drawbacks
