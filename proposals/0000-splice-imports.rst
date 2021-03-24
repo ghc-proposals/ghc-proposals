@@ -31,9 +31,16 @@ actually be used in a top-level splice.
    modules are just typechecked, but when ``TemplateHaskell`` is enabled, a large
    number of modules have to be cautiously compiled to bytecode.
 3. Proposals such as `#14905 <https://gitlab.haskell.org/ghc/ghc/-/issues/14095>`_ to increase build parallelism are far less effective
-   in projects which use ``TemplateHaskell`` because renaming depends on code generation
+   in projects which use ``TemplateHaskell`` because name resolution depends on code generation
    for all dependencies.
-4. When cross-compiling, all packages need to be compiled for both host and target.
+4. By using
+   splice imports you can separate the dependencies into those only needed at build-time and
+   those only needed at run-time. This allows you to omit linking against packages
+   only used during build time.
+5. When cross-compiling, all packages currently to be compiled for both host and target,
+   in a similar way to the previous point, only build dependencies need to be built
+   for the host and runtime dependencies for the target.
+
 
 Definitions
 -----------
@@ -139,7 +146,7 @@ Level Specification of ``splice``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 * Ordinary imports introduce variables at all non-negative levels (>= 0)
-* Splice variables introduce variables at all negative levels. (< 0)
+* Splice imports introduce variables at all negative levels. (< 0)
 
 Ambiguity of instances and variables
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -210,7 +217,8 @@ module as well::
 Splice imports can't be rexported, unless they are also imported normally. Allowing
 splice imports to be exported would turn a built-time only import into a runtime
 export. Maintaining the distinction between things only needed at build-time and
-things only needed at run-time is an important part of this proposal.
+things only needed at run-time allows project dependencies to be separated in the
+same way. This is important for cross-compilation.
 
 
 
@@ -223,6 +231,11 @@ Drawbacks
 
 Alternatives
 ------------
+
+* ``splice`` imports could also bring indentifiers into scope so that they
+  can be used everywhere in a module, not **only** in top-level splices as
+  the proposal suggest. This approach is not taken because it means that
+  build-time only dependencies can't be distinguished
 
 * Using a pragma rather than a syntactic modifier would fix in better with
   how ``SOURCE`` imports work and make writing backwards compatible code easier::
