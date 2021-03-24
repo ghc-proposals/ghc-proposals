@@ -224,7 +224,8 @@ proposed change.
   of uncapitalized identifiers denote either the term variable or type variable
   namespace, depending on whether the occurrence is in a type or not.
 
-* **Name**: A name is an identifier written in a program. Names can be
+* **Occurrence name** (sometimes just called "name"):
+  An occurrence name is an identifier written in a program. Names can be
   alphanumeric or symbolic. Symbolic names, such as ``+`` or ``!@!`` can
   be written in parentheses (``(+)`` or ``(!@!)``); a symbolic name in
   parentheses is treated identically to an alphanumeric name. Because of
@@ -241,7 +242,15 @@ proposed change.
   In a module import/export list, a symbolic name that begins with a ``:`` is
   in the type constructor namespace; otherwise, it is in the term variable
   namespace. (This is an unusual juxtaposition.)
-
+  
+* **Original name**:
+  The original name of an entity is a pair of the module
+  (e.g. ``A.B.C``) that defines it, and the occurrence
+  name (e.g. ``x``) by which it is defined in that module. Note that
+  occurrence names belong to a namespace, even though the namespace
+  is invisible in the spelling of the name. The
+  original name uniquely identifies an entity.
+  
 * **Qualified name**: A qualified name is a name prepended with a module name
   followed by a ``.``, with no intervening whitespace. Both alphanumeric and
   symbolic names can be qualified.
@@ -250,8 +259,8 @@ proposed change.
   An entity has a name. Entities include variables, classes, datatypes, and
   constructors, among a few other constructs.
 
-* **Environment**: An environment is a set of names and qualified names,
-  used for validating name occurrences.
+* **Environment**: An environment is mapping of unqualified and qualified
+  names to original names. It defines what is in scope.
 
 * **in scope**: A name is said to be **in scope** when it is in the current
   environment.
@@ -262,25 +271,47 @@ proposed change.
 * **Module**: A module is a set of declarations of entities, along with a set
   of exported names.
   
-* **Exports**: The exports from a module is a set of names. Exports are always *unqualified* names.
-  (These names can be written with a qualification
+* **Exports**: The exports from a module is a set of original names, such
+  that no two exports can have the same occurrence name.
+  (These names can be written with a qualification in an export
   to disambiguate, if the unqualified name has multiple entries in the environment
-  of the exporting module. But the exported name itself is unqualified.)
+  of the exporting module. But the exported name itself is just the original name;
+  it does not "remember" the qualification.)
 
-* **Imports**: An ``import`` statement names a module and (optionally) a set
-  of *unqualified* names. (This set may be specified via complement, using ``hiding``;
-  this proposal will not worry about this detail.)
-  These names are brought into scope in some fashion:
+* **Import specifiers**: An import specification, or *impspec*, can be listed
+  in parentheses in an ``import`` statement to restrict what is imported.
+  Formally, an impspec is set of occurrence names. (This set may be specified
+  via complement, using ``hiding``; this proposal will not worry about this
+  detail.)
 
-  * If the import uses ``as``, the module name appearing after the ``as``
-    is known as the module alias. If there is no ``as``, the module name itself
-    is used as the alias.
+* **Import item**:  An element in an import specifier is an *import item*.
+  
+* **Imports**: An ``import`` statement names a module *M* and (optionally) an 
+  import-specifier *impspec*.
 
-  * The set of names indicated is brought into scope (that is, put into the
-    global environment), qualified by the module alias in the import.
+  If *impspec* is omitted, then *impspec* is considered to include
+  the occurrence names of all the original names exported from *M*.
 
-  * If the import does not use ``qualified``, the names are additionally
-    brought into scope unqualified.
+  Let the *impspec*\-environment be a mapping from all the (unqualified) occurrence
+  names in *impspec* to corresponding original names exported from *M*.
+  Call the creation of an *impspec*\-environment from an *impspec* the *interpretation*
+  of the *impspec*. Note that interpretation happens in the context of a
+  exported set of original names.
+
+  It is an error if *impspec* contains any occurrence name that does not
+  correpsond to an original name exported from *M*.
+
+  Let the *module alias A* be the module name appearing after the ``as`` in
+  the ``import`` statement. If there is no ``as``, then the module alias *A*
+  is just *M*.
+
+  For each mapping *occname* ``|->`` *origname* in the *impspec*\-environment,
+  add *A.occname* ``|->`` *origname* to the global environment of the file
+  being compiled.
+
+  If the import does not use ``qualified``, additionally add the
+  entire *impspec*\-environment to the global environment of the file
+  being compiled.
 
 Core Proposal Change Specification
 ----------------------------------
@@ -288,8 +319,15 @@ Core Proposal Change Specification
 This proposal's specification is divided into pieces. This core piece is a necessary
 component of the overall proposal. Later pieces can be chosen piecemeal.
 
-1. A qualified name can now have any number of module qualifications, each
-   separated by a ``.`` and with no intervening whitespace. This can lead
+1. An original name is now a triple, containing the top-level (file) module
+   where an entity is declared, a list of local module names within which
+   an entity is declared, and the occurrence name of the entity. (Entities
+   from a module that does not use this extension will have an empty list of local
+   module names.)
+
+#. A qualified name can now have any number of module qualifications, each
+   separated by a ``.`` and with no intervening whitespace. (This is a change
+   to the definition *qualified name*.) This can lead
    to potential ambiguity: is the name ``Data.List.length`` qualified by
    ``Data.List`` (a well-formed module name) or qualified both by ``Data``
    and by ``List``? If ``length`` is in scope qualified both by ``Data.List``
@@ -299,28 +337,44 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
 
 #. Introduce a new extension ``-XLocalModules``.
 
-#. Introduce a new concept *export-module*, which is a set of unqualified names
+#. Introduce a new concept *export-module*, which is a set of original names
    and export-modules. Export-modules have names chosen from the module namespace.
-   Instead of exporting a set of unqualified names, modules now export a set of
-   unqualified names and export-modules.
+   Instead of exporting a set of original names, modules now export a set of
+   original names and export-modules.
+
+   An export-module *M* may be interpreted into an environment:
+   
+     * For each original name *O.n* exported by *M*, add *n* ``|->`` *O.n* to the result
+       environment.
+     * For each export-module *Sub* exported by *M*, interpret *Sub* into an
+       environment *E*. For each mapping *qualname* ``|->`` *origname* in *E*,
+       add a mapping *Sub.qualname* ``|->`` *origname* to the result environment.
 
 #. Export-modules may be imported with this import item::
 
      import ::= ... | 'module' modid [ impspec ]
 
-   This import item adds to the environment all unqualified names and export-modules indicated
-   by *impspec*, each additionally qualified by *modid*. If *impspec* is omitted,
-   this adds all unqualified names and export-modules exported by *modid*.
-
-   It is an error if *modid* does not export an export-module named *modid*.
+   The interpretation of this import item is a subset of the environment obtained
+   by interpreting the export-module *modid* (where the subsetting is controlled
+   by *impspec*).
+   The *impspec*\-environment produced here is then merged with the
+   intepretation of its other sibling import items.
      
+   It is an error if the export-module in which we are working
+   does not export an export-module named *modid*.
+
+   If *impspec* is omitted, consider it to contain the occurrence names
+   corresponding to all original names exported by the export-module *modid*,
+   as well as ``module`` import items corresponding to all export-modules exported
+   by the export-module *modid*.
+
    This new form of import is allowed only with ``-XLocalModules``.
 
    (We do not yet have a way of exporting an export-module; this comes later in this proposal.)
    
 #. Introduce a new declaration form (allowed only at the top level of a
    module -- i.e. not in a ``let`` or ``where``)
-   to declare new modules called *local modules*. Here is the BNF::
+   to declare a new module called a *local module*. Here is the BNF::
 
      topdecl ::= ... | 'module' [ 'qualified' ] modid [ exports ] 'where' decls
 
@@ -339,26 +393,36 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
    modules influence scoping only, but not type-checking or dependency
    (which remain constrained by compilation units, as they are today).
    
-#. A local module exports a set of unqualified names and export-modules. This set
-   is imported into the environment of the enclosing module, qualified by the
-   local module name.
+#. A local module exports a set of original names and export-modules. This set
+   of exports is interpreted into an environment (as described under "export-modules");
+   that environment is merged with the environment in which the local module
+   declaration is written.
 
    A. The local module may include an export list; if so, this export list
-      defines the set of exports from the local module.
+      defines the set of exports (original names and export-modules)
+      from the local module.
 
-   B. If the local module ``M`` omits an export list, it exports the names of all declarations
-      made inside ``M``. For each nested local module ``N``, an export-module ``N``
-      is exported; this export-module contains all names in scope within ``M`` with a ``N.``
-      prefix (including any further nested local modules).
+   B. If the local module *M* omits an export list, it exports the names of all declarations
+      made inside *M*. For each nested local module *N*, an export-module *N*
+      is exported; this export-module contains all names in *M*\'s environment
+      qualified by *N*.
 
    C. If the keyword ``qualified`` is missing, then all names exported by
       the local module are also added to the enclosing scope unqualified.
+      That is, take the environment built by interpreting the exports
+      of the local module *M*; the mappings in this environment will have
+      the form *M.qualname* ``|->`` *origname*. Create a new environment
+      with mappings dropping the *M.* qualification, and merge that with
+      the ambient environment outside of *M*.
 
 #. Modules may be extended via the declaration or importing of another
    local module of the same name. If local modules with the same name are in
    scope at the same time (either through importation or declaration) their
    contents are simply merged. Individual identifiers that are multiply
    defined will be an error if used ambiguously.
+
+   This behavior is directly implied by the idea that scopes are simply
+   environments mapping qualified names to original ones.
 
    In other words, local modules are not entities of themselves: module
    names are simply prefixes used in qualified names. This merging behavior
@@ -371,18 +435,16 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
      decl ::= ... | 'import' 'module' modid [ impspec ]
 
    A. Without an ``impspec``: Consider all qualified names in scope with a
-      *modid*\ ``.`` qualification. These names are brought into scope (that is,
+      *modid*\ ``.`` qualification. That is, find all mappings *modid.qualname* ``|->``
+      *origname* in the environment. These names are brought into scope (that is,
       added to the local environment) without this *modid*\ ``.`` qualification.
 
-   #. With an ``impspec``: Each name included in the ``impspec`` must be in scope
-      with a *modid*\ ``.`` qualification. It is brought additionally into scope
-      without that qualification.
+   #. With an *impspec*: Interpret the *impspec* into an *impspec*\-environment.
+      Each mapping will be of the form *qualname* ``|->`` *origname*. For each
+      such mapping, it is an error if *modid.qualname* is not in the environment.
+      Merge the *impspec*\-environment with the outer environment, bringing all
+      such names into scope without the *modid* qualification.
 
-      If a ``module N`` import item is included: Each name with a *modid*\ ``.N.``
-      qualification is brought into scope without the *modid*\ ``.`` qualification.
-      If an ``impspec`` is specified in a ``module N`` import item: apply this
-      approach recursively.
-     
    The declaration is allowed in ``let`` and ``where`` clauses.
 
    Note that the declaration form includes the word ``module`` to distinguish
