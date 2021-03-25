@@ -27,7 +27,7 @@ actually be used in a top-level splice.
 
 1. Using ``-fno-code``, any module imported by a module using ``TemplateHaskell`` has to be compiled to object
    code, this causes a significant slow down.
-2. IDEs such as haskell-language-server face a similar problem where normally
+2. Projects such as haskell-language-server face a similar problem where normally
    modules are just typechecked, but when ``TemplateHaskell`` is enabled, a large
    number of modules have to be cautiously compiled to bytecode.
 3. Proposals such as `#14905 <https://gitlab.haskell.org/ghc/ghc/-/issues/14095>`_ to increase build parallelism are far less effective
@@ -58,8 +58,6 @@ top-level splice
 
 home module
   A module from the package that is currently being compiled.
-
-
 
 
 Proposed Change
@@ -215,7 +213,7 @@ module as well::
 
 
 Splice imports can't be rexported, unless they are also imported normally. Allowing
-splice imports to be exported would turn a built-time only import into a runtime
+splice imports to be exported would turn a build-time only import into a runtime
 export. Maintaining the distinction between things only needed at build-time and
 things only needed at run-time allows project dependencies to be separated in the
 same way. This is important for cross-compilation.
