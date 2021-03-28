@@ -9,7 +9,7 @@ This proposal is [discussed at this pull request](https://github.com/ghc-proposa
 
 # Fine-grained pragmas for classes, families, and instances
 
-Currently when one needs to "escape" the termination checker, this is only possible by enabling `UndecidableInstances` and `UndecidableSuperClasses` in a per-module basis. However, this means losing those checks for every single type class, family, or instance defined in that module. This proposal introduces new `%NoTerminationCheck`, `%LiberalCoverage`, and `%LiberalInjectivity` modifiers to mark a specific definition, instead of the whole module. 
+Currently when one needs to "escape" the termination checker, this is only possible by enabling `UndecidableInstances` and `UndecidableSuperClasses` in a per-module basis. However, this means losing those checks for every single type class, family, or instance defined in that module. This proposal introduces new modifiers to mark a specific definition, instead of the whole module. 
 
 One side effect of only adding those changes would be weird syntax for adding `OVERLAPPING` information in addition to these modifiers.
 
@@ -17,7 +17,7 @@ One side effect of only adding those changes would be weird syntax for adding `O
 %NoTerminationCheck ; instance {-# OVERLAPS #-} ...
 ```
 
-For that reason, this proposal also regularizes the syntax, turning those pragmas into modifiers `%Overlapping`, `%Overlappable`, and `%Overlaps`. Note that the old pragmas are _not_ deprecated by this proposal.
+For that reason, this proposal also regularizes the syntax, turning those pragmas into modifiers `%Overlapping`, `%Overlappable`, and `%Overlaps`.
 
 ## Motivation
 
@@ -60,24 +60,59 @@ There are also tweaks to the coverage conditions for coverage / injectivity in t
 
 ## Proposed Change Specification
 
-We introduce new modifiers `%NoTerminationCheck`, `%LiberalCoverage`, `%LiberalInjectivity`, `%Overlapping`, `%Overlappable`, and `%Overlaps` which are used _before_ the keyword introducing the definition where we want to lift the corresponding restriction. The modifier syntax is taken from this [approved proposal](https://github.com/ghc-proposals/ghc-proposals/pull/370), with the additional [change](https://github.com/ghc-proposals/ghc-proposals/pull/392) of modifiers appearing _before_ the modified thing.
+The modifier syntax is taken from this [approved proposal](https://github.com/ghc-proposals/ghc-proposals/pull/370), with the additional [change](https://github.com/ghc-proposals/ghc-proposals/pull/392) of modifiers appearing _before_ the modified thing. Since modifiers ought to be types, we introduce the following declarationg in the `GHC.Generics` module.
 
-1. Putting `%NoTerminationCheck` before a class declaration skips its superclass-cycle check.
+```haskell
+data TerminationCheck =
+  Terminating | LiberalCoverage | LiberalInjectivity
+
+data OverlapCheck =
+  Overlapping | Overlappable | Overlaps
+```
+
+The following grammar rules are updated to allow modifiers to appear:
+
+```diff
++modifiers : {- empty -} | ('%' qtycon)* ';'
+
+cl_decl :
+- : 'class' tycl_hdr fds where_cls
++ : modifiers 'class' tycl_hdr fds where_cls
+
+inst_decl
+- :           'instance' overlap_pragma inst_type where_inst
++ : modifiers 'instance' overlap_pragma inst_type where_inst
+- |           'type' 'instance' ty_fam_inst_eqn
++ | modifiers 'type' 'instance' ty_fam_inst_eqn
+- |           data_or_newtype 'instance' capi_ctype datafam_inst_hdr ...
++ | modifiers data_or_newtype 'instance' capi_ctype datafam_inst_hdr ...
+
+ty_decl
+- |           'type' 'family' type opt_tyfam_kind_sig ...
++ | modifiers 'type' 'family' type opt_tyfam_kind_sig ...
+
+forall_telescope : 
+- :           'forall' tv_bndrs '.'
++ : modifiers 'forall' tv_bndrs '.'
+- |           'forall' tv_bndrs '->'
++ | modifiers 'forall' tv_bndrs '->'
+```
+
+The modifiers change the behavior of the checks as follows.
+
+1. **Type class declaration**: the `%NoTerminationCheck` modifier before a class declaration makes it skip its superclass-cycle check.
 
     ```haskell
     %NoTerminationCheck ; class C (F a) => C a where ...
     ```
 
-    ```diff
-    +cls_mod  : '%NoTerminationCheck'
-    +cls_mods : {- empty -} | cls_mods cls_mod
+2. **Type class instance**: the `%NoTerminationCheck` modifier before an type class instance declaration skips its termination check. The `%LiberalCoverage` modifier allows for the more liberal coverage condition.
 
-    cl_decl :
-    - : 'class' tycl_hdr fds where_cls
-    + : cls_mods ';' 'class' tycl_hdr fds where_cls
+    ```haskell
+    %NoTerminationCheck ; instance Eq (Tree a a) => Eq (Rose a) where ..
     ```
 
-2. Putting `%NoTerminationCheck` before the forall in a quantified constraint skips its termination check. 
+3. **Quantified constraint**: the `%NoTerminationCheck` modifier before the `forallp  in a quantified constraint skips its termination check. 
 
     ```haskell
     f :: forall a. (%NoTerminationCheck forall b. C b a => C a a) => a -> a
@@ -86,23 +121,7 @@ We introduce new modifiers `%NoTerminationCheck`, `%LiberalCoverage`, `%LiberalI
     g :: forall a. (%NoTerminationCheck forall. D a a => C a) => a -> a
     ```
 
-    ```diff
-    +forall_mod  : '%NoTerminationCheck'
-    +forall_mods : {- empty -} | forall_mods forall_mod
-
-    forall_telescope : 
-    - :             'forall' tv_bndrs '.'
-    + : forall_mods 'forall' tv_bndrs '.'
-    - |             'forall' tv_bndrs '->'
-    + | forall_mods 'forall' tv_bndrs '->'
-
-3. Putting `%NoTerminationCheck` before an instance declaration skips its termination check. Putting `%LiberalCoverage` allows for the more liberal coverage condition.
-
-    ```haskell
-    %NoTerminationCheck ; instance Eq (Tree a a) => Eq (Rose a) where ..
-    ```
-
-5. Putting `%NoTerminationCheck` within a type instance (or type in an associated type instance) skips the equation's termination check. Putting `%LiberalInjectivity` allows for the more liberal injectivity consistency check.
+4. **Open type family**: the `%NoTerminationCheck` modifier before a type family instance (or type in an associated type instance) skips the equation's termination check. The `%LiberalInjectivity` modifier allows for the more liberal injectivity consistency check.
 
     ```haskell
     %NoTerminationCheck ; type instance F [a] = G a a
@@ -113,34 +132,12 @@ We introduce new modifiers `%NoTerminationCheck`, `%LiberalCoverage`, `%LiberalI
 
     The `%Overlapping`, `%Overlappable`, and `%Overlaps` modifiers keep the same meaning of the corresponding pragmas.
 
-    ```diff
-    +cls_inst_mod  : '%NoTerminationCheck' | '%LiberalCoverage'
-    +              | '%Overlapping' | '%Overlaps' | '%Overlappable'
-    +cls_inst_mods : {- empty -} | cls_inst_mods cls_inst_mod
-    +ty_fam_mod    : '%NoTerminationCheck' | '%LiberalInjectivity'
-    +ty_fam_mods   : {- empty -} | ty_fam_mods ty_fam_mod
-
-    inst_decl
-    - :               'instance' overlap_pragma inst_type where_inst
-    + : inst_mods ';' 'instance' overlap_pragma inst_type where_inst
-    - |                 'type' 'instance' ty_fam_inst_eqn
-    + | ty_fam_mods ';' 'type' 'instance' ty_fam_inst_eqn
-    - |                 data_or_newtype 'instance' capi_ctype datafam_inst_hdr ...
-    + | ty_fam_mods ';' data_or_newtype 'instance' capi_ctype datafam_inst_hdr ...
-    ```
-
-6. Putting `%NoTerminationCheck` within a closed type family declaration skips the termination check for all of its equations. Putting `%LiberalInjectivity` allows for the more liberal injectivity consistency check.
+5. **Closed type family**: the `%NoTerminationCheck` modifier before a closed type family declaration skips the termination check for all of its equations. The `%LiberalInjectivity` modifier allows for the more liberal injectivity consistency check.
 
     ```haskell
     %NoTerminationCheck ; type family F a where
       F [a] = G a a
       F Int = Bool
-    ```
-
-    ```diff
-    ty_decl
-    - |                 'type' 'family' type opt_tyfam_kind_sig ...
-    + | ty_fam_mods ';' 'type' 'family' type opt_tyfam_kind_sig ...
     ```
 
 In addition, the warning messages in GHC should be rephrased to point to this new constructs instead of the per-module extensions.
@@ -166,6 +163,19 @@ class F a => C a where
 ## Effect and Interactions
 
 By using this pragmas the programmer does not have to enable the `UndecidableInstances` or `UndecidableSuperClasses` extensions, but rather mark _each_ undecidable definition explicitly. This makes it harder to accept a definition by mistake, but also means that explicit action needs to be taken to upgrade modules to the new syntax.
+
+### Backwards compatibility
+
+This proposal does _not_ deprecate neither the `UndecidableInstances` and `UndecidableSuperClasses` extensions, not the `{-# OVERLAP #-}` set of pragmas for type class instances. Those extensions have been present for a long time, and quite some libraries and reading material would be forced to change if they were removed.
+
+Starting two versions from the first one in which this proposal is implemented, GHC will start emitting a warning, informing the programmer of the new modifiers. If possible, that warning will point to the specific modifiers that must be enabled for the code to keep compiling.
+
+```
+warning:
+  Using 'UndecidableInstances' is discouraged.
+  Use the '%Terminating' modifiers in front of
+  an instance to disable the termination check.
+```
 
 ## Costs and Drawbacks
 
