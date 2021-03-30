@@ -91,11 +91,14 @@ ty_decl
 - |           'type' 'family' type opt_tyfam_kind_sig ...
 + | modifiers 'type' 'family' type opt_tyfam_kind_sig ...
 
+
++forall_modifiers : ('%' qtycon)*
+
 forall_telescope : 
-- :           'forall' tv_bndrs '.'
-+ : modifiers 'forall' tv_bndrs '.'
-- |           'forall' tv_bndrs '->'
-+ | modifiers 'forall' tv_bndrs '->'
+- :                  'forall' tv_bndrs '.'
++ : forall_modifiers 'forall' tv_bndrs '.'
+- |                  'forall' tv_bndrs '->'
++ | forall_modifiers 'forall' tv_bndrs '->'
 ```
 
 The modifiers change the behavior of the checks as follows.
