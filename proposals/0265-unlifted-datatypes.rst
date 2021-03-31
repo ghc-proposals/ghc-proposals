@@ -3,8 +3,8 @@ Unlifted Datatypes
 
 .. author:: Sebastian Graf
 .. date-accepted:: 2020-01-30
-.. ticket-url::
-.. implemented::
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/19523
+.. implemented:: 9.2
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/265>`_.
 .. contents::
