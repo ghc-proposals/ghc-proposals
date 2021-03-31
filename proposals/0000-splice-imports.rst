@@ -14,32 +14,42 @@ Explicit Splice Imports Extension
 ==============
 
 This proposes a new extension, ``ExplicitSpliceImports``, which modifies the
-import syntax so that imports used inside top-level splices are marked explicitly.
+import syntax so that imports which are only used at compile-time are marked explicitly.
 
 
 Motivation
 ----------
 
-If a module enables the ``TemplateHaskell`` then all imported modules are required
-to first be compiled to object code before name resolution can take place. This
-is a major pessimisation because most of the imported identifers will not
-actually be used in a top-level splice.
+The primary goal of this proposal is to distinguish three different ways that
+modules are used:
 
-1. Using ``-fno-code``, any module imported by a module using ``TemplateHaskell`` has to be compiled to object
-   code, this causes a significant slow down.
-2. Projects such as haskell-language-server face a similar problem where normally
-   modules are just typechecked, but when ``TemplateHaskell`` is enabled, a large
-   number of modules have to be cautiously compiled to bytecode.
-3. Proposals such as `#14905 <https://gitlab.haskell.org/ghc/ghc/-/issues/14095>`_ to increase build parallelism are far less effective
+1. Modules whose code is executed only at compile time
+2. Modules whose code is executed only at runtime
+3. Modules whose code is executed both at compile time and runtime.
+
+Distinguishing these 3 different cases has several advantages
+
+1. If a module enables ``TemplateHaskell`` then all imported modules are required
+   to first be compiled to object code before name resolution can take place. This
+   is a major pessimisation because most of the imported identifers will not
+   actually be used in a top-level splice.
+   Proposals (such as `#14905 <https://gitlab.haskell.org/ghc/ghc/-/issues/14095>`_) to increase build parallelism are far less effective
    in projects which use ``TemplateHaskell`` because name resolution depends on code generation
    for all dependencies.
+2. Using ``-fno-code``, any module imported by a module using ``TemplateHaskell`` has to be compiled to object
+   code, this causes a significant slow down.
+3. Projects such as haskell-language-server face a similar problem where normally
+   modules are just typechecked, but when ``TemplateHaskell`` is enabled, a large
+   number of modules have to be cautiously compiled to bytecode.
 4. By using
-   splice imports you can separate the dependencies into those only needed at build-time and
-   those only needed at run-time. This allows you to omit linking against packages
+   splice imports you can separate the dependencies into those only needed at build-time (1) and
+   those only needed at runtime (2). This allows you to omit linking against packages
    only used during build time.
 5. When cross-compiling, all packages currently to be compiled for both host and target,
-   in a similar way to the previous point, only build dependencies need to be built
-   for the host and runtime dependencies for the target.
+   in a similar way to the previous point, only build dependencies (1) need to be built
+   for the host and runtime dependencies for the target (2). If a dependency
+   is used at both compile and runtime (3) then it must also be compiled both
+   for the host and target.
 
 
 Definitions
@@ -63,15 +73,19 @@ home module
 Proposed Change
 ---------------
 
-We would like to distinguish between three ways that an imported identifier can
-used.
+The ``splice`` modifier indicates that a module's imports are available at compile time.
+The absense of the ``splice`` modifier indicates that a module's imports are available
+at runtime.
 
-1. Only available in top-level splices
-2. Not available in top-level splices
-3. Available everwhere
+A ``splice`` imported module allows identifiers to be used at compile time. Compile time
+evaluation is indicated by a top-level splice. Therefore the ``splice`` modifier
+affects name resolution depending on whether we are inside a top-level splice or not.
 
-In order to do this
-the new language extension ``ExplicitSpliceImports`` is introduced which adds a
+1. If a module is only available at compile time then the imports are only available in top-level splices.
+2. If a module is only available at runtime then the imports are not available in top-level splices.
+3. If a module is availabe at both runtime and compile time then the imports are available everwhere.
+
+The new language extension ``ExplicitSpliceImports`` adds a
 new import modifier to the import syntax. An import is marked as a "splice"
 import when it is prefixed with ``splice``::
 
@@ -86,13 +100,13 @@ import when it is prefixed with ``splice``::
   import A
 
 
-The splice modifier indicates to the compiler that identifiers imported from
-the module can **only** be used inside top-level splices (1). When the extension is enabled,
-imports without the splice modifier are not available to be used in top-level splices (2).
-Therefore, in this example, identifiers from ``B`` can **only** be used in top-level splices
+The splice modifier indicates to the compiler that module B is only used at compile time
+and hence the imports can **only** be used inside top-level splices (1). When the extension is enabled,
+imports without the splice modifier are only available at runtime and therefore not available to be used in top-level splices (2).
+In this example, identifiers from ``B`` can **only** be used in top-level splices
 and identifiers from ``A`` can be used everywhere, apart from in top-level splices.
 
-This distinction is important for two reasons:
+To make some of the initial motivation explicit:
 
 1. Now when compiling module ``Main``, despite the fact ``TemplateHaskell`` is enabled,
    we know that only identifers from module ``B`` will be used in top-level splices so
@@ -215,7 +229,7 @@ module as well::
 Splice imports can't be rexported, unless they are also imported normally. Allowing
 splice imports to be exported would turn a build-time only import into a runtime
 export. Maintaining the distinction between things only needed at build-time and
-things only needed at run-time allows project dependencies to be separated in the
+things only needed at runtime allows project dependencies to be separated in the
 same way. This is important for cross-compilation.
 
 
