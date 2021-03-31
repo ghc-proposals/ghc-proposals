@@ -4,7 +4,7 @@ NoFieldSelectors
 .. date-accepted:: 2019-08-23
 .. author:: reactormonk
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/5972
-.. implemented:: 
+.. implemented:: 9.2
 .. highlight:: haskell
 .. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/160>`_.
 .. contents::

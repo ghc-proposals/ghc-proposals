@@ -4,7 +4,7 @@ GHC 2021
 .. author:: The committee
 .. date-accepted:: 2021-01-18
 .. ticket-url::  https://gitlab.haskell.org/ghc/ghc/-/issues/19234
-.. implemented::
+.. implemented:: 9.2
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/380>`_.
 .. contents::
