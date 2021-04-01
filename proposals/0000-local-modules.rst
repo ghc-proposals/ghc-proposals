@@ -599,18 +599,6 @@ Each numbered item in this section can be considered separately.
    of the enclosing ``instance`` declaration: the ``data``\/\ ``newtype``
    module is *not* nested within the class module.
 
-#. The ``import module`` declaration can unqualify multiple levels of qualification
-   at once. This changes the BNF to ::
-
-     decl ::= ... | 'import' 'module' modid { '.' modid } [ impspec ]
-
-   where, following the Haskell Report, braces mean "0 or more". The semantics
-   is the same as specified above, but looking under multiple levels of qualification
-   at once.
-
-   (Recall that ``modid`` contains module names like ``Data.Set``, which is
-   considered as one qualification, just as it is currently.)
-   
 Further Examples
 ----------------
 
