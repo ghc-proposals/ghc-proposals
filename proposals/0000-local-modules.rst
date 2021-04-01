@@ -574,13 +574,6 @@ Each numbered item in this section can be considered separately.
    empty export list but are still useful
    as a way of declaring instances that use local definitions.)
 
-#. A module import can be preceded by the keyword ``import``::
-
-     import ::= ... | [ 'import' ] 'module' modid [ impspec ]
-
-   A module import with the ``import`` keyword additionally brings the named
-   entities into scope without the *modid*\ ``.`` qualification.
-   
 #. Every ``class``, ``data``, ``newtype``, ``data instance``, and ``newtype
    instance`` declaration with an alphanumeric name implicitly creates a new local module. The name of
    the local module matches the name of the declared type. All entities (e.g.,
