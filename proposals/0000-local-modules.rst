@@ -202,53 +202,28 @@ In order to precisely specify local modules, we must fix a number of items
 of vocabulary. All descriptions of Haskell are true today; this is not part of the
 proposed change.
 
-* **Namespace**: There are five namespaces in Haskell:
-
-  1. The term variable namespace, inhabited by e.g. ``length`` and ``(+)``.
-
-  2. The data constructor namespace, inhabited by e.g. ``Left`` and ``(:)``.
-
-  3. The type variable namespace, inhabited by e.g. ``a`` and ``m`` (when written in
-     a type).
-
-  4. The type constant namespace, inhabited by e.g. ``Maybe``, ``Int``, and ``Eq``.
-
-  5. The module namespace, inhabited by e.g. ``Prelude`` and ``Data.List``.
-
-  The choice of namespace for a given identifier is controlled by whether
-  the identifier has an initial capital letter and where the identifier appears.
-  Occurrences of a capitalized alphanumeric identifier before a ``.``
-  (without any intervening space) denote the module namespace. Other occurrences
-  of a capitalized identifier denote either the data constructor or type constant
-  namespaces, depending on whether the occurrence is in a type or not. Occurrences
-  of uncapitalized identifiers denote either the term variable or type variable
-  namespace, depending on whether the occurrence is in a type or not.
-
 * **Occurrence name** (sometimes just called "name"):
   An occurrence name is an identifier written in a program. Names can be
   alphanumeric or symbolic. Symbolic names, such as ``+`` or ``!@!`` can
   be written in parentheses (``(+)`` or ``(!@!)``); a symbolic name in
   parentheses is treated identically to an alphanumeric name. Because of
   this correspondence, we do not treat symbolic identifiers specially in this
-  proposal. Names belong to a namespace, as described in the entry for namespaces.
+  proposal.
 
-  In a type, a symbolic name is always in the type constant namespace.
+* **Module name**: A dot-separated list of identifiers starting with a
+  capital letter (e.g. ``A.B.C``). A module name may or may not refer
+  to an extant module. For instance in
 
-  In a term, a symbolic name that begins with a ``:`` is in the data constructor
-  namespace; otherwise, it is in the term variable namespace.
+  ::
 
-  Symbolic names do not exist in the module namespace.
+      module Q( x ) where { import P as P2; foo = P2.x }
 
-  In a module import/export list, a symbolic name that begins with a ``:`` is
-  in the type constructor namespace; otherwise, it is in the term variable
-  namespace. (This is an unusual juxtaposition.)
-  
+  the module name ``P2`` is valid but no such module need exist.
+
 * **Original name**:
   The original name of an entity is a pair of the module
   (e.g. ``A.B.C``) that defines it, and the occurrence
-  name (e.g. ``x``) by which it is defined in that module. Note that
-  occurrence names belong to a namespace, even though the namespace
-  is invisible in the spelling of the name. The
+  name (e.g. ``x``) by which it is defined in that module. The
   original name uniquely identifies an entity.
   
 * **Qualified name**: A qualified name is a name prepended with a module name
@@ -256,7 +231,7 @@ proposed change.
   symbolic names can be qualified.
   
 * **Entity**: An entity is a definition that can be exported and imported.
-  An entity has a name. Entities include variables, classes, datatypes, and
+  An entity is uniquely identified by its original names name. Entities include variables, classes, datatypes, and
   constructors, among a few other constructs.
 
 * **Environment**: An environment is mapping of unqualified and qualified
@@ -338,7 +313,7 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
 #. Introduce a new extension ``-XLocalModules``.
 
 #. Introduce a new concept *export-module*, which is a set of original names
-   and export-modules. Export-modules have names chosen from the module namespace.
+   and export-modules. Export-modules have module names.
    Instead of exporting a set of original names, modules now export a set of
    original names and export-modules.
 
