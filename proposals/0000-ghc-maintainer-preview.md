@@ -63,12 +63,12 @@ I think one month is good but I'd like some more points of view
 1. We add a fixed (or flexible?) period of time to the calendar of the GHC release team between the last RC release and the final, user-focused release.
 2. We create a strike-force whose duties explicitly involve being responsible for reaching out to maintainers in public community spaces, and help maintainers migrate. There are resources such as the [Hackage Trustees cookbook](https://github.com/haskell-infra/hackage-trustees/blob/master/cookbook.md), and [head.hackage](https://ghc.gitlab.haskell.org/head.hackage/), as well as the GHC Wiki page for each release, that are already available. I suggest we make better use of those.
 
-## What this proposal is not:
+## What this proposal is not about:
 
-* A technical proposal
 * Ensuring that the entirety of Hackage is ready for each major GHC release
 * Turning Hackage into Stackage
 * Stigmatising maintainers who cannot assume their duties anymore
+* Discussing the proper incentives to have package maintainers support new GHC versions in a reasonable timespan (although it's a good idea and definitely should be discussed, but here is just not the place)
 
 ## Alternatives
 
