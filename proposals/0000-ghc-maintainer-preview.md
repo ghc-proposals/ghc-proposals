@@ -22,6 +22,8 @@ but because both final users **and** library maintainers and tooling authors are
 It appears that releasing final versions for those different audiences erases the dependency that users have on maintainers,
 but it does not change the fact that users should reasonably expect a working ecosystem for new major GHC versions.
 
+On a side note, I think this may also help relieving the burden off the Hackage Trustees' shoulders who have to revise the metadata of packages to alter their bounds. 
+
 ## Proposed Change Specification
 I suggest that we implement the following strategy: Once we arrive at a final release of the next GHC version, we publish a "Maintainer Preview" version,
 make it available in ghcup, the Ubuntu PPA (so that it can be easily used by CI systems like GitHub Actions or Travis), and send a call to maintainers that (in substance) say:
@@ -53,6 +55,12 @@ We add a fixed (or flexible?) period of time to the calendar of the GHC release 
 
 Moreover, we need people whose duties explicitly involve being responsible for reaching out to maintainers in public community spaces
 (ideally someone who is not the current GHC Release Maanger)
+
+## What this proposal is not:
+
+* Ensuring that the entirety of Hackage is ready for each major GHC release
+* Turning Hackage into Stackage
+* Stigmatising maintainers who cannot assume their duties anymore
 
 ## Alternatives
 
