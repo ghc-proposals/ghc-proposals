@@ -58,6 +58,7 @@ Moreover, we need people whose duties explicitly involve being responsible for r
 
 ## What this proposal is not:
 
+* A technical proposal
 * Ensuring that the entirety of Hackage is ready for each major GHC release
 * Turning Hackage into Stackage
 * Stigmatising maintainers who cannot assume their duties anymore
