@@ -7,6 +7,8 @@ implemented: ""
 
 This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/417).
 
+>Note: This is a living document, that I update for clarifying points that are raised in the PR thread. I invite you to read the comments before posting, but do not be surprised if some of the comments ask questions that are answered here, it is very possible that I clarified the proposal in response.
+
 # GHC Maintainer preview
 
 This GHC Proposal introduces the concept of a GHC Maintainer Preview (name can be moderately bikeshedded).
