@@ -26,7 +26,7 @@ On a side note, I think this may also help relieving the burden off the Hackage 
 
 ## Proposed Changes
 
-I suggest that we implement the following strategy: Once we arrive at a final release of the next GHC version, we publish a "Maintainer Preview" version,
+I suggest that we implement the following strategy: Once we arrive at a final RC of the next GHC version, we publish a "Maintainer Preview" version,
 make it available in ghcup, the Ubuntu PPA (so that it can be easily used by CI systems like GitHub Actions or Travis), and send a call to maintainers that (in substance) say:
 
 > Hi, the Maintainer Preview version of GHC X.Y has just come out! You have <period of time> to update your libraries before we release it for the users!
@@ -60,10 +60,8 @@ I think one month is good but I'd like some more points of view
 
 ## Implementation Plan
 
-We add a fixed (or flexible?) period of time to the calendar of the GHC release team between the last RC release and the final, user-focused release.
-
-Moreover, we need people whose duties explicitly involve being responsible for reaching out to maintainers in public community spaces
-(ideally someone who is not the current GHC Release Maanger)
+1. We add a fixed (or flexible?) period of time to the calendar of the GHC release team between the last RC release and the final, user-focused release.
+2. We create a strike-force whose duties explicitly involve being responsible for reaching out to maintainers in public community spaces, and help maintainers migrate. There are resources such as the [Hackage Trustees cookbook](https://github.com/haskell-infra/hackage-trustees/blob/master/cookbook.md), and [head.hackage](https://ghc.gitlab.haskell.org/head.hackage/), as well as the GHC Wiki page for each release, that are already available. I suggest we make better use of those.
 
 ## What this proposal is not:
 
