@@ -24,7 +24,8 @@ but it does not change the fact that users should reasonably expect a working ec
 
 On a side note, I think this may also help relieving the burden off the Hackage Trustees' shoulders who have to revise the metadata of packages to alter their bounds. 
 
-## Proposed Change Specification
+## Proposed Changes
+
 I suggest that we implement the following strategy: Once we arrive at a final release of the next GHC version, we publish a "Maintainer Preview" version,
 make it available in ghcup, the Ubuntu PPA (so that it can be easily used by CI systems like GitHub Actions or Travis), and send a call to maintainers that (in substance) say:
 
@@ -35,10 +36,18 @@ the code is ready for the next release!
 >With love,  
 The GHC dev team
 
+Then, we mobilise a team (volunteers, people paid by Haskell Foundation partners, etc) to **actively** enact the process of helping out maintainers move their libraries and packages to the new version. I want to focus on their role as people to whom maintainers reach for help. We do not want to create friction with maintainers by taking away their agency. We can still fallback on metadata revision if needs be, but I would like to foster a better environment so that maintainers who burn-out can reach-out for help (this is a larger problem in our ecosystem and there are many angles from which to tackle it, this is one).
+
 ## Operating costs
 
-We will need to communicate and interact with this subset of the community that are the package maintainers.
-We could start by publishing the news on Reddit, Lobste.rs, Discourse.
+### Communication
+* We will need to communicate and interact with this subset of the community that are the package maintainers.
+* We could start by publishing the news on Reddit, Lobste.rs, Discourse.
+
+### Migration
+
+* We need a team of people who will be able to give a hand to the maintainers who are in need of help to move their libraries. Maybe a Haskell Foundation strike team?
+* This strike force needs some tooling, but I suggest we start with "here is an email address, send us an email and we'll help".
 
 ## Points to debate
 I would like to have a discussion about the following points:
