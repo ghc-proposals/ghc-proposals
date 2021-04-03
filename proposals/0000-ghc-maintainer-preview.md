@@ -70,6 +70,11 @@ I think one month is good but I'd like some more points of view
 * Stigmatising maintainers who cannot assume their duties anymore
 * Discussing the proper incentives to have package maintainers support new GHC versions in a reasonable timespan (although it's a good idea and definitely should be discussed, but here is just not the place)
 
+## Side note
+
+Taken from my direct experience as a technical writer for GHC, I can testify many people have the potential to meaningfully contribute to GHC and Haskell in other roles than compiler engineer or systems programmers.
+I think the plan laid out in this proposal would open an interesting gateway for many people to be involved in our communities to fullfil community-facing roles.
+
 ## Alternatives
 
 The current system. 
