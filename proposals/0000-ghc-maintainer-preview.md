@@ -13,6 +13,7 @@ This GHC Proposal introduces the concept of a GHC Maintainer Preview (name can b
 
 The principle is to provide library authors and tooling maintainers an RC version of each new GHC release that would be fully identical to the final version.  
 The aim is to give library and tooling authors the means to update their code to accomodate the new version, without publishing a user-oriented GHC release _yet_.
+The kind of release that is proposed is in itself no different from a traditional Release Candidate. This proposal aims at polishing the surrounding release cycle and schedule.
 
 ## Motivation
 
