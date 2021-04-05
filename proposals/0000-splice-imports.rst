@@ -244,7 +244,7 @@ Drawbacks
 Alternatives
 ------------
 
-* ``splice`` imports could also bring indentifiers into scope so that they
+* ``splice`` imports could also bring identifiers into scope so that they
   can be used everywhere in a module, not **only** in top-level splices as
   the proposal suggest. This approach is not taken because it means that
   build-time only dependencies can't be distinguished
