@@ -83,7 +83,7 @@ affects name resolution depending on whether we are inside a top-level splice or
 
 1. If a module is only available at compile time then the imports are only available in top-level splices.
 2. If a module is only available at runtime then the imports are not available in top-level splices.
-3. If a module is availabe at both runtime and compile time then the imports are available everwhere.
+3. If a module is available at both runtime and compile time then the imports are available everywhere.
 
 The new language extension ``ExplicitSpliceImports`` adds a
 new import modifier to the import syntax. An import is marked as a "splice"
