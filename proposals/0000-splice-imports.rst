@@ -58,7 +58,7 @@ Definitions
 level
   Each expression exists at a level. The level is increased by 1 when
   inside a quote and decreased by 1 inside a splice. Therefore the level of
-  an expression can be calcated as the number of quotes surrounding an expression
+  an expression can be calculated as the number of quotes surrounding an expression
   subtract the number of splices.
 
 top-level splice
@@ -282,4 +282,3 @@ Alternatives
 
 Unresolved Questions
 --------------------
-
