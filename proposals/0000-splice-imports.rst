@@ -74,7 +74,7 @@ Proposed Change
 ---------------
 
 The ``splice`` modifier indicates that a module's imports are available at compile time.
-The absense of the ``splice`` modifier indicates that a module's imports are available
+The absence of the ``splice`` modifier indicates that a module's imports are available
 at runtime.
 
 A ``splice`` imported module allows identifiers to be used at compile time. Compile time
