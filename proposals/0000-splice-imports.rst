@@ -249,7 +249,7 @@ Alternatives
   the proposal suggest. This approach is not taken because it means that
   build-time only dependencies can't be distinguished
 
-* Using a pragma rather than a syntactic modifier would fix in better with
+* Using a pragma rather than a syntactic modifier would fit in better with
   how ``SOURCE`` imports work and make writing backwards compatible code easier::
 
     import {-# SPLICE #-} B
