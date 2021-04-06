@@ -42,8 +42,8 @@ Distinguishing these 3 different cases has several advantages:
 2. GHC offers an ``-fno-code`` flag that instructs the compiler to parse and
    typecheck Haskell modules, but not to generate code. The intent is to offer
    quick feedback to the user. Any module imports of a module using
-   ``TemplateHaskell`` must be compiled to object code, Because of .1 above.
-   This despite the fact that we will not generate object code for the module
+   ``TemplateHaskell`` must be compiled to object code.
+   This is despite the fact that we will not generate object code for the module
    itself. By distinguishing imported modules whose code is executed only at
    runtime, we can reduce this unfortunate work significantly, and entirely in many
    cases.
@@ -55,7 +55,7 @@ Distinguishing these 3 different cases has several advantages:
    imported modules must be compiled for both host and target.
    By distinguishing imported modules used at compile time(i.e. not used at
    runtime), we can require only those modules to be compiled for the host.
-   Similarly, by distinguising imported modules used at runtime(i.e. not used at
+   Similarly, by distinguishing imported modules used at runtime (i.e. not used at
    compile time), we can require only those modules to be compiled for the
    target. It can be very hard or impossible to make some packages available on
    some cross-compile target platforms, so this change would significantly
@@ -69,21 +69,19 @@ level
   Each expression exists at a level. The level is increased by 1 when
   inside a quote and decreased by 1 inside a splice. Therefore the level of
   an expression can be calculated as the number of quotes surrounding an expression
-  subtract the number of splices.
-
-  example:  ``levels``::
+  subtract the number of splices. For example::
 
     -- foo is at level 0
     foo = $(let
-      -- bar is at level 1
+      -- bar is at level -1
       bar = $(let
-        -- baz is at level 2
+        -- baz is at level -2
         baz = [|
-        -- qux is at level 1
+        -- qux is at level -1
           qux = [|
             -- quux is at level 0
             quux = [|
-              quuz is at level -1
+              quuz is at level 1
               quuz = 0
             |]
           |]
@@ -93,8 +91,8 @@ level
 
 
 top-level splice
-  A splice, where the body is at a negative level or an unadorned
-  declaration splice.
+  A splice, where the body is at a negative level, an unadorned
+  declaration splice or a quasiquoter.
 
 
 home module
