@@ -130,10 +130,6 @@ Unfortunately, there are a couple of issues associated with it:
   strictness annotation is followed by a ``btype`` (it actually must be
   followed by an ``atype``), and it does not mention linear type syntax at all.
 
-* It is too permissive with regards to parentheses, causing implementation
-  issues (see `#19192
-  <https://gitlab.haskell.org/ghc/ghc/-/issues/19192#note_329172>`_).
-
 In this proposal we aim to give an alternative specification that would fix the
 aforementioned issues.
 
@@ -198,12 +194,9 @@ Proposed Change Specification
 Changes from status quo
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-1. Drop support for parentheses around the tail of a prefix-style constructor
-   signature (fix `#19192
-   <https://gitlab.haskell.org/ghc/ghc/-/issues/19192>`_).
-2. Permit nested foralls and contexts (a free order of quantifiers) in
-   prefix-style constructor signatures (fix `#18389
-   <https://gitlab.haskell.org/ghc/ghc/-/issues/18389>`_).
+Permit nested foralls and contexts (a free order of quantifiers) in
+prefix-style constructor signatures (fix `#18389
+<https://gitlab.haskell.org/ghc/ghc/-/issues/18389>`_).
 
 Grammar specification
 ~~~~~~~~~~~~~~~~~~~~~
@@ -237,6 +230,7 @@ Prefix form::
 
   gadt_prefix_sig ::= btype
                    |  quantifier gadt_prefix_sig
+                   |  '(' gadt_prefix_sig ')'
 
   quantifier ::= forall_telescope
               |  btype '=>'
@@ -279,41 +273,19 @@ Clarifications and side conditions:
 3. In ``strictness_sigil``, the ``~`` is guarded behind ``-XStrictData``.
 4. Under ``UnicodeSyntax``, the ``::``, ``->``, and ``=>`` terminals can be
    written as ``∷``, ``→``, and ``⇒`` respectively.
-5. The ``btype`` production in ``gadt_prefix_sig`` and ``gadt_record_sig`` is
-   taken as the result type of the GADT constructor; it must be a substitution
-   instance (allowing expansion of type synonyms, but not type families)
-   of the type being declared. This implies that ``data T where T1 ::
-   (Int -> T)`` is rejected. The error message should not only say that ``(Int
-   -> T)`` is not an instance of ``T`` but also helpfully explain where
-   parentheses are and are not allowed in constructor signatures.
-   (Note that the treatment of type synonyms vs. type families matches the
-   status quo.)
-6. If ``forall tvs ->`` quantification is used in a constructor's type, the use
+5. If ``forall tvs ->`` quantification is used in a constructor's type, the use
    of such constructor in an expression or a pattern is an error.  However, it
    can be promoted and used in types under ``DataKinds``.
 
 Effect and Interactions
 -----------------------
 
-Since we drop support for parentheses, the following programs will be all
-rejected by the new grammar::
-
-  data T where
-    T1 :: (Int -> T)
-    T2 :: (forall a. a -> T)
-    T3 :: forall a. (a -> T)
-    T4 :: forall a. (a -> (T))
-
-This makes it possible to avoid conflicts between ``btype`` and
-``gadt_prefix_sig`` in the LALR grammar.
-
-On the other hand, we now allow nested ``forall`` and contexts::
+We now allow nested ``forall`` and contexts::
 
   data T a where
     MkT :: Int -> forall a. Eq a => T a
 
 Implementing this proposal as described will fix
-`#19192 <https://gitlab.haskell.org/ghc/ghc/-/issues/19192>`_ and
 `#18389 <https://gitlab.haskell.org/ghc/ghc/-/issues/18389>`_, and unblock
 `#18782 <https://gitlab.haskell.org/ghc/ghc/-/issues/18782>`_.
 
@@ -342,6 +314,12 @@ Alternatives
 ------------
 
 * Complete redesign of GADT syntax to avoid contradictory goals.
+
+* We could drop support for parentheses around the tail of prefix-style
+  constructor signatures, as suggested in `#19192
+  <https://gitlab.haskell.org/ghc/ghc/-/issues/19192#note_329172>`_.  This
+  change was included in the initial version of this proposal, as it would
+  simplify implementation, however it turned out to be controversial.
 
 Unresolved Questions
 --------------------
