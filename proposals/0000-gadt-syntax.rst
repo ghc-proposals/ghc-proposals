@@ -292,10 +292,6 @@ Implementing this proposal as described will fix
 Costs and Drawbacks
 -------------------
 
-* The proposed grammar allows parentheses in fewer places than the current
-  implementation (e.g. ``MkT :: Int -> (Int -> T)`` will be rejected) and users
-  will need to migrate.
-
 * The free order of quantifiers in prefix-style constructors will have major
   effect on the implementation.
 
