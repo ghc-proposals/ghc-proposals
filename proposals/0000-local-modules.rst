@@ -350,7 +350,8 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
       original names. This is a strict broadening of the current definition of
       an export environment.
 
-   #. An *import specifier*, or *impspec*, is now a set of qualified names, instead
+   #. The interpretation of an *import specifier*, or *impspec*,
+      is now a set of qualified names, instead
       of just a set of occurrence names. (Recall that a qualified name can have 0
       qualifications, so this change is a broadening of the definition of an *impspec*
       and is backward-compatible.)
@@ -542,13 +543,13 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
 
       the module ``M`` exports ``{X.f ↦ (M, X.f)}``. And in
 
-       ::
+      ::
 
-        module M (module qualified X) where
+       module M (module qualified X) where
 
-          module qualified X where
-            f = …
-            g = …
+         module qualified X where
+           f = …
+           g = …
 
       the module ``M`` exports ``{X.f ↦ (M, X.f), X.g ↦ (M, X.g)}``. And in
 
