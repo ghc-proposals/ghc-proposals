@@ -58,6 +58,8 @@ entirely in the renamer (and, naturally, the AST and interface-file format).
 .. _`#243`: https://github.com/ghc-proposals/ghc-proposals/pull/243
 .. _`#295`: https://github.com/ghc-proposals/ghc-proposals/pull/295
 
+.. _`Haskell 2010 Report`: https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#x17-18000010.5
+
 Motivation
 ----------
 1. It is common for a Haskell library to export several modules with the same
@@ -225,22 +227,31 @@ proposed change.
   (e.g. ``A.B.C``) that defines it, and the occurrence
   name (e.g. ``x``) by which it is defined in that module. The
   original name uniquely identifies an entity.
-  
-* **Qualified name**: A qualified name is a name optionally prepended with a module name
-  followed by a ``.``, with no intervening whitespace.
+
+* **Qualifier** and **qualified name**: A qualified name optionally
+  begins with a qualifier, where a qualifier is a module name. Because
+  the qualifier is optional, all occurrence names are also qualified names.
+
+  A module-name qualification must have no whitespace between it and the ``.``, nor
+  between the ``.`` and the occurrence name.
   
 * **Entity**: An entity is a definition that can be exported and imported.
   An entity is uniquely identified by its original name. Entities include variables, classes, datatypes, and
   constructors, among a few other constructs.
 
-* **Environment**: An environment is mapping of qualified
-  names to original names. It defines what is in scope.
+* **Environments**: An environment is mapping of names to original names.
+  We distinguish two specific types of environment here: a **QEnv** maps
+  qualified names to original names, while an **OEnv** maps occurrence
+  names to original names.
+
+  At all locations in Haskell source code, some ambient QEnv describes how
+  to look up identifier occurrences.
 
 * **in scope**: A name is said to be **in scope** when it is in the current
-  environment.
+  QEnv.
   
 * **Scope**: A scope is a lexical region of a program where all name occurrences are
-  looked up in an environment (or a superset of an environment).
+  looked up in a QEnv.
   
 * **Module**: A module is a set of declarations of entities, along with a set
   of exported names.
@@ -252,63 +263,109 @@ proposed change.
   An export item may be written using a qualified name.
   
 * **Exports**: The exports from a module is a mapping
-  from occurrence names to original names *occname ↦ origname*, where
+  from occurrence names to original names *occname ↦ origname* (that is, an OEnv), where
   for each such binding, we require that the occurrence name of *origname*
   is exactly *occname*. We can thus view exports as a set of
   original names, but the presentation of this idea as a map sets the
   stage nicely for the extension proposed.
 
-  We can say that a set of exports is an *environment*, but with the
-  caveat that all domain elements are unqualified.
+  To get from an expspec to an export OEnv, we must *interpret* the expspec. This
+  is done by looking names up in the ambient QEnv that defines what is in scope.
 
-* Define the *prepend-qualifier* operation on an exports ``X``::
+  In code::
 
-      modid . X = { modid.x ↦ orig | (x ↦ orig) ∈ X }
+    type ExpSpec = [ExpItem]
 
-  A ``modid . X`` is an environment mapping qualified names to original names.
-  In English: ``modid . X`` prepends ``modid`` to the domain elements
+    interpretExpSpec :: (ExpSpec, QEnv) -> OEnv
+    interpretExpSpec(expspec, ambient_env)
+      = concatMap (\item -> interpretExpItem(item, ambient_env)) expspec
+
+    interpretExpItem :: (ExpItem, QEnv) -> OEnv
+    interpretExpItem(item, ambient_env)
+      = { occ ↦ orig | modid.occ ∈ item
+                     , modid.occ ↦ orig ∈ ambient_env }
+
+  We see here that, even though the user might write a qualified name in an
+  export item, only its occurrence name makes it into the export OEnv.
+
+  The ``modid.occ ∈ item`` syntax here allows us to retrieve names from
+  export items like ``T(..)``; we leave this operation abstract.
+
+  It is an error if multiple export items returns OEnvs with mappings for
+  the same occurrence name. We thus need not worry about left- or right-biasing
+  of the merge operation on OEnvs.
+
+* Define the *qualify* operation on an OEnv ``X``::
+
+      qualify :: (ModuleName, OEnv) -> QEnv
+      qualify(modid, X) = { modid.occ ↦ orig | (occ ↦ orig) ∈ X }
+
+  In English: ``qualify(modid, X)`` prepends ``modid`` to the domain elements
   of ``X``.
 
-* Define the *strip-qualifier* operation on an environment ``E``::
-      
-      ∂(modid) E = { x ↦ orig | (modid.x ↦ orig) ∈ E }
+* Define the *strip* operation on a QEnv ``E``::
 
-  A ``∂(modid) E`` is an exports: it maps *unqualified* names (only) to original names.
-  In English: ``∂(modid) E`` selects all these entities whose
-  qualified names starts with ``modid``, and remove the 
+      strip :: (ModuleName, QEnv) -> OEnv
+      strip(modid, E) = { occ ↦ orig | (modid.occ ↦ orig) ∈ E }
+
+  In English: ``strip(modid, E)`` selects all entities whose
+  qualified names starts with ``modid``, and removes the 
   ``modid`` from their names (yielding a plain occurrence name).
 
-  Note that ``modid . ∂(modid) E`` is simply a filter, keeping all those names
+  Note that ``qualify(modid, strip(modid, E))`` is simply a filter, keeping all those names
   in ``E`` which start with ``modid``.
   
-* **Import specifiers**: An import specification, or *impspec*, can be listed
+* **Import specification**: An import specification, or *impspec*, can be listed
   in parentheses in an ``import`` statement to restrict what is imported.
-  We say we *interpret* an *impspec* with respect to an export environment
-  to create an environment.
+  We say we *interpret* an *impspec* with respect to an export OEnv
+  to create a different OEnv.
+  Interpreting an impspec produces the union of interpreting each import item (defined
+  just below)::
+
+    type ImpSpec = [ImpItem]
+    
+    interpretImpSpec :: (ImpSpec, OEnv) -> OEnv
+    interpretImpSpec(impspec, export_env) =
+      concatMap (\item -> interpretImpItem(item, export_env)) impspec
+
+  It is allowed for the merge operation on OEnvs here to encounter the same
+  occurrence name more than once; however, it is an invariant that any
+  repeated domain occurrence name is mapped to the same original name.
+  Accordingly, we need not worry about left- or right-biasing the merge
+  operation.
+      
   (An *impspec* may be specified
   via complement, using ``hiding``; this proposal will not worry about this
   detail.)
 
 * **Import item**:  An element in an import specifier is an *import item*.
-  Each import item is interpreted by looking it up in the export environment of
-  the module being imported. If this lookup fails, then report an error.
-  
-* **Imports**: An ``import`` statement names a module *M* and (optionally) an 
-  import-specifier *impspec*.
+  Each import item is interpreted by looking it up in the export OEnv of
+  the module being imported. If this lookup fails, then report an error. ::
 
-  Let *X* be the export environment of *M*.
+     interpretImpItem :: (ImpItem, OEnv) -> OEnv
+     interpretImpItem(item, export_env) = { occ ↦ orig | occ ∈ item
+                                                       , occ ↦ orig ∈ export_env }
+
+  Import items are described by the ``import`` nonterminal in the `Haskell 2010 Report`_,
+  and we leave the ``occ ∈ item`` operation left abstract here.
+                                                       
+* **Imports**: An ``import`` statement names a module ``M`` and (optionally) an 
+  import-specifier ``impspec``.
+
+  Let ``X`` be the export OEnv of ``M``.
   
-  Let *I* be the interpretation of *impspec* with respect to *X*. If
-  *impspec* is omitted, let *I = X*.
+  Let ``I`` be the interpretation of ``impspec`` with respect to ``X``. (That is,
+  ``I = interpretImpSpec(impspec, X)``.
+  If ``impspec`` is omitted, let ``I = X``.
   
-  Let the *module alias A* be the module name appearing after the ``as`` in
-  the ``import`` statement. If there is no ``as``, then the module alias *A*
-  is just *M*.
+  Let the *module alias* ``A`` be the module name appearing after the ``as`` in
+  the ``import`` statement. If there is no ``as``, then the module alias ``A``
+  is ``M``.
 
   The ``import`` statement brings names into scope by adding entries
-  to the global environment. Concretely, add *A . I* to the environment.
+  to the global QEnv. Concretely, merge ``qualify(A, I)`` into the global QEnv.
   If the ``import`` statement does not use
-  ``qualified``, additionally add *I* to the global environment.
+  ``qualified``, additionally merge ``I`` into the global QEnv.
 
 Core Proposal Change Specification
 ----------------------------------
@@ -318,20 +375,26 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
 
 1. **Definitions**
 
-   A. A qualified name can now have any number of module qualifications (instead
-      of just 0 or 1), each
-      separated by a ``.`` and with no intervening whitespace. Formally, a qualified
-      name is the pair of a list (perhaps empty) of module names and an occurrence name.
+   A. A module name is now just one alphanumeric identifier beginning with a capital
+      letter. Previously, a module name could have dot-separated components, but
+      no longer.
 
-      The concrete can lead
-      to potential ambiguity: is the name ``Data.List.length`` qualified by
-      ``Data.List`` (a well-formed module name) or qualified both by ``Data``
-      and by ``List``? If ``length`` is in scope qualified both by ``Data.List``
-      and by both ``Data`` and ``List``, the occurrence ``Data.List.length`` is
-      an error. There is no way to disambiguate locally without using module
-      aliases or other renamings. (Programmers should seek to avoid this scenario.)
+   #. Use the meta-variable *modids* to refer to a dot-separated list of module names.
 
-   #. An original name is now a pair of the name of the module that
+   #. A *top-level module* is one that includes an entire file. The initial
+      ``module ... where`` syntax at the top of a file defines a top-level module.
+      A top-level module's name is a *modids*.
+      We also call this structure a *top-level-module-name*, where the hyphenation
+      suggests that a top-level-module-name is not just a descriptor on a module
+      name. (The former is a list of the latter.)
+
+   #. Qualifiers now are dot-separated lists of module names; that is, just like
+      *modids*. Accordingly,
+      a qualified name represents the same strings (dot-separated capitalized
+      identifiers, followed by final dot and an occurrence name)
+      as it did previously, but with now more structure in the qualifier.
+   
+   #. An original name is now a pair of the name of the top-level-module-name that
       defines it and a qualified name.
 
       For instance in
@@ -346,29 +409,44 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
 
       The original name of the ``x`` definition is ``(Data.Foo, Bar.Baz.x)``
 
-   #. The exports of a module are now a full environment: a map from qualified name to
+   #. The exports of a module are now a QEnv (not an OEnv): a map from qualified name to
       original names. This is a strict broadening of the current definition of
-      an export environment.
+      an export environment. ::
 
-   #. The interpretation of an *import specifier*, or *impspec*,
-      is now a set of qualified names, instead
-      of just a set of occurrence names. (Recall that a qualified name can have 0
+        interpretExpSpec :: (ExpSpec, QEnv) -> QEnv
+        interpretExpSpec = ...  -- unchanged
+        interpretExpItem :: (ExpItem, QEnv) -> QEnv
+        interpretExpItem = ...  -- see below
+
+   #. The interpretation of an *import item* is now a QEnv, instead of an OEnv.
+      The interpretation of an *import specification*, or *impspec*,
+      is now also a QEnv, instead of an OEnv. (Recall that a qualified name can omit
+      the qualifier
       qualifications, so this change is a broadening of the definition of an *impspec*
-      and is backward-compatible.)
+      and is backward-compatible.) ::
 
-   #. Generalize the ``.`` and ``∂`` operations to both accept and return
-      environments. This is possible now that an export environment is just
-      a regular environment::
+        interpretImpSpec :: (ImpSpec, QEnv) -> QEnv
+        interpretImpSpec = ...  -- unchanged
+        interpretImpItem :: (ImpItem, QEnv) -> QEnv
+        interpretImpItem = ...  -- see below
 
-         modid . E = { modid.x ↦ orig | (x ↦ orig) ∈ E }
+   #. Generalize the ``qualify`` and ``strip`` operations to both accept and return
+      QEnvs::
+
+         qualify(modids, E) = { modids.qualname ↦ orig | (qualname ↦ orig) ∈ E }
         
-         ∂(modid) E = { x ↦ orig | (modid.x ↦ orig) ∈ E }
+         strip(modids, E) = { qualname ↦ orig | (modids.qualname ↦ orig) ∈ E }
+
+      These operations now also operate on *modids*, not just atomic module names.
+      The operations are thus generalizations of the previous versions.
+
+   #. It turns out that we do not need the concept of an OEnv in this proposal.
 
 #. Introduce a new extension ``-XLocalModules``.
 
 #. **Imports**
    
-   A. Import items can now mention qualified names. The `Haskell 2010 Report <https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#x17-18000010.5>`_ defines ::
+   A. Import items can now mention qualified names. The `Haskell 2010 Report`_ defines ::
 
         import ::= var
                |   tycon [ '(' '..' ')' | '(' cname1 ',' ... ',' cnamen ')' ]
@@ -384,24 +462,41 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
                |   qtycon [ '(' '..' ')' | '(' cname1 ',' ... ',' cnamen ')' ]
                |   qtycls [ '(' '..' ')' | '(' var1 ',' ... ',' varn ')' ]
 
+      The interpretation of a qualified-name import is the same as an occurrence-name
+      import: just look it up in the export QEnv::
+
+         interpretImpItem(item, export_env) = { qual ↦ orig | qual ∈ item
+                                                            , qual ↦ orig ∈ export_env }
+
+      The only difference with the previous interpretation of an import item is
+      that we now allow a qualified name instead of an occurrence name.
+
    #. A new import item is introduced::
 
-        import ::= ... | 'module' modid [ impspec ]
+        import ::= ... | 'module' modids [ impspec ]
 
       We must now give the semantics of this new import item; that is, we must
-      describe how to interpret a ``module modid impspec`` import item as an
-      environment.
+      describe how to interpret a ``module modids impspec`` import item as a
+      QEnv with respect to an export QEnv ``X``.
 
-      First, the nested ``impspec`` is interpreted with respect to ``∂(modid) X``.
+      First, the nested ``impspec`` is interpreted with respect to ``strip(modids, X)``.
       That is, we understand the ``impspec`` in a context where we're looking only
-      at exported names qualified by ``modid``.
-      This interpretation gives us an environment ``I0``.
-      The environment described by import item
-      ``module modid impspec`` is then ``modid . I0``.
+      at exported names qualified by ``modids``.
+      This interpretation gives us a QEnv ``I0``.
+      The QEnv described by import item
+      ``module modids impspec`` is then ``qualify(modids, I0)``.
         
-      In absence of an *impspec*, ``module modid`` denotes
-      ``modid . ∂(modid) X``: that is, it denotes all
-      bindings in ``X`` whose domain element has a ``modid.`` prefix.
+      In absence of an *impspec*, ``module modids`` denotes
+      ``qualify(modids, strip(modids, X))``: that is, it denotes all
+      bindings in ``X`` whose domain element has a ``modids.`` prefix.
+
+      In code::
+
+        interpretImpItem('module' modids impspec, export_env)
+          = let I0 = interpretImpSpec(impspec, strip(modids, export_env)) in
+            qualify(modids, I0)
+        interpretImpItem('module' modids, export_env)
+          = qualify(modids, strip(modids, X))
 
       This new form of import is allowed only with ``-XLocalModules``.
 
@@ -420,27 +515,9 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
       Note that the import item ``module M (x, y)`` means the same
       as ``M.x, M.y`` in an import specification.
       
-   #. An ``import`` statement adds bindings to the global environment.
-      Given that import specifiers now denote sets of qualified names
-      and exports are now full environments, this part is easy, and
-      is a straightforward adaptation of the import story today:
-      
-      An ``import`` statement names a module *M* and (optionally) an 
-      import-specifier *impspec*.
-
-      Let *X* be the export environment of *M*.
-  
-      Let *I* be the interpretation of *impspec* with respect to *X*. If
-      *impspec* is omitted, let *I = X*.
-  
-      Let the *module alias A* be the module name appearing after the ``as`` in
-      the ``import`` statement. If there is no ``as``, then the module alias *A*
-      is just *M*.
-
-      The ``import`` statement brings names into scope by adding entries
-      to the global environment. Concretely, add *A . I* to the environment.
-      If the ``import`` statement does not use
-      ``qualified``, additionally add *I* to the global environment.
+   #. An ``import`` statement adds bindings to the global environment,
+      as follows, just as described in **Imports** in the Background.
+      The only difference is that all OEnvs are now QEnvs.
 
 #. **Exports**
 
@@ -457,29 +534,36 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
         export ::= qvar [ 'qualified' ]
                |   qtycon [ '(' '..' ')' | '(' cname1 ',' ... ',' cnamen ')' ] [ 'qualified' ]
                |   qtycls [ '(' '..' ')' | '(' qvar1 ',' ... ',' qvarn ')' ] [ 'qualified' ]
-               |   'module' [ 'qualified' ] modid [ exports ]
+               |   'module' [ 'qualified' ] modids [ exports ]
 
-      The nonterminal *exports* denotes an export specification.
+      The nonterminal *exports* (from the `Haskell 2010 Report`_)
+      denotes an export specification: a list of ``export``.
 
-   #. Export specifications must now be understood with reference to an environment *E*.
-      That is, to extract the export environment, we must look up names in the
-      ambient environment. Accordingly, we must give semantics to an export item
-      by describing how it creates an environment that will form part of the export
-      environment of a module.
+      We must now give these new export items semantics by saying how they
+      are interpreted.    
 
-   #. An export item consisting of a qualified name *qual* (possibly with bundled items
-      in ``(...)``), but without the ``qualified`` keyword, adds a mapping *occname ↦ orig*
-      to the export environment, where *occname* is the occurrence name component of
-      *qual*, and *orig* is the result of looking up *qual* in
-      the ambient in-scope environment of the module being defined. (This is not a
-      change from current behavior.)
+   #. The interpretation of Haskell98-style export items (that is, without ``qualified``)
+      is unchanged::
+
+        interpretExpItem(haskell98item, ambient_env)
+          = { occ ↦ orig | modids.occ ∈ haskell98item
+                         , modids.occ ↦ orig ∈ ambient_env }
+
+      The only difference here from above is now we write ``modids`` for the qualifier.
+
+      Note that ``occ ↦ orig`` is returned, not the full qualified name. This is
+      unchanged from previously, but it was previously a requirement (in order to
+      be type-correct) to return an ``occ ↦ orig`` binding, while now the type
+      has been generalized to return a QEnv.
       
-   #. If the export item is a ``qvar``, a ``qtycon``, or a ``qtycls`` followed
-      by ``qualified``, the identifier (henceforth ``qual``)
-      must indeed have at least one qualification. Otherwise,
-      the export item is an error. If it is not an error, the export
-      environment from the current module includes ``qual ↦ orig`` (where ``orig``
-      is the original name found by looking up ``qual`` in the environment).
+   #. If the export item is a ``qvar``, a ``qtycon``, or a ``qtycls`` (henceforth
+      called ``qual``) followed
+      by ``qualified``, the export
+      QEnv from the current module includes ``qual ↦ orig`` (where ``orig``
+      is the original name found by looking up ``qual`` in the ambient QEnv).
+
+      If ``qual`` has no qualifier, report a warning controlled by
+      ``-Wunqualified-qualified-exports``.
 
       If there are bundled identifiers exported (in ``(...)``), these are
       also exported with the same qualification as the root identifier,
@@ -491,30 +575,49 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
       keyword, which causes the unqualified name to be mapped to the original
       name in the export environment (as is done prior to this proposal).
 
-   #. For an export item like ``module qualified modid [ exports ]``:
+      In code::
+
+        interpretExpItem(haskell98item@(modids0.occname(..)) 'qualified', ambient_env)
+          = { modids0.occ1 ↦ orig | modids1.occ1 ∈ haskell98item
+                                  , modids1.occ1 ↦ orig ∈ ambient_env }
+
+      The key part here is that the return is a qualified-name mapping. Note
+      that the qualification in the exported mapping is ``modids0``, not the
+      ``modids1`` that might be found in the list of bundled qualified names.
+      See the example a few paragraphs above.
+
+   #. For an export item like ``module qualified modids [ exports ]``:
 
       If ``exports`` is given, we must interpret this export specification into
-      an export environment. If ``E`` is the ambient environment, ``exports`` is
-      interpreted with respect to the environment ``∂(modid) E`` (that is, ``E``
-      with ``modid.`` stripped off from every domain element). Call this
-      intepretation of ``exports`` to be ``X'``. Let ``X = modid . X'``.
+      an export QEnv. Let ``E`` be the ambient QEnv. Then, ``exports`` is
+      interpreted with respect to the QEnv ``strip(modids, E)`` (that is, ``E``
+      with ``modids.`` stripped off from every domain element). Call this
+      intepretation of ``exports`` to be ``X'``. Let ``X = qualify(modids, X')``.
 
-      If ``exports`` is not given, then let ``X = modid . ∂(modid) E``. That is,
+      If ``exports`` is not given, then let ``X = qualify(modids, strip(modids, E))``. That is,
       ``X`` includes all bindings in ``E``
-      whose domain element is qualified by ``modid``.
+      whose domain element is qualified by ``modids``.
 
-      This export item exports the environment ``X``.
+      This export item exports the QEnv ``X``.
 
       In this way, the export item ``module qualified M ( f, g )`` means the
       same as ``module qualified M ( f ), module qualified M ( g )``.
 
-   #. For an export item like ``module modid [ exports ]``:
+      In code::
 
-      The ambient, in-scope environment is ``E``. Define a new environment ``E'``
+        interpretExpItem('module' 'qualified' modids expspec, ambient_env)
+          = let X' = interpretExpSpec(expspec, strip(modids, ambient_env)) in
+            qualify(modids, X')
+        interpretExpItem('module' 'qualified' modids, ambient_env)
+          = qualify(modids, strip(modids, ambient_env))
+
+   #. For an export item like ``module modids [ exports ]``:
+
+      The ambient, in-scope QEnv is ``E``. Define a new QEnv ``E'``
       as follows::
 
         E' = { qual ↦ orig | qual ↦ orig ∈ E
-                           , modid.qual ↦ orig ∈ E }
+                           , modids.qual ↦ orig ∈ E }
 
       If ``exports`` is specified, let ``X`` be the interpretation of ``exports``
       with respect to ``E'``.
@@ -523,9 +626,18 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
 
       This export item exports the environment ``X``.
 
+      In code::
+
+        interpretExpItem('module' modids maybe_exports, ambient_env)
+          = let E' = { qual ↦ orig | qual ↦ orig ∈ ambient_env
+                                   , modids.qual ↦ orig ∈ ambient_env } in
+            case maybe_exports of
+              Nothing -> E'
+              Just expspec -> interpretExpSpec(expspec, E')
+
       Other than the new possibility of writing ``exports``, this is not a change
-      from current behavior: a ``module modid`` export exports all identifiers
-      in scope both with and without the ``modid`` qualification.
+      from current behavior: a ``module modids`` export exports all identifiers
+      in scope both with and without the ``modids`` qualification.
 
       One non-backward-compatible alternative below is not to require that
       names be in scope without qualification; this would make this unqualified
@@ -570,7 +682,7 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
    A. Introduce a new declaration form
       to declare a new module called a *local module*. Here is the BNF::
 
-        topdecl ::= ... | 'module' [ 'qualified' ] modid [ exports ] 'where' '{' topdecls '}'
+        topdecl ::= ... | 'module' [ 'qualified' ] modids [ exports ] 'where' '{' topdecls '}'
 
       This declaration form is allowed only with ``-XLocalModules``.
 
@@ -588,37 +700,35 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
 
       The term *module* can refer to either a top-level or a local module.
 
-   #. The environment within the local module is an extension (superset)
-      of the environment of the enclosing module. It consists of the
-      environment of the enclosing module (which can be
-      the top-level module or a local module) plus the definitions
-      of the local module.
+   #. The ambient QEnv within the local module extends the ambient QEnv
+      of the enclosing module with its local definitions.
 
       In particular, definitions in a local module may be mutually recursive with definitions
       in other local modules or outside of any local module. That is, local
       modules influence scoping only, but not type-checking or dependency
       (which remain constrained by compilation units, as they are today).
 
-   #. Let the environment of the local module (call it ``M``) be ``E``.
-      (This environment includes
-      definitions in scope from the outer module.) The export environment
+   #. Let the ambient QEnv of the local module (call it ``M``) be ``E``.
+      (This QEnv includes
+      definitions in scope from the outer module.) The export QEnv
       of ``M`` is the result of interpreting ``exports`` (if given)
       with respect to ``E``.
 
       If ``exports`` is not given, then the export environment of ``M``
       includes a mapping from occurrence name to original name
       for each definition within the local module. For each nested local
-      module ``N`` within ``M`` with export environment ``N_E``, the
-      export environment of ``M`` includes ``N . N_E``.
+      module ``N`` within ``M`` with export QEnv ``N_E``, the
+      export QEnv of ``M`` includes ``qualify(N, N_E)``.
 
-   #. A local module definition for ``M`` adds entries to the ambient environment
-      ``E0``. Let the export environment of ``M`` be ``X``; then ``E0`` is extended
-      with the environment ``M . X``. If the ``qualified`` keyword is missing from
+   #. A local module definition for ``M`` adds entries to the ambient QEnv
+      ``E0`` of the enclosing module.
+      Let the export QEnv of ``M`` be ``X``; then ``E0`` is extended
+      with the environment ``qualify(M, X)``. If the ``qualified`` keyword is missing from
       the definition of the local module, then ``X`` is additionally added to ``E0``.
 
 #. A new declaration form is introduced::
 
-     decl ::= ... | 'import' 'module' modid [ impspec ]
+     decl ::= ... | 'import' 'module' modids [ impspec ]
 
    The declaration is allowed in ``let`` and ``where`` clauses. It
    modifies the environment for the scope of the ``let`` / ``where``
@@ -634,10 +744,10 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
 
    The environment is modified for ``u`` and ``v``.
 
-   Let ``E`` be the current environment. Let ``I`` be the interpretation
-   of ``impspec`` with respect to the environment ``∂(modid) E``. (If ``impspec``
-   is missing, then let ``I = ∂(modid) E``.)
-   The declaration ``import module modid (impspec)`` modifies the environment
+   Let ``E`` be the ambient QEnv. Let ``I`` be the interpretation
+   of ``impspec`` with respect to the environment ``strip(modids, E)``. (If ``impspec``
+   is missing, then let ``I = strip(modids, E)``.)
+   The declaration ``import module modids (impspec)`` modifies the ambient QEnv
    to become ``E ∪ I``.
 
    Note that the declaration form includes the word ``module`` to distinguish
@@ -671,6 +781,23 @@ Each numbered item in this section can be considered separately.
    empty export list but are still useful
    as a way of declaring instances that use local definitions.)
 
+#. Introduce a new export item with the following BNF::
+
+     export ::= ... | 'module' modids '(' '..' ')'
+
+   This export item exports all qualified names in scope with the ``modids`` prefix,
+   stripped of that prefix. ::
+
+     interpretExpItem('module' modids '(' '..' ')', ambient_env)
+       = strip(modids, ambient_env)
+
+   This new form is really the non-qualified equivalent of the new export
+   item ``module qualified modids``. It needs the ``(..)`` syntax to differentiate
+   it from ``module modids``, which is designed to be backward-compatible.
+
+   There is no non-qualified equivalent of ``module qualified modids exports``, with
+   an explicit export list.
+   
 #. Every ``class``, ``data``, ``newtype``, ``data instance``, and ``newtype
    instance`` declaration with an alphanumeric name implicitly creates a new local module. The name of
    the local module matches the name of the declared type. All entities (e.g.,
@@ -813,27 +940,11 @@ Effect and Interactions
   is that the local module system affects only the names that are in scope (and their qualifications
   and import/export), not any other aspect of the program.
 
-* This proposal does not introduce any hierarchy into module names as the currently exist.
-  For example, if we have ::
-
-    import qualified Data.Set ( Set )
-    import qualified Data.Map ( Map )
-
-    import module Data
-
-  will not bring ``Set.Set`` or ``Map.Map`` into scope. Those identifiers are qualified
-  by ``Data.Set`` and ``Data.Map`` respectively.
-  
 Costs and Drawbacks
 -------------------
 
 * This is a significant new bit of implementation and specification, and it should require the
   requisite level of support from the community to be accepted.
-
-* As highlighted in the "potential ambiguity" effect, above, this extension will rule out
-  a few existing programs, when an import whose identifiers are used with qualifications
-  shares a name with a locally defined type. The problem only arises with ``-XLocalModules``,
-  though, and is easily remedied through a (local) renaming.
 
 * This proposal does not really make a module into a first-class entity. Instead, it
   interprets a module essentially as the set of names that can be written qualified
@@ -844,6 +955,22 @@ Costs and Drawbacks
 
   See `#295`_ for a more complete treatment of the idea of making a module into a
   first-class entity.
+
+* This proposal introduces a backward-incompatibility in an obscure scenario::
+
+    module M ( module L ) where
+
+    import L ( x )
+    import L.Internal ( z )
+    import L.Internal as Internal ( z )
+
+  The export QEnv from ``M`` would include both ``x`` and ``Internal.z``. This is
+  because the ambient QEnv in ``M`` includes both ``L.Internal.z`` and ``Internal.z``,
+  both referring to the same original name.
+
+  There is thus the small potential for abstraction leakage.
+
+  It would be possible to introduce a warning to detect this scenario.
   
 Related Work
 ------------
@@ -879,25 +1006,7 @@ Alternatives
 
 Beyond the `Related Work`_, there is wiggle room within this proposal for alternatives.
 
-A. This proposal does not allow the export of a qualified local module such that
-   importers get the identifiers unqualified. We could imagine a new export item
-   ``import module M`` that exports all identifiers in scope with a ``M.`` prefix
-   unqualified. (That is, it would add ``∂(M) X`` to the environment, where ``X`` is
-   the export environment we are interpreting the import item against.)
-   I don't find this feature necessary, but it would fit with the
-   rest of this proposal.
-
-   For example, if a local module introduces ``M.x`` and ``M.y``
-   into the top-level scope (but not ``x`` or ``y``), then this proposal offers no
-   way of exporting ``M.x`` and ``M.y`` by listing only something about module ``M``
-   such that importers get ``x`` and ``y`` unqualified. This is because exporting
-   ``module M`` would *not* export ``x`` or ``y`` (because they are not in scope unqualified)
-   and exporting ``module qualified M`` would give importers access to ``M.x`` and
-   ``M.y``, but not ``x`` and ``y`` (unless an importer also said ``import module M``
-   as a separate declaration).
-   A hypothetical ``import module M`` export item could satisfy this need.
-
-#. Disallow local modules to be mutually recursive. The current proposal says
+1. Disallow local modules to be mutually recursive. The current proposal says
    that the local module system affects scoping only. However, we could instead declare
    that a mutual-dependency strongly-connected component (SCC) cannot include definitions
    in more than one module. This would disable mutual recursion between modules, but open
@@ -910,31 +1019,77 @@ A. This proposal does not allow the export of a qualified local module such that
    via a mechanism specifically suited for compilation dependencies, such as explicit
    staging like `#243`_.
 
+#. This proposal includes the possibility for a new export item
+   ``'module' modids '(' '..' ')'``, whose semantics is very close to
+   ``'module' 'qualified' modids``. Instead, we could give these semantics
+   to ``'module' modids`` (without the ``(..)``). This would simplify the specification
+   a little (and mean that removing the ``qualified`` keyword changes only whether
+   the produced QEnv includes names with an additional qualification),
+   but it would not be backward compatible. For example::
+
+     module M ( module Data ) where
+
+     import Data
+     import Data.Set
+
+   The alternative proposed here would mean that ``M`` would export e.g. ``Set.fromList``
+   -- even though this module uses entirely Haskell98 syntax. While we could control
+   the new behavior by stating that it applies only when ``-XLocalModules`` is specified,
+   this change may be unexpected, and it could potentially lead to abstraction leakage,
+   if a module exports more than it thinks it does.
+
+   I favor the proposal as written, because I like backward compatibility. But if
+   we were designing from scratch, I would favor this alternative.
+
+#. The proposal offers no non-qualified equivalent of ``module qualified modids exports``,
+   where the export QEnv is built without regard to what identifiers are in scope
+   without the ``modids`` prefix.
+   We could say that ``module modids exports`` behaves like
+   ``module qualified modids exports``, instead of the semantics given above.
+
+   There is no backward-compatibility problem here, because including an export-list
+   in a module export is new. However, it does mean that the ``module M ( x )`` and
+   ``module M`` export items would have strangely different meanings. For example::
+
+     module X ( {- change what goes here -} ) where
+
+     import qualified M ( x )
+     import M ( y )
+
+   If the export item is ``module M ( x )``, then ``x ↦ (M, x)`` is exported.
+   If the export item is ``module M``, then only ``y ↦ (M, y)`` is exported. This
+   is because ``x ↦ (M, x)`` is not in the ambient QEnv.
+
+   If we choose to adopt the backward-incompatible alternative above around this point,
+   then I suggest also taking this alternative. Otherwise, skip as too confusing.
+
 #. Counter-proposal `#295`_ rightly observes that the export specifiers in this proposal
    are complicated. At the risk of making this proposal fork-like (that is, by changing the
    meaning of legacy constructs), these specifiers can be simplified. Here is an alternate
    formulation, replacing the relevant point under **Exports** in the specification section:
 
-   * For an export item like ``module modid [ exports ]``:
+   * For an export item like ``module modids [ exports ]``:
 
      If ``exports`` is given, we must interpret this export specification into
-     an export environment. If ``E`` is the ambient environment, ``exports`` is
-     interpreted with respect to the environment ``∂(modid) E`` (that is, ``E``
-     with ``modid.`` stripped off from every domain element). Call this
-     intepretation of ``exports`` to be ``X``
+     an export QEnv. If ``E`` is the ambient QEnv, ``exports`` is
+     interpreted with respect to the environment ``strip(modids, E)`` (that is, ``E``
+     with ``modids.`` stripped off from every domain element). Call this
+     intepretation of ``exports`` to be ``X``.
 
-     If ``exports`` is not given, then let ``X = ∂(modid) E``. That is,
+     If ``exports`` is not given, then let ``X = strip(modids, E)``. That is,
      ``X`` includes all bindings in ``E``
-     whose domain element is qualified by ``modid``, with that qualification
+     whose domain element is qualified by ``modids``, with that qualification
      stripped off.
 
-     This export item exports the environment ``X``.
+     This export item exports the QEnv ``X``.
 
      In this way, the export item ``module M ( f, g )`` means the
      same as ``module M ( f ), module M ( g )``.
 
    This allows users to write ``module M`` as an export item to export
    unqualified all entities in scope with a ``M.`` prefix.
+
+   
 
    I am agnostic on whether I prefer the meaning for ``module`` export items above,
    or whether I prefer this alternative.
@@ -967,7 +1122,13 @@ A. This proposal does not allow the export of a qualified local module such that
    modules default to the ``qualified`` behavior, requiring an ``import`` to
    get the names unqualified. (Earlier versions of this proposal indeed defaulted
    to ``qualified``.)
-   
+
+#. This proposal puts the ``qualified`` keyword after export names, like
+   ``module M ( Set.fromList qualified )``. It could go before the name,
+   like ``module M ( qualified Set.fromList )``. If it goes before, we would
+   have to specify where the ``qualified`` goes with respect to the ``type``
+   or ``pattern`` namespace selectors allowed in export/import lists.
+
 Future Work
 -----------
 
