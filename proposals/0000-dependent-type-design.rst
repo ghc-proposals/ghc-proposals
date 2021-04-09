@@ -62,7 +62,7 @@ integrate dependent types in GHC.
 
 This current proposal aims give some detail to what dependent types may look like.
 Acceptance does not commit us to an unalterable course of inclusion of exactly
-the features described here. But it would suggest that that other proposals in
+the features described here. But it would suggest that other proposals in
 this space should be designed in such a way that they are compatible with the
 details presented here.
 
