@@ -283,8 +283,8 @@ Proposed Change Specification
 -----------------------------
 
 When evaluating new proposals,
-the GHC committee would consider compatibility with `the proposed design
-sketch of dependent types on the GHC wiki <https://gitlab.haskell.org/ghc/ghc/-/wikis/dependent-haskell>`_. Generally speaking, new proposals should be forward-compatible
+the GHC committee would consider compatibility with the design sketch
+below. Generally speaking, new proposals should be forward-compatible
 with the design sketch; that is, the new features proposed would continue to
 be at home when surrounded by other dependent-type features.
 
