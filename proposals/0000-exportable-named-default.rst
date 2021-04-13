@@ -119,7 +119,9 @@ than one ``default`` declaration in scope, the conflict is resolved using the fo
    one. The effect is to ignore the subsumed first declaration.
 5. If a class has neither a local ``default`` declaration nor an imported ``default`` declaration that subsumes all
    other imported ``default`` declarations for the class, the conflict between the imports is unresolvable. The effect
-   is to ignore all ``default`` declarations for the class, so that no declaration is in effect in the module.
+   is to ignore all ``default`` declarations for the class, so that no declaration is in effect in the module. The
+   compiler may choose to emit a warning in this case, but no error would be triggered unless there is an actual
+   ambiguous type in the module.
 
 Rules for disambiguation at the use site
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -203,6 +205,47 @@ declaration, every importer of the module will have the conflicts resolved for t
 An equivalent story can be told for the ``OverloadedLists``, by replacing ``Text`` and ``Foundation.String`` by
 ``Vector`` and ``Foundation.String`` by ``Foundation.Array``.
 
+Effect and Interactions
+-----------------------
+
+GHC already supports two extensions that modify the defaulting mechanism:
+`ExtendedDefaultRules<https://ghc.gitlab.haskell.org/ghc/doc/users_guide/ghci.html#type-defaulting-in-ghci>`_ and
+`OverloadedStrings<https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/overloaded_strings.html?highlight=overloadedstrings#overloaded-string-literals>`_.
+
+The former is fully devoted to defaulting. Its effect is to extend the defaulting rules so that they apply not only to
+the class ``Num`` as specified by the language standard, but also to any class in the following list: ``Show``,
+``Eq``, ``Ord``, ``Foldable``, ``Traversable``, or any numeric class. This list is hard-coded and not
+user-extensible. Furthermore, the extension adds ``()`` and ``[]`` to the list of default types to try. If the present
+proposal is accepted, ``ExtendedDefaultRules`` could be reformulated as a set of actual ``default`` declarations
+brought into the scope::
+
+  default Show ((), Integer, Double)
+  default Eq ((), Integer, Double)
+  default Ord ((), Integer, Double)
+  default Foldable ([])
+  default Traversable ([])
+  default Num ((), Integer, Double)
+
+The ``OverloadedStrings`` extension by itself causes many new ambiguities, much like the ambiguites caused by the
+overloaded numeric literals which were the original reason for ``default`` declarations in the first place. To rectify
+this problem, the extension tweaks the defaulting mechanism. To quote from the GHC manual:
+
+- Each type in a ``default`` declaration must be an instance of ``Num`` or of ``IsString``.
+
+- If no ``default`` declaration is given, then it is just as if the module contained the declaration ``default
+  (Integer, Double, String)``.
+
+- The standard defaulting rule is extended thus: defaulting applies when all the unresolved constraints involve
+  standard classes or ``IsString``; and at least one is a numeric class or ``IsString``.
+
+Once again, if the present proposal were adopted, the above rules could be expressed as an actual ``default``
+declaration::
+
+   default IsString (Integer, Double, String)
+
+Furthermore, as the whole purpose of this extension is to enable string literals to enable types other than
+``String``, its presence should probably imply ``ImportedDefaults``.
+
 Costs and Drawbacks
 -------------------
 
@@ -228,6 +271,15 @@ The solution to this problem depends on where the conflicting defaults come from
 
 Alternatives
 ------------
+
+Implicit ``ImportedDefaults``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The only reason this proposal adds the ``ImportedDefaults`` extension is to preserve full backward compatibility at
+the module level: it may change the semantics of a previously valid module that was relying on the implicit ``default
+(Integer, Double)`` rule. It is much more likely, however, for this extension to resolve a type ambiguity that was
+preventing the module to compile, so one may be inclined to just enable it by default. If the proposal is adopted,
+this extension would become a prime candidate for addition to the ``GHC202X`` package.
 
 Declaration imports
 ~~~~~~~~~~~~~~~~~~~
@@ -292,8 +344,3 @@ constraint group on the right-hand side until it finds one that completely resol
 Again, this extension is not a part of the proposal because it would depend on type equality at least, and because its
 utility is unproven. Still, it's good to know that the proposal does not close off this potentially important
 development direction.
-
-Unresolved questions
---------------------
-
-This proposal does not cover GHCi and its special defaulting behaviour.
