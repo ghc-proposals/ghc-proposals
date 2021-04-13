@@ -60,11 +60,11 @@ There are also tweaks to the coverage conditions for coverage / injectivity in t
 
 ## Proposed Change Specification
 
-The modifier syntax is taken from this [approved proposal](https://github.com/ghc-proposals/ghc-proposals/pull/370), with the additional [change](https://github.com/ghc-proposals/ghc-proposals/pull/392) of modifiers appearing _before_ the modified thing. Since modifiers ought to be types, we introduce the following declarationg in the `GHC.Generics` module.
+The modifier syntax is taken from this [approved proposal](https://github.com/ghc-proposals/ghc-proposals/pull/370), with the additional [change](https://github.com/ghc-proposals/ghc-proposals/pull/392) of modifiers appearing _before_ the modified thing. Since modifiers ought to be types, we introduce the following declarationg in the `GHC.Modifiers` module.
 
 ```haskell
 data TerminationCheck =
-  Terminating | LiberalCoverage | LiberalInjectivity
+  NoTerminationCheck | LiberalCoverage | LiberalInjectivity
 
 data OverlapCheck =
   Overlapping | Overlappable | Overlaps
@@ -176,7 +176,7 @@ Starting two versions from the first one in which this proposal is implemented, 
 ```
 warning:
   Using 'UndecidableInstances' is discouraged.
-  Use the '%Terminating' modifiers in front of
+  Use the '%NoTerminationCheck' modifiers in front of
   an instance to disable the termination check.
 ```
 
