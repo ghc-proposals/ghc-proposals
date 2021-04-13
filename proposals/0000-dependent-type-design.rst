@@ -1,6 +1,7 @@
 Design for Dependent Types
 ==========================
 
+.. sectnum::
 .. author:: Richard Eisenberg
 .. date-accepted:: Leave blank. This will be filled in when the proposal is accepted.
 .. ticket-url:: Leave blank. This will eventually be filled with the
