@@ -12,6 +12,8 @@ Binding type variables in lambda-expressions
 
 .. _`#126`: https://github.com/ghc-proposals/ghc-proposals/pull/126
 .. _`#128`: https://github.com/ghc-proposals/ghc-proposals/pull/128
+.. _`#119`: https://github.com/ghc-proposals/ghc-proposals/pull/119
+.. _`Haskell 2010 Report`: https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#x17-18000010.5
 
 Proposal `#126`_ allows us to bind scoped type variables in patterns using an ``@a`` syntax.
 However, the new syntax is allowed only in *constructor* patterns ``K @a @b x y``. This proposal
@@ -80,94 +82,126 @@ There are several motivating factors for this addition:
 
 4. See crowd-sourced example `here <https://github.com/ghc-proposals/ghc-proposals/pull/155#issuecomment-459430140>`_.
 
+5. The behavior of ``ScopedTypeVariables`` appears incompatible with the
+   ability to bind type variables using a ``@a`` pattern. (What would ``(\ @a
+   -> expr) :: forall b. ty`` mean? What would its desugaring be? What's the
+   relationship between ``a`` and ``b``?)
+   This proposal thus reshuffles the meaning of a number of extensions
+   in a backward-compatible way. Along the way, this proposal satisfies the
+   motivations behind `#119`_, which was rejected for insufficient merit,
+   yet has continued to look attractive from time to time.
+   
 Proposed Change Specification
 -----------------------------
-GHC's type system is *bidirectional*, meaning that it sometimes is *inferring* a type
-and sometimes is *checking* a type. `Practical Type Inference for Arbitrary-Rank Types <http://repository.upenn.edu/cis_papers/315/>`_ is a careful introduction of the ideas, though
-GHC's algorithm is currently based on the more recent `Visible Type Applications`_. Essentially,
-bidirectionality means that the type system can distinguish (and make decisions based on)
-the difference between knowing what type to expect and not.
 
-.. _`Visible Type Applications`: https://repository.brynmawr.edu/cgi/viewcontent.cgi?article=1001&context=compsci_pubs
+1. Introduce ``-XPatternSignatures``. With ``-XPatternSignatures``, we would
+   allow type signatures in patterns. These signatures could mention type
+   variables, but their scope would be limited to only that very signature.
 
-Under this proposal, the new feature is allowed only in *checking* mode. That is, we
-always know exactly what type is expected for a function definition or lambda expression.
+2. Introduce ``-XPatternTypeVariables``. With ``-XPatternTypeVariables``, any
+   type variables bound in a pattern signature would remain in scope over the
+   same region of code that term-level variables introduced in a pattern scope
+   over. This implies ``-XPatternSignatures``.
 
-As always, we can consider a nested lambda ``\ x y z -> ...`` to be an abbreviation for
-``\ x -> \ y -> \ z ->``. This does not change if one of the bound variables is a type
-variable (preceded by ``@``). We do require, as usual, that we do not bind the same variable
-twice in a single lambda; this is true for type variables, too.
+3. Introduce ``-XMethodTypeVariables``. With ``-XMethodTypeVariables``, type
+   variables introduced in an instance head would scope over the bodies of
+   method implementations. Additionally, type variables introduced in a class
+   head would scope over the bodies of method defaults.
 
-Thus, the core of the proposal boils down to one rule:
+4. Introduce ``-XScopedForAlls``. With ``-XScopedForAlls``, any type variables
+   mentioned in an explicit ``forall`` scopes over an expression. This applies
+   to the following constructs:
+   * Function bindings
+   * Pattern synonym bindings (including in any ``where`` clause)
+   * Expression type signatures
 
-* ``\ @a -> body``, being checked against the type ``forall a. ty`` (where the ``a`` is *specified*), binds the type
-  variable ``a`` and then checks ``body`` against the type ``ty``. Checking an
-  expression ``\ @a -> body`` against a type that does not begin with a ``forall``
-  is an error. The token after the ``@`` must be a type variable name or ``_``.
+5. The extension ``-XScopedTypeVariables`` would imply all of the above
+   extensions; this way, ``-XScopedTypeVariables`` does not change from its
+   current meaning.
 
-That's it! Note that this specification assumes that the variable name in the lambda
-equals the variable name in the ``forall``. If the type begins with a ``forall``, this
-correspondence can always be made to happen because we can freely rename the bound
-type variable in a ``forall``. (This "free renaming" is entirely internal; a user
-can write a different name in the type than in the pattern, always.)
+6. Introduce ``-XTypeAbstractions``. With ``-XTypeAbstractions``, users
+   could write a pattern like ``@a`` to the left of the ``=`` in a function
+   binding or between the ``\`` and ``->`` in a lambda-expression. 
+   In addition, the ``-XScopedForAlls`` extension now affects only *inferred*
+   variables, never *specified* variables. Note that *inferred* variables
+   can be mentioned in source Haskell with accepted proposal `#99`_.
 
-As usual, we can interpret a function defintion ``f <args> = body`` as
-``f = \ <args> -> body``, and thus the function-definition case reduces to the lambda-expression
-case above.
+   A. Here is the BNF of the new form (cf. The `Haskell 2010 Report`_)::
 
-One wrinkle is that, according to the rules in the `Visible Type Application`_ paper,
-type variables quantified by a ``forall`` in a type signature get brought into scope
-*before* we check the term. We thus add the following rule:
+        apat ::= ... | '@' tyvar
 
-* The new extension ``-XTypeAbstractions`` enables binding type variables as described
-  in this proposal. Additionally, it disables the behavior of ``-XScopedTypeVariables``
-  that brings ``forall``\-quantified variables into scope in the body of the ``forall``.
-  Examples are below.
+      Conveniently, ``apat``\ s are used both in function left-hand sides
+      and in lambda-expressions, so this change covers both use-cases.
 
-This change is specified in the appendix to the `Type variables in patterns <https://cs.brynmawr.edu/~rae/papers/2018/pat-tyvars/pat-tyvars-extended.pdf>`_ paper.
+      In the BNF, we assume the ``@`` is a `*prefix occurrence* <https://github.com/ghc-proposals/ghc-proposals/blob/79f48248ae31b1a490deb1b019c206efa0be89da/proposals/0229-whitespace-bang-patterns.rst#id3>`_.
 
-Bidirectional type checking
----------------------------
+   B. A type variable pattern would not be allowed in the following contexts:
 
-While the specification above is (in my opinion) a complete specification of the proposed behavior with
-respect to the linked papers,
-I include here an expansion of the idea behind bidirectional type checking to aid understanding.
+      i. To the right of an as-pattern
+      ii. As the top node in a lazy (``~``) pattern
+      iii. As the top node in a ``lpat`` (that is, to the left of an infix
+           constructor, directly inside a parenthesis, as a component of
+           a tuple, as a component of a list, or directly after an ``=``
+           in a record pattern)
 
-**Motivation**: We need to restrict this feature to the *checking* mode of bidirectional type checking because
-it is unclear (to me) how to do better. Clearly, ``id @a x = x`` is problematic, because we don't know how to
-associate ``a`` with ``x``. But what about ``f @a (x :: a) @b (y :: b) = x == y``? That could indeed be well-typed
-at ``f :: forall a. a -> forall b. b -> (a ~ b, Eq a) => Bool``, but I don't wish to ask GHC to infer that. (Even
-without the wonky equality constraint would be hard.) Perhaps someone can sort this out and expand this feature,
-but there seems to be no need to handle the *inference* case now.
+   C. Typing rules for the new construct are as in a `recent paper
+      <https://richarde.dev/papers/2021/stability/stability.pdf>`_: see
+      ETm-InfTyAbs, ETm-CheckTyAbs, Pat-InfTyVar, and Pat-CheckTyVar, all in
+      Figure 7. While the typeset versions remain the official typing rules,
+      I will summarise the different rules below.
 
-The algorithm operates in *inference mode* when it does not know the type of an expression. If GHC does know
-the type in advance, it uses *checking* mode. Here are some
-examples::
+      **Background**. GHC implements *bidirectional* type-checking, where
+      we sometimes know what type to expect an expression to have. When we
+      know such a type (for example, because we have a type signature, or
+      an expression is an argument to a function with a known type), we say
+      we are in *checking* mode. When we do not know such a type (for example,
+      when we are inferring the type of a ``let``\ -binding or the type of
+      a function applied to arguments), we say we are in *synthesis* mode.
+      The `Practical Type Inference <https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/putting.pdf>`_ paper gives a nice, Haskell-oriented introduction.
 
-  f x = x 6 True  -- we do not know the type of the RHS, so we infer it
+      i. In synthesis mode, when examining ``\ @a -> expr``, we simply put
+         ``a`` in scope as a fresh skolem variable (that is, not equal
+         to any other type) and then check ``expr``. (Presumably, ``expr``
+         uses ``a`` in a type signature.) When we infer that ``expr`` has
+         type ``ty``, the expression ``\ @a -> expr`` has type ``forall a. ty``.
+         Example: ``\ @a (x :: a) -> x`` infers the type ``forall a. a -> a``.
+         (For this example, we note that ``\ @a (x :: a) -> x`` is a short-hand
+         for ``\ @a -> \ (x :: a) -> x``.)
 
-  g (x :: Int) = x + 8   -- ditto here: we do not know the type of the RHS
+      ii. In checking mode, when examining ``\ @a -> expr`` against type ``ty``,
+          we require that ``ty`` has the shape ``forall a. ty'``, where
+          ``a`` is a *specified* variable (possibly
+          after skolemising any *inferred* variables in ``ty``), renaming the
+          bound variable as necessary to match the name used in the expression.
+          We then check ``expr`` against type ``ty'``.
 
-  h :: Int -> Int
-  h x = x + 8   -- this RHS is in *checking* mode, as we do know it to have type Int
+      iii. In synthesis mode, when examining a function argument ``@a`` to
+           a function ``f``, we
+           bring ``a`` into scope as a fresh skolem variable and check the
+           remainder of the arguments and the right-hand side. In the type
+           of ``f``, we include a ``forall a.`` in the spot corresponding
+           to the type variable argument.
 
-  j :: Bool -> Bool
-  j x = id not x   -- the expression (id not) is in *inference* mode, as we don't, a priori, know its type
+           If there are multiple equations, each equation is required
+           to bind type variables in the same locations. (If this is
+           burdensome, write a type signature.) (We could probably do
+           better, by inferring the maximum count of bound type
+           variables between each required argument and then treating
+           each set of bound type variables as a prefix against this
+           maximum, but there is little incentive. Just write a type
+           signature!)
 
-The new syntax is available only in expressions that are being *checked*, not *inferred*. In effect, this
-means that it is usable only when a function that has been given a type signature.
+      iv. In checking mode, when examining a function argument ``@a`` to
+          a function ``f`` with type signature ``ty``, we require the corresponding
+          spot in the type signature to have a ``forall a`` (possibly renaming
+          the bound variable). The type variable ``a`` is then brought
+          into scope and we continue checking arguments and the right-hand side.
 
-In the context of the GHC implementation, we have these definitions::
+          Multiple equations can bind type variables in different places,
+          as we have a type signature to guide us.
 
-  data ExpType = Check TcType
-               | Infer !InferResult
-  tcExpr :: HsExpr GhcRn -> ExpType -> TcM (HsExpr GhcTcId)
-
-*Checking* mode is precisely when the ``ExpType`` passed to ``tcExpr`` is a ``Check``.
-*Inference* mode is precisely when the ``ExpType`` passed to ``tcExpr`` is an ``Infer``.
-  
-Examples of new behavior of ``-XScopedTypeVariables``
------------------------------------------------------
+Examples of new behavior of scoped type variables
+-------------------------------------------------
 
 ::
 
@@ -175,7 +209,7 @@ Examples of new behavior of ``-XScopedTypeVariables``
    f x = (x :: a)      -- rejected with -XTypeAbstractions
 
    g :: forall a. a -> a
-   g @a x = (x :: a)   -- accepted
+   g @a x = (x :: a)   -- accepted with -XTypeAbstractions
 
    h = ((\x -> (x :: a)) :: forall a. a -> a)
      -- accepted with previous -XScopedTypeVariables, but rejected
@@ -184,7 +218,7 @@ Examples of new behavior of ``-XScopedTypeVariables``
    i = ((\ @a x -> (x :: a)) :: forall a. a -> a)
      -- accepted with -XTypeAbstractions
 
-Note that limiting the behavior of ``-XScopedTypeVariables`` is necessary if we
+Note that turning off ``-XScopedForAlls`` with ``-XTypeAbstractions`` is necessary if we
 think about where type variables are brought into scope. Are they brought into
 scope by the ``forall``? Or by the ``@a``? It can't be both, as there is no
 sensible desugaring into System F. Specifically, if we have ``expr :: forall a. ty``,
@@ -238,13 +272,6 @@ Here are two real-world examples of how this will help, courtesy of @int-index:
 Effect and Interactions
 -----------------------
 
-* One might worry about parsing. After all, ``@`` already has a meaning in patterns. However,
-  this is all OK: whenever ``-XTypeApplications`` is enabled, ``@`` with a preceding
-  whitespace character (or comment) is parsed differently from ``@`` without a preceding
-  whitespace character (or comment). So ``f x @a`` is a good left hand side for a function
-  with type ``Int -> forall a. ...`` and ``f x@a`` simply binds both ``x`` and ``a`` to the
-  first argument to ``f``.
-
 * An astute reader will note that I put spaces after all my lambdas. That is because
   ``\@`` is a valid name for a user-defined operator. This proposal does not change that.
   If you want to bind a type variable in a lambda, you must separate the ``\`` from the
@@ -257,7 +284,7 @@ Effect and Interactions
   (`#126`_, `#128`_), but all the proposals are orthogonal. Any can usefully be accepted
   without the others.
 
-* Accepted proposal `26`_ (debated as `#99`_) introduces the possibility of user-written
+* Accepted proposal `#99`_ introduces the possibility of user-written
   specificity annotations (``forall {k} ...``). An *inferred* variable, including one
   written by the programmer using this new notation, is not available for use with
   any form of visible type application, including the one proposed here. If you have
@@ -265,7 +292,6 @@ Effect and Interactions
   of ``-XScopedTypeVariables`` to bring ``k`` into scope in ``f``\'s definition. This is
   regrettable but seems an inevitable consequence of the ``{k}`` notation.
 
-.. _`26`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0026-explicit-specificity.rst
 .. _`#99`: https://github.com/ghc-proposals/ghc-proposals/pull/99
   
 * (technical) The `Visible Type Applications`_ (VTA) paper defines the behavior about what to
@@ -288,37 +314,18 @@ There is a potential confusion with as-patterns.
 
 Alternatives
 ------------
-If we want to bind type variables in lambda-expressions, I think this is the only way to do it.
-We don't have to, of course, but then there will still be one area in GHC/Haskell that requires
-``Proxy``, and that's unfortunate.
+* If we want to bind type variables in lambda-expressions, I think this is the
+  only way to do it. We don't have to, of course, but then there will still be
+  one area in GHC/Haskell that requires ``Proxy``, and that's unfortunate.
 
-One alternative design would be to rearrange the extensions so that users could enable
-parts of today's ``ScopedTypeVariables`` without enabling the strange binding behavior of
-``forall``. I don't feel the need for this, myself, so I do not plan on working out this
-design, but I'm happy to accept contributions toward this end from the community. One such
-worked out design is in `this comment <https://github.com/ghc-proposals/ghc-proposals/pull/155#issuecomment-406024481>`_.
-I'm still not convinced the complication is worth it.
-
-One drawback of this proposal is that it rejects ``id @a (x :: a) = x`` if there is no
-type signature on ``id``. We could imagine extending this feature to pretend that such
-a definition comes with an implicit ``id :: forall a. a -> _`` partial type signature
-and proceeding accordingly. (The partial type signature is created from a quick syntactic
-analysis of the definition.) In this case, the definition of ``id`` would be accepted.
-However, I worry that this would be fragile as the partial-type-signature extraction would
-have to be purely syntactic. For example, would ``null @a ((_ :: a) : _) = False`` be treated
-identically to ``null @a ((_:_) :: [a]) = False`` and ``null @a (_:(_ :: [a]))``? It seems
-hard to ensure. Perhaps I'm just being pessimistic, though.
+* We do not have to split up all the extensions as described here, but I think
+  it makes the design cleaner.
 
 Unresolved questions
 --------------------
-Q: As brought up in the GitHub trail: should we consider changes to the extension structure?
-Specifically, do we want a way to enable this feature without also enabling the fact that
-a ``forall`` in a type signature binds a type variable in a definition.
-
-A: I say "no". I would prefer that world to the one we're currently in, but I simply don't
-think this small rejiggering is worth the transition costs.
+* None at this time.
 
 Implementation Plan
 -------------------
 I'm happy to advise and support a volunteer who wishes to implement. I might do it myself
-or work with a student on this someday, as well.
+or work with an intern on this someday, as well.
