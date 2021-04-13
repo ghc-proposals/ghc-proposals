@@ -130,7 +130,7 @@ The modifiers change the behavior of the checks as follows.
     %NoTerminationCheck ; type instance F [a] = G a a
 
     instance D (Maybe a) where
-      %NoTerminationCheck type F (Maybe a) = G a a
+      %NoTerminationCheck ; type F (Maybe a) = G a a
     ```
 
     The `%Overlapping`, `%Overlappable`, and `%Overlaps` modifiers keep the same meaning of the corresponding pragmas.
