@@ -14,6 +14,7 @@ Binding type variables in lambda-expressions
 .. _`#128`: https://github.com/ghc-proposals/ghc-proposals/pull/128
 .. _`#119`: https://github.com/ghc-proposals/ghc-proposals/pull/119
 .. _`Haskell 2010 Report`: https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#x17-18000010.5
+.. _`#285`: https://github.com/ghc-proposals/ghc-proposals/pull/285
 
 Proposal `#126`_ allows us to bind scoped type variables in patterns using an ``@a`` syntax.
 However, the new syntax is allowed only in *constructor* patterns ``K @a @b x y``. This proposal
@@ -95,13 +96,16 @@ Proposed Change Specification
 -----------------------------
 
 1. Introduce ``-XPatternSignatures``. With ``-XPatternSignatures``, we would
-   allow type signatures in patterns. These signatures could mention type
-   variables, but their scope would be limited to only that very signature.
+   allow type signatures in patterns. These signatures could mention in-scope
+   type variables as variable occurrences, but could not bind type variables.
 
-2. Introduce ``-XPatternTypeVariables``. With ``-XPatternTypeVariables``, any
-   type variables bound in a pattern signature would remain in scope over the
+2. Introduce ``-XPatternSignatureBinds``. With ``-XPatternSignatureBinds``, any
+   out-of-scope type variables written in a pattern signature would be bound there
+   and would remain in scope over the
    same region of code that term-level variables introduced in a pattern scope
-   over. This implies ``-XPatternSignatures``.
+   over. This extension is on by default (but is useless without ``-XPatternSignatures``).
+   (This point is actually not a change, but is a part of accepted proposal
+   `#285`_.)
 
 3. Introduce ``-XMethodTypeVariables``. With ``-XMethodTypeVariables``, type
    variables introduced in an instance head would scope over the bodies of
