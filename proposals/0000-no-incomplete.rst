@@ -46,130 +46,136 @@ My idea is to do the same thing for exhaustiveness checking: it should be mandat
 Proposed Change Specification
 -----------------------------
 
-#. Let there be a new language extension ``Incomplete``.
-   This extension is on by default, as that corresponds to the status quo.
+``-XIncomplete`` and ``-XNoIncomplete``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-   We first describe the behavior of ``NoIncomplete``.
-   This restricts the programs accepted compared to the status quo.
-   More important than the specific specification is the guiding principle behind that specification.
-   It is this:
+Let there be a new language extension ``Incomplete``.
+This extension is on by default, as that corresponds to the status quo.
 
-     Prohibit any program that can fail for reasons not explicitly specified by the programmer, except non-termination and exhaustion of resources.
+We first describe the behavior of ``NoIncomplete``.
+This restricts the programs accepted compared to the status quo.
+More important than the specific specification is the guiding principle behind that specification.
+It is this:
 
-   For GHC, that means to prohibit any program for which GHC would need to emit a synchronous exception throw not specified by the user.
+  Prohibit any program that can fail for reasons not explicitly specified by the programmer, except non-termination and exhaustion of resources.
 
-   To accomplish this, we will mainly rely on existing analyses.
-   Any program that would emit warnings from the following warning categories is prohibited:
+For GHC, that means to prohibit any program for which GHC would need to emit a synchronous exception throw not specified by the user.
 
-   - ``incomplete-patterns``
-   - ``incomplete-uni-patterns``
-   - ``incomplete-record-updates``
-   - ``missing-fields``
-   - ``missing-methods``
+To accomplish this, we will mainly rely on existing analyses.
+Any program that would emit warnings from the following warning categories is prohibited:
 
-   Additionally, with ``-XFieldSelectors`` (also on by default), any program that would emit warnings with ``-Wpartial-fields`` is also prohibited.
-   Finally, ``HasField`` is only emitted for fields and types when that field is present in all variants for the type.
+- ``incomplete-patterns``
+- ``incomplete-uni-patterns``
+- ``incomplete-record-updates``
+- ``missing-fields``
+- ``missing-methods``
 
-   More specifically, these are cases we intend to make illegal are, along with the warning from the list above that currently catches each case:
-   
-   - Function definitions that fail to match some value, e.g.::
-   
-      f (Just x) = rhs
-      -- but no Nothing case
+Additionally, with ``-XFieldSelectors`` (also on by default), any program that would emit warnings with ``-Wpartial-fields`` is also prohibited.
+Finally, ``HasField`` is only emitted for fields and types when that field is present in all variants for the type.
 
-     Existing warning: ``incomplete-patterns``.
-   
-   - Case expressions that fail to match some value, e.g.::
-   
-      case m of
-        Just x -> rhs
-        -- no Nothing case
+More specifically, these are cases we intend to make illegal are, along with the warning from the list above that currently catches each case:
 
-     Existing warning: ``incomplete-patterns``.
-   
-   - Pattern bindings that may fail to match, e.g.::
-   
-      let Just x = m
-      in body
+- Function definitions that fail to match some value, e.g.::
 
-     Existing warning: ``incomplete-uni-patterns``.
-   
-   - Lambdas that may fail to match, e.g.::
-   
-      (\(Just x) -> x)
+   f (Just x) = rhs
+   -- but no Nothing case
 
-     Existing warning: ``incomplete-uni-patterns``.
-   
-   - A record construction which is incomplete because there are missing fields, e.g.::
-   
-      data T = MkT { x :: Int, y :: Bool }
-      t = MkT { x = 5 } -- No specification of y.
+  Existing warning: ``incomplete-patterns``.
 
-     Existing warning: ``missing-fields``.
-   
-   - A record update where the field to be updated does not occur in every constructor of the record type, e.g.::
-      
-      data T = T1 { x :: Int } | T2
-      f r = r { x = 3 } -- Would fail if T2 were passed to f
+- Case expressions that fail to match some value, e.g.::
 
-     Existing warning: ``incomplete-record-updates``.
+   case m of
+     Just x -> rhs
+     -- no Nothing case
 
-   - An instance declaration where a method goes unspecified despite no default in the corresponding class declaration, e.g.::
-   
-      class C a where
-        op1 :: a -> a
-        op2 :: a -> [a]
+  Existing warning: ``incomplete-patterns``.
 
-      instance C Int where
-        op1 = rhs
-        -- No definition for op2, and no default method in the class declaration.
+- Pattern bindings that may fail to match, e.g.::
 
-     Existing warning: ``missing-methods``.
+   let Just x = m
+   in body
 
-   - With ``-XFieldSelectors``, a data declaration using record syntax which defines fields that fail to occur in every constructor, e.g.::
-   
-      data T = T1 { x :: Int } | T2
-      -- The defined field selector function x :: T -> Int would have been incomplete.
+  Existing warning: ``incomplete-uni-patterns``.
 
-     Existing warning: ``partial-fields``.
+- Lambdas that may fail to match, e.g.::
 
-   - With ``-XMultiWayIf``, any multi-way if expression that is not guaranteed to match in some way (i.e. by having an ``otherwise`` or ``True`` branch), e.g.::
-   
-      if | x == 1 -> "a"
-         | y < 7  -> "b"
+   (\(Just x) -> x)
 
-     Existing warning: ``incomplete-patterns``.
+  Existing warning: ``incomplete-uni-patterns``.
 
-   With ``Incomplete`` enabled, the guiding principle is relaxed, and GHC works as it does today.
+- A record construction which is incomplete because there are missing fields, e.g.::
 
-   The implementation must have no false negatives.
-   That is, with ``-XNoIncomplete`` if the program compiles without error, it must not fail at runtime with any of the above errors.
-   However, the implementation is permitted to have false positives: it may report an error when in fact the pattern match is complete.
-   A good implementation will strive to reduce the number of false positives.
+   data T = MkT { x :: Int, y :: Bool }
+   t = MkT { x = 5 } -- No specification of y.
 
-     While this is enough to specify ``NoIncomplete`` and ``Incomplete`` for GHC, language extensions are supposed to be proposed in a more implementation agnostic manner, so that they are eligible for inclusion in future Haskell reports.
-     The field and method restrictions are fairly clear cut and easy to specify from first principles, but the pattern match completeness checking GHC does today is not easy to specify.
+  Existing warning: ``missing-fields``.
 
-   If and when ``NoIncomplete`` were submitted to be the official default, or part of a Haskell report, we first promise to define the extension more formally: we would specify a simple and conservative completness checking algorithm.
-   That way, users know exactly what sort of false positives to expect from an implementation that does no less and no more than what the standard requires.
+- A record update where the field to be updated does not occur in every constructor of the record type, e.g.::
 
-     To be clear, punting on that spec need not block implementing for ``NoIncomplete`` for GHC, as GHC can always accept more programs than the spec.
+   data T = T1 { x :: Int } | T2
+   f r = r { x = 3 } -- Would fail if T2 were passed to f
 
-#. Let there be a new flag ``-fdefer-incompleteness-errors``, which defers these new compile-time errors from modules with ``NoIncomplete`` to be run-time errors.
-   It has no effect on ``Incomplete`` modules.
+  Existing warning: ``incomplete-record-updates``.
 
-   The deferred errors still exist at compile time, but as warnings.
-   Warnings will be categorized under these new warning categories:
+- An instance declaration where a method goes unspecified despite no default in the corresponding class declaration, e.g.::
 
-   - ``deferred-incomplete-patterns``
-   - ``deferred-incomplete-uni-patterns``
-   - ``deferred-incomplete-record-updates``
-   - ``deferred-incomplete-record-selection``
-   - ``deferred-incomplete-record-construction``
-   - ``deferred-missing-methods``
+   class C a where
+     op1 :: a -> a
+     op2 :: a -> [a]
 
-   These warning categories in turn can be ignored with ``-Wno-deferred-*``, or turned (back) into errors with ``-Werror=deferred-*``, like any other warning category.
-   They are enabled by default, so plain ``-Werror`` will suffice to make them all errors.
+   instance C Int where
+     op1 = rhs
+     -- No definition for op2, and no default method in the class declaration.
+
+  Existing warning: ``missing-methods``.
+
+- With ``-XFieldSelectors``, a data declaration using record syntax which defines fields that fail to occur in every constructor, e.g.::
+
+   data T = T1 { x :: Int } | T2
+   -- The defined field selector function x :: T -> Int would have been incomplete.
+
+  Existing warning: ``partial-fields``.
+
+- With ``-XMultiWayIf``, any multi-way if expression that is not guaranteed to match in some way (i.e. by having an ``otherwise`` or ``True`` branch), e.g.::
+
+   if | x == 1 -> "a"
+      | y < 7  -> "b"
+
+  Existing warning: ``incomplete-patterns``.
+
+With ``Incomplete`` enabled, the guiding principle is relaxed, and GHC works as it does today.
+
+The implementation must have no false negatives.
+That is, with ``-XNoIncomplete`` if the program compiles without error, it must not fail at runtime with any of the above errors.
+However, the implementation is permitted to have false positives: it may report an error when in fact the pattern match is complete.
+A good implementation will strive to reduce the number of false positives.
+
+  While this is enough to specify ``NoIncomplete`` and ``Incomplete`` for GHC, language extensions are supposed to be proposed in a more implementation agnostic manner, so that they are eligible for inclusion in future Haskell reports.
+  The field and method restrictions are fairly clear cut and easy to specify from first principles, but the pattern match completeness checking GHC does today is not easy to specify.
+
+If and when ``NoIncomplete`` were submitted to be the official default, or part of a Haskell report, we first promise to define the extension more formally: we would specify a simple and conservative completness checking algorithm.
+That way, users know exactly what sort of false positives to expect from an implementation that does no less and no more than what the standard requires.
+
+  To be clear, punting on that spec need not block implementing for ``NoIncomplete`` for GHC, as GHC can always accept more programs than the spec.
+
+``-fdefer-incompleteness-errors``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Let there be a new flag ``-fdefer-incompleteness-errors``, which defers these new compile-time errors from modules with ``NoIncomplete`` to be run-time errors.
+It has no effect on ``Incomplete`` modules.
+
+The deferred errors still exist at compile time, but as warnings.
+Warnings will be categorized under these new warning categories:
+
+- ``deferred-incomplete-patterns``
+- ``deferred-incomplete-uni-patterns``
+- ``deferred-incomplete-record-updates``
+- ``deferred-incomplete-record-selection``
+- ``deferred-incomplete-record-construction``
+- ``deferred-missing-methods``
+
+These warning categories in turn can be ignored with ``-Wno-deferred-*``, or turned (back) into errors with ``-Werror=deferred-*``, like any other warning category.
+They are enabled by default, so plain ``-Werror`` will suffice to make them all errors.
 
 Examples
 --------
