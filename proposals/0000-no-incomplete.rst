@@ -41,7 +41,7 @@ As I mentioned above, nobody would propose type checking is some extraneous anal
 The "defer" in the name makes clear we are taking what is normally a compile-time error and deferring it to run-time behind additional branching.
 Whether for quick slap-dash programming, or arguing with proponents of untyped languages, ``-fdefer-type-errors`` allows GHC to both express its opinion and yet also not straight-jacket the user into any one policy.
 
-My idea is to do the same thing for exhaustiveness checking: it should be mandatory, but as a debugging aid there are ``-fdefer-...`` flags to defer compile time errors into a run-time errors.
+My idea is to do the same thing for exhaustiveness checking: it should be mandatory, but as a debugging aid there are ``-fdefer-...errors`` flags to defer compile time errors into a run-time errors.
 
 Proposed Change Specification
 -----------------------------
@@ -206,6 +206,12 @@ Examples
 
 Effect and Interactions
 -----------------------
+
+- Roughly speaking, ``NoIncomplete`` + ``-fdefer-incompleteness-errors`` ≈ ``Incomplete``.
+  One might ask then, what is the point of ``-fdefer-incompleteness-errors``, if it gets us back where we started?
+  As laid out in the motivation, we view ``Incomplete`` as a mistake, and want ``NoIncomplete`` to be a viable alternative in all situations --- not just when "coding in the large".
+  Likewise as laid out there, we also think a ``-fdefer-...errors`` flag is a more appropriate framing of the ability to compile code with incomplete patterns.
+  So in short, we are planning for a world without ``Incomplete`` where the redundancy goes away and we don't use functionality.
 
 - With ``NoIncomplete``, The exception types ``NoMethodError``, ``RecUpdError``, ``RecConError``, ``RecSelError``, and ``PatternMatchFail`` should all be thought of as debugging aids like ``TypeError``.
 
