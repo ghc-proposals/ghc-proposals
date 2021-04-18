@@ -112,6 +112,8 @@ Expression              Equivalent
 ``e{lbl₁.lbl₂ = val}``  ``e{lbl₁ = (e.lbl₁){lbl₂ = val}}``
 ``e.lbl₁{lbl₂ = val}``  ``(e.lbl₁){lbl₂ = val}``
 ``e{lbl₁ = val₁}.val₂`` ``(e{lbl₁ = val₁}).val₂``
+``e{lbl₁}``             ``e{lbl₁ = lbl₁}`` [Note: requires ``NamedFieldUpdates``]
+``e{lbl₁.lbl₂}``        ``e{lbl₁.lbl₂ = lbl₂}`` [Note: requires ``NamedFieldUpdates``]
 ======================= ==================================
 
 [Note: ``e{lbl = val}`` is the syntax of a standard H98 record update.
