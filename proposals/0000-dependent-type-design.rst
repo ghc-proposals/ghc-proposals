@@ -324,8 +324,8 @@ demand, I can expand this.
 Here, then, are the design principles for Dependent Haskell, originally drafted
 by Simon PJ and then co-edited collaboratively.
 
-1. Type inference
-^^^^^^^^^^^^^^^^^
+Type inference
+^^^^^^^^^^^^^^
 
 Dependent Haskell embodies type inference, just like Haskell.  Indeed, every Haskell
 program is a DH program: no extra type annotations are required.
@@ -339,8 +339,8 @@ corners of the type system the programmer must supply some type annotations
 check GADT pattern-matches), but the goal is to have simple, predictable rules
 to say when such annotations are necessary.
 
-2. Erasure
-^^^^^^^^^^
+Erasure
+^^^^^^^
 
 In DH, *the programmer knows, for sure, which bits of the program will be
 retained at runtime, and which will be erased*. We shall call this the
@@ -358,8 +358,8 @@ erase as much as possible). The one exception to this is in datatypes, where
 erasure must always be made explicit (otherwise, GHC has no way to know what
 should be erased, unlike in functions).
 
-3. Lexical scoping, term-syntax and type-syntax, and renaming
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Lexical scoping, term-syntax and type-syntax, and renaming
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Status quo
 """"""""""
@@ -480,8 +480,8 @@ There are some details to be worked out here (e.g. the precise BNF), but a
 disambiguation syntax may be necessary, and this section suggests a way to
 accommodate one.
 
-4. Quantifiers
-^^^^^^^^^^^^^^
+Quantifiers
+^^^^^^^^^^^
 
 There are three "attributes" to a quantifier::
 
@@ -640,8 +640,8 @@ The ``foreach`` quantifier is the defining feature that makes Dependent
 Haskell a dependently-typed language. We now look at how ``foreach``\ -functions
 are applied (eliminated) and defined (introduced).
 
-5. Dependent pattern-match
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+Dependent pattern-match
+^^^^^^^^^^^^^^^^^^^^^^^
 
 When we pattern-match on a value that also appears in a type (that is,
 something bound by a ``foreach``), the type-checker can use the
@@ -665,8 +665,8 @@ never in *inference* mode.) In the ``vReplicate`` example above, we do indeed
 know the result type: ``Vec n a``. We can thus perform an informative
 pattern-match, as required to accept the definition.
 
-6. Dependent application and the Static Subset
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Dependent application and the Static Subset
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Suppose we have a function ``f :: foreach (a::ty) -> blah`` or ``f :: forall
 (a::ty) -> blah``. Then at a call site the programmer must supply an explicit
@@ -784,8 +784,8 @@ This approach keeps things simple for now; we might imagine retaining the
 knowledge that ``bs = [True]`` when, say, the right-hand side of a ``let`` is
 in the Static Subset, but we leave that achievement for later.
 
-7. Dependent definition
-^^^^^^^^^^^^^^^^^^^^^^^
+Dependent definition
+^^^^^^^^^^^^^^^^^^^^
 
 Principle: We will never *infer* a type with ``foreach .``, ``foreach ->``, or
 ``forall ->``. We will continue to infer types with ``forall .``, via
@@ -819,8 +819,8 @@ particular, this applies to the ``b`` in the ``the`` example. Its use in a
 type relies on the lookup failing in the type namespace and succeeding in the
 term namespace.
 
-8. Phase distinction
-^^^^^^^^^^^^^^^^^^^^
+Phase distinction
+^^^^^^^^^^^^^^^^^
 
 Erased arguments cannot be used at runtime. More specifically, they cannot be
 pattern-matched against, returned from a function, or otherwise used, except
@@ -869,8 +869,8 @@ But can we implement this in practice? I think we can, by use type
 representations. Yet, we may choose to defer such behavior until later; we can
 always make ``Type`` opaque and unavailable for pattern-matching.
 
-9. Full expressiveness
-^^^^^^^^^^^^^^^^^^^^^^
+Full expressiveness
+^^^^^^^^^^^^^^^^^^^
 
 One worry that some have about dependent types is that other dependently typed
 languages sometimes require all functions to be proved to terminate. (For
@@ -896,8 +896,8 @@ types in Haskell are designed (e.g., as explained in this `ICFP'17
 paper <https://richarde.dev/papers/2017/dep-haskell-spec/dep-haskell-spec.pdf>`_),
 it is not necessary to have a termination proof to support dependent types.
 
-10. Typed intermediate language
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Typed intermediate language
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 GHC has from the beginning supported a *typed* intermediate language. The type
 safety of this intermediate language is what allows us to say that Haskell
@@ -933,8 +933,8 @@ been the subject of some research. We believe that the most recent paper
   PhD thesis, 2013. This work describes an intermediate language and the
   Static Subset included in this design document.
 
-11. The Glorious Future
-^^^^^^^^^^^^^^^^^^^^^^^
+The Glorious Future
+^^^^^^^^^^^^^^^^^^^
 
 One glorious day, perhaps all terms will be understood by the static type
 checker. To put it another way, any term whatsoever will be acceptable as an
@@ -961,6 +961,63 @@ will treat these two very differently:
   
 Even once we reach the Glorious Day, nothing forces us to unify ``t1 -> t2``
 with ``foreach (_ :: t1) -> t2``, and we may decide not to.
+
+Learnability of Haskell
+^^^^^^^^^^^^^^^^^^^^^^^
+
+A cross-cutting concern in the design of depdendent types in Haskell is whether
+they will make learning Haskell more difficult for newcomers to the language, or
+less usable for long-time Haskellers who prefer to avoid dependent types.
+
+We thus set forth this principle:
+
+**The Opt-In Principle (OIP):** Users who do not opt into dependent types will
+not be affected by them.
+
+By "opt into", we mean that users would have to enable ``-XDependentTypes`` or
+import a module that exposes functions with depenently-typed interfaces. These
+modules would not be standard modules that are routinely imported today, such
+as ``Data.List`` or ``Prelude``.
+
+Like all principles, we cannot promise that there will not be exceptions, but
+any exceptions made would be made wary of the OIP. An example from the history
+of adding fancy types to GHC is around the type of ``($)``, which became levity-polymorphic
+for GHC 8.0, despite the fact that ``($)`` is exported in ``Prelude``. The solution
+is to have ``-fprint-explicit-runtime-reps``, off by default, that allows users
+to see the full type of ``($)``. Without ``-fprint-explicit-runtime-reps``, users see
+a simplified type ``(a -> b) -> a -> b``, as they might expect. Extrapolating to
+dependent types, if a function in ``Prelude`` were to get a dependent type, we
+would design the new type to be backward compatible and to be hidden behind a flag
+similar to ``-fprint-explicit-runtime-reps``. It is our hope that efforts toward
+better IDE support for Haskell will make such designs easier to contemplate, where
+a user might, say, click on a confusing aspect of an error message to get more detail.
+
+Another important aspect of the OIP is in error messages. Suppose my second day of
+Haskell includes ::
+
+  x :: Just Int
+  x = Nothing
+
+I would then see a suggestion ``A data constructor of that name is in scope;
+did you mean DataKinds?``. This suggestion is unhelpful on the second day of
+Haskelling: much better would be for GHC to suggest that the user meant ``Maybe``
+instead of ``Just``. There is an inherent tension between keeping users in
+a language subset that is more understandable and discoverability. One possibility
+would be for an error message to label how "advanced" a language extension is
+as it is being suggested, or to link to a page with more information and guidance.
+If our second-day-of-Haskell user were told
+``Did you mean to enable advanced extension DataKinds?`` perhaps they would
+seek other fixes to their program before enabling ``-XDataKinds``.
+
+Another possibility
+is for users to somehow indicate a universe of extensions that are in scope; error
+messages would not suggest extensions outside of that universe. This universe could
+be quite small by default, and then have a way of being easily enlarged; it is all
+easier to imagine in the context of an IDE than as a command-line interface.
+
+The goal here is not to suggest a concrete approach to upholding the OIP, only
+that solutions exist. As we develop out dependent types and implement it, we can
+revisit these solutions as necessary.
 
 Non-design of dependent types
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
