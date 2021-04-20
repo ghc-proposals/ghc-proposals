@@ -116,11 +116,8 @@ Expression              Equivalent
 ``e{lbl₁.lbl₂}``        ``e{lbl₁.lbl₂ = lbl₂}`` [Note: requires ``NamedFieldUpdates``]
 ======================= ==================================
 
-[Note: ``e{lbl = val}`` is the syntax of a standard H98 record update.
-It’s the nested form introduced by this proposal that is new :
-``e{lbl1.lbl2 = val}``. However, in the event
-``OverloadedRecordUpdate`` is in effect, note that ``e{lbl = val}``
-desugars to ``setField @"lbl" e val``].
+- **Updating nested fields.** ``e{lbl = val}`` is the syntax of a standard H98 record update. It’s the nested form introduced by this proposal that is new : ``e{lbl1.lbl2 = val}``. However, in the event ``OverloadedRecordUpdate`` is in effect, note that ``e{lbl = val}`` desugars to ``setField @"lbl" e val``].
+- **Punning.** With ``NamedFieldPuns``, the form ``e { x, y }`` means ``e { x=x, y=y }``. With ``OverloadedRecordUpdate`` this behaviour is extended to nested updates: ``e { a.b.c, x.y }`` means ``e { a.b.c=c, x.y=y }``. Note the variable that is referred to implicitly (here ``c`` and ``y``) is the last chunk of the field to update. So ``c`` is the last chunk of ``a.b.c``, and ``y`` is the last chunk of ``x.y``.
 
 2.1.2 Precedence
 ^^^^^^^^^^^^^^^^
