@@ -55,7 +55,8 @@ It is on by default for backwards compatibility.
 When using ``-XNoImplicitForAll``, all variables in regular signatures, instances, and data declarations must be explicitly bound.
 
 Create ``-XPatternSignatureBinds`` to allow the implicit binding of free variables in pattern signatures.
-It is also on by default for backwards compatibility.
+It is implied by ``-XScopeTypeVariables`` by default for backwards compatibility.
+(Without ``-XScopeTypeVariables`` it currently has no effect, so we are free to have it off by default.)
 When using ``-XNoPatternSignatureBinds``, all variables in pattern signatures must be explicitly bound.
 
 Examples
