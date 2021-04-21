@@ -2,11 +2,11 @@ Stable GADT constructor syntax
 ==============================
 
 .. author:: Vladislav Zavialov
-.. date-accepted::
+.. date-accepted:: 2021-04-21
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/402>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/402>`_.
 .. contents::
 
 The syntax of GADT constructor declarations is `documented in the User's Guide
