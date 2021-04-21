@@ -1,13 +1,17 @@
 Binding type variables in lambda-expressions
 ============================================
 
-.. proposal-number:: 50
-.. trac-ticket::
-.. implemented::
-.. highlight:: haskell
-.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/155>`_.
 .. sectnum::
-   :start: 50
+.. author:: Richard Eisenberg
+.. date-accepted:: Leave blank. This will be filled in when the proposal is accepted.
+.. ticket-url:: Leave blank. This will eventually be filled with the
+                ticket URL which will track the progress of the
+                implementation of the feature.
+.. implemented:: Leave blank. This will be filled in with the first GHC version which
+                 implements the described feature.
+.. highlight:: haskell
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/155>`_
+            and is being `amended at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/238>`_.
 .. contents::
 
 .. _`#126`: https://github.com/ghc-proposals/ghc-proposals/pull/126
@@ -45,6 +49,9 @@ extends this idea to lambda-expressions, allowing ``\ @a x -> ...``. Here are so
   wrong @a x = x                          -- we can't do this without a type signature
 
   stillWrong @a (x :: a) = x              -- even here we can't
+
+In addition, this proposal splits up the current ``-XScopedTypeVariables`` extension into
+component pieces which may be mixed and matched.
   
 Motivation
 ----------
@@ -91,9 +98,35 @@ There are several motivating factors for this addition:
    in a backward-compatible way. Along the way, this proposal satisfies the
    motivations behind `#119`_, which was rejected for insufficient merit,
    yet has continued to look attractive from time to time.
+
+6. John Ericson has also `provided <https://github.com/ghc-proposals/ghc-proposals/pull/238#issuecomment-824134181>`_
+   some relevant motivation for splitting up
+   ``-XScopedTypeVariables``:
+
+       To me the motivation is that, with ``-XTypeAbstractions``, ``-XScopedForAlls``
+       and ``-XPatternSignatureBinds`` become arguable misfeatures with replacements,
+       but ``-XMethodTypeVariables`` is (perhaps unfortunately) still needed. It would
+       be possible to skip ``-XScopedForAlls`` and have that just be the remaining
+       core feature of ``-XScopedTypeVariables``, but I do sort of
+       like ``-XScopedTypeVariables`` just enabling other features, so we have more
+       decomposition into composable parts. I think that might help with teaching.
+
+       ``-XPatternSignatures`` is also nice in order to separate out the least
+       controversial part of all of this. It's a knob we don't need only because I
+       very much hope it can uncontroversial become part of the next version of
+       Haskell (likewise ``-XExplicitForAll``) while the rest of this stuff would
+       probably would get more haggling.
    
 Proposed Change Specification
 -----------------------------
+
+There are two parts of this proposal: a refactoring of extensions around binding
+type variables, and a new construct for binding type variables in function definitions
+(both in function binds and in anonymous functions). While they are separable,
+I think they make a nice whole. We could choose to do either part, or both together.
+
+Refactoring extensions around type variable binding
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 1. Introduce ``-XPatternSignatures``. With ``-XPatternSignatures``, we would
    allow type signatures in patterns. These signatures could mention in-scope
@@ -103,9 +136,9 @@ Proposed Change Specification
    out-of-scope type variables written in a pattern signature would be bound there
    and would remain in scope over the
    same region of code that term-level variables introduced in a pattern scope
-   over. This extension is on by default (but is useless without ``-XPatternSignatures``).
-   (This point is actually not a change, but is a part of accepted proposal
-   `#285`_.)
+   over. This extension is off by default.
+   (This extension is a part of accepted, unimplemented proposal
+   `#285`_; the only change is that this proposal makes it off by default.)
 
 3. Introduce ``-XMethodTypeVariables``. With ``-XMethodTypeVariables``, type
    variables introduced in an instance head would scope over the bodies of
@@ -115,6 +148,7 @@ Proposed Change Specification
 4. Introduce ``-XScopedForAlls``. With ``-XScopedForAlls``, any type variables
    mentioned in an explicit ``forall`` scopes over an expression. This applies
    to the following constructs:
+   
    * Function bindings
    * Pattern synonym bindings (including in any ``where`` clause)
    * Expression type signatures
@@ -123,86 +157,89 @@ Proposed Change Specification
    extensions; this way, ``-XScopedTypeVariables`` does not change from its
    current meaning.
 
-6. Introduce ``-XTypeAbstractions``. With ``-XTypeAbstractions``, users
-   could write a pattern like ``@a`` to the left of the ``=`` in a function
-   binding or between the ``\`` and ``->`` in a lambda-expression. 
-   In addition, the ``-XScopedForAlls`` extension now affects only *inferred*
-   variables, never *specified* variables. Note that *inferred* variables
-   can be mentioned in source Haskell with accepted proposal `#99`_.
+Type abstractions
+^^^^^^^^^^^^^^^^^
+   
+Introduce ``-XTypeAbstractions``. With ``-XTypeAbstractions``, users
+could write a pattern like ``@a`` to the left of the ``=`` in a function
+binding or between the ``\`` and ``->`` in a lambda-expression. 
+In addition, the ``-XScopedForAlls`` extension now affects only *inferred*
+variables, never *specified* variables. Note that *inferred* variables
+can be mentioned in source Haskell with accepted proposal `#99`_.
 
-   A. Here is the BNF of the new form (cf. The `Haskell 2010 Report`_)::
+A. Here is the BNF of the new form (cf. The `Haskell 2010 Report`_)::
 
-        apat ::= ... | '@' tyvar
+     apat ::= ... | '@' tyvar
 
-      Conveniently, ``apat``\ s are used both in function left-hand sides
-      and in lambda-expressions, so this change covers both use-cases.
+   Conveniently, ``apat``\ s are used both in function left-hand sides
+   and in lambda-expressions, so this change covers both use-cases.
 
-      In the BNF, we assume the ``@`` is a `*prefix occurrence* <https://github.com/ghc-proposals/ghc-proposals/blob/79f48248ae31b1a490deb1b019c206efa0be89da/proposals/0229-whitespace-bang-patterns.rst#id3>`_.
+   In the BNF, we assume the ``@`` is a `*prefix occurrence* <https://github.com/ghc-proposals/ghc-proposals/blob/79f48248ae31b1a490deb1b019c206efa0be89da/proposals/0229-whitespace-bang-patterns.rst#id3>`_.
 
-   B. A type variable pattern would not be allowed in the following contexts:
+B. A type variable pattern would not be allowed in the following contexts:
 
-      i. To the right of an as-pattern
-      ii. As the top node in a lazy (``~``) pattern
-      iii. As the top node in a ``lpat`` (that is, to the left of an infix
-           constructor, directly inside a parenthesis, as a component of
-           a tuple, as a component of a list, or directly after an ``=``
-           in a record pattern)
+   i. To the right of an as-pattern
+   ii. As the top node in a lazy (``~``) pattern
+   iii. As the top node in a ``lpat`` (that is, to the left of an infix
+        constructor, directly inside a parenthesis, as a component of
+        a tuple, as a component of a list, or directly after an ``=``
+        in a record pattern)
 
-   C. Typing rules for the new construct are as in a `recent paper
-      <https://richarde.dev/papers/2021/stability/stability.pdf>`_: see
-      ETm-InfTyAbs, ETm-CheckTyAbs, Pat-InfTyVar, and Pat-CheckTyVar, all in
-      Figure 7. While the typeset versions remain the official typing rules,
-      I will summarise the different rules below.
+C. Typing rules for the new construct are as in a `recent paper
+   <https://richarde.dev/papers/2021/stability/stability.pdf>`_: see
+   ETm-InfTyAbs, ETm-CheckTyAbs, Pat-InfTyVar, and Pat-CheckTyVar, all in
+   Figure 7. While the typeset versions remain the official typing rules,
+   I will summarise the different rules below.
 
-      **Background**. GHC implements *bidirectional* type-checking, where
-      we sometimes know what type to expect an expression to have. When we
-      know such a type (for example, because we have a type signature, or
-      an expression is an argument to a function with a known type), we say
-      we are in *checking* mode. When we do not know such a type (for example,
-      when we are inferring the type of a ``let``\ -binding or the type of
-      a function applied to arguments), we say we are in *synthesis* mode.
-      The `Practical Type Inference <https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/putting.pdf>`_ paper gives a nice, Haskell-oriented introduction.
+   **Background**. GHC implements *bidirectional* type-checking, where
+   we sometimes know what type to expect an expression to have. When we
+   know such a type (for example, because we have a type signature, or
+   an expression is an argument to a function with a known type), we say
+   we are in *checking* mode. When we do not know such a type (for example,
+   when we are inferring the type of a ``let``\ -binding or the type of
+   a function applied to arguments), we say we are in *synthesis* mode.
+   The `Practical Type Inference <https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/putting.pdf>`_ paper gives a nice, Haskell-oriented introduction.
 
-      i. In synthesis mode, when examining ``\ @a -> expr``, we simply put
-         ``a`` in scope as a fresh skolem variable (that is, not equal
-         to any other type) and then check ``expr``. (Presumably, ``expr``
-         uses ``a`` in a type signature.) When we infer that ``expr`` has
-         type ``ty``, the expression ``\ @a -> expr`` has type ``forall a. ty``.
-         Example: ``\ @a (x :: a) -> x`` infers the type ``forall a. a -> a``.
-         (For this example, we note that ``\ @a (x :: a) -> x`` is a short-hand
-         for ``\ @a -> \ (x :: a) -> x``.)
+   i. In synthesis mode, when examining ``\ @a -> expr``, we simply put
+      ``a`` in scope as a fresh skolem variable (that is, not equal
+      to any other type) and then check ``expr``. (Presumably, ``expr``
+      uses ``a`` in a type signature.) When we infer that ``expr`` has
+      type ``ty``, the expression ``\ @a -> expr`` has type ``forall a. ty``.
+      Example: ``\ @a (x :: a) -> x`` infers the type ``forall a. a -> a``.
+      (For this example, we note that ``\ @a (x :: a) -> x`` is a short-hand
+      for ``\ @a -> \ (x :: a) -> x``.)
 
-      ii. In checking mode, when examining ``\ @a -> expr`` against type ``ty``,
-          we require that ``ty`` has the shape ``forall a. ty'``, where
-          ``a`` is a *specified* variable (possibly
-          after skolemising any *inferred* variables in ``ty``), renaming the
-          bound variable as necessary to match the name used in the expression.
-          We then check ``expr`` against type ``ty'``.
+   ii. In checking mode, when examining ``\ @a -> expr`` against type ``ty``,
+       we require that ``ty`` has the shape ``forall a. ty'``, where
+       ``a`` is a *specified* variable (possibly
+       after skolemising any *inferred* variables in ``ty``), renaming the
+       bound variable as necessary to match the name used in the expression.
+       We then check ``expr`` against type ``ty'``.
 
-      iii. In synthesis mode, when examining a function argument ``@a`` to
-           a function ``f``, we
-           bring ``a`` into scope as a fresh skolem variable and check the
-           remainder of the arguments and the right-hand side. In the type
-           of ``f``, we include a ``forall a.`` in the spot corresponding
-           to the type variable argument.
+   iii. In synthesis mode, when examining a function argument ``@a`` to
+        a function ``f``, we
+        bring ``a`` into scope as a fresh skolem variable and check the
+        remainder of the arguments and the right-hand side. In the type
+        of ``f``, we include a ``forall a.`` in the spot corresponding
+        to the type variable argument.
 
-           If there are multiple equations, each equation is required
-           to bind type variables in the same locations. (If this is
-           burdensome, write a type signature.) (We could probably do
-           better, by inferring the maximum count of bound type
-           variables between each required argument and then treating
-           each set of bound type variables as a prefix against this
-           maximum, but there is little incentive. Just write a type
-           signature!)
+        If there are multiple equations, each equation is required
+        to bind type variables in the same locations. (If this is
+        burdensome, write a type signature.) (We could probably do
+        better, by inferring the maximum count of bound type
+        variables between each required argument and then treating
+        each set of bound type variables as a prefix against this
+        maximum, but there is little incentive. Just write a type
+        signature!)
 
-      iv. In checking mode, when examining a function argument ``@a`` to
-          a function ``f`` with type signature ``ty``, we require the corresponding
-          spot in the type signature to have a ``forall a`` (possibly renaming
-          the bound variable). The type variable ``a`` is then brought
-          into scope and we continue checking arguments and the right-hand side.
+   iv. In checking mode, when examining a function argument ``@a`` to
+       a function ``f`` with type signature ``ty``, we require the corresponding
+       spot in the type signature to have a ``forall a`` (possibly renaming
+       the bound variable). The type variable ``a`` is then brought
+       into scope and we continue checking arguments and the right-hand side.
 
-          Multiple equations can bind type variables in different places,
-          as we have a type signature to guide us.
+       Multiple equations can bind type variables in different places,
+       as we have a type signature to guide us.
 
 Examples of new behavior of scoped type variables
 -------------------------------------------------
@@ -297,7 +334,12 @@ Effect and Interactions
   regrettable but seems an inevitable consequence of the ``{k}`` notation.
 
 .. _`#99`: https://github.com/ghc-proposals/ghc-proposals/pull/99
-  
+
+* This proposal dovetails with accepted proposal `#285`_ in its use of ``-XPatternSignatureBinds``.
+  The goal of `#285`_ is to allow the user to more carefully control whether type variables
+  may be brought into scope "automatically". This proposal broadly continues in that tradition
+  by giving users finer-grained control of which features they wish to enable.
+
 * (technical) The `Visible Type Applications`_ (VTA) paper defines the behavior about what to
   do when checking against a polytype: it says to deeply skolemize. However, eager deep
   skolemization will spell trouble for this extension, as we need the lambdas to see
@@ -310,11 +352,19 @@ Effect and Interactions
   
 Costs and Drawbacks
 -------------------
-This is another feature to specify and maintain, and that's always a burden. It will take
-some creative thought about how to do generalization properly (last point in previous section),
-but I don't actually think the code will be all that challenging there.
+* The new small zoo of flags is yet more flags to be aware of. It is possible to do away
+  with this part of the proposal of the cost appears to outweigh the benefit. (Earlier
+  versions of this proposal had ``-XTypeAbstractions`` imply ``-XNoScopedForAlls``, but
+  that does not work with *inferred* variables. In any case, this historical fact is why
+  these two ideas are bundled in one proposal. They could be separated, but I want both
+  parts, so I've kept them both here.)
 
-There is a potential confusion with as-patterns.
+* ``-XTypeAbstractions`` is another feature to specify and maintain, and
+  that's always a burden. It will take some creative thought about how to do
+  generalization properly (last point in previous section), but I don't
+  actually think the code will be all that challenging there.
+
+* There is a potential confusion with as-patterns.
 
 Alternatives
 ------------
