@@ -55,7 +55,7 @@ lambda expressions closer to those of function declarations:
     allowing lambda expressions to have multiple clauses. This was not
     implemented: The most obvious approach of turning `\` into a layout herald
     had the disadvantage of making some common idioms invalid.
-    - This can be circumvented by introducing a new expression that isn't required
+    - This could be circumvented by introducing a new expression that isn't required
       to be backwards compatible with existing idioms.
 
 In the discussion of this proposal, several designs to address these
@@ -83,7 +83,7 @@ NB: This section assumes that `\mcase` is chosen as the keyword. Other keywords 
 been suggested, such as `\of` and `\cases`.
 
 A new extension `-XMultiWayLambda` is implemented. Under this extension, a new
-expression is enabled, introduced by the token sequence `\ mcase`. The whitespace between  `\` and `mcase`
+expression is enabled, introduced by the token sequence <tt>\\&nbsp;mcase</tt>. The whitespace between  `\` and `mcase`
 is optional and may contain an arbitrary sequence of whitespace characters.
 `\mcase` behaves in a way largely similar to `\`, but it is a layout herald, can have multiple
 clauses, and may contain guards (see BNF for details).
@@ -99,26 +99,27 @@ be addressed in a future proposal, for example by adding absurd patterns, to
 provide a more general solution. Note that the `\case {}` construct only works for matching
 on a single pattern.
 
-Like the existing behavior for alternatives in case- and
+Like the existing behavior for alternatives in `case`- and
 `\case`-expressions, and equations in function declaration syntax, it is
 possible to use `where` clauses within each clause of a `\mcase`-expression.
 
-Explicit layout using braces can be used instead of the implicit layout.
-
 As with function declaration equations, all clauses must have the same number of patterns.
 
-Once the [*Binding type variables in lambda-expressions*](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0155-type-lambda.rst) proposal is being implemented,
-with `-XTypeAbstractions`, `\mcase`-expressions will also be able to bind type
-variables.
-
-Given an `\mcase`-expression `ofexp` with one or more scrutinees and function `f` declared with function
+Given an `\mcase`-expression `mcexp` with one or more scrutinees and function `f` declared with function
 declaration syntax
-and with the same alternatives and same guards for each alternative as `ofexp`, the semantics of the
-expression `ofexp` are the same as those of the expression `f`. If `ofexp` has no scrutinees, the
+and with the same alternatives and same guards for each alternative as `mcexp`, the semantics of the
+expression `mcexp` are the same as those of the expression `f`. If `mcexp` has no scrutinees, the
 semantics are the same as those of an expression `p` declared with a pattern binding with the same
-guards as `ofexp`.
+guards as `mcexp`.
 
-#### BNF changes for (1)
+This alternative matches function declaration syntax very closely, making
+refactoring easier. However, it is another syntactic construct that has to be
+maintained. Since it covers (almost) all of the use-cases of `\case`,
+adding a deprecation plan for `\case` could be considered.
+
+#### BNF Changes for (1)
+
+**Bold** indicates changes to the existing BNF.
 
 <table>
     <tr>
@@ -160,9 +161,12 @@ filter = \case _, []               -> []
 ```
 
 This alternative does not introduce a new construct. It instead consists of a straightforward extension to an existing one:
-Allow to separate multiple patterns in `\case` by commas.
+Allow separating multiple patterns in `\case` by commas.
 
-Additionally, an analogous extension could be introduced to `case of`:
+A clause would only match if all of its patterns match their respective
+scrutinee.
+
+Additionally, an analogous extension could be introduced for `case of`:
 
 ```haskell
 case numerator, denominator of
@@ -184,7 +188,18 @@ With the advantage that users don't have to be worried or learn about whether
 using tuples in such cases incurs a performance penalty, and it would mean that the
 `\case` syntax stays consistent with `case of` syntax.
 
-#### BNF changes for (2)
+The lack of parentheses makes this slightly more concise than the other
+alternatives, especially in cases with only a single pattern.
+
+One potential concern is that this breaks the pattern of symmetry between
+expressions and patterns that match them. For example, if a function is defined
+as `f (Just a) (Right b) = a + b`, it can be called as `f (Just a) (Right b)`,
+but when using `\case` (i.e. `f = \case Just a, Right b -> a + b`), the patterns are
+separated by commas, whereas the expression calling `f` still uses parentheses.
+
+#### BNF Changes for (2)
+
+**Bold** indicates changes to the existing BNF.
 
 <table>
     <tr>
@@ -254,20 +269,37 @@ possible to use `where` clauses within each clause of the extended `case`
 expression. Furthermore, each clause can have guards, which appear after all
 patterns (see BNF).
 
-Once the [*Binding type variables in lambda-expressions*](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0155-type-lambda.rst)
-proposal is being implemented, with `-XTypeAbstractions`, `case`-expressions will also be able to bind type
-variables.
+This alternative has some desirable properties, in that it extends an existing
+syntactic construct rather than introducing a new one and is syntactically
+similar to lambda expressions. On the other hand, it does not relate to
+existing syntax as directly as others (e.g., it produces an anonymous function
+but doesn't start with `\`, as opposed to lambda expressions and `\case`), and
+its functionality overlaps with that of `\case`. As with alternative (2), a
+deprecation plan for `\case` could thus be considered.
 
-#### BNF changes for (3)
+Since the introductory example only demonstrates the case without scrutinee,
+here is a different example:
+
+```haskell
+sendEmail address = case validate address of
+  Just emailAddress \subject content (Just attachment) -> sendWithAttachment emailAddress subject content attachment
+  Just emailAddress \subject content Nothing           -> sendWithoutAttachment emailAddress subject content
+  Nothing           \_       _       _                 -> error "invalid address"
+```
+
+#### BNF Changes for (3)
 
 **Bold** indicates changes to the existing BNF.
 
 <table>
     <tr>
-        <td><i>lexp</i></td><td>&rarr;</td><td><tt>case</tt> <i>exp</i> <tt>of</tt> <tt>{</tt> <i>alts</i> <tt>}</tt></td>
+        <td><i>lexp</i></td><td>&rarr;</td><td>&hellip;</td>
     </tr>
     <tr>
-        <td></td><td><b>|</b></td><td><b><tt>case</tt> <tt>of</tt> <tt>{</tt> <i>nalts</i> <tt>}</tt></b></td>
+        <td><i>lexp</i></td><td>|</td><td><tt>case</tt> <i>exp</i> <tt>of</tt> <tt>{</tt> <i>alts</i> <tt>}</tt></td><td>(case expression)</td>
+    </tr>
+    <tr>
+        <td></td><td><b>|</b></td><td><b><tt>case</tt> <tt>of</tt> <tt>{</tt> <i>nalts</i> <tt>}</tt></b></td><td><b>(case expression without scrutinee)</b></td>
     </tr>
     <tr>
         <td></td><td>|</td><td><tt>case</tt> <i>exp</i> <tt>of</tt> <tt>{}</tt></td><td>(with <tt>-XEmptyCase</tt>)</td>
@@ -275,10 +307,10 @@ variables.
         <td><i>alts</i></td><td>&rarr;</td><td><i>alt<sub>1</sub></i> <tt>;</tt> &hellip; <tt>;</tt> <i>alt<sub>n</sub></i></td><td>(<i>n</i> &ge; 1)</td>
     </tr>
     <tr>
-        <td><i>alt</i></td><td>&rarr;</td><td><i>pat</i> <b>[ <tt>\</tt> <i>apat<sub>1</sub></i> &hellip; <i>apat<sub>n</sub></i><tt> ]</b> -&gt;</tt> <i>exp</i> [ <tt>where</tt> <i>decls</i> ]</td><td>(<i>n</n> &ge; 1)</td>
+        <td><i>alt</i></td><td>&rarr;</td><td><i>pat</i> <b>[ <tt>\</tt> <i>apat<sub>1</sub></i> &hellip; <i>apat<sub>n</sub></i> ]</b> <tt>-&gt;</tt> <i>exp</i> [ <tt>where</tt> <i>decls</i> ]</td><td><b>(<i>n</n> &ge; 1)</b></td>
     </tr>
     <tr>
-        <td></td><td>|</td><td><i>pat</i> <b>[ <tt>\</tt> <i>apat<sub>1</sub></i> &hellip; <i>apat<sub>n</sub></i> ]</b> <i>gdpat</i> [ <tt>where</tt> <i>decls</i> ]</td><td>(<i>n</n> &ge; 1)</td>
+        <td></td><td>|</td><td><i>pat</i> <b>[ <tt>\</tt> <i>apat<sub>1</sub></i> &hellip; <i>apat<sub>n</sub></i> ]</b> <i>gdpat</i> [ <tt>where</tt> <i>decls</i> ]</td><td><b>(<i>n</n> &ge; 1)</b></td>
     </tr>
     <tr>
         <td></td><td>|</td><td></td><td>(empty alternative)</td>
@@ -294,21 +326,6 @@ variables.
     </tr>
     <tr>
         <td></td><td><b>|</b></td><td></td><td><b>(empty alternative)</b></td>
-    </tr>
-    <tr>
-        <td><i>gdpat</i></td><td>&rarr;</td><td><i>guards</i> <tt>-&gt;</tt> <i>exp</i> [ <i>gdpat</i> ]</td>
-    </tr>
-    <tr>
-        <td><i>guards</i></td><td>&rarr;</td><td><tt>|</tt> <i>guard<sub>1</sub></i><tt>,</tt> &hellip;<tt>,</tt> <i>guard<sub>n</sub></i></td><td>(<i>n</i> &ge; 1)</td>
-    </tr>
-    <tr>
-        <td><i>guard</i></td><td>&rarr;</td><td><i>pat</i> <tt>&lt;-</tt> <i>infixexp</i></td><td>(pattern guard)</td>
-    </tr>
-    <tr>
-        <td></td><td>|</td><td><tt>let</tt> <i>decls</i></td><td>(local declaration)</td>
-    </tr>
-    <tr>
-        <td></td><td>|</td><td><i>infixexp</i></td><td>(boolean guard)</td>
     </tr>
 <table>
 
@@ -353,6 +370,8 @@ would make it possible to remove the special casing and warning after a few
 releases have passed.
 
 #### BNF Changes for (4)
+
+**Bold** indicates changes to the existing BNF.
 
 <table>
     <tr>
@@ -433,10 +452,6 @@ case Just 34, Right [] of
   <td>
     <ul>
       <li>Different from function equation syntax and from function application syntax: you apply as <tt>f (Just 34) (Right [])</tt> but pattern match with <tt>\case Just 23, Right []</tt></li>
-    </ul>
-    <ul>
-      <li>Closes the door that leads to using commas as separator between
-      multiple alternatives that are handled as a single case</li>
     </ul>
   </td>
 </tr>
