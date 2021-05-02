@@ -164,21 +164,25 @@ Allow to separate multiple patterns in `\case` by commas.
 
 Additionally, an analogous extension could be introduced to `case of`:
 
-<!-- TODO: use more realistic example here -->
 ```haskell
-case x, y of
-  Just a, Right b -> something1
-  Just a, Left b -> something2
-  _, _ -> something3
+case numerator, denominator of
+  _          , 0 -> Nothing
+  Whole n    , d -> Whole (n / d)
+  Complex a b, d -> Complex (a / d) (b / d)
 ```
 
-This would mean that `\case` syntax stays consistent with `case of` syntax, and
-this new syntax could be used when matching on multiple expressions instead of
-tuples, without worrying if there will be a performance impact <!-- TODO
-explain better what this means -->
+This can be used instead of using tuples to achieve something similar:
 
-<!-- TODO: add examples -->
-<!-- TODO: add BNF changes as tables -->
+```haskell
+case (numerator, denominator) of
+  (_          , 0) -> Nothing
+  (Whole n    , d) -> Whole (n / d)
+  (Complex a b, d) -> Complex (a / d) (b / d)
+```
+
+With the advantage that users don't have to be worried or learn about whether
+using tuples in such cases incurs a performance penalty, and it would mean that the
+`\case` syntax stays consistent with `case of` syntax.
 
 #### BNF changes for (2)
 
@@ -699,6 +703,10 @@ case Just 34, Right [] of
   <td>
     <ul>
       <li>Different from function equation syntax and from function application syntax: you apply as <tt>f (Just 34) (Right [])</tt> but pattern match with <tt>\case Just 23, Right []</tt></li>
+    </ul>
+    <ul>
+      <li>Closes the door that leads to using commas as separator between
+      multiple alternatives that are handled as a single case</li>
     </ul>
   </td>
 </tr>
