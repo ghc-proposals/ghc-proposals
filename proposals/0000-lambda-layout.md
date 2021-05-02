@@ -132,10 +132,10 @@ adding a deprecation plan for `\case` could be considered.
         <td><b><i>nalts</i></b></td><td><b>&rarr;</b></td><td><b><i>nalt</i><sub>1</sub> <tt>;</tt> &hellip; <tt>;</tt> <i>nalt</i><sub>n</sub></b></td><td><b>(n &ge; 1)</b></td>
     </tr>
     <tr>
-        <td><b><i>nalt</i></b></td><td><b>&rarr;</b></td><td><b>[ <i>apat</i><sub>1</sub> &hellip; <i>apat</i><sub>n</sub> ] <tt>-></tt> <i>exp</i> [ <tt> where </tt> <i>decls</i> ]</b></td><td><b>(n &ge; 1)</b></td>
+        <td><b><i>nalt</i></b></td><td><b>&rarr;</b></td><td><b>[ <i>apat</i><sub>1</sub> &hellip; <i>apat</i><sub>n</sub> ] <tt>-></tt> <i>exp</i> [ <tt> where </tt> <i>decls</i> ]</b></td><td><b>(n &ge; 0)</b></td>
     </tr>
     <tr>
-        <td></td><td><b>|</b></td><td><b>[ <i>apat</i><sub>1</sub> &hellip; <i>apat</i><sub>n</sub> ] <i>gdpat</i> [ <tt> where </tt> <i>decls</i> ]</b></td><td><b>(n &ge; 1)</b></td>
+        <td></td><td><b>|</b></td><td><b>[ <i>apat</i><sub>1</sub> &hellip; <i>apat</i><sub>n</sub> ] <i>gdpat</i> [ <tt> where </tt> <i>decls</i> ]</b></td><td><b>(n &ge; 0)</b></td>
     </tr>
     <tr>
         <td></td><td><b>|</b></td><td></td><td><b>(empty alternative)</b></td>
@@ -161,7 +161,8 @@ filter = \case _, []               -> []
 ```
 
 This alternative does not introduce a new construct. It instead consists of a straightforward extension to an existing one:
-Allow separating multiple patterns in `\case` by commas.
+Allow separating multiple patterns in `\case` by commas. This makes it the
+least disruptive of the presented alternatives.
 
 A clause would only match if all of its patterns match their respective
 scrutinee.
@@ -203,10 +204,10 @@ separated by commas, whereas the expression calling `f` still uses parentheses.
 
 <table>
     <tr>
-        <td><b><i>alt</i></b></td><td><b>&rarr;</b></td><td><b>[ <i>pat</i><sub>1</sub><tt>,</tt> &hellip;, <i>apat</i><sub>n</sub> ] <tt>-></tt> <i>exp</i> [ <tt> where </tt> <i>decls</i> ]</b></td><td><b>(n &ge; 1)</b></td>
+        <td><i>alt</i></td><td>&rarr;</td><td><b>[ <i>pat</i><sub>1</sub><tt>,</tt> &hellip;, <i>apat</i><sub>n</sub> ]</b> <tt>-></tt> <i>exp</i> [ <tt> where </tt> <i>decls</i> ]</td><td><b>(n &ge; 1)</b></td>
     </tr>
     <tr>
-        <td></td><td>|</td><td><b>[ <i>pat</i><sub>1</sub><tt>,</tt> &hellip;<tt>,</tt> <i>apat</i><sub>n</sub> ] <t>gdpat</t> [ <tt> where </tt> <i>decls</i> ]</b></td><td><b>(n &ge; 1)</b></td>
+        <td></td><td>|</td><td><b>[ <i>pat</i><sub>1</sub><tt>,</tt> &hellip;<tt>,</tt> <i>apat</i><sub>n</sub> ]</b> <t>gdpat</t> [ <tt> where </tt> <i>decls</i> ]</td><td>(n &ge; 1)</td>
     </tr>
 <table>
 
@@ -296,7 +297,7 @@ sendEmail address = case validate address of
         <td><i>lexp</i></td><td>&rarr;</td><td>&hellip;</td>
     </tr>
     <tr>
-        <td><i>lexp</i></td><td>|</td><td><tt>case</tt> <i>exp</i> <tt>of</tt> <tt>{</tt> <i>alts</i> <tt>}</tt></td><td>(case expression)</td>
+        <td></td><td>|</td><td><tt>case</tt> <i>exp</i> <tt>of</tt> <tt>{</tt> <i>alts</i> <tt>}</tt></td><td>(case expression)</td>
     </tr>
     <tr>
         <td></td><td><b>|</b></td><td><b><tt>case</tt> <tt>of</tt> <tt>{</tt> <i>nalts</i> <tt>}</tt></b></td><td><b>(case expression without scrutinee)</b></td>
@@ -319,10 +320,10 @@ sendEmail address = case validate address of
         <td><b><i>nalts</i></b></td><td><b>&rarr;</b></td><td><b><i>nalt<sub>1</sub></i> <tt>;</tt> &hellip; <tt>;</tt> <i>nalt<sub>n</sub></i></b></td><td><b>(<i>n</i> &ge; 1)</b></td>
     </tr>
     <tr>
-        <td><b><i>nalt</i></b></td><td><b>&rarr;</b></td><td><b><tt>\</tt> <i>apat<sub>1</sub></i> &hellip; <i>apat<sub>n</sub></i><tt> -&gt;</tt> <i>exp</i> [ <tt>where</tt> <i>decls</i> ]</b></td><td><b>(<i>n</n> &ge; 1)</b></td>
+        <td><b><i>nalt</i></b></td><td><b>&rarr;</b></td><td><b><tt>\</tt> <i>apat<sub>1</sub></i> &hellip; <i>apat<sub>n</sub></i><tt> -&gt;</tt> <i>exp</i> [ <tt>where</tt> <i>decls</i> ]</b></td><td><b>(<i>n</n> &ge; 0)</b></td>
     </tr>
     <tr>
-        <td></td><td><b>|</b></td><td><b><tt>\</tt> <i>apat<sub>1</sub></i> &hellip; <i>apat<sub>n</sub></i> <i>gdpat</i> [ <tt>where</tt> <i>decls</i> ]</b></td><td><b>(<i>n</n> &ge; 1)</b></td>
+        <td></td><td><b>|</b></td><td><b><tt>\</tt> <i>apat<sub>1</sub></i> &hellip; <i>apat<sub>n</sub></i> <i>gdpat</i> [ <tt>where</tt> <i>decls</i> ]</b></td><td><b>(<i>n</n> &ge; 0)</b></td>
     </tr>
     <tr>
         <td></td><td><b>|</b></td><td></td><td><b>(empty alternative)</b></td>
@@ -384,10 +385,10 @@ releases have passed.
         <td><b><i>nalts</i></b></td><td><b>&rarr;</b></td><td><b><i>nalt</i><sub>1</sub> <tt>;</tt> &hellip; <tt>;</tt> <i>nalt</i><sub>n</sub></b></td><td><b>(n &ge; 1)</b></td>
     </tr>
     <tr>
-        <td><b><i>nalt</i></b></td><td><b>&rarr;</b></td><td><b>[ <i>apat</i><sub>1</sub> &hellip; <i>apat</i><sub>n</sub> ] <tt>-></tt> <i>exp</i> [ <tt> where </tt> <i>decls</i> ]</b></td><td><b>(n &ge; 1)</b></td>
+        <td><b><i>nalt</i></b></td><td><b>&rarr;</b></td><td><b>[ <i>apat</i><sub>1</sub> &hellip; <i>apat</i><sub>n</sub> ] <tt>-></tt> <i>exp</i> [ <tt> where </tt> <i>decls</i> ]</b></td><td><b>(n &ge; 0)</b></td>
     </tr>
     <tr>
-        <td></td><td><b>|</b></td><td><b>[ <i>apat</i><sub>1</sub> &hellip; <i>apat</i><sub>n</sub> ] <i>gdpat</i> [ <tt> where </tt> <i>decls</i> ]</b></td><td><b>(n &ge; 1)</b></td>
+        <td></td><td><b>|</b></td><td><b>[ <i>apat</i><sub>1</sub> &hellip; <i>apat</i><sub>n</sub> ] <i>gdpat</i> [ <tt> where </tt> <i>decls</i> ]</b></td><td><b>(n &ge; 0)</b></td>
     </tr>
     <tr>
         <td></td><td><b>|</b></td><td></td><td><b>(empty alternative)</b></td>
@@ -510,7 +511,7 @@ case [1,2,3] of
 
 ## Further Examples
 
-Using multi-way lambda expressions with guards allows shortening some definitions:
+Guards can be used instead of `-XMultiWayIf` inside lambda expressions:
 
 ```Haskell
 {-# LANGUAGE MultiWayIf, BlockArguments #-}
@@ -521,13 +522,33 @@ take' = flip $ flip foldr (const [])
 
 -- becomes
 
+-- (1)
 take' :: Int -> [a] -> [a]
 take' = flip $ flip foldr (const [])
   \mcase x more n | n > 0 -> x : more (n - 1)
                   | otherwise -> []
+
+-- (2)
+take' :: Int -> [a] -> [a]
+take' = flip $ flip foldr (const [])
+  \case x, more, n | n > 0 -> x : more (n - 1)
+                   | otherwise -> []
+
+-- (3)
+take' :: Int -> [a] -> [a]
+take' = flip $ flip foldr (const [])
+  case of
+    \x more n | n > 0 -> x : more (n - 1)
+              | otherwise -> []
+
+-- (4)
+take' :: Int -> [a] -> [a]
+take' = flip $ flip foldr (const [])
+  \case x more n | n > 0 -> x : more (n - 1)
+                 | otherwise -> []
 ```
 
-Multi-way lambdas can always replace `-XMultiWayIf`:
+The new syntax could be used instead of `-XMultiWayIf`:
 
 ```Haskell
 foo = bar baz if | g1 -> a
@@ -535,11 +556,24 @@ foo = bar baz if | g1 -> a
 
 -- with -XBlockArguments becomes
 
+-- (1)
 foo = bar baz \mcase | g1 -> a
                      | g2 -> b
+
+-- (2)
+foo = bar baz \case | g1 -> a
+                    | g2 -> b
+
+-- (3)
+foo = bar baz case of \ | g1 -> a
+                      \ | g2 -> b
+
+-- (4)
+foo = bar baz \case | g1 -> a
+                    | g2 -> b
 ```
 
-`\case` can be replaced by a `\mcase`-expression:
+`\case` can be replaced by the new syntax:
 
 ```Haskell
 \case Bar baz -> Just baz
@@ -547,27 +581,57 @@ foo = bar baz \mcase | g1 -> a
 
 -- becomes
 
+-- (1)
 \mcase (Bar baz) -> Just baz
-    Quux -> Nothing
+       Quux -> Nothing
+
+-- (2) (no change)
+\case Bar baz -> Just baz
+      Quux -> Nothing
+
+-- (3)
+case of \(Bar baz) -> Just baz
+        \Quux -> Nothing
+
+-- (4)
+\case (Bar baz) -> Just baz
+      Quux -> Nothing
+
 ```
 
-Lambda expressions are more powerful since they can match on multiple patterns:
+Unlike current `\case`, multiple patterns can be matched:
 
 ```Haskell
 -- \case can't be used here!
--- At least not as easily as in the previous example
+-- At least not easily
 \foo bar baz -> case (foo, bar, baz) of
   (Just 4, 3, False) -> 42
   _ -> 0
 
 -- becomes
 
+-- (1)
 \mcase
+  (Just 4) 3 False -> 42
+  _ _ _ -> 0
+
+-- (2)
+\case
+  Just 4, 3, False -> 42
+  _, _, _ -> 0
+
+-- (3)
+case of
+  \(Just 4) 3 False -> 42
+  \_ _ _ -> 0
+
+-- (4)
+\case
   (Just 4) 3 False -> 42
   _ _ _ -> 0
 ```
 
-`\mcase`-expressions can be used instead of regular function declaration syntax,
+The new syntax can be used instead of regular function declaration syntax,
 potentially resulting in more concise definitions:
 
 ```Haskell
@@ -577,7 +641,26 @@ extremelyLengthyFunctionIdentifier _        _     = Nothing
 
 -- becomes
 
+-- (1)
 extremelyLengthyFunctionIdentifier = \mcase
+  (Just a) False -> Just 42
+  (Just a) True  -> Just (a / 2)
+  _        _     -> Nothing
+
+-- (2)
+extremelyLengthyFunctionIdentifier = \case
+  Just a, False -> Just 42
+  Just a, True  -> Just (a / 2)
+  _     ,  _    -> Nothing
+
+-- (3)
+extremelyLengthyFunctionIdentifier = case of
+  \(Just a) False -> Just 42
+  \(Just a) True  -> Just (a / 2)
+  \_        _     -> Nothing
+
+-- (4)
+extremelyLengthyFunctionIdentifier = \case
   (Just a) False -> Just 42
   (Just a) True  -> Just (a / 2)
   _        _     -> Nothing
@@ -589,93 +672,57 @@ equations
 ```Haskell
 -- have to repeat the definition of `magicNumber` or place it outside the definition of
 -- foo
-foo (Just x) | x < 0 = ...
-             | let y = blah + 1 = ...
+foo (Just x) p | x < 0 = ...
+               | let y = blah + 1 = ...
   where blah = x + magicNumber
         magicNumber = 5
-foo Nothing = magicNumber
+foo Nothing _ = magicNumber
   where magicNumber = 5
 
 -- becomes
 
--- note that the first `where` clause belongs to the first `\mcase`-expression
--- clause, rather than the function declaration, because it is indented further
+-- note that the first `where` clause belongs to the first clause, rather than the
+-- function declaration, because it is indented further
+
+-- (1)
 foo = \mcase
-  (Just x) | x < 0 -> ...
-           | let y = blah + 1 -> ...
+  (Just x) p | x < 0 -> ...
+             | let y = blah + 1 -> ...
     where blah = x + magicNumber
-  Nothing -> magicNumber
+  Nothing _ -> magicNumber
+  where
+    magicNumber = 5
+
+-- (2)
+foo = \case
+  Just x, p | x < 0 -> ...
+            | let y = blah + 1 -> ...
+    where blah = x + magicNumber
+  Nothing, _ -> magicNumber
+  where
+    magicNumber = 5
+
+-- (3)
+foo = case of
+  \(Just x) p | x < 0 -> ...
+             | let y = blah + 1 -> ...
+    where blah = x + magicNumber
+  \Nothing _ -> magicNumber
+  where
+    magicNumber = 5
+
+-- (1)
+foo = \case
+  (Just x) p | x < 0 -> ...
+             | let y = blah + 1 -> ...
+    where blah = x + magicNumber
+  Nothing _ -> magicNumber
   where
     magicNumber = 5
 ```
 
 To illustrate with some real-world examples, this section shows
 how some snippets found on hackage would look if they used this new syntax:
-  
-megaparsec-tests-8.0.0/tests/Text/Megaparsec/Char/LexerSpec.hs
-```Haskell
-forAll mkFold $ \(l0,l1,l2) -> do
-  let {- various bindings -}
-  if | end0 && col1 <= col0 -> prs p s `shouldFailWith`
-       errFancy (getIndent l1 + g 1) (ii GT col0 col1)
-     | end1 && col2 <= col0 -> prs p s `shouldFailWith`
-       errFancy (getIndent l2 + g 2) (ii GT col0 col2)
-     | otherwise -> prs p s `shouldParse` (sbla, sblb, sblc)
-
--- with -XMultiWayLambda
-
-forAll mkFold $ \(l0,l1,l2) -> do
-  let {- various bindings -}
-  \mcase | end0 && col1 <= col0 -> prs p s `shouldFailWith`
-        errFancy (getIndent l1 + g 1) (ii GT col0 col1)
-      | end1 && col2 <= col0 -> prs p s `shouldFailWith`
-        errFancy (getIndent l2 + g 2) (ii GT col0 col2)
-      | otherwise -> prs p s `shouldParse` (sbla, sblb, sblc)
-```
-
-caramia-0.7.2.2/src/Graphics/Caramia/Texture.hs:
-```Haskell
-return $ if
-    | result == GL_CLAMP_TO_EDGE -> Clamp
-    | result == GL_REPEAT -> Repeat
-    | otherwise -> error "getWrapping: unexpected wrapping mode."
-
--- with -XMultiWayLambda and -XBlockArguments
-
-return \mcase
-    | result == GL_CLAMP_TO_EDGE -> Clamp
-    | result == GL_REPEAT -> Repeat
-    | otherwise -> error "getWrapping: unexpected wrapping mode."
-```
-
-red-black-record-2.1.0.3/lib/Data/RBR/Internal.hs
-```Haskell
-_prefixNS = \case
-    Left  l -> S l
-    Right x -> case x of Here fv -> Z @_ @v @start fv
-_breakNS = \case
-    Z x -> Right (Here x)
-    S x -> Left x
-
--- with -XMultiWayLambda
-_prefixNS = \mcase
-    (Left  l) -> S l
-    (Right x) -> case x of Here fv -> Z @_ @v @start fv
-_breakNS = \mcase
-    (Z x) -> Right (Here x)
-    (S x) -> Left x
-```
-
-recursors-0.1.0.0/Control/Final.hs
-```Haskell
-map (\case PlainTV n    -> n
-           KindedTV n _ -> n) binders
-
--- With -XMultiWayLambda
-
-map (\mcase (PlainTV n)    -> n
-         (KindedTV n _) -> n) binders
-```
 
 roc-id-0.1.0.0/library/ROC/ID/Gender.hs
 ```Haskell
@@ -694,14 +741,31 @@ printGenderChinese = \case
   Male   -> "男性"
   Female -> "女性"
 
--- With -XMultiWayLambda - this makes use of the capability to have multiple parameters
+-- becomes
 
+-- (1)
 printGender :: Language -> Gender -> Text
 printGender = \mcase
   English Male   -> "Male"
   English Female -> "Female"
   Chinese Male   -> "男性"
   Chinese Female -> "女性"
+
+-- (2)
+printGender :: Language -> Gender -> Text
+printGender = \case
+  English, Male   -> "Male"
+  English, Female -> "Female"
+  Chinese, Male   -> "男性"
+  Chinese, Female -> "女性"
+
+-- (3)
+printGender :: Language -> Gender -> Text
+printGender = case of
+  \English Male   -> "Male"
+  \English Female -> "Female"
+  \Chinese Male   -> "男性"
+  \Chinese Female -> "女性"
 ```
 
 ## Effect and Interactions
