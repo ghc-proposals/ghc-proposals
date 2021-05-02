@@ -375,6 +375,124 @@ releases have passed.
     </tr>
 <table>
 
+## Summary
+
+Here is a comparison of the four alternatives:
+
+<table>
+<tr>
+  <th>Approach</th>
+  <th>Example</th>
+  <th>Pros</th>
+  <th>Cons</th>
+</tr>
+<tr>
+  <td>(1) Keyword (<tt>\mcase</tt>, <tt>\mcase</tt>, etc.)</td>
+  <td>
+     <pre style="display: inline">
+       <code>
+\mcase (Just a) (Left b) -> ...
+    _        _        -> ...</code>
+    </pre>
+  </td>
+  <td>
+    <ul>
+      <li>Parity with function equation syntax</li>
+    </ul>
+  </td>
+  <td>
+    <ul>
+      <li>Disagreement over which keyword to use</li>
+      <li>Adds yet another similar construct and hence disagreements about deprecations</li>
+    </ul>
+  </td>
+</tr>
+<tr>
+  <td>(2) Comma-separated <tt>\case</tt></td>
+  <td>
+     <pre style="display: inline">
+       <code>
+\case Just a, Left b -> ...
+      _     , _      -> ...</code>
+    </pre>
+    <pre style="display: inline">
+       <code>
+case Just 34, Right [] of
+    Just a, Left b -> ...
+    _     , _      -> ...</code>
+    </pre>
+  </td>
+  <td>
+    <ul>
+      <li>Conceptually, the smallest change that achieves the goal: Just a minor extension to one or two existing constructs</li>
+      <li>That means no demand for or concerns about potential deprecation</li>
+      <li>Parity with extended <tt>case ... of</tt> syntax</li>
+      <li>Like current <tt>\case</tt>, single pattern uses are concise due to lack of parentheses</li>
+    </ul>
+  </td>
+  <td>
+    <ul>
+      <li>Different from function equation syntax and from function application syntax: you apply as <tt>f (Just 34) (Right [])</tt> but pattern match with <tt>\case Just 23, Right []</tt></li>
+    </ul>
+    <ul>
+      <li>Closes the door that leads to using commas as separator between
+      multiple alternatives that are handled as a single case</li>
+    </ul>
+  </td>
+</tr>
+<tr>
+  <td>(3) One lambda per clause <tt>case of</tt></td>
+  <td>
+     <pre style="display: inline">
+       <code>
+case of
+  \(Just a) (Left b) -> ...
+  \_        _        -> ...</code>
+    </pre>
+     <pre style="display: inline">
+       <code>
+case [1,2,3] of
+  (x:xs) \(Just a) (Left b) -> ...
+  _      \_        _        -> ...</code>
+    </pre>
+  </td>
+  <td>
+    <ul>
+      <li>Allows combining pattern matching on scrutinees and function arguments in one expression</li>
+      <li>Parity with function equation syntax</li>
+    </ul>
+  </td>
+  <td>
+    <ul>
+      <li>While it extends an existing construct, this extension makes it overlap with <tt>\case</tt> functionality</li>
+      <li>Not as obvious an extension from existing syntax as the other options (i.e. starts with <tt>case</tt>, not <tt>\</tt>, even though it takes arguments)</li>
+    </ul>
+  </td>
+</tr>
+<tr>
+  <td>(4) Multi-pattern <tt>\case</tt> with parens</td>
+  <td>
+     <pre style="display: inline">
+       <code>
+\case
+  (Just a) (Left b) -> ...
+  _        _        -> ...</code>
+    </pre>
+  </td>
+  <td>
+    <ul>
+      <li>Doesn't introduce a new construct, and doesn't introduce any overlap with others</li>
+      <li>Parity with function equation syntax</li>
+    </ul>
+  </td>
+  <td>
+    <ul>
+      <li>Not backwards compatible - can be mitigated by using (possibly temporary) compiler magic to allow single-scrutinee <tt>\case</tt> without parens, as well as providing an automatic refactoring tool to update existing code</li>
+    </ul>
+  </td>
+</tr>
+</table>
+
 ## Further Examples
 
 Using multi-way lambda expressions with guards allows shortening some definitions:
@@ -646,122 +764,6 @@ doesn't yet exist.
  - The possibility to have a construct similar to `-XMultiWayIf` but without the keyword, i.e. using guards directly as
    an expression, was also raised in the discussion. If this were to be used instead of `\mcase` expressions, any pattern
    matching would have to be done with pattern guards.
-
-Here is a comparison of the major alternatives that were being discussed as of March 2021:
-
-<table>
-<tr>
-  <th>Approach</th>
-  <th>Example</th>
-  <th>Pros</th>
-  <th>Cons</th>
-</tr>
-<tr>
-  <td>(1) Keyword (<tt>\mcase</tt>, <tt>\mcase</tt>, etc.)</td>
-  <td>
-     <pre style="display: inline">
-       <code>
-\mcase (Just a) (Left b) -> ...
-    _        _        -> ...</code>
-    </pre>
-  </td>
-  <td>
-    <ul>
-      <li>Parity with function equation syntax</li>
-    </ul>
-  </td>
-  <td>
-    <ul>
-      <li>Disagreement over which keyword to use</li>
-      <li>Adds yet another similar construct and hence disagreements about deprecations</li>
-    </ul>
-  </td>
-</tr>
-<tr>
-  <td>(2) Comma-separated <tt>\case</tt></td>
-  <td>
-     <pre style="display: inline">
-       <code>
-\case Just a, Left b -> ...
-      _     , _      -> ...</code>
-    </pre>
-    <pre style="display: inline">
-       <code>
-case Just 34, Right [] of
-    Just a, Left b -> ...
-    _     , _      -> ...</code>
-    </pre>
-  </td>
-  <td>
-    <ul>
-      <li>Conceptually, the smallest change that achieves the goal: Just a minor extension to one or two existing constructs</li>
-      <li>That means no demand for or concerns about potential deprecation</li>
-      <li>Parity with extended <tt>case ... of</tt> syntax</li>
-      <li>Like current <tt>\case</tt>, single pattern uses are concise due to lack of parentheses</li>
-    </ul>
-  </td>
-  <td>
-    <ul>
-      <li>Different from function equation syntax and from function application syntax: you apply as <tt>f (Just 34) (Right [])</tt> but pattern match with <tt>\case Just 23, Right []</tt></li>
-    </ul>
-    <ul>
-      <li>Closes the door that leads to using commas as separator between
-      multiple alternatives that are handled as a single case</li>
-    </ul>
-  </td>
-</tr>
-<tr>
-  <td>(3) One lambda per clause <tt>case of</tt></td>
-  <td>
-     <pre style="display: inline">
-       <code>
-case of
-  \(Just a) (Left b) -> ...
-  \_        _        -> ...</code>
-    </pre>
-     <pre style="display: inline">
-       <code>
-case [1,2,3] of
-  (x:xs) \(Just a) (Left b) -> ...
-  _      \_        _        -> ...</code>
-    </pre>
-  </td>
-  <td>
-    <ul>
-      <li>Allows combining pattern matching on scrutinees and function arguments in one expression</li>
-      <li>Parity with function equation syntax</li>
-    </ul>
-  </td>
-  <td>
-    <ul>
-      <li>While it extends an existing construct, this extension makes it overlap with <tt>\case</tt> functionality</li>
-      <li>Not as obvious an extension from existing syntax as the other options (i.e. starts with <tt>case</tt>, not <tt>\</tt>, even though it takes arguments)</li>
-    </ul>
-  </td>
-</tr>
-<tr>
-  <td>(4) Multi-pattern <tt>\case</tt> with parens</td>
-  <td>
-     <pre style="display: inline">
-       <code>
-\case
-  (Just a) (Left b) -> ...
-  _        _        -> ...</code>
-    </pre>
-  </td>
-  <td>
-    <ul>
-      <li>Doesn't introduce a new construct, and doesn't introduce any overlap with others</li>
-      <li>Parity with function equation syntax</li>
-    </ul>
-  </td>
-  <td>
-    <ul>
-      <li>Not backwards compatible - can be mitigated by using (possibly temporary) compiler magic to allow single-scrutinee <tt>\case</tt> without parens, as well as providing an automatic refactoring tool to update existing code</li>
-    </ul>
-  </td>
-</tr>
-</table>
 
 ## Implementation Plan
 
