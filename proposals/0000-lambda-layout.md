@@ -125,7 +125,7 @@ guards as `ofexp`.
         <td><i>lexp</i></td><td>&rarr;</td><td>&hellip;</td>
     </tr>
     <tr>
-        <td></td><td><b>|</b></td><td><b><tt>\\mcase</tt> <tt>{</tt> <i>nalts</i> <tt>}</tt></b></td><td><b>(<tt>\\mcase</tt> expression)</b></td>
+        <td></td><td><b>|</b></td><td><b><tt>\mcase</tt> <tt>{</tt> <i>nalts</i> <tt>}</tt></b></td><td><b>(<tt>\mcase</tt> expression)</b></td>
     </tr>
     <tr>
         <td><b><i>nalts</i></b></td><td><b>&rarr;</b></td><td><b><i>nalt</i><sub>1</sub> <tt>;</tt> &hellip; <tt>;</tt> <i>nalt</i><sub>n</sub></b></td><td><b>(n &ge; 1)</b></td>
@@ -275,10 +275,10 @@ variables.
         <td><i>alts</i></td><td>&rarr;</td><td><i>alt<sub>1</sub></i> <tt>;</tt> &hellip; <tt>;</tt> <i>alt<sub>n</sub></i></td><td>(<i>n</i> &ge; 1)</td>
     </tr>
     <tr>
-        <td><i>alt</i></td><td>&rarr;</td><td><i>pat</i> <b>[ <tt>\\</tt> <i>apat<sub>1</sub></i> &hellip; <i>apat<sub>n</sub></i><tt> ]</b> -&gt;</tt> <i>exp</i> [ <tt>where</tt> <i>decls</i> ]</td><td>(<i>n</n> &ge; 1)</td>
+        <td><i>alt</i></td><td>&rarr;</td><td><i>pat</i> <b>[ <tt>\</tt> <i>apat<sub>1</sub></i> &hellip; <i>apat<sub>n</sub></i><tt> ]</b> -&gt;</tt> <i>exp</i> [ <tt>where</tt> <i>decls</i> ]</td><td>(<i>n</n> &ge; 1)</td>
     </tr>
     <tr>
-        <td></td><td>|</td><td><i>pat</i> <b>[ <tt>\\</tt> <i>apat<sub>1</sub></i> &hellip; <i>apat<sub>n</sub></i> ]</b> <i>gdpat</i> [ <tt>where</tt> <i>decls</i> ]</td><td>(<i>n</n> &ge; 1)</td>
+        <td></td><td>|</td><td><i>pat</i> <b>[ <tt>\</tt> <i>apat<sub>1</sub></i> &hellip; <i>apat<sub>n</sub></i> ]</b> <i>gdpat</i> [ <tt>where</tt> <i>decls</i> ]</td><td>(<i>n</n> &ge; 1)</td>
     </tr>
     <tr>
         <td></td><td>|</td><td></td><td>(empty alternative)</td>
@@ -287,10 +287,10 @@ variables.
         <td><b><i>nalts</i></b></td><td><b>&rarr;</b></td><td><b><i>nalt<sub>1</sub></i> <tt>;</tt> &hellip; <tt>;</tt> <i>nalt<sub>n</sub></i></b></td><td><b>(<i>n</i> &ge; 1)</b></td>
     </tr>
     <tr>
-        <td><b><i>nalt</i></b></td><td><b>&rarr;</b></td><td><b><tt>\\</tt> <i>apat<sub>1</sub></i> &hellip; <i>apat<sub>n</sub></i><tt> -&gt;</tt> <i>exp</i> [ <tt>where</tt> <i>decls</i> ]</b></td><td><b>(<i>n</n> &ge; 1)</b></td>
+        <td><b><i>nalt</i></b></td><td><b>&rarr;</b></td><td><b><tt>\</tt> <i>apat<sub>1</sub></i> &hellip; <i>apat<sub>n</sub></i><tt> -&gt;</tt> <i>exp</i> [ <tt>where</tt> <i>decls</i> ]</b></td><td><b>(<i>n</n> &ge; 1)</b></td>
     </tr>
     <tr>
-        <td></td><td><b>|</b></td><td><b><tt>\\</tt> <i>apat<sub>1</sub></i> &hellip; <i>apat<sub>n</sub></i> <i>gdpat</i> [ <tt>where</tt> <i>decls</i> ]</b></td><td><b>(<i>n</n> &ge; 1)</b></td>
+        <td></td><td><b>|</b></td><td><b><tt>\</tt> <i>apat<sub>1</sub></i> &hellip; <i>apat<sub>n</sub></i> <i>gdpat</i> [ <tt>where</tt> <i>decls</i> ]</b></td><td><b>(<i>n</n> &ge; 1)</b></td>
     </tr>
     <tr>
         <td></td><td><b>|</b></td><td></td><td><b>(empty alternative)</b></td>
@@ -359,7 +359,7 @@ releases have passed.
         <td><i>lexp</i></td><td>&rarr;</td><td>&hellip;</td>
     </tr>
     <tr>
-        <td></td><td><b>|</b></td><td><b><tt>\\case</tt> <tt>{</tt> <i>nalts</i> <tt>}</tt></b></td><td><b>(<tt>\\case</tt> expression)</b></td>
+        <td></td><td><b>|</b></td><td><b><tt>\case</tt> <tt>{</tt> <i>nalts</i> <tt>}</tt></b></td><td><b>(<tt>\case</tt> expression)</b></td>
     </tr>
     <tr>
         <td><b><i>nalts</i></b></td><td><b>&rarr;</b></td><td><b><i>nalt</i><sub>1</sub> <tt>;</tt> &hellip; <tt>;</tt> <i>nalt</i><sub>n</sub></b></td><td><b>(n &ge; 1)</b></td>
