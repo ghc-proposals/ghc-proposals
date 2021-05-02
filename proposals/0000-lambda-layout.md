@@ -167,6 +167,9 @@ least disruptive of the presented alternatives.
 A clause would only match if all of its patterns match their respective
 scrutinee.
 
+Rather than introducing a new extension, this behavior would be enabled by
+`-XLambdaCase`.
+
 Additionally, an analogous extension could be introduced for `case of`:
 
 ```haskell
@@ -188,6 +191,9 @@ case (numerator, denominator) of
 With the advantage that users don't have to be worried or learn about whether
 using tuples in such cases incurs a performance penalty, and it would mean that the
 `\case` syntax stays consistent with `case of` syntax.
+
+This extension to `case of` would be enabled regardless of whether or not
+`-XLambdaCase` is turned on.
 
 The lack of parentheses makes this slightly more concise than the other
 alternatives, especially in cases with only a single pattern.
@@ -239,7 +245,8 @@ Semantically, this would be equivalent to
   ([ Pattern_0b, ] Pattern_1b, ..., Pattern_nb) -> Expression_b
 ```
 
-The `case` expression is now able to define anonymous functions. The scrutinee
+A new extension `-XCaseLambda` is introduced. With this new extension enabled,
+the `case` expression is able to define anonymous functions. The scrutinee
 may be omitted, in which case the corresponding pattern in each clause must also be
 omitted. Furthermore, in each clause, between the usual pattern (if it is present) and
 the arrow, a `\` and a number of patterns may be written. The
@@ -711,7 +718,7 @@ foo = case of
   where
     magicNumber = 5
 
--- (1)
+-- (4)
 foo = \case
   (Just x) p | x < 0 -> ...
              | let y = blah + 1 -> ...
@@ -723,6 +730,33 @@ foo = \case
 
 To illustrate with some real-world examples, this section shows
 how some snippets found on hackage would look if they used this new syntax:
+
+red-black-record-2.1.0.3/lib/Data/RBR/Internal.hs
+```Haskell
+_prefixNS = \case
+    Left l -> S l
+    Right x -> case x of Here fv -> Z @_ @v @start fv
+
+-- (1)
+_prefixNS = \mcase
+    (Left l) -> S l
+    (Right x) -> case x of Here fv -> Z @_ @v @start fv
+
+-- (2) (no change)
+_prefixNS = \case
+    Left l -> S l
+    Right x -> case x of Here fv -> Z @_ @v @start fv
+
+-- (3)
+_prefixNS = case of
+    \(Left l) -> S l
+    \(Right x) -> case x of Here fv -> Z @_ @v @start fv
+
+-- (4)
+_prefixNS = \case
+    (Left l) -> S l
+    (Right x) -> case x of Here fv -> Z @_ @v @start fv
+```
 
 roc-id-0.1.0.0/library/ROC/ID/Gender.hs
 ```Haskell
@@ -766,6 +800,14 @@ printGender = case of
   \English Female -> "Female"
   \Chinese Male   -> "男性"
   \Chinese Female -> "女性"
+
+-- (4)
+printGender :: Language -> Gender -> Text
+printGender = \case
+  English Male   -> "Male"
+  English Female -> "Female"
+  Chinese Male   -> "男性"
+  Chinese Female -> "女性"
 ```
 
 ## Effect and Interactions
