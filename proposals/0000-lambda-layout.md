@@ -16,9 +16,10 @@ case split on the arguments of multi-parameter lambda expressions.
 ## Motivation
 
 In Haskell 2010, there are two syntaxes to define a function: via the function
-definition syntax, or via lambda expressions. The most obvious difference is
-that the former assigns a name to the function, whereas the latter can be used
-for anonymous functions. However, the differences go significantly beyond that:
+definition syntax, or via lambda expressions. The most obvious difference
+between these is that the former assigns a name to the function, whereas the
+latter can be used to create anonymous functions. However, the differences go
+significantly beyond that:
 
  - Lambda expressions can only have a single clause, function declarations
    can have an arbitrary non-zero number of equations
@@ -30,7 +31,7 @@ lambda expressions closer to those of function declarations:
 
  1. The extension `-XLambdaCase` introduces a `\case` construct which allows
     lambda expression to have multiple clauses, however, only one pattern can
-    be matched on. Like a regular case-expression, this can also have guards.
+    be matched on. Like a regular `case`-expression, this can also have guards.
     [During its
     implementation](https://gitlab.haskell.org/ghc/ghc/issues/4359#note_44819)
     as well as [after it](https://github.com/ghc-proposals/ghc-proposals/pull/18),
@@ -58,6 +59,8 @@ lambda expressions closer to those of function declarations:
     - This could be circumvented by introducing a new expression that isn't required
       to be backwards compatible with existing idioms.
 
+## Proposed Change Specification
+
 In the discussion of this proposal, several designs to address these
 limitations came up, each with some merits and some shortcomings. Thus, this
 proposal presents all of the most promising of these designs, and leaves it up
@@ -67,14 +70,12 @@ Doing so would make the existing `-XLambdaCase` extension obsolete and would
 allow users to entirely forego conventional function declaration syntax and
 use this new construct instead, should they wish to do so.
 
-## Proposed Change Specification
-
 ### Alternative (1): Add a new keyword
 
 Example:
 
 ```haskell
-filter = \mcase _ []                 -> []
+filter = \mcase _ []              -> []
              p (x:xs) | p x       -> x : filter p xs
                       | otherwise ->     filter p xs
 ```
@@ -82,7 +83,7 @@ filter = \mcase _ []                 -> []
 NB: This section assumes that `\mcase` is chosen as the keyword. Other keywords have
 been suggested, such as `\of` and `\cases`.
 
-A new extension `-XMultiWayLambda` is implemented. Under this extension, a new
+A new extension `-XMultiWayLambda` is introduced. Under this extension, a new
 expression is enabled, introduced by the token sequence <tt>\\&nbsp;mcase</tt>. The whitespace between  `\` and `mcase`
 is optional and may contain an arbitrary sequence of whitespace characters.
 `\mcase` behaves in a way largely similar to `\`, but it is a layout herald, can have multiple
@@ -90,18 +91,10 @@ clauses, and may contain guards (see BNF for details).
 
 Zero clauses are not permitted, as the expression would be ambiguous.
 (See `Alternatives` section for details.)
-This means that with `-XEmptyCase`,
-`-XLambdaCase` still has one (albeit rarely used) construct that cannot be
-replaced by a `\mcase`-expression, though
-`\case {}` can (even today) be replaced by `\x -> case x of {}`. This shortcoming
-could potentially
-be addressed in a future proposal, for example by adding absurd patterns, to
-provide a more general solution. Note that the `\case {}` construct only works for matching
-on a single pattern.
 
 Like the existing behavior for alternatives in `case`- and
 `\case`-expressions, and equations in function declaration syntax, it is
-possible to use `where` clauses within each clause of a `\mcase`-expression.
+possible to use `where` clauses within each clause of an `\mcase`-expression.
 
 As with function declaration equations, all clauses must have the same number of patterns.
 
@@ -114,8 +107,7 @@ guards as `mcexp`.
 
 This alternative matches function declaration syntax very closely, making
 refactoring easier. However, it is another syntactic construct that has to be
-maintained. Since it covers (almost) all of the use-cases of `\case`,
-adding a deprecation plan for `\case` could be considered.
+maintained.
 
 #### BNF Changes for (1)
 
@@ -175,8 +167,8 @@ Additionally, an analogous extension could be introduced for `case of`:
 ```haskell
 case numerator, denominator of
   _          , 0 -> Nothing
-  Whole n    , d -> Whole (n / d)
-  Complex a b, d -> Complex (a / d) (b / d)
+  Whole n    , d -> Whole (n `div` d)
+  Complex a b, d -> Complex (a `div` d) (b `div` d)
 ```
 
 This can be used instead of using tuples to achieve something similar:
@@ -184,8 +176,8 @@ This can be used instead of using tuples to achieve something similar:
 ```haskell
 case (numerator, denominator) of
   (_          , 0) -> Nothing
-  (Whole n    , d) -> Whole (n / d)
-  (Complex a b, d) -> Complex (a / d) (b / d)
+  (Whole n    , d) -> Whole (n `div` d)
+  (Complex a b, d) -> Complex (a `div` d) (b `div` d)
 ```
 
 With the advantage that users don't have to be worried or learn about whether
@@ -195,8 +187,14 @@ using tuples in such cases incurs a performance penalty, and it would mean that 
 This extension to `case of` would be enabled regardless of whether or not
 `-XLambdaCase` is turned on.
 
-The lack of parentheses makes this slightly more concise than the other
-alternatives, especially in cases with only a single pattern.
+If no clauses are given, i.e. the expression in question if `\case {}`, how
+many arguments this expression should take is ambiguous. However, currently,
+with `-XEmptyCase`, this expression is already valid and takes a single
+argument. Thus, to maintain backwards compatibility and for lack of a better
+option, this proposal does not alter the behavior of this expression.
+
+In general, the lack of parentheses makes this alternative slightly more
+concise than the others, especially in cases with only a single pattern.
 
 One potential concern is that this breaks the pattern of symmetry between
 expressions and patterns that match them. For example, if a function is defined
@@ -213,7 +211,7 @@ separated by commas, whereas the expression calling `f` still uses parentheses.
         <td><i>alt</i></td><td>&rarr;</td><td><b>[ <i>pat</i><sub>1</sub><tt>,</tt> &hellip;, <i>apat</i><sub>n</sub> ]</b> <tt>-></tt> <i>exp</i> [ <tt> where </tt> <i>decls</i> ]</td><td><b>(n &ge; 1)</b></td>
     </tr>
     <tr>
-        <td></td><td>|</td><td><b>[ <i>pat</i><sub>1</sub><tt>,</tt> &hellip;<tt>,</tt> <i>apat</i><sub>n</sub> ]</b> <t>gdpat</t> [ <tt> where </tt> <i>decls</i> ]</td><td>(n &ge; 1)</td>
+        <td></td><td>|</td><td><b>[ <i>pat</i><sub>1</sub><tt>,</tt> &hellip;<tt>,</tt> <i>apat</i><sub>n</sub> ]</b> <t>gdpat</t> [ <tt> where </tt> <i>decls</i> ]</td><td><b>(n &ge; 1)</b></td>
     </tr>
 <table>
 
@@ -245,7 +243,7 @@ Semantically, this would be equivalent to
   ([ Pattern_0b, ] Pattern_1b, ..., Pattern_nb) -> Expression_b
 ```
 
-A new extension `-XCaseLambda` is introduced. With this new extension enabled,
+A new extension `-XExtendedCase` is introduced. With this new extension enabled,
 the `case` expression is able to define anonymous functions. The scrutinee
 may be omitted, in which case the corresponding pattern in each clause must also be
 omitted. Furthermore, in each clause, between the usual pattern (if it is present) and
@@ -255,7 +253,7 @@ corresponding patterns must match (e.g., the first pattern after the backslash
 must have the same type for all clauses). As usual, `case` clauses can
 contain guards as well.
 
-The number of patterns after each `\` determine the arity of the function that
+The number of patterns after each `\` determines the arity of the function that
 a `case` expression produces. The *n*th pattern after the `\` is matched
 against the *n*th argument given to the function.
 
@@ -280,15 +278,15 @@ patterns (see BNF).
 This alternative has some desirable properties, in that it extends an existing
 syntactic construct rather than introducing a new one and is syntactically
 similar to lambda expressions. On the other hand, it does not relate to
-existing syntax as directly as others (e.g., it produces an anonymous function
+existing syntax as directly as the alternatives (e.g., it produces an anonymous function
 but doesn't start with `\`, as opposed to lambda expressions and `\case`), and
-its functionality overlaps with that of `\case`. As with alternative (2), a
-deprecation plan for `\case` could thus be considered.
+its functionality overlaps with that of `\case`.
 
 Since the introductory example only demonstrates the case without scrutinee,
 here is a different example:
 
 ```haskell
+sendEmail :: Text -> Text -> Text -> Maybe Attachment -> IO ()
 sendEmail address = case validate address of
   Just emailAddress \subject content (Just attachment) -> sendWithAttachment emailAddress subject content attachment
   Just emailAddress \subject content Nothing           -> sendWithoutAttachment emailAddress subject content
@@ -327,10 +325,10 @@ sendEmail address = case validate address of
         <td><b><i>nalts</i></b></td><td><b>&rarr;</b></td><td><b><i>nalt<sub>1</sub></i> <tt>;</tt> &hellip; <tt>;</tt> <i>nalt<sub>n</sub></i></b></td><td><b>(<i>n</i> &ge; 1)</b></td>
     </tr>
     <tr>
-        <td><b><i>nalt</i></b></td><td><b>&rarr;</b></td><td><b><tt>\</tt> <i>apat<sub>1</sub></i> &hellip; <i>apat<sub>n</sub></i><tt> -&gt;</tt> <i>exp</i> [ <tt>where</tt> <i>decls</i> ]</b></td><td><b>(<i>n</n> &ge; 0)</b></td>
+        <td><b><i>nalt</i></b></td><td><b>&rarr;</b></td><td><b><tt>\</tt> [ <i>apat<sub>1</sub></i> &hellip; <i>apat<sub>n</sub></i> ] <tt>-&gt;</tt> <i>exp</i> [ <tt>where</tt> <i>decls</i> ]</b></td><td><b>(<i>n</n> &ge; 1)</b></td>
     </tr>
     <tr>
-        <td></td><td><b>|</b></td><td><b><tt>\</tt> <i>apat<sub>1</sub></i> &hellip; <i>apat<sub>n</sub></i> <i>gdpat</i> [ <tt>where</tt> <i>decls</i> ]</b></td><td><b>(<i>n</n> &ge; 0)</b></td>
+        <td></td><td><b>|</b></td><td><b><tt>\</tt> [ <i>apat<sub>1</sub></i> &hellip; <i>apat<sub>n</sub></i> ] <i>gdpat</i> [ <tt>where</tt> <i>decls</i> ]</b></td><td><b>(<i>n</n> &ge; 1)</b></td>
     </tr>
     <tr>
         <td></td><td><b>|</b></td><td></td><td><b>(empty alternative)</b></td>
@@ -376,6 +374,8 @@ When this special case is triggered, the compiler would produce a warning
 that they're using syntax which will be deprecated at some future point. This
 would make it possible to remove the special casing and warning after a few
 releases have passed.
+
+As in (2), the behavior of `\case {}` is not altered by this proposal.
 
 #### BNF Changes for (4)
 
@@ -493,7 +493,7 @@ case [1,2,3] of
   </td>
 </tr>
 <tr>
-  <td>(4) Multi-pattern <tt>\case</tt> with parens</td>
+  <td>(4) Multi-pattern <tt>\case</tt> with parentheses</td>
   <td>
      <pre style="display: inline">
        <code>
@@ -510,7 +510,7 @@ case [1,2,3] of
   </td>
   <td>
     <ul>
-      <li>Not backwards compatible - can be mitigated by using (possibly temporary) compiler magic to allow single-scrutinee <tt>\case</tt> without parens, as well as providing an automatic refactoring tool to update existing code</li>
+      <li>Not backwards compatible - can be mitigated by using (possibly temporary) compiler magic to allow single-scrutinee <tt>\case</tt> without parentheses, as well as providing an automatic refactoring tool to update existing code</li>
     </ul>
   </td>
 </tr>
@@ -555,7 +555,7 @@ take' = flip $ flip foldr (const [])
                  | otherwise -> []
 ```
 
-The new syntax could be used instead of `-XMultiWayIf`:
+The new syntax could be used instead of `-XMultiWayIf` elsewhere as well:
 
 ```Haskell
 foo = bar baz if | g1 -> a
@@ -812,12 +812,14 @@ printGender = \case
 
 ## Effect and Interactions
 
-Enabling the extension enables users to use the suggested syntax. This obviates
-the need for `-XMultiWayIf` and `-XLambdaCase`.
+All proposed alternatives subsume the functionality that `-XLambdaCase`
+provides. (See "Alternatives" section for a discussion on deprecation.)
 
-As `of` is already a keyword, no currently allowed syntax is stolen by this extension,
-and the behavior of no currently legal program would be changed with the extension
-enabled.
+All proposed syntaxes can also be used instead of `-XMultiWayIf`, however in a
+slightly more verbose manner, as shown in the "Further Examples" section.
+
+(1) would introduce a new keyword and thus make it impossible to use the chosen
+word for other purposes, though this would be gated behind an extension.
 
 ## Costs and Drawbacks
 
@@ -825,26 +827,29 @@ It is one additional syntactic construct to maintain, however the maintenance
 cost should be fairly low due to the similarity to already existing constructs.
 
 While this also means one additional construct to learn for beginners, the
-syntax is consistent with similar constructs in the existing language, and as
-such users might be surprised that a construct with these capabilities
-doesn't yet exist.
+syntax is largely consistent with similar constructs in the existing language,
+and as such users might in fact be surprised that a construct with similar
+capabilities doesn't yet exist.
 
 ## Alternatives
 
- - Zero clauses could be permitted. In this case, however, a way would have to be found
-   to indicate how many arguments a given `\mcase`-expression matches on, as otherwise, it would
+ - For (1) and (3), this proposal does not permit zero clauses, as with
+   `case`-expressions and `-XEmptyCase`. This could be permitted. In this case, however, a way would have to be found
+   to indicate how many arguments a given expression matches on, as otherwise, it would
    be ambiguous.
-   The number of arguments a `\mcase`-expression pattern matches on becomes obvious from the
+   The number of arguments an expression matches on becomes obvious from the
    clauses, e.g. `\mcase a b -> ...` clearly matches on two arguments. Without clauses, this remains
    unclear. This means it would also be unclear whether the patterns are non-exhaustive:
    Consider the expression `f = \mcase {} :: Bool -> Void -> a`. If the expression is supposed to match on
    both arguments, the patterns are exhaustive. If it is only supposed to match on the first argument
-   and evaluate to a funtion of type `Void -> a`, it is not exhaustive. Moreover, in the former case,
+   and evaluate to a function of type `Void -> a`, it is not exhaustive. Moreover, in the former case,
    ``f undefined `seq` ()`` evaluates to `()`, whereas in the latter case, it evaluates to bottom.
-   With `\case {}` this problem doesn't arise, since it always matches on exactly one argument,
+   Currently, with `\case {}`, this problem doesn't arise, since it always matches on exactly one argument,
    and similarly for `case x of {}`, which only matches on `x`.
-   A syntax to resolve this has been proposed in the discussion: `(\mcase)` for matching on no arguments,
+   A syntax to resolve this for (1) has been proposed in the discussion: `(\mcase)` for matching on no arguments,
    `(\mcase _)` for one, `(\mcase _ _)` for two, and so on.
+   Alternatively, absurd patterns could be introduced, which would provide a
+   more general solution that could also be used in function definition syntax.
 
  - Regular lambda expressions could be extended to use layout and guards, however,
    this necessitates some potentially controversial decision on when exactly to
@@ -868,22 +873,21 @@ doesn't yet exist.
    Both of these would avoid the problem, but both rules are dissimilar from how layout heralding
    is handled in other Haskell constructs.
 
- - `\mcase`-expressions with zero patterns could only be allowed if the expression contains guards.
+ - Expressions with zero patterns could be allowed only if the expression contains guards,
+   rather than always being allowed.
    This would make them somewhat less consistent, but it is how lambda expressions work
-   (i.e. `\ -> ...` is illegal) and only disallows expressions that are needlessly verbose (i.e.
+   (i.e. `\ -> ...` is illegal) and only disallows expressions that are needlessly verbose (e.g.
    `\mcase -> exp` can always be replaced by `exp`).
 
- - `\case` could be deprecated, since all its use cases would be subsumed by `\mcase`, albeit with additional
-   parentheses around patterns that consist of more than one token. However, the discussion of this proposal
-   has shown that such a deprecation would be a controversial
-   change of its own and that some working out has to be done as to the exact details of it, thus,
-   this might be better suited to being its own, separate proposal. Combined with this, an alternative to the keyword would be
-   to reuse `\case` and change the way it works to the behaviour described in this proposal.
-
- - There are also other alternatives for the keyword that have been raised: `\cases` and `\mcase`.
+ - For (1) and (3), `\case` could be deprecated, since all its use cases
+   (except for those involving `-XEmptyCase`) would
+   be subsumed by these alternatives. However, the discussion of this proposal has shown that
+   such a deprecation would be a controversial change in its own right, and that some
+   working out has to be done as to the exact details of it, thus, this might
+   be better suited to being its own, separate proposal.
 
  - The possibility to have a construct similar to `-XMultiWayIf` but without the keyword, i.e. using guards directly as
-   an expression, was also raised in the discussion. If this were to be used instead of `\mcase` expressions, any pattern
+   an expression, was also raised in the discussion. If this were to be used, any pattern
    matching would have to be done with pattern guards.
 
 ## Implementation Plan
