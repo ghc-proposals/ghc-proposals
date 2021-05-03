@@ -163,9 +163,6 @@ Type abstractions
 Introduce ``-XTypeAbstractions``. With ``-XTypeAbstractions``, users
 could write a pattern like ``@a`` to the left of the ``=`` in a function
 binding or between the ``\`` and ``->`` in a lambda-expression. 
-In addition, the ``-XScopedForAlls`` extension now affects only *inferred*
-variables, never *specified* variables. Note that *inferred* variables
-can be mentioned in source Haskell with accepted proposal `#99`_.
 
 A. Here is the BNF of the new form (cf. The `Haskell 2010 Report`_)::
 
@@ -241,20 +238,64 @@ C. Typing rules for the new construct are as in a `recent paper
        Multiple equations can bind type variables in different places,
        as we have a type signature to guide us.
 
+D. ``-XTypeAbstractions`` and ``-XScopedForAlls`` have a fraught relationship,
+   as both are trying to accomplish the same goal via different means. Here are
+   the rules keeping this sibling rivalry at bay:
+
+   i. ``-XScopedForAlls`` does not apply in expression type signatures. Instead,
+      if users want a type variable brought into scope, they are encouraged to
+      use ``-XTypeAbstractions``. (It would not be hard to introduce a helpful
+      error message instructing users to do this.)
+
+   ii. If ``-XScopedForAlls`` is enabled,
+       in an equation for a function definition for a function ``f`` (and similar
+       for pattern synonym bindings):
+
+       * If ``f`` is written with no arguments or its first argument is not
+         a type argument (that is, the next token after ``f``
+         is not a prefix ``@``), then ``-XScopedForAlls`` is in effect and
+         brings type variables into scope.
+
+       * Otherwise, if ``f``\'s first argument is a type argument, then
+         ``-XScopedForAlls`` has no effect. No additional type variables
+         are brought into scope.
+
+E. (Optional extra) If ``-XTypeAbstractions`` is in effect, then a function
+   binding may use ``@(..)`` on its left-hand side. Here is the BNF (cf. the
+   `Haskell 2010 Report <https://www.haskell.org/onlinereport/haskell2010/haskellch4.html#x10-800004.4>`_, Section 4.4.3), recalling that braces mean "0 or more"::
+
+     funlhs  →  var apat { apat }
+             |  pat varop pat
+             |  '(' funlhs ')' apat { apat }
+             |  funlhs '@' '(' '..' ')'
+
+   The last line is new, and we assume the ``@`` is in prefix form. This construct
+   is available only when the function being defined has a type signature.
+   The new construct brings into scope all type variables brought into scope
+   at that point in the signature. Note that implicitly quantified type variables
+   are brought into scope at the top of a signature, and so ::
+
+     f :: a -> b -> a
+     f @(..) = -- RHS
+
+   would have ``a`` and ``b`` in scope in the ``RHS``.
+
+   The ``@(..)`` construct works for both *specified* and *inferred* variables.
+
 Examples of new behavior of scoped type variables
 -------------------------------------------------
 
 ::
 
    f :: forall a. a -> a
-   f x = (x :: a)      -- rejected with -XTypeAbstractions
+   f @b x = (x :: a)   -- rejected, because -XScopedForAlls is disabled here
 
    g :: forall a. a -> a
    g @a x = (x :: a)   -- accepted with -XTypeAbstractions
 
    h = ((\x -> (x :: a)) :: forall a. a -> a)
      -- accepted with previous -XScopedTypeVariables, but rejected
-     -- if -XTypeAbstractions is in effect
+     -- now
 
    i = ((\ @a x -> (x :: a)) :: forall a. a -> a)
      -- accepted with -XTypeAbstractions
@@ -330,7 +371,8 @@ Effect and Interactions
   written by the programmer using this new notation, is not available for use with
   any form of visible type application, including the one proposed here. If you have
   a function ``f :: forall {k} (a :: k). ...``, you will have to rely on the old behavior
-  of ``-XScopedTypeVariables`` to bring ``k`` into scope in ``f``\'s definition. This is
+  of ``-XScopedTypeVariables`` to bring ``k`` into scope in ``f``\'s definition, or
+  you will have to use a pattern signature. This is
   regrettable but seems an inevitable consequence of the ``{k}`` notation.
 
 .. _`#99`: https://github.com/ghc-proposals/ghc-proposals/pull/99
@@ -349,6 +391,36 @@ Effect and Interactions
   right before doing the subsumption check. Type generalization is hard in GHC, though,
   and so the paper avoided it. In order to implement this proposal, we'll have to work
   out how to do this.
+
+* The optional extra ``@(..)`` notation seems like a convenient middle ground,
+  allowing for an easy transition from the old-style ``-XScopedTypeVariables``
+  to the newer ``-XTypeAbstractions``. It brings inferred variables into
+  scope, quite conveniently. This new notation also allows type variables to
+  be brought into scope without the ``forall`` keyword in the type, in case
+  the user does not want to trigger ``forall``\ -or-nothing behavior.
+
+  Note that this notation is forward compatible with visible dependent quantification
+  in terms::
+
+    f :: foreach (count :: Int) (label :: String) (is_paid_for :: Bool) -> Invoice
+    f (..) = -- here, count, label, and is_pair_for are all in scope
+
+  This style allows for more perspicuous types while avoiding redundancy. The particular
+  example here uses ``foreach`` to denote arguments that are available at runtime, but
+  nothing about ``foreach`` is required to make this all work (as far as scoping is
+  concerned).
+
+  Accepting the ``@(..)`` syntax does *not* entail accepting this new, separate
+  ``(..)`` syntax, though it is good to know that the idea is forward compatible
+  with.
+
+  A ``@(..)`` argument counts as a type argument when asking whether ``-XScopedForAlls``
+  affects a function equation.
+
+  The new ``@(..)`` notation does *not* work with expression type signatures,
+  lambda-expressions, or anywhere other than a function binding with a type
+  signature. This is because doing so would require propagating type
+  information into scoping, which is problematic.
   
 Costs and Drawbacks
 -------------------
