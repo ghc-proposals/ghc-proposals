@@ -424,12 +424,33 @@ Effect and Interactions
   
 Costs and Drawbacks
 -------------------
-* The new small zoo of flags is yet more flags to be aware of. It is possible to do away
-  with this part of the proposal of the cost appears to outweigh the benefit. (Earlier
-  versions of this proposal had ``-XTypeAbstractions`` imply ``-XNoScopedForAlls``, but
-  that does not work with *inferred* variables. In any case, this historical fact is why
-  these two ideas are bundled in one proposal. They could be separated, but I want both
-  parts, so I've kept them both here.)
+* The new small zoo of flags is yet more flags to be aware of. It is possible
+  to do away with this part of the proposal if the cost appears to outweigh
+  the benefit. (Earlier versions of this proposal had ``-XTypeAbstractions``
+  imply ``-XNoScopedForAlls``. In any case, this historical fact is why these
+  two ideas are bundled in one proposal. They could be separated, but I want
+  both parts, so I've kept them both here.)
+
+* Note that the second part of this proposal (introducing ``-XTypeAbstractions``)
+  is *not* backward-compatible, because it rejects expressions like ::
+
+    ((\x -> (x :: a)) :: forall a. a -> a)
+
+  which are accepted today. No migration period is proposed, because it is
+  very hard to imagine how ``-XTypeAbstractions`` and ``-XScopedForAlls`` should
+  co-exist peacefully here. Instead, we can issue a specific error message telling
+  users how to migrate their code in this case.
+
+  My hope is that constructs such as this one are rare and would not impact many
+  users.
+
+  If necessary, we could imagine taking the expression ``expr :: forall ... . ty``
+  and looking proactively to see whether ``expr`` ever uses a type variable
+  pattern from this proposal. If not, ``-XScopedForAlls`` could trigger (and we
+  issue a warning with ``-Wcompat``). But, if a type argument appears anywhere
+  in ``expr``, then ``-XScopedForAlls`` is disabled. This would be backward-compatible,
+  but unfortunately non-local and annoying. I prefer just to skip this
+  migration step.
 
 * ``-XTypeAbstractions`` is another feature to specify and maintain, and
   that's always a burden. It will take some creative thought about how to do
