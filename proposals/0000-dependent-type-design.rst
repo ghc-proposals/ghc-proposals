@@ -956,7 +956,7 @@ will treat these two very differently:
 * If ``f1 :: t1 -> t2``, then in a call ``(f1 arg)``, there are no
   restrictions on ``arg`` (except of course that it has type ``t1``).
   
-* If ``f2 :: forall (_ :: t2) -> t2``, then in a call ``(f2 arg)`` arg must
+* If ``f2 :: foreach (_ :: t2) -> t2``, then in a call ``(f2 arg)`` arg must
   lie in the Static Subset of terms.
   
 Even once we reach the Glorious Day, nothing forces us to unify ``t1 -> t2``
