@@ -394,7 +394,8 @@ Effect and Interactions
 
 * The optional extra ``@(..)`` notation seems like a convenient middle ground,
   allowing for an easy transition from the old-style ``-XScopedTypeVariables``
-  to the newer ``-XTypeAbstractions``. It brings inferred variables into
+  to the newer ``-XTypeAbstractions``. It brings the *inferred* variables (from `#99`_)
+  into
   scope, quite conveniently. This new notation also allows type variables to
   be brought into scope without the ``forall`` keyword in the type, in case
   the user does not want to trigger ``forall``\ -or-nothing behavior.
