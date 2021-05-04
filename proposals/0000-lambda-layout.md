@@ -308,8 +308,6 @@ sendEmail address = case validate address of
         <td></td><td><b>|</b></td><td><b><tt>case</tt> <tt>of</tt> <tt>{</tt> <i>nalts</i> <tt>}</tt></b></td><td><b>(case expression without scrutinee)</b></td>
     </tr>
     <tr>
-        <td></td><td>|</td><td><tt>case</tt> <i>exp</i> <tt>of</tt> <tt>{}</tt></td><td>(with <tt>-XEmptyCase</tt>)</td>
-    <tr>
         <td><i>alts</i></td><td>&rarr;</td><td><i>alt<sub>1</sub></i> <tt>;</tt> &hellip; <tt>;</tt> <i>alt<sub>n</sub></i></td><td>(<i>n</i> &ge; 1)</td>
     </tr>
     <tr>
