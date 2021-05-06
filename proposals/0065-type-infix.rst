@@ -9,7 +9,7 @@ Require namespacing fixity declarations for type names and ``WARNING``/``DEPRECA
 .. header:: This proposal was `discussed at this pull requst <https://github.com/ghc-proposals/ghc-proposals/pull/65>`_.
 .. contents::
 
-GHC allows infix names at the type level using the ``TypeOperators`` extension. However, GHC's mechanism for providing fixity declarations for such infix type names—or to deprecate infix type names—is rather deficient. The same syntax is used for declare fixities and to deprecate names for both value-level and type-level names. I propose to tighten up the implementation by allowing users to indicate that an fixity declaration or a ``WARNING``/``DEPRECATED`` pragma should specifically be for a value or type name by typing out an explicit ``value`` or ``type`` namespace. I also propose deprecating the current, ambiguous mechanism for providing fixity declarations/``WARNING`` pragmas/``DEPRECATED`` pragmas for type names and eventually requiring the use of the ``type`` namespace for all fixity declarations/``WARNING`` pragmas/``DEPRECATED`` pragmas for type names in the future.
+GHC allows infix names at the type level using the ``TypeOperators`` extension. However, GHC's mechanism for providing fixity declarations for such infix type names—or to deprecate infix type names—is rather deficient. The same syntax is used for declare fixities and to deprecate names for both value-level and type-level names. I propose to tighten up the implementation by allowing users to indicate that an fixity declaration or a ``WARNING``/``DEPRECATED`` pragma should specifically be for a value or type name by typing out an explicit ``data`` or ``type`` namespace. I also propose deprecating the current, ambiguous mechanism for providing fixity declarations/``WARNING`` pragmas/``DEPRECATED`` pragmas for type names and eventually requiring the use of the ``type`` namespace for all fixity declarations/``WARNING`` pragmas/``DEPRECATED`` pragmas for type names in the future.
 
 
 Motivation
@@ -83,7 +83,7 @@ This strategy is unsatisfying for a couple of reasons, however.
 
 Proposed Change Specification
 -----------------------------
-I propose two major changes: a modification to the syntax to allow optional ``value`` and ``type`` namespaces in fixity declarations and ``WARNING`` pragmas, and a plan to phase out the old way of deprecating and specifying fixities for infix type-level names (without the ``type`` namespace) in favor of the new syntax (where the ``type`` namespace would be required).
+I propose two major changes: a modification to the syntax to allow optional ``data`` and ``type`` namespaces in fixity declarations and ``WARNING`` pragmas, and a plan to phase out the old way of deprecating and specifying fixities for infix type-level names (without the ``type`` namespace) in favor of the new syntax (where the ``type`` namespace would be required).
 
 Syntax extension
 ~~~~~~~~~~~~~~~~
@@ -96,14 +96,14 @@ I propose an extension to the existing fixity declaration syntax:
     infixr 0 $, *, ^
 
     -- New syntax, for value-level names
-    infixr 0 value $, *, ^
+    infixr 0 data $, *, ^
 
     -- New syntax, for type-level names
     infixr 0 type $, *, ^
 
-The only difference from the current syntax is the presence of a namespace keyword (``value`` or ``type``) inserted between the precedence and the comma-separated list of infix names. The semantics of a ``infixr 0 value $`` declaration is to give the value-level ``$`` (and not the type-level ``$``, if one is also declared) a fixity of ``infixr 0``. If ``$`` is not declared in the value namespace, an error is thrown. (Similarly, ``infixr 0 type $`` applies only to the type-level ``$``, and errors if ``$`` is not declared in the type namespace.) This declaration is only permitted if the ``ExplicitNamespaces`` extension is enabled.
+The only difference from the current syntax is the presence of a namespace keyword (``data`` or ``type``) inserted between the precedence and the comma-separated list of infix names. The semantics of a ``infixr 0 data $`` declaration is to give the value-level ``$`` (and not the type-level ``$``, if one is also declared) a fixity of ``infixr 0``. If ``$`` is not declared in the value namespace, an error is thrown. (Similarly, ``infixr 0 type $`` applies only to the type-level ``$``, and errors if ``$`` is not declared in the type namespace.) This declaration is only permitted if the ``ExplicitNamespaces`` extension is enabled.
 
-``infix{l,r} n value`` would be applicable to all value-level names (top-level functions, class methods, data constructors, and pattern synonyms).
+``infix{l,r} n data`` would be applicable to all value-level names (top-level functions, class methods, data constructors, and pattern synonyms).
 
 ``infix{l,r} n type`` would be applicable to most type-level names (type families, type classes, data types, and type synonyms).
 
@@ -115,7 +115,7 @@ I also propose a similar change to the existing ``WARNING`` pragma syntax:
     {-# WARNING ($) "Es muy peligroso" #-}
 
     -- New syntax, for value-level names
-    {-# WARNING value ($) "Es muy peligroso" #-}
+    {-# WARNING data ($) "Es muy peligroso" #-}
 
     -- New syntax, for type-level names
     {-# WARNING type ($) "Es muy peligroso" #-}
@@ -123,20 +123,20 @@ I also propose a similar change to the existing ``WARNING`` pragma syntax:
 Aside: promoted data constructors (and other promoted things)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-One type-level construct that ``infix{l,r} n type`` would not be applicable to is promoted data constructors. The reason is that promoted data constructor names shouldn't be thought of as separate from the original data constructor names, but rather the same names being used in a different context. For this reason, promoted data constructors simply inherit the fixity of the original, unpromoted data constructor (at the value level), so if a user specifies ``infixr 0 value Foo``, then both the constructor ``Foo`` and its promoted counterpart ``'Foo`` will be ``infixr 0``.
+One type-level construct that ``infix{l,r} n type`` would not be applicable to is promoted data constructors. The reason is that promoted data constructor names shouldn't be thought of as separate from the original data constructor names, but rather the same names being used in a different context. For this reason, promoted data constructors simply inherit the fixity of the original, unpromoted data constructor (at the value level), so if a user specifies ``infixr 0 data Foo``, then both the constructor ``Foo`` and its promoted counterpart ``'Foo`` will be ``infixr 0``.
 
-For the time being, data constructors are the only named construct in Haskell that can be used in multiple contexts like this. In the future (perhaps in work related to Dependent Haskell), it is conceivable that there will be other value-level constructs that can also be used at the type level. If this were to happen, I would advise following a similar principle of only allowing these constructs to have their fixity specified with ``infix{l,r} n value``, and to have uses of these constructs at the type level inherit their value-level fixities.
+For the time being, data constructors are the only named construct in Haskell that can be used in multiple contexts like this. In the future (perhaps in work related to Dependent Haskell), it is conceivable that there will be other value-level constructs that can also be used at the type level. If this were to happen, I would advise following a similar principle of only allowing these constructs to have their fixity specified with ``infix{l,r} n data``, and to have uses of these constructs at the type level inherit their value-level fixities.
 
 Migration plan
 ~~~~~~~~~~~~~~
 
 The eventual goal is to make ``infix{l,r} n type`` the only means by which one can specify the fixity of type-level names, and to make ``infix{l,r} n`` declarations (without the ``type``) only applicable to value-level names. To this end, I propose following the plan (which adheres to the `three-release policy <https://prime.haskell.org/wiki/Libraries/3-Release-Policy>`_):
 
-* Introduce ``infix{l,r} n value`` and ``infix{l,r} n type`` in an upcoming GHC version. (Call this GHC 8.X). Retain ``infix{l,r} n``'s ability to refer to both value-level and type-level names.
+* Introduce ``infix{l,r} n data`` and ``infix{l,r} n type`` in an upcoming GHC version. (Call this GHC 8.X). Retain ``infix{l,r} n``'s ability to refer to both value-level and type-level names.
 * In GHC 8.(X+4), have ``infix{l,r} n`` emit a warning whenever it refers to type-level names. Here is the plan for when to emit warnings:
 
-  * If an ``infix{l,r} n`` declaration refers to exclusively to a type-level name (that is, either there is no value with the same name that is also declared, or there a value with the same name has its fixity declared separately with ``infix{l,r} n value``), warn that the user should change it to ``infix{l,r} n type``. This is a straightforward case, as this would become an error in GHC 8.(X+6).
-  * If an ``infix{l,r} n`` declaration refers to both a value-level and type-level name (that is, there are no other ``infix{l,r} n value`` or ``infix{l,r} n type`` declarations referring to the same name), things are a bit trickier. There are two scenarios under which this could happen. One is when a user inadvertently assigned a fixity to a type-level name, such as in this example: ::
+  * If an ``infix{l,r} n`` declaration refers to exclusively to a type-level name (that is, either there is no value with the same name that is also declared, or there a value with the same name has its fixity declared separately with ``infix{l,r} n data``), warn that the user should change it to ``infix{l,r} n type``. This is a straightforward case, as this would become an error in GHC 8.(X+6).
+  * If an ``infix{l,r} n`` declaration refers to both a value-level and type-level name (that is, there are no other ``infix{l,r} n data`` or ``infix{l,r} n type`` declarations referring to the same name), things are a bit trickier. There are two scenarios under which this could happen. One is when a user inadvertently assigned a fixity to a type-level name, such as in this example: ::
 
         {-# LANGUAGE TypeOperators #-}
         module A where
@@ -148,7 +148,7 @@ The eventual goal is to make ``infix{l,r} n type`` the only means by which one c
 
         type f $ x = f x
 
-    Here, the user only meant to assign a fixity to the value-level ``($)`` fixity, and doesn't care about the fixity of the type-level ``($)``. This situation could be addressed by converting the existing fixity declaration to ``infixr 0 value $``.
+    Here, the user only meant to assign a fixity to the value-level ``($)`` fixity, and doesn't care about the fixity of the type-level ``($)``. This situation could be addressed by converting the existing fixity declaration to ``infixr 0 data $``.
 
     It should be noted, however, that the code above is not wrong, and would compile in GHC 8.(X+6). However, we still should warn when we see code like this, because of the other scenario: it is possible that the user really did mean to assign the type-level ``($)`` a fixity. Even worse, the place where the fixity matters might be in an entirely different module: ::
 
@@ -166,7 +166,7 @@ The eventual goal is to make ``infix{l,r} n type`` the only means by which one c
       warning:
         * 'infixr 0 $' refers to both a value-level and a type-level name '$'
         * In GHC 8.(X+6), 'infixr 0 $' will only assign 'infixr 0' to the value-level '$'
-        * If you intended this, use 'infixr 0 value $' instead
+        * If you intended this, use 'infixr 0 data $' instead
         * If you want the type-level '$' to also be 'infixr 0', add a 'infixr 0 type $' declaration
 
 * In GHC 8.(X+6) have ``infix{l,r} n`` error whenever it refers exclusively to a type-level name.
