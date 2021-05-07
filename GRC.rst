@@ -48,8 +48,8 @@ Specifically, we aspire to these qualities:
 * We strive to be scrupulously polite at all times.  There should be no
   rudeness, name-calling, or harassment in our communication.
 
-* Where we disagree with someone, we avoid forms of expression that might make
-  our dialogue partner feel attacked, humiliated, demeaned, or marginalised.
+* Where we disagree with someone, we avoid forms of expression which intends to
+  attack, humiliate, demean, or marginalise our dialogue partner.
   Our critique should always be of specific statements and claims, never of
   people.
 
