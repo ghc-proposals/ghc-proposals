@@ -1,11 +1,11 @@
 ---
 author: Vladislav Zavialov
-date-accepted: ""
+date-accepted: "2021-05-10"
 ticket-url: ""
 implemented: ""
 ---
 
-This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/371).
+This proposal was [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/371).
 
 # Export `~` from `Data.Type.Equality`
 
