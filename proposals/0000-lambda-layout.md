@@ -846,7 +846,7 @@ capabilities doesn't yet exist.
    and similarly for `case x of {}`, which only matches on `x`.
    A syntax to resolve this for (1) has been proposed in the discussion: `(\mcase)` for matching on no arguments,
    `(\mcase _)` for one, `(\mcase _ _)` for two, and so on.
-   Alternatively, absurd patterns could be introduced, which would provide a
+   Alternatively, [absurd patterns](https://github.com/ghc-proposals/ghc-proposals/issues/421) could be introduced, which would provide a
    more general solution that could also be used in function definition syntax.
 
  - Regular lambda expressions could be extended to use layout and guards, however,
