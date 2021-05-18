@@ -1222,9 +1222,6 @@ Non-design of dependent types
 
 Effect and Interactions
 -----------------------
-* By accepting this proposal, the committee reaffirms Haskell's status as
-  an evolving, forward-thinking language, excited to adopt new ideas.
-
 * If this current proposal is accepted, I would expect the committee to accept
   `#291`_ (with significant revisions to the text, but not the spirit) and
   `#270`_ (perhaps with significant revisions to the details). `#281`_ could
@@ -1312,11 +1309,6 @@ The `GitHub PR <https://github.com/ghc-proposals/ghc-proposals/pull/378>`_ has a
 great deal of discussion. Here are a few takeaways:
 
 * Many industrial Haskellers came out of the woodwork to support this proposal.
-
-* There are lots of areas of uncertainty around what the design is. The `wiki page <https://gitlab.haskell.org/ghc/ghc/-/wikis/dependent-haskell>`_ hopefully answers many of these.
-
-* There are a number of misconceptions out there, hopefully addressed by the "non-design",
-  above.
 
 * There is worry that dependent types will somehow, non-specifically make Haskell worse.
   I `responded <https://github.com/ghc-proposals/ghc-proposals/pull/378#issuecomment-788536398>`_
