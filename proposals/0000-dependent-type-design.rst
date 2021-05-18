@@ -1319,11 +1319,15 @@ great deal of discussion. Here are a few takeaways:
   I am agnostic on the choice of vocabulary here. In any case, this proposal does not
   fix that vocabulary item.
 
-* There remain a few individuals who appear to remain deeply unconvinced. However, these seem to
-  be a small minority. The reasons they are not convinced appear to be around lack of
-  understanding of the proposal/design and general worry about unintended consequences.
-  I have tried to address both of these, but I do not believe my efforts have been fully
-  successful.
+* One particular worry is that people who do not wish to use dependent types will
+  somehow be forced to, either by following unhelpful suggestions in error messages
+  or through the adoption of dependent types in necessary libraries. The OIP was added
+  to address the concern about error messages -- I think this is an easy mistake to
+  avoid. The problem of adoption in libraries
+  is not really one that can be addressed within GHC. While there is a possibility
+  that some systemically important libraries will adopt dependent types before they are
+  sufficiently settled, it is my hope (and belief) that the community will work to avoid this
+  becoming a problem.
 
 * There is some concern that we should spend our collective energy elsewhere, away
   from dependent types.
