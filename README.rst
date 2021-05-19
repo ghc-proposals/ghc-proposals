@@ -246,7 +246,6 @@ Alejandro Serrano       `@serras <https://github.com/serras/>`_               20
 Simon Marlow            `@simonmar <https://github.com/simonmar>`_            2017/02  2021/02  co-chair
 Simon Peyton-Jones      `@simonpj <https://github.com/simonpj>`_              2017/02  2021/02  co-chair
 Joachim Breitner        `@nomeata <https://github.com/nomeata>`_              2017/02  2021/03  secretary
-Iavor Diatchki          `@yav <https://github.com/yav>`_                      2017/02  2021/03
 Richard Eisenberg       `@goldfirere <https://github.com/goldfirere>`_        2017/02  2021/03
 Vladislav Zavialov      `@int-index <https://github.com/int-index/>`_         2021/03
 ======================  ====================================================  =======  =======  =========
@@ -263,6 +262,7 @@ Ben Gamari              `@bgamari <https://github.com/bgamari>`_              20
 Manuel M T Chakravarty  `@mchakravarty <https://github.com/mchakravarty>`_    2017/02 - 2019/07
 Sandy Maguire           `@isovector <https://github.com/isovector>`_          2019/07 - 2019/12
 Christopher Allen       `@bitemyapp <https://github.com/bitemyapp>`_          2017/02 - 2020/05
+Iavor Diatchki          `@yav <https://github.com/yav>`_                      2017/02 - 2021/05
 ======================  ====================================================  =================
 
 
