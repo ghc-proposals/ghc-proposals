@@ -642,6 +642,11 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
       One non-backward-compatible alternative below is not to require that
       names be in scope without qualification; this would make this unqualified
       case more similar to the qualified case.
+
+      (This is still slightly backward-incompatible in an obscure scenario; see
+      `below`__.)
+
+__ export-backward-incompat_
    
    #. **Examples**. For instance in
 
@@ -776,10 +781,7 @@ Each numbered item in this section can be considered separately.
      topdecl ::= ... | 'module' [ 'qualified' ] [ modid ] [ exports ] 'where' decls
 
    It is an error to omit a module's name and
-   include the ``qualified`` keyword, unless there is also an empty export list.
-   (Anonymous qualified modules with an
-   empty export list but are still useful
-   as a way of declaring instances that use local definitions.)
+   include the ``qualified`` keyword.
 
 #. Introduce a new export item with the following BNF::
 
@@ -956,6 +958,8 @@ Costs and Drawbacks
   See `#295`_ for a more complete treatment of the idea of making a module into a
   first-class entity.
 
+.. _export-backward-incompat:
+  
 * This proposal introduces a backward-incompatibility in an obscure scenario::
 
     module M ( module L ) where
