@@ -102,8 +102,7 @@ Proposed Change Specification
     modifier may have a top-level type signature.
 
 11. A modifier of type ``Multiplicity`` changes the multiplicity of the following arrow,
-    preceding pattern-bound variable of a lambda (but only when the lambda binds just one
-    variable),
+    preceding pattern-bound variable of a lambda,
     or preceding record field.
     Multiple modifiers of type ``Multiplicity`` on the same arrow are not allowed.
     Any other use of a modifier is an error.

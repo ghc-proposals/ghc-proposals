@@ -307,8 +307,6 @@ This proposal adds two new syntactical constructs:
   where the ``btype`` after the ``%`` must be of kind ``Multiplicity``
   (see below).
 
-  This form is allowed only when the lambda binds precisely one variable.
-
 - Record fields can be labeled with a multiplicity. This modifies
   the syntax for record fields as follows::
      
