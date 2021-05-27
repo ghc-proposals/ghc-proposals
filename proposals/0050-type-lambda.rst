@@ -238,7 +238,83 @@ C. Typing rules for the new construct are as in a `recent paper
        Multiple equations can bind type variables in different places,
        as we have a type signature to guide us.
 
-D. ``-XTypeAbstractions`` and ``-XScopedForAlls`` have a fraught relationship,
+#. Typing rules for pattern synonym bindings are complicated, as usual.
+
+   i. A visible type abstraction in a pattern synonym binding that lacks
+      a type signature is rejected. (While we could, at some cost, work
+      out what should happen here, please just use a type signature.)
+
+   ii. (Background information; no new specification here.)
+       Pattern synonym type signatures have a restricted form that looks
+       like this::
+
+         pattern P :: forall universal_tvs.   required_context =>
+                      forall existential_tvs. provided_context =>
+                      arg1 -> arg2 -> ... ->
+                      result
+
+       `The GHC manual <https://downloads.haskell.org/ghc/latest/docs/html/users_guide/exts/pattern_synonyms.html#typing-of-pattern-synonyms>`_ has the details for how parts
+       of this signature can be left out; I will not repeat these rules here.
+       The key observation is that all quantified type variables occur
+       *before* any required term-level arguments.
+
+       Furthermore, pattern synonym bindings may be specified in two parts,
+       for explicit bidirectional pattern synonyms::
+
+         pattern P <- pat
+           where P = expr
+
+        Call the top line the *pattern synonym pattern binding*, while
+        the second line is the *pattern synonym expression binding*.
+
+        In an implicitly bidirection pattern synonym binding, the
+        pattern synonym pattern binding and pattern synonym expression
+        binding are written with one bit of syntax. For the purposes
+        of this proposal, though, we consider type-checking this
+        bit of syntax *twice*, once as a pattern synonym pattern binding,
+        and once as a pattern synonym expression binding.
+       
+   iii. With ``-XTypeAbstractions``, a pattern synonym pattern binding may
+        include any number of type abstractions (such as ``@a`` or ``@_``)
+        directly after the pattern synonym name. (Such a binding must be written
+        in prefix notation, not infix.)
+        These bindings correspond to a prefix of the *specified* *universal* type variables
+        in the pattern synonym's type. It is an error to write more type
+        abstractions than there are specified universal variables.
+
+        Each type abstraction binds a local name to the corresponding
+        universal type variable. These names are available in the right-hand
+        side (after the ``<-`` or ``=``).
+
+        (Existentials are excluded here because an existential type variable
+        is bound by the pattern in the right-hand side. There appears to be
+        no motivation for being able to name these on the left.)
+
+        The rules for the usage of such variables on the right-hand side are
+        unchanged from the way scoped type variables work in pattern synonyms
+        today.
+
+   iv. With ``-XTypeAbstractions``, a pattern synonym expression binding
+       may include any number of type abstractions (such as ``@a`` or ``@_``)
+       directly after the pattern synonym name. (Such a binding must be written
+       in prefix notation, not infix.) These correspond to a prefix of
+       the concatentation of the specified universal and specified existential type variables
+       written in the pattern synonym type signature. It is an error
+       to write more type abstractions than there are specified universal
+       and specified existential type variables.
+
+       Each type abstraction binds a local name to the corresponding
+       universal or existential type variable. These names are available in the
+       right-hand side (after the ``=``).
+
+       (Existentials are included here because a pattern synonym used as an
+       expression takes existentials as arguments from call sites, and it is
+       sensible to bind these on the left.)
+
+       The rules for the usage of such variables on the right-hand side are
+       just as they exist for ordinary function bindings.
+       
+#. ``-XTypeAbstractions`` and ``-XScopedForAlls`` have a fraught relationship,
    as both are trying to accomplish the same goal via different means. Here are
    the rules keeping this sibling rivalry at bay:
 
@@ -249,7 +325,7 @@ D. ``-XTypeAbstractions`` and ``-XScopedForAlls`` have a fraught relationship,
 
    ii. If ``-XScopedForAlls`` is enabled,
        in an equation for a function definition for a function ``f`` (and similar
-       for pattern synonym bindings):
+       for pattern synonym pattern bindings and pattern synonym expression bindings):
 
        * If ``f`` is written with no arguments or its first argument is not
          a type argument (that is, the next token after ``f``
@@ -280,7 +356,11 @@ E. (Optional extra) If ``-XTypeAbstractions`` is in effect, then a function
 
    would have ``a`` and ``b`` in scope in the ``RHS``.
 
-   The ``@(..)`` construct works for both *specified* and *inferred* variables.
+   The ``@(..)`` construct works for both *specified* and *inferred* variables,
+   and is additionally avaialable in pattern synonym pattern bindings (where it
+   brings into scope only universals) and pattern synonym expression bindings
+   (where is brings into scope both universals and existentials). (In an implicitly
+   bidirectional pattern synonym, the ``@(..)`` brings into scope only universals.)
 
 Examples of new behavior of scoped type variables
 -------------------------------------------------
