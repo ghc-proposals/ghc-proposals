@@ -9,6 +9,7 @@ Generalized, named, and exportable ``default`` declarations
 .. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/409>`_.
             **After creating the pull request, edit this file again, update the
             number in the link, and delete this bold sentence.**
+.. sectnum::
 .. contents::
 
 The ``default`` declaration as specified in Haskell 2010 report is very limited. This proposal aims to make it useful
@@ -41,7 +42,7 @@ Proposed Change Specification
 
 The present proposal is basically an expanded version of the earlier `name the class
 <https://prime.haskell.org/wiki/Defaulting#Proposal1-nametheclass>`_ Haskell Prime proposal. It is also a slightly
-amended version of `a proposal<https://github.com/haskell/rfcs/pull/18>`_ for the ill-fated *Haskell 2020*
+amended version of `a proposal <https://github.com/haskell/rfcs/pull/18>`_ for the ill-fated *Haskell 2020*
 language stadardization attempt.
 
 The Haskell 2010 language report specifies the following syntax for the ``default`` declaration:
@@ -96,6 +97,20 @@ The syntactic extension to exports would be enabled by a new ``{-# LANGUAGE Expo
 imply the aforementioned ``NamedDefaults`` pragma. The new semantics of imports would be enabled by a new ``{-#
 LANGUAGE ImportedDefaults #-}`` pragma.
 
+Subsumption
+~~~~~~~~~~~
+
+Definition: given two ``default`` declarations for the same class
+   
+   |      ``default`` *C*  (*Type*\ `1`:subscript:\ `a`:superscript: , … , *Type*\ `m`:subscript:\ `a`:superscript:)
+   |      ``default`` *C*  (*Type*\ `1`:subscript:\ `b`:superscript: , … , *Type*\ `n`:subscript:\ `b`:superscript:)
+
+if *m* ≤ *n* and the first type sequence *Type*\ `1`:subscript:\ `a`:superscript: , … , *Type*\ `m`:subscript:\
+`a`:superscript: is a sub-sequence of the second sequence *Type*\ `1`:subscript:\ `b`:superscript: , … , *Type*\
+`n`:subscript:\ `b`:superscript: (*i.e.*, the former can be obtained by removing a number of *Type*\ `i`:subscript:\
+`b`:superscript: items from the latter), we say that the second declaration *subsumes* the first one.
+
+
 Rules for disambiguation of multiple declarations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -106,22 +121,15 @@ than one ``default`` declaration in scope, the conflict is resolved using the fo
    particular use site as we'll see in the following section.
 2. Two declarations for the same class explicitly declared in the same module are considered a static error.
 3. A ``default`` declaration in a module takes precedence over any imported ``default`` declarations for the same
-   class.
-4. For any two imported ``default`` declarations for the same class
-   
-   |      ``default`` *C*  (*Type*\ `1`:subscript:\ `a`:superscript: , … , *Type*\ `m`:subscript:\ `a`:superscript:)
-   |      ``default`` *C*  (*Type*\ `1`:subscript:\ `b`:superscript: , … , *Type*\ `n`:subscript:\ `b`:superscript:)
-
-   if *m* ≤ *n* and the first type sequence *Type*\ `1`:subscript:\ `a`:superscript: , … , *Type*\ `m`:subscript:\
-   `a`:superscript: is a sub-sequence of the second sequence *Type*\ `1`:subscript:\ `b`:superscript: , … , *Type*\
-   `n`:subscript:\ `b`:superscript: (*i.e.*, the former can be obtained by removing a number of *Type*\
-   `i`:subscript:\ `b`:superscript: items from the latter), we say that the second declaration *subsumes* the first
-   one. The effect is to ignore the subsumed first declaration.
+   class. However the compiler may warn the user if an imported declaration is not subsumed by the local declaration.
+4. For any two imported ``default`` declarations for the same class where one subsumes the other, we ignore the
+   subsumed declaration.
 5. If a class has neither a local ``default`` declaration nor an imported ``default`` declaration that subsumes all
    other imported ``default`` declarations for the class, the conflict between the imports is unresolvable. The effect
    is to ignore all ``default`` declarations for the class, so that no declaration is in effect in the module. The
-   compiler may choose to emit a warning in this case, but no error would be triggered unless there is an actual
-   ambiguous type in the module.
+   compiler may choose to emit a warning in this case, but no error would be triggered about the imports. Of course an
+   error may be triggered in the body of the module if it contains an actual ambiguous type for the class with the
+   conflicting imported defaults, as per the following section.
 
 Rules for disambiguation at the use site
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -138,11 +146,9 @@ ambiguous type variable *v* is defaultable if:
     Each defaultable variable is replaced by the first type in the default list that is an instance of all the
     ambiguous variable’s classes. It is a static error if no such type is found.
 
-The new rules require instead that 
+The new rules instead require only that 
 
-- *v* appears only in constraints of the form *C* *v*, where *C* is a class, and
-
-- there is a ``default`` declaration in effect for at least one of these classes or their super-classes.
+- *v* appears in at least one constraint of the form *C* *v*, where *C* is a class.
 
 The type selection process remains the same for any given class *C*. If there are multiple *C*\ `i`:subscript: *v*
 constraints with competing ``default`` declarations, they have to resolve to the same type. In other words, the type
@@ -152,13 +158,15 @@ for any of them to not resolve to any type.
 
 To make the design more explicit, the following algorithm *can* be used for default resolution:
 
-0. Assuming that the type inference produces the constraint set {*C*\ `1`:subscript: *v*, … , *C*\ `n`:subscript: *v*}
-   for a type variable *v*,
+0. Assuming that the type inference produces the constraint set *S*\ `v`:subscript: = {*C*\ `1`:subscript: *v*, … , *C*\
+   `n`:subscript: *v*} ∪ *OtherConstraints* of all constraints involving type variable *v*,
 1. add all super-classes of every *C*\ `i`:subscript: to the constraint set,
-2. filter the constraint set to contain only the classes with a ``default`` declaration in effect,
-3. map every found ``default`` *C*\ `i`:subscript: declaration to the first type *T*\ `i`:subscript: in its type list
-   that satisfies *all* required constraints from step 0 for the ambiguous type variable *v*, and finally,
-4. if there is more than one distinct type *T*\ `i`:subscript: in the resulting type set, report a static error.
+2. filter the constraint set *C*\ `i`:subscript: to contain only the classes with a ``default`` declaration in effect,
+3. for each *C*\ `i`:subscript: left in the constraint set by the previous step, find the first type *T*\
+   `i`:subscript: in the default list for *C*\ `i`:subscript: that satisfies *all* required constraints from the set
+   *S*\ `v`:subscript:,
+4. report a static error if there is more than one distinct type *T*\ `i`:subscript: in the resulting type set,
+5. otherwise resolve the ambiguity by adding a ``v ~ T`` constraint.
 
 Examples
 --------
@@ -209,8 +217,11 @@ Effect and Interactions
 -----------------------
 
 GHC already supports two extensions that modify the defaulting mechanism:
-`ExtendedDefaultRules<https://ghc.gitlab.haskell.org/ghc/doc/users_guide/ghci.html#type-defaulting-in-ghci>`_ and
-`OverloadedStrings<https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/overloaded_strings.html?highlight=overloadedstrings#overloaded-string-literals>`_.
+`ExtendedDefaultRules <https://ghc.gitlab.haskell.org/ghc/doc/users_guide/ghci.html#type-defaulting-in-ghci>`_ and
+`OverloadedStrings <https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/overloaded_strings.html?highlight=overloadedstrings#overloaded-string-literals>`_.
+
+ExtendedDefaultRules
+~~~~~~~~~~~~~~~~~~~~
 
 The former is fully devoted to defaulting. Its effect is to extend the defaulting rules so that they apply not only to
 the class ``Num`` as specified by the language standard, but also to any class in the following list: ``Show``,
@@ -225,6 +236,9 @@ brought into the scope::
   default Foldable ([])
   default Traversable ([])
   default Num ((), Integer, Double)
+
+OverloadedStrings
+~~~~~~~~~~~~~~~~~
 
 The ``OverloadedStrings`` extension by itself causes many new ambiguities, much like the ambiguites caused by the
 overloaded numeric literals which were the original reason for ``default`` declarations in the first place. To rectify
@@ -245,6 +259,30 @@ declaration::
 
 Furthermore, as the whole purpose of this extension is to enable string literals to enable types other than
 ``String``, its presence should probably imply ``ImportedDefaults``.
+
+OverloadedLists
+~~~~~~~~~~~~~~~
+
+The ``OverloadedLists`` extension does not currently bring any defaulting rules into scope. There is no need to change
+that. Once this proposal is adopted, a library like ``Vector`` could export a rule::
+
+  default IsList ([], Vector)
+
+ParallelListComp, TransformListComp, and MonadComprehensions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The same consideration could be extended to the ``ParallelListComp``, ``TransformListComp``, and
+``MonadComprehensions`` extensions. None of them bring any special defaulting rules. The desugaring of the first two
+extensions on their own seems to be hard-wired to list-specific functions like ``zip``. This means that their use
+effectively neutralizes ``OverloadedLists``. When combined with the ``MonadComprehensions`` extension, the
+``ParallelListComp`` extension is generalized to target any ``MonadZip`` instance, but ``TransformListComp`` is
+not. To target a type other then ``[]``, GHC Users Guide instead suggests the combination of three extensions::
+
+  {-# LANGUAGE TransformListComp, MonadComprehensions, RebindableSyntax #-}
+
+There is some opportunity here for the expanded use of the present proposal, but the backward compatibility is
+sufficiently messy for me to refrain from making any suggestions. The extensions are also fairly old and not
+particularly popular, so they may be best left alone.
 
 Costs and Drawbacks
 -------------------
@@ -303,6 +341,28 @@ consistent, it would also make its infamous learning curve even steeper for begi
 An optional extension compatible with either of these alternatives would be to allow the ``hiding`` clause to list the
 ``default`` declarations that should not be brought into the scope. This is not a part of the present proposal simply
 because it's unnecessary.
+
+Global coherence
+~~~~~~~~~~~~~~~~
+
+A proposal was put forward to treat ``default`` declarations the same way as ``instance`` declarations, *i.e.*, to
+always export and import them and to insist on their global coherence. In some ways this is easier in case of
+``default`` declarations, because coherence can always be recovered by adding a new ``default`` declaration that
+subsumes all conflicting declarations for the same class. For example if any two modules contain two conflicting
+declarations from above::
+
+   default C (Int,Double,String,())
+   default D (Double,String,Int,())
+
+any third (presumably higher-level) module can recover the coherence and resolve the conflict in favour of the first
+module by declaring::
+
+   default C (Int,Double,String,(),Int,())
+
+Both old declarations are subsumed by the new one. However this new declaration doesn't look very declarative, to put
+it mildly. Furthermore there would be no way to simply turn off a ``default`` declaration within a module. Besides,
+``default`` coherence wouldn't bring any benefits it does to ``instance`` declarations.
+  
 
 Multi-parameter type classes and other constraints
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
