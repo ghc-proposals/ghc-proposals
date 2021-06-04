@@ -30,13 +30,13 @@ imported module imports are used:
 Distinguishing these 3 different cases has several advantages:
 
 1. Currently, if a module enables ``TemplateHaskell``, then all imported modules
-   are compiled to object code before name resolution takes place. The ensures that any top level splices that may be encountered are able to be fully evaluated.
+   are compiled to object code before name resolution takes place. This ensures that any top level splices that may be encountered are able to be fully evaluated.
    This is a pessimisation because most of the imported identifiers, which we have taken such pains to ensure we can run, will not
    actually be used in a top-level splice.
    Proposals (such as `#14905 <https://gitlab.haskell.org/ghc/ghc/-/issues/14095>`_) to increase build parallelism are far less effective
    in projects which use ``TemplateHaskell`` because name resolution depends on code generation
    for all dependencies.
-   By distinguishing imported modules whose code is executed only at runtime
+   By distinguishing imported modules whose code is executed only at compile time
    (which in common cases will be a small fraction of imported modules), we are
    able to improve this pessimisation.
 2. GHC offers an ``-fno-code`` flag that instructs the compiler to parse and
@@ -45,7 +45,7 @@ Distinguishing these 3 different cases has several advantages:
    ``TemplateHaskell`` must be compiled to object code.
    This is despite the fact that we will not generate object code for the module
    itself. By distinguishing imported modules whose code is executed only at
-   runtime, we can reduce this unfortunate work significantly, and entirely in many
+   compile time, we can significantly reduce this unfortunate work, and entirely in many
    cases.
 3. Projects such as haskell-language-server face similar problems as 2., where they are interested only in the result of type-checking modules, but when ``TemplateHaskell`` is enabled a large
    number of modules have to be cautiously compiled to bytecode.
@@ -81,7 +81,7 @@ level
           qux = [|
             -- quux is at level 0
             quux = [|
-              quuz is at level 1
+              -- quuz is at level 1
               quuz = 0
             |]
           |]
@@ -106,13 +106,28 @@ The ``splice`` modifier indicates that a module's imports are available at compi
 The absence of the ``splice`` modifier indicates that a module's imports are available
 at runtime.
 
-A ``splice`` imported module allows identifiers to be used at compile time. Compile time
-evaluation is indicated by a top-level splice. Therefore the ``splice`` modifier
-affects name resolution depending on whether we are inside a top-level splice or not.
+Resolution of scopes (often called "renaming") is blind to whether or not an
+identifier was imported with ``splice``. This is important because it will allow
+GHC to emit errors advising the user to modify their import declarations.
 
+The typechecker will be modified to emit errors in the following cases:
+1. It is an error to reference a ``splice`` imported name from a negative
+   level, and it is an error to reference a non-``splice`` imported name from
+   a non-negative level.
+
+2. It is an error to use name that is both ``splice``-imported and non-``splice``
+   imported. Note that in some cases we could disambiguate these names by
+   inspecting the level at which they appeared, but we do not propose this.
+   See Ambiguity.
+
+Then,
 1. If a module is only available at compile time then the imports are only available in top-level splices.
 2. If a module is only available at runtime then the imports are not available in top-level splices.
 3. If a module is available at both runtime and compile time then the imports are available everywhere.
+
+The driver will be modified to ensure that, for modules with
+`-XTemplateHaskell`, object code is generated for ``splice`` imported modules,
+whereas today it ensures object code is available for all imported modules.
 
 The new language extension ``ExplicitSpliceImports`` adds a
 new import modifier to the import syntax. An import is marked as a "splice"
@@ -239,10 +254,12 @@ This program is also rejected because the instances defined in ``Normal`` and ``
 Other Considerations
 ~~~~~~~~~~~~~~~~~~~~
 
+When ``TemplateHaskell`` is disabled, then ``ExplicitSpliceImports`` is a no-op.
+
 When ``TemplateHaskell`` is enabled but NOT ``ExplicitSpliceImports``, then all imports
 are implicitly additionally imported as splice imports, which matches the current behaviour.
 
-If the ``Prelude`` module is implicitly imported then it is also imported as a splice module so the following is
+If the ``Prelude`` module is implicitly imported then it is also imported as a splice module. Hence the following is
 allowed::
 
   zero = $(id [| 0 |])
@@ -250,6 +267,8 @@ allowed::
 If ``NoImplicitPrelude`` is enabled then you have to import ``Prelude`` as a splice
 module as well in order to use names from ``Prelude`` in negative level splices::
 
+  {-# LANGUAGE TemplateHaskell #-}
+  {-# LANGUAGE ExplicitSpliceImports #-}
   {-# LANGUAGE NoImplicitPrelude #-}
 
   import splice Prelude
@@ -313,6 +332,13 @@ Alternatives
     import splice 2 A
 
   Practically, by far the most common situation is 2 stages.
+
+ * Since ``ExplicitSpliceImports`` is a no-op when ``TemplateHaskell`` is
+   disabled, we could have ``ExplicitSpliceImports`` imply ``TemplateHaskell``.
+   There is at least one case where this would be harmful: users may which to
+   enable ``ExplicitSpliceImports`` globally for their project, but only
+   carefully enable ``TemplateHaskell`` for a small number of modules.
+
 
 
 Unresolved Questions
