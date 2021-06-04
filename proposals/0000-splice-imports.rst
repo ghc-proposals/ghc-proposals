@@ -115,7 +115,7 @@ The typechecker will be modified to emit errors in the following cases:
    level, and it is an error to reference a non-``splice`` imported name from
    a non-negative level.
 
-2. It is an error to use name that is both ``splice``-imported and non-``splice``
+2. It is an error to use a name that is both ``splice``-imported and non-``splice``
    imported. Note that in some cases we could disambiguate these names by
    inspecting the level at which they appeared, but we do not propose this.
    See Ambiguity.
