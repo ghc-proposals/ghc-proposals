@@ -126,7 +126,7 @@ Then,
 3. If a module is available at both runtime and compile time then the imports are available everywhere.
 
 The driver will be modified to ensure that, for modules with
-`-XTemplateHaskell`, object code is generated for ``splice`` imported modules,
+``-XTemplateHaskell``, object code is generated for ``splice`` imported modules,
 whereas today it ensures object code is available for all imported modules.
 
 The new language extension ``ExplicitSpliceImports`` adds a
