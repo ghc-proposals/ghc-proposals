@@ -110,15 +110,12 @@ Resolution of scopes (often called "renaming") is blind to whether or not an
 identifier was imported with ``splice``. This is important because it will allow
 GHC to emit errors advising the user to modify their import declarations.
 
-The typechecker will be modified to emit errors in the following cases:
-1. It is an error to reference a ``splice`` imported name from a negative
+The typechecker will be modified to emit errors in the following case:
+
+   It is an error to reference a ``splice`` imported name from a negative
    level, and it is an error to reference a non-``splice`` imported name from
    a non-negative level.
 
-2. It is an error to use a name that is both ``splice``-imported and non-``splice``
-   imported. Note that in some cases we could disambiguate these names by
-   inspecting the level at which they appeared, but we do not propose this.
-   See Ambiguity.
 
 Then,
 1. If a module is only available at compile time then the imports are only available in top-level splices.
@@ -333,11 +330,22 @@ Alternatives
 
   Practically, by far the most common situation is 2 stages.
 
- * Since ``ExplicitSpliceImports`` is a no-op when ``TemplateHaskell`` is
+* Since ``ExplicitSpliceImports`` is a no-op when ``TemplateHaskell`` is
    disabled, we could have ``ExplicitSpliceImports`` imply ``TemplateHaskell``.
    There is at least one case where this would be harmful: users may which to
    enable ``ExplicitSpliceImports`` globally for their project, but only
    carefully enable ``TemplateHaskell`` for a small number of modules.
+
+* There are several proposals or the syntax of splice imports. Some have objected
+  that the ``import splice`` suggestion is ungramatical, unlike ``import qualified`` or
+  ``import hiding``.
+
+  One possible alternative is ``$(import Foo)`` to represent a splice import, this
+  syntax clashes with the existing syntax for declaration splices and significantly
+  changes the structure of the import syntax.
+
+  Another alternative suggested was ``import for splice`` which restores the
+  gramatically nature of the import.
 
 
 
