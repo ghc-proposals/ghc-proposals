@@ -102,30 +102,6 @@ home module
 Proposed Change
 ---------------
 
-The ``splice`` modifier indicates that a module's imports are available at compile time.
-The absence of the ``splice`` modifier indicates that a module's imports are available
-at runtime.
-
-Resolution of scopes (often called "renaming") is blind to whether or not an
-identifier was imported with ``splice``. This is important because it will allow
-GHC to emit errors advising the user to modify their import declarations.
-
-The typechecker will be modified to emit errors in the following case:
-
-   It is an error to reference a ``splice`` imported name from a negative
-   level, and it is an error to reference a non-``splice`` imported name from
-   a non-negative level.
-
-
-Then,
-1. If a module is only available at compile time then the imports are only available in top-level splices.
-2. If a module is only available at runtime then the imports are not available in top-level splices.
-3. If a module is available at both runtime and compile time then the imports are available everywhere.
-
-The driver will be modified to ensure that, for modules with
-``-XTemplateHaskell``, object code is generated for ``splice`` imported modules,
-whereas today it ensures object code is available for all imported modules.
-
 The new language extension ``ExplicitSpliceImports`` adds a
 new import modifier to the import syntax. An import is marked as a "splice"
 import when it is prefixed with ``splice``::
@@ -169,6 +145,26 @@ The syntax for imports is changed in the follow way::
 
 The ``splice`` keyword appears before the ``qualified`` keyword but after ``SOURCE``
 and ``SAFE`` pragmas.
+
+Resolution of scopes (often called "renaming") is blind to whether or not an
+identifier was imported with ``splice``. This is important because it will allow
+GHC to emit errors advising the user to modify their import declarations.
+
+The typechecker will be modified to emit errors in the following case:
+
+   It is an error to reference a non-``splice`` imported name from a negative
+   level, and it is an error to reference a ``splice`` imported name from
+   a non-negative level.
+
+
+Then,
+1. If a module is only available at compile time then the imports are only available in top-level splices.
+2. If a module is only available at runtime then the imports are not available in top-level splices.
+3. If a module is available at both runtime and compile time then the imports are available everywhere.
+
+The driver will be modified to ensure that, for modules with
+``-XTemplateHaskell``, object code is generated for ``splice`` imported modules,
+whereas today it ensures object code is available for all imported modules.
 
 
 Intuitive Specification of ``splice``
@@ -331,10 +327,10 @@ Alternatives
   Practically, by far the most common situation is 2 stages.
 
 * Since ``ExplicitSpliceImports`` is a no-op when ``TemplateHaskell`` is
-   disabled, we could have ``ExplicitSpliceImports`` imply ``TemplateHaskell``.
-   There is at least one case where this would be harmful: users may which to
-   enable ``ExplicitSpliceImports`` globally for their project, but only
-   carefully enable ``TemplateHaskell`` for a small number of modules.
+  disabled, we could have ``ExplicitSpliceImports`` imply ``TemplateHaskell``.
+  There is at least one case where this would be harmful: users may which to
+  enable ``ExplicitSpliceImports`` globally for their project, but only
+  carefully enable ``TemplateHaskell`` for a small number of modules.
 
 * There are several proposals or the syntax of splice imports. Some have objected
   that the ``import splice`` suggestion is ungramatical, unlike ``import qualified`` or
