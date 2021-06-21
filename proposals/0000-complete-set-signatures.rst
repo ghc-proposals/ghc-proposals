@@ -16,10 +16,10 @@ GHC allows users to add what looks like a type signature to a COMPLETE set decla
 
  {-# COMPLETE P, Q :: Either #-}
 
-While this is documented purely as a means of disambiguation with the goal of convenient
-implementation within GHC, it since has been abused by users, for its refining effect:
-It allows the COMPLETE set ``{P,Q}``to only apply at the concrete data type constructor
-``[]``.
+While this is documented purely as a means of disambiguation with the goal of
+convenient implementation within GHC, it since has been abused by users, for
+its refining effect: It allows the COMPLETE set ``{P,Q}`` to only apply at the
+concrete data type constructor ``[]``.
 
 It's impossible to bend the "type signature" to accomodate some legitimate
 use cases, like requiring the type constructor to satisfy a type class. At
@@ -201,21 +201,21 @@ to
 
 Where a ``ctype`` is a "for-all type", according to GHC's happy parser. It's the
 same grammatical sort that constitutes the RHS of a ``::`` in a type signature
-and since it constrains the result type of the relevant ConLikes, I'd like to
-call it a "result type signature".
+and since it constrains the result type of the relevant ConLikes, we call
+it a "result type signature", often referring just to the type it carries.
 
 Note that this change accepts strictly more syntax, because
 
-  - ``atype`` accepts a superset of ``gtycon``
-  - ``atype`` can be derived from ``ctype`` (via ``type``, ``btype``, ``infixtype``, ``ftype``)
+- ``atype`` accepts a superset of ``gtycon``
+- ``atype`` can be derived from ``ctype`` (via ``type``, ``btype``, ``infixtype``, ``ftype``)
 
 Typing
 ======
 
-The ``ctype`` in the result type signature is renamed and kind-checked like a
-``ctype`` occuring in an ordinary type signature.
+The (type carried by the) result type signature must have kind ``TYPE r``, for
+any runtime-representation ``r``.
 
-Examples for well-typed ``ctype``s:
+Examples for well-typed result type signatures:
 
 ::
 
@@ -224,22 +224,24 @@ Examples for well-typed ``ctype``s:
  String
  (a ~ Int, Semigroup a) => a
  MPTC a b => a
+ Int#
 
-Examples for invalid ``ctype``s:
+Examples for invalid result type signatures:
 
 ::
 
  Stream
  (->)
  "Symbol"
+ Eq Int
 
 Note that after type-checking
 
-  - We *accept* some of the previously well-typed syntax, like ``Int`` and other
-    nullary data type constructors.
-  - We *reject* some of the previously well-typed syntax, like ``Stream`` and other
-    non-nullary data type constructors.
-  - We *accept* new syntax, like ``IsInfinite l => l a``.
+- We *accept* some of the previously well-typed syntax, like ``Int`` and other
+  nullary data type constructors.
+- We *reject* some of the previously well-typed syntax, like ``Stream`` and other
+  non-nullary data type constructors.
+- We *accept* new syntax, like ``IsInfinite l => l a``.
 
 Pattern match checking
 ======================
@@ -249,11 +251,11 @@ A COMPLETE set with a result type signature ``{-# COMPLETE cls :: sig_ty
 the COMPLETE set is supposedly *covered* by a set of patterns in a pattern
 match, we
 
-  1. Take the result type of the pattern match, ``ty``.
-  2. Check whether ``sig_ty`` subsumes ``ty``, as per the usual subsumption
-     rules of GHC.
-     If that is the case, then the COMPLETE set is *covered* by the pattern match.
-     Otherwise, the COMPLETE set is *not covered* by the pattern match.
+1. Take the result type of the pattern match, ``ty``.
+2. Check whether ``sig_ty`` subsumes ``ty``, as per the usual subsumption
+   rules of GHC.
+   If that is the case, then the COMPLETE set is *covered* by the pattern match.
+   Otherwise, the COMPLETE set is *not covered* by the pattern match.
 
 If *any* COMPLETE set is covered by a pattern match, then the pattern match is
 exhaustive.
@@ -312,34 +314,34 @@ This program passes type-checking. The compiler *should* emit a warning about
 the definition of ``unsafeHead`` being incomplete, but not for ``f``,
 ``safeHead`` or ``safeHead2``:
 
-  - ``f`` has a case for ``Empty`` and ``(:<)``. COMPLETE set (1) is covered,
-    because the type of the pattern match is ``IsList l => l a``, which is
-    subsumed by itself. Thus, the pattern match of ``f`` is exhaustive.
-  - ``f`` has a case for ``(:<)``. COMPLETE set (2) is *not* covered,
-    because the type of the pattern match is ``IsList l => l a``, which is not
-    subsumed by ``IsInfinite l => l a``.
-  - ``safeHead`` has a case for ``(:<)``. COMPLETE set (2) is covered,
-    because the type of the pattern match is ``IsInfinite l => l a``, which is
-    subsumed by itself. Thus, the pattern match of ``safeHead`` is exhaustive.
-  - ``safeHead2`` has a case for ``(:<)``. COMPLETE set (2) is covered,
-    because the type of the pattern match is ``Stream a``, which is
-    subsumed by ``IsInfinite l => l a``.
-    Thus, the pattern match of ``safeHead2`` is exhaustive.
-  - ``unsafeHead`` has a case for ``(:<)``. COMPLETE set (2) is *not* covered,
-    because the type of the pattern match is ``[a]``, which is not
-    subsumed by ``IsInfinite l => l a``.
-  - The lack of any COMPLETE set being covered by the the pattern match in
-    ``unsafeHead`` means that its definition is flagged as inexhaustive.
+- ``f`` has a case for ``Empty`` and ``(:<)``. COMPLETE set (1) is covered,
+  because the type of the pattern match is ``IsList l => l a``, which is
+  subsumed by itself. Thus, the pattern match of ``f`` is exhaustive.
+- ``f`` has a case for ``(:<)``. COMPLETE set (2) is *not* covered,
+  because the type of the pattern match is ``IsList l => l a``, which is not
+  subsumed by ``IsInfinite l => l a``.
+- ``safeHead`` has a case for ``(:<)``. COMPLETE set (2) is covered,
+  because the type of the pattern match is ``IsInfinite l => l a``, which is
+  subsumed by itself. Thus, the pattern match of ``safeHead`` is exhaustive.
+- ``safeHead2`` has a case for ``(:<)``. COMPLETE set (2) is covered,
+  because the type of the pattern match is ``Stream a``, which is
+  subsumed by ``IsInfinite l => l a``.
+  Thus, the pattern match of ``safeHead2`` is exhaustive.
+- ``unsafeHead`` has a case for ``(:<)``. COMPLETE set (2) is *not* covered,
+  because the type of the pattern match is ``[a]``, which is not
+  subsumed by ``IsInfinite l => l a``.
+- The lack of any COMPLETE set being covered by the the pattern match in
+  ``unsafeHead`` means that its definition is flagged as inexhaustive.
 
-#399
-====
+Relation to `#399`_
+===================
 
-We stole the syntax from #399, which means the proposals pretty much align in
+We stole the syntax from `#399`_, which means the proposals pretty much align in
 spirit. In fact, every example there should work similarly with our proposal.
 
-A mild difference is that this proposal wants more general return types, e.g.,
-we allow ``ctype`` in the return type signature, to allow type class constraints
-and feature parity with real type signatures.
+The major difference is that this proposal wants more general result types.
+E.g., we allow full forall types in the result type signature, to allow type
+class constraints and feature parity with real type signatures.
 
 Effect and Interactions
 -----------------------
@@ -362,14 +364,14 @@ that isn't just a leak of implementational detail.
 Breaking changes
 ================
 
-Note that the new return type signatures
+Note that the new result type signatures
 
-  1. *align* with the previous semantics of COMPLETE set signatures for nullary
-     data type constructors like ``Int``
-  2. *diverge* from the previous semantics of COMPLETE set signatures for
-     non-nullary data type constructors like ``Stream``, which is now ill-kinded.
-  3. *add considerable expressiveness*, as polymorphic return types like
-     ``IsList l => l a`` are possible and have reasonable semantics.
+1. *align* with the previous semantics of COMPLETE set signatures for nullary
+   data type constructors like ``Int``
+2. *diverge* from the previous semantics of COMPLETE set signatures for
+   non-nullary data type constructors like ``Stream``, which is now ill-kinded.
+3. *add considerable expressiveness*, as polymorphic result types like
+   ``IsList l => l a`` are possible and have reasonable semantics.
 
 (2) is a breaking change caught at compile-time with a clear and
 trivial upgrade path. The compiler could even emulate the old
@@ -383,7 +385,7 @@ E.g., ::
 
  test.hs:42:1: warning:
     Non-nullary data type constructor implicitly instantiated to ``Stream a``
-    In the return type signature of a COMPLETE pragma
+    In the result type signature of a COMPLETE pragma
 
 Alternatives
 ------------
@@ -392,16 +394,16 @@ Different Syntax
 ================
 
 An earlier version of this proposal used to invent new syntax to specify a
-*constraint* on the return type constructor instead, e.g., ::
+*constraint* on the result type constructor instead, e.g., ::
 
  {-# COMPLETE[forall l. IsList l] (:<), Empty #-}
  -- or just
  {-# COMPLETE[IsList] (:<), Empty #-}
 
 This syntax is (more arcane, and) terser if the COMPLETE set is constrained by
-a type class, whereas the syntax now described in this proposal (and #399) is
+a type class, whereas the syntax now described in this proposal (and `#399`_) is
 terser if the COMPLETE set is constrained by an equality constraint, e.g., if
-the return type in the type signature is a concrete data type).
+the result type signature is a concrete data type).
 
 Unresolved Questions
 --------------------
@@ -416,5 +418,6 @@ that I, Sebastian Graf, will shepherd.
 Endorsements
 ------------
 
+.. _`#399`: https://github.com/ghc-proposals/ghc-proposals/pull/399
 .. _`Note [Matching against a ConLike result type]`: https://gitlab.haskell.org/ghc/ghc/-/blob/a9129f9fdfbd358e76aa197ba00bfe75012d6b4f/compiler/GHC/HsToCore/Pmc/Solver.hs#L1712
 
