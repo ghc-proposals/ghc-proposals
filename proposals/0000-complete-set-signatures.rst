@@ -213,7 +213,8 @@ Typing
 ======
 
 The (type carried by the) result type signature must have kind ``TYPE r``, for
-any runtime-representation ``r``.
+any runtime-representation ``r``. Any free type variables are implicitly bound
+by top-level ``forall``, just like it happens for function type signatures.
 
 Examples for well-typed result type signatures:
 
@@ -221,6 +222,7 @@ Examples for well-typed result type signatures:
 
  [a]
  IsInfinite l => l a
+ forall l a. IsInfinite l => l a  -- equivalent to the former
  String
  (a ~ Int, Semigroup a) => a
  MPTC a b => a
