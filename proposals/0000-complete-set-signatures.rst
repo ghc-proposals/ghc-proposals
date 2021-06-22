@@ -407,6 +407,33 @@ a type class, whereas the syntax now described in this proposal (and `#399`_) is
 terser if the COMPLETE set is constrained by an equality constraint, e.g., if
 the result type signature is a concrete data type).
 
+Different ``forall`` semantics
+==============================
+
+Consider ::
+
+ {-# COMPLETE P :: forall a. [a] #-}
+ pattern P = []
+
+ ... case [] :: [Int] of
+   P -> ...
+
+The proposed design will find that the declared COMPLETE signature applies at
+the match type ``[Int]``, because ``forall a. [a]`` subsumes ``[Int]`` (in that
+we can instantiate ``x :: forall a. [a]`` to have type ``[Int]`` simply by
+applying it to ``@Int``.
+
+An alternative design might argue that *building* an expression of type
+``forall a. [a]`` is harder than building one of type ``[Int]``; while ``[]``
+inhabits both types, ``[4]`` only inhabits the latter.
+Based on this relation, it might also make sense to say that the COMPLETE pragma
+should not apply at ``[Int]``, because it is *less specific* (in the sense just
+discussed) than ``forall a. [a]``.
+
+We think the proposed design makes more sense, for its similarity to how
+function type signatures work. Another more soft argument: pattern matching
+feels a lot more like instantiating an expression than building one.
+
 Unresolved Questions
 --------------------
 The design pretty much determines the implementation.
