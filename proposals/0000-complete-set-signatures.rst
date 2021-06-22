@@ -19,7 +19,7 @@ GHC allows users to add what looks like a type signature to a COMPLETE set decla
 While this is documented purely as a means of disambiguation with the goal of
 convenient implementation within GHC, it since has been abused by users, for
 its refining effect: It allows the COMPLETE set ``{P,Q}`` to only apply at the
-concrete data type constructor ``[]``.
+concrete data type constructor ``Either``.
 
 It's impossible to bend the "type signature" to accomodate some legitimate
 use cases, like requiring the type constructor to satisfy a type class. At
@@ -449,4 +449,3 @@ Endorsements
 
 .. _`#399`: https://github.com/ghc-proposals/ghc-proposals/pull/399
 .. _`Note [Matching against a ConLike result type]`: https://gitlab.haskell.org/ghc/ghc/-/blob/a9129f9fdfbd358e76aa197ba00bfe75012d6b4f/compiler/GHC/HsToCore/Pmc/Solver.hs#L1712
-
