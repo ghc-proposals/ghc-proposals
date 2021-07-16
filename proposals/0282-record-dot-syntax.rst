@@ -437,7 +437,7 @@ Instead of this proposal, we could do any of the following:
    not actually in the language.
 -  Continue to
    `vent <https://www.reddit.com/r/haskell/comments/vdg55/haskells_record_system_is_a_cruel_joke/>`__
-   `about <https://bitcheese.net/haskell-sucks>`__
+   `about <https://web.archive.org/web/20210504193320/https://bitcheese.net/haskell-sucks>`__
    `records <https://medium.com/@snoyjerk/least-favorite-thing-about-haskal-ef8f80f30733>`__
    `on <https://www.quora.com/What-are-the-worst-parts-about-using-Haskell>`__
    `social <http://www.stephendiehl.com/posts/production.html>`__
@@ -549,9 +549,10 @@ was produced that parses and desugars forms directly in the parser. For
 confirmation, we *do not* view desugaring in the parser as the correct
 implementation choice, but it provides a simple mechanism to pin down
 the changes without going as far as adding additional AST nodes or type
-checker rules. The prototype is sufficiently rich enough to “do the
-right thing” with `this test
-file <https://gitlab.haskell.org/shayne-fletcher-da/ghc/-/blob/f74bb04d850c53e4b35eeba53052dd4b407fd60b/record-dot-syntax-tests/Test.hs>`__.
+checker rules. The prototype was rich enough to “do the right thing”. Update
+July 2021: More tests are now available in the GHC tree, e.g.
+`RecordDotSyntax1.hs
+<https://gitlab.haskell.org/ghc/ghc/-/blob/master/testsuite/tests/parser/should_run/RecordDotSyntax1.hs>`__.
 
 9.2 Who will provide an implementation?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
