@@ -66,9 +66,9 @@ Proposed Change Specification
 
      fexp     ::= {modifier} aexp | fexp aexp
 
-5. With ``-XModifiers``, introduce modifier syntax in lambda expressions as follows::
+5. With ``-XModifiers``, introduce modifier syntax in patterns as follows::
 
-     lexp     ::= \ apat1 ... apatn {modifier} -> exp
+     lpat     ::= {modifier} lpat | ...
 
 6. With ``-XModifiers``, introduce modifier syntax on record field declarations as follows::
      
@@ -102,7 +102,7 @@ Proposed Change Specification
     modifier may have a top-level type signature.
 
 11. A modifier of type ``Multiplicity`` changes the multiplicity of the following arrow,
-    preceding pattern-bound variable of a lambda,
+    or following pattern-bound variable of a lambda,
     or preceding record field.
     Multiple modifiers of type ``Multiplicity`` on the same arrow are not allowed.
     Any other use of a modifier is an error.
