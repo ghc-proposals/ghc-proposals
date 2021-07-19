@@ -492,8 +492,7 @@ Effect and Interactions
   concerned).
 
   Accepting the ``@(..)`` syntax does *not* entail accepting this new, separate
-  ``(..)`` syntax, though it is good to know that the idea is forward compatible
-  with.
+  ``(..)`` syntax, though it is good to know that the idea is forward compatible.
 
   A ``@(..)`` argument counts as a type argument when asking whether ``-XScopedForAlls``
   affects a function equation.
