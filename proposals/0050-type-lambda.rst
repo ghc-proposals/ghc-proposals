@@ -501,6 +501,12 @@ Effect and Interactions
   lambda-expressions, or anywhere other than a function binding with a type
   signature. This is because doing so would require propagating type
   information into scoping, which is problematic.
+
+  Some have argued on GitHub that it may be best to hold off the ``@(..)`` until
+  we gain more experience here: adding new features is easier than removing them.
+  While I agree that this could be done, the ``@(..)`` construct makes for a very
+  easy migration from today's ``-XScopedTypeVariables`` and is thus tempting to
+  be around from the start. I don't feel strongly.
   
 Costs and Drawbacks
 -------------------
