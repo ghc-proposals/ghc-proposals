@@ -644,10 +644,8 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
       case more similar to the qualified case.
 
       (This is still slightly backward-incompatible in an obscure scenario; see
-      `below`__.)
+      `below <export-backward-incompat>`_.)
 
-__ export-backward-incompat_
-   
    #. **Examples**. For instance in
 
       ::
