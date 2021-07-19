@@ -643,8 +643,7 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
       names be in scope without qualification; this would make this unqualified
       case more similar to the qualified case.
 
-      (This is still slightly backward-incompatible in an obscure scenario; see
-      `below <export-backward-incompat>`_.)
+      (This is still slightly backward-incompatible in an `obscure scenario`_.)
 
    #. **Examples**. For instance in
 
@@ -956,7 +955,7 @@ Costs and Drawbacks
   See `#295`_ for a more complete treatment of the idea of making a module into a
   first-class entity.
 
-.. _export-backward-incompat:
+.. _`obscure scenario`:
   
 * This proposal introduces a backward-incompatibility in an obscure scenario::
 
