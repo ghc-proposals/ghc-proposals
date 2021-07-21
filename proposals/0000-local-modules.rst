@@ -392,7 +392,11 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
       *modids*. Accordingly,
       a qualified name represents the same strings (dot-separated capitalized
       identifiers, followed by final dot and an occurrence name)
-      as it did previously, but with now more structure in the qualifier.
+      as it did previously, but with now more structure in the qualifier (previously,
+      the qualification was a monolithic *modid*, which had lexical structure around
+      capitalized words and dots, but was still considered one module name; now,
+      we have a dot-separated list of *modid*\ s, which can be split apart by e.g.
+      ``strip``).
    
    #. An original name is now a pair of the name of the top-level-module-name that
       defines it and a qualified name.
@@ -563,7 +567,8 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
       is the original name found by looking up ``qual`` in the ambient QEnv).
 
       If ``qual`` has no qualifier, report a warning controlled by
-      ``-Wunqualified-qualified-exports``.
+      ``-Wunqualified-qualified-exports``. In this case, the ``qualified``
+      keyword is a no-op.
 
       If there are bundled identifiers exported (in ``(...)``), these are
       also exported with the same qualification as the root identifier,
@@ -584,7 +589,7 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
       The key part here is that the return is a qualified-name mapping. Note
       that the qualification in the exported mapping is ``modids0``, not the
       ``modids1`` that might be found in the list of bundled qualified names.
-      See the example a few paragraphs above.
+      See the ``M.T`` example a few paragraphs above.
 
    #. For an export item like ``module qualified modids [ exports ]``:
 
