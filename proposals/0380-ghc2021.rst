@@ -32,7 +32,7 @@ The ``GHC2021`` language extension set comprises of the following language exten
 As a reminder, the following extensions are part of `Haskell2010`_, and continue to be enabled:
 
 * ``ImplicitPrelude``, `StarIsType`_, ``MonomorphismRestriction``, ``TraditionalRecordSyntax``, `EmptyDataDecls`_, `ForeignFunctionInterface`_, ``PatternGuards``, ``DoAndIfThenElse``,  ``RelaxedPolyRec``.
-* GHC already treats `MonadFailDesugaring`_ as if it were part of `Haskell2010`_ (see `documented divergences <https://ghc.gitlab.haskell.org/ghc/doc/users_guide/bugs.html#divergence-from-haskell-98-and-haskell-2010>`_), and the same holds for ``GHC2021``.
+* GHC already treated `MonadFailDesugaring`_ as if it were part of `Haskell2010`_ (see `documented divergences <https://ghc.gitlab.haskell.org/ghc/doc/users_guide/bugs.html#divergence-from-haskell-98-and-haskell-2010>`_), and the same holds for ``GHC2021``. The extension was removed in 9.0.1.
 
 The following deprecated extensions, which are part of `Haskell2010`_, are _not_ included in ``GHC2021``:
 
@@ -267,7 +267,7 @@ Data based on 13951 hackage packages, 1348 survey responses and 11 committee vot
 .. _LinearTypes: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/linear_types.html#extension-LinearTypes
 .. _MagicHash: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/magic_hash.html#extension-MagicHash
 .. _MonadComprehensions: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/monad_comprehensions.html#extension-MonadComprehensions
-.. _MonadFailDesugaring: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/monadfail_desugaring.html#extension-MonadFailDesugaring
+.. _MonadFailDesugaring: https://downloads.haskell.org/~ghc/8.10.5/docs/html/users_guide/glasgow_exts.html#extension-MonadFailDesugaring
 .. _MonoLocalBinds: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/let_generalisation.html#extension-MonoLocalBinds
 .. _MultiParamTypeClasses: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/multi_param_type_classes.html#extension-MultiParamTypeClasses
 .. _MultiWayIf: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/multiway_if.html#extension-MultiWayIf
