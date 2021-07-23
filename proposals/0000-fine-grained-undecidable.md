@@ -60,14 +60,23 @@ There are also tweaks to the coverage conditions for coverage / injectivity in t
 
 ## Proposed Change Specification
 
-The modifier syntax is taken from this [approved proposal](https://github.com/ghc-proposals/ghc-proposals/pull/370), with the additional [change](https://github.com/ghc-proposals/ghc-proposals/pull/392) of modifiers appearing _before_ the modified thing. Since modifiers ought to be types, we introduce the following declarationg in the `GHC.Modifiers` module.
+The modifier syntax is taken from the [updated modifiers proposal](https://github.com/goldfirere/ghc-proposals/blob/clarify-modifiers/proposals/0370-modifiers.rst). Since modifiers ought to be types, we introduce the following declarationg in the `GHC.Modifiers` module.
+
+We define a set of (promoted) data types to describe the different cases that may arise:
 
 ```haskell
-data TerminationCheck =
-  NoTerminationCheck | LiberalCoverage | LiberalInjectivity
+data LiberalCoverageConfig    = NoLiberalCoverage    | LiberalCoverage
+data LiberalInjectivityConfig = NoLiberalInjectivity | LiberalInjectivity
 
-data OverlapCheck =
-  Overlapping | Overlappable | Overlaps
+data TerminationCheck = PerformTerminationCheck | NoTerminationCheck
+
+data OverlapConfig = Overlap { overlapping :: Bool, overlappable :: Bool }
+
+-- type synonyms to cover the previously-defined pragmas
+type NoOverlap    = Overlap False False
+type Overlappable = Overlap False True
+type Overlapping  = Overlap True  False
+type Overlaps     = Overlap True  True
 ```
 
 The following grammar rules are updated to allow modifiers to appear:
@@ -115,7 +124,7 @@ The modifiers change the behavior of the checks as follows.
     %NoTerminationCheck ; instance Eq (Tree a a) => Eq (Rose a) where ..
     ```
 
-3. **Quantified constraint**: the `%NoTerminationCheck` modifier before the `forallp  in a quantified constraint skips its termination check. 
+3. **Quantified constraint**: the `%NoTerminationCheck` modifier before the `forall` in a quantified constraint skips its termination check. 
 
     ```haskell
     f :: forall a. (%NoTerminationCheck forall b. C b a => C a a) => a -> a
@@ -186,11 +195,11 @@ For modules using a lot of type level computation, there might be a large amount
 
 ## Unresolved Questions
 
-This proposal overlaps in part with [#374](https://github.com/ghc-proposals/ghc-proposals/pull/374) (_DYSFUNCTIONAL per-instance pragma for selective lifting of the coverage condition_). Note however that this proposal only concerns with enabling the more liberal conditions.
+Should we introduce a deprecation plan for `{-# OVERLAPS #-}` and related pragmas? We propose to follow the usual 3-release deprecation cycle:
 
-There's another level of flexibility in GHC by allowing to use the more liberal Paterson conditions instead of the restrictive conditions in the Report; one could think of also selectively enabling those. Given that it seems quite plausible that [`GHC2021`](https://github.com/ghc-proposals/ghc-proposals/pull/380) would get `FlexibleInstances` and `FlexibleContexts` in the default mix, I think we should not go that way.
-
-Should we also take the chance to reguralize the [`AMBIGUOUS`](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0232-AmbiguousType-pragma.rst) syntax before it is implemented?
+- implement modifiers in version X,
+- introduce the warnings about future deprecation in X + 1,
+- fully deprecate the old pragmas in X + 3.
 
 ## Implementation Plan
 
