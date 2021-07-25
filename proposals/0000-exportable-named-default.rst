@@ -93,6 +93,11 @@ When exporting a ``default Num`` declaration, the class ``Num`` has to be explic
 An ``import`` of a module always imports all the ``default`` declarations listed in the module's export list. There is
 no way to exclude any of them. This is the default option for this proposal, but there are `alternatives`_.
 
+A module can export its ``default`` declarations either by having no explicit export list (as in ``module M where
+{...}``) or by specifying them explicitly in its export list using the above syntax extension. In particular,
+re-export of a whole imported module (as in ``module M (module N) where{...}`` does *not* export any ``default``
+declarations.
+
 The syntactic extension to exports would be enabled by a new ``{-# LANGUAGE ExportedDefaults #-}`` pragma, which would
 imply the aforementioned ``NamedDefaults`` pragma. The new semantics of imports would be enabled by a new ``{-#
 LANGUAGE ImportedDefaults #-}`` pragma.
@@ -341,6 +346,22 @@ consistent, it would also make its infamous learning curve even steeper for begi
 An optional extension compatible with either of these alternatives would be to allow the ``hiding`` clause to list the
 ``default`` declarations that should not be brought into the scope. This is not a part of the present proposal simply
 because it's unnecessary.
+
+Module re-exports
+~~~~~~~~~~~~~~~~~
+
+As proposed in the `Exporting the defaults`_ section, a re-export of a whole module would not export the ``default``
+declarations imported from that module. The reasoning behind this constraint was to prevent a module from exporting a
+conflicting set of declarations without also exporting a local subsuming declaration, as in this example::
+
+   module M( f, g, module A, module B ) where
+     import A   -- Say A exports default X( P, R )
+     import B   -- Say B exports default X( Q, R )
+     default X( P, Q, R )
+
+The alternative would be to simplify the semantics and have ``module A, module B`` re-export export everything
+including the conflicting ``default`` declarations. The compiler could warn the author that the lack of an export of a
+subsuming declaration makes life harder for the module's importers.
 
 Global coherence
 ~~~~~~~~~~~~~~~~
