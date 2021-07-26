@@ -901,7 +901,9 @@ Effect and Interactions
     y = T.x
 
   There will be two identifiers ``T.x`` in scope: both the one imported from ``T`` and the record selector
-  in the type ``T``. This situation will lead to an error, as do other sources of ambiguity.
+  in the type ``T``. This situation will lead to an error, as do other sources of ambiguity. Note that
+  the code above is valid (and unambiguous) today, and so this example shows a small regression compared
+  to the status quo, but only when enabling ``-XLocalModules``.
 
 * The ability to detect dependencies of a module by parsing only a prefix of the module is retained.
   Local modules are always imported only by ``import module``, never plain ``import``. Plain ``import``
@@ -944,6 +946,34 @@ Effect and Interactions
   is that the local module system affects only the names that are in scope (and their qualifications
   and import/export), not any other aspect of the program.
 
+* This proposal describes *top-level modules* as distinct from *local modules*, but this distinction
+  has little import. Here is the full set of differences between these concepts:
+
+  1. The ``module`` keyword for a top-level module is the first lexeme in a file; the ``module``
+     keyword for a local module must not be the first lexeme in a file.
+
+  #. A top-level module can have ``import`` statements; a local module can have only ``import module``
+     statements.
+
+  #. An ``import`` statement can name only a top-level module, not a local module.
+
+  That's it! If you like, you can think of a ``import X`` statement as a combination of
+  ``import qualified X`` and ``import module X`` statement: the first loads the external compilation
+  unit named ``X`` (in a file ``X.hs``)
+  and brings lots of ``X.blah`` entities into scope, and the second removes the ``X.`` qualification.
+
+  Another way to think about this is that there is really no distinction between top-level modules
+  and local modules, but there is a distinction between a compilation unit and a module. An ``import``
+  statement names a compilation unit, granting access to any modules it contains. Haskell separately
+  has two restrictions:
+
+  A. Every compilation unit must contain exactly one module (which may contain other modules); the
+     compilation unit must have the same name as its one module.
+
+  #. ``import`` statements must go before all other statements (except, optionally, for a ``module``
+     header) in a compilation unit (in order to
+     support finding dependencies while parsing only a prefix of a file).
+  
 Costs and Drawbacks
 -------------------
 
