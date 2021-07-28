@@ -8,7 +8,7 @@ implemented: ""
 
 This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/302).
 
-# Multi-way lambda expressions
+# `\cases` - Multi-way lambda expressions
 
 This proposal introduces a syntactic construct that provides functionality to
 case split on the arguments of multi-parameter lambda expressions.
