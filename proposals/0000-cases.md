@@ -128,8 +128,9 @@ filter = \cases _ []                 -> []
 
 #### Changes
 
-A new extension `-XMultiWayLambda` is introduced. Under this extension, a new
-expression is enabled, introduced by the token sequence <tt>\\&nbsp;cases</tt>. The whitespace between  `\` and `cases`
+When the `-XLambdaCase` extension is enabled, a new
+expression is added, introduced by the token sequence <tt>\\&nbsp;cases</tt>.
+The whitespace between  `\` and `cases`
 is optional and may contain an arbitrary sequence of whitespace characters.
 `\cases` behaves in a way largely similar to `\`, but it is a layout herald.
 
@@ -308,6 +309,10 @@ slightly more verbose manner, as shown in the "Further Examples" section.
 (1) would introduce a new keyword and thus make it impossible to use the chosen
 word for other purposes, though this would be gated behind an extension.
 
+Since the proposal changes the existing `-XLambdaCase` extension, it is not
+entirely backwards-compatible: Expressions like `\cases -> cases + 1` are now
+interpreted differently when `-XLambdaCase` is active.
+
 ## Costs and Drawbacks
 
 It is one additional syntactic construct to maintain, however the maintenance
@@ -320,6 +325,9 @@ capabilities doesn't yet exist.
 
 ## Alternatives
 
+ - Instead of adding functionality to `-XLambdaCase`, a new extension, e.g.
+   `-XLambdaCases` could be added. It might be desirable to have this new
+   extension imply `-XLambdaCase`.
  - This proposal does not permit zero clauses, as with
    `case`-expressions and `-XEmptyCase`. This could be permitted. In this case, however, a way would have to be found
    to indicate how many arguments a given expression matches on, as otherwise, it would
