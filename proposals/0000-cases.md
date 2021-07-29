@@ -61,39 +61,6 @@ lambda expressions closer to those of function declarations:
 
 ## Proposed Change Specification
 
-Example:
-
-```haskell
-filter = \cases _ []                 -> []
-                p (x:xs) | p x       -> x : filter p xs
-                         | otherwise ->     filter p xs
-```
-
-A new extension `-XMultiWayLambda` is introduced. Under this extension, a new
-expression is enabled, introduced by the token sequence <tt>\\&nbsp;cases</tt>. The whitespace between  `\` and `cases`
-is optional and may contain an arbitrary sequence of whitespace characters.
-`\cases` behaves in a way largely similar to `\`, but it is a layout herald, can have multiple
-clauses, and may contain guards (see BNF for details).
-
-Zero clauses are not permitted, as the expression would be ambiguous.
-(See `Alternatives` section for details.)
-
-Like the existing behavior for alternatives in `case`- and
-`\case`-expressions, and equations in function declaration syntax, it is
-possible to use `where` clauses within each clause of a `\cases`-expression.
-
-As with function declaration equations, all clauses must have the same number of patterns.
-
-Given a `\cases`-expression `mcexp` with one or more scrutinees and a function
-`f` declared with function declaration syntax, and with the same alternatives
-and same guards for each alternative as `mcexp`, the semantics of the
-expression `mcexp` are the same as those of the expression `f`. If `mcexp` has
-no scrutinees, the semantics are the same as those of an expression `p`
-declared with a pattern binding with the same guards as `mcexp`.
-
-The new expression matches function declaration syntax very closely, making
-refactoring easy.
-
 #### BNF Changes
 
 **Bold** indicates changes to the existing BNF.
@@ -103,10 +70,25 @@ refactoring easy.
         <td><i>lexp</i></td><td>&rarr;</td><td>&hellip;</td>
     </tr>
     <tr>
+        <td></td><td>|</td><td><tt>\case</tt> <tt>{</tt> <i>alts</i> <tt>}</tt></td><td>(<tt>\case</tt> expression)</td>
+    </tr>
+    <tr>
         <td></td><td><b>|</b></td><td><b><tt>\cases</tt> <tt>{</tt> <i>nalts</i> <tt>}</tt></b></td><td><b>(<tt>\cases</tt> expression)</b></td>
     </tr>
     <tr>
-        <td><b><i>nalts</i></b></td><td><b>&rarr;</b></td><td><b><i>nalt</i><sub>1</sub> <tt>;</tt> &hellip; <tt>;</tt> <i>nalt</i><sub>n</sub></b></td><td><b>(n &ge; 1)</b></td>
+        <td><i>alts</i></td><td>&rarr;</td><td><i>alt</i><sub>1</sub> <tt>;</tt> &hellip; <tt>;</tt> <i>alt</i><sub>m</sub></td><td>(m &ge; 1)</td>
+    </tr>
+    <tr>
+        <td><i>alt</i></td><td>&rarr;</td><td><i>pat</i> <tt>-></tt> <i>exp</i> [ <tt> where </tt> <i>decls</i> ]</td>
+    </tr>
+    <tr>
+        <td></td><td>|</td><td><i>pat</i> <i>gdpat</i> [ <tt> where </tt> <i>decls</i> ]</td>
+    </tr>
+    <tr>
+        <td></td><td>|</td><td></td><td>(empty alternative)</td>
+    </tr>
+    <tr>
+        <td><b><i>nalts</i></b></td><td><b>&rarr;</b></td><td><b><i>nalt</i><sub>1</sub> <tt>;</tt> &hellip; <tt>;</tt> <i>nalt</i><sub>m</sub></b></td><td><b>(m &ge; 1)</b></td>
     </tr>
     <tr>
         <td><b><i>nalt</i></b></td><td><b>&rarr;</b></td><td><b>[ <i>apat</i><sub>1</sub> &hellip; <i>apat</i><sub>n</sub> ] <tt>-></tt> <i>exp</i> [ <tt> where </tt> <i>decls</i> ]</b></td><td><b>(n &ge; 0)</b></td>
@@ -122,10 +104,55 @@ refactoring easy.
 Aside from the explicit layout using `{`, `}`, and `;`, implicit layout as described in the Haskell
 report can also be used.
 
+Note the differences in the BNF to `\case`:
+  - `\case` always has arity 1, whereas `\cases` can have any arity, including
+    zero
+  - The patterns in `\case` do not need to be parenthesized (as in `case`, with
+    *pat*), whereas the patterns in `\cases` must be atomic or parenthesized
+    (as in function definitions, with *lpat*)
+  - `\case` can have zero clauses, whereas `\cases must have at least one
+    clause
+
 In expressions that have zero scrutinees and multiple guards, there is an ambiguity as to whether
 the expression has multiple alternatives with one guard each or one alternative with multiple guards
 (or any combination thereof). However, the semantics for these are equivalent, so this ambiguity can be
 resolved in an arbitrary way.
+
+#### Example
+
+```haskell
+filter = \cases _ []                 -> []
+                p (x:xs) | p x       -> x : filter p xs
+                         | otherwise ->     filter p xs
+```
+
+#### Changes
+
+A new extension `-XMultiWayLambda` is introduced. Under this extension, a new
+expression is enabled, introduced by the token sequence <tt>\\&nbsp;cases</tt>. The whitespace between  `\` and `cases`
+is optional and may contain an arbitrary sequence of whitespace characters.
+`\cases` behaves in a way largely similar to `\`, but it is a layout herald.
+
+As the BNF shows
+ - There can be any number of *patterns* including zero (n &ge; 0)
+ - There must be at least one clause (m &ge; 1). If there were zero clauses,
+   the arity of the `\cases`-expression would be ambiguous (see `Alternatives`
+   section for details).
+ - As with `\case`-expressions, it is possible to use `where` blocks within
+   each clause
+
+As with function declaration equations, all clauses must have the same number of patterns.
+
+Given a `\cases`-expression `csexp` with one or more scrutinees and a function
+`f` declared with function declaration syntax, and with the same alternatives
+and same guards for each alternative as `csexp`, the semantics of the
+expression `mcexp` are the same as those of the expression `f`. If `csexp` has
+no scrutinees, the semantics are the same as those of an expression `p`
+declared with a pattern binding with the same guards as `csexp`.
+
+The new expression matches function declaration syntax very closely, making
+refactoring easy.
+
 
 ## Further Examples
 
