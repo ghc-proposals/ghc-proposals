@@ -76,7 +76,7 @@ lambda expressions closer to those of function declarations:
         <td></td><td><b>|</b></td><td><b><tt>\cases</tt> <tt>{</tt> <i>nalts</i> <tt>}</tt></b></td><td><b>(<tt>\cases</tt> expression)</b></td>
     </tr>
     <tr>
-        <td><i>alts</i></td><td>&rarr;</td><td><i>alt</i><sub>1</sub> <tt>;</tt> &hellip; <tt>;</tt> <i>alt</i><sub>m</sub></td><td>(m &ge; 1)</td>
+        <td><i>alts</i></td><td>&rarr;</td><td><i>alt</i><sub>1</sub> <tt>;</tt> &hellip; <tt>;</tt> <i>alt</i><sub>m</sub></td><td>(m &ge; 0)</td>
     </tr>
     <tr>
         <td><i>alt</i></td><td>&rarr;</td><td><i>pat</i> <tt>-></tt> <i>exp</i> [ <tt> where </tt> <i>decls</i> ]</td>
@@ -109,8 +109,8 @@ Note the differences in the BNF to `\case`:
     zero
   - The patterns in `\case` do not need to be parenthesized (as in `case`, with
     *pat*), whereas the patterns in `\cases` must be atomic or parenthesized
-    (as in function definitions, with *lpat*)
-  - `\case` can have zero clauses, whereas `\cases must have at least one
+    (as in function definitions, with *apat*)
+  - `\case` can have zero clauses, whereas `\cases` must have at least one
     clause
 
 In expressions that have zero scrutinees and multiple guards, there is an ambiguity as to whether
