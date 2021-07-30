@@ -142,7 +142,8 @@ As the BNF shows
  - As with `\case`-expressions, it is possible to use `where` blocks within
    each clause
  - Unlike `case`, `cases` is *not* a keyword. Only the token sequence `\` `cases`
-   is treated specially.
+   is treated specially (more precisely, lexically, `cases` is a *varid* rather than a
+   *reservedid*, and it may be used as a variable).
 
 As with function declaration equations, all clauses must have the same number of patterns.
 
