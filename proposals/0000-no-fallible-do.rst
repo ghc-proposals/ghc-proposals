@@ -147,7 +147,8 @@ Comprehensions
 Monad comprehensions are not affected in order to match list comprehensions.
 More broadly the idea is that comprehensions are for filtering, so the use of incomplete patterns is far more common/idiomatic.
 That said, we don't think ``MonadFail`` is a great way to filter either;
-``mzero`` from ``MonadPlus`` / ``zero`` from ``Alternative`` are far better options, and also match list comprehensions
+``mzero`` from ``MonadPlus`` / ``zero`` from ``Alternative`` are far better options, and also match list comprehensions.
+
 We are still considering whether and how we might propose that monad comprehensions use those instead.
 
 Why ``PatternMatchFail``
@@ -179,7 +180,7 @@ Many such designs would obviate a module-wide extension like this.
 See the alternatives section for details.
 
 We probably ought to get just rid of the heuristic earlier in the compilation pipeline that conservatively decides whether a pattern match is infallible.
-By getting rid of the main problem it causes, we disincentive doing that work.
+By getting rid of the main problem it causes, we disincentivise doing that work.
 However, if we get rid of ``FallibleDo`` unconditionally, which this proposal points the way to, we will no longer have any need for that heuristic.
 
 To the cost in particular, one of the reasons we picked this route is that the implementation cost seemed by-far the most minimal while also solving the problems our client was running into, and thus far the work has borne that out:
