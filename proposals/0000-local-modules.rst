@@ -183,19 +183,40 @@ Motivation
 
        class C a where ...
 
-       import module C where
+       module C where
          meth :: ...
 
    This example shows that modules may be *extended*. The ``class C``
    declaration implicitly creates module ``C``, which is then extended below.
 
    An import specifier of ``C(..)`` will not import ``meth`` after this
-   change. Instead, importers must say ``import module C``. However, this new
-   import statement is a drop-in replacement for ``C(..)`` and may become
-   preferable (as it is customizable in the way demonstrated here). Thus,
-   it is reasonable that Haskellers would learn to write ``import module C``
-   in import lists instead of ``C(..)``, as the former (new form) is
-   extensible.
+   change. Instead, importers must say ``module C`` in the import list.
+   If they want unqualified access to ``C``\ 's contents, they will additionally
+   have to write ``import module C`` separately. This new form works to replace
+   today's ``C(..)`` and is customizable, and so may become the recommended way
+   of importing a type with its auxiliary definitions.
+
+7. When importing a library qualified, there are often stretches of code which
+   work with the imported type, performing many operations on values of that type.
+   In these stretches, the qualifications can become noisy. ::
+
+     module Main where
+
+     import qualified Data.Set as Set
+
+     frobbleSets :: Set.Set Bool -> Set.Set Int -> Set.Set Char
+     frobbleSets = ...
+
+   In ``frobbleSets``, there will be many ``Set.`` qualifications.
+
+   With this proposal, we could add ::
+
+     where
+       import module Set
+
+   to the end of the definition of ``frobbleSet`` to bring all the exports
+   from ``Data.Set`` into scope unqualified, locally. This reduces noise and
+   may serve to encourage users to import more identifiers qualified.
 
 Background
 ----------
@@ -500,7 +521,7 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
           = let I0 = interpretImpSpec(impspec, strip(modids, export_env)) in
             qualify(modids, I0)
         interpretImpItem('module' modids, export_env)
-          = qualify(modids, strip(modids, X))
+          = qualify(modids, strip(modids, export_env))
 
       This new form of import is allowed only with ``-XLocalModules``.
 
@@ -520,7 +541,7 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
       as ``M.x, M.y`` in an import specification.
       
    #. An ``import`` statement adds bindings to the global environment,
-      as follows, just as described in **Imports** in the Background.
+      just as described in **Imports** in the Background.
       The only difference is that all OEnvs are now QEnvs.
 
 #. **Exports**
@@ -708,16 +729,17 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
       The term *module* can refer to either a top-level or a local module.
 
    #. The ambient QEnv within the local module extends the ambient QEnv
-      of the enclosing module with its local definitions.
+      of the enclosing module with its local definitions. This means that
+      all qualified names in scope in the enclosing module are in scope in the
+      local module.
 
-      In particular, definitions in a local module may be mutually recursive with definitions
+   #. Definitions in a local module may be mutually recursive with definitions
       in other local modules or outside of any local module. That is, local
       modules influence scoping only, but not type-checking or dependency
       (which remain constrained by compilation units, as they are today).
 
    #. Let the ambient QEnv of the local module (call it ``M``) be ``E``.
-      (This QEnv includes
-      definitions in scope from the outer module.) The export QEnv
+      The export QEnv
       of ``M`` is the result of interpreting ``exports`` (if given)
       with respect to ``E``.
 
@@ -732,6 +754,22 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
       Let the export QEnv of ``M`` be ``X``; then ``E0`` is extended
       with the environment ``qualify(M, X)``. If the ``qualified`` keyword is missing from
       the definition of the local module, then ``X`` is additionally added to ``E0``.
+
+      Example::
+
+        module Outer where
+          module Inner where
+            five = 5
+
+      The export QEnv of ``Inner`` is ``{five ↦ (Outer, Inner.five)}``.
+      The ambient QEnv of ``Outer`` is thus extended with ``{five ↦ (Outer, Inner.five),
+      Inner.five ↦ (Outer, Inner.five), Outer.Inner.five ↦ (Outer, Inner.five)}``. The
+      first of these comes from adding the export QEnv (call it ``X``, as above)
+      of ``Inner`` to the ambient QEnv
+      in ``Outer``, because the declaration for ``Inner`` does not say ``qualified``.
+      The second of these comes from adding ``qualify(Inner, X)``. The third comes
+      from the rule in the Haskell 2010 Report (Section 5.5.1) that new names are
+      brought into scope both qualified and unqualified.
 
 #. A new declaration form is introduced::
 
