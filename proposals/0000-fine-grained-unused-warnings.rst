@@ -67,8 +67,8 @@ A further inconsistency is that in
 
   foo cond = when cond (putStrLn "foo")
 
-GHC will warn about the second import, but not about the second occurrence in
-the import list of ``when``.
+GHC will warn about the second import, but not about the second occurrence of
+``when`` in the import list.
 
 Proposed Change Specification
 -----------------------------
@@ -85,6 +85,8 @@ This affects the following warnings:
 * ``-Wunused-pattern-binds``: Warn if a pattern does not bind any names and is
   not a wild-card or bang pattern.
 * ``-Wunused-binds``: Alias for the three warnings above.
+* ``-Wunused-foralls``: Warn if a type variable which arises from an explicit,
+  user-written ``forall`` statement is unused.
 * ``-Wunused-matches``: Warn if a name bound in a term-level pattern binding
   does not appear in the right-hand side of a definition.
 * ``-Wunused-imports``:
@@ -103,7 +105,7 @@ This affects the following warnings:
 
 For each of these warnings, this proposal adds a transitive version, denoted by
 the name followed by a ``-transitive`` suffix (e.g. the transitive version of
-``-Wunused-binds`` is ``-Wunused-binds-transitive``. Rather than being
+``-Wunused-binds`` is ``-Wunused-binds-transitive``). Rather than being
 triggered when a name is not used, this warnings will be triggered when a name
 is "transitively unused". A name is transitively unused if all of its usage
 sites are in unused or transitively unused definitions.
