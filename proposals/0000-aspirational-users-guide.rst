@@ -1,22 +1,7 @@
-Notes on reStructuredText - delete this section before submitting
-==================================================================
-
-The proposals are submitted in reStructuredText format.  To get inline code, enclose text in double backticks, ``like this``.  To get block code, use a double colon and indent by at least one space
-
-::
-
- like this
- and
-
- this too
-
-To get hyperlinks, use backticks, angle brackets, and an underscore `like this <http://www.haskell.org/>`_.
-
-
-Proposal title
+Coordinate proposals with an "Apsirational User's Guide"
 ==============
 
-.. author:: Your name
+.. author:: John Ericson
 .. date-accepted:: Leave blank. This will be filled in when the proposal is accepted.
 .. ticket-url:: Leave blank. This will eventually be filled with the
                 ticket URL which will track the progress of the
@@ -29,17 +14,28 @@ Proposal title
             number in the link, and delete this bold sentence.**
 .. contents::
 
-Here you should write a short abstract motivating and briefly summarizing the proposed change.
-
+This is a meta-proposal to change the proposal format and process.
+We currently propose changes to an *implicit* state, the current design which is a roll-up of GHC and all unimplemented, accepted proposals.
+Instead, we should propose changes to an *explicit* design document, which is a copy of the GHC User's Guide known as the "Aspirational User's Guide".
+This will catch subtle design interactions earlier at proposal time rather than implementation design, and encourage holistic rather than piecemeal planning.
 
 Motivation
 ----------
-Give a strong reason for why the community needs this change. Describe the use
-case as clearly as possible and give an example. Explain how the status quo is
-insufficient or not ideal.
 
-A good Motivation section is often driven by examples and real-world scenarios.
+As stated in the summary, we currently propose changes against...nothing in particular.
+The proposals are meant to clearly specify a change, which they do, but what is not specified clearly is *what* is being change.
+"The design", yes, but where is it? In our heads.
 
+Keeping track of this design is a lot of hard mental labor, even for our best experts and those making the decisions.
+
+An example of this is the situation we recently got into with a few pattern- and scoping-related proposals.
+Joachim's [email] to the GHC Steering Committee list about this issue is very instructive.
+There are 3 accepted but unimplemented proposals and 3 open proposals all touching on related portions of the design, and the result is very hard to follow.
+In this situation, the solution adopted was that Richard would go make a mega proposal combining all of them.
+That's fine, but also a lot of work.
+Wouldn't it be nice if we could still proposal incremental changes but also track their ramifications without "applying patches" mentally?
+
+[email]: https://mail.haskell.org/pipermail/ghc-steering-committee/2021-August/002571.html
 
 Proposed Change Specification
 -----------------------------
