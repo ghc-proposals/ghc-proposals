@@ -39,60 +39,43 @@ Wouldn't it be nice if we could still proposal incremental changes but also trac
 
 Proposed Change Specification
 -----------------------------
-Specify the change in precise, comprehensive yet concise language. Avoid words
-like "should" or "could". Strive for a complete definition. Your specification
-may include,
 
-* BNF grammar and semantics of any new syntactic constructs
-  (Use the `Haskell 2010 Report <https://www.haskell.org/onlinereport/haskell2010/>`_ or GHC's ``alex``\- or ``happy``\-formatted files
-  for the `lexer <https://gitlab.haskell.org/ghc/ghc/-/blob/master/compiler/GHC/Parser/Lexer.x>`_ or `parser <https://gitlab.haskell.org/ghc/ghc/-/blob/master/compiler/GHC/Parser.y>`_
-  for a good starting point.)
-* the types and semantics of any new library interfaces
-* how the proposed change interacts with existing language or compiler
-  features, in case that is otherwise ambiguous
+The GHC users guide is be copied into this repo, where it will be known as the "Aspirational User's Guide" --- the user's guide for the GHC we wish we had.
+Proposals will be co-written with the changes to the users guide they wish to effect, and the "proposed changed specification" and "effects and interactions" sections will instead be glosses that point to the changed sections.
+The can thus be shorter because the Aspirational User's Guide alone is authoritative.
 
-Strive for *precision*. The ideal specification is described as a
-modification of the `Haskell 2010 report
-<https://www.haskell.org/definition/haskell2010.pdf>`_. Where that is
-not possible (e.g. because the specification relates to a feature that
-is not in the Haskell 2010 report), try to adhere its style and level
-of detail. Think about corner cases. Write down general rules and
-invariants.
+In order to have a good starting point for proposals with this new process, we also need to apply this process retroactively.
+The steering committee in conjunction with proposal authors will codify the changes specified in accepted but unimplemented proposals (already-implemented ones should already be in the initial copy) in the Aspirational User's Guide.
+Thus, the Aspirational User's Guide will become up-to-date with the committee's decisions to this point.
 
-Note, however, that this section should focus on a precise
-*specification*; it need not (and should not) devote space to
-*implementation* details -- there is a separate section for that.
+When proposals are implemented, those changes should be synchronized with real GHC User's Guide as part of the implementation.
+Additionally, other changes to the real User's Guide not corresponding to implemented proposals should be synced back to the Aspiration version in this repo.
+In general, the difference between them should be kept to a minimum.
 
-The specification can, and almost always should, be illustrated with
-*examples* that illustrate corner cases. But it is not sufficient to
-give a couple of examples and regard that as the specification! The
-examples should illustrate and elucidate a clearly-articulated
-specification that covers the general case.
+`git subtree` will be used to sync the aspirational users guide so the history is intact for e.g. `git blame` purposes in both repos.
 
 Examples
 --------
-This section illustrates the specification through the use of examples of the
-language change proposed. It is best to exemplify each point made in the
-specification, though perhaps one example can cover several points. Contrived
-examples are OK here. If the Motivation section describes something that is
-hard to do without this proposal, this is a good place to show how easy that
-thing is to do with the proposal.
+
+Implemented proposals demonstrate the changes to the users guide that should now be made up front.
 
 Effect and Interactions
 -----------------------
-Your proposed change addresses the issues raised in the motivation. Explain how.
 
-Also, discuss possibly contentious interactions with existing language or compiler
-features. Complete this section with potential interactions raised
-during the PR discussion.
+#. The proposal process will be harder, because some of the work that was previously deferred to the implementation must be done up front.
+   It is a matter of opinion whether this front-loading is good, bad, or neutral, so I put it in this section.
 
+#. Proposals that remain unimplemented too long will impose a burden in more merge conflicts with the two User's Guides synchronization.
+   We might need to create a process to unaccept such proposals if this becomes to burdensome.
 
 Costs and Drawbacks
 -------------------
-Give an estimate on development and maintenance costs. List how this effects
-learnability of the language for novice users. Define and list any remaining
-drawbacks that cannot be resolved.
 
+#. While proposals texts can still be written in Markdown, authors will need to know reST to modify the Aspirational User's Guide.
+   This somewhat undermines the past decisions to allow Markdown to be used.
+
+#. Managing the merge conflicts creates more work for the committee at large.
+   But hopefully in most cases those merge conflicts are just materializing the design interactions we need to adjudicate anyways.
 
 Alternatives
 ------------
