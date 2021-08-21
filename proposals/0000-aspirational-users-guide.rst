@@ -68,6 +68,10 @@ Effect and Interactions
 #. Proposals that remain unimplemented too long will impose a burden in more merge conflicts with the two User's Guides synchronization.
    We might need to create a process to unaccept such proposals if this becomes to burdensome.
 
+#. The current User's Guide might not go into enough depth to adequately describe the relevant portion of the design prior to some proposal.
+   In that case, the author of the proposal could first improve the User's Guide to better describe the status quo so the subsequent diff is meaningful.
+   This improves the quality of the documentation of GHC regardless of whether the proposal is accepted.
+
 Costs and Drawbacks
 -------------------
 
@@ -77,39 +81,28 @@ Costs and Drawbacks
 #. Managing the merge conflicts creates more work for the committee at large.
    But hopefully in most cases those merge conflicts are just materializing the design interactions we need to adjudicate anyways.
 
+#. Mentioning version numbers etc. in commits can wreck havoc with GHC and proposals' issue trackers -- something we saw when Hadrian was merged in GHC as a subtree.
+   This can be avoided by using git-filter-branch to modify commit messages.
+   It should be possible to make that process idempotent so that the extracted subtree commits are in fact properly shared in both repos and over-subsequent splits/merges.
+
 Alternatives
 ------------
-List alternative designs to your proposed change. Both existing
-workarounds, or alternative choices for the changes. Explain
-the reasons for choosing the proposed change over these alternative:
-*e.g.* they can be cheaper but insufficient, or better but too
-expensive. Or something else.
 
-The PR discussion often raises other potential designs, and they should be
-added to this section. Similarly, if the proposed change
-specification changes significantly, the old one should be listed in
-this section.
+#. The design document proposals could be a greenfield document rather than a fork of the users guide.
+   But this just strikes me as more work: now we have a distinct Users Guide and design document that cannot be synchronized semi-automatically via Git.
+   It also means we lose out on the side benefit of a regular users not interested in the proposal process getting better-maintained documentation.
 
 Unresolved Questions
 --------------------
-Explicitly list any remaining issues that remain in the conceptual design and
-specification. Be upfront and trust that the community will help. Please do
-not list *implementation* issues.
 
-Hopefully this section will be empty by the time the proposal is brought to
-the steering committee.
-
+None at this time.
 
 Implementation Plan
 -------------------
-(Optional) If accepted who will implement the change? Which other resources
-and prerequisites are required for implementation?
+
+I will happily assist the steering committee with modifying the proposal templates, figuring out how exactly to sync the User's Guide via git, and codifying existing proposals.
 
 Endorsements
 -------------
-(Optional) This section provides an opportunty for any third parties to express their
-support for the proposal, and to say why they would like to see it adopted.
-It is not mandatory for have any endorsements at all, but the more substantial
-the proposal is, the more desirable it is to offer evidence that there is
-significant demand from the community.  This section is one way to provide
-such evidence.
+
+None at this time.
