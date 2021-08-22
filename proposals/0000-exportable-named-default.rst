@@ -136,6 +136,29 @@ than one ``default`` declaration in scope, the conflict is resolved using the fo
    error may be triggered in the body of the module if it contains an actual ambiguous type for the class with the
    conflicting imported defaults, as per the following section.
 
+Note that a ``default`` declaration that repeats a type name more than once is perfectly valid, and sometimes may
+be necessary to resolve coflicts. For example, a module that imports two conflicting defaults
+
+::
+
+   default C (Int, Bool)
+
+and
+   
+::
+
+   default C (Bool, Int)
+
+may use a local declaration
+
+::
+
+   default C (Int, Bool, Int)
+
+to override the imports. Because this declaration subsumes both imported defaults it will not trigger any compiler
+warning.
+
+   
 Rules for disambiguation at the use site
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -380,10 +403,10 @@ module by declaring::
 
    default C (Int,Double,String,(),Int,())
 
-Both old declarations are subsumed by the new one. However this new declaration doesn't look very declarative, to put
-it mildly. Furthermore there would be no way to simply turn off a ``default`` declaration within a module. Besides,
-``default`` coherence wouldn't bring any benefits it does to ``instance`` declarations.
-  
+Both old declarations are subsumed by the new one. However there would be no way to simply turn off a ``default``
+declaration within a module. Besides, ``default`` coherence wouldn't bring any benefits it does to ``instance``
+declarations.
+
 
 Multi-parameter type classes and other constraints
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
