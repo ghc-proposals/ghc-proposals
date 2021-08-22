@@ -52,7 +52,7 @@ When proposals are implemented, those changes should be synchronized with real G
 Additionally, other changes to the real User's Guide not corresponding to implemented proposals should be synced back to the Aspiration version in this repo.
 In general, the difference between them should be kept to a minimum.
 
-`git subtree` will be used to sync the aspirational users guide so the history is intact for e.g. `git blame` purposes in both repos.
+``git subtree`` will be used to sync the aspirational users guide so the history is intact for e.g. ``git blame`` purposes in both repos.
 
 Examples
 --------
@@ -75,7 +75,7 @@ Effect and Interactions
 Costs and Drawbacks
 -------------------
 
-#. While proposals texts can still be written in Markdown, authors will need to know reST to modify the Aspirational User's Guide.
+#. While proposals texts can still be written in Markdown, authors will need to know reStructuredText to modify the Aspirational User's Guide.
    This somewhat undermines the past decisions to allow Markdown to be used.
 
 #. Managing the merge conflicts creates more work for the committee at large.
