@@ -178,23 +178,25 @@ The new rules instead require only that
 
 - *v* appears in at least one constraint of the form *C* *v*, where *C* is a class.
 
-The type selection process remains the same for any given class *C*. If there are multiple *C*\ `i`:subscript: *v*
-constraints with competing ``default`` declarations, they have to resolve to the same type. In other words, the type
-selected for defaulting has to be the first type that satisfies all the class constraints, in every ``default``
-declaration in effect. It is a static error for different ``default`` declarations to resolve to different types, or
-for any of them to not resolve to any type.
+Informally speaking, the type selected for defaulting is the first type from the ``default`` list for class *C* that
+satisfies all constraints on type variable *v*. If there are multiple *C*\ `i`:subscript: *v* constraints with
+competing ``default`` declarations, they have to resolve to the same type.
 
-To make the design more explicit, the following algorithm *can* be used for default resolution:
+To make the design more explicit, the following algorithm *can* be used for default resolution, but any other method
+that achieves the same effect can be substitued:
 
-0. Assuming that the type inference produces the constraint set *S*\ `v`:subscript: = {*C*\ `1`:subscript: *v*, … , *C*\
-   `n`:subscript: *v*} ∪ *OtherConstraints* of all constraints involving type variable *v*,
-1. add all super-classes of every *C*\ `i`:subscript: to the constraint set,
-2. filter the constraint set *C*\ `i`:subscript: to contain only the classes with a ``default`` declaration in effect,
-3. for each *C*\ `i`:subscript: left in the constraint set by the previous step, find the first type *T*\
-   `i`:subscript: in the default list for *C*\ `i`:subscript: that satisfies *all* required constraints from the set
-   *S*\ `v`:subscript:,
-4. report a static error if there is more than one distinct type *T*\ `i`:subscript: in the resulting type set,
-5. otherwise resolve the ambiguity by adding a ``v ~ T`` constraint.
+Let *S* be the complete set of unsolved constraints, and initialize *S*\ `x`:subscript: to an empty set of constraints. For
+every *v* that is free in *S*:
+
+1. Define *C*\ `v`:subscript: = { *C*\ `i`:subscript: v | *C*\ `i`:subscript: v ∈ S }, the subset of S consisting of
+   all constraints of form *C*\ `i`:subscript: v for some type class *C*\ `i`:subscript:.
+2. Define *D*\ `v`:subscript:, by extending *C*\ `v`:subscript: with the superclasses of every *C*\ `i`:subscript: in
+   *C*\ `v`:subscript:
+3. Define *E*\ `v`:subscript:, by filtering *D*\ `v`:subscript: to contain only classes with a default declaration
+4. For each *C*\ `i`:subscript: in *E*\ `v`:subscript:, find the first type *T*\ `i`:subscript: in the default list
+   for *C*\ `i`:subscript: that satisfies all required constraints from the set *C*\ `v`:subscript:.
+5. If there is precisely one type *T*\ `i`:subscript: in the resulting type set, resolve the ambiguity by adding a ``v
+   ~ T``\ `i`:subscript: constraint to a set *S*\ `x`:subscript:; otherwise report a static error.
 
 Examples
 --------
