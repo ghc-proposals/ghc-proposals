@@ -59,10 +59,20 @@ to make this class explicit, so the syntax becomes
 
 |    \ *topdecl* → ``default`` *qtycls*? (*qtycon*\ `1`:subscript: , … , *qtycon*\ `n`:subscript:) (n ≥ 0)
 
-where each type *qtycon*\ `i`:subscript: must be an instance of the specified class *qtycls*. If no class is
-specified, the earlier default of ``Num`` is assumed.
+where each type *qtycon*\ `i`:subscript: must be an instance of the specified class *qtycls*. The types may belong to
+any kind, but the class must have a single parameter.
 
-The types may belong to any kind, but the class must have a single parameter.
+If no class is specified, the earlier default of ``Num`` is assumed. In other words, the Haskell '98 syntax of
+
+::
+
+   default (Int, Float)
+
+would mean exactly the same as
+
+::
+
+   default Num (Int, Float)
 
 This syntactic extension would be enabled by a new ``{-# LANGUAGE NamedDefaults #-}`` pragma.
 
