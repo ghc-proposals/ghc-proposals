@@ -98,9 +98,8 @@ A module can export its ``default`` declarations either by having no explicit ex
 re-export of a whole imported module (as in ``module M (module N) where{...}`` does *not* export any ``default``
 declarations.
 
-The syntactic extension to exports would be enabled by a new ``{-# LANGUAGE ExportedDefaults #-}`` pragma, which would
-imply the aforementioned ``NamedDefaults`` pragma. The new semantics of imports would be enabled by a new ``{-#
-LANGUAGE ImportedDefaults #-}`` pragma.
+The syntactic extension to exports would be enabled by the same ``{-# LANGUAGE NamedDefaults #-}`` pragma. The new
+semantics of imports would be enabled by default with no ``LANGUAGE`` extension required.
 
 Subsumption
 ~~~~~~~~~~~
@@ -288,9 +287,6 @@ declaration::
 
    default IsString (Integer, Double, String)
 
-Furthermore, as the whole purpose of this extension is to enable string literals to enable types other than
-``String``, its presence should probably imply ``ImportedDefaults``.
-
 OverloadedLists
 ~~~~~~~~~~~~~~~
 
@@ -341,14 +337,16 @@ The solution to this problem depends on where the conflicting defaults come from
 Alternatives
 ------------
 
-Implicit ``ImportedDefaults``
+Explicit ``ImportedDefaults``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The only reason this proposal adds the ``ImportedDefaults`` extension is to preserve full backward compatibility at
-the module level: it may change the semantics of a previously valid module that was relying on the implicit ``default
-(Integer, Double)`` rule. It is much more likely, however, for this extension to resolve a type ambiguity that was
-preventing the module to compile, so one may be inclined to just enable it by default. If the proposal is adopted,
-this extension would become a prime candidate for addition to the ``GHC202X`` package.
+Originally this proposal came with a separate ``ImportedDefaults`` extension to enable the imports of ``default``
+declarations.
+
+The proposal in its present form does not preserve full backward compatibility at the module level: it may change the
+semantics of a previously valid module that was relying on the implicit ``default (Integer, Double)`` rule. It is much
+more likely, however, for this extension to resolve a type ambiguity that was preventing the module to compile, so the
+committee decided to just enable it by default.
 
 Declaration imports
 ~~~~~~~~~~~~~~~~~~~
