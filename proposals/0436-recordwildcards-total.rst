@@ -43,6 +43,8 @@ Existing workarounds are described in `this blog post <https://cs-syd.eu/posts/2
 
 The `safe-wild-cards <https://hackage.haskell.org/package/safe-wild-cards>`_ package provides a Template Haskell solution to this, but it would be nice to support this natively.
 
+One could even think of this as the dual of the `Or pattern proposal <https://github.com/ghc-proposals/ghc-proposals/pull/43>`_, to warn on unused terms in product types as opposed to unused terms in sum types.
+
 Proposed Change Specification
 -----------------------------
 
