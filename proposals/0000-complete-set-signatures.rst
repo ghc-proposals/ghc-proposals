@@ -335,6 +335,38 @@ the definition of ``unsafeHead`` being incomplete, but not for ``f``,
 - The lack of any COMPLETE set being covered by the the pattern match in
   ``unsafeHead`` means that its definition is flagged as inexhaustive.
 
+Constraints in the signature
+============================
+
+Given the following example (full example in `#14422 <https://gitlab.haskell.org/ghc/ghc/-/issues/14422#note_296728>`_) ::
+
+ pattern FZ :: () =>        n ~ 'S m      => Fin n
+ pattern FZ <- (viewFin -> VZ) where
+   FZ = Fin 0
+
+ pattern FS :: () => n ~ 'S m => Fin m -> Fin n
+ pattern FS m <- (viewFin -> VS m) where
+   FS (Fin m) = Fin (1 + m)
+
+ {-# COMPLETE FZ, FS #-}
+
+ inc :: Fin n -> Fin (S n)
+ inc FZ       = FS FZ
+ inc n@(FS _) = FS n
+
+How would I give the signature a COMPLETE set while preserving its semantics?
+
+- ``{-# COMPLETE FZ, FS :: Fin n #-}`` is the obvious and correct choice.
+- ``{-# COMPLETE FZ :: Fin Z #-}; {-# COMPLETE FS :: Fin (S n) #-}`` Means that
+  neither COMPLETE set applies at a match type of ``Fin n``, as long as there is
+  no Given constraint that refines ``n``. The pattern-match in ``inc`` would be
+  regarded as incomplete.
+- ``{-# COMPLETE FZ :: n ~ Z => Fin n #-}; {-# COMPLETE FS :: n ~ S m => Fin n #-}``
+  Exactly as the previous point; any constraints in the result type signature
+  are to interpreted as *required* constraints. That's in stark contrast to
+  the *provided* constraints in the pattern synonym definitions of ``FZ`` and
+  ``FS``, which act as additional Given constraints in a pattern match.
+
 Relation to `#399`_
 ===================
 
