@@ -79,11 +79,10 @@ As far as I know, the proposed ``Foo{..!}`` syntax doesn't conflict with any cur
 
 Costs and Drawbacks
 -------------------
-Since it's just syntax sugar, development "shouldn't" take long. Likewise, I don't see this adding much maintenance cost.
 
-It's completely optional, so novice users can avoid this syntax completely.
-
-Primary drawback is updating tooling/editor support for the new syntax.
+* Since it's just syntax sugar, development "shouldn't" take long. Likewise, I don't see this adding much maintenance cost.
+* Primary drawback is updating tooling/editor support for the new syntax.
+* It's opt-in syntax, so new developers don't need to know about the new syntax when writing code. But if they're working on a fleshed out system, they might encounter this syntax and have difficulty searching for it
 
 
 Alternatives
