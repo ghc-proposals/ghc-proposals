@@ -89,7 +89,31 @@ Primary drawback is updating tooling/editor support for the new syntax.
 Alternatives
 ------------
 
-* Add an additional extension, e.g. ``-XRecordWildCardsStrict``, that implies ``-XRecordWildCards`` and enables this extension. I'm not opposed to this, but since the change doesn't break existing ``-XRecordWildCards`` syntax, I don't see a reason to break out yet another extension.
+* Add an additional extension, e.g. ``-XRecordWildCardsStrict``, that implies ``-XRecordWildCards`` and enables this additional syntax.
+
+  * I'm not opposed to this, but since the change doesn't break existing ``-XRecordWildCards`` syntax, I don't see a reason to break out yet another extension.
+    
+* Expand `-Wunused-local-binds` to include RecordWildCard fields everywhere
+
+  * This won't work because most uses of RecordWildCard do not use all the fields in the record. The scenario of wanting to check all record fields used is a fairly rare (but important!) use-case.
+
+* Add an additional ``-Wunused-recordwildcard-fields`` warning
+
+  * This will break people using ``-Weverything``. As mentioned before, this scenario is very rare and shouldn't be enabled by default. Abstractly, warnings are good for sanity checks, but this proposal isn't a "you should probably be doing this, and the compiler will now check it" use-case, it's an opt-in "you might need this in some scenarios" use-case.
+
+* Use the `proposed modifier syntax <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0370-modifiers.rst>`_ to create a modifier that turns on this ability, e.g.
+
+  ::
+
+     toJSON Foo{%useAllRecordFields ..} =
+       object
+         [ "a" .= a
+         , "b" .= b
+         ]
+         
+  * Pro: makes the behavior change explicit with a searchable keyword
+  * Con: creates a one-off modifier for a small-ish feature
+  * Con: would be blocked on the modifier syntax being implemented
 
 Unresolved Questions
 --------------------
