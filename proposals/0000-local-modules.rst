@@ -676,6 +676,40 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
 
       (This is still slightly backward-incompatible in an `obscure scenario`_.)
 
+   #. If there is no export list given for a module, all entities declared in that
+      module (and only those) are included in the export QEnv. This notion can
+      be made formal as follows::
+
+        X = { qual ↦ orig | qual ↦ orig ∈ ambient_env
+                          , orig = MODIDS.occ }
+
+      where ``MODIDS`` is the fully qualified name of the current module.
+
+      This export ``X`` may contain overlapping entries. Here is an example::
+
+        module Top where
+          module A where
+            x = 5
+          module B where
+            x = True
+
+      In this example, the ambient QEnv for ``Top`` includes mappings
+      ``{ A.x ↦ Top.A.x, x ↦ Top.A.x, B.x ↦ Top.B.x, x ↦ Top.B.x }``.
+      This QEnv contains two mappings for ``x``. By itself, this does not cause
+      a problem: it is only a usage site of ``x`` that would cause an ambiguity
+      error (as usual). However, since ``Top`` does not have an export list,
+      we would normally export all of the ambient QEnv in ``Top``, causing trouble
+      for importing modules.
+
+      We thus exclude from the default export list any qualified name that is mapped to multiple
+      original names. More formally::
+
+        X' = X \ { qual ↦ orig | qual ↦ orig ∈ X
+                               , qual ↦ orig' ∈ X
+                               , orig /= orig' }
+
+      Now, ``X'`` is our final export QEnv.
+
    #. **Examples**. For instance in
 
       ::
@@ -1016,6 +1050,23 @@ Effect and Interactions
   #. ``import`` statements must go before all other statements (except, optionally, for a ``module``
      header) in a compilation unit (in order to
      support finding dependencies while parsing only a prefix of a file).
+
+* This proposal may obviate the existing *bundling* mechanism for pattern synonyms, where a pattern
+  synonym may be exported with some type constructor. If we adopt options 4.2 and 4.3, then you can
+  export ``module T(..)`` in place of today's ``T(..)``. But
+  the exporter could also write code like ::
+
+    module M ( module T(..) ) where
+
+    data T = MkT1 ... | MkT2
+
+    module T where
+      pattern MkT3 x = ...
+
+  Now, importers will get all of ``MkT1``, ``MkT2``, and ``MkT3`` with ``import M ( module T(..) )``.
+  Indeed, because the ``module T(..)`` form is customizable, it would be preferred over the
+  ``T(..)`` import item. We could imagine changing the meaning of ``T(..)`` to mean ``module T(..)``
+  or deprecating that form, but this proposal does not do so.
 
 Costs and Drawbacks
 -------------------
