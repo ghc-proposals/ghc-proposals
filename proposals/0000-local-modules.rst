@@ -31,7 +31,7 @@ Haskell currently has three related restrictions:
   if a user wants to, say, change a class into a type family that returns a
   constraint; downstream users have to change their import statements for
   what was meant to be a local refactoring.
-  
+
 * Despite common idioms like ``import qualified Data.Set as S``, if a user
   wants to have ``Data.Set`` imported this way throughout their project, they
   must repeat this line in every file. There is no way to abstract over this
@@ -109,7 +109,7 @@ Motivation
    thus the names ``Zero`` and ``Succ`` apply well to each. This is
    impossible today, as the names clash.
 
-   With this proposal, these declarations would be accepted. The constructors
+   With this proposal's optional change 4.3, these declarations would be accepted. The constructors
    would be disambiguated with module prefixes, like ``Nat.Zero`` and
    ``Elem.Succ``. (The ``Fin`` declaration would need to say ``Nat.Succ`` in
    place of ``Succ``.) An unqualified use of a constructor would be an error.
@@ -255,7 +255,7 @@ proposed change.
 
   A module-name qualification must have no whitespace between it and the ``.``, nor
   between the ``.`` and the occurrence name.
-  
+
 * **Entity**: An entity is a definition that can be exported and imported.
   An entity is uniquely identified by its original name. Entities include variables, classes, datatypes, and
   constructors, among a few other constructs.
@@ -270,10 +270,10 @@ proposed change.
 
 * **in scope**: A name is said to be **in scope** when it is in the current
   QEnv.
-  
+
 * **Scope**: A scope is a lexical region of a program where all name occurrences are
   looked up in a QEnv.
-  
+
 * **Module**: A module is a set of declarations of entities, along with a set
   of exported names.
 
@@ -282,7 +282,7 @@ proposed change.
 
 * **Export item**: An export item is one element of an export specification.
   An export item may be written using a qualified name.
-  
+
 * **Exports**: The exports from a module is a mapping
   from occurrence names to original names *occname ↦ origname* (that is, an OEnv), where
   for each such binding, we require that the occurrence name of *origname*
@@ -316,6 +316,8 @@ proposed change.
   the same occurrence name to distinct original names. We thus need not worry about left- or right-biasing
   of the merge operation on OEnvs.
 
+  (This definition does not cover ``module`` exports.)
+
 * Define the *qualify* operation on an OEnv ``X``::
 
       qualify :: (ModuleName, OEnv) -> QEnv
@@ -330,12 +332,12 @@ proposed change.
       strip(modid, E) = { occ ↦ orig | (modid.occ ↦ orig) ∈ E }
 
   In English: ``strip(modid, E)`` selects all entities whose
-  qualified names starts with ``modid``, and removes the 
+  qualified names starts with ``modid``, and removes the
   ``modid`` from their names (yielding a plain occurrence name).
 
   Note that ``qualify(modid, strip(modid, E))`` is simply a filter, keeping all those names
   in ``E`` which start with ``modid``.
-  
+
 * **Import specification**: An import specification, or *impspec*, can be listed
   in parentheses in an ``import`` statement to restrict what is imported.
   We say we *interpret* an *impspec* with respect to an export OEnv
@@ -344,7 +346,7 @@ proposed change.
   just below)::
 
     type ImpSpec = [ImpItem]
-    
+
     interpretImpSpec :: (ImpSpec, OEnv) -> OEnv
     interpretImpSpec(impspec, export_env) =
       concatMap (\item -> interpretImpItem(item, export_env)) impspec
@@ -354,7 +356,7 @@ proposed change.
   repeated domain occurrence name is mapped to the same original name.
   Accordingly, we need not worry about left- or right-biasing the merge
   operation.
-      
+
   (An *impspec* may be specified
   via complement, using ``hiding``; this proposal will not worry about this
   detail.)
@@ -369,16 +371,16 @@ proposed change.
 
   Import items are described by the ``import`` nonterminal in the `Haskell 2010 Report`_,
   and we leave the ``occ ∈ item`` operation left abstract here.
-                                                       
-* **Imports**: An ``import`` statement names a module ``M`` and (optionally) an 
+
+* **Imports**: An ``import`` statement names a module ``M`` and (optionally) an
   import-specifier ``impspec``.
 
   Let ``X`` be the export OEnv of ``M``.
-  
+
   Let ``I`` be the interpretation of ``impspec`` with respect to ``X``. (That is,
   ``I = interpretImpSpec(impspec, X)``.
   If ``impspec`` is omitted, let ``I = X``.
-  
+
   Let the *module alias* ``A`` be the module name appearing after the ``as`` in
   the ``import`` statement. If there is no ``as``, then the module alias ``A``
   is ``M``.
@@ -418,7 +420,7 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
       capitalized words and dots, but was still considered one module name; now,
       we have a dot-separated list of *modid*\ s, which can be split apart by e.g.
       ``strip``).
-   
+
    #. An original name is now a pair of the name of the top-level-module-name that
       defines it and a qualified name.
 
@@ -459,7 +461,7 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
       QEnvs::
 
          qualify(modids, E) = { modids.qualname ↦ orig | (qualname ↦ orig) ∈ E }
-        
+
          strip(modids, E) = { qualname ↦ orig | (modids.qualname ↦ orig) ∈ E }
 
       These operations now also operate on *modids*, not just atomic module names.
@@ -470,7 +472,7 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
 #. Introduce a new extension ``-XLocalModules``.
 
 #. **Imports**
-   
+
    A. Import items can now mention qualified names. The `Haskell 2010 Report`_ defines ::
 
         import ::= var
@@ -510,7 +512,7 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
       This interpretation gives us a QEnv ``I0``.
       The QEnv described by import item
       ``module modids impspec`` is then ``qualify(modids, I0)``.
-        
+
       In absence of an *impspec*, ``module modids`` denotes
       ``qualify(modids, strip(modids, X))``: that is, it denotes all
       bindings in ``X`` whose domain element has a ``modids.`` prefix.
@@ -539,7 +541,7 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
 
       Note that the import item ``module M (x, y)`` means the same
       as ``M.x, M.y`` in an import specification.
-      
+
    #. An ``import`` statement adds bindings to the global environment,
       just as described in **Imports** in the Background.
       The only difference is that all OEnvs are now QEnvs.
@@ -565,7 +567,7 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
       denotes an export specification: a list of ``export``.
 
       We must now give these new export items semantics by saying how they
-      are interpreted.    
+      are interpreted.
 
    #. The interpretation of Haskell98-style export items (that is, without ``qualified``)
       is unchanged::
@@ -576,11 +578,14 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
 
       The only difference here from above is now we write ``modids`` for the qualifier.
 
+      (Here, ``haskell98item`` refers to a non-\ ``module`` Haskell98 export item,
+      and ``modids`` is any dot-separated sequence of module names.)
+
       Note that ``occ ↦ orig`` is returned, not the full qualified name. This is
       unchanged from previously, but it was previously a requirement (in order to
       be type-correct) to return an ``occ ↦ orig`` binding, while now the type
       has been generalized to return a QEnv.
-      
+
    #. If the export item is a ``qvar``, a ``qtycon``, or a ``qtycls`` (henceforth
       called ``qual``) followed
       by ``qualified``, the export
@@ -704,7 +709,7 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
            import X
 
       the export environment of ``M`` is ``{f ↦ (X, Y.f), g ↦ (x, Y.g)}``.
-      
+
 #. **Local Modules**
 
    A. Introduce a new declaration form
@@ -839,13 +844,13 @@ Each numbered item in this section can be considered separately.
 
    There is no non-qualified equivalent of ``module qualified modids exports``, with
    an explicit export list.
-   
+
 #. Every ``class``, ``data``, ``newtype``, ``data instance``, and ``newtype
    instance`` declaration with an alphanumeric name implicitly creates a new local module. The name of
    the local module matches the name of the declared type. All entities (e.g.,
    method names, constructors, record selectors) brought into scope within the
    declaration, including the type itself, are put into this local module.
-   
+
    If the pseudo-keyword ``qualified`` appears directly after the keyword(s)
    that begin the declaration, these internal definitions are not brought into
    the outer scope. Otherwise, they are (just like usual). Exception: the type
@@ -886,7 +891,7 @@ Further Examples
 Let ``I1`` be the export environment from ``Import1`` and ``I2`` be the
 export environment from ``Import2``. We now give the export environments
 generated from each export item from module ``A``:
-     
+
 * ``module M1``: ``I1``
 
 * ``module M2``: ``{m2a ↦ (A, M2.m2a), m2b ↦ (A, M2.m2b)}``
@@ -909,7 +914,7 @@ The export environment from ``A`` is the union of the above environments.
 We now give the environments imported by each import item in the import statement.
 Each import environment is additionally added with the ``A.`` qualification, though
 we omit those bindings below.
-   
+
 * ``module M2``: ``{M2.m2a ↦ (A, M2.m2a), M2.m2b ↦ (A, M2.m2b)}``
 
 * ``module M3``: ``M3 . I2``
@@ -917,7 +922,7 @@ we omit those bindings below.
 * ``module M4``: ``{M4.m4a ↦ (A, M4.m4a), M4.m4b ↦ (A, M4.m4b)}``
 
 * The import of ``m4a`` is an error; ``A`` does not export ``m4a``.
-    
+
 Effect and Interactions
 -----------------------
 
@@ -1011,7 +1016,7 @@ Effect and Interactions
   #. ``import`` statements must go before all other statements (except, optionally, for a ``module``
      header) in a compilation unit (in order to
      support finding dependencies while parsing only a prefix of a file).
-  
+
 Costs and Drawbacks
 -------------------
 
@@ -1029,7 +1034,7 @@ Costs and Drawbacks
   first-class entity.
 
 .. _`obscure scenario`:
-  
+
 * This proposal introduces a backward-incompatibility in an obscure scenario::
 
     module M ( module L ) where
@@ -1045,7 +1050,7 @@ Costs and Drawbacks
   There is thus the small potential for abstraction leakage.
 
   It would be possible to introduce a warning to detect this scenario.
-  
+
 Related Work
 ------------
 
@@ -1061,10 +1066,10 @@ There is much prior art. The list below is shamelessly cribbed from `#205`_.
 
 * 2005 Coutts, ``as`` in export lists: `<https://mail.haskell.org/pipermail/libraries/2005-March/003390.html>`_ . Salient points:
   letting modules export other modules' contents qualified with the module name`
-  
+
 * 2006 Wallace, explicit namespaces for module names: `<https://ghc.haskell.org/trac/ghc/wiki/Commentary/Packages/PackageNamespacesProposal>`_ . Salient points:
   The declaration import namespace brings into availability the subset of the hierarchy of module names rooted in the package "foo-1.3", at the position ``Data.Foo``
-  
+
 * 2013 de Castro Lopo, qualified exports: `<https://wiki.haskell.org/GHC/QualifiedModuleExport>`_
   ``qualified module T`` in export list and is essentially a subset of this proposal.
 
@@ -1074,7 +1079,7 @@ There is much prior art. The list below is shamelessly cribbed from `#205`_.
   to keep backward compatibility due to its more fundamental approach. Given a fresh start,
   I would likely prefer something like `#295`_ than what I have written here, but we're not
   making a fresh start.
-  
+
 Alternatives
 ------------
 
@@ -1163,7 +1168,7 @@ Beyond the `Related Work`_, there is wiggle room within this proposal for altern
    This allows users to write ``module M`` as an export item to export
    unqualified all entities in scope with a ``M.`` prefix.
 
-   
+
 
    I am agnostic on whether I prefer the meaning for ``module`` export items above,
    or whether I prefer this alternative.
@@ -1233,7 +1238,7 @@ I see a few future directions along these lines, but I leave it to others to fle
 
 #. Formalise all of this along the lines of `A Formal Specification of the Haskell 98 Module
    System <https://web.cecs.pdx.edu/~mpj/pubs/hsmods.pdf>`_, by Diatchki, Jones, and Hallgren.
-   
+
 Unresolved questions
 --------------------
 
@@ -1266,7 +1271,7 @@ Unresolved questions
    not future-compatible. I don't have such a plan to offer, but concerns have
    been raised (chiefly by @Ericson2314) about the lack of such a plan before
    accepting this proposal.
-   
+
 
 Implementation Plan
 -------------------
