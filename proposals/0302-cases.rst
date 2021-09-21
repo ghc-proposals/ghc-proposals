@@ -144,7 +144,7 @@ lexp
 
    <td>
 
-:raw-latex:`\case` { alts }
+``\case`` { alts }
 
 .. raw:: html
 
@@ -154,7 +154,7 @@ lexp
 
    <td>
 
-(:raw-latex:`\case` expression)
+(``\case`` expression)
 
 .. raw:: html
 
@@ -190,7 +190,7 @@ lexp
 
    <td>
 
-:raw-latex:`\cases` { nalts }
+``\cases`` { nalts }
 
 .. raw:: html
 
@@ -200,7 +200,7 @@ lexp
 
    <td>
 
-(:raw-latex:`\cases` expression)
+(``\cases`` expression)
 
 .. raw:: html
 
@@ -1143,7 +1143,7 @@ Alternatives
 
          <td>
 
-      (1) Keyword (:raw-latex:`\cases`, :raw-latex:`\cases`, etc.)
+      (1) Keyword (``\cases``, ``\cases``, etc.)
 
           .. raw:: html
 
@@ -1239,7 +1239,7 @@ Alternatives
 
              <td>
 
-          (2) Comma-separated :raw-latex:`\case`
+          (2) Comma-separated ``\case``
 
               .. raw:: html
 
@@ -1312,7 +1312,7 @@ Alternatives
 
                  <li>
 
-              Like current :raw-latex:`\case`, single pattern uses are
+              Like current ``\case``, single pattern uses are
               concise due to lack of parentheses
 
               .. raw:: html
@@ -1341,7 +1341,7 @@ Alternatives
 
               Different from function equation syntax and from function
               application syntax: you apply as f (Just 34) (Right [])
-              but pattern match with :raw-latex:`\case `Just 23, Right
+              but pattern match with ``\case ``Just 23, Right
               []
 
               .. raw:: html
@@ -1448,7 +1448,7 @@ Alternatives
                      <li>
 
                   While it extends an existing construct, this extension
-                  makes it overlap with :raw-latex:`\case` functionality
+                  makes it overlap with ``\case`` functionality
 
                   .. raw:: html
 
@@ -1486,7 +1486,7 @@ Alternatives
 
                      <td>
 
-                  (4) Multi-pattern :raw-latex:`\case` with parentheses
+                  (4) Multi-pattern ``\case`` with parentheses
 
                       .. raw:: html
 
@@ -1559,7 +1559,7 @@ Alternatives
 
                       Not backwards compatible - can be mitigated by
                       using (possibly temporary) compiler magic to allow
-                      single-scrutinee :raw-latex:`\case` without
+                      single-scrutinee ``\case`` without
                       parentheses, as well as providing an automatic
                       refactoring tool to update existing code
 
