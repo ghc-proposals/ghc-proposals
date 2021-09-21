@@ -312,8 +312,8 @@ proposed change.
   The ``modid.occ ∈ item`` syntax here allows us to retrieve names from
   export items like ``T(..)``; we leave this operation abstract.
 
-  It is an error if multiple export items returns OEnvs with mappings for
-  the same occurrence name. We thus need not worry about left- or right-biasing
+  It is an error if multiple export items returns OEnvs with mappings from
+  the same occurrence name to distinct original names. We thus need not worry about left- or right-biasing
   of the merge operation on OEnvs.
 
 * Define the *qualify* operation on an OEnv ``X``::
