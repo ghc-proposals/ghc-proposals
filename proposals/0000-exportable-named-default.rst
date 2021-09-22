@@ -143,7 +143,11 @@ than one ``default`` declaration in scope, the conflict is resolved using the fo
    is to ignore all ``default`` declarations for the class, so that no declaration is in effect in the module. The
    compiler may choose to emit a warning in this case, but no error would be triggered about the imports. Of course an
    error may be triggered in the body of the module if it contains an actual ambiguous type for the class with the
-   conflicting imported defaults, as per the following section.
+   conflicting imported defaults, as per the following subsection.
+
+As a result, in any module each class has either one default declaration in scope (a locally-declared one, or an
+imported one that subsumes all other imported ones), or none. This single default is used to resolve ambiguity, as
+described in the next subsection.
 
 Note that a ``default`` declaration that repeats a type name more than once is perfectly valid, and sometimes may
 be necessary to resolve coflicts. For example, a module that imports two conflicting defaults
@@ -165,7 +169,8 @@ may use a local declaration
    default C (Int, Bool, Int)
 
 to override the imports. Because this declaration subsumes both imported defaults it will not trigger any compiler
-warning.
+warning. When used to resolve ambiguity (next section) it behaves exactly like ``default C( Int, Bool)``; that is, the
+repeats can be discarded.
 
    
 Rules for disambiguation at the use site
@@ -185,7 +190,7 @@ ambiguous type variable *v* is defaultable if:
 
 The new rules instead require only that 
 
-- *v* appears in at least one constraint of the form *C* *v*, where *C* is a class.
+- *v* appears in at least one constraint of the form *C* *v*, where *C* is a single-parameter class.
 
 Informally speaking, the type selected for defaulting is the first type from the ``default`` list for class *C* that
 satisfies all constraints on type variable *v*. If there are multiple *C*\ `i`:subscript: *v* constraints with
@@ -194,17 +199,17 @@ competing ``default`` declarations, they have to resolve to the same type.
 To make the design more explicit, the following algorithm *can* be used for default resolution, but any other method
 that achieves the same effect can be substitued:
 
-Let *S* be the complete set of unsolved constraints, and initialize *S*\ `x`:subscript: to an empty set of constraints. For
-every *v* that is free in *S*:
+Let *S* be the complete set of unsolved constraints, and initialize *S*\ `x`:subscript: to an empty set of constraints.
+For every *v* that is free in *S*:
 
-0. Define *B*\ `v`:subscript:, the subset of S consisting of all constraints whose only free type variable is *v*.
 1. Define *C*\ `v`:subscript: = { *C*\ `i`:subscript: v | *C*\ `i`:subscript: v ∈ *B*\ `v`:subscript: }, the subset of
-   S consisting of all constraints of form *C*\ `i`:subscript: v for some type class *C*\ `i`:subscript:.
+   *S* consisting of all constraints in *S* of form (*C*\ `i`:subscript: v), where *C*\ `i`:subscript: is a
+   single-parameter type class.
 2. Define *D*\ `v`:subscript:, by extending *C*\ `v`:subscript: with the superclasses of every *C*\ `i`:subscript: in
    *C*\ `v`:subscript:
-3. Define *E*\ `v`:subscript:, by filtering *D*\ `v`:subscript: to contain only classes with a default declaration
+3. Define *E*\ `v`:subscript:, by filtering *D*\ `v`:subscript: to contain only classes with a default declaration.
 4. For each *C*\ `i`:subscript: in *E*\ `v`:subscript:, find the first type *T*\ `i`:subscript: in the default list
-   for *C*\ `i`:subscript: that satisfies all required constraints from the set *B*\ `v`:subscript:.
+   for *C*\ `i`:subscript: that satisfies all required constraints from the set *C*\ `v`:subscript:.
 5. If there is precisely one type *T*\ `i`:subscript: in the resulting type set, resolve the ambiguity by adding a ``v
    ~ T``\ `i`:subscript: constraint to a set *S*\ `x`:subscript:; otherwise report a static error.
 
