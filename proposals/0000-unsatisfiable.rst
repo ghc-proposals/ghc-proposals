@@ -7,6 +7,7 @@ Unsatisfiable
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/433>`_.
+.. sectnum::
 .. contents::
 
 This proposal introduces a new built-in constraint form, ``Unsatisfiable``, as a
@@ -46,8 +47,8 @@ behaviour, as the following subsections describe.
 
 
 
-Example: ``TypeError`` can report errors too lazily
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``TypeError`` can report errors too lazily
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The following is a tempting but problematic use of ``TypeError``, because it
 does not report an error when one would be expected::
@@ -83,8 +84,8 @@ Now type-checking ``null (g 'x' [])`` will need to solve the ``NotCharGood
 Char`` constraint, and hence will trigger the ``TypeError``.
 
 
-Example: ``TypeError`` can report errors too eagerly
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``TypeError`` can report errors too eagerly
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In the previous subsection, we saw a program that did not report a custom type
 error when one would be expected, and that this can be avoided by using
@@ -95,7 +96,7 @@ As a simple example, it is not possible to directly write a function which will
 trigger a type error when used, because this is rejected at the definition
 site::
 
-  foo :: TypeError (Text "Dont' call foo") => Int
+  foo :: TypeError (Text "Don't call foo") => Int
   foo = 0
 
 As a more substantial example, consider the following (where ``If`` is the type
@@ -136,8 +137,8 @@ errors being reported too eagerly.
 
 
 
-Example: ``TypeError`` can report too many errors
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``TypeError`` can report too many errors
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 One of the uses of ``TypeError`` is to point out that a class instance is
 impossible, with a domain-specific error message. For example::
@@ -229,35 +230,40 @@ Proposed Change Specification
 
 The ``GHC.TypeError`` module (the planned new home for ``TypeError`` per `!6066
 <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/6066>`_) is extended with
-the following definition::
+the following definitions::
 
   class Unsatisfiable (e :: ErrorMessage) where
-    unsatisfiable :: a
+    unsatisfiable' :: a
+
+  unsatisfiable :: forall e {rep} (a :: TYPE rep). Unsatisfiable e => a
+  unsatisfiable = unsatisfiable' @e (##)
+
+The ``Unsatisfiable`` class and ``unsatisfiable`` function are exported, but the
+``unsatisfiable'`` class method is not.
 
 ``Unsatisfiable`` constraints have the following properties:
 
-* During constraint solving, the solver treats ``Unsatisfiable`` Wanted
-  constraints like any other class with no instances.  At the end of constraint
-  solving, if a Wanted constraint of the form ``Unsatisfiable e`` remains
-  unsolved:
+* During constraint solving, the solver treats ``Unsatisfiable`` constraints
+  like any other class with no instances.  In particular, an ``Unsatisfiable e``
+  Given constraint can solve a corresponding ``Unsatisfiable e`` Wanted
+  constraint, but not ``Unsatisfiable e'`` for some distinct ``e'``.
 
-  - Under ``-fno-defer-type-errors`` (the default), the type ``e`` is normalised
-    and rendered as a custom type error message.
+* At the end of constraint solving:
 
-  - Under ``-fdefer-type-errors``, a warning is emitted instead of an error, and
-    the constraint is solved by producing a dictionary such that
-    ``unsatisfiable`` throws an appropriate runtime exception.
+  - If at least one Given constraint of the form ``Unsatisfiable e`` is present,
+    the constraint solver will automatically solve all Wanted constraints
+    (including any ``Unsatisfiable`` Wanted constraints). The evidence for a
+    Wanted ``w`` consists of a call to ``unsatisfiable @e @w``.
 
-* If an ``Unsatisfiable`` Given constraint is present during constraint solving,
-  the constraint solver will automatically solve all Wanted constraints. The
-  evidence for each constraint consists of an application of the
-  ``unsatisfiable`` class method at the appropriate type.
+  - Otherwise, if a Wanted constraint of the form ``Unsatisfiable e`` remains
+    unsolved, a type error is reported but the usual "unsolved constraint" error
+    message is replaced by the custom message that results from normalising and
+    rendering the type ``e``.
 
 * An ``Unsatisfiable`` constraint is never automatically generalised.
 
 * If an ``Unsatisfiable`` Given constraint is present during pattern-match coverage
-  checking, the match is trivially regarded as total.  See discussion on `#20180
-  <https://gitlab.haskell.org/ghc/ghc/-/issues/20180>`_.
+  checking, the match is trivially regarded as total.
 
 * If a class instance has an ``Unsatisfiable`` Given constraint in the context,
   it bypasses the functional dependency check.
@@ -265,9 +271,59 @@ the following definition::
 * GHC will report an error if a user attempts to define an instance for
   ``Unsatisfiable``.
 
+* The representation of an ``Unsatisfiable e`` constraint in Core is equivalent
+  to the dictionary ``newtype CoercibleDict e = CoercibleDict (forall a . a)``.
+  This is GHC's normal representation of a class with a single method.
+
 The rendering of ``ErrorMessage`` values works just as for ``TypeError``. But
 unlike ``TypeError``, mere presence of ``Unsatisfiable`` somewhere within a
 constraint type does not trigger an error.
+
+
+Optional proposed change: ``Warning`` class
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+*The change proposed in this subsection is optional, and may be removed without
+affecting the rest of the proposal.*
+
+``GHC.TypeError`` is also extended with the following definition::
+
+    class Warning (e :: ErrorMessage)
+
+``Warning`` constraints have the following properties:
+
+* During constraint solving, the solver treats ``Warning`` constraints like any
+  other class with no instances.
+
+* At the end of constraint solving, if a Wanted constraint of the form ``Warning
+  e`` remains unsolved, a warning diagnostic is emitted, displaying the message
+  that results from normalising and rendering the type ``e``.
+
+* An ``Warning`` constraint is never automatically generalised.
+
+* The presence of ``Warning`` constraints does not affect pattern-match coverage
+  checking or the functional dependency check.
+
+* GHC will report an error if a user attempts to define an instance for
+  ``Warning``.
+
+* The representation of an ``Warning e`` constraint in Core is equivalent to the
+  dictionary ``data WarningDict e = WarningDict``.  This is GHC's normal
+  representation of a class with no methods.
+
+See `#17027 <https://gitlab.haskell.org/ghc/ghc/-/issues/17027>`_ for a request
+for a feature like this.  Unlike the suggestion in that ticket, the ``Warning``
+class proposed here can only be used at kind ``Constraint``, for similar reasons
+to ``Unsatisfiable``.
+
+The warning diagnostics emitted by this feature are controlled by a new warning
+class ``-Wtype-warnings``, which is enabled by default, but may be disabled with
+``-Wno-type-warnings``.
+
+This provides a more flexible alternative to ``WARNING`` and ``DEPRECATED``
+pragmas, because warnings may be displayed only when definitions are used at
+particular types, and the messages may be constructed dynamically.
+
 
 
 Examples
@@ -275,7 +331,8 @@ Examples
 
 For more substantial examples, see the `unsatisfiable package by Oleg Grenrus
 <https://hackage.haskell.org/package/unsatisfiable>`_.  This package implements
-a type-checker plugin that roughly corresponds to the design in this proposal.
+a type-checker plugin that roughly corresponds to the design of the
+``Unsatisfiable`` constraints in this proposal.
 
 #. The following definitions are accepted (assuming ``DataKinds``,
    ``FlexibleContexts`` and ``TypeApplications`` are enabled)::
@@ -364,26 +421,51 @@ a type-checker plugin that roughly corresponds to the design in this proposal.
    Double)``, this will result in a runtime exception that correctly blames the
    use of ``-fdefer-type-errors`` to bypass the ``Unsatisfiable`` constraint.
 
-#. The following is regarded as total by the pattern-match coverage checker::
+#. The following is regarded as total by the pattern-match coverage checker
+   (thanks to `/u/ComicIronic on Reddit
+   <https://www.reddit.com/r/haskell/comments/p2ao7v/unsatisfiable_a_ghcproposal_for_better_custom/h8je78s/>`_
+   for the example)::
 
-     data T a where
-       MkT1 :: a -> T a
-       MkT2 :: Unsatisfiable (Text "Impossible") => T a
+     data MyGADT a where
+       MyInt :: MyGADT Int
 
-     f :: T a -> a
-     f (MkT1 x) = x
+     type family IsBool a where
+       IsBool Bool = ()
+       IsBool a    = Unsatisfiable (Text "Must be Bool")
+
+     foo :: IsBool a => MyGADT a -> Void
+     foo x = case x of {}
+
+   This means it is possible to use ``Unsatisfiable`` to get custom error
+   messages, without needing to write cases that are in practice inaccessible.
+   Similar functionality was recently implemented for ``TypeError`` by Sam
+   Derbyshire (see `#20180
+   <https://gitlab.haskell.org/ghc/ghc/-/issues/20180>`_).
 
 #. The following is accepted despite the apparent functional dependency violation::
 
      class C a b | a -> b
      instance Unsatisfiable (Text "No") => C a b
 
-   That is, instances can be ruled out with a custom type error even if a this
-   would otherwise conflict with the functional dependencies.  Without this
-   rule, the following workaround is possible, but runs the risk of exposing the
-   superclass cycle as a constraint solver loop::
+   That is, an instance can be ruled out with a custom type error even where
+   this would otherwise conflict with the functional dependencies.  A practical
+   use case for this `arises in the optics library
+   <https://hackage.haskell.org/package/optics-core-0.4/docs/Optics-Internal-Optic-Subtyping.html#t:JoinKinds>`_.
+   Without this rule, a workaround is possible by building an otherwise unused
+   cycle in the context, but this runs the risk of exposing the cycle as a
+   constraint solver loop::
 
      instance (Unsatisfiable (Text "No"), C a b) => C a b
+
+#. Assuming the ``Warning`` option is included, the following ``decode``
+   function will emit a warning if it is used at type ``Integer``, but the
+   program will otherwise compile normally::
+
+     type family WarnInteger a where
+       WarnInteger Integer = Warning (Text "Integer may require unbounded memory!")
+       WarnInteger a       = ()
+
+     decode :: (FromJSON a, WarnInteger a) => ByteString -> Maybe a
 
 
 Effect and Interactions
@@ -400,6 +482,37 @@ restricted to kind ``Constraint``, whereas the latter is kind-polymorphic.  Thus
 there may be situations where ``TypeError`` is preferable, and both will remain
 available for use.  Correspondingly, this proposal does not lead to significant
 backwards incompatibility.
+
+
+Interaction with deferred type errors
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+As usual, when ``-fdefer-type-errors`` is enabled, unsolved constraint errors
+will be deferred to runtime by the compiler automatically generating a
+dictionary that throws a runtime exception if evaluated.  The message attached
+to the exception contains the type error that was deferred (including its source
+position).
+
+This proposal does not change this behaviour; a use of ``Unsatisfiable`` merely
+changes the message that is produced.  For example::
+
+    {-# OPTIONS_GHC -fdefer-type-errors #-}
+
+    f :: Unsatisfiable (Text "Blah blah") => a -> a
+    f x = x+1
+
+    main = print (f True)
+
+Compiling this program will emit a warning corresponding to the deferred type
+error.  Executing it will throw a runtime exception like this::
+
+    *** Exception: Unsatisfiable.hs:24:15: error:
+        • Blah blah
+            arising from a use of ‘f’
+        • In the first argument of ‘print’, namely ‘(f True)’
+          In the expression: print (f True)
+          In an equation for ‘main’: main = print (f True)
+    (deferred type error)
 
 
 Costs and Drawbacks
@@ -463,7 +576,18 @@ the user can write explicit calls to ``unsatisfiable`` instead, and in the
 presence of ``-fdefer-type-errors`` it can matter whether a class method is
 defined or calls ``unsatisfiable``.
 
+The proposed definition of ``unsatisfiable`` is levity-polymorphic, so it can be
+used directly at unlifted types.  This is consistent with ``error``, but is not
+strictly necessary.  A consequence is that ``import GHC.TypeError (Unsatisfiable
+(..))`` will not import ``unsatisfiable``, so users preferring explicit imports
+will need to write ``import GHC.TypeError (Unsatisfiable, unsatisfiable)``
+instead.  While mildly annoying, this preserves freedom to tweak the class
+definition in the future without breaking backwards compatibility, and is
+consistent with ``Coercible`` and ``coerce``, which likewise have to be imported
+separately.
+
 
 Unresolved Questions
 --------------------
-None
+
+Should the optional ``Warning`` feature be included?
