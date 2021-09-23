@@ -202,15 +202,16 @@ that achieves the same effect can be substitued:
 Let *S* be the complete set of unsolved constraints, and initialize *S*\ `x`:subscript: to an empty set of constraints.
 For every *v* that is free in *S*:
 
-1. Define *C*\ `v`:subscript: = { *C*\ `i`:subscript: v | *C*\ `i`:subscript: v ∈ *B*\ `v`:subscript: }, the subset of
+1. Define *C*\ `v`:subscript: = { *C*\ `i`:subscript: v | *C*\ `i`:subscript: v ∈ *S* }, the subset of
    *S* consisting of all constraints in *S* of form (*C*\ `i`:subscript: v), where *C*\ `i`:subscript: is a
    single-parameter type class.
 2. Define *D*\ `v`:subscript:, by extending *C*\ `v`:subscript: with the superclasses of every *C*\ `i`:subscript: in
    *C*\ `v`:subscript:
 3. Define *E*\ `v`:subscript:, by filtering *D*\ `v`:subscript: to contain only classes with a default declaration.
-4. For each *C*\ `i`:subscript: in *E*\ `v`:subscript:, find the first type *T*\ `i`:subscript: in the default list
-   for *C*\ `i`:subscript: that satisfies all required constraints from the set *C*\ `v`:subscript:.
-5. If there is precisely one type *T*\ `i`:subscript: in the resulting type set, resolve the ambiguity by adding a ``v
+4. For each *C*\ `i`:subscript: in *E*\ `v`:subscript:, find the first type *T* in the default list for
+   *C*\ `i`:subscript: for which, for every (*C*\ `i`:subscript: v) in *C*\ `v`:subscript:, the constraint
+   (*C*\ `i`:subscript: *T*) is soluble.
+5. If there is precisely one type *T* in the resulting type set, resolve the ambiguity by adding a ``v
    ~ T``\ `i`:subscript: constraint to a set *S*\ `x`:subscript:; otherwise report a static error.
 
 Examples
