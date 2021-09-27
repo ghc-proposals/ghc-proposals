@@ -213,8 +213,8 @@ Typing
 ======
 
 The (type carried by the) result type signature must have kind ``TYPE r``, for
-any runtime-representation ``r``. Any free type variables are implicitly bound
-by top-level ``forall``, just like it happens for function type signatures.
+any runtime-representation ``r``.
+Type variables obey the `forall-or-nothing rule`_ for quantification.
 
 Examples for well-typed result type signatures:
 
@@ -236,6 +236,7 @@ Examples for invalid result type signatures:
  (->)
  "Symbol"
  Eq Int
+ forall l. IsInfinite l => l a  -- forall-or-nothing: a is not in scope
 
 Note that after type-checking
 
@@ -354,7 +355,7 @@ Given the following example (full example in `#14422 <https://gitlab.haskell.org
  inc FZ       = FS FZ
  inc n@(FS _) = FS n
 
-How would I give the signature a COMPLETE set while preserving its semantics?
+What result type signature would I give the COMPLETE set that preserves its semantics?
 
 - ``{-# COMPLETE FZ, FS :: Fin n #-}`` is the obvious and correct choice.
 - ``{-# COMPLETE FZ :: Fin Z #-}; {-# COMPLETE FS :: Fin (S n) #-}`` Means that
@@ -370,8 +371,8 @@ How would I give the signature a COMPLETE set while preserving its semantics?
 Relation to `#399`_
 ===================
 
-We stole the syntax from `#399`_, which means the proposals pretty much align in
-spirit. In fact, every example there should work similarly with our proposal.
+This proposal supersedes and obviates `#399`_ in that every example there should
+work with our proposal, too.
 
 The major difference is that this proposal wants more general result types.
 E.g., we allow full forall types in the result type signature, to allow type
@@ -481,3 +482,4 @@ Endorsements
 
 .. _`#399`: https://github.com/ghc-proposals/ghc-proposals/pull/399
 .. _`Note [Matching against a ConLike result type]`: https://gitlab.haskell.org/ghc/ghc/-/blob/a9129f9fdfbd358e76aa197ba00bfe75012d6b4f/compiler/GHC/HsToCore/Pmc/Solver.hs#L1712
+.. _`forall-or-nothing rule`: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/explicit_forall.html#the-forall-or-nothing-rule
