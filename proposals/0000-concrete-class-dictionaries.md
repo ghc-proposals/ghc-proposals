@@ -136,8 +136,8 @@ class Eq a where
 
 defaultEq :: Eq a => EqDict a
 defaultEq = Eq
-  { (==) = \x y -> x /= y  -- using (Eq a)
-  , (/=) = \x y -> x == y
+  { (==) = \x y -> not (x /= y)  -- using (Eq a)
+  , (/=) = \x y -> not (x == y)
   }
 
 instance Eq T = defaultEq
