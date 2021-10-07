@@ -324,6 +324,11 @@ This provides a more flexible alternative to ``WARNING`` and ``DEPRECATED``
 pragmas, because warnings may be displayed only when definitions are used at
 particular types, and the messages may be constructed dynamically.
 
+(It would be possible to add a ``Deprecated`` constraint, similar to
+``Warning``, specifically for use with deprecation warnings, and controlled by a
+different flag.  However separating out deprecation warnings specifically does
+not seem strongly motivated.)
+
 
 
 Examples
@@ -591,3 +596,4 @@ Unresolved Questions
 --------------------
 
 Should the optional ``Warning`` feature be included?
+Should there be a separate ``Deprecated`` constraint as well?
