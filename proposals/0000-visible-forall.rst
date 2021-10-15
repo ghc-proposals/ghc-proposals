@@ -361,7 +361,7 @@ Part I: Proposed Change Specification
      follow the rules shown in Figure 4 of "A quick look at impredicativity",
      extended as follows::
 
-        G |- sigma[a := rho]; pis  ~>  Theta; phis; rho_r
+        G |- sigma[a := rho];                 pis  ~>  Theta; phis; rho_r
         ------------------------------------------------------------------  ITVDQ
         G |- (forall a -> sigma); (type rho), pis  ~>  Theta; phis; rho_r
 
@@ -744,19 +744,19 @@ Implicit quantification
 Type checking
 ~~~~~~~~~~~~~
 
-9. Introduce an additional typing rule that transforms term arguments into type
-   arguments::
+9. Generalize the ``ITVDQ`` rule introduced earlier
+   by using ``t2t``::
 
      rho = t2t(e)
-     G |- (forall a -> sigma); type rho, pis  ~>  Theta; phis; rho_r
-     ----------------------------------------------------------------  T2T
-     G |- (forall a -> sigma);        e, pis  ~>  Theta; phis; rho_r
+     G |- sigma[a := rho];         pis  ~>  Theta; phis; rho_r
+     ---------------------------------------------------------- ITVDQ-T2T
+     G |- (forall a -> sigma);  e, pis  ~>  Theta; phis; rho_r
 
-   See "T2T-Mapping" below for an informal definition of ``t2t``.
+   ``t2t`` transforms term arguments into type arguments, see "T2T-Mapping"
+   below for an informal definition.
 
    In other words, given ``f :: forall a -> t``, the ``x`` in ``f x`` is
    parsed and renamed as a term, but then mapped to a type.
-
 
 10. Any uses of terms in types are ill-typed:
     ::
@@ -817,6 +817,8 @@ The T2T mapping is partial: it succeeds on expressions that are within the
 Static Subset (introduced in `#378 Design for Dependent Types
 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0378-dependent-type-design.rst>`_),
 and fails on expressions outside of this subset.
+
+* Embedded types ``type t`` are mapped to ``t`` directly, without modification.
 
 * Variables and constructors (regardless of their namespace) are mapped
   directly, without modification.
