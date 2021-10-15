@@ -14,10 +14,10 @@ Coordinate proposals with an "Apsirational User's Guide"
             number in the link, and delete this bold sentence.**
 .. contents::
 
-This is a meta-proposal to change the proposal format and process.
+This is a meta-proposal to out an a change to the process on an experimental basis.
 We currently propose changes to an *implicit* state, the current design which is a roll-up of GHC and all unimplemented, accepted proposals.
-Instead, we should propose changes to an *explicit* design document, which is a copy of the GHC User's Guide known as the "Aspirational User's Guide".
-This will catch subtle design interactions earlier at proposal time rather than implementation design, and encourage holistic rather than piecemeal planning.
+Instead, we should make that state *explicit* by codifying excepted proposals in a design document, which is a copy of the GHC User's Guide known as the "Aspirational User's Guide".
+This will catch subtle design interactions earlier than implementation design, and make it easier to evaluate new proposals against a known-to-all baseline.
 
 Motivation
 ----------
@@ -28,42 +28,90 @@ The proposals are meant to clearly specify a change, which they do, but what is 
 
 Keeping track of this design is a lot of hard mental labor, even for our best experts and those making the decisions.
 
-An example of this is the situation we recently got into with a few pattern- and scoping-related proposals.
-Joachim's [email] to the GHC Steering Committee list about this issue is very instructive.
+A recent example of this is the situation we recently got into with a few pattern- and scoping-related proposals.
+Joachim's `email`_ to the GHC Steering Committee list about this issue is very instructive.
 There are 3 accepted but unimplemented proposals and 3 open proposals all touching on related portions of the design, and the result is very hard to follow.
+
 In this situation, the solution adopted was that Richard would go make a mega proposal combining all of them.
-That's fine, but also a lot of work.
-Wouldn't it be nice if we could still proposal incremental changes but also track their ramifications without "applying patches" mentally?
+That's fine, but also a solution we perhaps could only arrive at post-hoc.
+Are we, ever time we find some proposals need tighter integration, going to have to re-propose them?
+Wouldn't it be nice if we could still proposal incremental changes but also track their ramifications explicitly as we go to catch subtle interactions earlier?
+
+My earlier draft strait-up proposed changing the proposal process, but based on `Richard's response`_ to a comment of mine alluding to my plan, I decided to scale things back.
+Different processes do indeed burden different classes of participants in different ways (think proposal author burden vs committee burden trade-offs).
+And we shouldn't make any drastic changes without trial run period, or risk a big "blow back" if something goes wrong.
+
+The current form of this proposal thus instead has us maintain the "aspirational users guide" along side the existing proposal process, with no mandatory synchronization points.
+If the experiment goes well, I hope people will be inspired to keep it up to date with it being a requirement on anyone.
+If that becomes a burden no one wants to deal with, this rightly goes back to the drawing board...or the dumpster.
 
 [email]: https://mail.haskell.org/pipermail/ghc-steering-committee/2021-August/002571.html
+
+[Richard's response]: https://github.com/ghc-proposals/ghc-proposals/pull/283#issuecomment-924218834
+
+Prior art
+~~~~~~~~~
+
+I am not lawyer, but my understanding is that this is basically the process of codification in law.
+(The `English Wikipedia article`_ has some information, I am sure a lawyer could point us towards something more authoritative.)
+Very crudely, as I understand it, bills/acts/edicts/whatever are "informal patches" that might also contain "side effects" (one-off acts of governments).
+Humans separate the two parts and apply the first to another document.
+The process is somewhat async, at least historically, so conflicts/mistakes/ambiguities are expected.
+
+While I don't think GHC proposals typically have the "side effects" part to sieve out, the rest of the process closely mirrors what is proposed below in spirit.
+
+[English Wikipedia article]: https://en.wikipedia.org/wiki/Codification_(law)
+
+Prehistory of our proposal process
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is feel more confident talking about :).
+
+Our proposal process is inspired by the Rust proposal process `[rust-origin]`_.
+Rust's RFC process was `proposed <https://mail.mozilla.org/pipermail/rust-dev/2014-March/008973.html>`_ as a formalization of the existing pattern of tagging some emails to the mailing list "RFC:".
+The trail after that is a but fuzzier, but I think it's safe say it eventually goes back to the original Internet Engineering Task Force (IETF) Request for Comments (and its ARPANET antecedents typewriter-written).
+
+This and its descendants all have a *lack* of any codification process in common.
+But, unlike the Rust and GHC proposals which govern a single implementation, The IETF ones describe a bunch of protocols shared between many different implementations, and certainly no single implementation implementing all of them.
+As such, it's a *good* thing the RFCs are relatively standalone, listing the just the priors RFC they build upon or supersede, because for the purpose of protocol specification *modularity is more important than cohesiveness*.
+
+Of course, we don't want e.g. every language extension to only make sense in the full context of every other, so there is no initial thread for beginners to pull.
+But that doesn't negate that fact that we are planning for *one* GHC, and it is very important that we understand the interactions of our design decisions up front, and without having to understand all the implementation details.
+
+So zooming back out, I think Rust uncritically grandfathered in a lack of codification, but that was an understandable output because their RFC process evolved rather organically.
+We, in turn, were looking to emulate Rust's success with it, so it made sense we also would basically take the process as-is.
+But Rust is a more centralized project than Haskell, especially back then with Mozilla being the main facilitator, so while I think a lack of a central design document is bad for both compilers, it makes sense the issues could be more felt here.
+
+[rust-origin]: https://www.haskell.org/ghc/blog/20160709-rethinking-proposals.html
 
 Proposed Change Specification
 -----------------------------
 
-The GHC users guide is be copied into this repo, where it will be known as the "Aspirational User's Guide" --- the user's guide for the GHC we wish we had.
-Proposals will be co-written with the changes to the users guide they wish to effect, and the "proposed changed specification" and "effects and interactions" sections will instead be glosses that point to the changed sections.
-The can thus be shorter because the Aspirational User's Guide alone is authoritative.
+A copy GHC users guide is to be split out of the GHC repo into its own repo.
+That copy will be known as the "Aspirational User's Guide" --- the user's guide for the GHC we *wish* we had.
+
+Accepted proposals should be "codified" by documenting them as if they had already been implemented in the Aspirational User's Guide.
+The GHC steering committee would ultimately be responsible for this, in order to not burden proposal authors during the course of the experiment, but proposal authors are encoraged to help out.
 
 In order to have a good starting point for proposals with this new process, we also need to apply this process retroactively.
-The steering committee in conjunction with proposal authors will codify the changes specified in accepted but unimplemented proposals (already-implemented ones should already be in the initial copy) in the Aspirational User's Guide.
-Thus, the Aspirational User's Guide will become up-to-date with the committee's decisions to this point.
+The steering committee should codify the changes specified in accepted but unimplemented proposals (already-implemented ones should already be in the initial split-out repo) in the Aspirational User's Guide.
+This is the first "prelude" phase of the experiment; if getting the Aspirational User's Guide up to date with the accepted but unimplemented proposals proves too arduous, we'll have to rethink this experiment.
 
-When proposals are implemented, those changes should be synchronized with real GHC User's Guide as part of the implementation.
-Additionally, other changes to the real User's Guide not corresponding to implemented proposals should be synced back to the Aspiration version in this repo.
-In general, the difference between them should be kept to a minimum.
+When proposals are implemented, their codification in the Aspirational User's Guide should be synchronized with real GHC User's Guide as part of the implementation.
+Beyond saving work, this helps ensure that the two user's guides don't drift apart without bound.
+Additionally, other changes to the real User's Guide (not corresponding to implemented proposals) should be synced back to the Aspiration version in this repo for the same reason.
 
-``git subtree`` will be used to sync the aspirational users guide so the history is intact for e.g. ``git blame`` purposes in both repos.
+In general, the difference between them should be kept to a minimum --- were the difference between them to become too vast, that would serve as a good "canary in the coal mine" that we have too many accepted but unimplemented proposals.
+
+``git subtree`` is suggested to be used to split and sync the two users guides so the history is intact for e.g. ``git blame`` purposes in both repos.
 
 Examples
 --------
 
-Implemented proposals demonstrate the changes to the users guide that should now be made up front.
+If this proposal gets near approval, I would be happy to demo the codification process with some accepted but implemented proposals.
 
 Effect and Interactions
 -----------------------
-
-#. The proposal process will be harder, because some of the work that was previously deferred to the implementation must be done up front.
-   It is a matter of opinion whether this front-loading is good, bad, or neutral, so I put it in this section.
 
 #. Proposals that remain unimplemented too long will impose a burden in more merge conflicts with the two User's Guides synchronization.
    We might need to create a process to unaccept such proposals if this becomes to burdensome.
@@ -75,13 +123,14 @@ Effect and Interactions
 Costs and Drawbacks
 -------------------
 
-#. While proposals texts can still be written in Markdown, authors will need to know reStructuredText to modify the Aspirational User's Guide.
-   This somewhat undermines the past decisions to allow Markdown to be used.
+#. During the experimental phase, there will be more burden on the steering committee codifying proposals.
+   (If we wish to stick with the experiment, we can shift that burden around, but it might not go away.
+   That said, I have some optimism that forking the Aspirational User's Guide *before* one writes the proposal could make writing the proposed change specification easier, as one doesn't need to remember as much and can just "follow the text")
 
-#. Managing the merge conflicts creates more work for the committee at large.
-   But hopefully in most cases those merge conflicts are just materializing the design interactions we need to adjudicate anyways.
+#. Managing any merge conflicts with ``git subtree`` might be too arcane.
+   But hopefully in most cases those merge conflicts are just materializing the design interactions we need to adjudicate anyways, so it's better we catch them than not, even if the process is a bit annoying.
 
-#. Mentioning version numbers etc. in commits can wreck havoc with GHC and proposals' issue trackers -- something we saw when Hadrian was merged in GHC as a subtree.
+#. Mentioning issue numbers etc. in commits can wreck havoc if there are multiple issue/PR counters -- something we saw when Hadrian was merged in GHC with ``git subtree``.
    This can be avoided by using git-filter-branch to modify commit messages.
    It should be possible to make that process idempotent so that the extracted subtree commits are in fact properly shared in both repos and over-subsequent splits/merges.
 
@@ -91,6 +140,18 @@ Alternatives
 #. The design document proposals could be a greenfield document rather than a fork of the users guide.
    But this just strikes me as more work: now we have a distinct Users Guide and design document that cannot be synchronized semi-automatically via Git.
    It also means we lose out on the side benefit of a regular users not interested in the proposal process getting better-maintained documentation.
+
+#. Skip pure-side experiment and start requiring something of proposals / proposal authors too.
+   In order of increasing severity:
+
+    #. Proposal is not truly approved until codified (first approval is tentative).
+
+    #. Initial draft of codification must be done by proposal author.
+
+    #. Codification and proposal must be submitted together.
+       While the most draconian, this does have the advantage that we could slim down or remove the "detailed design" section to avoid duplicate work.
+
+   For the 3rd option, we would probably want to permanently merge the Apsirational User's Guide into the proposals repo.
 
 Unresolved Questions
 --------------------
