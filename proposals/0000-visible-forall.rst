@@ -619,6 +619,10 @@ Syntax
    (same motivation as `#193 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0193-forall-keyword.rst>`_).
    This implies ``forall`` is no longer a valid identifier.
 
+   For three releases before this change takes place, include a new warning
+   ``-Wforall-identifier`` in ``-Wdefault``. This warning will be triggered
+   at definition sites (but not use sites) of ``forall`` as an identifier.
+
 4. Introduce a new extension, ``ListTupleTypeSyntax``, on by default,
    which enables:
 
