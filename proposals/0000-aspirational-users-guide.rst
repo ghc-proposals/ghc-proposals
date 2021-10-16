@@ -45,9 +45,9 @@ The current form of this proposal thus instead has us maintain the "aspirational
 If the experiment goes well, I hope people will be inspired to keep it up to date with it being a requirement on anyone.
 If that becomes a burden no one wants to deal with, this rightly goes back to the drawing board...or the dumpster.
 
-[email]: https://mail.haskell.org/pipermail/ghc-steering-committee/2021-August/002571.html
+.. _`email`: https://mail.haskell.org/pipermail/ghc-steering-committee/2021-August/002571.html
 
-[Richard's response]: https://github.com/ghc-proposals/ghc-proposals/pull/283#issuecomment-924218834
+.. _`Richard's response`: https://github.com/ghc-proposals/ghc-proposals/pull/283#issuecomment-924218834
 
 Prior art
 ~~~~~~~~~
@@ -60,14 +60,14 @@ The process is somewhat async, at least historically, so conflicts/mistakes/ambi
 
 While I don't think GHC proposals typically have the "side effects" part to sieve out, the rest of the process closely mirrors what is proposed below in spirit.
 
-[English Wikipedia article]: https://en.wikipedia.org/wiki/Codification_(law)
+.. _`English Wikipedia article`: https://en.wikipedia.org/wiki/Codification_(law)
 
 Prehistory of our proposal process
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This is feel more confident talking about :).
 
-Our proposal process is inspired by the Rust proposal process `[rust-origin]`_.
+Our proposal process is inspired by the `Rust proposal process`_.
 Rust's RFC process was `proposed <https://mail.mozilla.org/pipermail/rust-dev/2014-March/008973.html>`_ as a formalization of the existing pattern of tagging some emails to the mailing list "RFC:".
 The trail after that is a but fuzzier, but I think it's safe say it eventually goes back to the original Internet Engineering Task Force (IETF) Request for Comments (and its ARPANET antecedents typewriter-written).
 
@@ -82,7 +82,7 @@ So zooming back out, I think Rust uncritically grandfathered in a lack of codifi
 We, in turn, were looking to emulate Rust's success with it, so it made sense we also would basically take the process as-is.
 But Rust is a more centralized project than Haskell, especially back then with Mozilla being the main facilitator, so while I think a lack of a central design document is bad for both compilers, it makes sense the issues could be more felt here.
 
-[rust-origin]: https://www.haskell.org/ghc/blog/20160709-rethinking-proposals.html
+.. _`Rust proposal process`: https://www.haskell.org/ghc/blog/20160709-rethinking-proposals.html
 
 Proposed Change Specification
 -----------------------------
@@ -144,12 +144,12 @@ Alternatives
 #. Skip pure-side experiment and start requiring something of proposals / proposal authors too.
    In order of increasing severity:
 
-    #. Proposal is not truly approved until codified (first approval is tentative).
+   #. Proposal is not truly approved until codified (first approval is tentative).
 
-    #. Initial draft of codification must be done by proposal author.
+   #. Initial draft of codification must be done by proposal author.
 
-    #. Codification and proposal must be submitted together.
-       While the most draconian, this does have the advantage that we could slim down or remove the "detailed design" section to avoid duplicate work.
+   #. Codification and proposal must be submitted together.
+      While the most draconian, this does have the advantage that we could slim down or remove the "detailed design" section to avoid duplicate work.
 
    For the 3rd option, we would probably want to permanently merge the Apsirational User's Guide into the proposals repo.
 
