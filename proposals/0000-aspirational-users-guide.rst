@@ -1,4 +1,4 @@
-Coordinate proposals with an "Apsirational User's Guide"
+Codify proposals in an "Apsirational User's Guide"
 ==============
 
 .. author:: John Ericson
@@ -14,8 +14,8 @@ Coordinate proposals with an "Apsirational User's Guide"
             number in the link, and delete this bold sentence.**
 .. contents::
 
-This is a meta-proposal to out an a change to the process on an experimental basis.
-We currently propose changes to an *implicit* state, the current design which is a roll-up of GHC and all unimplemented, accepted proposals.
+This is a meta-proposal to try out an extension to the proposal process on an experimental basis.
+We currently propose changes to an *implicit* state, the current design that is a roll-up of GHC and all unimplemented, accepted proposals.
 Instead, we should make that state *explicit* by codifying excepted proposals in a design document, which is a copy of the GHC User's Guide known as the "Aspirational User's Guide".
 This will catch subtle design interactions earlier than implementation design, and make it easier to evaluate new proposals against a known-to-all baseline.
 
@@ -23,7 +23,7 @@ Motivation
 ----------
 
 As stated in the summary, we currently propose changes against...nothing in particular.
-The proposals are meant to clearly specify a change, which they do, but what is not specified clearly is *what* is being change.
+The proposals are meant to clearly specify a change, which they do, but *what* is being changed is not specified so clearly.
 "The design", yes, but where is it? In our heads.
 
 Keeping track of this design is a lot of hard mental labor, even for our best experts and those making the decisions.
@@ -37,7 +37,7 @@ That's fine, but also a solution we perhaps could only arrive at post-hoc.
 Are we, ever time we find some proposals need tighter integration, going to have to re-propose them?
 Wouldn't it be nice if we could still proposal incremental changes but also track their ramifications explicitly as we go to catch subtle interactions earlier?
 
-My earlier draft strait-up proposed changing the proposal process, but based on `Richard's response`_ to a comment of mine alluding to my plan, I decided to scale things back.
+An earlier draft of this proposal went directly to changing the proposal process, but based on `Richard's response`_ to a comment of mine alluding to prior plan, I decided to scale back.
 Different processes do indeed burden different classes of participants in different ways (think proposal author burden vs committee burden trade-offs).
 And we shouldn't make any drastic changes without trial run period, or risk a big "blow back" if something goes wrong.
 
@@ -52,12 +52,11 @@ If that becomes a burden no one wants to deal with, this rightly goes back to th
 Prior art
 ~~~~~~~~~
 
-I am not lawyer, but my understanding is that this is basically the process of codification in law.
+I am no lawyer, but my understanding is that the new task I am proposing is similar to the codification of law.
 (The `English Wikipedia article`_ has some information, I am sure a lawyer could point us towards something more authoritative.)
 Very crudely, as I understand it, bills/acts/edicts/whatever are "informal patches" that might also contain "side effects" (one-off acts of governments).
 Humans separate the two parts and apply the first to another document.
-The process is somewhat async, at least historically, so conflicts/mistakes/ambiguities are expected.
-
+The process is somewhat asynchronous, at least historically, so conflicts/mistakes/ambiguities are expected.
 While I don't think GHC proposals typically have the "side effects" part to sieve out, the rest of the process closely mirrors what is proposed below in spirit.
 
 .. _`English Wikipedia article`: https://en.wikipedia.org/wiki/Codification_(law)
