@@ -69,7 +69,7 @@ This is feel more confident talking about :).
 
 Our proposal process is inspired by the `Rust proposal process`_.
 Rust's RFC process was `proposed <https://mail.mozilla.org/pipermail/rust-dev/2014-March/008973.html>`_ as a formalization of the existing pattern of tagging some emails to the mailing list "RFC:".
-The trail after that is a but fuzzier, but I think it's safe say it eventually goes back to the original Internet Engineering Task Force (IETF) Request for Comments (and its ARPANET antecedents typewriter-written).
+The trail after that is a but fuzzier, but I think it's safe say it eventually goes back to the original Internet Engineering Task Force (IETF) Request for Comments (and, yes, its ARPANET antecedents).
 
 This and its descendants all have a *lack* of any codification process in common.
 But, unlike the Rust and GHC proposals which govern a single implementation, The IETF ones describe a bunch of protocols shared between many different implementations, and certainly no single implementation implementing all of them.
