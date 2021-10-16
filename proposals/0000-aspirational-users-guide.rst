@@ -64,8 +64,6 @@ While I don't think GHC proposals typically have the "side effects" part to siev
 Prehistory of our proposal process
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This is feel more confident talking about :).
-
 Our proposal process is inspired by the `Rust proposal process`_.
 Rust's RFC process was `proposed <https://mail.mozilla.org/pipermail/rust-dev/2014-March/008973.html>`_ as a formalization of the existing pattern of tagging some emails to the mailing list "RFC:".
 The trail after that is a but fuzzier, but I think it's safe say it eventually goes back to the original Internet Engineering Task Force (IETF) Request for Comments (and, yes, its ARPANET antecedents).
