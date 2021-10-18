@@ -681,7 +681,7 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
       be made formal as follows::
 
         X = { qual ↦ orig | qual ↦ orig ∈ ambient_env
-                          , orig = MODIDS.occ }
+                          , orig = (MODIDS, _) }
 
       where ``MODIDS`` is the fully qualified name of the current module.
 
@@ -694,7 +694,7 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
             x = True
 
       In this example, the ambient QEnv for ``Top`` includes mappings
-      ``{ A.x ↦ Top.A.x, x ↦ Top.A.x, B.x ↦ Top.B.x, x ↦ Top.B.x }``.
+      ``{ A.x ↦ (Top, A.x), x ↦ (Top, A.x), B.x ↦ (Top, B.x), x ↦ (Top, B.x) }``.
       This QEnv contains two mappings for ``x``. By itself, this does not cause
       a problem: it is only a usage site of ``x`` that would cause an ambiguity
       error (as usual). However, since ``Top`` does not have an export list,
