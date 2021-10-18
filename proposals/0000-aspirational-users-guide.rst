@@ -15,45 +15,57 @@ Codify proposals in an "Apsirational User's Guide"
 .. contents::
 
 This is a meta-proposal to try out an extension to the proposal process on an experimental basis.
+
 We currently propose changes to an *implicit* state, the current design that is a roll-up of GHC and all unimplemented, accepted proposals.
-Instead, we should make that state *explicit* by codifying excepted proposals in a design document, which is a copy of the GHC User's Guide known as the "Aspirational User's Guide".
-This will catch subtle design interactions earlier than implementation design, and make it easier to evaluate new proposals against a known-to-all baseline.
+Instead, we should make that state *explicit* by codifying excepted proposals in a design document, which is to be copy of the GHC User's Guide known as the "Aspirational User's Guide".
+This will catch subtle design interactions earlier than implementation time, and make it easier to evaluate new proposals against an accurate baseline anyone can read.
 
 Motivation
 ----------
 
+Understanding proposals in context
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 As stated in the summary, we currently propose changes against...nothing in particular.
 The proposals are meant to clearly specify a change, which they do, but *what* is being changed is not specified so clearly.
-"The design", yes, but where is it? In our heads.
+"The design", yes, but where is it?
+In our heads.
 
-Keeping track of this design is a lot of hard mental labor, even for our best experts and those making the decisions.
+Keeping track of this design is a lot of hard mental labor, even for our best experts including those on the steering committee.
 
 A recent example of this is the situation we recently got into with a few pattern- and scoping-related proposals.
 Joachim's `email`_ to the GHC Steering Committee list about this issue is very instructive.
 There are 3 accepted but unimplemented proposals and 3 open proposals all touching on related portions of the design, and the result is very hard to follow.
 
-In this situation, the solution adopted was that Richard would go make a mega proposal combining all of them.
+In this situation, the solution adopted was that Richard would go make a mega-proposal combining all of them.
 That's fine, but also a solution we perhaps could only arrive at post-hoc.
-Are we, ever time we find some proposals need tighter integration, going to have to re-propose them?
-Wouldn't it be nice if we could still proposal incremental changes but also track their ramifications explicitly as we go to catch subtle interactions earlier?
-
-An earlier draft of this proposal went directly to changing the proposal process, but based on `Richard's response`_ to a comment of mine alluding to prior plan, I decided to scale back.
-Different processes do indeed burden different classes of participants in different ways (think proposal author burden vs committee burden trade-offs).
-And we shouldn't make any drastic changes without trial run period, or risk a big "blow back" if something goes wrong.
-
-The current form of this proposal thus instead has us maintain the "aspirational users guide" along side the existing proposal process, with no mandatory synchronization points.
-If the experiment goes well, I hope people will be inspired to keep it up to date with it being a requirement on anyone.
-If that becomes a burden no one wants to deal with, this rightly goes back to the drawing board...or the dumpster.
+Are we, ever time we find that some proposals need tighter integration, going to have to re-propose them?
+Wouldn't it be nice if we could still proposal incremental changes, but also track their ramifications explicitly?
+If we could catch subtle interactions earlier we could do that.
 
 .. _`email`: https://mail.haskell.org/pipermail/ghc-steering-committee/2021-August/002571.html
 
+Taking baby steps by making this an experiment
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+An earlier draft of this proposal went directly to changing the proposal process, but based on `Richard's response`_ to a comment of mine alluding to that prior plan, I decided to scale the proposal back.
+Different processes do indeed burden different classes of participants in different ways (think author vs committee burden trade-offs).
+And we shouldn't make any drastic changes without a trial run period, or we risk a big "blow back" if something goes wrong.
+
+The current form of this proposal thus instead has us maintain the "Aspirational User's Guide" alongside the existing proposal process, with no mandatory synchronization points between them.
+If the experiment goes well, I hope people will be inspired to keep it up to date and we can more formally include the Aspirational User's Guide in the proposal process.
+If the experiment becomes a burden no one wants to deal with, this rightly goes back to the drawing board...or the dumpster.
+
 .. _`Richard's response`: https://github.com/ghc-proposals/ghc-proposals/pull/283#issuecomment-924218834
+
+Background info
+---------------
 
 Prior art
 ~~~~~~~~~
 
 I am no lawyer, but my understanding is that the new task I am proposing is similar to the codification of law.
-(The `English Wikipedia article`_ has some information, I am sure a lawyer could point us towards something more authoritative.)
+(The `English Wikipedia article`_ has some information, I am sure a lawyer could point us towards other descriptions.)
 Very crudely, as I understand it, bills/acts/edicts/whatever are "informal patches" that might also contain "side effects" (one-off acts of governments).
 Humans separate the two parts and apply the first to another document.
 The process is somewhat asynchronous, at least historically, so conflicts/mistakes/ambiguities are expected.
