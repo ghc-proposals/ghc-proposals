@@ -215,7 +215,9 @@ Motivation
        import module Set
 
    to the end of the definition of ``frobbleSet`` to bring all the exports
-   from ``Data.Set`` into scope unqualified, locally. This reduces noise and
+   from ``Data.Set`` into scope unqualified, locally. This reduces noise in
+   the implementation of ``frobbleSets`` (though, regrettably, not in its
+   type signature) and
    may serve to encourage users to import more identifiers qualified.
 
 Background
@@ -596,7 +598,7 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
       ``-Wunqualified-qualified-exports``. In this case, the ``qualified``
       keyword is a no-op.
 
-      If there are bundled identifiers exported (in ``(...)``), these are
+      If there are bundled identifiers exported (in ``(..)``), these are
       also exported with the same qualification as the root identifier,
       even if the bundled identifiers are written with different qualifications.
       (Example: the export item ``M.T(K1, M.K2, N.K3) qualified`` exports
@@ -632,7 +634,8 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
       This export item exports the QEnv ``X``.
 
       In this way, the export item ``module qualified M ( f, g )`` means the
-      same as ``module qualified M ( f ), module qualified M ( g )``.
+      same as ``module qualified M ( f ), module qualified M ( g )`` and
+      ``M.f qualified, M.g qualified``.
 
       In code::
 
@@ -709,6 +712,9 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
                                , orig /= orig' }
 
       Now, ``X'`` is our final export QEnv.
+
+      When any variable is excluded from the final export QEnv in this way, GHC warns,
+      controlled by ``-Wsuppressed-duplicate-exports``.
 
    #. **Examples**. For instance in
 
@@ -862,6 +868,26 @@ Each numbered item in this section can be considered separately.
    It is an error to omit a module's name and
    include the ``qualified`` keyword.
 
+   The original name of an entity declared within an anonymous local module
+   includes a special module name ``anonymous`` in place of the name of the
+   anonymous module. This special module name is guaranteed not to conflict
+   with any other module name, because it begins with a lower-case letter.
+
+   Example::
+
+     module Top where
+       x = True
+       module where
+         x = False
+
+       a = x
+       b = Top.x
+
+   In this example, the definition of ``a`` is ambiguous, because ``x`` is
+   bound to both ``Top.x`` and ``Top.anonymous.x``. However, ``b`` is OK
+   (``b`` will be ``True``), because the inner ``x`` cannot be written
+   qualified.
+
 #. Introduce a new export item with the following BNF::
 
      export ::= ... | 'module' modids '(' '..' ')'
@@ -903,6 +929,9 @@ Each numbered item in this section can be considered separately.
    Associated ``data`` and ``newtype`` instances create modules at the level
    of the enclosing ``instance`` declaration: the ``data``\/\ ``newtype``
    module is *not* nested within the class module.
+
+   It is an error to use the ``qualified`` keyword with a non-alphanumeric name.
+   Module names are always alphanumeric.
 
 Further Examples
 ----------------
@@ -1066,7 +1095,9 @@ Effect and Interactions
   Now, importers will get all of ``MkT1``, ``MkT2``, and ``MkT3`` with ``import M ( module T(..) )``.
   Indeed, because the ``module T(..)`` form is customizable, it would be preferred over the
   ``T(..)`` import item. We could imagine changing the meaning of ``T(..)`` to mean ``module T(..)``
-  or deprecating that form, but this proposal does not do so.
+  or deprecating that form, but this proposal does not do so. This change is not
+  backward-compatible, and controlling it by the presence of the ``-XLocalModules``
+  extension seems too subtle.
 
 Costs and Drawbacks
 -------------------
