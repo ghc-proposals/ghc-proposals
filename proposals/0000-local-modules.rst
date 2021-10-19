@@ -167,7 +167,7 @@ Motivation
          data Set = ...
          fromList = ...
 
-   An importer who days ``import Data.Set`` will get access to ``Set`` (the
+   An importer who says ``import Data.Set`` will get access to ``Set`` (the
    type) and ``Set.fromList``, the function. The fact that the module and type
    have the same name is inconsequential here, but it is permitted.
 
