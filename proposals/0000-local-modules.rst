@@ -834,7 +834,10 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
 
    The environment is modified for ``u`` and ``v``.
 
-   Let ``E`` be the ambient QEnv. Let ``I`` be the interpretation
+   Let ``E`` be the ambient QEnv, as it exists outside the ``let`` / ``where`` block
+   (or, at the top level, the ambient QEnv as it exists after processing all ``import``
+   statements, but nothing else).
+   Let ``I`` be the interpretation
    of ``impspec`` with respect to the environment ``strip(modids, E)``. (If ``impspec``
    is missing, then let ``I = strip(modids, E)``.)
    The declaration ``import module modids (impspec)`` modifies the ambient QEnv
@@ -843,6 +846,16 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
    Note that the declaration form includes the word ``module`` to distinguish
    it from a normal ``import`` which induces a dependency on another file. An
    ``import module`` declaration cannot induce a dependency.
+
+   This form adds bindings to some base QEnv (either the QEnv from outside the ``let``
+   / ``where`` or the QEnv built from ``import`` statements only). The reason for this
+   design is to avoid the need for a fixpoint computation. If we allowed ``import module``
+   statements to build on one another and have no ordering, we would need to consider
+   them in all possible orders, including multiple usages of the same one. This would
+   require a fixpoint computation. We avoid this complication by restricting the QEnv
+   the ``import module`` statements operate on. An alternative would be to make the
+   ordering of ``import module`` statements significant, but this seems positively
+   anti-Haskellish.
 
    If the declaration adds no new bindings into the environment (because, for example,
    the module name is not used to qualify any identifiers), it is a warning
