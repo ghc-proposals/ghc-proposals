@@ -783,16 +783,18 @@ component of the overall proposal. Later pieces can be chosen piecemeal.
       modules influence scoping only, but not type-checking or dependency
       (which remain constrained by compilation units, as they are today).
 
-   #. Let the ambient QEnv of the local module (call it ``M``) be ``E``.
-      The export QEnv
-      of ``M`` is the result of interpreting ``exports`` (if given)
-      with respect to ``E``.
+   #. Let the ambient QEnv of the local module (call it ``M``, located within
+      top-level module ``Top`` and under other local modules ``modids``) be ``E``.
 
-      If ``exports`` is not given, then the export environment of ``M``
-      includes a mapping from occurrence name to original name
-      for each definition within the local module. For each nested local
-      module ``N`` within ``M`` with export QEnv ``N_E``, the
-      export QEnv of ``M`` includes ``qualify(N, N_E)``.
+      If ``exports`` is given, the export QEnv
+      of ``M`` is the result of interpreting ``exports`` with respect to ``E``.
+
+      If ``exports`` is not given, then the export QEnv ``X`` of ``M``
+      is the subset of ``E`` containing all mappings to original names that
+      appear within ``M``. That is, ::
+
+        X = { qual ↦ orig | qual ↦ orig ∈ E
+                          , orig = (Top, modids.M._, _occ) }
 
    #. A local module definition for ``M`` adds entries to the ambient QEnv
       ``E0`` of the enclosing module.
