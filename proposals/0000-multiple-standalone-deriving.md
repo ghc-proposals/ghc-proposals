@@ -100,9 +100,9 @@ type D :: (Type -> Type) -> Constraint
 type E :: (Bool -> Type) -> Constraint
 
 deriving via Target Roger
-  instance C Roger
-  instance D Roger
-  instance E Roger
+  instance C Roger  -- via Target @k Roger
+  instance D Roger  -- via Target @Type Roger
+  instance E Roger  -- via Target @Bool Roger
 ```
 
 ## Effect and Interactions
