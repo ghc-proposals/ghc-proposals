@@ -124,6 +124,7 @@ type synonym for it.
 type FooTarget a = Customizer ('FormatOptions ('Indentation 3) '["tomato", "potato"]) (Foo a)
 deriving via FooTarget a
   instance Parseable a => Parseable (Foo a)
+deriving via FooTarget a
   instance PrettyPrintable a => PrettyPrintable (Foo a)
 ```
 
