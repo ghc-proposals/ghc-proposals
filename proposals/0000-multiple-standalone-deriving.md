@@ -36,7 +36,7 @@ deriving via Generically (Foo a)
 ## Motivation
 
 Being able to write a deriving strategy once and use it multiple times
-can save a considerable amount of typing, especially when types get long
+can save a considerable amount of typing, especially when types get long.
 For example, one might wish to do something like
 
 ```haskell
