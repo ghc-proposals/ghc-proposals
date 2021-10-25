@@ -15,9 +15,11 @@ Modern Scoped Type Variables
 This proposal updates the treatment of scoped type variables in GHC, tying
 together many existing proposals:
 
+.. _`#99`: https://github.com/ghc-proposals/ghc-proposals/pull/99
 .. _`#119`: https://github.com/ghc-proposals/ghc-proposals/pull/119
 .. _`#126`: https://github.com/ghc-proposals/ghc-proposals/pull/126
 .. _`#155`: https://github.com/ghc-proposals/ghc-proposals/pull/155
+.. _`#228`: https://github.com/ghc-proposals/ghc-proposals/pull/228
 .. _`#238`: https://github.com/ghc-proposals/ghc-proposals/pull/238
 .. _`#281`: https://github.com/ghc-proposals/ghc-proposals/pull/281
 .. _`#285`: https://github.com/ghc-proposals/ghc-proposals/pull/285
@@ -27,6 +29,7 @@ together many existing proposals:
 .. _`#420`: https://github.com/ghc-proposals/ghc-proposals/pull/420
 .. _Type Variables in Patterns: https://richarde.dev/papers/2018/pat-tyvars/pat-tyvars.pdf
 .. _Kind Inference for Datatypes: https://richarde.dev/papers/2020/kind-inference/kind-inference.pdf
+.. _`Haskell 2010 Report`: https://www.haskell.org/onlinereport/haskell2010/haskellch10.html
 
 * `#126`_: Accepted, implemented proposal on accepting type arguments to constructor
   patterns, allowing constructions like ``f (Just @Int x) = x + 5``
@@ -387,6 +390,8 @@ Extension shuffling
    This extension is part of accepted, unimplemented proposal `#285`_; there
    is no intended change in the description here.
 
+   Being able to turn off this extension is necessary to uphold the EBP_.
+
 .. _gadt-syntax:
 
 GADT syntax to distinguish universals and existentials
@@ -401,93 +406,856 @@ Motivation
    very clear, as required by the analysis `above <#universals-and-existentials>`_.
 
 #. Principled kind inference is, I believe, impossible using the current syntax. This is argued
-   in `Appendix B.8 <https://richarde.dev/papers/2020/kind-inference/kind-inference-supplement.pdf#subsection.B.8>`_ of the `Kind Inference for Datatypes`_ paper.
+   in `Appendix B.8 <https://richarde.dev/papers/2020/kind-inference/kind-inference-supplement.pdf#subsection.B.8>`_ of the `Kind Inference for Datatypes`_ paper. The current approach allows some examples of polymorphic
+   recursion, but not others, and I doubt there is a declarative specification
+   of what we accept today. Here is an example of surprisingly allowed polymorphic
+   recursion::
 
-Specify the change in precise, comprehensive yet concise language. Avoid words
-like "should" or "could". Strive for a complete definition. Your specification
-may include,
+     data Poly a where
+       MkPoly :: forall k1 k2 (a :: k1) (b :: k2). Poly a -> Poly b -> Poly a
 
-* BNF grammar and semantics of any new syntactic constructs
-  (Use the `Haskell 2010 Report <https://www.haskell.org/onlinereport/haskell2010/>`_ or GHC's ``alex``\- or ``happy``\-formatted files
-  for the `lexer <https://gitlab.haskell.org/ghc/ghc/-/blob/master/compiler/GHC/Parser/Lexer.x>`_ or `parser <https://gitlab.haskell.org/ghc/ghc/-/blob/master/compiler/GHC/Parser.y>`_
-  for a good starting point.)
-* the types and semantics of any new library interfaces
-* how the proposed change interacts with existing language or compiler
-  features, in case that is otherwise ambiguous
+   Note that the use of ``Poly b`` instantiates ``Poly`` at a different
+   kind (``k2``) than the instantiation in the result (``k1``).
 
-Strive for *precision*. The ideal specification is described as a
-modification of the `Haskell 2010 report
-<https://www.haskell.org/definition/haskell2010.pdf>`_. Where that is
-not possible (e.g. because the specification relates to a feature that
-is not in the Haskell 2010 report), try to adhere its style and level
-of detail. Think about corner cases. Write down general rules and
-invariants.
+   If we change the ``Poly b`` above to ``Poly Maybe``, the definition is
+   rejected: only when the polymorphic recursion instantiates a kind variable
+   *with a variable* is the definition accepted.
 
-Note, however, that this section should focus on a precise
-*specification*; it need not (and should not) devote space to
-*implementation* details -- there is a separate section for that.
+   Another oddity here happens when we ask what the inferred kind of ``Poly``
+   is, before generalization. It must be ``k1 -> Type``... but ``k1`` is not
+   even in scope in the declaration of ``Poly``. It's all very strange.
 
-The specification can, and almost always should, be illustrated with
-*examples* that illustrate corner cases. But it is not sufficient to
-give a couple of examples and regard that as the specification! The
-examples should illustrate and elucidate a clearly-articulated
-specification that covers the general case.
+Proposed Change Specification
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+1. Allow all variables -- call them ``a1 .. an`` -- in the header of a GADT declaration (including variables introduced implicitly) to scope over
+   all constructor declarations. Call the GADT ``G``.
+
+#. If there is no standalone kind signature for the GADT, each ``ai`` is
+   assigned a kind meta-variable. When checking the constructors, this kind
+   meta-variable is unified following the usual rules for meta-variables.
+   In particular, this meta-variable will not be able to unify with any kind
+   variable locally quantified in a constructor declaration, because the scope
+   of the locally quantified kind variable is smaller than the kind meta-variable.
+
+   If a variable kind signature (e.g. ``data G (a :: Type -> Type) where ...``)
+   is given in the GADT header, the kind given for the kind
+   variable is unified with the kind meta-variable, as usual.
+
+   In declarative terms, this means that we can simply "guess" a monokind for
+   each type variable ``ai``.
+
+#. For each constructor, we must determine the universal variables and the
+   existential variables. To do this, look at the result type ``G ty1 .. tyn``.
+   For each ``i`` such that ``tyi`` is exactly ``ai``, ``ai`` is labeled as
+   a universal variable for that constructor. All other type variables in
+   that constructor's type are existentials. The distinction between universals
+   and existentials matters only in patterns.
+
+#. If a constructor explicitly quantifies over an in-scope type variable
+   (example: ``data G a where MkG :: Int -> forall a. a -> G a``), that
+   quantification does *not* introduce a new variable. Instead, during
+   kind inference, any kind
+   signature in the ``forall`` is unified with the kind of the variable,
+   but the quantification is otherwise ignored (during kind inference).
+
+#. After kind inference is complete, we must assign types to each
+   constructor. The type of the constructor is unchanged from today:
+   the order of quantified variables is as given by the user (so, for example,
+   existentials might precede universals).
 
 Examples
---------
-This section illustrates the specification through the use of examples of the
-language change proposed. It is best to exemplify each point made in the
-specification, though perhaps one example can cover several points. Contrived
-examples are OK here. If the Motivation section describes something that is
-hard to do without this proposal, this is a good place to show how easy that
-thing is to do with the proposal.
+^^^^^^^^
 
-Effect and Interactions
------------------------
-Your proposed change addresses the issues raised in the motivation. Explain how.
+::
 
-Also, discuss possibly contentious interactions with existing language or compiler
-features. Complete this section with potential interactions raised
-during the PR discussion.
+  data G1 a where
+    MkG1 :: a Int -> G1 a
 
+Inference for ``G1`` is now easier. We assign ``a :: kappa`` and then unify
+``Type -> Type`` with ``kappa``. Today's algorithm instead unifies the kind
+of ``G1`` with ``(Type -> Type) -> Type``, from the result type.
+
+::
+
+  data G2 a where
+    MkG2 :: forall k (a :: k). G2 a
+
+This definition is now rejected, because the kind for ``a`` cannot mention
+locally quantified ``k``. This could be accepted with a standalone kind signature
+for ``G2``.
+
+::
+
+  data G3 a where
+    MkG3 :: G3 a
+
+This definition is accepted, with ``G3 :: forall k. k -> Type``.
+At the end of kind inference, there is no restriction on the kind of ``a``,
+so it is generalized.
+
+::
+
+  data G4 (a :: k) where
+    MkG4 :: forall k (a :: k). G4 a
+
+This definition is accepted. The ``k`` in the header becomes an implicit
+type argument to ``G4``. The ``forall k`` is then ignored during kind
+inference, and so the kind annotation on ``a`` in the constructor does
+not cause trouble.
+
+::
+
+  data G5 k a where
+    MkG5 :: forall k (a :: k). G5 k a
+
+This is also accepted, because the ``k`` is introduced in the header.
+
+::
+
+  data G6 a b where
+    MkG6 :: a -> b -> G6 b b
+
+The constructor ``MkG6`` has a universal argument ``b`` and an existential
+argument ``a``. Its type is ``forall a b. a -> b -> G6 b b``. Pattern-matching
+a scrutinee of type ``G6 ty1 ty2`` against ``MkG6`` introduces an existential
+variable ``a`` and assumes an equality constraint ``ty1 ~ ty2``.
+
+::
+
+  data G7 a where
+    MkG7 :: b -> G7 b
+
+The constructor ``MkG7`` has only an existential variable ``b``.
+Pattern-matching a scrutinee of type ``G7 ty`` against ``MkG7``
+introduces the existential ``b`` and an equality constraint that
+``b ~ ty``. This equality, however, will not affect type inference,
+because it is "let-like".
+See ``Note [Let-bound skolems]`` in ``GHC.Tc.Solver.InertSet``.
+The choice of making ``b`` existential *does* affect the shape of
+the data constructor worker for ``MkG7``, but this will not affect
+Haskell users.
+
+::
+
+  data G8 a where
+    MkG8_1 :: a Int -> G8 Bool
+    MkG8_2 :: a -> G8 a
+
+This definition is accepted today but will be rejected under this proposal.
+The problem is that the kind of ``a`` is *different* in the different constructor
+types. Today, these ``a``\ s are considered independent, and so there is no
+trouble. Under this proposal, though, these ``a``\ s are considered the same,
+and thus cannot have different kinds. I argue that ``G8`` here is as confusing
+to human readers as it would be to GHC under this proposal, and so rejection
+seems sensible.
+
+Effects
+^^^^^^^
+
+1. Kind inference becomes more principled, allowing information to flow from
+   constructor types back to the declared type arguments.
+
+#. Some definitions accepted today will be rejected under this new treatment,
+   when accepting the definition requires unifying the kind of a type argument
+   with a locally quantified kind variable. This rejection is a *desired* outcome
+   of this change, as the current acceptance is in violation of our plan
+   not to infer polymorphic recursion.
+
+   Any newly rejected definition can be fixed with a standalone kind signature.
+   This fix is backward compatible.
+
+#. Other definitions accepted today are like ``G8`` in that they use the same
+   name for multiple different variables in different constructor types. These
+   definitions will have to rename some variables, which is a completely local
+   change and will not affect downstream users.
+
+#. A `separate part <#pattern-type-args>`_ of this proposal describes
+   how the choice of universals and existentials affects pattern-matching.
+
+#. Constructor uses in expressions are completely and utterly unchanged,
+   because the assigned types of constructors are unchanged.
+
+#. Currently, the kind inference algorithm requires two full passes over
+   every datatype that lacks a standalone kind signature. I believe this
+   change would mean we could reduce this to one pass, though the simplification
+   would require some significant refactoring within GHC. (Without this proposal,
+   I believe we are tied to keeping the second pass.) The `Kind Inference
+   for Datatypes`_ paper shows how kind inference can be done in one pass
+   (followed by a straightforward substitution).
+
+#. This change allows some simplification in the kind-inference code.
+   It would nullify ``Note [Using TyVarTvs for kind-checking GADTs]`` in
+   ``GHC.Tc.TyCl``. It would also mean that the result kind of a GADT
+   now makes sense when checking constructors, simplifying logic in ``kcConDecl``
+   and making aspects of supporing unlifted newtypes easier (see the
+   wrinkle around #17021 in ``Note [Implementation of UnliftedNewtypes]``
+     in ``GHC.Tc.TyCl``.
+
+Drawbacks
+^^^^^^^^^
+
+1. This change may annoy some users whose definitions are newly rejected.
+   The fixes are easy and fully backward-compatible.
+
+Alternatives
+^^^^^^^^^^^^
+
+1. We could come up with another scheme for telling universals from
+   existentials. (For example: we could say that a bare variable used
+   as an argument in the result type is a universal.) Doing so would
+   address the need to distinguish universals from existentials, but
+   would not fix the type-inference trouble.
+
+#. We could offer users a migration period, where we warn about this
+   impending change. I see no easy way of implementing such a check,
+   and I see relatively little value in doing so, given that the fixes
+   are really quite easy. This opinion may change in the light of experience,
+   if this feature is implemented and we see trouble in the wild.
+
+.. _pattern-type-args:
+
+Type arguments in constructor patterns
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is an update to accepted, implemented proposal `#126`_ that changes
+its treatment of universals. It incorporates the logic of not-yet-accepted
+amendment `#291`_.
+
+Specification
+^^^^^^^^^^^^^
+
+1. Introduce a new extension ``-XTypeAbstractions``.
+
+#. When ``-XTypeAbstractions`` is enabled, allow type application syntax
+   in constructor patterns.
+
+   Concretely, the grammar goes from ::
+
+     pat → gcon apat1 … apatk
+         …
+
+   to ::
+
+       pat → gcon tyapp_or_pat1 … tyapp_or_patk
+           …
+
+       tyapp_or_pat → '@' atype    -- '@' is in prefix position
+                    → pat
+
+#. Type applications in constructor patterns do *not* affect whether
+   the pattern-match is successful.
+
+#. Type applications in constructor patterns must correspond to ``forall``
+   quantifications in the declared constructor or pattern synonym type.
+   (Right now, pattern synonyms require all such quantifications to occur
+   before any term arguments, but accepted proposal `#402`_ allows these
+   quantifications to occur in any order in data constructors.
+
+#. Each quantification in a data constructor or pattern synonym brings
+   into scope either a universal variable or an existential variable.
+   Telling these apart is easy in pattern synonym types; `see above <#gadt-syntax>`_ for how to determine this property of data constructor
+   types.
+
+   1. A type argument corresponding to a universal variable, if given,
+      must be ``_``. No exceptions.
+
+   #. A type argument corresponding to an existential variable, if given,
+      must be a bare variable or a ``_``. If a variable, this variable is
+      unconditionally brought into scope (possibly shadowing any existing
+      type variable with the same spelling), bound to the existential type
+      packed in the datatype.
+
+#. A wildcard ``_`` as a type argument says simply to skip that argument;
+   it does not trigger any behavior associated with partial type signatures.
+   In particular, ``-XPartialTypeSignatures`` is not necessary, and no
+   diagnostic is produced.
+
+#. As with term variables, it is an error to bring the same type variable
+   into scope in two (or more) places within the same pattern.
+
+Examples
+^^^^^^^^
+
+::
+
+  f1 (Just @Int x) = x + 1
+
+This is accepted under `#126`_ but rejected under this current proposal,
+because we do not allow instantiation of universals. See the
+`universals and existentials <#universals-and-existentials>`_ section
+for a discussion.
+
+If you want this behavior under this proposal, write a type signature.
+
+::
+
+  {-# LANGUAGE ScopedTypeVariables #-}
+  data Ex = forall a. MkEx a
+  f2 :: forall b. b -> Ex -> Int
+  f2 y (MkEx @b z) = ...
+
+This is rejected under `#126`_,
+as it appears to insist that the existential
+type packed in ``MkEx`` is the same as the type argument passed to ``f2``.
+On the other hand, this is accepted by the current proposal, allowing the
+existential ``b`` to shadow the ``b`` brought into scope by the ``forall``.
+
+This shadowing behavior mimics what happens with term variables in patterns.
+
+Effects
+^^^^^^^
+
+1. The ability to bind existential variables via a construct such as this
+   is necessary to support the EVP_.
+
+#. Forbidding instantiation of universals is to uphold the VOP_ and LSPC_.
+
+#. Having type variables have the same behavior as term variables with
+   respect to shadowing (and repeated binding) upholds the VOP_.
+
+#. Allowing users to write ``@_`` for universal arguments upholds the PEDP_.
+   An alternative would be simply to skip universals in patterns (as Coq does,
+   for example), but this violates the PEDP_. I expect a future proposal to
+   arrive eventually that will allow a syntax for instantiating universals;
+   the current treatment would be forward compatible with any such syntax.
+
+Type arguments in lambda patterns
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is a restatement of accepted proposal `#155`_, as amended by not-yet-accepted
+`#238`_. For motivation, please see `#238`_.
+
+Specitification
+^^^^^^^^^^^^^^^
+
+A. With ``-XTypeAbstractions``, introduce a new form of pattern (cf. The `Haskell 2010 Report`_)::
+
+     apat → … | '@' tyvar | '@' '_'   -- '@' is a prefix occurrence
+
+   Conveniently, ``apat``\ s are used both in function left-hand sides
+   and in lambda-expressions, so this change covers both use-cases.
+
+#. A type variable pattern would not be allowed in the following contexts:
+
+   1. To the right of an as-pattern
+   #. As the top node in a lazy (``~``) pattern
+   #. As the top node in a ``lpat`` (that is, to the left of an infix
+      constructor, directly inside a parenthesis, as a component of
+      a tuple, as a component of a list, or directly after an ``=``
+      in a record pattern)
+
+#. Typing rules for the new construct are as in a `recent paper
+   <https://richarde.dev/papers/2021/stability/stability.pdf>`_: see
+   ETm-InfTyAbs, ETm-CheckTyAbs, Pat-InfTyVar, and Pat-CheckTyVar, all in
+   Figure 7. While the typeset versions remain the official typing rules,
+   I will summarise the different rules below.
+
+   **Background**. GHC implements *bidirectional* type-checking, where
+   we sometimes know what type to expect an expression to have. When we
+   know such a type (for example, because we have a type signature, or
+   an expression is an argument to a function with a known type), we say
+   we are in *checking* mode. When we do not know such a type (for example,
+   when we are inferring the type of a ``let``\ -binding or the type of
+   a function applied to arguments), we say we are in *synthesis* mode.
+   The `Practical Type Inference <https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/putting.pdf>`_ paper gives a nice, Haskell-oriented introduction.
+
+   1. In synthesis mode, when examining ``\ @a -> expr``, we simply put
+      ``a`` in scope as a fresh skolem variable (that is, not equal
+      to any other type) and then check ``expr``. (Presumably, ``expr``
+      uses ``a`` in a type signature.) When we infer that ``expr`` has
+      type ``ty``, the expression ``\ @a -> expr`` has type ``forall a. ty``.
+      Example: ``\ @a (x :: a) -> x`` infers the type ``forall a. a -> a``.
+      (For this example, we note that ``\ @a (x :: a) -> x`` is a short-hand
+      for ``\ @a -> \ (x :: a) -> x``.)
+
+   #. In checking mode, when examining ``\ @a -> expr`` against type ``ty``,
+      we require that ``ty`` has the shape ``forall a. ty'``, where
+      ``a`` is a *specified* variable (possibly
+      after skolemising any *inferred* variables in ``ty``), renaming the
+      bound variable as necessary to match the name used in the expression.
+      We then check ``expr`` against type ``ty'``.
+
+   #. In synthesis mode, when examining a function argument ``@a`` to
+      a function ``f``, we
+      bring ``a`` into scope as a fresh skolem variable and check the
+      remainder of the arguments and the right-hand side. In the type
+      of ``f``, we include a ``forall a.`` in the spot corresponding
+      to the type variable argument.
+
+      If there are multiple equations, each equation is required
+      to bind type variables in the same locations. (If this is
+      burdensome, write a type signature.) (We could probably do
+      better, by inferring the maximum count of bound type
+      variables between each required argument and then treating
+      each set of bound type variables as a prefix against this
+      maximum, but there is little incentive. Just write a type
+      signature!)
+
+   #. In checking mode, when examining a function argument ``@a`` to
+      a function ``f`` with type signature ``ty``, we require the corresponding
+      spot in the type signature to have a ``forall a`` (possibly renaming
+      the bound variable). The type variable ``a`` is then brought
+      into scope and we continue checking arguments and the right-hand side.
+
+      Multiple equations can bind type variables in different places,
+      as we have a type signature to guide us.
+
+#. Typing rules for pattern synonym bindings are complicated, as usual.
+
+   1. A visible type abstraction in a pattern synonym binding that lacks
+      a type signature is rejected. (While we could, at some cost, work
+      out what should happen here, please just use a type signature.)
+
+   #. (Background information; no new specification here.)
+      Pattern synonym type signatures have a restricted form that looks
+      like this::
+
+         pattern P :: forall universal_tvs.   required_context =>
+                      forall existential_tvs. provided_context =>
+                      arg1 -> arg2 -> ... ->
+                      result
+
+      `The GHC manual <https://downloads.haskell.org/ghc/latest/docs/html/users_guide/exts/pattern_synonyms.html#typing-of-pattern-synonyms>`_ has the details for how parts
+      of this signature can be left out; I will not repeat these rules here.
+      The key observation is that all quantified type variables occur
+      *before* any required term-level arguments.
+
+      Furthermore, pattern synonym bindings may be specified in two parts,
+      for explicit bidirectional pattern synonyms::
+
+         pattern P <- pat
+           where P = expr
+
+      Call the top line the *pattern synonym pattern binding*, while
+      the second line is the *pattern synonym expression binding*.
+
+      In an implicitly bidirection pattern synonym binding, the
+      pattern synonym pattern binding and pattern synonym expression
+      binding are written with one bit of syntax. For the purposes
+      of this proposal, though, we consider type-checking this
+      bit of syntax *twice*, once as a pattern synonym pattern binding,
+      and once as a pattern synonym expression binding.
+
+   #. With ``-XTypeAbstractions``, a pattern synonym pattern binding may
+      include any number of type abstractions (such as ``@a`` or ``@_``)
+      directly after the pattern synonym name. (Such a binding must be written
+      in prefix notation, not infix.)
+      These bindings correspond to a prefix of the *specified* *universal* type variables
+      in the pattern synonym's type. It is an error to write more type
+      abstractions than there are specified universal variables.
+
+      Each type abstraction binds a local name to the corresponding
+      universal type variable. These names are available in the right-hand
+      side (after the ``<-`` or ``=``).
+
+      (Existentials are excluded here because an existential type variable
+      is bound by the pattern in the right-hand side. There appears to be
+      no motivation for being able to name these on the left.)
+
+      The rules for the usage of such variables on the right-hand side are
+      unchanged from the way scoped type variables work in pattern synonyms
+      today.
+
+   #. With ``-XTypeAbstractions``, a pattern synonym expression binding
+      may include any number of type abstractions (such as ``@a`` or ``@_``)
+      directly after the pattern synonym name. (Such a binding must be written
+      in prefix notation, not infix.) These correspond to a prefix of
+      the concatentation of the specified universal and specified existential type variables
+      written in the pattern synonym type signature. It is an error
+      to write more type abstractions than there are specified universal
+      and specified existential type variables.
+
+      Each type abstraction binds a local name to the corresponding
+      universal or existential type variable. These names are available in the
+      right-hand side (after the ``=``).
+
+      (Existentials are included here because a pattern synonym used as an
+      expression takes existentials as arguments from call sites, and it is
+      sensible to bind these on the left.)
+
+      The rules for the usage of such variables on the right-hand side are
+      just as they exist for ordinary function bindings.
+
+#. ``-XTypeAbstractions`` and ``-XScopedForAlls`` have a fraught relationship,
+   as both are trying to accomplish the same goal via different means. Here are
+   the rules keeping this sibling rivalry at bay:
+
+   1. ``-XScopedForAlls`` does not apply in expression type signatures. Instead,
+      if users want a type variable brought into scope, they are encouraged to
+      use ``-XTypeAbstractions``. (It would not be hard to introduce a helpful
+      error message instructing users to do this.)
+
+   #. If ``-XScopedForAlls`` is enabled,
+      in an equation for a function definition for a function ``f`` (and similar
+      for pattern synonym pattern bindings and pattern synonym expression bindings):
+
+      * If ``f`` is written with no arguments or its first argument is not
+        a type argument (that is, the next token after ``f``
+        is not a prefix ``@``), then ``-XScopedForAlls`` is in effect and
+        brings type variables into scope.
+
+      * Otherwise, if ``f``\'s first argument is a type argument, then
+        ``-XScopedForAlls`` has no effect. No additional type variables
+        are brought into scope.
+
+#. (Optional extra) If ``-XTypeAbstractions`` is in effect, then a function
+   binding may use ``@(..)`` on its left-hand side. Here is the BNF (cf. the
+   `Haskell 2010 Report <https://www.haskell.org/onlinereport/haskell2010/haskellch4.html#x10-800004.4>`_, Section 4.4.3), recalling that braces mean "0 or more"::
+
+     funlhs  →  var apat { apat }
+             |  pat varop pat
+             |  '(' funlhs ')' apat { apat }
+             |  funlhs '@' '(' '..' ')'
+
+   The last line is new, and we assume the ``@`` is in prefix form. This construct
+   is available only when the function being defined has a type signature.
+   The new construct brings into scope all type variables brought into scope
+   at that point in the signature. Note that implicitly quantified type variables
+   are brought into scope at the top of a signature, and so ::
+
+     f :: a -> b -> a
+     f @(..) = -- RHS
+
+   would have ``a`` and ``b`` in scope in the ``RHS``.
+
+   The ``@(..)`` construct works for both *specified* and *inferred* variables,
+   and is additionally avaialable in pattern synonym pattern bindings (where it
+   brings into scope only universals) and pattern synonym expression bindings
+   (where is brings into scope both universals and existentials). (In an implicitly
+   bidirectional pattern synonym, the ``@(..)`` brings into scope only universals.)
+
+Examples of new behavior of scoped type variables
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+::
+
+   f :: forall a. a -> a
+   f @b x = (x :: a)   -- rejected, because -XScopedForAlls is disabled here
+
+   g :: forall a. a -> a
+   g @a x = (x :: a)   -- accepted with -XTypeAbstractions
+
+   h = ((\x -> (x :: a)) :: forall a. a -> a)
+     -- accepted with previous -XScopedTypeVariables, but rejected
+     -- now
+
+   i = ((\ @a x -> (x :: a)) :: forall a. a -> a)
+     -- accepted with -XTypeAbstractions
+
+Note that turning off ``-XScopedForAlls`` with ``-XTypeAbstractions`` is necessary if we
+think about where type variables are brought into scope. Are they brought into
+scope by the ``forall``? Or by the ``@a``? It can't be both, as there is no
+sensible desugaring into System F. Specifically, if we have ``expr :: forall a. ty``,
+that gets desugared into ``/\ a -> expr``. If we have ``(\ @a -> expr) :: forall b. ty``,
+what does it get desugared into? It would have to be ``/\ b -> /\ a -> expr``, but then
+``b`` and ``a`` are different.
+
+Here might be another way of thinking about it. Suppose we're checking ``expr`` against
+the pushed-down (known) type ``forall a. ty``. If we bring ``a`` into scope, what type
+do we check ``expr`` against? Is it ``forall a. ty`` again? That's very awkward if ``a``
+is *already* in scope. If we check ``expr`` against ``ty`` and ``expr`` looks like
+``\ @b -> expr'``, then we check ``\ @b -> expr'`` against ``ty`` -- not against
+``forall a. ty``.
+
+Effects
+^^^^^^^
+
+1. This delivers the EVP_, meaning we can rid of ``Proxy``.
+
+2. The optional extra ``@(..)`` notation seems like a convenient middle ground,
+   allowing for an easy transition from the old-style ``-XScopedTypeVariables``
+   to the newer ``-XTypeAbstractions``. It brings the *inferred* variables (from `#99`_)
+   into
+   scope, quite conveniently. This new notation also allows type variables to
+   be brought into scope without the ``forall`` keyword in the type, in case
+   the user does not want to trigger ``forall``\ -or-nothing behavior.
+
+   Note that this notation is forward compatible with visible dependent quantification
+   in terms (`#281`_)::
+
+     f :: foreach (count :: Int) (label :: String) (is_paid_for :: Bool) -> Invoice
+     f (..) = -- here, count, label, and is_pair_for are all in scope
+
+   This style allows for more perspicuous types while avoiding redundancy. The particular
+   example here uses ``foreach`` to denote arguments that are available at runtime, but
+   nothing about ``foreach`` is required to make this all work (as far as scoping is
+   concerned).
+
+   Accepting the ``@(..)`` syntax does *not* entail accepting this new, separate
+   ``(..)`` syntax, though it is good to know that the idea is forward compatible.
+
+   A ``@(..)`` argument counts as a type argument when asking whether ``-XScopedForAlls``
+   affects a function equation.
+
+   The new ``@(..)`` notation does *not* work with expression type signatures,
+   lambda-expressions, or anywhere other than a function binding with a type
+   signature. This is because doing so would require propagating type
+   information into scoping, which is problematic.
+
+   Some have argued on GitHub that it may be best to hold off the ``@(..)`` until
+   we gain more experience here: adding new features is easier than removing them.
+   While I agree that this could be done, the ``@(..)`` construct makes for a very
+   easy migration from today's ``-XScopedTypeVariables`` and is thus tempting to
+   be around from the start. I don't feel strongly.
+
+#. (technical) The `Visible Type Applications`_ (VTA) paper defines the behavior about what to
+   do when checking against a polytype: it says to deeply skolemize. However, eager deep
+   skolemization will spell trouble for this extension, as we need the lambdas to see
+   the ``forall``\s. The end of the Section 6.1 in the `extended VTA <https://cs.brynmawr.edu/~rae/papers/2016/type-app/visible-type-app-extended.pdf>`_ paper discusses
+   why we do eager deep skolemization: essentially, the alternative would be to do
+   type generalization at inflection points between checking and inference mode,
+   right before doing the subsumption check. Type generalization is hard in GHC, though,
+   and so the paper avoided it. In order to implement this proposal, we'll have to work
+   out how to do this.
+
+Costs and Drawbacks
+^^^^^^^^^^^^^^^^^^^
+
+1. This part of the proposal
+   is *not* backward-compatible with today's ``-XScopedTypeVariables``,
+   because it rejects expressions like ::
+
+     ((\x -> (x :: a)) :: forall a. a -> a)
+
+   which are accepted today. No migration period is proposed, because it is
+   very hard to imagine how ``-XTypeAbstractions`` and ``-XScopedForAlls`` should
+   co-exist peacefully here. Instead, we can issue a specific error message telling
+   users how to migrate their code in this case.
+
+   My hope is that constructs such as this one are rare and would not impact many
+   users.
+
+   If necessary, we could imagine taking the expression ``expr :: forall ... . ty``
+   and looking proactively to see whether ``expr`` ever uses a type variable
+   pattern from this proposal. If not, ``-XScopedForAlls`` could trigger (and we
+   issue a warning with ``-Wcompat``). But, if a type argument appears anywhere
+   in ``expr``, then ``-XScopedForAlls`` is disabled. This would be backward-compatible,
+   but unfortunately non-local and annoying. I prefer just to skip this
+   migration step.
+
+
+.. _type-let:
+
+``let``-binding types
+~~~~~~~~~~~~~~~~~~~~~
+
+This segment of the proposal goes beyond previous proposals in describing a mechanism
+to use ``let`` to bind type synonyms.
+
+Motivation
+^^^^^^^^^^
+
+1. Users have, from time to time, requested the ability to make local type synonyms.
+   GHC even has a little support for synonyms via equality constraints (e.g., writing
+   ``f :: (a ~ Some Big Type With Lots Of Parts) => Maybe a -> a -> Maybe a``). Instead
+   of encoding this idea via equality constraints, though, it would be nice to support
+   it directly.
+
+#. Now that type variables can stand for types, we can write code like ::
+
+     f :: Maybe Bool -> Bool
+     f (x :: Maybe b) = (True :: b)
+
+   Note that the pattern signature binds ``b`` to ``Bool``. This is, essentially, a ``let``\ -bound
+   type variable: in the scope of ``b``, ``b`` is synonymous with ``Bool``. Yet the only way
+   to make such a ``b`` is via a pattern (or result, `#228`_) signature. Why force users
+   to use matching instead of binding the variable directly.
+
+#. Doing this helps uphold the EBP_.
+
+Specification
+^^^^^^^^^^^^^
+
+1. Create a new extension ``-XExtendedLet``.
+
+#. With ``-XExtendedLet``, add two new productions for ``decl`` (from the `Haskell 2010 Report`_), ::
+
+     decl → 'type' simpletype '=' type
+          → 'type' tyvar '=' type
+
+   and remove the production ``topdecl → 'type' simpletype '=' type`` from ``topdecl``.
+
+   Note that the second form allows a local binding for a lower-case ``tyvar``; these
+   synonyms may not be parameterized.
+
+#. These new declaration forms introduce local type synonyms in terms, which scope over the same
+   region of code that other declarations in the same ``let`` / ``where`` clause scope over.
+
+   Like other type synonyms, local type synonyms may not be recursive.
+
+#. Wildcards are allowed in the right-hand side of local synonyms. At usage sites of the
+   synonym, the synonym is expanded. It is an error if that location does not allow wildcards.
+   The wildcard is understood to stand for just one type shared among all the expansions.
+
+Effects
+^^^^^^^
+
+1. We can now bind local type synonyms, avoiding the need to do so via pattern or result
+   signatures.
+
+#. One challenge is how to present these local synonyms in error messages. It might be
+   best to aggressively expand (unlike top-level type synonyms), especially because these
+   local synonyms might refer to other local type variables that are in scope. As we gain
+   experience with this new form, we can refine their appearance in error messages.
+
+#. Note that this proposal does *not* allow for top-level lower-case type synonyms. There
+   is nothing stopping us from doing so, but it would seem to violate expectations of Haskellers
+   and would be the first instance of a lower-case type variable being in scope at the top level.
+
+``let`` in patterns
+~~~~~~~~~~~~~~~~~~~
+
+This part of this proposal allows introducing a ``let``\ -binding in a pattern.
+The bound variable(s) scope over the same region of code as the pattern-bound
+variables do.
+
+Motivation
+^^^^^^^^^^
+
+1. A careful reader will note that allowing ``let`` for `type synonyms <#type-let>`_
+   does not, by itself, replace a binding such as that in ``f (True :: b) = ...``
+   because the current form binds the type variable in the pattern. This part
+   of the proposal closes this gap. See `examples <#let-in-pattern-example>`_ below.
+
+#. Though admittedly a weakish motivation, there is currently no way to share
+   expressions used in common in multiple view patterns. See `examples <#let-in-pattern-example>`_
+   below.
+
+Specification
+^^^^^^^^^^^^^
+
+1. With ``-XExtendedLet``, add a new form of pattern as follows::
+
+     pat → 'let' decls 'in' pat
+
+#. Any entites bound in ``decls`` scope over the same region of the program
+   that pattern-bound variables scope over, with the addition of the ``decls``
+   themselves (that is, the declarations can be recursive).
+
+.. _let-in-pattern-example:
+
+Examples
+^^^^^^^^
+
+1. Instead of ::
+
+     f :: Maybe Bool -> Bool -> Bool
+     f (x :: Maybe b) (y :: b) = ...
+
+   we can write ::
+
+     f :: Maybe Bool -> Bool -> Bool
+     f (let type b = Bool in x) (y :: b) = ...
+
+   Note that the ``b`` is in scope in the type signature for ``y``.
+
+   If we instead say ::
+
+     f (let type b = _ in (x :: Maybe b)) (y :: b) = ...
+
+   now the choice ``b ~ Bool`` is inferred, but we have an explicit binding
+   site for ``b``, in accordance with the EBP_.
+
+#. Instead of ::
+
+     f x y z (frob x y z -> True) (frob x y z -> False) = ...
+
+   we can write ::
+
+     f x y z (let test = frob x y z in (test -> True)) (test -> False) = ...
+
+   avoiding some repetition.
+
+``let`` in types
+~~~~~~~~~~~~~~~~
+
+This part of the proposal allows ``let`` to be used in types.
+
+Motivation
+^^^^^^^^^^
+
+1. The careful reader will notes that the `secction above <#type-lets>`_ defining
+   the ability to bind type synonyms in ``let`` expressions does not actually address
+   a motivating example. This component of this proposal allows us to avoid repetition
+   within a type signature.
+
+Specification
+^^^^^^^^^^^^^
+
+1. With ``-XExtendedLets``, expand the grammar for types to include the following::
+
+     type → 'let' tdecls 'in' type
+
+     tdecls → '{' tdecl1 ';' ... ';' tdecln '}'
+     tdecl → simpletype '=' type
+           → tyvar '=' type
+
+   Note that we do not include the ``type`` keyword in the grammar above, because
+   we are already in type-syntax.
+
+#. The type synonyms introduced in a ``let`` in types scope over the type after the
+   ``in``.
+
+#. As above, the synonyms may mention wildcards, and the definitions may not be recursive.
+
+Examples
+^^^^^^^^
+
+1. Instead of ::
+
+     f :: forall a b. (c ~ Very Big Type a b) => c -> c -> c
+
+   we can write ::
+
+     f :: forall a b. let c = Very Big Type a b in c -> c -> c
+
+   which more directly expresses what we mean.
+
+Effects
+^^^^^^^
+
+1. This step further unifies term-level and type-level syntax, at low cost.
+
+#. An initial version of this feature will likely want to expand the synonyms
+   aggressively. We can think about ways to preserve synonyms as we gain experience
+   with the feature.
+
+#. This part of the proposal does not directly serve any of the principles outlined
+   at the top of this proposal, but now seems a convenient time to introduce this
+   extension, which should be relatively easy to implement.
 
 Costs and Drawbacks
 -------------------
 
+1. This proposal, if accepted in full, is a pretty drastic change to the way
+   scoped type variables are described and implemented in GHC. However, it is
+   designed to be mostly backward compatible and should affect downstream users
+   rather little.
 
 Alternatives
 ------------
-List alternative designs to your proposed change. Both existing
-workarounds, or alternative choices for the changes. Explain
-the reasons for choosing the proposed change over these alternative:
-*e.g.* they can be cheaper but insufficient, or better but too
-expensive. Or something else.
 
-The PR discussion often raises other potential designs, and they should be
-added to this section. Similarly, if the proposed change
-specification changes significantly, the old one should be listed in
-this section.
+1. It is possible to break this proposal up into smaller pieces. In particular,
+   any of the changes to ``let`` are completely separable from the rest of the
+   proposal and from each other. These pieces are included here only because
+   they fit nicely with the other ideas in this proposal and it would seem to
+   be less jarring to users to get this all done at once. At a minimum, if these
+   pieces are left off, we see here how the design of this proposal is forward
+   compatible with these additions.
 
 Unresolved Questions
 --------------------
-Explicitly list any remaining issues that remain in the conceptual design and
-specification. Be upfront and trust that the community will help. Please do
-not list *implementation* issues.
 
-Hopefully this section will be empty by the time the proposal is brought to
-the steering committee.
-
+None at this time.
 
 Implementation Plan
 -------------------
-(Optional) If accepted who will implement the change? Which other resources
-and prerequisites are required for implementation?
+
+I am very keen to get this implemented and would be happy to support others
+taking on this work or to do it myself.
 
 Endorsements
 -------------
-(Optional) This section provides an opportunty for any third parties to express their
-support for the proposal, and to say why they would like to see it adopted.
-It is not mandatory for have any endorsements at all, but the more substantial
-the proposal is, the more desirable it is to offer evidence that there is
-significant demand from the community.  This section is one way to provide
-such evidence.
+
+Please feel free to submit a PR against this one to add your name here!
