@@ -439,6 +439,7 @@ SAKS zipping works over two lists: quantifiers and binders. Let us define it in
 pseudo-code::
 
   -- Base version (before this proposal)
+  zipSAKS :: [Quantifier] -> [Binder] -> [(Quantifier, Maybe Binder)]
   zipSAKS (q:qs) (b:bs)
     | isInvisibleQuantifier q = (q, Nothing) : zipSAKS qs (b:bs)
     | otherwise               = (q, Just b)  : zipSAKS qs bs
@@ -506,6 +507,7 @@ Primary Change: ``@k``-binders
    To be precise, modify the pseudo-code of ``zipSAKS`` as follows::
 
     -- Updated version
+    zipSAKS :: [Quantifier] -> [Binder] -> [(Quantifier, Maybe Binder)]
     zipSAKS (q:qs) (b:bs)
       | zippable q b  = (q, Just b)  : zipSAKS qs bs
       | skippable q   = (q, Nothing) : zipSAKS qs (b:bs)
