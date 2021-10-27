@@ -409,48 +409,124 @@ thus::
 GHC avoids this question by determining the instance header solely from the
 header.  This proposal simply extends the same principle to type family instances.
 
-Proposed Change Specification
------------------------------
+Proposed Change Specification: Declarations
+-------------------------------------------
 
-Background: SAKS Zipping
-~~~~~~~~~~~~~~~~~~~~~~~~
+Syntax
+~~~~~~
 
-**SAKS zipping** is the part of checking declarations against the corresponding
-standalone kind signature that pairs quantifiers with zero-or-one binders.
+Relax the syntactic check of ``data``, ``newtype``, ``type``, ``class``,
+``type family``, and ``data family`` declarations to allow ``@k``-binders in
+their headers::
 
-Consider the following declaration::
+  tv_bndr ::=
+           | tyvar                         -- variable
+           | '(' tyvar '::' kind ')'       -- variable with kind annotation
+    (NEW)  | '@' tyvar                     -- invisible variable
+    (NEW)  | '@' '(' tyvar '::' kind ')'   -- invisible variable with kind annotation
+    (NEW)  | '@' '_'                       -- wildcard (to skip an invisible quantifier)
+
+The occurrences of ``@`` must be *prefix*, as defined by
+`#229 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0229-whitespace-bang-patterns.rst>`_.
+
+Scope
+~~~~~
+
+In type synonym declarations, require that every variable mentioned on the
+RHS must be bound on the LHS. For three releases before this change takes
+place, include a new warning ``-Wimplicit-rhs-quantification`` in
+``-Wcompat``, to inform users of affected definitions.
+
+Kind Inference
+~~~~~~~~~~~~~~
+
+When a declaration has no standalone kind signature, a ``@k``-binder gives
+rise to a ``forall k.`` quantifier in the inferred kind signature.
+The inferred ``forall k.`` does not float to the left; the order of
+quantifiers continues to match the order of binders in the header.
+
+Kind Checking
+~~~~~~~~~~~~~
+
+To kind-check a declaration that has a standalone kind signature (SAKS), we
+must associate the *quantifiers* of the kind signature with the *binders* of
+the type declaration. We call this **SAKS zipping**. For example, consider the
+following declaration::
 
   type T :: forall a. a -> forall b c. (b, c) -> forall d -> (a ~ b) => Type
-  data T (x :: Type) y z = ...
+  data T (x :: Type) @t y z = ...
 
 Here we produce the following pairs::
 
-    Quantifier  |   Binder
-  --------------+------------
-    forall a.   |
-    a ->        | (x :: Type)
-    forall b.   |
-    forall c.   |
-    (b, c) ->   | y
-    forall d -> | z
-    (a ~ b) =>  |
+      Quantifier  |   Binder
+  ----------------+------------
+  1.  forall a.   |
+  2.  a ->        | (x :: Type)
+  3.  forall b.   | @t
+  4.  forall c.   |
+  5.  (b, c) ->   | y
+  6.  forall d -> | z
+  7.  (a ~ b) =>  |
 
-SAKS zipping works over two lists: quantifiers and binders. Let us define it in
-pseudo-code::
+Notice that each quantifier is associated with either one binder or none.
 
-  -- Base version (before this proposal)
+This association plays two roles:
+
+* It fixes the arity of the type constructor. The arity is the number of
+  quantifiers up to and including the one paired with the last binder. In our
+  example, the last binder is ``z``, which is paired with the sixth quantifier
+  ``forall d ->``, so the arity is ``6`` (see also "Arity Inference" below).
+
+* It associates the kinds in the kind signature with the variables in the
+  declarations. For example, the binder ``y`` is associated with the quantifier
+  ``(b,c) ->``, so ``y`` must have kind ``(b,c)``. Similarly the binder ``@t``
+  is associated with the quantifier ``forall b.``, so ``t`` is simply a name
+  for ``b``.
+
+SAKS zipping works over two lists: quantifiers (from the signature) and binders
+(from the declaration). Let us define it in pseudo-code::
+
   zipSAKS :: [Quantifier] -> [Binder] -> [(Quantifier, Maybe Binder)]
   zipSAKS (q:qs) (b:bs)
-    | isInvisibleQuantifier q = (q, Nothing) : zipSAKS qs (b:bs)
-    | otherwise               = (q, Just b)  : zipSAKS qs bs
+    | zippable q b  = (q, Just b)  : zipSAKS qs bs
+    | skippable q   = (q, Nothing) : zipSAKS qs (b:bs)
+    | otherwise     = error "Unzippable quantifier/binder pair"
   zipSAKS [] (b:bs) = error "Too many binders"
   zipSAKS _ [] = []
 
-``isInvisibleQuantifier`` holds for ``forall a.``, ``forall {a}.``, and ``ctx
-=>``, but does not hold for ``a ->`` or ``forall x ->``.
+  skippable q = isInvisibleQuantifier q
+  zippable q b =
+    (isInvisibleForall q && isInvisibleBinder b) ||
+    (isVisibleQuantifier q && isVisibleBinder b)
 
-Background: Trailing Quantifiers
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Where the predicates are defined as follows (with ``⟦ ... ⟧`` denoting AST quotation)::
+
+  isInvisibleForall :: Quantifier -> Bool
+  isInvisibleForall q = case q of
+    ⟦ forall x.        ⟧  ->  True
+    ⟦ forall (x :: k). ⟧  ->  True
+    _                     ->  False   -- incl. forall {x}.
+
+  isInvisibleBinder :: Binder -> Bool
+  isInvisibleBinder b = case b of
+    ⟦  @k         ⟧   ->  True
+    ⟦  @(k :: s)  ⟧   ->  True
+    ⟦  @_         ⟧   ->  True
+    _                 ->  False
+
+  isVisibleBinder = not . isInvisibleBinder
+
+  isVisibleQuantifier :: Quantifier -> Bool
+  isVisibleQuantifier q = case q of
+    ⟦  a ->                ⟧   ->  True
+    ⟦  forall x ->         ⟧   ->  True
+    ⟦  forall (x :: k) ->  ⟧   ->  True
+    _                          ->  False
+
+  isInvisibleQuantifier = not . isVisibleQuantifier
+
+Arity Inference
+~~~~~~~~~~~~~~~
 
 When SAKS zipping is done, some quantifiers may remain. Consider::
 
@@ -466,13 +542,18 @@ The produced pairs are::
 
 Zipping stops when binders are exhausted, so the ``forall b.`` does not yield a
 pair. Instead, it becomes a part of the return type. We call the remaining
-quantifiers **trailing**.
+quantifiers *trailing*.
 
-During arity inference, it is determined how many of the trailing ``forall``
-quantifiers are included in the arity of a type synonym or type family.
+In today's GHC, there is an additional step called *arity inference* to decide
+which of the trailing quantifiers to include in the arity in addition to the
+zipped ones.
 
-Background: Inferred vs Invisible Variables
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+We propose to remove this step entirely, so that the arity is fully determined
+by SAKS zipping, as ``@k``-binders provide the same control over arity but in a
+more principled way.
+
+Inferred Variables
+~~~~~~~~~~~~~~~~~~
 
 In addition to visible (``forall x ->``) and invisible (``forall x.``)
 quantification, GHC features inferred quantification ``forall {x}.``.
@@ -480,78 +561,23 @@ quantification, GHC features inferred quantification ``forall {x}.``.
 We leave it out of scope of this proposal and intentionally do not introduce
 ``@{k}``-binders.  See "Alternatives" for reasoning.
 
-Primary Change: ``@k``-binders
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Proposed Change Specification: Instances
+----------------------------------------
 
-1. Relax the syntactic check of ``data``, ``newtype``, ``type``, ``class``,
-   ``type family``, and ``data family`` declarations to allow ``@k``-binders in
-   their headers::
+The changes to instances are not directly related to the main body of the
+proposal, but they are close to it in spirit, so we include them here.
 
-     tv_bndr ::=
-              | tyvar                         -- variable
-              | '(' tyvar '::' kind ')'       -- variable with kind annotation
-       (NEW)  | '@' tyvar                     -- invisible variable
-       (NEW)  | '@' '(' tyvar '::' kind ')'   -- invisible variable with kind annotation
-       (NEW)  | '@' '_'                       -- wildcard (to skip an invisible quantifier)
+Scope
+~~~~~
 
-   The occurrences of ``@`` must be *prefix*, as defined by
-   `#229 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0229-whitespace-bang-patterns.rst>`_.
+In type family and data family instances, require that every variable
+mentioned on the RHS must also occur on the LHS.
 
-2. When a declaration has no standalone kind signature, a ``@k``-binder gives
-   rise to a ``forall k.`` quantifier in the inferred kind signature.
-   The inferred ``forall k.`` does not float to the left; the order of
-   quantifiers continues to match the order of binders in the header.
+Instantiation
+~~~~~~~~~~~~~
 
-3. When a standalone kind signature is given, modify the process of zipping
-   binders with quantifiers to match ``@k``-binders and ``forall k.``-quantifiers.
-   To be precise, modify the pseudo-code of ``zipSAKS`` as follows::
-
-    -- Updated version
-    zipSAKS :: [Quantifier] -> [Binder] -> [(Quantifier, Maybe Binder)]
-    zipSAKS (q:qs) (b:bs)
-      | zippable q b  = (q, Just b)  : zipSAKS qs bs
-      | skippable q   = (q, Nothing) : zipSAKS qs (b:bs)
-      | otherwise     = error "Unzippable quantifier/binder pair"
-    zipSAKS [] (b:bs) = error "Too many binders"
-    zipSAKS _ [] = []
-
-    skippable q = isInvisibleQuantifier q
-    zippable q b =
-      (isInvisibleForall q && isInvisibleBinder b) ||
-      (isVisibleQuantifier q && isVisibleBinder b)
-
-   ``isInvisibleForall`` holds for the ``forall x.`` quantifier only, but does
-   not hold for ``forall {x}.`` or any other quantifier.
-
-   ``isInvisibleBinder`` holds for ``@k``, ``@(k :: s)``, and ``@_``, but does
-   not hold for ``k`` or ``(k :: s)``. ``isVisibleBinder`` is the opposite.
-
-   ``isVisibleQuantifier`` holds for ``a ->`` and ``forall x ->`` only.
-   ``isInvisibleQuantifier`` is the opposite.
-
-   This implies that within a single declaration, some ``forall x.``
-   quantifiers may be zipped with binders, while others are not.
-
-Secondary Change: Arity Inference
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-4. During arity inference, do not include trailing ``forall x.`` quantifiers in
-   the arity.
-
-Secondary Change: Scoping Rules
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-5. In type synonym declarations, require that every variable mentioned on the
-   RHS must be bound on the LHS.
-
-6. In type family and data family instances, require that every variable
-   mentioned on the RHS must also occur on the LHS.
-
-Secondary Change: Instantiation Rules
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-7. In type family and data family instances, the instantiation is fully
-   determined by the left hand side, without looking at the right hand side.
+In type family and data family instances, the instantiation is fully
+determined by the left hand side, without looking at the right hand side.
 
 Examples
 --------
@@ -572,7 +598,7 @@ the fully-explicit version is::
 
 Notice the repeated ``b`` on the LHS. The author was entirely unaware that the
 resulting type family was partial, because the equation he wrote looked total.
-With change (7), the original program::
+With the proposed change to instantiation, the original program::
 
   type family Trans pa pb where
     Trans rel MkR = rel
@@ -589,14 +615,9 @@ saved Jakob some time.
 Effect and Interactions
 -----------------------
 
-* Changes (1), (2), and (3) provide the programmer with a more principled way
-  of brining type variables into scope in certain corner cases.
-
-* Changes (4), (5), and (6) simplify arity inference and scoping rules, but they are
-  all breaking changes that rely on the new form of binders. We may want to introduce
-  migratory warnings before pulling the trigger.
-
-* Change (7) does not require a migration strategy.
+The proposed changes provide the programmer with a more principled way of
+brining type variables into scope in certain corner cases, simplify arity
+inference and scoping rules.
 
 Costs and Drawbacks
 -------------------
