@@ -76,112 +76,112 @@ principles, but relax them when doing so is well motivated.
 
 .. _LSP:
 
-* **Lexical Scoping Principle (LSP)**. For every occurrence of an identifier, it is possible to uniquely identify its binding site, without involving the type system. (From `#378`_.)
+1. **Lexical Scoping Principle (LSP)**. For every occurrence of an identifier, it is possible to uniquely identify its binding site, without involving the type system. (From `#378`_.)
 
-  The LSP implies
+   The LSP implies
 
 .. _LSPC:
 
-  **Lexical Scoping Principle Corollary (LSPC)**. For every appearance of an identifier
-  in a Haskell program, it is possible to determine whether that appearance is a
-  binding site or an occurrence, without involving the type system.
+   **Lexical Scoping Principle Corollary (LSPC)**. For every appearance of an identifier
+   in a Haskell program, it is possible to determine whether that appearance is a
+   binding site or an occurrence, without involving the type system.
 
-  Motivation: These principles mean that we can understand the binding
-  structure of a program without relying on type inference, important both for the
-  implementation of GHC and the sanity of programmers.
+   Motivation: These principles mean that we can understand the binding
+   structure of a program without relying on type inference, important both for the
+   implementation of GHC and the sanity of programmers.
 
 .. _SUP:
 
-* **Syntactic Unification Principle (SUP)**. In the absence of punning, there is no difference between type-syntax and term-syntax.
-  (From `#378`_.)
+#. **Syntactic Unification Principle (SUP)**. In the absence of punning, there is no difference between type-syntax and term-syntax.
+   (From `#378`_.)
 
-  Motivation: The SUP keeps us forward-compatible with a possible future where the
-  distinction between term-syntax and type-syntax is removed.
+   Motivation: The SUP keeps us forward-compatible with a possible future where the
+   distinction between term-syntax and type-syntax is removed.
 
 .. _EVP:
 
-* **Explicit Variable Principle (EVP)**. It is possible to write out all
-  type arguments in every polymorphic function application,
-  give the type for every bound variable,
-  and write a type signature for every expression. This requires the ability to
-  bring type variables into scope. These variables can be brought into scope
-  without relying on matching or unification.
+#. **Explicit Variable Principle (EVP)**. It is possible to write out all
+   type arguments in every polymorphic function application,
+   give the type for every bound variable,
+   and write a type signature for every expression. This requires the ability to
+   bring type variables into scope. These variables can be brought into scope
+   without relying on matching or unification.
 
-  Examples::
+   Examples::
 
-    const :: a -> b -> a
-    const x y = ...    -- there must be some way to name the types of x and y here
-    -- using `const (x :: a) (y :: b) = ...` is not powerful enough, because it relies
-    -- on matching the pattern signature with the argument type from the type signature
+     const :: a -> b -> a
+     const x y = ...    -- there must be some way to name the types of x and y here
+     -- using `const (x :: a) (y :: b) = ...` is not powerful enough, because it relies
+     -- on matching the pattern signature with the argument type from the type signature
 
-    data Ex = forall a. Ex a
-    f (Ex x) = ...     -- there must be some way to name the type of x here
+     data Ex = forall a. Ex a
+     f (Ex x) = ...     -- there must be some way to name the type of x here
 
-    hr :: (forall a. a -> a -> a) -> ...
-    hr = ...
-    g = hr (\ x y -> ...)   -- there must be some way to name the type of x or y here
+     hr :: (forall a. a -> a -> a) -> ...
+     hr = ...
+     g = hr (\ x y -> ...)   -- there must be some way to name the type of x or y here
 
-  Once we have the EVP, there will never be a need for ``Proxy``.
+   Once we have the EVP, there will never be a need for ``Proxy``.
 
-  Motivation: As GHC supports more and more type-level programming, the ability
-  to write out type signatures, arguments, and annotations has become increasingly
-  important. With ``-XScopedTypeVariables``, GHC allows us to bring type variables
-  into scope, but often requires us to do so by cumbersome matching. If we have
-  a type ``Maybe (Either (Int, Bool, a) Double)``, that's a lot to type just to
-  be able to, say, bind ``a``. The EVP says we do *not* have to resort to matching,
-  ever.
+   Motivation: As GHC supports more and more type-level programming, the ability
+   to write out type signatures, arguments, and annotations has become increasingly
+   important. With ``-XScopedTypeVariables``, GHC allows us to bring type variables
+   into scope, but often requires us to do so by cumbersome matching. If we have
+   a type ``Maybe (Either (Int, Bool, a) Double)``, that's a lot to type just to
+   be able to, say, bind ``a``. The EVP says we do *not* have to resort to matching,
+   ever.
 
 .. _EBP:
 
-* **Explicit Binding Principle (EBP)**. Through the right combination of extensions and/or warning flags, it is possible
-  for a Haskell programmer to ensure that all identifiers in a program have an explicit binding site.
+#. **Explicit Binding Principle (EBP)**. Through the right combination of extensions and/or warning flags, it is possible
+   for a Haskell programmer to ensure that all identifiers in a program have an explicit binding site.
 
-  Examples::
+   Examples::
 
-    id :: a -> a    -- the variable `a` has no explicit binding site, but we can write `forall a.` to provide one
+     id :: a -> a    -- the variable `a` has no explicit binding site, but we can write `forall a.` to provide one
 
-    f :: (Bool, Bool) -> Bool
-    not (x :: (b, b)) = ...   -- the variable `b` is bound to `Bool` by this
-                              -- pattern signature. But either this is done by
-                              -- matching (in violation of the EVP) or the binding
-                              -- site is implicit (in violation of the EBP).
+     f :: (Bool, Bool) -> Bool
+     not (x :: (b, b)) = ...   -- the variable `b` is bound to `Bool` by this
+                               -- pattern signature. But either this is done by
+                               -- matching (in violation of the EVP) or the binding
+                               -- site is implicit (in violation of the EBP).
 
-  Motivation: The EBP allows programmers to control exactly how variables come into
-  scope. It also prevents the possibility of typos that accidentally introduce new
-  variables.
+   Motivation: The EBP allows programmers to control exactly how variables come into
+   scope. It also prevents the possibility of typos that accidentally introduce new
+   variables.
 
 .. _VOP:
 
-* **Visibility Orthogonality Principle (VOP)**. Whether an argument is visible or
-  invisible should affect only its visibility, not other properties.
+#. **Visibility Orthogonality Principle (VOP)**. Whether an argument is visible or
+   invisible should affect only its visibility, not other properties.
 
-  A consequence of the VOP is that these two programs should have the same meaning::
+   A consequence of the VOP is that these two programs should have the same meaning::
 
-    f1 :: forall a -> ...
-    f1 blah1 = ...
+     f1 :: forall a -> ...
+     f1 blah1 = ...
 
-    g1 = ... f1 blah2 ...
+     g1 = ... f1 blah2 ...
 
-    -------
+     -------
 
-    f2 :: forall a. ...
-    f2 @(blah1) = ...
+     f2 :: forall a. ...
+     f2 @(blah1) = ...
 
-    g2 = ... f2 @(blah2) ...
+     g2 = ... f2 @(blah2) ...
 
-  The only difference between these is the visibility.
+   The only difference between these is the visibility.
 
-  Motivation: Visibility should be just that: a superficial property that describes
-  (only) whether an argument is visible in the user-written source code.
+   Motivation: Visibility should be just that: a superficial property that describes
+   (only) whether an argument is visible in the user-written source code.
 
 .. _PEDP:
 
-* **Pattern/Expression Duality Principle (PEDP)**. The syntax for patterns mimics
-  that of expressions, allowing an expression headed by a constructor to be pattern-matched
-  against a pattern of the same syntactic structure.
+#. **Pattern/Expression Duality Principle (PEDP)**. The syntax for patterns mimics
+   that of expressions, allowing an expression headed by a constructor to be pattern-matched
+   against a pattern of the same syntactic structure.
 
-  Motivation: This is the essence of pattern-matching, where we can deconstruct data
-  that was constructed by an expression.
+   Motivation: This is the essence of pattern-matching, where we can deconstruct data
+   that was constructed by an expression.
 
 .. _universals-and-existentials:
 
@@ -1224,6 +1224,36 @@ Effects
 #. This part of the proposal does not directly serve any of the principles outlined
    at the top of this proposal, but now seems a convenient time to introduce this
    extension, which should be relatively easy to implement.
+
+Effects and Interactions
+------------------------
+
+The effects of this proposal are written out in the individual sections. Here,
+I summarize the effects on the principles_ laid out above.
+
+1. The LSPC_ is upheld. Binders occur in patterns, after ``forall``, in
+   ``let`` declarations, and a few other discrete places in the AST -- and
+   nowhere else. In particular, binders do not occur in pattern signatures.
+   Instead, with ``-XPatternSignatureBinds``, an occurrence of an out-of-scope
+   variable ``a`` induces a ``let type a = _ in`` to be prefixed to the pattern.
+
+#. The SUP_ is supported. The new ``let`` syntax in types is a strict subset
+   of its syntax in terms, and the semantics are compatible.
+
+#. The EVP_ is made to hold, by allowing explicit binders for type variables
+   for existentials and the variables bound by an inner ``forall`` in a higher-rank
+   type.
+
+#. The EBP_ is made to hold, by introducing ``-XNoImplicitForAll`` and
+   ``-XNoPatternSignatureBinds``.
+
+#. The VOP_ is made to hold, by ensuring that types and terms are treated identically
+   in patterns.
+
+#. The PEDP_ is respected, by allowing space for universals in patterns. It is up
+   to a future proposal to figure out how universals can be instantiated in patterns,
+   but this current proposal is future-compatible with other ideas, and it retains
+   the correspondence between arguments in patterns and arguments in expressions.
 
 Costs and Drawbacks
 -------------------
