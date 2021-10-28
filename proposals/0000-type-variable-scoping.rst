@@ -79,7 +79,7 @@ principles, but relax them when doing so is well motivated.
 
    The LSP implies
 
-.. _LSPC:
+   .. _LSPC:
 
    **Lexical Scoping Principle Corollary (LSPC)**. For every appearance of an identifier
    in a Haskell program, it is possible to determine whether that appearance is a
@@ -89,17 +89,31 @@ principles, but relax them when doing so is well motivated.
    structure of a program without relying on type inference, important both for the
    implementation of GHC and the sanity of programmers.
 
-.. _SUP:
+   .. _LLSP:
 
-2. **Syntactic Unification Principle (SUP)**. In the absence of punning, there is no difference between type-syntax and term-syntax.
+#. **Local Lexical Scoping Principle (LLSP)**. For every occurrence of an identifier, it is possible to determine
+   whether that appearance is a binding site or an occurrence, without looking to see what identifiers are
+   already in scope.
+
+   This is a variant of the LSPC_ that also prevents us from looking at the set of in-scope identifiers for determining
+   whether something is a binding site.
+
+   Motivation: Tracking the set of in-scope variables is laborious for human readers. (The compiler is already
+   doing this during name resolution.) This fact becomes even more poignant if we consider the possibility
+   of mixing the term-level and type-level namespaces (`#270`_) and need to think about clashes between type
+   variables and imported term variables.
+
+   .. _SUP:
+
+#. **Syntactic Unification Principle (SUP)**. In the absence of punning, there is no difference between type-syntax and term-syntax.
    (From `#378`_.)
 
    Motivation: The SUP keeps us forward-compatible with a possible future where the
    distinction between term-syntax and type-syntax is removed.
 
-.. _EVP:
+   .. _EVP:
 
-3. **Explicit Variable Principle (EVP)**. It is possible to write out all
+#. **Explicit Variable Principle (EVP)**. It is possible to write out all (specified)
    type arguments in every polymorphic function application,
    give the type for every bound variable,
    and write a type signature for every expression. This requires the ability to
@@ -130,9 +144,9 @@ principles, but relax them when doing so is well motivated.
    be able to, say, bind ``a``. The EVP says we do *not* have to resort to matching,
    ever.
 
-.. _EBP:
+   .. _EBP:
 
-4. **Explicit Binding Principle (EBP)**. Through the right combination of extensions and/or warning flags, it is possible
+#. **Explicit Binding Principle (EBP)**. Through the right combination of extensions and/or warning flags, it is possible
    for a Haskell programmer to ensure that all identifiers in a program have an explicit binding site.
 
    Examples::
@@ -149,9 +163,9 @@ principles, but relax them when doing so is well motivated.
    scope. It also prevents the possibility of typos that accidentally introduce new
    variables.
 
-.. _VOP:
+   .. _VOP:
 
-5. **Visibility Orthogonality Principle (VOP)**. Whether an argument is visible or
+#. **Visibility Orthogonality Principle (VOP)**. Whether an argument is visible or
    invisible should affect only its visibility, not other properties.
 
    A consequence of the VOP is that these two programs should have the same meaning::
@@ -173,9 +187,9 @@ principles, but relax them when doing so is well motivated.
    Motivation: Visibility should be just that: a superficial property that describes
    (only) whether an argument is visible in the user-written source code.
 
-.. _PEDP:
+   .. _PEDP:
 
-6. **Pattern/Expression Duality Principle (PEDP)**. The syntax for patterns mimics
+#. **Pattern/Expression Duality Principle (PEDP)**. The syntax for patterns mimics
    that of expressions, allowing an expression headed by a constructor to be pattern-matched
    against a pattern of the same syntactic structure.
 
@@ -236,7 +250,7 @@ and thus the choice must be the same for both.
 and occurrence is made depending on whether a type variable is already in scope. For the last
 ``f`` example, `#126`_ rejects because we cannot know that the existential type variable will
 be ``d``. (That is, there is no shadowing.) Using in-scopedness to choose between binding site
-and occurrence is not in violation of the LSPC_.
+and occurrence is not in violation of the LSPC_, but it is in violation of the otherwise-respected LLSP_.
 
 **Treatment of term variables**. However, consider how this design compares with the treatment of ordinary expression patterns.
 For example::
@@ -313,9 +327,13 @@ Proposed Changes
 Extension shuffling
 ~~~~~~~~~~~~~~~~~~~
 
-1. Introduce ``-XPatternSignatures``. With ``-XPatternSignatures``, we
+1. Re-purpose deprecated extension ``-XPatternSignatures``. With ``-XPatternSignatures``, we
    allow type signatures in patterns. These signatures can mention in-scope
    type variables as variable occurrences, but can not bind type variables.
+
+   The current ``-XPatternSignatures`` is just a synonym for ``-XScopedTypeVariables``.
+   This change is thus not backward-compatible, but given that the existing extension
+   is deprecated, I think this change is acceptable.
 
    Motivation: See rejected proposal `#119`_, which contains the motivation here.
 
@@ -347,6 +365,8 @@ Extension shuffling
    * Function bindings
    * Pattern synonym bindings (including in any ``where`` clause)
    * Expression type signatures
+
+   (Alternative name: ``-XExtendedForAllScope``. See `Vlad's comment <https://github.com/ghc-proposals/ghc-proposals/pull/448#discussion_r738276607>`_.).
 
 #. The extension ``-XScopedTypeVariables`` would imply all of the above
    extensions; this way, ``-XScopedTypeVariables`` does not change from its
@@ -645,7 +665,7 @@ Specification
 #. Type applications in constructor patterns do *not* affect whether
    the pattern-match is successful.
 
-#. Type applications in constructor patterns must correspond to ``forall``
+#. Type applications in constructor patterns must correspond to ``forall … .``
    quantifications in the declared constructor or pattern synonym type.
    (Right now, pattern synonyms require all such quantifications to occur
    before any term arguments, but accepted proposal `#402`_ allows these
@@ -711,7 +731,9 @@ Effects
 #. Forbidding instantiation of universals is to uphold the VOP_ and LSPC_.
 
 #. Having type variables have the same behavior as term variables with
-   respect to shadowing (and repeated binding) upholds the VOP_.
+   respect to shadowing (and repeated binding) upholds the VOP_. In addition,
+   the fact that type variables are unconditionally brought into scope upholds
+   the LLSP_.
 
 #. Allowing users to write ``@_`` for universal arguments upholds the PEDP_.
    An alternative would be simply to skip universals in patterns (as Coq does,
@@ -900,7 +922,7 @@ A. With ``-XTypeAbstractions``, introduce a new form of pattern (cf. The `Haskel
 
 #. (Optional extra) If ``-XTypeAbstractions`` is in effect, then a function
    binding may use ``@(..)`` on its left-hand side. Here is the BNF (cf. the
-   `Haskell 2010 Report <https://www.haskell.org/onlinereport/haskell2010/haskellch4.html#x10-800004.4>`_, Section 4.4.3), recalling that braces mean "0 or more"::
+   `Haskell 2010 Report`_, Section 4.4.3), recalling that braces mean "0 or more"::
 
      funlhs  →  var apat { apat }
              |  pat varop pat
@@ -919,7 +941,7 @@ A. With ``-XTypeAbstractions``, introduce a new form of pattern (cf. The `Haskel
    would have ``a`` and ``b`` in scope in the ``RHS``.
 
    The ``@(..)`` construct works for both *specified* and *inferred* variables,
-   and is additionally avaialable in pattern synonym pattern bindings (where it
+   and is additionally available in pattern synonym pattern bindings (where it
    brings into scope only universals) and pattern synonym expression bindings
    (where is brings into scope both universals and existentials). (In an implicitly
    bidirectional pattern synonym, the ``@(..)`` brings into scope only universals.)
@@ -1078,6 +1100,8 @@ Specification
    Note that the second form allows a local binding for a lower-case ``tyvar``; these
    synonyms may not be parameterized.
 
+#. The form ``decl → 'type' tyvar '=' type`` is not allowed at top-level.
+
 #. These new declaration forms introduce local type synonyms in terms, which scope over the same
    region of code that other declarations in the same ``let`` / ``where`` clause scope over.
 
@@ -1109,6 +1133,9 @@ This part of this proposal allows introducing a ``let``\ -binding in a pattern.
 The bound variable(s) scope over the same region of code as the pattern-bound
 variables do.
 
+The syntax for this feature is a bit awkward, and so this proposal presents
+two alternatives for discussion.
+
 Motivation
 ^^^^^^^^^^
 
@@ -1121,14 +1148,63 @@ Motivation
    expressions used in common in multiple view patterns. See `examples <#let-in-pattern-example>`_
    below.
 
-Specification
-^^^^^^^^^^^^^
+Specification Alternative 1
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 1. With ``-XExtendedLet``, add a new form of pattern as follows::
 
      pat → 'let' decls 'in' pat
 
 #. Any entites bound in ``decls`` scope over the same region of the program
+   that pattern-bound variables scope over, with the addition of the ``decls``
+   themselves (that is, the declarations can be recursive).
+
+Specification Alternative 2
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+0. **Background**. Here are some productions from the `Haskell 2010 Report`_::
+
+     funlhs → var apat {apat}
+            | pat varop pat
+            | '(' funlhs ')' apat {apat}
+
+     apat → gcon
+          | literal
+          | …
+
+     lexp → '\' apat1 … apatn '->' exp   (n ≧ 1)
+          | …
+
+     lpat → apat
+          | '-' (integer|float)
+          | gcon apat1 … apatn
+
+   (Recall that braces mean "0 or more".)
+
+1. With ``-XExtendedLet``, change the grammar to be ::
+
+     funlhs → var apats1
+            | pat varop pat
+            | '(' funlhs ')' apats
+
+     apats1 → apat
+            | apat apats
+            | '(' 'let' decls ')' apats
+
+     apats →
+           | apats1
+
+     lexp → '\' apats1 '->' exp
+          | …
+
+     lpat → apat
+          | '-' (integer|float)
+          | gcon apats
+
+   This allows phrases like ``f x (let y = g x x) (frob y -> True) = ...``, where we can include
+   a ``let`` construct in the middle of a list of patterns. The pattern grammar itself is unaffected.
+
+2. Any entities bound in ``decls`` scope over the same region of the program
    that pattern-bound variables scope over, with the addition of the ``decls``
    themselves (that is, the declarations can be recursive).
 
@@ -1142,16 +1218,25 @@ Examples
      f :: Maybe Bool -> Bool -> Bool
      f (x :: Maybe b) (y :: b) = ...
 
-   we can write ::
+   we can write (Alternative 1) ::
 
      f :: Maybe Bool -> Bool -> Bool
      f (let type b = Bool in x) (y :: b) = ...
 
+   or (Alternative 2) ::
+
+     f :: Maybe Bool -> Bool -> Bool
+     f (let type b = Bool) x (y :: b) = ...
+
    Note that the ``b`` is in scope in the type signature for ``y``.
 
-   If we instead say ::
+   If we instead say (Alternative 1) ::
 
      f (let type b = _ in (x :: Maybe b)) (y :: b) = ...
+
+   or (Alternative 2) ::
+
+     f (let type b = _) (x :: Maybe b) (y :: b) = ...
 
    now the choice ``b ~ Bool`` is inferred, but we have an explicit binding
    site for ``b``, in accordance with the EBP_.
@@ -1160,9 +1245,13 @@ Examples
 
      f x y z (frob x y z -> True) (frob x y z -> False) = ...
 
-   we can write ::
+   we can write (Alternative 1) ::
 
      f x y z (let test = frob x y z in (test -> True)) (test -> False) = ...
+
+   or (Alternative 2) ::
+
+     f x y z (let test = frob x y z) (test -> True) (test -> False) = ...
 
    avoiding some repetition.
 
@@ -1235,6 +1324,10 @@ I summarize the effects on the principles_ laid out above.
    nowhere else. In particular, binders do not occur in pattern signatures.
    Instead, with ``-XPatternSignatureBinds``, an occurrence of an out-of-scope
    variable ``a`` induces a ``let type a = _ in`` to be prefixed to the pattern.
+
+#. The LLSP_ is made to hold, by describing pattern-signature binds as occurrences
+   and making type applications in patterns unconditionally bring new variables
+   into scope.
 
 #. The SUP_ is supported. The new ``let`` syntax in types is a strict subset
    of its syntax in terms, and the semantics are compatible.
