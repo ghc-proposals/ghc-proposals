@@ -89,8 +89,24 @@ We propose a module-level means of switching off the use of ``fail`` in ``do``\ 
 Specifically, there is a extension flag ``FallibleDo``, which is enabled by default, that controls the desugaring of fallible patterns in ``do``\ -notation binds (i.e. ``pat <- stmt`` syntax).
 
 With ``FallibleDo``, the usual translation of the ``do``\ -syntax involving ``fail`` is used.
-With ``NoFallibleDo`` the use of ``fail`` is replaced with the usual throwing of a `PatternMatchFail <https://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Exception.html#t:PatternMatchFail>`_.
+GHC *currently* extends the Haskell Report with the aformentioned heuristic since ``MonadFail``, giving us the moral equalivalent of::
 
+  do {p <- e; stmts} =
+    let ok p = do {stmts}
+  #if MIGHT_BE_INCOMPLETE(p)
+        ok _ = fail "..." -- induces MonadFail
+  #endif
+    in e >>= ok
+
+With ``NoFallibleDo`` the wildcard alternative with ``fail`` is unconditionaly gotten rid of, therby also removing the heuristic::
+
+  do {p <- e; stmts} =
+    let ok p = do {stmts}
+    in e >>= ok
+
+There is crucially no longer any variation in mean for heuristics to control.
+
+If the pattern is incomplete we would instead get the usual throwing of a `PatternMatchFail <https://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Exception.html#t:PatternMatchFail>`_.
 When the ``-Wincomplete-uni-patterns`` warning flag is enabled alongside ``NoFallibleDo``, we will warn about the incomplete pattern match.
 
 Monad comprehensions are not affected by this extension.
