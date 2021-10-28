@@ -90,7 +90,7 @@ principles, but relax them when doing so is well motivated.
 
 .. _SUP:
 
-#. **Syntactic Unification Principle (SUP)**. In the absence of punning, there is no difference between type-syntax and term-syntax.
+2. **Syntactic Unification Principle (SUP)**. In the absence of punning, there is no difference between type-syntax and term-syntax.
    (From `#378`_.)
 
    Motivation: The SUP keeps us forward-compatible with a possible future where the
@@ -98,7 +98,7 @@ principles, but relax them when doing so is well motivated.
 
 .. _EVP:
 
-#. **Explicit Variable Principle (EVP)**. It is possible to write out all
+3. **Explicit Variable Principle (EVP)**. It is possible to write out all
    type arguments in every polymorphic function application,
    give the type for every bound variable,
    and write a type signature for every expression. This requires the ability to
@@ -131,7 +131,7 @@ principles, but relax them when doing so is well motivated.
 
 .. _EBP:
 
-#. **Explicit Binding Principle (EBP)**. Through the right combination of extensions and/or warning flags, it is possible
+4. **Explicit Binding Principle (EBP)**. Through the right combination of extensions and/or warning flags, it is possible
    for a Haskell programmer to ensure that all identifiers in a program have an explicit binding site.
 
    Examples::
@@ -150,7 +150,7 @@ principles, but relax them when doing so is well motivated.
 
 .. _VOP:
 
-#. **Visibility Orthogonality Principle (VOP)**. Whether an argument is visible or
+5. **Visibility Orthogonality Principle (VOP)**. Whether an argument is visible or
    invisible should affect only its visibility, not other properties.
 
    A consequence of the VOP is that these two programs should have the same meaning::
@@ -174,7 +174,7 @@ principles, but relax them when doing so is well motivated.
 
 .. _PEDP:
 
-#. **Pattern/Expression Duality Principle (PEDP)**. The syntax for patterns mimics
+6. **Pattern/Expression Duality Principle (PEDP)**. The syntax for patterns mimics
    that of expressions, allowing an expression headed by a constructor to be pattern-matched
    against a pattern of the same syntactic structure.
 
