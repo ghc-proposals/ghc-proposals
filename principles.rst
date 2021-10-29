@@ -23,7 +23,9 @@ a change to GHC.
 
 We urge proposers to resist the temptation to propose principles without an
 accompanying concrete change to GHC. Debating principles in the abstract does
-not seem a productive use of time, though it is possible to imagine exceptions.
+not seem a productive use of time, though it is possible to imagine exceptions. 
+For example, the justification for the rejection of a proposal may be distilled into
+a new principle here.
 
 All principles in this document are linked back to the PR that introduce them,
 so that readers can learn the context in which they were written.
