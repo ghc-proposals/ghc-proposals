@@ -611,6 +611,11 @@ Effects
    wrinkle around #17021 in ``Note [Implementation of UnliftedNewtypes]``
      in ``GHC.Tc.TyCl``.
 
+#. This design violates the LLSP_, in that, if we see ``Mk :: forall a. a -> T a``,
+   the first ``a`` is a binder if ``a`` is not already in scope, but is not a binder
+   if ``a`` is already in scope. See the `alternative approach <#gadt-alternative>`_
+   below.
+
 Drawbacks
 ^^^^^^^^^
 
@@ -620,11 +625,40 @@ Drawbacks
 Alternatives
 ^^^^^^^^^^^^
 
-1. We could come up with another scheme for telling universals from
-   existentials. (For example: we could say that a bare variable used
-   as an argument in the result type is a universal.) Doing so would
-   address the need to distinguish universals from existentials, but
-   would not fix the type-inference trouble.
+.. _gadt-alternative:
+
+1. Instead of having the variables in the header directly scope over
+   the constructors, we could instead compute a variable renaming for
+   each constructor. It would work like this, operating over each
+   constructor ``K`` of a type ``T`` separately:
+
+   * Let ``R`` represent a *renaming*, mapping variables in scope
+     in the result type of ``K`` (domain) to variables mentioned in the declaration
+     header (codomain). ``R`` starts empty.
+
+   * Let ``tv1 .. tvn`` represent the variables mentioned in the
+     declaration header for ``T``.
+
+   * Look at the result type of ``K`` and extract out the
+     type arguments to ``T``. Call these arguments ``arg1 .. argn``,
+     where ``T`` has arity ``n``.
+
+   * For each ``argi``: if ``argi`` is a bare variable ``v`` that is not
+     already included in the domain of ``R``, add a mapping to ``R``
+     from ``v`` to ``tvi``.
+
+   * The key set of ``R`` is precisely the set of universal variables
+     of ``K``; any other variable introduced in ``K``\ 's type is an
+     existential.
+
+   * During kind inference, treat an occurrence of a variable ``v``
+     in the key set of ``R`` as if it were an occurrence of ``R(v)``.
+
+   Note that the algorithm above does *not* depend on type or kind inference;
+   it is a straightforward pass over the abstract syntax of the constructor.
+
+   This version preserves today's scoping rules (and upholds the LLSP_). It
+   is backward-compatible. But it is subtler. Maybe it is better, regardless.
 
 #. We could offer users a migration period, where we warn about this
    impending change. I see no easy way of implementing such a check,
