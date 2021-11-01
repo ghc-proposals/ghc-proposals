@@ -2,12 +2,11 @@ Visible ``forall`` in types of terms
 ====================================
 
 .. author:: Vladislav Zavialov
-.. date-accepted::
-.. proposal-number::
+.. date-accepted:: 2021-11-01
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/281>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/281>`_.
 .. sectnum::
 .. contents::
 
