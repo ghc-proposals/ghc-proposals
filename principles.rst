@@ -80,5 +80,5 @@ not be affected by it.
 
 This principle is violated in various ways today: it is easy for GHC to generate error messages that refer to
 advanced features even when writing simple code. In addition, the existence of advanced features likely slow
-down GHC even when those features are not active. Yet this principle is an important to keep in mind going forward,
+down GHC even when those features are not active. Yet this principle is important to keep in mind going forward,
 as we hope not to make the current situation worse.
