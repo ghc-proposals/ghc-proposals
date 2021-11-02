@@ -342,8 +342,8 @@ Extension shuffling
    and would remain in scope over the
    same region of code that term-level variables introduced in a pattern scope
    over. In addition, any out-of-scope type variable introduced in a type signature of a
-    ``forall``\ -bound variable of a ``RULES`` pragma is similarly scoped over the
-    rule. This extension is on by default.
+   ``forall``\ -bound variable of a ``RULES`` pragma is similarly scoped over the
+   rule. This extension is on by default.
    (This extension is a part of accepted, unimplemented proposal
    `#285`_.)
 
