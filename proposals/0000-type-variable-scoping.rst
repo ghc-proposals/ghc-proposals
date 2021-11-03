@@ -197,8 +197,6 @@ principles, but relax them when doing so is well motivated.
    Motivation: This is the essence of pattern-matching, where we can deconstruct data
    that was constructed by an expression.
 
-.. _universalsandexistentials:
-
 Universals and existentials
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -423,7 +421,7 @@ Motivation
 ^^^^^^^^^^
 
 1. This new version makes the distinction between universals and existentials in constructors
-   very clear, as required by the analysis above (`universalsandexistentials`_).
+   very clear, as required by the analysis above (`universals-and-existentials`_).
 
 #. Principled kind inference is, I believe, impossible using the current syntax. This is argued
    in `Appendix B.8 <https://richarde.dev/papers/2020/kind-inference/kind-inference-supplement.pdf#subsection.B.8>`_ of the `Kind Inference for Datatypes`_ paper. The current approach allows some examples of polymorphic
