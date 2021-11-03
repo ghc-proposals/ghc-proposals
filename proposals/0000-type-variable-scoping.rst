@@ -20,6 +20,7 @@ together many existing proposals:
 .. _`#155`: https://github.com/ghc-proposals/ghc-proposals/pull/155
 .. _`#228`: https://github.com/ghc-proposals/ghc-proposals/pull/228
 .. _`#238`: https://github.com/ghc-proposals/ghc-proposals/pull/238
+.. _`#270`: https://github.com/ghc-proposals/ghc-proposals/pull/270
 .. _`#281`: https://github.com/ghc-proposals/ghc-proposals/pull/281
 .. _`#285`: https://github.com/ghc-proposals/ghc-proposals/pull/285
 .. _`#291`: https://github.com/ghc-proposals/ghc-proposals/pull/291
