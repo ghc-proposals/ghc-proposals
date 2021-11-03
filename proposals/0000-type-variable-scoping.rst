@@ -667,10 +667,10 @@ Alternatives
    are really quite easy. This opinion may change in the light of experience,
    if this feature is implemented and we see trouble in the wild.
 
-.. _pattern-type-args:
-
 Type arguments in constructor patterns
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. _pattern-type-args:
 
 This is an update to accepted, implemented proposal `#126`_ that changes
 its treatment of universals. It incorporates the logic of not-yet-accepted
@@ -1090,11 +1090,10 @@ Costs and Drawbacks
    but unfortunately non-local and annoying. I prefer just to skip this
    migration step.
 
-
-.. _type-let:
-
 ``let``-binding types
 ~~~~~~~~~~~~~~~~~~~~~
+
+.. _type-let:
 
 This segment of the proposal goes beyond previous proposals in describing a mechanism
 to use ``let`` to bind type synonyms.
@@ -1243,10 +1242,10 @@ Specification Alternative 2
    that pattern-bound variables scope over, with the addition of the ``decls``
    themselves (that is, the declarations can be recursive).
 
-.. _let-in-pattern-example:
-
 Examples
 ^^^^^^^^
+
+.. _let-in-pattern-example:
 
 1. Instead of ::
 
@@ -1298,7 +1297,7 @@ This part of the proposal allows ``let`` to be used in types.
 Motivation
 ^^^^^^^^^^
 
-1. The careful reader will notes that the `secction above <#type-lets>`_ defining
+1. The careful reader will notes that the `secction above <#type-let>`_ defining
    the ability to bind type synonyms in ``let`` expressions does not actually address
    a motivating example. This component of this proposal allows us to avoid repetition
    within a type signature.
