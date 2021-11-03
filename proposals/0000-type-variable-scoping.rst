@@ -197,9 +197,7 @@ principles, but relax them when doing so is well motivated.
    Motivation: This is the essence of pattern-matching, where we can deconstruct data
    that was constructed by an expression.
 
-.. _universalsandexistentials:
-
-   blah
+   .. _universalsandexistentials:
 
 Universals and existentials
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
