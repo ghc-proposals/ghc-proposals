@@ -412,10 +412,10 @@ Extension shuffling
 
    Being able to turn off this extension is necessary to uphold the EBP_.
 
-.. _gadt-syntax:
-
 GADT syntax to distinguish universals and existentials
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. _gadt-syntax:
 
 This component of this proposal revises the scoping of variables in GADT declaration syntax.
 
