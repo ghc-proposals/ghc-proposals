@@ -15,6 +15,10 @@ mechanism for introducing custom type error messages. It is similar to the
 existing ``TypeError`` built-in type family, but it is more predictable when
 errors are reported.
 
+A previous iteration of this proposal included another constraint form,
+``Warning``, for custom type warnings.  This is now described in `proposal #454
+<https://github.com/ghc-proposals/ghc-proposals/pull/454>`_ instead.
+
 
 Motivation
 ----------
@@ -280,56 +284,6 @@ unlike ``TypeError``, mere presence of ``Unsatisfiable`` somewhere within a
 constraint type does not trigger an error.
 
 
-Optional proposed change: ``Warning`` class
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-*The change proposed in this subsection is optional, and may be removed without
-affecting the rest of the proposal.*
-
-``GHC.TypeError`` is also extended with the following definition::
-
-    class Warning (e :: ErrorMessage)
-
-``Warning`` constraints have the following properties:
-
-* During constraint solving, the solver treats ``Warning`` constraints like any
-  other class with no instances.
-
-* At the end of constraint solving, if a Wanted constraint of the form ``Warning
-  e`` remains unsolved, a warning diagnostic is emitted, displaying the message
-  that results from normalising and rendering the type ``e``.
-
-* An ``Warning`` constraint is never automatically generalised.
-
-* The presence of ``Warning`` constraints does not affect pattern-match coverage
-  checking or the functional dependency check.
-
-* GHC will report an error if a user attempts to define an instance for
-  ``Warning``.
-
-* The representation of an ``Warning e`` constraint in Core is equivalent to the
-  dictionary ``data WarningDict e = WarningDict``.  This is GHC's normal
-  representation of a class with no methods.
-
-See `#17027 <https://gitlab.haskell.org/ghc/ghc/-/issues/17027>`_ for a request
-for a feature like this.  Unlike the suggestion in that ticket, the ``Warning``
-class proposed here can only be used at kind ``Constraint``, for similar reasons
-to ``Unsatisfiable``.
-
-The warning diagnostics emitted by this feature are controlled by a new warning
-class ``-Wtype-warnings``, which is enabled by default, but may be disabled with
-``-Wno-type-warnings``.
-
-This provides a more flexible alternative to ``WARNING`` and ``DEPRECATED``
-pragmas, because warnings may be displayed only when definitions are used at
-particular types, and the messages may be constructed dynamically.
-
-(It would be possible to add a ``Deprecated`` constraint, similar to
-``Warning``, specifically for use with deprecation warnings, and controlled by a
-different flag.  However separating out deprecation warnings specifically does
-not seem strongly motivated.)
-
-
 
 Examples
 --------
@@ -462,16 +416,6 @@ a type-checker plugin that roughly corresponds to the design of the
 
      instance (Unsatisfiable (Text "No"), C a b) => C a b
 
-#. Assuming the ``Warning`` option is included, the following ``decode``
-   function will emit a warning if it is used at type ``Integer``, but the
-   program will otherwise compile normally::
-
-     type family WarnInteger a where
-       WarnInteger Integer = Warning (Text "Integer may require unbounded memory!")
-       WarnInteger a       = ()
-
-     decode :: (FromJSON a, WarnInteger a) => ByteString -> Maybe a
-
 
 Effect and Interactions
 -----------------------
@@ -595,5 +539,4 @@ separately.
 Unresolved Questions
 --------------------
 
-Should the optional ``Warning`` feature be included?
-Should there be a separate ``Deprecated`` constraint as well?
+None.
