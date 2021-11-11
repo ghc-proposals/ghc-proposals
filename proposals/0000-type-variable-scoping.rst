@@ -245,131 +245,6 @@ principles, but relax them when doing so is well motivated.
    sure I'd want ``do`` notation to be any different here, because reusing variable names in ``do``
    notation is convenient), but to get one step closer to it for those programmers who want it.
 
-Universals and existentials
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. _universals-and-existentials:
-
-The combination of the VOP_ and the LSPC_ lead to a surprising conclusion: we must distinguish
-between universal variables and existential variables of GADT constructors. This section explains
-why this is the case, despite the fact that this goes against conclusions in the `Type Variables
-in Patterns`_ paper.
-
-To make these ideas concrete, let's consider this running example::
-
-  type UnivEx :: Type -> Type
-  data UnivEx a where
-    MkUE :: a -> b -> UnivEx a
-
-**Inputs vs outputs**. The first key observation in this analysis is that, in a pattern, universal type variables are
-*inputs*, while existential type variables are *outputs*. That is, when see a pattern such as
-the one in ``f (MkUE x y) = ...``, we must already know the instantiation for ``a`` (taken from
-the declared type of ``MkUE``), but the pattern itself tells us the value for ``b``. (In this way,
-universals are like the *required* constraints of a pattern synonym, while existentials are like
-the *provided* constraints.) If we have ``f :: UnivEx Int -> ...``, then it might be sensible, for example,
-to write ``f (MkUE @Int x y) = ...``, (redundantly) saying how to instantiate the ``a`` from
-``MkUE``\ 's type. On the other hand, it would never work to say ``f (MkUE @Int @Bool x y) = ...``,
-where the ``@Bool`` is meant to "instantiate" the ``b``. The pattern match *informs* the choice for
-``b``: it cannot presuppose it (without doing run-time type matching, which we don't).
-
-Because universals are inputs, it makes sense to mention in-scope variables in universal-variable
-instantiations. For example::
-
-  f :: forall c. UnivEx c -> ...
-  f (MkUE @c x y) = ...
-
-Here, we have used the in-scope (assuming today's ``-XScopedTypeVariables``) type variable ``c``
-to say how to instantiate ``MkUE``. On the other hand, we would never want to mention in-scope
-variables in an existential binding::
-
-  f :: forall c d. UnivEx c -> d -> ...
-  f (MkUE @c @d x y) = ...
-
-This is quite strange: we're somehow suggesting that the existential type packed in ``MkUE`` is
-precisely ``d``. That's impossible. Instead, we might imagine that this binds a new type variable
-``d`` that *shadows* the existing ``d``. In any case, something is definitely strange here.
-
-In the context of the LSPC_, though, we see that the treatment for universal type arguments
-and existential type arguments must be identical -- at least as far as whether variable mentions
-are bindings or occurrences. The reason is that the LSPC_ forbids us from considering ``MkUE``\ 's
-type when determining whether the mentions of ``c`` and ``d`` here are bindings or occurrences --
-and thus the choice must be the same for both.
-
-**Current solution**. One way out of this is taken in accepted proposal `#126`_, where the choice between binding site
-and occurrence is made depending on whether a type variable is already in scope. For the last
-``f`` example, `#126`_ rejects because we cannot know that the existential type variable will
-be ``d``. (That is, there is no shadowing.) Using in-scopedness to choose between binding site
-and occurrence is not in violation of the LSPC_, but it is in violation of the otherwise-respected LLSP_.
-
-**Treatment of term variables**. However, consider how this design compares with the treatment of ordinary expression patterns.
-For example::
-
-  g x (Just x) = ...
-  h x = case frob x of
-    Just x -> ...
-
-No type variables here. Instead, we have an illegal ``g`` -- rejected because one sequence
-of patterns binds the same term variable twice. And we have an accepted ``h``, but this
-``h`` has a shadowed binding for ``x`` -- no equality comparison here. In terms, any variable
-occurrence in a pattern (except in the expression part of a view pattern) is a binding site,
-with no questions asked.
-
-**Visible dependent quantification**. Now, let's consider what happens once we have visible
-dependent quantification (VDQ) in the types of GADT constructors. This is proposed in `#281`_, which
-amends `#402`_ to allow VDQ in GADT constructors (among supporting VDQ more generally). ::
-
-  data VDQ a where
-    MkVDQ :: forall a b -> a -> b -> VDQ a
-
-The type ``VDQ`` is like ``UnivEx``, except that it uses VDQ in its constructor. A pattern might
-look like ``f (MkVDQ a b x y) = ...``. According to the analysis above, we might want variable
-*occurrences* in the first argument of the pattern ``MkVDQ`` (because ``a`` is universal, and
-hence an *input* to the pattern), while we definitely want binding sites for ``x`` and ``y``, the
-ordinary term arguments. Yet, having different binding treatment for ``a`` than for ``x`` and ``y``
-is in violation of the LSPC_, which forbids us from looking at the type of ``MkVDQ`` in making this
-decision.
-
-In order to keep backward compatibility with the current treatment for term-level patterns, we must
-treat ``a`` and ``b`` as *binding sites* not occurrences.
-
-**Visible vs. invisible type arguments**. The VOP_ tells us that the presence or absence of the
-``@`` sign should not affect the binding-site treatment of a region of code. Accordingly, we now
-realize that all type arguments -- whether visible or invisible -- must treat variable mentions
-as binding sites, not occurrences. Here is an example::
-
-  data VOP a b where
-    MkVOP :: forall a -> forall b. a -> b -> VOP a b
-
-Here, we have one visible type argument and one invisible one. A pattern might look like
-``f (MkVOP a @b x y) = ...``. The VOP_ compels us to treat ``a`` and ``b`` identically.
-Furthermore, the LSPC_ compels us to treat ``a`` and ``x``\ /\ ``y`` identically, too.
-Accordingly, all of these must be binding sites -- none can be occurrences.
-
-**Term-level inputs to patterns**. Pattern synonyms currently allow us to declare two
-flavors of input: universal type variables and required constraints. We also can declare
-three forms of output: existential type variables, provided constraints, and normal term-level arguments.
-We're clearly missing something here: term-level input arguments. This proposal does *not*
-address this deficiency, but it seems desirable to leave the door open to such an extension in
-the future. And when we do, the treatment for term-level inputs should be -- in accordance with the
-SUP_ -- the same as the treatment for universal type variables.
-
-**But we want occurrences**. Earlier, we discovered that we sometimes want occurrences
-of type variables when instantiating a universal in a pattern. And yet, we see by the
-argument here that we cannot support this desire -- at least without new syntax to separate
-out inputs from outputs (we could use a modifier, for example).
-
-**Bottom line**. We must not allow universal-variable instantiations in patterns. (This is in
-direct conflict with `#126`_ and the `Type Variables in Patterns`_ paper.) There is no way
-to safely distinguish such parts of a pattern from the parts of the pattern that bind new variables,
-and so until we invent new syntax to allow universal-variable instantiation in patterns, we
-must stop accepting these instantiations.
-
-**Corollary**. We must be able to tell the difference between universal variables and existential
-variables in GADT constructors. As `Type Variables in Patterns`_ observes, this is not always so
-easy in the presence of equality constraints. Accordingly, this proposal introduces a `new way
-of understanding GADT syntax <#gadt-syntax>`_ that clearly does define which variables are
-universal and which are existential.
-
 Proposed Changes
 ----------------
 
@@ -462,261 +337,6 @@ Extension shuffling
 
    Being able to turn off this extension is necessary to uphold the EBP_.
 
-GADT syntax to distinguish universals and existentials
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. _gadt-syntax:
-
-This component of this proposal revises the scoping of variables in GADT declaration syntax.
-
-Motivation
-^^^^^^^^^^
-
-1. This new version makes the distinction between universals and existentials in constructors
-   very clear, as required by the analysis `above <#universals-and-existentials>`_.
-
-#. Principled kind inference is, I believe, impossible using the current syntax. This is argued
-   in `Appendix B.8 <https://richarde.dev/papers/2020/kind-inference/kind-inference-supplement.pdf#subsection.B.8>`_ of the `Kind Inference for Datatypes`_ paper. The current approach allows some examples of polymorphic
-   recursion, but not others, and I doubt there is a declarative specification
-   of what we accept today. Here is an example of surprisingly allowed polymorphic
-   recursion::
-
-     data Poly a where
-       MkPoly :: forall k1 k2 (a :: k1) (b :: k2). Poly a -> Poly b -> Poly a
-
-   Note that the use of ``Poly b`` instantiates ``Poly`` at a different
-   kind (``k2``) than the instantiation in the result (``k1``).
-
-   If we change the ``Poly b`` above to ``Poly Maybe``, the definition is
-   rejected: only when the polymorphic recursion instantiates a kind variable
-   *with a variable* is the definition accepted.
-
-   Another oddity here happens when we ask what the inferred kind of ``Poly``
-   is, before generalization. It must be ``k1 -> Type``... but ``k1`` is not
-   even in scope in the declaration of ``Poly``. It's all very strange.
-
-Proposed Change Specification
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-1. Allow all variables -- call them ``a1 .. an`` -- in the header of a GADT declaration (including variables introduced implicitly) to scope over
-   all constructor declarations. Call the GADT ``G``.
-
-#. If there is no standalone kind signature for the GADT, each ``ai`` is
-   assigned a kind meta-variable. When checking the constructors, this kind
-   meta-variable is unified following the usual rules for meta-variables.
-   In particular, this meta-variable will not be able to unify with any kind
-   variable locally quantified in a constructor declaration, because the scope
-   of the locally quantified kind variable is smaller than the kind meta-variable.
-
-   If a variable kind signature (e.g. ``data G (a :: Type -> Type) where ...``)
-   is given in the GADT header, the kind given for the kind
-   variable is unified with the kind meta-variable, as usual.
-
-   In declarative terms, this means that we can simply "guess" a monokind for
-   each type variable ``ai``.
-
-#. For each constructor, we must determine the universal variables and the
-   existential variables. To do this, look at the result type ``G ty1 .. tyn``.
-   For each ``i`` such that ``tyi`` is exactly ``ai``, ``ai`` is labeled as
-   a universal variable for that constructor. All other type variables in
-   that constructor's type are existentials. The distinction between universals
-   and existentials matters only in patterns.
-
-#. If a constructor explicitly quantifies over an in-scope type variable
-   (example: ``data G a where MkG :: Int -> forall a. a -> G a``), that
-   quantification does *not* introduce a new variable. Instead, during
-   kind inference, any kind
-   signature in the ``forall`` is unified with the kind of the variable,
-   but the quantification is otherwise ignored (during kind inference).
-
-#. After kind inference is complete, we must assign types to each
-   constructor. The type of the constructor is unchanged from today:
-   the order of quantified variables is as given by the user (so, for example,
-   existentials might precede universals).
-
-Examples
-^^^^^^^^
-
-::
-
-  data G1 a where
-    MkG1 :: a Int -> G1 a
-
-Inference for ``G1`` is now easier. We assign ``a :: kappa`` and then unify
-``Type -> Type`` with ``kappa``. Today's algorithm instead unifies the kind
-of ``G1`` with ``(Type -> Type) -> Type``, from the result type.
-
-::
-
-  data G2 a where
-    MkG2 :: forall k (a :: k). G2 a
-
-This definition is now rejected, because the kind for ``a`` cannot mention
-locally quantified ``k``. This could be accepted with a standalone kind signature
-for ``G2``.
-
-::
-
-  data G3 a where
-    MkG3 :: G3 a
-
-This definition is accepted, with ``G3 :: forall k. k -> Type``.
-At the end of kind inference, there is no restriction on the kind of ``a``,
-so it is generalized.
-
-::
-
-  data G4 (a :: k) where
-    MkG4 :: forall k (a :: k). G4 a
-
-This definition is accepted. The ``k`` in the header becomes an implicit
-type argument to ``G4``. The ``forall k`` is then ignored during kind
-inference, and so the kind annotation on ``a`` in the constructor does
-not cause trouble.
-
-::
-
-  data G5 k a where
-    MkG5 :: forall k (a :: k). G5 k a
-
-This is also accepted, because the ``k`` is introduced in the header.
-
-::
-
-  data G6 a b where
-    MkG6 :: a -> b -> G6 b b
-
-The constructor ``MkG6`` has a universal argument ``b`` and an existential
-argument ``a``. Its type is ``forall a b. a -> b -> G6 b b``. Pattern-matching
-a scrutinee of type ``G6 ty1 ty2`` against ``MkG6`` introduces an existential
-variable ``a`` and assumes an equality constraint ``ty1 ~ ty2``.
-
-::
-
-  data G7 a where
-    MkG7 :: b -> G7 b
-
-The constructor ``MkG7`` has only an existential variable ``b``.
-Pattern-matching a scrutinee of type ``G7 ty`` against ``MkG7``
-introduces the existential ``b`` and an equality constraint that
-``b ~ ty``. This equality, however, will not affect type inference,
-because it is "let-like".
-See ``Note [Let-bound skolems]`` in ``GHC.Tc.Solver.InertSet``.
-The choice of making ``b`` existential *does* affect the shape of
-the data constructor worker for ``MkG7``, but this will not affect
-Haskell users.
-
-::
-
-  data G8 a where
-    MkG8_1 :: a Int -> G8 Bool
-    MkG8_2 :: a -> G8 a
-
-This definition is accepted today but will be rejected under this proposal.
-The problem is that the kind of ``a`` is *different* in the different constructor
-types. Today, these ``a``\ s are considered independent, and so there is no
-trouble. Under this proposal, though, these ``a``\ s are considered the same,
-and thus cannot have different kinds. I argue that ``G8`` here is as confusing
-to human readers as it would be to GHC under this proposal, and so rejection
-seems sensible.
-
-Effects
-^^^^^^^
-
-1. Kind inference becomes more principled, allowing information to flow from
-   constructor types back to the declared type arguments.
-
-#. Some definitions accepted today will be rejected under this new treatment,
-   when accepting the definition requires unifying the kind of a type argument
-   with a locally quantified kind variable. This rejection is a *desired* outcome
-   of this change, as the current acceptance is in violation of our plan
-   not to infer polymorphic recursion.
-
-   Any newly rejected definition can be fixed with a standalone kind signature.
-   This fix is backward compatible.
-
-#. Other definitions accepted today are like ``G8`` in that they use the same
-   name for multiple different variables in different constructor types. These
-   definitions will have to rename some variables, which is a completely local
-   change and will not affect downstream users.
-
-#. A `separate part <#pattern-type-args>`_ of this proposal describes
-   how the choice of universals and existentials affects pattern-matching.
-
-#. Constructor uses in expressions are completely and utterly unchanged,
-   because the assigned types of constructors are unchanged.
-
-#. Currently, the kind inference algorithm requires two full passes over
-   every datatype that lacks a standalone kind signature. I believe this
-   change would mean we could reduce this to one pass, though the simplification
-   would require some significant refactoring within GHC. (Without this proposal,
-   I believe we are tied to keeping the second pass.) The `Kind Inference
-   for Datatypes`_ paper shows how kind inference can be done in one pass
-   (followed by a straightforward substitution).
-
-#. This change allows some simplification in the kind-inference code.
-   It would nullify ``Note [Using TyVarTvs for kind-checking GADTs]`` in
-   ``GHC.Tc.TyCl``. It would also mean that the result kind of a GADT
-   now makes sense when checking constructors, simplifying logic in ``kcConDecl``
-   and making aspects of supporing unlifted newtypes easier (see the
-   wrinkle around #17021 in ``Note [Implementation of UnliftedNewtypes]``
-     in ``GHC.Tc.TyCl``.
-
-#. This design violates the LLSP_, in that, if we see ``Mk :: forall a. a -> T a``,
-   the first ``a`` is a binder if ``a`` is not already in scope, but is not a binder
-   if ``a`` is already in scope. See the `alternative approach <#gadt-alternative>`_
-   below.
-
-Drawbacks
-^^^^^^^^^
-
-1. This change may annoy some users whose definitions are newly rejected.
-   The fixes are easy and fully backward-compatible.
-
-Alternatives
-^^^^^^^^^^^^
-
-.. _gadt-alternative:
-
-1. Instead of having the variables in the header directly scope over
-   the constructors, we could instead compute a variable renaming for
-   each constructor. It would work like this, operating over each
-   constructor ``K`` of a type ``T`` separately:
-
-   * Let ``R`` represent a *renaming*, mapping variables in scope
-     in the result type of ``K`` (domain) to variables mentioned in the declaration
-     header (codomain). ``R`` starts empty.
-
-   * Let ``tv1 .. tvn`` represent the variables mentioned in the
-     declaration header for ``T``.
-
-   * Look at the result type of ``K`` and extract out the
-     type arguments to ``T``. Call these arguments ``arg1 .. argn``,
-     where ``T`` has arity ``n``.
-
-   * For each ``argi``: if ``argi`` is a bare variable ``v`` that is not
-     already included in the domain of ``R``, add a mapping to ``R``
-     from ``v`` to ``tvi``.
-
-   * The key set of ``R`` is precisely the set of universal variables
-     of ``K``; any other variable introduced in ``K``\ 's type is an
-     existential.
-
-   * During kind inference, treat an occurrence of a variable ``v``
-     in the key set of ``R`` as if it were an occurrence of ``R(v)``.
-
-   Note that the algorithm above does *not* depend on type or kind inference;
-   it is a straightforward pass over the abstract syntax of the constructor.
-
-   This version preserves today's scoping rules (and upholds the LLSP_). It
-   is backward-compatible. But it is subtler. Maybe it is better, regardless.
-
-#. We could offer users a migration period, where we warn about this
-   impending change. I see no easy way of implementing such a check,
-   and I see relatively little value in doing so, given that the fixes
-   are really quite easy. This opinion may change in the light of experience,
-   if this feature is implemented and we see trouble in the wild.
-
 Type arguments in constructor patterns
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -754,21 +374,22 @@ Specification
    quantifications in the declared constructor or pattern synonym type.
    (Right now, pattern synonyms require all such quantifications to occur
    before any term arguments, but accepted proposal `#402`_ allows these
-   quantifications to occur in any order in data constructors.
+   quantifications to occur in any order in data constructors.)
 
-#. Each quantification in a data constructor or pattern synonym brings
-   into scope either a universal variable or an existential variable.
-   Telling these apart is easy in pattern synonym types; `see above <#gadt-syntax>`_ for how to determine this property of data constructor
-   types.
+#. Any type variables mentioned in a type application are considered
+   binding sites, shadowing any in-scope type variables.
 
-   1. A type argument corresponding to a universal variable, if given,
-      must be ``_``. No exceptions.
+#. Typing follows the rules in `Type Variables in Patterns`_. In particular,
+   see Figure 7, which we modify here in two ways:
 
-   #. A type argument corresponding to an existential variable, if given,
-      must be a bare variable or a ``_``. If a variable, this variable is
-      unconditionally brought into scope (possibly shadowing any existing
-      type variable with the same spelling), bound to the existential type
-      packed in the datatype.
+   1. Ignore the ``isInternalTypeVar`` premise, which was done
+      away with by accepted proposal `#128`_.
+
+   #. Change the ``cs = ftv(τ's) \ dom(Γ)`` premise to be ``cs = ftv(τ's)``
+      and ``cs # dom(Γ)``. That is, instead of making the new type variables
+      ``cs`` be only those that are not already in scope, require all the
+      type variables to be fresh (shadowing is possible, but left implicit
+      here).
 
 #. A wildcard ``_`` as a type argument says simply to skip that argument;
    it does not trigger any behavior associated with partial type signatures.
@@ -780,17 +401,6 @@ Specification
 
 Examples
 ^^^^^^^^
-
-::
-
-  f1 (Just @Int x) = x + 1
-
-This is accepted under `#126`_ but rejected under this current proposal,
-because we do not allow instantiation of universals. See the
-`universals and existentials <#universals-and-existentials>`_ section
-for a discussion.
-
-If you want this behavior under this proposal, write a type signature.
 
 ::
 
@@ -813,18 +423,21 @@ Effects
 1. The ability to bind existential variables via a construct such as this
    is necessary to support the EVP_.
 
-#. Forbidding instantiation of universals is to uphold the VOP_ and LSPC_.
+#. The previous proposal `#126`_ followed the paper more closely, bringing into
+   scope only those variables that are not already in scope. However, given that
+   this behavior is triggered only by a ``@``, doing this is in violation of the
+   VOP_. This newer version instead labels all variables as binding sites.
 
 #. Having type variables have the same behavior as term variables with
    respect to shadowing (and repeated binding) upholds the VOP_. In addition,
    the fact that type variables are unconditionally brought into scope upholds
    the LLSP_.
 
-#. Allowing users to write ``@_`` for universal arguments upholds the PEDP_.
-   An alternative would be simply to skip universals in patterns (as Coq does,
-   for example), but this violates the PEDP_. I expect a future proposal to
-   arrive eventually that will allow a syntax for instantiating universals;
-   the current treatment would be forward compatible with any such syntax.
+#. It may be useful to write a variable occurrence to instantiate a universal
+   argument. This proposal prevents this possibility. We expect a future proposal
+   to remedy this problem, with either a modifier or some symbol. For example,
+   perhaps we would say e.g. ``f (Just @(*a) x) = ...`` to denote an occurrence
+   of already-in-scope type variable ``a``.
 
 Type arguments in lambda patterns
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
