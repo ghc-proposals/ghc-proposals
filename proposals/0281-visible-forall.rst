@@ -622,6 +622,9 @@ Syntax
    ``-Wforall-identifier`` in ``-Wdefault``. This warning will be triggered
    at definition sites (but not use sites) of ``forall`` as an identifier.
 
+   This change applies to ``∀`` (the ``UnicodeSyntax`` rendition of ``forall``)
+   as well.
+
 4. Introduce a new extension, ``ListTupleTypeSyntax``, on by default,
    which enables:
 
