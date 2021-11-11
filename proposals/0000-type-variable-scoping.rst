@@ -337,6 +337,16 @@ Extension shuffling
 
    Being able to turn off this extension is necessary to uphold the EBP_.
 
+Alternatives
+^^^^^^^^^^^^
+
+1. We could have ``-XPatternSignatureBinds`` off by default. This would mean less effort
+   for users to activate the EBP_. However, it would also mean that the new ``-XPatternSignatures`` deviates from the old, pre-\ ``-XScopedTypeVariables`` meaning
+   of ``-XPatternSignatures``.
+
+   My inclination is to keep this aspect as written in the proposal, with ``-XPatternSignatureBinds`` on by default. Pattern signatures are convenient and intuitive.
+   Users wishing for the EBP_ can be expected to work a little harder to get it.
+
 Type arguments in constructor patterns
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
