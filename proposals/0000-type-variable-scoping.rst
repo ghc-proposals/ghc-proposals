@@ -197,6 +197,45 @@ principles, but relax them when doing so is well motivated.
    Motivation: This is the essence of pattern-matching, where we can deconstruct data
    that was constructed by an expression.
 
+   .. _CSP:
+
+#. **Contiguous Scoping Principle (CSP)**. The region of a program for which an identifier
+   is in scope is contiguous.
+
+   Motivation: The CSP_ makes programs easier to read, in that a reader can add a variable
+   to their internal tracking of in-scope variables then
+   remove that variable from their in-scope set just once.
+
+   The CSP is *not* respected by Haskell 2010 nor some of GHC's extensions. Here are some places
+   where the CSP is violated:
+
+   1. ``do``\ -notation. Example: ``do (x, (f x -> Pat)) <- action; blah``. ``x`` is in scope in
+      its pattern, to the right of its binding site, but then not in ``action``. It is in scope
+      again in ``blah``. Example of potential confusion: ``f x = do x <- x; g x``.
+
+   #. List comrephensions. Example: ``[ (x, y) | x <- thing1, y <- thing2, condition3 ]``. The
+      variable ``y`` is in scope in ``condition3`` and the ``(x, y)`` at the
+      beginning, but nowhere else. Example of potential confusion:
+      ``f x y = [ (x, y) | x <- y, y <- x ]``.
+
+   #. Arrow notation. Example: ``proc x -> do y <- task1 -< input1; task2 -< input2``. The variable
+      ``x`` is in scope in ``input1`` and ``input2`` but not in ``task1`` or ``task2``.
+      Example of potential confusion: ``f x = proc x -> x -< x``. The two ``x``\ s at the end
+      refer to *different* variables.
+
+   #. ``-XScopedTypeVariables``. Example: ``f :: forall a. a -> a; x :: Int; f y = (y :: a)``. The
+      type variable ``a`` is in scope in the definition of ``f`` but not in
+      the type signature for ``x``.
+
+   #. GADT header variables. Example of potential confusion:
+      ``data G a where MkG :: a Int -> G Bool deriving C a``. The ``a`` in the type of ``MkG`` is
+      completely unrelated to the ``a`` toward the beginning and in the deriving
+      clause.
+
+   There may be others beyond this. The goal here is *not* to establish the CSP_ (indeed, I'm not
+   sure I'd want ``do`` notation to be any different here, because reusing variable names in ``do``
+   notation is convenient), but to get one step closer to it for those programmers who want it.
+
 Universals and existentials
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -368,6 +407,8 @@ Extension shuffling
    * Expression type signatures
 
    (Alternative name: ``-XExtendedForAllScope``. See `Vlad's comment <https://github.com/ghc-proposals/ghc-proposals/pull/448#discussion_r738276607>`_.).
+
+   Separating out ``-XScopedForAlls`` gets us closer to the CSP_.
 
 #. The extension ``-XScopedTypeVariables`` would imply all of the above
    extensions; this way, ``-XScopedTypeVariables`` does not change from its
