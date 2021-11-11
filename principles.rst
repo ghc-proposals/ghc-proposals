@@ -4,7 +4,8 @@ Principles for GHC
 This document lays out high-level principles for the evolution of GHC
 and the language it compiles. In much the way that we like to write
 *properties* of our functions -- instead of just writing down individual
-test cases -- this document strives to write *principles* of our proposals.
+test cases -- this document strives to write *principles* that our proposals
+ought to maintain (or build towards).
 
 Articulating these principles helps to guide future proposals: proposals
 that maintain the principles in this document are more likely to be accepted,
