@@ -185,8 +185,17 @@ principles, but relax them when doing so is well motivated.
 
    The only difference between these is the visibility.
 
+   Put another way: two programs that are the same except for visibility markers (such as
+   the ``.`` vs ``->`` in a ``forall`` or the presence or absence of a ``@``) should desugar
+   to the same Core program.
+
    Motivation: Visibility should be just that: a superficial property that describes
    (only) whether an argument is visible in the user-written source code.
+
+   Currently, the design for `#281`_ (along with the design for ``-XTypeApplications``)
+   violates the VOP_, because the visibility marker ``@`` also affects the difference between
+   term-syntax and type-syntax. However, given the SUP_, we strive to uphold the VOP_ when
+   there is an absence of punning.
 
    .. _PEDP:
 
