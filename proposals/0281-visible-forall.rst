@@ -630,9 +630,9 @@ Syntax
 
    * ``[]`` as the list type constructor
    * ``()`` as the unit type
-   * ``[a]`` the syntax of a list type
-   * ``(,)`` as the pair type constructor
-   * ``(a, b)`` as the syntax of a pair type
+   * ``[a]`` as the syntax of the list type
+   * ``(,)`` as the pair type constructor (likewise for ``(,,)``, ``(,,,)``, and so on)
+   * ``(a, b)`` as the syntax of the pair type (likewise for ``(a, b, c)``, ``(a, b, c, d)``, and so on)
 
    When the extension is on, these constructs retain their Haskell 2010
    meaning, which depends on whether we are in a type-level or term-level
@@ -654,23 +654,41 @@ Syntax
 
    Export the following synonym from the ``Data.Tuple`` module::
 
-     type Unit = ()
+     type Unit = ()   -- Tuple0 has a special name
 
-   For tuples of higher arities, users may want to define their own
-   synonyms, such as::
+     type Tuple2 = (,)
+     type Tuple3 = (,,)
+     type Tuple4 = (,,,)
 
-     type TupleOf2 = (,)
-     type TupleOf3 = (,,)
-     type TupleOf4 = (,,,)
      ... -- up to the maximum tuple arity
-
-   We do not propose adding them to ``Data.Tuple`` for the time being,
-   as better APIs are possible (e.g. based on variadic data families)
-   but are blocked by other technical issues. We leave it as future work.
 
    This change allows the use of built-in lists and tuples without any
    disambugation syntax (the ``'`` promotion syntax at the type level or the
    ``type`` herald at the term level).
+
+   Under ``NoListTupleTypeSyntax``, the synonyms are also to be used when
+   printing inferred types.
+
+   This extension interacts with ``UnboxedTuples``, ``UnboxedSums``, which also
+   rely on punning. ``ListTupleTypeSyntax`` has a similar effect on ``(# #)``,
+   ``(# , #)``, ``(# | #)``, and so on.
+
+   Export the following names from ``GHC.Exts``::
+
+     type Unit#    -- Tuple0# has a special name
+
+     type Tuple1#
+     type Tuple2#
+     type Tuple3#
+     type Tuple4#
+
+     ... -- up to the maximum unboxed tuple arity
+
+     type Sum2#
+     type Sum3#
+     type Sum4#
+
+     ... -- up to the maximum unboxed sum arity
 
 5. When ``ViewPatterns`` are enabled, interpret ``f (a -> b) = ...``
    as a view pattern, otherwise as ``f ((->) a b) = ...``.
@@ -1040,7 +1058,7 @@ Corner Cases
    One way to change this is to use synonyms
    from ``Data.Tuple`` and ``Data.List``::
 
-     x1 = g (TupleOf2 Int Bool)
+     x1 = g (Tuple2 Int Bool)
      x2 = g (List Int)
 
    Another way is to use the ``type`` herald::
@@ -1061,8 +1079,8 @@ Corner Cases
    One way to resolve this is to use synonyms
    from ``Data.Tuple`` and ``Data.List``::
 
-      a = f @(TupleOf2 Int Bool)
-      b = g  (TupleOf2 Int Bool)
+      a = f @(Tuple2 Int Bool)
+      b = g  (Tuple2 Int Bool)
 
    Another way is to use the ``type`` herald::
 
