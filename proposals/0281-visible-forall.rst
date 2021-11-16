@@ -659,7 +659,6 @@ Syntax
      type Tuple2 = (,)
      type Tuple3 = (,,)
      type Tuple4 = (,,,)
-
      ... -- up to the maximum tuple arity
 
    This change allows the use of built-in lists and tuples without any
@@ -681,14 +680,13 @@ Syntax
      type Tuple2#
      type Tuple3#
      type Tuple4#
-
-     ... -- up to the maximum unboxed tuple arity
+     ... -- and so on
 
      type Sum2#
      type Sum3#
      type Sum4#
+     ... -- and so on
 
-     ... -- up to the maximum unboxed sum arity
 
 5. When ``ViewPatterns`` are enabled, interpret ``f (a -> b) = ...``
    as a view pattern, otherwise as ``f ((->) a b) = ...``.
