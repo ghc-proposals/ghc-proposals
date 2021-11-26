@@ -5,7 +5,7 @@ ticket-url: ""
 implemented: ""
 ---
 
-This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/461>).
+This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/461).
 
 # Type Class Backend
 
