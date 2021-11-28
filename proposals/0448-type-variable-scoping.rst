@@ -27,6 +27,7 @@ together many existing proposals:
 .. _`#378`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0378-dependent-type-design.rst
 .. _`#402`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0402-gadt-syntax.rst
 .. _`#420`: https://github.com/ghc-proposals/ghc-proposals/pull/420
+.. _`#523`: https://github.com/ghc-proposals/ghc-proposals/pull/523
 .. _Type Variables in Patterns: https://richarde.dev/papers/2018/pat-tyvars/pat-tyvars.pdf
 .. _Kind Inference for Datatypes: https://richarde.dev/papers/2020/kind-inference/kind-inference.pdf
 .. _`Haskell 2010 Report`: https://www.haskell.org/onlinereport/haskell2010/haskellch10.html
@@ -104,12 +105,19 @@ synonym of ``-XScopedTypeVariables``. Under this change, that would no longer be
 
 This component of this proposal is taken
 from the not-yet-accepted proposal `#238`_, changing the name of what I now call
-``-XExtendedForAllScope``, and simplifying the binding story around pattern signatures
-(getting rid of ``-XPatternSignatureBinds``). This part of the proposal also introduces
-a new warning ``-Wpattern-signature-binds`` (available only in ``-Weverything``) as a
-new way of handling the pattern-signature-binding part of `#285`_.
+``-XExtendedForAllScope``.
 
-This component includes the ``-XNoImplicitForAll`` of `#285`_ unchanged.
+``-XImplicitBinds`` is the combination of ``-XImplicitBindsForAll`` and ``-XPatternSignatureBinds``) from accepted
+proposal `#285`_, and differ from that proposal in that:
+
+  - The extensions are combined for fewer knobs when the motivations are the same.
+
+  - ``RULES`` was forgotten as an example.
+
+  - Examples of implicit binds falsely categorized as pattern signature binds are now explicitly included.
+
+    "Pattern signatures" has a narrow meaning but @Ericson2314 misunderstood it to include other negative-position type signatures.
+    Now that the extensions are combined we side-step the phrase "pattern signature" more easily.
 
 Motivation for any extension shuffling
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -127,8 +135,16 @@ two reasons:
   It thus seems necessary to separate out the problematic ``-XExtendedForAllScope``
   from the other components of ``-XScopedTypeVariables``.
 
+A secondary goal is to clean up some issues with proposal `#285`_ while simplifying things:
+
+* ``-XImplicitForAll`` and ``-XPatternSignatureBinds`` have the exact same
+  motivation, and it is unclear why one would ever want one without the other.
+
+* ``-XImplicitForAll`` and ``-XPatternSignatureBinds`` *missed* some of the cases in the examples, which clearly are implicit binding forms meant to be turned off per the overall motivation, but nonetheless slipped through the cracks of the drafting process.
+
 Having separated out ``-XExtendedForAllScope``, it seemed strange to have a ``-XRumpEndOfOldScopedTypeVariables``
 extension, and so I've introduced separate ``-XMethodTypeVariables`` and ``-XPatternSignatures``.
+``-XPatternSignatures`` is more narrow than it's GHC 6.x namesake so as not to violate any principles by default, and to match ``-XKindSignatures`` which is narrow in the same fashion.
 
 Motivation for ``-XPatternSignatures``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -182,13 +198,27 @@ conservative; it may actually break my program somewhere!
 What I really want in this case is a pattern signature, and it would be nice if I could
 just state that ``PatternSignatures``.
 
-Motivation for ``-XNoImplicitForAll``
+Motivation for not doing binding
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Consistency
+"""""""""""
+
+Firstly, it matches ``KindSignatures``.
+``KindSignatures`` doesn't allow implicit binds for a rather roundabout reason: implicit binds would imply implicit kind-level foralls, which would require ``-XPolyKinds``.
+Given the other extensions being proposed here, we can retroactively reinterpret this as a simple syntactic rule: ``-XKindSignatures`` alone doesn't do implicit binding.
+Now, ``PatternSignature``
+
+Conservativism for standardization
+""""""""""""""""""""""""""""""""""
+
+With both of these signatures being very minimal, I think they would be easy uncontroversial candidates for a new language report.
+Conversely, all implicit binding constructs are very fraught with a complicated mix of upsides and downsides, we and should only standardize them with great care.
+
+Motivation for ``-XNoImplicitBinds``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This is taken directly from `#285`_, updated to refer to warnings instead of language extensions.
-The "I" here is John Ericson.
-
-There are two independent motivations: education and consistency with a unified namespace.
+This is mostly taken  from `#285`_, but modified now that @Ericson2314 realizes both extensions share the same motivations not one having more than the other.
 
 Education
 ^^^^^^^^^
@@ -198,42 +228,74 @@ All other variables are explicitly bound, and the inconsistency means more to le
 Also, implicit syntax in general allows the beginner to not realize what they are doing.
 What are tedious tasks for the expert may be helpful learning steps to them.
 
-Further, the most beginnning students may be taught with both ``-XNoImplicitForAll`` and ``-XNoExplicitForAll``.
+Further, the most beginnning students may be taught with both ``-XImplicitBinds``, ``-XNoExplicitForAll``, and ``-XNoPolyKinds``.
 This means it's impossible to write forall types by any means.
 Combine with ``-Wmissing-signatures`` and ``-Wmissing-local-signatures``, so inferred polymorphic types of bindings are also prohibited, and a monomorphic custom prelude, and forall types are all but expunged entirely.
 
-I don't wish to argue whether these choices do or don't actually help learning, but just state that some people have opinions that they do and there is no technical reason GHC cannot accommodate them.
+@Ericson2314 doesn't wish to argue whether these choices do or don't actually help learning, but just state that some people have opinions that they do and there is no technical reason GHC cannot accommodate them.
+
+Consistency
+^^^^^^^^^^^
+
+Notice how today that out-of-scope variables in negative position signatures are implicitly bound in *different* ways depending on whether they are type variables (in pattern signatures) or kind variables (in negative position kind signatures).
+By banning implicit binding, we side-step that difference.
+
+After all, given::
+
+  data Foo (a :: k)
+
+desugars to::
+
+  data Foo @k (a :: k)
+
+a new Haskeller might conceivably think::
+
+  \(Foo (a :: k) -> ..
+
+desugars to::
+
+  \(Foo @k (a :: k) ->
+
+or::
+
+  \ @k (Foo (a :: k) ->
+
+which happen to be true in some simple common cases, but are in fact incorrect in general.
+
+That it takes a complicated example to show why these false desugarings aren't true in general make this is a huge educational stumbling block!
 
 Unified Namespace
 ^^^^^^^^^^^^^^^^^
 
 If `#270`_ is accepted, there will be a way to program Haskell with "morally" one namespace for types and terms alike.
-However, there is one exception to the unification of namespaces: lower case variables in type signatures bound "like terms" still are treated as free and implicitly bound with a ``forall`` instead::
+However, there is one exception to the unification of namespaces: lower case variables in type signatures bound "like terms" still are treated as free and implicitly bound instead::
 
   t = Int
   x :: t -- sugar for 'forall t. t', not 't ~ Int'
   x = 0
 
-Should the ``t`` in ``x :: t`` cause an implicit ``forall t.`` to be synthesized or not? With ``-XNoImplicitForAll``, we know
-it will not, and thus can refer to the ``t`` defined above, once such a reference is possible (left to another proposal).
+  t = Int
+  foo (x :: t) = 0 -- sugar for 'foo = let t = _ in \(x :: t) -> 0'
 
-Motivation for ``-Wpattern-signature-binds``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Should the ``t`` in ``x :: t`` cause implicit ``forall t.`` and ``let t = I in`` to be synthesized or not?
 
-This is necessary in order to uphold the `Lexical Scoping Principle`_, part (a).
+With ``-XNoImplicitBinds``, we know it will not, and thus can refer to the ``t`` defined above, once such a reference is possible (left to another proposal).
+
+Without ``-XImplicitBinds`` we have no choice but do the implicit desugaring that violates the unified namespace abstraction
+--- otherwise we would be *forklike* in the that rather than giving new meaning to previously invalid programs, we would be *changing* the meaning of previously *valid* programs.
+Put another way, ``-XImplicitBinds`` and any ``-XUnifiedNamespace`` must be mutually exclusive, so we need a way for Haskell programmers to opt out of ``-XImplicitBinds`` first.
 
 Proposed Change Specification
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Points below up to and including the new (backward-compatible) definition of
-``-XScopedTypeVariables`` come from not-yet-accepted proposal `#238`_. The point
-about ``-XImplicitForAll`` is a restatement of (part of) accepted proposal `#285`_.
-The other part of `#285`_ has been modified to use ``-Wpattern-signature-binds``.
+``-XScopedTypeVariables`` come from not-yet-accepted proposal `#238`_.
+``-XImplicitBinds`` is a fixed and simplified (via combining extensions) version of accepted proposal `#285`_.
 
 1. Re-purpose deprecated extension ``-XPatternSignatures``. With ``-XPatternSignatures``, we
    allow type signatures in patterns. These signatures can mention in-scope
-   type variables as variable occurrences. A mention of an out-of-scope variable
-   binds the type variable as an alias of the type it is unified with (as today).
+   type variables as variable occurrences, but can not bind type variables without the
+   separate ``-XImplicitBinds`` extension. Do note that extension is on by default, however.
 
    The current ``-XPatternSignatures`` is just a synonym for ``-XScopedTypeVariables``.
    This change is thus not backward-compatible, but given that the existing extension
@@ -259,52 +321,64 @@ The other part of `#285`_ has been modified to use ``-Wpattern-signature-binds``
    this way, ``-XScopedTypeVariables`` does not change from its
    current meaning.
 
-#. Introduce ``-XImplicitForAll``, on by default. With ``-XImplicitForAll``,
-   an out-of-scope type variable mentioned in various constructs (listed below)
-   is implicitly brought into scope over the construct. With ``-XNoImplicitForAll``,
-   this implicit scoping does not happen, and the use of the variable is an error.
+#. Introduce ``-XImplicitBinds``. With ``-XImplicitBinds``, a few sorts of implicit bindings are enabled:
 
-   Constructs affected:
+   #. Implicit forall in positive position type signatures.
 
-   1. Type signatures for variable declarations, methods, and foreign imports & exports.
-      Example: ``let f :: a -> a; f = ... in ...`` becomes
-      ``let f :: forall a. a -> a; f = ... in ...``.
+      With this extension, out-of-scope type variables are implicitly quantified over the following constructs.
+      With ``-XNoImplicitBinds``, this implicit scoping does not happen, and the use of the variable is an error.
 
-   #. Kind signatures. Example: ``type T :: k -> Type`` becomes ``type T :: forall k. k -> Type``.
+      Constructs affected:
 
-   #. GADT constructor declarations. Example: ``MkG :: a -> Maybe b -> G (Either Int b)``
-      becomes ``MkG :: forall a b. a -> Maybe b -> G (Either Int b)``.
+      #. Type signatures for variable declarations, methods, and foreign imports & exports.
+         Example: ``let f :: a -> a; f = ... in ...`` becomes
+         ``let f :: forall a. a -> a; f = ... in ...``.
 
-   #. Pattern synonym signatures. Example: ``pattern P :: a -> Maybe a`` becomes
-      ``pattern P :: forall a. a -> Maybe a``. Implicit quantification in pattern synonyms
-      always produces *universal* variables, never existential ones.
+      #. Kind signatures. Example: ``type T :: k -> Type`` becomes ``type T :: forall k. k -> Type``.
 
-   #. Type annotations in expressions and ``SPECIALISE`` pragmas. Example:
-      ``Right True :: Either a Bool`` becomes ``Right True :: forall a. Either a Bool``.
+      #. GADT constructor declarations. Example: ``MkG :: a -> Maybe b -> G (Either Int b)``
+         becomes ``MkG :: forall a b. a -> Maybe b -> G (Either Int b)``.
 
-   #. Types in a ``deriving`` clause. Example: ``data T deriving (C a)`` becomes
-      ``data T deriving (forall a. C a)``.
+      #. Pattern synonym signatures. Example: ``pattern P :: a -> Maybe a`` becomes
+         ``pattern P :: forall a. a -> Maybe a``. Implicit quantification in pattern synonyms
+         always produces *universal* variables, never existential ones.
 
-   #. Instance heads, including standalone-deriving instances.
-      Example: ``instance Show a => Show (Maybe a)`` becomes
-      ``instance forall a. Show a => Show (Maybe a)``.
+      #. Type annotations in expressions and ``SPECIALISE`` pragmas. Example:
+         ``Right True :: Either a Bool`` becomes ``Right True :: forall a. Either a Bool``.
 
-   #. Type and data family instances, as well as closed type family equations.
-      Example: ``type instance F (Maybe a) = Int``
-      becomes ``type instance forall a. F (Maybe a) = Int``.
+      #. Types in a ``deriving`` clause. Example: ``data T deriving (C a)`` becomes
+         ``data T deriving (forall a. C a)``.
 
-   #. ``RULES`` pragmas.
-      Example: ``{-# RULES "name" forall (x :: Maybe a). foo x = 5 #-}``
-      becomes ``{-# RULES "name" forall a. forall (x :: Maybe a). foo x = 5 #-}``.
-      (The double-\ ``forall`` syntax separates type variables like ``a`` from
-      term variables like ``x``.)
+      #. Instance heads, including standalone-deriving instances.
+         Example: ``instance Show a => Show (Maybe a)`` becomes
+         ``instance forall a. Show a => Show (Maybe a)``.
 
-   This extension is part of accepted, unimplemented proposal `#285`_; the only change is including ``RULES`` pragmas, which @Ericson2314 simply forgot to include in `#285`_ (his own admission).
+      #. Type and data family instances, as well as closed type family equations.
+         Example: ``type instance F (Maybe a) = Int``
+         becomes ``type instance forall a. F (Maybe a) = Int``.
 
-   Being able to turn off this extension is necessary to uphold the `Explicit Binding Principle`_.
+      #. ``RULES`` pragmas.
+         Example: ``{-# RULES "name" forall (x :: Maybe a). foo x = 5 #-}``
+         becomes ``{-# RULES "name" forall a. forall (x :: Maybe a). foo x = 5 #-}``.
+         (The double-\ ``forall`` syntax separates type variables like ``a`` from
+         term variables like ``x``.)
 
-#. Introduce a new warning ``-Wpattern-signature-binds`` (available in ``-Weverything``) that
-   warns whenever an out-of-scope type variable is mentioned in a pattern signature.
+      This is the former ``-XImplicitForAll`` from accepted but unimplemented proposal `#285`_;
+      the only change is including ``RULES`` pragmas, which @Ericson2314 simply forgot to include in `#285`_ (his own admission).
+
+   #. Implicit binds in pattern signatures:
+
+      Out-of-scope type variables written in a pattern signature would be bound there and would remain in scope over the same region of code that term-level variables introduced in a pattern scope over.
+
+      This is the former ``-XPatternSignatureBinds`` from accepted, unimplemented proposal `#285`_.
+
+   #. Implicit binds in kind signatures:
+
+      Out-of-scope type variables written in a negative position kind signatures (positive ones are implicit foralls) are bound as implicit capital lambdas to the left of the parameter they occur in.
+
+      This was intended to be included in the former ``-XPatternSignatureBinds`` from accepted, unimplemented proposal `#285`_, but mistakenly wasn't as these are not "pattern signatures" in the current terminology.
+
+   This extension is on by default for backwards compatibility.
 
 Effects
 ~~~~~~~
@@ -316,8 +390,12 @@ Effects
 Alternatives
 ~~~~~~~~~~~~
 
-1. Previous versions of this proposal, along with the accepted `#285`_, use ``-XNoPatternSignatureBinds`` instead of ``-Wpattern-signature-binds``.
-   However, there seems to be no good reason this must be an extension, instead of a warning.
+1. We could further breaking down ``-XImplicitBinds``, like before.
+
+   But fixing the drafting error would require a *third* extension, ``-XNegativeSignatureBinds``, in addition to the original two.
+   This would allow more conservative defaults --- we must have Haskell98 implicit foralls but not the others which are all guarded behind language extensions today.
+
+   However, @Ericson2314 sense there is a weariness with too many extensions coming from this, and so didn't so it.
 
 Type arguments in constructor patterns
 --------------------------------------
@@ -340,7 +418,7 @@ shadowing any in-scope type variable ``a``. This design supports the
 `Visibility Orthogonality Principle`_, which states that the presence of
 an ``@`` should affect only whether a thing is visible or not, not other
 characteristics (like its shadowing and scoping behavior). Additionally,
-this choice edges us closer to the `Local Lexical Scoping Principle`_,
+this choice edges us closer to the `Lexical Scoping Principle`_,
 because we no longer have to check whether ``a`` is in scope before identifying
 the ``a`` in ``f (Just @a x) = ...`` is a binding site or an occurrence.
 
@@ -501,6 +579,162 @@ This shadowing behavior mimics what happens with term variables in patterns.
   f (Just @a _)  = (5 :: a)
 
 This is accepted. The type variable ``a`` is bound to ``Int``, by pattern-matching.
+
+``-XNoImplicitBinds``
+^^^^^^^^^^^^^^^^^^^^^
+
+Many of these examples also use ``-XTypeAbstractions`` from here and Proposal `#425`_.
+
+Basic examples
+""""""""""""""
+
+#. ::
+
+     f :: t -> ... -- error: `t` is not bound
+     f x = ...
+
+   This could be rewritten as::
+
+     f :: forall t. t -> ...
+     f x = ...
+
+#. ::
+
+     f (x :: t) = ... -- error: `t` is not bound
+
+   This could be rewritten as::
+
+     f :: forall t0. ...
+     f @t (x :: t) = ... -- OK
+
+#. ::
+
+     data Some where
+       MkSome :: forall t. t -> Some
+
+     f (MkSome (x :: t)) = ... -- error: `t` is not bound
+
+   This could be rewritten as::
+
+     data Some where
+       MkSome :: forall t. t -> Some
+
+     f (MkSome @t x) = ... -- OK
+
+Not just term definitions
+"""""""""""""""""""""""""
+
+Besides top level term bindings, we currently have signatures with implicit forall quantification for expressions, data declerations, family declarations, and instances [#class-forall]_.
+This proposal applies to all alike:
+
+#. ::
+
+     ... (id :: t -> t) -- error: `t` is not bound
+
+   This could be rewritten as::
+
+     ... (id :: forall t. t -> t) -- OK
+
+#. ::
+
+    data D :: k -> Type where -- error: `k` is not bound
+
+   This could be rewritten as::
+
+    data D :: forall k. k -> Type where -- OK
+
+#. ::
+
+    type family F :: k -> Type where -- error: `k` is not bound
+
+   This could be rewritten as::
+
+    type family F :: forall k. k -> Type where -- OK
+
+#. ::
+
+    instance Eq t => C t where -- error: `t` is not bound
+
+   This could be rewritten as::
+
+    instance forall t. Eq t => C t where -- OK
+
+When ``-XStandaloneKindSignatures`` is on, these new standalone signatures are affected as well.
+
+#. ::
+
+     type F :: k -> Type -- error: `k` is not bound
+     data F _ = ...
+
+   This could be rewritten as::
+
+     type F :: forall k. k -> Type -- OK
+     data F _ = ...
+
+#. ::
+
+     type F :: k -> k -- error: `k` is not bound
+     type family F where
+
+   This could be rewritten as::
+
+     type F :: forall k. k -> k -- OK
+     type family F where
+
+#. ::
+
+     type C :: (k -> Type) -> Constraint -- error: `k` is not bound
+     class C f where
+
+   This could be rewritten as::
+
+     type C :: forall k. (k -> Type) -> Constraint -- OK
+     class C f where
+
+#. ::
+
+     type D :: k -> Type -- error: `k` is not bound
+     data D where
+
+   This could be rewritten as::
+
+     type D :: forall k. k -> Type -- OK
+     data D where
+
+Pattern signatures in GADT declarations, family declarations, and class declarations are also restricted.
+I'll first use a hypothetical yet-unproposed ``@``-abstraction syntax to "fix" these examples to demonstrate the analogy to the previous examples.
+Then I'll put the inline signature or top-level signature workaround that exist today.
+
+#. ::
+
+     data D (y :: x) (z :: y) where -- error: `x` is not bound, `y` and `z` are fine
+
+   Could be be rewritten as::
+
+     data D @x (y :: x) (z :: y) where -- OK
+
+#. ::
+
+     type family F (y :: x) (z :: y) where -- error: `x` is not bound, `y` and `z` are fine
+
+   Could be be rewritten as::
+
+     type family F @x (y :: x) (z :: y) where -- OK
+
+#. ::
+
+     class Eq a => C (y :: x) (z :: y) where -- error: `x` is not bound, `y` and `z` are fine
+
+   Could be be rewritten as::
+
+     class Eq a => C @x (y :: x) (z :: y) where -- OK
+
+   Note that since there is no ``class F :: ...`` syntax analogous to ``data F :: ...``,
+   so ``-XStandaloneKindSignatures`` are the only way to write explicitly kind-polymorphic classes.
+
+Note that the variables to the left of the ``::`` are are deemed explicit bindings analogous to ``f (y :: x) (z :: z) = ...`` and permitted.
+However ``x`` to the right of the ``::`` is a use, not otherwise bound, and thus implicit binding today.
+It is not permitted as-is, and must be explicitly bound or discarded as done in the working alternatives.
 
 Effects
 ~~~~~~~
@@ -1045,22 +1279,44 @@ Effects and Interactions
 The effects of this proposal are written out in the individual sections. Here,
 I summarize the effects on the principles_.
 
-1. We get closer to the `Lexical Scoping Principle`_: with ``-Werror=pattern-signature-binds``, type
-   variables cannot be bound in pattern signatures,
-   closing one of the places where the `Lexical Scoping Principle`_ is currently violated.
+#. The `Explicit Variable Principle`_ is made to hold, by allowing explicit binders for type variables
+   for existentials and the variables bound by an inner ``forall`` in a higher-rank
+   type.
+
+#. The `Lexical Scoping Principle`_ is made to hold with ``-XNoImplicitBinds``
+
+   Indeed, the purpose of ``-XNoImplicitBinds`` is to be the single extension which is both necessary and sufficient to do this.
+
+   The `Lexical Scoping Principle`_, part (a), is upheld.
+   Binders occur in patterns, after ``forall``, in
+   ``let`` declarations, and a few other discrete places in the AST -- and
+   nowhere else. In particular, binders do not occur in pattern signatures.
+
+   The `Lexical Scoping Principle`_ part (a) is made to hold, by describing pattern-signature binds as occurrences
+   and making type applications in patterns unconditionally bring new variables
+   into scope.
 
    This would not be the case with the treatment of in-scope variables as originally written
    in `#126`_, where the choice between a binding site and an occurrence depends on whether a
    type variable is in scope.
 
-#. The `Explicit Variable Principle`_ is made to hold, by allowing explicit binders for type variables
-   for existentials and the variables bound by an inner ``forall`` in a higher-rank
-   type.
+#. The `Syntactic Unification Principle`_ is bolstersted by ``-XNoImplicitBinds``
 
-#. The `Explicit Binding Principle`_ is made to hold, by introducing ``-XNoImplicitForAll`` and
-   ``-Werror=pattern-signature-binds``. However, it is impossible
-   to use pattern signatures in this mode; there is no alternative
-   way to bind pattern-signature variables.
+   As discussed in the "Consistency" section of the motivation for that extension, the different forms of implicit binding we have today work quite differently.
+   In many case, those different forms are chiefly distinguished by being confined to one of the type- or term- level, e.g. regular pattern for type synonym right hand sides.
+   A lack of inconsistency on this front therefore is part of the type and term syntax unification espoused by this principle.
+
+#. The `Explicit Binding Principle`_ is made to hold under ``-XNoImplicitBinds`` and ``-XPatternSignatures`` by side-stepping the need for new explicit syntax.
+
+   Making ``-XPatternSignatures`` not imply implicit bindings keeps that exntension in accordance with the `Explicit Binding Principle`_.
+   That principle says implicit binding constructions should have explicit counterparts they desugar to.
+
+   In general, solutions to `Lexical Scoping Principle`_ are also solutions to `Explicit Binding Principle`_.
+   It is just for implicit forms ones wishes to leave enabled that explicit syntax is needed, and explicit syntax forms an additional solution to the `Explicit Binding Principle`_ (and not the `Lexical Scoping Principle`_).
+
+   ``let type name = _ in``, proposed in Proposal `#523`_, would be such explicit syntax.
+   If that proposal is accepted, then we can say ``-XNoImplicitBinds`` goes back to just being a solution for the `Lexical Scoping Principle`_, and ``let type name = _ in`` is just the solution for the `Explicit Binding Principle`_.
+   This is conceptually simpler and we hope to get there, but in the meantime we don't want to deny ``-XNoImplicitBinds`` its extra benefit!
 
 #. The `Visibility Orthogonality Principle`_ is made to hold, by ensuring that types and terms are treated identically
    in patterns. This was not the case with the old version of `#126`_ for constructor patterns, which
