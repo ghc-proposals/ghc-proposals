@@ -3,7 +3,7 @@
 
 .. author:: Jakob Brünker
 .. date-accepted:: 2021-09-21
-.. ticket-url::
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/20768
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/302>`_.
