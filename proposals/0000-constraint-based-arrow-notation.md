@@ -10,13 +10,21 @@ This proposal is [discussed at this pull request](https://github.com/ghc-proposa
 
 # Constraint based arrow notation
 
-Since GHC 7.8, the desugaring of custom commands (aka `(|` banana brackets `|)`) in [arrow notation][] has differed from that used in both [the original paper][Paterson01] and [the original implementation in GHC][Paterson04]. The current desugaring is easier to typecheck and theoretically provides the same expressive power as the original desugaring, but in practice, it is incompatible with the types programmers assign to control operators. For example, consider the type of `handle` given in the paper and [the `arrows` library][hackage:arrows]:
+Since GHC 7.8, the desugaring of custom commands (aka `(|` banana brackets `|)`) in [arrow notation][] has differed from that used in both [the original paper][Paterson01] and [the original implementation in GHC][Paterson04]. The new desugaring technically provides the same expressive power as the original desugaring, but in practice, it is incompatible with the types programmers assign to control operators. For example, consider the type of `handle` given in the paper and [the `arrows` library][hackage:arrows]:
 
 ```haskell
 handle :: ArrowError e arr => arr a b -> arr (a, e) b -> arr a b
 ```
 
-The original desugaring supported the use of `handle` as a control operator, but under GHC’s current desugaring, it fails to typecheck. This proposal presents an alternate, constraint-based approach that is more faithful to the original notation, allowing many more operations to be used directly as control operators.
+The original desugaring supported the use of `handle` as a control operator, but under GHC’s current desugaring, it fails to typecheck. This dramatically reduces the usefulness of custom control operators, so much so that it arguably constitutes a bug.
+
+Why was such an unhelpful change made to begin with? It’s not entirely clear, but as far as I can tell, it appears to have been only quasi-intentional: it coincided with a larger change to GHC’s typechecker that made the old typechecking strategy no longer viable, and nobody sufficiently familiar with arrow notation was immediately available. Therefore, the change was made to accommodate the implementation, as the revised desugaring is easier to typecheck.
+
+Of course, that is quite backwards, as a simpler implementation does not by itself justify making a feature dramatically less useful. This proposal outlines a strategy to fix this historical mistake, divided into two parts:
+
+  1. First, it proposes a set of **updated declarative typing rules for custom control operators in arrow notation**. These rules are not precisely equivalent to the original ones proposed by Paterson (and hence this proposal amounts to a little more than a simple bug fix), but I argue they are both philosophically consistent with them and an improvement on the original design.
+
+  2. Second, it provides **a sketch of how the updated rules can be implemented** in GHC. Though implementation details are usually considered out of scope for a proposal, given that the original change was made due to implementation difficulties, it seems wise to present an overview of a new (algorithmic) typechecking strategy.
 
 ## Motivation
 
@@ -136,9 +144,9 @@ The following section describes this strategy in gory detail.
 
 To restore the spirit of the original system, I propose the following modifications to GHC’s implementation of arrow notation.
 
-### Typechecking
+### Declarative rules
 
-Both the original and current system [are specified][Paterson04] using judgments of the following form:
+Typechecking rules for both the original and current system [are specified][Paterson04] using judgments of the following form:
 
 ```
 G;D |-a c :: stk --> t
@@ -156,45 +164,139 @@ ys \subseteq xs
 G;xs |-a cmd exp :: stk --> t2
 ```
 
-I do not propose any radical changes to the structure of the `|-a` judgment or its rules, but I suggest the following key modifications:
+I do not propose any radical changes to the structure of the `|-a` judgment or its rules. In fact, my proposed rules are identical to the ones [given by Paterson to describe GHC’s original behavior][Paterson04], modulo a small adjustment to the definition of a single metafunction. Unfortunately, Paterson’s notational choices obscure both the specifics of his original specification and my proposed change, so some clarification is necessary.
 
-  1. Eliminate the requirement that `stk` be strictly an input to `|-a`. Instead, allow it to be an arbitrary type of kind `[Type]`. This allows `stk` to be a (potentially unsolved) metavariable rather than a concrete list, which allows GHC’s typechecker to propagate information bidirectionally using the ordinary type inference mechanism.
+In Paterson’s original specification (see the previous link), he periodically uses overbar notation to represent repetition, such as in the following two rules for command application and control operators:
 
-  2. Introduce two wired-in type families:
+![](0000-constraint-based-arrow-notation/paterson-overbar-rules.png)
 
-     1. `ArrowStackTup :: [Type] -> Type`, which converts a stack type to a tuple. Morally, it is a closed type family with the following infinitely-long definition:
+Note that the overbar notation is used in precisely two ways:
 
-        ```haskell
-        type family ArrowStackTup stk where
-          ArrowStackTup '[a]       = a
-          ArrowStackTup '[a, b]    = (a, b)
-          ArrowStackTup '[a, b, c] = (a, b, c)
-          ...
-        ```
+  1. In the first rule, it is always used in the form 𝜏̅ ⇀ 𝜎 to mean some repetition of the form
 
-        This type family is non-injective, as the RHS of the first case overlaps with all other cases.
+     &nbsp;&nbsp;&nbsp;&nbsp; 𝜏<sub>1</sub> ⇀ 𝜏<sub>2</sub> ⇀ ⋯ ⇀ 𝜏<sub>𝑖−1</sub> ⇀ 𝜏<sub>𝑖</sub> ⇀ 𝜎
 
-     2. `ArrowEnvTup :: Type -> [Type] -> Type`, which accepts an environment and a stack and produces a tuple. This is quite similar to `ArrowStackTup`, and it has a similar definition:
+     which corresponds to the types of the values on the current arrow stack. This is fairly intuitive.
 
-         ```haskell
-         data ArrowEnv env -- an opaque type that represents the local environment
+  2. The second rule additionally features the notation (𝜎, 𝜏̅). What precisely this means is less obvious, as the most straightforward interpretation would be
 
-         type family ArrowEnvTup env stk = arg | arg -> env stk where
-           ArrowEnvTup env '[]     = ArrowEnv env
-           ArrowEnvTup env '[a]    = (ArrowEnv env, a)
-           ArrowEnvTup env '[a, b] = (ArrowEnv env, a, b)
-           ...
-         ```
+     &nbsp;&nbsp;&nbsp;&nbsp; (𝜎, 𝜏<sub>1</sub>, 𝜏<sub>2</sub>, ⋯, 𝜏<sub>𝑖−1</sub>, 𝜏<sub>𝑖</sub>)
 
-         Crucially, this type family *is* injective, which preserves important type inference properties.
+     which is to say it represents a tuple type of size 𝑖+1.
 
-  3. Change the `|-a` rules for `f -< e`, `f -<< e`, `c e`, `\p -> c`, and `(| e c ... |)` to use the above type families in the relevant places. In the context of GHC’s implementation, this means emitting equality constraints between applications of those type families rather than solving everything up front.
+     Unfortunately, this is *not* the intended interpretation. Indeed, the only way to divine what was actually intended is to read [Paterson’s original paper][Paterson01], which gives an explicit, inductive definition in Definition 3. Under that definition, (𝜎, 𝜏̅) in fact means
 
-Because the ASCII-art versions of the modified rules are more difficult to read than properly typeset versions, I’ve created readable renderings of the key rules (where Sᴛᴋ⟦𝜎⟧ is used in place of `ArrowStackTup` and Eɴᴠ⟦𝜏,𝜎⟧ is used in place of `ArrowEnvTup`):
+     &nbsp;&nbsp;&nbsp;&nbsp; (( ⋯ ((𝜎, 𝜏<sub>1</sub>), 𝜏<sub>2</sub>), ⋯ , 𝜏<sub>𝑖−1</sub>), 𝜏<sub>𝑖</sub>)
 
-<img src="0000-typechecking-rules.png" height="600" />
+     which is to say it represents a left-associated nest of pairs, not a flat tuple of size 𝑖+1. In the case that 𝑖 is 0, the expansion is simply the type 𝜎, with no additional wrapping. This is the representation that was used by GHC 7.6.
 
-The full set of rules, rendered from [this Ott model](0000-typechecking-rules.ott), are [available here in PDF form](0000-typechecking-rules.pdf).
+Fortunately, given that context, my proposed change to these rules is quite simple: **I propose that GHC return to Paterson’s original rules, as were used prior to GHC 7.8, but with the flat tuple interpretation of the (𝜎, 𝜏̅) notation discussed above.** That is, this proposal suggests using Paterson’s rules, but reinterpreting (𝜎, 𝜏̅) to mean
+
+&nbsp;&nbsp;&nbsp;&nbsp; (𝜎, 𝜏<sub>1</sub>, 𝜏<sub>2</sub>, ⋯, 𝜏<sub>𝑖−1</sub>, 𝜏<sub>𝑖</sub>)
+
+rather than a left-associated nest of pairs.
+
+#### Reformulated rules
+
+Strictly speaking, the previous section is enough to serve as a complete change specification. This proposal does not recommend any further deviations from the GHC 7.6 behavior, so if a return to the GHC 7.6 behavior can be called a bugfix, the change proposed is minuscule.
+
+However, the above specification of the change is quite unsatisfying, as it hinges upon reinterpreting already-ambiguous notation to mean something different from what its author seems to have intended. What’s more, discussion on this proposal has highlighted further ways in which Paterson’s notation is confusing, such as the fact that he uses the names 𝜏, 𝜏̅, 𝜏<sub>𝑖</sub>, and 𝜏̅<sub>𝑖</sub> as *different, unrelated metavariables* in the rule for control operators.
+
+All that is to say that GHC would evidently benefit from a clearer, less ambiguous specification of arrow notation, so this proposal additionally includes a reformulation of Paterson’s typechecking rules using a modified notation. For example, here is the revised version of Paterson’s typechecking rule for control operator commands:
+
+![](0000-constraint-based-arrow-notation/revised-paterson-operator-rule.png)
+
+In addition to various minor differences intended to avoid ambiguity, the most significant departure from Paterson’s notation is the replacement of (𝑤, 𝜎̅) with Tᴜᴘ〚𝑤, 𝜎̅〛. Tᴜᴘ is an n-ary *metafunction*, and under this proposal, it has the following definition:
+
+![](0000-constraint-based-arrow-notation/tup-metafunction-proposed.png)
+
+That is, Tᴜᴘ applied to a single argument is a no-op, and Tᴜᴘ applied to more than one argument builds an n-tuple from its arguments.
+
+The explicit introduction of the Tᴜᴘ metafunction serves two purposes. First, it allows its meaning to be spelled out in a way that is excruciatingly clear, avoiding any potential confusion inherent in the (𝜎, 𝜏̅) notation. Second, it allows the actual change recommended by this proposal to be expressed in a dramatically simpler way, as Paterson’s original rules can be recovered by simply using an alternative definition for Tᴜᴘ:
+
+![](0000-constraint-based-arrow-notation/tup-metafunction-paterson.png)
+
+Therefore, the actual behavioral change suggested by this proposal can be precisely stated as replacing the second definition of Tᴜᴘ with the first one.
+
+### Algorithmic rules
+
+The previous section fully captures the *what* of this proposal, but it leaves open questions about the *how*. Technically, answering the latter question is not a requirement for a proposal’s acceptance, so the algorithmic changes to the typechecker could be left to the implementation. However, seeing as the changes made to arrow notation in GHC 7.8 were due to uncertainty about how to implement the previous rules, it seems wise to discuss some algorithmic details in the proposal itself.
+
+First, it’s crucial to understand why implementing the declarative rules is challenging in the first place. The difficulty lies entirely in a potential interaction between the typechecking rules for arrow application and control operators:
+
+![](0000-constraint-based-arrow-notation/tricky-declarative-rules.png)
+
+Remember that Tᴜᴘ is a metafunction, so applications of Tᴜᴘ must be replaced with their corresponding result types to be able to build a `TcType` at all. If the arguments to Tᴜᴘ are known during constraint generation, this is no big deal: we could define a function
+
+```haskell
+arrowTupMF :: [TcType] -> TcType
+arrowTupMF [ty] = ty
+arrowTupMF tys  = mkTupleTy1 Boxed tys
+```
+
+and directly translate the type equalities demanded by the declarative rule into constraints that GHC’s constraint solver can understand. Unfortunately, if we can’t determine the number of arguments to Tᴜᴘ during constraint generation, such a strategy cannot work, as we won’t know which case of `arrowTupMF` to pick.
+
+The question, therefore, is whether it’s possible in general to determine the number of arguments to Tᴜᴘ without solving constraints, and unfortunately the answer is *no*. For example, consider the following program:
+
+```haskell
+type family F a where
+  F ()   = ()
+  F Bool = (Bool, Bool)
+
+foo :: F a -> a
+
+bar :: () -> ()
+bar = proc () -> (| id (foo -< ()) |)
+```
+
+This program is well-typed under the declarative system if (and only if) the arrow stack is always empty. But how can the typechecker learn that fact? Typechecking the body of `baz` requires proving the statement
+
+<pre><code>Γ | ∅ ⊢<sub>(->)</sub> (| id (foo -< ()) |) :: ()</code></pre>
+
+which in turn requires proving the following subgoals:
+
+<pre><code>Γ ⊢ id :: forall w. (Tup〚w, σ̅〛 -> ()) -> Tup〚w〛 -> ()
+Γ ⊢ foo :: Tup〚(), σ̅〛 -> ()</code></pre>
+
+Neither subgoal, in isolation, allows the typechecker to discern the length of 𝜎̅. Checking the type of `id` certainly doesn’t immediately reveal anything, as the argument type is just a fresh type variable. Meanwhile, discovering the structure of the argument to `foo` requires instantiating `a` and simplifying the application `F a`, a textbook example of something that’s the constraint solver’s responsibility.
+
+Therefore, there’s simply no way to reduce the Tᴜᴘ metafunction at constraint generation time—rather, the typechecker must rely on the constraint solver to do that reduction.
+
+But this should not seem terribly surprising! After all, the Tᴜᴘ “metafunction” looks an awful lot like a type family. Indeed, we could imagine defining a closed type family that corresponds directly to the definition of the Tᴜᴘ metafunction given above:
+
+```haskell
+type family Tup stk where
+  Tup '[a]       = a
+  Tup '[a, b]    = (a, b)
+  Tup '[a, b, c] = (a, b, c)
+  ...
+```
+
+Since GHC has a maximum tuple size, this type family could have a finite definition, and GHC could simply emit equality constraints that contain applications of the `Tup` type family wherever the declarative rules use the Tᴜᴘ metafunction.
+
+Unfortunately, this strategy is still not quite good enough to typecheck the above program. The problem stems from the fact that `Tup` is not injective, so the constraint solver can’t learn any information from equalities of the shape `[W] Tup stk ~ arg` unless the outermost structure of `stk` is already known. And frustratingly, lacking knowledge of the outermost structure of `stk`—which corresponds to the number of arguments passed to the Tᴜᴘ metafunction—is precisely the problem we’re trying to avoid.
+
+However, all is not lost. In the typechecking rule for control operators, the first argument to Tᴜᴘ is always a quantified type variable, and unusually, that type variable is instantiated by the *compiler*, not user code. The type variable stands for the “command environment” used by the compiler to thread the values of arrow-local variables through the computation (desugaring arrow notation is rather like performing lambda lifting), and the quantification ensures that the control operator’s type does not depend on the compiler’s choice of representation.
+
+This detail seems unrelated, but it turns out to give us exactly the leverage we need: since GHC can arrange for the type used to represent the command environment to be anything at all, it can ensure the first argument to Tᴜᴘ is *never* itself a tuple type. This allows defining an alternate version of `Tup` that *is*, in fact, injective:
+
+```haskell
+data ArrowEnv env -- an opaque type representing the command environment
+
+type family ArrowEnvTup env stk = arg | arg -> env stk where
+  ArrowEnvTup env '[]     = ArrowEnv env
+  ArrowEnvTup env '[a]    = (ArrowEnv env, a)
+  ArrowEnvTup env '[a, b] = (ArrowEnv env, a, b)
+  ...
+```
+
+Now, when typechecking control operators, GHC can represent Tup〚w, σ̅〛 with the type `ArrowEnvTup w stk` rather than `Tup (w ': stk)`. And since this type family is genuinely injective, given a constraint `[W] Tup stk ~ arg`, the constraint solver can learn information about the shape of `stk` if it knows information about the shape of `arg` which turns out to be precisely the sort of inference needed to typecheck the above program.
+
+#### Implementing the algorithmic system
+
+The reasoning in the previous section provides a compelling implementation strategy for this proposal: literally introduce `Tup` and `ArrowEnvTup` type families in `GHC.Desugar` and update the constraint generator and desugarer to use them. However, it should be said that is not the *only* possible implementation strategy, and indeed, there are potential advantages to taking a different route.
+
+However, there are potential advantages to taking an alternative route: instead of using type families, GHC could emit an entirely new type of constraint specialized to handling arrow notation. Such an approach could make it much easier to produce dramatically better error messages, since mysterious type families would not leak into the types printed in errors, and it would enable more opportunities for constraint “improvement” that GHC currently does not perform for injective type families.
 
 ### Desugaring
 
