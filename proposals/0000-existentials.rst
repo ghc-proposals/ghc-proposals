@@ -33,7 +33,7 @@ Motivation
    which is laborious. Furthermore, packing and unpacking these datatypes
    must be done by hand, which is cluttersome.
 
-  .. _filter:
+   .. _filter:
 
 #. A simple example, clearly aided by existentials is ``filter`` over
    length-indexed vectors::
@@ -392,9 +392,9 @@ Proposed Change Specification
    into the scheme outlined in `#17934`_.
 
 #. **Compilation.** The new ``Pack`` and ``Open`` constructs can be erased entirely
-    during code generation. This is why the representation of ``exists (a :: k). ty``
-    is the same as the representation of ``ty``. This is exactly the same as the treatment
-    of ``forall`` and type application.
+   during code generation. This is why the representation of ``exists (a :: k). ty``
+   is the same as the representation of ``ty``. This is exactly the same as the treatment
+   of ``forall`` and type application.
 
 Optional Extension
 ------------------
@@ -409,8 +409,7 @@ Haskell, ``TWitness`` becomes a synonym for ``Witness``.)
 Supporting this feature would require yet more extensions to Core:
 * ``PackTy`` and ``OpenTy`` in ``Type``, analogous to ``Pack`` and ``Open`` in ``Expr``.
 * ``TWitness`` in ``Type``, analogous to ``Witness``.
-* ``TWitnessPackCo`` and ``TWitnessCo`` in ``Coercion``, analogous to ``WitnessPackCo`` and
-  ``WitnessCo``.
+* ``TWitnessPackCo`` and ``TWitnessCo`` in ``Coercion``, analogous to ``WitnessPackCo`` and ``WitnessCo``.
 
 I would prefer not to have this extension, but save type-level support for packing
 and opening existentials until we have proper dependent types.
