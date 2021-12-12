@@ -14,7 +14,7 @@ GHC.
 * `≡ List of rejected proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Rejected%22>`_
 * `≡ List of implemented proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`_
 * `≡ List of all proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=>`_
-  
+
 What is a proposal?
 -------------------
 
@@ -41,6 +41,10 @@ Should the GHC maintainers deem a change significant or controversial enough to
 warrant that, they may, at their discretion, involve the committee and ask the
 contributor to write a formal proposal.
 
+Proposals may contain amendments to our principles_, which serve as a guideline
+for future proposals and for the general evolution of GHC.
+
+.. _principles: principles.rst
 
 The life cycle of a proposal
 -----------------------------------
@@ -504,6 +508,13 @@ and any other relevant considerations, appropriately.
    with other new features. In the common case the original implementor of
    a feature moves on to other things after a few years, and this
    maintenance burden falls on others.
+
+* *It should conform to existing principles*. This repository contains
+  a principles_ document that lays out various principles guiding future
+  directions for GHC. Proposals should seek to uphold these principles
+  in new features, as much as possible. Note that these principles are not
+  absolutes, and regressions against the principles are possible, if a
+  proposal is otherwise very strong.
 
 How to build the proposals?
 ---------------------------
