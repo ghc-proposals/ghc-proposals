@@ -1,3 +1,6 @@
+.. sectnum::
+.. highlight:: haskell
+
 Principles for GHC
 ==================
 
