@@ -151,6 +151,11 @@ Proposed Change Specification
       ``TYPE rep`` for some ``rep``. The type ``exists tv_bndrs. ty`` itself
       has the same kind. (This is just like how ``forall`` is kinded.)
 
+   #. Existential quantification is not allowed in the top-level "spine" of
+      a GADT data constructor type, nor in a pattern synonym type. Arguments
+      of existential type are fine. Example: a data constructor ``Mk :: exists k. T k``
+      is disallowed, while ``Mk :: (exists k. Maybe k) -> T`` is fine.
+
 #. When looking up a lower-case identifier in type-syntax, if the name is not
    in scope, look in the term-level namespace before failing. Any term-level
    names are rejected during type-checking. This is much like the treatment
@@ -231,7 +236,8 @@ Proposed Change Specification
 
    #. When inferring the type of an expression ``e``, if that type is ``C /\ ty``, then rewrite that
       type to become ``ty`` and assume ``C`` as a given, available for use anywhere in the innermost
-      case-match or lambda. (This is rule ``IGiven`` in Fig. 11 of the paper_.) Use of such a given
+      case-match or lambda, including invisible lambdas as introduced in the argument to a function
+      with a higher-rank type. (This is rule ``IGiven`` in Fig. 11 of the paper_.) Use of such a given
       may have a surprising influence on runtime behavior, see Ambiguity_, below.
 
    #. When inferring the type of a lambda-expression ``\ pats -> e``, we must ensure that no variable bound
@@ -252,6 +258,19 @@ Proposed Change Specification
    #. When trying to satisfy a class constraint ``[W] C (C' /\ ty)``, instead solve
       ``[W] C' => C ty``. That is, assume ``C'`` as a given and then solve ``[W] C ty``.
       For multi-parameter type classes, apply this treatment one argument at a time.
+
+#. ``GHC.Exists`` exports ::
+
+     discardEvidence :: (() => c /\ a) -> a
+     discardEvidence x = x
+
+   This function effectively prevents the evidence for ``c`` from being used. Note that
+   it has a (trivially) higher-rank type, so that GHC introduces an invisible lambda around
+   its argument. Without this invisible lambda, the given would "escape" and be usable.
+
+   The ``discardEvidence`` function itself is completely ordinary and could be defined by
+   users, but the small unexpected twist in its type (and its general usefulness) suggests
+   it should be ``GHC.Exists``.
 
 #. **Core language.** There are several modifications to the Core language necessary to
    support this proposal. The notes here echo the design in the paper_, Section 5.
@@ -463,6 +482,27 @@ Effect and Interactions
    would, in turn, make it easier to write programs with more compile-time
    verification of invariants.
 
+#. Existential quantification can be erased. Currently it requires boxing, and so
+   using an existential may have an impact on the running time of a program.
+   It is a goal of mine that extra compile-time verification should never have
+   a cost at run-time, and this gets us one step closer to that goal.
+
+#. Laziness can be preserved. Currently, operating on existentially quantified values
+   requires forcing them. This is important in applications like ``filter``.
+
+#. With these existentials in place, it is a small step to allow existentials in newtypes,
+   finally addressing long-time feature request `#1965 <https://gitlab.haskell.org/ghc/ghc/-/issues/1965>`_.
+
+#. With either this feature or existential newtypes, a few library types that are currently
+   datatypes could be converted to newtypes. (Example: convert
+   ``data SomeTypeRep where SomeTypeRep :: forall k (a :: k). TypeRep a -> SomeTypeRep`` to
+   become ``newtype SomeTypeRep = SomeTypeRep (exists k (a :: k). TypeRep a)``.) This would
+   give a performance improvement to users who do not use this feature directly.
+
+#. This proposal does not currently interact with datatype-based existentials (as they have
+   existed since the inclusion of GADTs in GHC). It might be desirable for ``Witness`` to work
+   on legacy existentials. However, this is left as future work.
+
 Costs and Drawbacks
 -------------------
 
@@ -473,6 +513,26 @@ Costs and Drawbacks
 #. No language has a feature like this yet. It is possible that it will not
    be so easy to use in practice. It may take an iteration or two before we
    settle on just the right presentation to users.
+
+#. Because expressions now appear in types, any transformation GHC makes on
+   terms (i.e. optimizations) might now change types. (Specifically, if the
+   expression in an ``Open`` expression is optimized, its type changes.) GHC
+   would then have to relate the old expression with the new one via a
+   ``TransformEC`` expression-coercion -- which is why that constructor is
+   so general. (It is used essentially to assert the correctness of the
+   optimization.)
+
+   One particular wrinkle is that the optimization may eliminate the usage
+   of some free variable, and then the expression might be subject to floating.
+   But the now-eliminated variable would still appear in the ``TransformEC``
+   coercion, blocking the floating.
+
+   One solution to this problem would be to take a pass that let-binds all
+   ``Open`` expressions. Then the right-hand side of the let-binding could
+   be optimized without changing the type of the ``Open``; indeed, this idea
+   of let-binding might be a nice simplification regardless, because (I think)
+   it might mean that all ``Open`` expressions could contain only variables,
+   not arbitrary expressions.
 
 Alternatives
 ------------
@@ -488,10 +548,33 @@ Alternatives
    to accomplish the goal of ``/\``). However, I think these features go nicely
    together: would we want ``forall`` without ``=>``?
 
+#. Is ``/\`` a bad name? It has a name-clash with the widely used ``lattices``
+   package (though that package uses the name in the term-level namespace), and
+   it looks symmetrical, though it is not. An alternative might be ::
+
+     SuchThat :: Type -> Constraint -> Type
+
+   expected to be used infix. This would mean we have e.g.
+   ``pprs :: [exists a. a `SuchThat` Outputable a] -> SDoc``. I don't love that
+   the ordering between the constraint and the type is opposite to that of ``=>``,
+   but maybe that's OK.
+
 Unresolved Questions
 --------------------
 
-None at this time.
+1. The proposed ``exists`` erases the existential witness. What if we want to keep
+   it around, as suggested on `GitHub <https://github.com/ghc-proposals/ghc-proposals/pull/473#issuecomment-991433531>`_? I propose not solving this problem now, but instead
+   returning to it when we figure out exactly how to make ``forall`` relevant. Is it
+   worthwhile reserving a keyword though? An alternative would be to have some marker
+   on the bound variable to indicate its relevance (this could work for ``forall`` to,
+   meaning we wouldn't have to introduce the ``foreach`` keyword).
+
+#. Should this happen before or after we have dependent types? Maybe the effort put
+   into designing/implementing this would be better spend doing dependent types.
+   I think this is largely orthogonal to dependent types; it's not clear which one
+   would be easier to implement first. I think this one is easier, and could plausibly
+   let us gain experience with expressions in types without the major changes inherent
+   in supporting dependent types in full, but it's not obvious.
 
 Implementation Plan
 -------------------
