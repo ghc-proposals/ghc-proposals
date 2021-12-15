@@ -68,7 +68,7 @@ command-line option ``-Wno-custom:my-json-lib/decode-integer``.  It is possible
 for use sites to suppress the warning (regardless of flags), for example::
 
     decode_no_warning :: forall a . FromJSON a => ByteString -> Maybe a
-    decode_no_warning = suppressWarning @(WarnInteger a) decode
+    decode_no_warning = suppressWarning @"my-json-lib/decode-integer" decode
 
 
 Proposed Change Specification
@@ -83,7 +83,7 @@ the following definitions::
     type Warning :: Symbol -> ErrorMessage -> Constraint
     class Warning flag msg
 
-    suppressWarning :: forall c flag msg . c ~ Warning flag msg => (c => r) -> r
+    suppressWarning :: forall flag r . ((forall msg. Warning flag msg) => r) -> r
 
 The ``Warning`` class resembles the ``Unsatisfiable`` class from `proposal #433
 <https://github.com/ghc-proposals/ghc-proposals/pull/433>`_, but represents a
@@ -160,16 +160,20 @@ The ``suppressWarning`` function is provided so that users can explicitly
 silence a warning within a particular definition, regardless of which
 command-line flags are in effect::
 
-    suppressWarning :: forall c flag msg . c ~ Warning flag msg => (c => r) -> r
+    suppressWarning :: forall flag r . ((forall msg . Warning flag msg) => r) -> r
 
-This requires a type application specifying the particular ``Warning flag msg``
-constraint being suppressed.  The type is chosen so that the first type argument
-is the entire ``Warning`` constraint, to make it more convenient to package both
-flag and message together in a single constraint synonym.
+This requires a type application specifying the particular ``flag`` being
+suppressed, and uses ``QuantifiedConstraints`` to locally solve all ``Warning``
+constraints with that flag (regardless of the error message).
+
+It is not possible to suppress a single message selectively.  This is preferable
+to needing to specify the message explicitly, as the message may be long and
+depend on implementation details of the library.
 
 The implementation of this function requires compiler support, because it needs
-to construct a dictionary for the ``Warning`` class to pass to the ``c => r``
-argument, which is straightforward in Core but difficult in Haskell.
+to construct a dictionary for the ``forall msg . Warning flag msg`` constraint
+to pass to the argument, which is straightforward in Core but difficult in
+Haskell.
 
 
 Examples
@@ -224,7 +228,7 @@ Examples
 
 #. Users can suppress a warning by acknowledging it in the source code, for example::
 
-      foo = suppressWarning @FoldablePairWarning $ length (1,2)
+      foo = suppressWarning @"base/foldable-pair" $ length (1,2)
 
 
 Effect and Interactions
@@ -295,6 +299,9 @@ because:
 * It is possible to selectively postpone a warning by adding the corresponding
   constraint to the context.
 
+* It is possible to suppress a warning in source code by adding a call to
+  ``suppressWarning``.
+
 A reasonable alternative to this proposal would be to extend ``WARNING`` and
 ``DEPRECATED`` so that they could be attached to class instances, and perhaps
 could gain some of the other features proposed here.
@@ -334,17 +341,39 @@ As proposed, the ``Warning`` class has two separate parameters for the flag and
 message.  Various other designs are possible for encoding this information (see
 `discussion on proposal #433
 <https://github.com/ghc-proposals/ghc-proposals/pull/433#issuecomment-953219137>`_).
+In particular (as `suggested by David Feuer
+<https://github.com/ghc-proposals/ghc-proposals/pull/454#issuecomment-968417439>`_),
+the interface could encourage users to define an empty datatype representing
+each warning, for example::
 
-The approach proposed here is simple and minimal.  It may require some
-repetition of flag names, but
-that seems unlikely to be a problem in practice.  In particular, library authors
-are strongly encouraged to define constraint synonyms for warnings, such as::
+   type IsWarning :: Type -> Constraint
+   class IsWarning key where
+     type Name key :: Symbol
+     type Msg  key :: ErrorMessage
 
-    type MyLibraryWarning = Warning "my-lib/my-warning" (Text "Blah blah")
+   suppressWarning :: forall key r . (IsWarning key => r) -> r
 
-This can keep unnecessary noise out of type signatures and avoid repetition.  In
-particular, such constraint synonyms can be used when calling
-``suppressWarning``.
+   data IntegerTooBig
+   instance IsWarning IntegerTooBig where
+     type Name IntegerTooBig = "integer-too-big"
+     type Msg  IntegerTooBig = Text "Here's the message for an integer being too big"
+
+The datatype provides an identity for each warning, which can be used when
+calling ``suppressWarning @IntegerToBig``, rather than using quantified
+constraints as proposed above.
+
+However, this alternative approach requires introducing a more complex class
+into the basic API (with two associated types) and attaching a warning to a
+definition becomes less lightweight (because of the need to define a datatype).
+
+Instead, the approach recommended in the proposal is simple and minimal.
+Library authors can be encouraged to define constraint synonyms for warnings,
+such as::
+
+    type MyLibraryWarning x = Warning "my-lib/my-warning" (Text "Blah blah" :<>: ShowType x)
+
+This is not required, but can keep unnecessary noise out of type signatures and
+avoid repetition.
 
 If a more elaborate scheme is desired, it is possible to build one on top of the
 interface proposed here, entirely outside ``base`` (see `this gist
