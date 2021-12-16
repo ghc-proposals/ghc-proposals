@@ -96,7 +96,7 @@ This section outlines what stages a proposal may go through. The stage is identi
 8. Label: `Implemented <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`_.   Once a proposal is accepted, it still has to be implemented.  The author
    may do that, or someone else. We mark the proposal as “implemented” once it
    hits GHC’s ``master`` branch (and we are happy to be nudged to do so by
-   email or GitHub issue).
+   email, GitHub issue, or a comment on the relevant pull request).
 
    `≡ List of implemented proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`_
 
