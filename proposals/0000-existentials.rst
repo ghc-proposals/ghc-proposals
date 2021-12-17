@@ -207,9 +207,6 @@ Proposed Change Specification
       We can implement this rule by using a fresh unification variable
       for ``witness_ty`` before checking ``e`` against ``inner_ty``.
 
-   #. ``Witness`` would need to be added to Core, as well, likely as a new
-      constructor of GHC's ``Type`` type.
-
 #. ``GHC.Exists`` exports a type operator ``(/\) :: Constraint -> Type -> Type``;
    ``/\`` is injective and generative, like a datatype. It may appear partially
    applied.
