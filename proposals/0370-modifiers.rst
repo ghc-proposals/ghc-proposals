@@ -71,19 +71,26 @@ Proposed Change Specification
      lpat     ::= {modifier} lpat | ...
 
 6. With ``-XModifiers``, introduce modifier syntax on record field declarations as follows::
-     
+
      fielddecl ::= vars {modifier} '::' (type | '!' atype)
 
 7. With ``-XModifiers``, introduce modifier syntax on top-level declarations as follows::
 
-     topdecl ::= {modifier} 'type' simpletype '=' type
-             |   {modifier} 'data' [context '=>'] simpletype ['=' constrs] [deriving]
-             |   {modifier} 'newtype' [context '=>'] simpletype = newconstr [deriving]
-             |   {modifier} 'class' [scontext '=>'] tycls tyvar ['where' cdecls]
-             |   {modifier} 'instance' [scontext '=>'] qtycls inst ['where' idecls]
-             |   {modifier} 'default' '(' type1 ',' ... ',' typen ')'
-             |   {modifier} 'foreign' fdecl
-             |   decl                            -- unchanged
+     topdecl ::= {modifier} [ ';' ] 'type' simpletype '=' type
+             |   {modifier} [ ';' ] 'data' [context '=>'] simpletype ['=' constrs] [deriving]
+             |   {modifier} [ ';' ] 'newtype' [context '=>'] simpletype = newconstr [deriving]
+             |   {modifier} [ ';' ] 'class' [scontext '=>'] tycls tyvar ['where' cdecls]
+             |   {modifier} [ ';' ] 'instance' [scontext '=>'] qtycls inst ['where' idecls]
+             |   {modifier} [ ';' ] 'default' '(' type1 ',' ... ',' typen ')'
+             |   {modifier} [ ';' ] 'foreign' fdecl
+             |   {modifier} ';' decl
+
+   Recall that the Haskell 2010 Report uses brackets to denote an optional bit
+   of syntax. The optional semicolons allow modifiers to appear on a line
+   previous from the declaration affected. The semicolon is mandatory on
+   ``decl`` because ``decl``\ s do not start with keywords (except for fixity
+   declarations) and may have modifiers of their own. The semicolon makes
+   clear that the modifier is meant to affect the entire declaration.
 
 8. Reserve the use of ``%`` in a prefix occurrence to be used only for modifiers;
    though this proposal does not do so, we can imagine extending the modifier syntax
@@ -91,7 +98,7 @@ Proposed Change Specification
    import lists, etc.).
 
 9. Modifiers are parsed, renamed, and type-checked as *types*.
-   
+
 10. The type of a modifier is determined only by synthesis, never by checking.
     That is, in the bidirectional type-checking scheme used by GHC, we find the
     type of the modifier by running the synthesis judgment. Effectively, this
@@ -175,7 +182,7 @@ Effect and Interactions
   the general scheme (but ``%1`` is one such exception). It is possible that
   future extensions to this idea will be disambiguated before the type checker
   gets a chance to do its work.
-  
+
 * This proposal means that ``Int %m -> Bool``, acceptable today as a
   multiplicity-polymorphic function, would be rejected. The user would need
   to add a kind annotation to tell us that ``m`` is a multiplicity (and not,
@@ -209,7 +216,7 @@ Effect and Interactions
   via a plugin. Perhaps some modifier supports some function call to the GHC API that
   transforms the meaning of bit of syntax. The possibilities are
   tantalizing.
-  
+
 * These modifiers recall Java's `Annotations <https://en.wikipedia.org/wiki/Java_annotation>`_
   mechanism, which were a direct inspiration.
 
@@ -232,7 +239,7 @@ Effect and Interactions
 * Because modifiers are treated as types, they will typically begin with
   a capital letter. (Note that a polymorphic multiplicity is a type variable,
   and this is fine.)
-  
+
 Costs and Drawbacks
 -------------------
 * The loss of the inferred kind of ``m`` in multiplicity polymorphism is a
@@ -260,7 +267,10 @@ Alternatives
 
 * We could avoid ambiguity using extra punctuation (e.g. ``class ( %Mod1, %Mod2 ) C a b => D a b c where ...``),
   but "modifiers come before what they modify" is simple and uniform.
-  
+
+* We could require semicolons between modifiers and opening keyword
+  for all declarations, but it seems easy enough and harmless enough not to.
+
 Unresolved Questions
 --------------------
 * Is it too soon? That is, this proposal solves a problem we do not yet have:
