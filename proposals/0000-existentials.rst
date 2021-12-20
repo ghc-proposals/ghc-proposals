@@ -17,6 +17,7 @@ Crisis Resolved: Type inference for first-class existential types <TODO>`_.
 
 .. _paper: https://richarde.dev/papers/2021/exists/exists.pdf
 .. _`#270`: https://github.com/ghc-proposals/ghc-proposals/pull/270
+.. _`#378`: https://github.com/ghc-proposals/ghc-proposals/pull/378
 .. _`#285`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0285-no-implicit-binds.rst
 .. _`#281`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0281-visible-forall.rst
 .. _T2T: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0281-visible-forall.rst#t2t-mapping
@@ -33,7 +34,7 @@ Motivation
 
    .. _filter:
 
-#. A simple example, clearly aided by existentials is ``filter`` over
+#. A simple example, clearly aided by existentials, is ``filter`` over
    length-indexed vectors::
 
      data Nat = Zero | Succ Nat
@@ -67,6 +68,21 @@ Motivation
    just like ``filter`` should be. I do not believe a lazy implementation
    of ``filter`` over length-indexed vectors is possible in GHC's current
    type system.
+
+#. Along similar lines, existentials allow for easier deserializing of
+   GADTs (credit to @aspiwack)::
+
+     data T a where
+       Int  :: T Int
+       Bool :: T Bool
+
+     serialise :: T a -> String
+     serialise Int  = "int"
+     serialise Bool = "bool"
+
+     deserialise :: String -> exists a. T a
+     deserialise "int"  = Int
+     deserialise "bool" = Bool
 
 #. Suppose we have a pretty-printer based around the following class::
 
@@ -111,7 +127,9 @@ Motivation
 
    Note that this proposal does not go "all the way" toward this encoding of
    refinement types, in that we would not be able to write the type above with
-   this proposal. Nevertheless, the automatic inference of packing and unpacking
+   this proposal. (For one thing, this proposal assumes an erased witness for the
+   existential, although extending this to accommodate retained witnesses seems
+   quite easy.) Nevertheless, the automatic inference of packing and unpacking
    described here seems necessary if we are to integrate Liquid Haskell with the
    rest of GHC's type system.
 
@@ -156,19 +174,6 @@ Proposed Change Specification
       of existential type are fine. Example: a data constructor ``Mk :: exists k. T k``
       is disallowed, while ``Mk :: (exists k. Maybe k) -> T`` is fine.
 
-#. When looking up a lower-case identifier in type-syntax, if the name is not
-   in scope, look in the term-level namespace before failing. Any term-level
-   names are rejected during type-checking. This is much like the treatment
-   in `#270`_. (See ``Witness`` below for the motivation for this.)
-
-   Other than perhaps a change in error messages, this change does not affect
-   the set of programs that GHC accepts or the meanings of any program. In
-   particular, this rule does *not* change GHC's implicit binding of unbound
-   type-level lower-case names. To trigger the new behavior, the lower-case
-   name would be used in a context where there is no implicit binding, such as
-   in a signature with an explicit ``forall`` (according to the forall-or-nothing
-   rule) or with ``-XNoImplicitForAll`` from `#285`_.
-
 #. Introduce a new module in ``base`` called ``GHC.Exists``.
 
 #. ``GHC.Exists`` exports a type-level name ``Witness`` that extracts
@@ -182,8 +187,13 @@ Proposed Change Specification
    #. The argument to ``Witness`` is an *expression*, not a type. However, in order
       to simplify the implementation, the argument is parsed and renamed as
       as a type. After renaming, it must be interpretable as an expression.
+      (This works because of the fact that, under `#378, §4.3.2 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0378-dependent-type-design.rst#changes-to-support-dependent-types>`_,
+      GHC looks up in the term-level namespace if a lookup in the type-level namespace
+      fails.)
       We can imagine an inverse of the T2T_ translation of `#281`_ that would apply
-      here. (If requested, this could be written out in detail in this proposal.)
+      here. (If requested, this could be written out in detail in this proposal.
+      We also might want to consider simply unifying the ``HsExpr`` and ``HsType``
+      types in GHC in order to avoid this step entirely.)
       Because the argument to ``Witness`` is parsed as a type, it cannot use constructs
       like ``case``; a user would have to name an expression in, say, a ``let``-binding
       and then could use the variable instead.
@@ -207,6 +217,18 @@ Proposed Change Specification
       We can implement this rule by using a fresh unification variable
       for ``witness_ty`` before checking ``e`` against ``inner_ty``.
 
+   #. Types in the type-checker are represented using the same GHC type ``Type``
+      as Core types. However, a witness type in Haskell will use a *Haskell*
+      expression, not a *Core* expression. It thus requires a different constructor
+      of ``Type``, which will not be used in Core programs (that is, it will always
+      be a core-lint error)::
+
+        data Type = ...
+                  | HsWitnessTy Type (HsExpr GhcTc)
+
+      The ``Type`` field will always be an existential, and the ``@k`` parameter
+      to the Haskell construct ``Witness`` can be extracted from this exisential.
+
 #. ``GHC.Exists`` exports a type operator ``(/\) :: Constraint -> Type -> Type``;
    ``/\`` is injective and generative, like a datatype. It may appear partially
    applied.
@@ -221,15 +243,30 @@ Proposed Change Specification
 
    1. When checking an expression ``e`` against a type ``exists (a :: k). ty``, we create a fresh unification
       variable ``α :: k`` and check ``e`` against ``ty[α/a]``. (This is reflected in rule ``Gen`` at the top
-      of Fig. 4 of the paper_.)
+      of Fig. 4 of the paper_.) Here is the rule, with desugaring into Core (referencing new Core constructs
+      introduced below)::
+
+        (α :: k) fresh
+        Γ ⊢ e <= ty[α/a] ~> e'
+        -----------------------------------------------
+        Γ ⊢ e <= exists (a :: k). ty ~> Pack α e' a ty
 
    #. When checking an expression ``e`` against a type ``C /\ ty``, continue by checking ``e`` against ``ty``,
       emitting ``C`` as a wanted. That is, we must be able to satisfy the constraint ``C`` in order to accept
-      ``e`` as type ``C /\ ty``. (This is reflected in rule ``GenQualified`` in Fig. 11 of the paper_.)
+      ``e`` as type ``C /\ ty``. (This is reflected in rule ``GenQualified`` in Fig. 11 of the paper_.) ::
+
+        Γ ⊩ C ~> dict
+        Γ ⊢ e <= ty ~> e'
+        ----------------------------------------
+        Γ ⊢ e <= C /\ ty ~> Mk/\ @C @ty dict e'
 
    #. When inferring the type of an expression ``e``, if that type is ``exists (a :: k). ty``, then rewrite
       that type to become ``ty[Witness @k (exists (a :: k). ty) e/a]``. (This is rule ``IExist`` in Fig. 5
-      of the paper_.)
+      of the paper_.) ::
+
+        Γ ⊢ e => exists (a :: k). ty ~> e'
+        -------------------------------------------
+        Γ ⊢ e => ty[Witness @k ty e / a] ~> Open e'
 
    #. When inferring the type of an expression ``e``, if that type is ``C /\ ty``, then rewrite that
       type to become ``ty`` and assume ``C`` as a given, available for use anywhere in the innermost
@@ -237,24 +274,23 @@ Proposed Change Specification
       with a higher-rank type. (This is rule ``IGiven`` in Fig. 11 of the paper_.) Use of such a given
       may have a surprising influence on runtime behavior, see Ambiguity_, below.
 
-   #. When inferring the type of a lambda-expression ``\ pats -> e``, we must ensure that no variable bound
-      in ``pats`` leaks into the type of the expression; this is like a skolem-escape.
+        Γ ⊢ e => C /\ ty ~> e'   -- adding C to the environment not modeled here
+        ----------------------
+        Γ ⊢ e => ty ~> sndC e'
 
-      (More technically) When inferring the type of a lambda-expression ``\ pats -> e``: We must bump the
-      type-checker level before checking ``e``. This is because variables bound in ``pats`` might be mentioned
-      in ``Witness``\ es in the type of ``e``. Then, when forming the type of the whole lambda-expression,
-      we promote the inferred type of ``e``; if any variables bound in ``pats`` are encountered, issue an
-      error.
+      See also the ``toVec`` example `below <#toVec>`_.
 
-   #. When trying to satisfy a class constraint ``[W] C (exists (a :: k). ty)``, instead solve
-      ``[W] forall (a :: k). C ty``. For multi-parameter type classes, apply this treatment one
-      argument at a time. Note that this treatment applies to ``~``, which is solved like any
-      other type class (recall that lifted ``~`` is distinct from unlifted ``~#``, to which this
-      treatment does not apply).
+   #. When inferring the type of a ``let`` expression, substitute the bound term variables appearing in
+      the type of the expression with their known right-hand sides. (This is rule ``Let`` in Fig. 4 of the
+      paper_.) See an `example <#let-subst>`_ below. This is necessary in order to ensure that types do
+      not mention out-of-scope term variables.
 
-   #. When trying to satisfy a class constraint ``[W] C (C' /\ ty)``, instead solve
-      ``[W] C' => C ty``. That is, assume ``C'`` as a given and then solve ``[W] C ty``.
-      For multi-parameter type classes, apply this treatment one argument at a time.
+   #. When inferring the type of a lambda-expression or ``case``, we existentially quantify over
+      any ``Witness`` type in the result that mentions a locally bound variable. (Otherwise, the type
+      of the construct would mention an out-of-scope term variable.)
+
+      (See the paper for the typing rule. This is ``iAbs`` in Fig. 4. Elaboration is ``Elab-iAbs`` in Appendix
+      A of the extended version of the paper. See also the relevant `example <#existential-wrapping>`_.)
 
 #. ``GHC.Exists`` exports ::
 
@@ -324,7 +360,7 @@ Proposed Change Specification
       Similar changes will be necessary for case alternatives and for ``let``. See ``CE-Abs``
       in Fig. 7 of the paper_.
 
-   #. We need to add a new coercion form to sllow for an interpretation for ``Witness``.
+   #. We need to add a new coercion form to allow for an interpretation for ``Witness``.
       This would be the new constructor for ``Coercion``::
 
         | WitnessPackCo Type CoreExpr TyVar Type
@@ -362,6 +398,10 @@ Proposed Change Specification
 
    #. The ``InstCo`` and ``NthCo`` coercion forms now work on ``ExistsTy`` analogously
       to how they work on ``ForAllTy``.
+
+   #. There is no way to decompose a ``WitnessCo`` or an ``ExprCoercion``.
+      This stops the generality of ``TransformEC`` from "leaking" other type
+      equalities.
 
    #. Suppose ``f args :: C /\ ty`` and the constraint ``C`` is used. GHC will then
       generate bindings that look like ::
@@ -433,6 +473,8 @@ Examples
 
 1. See the filter_ example, above.
 
+   .. _toVec:
+
 #. ::
 
      toVec :: [a] -> exists n. KnownNat n /\ Vec n a
@@ -453,7 +495,11 @@ Examples
 
      frob :: (a -> b -> c) -> [a] -> [b] -> exists n. Maybe (Vec n c)
      frob f as bs = do let as' = toVec as
-                           bs' = toVec bs
+                           bs' = toVec bs   -- we need the KnownNat constraints from these calls to
+                                            -- toVec to be available for sameLength. Thus, changing
+                                            -- to `bs' = case () of _ -> toVec bs` would not work,
+                                            -- because constraints from /\ float out only to the
+                                            -- nearest enclosing lambda or case.
                        as'' <- sameLengthAs as' bs'
                        return (zipWithV f as'' bs')
 
@@ -464,13 +510,57 @@ Examples
      ppr :: Outputable a => a -> SDoc
 
      pprs :: [exists a. Outputable a /\ a] -> SDoc
-     pprs = sep . map ppr    -- this type-checks because of the rules for class constraints on existentials
+     pprs = sep . map (\x -> ppr x)   -- eta-expansion necessary in order to unpack the existential
 
      someTypecheckingFunction a b c d e f = do ...
                                                traceTc "herald" (pprs [a, b, c, d, e, f])
                                                -- today, we'd need [ppr a, ppr b, ppr c, ppr d, ppr e, ppr f],
                                                -- which is cluttersome.
                                                ...
+
+     -- in Core, because @nomeata asked me to:
+     (.) :: forall a b c. (b -> c) -> (a -> b) -> a -> c
+     map :: forall a b. (a -> b) -> [a] -> [b]
+     pprs :: [exists a. Outputable a /\ a] -> SDoc
+     pprs = (.) @[exists a. Outputable a /\ a] @[SDoc] @SDoc
+                sep
+                (map @(exists a. Outputable a /\ a) @SDoc (\ (x :: exists a. Outputable a /\ a) -> let cpair = Open x in
+                                                                                                   ppr @(Witness x) @$(fstC cpair) (sndC cpair)))
+       -- fstC extracts out the dictionary from /\
+       -- sndC extracts out the payload from /\
+       -- @$ denotes dictionary application
+
+#. These pairs are interchangeable (ignoring the possibility of type applications) (credit to @Icelandjack)::
+
+     length :: forall a. [a] -> Int
+            :: (exists a. [a]) -> Int
+
+     length :: forall f a. Foldable f => f a -> Int
+            :: (exists f a. Foldable f /\ f a) -> Int
+
+     const :: forall a b. a -> b -> a
+           :: forall a. a -> (exists b. b) -> a
+
+   That said, I expect we would continue to use the former types rather than the latter, which do
+   not seem to offer a benefit.
+
+   .. _existential-wrapping:
+
+#. Example around the existential wrapping in lambda and ``case``::
+
+     f xs = toVec xs
+       -- naively, this would infer f :: [a] -> Vec (Witness (exists n. Vec n a) (toVec xs)) a,
+       -- which mentions out-of-scope xs. Instead, it will actually infer f :: [a] -> exists b. Vec b a,
+       -- quite happily.
+
+   .. _let-subst:
+
+#. Example around substituting the result of a ``let``::
+
+     mk :: Bool -> exists a. (a, a -> Int)
+     example = (let x = mk True in snd x) (fst (mk True))
+
+   Without the substitution, that would not type-check.
 
 Effect and Interactions
 -----------------------
@@ -500,16 +590,14 @@ Effect and Interactions
    existed since the inclusion of GADTs in GHC). It might be desirable for ``Witness`` to work
    on legacy existentials. However, this is left as future work.
 
-Costs and Drawbacks
--------------------
-
-1. This is a significant change, including somewhat invasive changes to Core,
-   with expression variables appearing in types. The paper_ proves that these
-   changes are type-safe, but changing Core is always a reason for pause.
-
-#. No language has a feature like this yet. It is possible that it will not
-   be so easy to use in practice. It may take an iteration or two before we
-   settle on just the right presentation to users.
+#. This proposal depends on the behavior from `#378`_ around namespace lookup.
+   Other than perhaps a change in error messages, this change does not affect
+   the set of programs that GHC accepts or the meanings of any program. In
+   particular, this rule does *not* change GHC's implicit binding of unbound
+   type-level lower-case names. To trigger the new behavior, the lower-case
+   name would be used in a context where there is no implicit binding, such as
+   in a signature with an explicit ``forall`` (according to the forall-or-nothing
+   rule) or with ``-XNoImplicitForAll`` from `#285`_.
 
 #. Because expressions now appear in types, any transformation GHC makes on
    terms (i.e. optimizations) might now change types. (Specifically, if the
@@ -521,15 +609,79 @@ Costs and Drawbacks
 
    One particular wrinkle is that the optimization may eliminate the usage
    of some free variable, and then the expression might be subject to floating.
-   But the now-eliminated variable would still appear in the ``TransformEC``
-   coercion, blocking the floating.
+   Because of the ability to substitute in the types of a ``let`` expression,
+   the appearance of a locally bound variable in a ``TransformEC`` need not
+   stop floating. Just float out and replace the variable with its right-hand
+   side.
 
-   One solution to this problem would be to take a pass that let-binds all
-   ``Open`` expressions. Then the right-hand side of the let-binding could
-   be optimized without changing the type of the ``Open``; indeed, this idea
-   of let-binding might be a nice simplification regardless, because (I think)
-   it might mean that all ``Open`` expressions could contain only variables,
-   not arbitrary expressions.
+#. The new skolem-escape premise to the typing rule for lambdas will have
+   to be respected as GHC optimizes programs. In particular, GHC sometimes
+   lambda-lifts, and so this side condition will have to be checked; if it's
+   not satisfied, then GHC may have to add a ``Pack`` in order to "hide" a
+   variable that's falling out of scope. This does not seem hard to check or
+   recover from, but it is something in this proposal that will effect other
+   parts of GHC.
+
+Costs and Drawbacks
+-------------------
+
+1. This is a significant change, including somewhat invasive changes to Core,
+   with expression variables appearing in types. The paper_ proves that these
+   changes are type-safe, but changing Core is always a reason for pause.
+
+#. No language has a feature like this yet. It is possible that it will not
+   be so easy to use in practice. It may take an iteration or two before we
+   settle on just the right presentation to users.
+
+..
+    This proposal includes no way of eta-expanding an existential. For example,
+    if I know that ``expr :: (a, b)``, then I can rewrite ``expr`` as
+    ``(fst expr, snd expr)``. If I know that ``expr :: Bool``, then I can
+    rewrite ``expr`` as ``if expr then True else False`` or ``case expr of True -> True; False -> False``.
+    On the other hand, if I know that ``expr :: exists a. ty``,
+
+#. A key step in the proof that this all holds water is that Haskell is a
+   *pure* language. This is necessary when we assert reflexivity of type
+   equality. Suppose we have ::
+
+     mk :: Bool -> exists a. (a, a -> Int)
+     mk True  = (5, id)
+     mk False = (False, \ b -> if b then 1 else 0)
+
+   and I have ``x :: Witness (exists a. (a, a -> Int) (mk (some big expression))``. If
+   ``some big expression`` were sometimes ``True`` and sometimes ``False``, then ``x``
+   does not know what type it has, and we could coerce between ``Int`` and ``Bool``: bad.
+   Haskell's purity saves us from this dire fate.
+
+   However, of course, Haskell isn't purely pure. The fact that type safety
+   now depends on purity (instead of the usual situation: purity resting upon
+   type safety\ :sup:`[induction principle needed]`) means that the usual
+   sources of impurity can cause fresh havoc. Let's look at them:
+
+   1. *Non-termination.* What if ``expr`` in ``Witness (exists a. ty) expr`` fails
+      to terminate? No problem. We can extract its witness in finite time, and even
+      build expressions of that type. In other words ``Witness (exists a. ty) expr``
+      is still a completely valid type. This works because types are erased, anyway,
+      and so the actual type packed (at t=infinity) in ``expr`` is unnecessary
+      in order to make any decisions at compile-time or run-time.
+
+   #. *Exceptions.* What if ``expr`` in ``Witness (exists a. ty) expr`` throws
+      an exception during evaluation? No problem, for the same reason that
+      non-termination is no problem. After all, we can view an exception as a
+      special case of non-termination, where the computer does you the courtesy
+      of informing you of a problem in finite time.
+
+   #. ``unsafePerformIO``. This one is actually problematic. If ``some big expression``
+      in the little example above is non-deterministic (say, through a use
+      of ``unsafePerformIO``), then
+      ``snd (mk (some big expression)) (fst (mk (some big expression)))``
+      might apply a function expecting an ``Int`` to a ``Bool`` value.
+      That's bad. This doesn't technically make ``unsafePerformIO``
+      less safe than it was previously, because you can use it to
+      implement ``unsafeCoerce`` by using polymorphic references.
+      That said, the treatment of existentials proposed here widens
+      the hole in the type system somehow.
+
 
 Alternatives
 ------------
@@ -556,22 +708,114 @@ Alternatives
    the ordering between the constraint and the type is opposite to that of ``=>``,
    but maybe that's OK.
 
+   Other ideas proposed on the GitHub thread:
+
+   * ``//\`` (where the double-slash is meant to evoke the two lines of the ``=`` in ``=>``)
+   * ``=/\`` (the equals comes from ``=>`` again)
+   * ``=&``
+
+#. An alternative approach to having expressions in ``Witness`` (scary! expressions in types!)
+   would be to have only expression *variables* in ``Witness``. However, given the type of
+   ``Open``, this would also mean that ``Open`` would be restricted to take only variables.
+   In turn, this means that we lose a notion of substitution over expressions: we no longer
+   can understand Core via a simple operational semantics, stepping one expression to
+   another.
+
+   Worse, this doesn't actually solve the problem of expressions in types.
+   Suppose we have the expression ``(let y = expr in \ x -> ... Open y ...) 5``.
+   Inlining ``y`` will allow for β-reduction. But we can't substitute in the
+   ``Open``, so we get ``(\ x -> ... let y = expr in Open y ...) 5``. But what
+   is the type of ``let y = expr in Open y``? The naive answer of
+   ``Witness y`` is no good, because ``y`` is out of scope outside the ``let``.
+   The only answer is ``Witness expr``, but that's no good, because we wanted to eliminate
+   expressions in types, and that's an expression in a type.
+
+   So, this approach would have to carefully keep the ``let`` far enough away from the
+   ``Open`` so that the type of the body of the ``let`` does not mention any of the
+   variables bound by the ``let``. At this point, though, we've simply invented
+   an ``unpack`` operation, which must be placed high enough in the syntax tree
+   to cover all the places where the unpacked existential witness is used.
+
+   Let's explore ``unpack`` a bit. If GHC used ``unpack`` instead of ``open``, then
+   it would have to infer where in the syntax tree to put the ``unpack``. Suppose it
+   could do so, perhaps just by giving the ``unpack`` as large a scope as possible.
+   Now, though, we have to make absolutely sure that ``unpack`` is *lazy*, because we're
+   inserting it automatically. Furthermore, we would need the construct to be lazy
+   to get some of the advantages of the approach proposed here (namely, the ``filter``
+   example). I don't know how to design a lazy ``unpack`` and prove it type-safe.
+   In the process of writing the paper, we considered this alternative, but deemed
+   it too hard a route. See Aside 1 (page 4) in the paper_.
+
+   Is lazy ``unpack`` possible? Perhaps. Would it keep expressions out of types?
+   Yes. Yet it seems less flexible than the approach described here, where existentials
+   can simply be opened where they need to be, without any advanced directive.
+
+
 Unresolved Questions
 --------------------
 
-1. The proposed ``exists`` erases the existential witness. What if we want to keep
-   it around, as suggested on `GitHub <https://github.com/ghc-proposals/ghc-proposals/pull/473#issuecomment-991433531>`_? I propose not solving this problem now, but instead
-   returning to it when we figure out exactly how to make ``forall`` relevant. Is it
-   worthwhile reserving a keyword though? An alternative would be to have some marker
-   on the bound variable to indicate its relevance (this could work for ``forall`` to,
-   meaning we wouldn't have to introduce the ``foreach`` keyword).
-
-#. Should this happen before or after we have dependent types? Maybe the effort put
+1. Should this happen before or after we have dependent types? Maybe the effort put
    into designing/implementing this would be better spend doing dependent types.
    I think this is largely orthogonal to dependent types; it's not clear which one
    would be easier to implement first. I think this one is easier, and could plausibly
    let us gain experience with expressions in types without the major changes inherent
    in supporting dependent types in full, but it's not obvious.
+
+#. In the ``pprs`` example above, desugaring requires eta-expansion of a lambda. If
+
+Future Work
+-----------
+
+1. An earlier version of this proposal had these extra rules around type inference:
+
+   1. When trying to satisfy a class constraint ``[W] C (exists (a :: k). ty)``, instead solve
+      ``[W] forall (a :: k). C ty``. For multi-parameter type classes, apply this treatment one
+      argument at a time. Note that this treatment applies to ``~``, which is solved like any
+      other type class (recall that lifted ``~`` is distinct from unlifted ``~#``, to which this
+      treatment does not apply).
+
+   #. When trying to satisfy a class constraint ``[W] C (C' /\ ty)``, instead solve
+      ``[W] C' => C ty``. That is, assume ``C'`` as a given and then solve ``[W] C ty``.
+      For multi-parameter type classes, apply this treatment one argument at a time.
+
+   Sadly, they don't work, because not every class is amenable to this treatment. Take ``Eq`` for
+   example::
+
+     class Eq a where
+       (==) :: a -> a -> Bool
+
+   We can prove ``forall a. Eq (Const Int a)``.  Can we then prove ``Eq (exists a. Const Int a)``? Absolutely
+   not. We can see this more clearly
+   if we look at the instantiated type of ``(==)``:
+   ``(==) :: (exists a. Const Int a) -> (exists a. Const Int a) -> Bool``. The problem is that the ``a``
+   parameter to the two arguments to ``(==)`` might be *different*. So, even though I can construct
+   ``(==) :: Const Int alpha -> Const Int alpha -> Bool`` for any fixed ``alpha``, I cannot do so
+   if the two arguments have *different* types. And so we're hosed.
+
+   The treatment for ``/\`` fails in a broadly similar way: whether or not we can do the inference
+   trick written above depends on the methods (and superclasses) of the class we're inspecting.
+
+   Thus, this idea is left as future work, to identify under what conditions (on the class constraint
+   ``C``) either of these rules is valid and then to apply them only when valid.
+
+#. The proposed ``exists`` erases the existential witness. What if we want to keep
+   it around, as suggested on `GitHub <https://github.com/ghc-proposals/ghc-proposals/pull/473#issuecomment-991433531>`_? I propose not solving this problem now, but instead
+   returning to it when we figure out exactly how to make ``forall`` relevant. Is it
+   worthwhile reserving a keyword though? An alternative would be to have some marker
+   on the bound variable to indicate its relevance (this could work for ``forall`` too,
+   meaning we wouldn't have to introduce the ``foreach`` keyword).
+
+   The GitHub trail has a number of suggested keywords, such as
+   * ``forone``
+   * ``for_one``
+   * ``thereis``
+   * ``hereis``
+
+#. Integrate the approach to existentials here with datatype-based existentials, including
+   allowing existential quantification in newtypes and record-projection from data constructors
+   that bind (and use) existential variables. This part is left for the future so that we
+   gain experience with the new types in a syntactic extension to the language instead of
+   changing features that have been in the language for years.
 
 Implementation Plan
 -------------------
