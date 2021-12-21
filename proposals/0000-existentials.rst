@@ -13,7 +13,7 @@ First-class existentials
 This proposal introduces first-class existentials into GHC, where type
 inference figures out where to pack and unpack existentials, with no need
 for user annotations. It is based on the ICFP'21 paper `An Existential
-Crisis Resolved: Type inference for first-class existential types <TODO>`_.
+Crisis Resolved: Type inference for first-class existential types <https://richarde.dev/papers/2021/exists/exists.pdf>`_.
 
 .. _paper: https://richarde.dev/papers/2021/exists/exists.pdf
 .. _`#270`: https://github.com/ghc-proposals/ghc-proposals/pull/270
@@ -272,7 +272,7 @@ Proposed Change Specification
       type to become ``ty`` and assume ``C`` as a given, available for use anywhere in the innermost
       case-match or lambda, including invisible lambdas as introduced in the argument to a function
       with a higher-rank type. (This is rule ``IGiven`` in Fig. 11 of the paper_.) Use of such a given
-      may have a surprising influence on runtime behavior, see Ambiguity_, below.
+      may have a surprising influence on runtime behavior, see Ambiguity_, below. ::
 
         Γ ⊢ e => C /\ ty ~> e'   -- adding C to the environment not modeled here
         ----------------------
