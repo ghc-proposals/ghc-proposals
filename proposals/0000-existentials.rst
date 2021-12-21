@@ -283,7 +283,18 @@ Proposed Change Specification
    #. When inferring the type of a ``let`` expression, substitute the bound term variables appearing in
       the type of the expression with their known right-hand sides. (This is rule ``Let`` in Fig. 4 of the
       paper_.) See an `example <#let-subst>`_ below. This is necessary in order to ensure that types do
-      not mention out-of-scope term variables.
+      not mention out-of-scope term variables. However, the approach in the paper is insufficient
+      to handle recursive ``let``\ s, so we do this::
+
+        Γ ⊢ e1 => t1 ~> e1'
+        Γ, x:t1 ⊢ e2 <=> t2 ~> e2'
+        y fresh
+        --------------------------------------------------------------------
+        Γ ⊢ let x = e1 in e2 <=> t2[let y = e1 in y/x] ~> let x = e1' in e2'
+
+      Though the rule is stated with only one variable, we can generalize this straightforwardly
+      to handle multiple variables, tuples in the body of the ``let``. See the corresponding
+      `core rule <#let-core-rule>`_ for more info.
 
    #. When inferring the type of a lambda-expression or ``case``, we existentially quantify over
       any ``Witness`` type in the result that mentions a locally bound variable. (Otherwise, the type
@@ -357,8 +368,21 @@ Proposed Change Specification
         ------------------------------
         Γ ⊢ Lam (var:ty1) expr : ty1 -> ty2
 
-      Similar changes will be necessary for case alternatives and for ``let``. See ``CE-Abs``
+      Similar changes will be necessary for case alternatives. See ``CE-Abs``
       in Fig. 7 of the paper_.
+
+      .. _let-core-rule:
+
+   #. The typing rule for ``Let`` would have to be changed to use a substitution in the type,
+      just like in Haskell::
+
+        Γ, binds ⊢ e : t
+        --------------------------------------------------------------------
+        Γ ⊢ Let binds e : t[πi (Let binds (mkTuple boundVars)) / boundVar_i]
+
+      The idea in this rule is that, suppose the ``Let`` binds ``x`` and ``y`` (in a mutually
+      recursive way). Then, we substitute ``fst (Let binds (x, y))`` for ``x`` and
+      ``snd (Let binds (x, y))`` for ``y``.
 
    #. We need to add a new coercion form to allow for an interpretation for ``Witness``.
       This would be the new constructor for ``Coercion``::
@@ -622,6 +646,19 @@ Effect and Interactions
    recover from, but it is something in this proposal that will effect other
    parts of GHC.
 
+#. This proposal includes adding ``HsWitnessTy :: Type -> HsExpr GhcTc -> Type``
+   as a data constructor of ``Type``. This could have deleterious effects
+   on the module system within GHC, forcing a dependency from the core language
+   on the Haskell syntax tree. An alternative implementation approach would
+   be to separate ``TcType`` (the types used in the type-checker) from ``Type``
+   (Core types). (Right now, we have ``type TcType = Type``.) Then, ``TcType``
+   would have the new constructor, and ``Type`` would be unsullied. Separating
+   ``TcType`` from ``Type`` would have other happy effects, fully separating
+   proper Core ``TyVar``\ s from type-checker ``TcTyVar``\ s. We might also
+   imagine adding more information to ``TcType`` to allow it to pretty-print
+   according to how a user entered a type (e.g. print ``Int `Either` Bool``
+   if that's what the user wrote; we cannot do this now).
+
 Costs and Drawbacks
 -------------------
 
@@ -760,8 +797,6 @@ Unresolved Questions
    would be easier to implement first. I think this one is easier, and could plausibly
    let us gain experience with expressions in types without the major changes inherent
    in supporting dependent types in full, but it's not obvious.
-
-#. In the ``pprs`` example above, desugaring requires eta-expansion of a lambda. If
 
 Future Work
 -----------
