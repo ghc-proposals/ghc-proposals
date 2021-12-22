@@ -190,7 +190,7 @@ Proposed Change Specification
       is expected to be of kind ``Constraint`` and either none of the ``tyi`` are inferred to have kind ``Constraint``
       or there exists a ``tyi`` inferred to kind ``Type`` and none of the ``tyj`` (with j < i) are inferred to have
       kind ``Constraint``, is
-      a synonym for ``GHC.Tuple.Prim.Tuple``\ *n*\ `` ty1 ty2 ... tyn-1 tyn``.
+      a synonym for ``GHC.Tuple.Prim.Tuple``\ *n* ``ty1 ty2 ... tyn-1 tyn``.
 
    #. An occurrence of ``(# #)`` in type-syntax is a synonym for ``GHC.Prim.Unit#``.
 
@@ -210,11 +210,11 @@ Proposed Change Specification
       is a synonym for ``GHC.Classes.CUnit``.
 
    #. An occurrence of ``(ty1, ty2, ..., tyn-1, tyn)`` (for *n* ≧ 2) in type-syntax, where the type is
-      expected to be of kind ``Constraint``, is a synonym for ``GHC.Classes.CTuple``\ *n*\ `` ty1 ty2 ... tyn-1 tyn``.
+      expected to be of kind ``Constraint``, is a synonym for ``GHC.Classes.CTuple``\ *n* ``ty1 ty2 ... tyn-1 tyn``.
 
    #. An occurrence of ``(ty1, ty2, ..., tyn-1, tyn)`` (for *n* ≧ 2) in type-syntax, where the first
       ``tyi`` inferred to have kind ``Type`` or ``Constraint`` has kind ``Constraint``, is a synonym
-      for ``GHC.Classes.CTuple``\ *n*\ `` ty1 ty2 ... tyn-1 tyn``.
+      for ``GHC.Classes.CTuple``\ *n* ``ty1 ty2 ... tyn-1 tyn``.
 
    #. An unapplied occurrence of ``GHC.Types.List`` is pretty-printed as ``[]``.
 
