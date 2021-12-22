@@ -1012,10 +1012,10 @@ Corner Cases
    In ``a``, the argument is the pair type, in ``b`` it is a promoted pair.
 
    One way to resolve this is to use synonyms
-   from ``Data.Tuple`` and ``Data.List``::
+   from ``GHC.Tuple``::
 
-      a = f @(TupleOf2 Int Bool)
-      b = g  (TupleOf2 Int Bool)
+      a = f @(TupleN Int Bool)
+      b = g  (TupleN Int Bool)
 
    Another way is to use the ``type`` herald::
 

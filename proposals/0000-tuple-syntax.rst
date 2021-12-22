@@ -171,6 +171,8 @@ Proposed Change Specification
 
      data List a = [] | a : List a
 
+#. Re-export ``List`` from ``GHC.List``.
+
 #. Introduce a new extension ``-XListTupleTypeSyntax``; this extension is on by default.
 
 #. With ``-XListTupleTypeSyntax``:
