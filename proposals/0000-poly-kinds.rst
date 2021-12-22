@@ -6,9 +6,7 @@ Drop support for ``-XNoPolyKinds``
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_.
-            **After creating the pull request, edit this file again, update the
-            number in the link, and delete this bold sentence.**
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/476>`_.
 .. contents::
 
 Since version 7.4, GHC has supported *kind polymorphism*, where a definition like ``data App f a = MkApp (f a)`` works
