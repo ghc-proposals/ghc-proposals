@@ -249,7 +249,8 @@ Proposed Change Specification
 
    1. Uses of ``[]``, ``[...]``, ``()``, ``(,,...,,)``, ``(...,...,...)``, ``(# #)``, ``(#,,...,,#)``, ``(# ...,...,... #)``,
       ``(# | | ... | | #)``, and ``(# ... | ... | ... #)`` are now unambiguous. They always refer to data constructors,
-      never types or type constructors.
+      never types or type constructors. (Note that ``(...) =>`` is special syntax, not an occurrence of any of the types
+      listed above. See `below <#constraints-special-syntax>`_.)
 
    #. An occurrence of ``GHC.Tuple.Prim.Tuplen ty1 ty2 ... tyn`` is pretty-printed as ``Tuple [ty1, ty2, ..., tyn]``.
 
@@ -268,6 +269,8 @@ Effect and Interactions
    actually parseable) seems a positive improvement.
 
 #. With the definitions above, users can avoid puns in their lists and tuples.
+
+   .. _constraints-special-syntax:
 
 #. Note that the type syntax ``(ty1, ty2, ..., tyn) => ...`` is special syntax. The parser does *not*
    parse a type to the left of the ``=>``. This syntax thus remains completely unaffected by ``-XListTupleTypeSyntax``
