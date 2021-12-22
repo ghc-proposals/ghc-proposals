@@ -218,7 +218,7 @@ Proposed Change Specification
 
    #. An unapplied occurrence of ``GHC.Types.List`` is pretty-printed as ``[]``.
 
-   #. An occurrence of ``GHC.Types.List ty`` is pretty-printed as ``[ty]]`.
+   #. An occurrence of ``GHC.Types.List ty`` is pretty-printed as ``[ty]``.
 
    #. An occurrence of ``GHC.Tuple.Prim.Unit`` is pretty-printed as ``()``.
 
