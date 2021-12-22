@@ -6,7 +6,7 @@ Non-punning list and tuple syntax
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
-.. header::
+.. header::  This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/475>`_.
 .. contents::
 .. sectnum::
 
