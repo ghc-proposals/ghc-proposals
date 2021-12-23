@@ -265,17 +265,15 @@ Extension shuffling
    out-of-scope type variables written in a pattern signature would be bound there
    and would remain in scope over the
    same region of code that term-level variables introduced in a pattern scope
-   over. In addition, any out-of-scope type variable introduced in a type signature of a
-   ``forall``\ -bound variable of a ``RULES`` pragma is similarly scoped over the
-   rule. This extension is on by default.
+   over. This extension is on by default.
    (This extension is a part of accepted, unimplemented proposal
    `#285`_.)
 
    Motivation for "on by default": The effect on pattern signatures requires
    ``-XPatternSignatures`` to be witnessed, and so having this be on by default
-   does not change the meaning of Haskell98. However, ``RULES`` allows scoped
-   type variables even without any extensions today, and so ``-XPatternSignatureBinds``
-   is on by default to accommodate this use-case.
+   does not change the meaning of Haskell98. Furthermore, this makes it easier
+   to use ``-XPatternSignatures``, without needing to manually enable another
+   extension to be able to bind type variables.
 
 #. Introduce ``-XMethodTypeVariables``. With ``-XMethodTypeVariables``, type
    variables introduced in an instance head would scope over the bodies of
@@ -332,8 +330,13 @@ Extension shuffling
       Example: ``type instance F (Maybe a) = Int``
       becomes ``type instance forall a. F (Maybe a) = Int``.
 
-   This extension is part of accepted, unimplemented proposal `#285`_; there
-   is no intended change in the description here.
+   #. ``RULES`` pragmas.
+      Example: ``{-# RULES "name" forall (x :: Maybe a). foo x = 5 #-}``
+      becomes ``{-# RULES "name" forall a. forall (x :: Maybe a). foo x = 5 #-}``.
+      (The double-\ ``forall`` syntax separates type variables like ``a`` from
+      term variables like ``x``.)
+
+   This extension is part of accepted, unimplemented proposal `#285`_; the only change is including ``RULES`` pragmas, which @Ericson2314 simplify forgot to include in `#285`_ (his own admission).
 
    Being able to turn off this extension is necessary to uphold the EBP_.
 
@@ -346,6 +349,10 @@ Alternatives
 
    My inclination is to keep this aspect as written in the proposal, with ``-XPatternSignatureBinds`` on by default. Pattern signatures are convenient and intuitive.
    Users wishing for the EBP_ can be expected to work a little harder to get it.
+
+   On the other hand: currently ``-XPatternSignatures`` is deprecated, and so we have a rare window to "reset" things. We can always decide later ``-XPatternSignatureBinds`` should be implied by ``-XPatternSignatures``, and just except more programs.
+   The converse is not true: if ``-XPatternSignatureBinds`` is implied by ``-XPatternSignatures`` it would be a breaking change to remove that implication.
+   It may be prudent to start conservatively, taking maximal advantage of the current deprecated state of ``-XPatternSignatures`` to leave our options open for the future.
 
 Type arguments in constructor patterns
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
