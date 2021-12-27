@@ -35,11 +35,17 @@ Let `n` be the GHC version that implements this proposal.
 
 Starting with GHC `n`, include a compatibility fallback:
 
-* When the lookup for `~` fails because it is not in scope,
-  assume it refers to `Data.Type.Equality.~`.
-  When this happens and `-Wcompat` is in effect, emit a warning.
+1. When the lookup for `~` fails because it is not in scope,
+   assume it refers to `Data.Type.Equality.~`.
+   When this happens and `-Wtype-equality-out-of-scope` (included in
+   `-Wcompat`) is in effect, emit a warning.
 
-Starting with GHC `n+2`, enable the warning by default.
+2. When the use of `~` would have been rejected because `TypeOperators` are not
+   enabled, accept the program regardless.
+   When this happens and `-Wtype-equality-requires-operators` (enabled by
+   default) is in effect, emit a warning.
+
+Starting with GHC `n+2`, enable both warnings by default.
 Either starting with GHC `n+8` or with the next major compiler version bump (GHC
 10), whichever comes first, remove the compatibility fallback.
 
