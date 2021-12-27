@@ -5,7 +5,7 @@ ticket-url: ""
 implemented: ""
 ---
 
-This proposal was [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/371).
+This proposal was [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/371) and [amended by this one](https://github.com/ghc-proposals/ghc-proposals/pull/460).
 
 # Export `~` from `Data.Type.Equality`
 
