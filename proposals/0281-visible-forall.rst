@@ -991,9 +991,9 @@ Corner Cases
    is a promoted pair, and ``[Int]`` is a promoted singleton list.
 
    One way to change this is to use synonyms
-   from ``Data.Tuple`` and ``Data.List``::
+   from ``GHC.Tuple``::
 
-     x1 = g (TupleOf2 Int Bool)
+     x1 = g (TupleN Int Bool)
      x2 = g (List Int)
 
    Another way is to use the ``type`` herald::
