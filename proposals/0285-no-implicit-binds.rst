@@ -135,7 +135,7 @@ Basic examples
 Not just term definitions
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Besides top level term bindings, we currently have signatures with implicit forall quantification for expressions, data declerations, family declarations, and instances [#class-forall]_.
+Besides top level term bindings, we currently have signatures with implicit forall quantification for expressions, data declerations, family declarations, instances [#class-forall]_, and rewrite rules.
 This proposal applies to all alike:
 
 #. ::
@@ -193,6 +193,24 @@ This proposal applies to all alike:
     -- {-# LANGUAGE NoPatternSignatureBinds #-} -- Does not matter whether enabled or disabled
 
     instance forall t. Eq t => C t where -- OK
+
+#. ::
+
+
+    {-# LANGUAGE NoImplicitForAll #-}
+    -- {-# LANGUAGE NoPatternSignatureBinds #-} -- Does not matter whether enabled or disabled
+
+    {-# RULES "name" forall (x :: Maybe a). foo x = 5 #-} -- error: `a` is not bound
+
+   This could be rewritten as::
+
+    {-# LANGUAGE NoImplicitForAll #-}
+    -- {-# LANGUAGE NoPatternSignatureBinds #-} -- Does not matter whether enabled or disabled
+
+    {-# RULES "name" forall a. forall (x :: Maybe a). foo x = 5 #-}
+
+   (The double-\ ``forall`` syntax separates type variables like ``a`` from term variables like ``x``.
+   This syntax is fairly obscure, but does in fact already exist.)
 
 When ``-XStandaloneKindSignatures`` is on, these new standalone signatures are affected as well.
 
