@@ -66,17 +66,17 @@ We propose to borrow Rust's syntax for sized literals. A new extension (e.g.
 
 ::
 
-  123i   -- Int# literal
-  123i8  -- Int8# literal
-  123i16 -- Int16# literal
-  123i32 -- Int32# literal
-  123i64 -- Int64# literal
+  123#i   -- Int# literal
+  123#i8  -- Int8# literal
+  123#i16 -- Int16# literal
+  123#i32 -- Int32# literal
+  123#i64 -- Int64# literal
 
-  123u   -- Word# literal
-  123u8  -- Word8# literal
-  123u16 -- Word16# literal
-  123u32 -- Word32# literal
-  123u64 -- Word64# literal
+  123#u   -- Word# literal
+  123#u8  -- Word8# literal
+  123#u16 -- Word16# literal
+  123#u32 -- Word32# literal
+  123#u64 -- Word64# literal
 
 The lexer has new lexemes for these literals.
 
@@ -114,16 +114,16 @@ literals.
 
 ::
 
-  @decimal                             i8 / { ifExtension SizedLiterals }        { tok_primint8 positive 0 1 decimal }
-  0[bB] @numspc @binary                i8 / { ifExtension SizedLiterals `alexAndPred`
+  @decimal                             \#i8 / { ifExtension SizedLiterals }      { tok_primint8 positive 0 1 decimal }
+  0[bB] @numspc @binary                \#i8 / { ifExtension SizedLiterals `alexAndPred`
                                               ifExtension BinaryLiteralsBit }    { tok_primint8 positive 2 3 binary }
-  0[oO] @numspc @octal                 i8 / { ifExtension SizedLiterals }        { tok_primint8 positive 2 3 octal }
-  0[xX] @numspc @hexadecimal           i8 / { ifExtension SizedLiterals }        { tok_primint8 positive 2 3 hexadecimal }
-  @negative @decimal                   i8 / { negHashLitPred }                   { tok_primint8 negative 1 2 decimal }
-  @negative 0[bB] @numspc @binary      i8 / { negHashLitPred `alexAndPred`
-                                              ifExtension BinaryLiteralsBit }    { tok_primint8 negative 3 4 binary }
-  @negative 0[oO] @numspc @octal       i8 / { negHashLitPred }                   { tok_primint8 negative 3 4 octal }
-  @negative 0[xX] @numspc @hexadecimal i8 / { negHashLitPred }                   { tok_primint8 negative 3 4 hexadecimal }
+  0[oO] @numspc @octal                 \#i8 / { ifExtension SizedLiterals }      { tok_primint8 positive 2 3 octal }
+  0[xX] @numspc @hexadecimal           \#i8 / { ifExtension SizedLiterals }      { tok_primint8 positive 2 3 hexadecimal }
+  @negative @decimal                   \#i8 / { negHashLitPred }                 { tok_primint8 negative 1 2 decimal }
+  @negative 0[bB] @numspc @binary      \#i8 / { negHashLitPred `alexAndPred`
+                                                ifExtension BinaryLiteralsBit }  { tok_primint8 negative 3 4 binary }
+  @negative 0[oO] @numspc @octal       \#i8 / { negHashLitPred }                 { tok_primint8 negative 3 4 octal }
+  @negative 0[xX] @numspc @hexadecimal \#i8 / { negHashLitPred }                 { tok_primint8 negative 3 4 hexadecimal }
 
 (This can probably be factored with ``@signed_suffix`` and ``@unsigned_suffix``).
 
@@ -135,9 +135,9 @@ Example of a case-expression on a ``Word64#``:
 ::
 
   case x of
-    0u64   -> ...
-    123u64 -> ...
-    _      -> ...
+    0#u64   -> ...
+    123#u64 -> ...
+    _       -> ...
 
 
 Effect and Interactions
@@ -153,7 +153,40 @@ allows the replacement of some "Magic" (the hashes suffixes for ``Int#`` and
 
 Alternatives
 ------------
-None for now.
+
+We could also keep the "double-#" syntax instead of introducing "i/u" suffixes:
+
+::
+
+  123#    -- Int# literal
+  123#8   -- Int8# literal
+  123#16  -- Int16# literal
+  123#32  -- Int32# literal
+  123#64  -- Int64# literal
+
+  123##   -- Word# literal
+  123##8  -- Word8# literal
+  123##16 -- Word16# literal
+  123##32 -- Word32# literal
+  123##64 -- Word64# literal
+
+An earlier revision of this proposal proposed to drop the "#" completely, but it
+was considered confusing because there is no hint that literals are unboxed:
+
+::
+
+  123i   -- Int# literal
+  123i8  -- Int8# literal
+  123i16 -- Int16# literal
+  123i32 -- Int32# literal
+  123i64 -- Int64# literal
+
+  123u   -- Word# literal
+  123u8  -- Word8# literal
+  123u16 -- Word16# literal
+  123u32 -- Word32# literal
+  123u64 -- Word64# literal
+
 
 Unresolved Questions
 --------------------
