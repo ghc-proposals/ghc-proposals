@@ -53,7 +53,7 @@ With this proposal, if the author had disabled recursive let bindings with `-XNo
 
 * When `RecursiveLet` is _enabled_ (the default, or explicitly with `{-# language RecursiveLet #-}`), there are no changes.
 
-* When `RecursiveLet` is _disabled_ (`{-# language NoRecursiveLet -#}`), compilation of `let` expressions changes. With `NoRecursiveLet`, group of `let`-bound bindings cannot refer to themselves, either directly or mutually. For example, with `NoRecursiveLet`, the following will now fail to compile:
+* When `RecursiveLet` is _disabled_ (`{-# language NoRecursiveLet #-}`), compilation of `let` expressions changes. With `NoRecursiveLet`, group of `let`-bound bindings cannot refer to themselves, either directly or mutually. For example, with `NoRecursiveLet`, the following will now fail to compile:
 
   ```
   let iterate f x = x : iterate f (f x) in ...
