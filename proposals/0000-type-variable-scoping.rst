@@ -354,6 +354,10 @@ Alternatives
    The converse is not true: if ``-XPatternSignatureBinds`` is implied by ``-XPatternSignatures`` it would be a breaking change to remove that implication.
    It may be prudent to start conservatively, taking maximal advantage of the current deprecated state of ``-XPatternSignatures`` to leave our options open for the future.
 
+#. Instead of ``-XScopedForAlls``, @int-index suggests ``-XExtendedForAllScope``. The former sounds only
+   good: of course we want our ``forall``\ s to have a scope. The second might give one a little pause,
+   in that one might wonder whether an exteded scope is good.
+
 Type arguments in constructor patterns
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
