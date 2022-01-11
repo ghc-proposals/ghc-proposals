@@ -210,7 +210,7 @@ This proposal applies to all alike:
     {-# RULES "name" forall a. forall (x :: Maybe a). foo x = 5 #-}
 
    (The double-\ ``forall`` syntax separates type variables like ``a`` from term variables like ``x``.
-   This syntax is alreasdy part of the syntax for ``RULES``, see `section 6.19.1.1 "Rewrite rules, Syntax" <https://downloads.haskell.org/ghc/latest/docs/html/users_guide/exts/rewrite_rules.html#syntax>`_ of the Users Guide.)
+   This syntax is already part of the syntax for ``RULES``, see `section 6.19.1.1 "Rewrite rules, Syntax" <https://downloads.haskell.org/ghc/latest/docs/html/users_guide/exts/rewrite_rules.html#syntax>`_ of the Users Guide.)
 
 When ``-XStandaloneKindSignatures`` is on, these new standalone signatures are affected as well.
 
