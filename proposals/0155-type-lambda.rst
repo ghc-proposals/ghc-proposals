@@ -12,6 +12,8 @@ Binding type variables in lambda-expressions
 .. _`#126`: https://github.com/ghc-proposals/ghc-proposals/pull/126
 .. _`#128`: https://github.com/ghc-proposals/ghc-proposals/pull/128
 
+**This proposal is one of several that affect the way type variables are brought into scope. `Proposal #448 <0448-type-variable-scoping.rst>`_ supersedes the content of this proposal and puts it in context.**
+
 Proposal `#126`_ allows us to bind scoped type variables in patterns using an ``@a`` syntax.
 However, the new syntax is allowed only in *constructor* patterns ``K @a @b x y``. This proposal
 extends this idea to lambda-expressions, allowing ``\ @a x -> ...``. Here are some examples::
@@ -32,7 +34,7 @@ extends this idea to lambda-expressions, allowing ``\ @a x -> ...``. Here are so
 
   pair :: forall a. a -> (a, a)           -- brings a into scope (just like today)
   pair @b x = (x :: a, x :: b)            -- brings b into scope with the same meaning as a
-  
+
   higherRank :: (forall a. a -> a -> a) -> ...
   higherRank = ...
 
@@ -41,7 +43,7 @@ extends this idea to lambda-expressions, allowing ``\ @a x -> ...``. Here are so
   wrong @a x = x                          -- we can't do this without a type signature
 
   stillWrong @a (x :: a) = x              -- even here we can't
-  
+
 Motivation
 ----------
 
@@ -115,7 +117,7 @@ As usual, we can interpret a function defintion ``f <args> = body`` as
 case above.
 
 This new behavior will be with ``-XTypeApplications``. Naturally, scoped type variables
-work only with 
+work only with
 ``-XScopedTypeVariables`` enabled, so using this feature without ``-XScopedTypeVariables``
 would enable only ``@_`` abstractions.
 
@@ -160,8 +162,8 @@ In the context of the GHC implementation, we have these definitions::
 
 *Checking* mode is precisely when the ``ExpType`` passed to ``tcExpr`` is a ``Check``.
 *Inference* mode is precisely when the ``ExpType`` passed to ``tcExpr`` is an ``Infer``.
-  
-  
+
+
 
 Examples
 --------
@@ -231,7 +233,7 @@ Effect and Interactions
 
 .. _`26`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0026-explicit-specificity.rst
 .. _`#99`: https://github.com/ghc-proposals/ghc-proposals/pull/99
-  
+
 * (technical) The `Visible Type Applications`_ (VTA) paper defines the behavior about what to
   do when checking against a polytype: it says to deeply skolemize. However, eager deep
   skolemization will spell trouble for this extension, as we need the lambdas to see

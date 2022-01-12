@@ -27,6 +27,7 @@ together many existing proposals:
 .. _`#378`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0378-dependent-type-design.rst
 .. _`#402`: https://github.com/ghc-proposals/ghc-proposals/pull/402
 .. _`#420`: https://github.com/ghc-proposals/ghc-proposals/pull/420
+.. _`#452`: https://github.com/ghc-proposals/ghc-proposals/pull/452
 .. _Type Variables in Patterns: https://richarde.dev/papers/2018/pat-tyvars/pat-tyvars.pdf
 .. _Kind Inference for Datatypes: https://richarde.dev/papers/2020/kind-inference/kind-inference.pdf
 .. _`Haskell 2010 Report`: https://www.haskell.org/onlinereport/haskell2010/haskellch10.html
@@ -35,10 +36,6 @@ together many existing proposals:
 * `#126`_: Accepted, implemented proposal on accepting type arguments to constructor
   patterns, allowing constructions like ``f (Just @Int x) = x + 5``
   and ``g (Dynamic @a x) = show (typeOf (x :: a))``.
-* `#128`_: Accepted, implemented proposal that allows type variables in certain contexts
-  to refer to *types*, not just other type variables. Example: ``f (True :: b) = (False :: b)``;
-  here, ``b`` becomes a synonym for ``Bool``. (Previously, a type variable was required to remain
-  abstract.)
 * `#155`_: Accepted, not implemented proposal on accepting type arguments to
   lambdas, allowing constructions like ``\ @a (x :: a) -> x``.
 * `#238`_: Not yet accepted proposal that updates and extends `#155`_ to
@@ -68,12 +65,43 @@ linked above for motivation for why we generally want these type-level features.
 Individual aspects of this unifying proposal are motivated near where they are
 introduced.
 
+How to read this proposal
+-------------------------
+
+This is a large proposal, with a number of moving parts. The essential reason
+all these moving parts are glued together in just one proposal is so that they
+can be unified by their desire to uphold the Principles_ laid out here. Individual
+components of this proposal can be designed, debated, and implemented separately,
+yet are presented in one document as they are meant to dovetail together nicely.
+
+As currently written, this proposal is not self-contained, in that motivation for
+some individual pieces was not copied from their source proposals. In all cases,
+when this proposal refers to others as inspiration, seeking more information there
+will likely be helpful.
+
+If this proposal is accepted, it may be a good idea to incorporate that motivation,
+etc., right in this proposal here, to make it self-contained. I am happy to do this
+at the direction of the committee.
+
 Principles
 ----------
 
 The design here is guided by several high-level principles. These principles are not
 sacro-sanct, such that they admit no exceptions. Instead, we strive to uphold these
 principles, but relax them when doing so is well motivated.
+
+Each principle is meant to be able to stand alone; that is, each one should make sense
+as a language-design desideratum independent of the others. However, the underlying
+theme to all of them is to reduce the expected cognitive burden of readers and writers
+of a language. For example, it is well specified to have a language supporting a class
+of identifiers in scope only when their first letter occurs in an odd-numbered column
+(counting from 0). But such a language would be challenging to program in! The principles
+here are meant to make programming easier. This is subjective and up for debate;
+consideration of this proposal should also include consideration of whether these
+principles are worth upholding.
+
+If `#452`_ is accepted, these principles will be moved to the Principles document described
+in `#452`_.
 
 .. _`Lexical Scoping Principle`:
 

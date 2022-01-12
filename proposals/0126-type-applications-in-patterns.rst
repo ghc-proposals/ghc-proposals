@@ -9,6 +9,8 @@ Type Applications in Patterns
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/126>`_.
 .. contents::
 
+**This proposal is one of several that affect the way type variables are brought into scope. `Proposal #448 <0448-type-variable-scoping.rst>`_ supersedes the content of this proposal and puts it in context.**
+
 We have ``TypeApplications`` in terms. This proposal brings them to patterns in a way that preserves analogy to type signatures.
 
 
