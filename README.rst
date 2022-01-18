@@ -54,7 +54,7 @@ This section outlines what stages a proposal may go through. The stage is identi
 
 1. (No label.) The author drafts a proposal.
 
-   `What is a proposal? <#what-is-a-proposal>`_ • `What should a proposal look like? <#what-should-a-proposal-look-like>`_
+   `What is a proposal? <#what-is-a-proposal>`_
 
 2. (No label.) The author submits the proposal to the wider Haskell community for discussion, as a pull request against this repository.
 
