@@ -284,53 +284,33 @@ This proposal adds two new syntactical constructs:
 
       type family F (a :: *) :: Multiplicity
       f ::  forall (a :: *). Int  %(F a) -> a -> a
-- When ``-XScopedTypeVariables`` is switched on, binders can also be annotated with a multiplicity:
+- Lambda-bound variables can also be annotated with a multiplicity:
 
   ::
 
-    \x :: A %'One -> x
+    \ (%'One x) :: A -> x
 
   is the identity function at type ``A ⊸ A``. A binder can be
   annotated with a multiplicity without a type like this
 
   ::
 
-    \x %'One -> x
+    \ %'One x -> x
 
-  This modifies the syntax entry for pattern with signature annotation
-  as follows as follows
+  This modifies the syntax entry for lambda expressions
+  as follows
 
   ::
 
-    pat -> pat [PREFIX_PERCENT btype] [:: type]
+    lpat -> [PREFIX_PERCENT btype] lpat
 
   where the ``btype`` after the ``%`` must be of kind ``Multiplicity``
-  (see below).
+  (see below). The ``lpat`` must be a bare variable, or an error
+  occurs.
 
-  This form is disallowed for:
-
-  - Type variables
-
-    ::
-
-      forall (a %'One). a -> Int -- rejected
-  - Top-level signatures (though, see `Toplevel binders`_)
-
-    ::
-
-      foo %'One :: A -> B -- rejected
-      foo x = …
-
-  The form is however permitted in records (see `Records`_ below)
-
-  ::
-
-    data R = R { unrestrictedField %'Many :: A, linearField %'One :: B }
-
-  This modifies the field declaration syntax to
-
-  ::
-
+- Record fields can be labeled with a multiplicity. This modifies
+  the syntax for record fields as follows::
+     
     fielddecl -> vars [PREFIX_PERCENT btype] :: (type | ! atype)
 
 In the fashion of levity polymorphism, the proposal introduces a data
