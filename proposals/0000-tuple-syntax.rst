@@ -70,6 +70,11 @@ Proposed Change Specification
      data Unit = ()
      data Solo a = MkSolo a    -- this is a change from today's `data Solo a = Solo a`
 
+     {-# DEPRECATED Solo "The Solo constructor has been renamed to MkSolo to avoid punning." #-}
+     pattern Solo :: a -> Solo a
+     pattern Solo x = MkSolo x
+     {-# COMPLETE Solo #-}
+
      type Tuple0 = Unit
      type Tuple1 = Solo
      data Tuple2 a b = (a, b)
@@ -100,7 +105,7 @@ Proposed Change Specification
 
 #. Remove existing tuple definitions from ``GHC.Tuple``.
 
-#. Add the following definitions to ``GHC.Tuple``, which re-exports all of ``GHC.Tuple.Prim``::
+#. Export the following definitions from ``GHC.Tuple``::
 
      type TupleNKind :: Nat -> Type     -- Nat is from GHC.TypeLits
      type family TupleNKind n = r | r -> n where
@@ -172,6 +177,21 @@ Proposed Change Specification
        TupleN# @[...]              = Tuple64#
        TupleN# @reps               = TypeError (ShowType (Length reps) :<>: Text " is too large; the maximum size for a tuple is 64.")
 
+     type SumNKind# :: [RuntimeRep] -> [RuntimeRep] -> Type
+     type family SumNKind# all_reps reps_to_go = r | r -> all_reps reps_to_go where
+      SumNKind# all_reps '[]                      = TYPE (SumRep all_reps)
+      SumNKind# all_reps (first_rep : reps_to_go) = TYPE first_rep -> SumNKind# all_reps reps_to_go
+
+     type SumN# :: forall (reps :: [RuntimeRep]). SumNKind# reps reps
+     type family SumN# where
+      SumN# @[]                 = TypeError (Text "GHC does not support empty unboxed sums. Consider Data.Void.Void instead.")
+      SumN# @[rep1]             = TypeError (Text "GHC does not support unary unboxed sums. Consider Data.Tuple.Solo# instead.")
+      SumN# @[rep1, rep2]       = Sum2#
+      SumN# @[rep1, rep2, rep3] = Sum3#
+      -- ...
+      SumN# @[...]              = Sum64#
+      SumN# @reps               = TypeError (ShowType (Length reps) :<>: Text " is too large; the maximum size for a Sum is 64.")
+
 #. Export the following pseudo-definitions from ``GHC.Exts``. (Implementation note:
    These would likely be exported from ``GHC.Prim`` originally.) ::
 
@@ -211,10 +231,10 @@ Proposed Change Specification
 
 #. Re-export ``List`` from ``GHC.List`` and ``GHC.Prelude``.
 
-#. Introduce a new extension ``-XListTupleTypeSyntax``; this extension is part
+#. Introduce a new extension ``-XListTuplePuns``; this extension is part
    of ``-XHaskell98``, ``-XHaskell2010``, and ``-XGHC2021``. It is thus on by default.
 
-#. With ``-XListTupleTypeSyntax``:
+#. With ``-XListTuplePuns``:
 
    1. An occurrence of ``[]`` in type-syntax (as defined in `#378`_) is a synonym
       for ``GHC.List.List``.
@@ -284,24 +304,28 @@ Proposed Change Specification
 
    #. An occurrence of ``GHC.Tuple.CTuplen ty1 ty2 ... tyn`` is pretty-printed as ``(ty1, ty2, ..., tyn)``.
 
-#. With ``-XNoListTupleTypeSyntax``:
+#. With ``-XNoListTuplePuns``:
 
-   1. Uses of ``[]``, ``[...]``, ``()``, ``(,,...,,)``, ``(...,...,...)``, ``(# #)``, ``(#,,...,,#)``, ``(# ...,...,... #)``,
-      ``(# | | ... | | #)``, and ``(# ... | ... | ... #)`` are now unambiguous. They always refer to data constructors,
+   1. Uses of ``[]``, ``[...]``, ``()``, ``(,,...,,)``, ``(...,...,...)``, ``(# #)``, ``(#,,...,,#)``, and ``(# ...,...,... #)``
+      are now unambiguous. They always refer to data constructors,
       never types or type constructors. (Note that ``(...) =>`` is special syntax, not an occurrence of any of the types
       listed above. See `below <#constraints-special-syntax>`_.)
+
+   #. A use of ``(# ... | ... | ... #)`` is now disallowed.
 
    #. An occurrence of ``GHC.Tuple.Tuplen ty1 ty2 ... tyn`` is pretty-printed as ``Tuple [ty1, ty2, ..., tyn]``.
 
    #. An occurrence of ``GHC.Tuple.CTuplen ty1 ty2 ... tyn`` is pretty-printed as ``Constraints [ty1, ty2, ..., tyn]``.
 
+#. Three releases after this proposal is implemented, remove the ``Solo`` pattern synonym from ``GHC.Tuple``.
+
 Effect and Interactions
 -----------------------
-1. With ``-XListTupleTypeSyntax`` (which is on by default), all programs that are accepted today continue
+1. With ``-XListTuplePuns`` (which is on by default), all programs that are accepted today continue
    to be accepted, and with the same meanings. Note that the peculiar dance around type tuples and constraint
    tuples exists today; I have tried to describe the current implementation faithfully, above.
 
-#. With ``-XListTupleTypeSyntax`` (which is on by default), most pretty-printing will happen as it does
+#. With ``-XListTuplePuns`` (which is on by default), most pretty-printing will happen as it does
    today. The exception is around unsaturated ``CTuplen``, which is not handled above. It is hard to have
    an unsaturated constraint tuple, but possible by the use of a type family that decomposes one. Today's
    GHC prints out e.g. ``ghc-prim-0.6.1:GHC.Classes.(%,%)``. Switching to ``GHC.Classes.CTuple2`` (which is
@@ -312,14 +336,14 @@ Effect and Interactions
    .. _constraints-special-syntax:
 
 #. Note that the type syntax ``(ty1, ty2, ..., tyn) => ...`` is already special syntax. The parser does *not*
-   parse a type to the left of the ``=>``. This syntax thus remains completely unaffected by ``-XListTupleTypeSyntax``
-   and will continue to work with ``-XNoListTupleTypeSyntax``. Furthermore, because a type like ``(ty1, ty2, ... tyn) => ...``
+   parse a type to the left of the ``=>``. This syntax thus remains completely unaffected by ``-XListTuplePuns``
+   and will continue to work with ``-XNoListTuplePuns``. Furthermore, because a type like ``(ty1, ty2, ... tyn) => ...``
    does not contain any uses of ``CTuplen``, it will also continue to pretty-print just as today.
 
    On the other hand, collections of constraints occurring not to the left of a ``=>`` are affected by
    this proposal, for example in ``Dict (Eq a, Show b)`` (which would be written ``Dict (Constraints [Eq a, Show b])``
    under this proposal). Another example is ``(Eq a, (Show a, Read a)) => a -> a``, which would not
-   be accepted under ``-XNoListTupleTypeSyntax``. Instead, the user should flatten the constraints or
+   be accepted under ``-XNoListTuplePuns``. Instead, the user should flatten the constraints or
    write ``(Eq a, Constraints [Show a, Read a]) => a -> a``.
 
 #. An instance declaration like ``instance (C a, C b) => C (Tuple [a, b]) where ...`` would be
@@ -336,6 +360,10 @@ Effect and Interactions
    depend on any such ideas being adopted in the future. Any such idea would
    be evaluated by the Core Libraries Committee independently of this proposal.
 
+#. This proposal changes the name of the constructor of the unary boxed tuple ``Solo``,
+   from ``Solo`` to ``MkSolo``. The proposal includes a deprecated ``Solo`` pattern
+   synonym to enable a migration period.
+
 Costs and Drawbacks
 -------------------
 1. This is one more feature to maintain, but the code would be pretty local.
@@ -350,7 +378,7 @@ Costs and Drawbacks
 #. A particular class of code readers are beginners, and having multiple different
    ways to say the same thing is particularly challenging for beginners. We should
    thus think carefully about how to present these names to beginners, if
-   ``-XNoListTupleTypeSyntax`` catches on.
+   ``-XNoListTuplePuns`` catches on.
 
 Alternatives
 ------------
@@ -364,7 +392,21 @@ Alternatives
    such as ``(~ ty1, ty2 ~)`` for normal tuples and ``(% ty1, ty2 %)`` for constraint
    tuples. This was not as popular in a recent `straw poll <https://github.com/ghc-proposals/ghc-proposals/pull/458#issuecomment-982230541>`_.
 
-#. The name ``-XListTupleTypeSyntax`` is a mouthful. Maybe ``-XListTuplePuns`` would be better.
+#. Controlling the ``(# ... | ... | ... #)`` syntax for unboxed sum types with
+   ``-XNoListTuplePuns`` is not necessary to avoid punning, but is done only for
+   consistency. We could skip this, but I prefer keeping it as proposed.
+
+#. There was an objection in the commentary about the name ``GHC.Prelude``. I continue
+   to like that name: the module exports basic definitions one will likely want when
+   using the GHC compiler for Haskell. However, an alternative might be
+   ``GHC.SafeExts`` or something similar. (I'd actually rather have the safe extensions
+   be in ``GHC.Exts`` and the unsafe ones be in ``GHC.Exts.Unsafe``, but that ship has
+   sailed and is not worth calling back to port.)
+
+   Note that GHC itself already has a module named ``GHC.Prelude`` that would have to
+   be renamed if we keep ``GHC.Prelude`` as the choice for the new module in ``base``.
+   This is purely an implementation detail, though, and would not affect users (except
+   via the GHC API).
 
 Unresolved Questions
 --------------------
