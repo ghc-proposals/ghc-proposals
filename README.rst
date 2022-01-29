@@ -246,7 +246,6 @@ Vitaly Bragilevsky      `@bravit <https://github.com/bravit>`_                20
 Eric Seidel             `@gridaphobe <https://github.com/gridaphobe>`_        2018/09
 Arnaud Spiwack          `@aspiwack <https://github.com/aspiwack/>`_           2019/07
 Tom Harding             `@i-am-tom <https://github.com/i-am-tom/>`_           2020/01
-Alejandro Serrano       `@serras <https://github.com/serras/>`_               2020/01
 Simon Marlow            `@simonmar <https://github.com/simonmar>`_            2017/02  2021/02  co-chair
 Simon Peyton-Jones      `@simonpj <https://github.com/simonpj>`_              2017/02  2021/02  co-chair
 Joachim Breitner        `@nomeata <https://github.com/nomeata>`_              2017/02  2021/03  secretary
@@ -268,6 +267,7 @@ Sandy Maguire           `@isovector <https://github.com/isovector>`_          20
 Christopher Allen       `@bitemyapp <https://github.com/bitemyapp>`_          2017/02 - 2020/05
 Iavor Diatchki          `@yav <https://github.com/yav>`_                      2017/02 - 2021/05
 Cale Gibbard            `@cgibbard <https://github.com/cgibbard/>`_           2020/01 - 2021/07
+Alejandro Serrano       `@serras <https://github.com/serras/>`_               2020/01 - 2022/01
 ======================  ====================================================  =================
 
 
