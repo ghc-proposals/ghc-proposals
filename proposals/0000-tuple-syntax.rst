@@ -75,6 +75,9 @@ Proposed Change Specification
      pattern Solo x = MkSolo x
      {-# COMPLETE Solo #-}
 
+     getSolo :: Solo a -> a
+     getSolo (Solo a) = a   -- as today
+
      type Tuple0 = Unit
      type Tuple1 = Solo
      data Tuple2 a b = (a, b)
@@ -83,7 +86,7 @@ Proposed Change Specification
      data Tuple64 ... = (...)
 
 #. Export the following definitions from ``GHC.Exts`` and ``GHC.Prelude``. These
-   replace similar definitions today. (Note that ``(...) =>`` is special syntax, and does not
+   replace similar definitions (in ``GHC.Classes``) today. (Note that ``(...) =>`` is special syntax, and does not
    construct tuples. See more on this point `below <#constraint-special-syntax>`_.)::
 
      class CUnit
@@ -307,11 +310,11 @@ Proposed Change Specification
 #. With ``-XNoListTuplePuns``:
 
    1. Uses of ``[]``, ``[...]``, ``()``, ``(,,...,,)``, ``(...,...,...)``, ``(# #)``, ``(#,,...,,#)``, and ``(# ...,...,... #)``
-      are now unambiguous. They always refer to data constructors,
+      (among other arities) are now unambiguous. They always refer to data constructors,
       never types or type constructors. (Note that ``(...) =>`` is special syntax, not an occurrence of any of the types
       listed above. See `below <#constraints-special-syntax>`_.)
 
-   #. A use of ``(# ... | ... | ... #)`` is now disallowed.
+   #. A use of ``(# ... | ... | ... #)``, where each of the ``...`` is filled in, (among other arities) is now disallowed.
 
    #. An occurrence of ``GHC.Tuple.Tuplen ty1 ty2 ... tyn`` is pretty-printed as ``Tuple [ty1, ty2, ..., tyn]``.
 
@@ -364,6 +367,19 @@ Effect and Interactions
    from ``Solo`` to ``MkSolo``. The proposal includes a deprecated ``Solo`` pattern
    synonym to enable a migration period.
 
+#. A tempting alternative to the design here is to have ::
+
+     type Tuple :: [Type] -> Type
+     data family Tuple ts
+     data instance Tuple [a,b] = (a, b)
+
+   and higher arities. The problem with this design is that we have no way to express
+   what is today written as ::
+
+     instance Functor ((,) a)
+
+   and others.
+
 Costs and Drawbacks
 -------------------
 1. This is one more feature to maintain, but the code would be pretty local.
@@ -391,6 +407,16 @@ Alternatives
 #. Instead of introducing new names, we could use more mixfix bits of punctuation,
    such as ``(~ ty1, ty2 ~)`` for normal tuples and ``(% ty1, ty2 %)`` for constraint
    tuples. This was not as popular in a recent `straw poll <https://github.com/ghc-proposals/ghc-proposals/pull/458#issuecomment-982230541>`_.
+
+#. We could use a mixfix syntax for tuples, allowing something like ``a * b * c``,
+   perhaps with a Unicode operator. Note that ``*`` there is *not* associative, because
+   neither left-associative nor right-associative would work. This is tempting,
+   but we cannot use ``*`` (it means multiplication and *is* associative), and no other
+   operator naturally presents itself. Using Unicode as the primitive definition for
+   tuples seems unwise.
+
+   Note that a future proposal is welcome to include ideas for e.g. Unicode-based mixfix
+   syntax for tuples. This proposal is more concerned about their primitive definition.
 
 #. Controlling the ``(# ... | ... | ... #)`` syntax for unboxed sum types with
    ``-XNoListTuplePuns`` is not necessary to avoid punning, but is done only for
