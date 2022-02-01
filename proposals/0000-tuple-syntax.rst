@@ -15,6 +15,9 @@ to write pun-free code. In addition, add a new extension that disables
 the built-in syntax for these types, thus requiring users to use the new
 names.
 
+Everything in this proposal is fully backward-compatible (except for the deprecation
+on the data constructor ``Solo``, but that has a migration period).
+
 .. _`#270`: https://github.com/ghc-proposals/ghc-proposals/pull/270
 .. _`#281`: https://github.com/ghc-proposals/ghc-proposals/pull/281
 .. _`#378`: https://github.com/ghc-proposals/ghc-proposals/pull/378
@@ -51,6 +54,12 @@ This proposal thus allows for a common way to refer to tuples and lists without
 punning. It is entirely opt-in, though we expect the new phrasing to become popular
 over time.
 
+Notation
+--------
+This proposal uses angle-bracket syntax ``<n>`` to denote the occurrence of a numeric
+variable in a bit of code. This allows us to e.g. refer to ``Tuple2`` and ``Tuple3`` with
+``Tuple<n>``.
+
 Proposed Change Specification
 -----------------------------
 
@@ -86,7 +95,7 @@ Proposed Change Specification
      data Tuple64 ... = (...)
 
 #. Export the following definitions from ``GHC.Exts`` and ``GHC.Prelude``. These
-   replace similar definitions (in ``GHC.Classes``) today. (Note that ``(...) =>`` is special syntax, and does not
+   the existing tuple definitions (in ``GHC.Classes``) today. (Note that ``(...) =>`` is special syntax, and does not
    construct tuples. See more on this point `below <#constraint-special-syntax>`_.)::
 
      class CUnit
@@ -126,7 +135,7 @@ Proposed Change Specification
        TupleN @64 = Tuple64
        TupleN @n  = TypeError (ShowType n :<>: Text " is too large; the maximum size for a tuple is 64.")
 
-     type Length :: [a] -> Nat   -- not exported
+     type Length :: List a -> Nat   -- not exported
      type family Length xs where
        Length []     = 0
        Length (_:xs) = 1 + Length xs
@@ -165,12 +174,12 @@ Proposed Change Specification
        Constraints [...] = CTuple64 ...
        Constraints ts    = TypeError (ShowType (Length ts) :<>: Text " is too large; the maximum size for a tuple is 64.")
 
-     type TupleNKind# :: [RuntimeRep] -> [RuntimeRep] -> Type
+     type TupleNKind# :: List RuntimeRep -> List RuntimeRep -> Type
      type family TupleNKind# all_reps reps_to_go = r | r -> all_reps reps_to_go where
        TupleNKind# all_reps '[]                      = TYPE (TupleRep all_reps)
        TupleNKind# all_reps (first_rep : reps_to_go) = TYPE first_rep -> TupleNKind# all_reps reps_to_go
 
-     type TupleN# :: forall (reps :: [RuntimeRep]). TupleNKind# reps reps
+     type TupleN# :: forall (reps :: List RuntimeRep). TupleNKind# reps reps
      type family TupleN# where
        TupleN# @[]                 = Unit#
        TupleN# @[rep1]             = Solo#
@@ -180,12 +189,12 @@ Proposed Change Specification
        TupleN# @[...]              = Tuple64#
        TupleN# @reps               = TypeError (ShowType (Length reps) :<>: Text " is too large; the maximum size for a tuple is 64.")
 
-     type SumNKind# :: [RuntimeRep] -> [RuntimeRep] -> Type
+     type SumNKind# :: List RuntimeRep -> List RuntimeRep -> Type
      type family SumNKind# all_reps reps_to_go = r | r -> all_reps reps_to_go where
       SumNKind# all_reps '[]                      = TYPE (SumRep all_reps)
       SumNKind# all_reps (first_rep : reps_to_go) = TYPE first_rep -> SumNKind# all_reps reps_to_go
 
-     type SumN# :: forall (reps :: [RuntimeRep]). SumNKind# reps reps
+     type SumN# :: forall (reps :: List RuntimeRep). SumNKind# reps reps
      type family SumN# where
       SumN# @[]                 = TypeError (Text "GHC does not support empty unboxed sums. Consider Data.Void.Void instead.")
       SumN# @[rep1]             = TypeError (Text "GHC does not support unary unboxed sums. Consider Data.Tuple.Solo# instead.")
@@ -202,7 +211,7 @@ Proposed Change Specification
      data Unit# = (# #)
 
      type Solo# :: TYPE rep -> TYPE (TupleRep [rep])
-     data Solo# a = MkSolo# a
+     data Solo# a = (# a #)
 
      type Tuple0# = Unit#
      type Tuple1# = Solo#
@@ -248,37 +257,39 @@ Proposed Change Specification
       is a synonym for ``GHC.Tuple.Unit``.
 
    #. An occurrence of ``(,,...,,)`` where there are *n* commas (for *n* ≧ 1) in type-syntax
-      is a synonym for ``GHC.Tuple.Tuple``\ *n+1*.
+      is a synonym for ``GHC.Tuple.Tuple<n+1>``.
 
-   #. An occurrence of ``(ty1,ty2,...,tyn-1,tyn)`` (for *n* ≧ 2) in type-syntax, where neither the type
-      is expected to be of kind ``Constraint`` and either none of the ``tyi`` are inferred to have kind ``Constraint``
-      or there exists a ``tyi`` inferred to kind ``Type`` and none of the ``tyj`` (with j < i) are inferred to have
+   #. An occurrence of ``(ty1,ty2,...,ty<n-1>,ty<n>)`` (for *n* ≧ 2) in type-syntax, where neither the type
+      is expected to be of kind ``Constraint`` and either none of the ``ty<i>`` are inferred to have kind ``Constraint``
+      or there exists a ``ty<i>`` inferred to kind ``Type`` and none of the ``ty<j>`` (with *j* < i) are inferred to have
       kind ``Constraint``, is
-      a synonym for ``GHC.Tuple.Tuple``\ *n* ``ty1 ty2 ... tyn-1 tyn``.
+      a synonym for ``GHC.Tuple.Tuple<n>`` ``ty1 ty2 ... ty<n-1> ty<n>``. (This rule retains today's behavior.)
 
    #. With ``-XUnboxedTuples``, an occurrence of ``(# #)`` in type-syntax is a synonym for ``GHC.Exts.Unit#``.
 
-   #. With ``-XUnboxedTuples``, an occurrence of ``(#,,...,,#)`` where there are *n* commas (for *n* ≧ 1) in type-syntax
-      is a synonym for ``GHC.Exts.Tuple``\ *n+1*\ ``#``.
+   #. With ``-XUnboxedTuples``, an occurrence of ``(# ty #)`` in type-syntax is a synonym for ``GHC.Exts.Solo# ty``.
 
-   #. With ``-XUnboxedTuples``, an occurrence of ``(# ty1, ty2, ... , tyn-1, tyn #)`` (for *n* ≧ 2) in type-syntax is a synonym
-      for ``GHC.Exts.Tuple``\ *n*\ ``# ty1 ty2 ... tyn-1 tyn``.
+   #. With ``-XUnboxedTuples``, an occurrence of ``(#,,...,,#)`` where there are *n* commas (for *n* ≧ 1) in type-syntax
+      is a synonym for ``GHC.Exts.Tuple<n+1>#.
+
+   #. With ``-XUnboxedTuples``, an occurrence of ``(# ty1, ty2, ... , ty<n-1>, ty<n> #)`` (for *n* ≧ 2) in type-syntax is a synonym
+      for ``GHC.Exts.Tuple<n># ty1 ty2 ... ty<n-1> ty<n>``.
 
    #. With ``-XUnboxedSums``, an occurrence of ``(# | | ... | | #)`` where there are *n* pipes (for *n* ≧ 1) in type-syntax
-      is a synonym for ``GHC.Exts.Sum``\ *n+1*\ ``#``.
+      is a synonym for ``GHC.Exts.Sum<n+1>#``.
 
-   #. With ``-XUnboxedSums``, an occurrence of ``(# ty1 | ty2 | ... | tyn-1 | tyn #)`` (for *n* ≧ 2) in type-syntax is a
-      synonym for ``GHC.Exts.Sum``\ *n*\ ``# ty1 ty2 ... tyn-1 tyn``.
+   #. With ``-XUnboxedSums``, an occurrence of ``(# ty1 | ty2 | ... | ty<n-1> | ty<n> #)`` (for *n* ≧ 2) in type-syntax is a
+      synonym for ``GHC.Exts.Sum<n># ty1 ty2 ... ty<n-1> ty<n>``.
 
    #. An occurrence of ``()`` in type-syntax, where the type is expected to be of kind ``Constraint``,
       is a synonym for ``GHC.Tuple.CUnit``.
 
-   #. An occurrence of ``(ty1, ty2, ..., tyn-1, tyn)`` (for *n* ≧ 2) in type-syntax, where the type is
-      expected to be of kind ``Constraint``, is a synonym for ``GHC.Tuple.CTuple``\ *n* ``ty1 ty2 ... tyn-1 tyn``.
+   #. An occurrence of ``(ty1, ty2, ..., ty<n-1>, ty<n>)`` (for *n* ≧ 2) in type-syntax, where the type is
+      expected to be of kind ``Constraint``, is a synonym for ``GHC.Tuple.CTuple<n> ty1 ty2 ... ty<n-1> ty<n>``.
 
-   #. An occurrence of ``(ty1, ty2, ..., tyn-1, tyn)`` (for *n* ≧ 2) in type-syntax, where the first
-      ``tyi`` inferred to have kind ``Type`` or ``Constraint`` has kind ``Constraint``, is a synonym
-      for ``GHC.Tuple.CTuple``\ *n* ``ty1 ty2 ... tyn-1 tyn``.
+   #. An occurrence of ``(ty1, ty2, ..., ty<n-1>, ty<n>)`` (for *n* ≧ 2) in type-syntax, where the first
+      ``ty<i>`` inferred to have kind ``Type`` or ``Constraint`` has kind ``Constraint``, is a synonym
+      for ``GHC.Tuple.CTuple<n> ty1 ty2 ... ty<n-1> ty<n>``.
 
    #. An unapplied occurrence of ``GHC.List.List`` is pretty-printed as ``[]``.
 
@@ -286,26 +297,26 @@ Proposed Change Specification
 
    #. An occurrence of ``GHC.Tuple.Unit`` is pretty-printed as ``()``.
 
-   #. An occurrence of ``GHC.Tuple.Tuplen ty1 ty2 ... tyn`` is pretty-printed as ``(ty1, ty2, ..., tyn)``.
+   #. An occurrence of ``GHC.Tuple.Tuple<n> ty1 ty2 ... ty<n>`` is pretty-printed as ``(ty1, ty2, ..., ty<n>)``.
 
-   #. An occurrence of ``GHC.Tuple.Tuplen``, but not applied to a full *n* arguments, is pretty-printed as ``(,,...,,)``,
+   #. An occurrence of ``GHC.Tuple.Tuple<n>``, but not applied to a full *n* arguments, is pretty-printed as ``(,,...,,)``,
       where there are *n-1* commas.
 
    #. An occurrence of ``GHC.Exts.Unit#`` is pretty-printed as ``(# #)``.
 
-   #. An occurrence of ``GHC.Exts.Tuplen# ty1 ty2 ... tyn`` is pretty-printed as ``(# ty1, ty2, ..., tyn #)``.
+   #. An occurrence of ``GHC.Exts.Tuple<n># ty1 ty2 ... ty<n>`` is pretty-printed as ``(# ty1, ty2, ..., ty<n> #)``.
 
-   #. An occurrence of ``GHC.Exts.Tuplen#``, but not applied to a full *n* arguments, is pretty-printed as ``(#,,...,,#)``,
+   #. An occurrence of ``GHC.Exts.Tuple<n>#``, but not applied to a full *n* arguments, is pretty-printed as ``(#,,...,,#)``,
       where there are *n-1* commas.
 
-   #. An occurrence of ``GHC.Exts.Sumn# ty1 ty2 ... tyn`` is pretty-printed as ``(# ty1 | ty2 | ... | tyn #)``.
+   #. An occurrence of ``GHC.Exts.Sum<n># ty1 ty2 ... ty<n>`` is pretty-printed as ``(# ty1 | ty2 | ... | ty<n> #)``.
 
-   #. An occurrence of ``GHC.Exts.Sumn#``, but not applied to a full *n* arguments, is pretty-printed as ``(# | | ... | | #)``,
+   #. An occurrence of ``GHC.Exts.Sum<n>#``, but not applied to a full *n* arguments, is pretty-printed as ``(# | | ... | | #)``,
       where there are *n-1* pipes.
 
    #. An occurrence of ``GHC.Tuple.CUnit`` is pretty-printed as ``()``.
 
-   #. An occurrence of ``GHC.Tuple.CTuplen ty1 ty2 ... tyn`` is pretty-printed as ``(ty1, ty2, ..., tyn)``.
+   #. An occurrence of ``GHC.Tuple.CTuple<n> ty1 ty2 ... ty<n>`` is pretty-printed as ``(ty1, ty2, ..., ty<n>)``.
 
 #. With ``-XNoListTuplePuns``:
 
@@ -316,9 +327,9 @@ Proposed Change Specification
 
    #. A use of ``(# ... | ... | ... #)``, where each of the ``...`` is filled in, (among other arities) is now disallowed.
 
-   #. An occurrence of ``GHC.Tuple.Tuplen ty1 ty2 ... tyn`` is pretty-printed as ``Tuple [ty1, ty2, ..., tyn]``.
+   #. An occurrence of ``GHC.Tuple.Tuple<n> ty1 ty2 ... ty<n>`` is pretty-printed as ``Tuple [ty1, ty2, ..., ty<n>]``.
 
-   #. An occurrence of ``GHC.Tuple.CTuplen ty1 ty2 ... tyn`` is pretty-printed as ``Constraints [ty1, ty2, ..., tyn]``.
+   #. An occurrence of ``GHC.Tuple.CTuple<n> ty1 ty2 ... ty<n>`` is pretty-printed as ``Constraints [ty1, ty2, ..., ty<n>]``.
 
 #. Three releases after this proposal is implemented, remove the ``Solo`` pattern synonym from ``GHC.Tuple``.
 
@@ -338,10 +349,10 @@ Effect and Interactions
 
    .. _constraints-special-syntax:
 
-#. Note that the type syntax ``(ty1, ty2, ..., tyn) => ...`` is already special syntax. The parser does *not*
+#. Note that the type syntax ``(ty1, ty2, ..., ty<n>) => ...`` is already special syntax. The parser does *not*
    parse a type to the left of the ``=>``. This syntax thus remains completely unaffected by ``-XListTuplePuns``
-   and will continue to work with ``-XNoListTuplePuns``. Furthermore, because a type like ``(ty1, ty2, ... tyn) => ...``
-   does not contain any uses of ``CTuplen``, it will also continue to pretty-print just as today.
+   and will continue to work with ``-XNoListTuplePuns``. Furthermore, because a type like ``(ty1, ty2, ... ty<n>) => ...``
+   does not contain any uses of ``CTuple<n>``, it will also continue to pretty-print just as today.
 
    On the other hand, collections of constraints occurring not to the left of a ``=>`` are affected by
    this proposal, for example in ``Dict (Eq a, Show b)`` (which would be written ``Dict (Constraints [Eq a, Show b])``
