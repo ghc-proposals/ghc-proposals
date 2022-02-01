@@ -94,7 +94,7 @@ Proposed Change Specification
      -- ...
      data Tuple64 ... = (...)
 
-#. Export the following definitions from ``GHC.Exts`` and ``GHC.Prelude``. These
+#. Export the following definitions from ``GHC.Exts`` and ``GHC.Prelude``. These replace
    the existing tuple definitions (in ``GHC.Classes``) today. (Note that ``(...) =>`` is special syntax, and does not
    construct tuples. See more on this point `below <#constraint-special-syntax>`_.)::
 
@@ -270,7 +270,7 @@ Proposed Change Specification
    #. With ``-XUnboxedTuples``, an occurrence of ``(# ty #)`` in type-syntax is a synonym for ``GHC.Exts.Solo# ty``.
 
    #. With ``-XUnboxedTuples``, an occurrence of ``(#,,...,,#)`` where there are *n* commas (for *n* ≧ 1) in type-syntax
-      is a synonym for ``GHC.Exts.Tuple<n+1>#.
+      is a synonym for ``GHC.Exts.Tuple<n+1>#``.
 
    #. With ``-XUnboxedTuples``, an occurrence of ``(# ty1, ty2, ... , ty<n-1>, ty<n> #)`` (for *n* ≧ 2) in type-syntax is a synonym
       for ``GHC.Exts.Tuple<n># ty1 ty2 ... ty<n-1> ty<n>``.
@@ -340,7 +340,7 @@ Effect and Interactions
    tuples exists today; I have tried to describe the current implementation faithfully, above.
 
 #. With ``-XListTuplePuns`` (which is on by default), most pretty-printing will happen as it does
-   today. The exception is around unsaturated ``CTuplen``, which is not handled above. It is hard to have
+   today. The exception is around unsaturated ``CTuple<n>``, which is not handled above. It is hard to have
    an unsaturated constraint tuple, but possible by the use of a type family that decomposes one. Today's
    GHC prints out e.g. ``ghc-prim-0.6.1:GHC.Classes.(%,%)``. Switching to ``GHC.Classes.CTuple2`` (which is
    actually parseable) seems a positive improvement.
