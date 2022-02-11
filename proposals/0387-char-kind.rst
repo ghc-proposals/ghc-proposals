@@ -4,7 +4,7 @@ The ``Char`` kind
 .. author:: Daniel Rogozin (with thanks to Vladislav Zavialov)
 .. date-accepted:: 2021-01-22
 .. ticket-url:: `#11342 <https://gitlab.haskell.org/ghc/ghc/-/issues/11342>`_
-.. implemented:: `!4351 <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/4351>`_
+.. implemented:: 9.2
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/387>`_.
 .. contents::
