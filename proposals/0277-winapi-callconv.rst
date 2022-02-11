@@ -3,7 +3,7 @@ Add winapi pseudo calling convention
 
 .. author:: Tamar Christina
 .. date-accepted:: 2019-10-02
-.. ticket-url::
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/merge_requests/2485
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/277>`_.
