@@ -468,7 +468,7 @@ Alternatives
    of ``Tuple [Int, Bool]``: that is, use tuples instead of a list to store the type
    arguments. This lends itself naturally to heterogeneity.
 
-   Concretely, this alternative would be to replace the definition for ``Tuple``and ``Constraints``
+   Concretely, this alternative would be to replace the definition for ``Tuple`` and ``Constraints``
    above with the following::
 
       type TupleArgKind :: Type -> Nat -> Type
@@ -534,27 +534,27 @@ Alternatives
         Sum# (a, b, ..., bk, bl) = Sum64# a b ... bk bl
         Sum# @reps _ = TypeError (ShowType (Length reps) :<>: Text " is too large; the maximum size of a sum is 64.")
 
-  This creates a uniform mixfix syntax for boxed tuples, constraint tuples, unboxed tuples, and unboxed sums.
-  Handling singletons is a bit interesting:
+   This creates a uniform mixfix syntax for boxed tuples, constraint tuples, unboxed tuples, and unboxed sums.
+   Handling singletons is a bit interesting:
 
-  ``TupleArgKind t_or_c 1`` is defined to be ``t_or_c``, *not* ``Solo t_or_c``, as you would
-  otherwise expect. This is because we expect to see e.g. ``Tuple (Int)``, not ``Tuple (MkSolo Int)``.
-  (Actually, we would probably not expect these at all, but the current design allows us to be forgiving
-  during refactoring.)
+   ``TupleArgKind t_or_c 1`` is defined to be ``t_or_c``, *not* ``Solo t_or_c``, as you would
+   otherwise expect. This is because we expect to see e.g. ``Tuple (Int)``, not ``Tuple (MkSolo Int)``.
+   (Actually, we would probably not expect these at all, but the current design allows us to be forgiving
+   during refactoring.)
 
-  In ``Tuple``, we see ``Tuple a = a``, which looks like a universally applicable equation. It is
-  not. Because ``a :: Type`` (resp. ``a :: Constraint``) we learn the invisible argument to ``Tuple``
-  (resp. ``Constraints``) must be ``1``, and thus this equation fires only when the argument to ``Tuple``
-  is not a tuple of types (resp. constraints).
+   In ``Tuple``, we see ``Tuple a = a``, which looks like a universally applicable equation. It is
+   not. Because ``a :: Type`` (resp. ``a :: Constraint``) we learn the invisible argument to ``Tuple``
+   (resp. ``Constraints``) must be ``1``, and thus this equation fires only when the argument to ``Tuple``
+   is not a tuple of types (resp. constraints).
 
-  A beautiful, unexpected consequence of this design is that it aids migration. Now, with or without
-  ``-XListTuplePuns``, a user can write e.g. ``Tuple (Int, Bool, Double)``, and this will be the types
-  of e.g. ``(1, True, 3.14)``. With ``-XListTuplePuns``, the argument to ``Tuple`` will be the tuple
-  type, of kind ``Type``. That is, the type will really be understood as ``Tuple (Tuple3 Int Bool Double)``.
-  The "``1``" equation fires, reducing to ``Tuple3 Int Bool Double``. On the other hand, with
-  ``-XNoListTuplePuns``, the user's type is understood as ``Tuple @3 (Int, Bool, Double)``, and the "``3``"
-  equation fires, reducing to ``Tuple3 Int Bool Double`` -- the same answer! And so, all users
-  can write ``Tuple`` before their tuples and not get hurt.
+   A beautiful, unexpected consequence of this design is that it aids migration. Now, with or without
+   ``-XListTuplePuns``, a user can write e.g. ``Tuple (Int, Bool, Double)``, and this will be the types
+   of e.g. ``(1, True, 3.14)``. With ``-XListTuplePuns``, the argument to ``Tuple`` will be the tuple
+   type, of kind ``Type``. That is, the type will really be understood as ``Tuple (Tuple3 Int Bool Double)``.
+   The "``1``" equation fires, reducing to ``Tuple3 Int Bool Double``. On the other hand, with
+   ``-XNoListTuplePuns``, the user's type is understood as ``Tuple @3 (Int, Bool, Double)``, and the "``3``"
+   equation fires, reducing to ``Tuple3 Int Bool Double`` -- the same answer! And so, all users
+   can write ``Tuple`` before their tuples and not get hurt.
 
 Unresolved Questions
 --------------------
