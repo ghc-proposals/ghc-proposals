@@ -19,7 +19,9 @@ But no, not for all. The poor ellipsis `..` is left without. It wants to loo
 
 ## Proposed Change Specification
 
-Make `…` accepted wherever `..` is accepted.
+1. Make `…` accepted wherever `..` is accepted.
+
+2. Allow `…` in situations like `[False…]` where ASCII syntax `[False..]` would be a parse error. _(This is automatically the case with the patch proposed below.)_ _(Thanks to Jakob Brünker for [pointing this out](https://github.com/ghc-proposals/ghc-proposals/pull/477#issuecomment-1000255004).)_
 
 ## Examples
 
