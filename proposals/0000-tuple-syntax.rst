@@ -524,7 +524,7 @@ Alternatives
         Tuple# (a, b, ..., bk, bl) = Tuple64# a b ... bk bl
         Tuple# @reps _ = TypeError (ShowType (Length reps) :<>: Text " is too large; the maximum size of a tuple is 64.")
 
-      type Sum# :: forall (reps :: List RuntimeRep). TupleArgKind# reps -> TYPE (TupleRep reps)
+      type Sum# :: forall (reps :: List RuntimeRep). TupleArgKind# reps -> TYPE (SumRep reps)
       type family Sum# ts where
         Sum# () = TypeError (Text "GHC does not support empty unboxed sums. Consider Data.Void.Void instead.")
         Sum# a = TypeError (Text "GHC does not support unary unboxed sums. Consider Data.Tuple.Solo# instead.")
