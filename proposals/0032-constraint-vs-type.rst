@@ -3,7 +3,7 @@ Declare ``Constraint`` is not apart from ``Type``
 
 .. author:: Richard Eisenberg
 .. date-accepted:: 2018-04-24
-.. ticket-url::
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/21092
 .. implemented::
 .. highlight:: haskell
 .. header::
