@@ -195,7 +195,7 @@ between ``GHC.Exception`` and ``GHC.IO``. ::
 Pretty Printing
 ~~~~~~~~~~~~~~~
 
-The be compliant with the convention that ``Show`` instances should output
+To be compliant with the convention that ``Show`` instances should output
 valid Haskell code, the `Show` instance of ``Backtrace`` delegates to the
 instances of the inner types.
 
