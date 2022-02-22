@@ -403,9 +403,7 @@ As an example let's consider the case of GHC's internal `GHC.TopHandler.real_han
 Type synonym
 ~~~~~~~~~~~~
 
-As long as ``SomeExceptionWithBacktrace`` isn't deconstructed in pattern
-matches, a simple type synonym may be used to provide backwards
-compatibility. ::
+If no pattern matches are needed, compatibility with older compilers can be preserved by defining the `SomeExceptionWithBacktrace` type as a type synonym: ::
 
     module Control.Monad.Catch where
 
