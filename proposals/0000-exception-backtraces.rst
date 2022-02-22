@@ -107,7 +107,7 @@ Representing and capturing backtraces
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 GHC has four distinct mechanisms for capturing backtraces, each with
-it's own backtrace representation:
+its own backtrace representation:
 
 * ``HasCallStack`` is available in all programs, but requires modification of
   the source program.
