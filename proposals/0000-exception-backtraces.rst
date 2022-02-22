@@ -252,7 +252,7 @@ by the currently selected ``BacktraceMechanism``s: ::
 
     module GHC.Exception.Backtrace where
 
-    -- | Collect a list of 'Backtrace' via all current default 'BacktraceMechanism'.
+    -- | Collect a list of 'Backtrace's via all current default 'BacktraceMechanism's.
     -- See 'setDefaultBacktraceMechanisms'
     collectBacktraces :: HasCallStack =>IO [Backtrace]
     collectBacktraces = do
