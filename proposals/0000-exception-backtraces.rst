@@ -196,7 +196,7 @@ Pretty Printing
 ~~~~~~~~~~~~~~~
 
 To be compliant with the convention that ``Show`` instances should output
-valid Haskell code, the `Show` instance of ``Backtrace`` delegates to the
+valid Haskell code, the ``Show`` instance of ``Backtrace`` delegates to the
 instances of the inner types.
 
 An additional pretty printing function is added to output the ``Backtrace``
