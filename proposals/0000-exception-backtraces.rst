@@ -384,7 +384,7 @@ In expressions where ``fromException``'s changed parameter type leads to type
 errors, one common solution is to convert the exception value first with
 ``toException``.
 
-As an example let's consider we don't want to change the type of 
+As an example let's consider the case of GHC's internal `GHC.TopHandler.real_handler` function; to ease compatibility, we may want to avoid changing the `SomeException` argument to `SomeExceptionWithBacktrace`. We can achieve this with a strategically-placed `fromException . toException`:
 ``GHC.TopHandler.real_handler`` to keep the needed migration effort small. ::
 
     real_handler :: (Int -> IO a) -> SomeException -> IO a
