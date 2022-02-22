@@ -254,7 +254,7 @@ by the currently selected ``BacktraceMechanism``s: ::
 
     -- | Collect a list of 'Backtrace's via all current default 'BacktraceMechanism's.
     -- See 'setDefaultBacktraceMechanisms'
-    collectBacktraces :: HasCallStack =>IO [Backtrace]
+    collectBacktraces :: HasCallStack => IO [Backtrace]
     collectBacktraces = do
         mechs <- getDefaultBacktraceMechanisms
         catMaybes `fmap` mapM collectBacktraces' mechs
@@ -274,7 +274,7 @@ by the currently selected ``BacktraceMechanism``s: ::
     -- 'Backtrace' backtraces are collected according to the configured
     -- 'BacktraceMechanism's.
     --
-    -- WARNING: You may want to use 'throwIO' instead so that your pure code
+    -- WARNING: If you are in an `IO` context you may want to rather use 'throwIO' instead so that your pure code
     -- stays exception-free.
     throw :: HasCallStack => forall (r :: RuntimeRep). forall (a :: TYPE r). forall e.
             Exception e => e -> a
@@ -345,7 +345,7 @@ the fact that stack traces are primarily a debugging tool and somewhat of a
 cross-cutting concern. While a stateless approach would be preferred, we
 believe that this compromise is a significant improvement over the status quo.
 
-The Haskell community will have to adapt it's code to the new exception structure.
+The Haskell community will have to adapt its code to the new exception structure.
 As described in `Adding ``SomeExceptionWithBacktrace```_ the expected impact isn't
 very high. This is further discussed in `Migration`_ .
 
@@ -355,7 +355,7 @@ Migration
 There was an intense discussion in the comments of the pull request of this
 proposal about how to reach two goals
 (<https://github.com/ghc-proposals/ghc-proposals/pull/330>):
-- Keep the migration costs as low as possible. I.e. most usages should work
+- Keep the migration costs as low as possible (i.e. most usages should work)
   without any change.
 - Get a type checking error when the changed exception structure breaks existing
   code (i.e. no silent changes in behaviour.)
