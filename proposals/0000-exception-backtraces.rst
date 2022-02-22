@@ -423,7 +423,8 @@ implement this proposal.
 
 In general, it should always be considered if a "down cast" to ``SomeException``
 using ``toException`` and ``fromException`` would not be sufficient to solve the
-issue at hand.
+issue at hand. But, as ``SomeException`` does not carry backtraces, these would
+be lost.
 
 Type and pattern synonym
 ~~~~~~~~~~~~~~~~~~~~~~~~
