@@ -441,7 +441,7 @@ combination of type and a pattern synonym could be applied. ::
         SomeExceptionWithBacktrace (SomeException e) _ = SomeException e
     #endif
 
-This should be considered the last resort! Please refer to `Alternatives`_
+This should be considered to be a measure of last resort! Please refer to `Alternatives`_
 about why this is not a general solution and might break existing code.
 
 The preferred solution should always be to rewrite the code to not pattern
