@@ -358,7 +358,7 @@ proposal about how to reach two goals
 - Keep the migration costs as low as possible. I.e. most usages should work
   without any change.
 - Get a type checking error when the changed exception structure breaks existing
-  code. (I.e. no silent changes in behaviour.)
+  code (i.e. no silent changes in behaviour.)
 
 The solution presented in this proposal has been agreed upon by all involved
 parties.
