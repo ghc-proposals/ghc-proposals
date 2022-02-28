@@ -151,20 +151,6 @@ there is an absence of punning.
 *Motivation:* Visibility should be just that: a superficial property that describes
 (only) whether an argument is visible in the user-written source code.
 
-.. _`Pattern/Expression Duality Principle`:
-
-**Pattern/Expression Duality Principle (PEDP)**. (From `#448`_.) If the syntax of a pattern is also valid
-syntax for an expression, the pattern matches the expression.
-
-The `Pattern/Expression Duality Principle`_ holds for non-overloaded syntax today. For overloaded
-syntax, the matchability of a pattern depends on, for example, the ``Eq`` instance of a type
-and therefore cannot reliably uphold this principle.
-
-*Motivation:* This is the essence of pattern-matching, where we can deconstruct data
-that was constructed by an expression.
-
-From `#448_`.
-
 Name resolution and scoping
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

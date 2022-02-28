@@ -38,7 +38,6 @@ together many existing proposals:
 .. _`Visibility Orthogonality Principle`: ../principles.rst#visibility-orthogonality-principle
 .. _`Local Lexical Scoping Principle`: ../principles.rst#local-lexical-scoping-principle
 .. _`Syntactic Unification Principle`: ../principles.rst#syntactic-unification-principle
-.. _`Pattern/Expression Duality Principle`: ../principles.rst#pattern-expression-duality-principle
 .. _`Lexical Scoping Principle`: ../principles.rst#lexical-scoping-principle
 
 * `#126`_: Accepted, implemented proposal on accepting type arguments to constructor
@@ -1203,33 +1202,39 @@ Effects and Interactions
 The effects of this proposal are written out in the individual sections. Here,
 I summarize the effects on the principles_.
 
-1. The `Lexical Scoping Principle`_, part (a), is upheld. Binders occur in patterns, after ``forall``, in
+1. With the right extensions, the `Lexical Scoping Principle`_, part (a), is upheld. Binders occur in patterns, after ``forall``, in
    ``let`` declarations, and a few other discrete places in the AST -- and
    nowhere else. In particular, binders do not occur in pattern signatures.
    Instead, with ``-XPatternSignatureBinds``, an occurrence of an out-of-scope
    variable ``a`` induces a ``let type a = _ in`` to be prefixed to the pattern.
 
+   This would not be the case without the parts of the proposal around ``-XExtendedLet`` (allowing ``let``
+   in types is not needed) because of the behavior of pattern signatures.
+
 #. The `Local Lexical Scoping Principle`_ is made to hold, by describing pattern-signature binds as occurrences
    and making type applications in patterns unconditionally bring new variables
    into scope.
 
+   This would not be the case with the treatment of in-scope variables as originally written
+   in `#126`_, where the choice between a binding site and an occurrence depends on whether a
+   type variable is in scope.
+
 #. The `Syntactic Unification Principle`_ is supported. The new ``let`` syntax in types is a strict subset
-   of its syntax in terms, and the semantics are compatible.
+   of its syntax in terms, and the semantics are compatible. Note that allowing ``let`` in types brings
+   us closer to getting this principle.
 
 #. The `Explicit Variable Principle`_ is made to hold, by allowing explicit binders for type variables
    for existentials and the variables bound by an inner ``forall`` in a higher-rank
-   type.
+   type. Furthermore, the features around ``-XExtendedLet`` allow us to avoid matching in pattern
+   signatures when bringing a type variable into scope.
 
 #. The `Explicit Binding Principle`_ is made to hold, by introducing ``-XNoImplicitForAll`` and
-   ``-XNoPatternSignatureBinds``.
+   ``-XNoPatternSignatureBinds``. The ``-XExtendedLet`` features work as a convenient replacement
+   for ``-XPatternSignatureBinds``, without sacrificing the `Explicit Binding Principle`_.
 
 #. The `Visibility Orthogonality Principle`_ is made to hold, by ensuring that types and terms are treated identically
-   in patterns.
-
-#. The `Pattern/Expression Duality Principle`_ is respected, by allowing space for universals in patterns. It is up
-   to a future proposal to figure out how universals can be instantiated in patterns,
-   but this current proposal is future-compatible with other ideas, and it retains
-   the correspondence between arguments in patterns and arguments in expressions.
+   in patterns. This was not the case with the old version of `#126`_ for constructor patterns, which
+   treated variables after ``@`` different to those without a ``@``.
 
 Costs and Drawbacks
 -------------------
