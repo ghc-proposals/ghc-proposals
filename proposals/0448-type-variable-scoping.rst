@@ -34,6 +34,13 @@ together many existing proposals:
 .. _`Visible Type Applications`: https://richarde.dev/papers/2016/type-app/visible-type-app.pdf
 .. _`principles`: ../principles.rst
 .. _`Contiguous Scoping Principle`: ../principles.rst#contiguous-scoping-principle
+.. _`Explicit Binding Principle`: ../principles.rst#explicit-binding-principle
+.. _`Explicit Variable Principle`: ../principles.rst#explicit-variable-principle
+.. _`Visibility Orthogonality Principle`: ../principles.rst#visibility-orthogonality-principle
+.. _`Local Lexical Scoping Principle`: ../principles.rst#local-lexical-scoping-principle
+.. _`Syntactic Unification Principle`: ../principles.rst#syntactic-unification-principle
+.. _`Pattern/Expression Duality Principle`: ../principles.rst#pattern-expression-duality-principle
+.. _`Lexical Scoping Principle`: ../principles.rst#lexical-scoping-principle
 
 * `#126`_: Accepted, implemented proposal on accepting type arguments to constructor
   patterns, allowing constructions like ``f (Just @Int x) = x + 5``
@@ -915,7 +922,7 @@ Effects and Interactions
 The effects of this proposal are written out in the individual sections. Here,
 I summarize the effects on the principles_ laid out above.
 
-1. The `Lexical Scoping Principle Corollary`_ is upheld. Binders occur in patterns, after ``forall``, in
+1. The `Lexical Scoping Principle`_, part (a), is upheld. Binders occur in patterns, after ``forall``, in
    ``let`` declarations, and a few other discrete places in the AST -- and
    nowhere else. In particular, binders do not occur in pattern signatures.
    Instead, with ``-XPatternSignatureBinds``, an occurrence of an out-of-scope
