@@ -32,6 +32,7 @@ together many existing proposals:
 .. _Kind Inference for Datatypes: https://richarde.dev/papers/2020/kind-inference/kind-inference.pdf
 .. _`Haskell 2010 Report`: https://www.haskell.org/onlinereport/haskell2010/haskellch10.html
 .. _`Visible Type Applications`: https://richarde.dev/papers/2016/type-app/visible-type-app.pdf
+.. _`principles`: ../principles.rst
 
 * `#126`_: Accepted, implemented proposal on accepting type arguments to constructor
   patterns, allowing constructions like ``f (Just @Int x) = x + 5``
@@ -70,7 +71,8 @@ How to read this proposal
 
 This is a large proposal, with a number of moving parts. The essential reason
 all these moving parts are glued together in just one proposal is so that they
-can be unified by their desire to uphold the Principles_ laid out here. Individual
+can be unified by their desire to uphold the principles added to our
+`principles`_ document. Individual
 components of this proposal can be designed, debated, and implemented separately,
 yet are presented in one document as they are meant to dovetail together nicely.
 
@@ -82,197 +84,6 @@ will likely be helpful.
 If this proposal is accepted, it may be a good idea to incorporate that motivation,
 etc., right in this proposal here, to make it self-contained. I am happy to do this
 at the direction of the committee.
-
-Principles
-----------
-
-The design here is guided by several high-level principles. These principles are not
-sacro-sanct, such that they admit no exceptions. Instead, we strive to uphold these
-principles, but relax them when doing so is well motivated.
-
-Each principle is meant to be able to stand alone; that is, each one should make sense
-as a language-design desideratum independent of the others. However, the underlying
-theme to all of them is to reduce the expected cognitive burden of readers and writers
-of a language. For example, it is well specified to have a language supporting a class
-of identifiers in scope only when their first letter occurs in an odd-numbered column
-(counting from 0). But such a language would be challenging to program in! The principles
-here are meant to make programming easier. This is subjective and up for debate;
-consideration of this proposal should also include consideration of whether these
-principles are worth upholding.
-
-If `#452`_ is accepted, these principles will be moved to the Principles document described
-in `#452`_.
-
-.. _`Lexical Scoping Principle`:
-
-1. **Lexical Scoping Principle (LSP)**. For every occurrence of an identifier, it is possible to uniquely identify its binding site, without involving the type system. (From `#378`_.)
-
-   The LSP implies
-
-   .. _`Lexical Scoping Principle Corollary`:
-
-   **Lexical Scoping Principle Corollary (LSPC)**. For every appearance of an identifier
-   in a Haskell program, it is possible to determine whether that appearance is a
-   binding site or an occurrence, without involving the type system.
-
-   Motivation: These principles mean that we can understand the binding
-   structure of a program without relying on type inference, important both for the
-   implementation of GHC and the sanity of programmers.
-
-   .. _`Local Lexical Scoping Principle`:
-
-#. **Local Lexical Scoping Principle (LLSP)**. For every occurrence of an identifier, it is possible to determine
-   whether that appearance is a binding site or an occurrence, without looking to see what identifiers are
-   already in scope.
-
-   This is a variant of the `Lexical Scoping Principle Corollary`_ that also prevents us from looking at the set of in-scope identifiers for determining
-   whether something is a binding site.
-
-   Motivation: Tracking the set of in-scope variables is laborious for human readers. (The compiler is already
-   doing this during name resolution.) This fact becomes even more poignant if we consider the possibility
-   of mixing the term-level and type-level namespaces (`#270`_) and need to think about clashes between type
-   variables and imported term variables.
-
-   .. _`Syntactic Unification Principle`:
-
-#. **Syntactic Unification Principle (SUP)**. In the absence of punning, there is no difference between type-syntax and term-syntax.
-   (From `#378`_.)
-
-   Motivation: The SUP keeps us forward-compatible with a possible future where the
-   distinction between term-syntax and type-syntax is removed.
-
-   .. _`Explicit Variable Principle`:
-
-#. **Explicit Variable Principle (EVP)**. It is possible to write out all (specified)
-   type arguments in every polymorphic function application,
-   give the type for every bound variable,
-   and write a type signature for every expression. This requires the ability to
-   bring type variables into scope. These variables can be brought into scope
-   without relying on matching or unification.
-
-   Examples::
-
-     const :: a -> b -> a
-     const x y = ...    -- there must be some way to name the types of x and y here
-     -- using `const (x :: a) (y :: b) = ...` is not powerful enough, because it relies
-     -- on matching the pattern signature with the argument type from the type signature
-
-     data Ex = forall a. Ex a
-     f (Ex x) = ...     -- there must be some way to name the type of x here
-
-     hr :: (forall a. a -> a -> a) -> ...
-     hr = ...
-     g = hr (\ x y -> ...)   -- there must be some way to name the type of x or y here
-
-   Once we have the EVP, there will never be a need for ``Proxy``.
-
-   Motivation: As GHC supports more and more type-level programming, the ability
-   to write out type signatures, arguments, and annotations has become increasingly
-   important. With ``-XScopedTypeVariables``, GHC allows us to bring type variables
-   into scope, but often requires us to do so by cumbersome matching. If we have
-   a type ``Maybe (Either (Int, Bool, a) Double)``, that's a lot to type just to
-   be able to, say, bind ``a``. The EVP says we do *not* have to resort to matching,
-   ever.
-
-   .. _`Explicit Binding Principle`:
-
-#. **Explicit Binding Principle (EBP)**. Through the right combination of extensions and/or warning flags, it is possible
-   for a Haskell programmer to ensure that all identifiers in a program have an explicit binding site.
-
-   Examples::
-
-     id :: a -> a    -- the variable `a` has no explicit binding site, but we can write `forall a.` to provide one
-
-     f :: (Bool, Bool) -> Bool
-     not (x :: (b, b)) = ...   -- the variable `b` is bound to `Bool` by this
-                               -- pattern signature. But either this is done by
-                               -- matching (in violation of the EVP) or the binding
-                               -- site is implicit (in violation of the EBP).
-
-   Motivation: The EBP allows programmers to control exactly how variables come into
-   scope. It also prevents the possibility of typos that accidentally introduce new
-   variables.
-
-   .. _`Visibility Orthogonality Principle`:
-
-#. **Visibility Orthogonality Principle (VOP)**. Whether an argument is visible or
-   invisible should affect only its visibility, not other properties.
-
-   A consequence of the VOP is that these two programs should have the same meaning::
-
-     f1 :: forall a -> ...
-     f1 blah1 = ...
-
-     g1 = ... f1 blah2 ...
-
-     -------
-
-     f2 :: forall a. ...
-     f2 @(blah1) = ...
-
-     g2 = ... f2 @(blah2) ...
-
-   The only difference between these is the visibility.
-
-   Put another way: two programs that are the same except for visibility markers (such as
-   the ``.`` vs ``->`` in a ``forall`` or the presence or absence of a ``@``) should desugar
-   to the same Core program.
-
-   Motivation: Visibility should be just that: a superficial property that describes
-   (only) whether an argument is visible in the user-written source code.
-
-   Currently, the design for `#281`_ (along with the design for ``-XTypeApplications``)
-   violates the `Visibility Orthogonality Principle`_, because the visibility marker ``@`` also affects the difference between
-   term-syntax and type-syntax. However, given the `Syntactic Unification Principle`_, we strive to uphold the `Visibility Orthogonality Principle`_ when
-   there is an absence of punning.
-
-   .. _`Pattern/Expression Duality Principle`:
-
-#. **Pattern/Expression Duality Principle (PEDP)**. The syntax for patterns mimics
-   that of expressions, allowing an expression headed by a constructor to be pattern-matched
-   against a pattern of the same syntactic structure.
-
-   Motivation: This is the essence of pattern-matching, where we can deconstruct data
-   that was constructed by an expression.
-
-   .. _`Contiguous Scoping Principle`:
-
-#. **Contiguous Scoping Principle (CSP)**. The region of a program for which an identifier
-   is in scope is contiguous.
-
-   Motivation: The `Contiguous Scoping Principle`_ makes programs easier to read, in that a reader can add a variable
-   to their internal tracking of in-scope variables then
-   remove that variable from their in-scope set just once.
-
-   The CSP is *not* respected by Haskell 2010 nor some of GHC's extensions. Here are some places
-   where the CSP is violated:
-
-   1. ``do``\ -notation. Example: ``do (x, (f x -> Pat)) <- action; blah``. ``x`` is in scope in
-      its pattern, to the right of its binding site, but then not in ``action``. It is in scope
-      again in ``blah``. Example of potential confusion: ``f x = do x <- x; g x``.
-
-   #. List comrephensions. Example: ``[ (x, y) | x <- thing1, y <- thing2, condition3 ]``. The
-      variable ``y`` is in scope in ``condition3`` and the ``(x, y)`` at the
-      beginning, but nowhere else. Example of potential confusion:
-      ``f x y = [ (x, y) | x <- y, y <- x ]``.
-
-   #. Arrow notation. Example: ``proc x -> do y <- task1 -< input1; task2 -< input2``. The variable
-      ``x`` is in scope in ``input1`` and ``input2`` but not in ``task1`` or ``task2``.
-      Example of potential confusion: ``f x = proc x -> x -< x``. The two ``x``\ s at the end
-      refer to *different* variables.
-
-   #. ``-XScopedTypeVariables``. Example: ``f :: forall a. a -> a; x :: Int; f y = (y :: a)``. The
-      type variable ``a`` is in scope in the definition of ``f`` but not in
-      the type signature for ``x``.
-
-   #. GADT header variables. Example of potential confusion:
-      ``data G a where MkG :: a Int -> G Bool deriving C a``. The ``a`` in the type of ``MkG`` is
-      completely unrelated to the ``a`` toward the beginning and in the deriving
-      clause.
-
-   There may be others beyond this. The goal here is *not* to establish the `Contiguous Scoping Principle`_ (indeed, I'm not
-   sure I'd want ``do`` notation to be any different here, because reusing variable names in ``do``
-   notation is convenient), but to get one step closer to it for those programmers who want it.
 
 Proposed Changes
 ----------------
