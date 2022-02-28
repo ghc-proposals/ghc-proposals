@@ -517,7 +517,7 @@ Alternatives
       type Tuple# :: forall (reps :: List RuntimeRep). TupleArgKind# reps -> TYPE (TupleRep reps)
       type family Tuple# ts where
         Tuple# () = Unit#
-        Tuple# a = Solo# a     -- see below
+        Tuple# (a :: TYPE r) = TypeError (Text "Tuple# does not work for 1-tuples; use Solo#.")  -- see below
         Tuple# (a, b) = Tuple2# a b
         Tuple# (a, b, c) = Tuple3# a b c
         -- ...
@@ -527,7 +527,7 @@ Alternatives
       type Sum# :: forall (reps :: List RuntimeRep). TupleArgKind# reps -> TYPE (SumRep reps)
       type family Sum# ts where
         Sum# () = TypeError (Text "GHC does not support empty unboxed sums. Consider Data.Void.Void instead.")
-        Sum# a = TypeError (Text "GHC does not support unary unboxed sums. Consider Data.Tuple.Solo# instead.")
+        Sum# (a :: TYPE r) = TypeError (Text "GHC does not support unary unboxed sums. Consider Data.Tuple.Solo# instead.")
         Sum# (a, b) = Sum2# a b
         Sum# (a, b, c) = Sum3# a b c
         -- ...
@@ -555,6 +555,10 @@ Alternatives
    ``-XNoListTuplePuns``, the user's type is understood as ``Tuple @3 (Int, Bool, Double)``, and the "``3``"
    equation fires, reducing to ``Tuple3 Int Bool Double`` -- the same answer! And so, all users
    can write ``Tuple`` before their tuples and not get hurt.
+
+   For unboxed tuples (``Tuple#``), this non-uniformity is not as happy. For example, ``Tuple# (Int, Bool)``
+   means either ``Tuple2# Int Bool`` (with ``-XNoListTuplePuns``) or ``Solo# (Tuple2 Int Bool)`` (with
+   ``-XListTuplePuns``). Furthermore, ``Tuple# (Int#, Double#)`` would not kind-check with ``-XListTuplePuns``. So we avoid these problems by simply erroring in the 1-element case.
 
 Unresolved Questions
 --------------------
