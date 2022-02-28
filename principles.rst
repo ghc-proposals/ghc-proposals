@@ -113,11 +113,14 @@ a type ``Maybe (Either (Int, Bool, a) Double)``, that's a lot to type just to
 be able to, say, bind ``a``. The EVP says we do *not* have to resort to matching,
 ever.
 
-(From `#448`_.)
+From `#448`_.
+
+Visibility Orthogonality Principle (VOP)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. _`Visibility Orthogonality Principle`:
 
-**Visibility Orthogonality Principle (VOP)**. (From `#448_`.) Whether an argument is visible or
+**Principle**: Whether an argument is visible or
 invisible should affect only its visibility, not other properties.
 
 A consequence of the `Visibility Orthogonality Principle`_ is that these two programs should have the same meaning::
@@ -160,12 +163,17 @@ and therefore cannot reliably uphold this principle.
 *Motivation:* This is the essence of pattern-matching, where we can deconstruct data
 that was constructed by an expression.
 
+From `#448_`.
+
 Name resolution and scoping
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+Lexical Scoping Principle (LSP)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. _`Lexical Scoping Principle`:
 
-**Lexical Scoping Principle (LSP)**. ((a) from `#448`_; (b) from `#378`_.)
+**Principle**:
 
 a. For every appearance of
 an identifier, it is possible to determine whether that appearance is a *binding site*
@@ -177,19 +185,24 @@ b. For every *occurrence* of an
 identifier, it is possible to uniquely identify its *binding site*, without
 involving the type system.
 
-*Motivation:* These principles mean that we can understand the binding
-structure of a program without relying on type inference, important both for the
-implementation of GHC and the sanity of programmers.
-
 The `Lexical Scoping Principle`_ is true today, with two complications:
 
 1. Template Haskell splices may need to be run before completing name resolution (and running those splices requires type-checking them).
 
 2. The `deprecated mechanism <https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/exts/duplicate_record_fields.html#selector-functions>`_ for disambiguating duplicate record fields violates the `Lexical Scoping Principle`_ by requiring the type system.
 
+*Motivation:* These principles mean that we can understand the binding
+structure of a program without relying on type inference, important both for the
+implementation of GHC and the sanity of programmers.
+
+(a) from `#448`_; (b) from `#378`_.
+
+Local Lexical Scoping Principle (LLSP)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. _`Local Lexical Scoping Principle`:
 
-**Local Lexical Scoping Principle (LLSP)**. (From `#448`_.) For every appearance of an identifier, it is possible to determine
+**Principle**: For every appearance of an identifier, it is possible to determine
 whether that appearance is a *binding site* or an *occurrence*, without looking to see what identifiers are
 already in scope.
 
@@ -206,9 +219,14 @@ doing this during name resolution.) This fact becomes even more poignant if we c
 of mixing the term-level and type-level namespaces (`#270`_) and need to think about clashes between type
 variables and imported term variables.
 
+From `#448`_.
+
+Explicit Binding Principle (EBP)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. _`Explicit Binding Principle`:
 
-**Explicit Binding Principle (EBP)**. (From `#448`_.) Through the right combination of extensions and/or warning flags, it is possible
+**Principle**: Through the right combination of extensions and/or warning flags, it is possible
 for a Haskell programmer to ensure that all identifiers in a program have an explicit binding site.
 
 Examples::
@@ -226,9 +244,14 @@ Examples::
 scope. It also prevents the possibility of typos that accidentally introduce new
 variables.
 
+From `#448`_.
+
+Contiguous Scoping Principle (CSP)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. _`Contiguous Scoping Principle`:
 
-**Contiguous Scoping Principle (CSP)**. (From `#448`_.) The region of a program for which an identifier
+**Principle**: The region of a program for which an identifier
 is in scope is contiguous.
 
 The `Contiguous Scoping Principle`_ is *not* respected by Haskell 2010 nor some of GHC's extensions. Here are some places
@@ -264,25 +287,37 @@ but to be mindful of new violations.
 to their internal tracking of in-scope variables then
 remove that variable from their in-scope set just once.
 
+From `#448`_.
+
 Semantics
 ~~~~~~~~~
 
+Predictable Erasure Principle (PEP)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. _`Predictable Erasure Principle`:
 
-**Predictable Erasure Principle (PEP)**. (From `#378`_.) The programmer knows, for sure, which bits of the program will be
+**Principle**: The programmer knows, for sure, which bits of the program will be
 retained at runtime, and which will be erased.
 
 The `Predictable Erasure Principle`_ is true today: types are erased, while terms are retained.
 
+From `#378`_.
+
 User experience
 ~~~~~~~~~~~~~~~
 
+Opt-In Principle (OIP)
+^^^^^^^^^^^^^^^^^^^^^^
+
 .. _`Opt-In Principle`:
 
-**The Opt-In Principle (OIP):** (From `#378`_, slightly generalized.) Users who do not opt into an advanced feature will
+**Principle**: Users who do not opt into an advanced feature will
 not be affected by it.
 
 This principle is violated in various ways today: it is easy for GHC to generate error messages that refer to
 advanced features even when writing simple code. In addition, the existence of advanced features likely slow
 down GHC even when those features are not active. Yet this principle is important to keep in mind going forward,
 as we hope not to make the current situation worse.
+
+From `#378`_, slightly generalized.
