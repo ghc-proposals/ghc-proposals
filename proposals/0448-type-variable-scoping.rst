@@ -33,6 +33,7 @@ together many existing proposals:
 .. _`Haskell 2010 Report`: https://www.haskell.org/onlinereport/haskell2010/haskellch10.html
 .. _`Visible Type Applications`: https://richarde.dev/papers/2016/type-app/visible-type-app.pdf
 .. _`principles`: ../principles.rst
+.. _`Contiguous Scoping Principle`: ../principles.rst#contiguous-scoping-principle
 
 * `#126`_: Accepted, implemented proposal on accepting type arguments to constructor
   patterns, allowing constructions like ``f (Just @Int x) = x + 5``
