@@ -61,7 +61,7 @@ particular, allowing case expression on sized literals.
 Proposed Change Specification
 -----------------------------
 
-Syntax was debatable and was settled with a vote after discussions on the
+Syntax was debated and was settled with a vote after discussions on the
 previous revisions of this proposal (21 voters):
 
 ::
