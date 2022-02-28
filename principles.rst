@@ -51,12 +51,12 @@ Accepted principles
 Syntax
 ~~~~~~
 
-**Syntactic Unification Principle (SUP).**
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Syntactic Unification Principle (SUP)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. _`Syntactic Unification Principle`:
 
-(From `#378`_.) In the absence of punning, there is
+**Principle:** In the absence of punning, there is
 no difference between type-syntax and term-syntax.
 
 The `Syntactic Unification Principle`_ is a *long term* goal; today, there are many, many violations of this principle. (For example,
@@ -67,12 +67,14 @@ the `Syntactic Unification Principle`_ are to be valued.
 *Motivation:* The `Syntactic Unification Principle`_ keeps us forward-compatible with a possible future where the
 distinction between term-syntax and type-syntax is removed.
 
+From `#378`_.
+
+Explicit Variable Principle (EVP)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. _`Explicit Variable Principle`:
 
-**Explicit Variable Principle (EVP)**.
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-(From `#448`_.) It is possible to write out all (specified)
+**Principle:** It is possible to write out all (specified)
 type arguments in every polymorphic function application,
 give the type for every bound variable,
 and write a type signature for every expression. This requires the ability to
@@ -110,6 +112,8 @@ into scope, but often requires us to do so by cumbersome matching. If we have
 a type ``Maybe (Either (Int, Bool, a) Double)``, that's a lot to type just to
 be able to, say, bind ``a``. The EVP says we do *not* have to resort to matching,
 ever.
+
+(From `#448`_.)
 
 .. _`Visibility Orthogonality Principle`:
 
