@@ -45,8 +45,8 @@ to find (e.g. with Ctrl+F) the abbreviation within this page.
 Accepted principles
 -------------------
 
-.. _`#378`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0378-dependent-type-design.rst
-.. _`#448`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0448-type-variable-scoping.rst
+.. _`#378`: proposals/0378-dependent-type-design.rst
+.. _`#448`: proposals/0448-type-variable-scoping.rst
 
 Syntax
 ~~~~~~
