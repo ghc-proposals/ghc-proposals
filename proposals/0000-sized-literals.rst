@@ -12,7 +12,7 @@ Sized primitive literals
 .. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/451>`_.
 .. contents::
 
-Add syntax for sized primitive literals (Int8#, Word32#, etc.).
+Add syntax for sized primitive literals (``Int8#``, ``Word32#``, etc.).
 
 
 Motivation
