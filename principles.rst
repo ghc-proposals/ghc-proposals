@@ -51,12 +51,12 @@ Accepted principles
 Syntax
 ~~~~~~
 
-.. _`Syntactic Unification Principle`:
-
 **Syntactic Unification Principle (SUP).**
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
- (From `#378`_.) In the absence of punning, there is
+.. _`Syntactic Unification Principle`:
+
+(From `#378`_.) In the absence of punning, there is
 no difference between type-syntax and term-syntax.
 
 The `Syntactic Unification Principle`_ is a *long term* goal; today, there are many, many violations of this principle. (For example,
