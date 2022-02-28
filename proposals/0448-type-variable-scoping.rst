@@ -13,21 +13,20 @@ Modern Scoped Type Variables
 This proposal updates the treatment of scoped type variables in GHC, tying
 together many existing proposals:
 
-.. _`#99`: https://github.com/ghc-proposals/ghc-proposals/pull/99
+.. _`#99`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0099-explicit-specificity.rst
 .. _`#119`: https://github.com/ghc-proposals/ghc-proposals/pull/119
-.. _`#126`: https://github.com/ghc-proposals/ghc-proposals/pull/126
-.. _`#128`: https://github.com/ghc-proposals/ghc-proposals/pull/128
-.. _`#155`: https://github.com/ghc-proposals/ghc-proposals/pull/155
-.. _`#228`: https://github.com/ghc-proposals/ghc-proposals/pull/228
+.. _`#126`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0126-type-applications-in-patterns.rst
+.. _`#128`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0128-scoped-type-variables-types.rst
+.. _`#155`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0155-type-lambda.rst
+.. _`#228`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0228-function-result-sigs.rst
 .. _`#238`: https://github.com/ghc-proposals/ghc-proposals/pull/238
 .. _`#270`: https://github.com/ghc-proposals/ghc-proposals/pull/270
-.. _`#281`: https://github.com/ghc-proposals/ghc-proposals/pull/281
+.. _`#281`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0281-visible-forall.rst
 .. _`#285`: https://github.com/ghc-proposals/ghc-proposals/pull/285
 .. _`#291`: https://github.com/ghc-proposals/ghc-proposals/pull/291
 .. _`#378`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0378-dependent-type-design.rst
-.. _`#402`: https://github.com/ghc-proposals/ghc-proposals/pull/402
+.. _`#402`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0402-gadt-syntax.rst
 .. _`#420`: https://github.com/ghc-proposals/ghc-proposals/pull/420
-.. _`#452`: https://github.com/ghc-proposals/ghc-proposals/pull/452
 .. _Type Variables in Patterns: https://richarde.dev/papers/2018/pat-tyvars/pat-tyvars.pdf
 .. _Kind Inference for Datatypes: https://richarde.dev/papers/2020/kind-inference/kind-inference.pdf
 .. _`Haskell 2010 Report`: https://www.haskell.org/onlinereport/haskell2010/haskellch10.html
@@ -93,11 +92,80 @@ If this proposal is accepted, it may be a good idea to incorporate that motivati
 etc., right in this proposal here, to make it self-contained. I am happy to do this
 at the direction of the committee.
 
-Proposed Changes
-----------------
-
 Extension shuffling
-~~~~~~~~~~~~~~~~~~~
+-------------------
+
+Right now, ``-XScopedTypeVariables`` does a lot of heavy lifting. This proposal
+breaks up ``-XScopedTypeVariables`` into its components. This enables finer-grained
+control, and the ability for e.g. the ``a`` in ``f :: forall a. a -> a`` not to
+scope over the definition of ``a``.
+
+The new meaning of ``-XScopedTypeVariables`` is the same as the old one. The only
+backward-incompatible part of this is that, today, ``-XPatternSignatures`` is a deprecated
+synonym of ``-XScopedTypeVariables``. Under this change, that would no longer be true.
+
+With the exception of ``-XImplicitForAll`` and ``-XPatternSignatureBinds``,
+this component of this proposal is taken
+from the not-yet-accepted proposal `#238`_, with no change in meaning compared to
+that proposal. ``-XImplicitForAll`` and ``-XPatternSignatureBinds`` come from accepted
+proposal `#285`_, and differ from that proposal only in the default setting of
+``-XPatternSignatureBinds``. I advocate here that it should be on by default, while
+`#285`_ takes the opposite view. More explanation on this point below.
+
+Motivation for ``-XPatternSignatures``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is taken from `#119`_. "I" and "me" here is Joachim Breitner, aka @nomeata.
+
+Originally, ``PatternSignatures`` was a an extension on its own, but at some point it started to imply
+``ScopedTypeVariables`` and eventually was deprecated in favor of the latter. This has always bothered me
+and I often find myself in situations where I need to use a pattern signature without having any need for scoped
+type variables. This need has increased with more polymorphic functions in ``base`` (e.g. post FTP).
+
+I too often thoughts “I should have raised this point when it was time, but it is too late now”. But maybe it is not
+too late… hence this proposal.
+
+The concrete motivation is to be able to write something like this::
+
+   {-# LANGUAGE OverloadedStrings #-}
+   foo :: Monad m => m Int
+   foo = do
+     list <- return ""
+     return $ length list
+
+Currently, this fails with (much shortened)::
+
+    Test.hs:4:18: error:
+        • Could not deduce (Data.String.IsString (t0 a0))
+            arising from the literal '""'
+    Test.hs:5:12: error:
+        • Could not deduce (Foldable t0) arising from a use of 'length'
+
+Ah, the FTP strikes again. So to fix this, I have to specify ``list``\ 's type.
+In Haskell98 I can add a type signature to the use of ``list``, but that is ugly: Types should
+be declared where stuff is brought into scope! So I want to write::
+
+
+   {-# LANGUAGE OverloadedStrings #-}
+   foo :: Monad m => m Int
+   foo = do
+     list :: String <- return ""
+     return $ length list
+
+but I get::
+
+    Test.hs:4:3: error:
+        Illegal type signature: 'String'
+          Type signatures are only allowed in patterns with ScopedTypeVariables
+
+Ok, that works, but why am I bothered with ``ScopedTypeVariables``? Furthermore, ``ScopedTypeVariables`` is not
+conservative; it may actually break my program somewhere!
+
+What I really want in this case is a pattern signature, and it would be nice if I could
+just state that ``PatternSignatures``.
+
+Proposed Change Specification
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Points below up to and including the new (backward-compatible) definition of
 ``-XScopedTypeVariables`` come from not-yet-accepted proposal `#238`_. The point
@@ -111,8 +179,6 @@ The other part of `#285`_ is about ``-XPatternSignatureBinds``, as noted in that
    The current ``-XPatternSignatures`` is just a synonym for ``-XScopedTypeVariables``.
    This change is thus not backward-compatible, but given that the existing extension
    is deprecated, I think this change is acceptable.
-
-   Motivation: See rejected proposal `#119`_, which contains the motivation here.
 
 #. Introduce ``-XPatternSignatureBinds``. With ``-XPatternSignatureBinds``, any
    out-of-scope type variables written in a pattern signature would be bound there
@@ -133,7 +199,7 @@ The other part of `#285`_ is about ``-XPatternSignatureBinds``, as noted in that
    method implementations. Additionally, type variables introduced in a class
    head would scope over the bodies of method defaults.
 
-#. Introduce ``-XScopedForAlls``. With ``-XScopedForAlls``, any type variables
+#. Introduce ``-XExtendedForAllScope``. With ``-XExtendedForAllScope``, any type variables
    mentioned in an explicit ``forall`` scopes over an expression. This applies
    to the following constructs:
 
@@ -141,9 +207,7 @@ The other part of `#285`_ is about ``-XPatternSignatureBinds``, as noted in that
    * Pattern synonym bindings (including in any ``where`` clause)
    * Expression type signatures
 
-   (Alternative name: ``-XExtendedForAllScope``. See `Vlad's comment <https://github.com/ghc-proposals/ghc-proposals/pull/448#discussion_r738276607>`_.).
-
-   Separating out ``-XScopedForAlls`` gets us closer to the `Contiguous Scoping Principle`_.
+   Separating out ``-XExtendedForAllScope`` gets us closer to the `Contiguous Scoping Principle`_.
 
 #. The extension ``-XScopedTypeVariables`` would imply all of the above
    extensions; this way, ``-XScopedTypeVariables`` does not change from its
@@ -189,12 +253,12 @@ The other part of `#285`_ is about ``-XPatternSignatureBinds``, as noted in that
       (The double-\ ``forall`` syntax separates type variables like ``a`` from
       term variables like ``x``.)
 
-   This extension is part of accepted, unimplemented proposal `#285`_; the only change is including ``RULES`` pragmas, which @Ericson2314 simplify forgot to include in `#285`_ (his own admission).
+   This extension is part of accepted, unimplemented proposal `#285`_; the only change is including ``RULES`` pragmas, which @Ericson2314 simply forgot to include in `#285`_ (his own admission).
 
    Being able to turn off this extension is necessary to uphold the `Explicit Binding Principle`_.
 
 Alternatives
-^^^^^^^^^^^^
+~~~~~~~~~~~~
 
 1. We could have ``-XPatternSignatureBinds`` off by default. This would mean less effort
    for users to activate the `Explicit Binding Principle`_. However, it would also mean that the new ``-XPatternSignatures`` deviates from the old, pre-\ ``-XScopedTypeVariables`` meaning
@@ -207,23 +271,64 @@ Alternatives
    The converse is not true: if ``-XPatternSignatureBinds`` is implied by ``-XPatternSignatures`` it would be a breaking change to remove that implication.
    It may be prudent to start conservatively, taking maximal advantage of the current deprecated state of ``-XPatternSignatures`` to leave our options open for the future.
 
-#. Instead of ``-XScopedForAlls``, @int-index suggests ``-XExtendedForAllScope``. The former sounds only
-   good: of course we want our ``forall``\ s to have a scope. The second might give one a little pause,
-   in that one might wonder whether an exteded scope is good.
-
 Type arguments in constructor patterns
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------------
 
 .. _pattern-type-args:
 
-This is an update to accepted, implemented proposal `#126`_ that changes
-its treatment of universals. It incorporates the logic of not-yet-accepted
-amendment `#291`_.
+This is an update to accepted, implemented proposal `#126`_,
+incorporating the logic of not-yet-accepted amendment `#291`_.
 
-Specification
-^^^^^^^^^^^^^
+The original proposal `#126`_ is indeed implemented and released,
+but the implementation is not faithful to the specification around
+type variables that are already in scope. The original proposal says
+that, if ``a`` is already in scope, then ``f (Just @a x) = ...`` is an *occurrence*
+of the in-scope ``a``. By contrast, the implementation errors in this case.
 
-1. Introduce a new extension ``-XTypeAbstractions``.
+Not-yet-accepted amendment `#291`_ says that type variables scope
+just like term variables: they can be shadowed. Accordingly, ``f (Just @a x) = ...``
+would always, unconditionally bind a new type variable ``a``, possibly
+shadowing any in-scope type variable ``a``. This design supports the
+`Visibility Orthogonality Principle`_, which states that the presence of
+an ``@`` should affect only whether a thing is visible or not, not other
+characteristics (like its shadowing and scoping behavior). Additionally,
+this choice edges us closer to the `Local Lexical Scoping Principle`_,
+because we no longer have to check whether ``a`` is in scope before identifying
+the ``a`` in ``f (Just @a x) = ...`` is a binding site or an occurrence.
+
+The other change in this restatement is the use of new extension ``-XTypeAbstractions``
+instead of the current status of piggy-backing on ``-XTypeApplications``.
+
+Motivation
+~~~~~~~~~~
+
+This is taken directly from `#126`_.
+
+``TypeApplications`` are a convenient and natural way to specifying types of polymorphic functions. Consider::
+
+  data Foo a where MkFoo :: forall a. a -> Foo a
+
+With ``TypeApplications``, I can replace the somewhat clumsy ``MkFoo (x :: ty)`` with ``MkFoo @ty x``. Seen this way,
+explicit type applications are merely an alternative syntax for type signatures.
+
+At the moment, this only works in terms, but not in patterns: We can use type signatures in patterns
+(if ``PatternSignatures`` or ``ScopedTypeVariables`` are enabled), but not type applications. Given the strong
+relation between these syntactic forms, this is odd – why can I write::
+
+    foo (MkFoo (x :: ty)) = …
+
+but not::
+
+    foo (MkFoo @ty x) = …
+
+This proposal fills this gap: It allows type applications in patterns, and specifies them to behave “just like type signatures”.
+
+The intention of the following specification is that the following holds: For a constructor with type like ``C :: forall a. a -> …`` the meaning of ``C @ty x`` should coincide with the existing form ``C (x :: ty)``.
+
+Proposed Change Specification
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1. Introduce a new extension ``-XTypeAbstractions``, implied by ``-XScopedTypeVariables``.
 
 #. When ``-XTypeAbstractions`` is enabled, allow type application syntax
    in constructor patterns.
@@ -274,7 +379,7 @@ Specification
    into scope in two (or more) places within the same pattern.
 
 Examples
-^^^^^^^^
+~~~~~~~~
 
 ::
 
@@ -292,7 +397,7 @@ existential ``b`` to shadow the ``b`` brought into scope by the ``forall``.
 This shadowing behavior mimics what happens with term variables in patterns.
 
 Effects
-^^^^^^^
+~~~~~~~
 
 1. The ability to bind existential variables via a construct such as this
    is necessary to support the `Explicit Variable Principle`_.
@@ -313,14 +418,62 @@ Effects
    perhaps we would say e.g. ``f (Just @(*a) x) = ...`` to denote an occurrence
    of already-in-scope type variable ``a``.
 
+#. Because ``-XScopedTypeVariables`` implies ``-XTypeAbstractions``, people using
+   ``-XScopedTypeVariables`` would have access to the new features without enabling
+   a new extension. This is backward-compatible with the current implementation,
+   which requires both ``-XScopedTypeVariables`` and ``-XTypeApplications`` to be
+   in effect. (With this proposal, ``-XScopedTypeVariables`` alone would be enough.)
+
 Type arguments in lambda patterns
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------------
 
-This is a restatement of accepted proposal `#155`_, as amended by not-yet-accepted
-`#238`_. For motivation, please see `#238`_.
+This is a restatement of accepted, unimplemented proposal `#155`_, as amended by not-yet-accepted
+`#238`_. It introduces the ability to bind type variables by a lambda, controlled by the
+``-XTypeAbstractions`` extension.
 
-Specification
-^^^^^^^^^^^^^
+Motivation
+~~~~~~~~~~
+
+This is adapted from `#238`_.
+
+There are several motivating factors for this addition:
+
+1. There are cases where a ``Proxy`` is necessary in order for a higher-rank function argument
+   to access a type variable, such as::
+
+     type family F a
+
+     higherRankF :: (forall a. F a -> F a) -> ...
+
+     usage = higherRankF (\ (x :: F a) -> ...)
+
+   The ``(x :: F a)`` pattern signature does not work, because ``F`` is not injective. There
+   is no way to be sure that the ``a`` in ``usage`` is meant to match the ``a`` in
+   ``higherRankF``. Currently, there is simply no way for ``usage`` to get access to the
+   type variable written in the signature for ``higherRankF``. This code would have to
+   be rewritten to use ``Proxy``. Under this proposal, however, ``usage`` could be simply ::
+
+     usage = higherRankF (\ @a x -> ...)
+
+   Ah. That's better.
+
+2. With `#126`_, we can bind type variables in constructor patterns, allowing us to easily
+   capture existentials. The only other place a type variable can enter scope is in a
+   function definition, and so it's only logical to extend `#126`_ to do so. Furthermore,
+   doing so is necessary to uphold the `Explicit Variable Principle`_.
+
+3. ``-XExtendedForAllScope``\'s mechanism for binding type variables using a ``forall`` in
+   a signature has never sat well with some. (I'm in the some, but I'm not the only one.)
+   A type signature can appear arbitrarily far away from a function definition, and
+   (to me) the use of ``forall`` to induce scoping over the function definition is far
+   from intuitive. Using this new syntax, all the action happens in the function
+   definition. This allows for the possibility of usefully disabling ``-XExtendedForAllScope``
+   while still binding type variables, helping to support the `Contiguous Scoping Principle`_.
+
+4. See crowd-sourced example `here <https://github.com/ghc-proposals/ghc-proposals/pull/155#issuecomment-459430140>`_.
+
+Proposed Change Specification
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. With ``-XTypeAbstractions``, introduce a new form of pattern (cf. The `Haskell 2010 Report`_)::
 
@@ -332,7 +485,7 @@ Specification
    (Note that this does not subsume the new grammar for constructor patterns, which allow
    *types*, not just variables.)
 
-#. A type variable pattern would not be allowed in the following contexts:
+#. A type variable pattern is not allowed in the following contexts:
 
    1. To the right of an as-pattern
    #. As the top node in a lazy (``~``) pattern
@@ -395,7 +548,9 @@ Specification
       into scope and we continue checking arguments and the right-hand side.
 
       Multiple equations can bind type variables in different places,
-      as we have a type signature to guide us.
+      as we have a type signature to guide us. *Exception:* The number
+      of type variables bound after all term patterns must be the same
+      for all equations; discussion below.
 
 #. Typing rules for pattern synonym bindings are complicated, as usual.
 
@@ -473,35 +628,35 @@ Specification
       The rules for the usage of such variables on the right-hand side are
       just as they exist for ordinary function bindings.
 
-#. ``-XTypeAbstractions`` and ``-XScopedForAlls`` have a fraught relationship,
+#. ``-XTypeAbstractions`` and ``-XExtendedForAllScope`` have a fraught relationship,
    as both are trying to accomplish the same goal via different means. Here are
    the rules keeping this sibling rivalry at bay:
 
-   1. ``-XScopedForAlls`` does not apply in expression type signatures. Instead,
+   1. ``-XExtendedForAllScope`` does not apply in expression type signatures. Instead,
       if users want a type variable brought into scope, they are encouraged to
       use ``-XTypeAbstractions``. (It would not be hard to introduce a helpful
       error message instructing users to do this.)
 
-   #. If ``-XScopedForAlls`` is enabled,
+   #. If ``-XExtendedForAllScope`` is enabled,
       in an equation for a function definition for a function ``f`` (and similar
       for pattern synonym pattern bindings and pattern synonym expression bindings):
 
       * If ``f`` is written with no arguments or its first argument is not
         a type argument (that is, the next token after ``f``
-        is not a prefix ``@``), then ``-XScopedForAlls`` is in effect and
+        is not a prefix ``@``), then ``-XExtendedForAllScope`` is in effect and
         brings type variables into scope.
 
       * Otherwise, if ``f``\'s first argument is a type argument, then
-        ``-XScopedForAlls`` has no effect. No additional type variables
+        ``-XExtendedForAllScope`` has no effect. No additional type variables
         are brought into scope.
 
 Examples of new behavior of scoped type variables
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ::
 
    f :: forall a. a -> a
-   f @b x = (x :: a)   -- rejected, because -XScopedForAlls is disabled here
+   f @b x = (x :: a)   -- rejected, because -XExtendedForAllScope is disabled here
 
    g :: forall a. a -> a
    g @a x = (x :: a)   -- accepted with -XTypeAbstractions
@@ -513,7 +668,7 @@ Examples of new behavior of scoped type variables
    i = ((\ @a x -> (x :: a)) :: forall a. a -> a)
      -- accepted with -XTypeAbstractions
 
-Note that turning off ``-XScopedForAlls`` with ``-XTypeAbstractions`` is necessary if we
+Note that turning off ``-XExtendedForAllScope`` with ``-XTypeAbstractions`` is necessary if we
 think about where type variables are brought into scope. Are they brought into
 scope by the ``forall``? Or by the ``@a``? It can't be both, as there is no
 sensible desugaring into System F. Specifically, if we have ``expr :: forall a. ty``,
@@ -528,10 +683,135 @@ is *already* in scope. If we check ``expr`` against ``ty`` and ``expr`` looks li
 ``\ @b -> expr'``, then we check ``\ @b -> expr'`` against ``ty`` -- not against
 ``forall a. ty``.
 
-Effects
-^^^^^^^
+Further examples
+~~~~~~~~~~~~~~~~
 
-1. This delivers the `Explicit Variable Principle`_, meaning we can rid of ``Proxy``.
+Here are two real-world examples of how this will help, courtesy of @int-index:
+
+1. It would be useful to eliminate ``Proxy`` in this style of proof::
+
+     class WithSpine xs where
+       onSpine ::
+         forall r.
+         Proxy xs ->
+         ((xs ~ '[]) => r) ->
+         (forall y ys.
+           (xs ~ (y : ys)) =>
+           WithSpine ys =>
+           Proxy y ->
+           Proxy ys ->
+           r) ->
+         r
+
+   Code taken `from here <https://github.com/int-index/caps/blob/2f46fc6d5480bdef0a17f64359ad6eb29510dba4/src/Monad/Capabilities.hs#L273>`_.
+
+   Compare:
+
+   a. ``@``\-style: ``withSpine @xs (onNil ...) (\ @y @ys -> onCons ...)``
+   b. ``Proxy``\-style: ``withSpine (Proxy :: Proxy xs) (onNil ...) (\(Proxy :: Proxy y) (Proxy :: Proxy ys) -> onCons ...)``
+
+2. From `reflection <https://hackage.haskell.org/package/reflection-2.1.4/docs/Data-Reflection.html#v:reify>`_::
+
+     reify :: forall a r. a -> (forall (s :: *). Reifies s a => Proxy s -> r) -> r
+
+   Compare:
+
+   a. ``@``\-style: ``reify (\ @s -> ...)``
+   b. ``Proxy``\-style: ``reify (\(Proxy :: Proxy s) -> ...)``
+
+Examples of varying type variables among equations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. _varying-type-lambda-examples:
+
+::
+
+     f1 @a (x :: a) = x    -- accepted
+
+     f2 @a True  x (y :: a) = x
+     f2 @_ False x y        = y   -- accepted
+
+     f3 @a True  x (y :: a) = x
+     f3    False x y        = y   -- rejected: too confusing to have different type variable bindings
+
+     f4 :: Bool -> a -> a -> a
+     f4 @a True  x (y :: a) = x
+     f4    False x y        = y   -- accepted: the type signature allows us to do this
+
+     f5 :: Bool -> forall a. a -> a -> a
+     f5 True @a x (y :: a) = x
+     f5 False   x y        = y    -- accepted
+
+     f6 :: Bool -> forall a. a -> a -> a
+     f6 True  @a = const @a @a
+     f6 False @_ = flip const     -- accepted: the type variables after term variables line up
+
+     f7 :: Bool -> forall a. a -> a -> a
+     f7 True  @a = const @a @a
+     f7 False    = flip const     -- rejected: variable tail of type variables
+
+Effects
+~~~~~~~
+
+1. An astute reader will note that I put spaces after all my lambdas. That is because
+   ``\@`` is a valid name for a user-defined operator. This proposal does not change that.
+   If you want to bind a type variable in a lambda, you must separate the ``\`` from the
+   ``@``.
+
+#. This proposal makes abstracting over type variables the dual of applying types with
+   visible type application.
+
+#. Accepted proposal `#99`_ introduces the possibility of user-written
+   specificity annotations (``forall {k} ...``). An *inferred* variable, including one
+   written by the programmer using this new notation, is not available for use with
+   any form of visible type application, including the one proposed here. If you have
+   a function ``f :: forall {k} (a :: k). ...``, you will have to rely on the behavior
+   of ``-XExtendedForAllScope`` to bring ``k`` into scope in ``f``\'s definition, or
+   you will have to use a pattern signature. This is
+   regrettable but seems an inevitable consequence of the ``{k}`` notation.
+
+#. This delivers the `Explicit Variable Principle`_, meaning we can rid of ``Proxy``.
+
+#. The `last set of examples <#varying-type-lambda-examples>`_ above show how we deal
+   with functions with multiple equations with varying type variable bindings.
+
+   No variation
+   is allowed when there is no type signature, as doing so seems challenging (though possible),
+   and we can just encourage a type signature.
+
+   With a type signature, variation is allowed (example ``f4``, with one exception: the
+   tail of arguments must be consistent. The reason for this restriction can be understood
+   in thinking about ``f7``: in the right-hand side of the second equation, is the expected
+   type ``forall a. a -> a -> a`` or ``a -> a -> a``, with ``a`` already bound? This choice
+   matters: perhaps the right-hand side is ``\ @a -> flip (const @a @a)``. Or, if we have
+   a type like ``Bool -> forall a b. ...``, are both ``a`` and ``b`` bound to the left of the
+   ``=``? We could, for example, look at all equations and bind a number of variables equal
+   to the maximum number of type variables across all equations. But re-consider ``f7``
+   again: if we just wrote the second equation without the first, that would have a different
+   meaning than writing the equation along with the first. That is, we might imagine this
+   being accepted::
+
+     f7' :: Bool -> forall a. a -> a -> a
+     f7' False = \ @a -> flip (const @a @a)
+
+   but this being rejected as ill-typed::
+
+     f7'' :: Bool -> forall a. a -> a -> a
+     f7'' False   = \ @a -> flip (const @a @a)
+     f7'' True @a = const @a @a
+
+   This is strange, where the addition of a new equation violates the typing of a previous
+   one (that was otherwise fine). To avoid this strangeness, we simply forbid varying
+   the number of bound variables in the tail.
+
+   Note that we do not want to forbid binding variables in the tail generally, because
+   someone might want ::
+
+     myId :: forall a. a -> a
+     myId @a = id @a
+
+   which binds a variable in the tail. Happily, definitions like this will have only one
+   equation.
 
 #. (technical) The `Visible Type Applications`_ (VTA) paper defines the behavior about what to
    do when checking against a polytype: it says to deeply skolemize. However, eager deep
@@ -544,7 +824,7 @@ Effects
    out how to do this.
 
 Costs and Drawbacks
-^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~
 
 1. This part of the proposal
    is *not* backward-compatible with today's ``-XScopedTypeVariables``,
@@ -553,7 +833,7 @@ Costs and Drawbacks
      ((\x -> (x :: a)) :: forall a. a -> a)
 
    which are accepted today. No migration period is proposed, because it is
-   very hard to imagine how ``-XTypeAbstractions`` and ``-XScopedForAlls`` should
+   very hard to imagine how ``-XTypeAbstractions`` and ``-XExtendedForAllScope`` should
    co-exist peacefully here. Instead, we can issue a specific error message telling
    users how to migrate their code in this case.
 
@@ -562,14 +842,14 @@ Costs and Drawbacks
 
    If necessary, we could imagine taking the expression ``expr :: forall ... . ty``
    and looking proactively to see whether ``expr`` ever uses a type variable
-   pattern from this proposal. If not, ``-XScopedForAlls`` could trigger (and we
+   pattern from this proposal. If not, ``-XExtendedForAllScope`` could trigger (and we
    issue a warning with ``-Wcompat``). But, if a type argument appears anywhere
-   in ``expr``, then ``-XScopedForAlls`` is disabled. This would be backward-compatible,
+   in ``expr``, then ``-XExtendedForAllScope`` is disabled. This would be backward-compatible,
    but unfortunately non-local and annoying. I prefer just to skip this
    migration step.
 
 Alternatives
-^^^^^^^^^^^^
+~~~~~~~~~~~~
 
 1. We could add the following specification item if we like:
 
@@ -598,7 +878,7 @@ Alternatives
    The ``@(..)`` construct works for both *specified* and *inferred* variables,
    and is additionally available in pattern synonym pattern bindings (where it
    brings into scope only universals) and pattern synonym expression bindings
-   (where is brings into scope both universals and existentials). (In an implicitly
+   (where it brings into scope both universals and existentials). (In an implicitly
    bidirectional pattern synonym, the ``@(..)`` brings into scope only universals.)
 
    **Discussion**
@@ -625,7 +905,7 @@ Alternatives
    Accepting the ``@(..)`` syntax does *not* entail accepting this new, separate
    ``(..)`` syntax, though it is good to know that the idea is forward compatible.
 
-   A ``@(..)`` argument counts as a type argument when asking whether ``-XScopedForAlls``
+   A ``@(..)`` argument counts as a type argument when asking whether ``-XExtendedForAllScope``
    affects a function equation.
 
    The new ``@(..)`` notation does *not* work with expression type signatures,
@@ -637,19 +917,20 @@ Alternatives
    we gain more experience here: adding new features is easier than removing them.
    While I agree that this could be done, the ``@(..)`` construct makes for a very
    easy migration from today's ``-XScopedTypeVariables`` and is thus tempting to
-   be around from the start. I don't feel strongly.
+   be around from the start. I don't feel strongly but would personally vote for
+   inclusion.
 
-#. We could simply make ``-XScopedForAlls`` and ``-XTypeAbstractions`` incompatible.
+#. We could simply make ``-XExtendedForAllScope`` and ``-XTypeAbstractions`` incompatible.
    If the user specifies both, reject the program.
 
    I find this approach less convenient, as it prevents an easy migration from the
    status quo (with ``-XScopedTypeVariables`` enabled often, including in ``-XGHC2021``)
    to a future relying more on ``-XTypeAbstractions``. The approach described in this
-   proposal means that enabling ``-XTypeAbstractions`` affects nothing about ``-XScopedForAlls``,
+   proposal means that enabling ``-XTypeAbstractions`` affects nothing about ``-XExtendedForAllScope``,
    until a user tries to actually use a type abstraction. That's a nice property.
 
 ``let``-binding types
-~~~~~~~~~~~~~~~~~~~~~
+---------------------
 
 .. _type-let:
 
@@ -657,7 +938,7 @@ This segment of the proposal goes beyond previous proposals in describing a mech
 to use ``let`` to bind type synonyms.
 
 Motivation
-^^^^^^^^^^
+~~~~~~~~~~
 
 1. Users have, from time to time, requested the ability to make local type synonyms.
    GHC even has a little support for synonyms via equality constraints (e.g., writing
@@ -673,10 +954,10 @@ Motivation
    Note that the pattern signature binds ``b`` to ``Bool``. This is, essentially, a ``let``\ -bound
    type variable: in the scope of ``b``, ``b`` is synonymous with ``Bool``. Yet the only way
    to make such a ``b`` is via a pattern (or result, `#228`_) signature. Why force users
-   to use matching instead of binding the variable directly.
+   to use matching instead of binding the variable directly?
 
-Specification
-^^^^^^^^^^^^^
+Proposed Change Specification
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. Create a new extension ``-XExtendedLet``.
 
@@ -685,7 +966,7 @@ Specification
      decl → 'type' simpletype '=' type
           → 'type' tyvar '=' type
 
-   and remove the production ``topdecl → 'type' simpletype '=' type`` from ``topdecl``.
+   and remove the (now redundant) production ``topdecl → 'type' simpletype '=' type`` from ``topdecl``.
 
    Note that the second form allows a local binding for a lower-case ``tyvar``; these
    synonyms may not be parameterized.
@@ -704,7 +985,7 @@ Specification
    The wildcard is understood to stand for just one type shared among all the expansions.
 
 Effects
-^^^^^^^
+~~~~~~~
 
 1. We can now bind local type synonyms, avoiding the need to do so via pattern or result
    signatures.
@@ -719,7 +1000,7 @@ Effects
    and would be the first instance of a lower-case type variable being in scope at the top level.
 
 ``let`` in patterns
-~~~~~~~~~~~~~~~~~~~
+-------------------
 
 This part of this proposal allows introducing a ``let``\ -binding in a pattern.
 The bound variable(s) scope over the same region of code as the pattern-bound
@@ -731,7 +1012,7 @@ two alternatives for discussion. I have a slight preference for Alternative 2.
 This goes beyond any previous proposal.
 
 Motivation
-^^^^^^^^^^
+~~~~~~~~~~
 
 1. This is needed to uphold the `Explicit Binding Principle`_.
 
@@ -740,7 +1021,7 @@ Motivation
    below.
 
 Specification Alternative 1
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. With ``-XExtendedLet``, add a new form of pattern as follows::
 
@@ -751,7 +1032,7 @@ Specification Alternative 1
    themselves (that is, the declarations can be recursive).
 
 Specification Alternative 2
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 0. **Background**. Here are some productions from the `Haskell 2010 Report`_::
 
@@ -800,7 +1081,7 @@ Specification Alternative 2
    themselves (that is, the declarations can be recursive).
 
 Examples
-^^^^^^^^
+~~~~~~~~
 
 .. _let-in-pattern-example:
 
@@ -847,7 +1128,7 @@ Examples
    avoiding some repetition.
 
 Effects
-^^^^^^^
+~~~~~~~
 
 1. In concert with binding type variables in a ``let``, this helps uphold the `Explicit Binding Principle`_.
    Without this feature, a line such as ``f (x :: Either b b) = ...``
@@ -858,21 +1139,21 @@ Effects
    allows binding type variables.
 
 ``let`` in types
-~~~~~~~~~~~~~~~~
+----------------
 
 This part of the proposal allows ``let`` to be used in types. This part goes
 beyond any previous proposal.
 
 Motivation
-^^^^^^^^^^
+~~~~~~~~~~
 
 1. The careful reader will notes that the `secction above <#type-let>`_ defining
    the ability to bind type synonyms in ``let`` expressions does not actually address
    a motivating example. This component of this proposal allows us to avoid repetition
    within a type signature.
 
-Specification
-^^^^^^^^^^^^^
+Proposed Change Specification
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. With ``-XExtendedLets``, expand the grammar for types to include the following::
 
@@ -891,7 +1172,7 @@ Specification
 #. As above, the synonyms may mention wildcards, and the definitions may not be recursive.
 
 Examples
-^^^^^^^^
+~~~~~~~~
 
 1. Instead of ::
 
@@ -904,7 +1185,7 @@ Examples
    which more directly expresses what we mean.
 
 Effects
-^^^^^^^
+~~~~~~~
 
 1. This step further unifies term-level and type-level syntax, at low cost.
 
@@ -920,7 +1201,7 @@ Effects and Interactions
 ------------------------
 
 The effects of this proposal are written out in the individual sections. Here,
-I summarize the effects on the principles_ laid out above.
+I summarize the effects on the principles_.
 
 1. The `Lexical Scoping Principle`_, part (a), is upheld. Binders occur in patterns, after ``forall``, in
    ``let`` declarations, and a few other discrete places in the AST -- and
