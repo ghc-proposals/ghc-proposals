@@ -61,22 +61,34 @@ particular, allowing case expression on sized literals.
 Proposed Change Specification
 -----------------------------
 
-We propose to borrow Rust's syntax for sized literals. A new extension (e.g.
-"SizedLiterals") allows the following forms:
+Syntax was debatable and was settled with a vote after discussions on the
+previous revisions of this proposal (21 voters):
 
 ::
 
-  123#i   -- Int# literal
-  123#i8  -- Int8# literal
-  123#i16 -- Int16# literal
-  123#i32 -- Int32# literal
-  123#i64 -- Int64# literal
+  After a week of voting we have the following (using ranked pairs):
+  
+  Winner: Hash syntax extension, expecting generalization: 123#Int8, 123#Word64
+  Runner up: Mimicking C/Rust syntax: 123#i8, 123#u64
+  Third place: Hash syntax extension: 123#8, 123##64
+  Fourth place: Type mimickry: 123 :: Int8# 123 :: Word64#
 
-  123#u   -- Word# literal
-  123#u8  -- Word8# literal
-  123#u16 -- Word16# literal
-  123#u32 -- Word32# literal
-  123#u64 -- Word64# literal
+Hence we propose that a new extension (e.g. "ExtendedLiterals") allows the
+following literal forms:
+
+::
+
+  123#Int   -- Int# literal
+  123#Int8  -- Int8# literal
+  123#Int16 -- Int16# literal
+  123#Int32 -- Int32# literal
+  123#Int64 -- Int64# literal
+
+  123#Word   -- Word# literal
+  123#Word8  -- Word8# literal
+  123#Word16 -- Word16# literal
+  123#Word32 -- Word32# literal
+  123#Word64 -- Word64# literal
 
 The lexer has new lexemes for these literals.
 
@@ -114,16 +126,16 @@ literals.
 
 ::
 
-  @decimal                             \#i8 / { ifExtension SizedLiterals }      { tok_primint8 positive 0 1 decimal }
-  0[bB] @numspc @binary                \#i8 / { ifExtension SizedLiterals `alexAndPred`
-                                              ifExtension BinaryLiteralsBit }    { tok_primint8 positive 2 3 binary }
-  0[oO] @numspc @octal                 \#i8 / { ifExtension SizedLiterals }      { tok_primint8 positive 2 3 octal }
-  0[xX] @numspc @hexadecimal           \#i8 / { ifExtension SizedLiterals }      { tok_primint8 positive 2 3 hexadecimal }
-  @negative @decimal                   \#i8 / { negHashLitPred }                 { tok_primint8 negative 1 2 decimal }
-  @negative 0[bB] @numspc @binary      \#i8 / { negHashLitPred `alexAndPred`
-                                                ifExtension BinaryLiteralsBit }  { tok_primint8 negative 3 4 binary }
-  @negative 0[oO] @numspc @octal       \#i8 / { negHashLitPred }                 { tok_primint8 negative 3 4 octal }
-  @negative 0[xX] @numspc @hexadecimal \#i8 / { negHashLitPred }                 { tok_primint8 negative 3 4 hexadecimal }
+  @decimal                             \#Int8 / { ifExtension ExtendedLiterals }   { tok_primint8 positive 0 1 decimal }
+  0[bB] @numspc @binary                \#Int8 / { ifExtension ExtendedLiterals `alexAndPred`
+                                                 ifExtension BinaryLiteralsBit }   { tok_primint8 positive 2 3 binary }
+  0[oO] @numspc @octal                 \#Int8 / { ifExtension ExtendedLiterals }   { tok_primint8 positive 2 3 octal }
+  0[xX] @numspc @hexadecimal           \#Int8 / { ifExtension ExtendedLiterals }   { tok_primint8 positive 2 3 hexadecimal }
+  @negative @decimal                   \#Int8 / { negHashLitPred }                 { tok_primint8 negative 1 2 decimal }
+  @negative 0[bB] @numspc @binary      \#Int8 / { negHashLitPred `alexAndPred`
+                                                  ifExtension BinaryLiteralsBit }  { tok_primint8 negative 3 4 binary }
+  @negative 0[oO] @numspc @octal       \#Int8 / { negHashLitPred }                 { tok_primint8 negative 3 4 octal }
+  @negative 0[xX] @numspc @hexadecimal \#Int8 / { negHashLitPred }                 { tok_primint8 negative 3 4 hexadecimal }
 
 (This can probably be factored with ``@signed_suffix`` and ``@unsigned_suffix``).
 
@@ -135,67 +147,42 @@ Example of a case-expression on a ``Word64#``:
 ::
 
   case x of
-    0#u64   -> ...
-    123#u64 -> ...
-    _       -> ...
+    0#Word64   -> ...
+    123#Word64 -> ...
+    _          -> ...
 
 
 Effect and Interactions
 -----------------------
-None.
+
+Extension: we could use the same syntax for ``Char#`` literals (e.g. ``123#Char``)
+or for ``Float#/Double#`` literals, but it is left out of the scope of this
+proposal.
+
+``Int#`` and ``Word#`` literals can now be created with two different syntaxes:
+``123# / 123#Int`` and ``123## / 132#Word``. We could deprecate former syntax but it
+is left out of the scope of this proposal.
 
 
 Costs and Drawbacks
 -------------------
-None. It doesn't make the language any harder to learn. On the contrary, it
-allows the replacement of some "Magic" (the hashes suffixes for ``Int#`` and
-``Word#`` literals) with more meaningful suffixes.
+None.
 
 Alternatives
 ------------
 
-We could also keep the "double-#" syntax instead of introducing "i/u" suffixes:
+Other syntaxes were suggested:
 
-::
-
-  123#    -- Int# literal
-  123#8   -- Int8# literal
-  123#16  -- Int16# literal
-  123#32  -- Int32# literal
-  123#64  -- Int64# literal
-
-  123##   -- Word# literal
-  123##8  -- Word8# literal
-  123##16 -- Word16# literal
-  123##32 -- Word32# literal
-  123##64 -- Word64# literal
-
-An earlier revision of this proposal proposed to drop the "#" completely, but it
-was considered confusing because there is no hint that literals are unboxed:
-
-::
-
-  123i   -- Int# literal
-  123i8  -- Int8# literal
-  123i16 -- Int16# literal
-  123i32 -- Int32# literal
-  123i64 -- Int64# literal
-
-  123u   -- Word# literal
-  123u8  -- Word8# literal
-  123u16 -- Word16# literal
-  123u32 -- Word32# literal
-  123u64 -- Word64# literal
-
-
-Unresolved Questions
---------------------
-None for now.
+- Mimicking C/Rust syntax without the hash: ``123i8, 123u64`` (initial proposal)
+- Mimicking C/Rust syntax: ``123#i8, 123#u64``
+- Hash syntax extension, expecting generalization: ``123#Int8, 123#Word64``
+- Hash syntax extension: ``123#8, 123##64``
+- Type mimickry: ``123 :: Int8# 123 :: Word64#``
 
 
 Implementation Plan
 -------------------
-I could implement it.
+I [Sylvain Henry] could implement it.
 
 Endorsements
 -------------
