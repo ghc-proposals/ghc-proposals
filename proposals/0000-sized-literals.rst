@@ -26,7 +26,7 @@ It does however support primitive literals for ``Int#`` and ``Word#`` via the
 ``MagicHash`` extension: ``123#`` is an ``Int#`` literal and ``123##`` is a
 ``Word#`` literal.
 
-Internally in Core literals for sized primitives are supported but the only way
+Internally in Core, literals for sized primitives are supported but the only way
 to use them is to rely on constant folding. For example, the following code:
 
 ::
