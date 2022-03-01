@@ -111,6 +111,27 @@ proposal `#285`_, and differ from that proposal only in the default setting of
 ``-XPatternSignatureBinds``. I advocate here that it should be on by default, while
 `#285`_ takes the opposite view. More explanation on this point below.
 
+Motivation for any extension shuffling
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The main goal of this extension shuffling is to introduce ``-XExtendedForAllScope`` as
+an extension separate from ``-XScopedTypeVariables``. This separation is motivated by
+two reasons:
+
+* Some people [citation needed] dislike the behavior captured in ``-XExtendedForAllScope``
+  (where the ``a`` in ``f :: forall a. a -> a`` is in scope in ``f``\ 's definition).
+  Separating out the extension allows us to avoid this behavior.
+
+* The behavior of ``-XExtendedForAllScope`` is at odds with the behavior of ``-XTypeAbstractions``
+  for binding `type variables in lambda patterns <#type-vars-in-lambda>`_; see `this specification point <#fraught-relationship>`_.
+  It thus seems necessary to separate out the problematic ``-XExtendedForAllScope``
+  from the other components of ``-XScopedTypeVariables``.
+
+Having separated out ``-XExtendedForAllScope``, it seemed strange to have a ``-XRumpEndOfOldScopedTypeVariables``
+extension, and so I've introduced separate ``-XMethodTypeVariables`` and ``-XPatternSignatures``. The latter
+is further broken down to separate out ``-XPatternSignatureBinds``, as a part of accepted proposal
+`#285`_.
+
 Motivation for ``-XPatternSignatures``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -187,8 +208,8 @@ The other part of `#285`_ is about ``-XPatternSignatureBinds``, as noted in that
    (This extension is a part of accepted, unimplemented proposal
    `#285`_.)
 
-   Motivation for "on by default": The effect on pattern signatures requires
-   ``-XPatternSignatures`` to be witnessed, and so having this be on by default
+   Motivation for "on by default": The ``-XPatternSignatureBinds`` extension
+   has no effect, at all, without ``-XPatternSignatures`` also. Thus, having this be on by default
    does not change the meaning of Haskell98. Furthermore, this makes it easier
    to use ``-XPatternSignatures``, without needing to manually enable another
    extension to be able to bind type variables.
@@ -209,7 +230,8 @@ The other part of `#285`_ is about ``-XPatternSignatureBinds``, as noted in that
    Separating out ``-XExtendedForAllScope`` gets us closer to the `Contiguous Scoping Principle`_.
 
 #. The extension ``-XScopedTypeVariables`` would imply all of the above
-   extensions; this way, ``-XScopedTypeVariables`` does not change from its
+   extensions: ``-XPatternSignatures``, ``-XMethodTypeVariables``, and ``-XExtendedForAllScope``
+   (recalling that ``-XPatternSignatureBinds`` is on by default); this way, ``-XScopedTypeVariables`` does not change from its
    current meaning.
 
 #. Introduce ``-XImplicitForAll``, on by default. With ``-XImplicitForAll``,
@@ -380,9 +402,54 @@ Proposed Change Specification
 Examples
 ~~~~~~~~
 
+Here is an example (taken from _#15050 <https://gitlab.haskell.org/ghc/ghc/issues/15050#note_152286>_)::
+
+    type family F a where
+      F Bool = Int
+    data T a where
+      MkT :: forall b a. b ~ F a => b -> T a
+
+    foo :: T Bool -> ()
+    foo (MkT @Int _) = ()
+
+This should type-check, because the following code does::
+
+    foo :: T Bool -> ()
+    foo (MkT (_ :: Int _)) = ()
+
+Note that the data constructor expects up-to two type arguments (``forall b a.…``), but we are passing only one type argument, which then corresponds to the *first* type argument of of the data constructor.
+
+A more complex example is this (also inspired by `#15050 <https://gitlab.haskell.org/ghc/ghc/issues/15050>`_)::
+
+    data T a where
+      MkT1 :: forall a.              T a
+      MkT2 :: forall a.              T (a,a)
+      MkT3 :: forall a b.            T a
+      MkT4 :: forall a b. b ~ Int => T a
+      MkT5 :: forall a b c. b ~ c => T a
+
+    foo :: T (Int, Int) -> ()
+    foo (MkT1 @(Int,Int))  = ()
+    foo (MkT2 @x)          = (() :: x ~ Int => ())
+    foo (MkT3 @_ @x)       = (() :: x ~ x => ())
+    foo (MkT4 @_ @x)       = (() :: x ~ Int => ())
+    foo (MkT4 @_ @Int)     = ()
+    foo (MkT5 @_ @x @x)    = (() :: x ~ x => ())    -- not accepted
+
+All (save the last) of these equations type-check (just like they would if
+added value arguments of type ``a``, ``b``,... to the constructors and turned
+the type applications into type signatures). The last is rejected because it
+tries to bind ``x`` twice in the same pattern, in just the same way as a pattern
+binding the same term variable twice is rejected.
+
+Note that the ``@_`` are not treated like partial type signatures: they do not
+create any diagnostics; they are merely placeholders for type variables not bound.
+
+Note that it is usually a type error to supply a non-tyvar type, or an in-scope tyvar, in an existential position (e.g. ``MkT3 @_ @Int`` is wrong), unless the data constructor has constraints that equate the existential type variable to some type (as in the equations involving ``MkT4`` and ``MkT5`` above).
+
 ::
 
-  {-# LANGUAGE ScopedTypeVariables #-}
+  {-# LANGUAGE ExtendedForAllScope #-}
   data Ex = forall a. MkEx a
   f2 :: forall b. b -> Ex -> Int
   f2 y (MkEx @b z) = ...
@@ -394,6 +461,14 @@ On the other hand, this is accepted by the current proposal, allowing the
 existential ``b`` to shadow the ``b`` brought into scope by the ``forall``.
 
 This shadowing behavior mimics what happens with term variables in patterns.
+
+::
+
+  f :: Maybe Int -> Int
+  f (Nothing @a) = (4 :: a)
+  f (Just @a _)  = (5 :: a)
+
+This is accepted. The type variable ``a`` is bound to ``Int``, by pattern-matching.
 
 Effects
 ~~~~~~~
@@ -425,6 +500,8 @@ Effects
 
 Type arguments in lambda patterns
 ---------------------------------
+
+.. _type-vars-in-lambda:
 
 This is a restatement of accepted, unimplemented proposal `#155`_, as amended by not-yet-accepted
 `#238`_. It introduces the ability to bind type variables by a lambda, controlled by the
@@ -626,6 +703,8 @@ Proposed Change Specification
 
       The rules for the usage of such variables on the right-hand side are
       just as they exist for ordinary function bindings.
+
+   .. _fraught-relationship:
 
 #. ``-XTypeAbstractions`` and ``-XExtendedForAllScope`` have a fraught relationship,
    as both are trying to accomplish the same goal via different means. Here are
