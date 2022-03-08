@@ -429,6 +429,8 @@ their headers::
 The occurrences of ``@`` must be *prefix*, as defined by
 `#229 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0229-whitespace-bang-patterns.rst>`_.
 
+Guarded behind a new flag, ``-XTypeAbstractions``.
+
 Scope
 ~~~~~
 
@@ -622,8 +624,92 @@ inference and scoping rules.
 Costs and Drawbacks
 -------------------
 
-The change to arity inference is breaking, but most users are
-likely to be unaffected.
+The proposed changes break existing code in a few ways.
+
+Breakage 1: Scoping in Type Synonyms
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The first source of breakage is a change in the scoping of type synonyms. Consider::
+
+  type T1 = 'Nothing :: Maybe a
+
+This is no longer accepted, as ``a`` is not bound on the LHS. Instead, the user must write::
+
+  type T1 @a = 'Nothing :: Maybe a
+
+See "Argument 4: Quantification in Type Synonyms" for the motivation.
+
+There's no backwards-compatible way to rewrite this example, so we introduce
+the ``-Wimplicit-rhs-quantification`` warning, wait for three releases (in
+accordance with 3-Release-Policy), and only then make the change.
+
+Breakage 2: Arity Inference
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The second source of breakage is the change to arity inference. Consider::
+
+  type F :: Type -> forall k. Maybe k
+  type family F x
+
+This definition is currently assigned the arity of 2, but with the proposed
+changes will be assigned arity of 1. To keep the arity of 2, the user must rewrite it thus::
+
+  type F :: Type -> forall k. Maybe k
+  type family F x @k
+
+See "Argument 5: Arity Inference" for the motivation.
+
+We assume that this is an obscure situation and the change will go
+unnoticed by most users, because in order to encounter it, one must use
+``StandaloneKindSignatures`` – a relatively recent addition in itself.
+
+No migration strategy is provided.
+
+Breakage 3: Scoping in Instances
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The third source of breakage is the new requirement that variables mentioned on
+the RHS must also occur on the LHS. Consider::
+
+  type family F a :: k
+  type instance F Int = Any :: j -> j
+
+This is no longer accepted, as ``j`` is not mentioned on the LHS. The user must
+rewrite it as follows::
+
+  type family F a :: k
+  type instance F @(j -> j) Int = Any :: j -> j
+
+See "Addendum: Quantification in Type Family Instances" for the motivation.
+
+The ``@``-binders in type instances are already legal, so there's no need for a
+migration strategy: the fix is backwards-compatible.
+
+Breakage 4: Instantiation
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The fourth source of breakage is that instantiation of type/data family
+instances is fully determined by the left hand side, without looking at the
+right hand side. Consider::
+
+  type family F a :: k
+  type instance F Int = Char
+  type instance F Int = Maybe
+
+This is no longer accepted, as the LHS ``F Int`` does not fully determine if
+the instance matches, as evidenced by the presence of two instances with
+identical LHSs.
+
+The user must rewrite this code as follows::
+
+  type family F a :: k
+  type instance F @Type         Int = Char
+  type instance F @(Type->Type) Int = Maybe
+
+See "Addendum: Instantiation of Type Family Instances" for the motivation.
+
+The ``@``-binders in type instances are already legal, so there's no need for a
+migration strategy: the fix is backwards-compatible.
 
 Alternatives
 ------------
