@@ -646,16 +646,45 @@ accordance with 3-Release-Policy), and only then make the change.
 Breakage 2: Arity Inference
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The second source of breakage is the change to arity inference. Consider::
+*Background*. Every type synonym and type family has an *arity*, which
+specifies the number of arguments that must be supplied at every usage
+of the type synonym or family. Note that arity is distinct from a kind.
+For example::
+
+  type F1 :: Type -> Type -> Type
+  type family F1 a where
+    F1 Int  = Maybe
+    F1 Bool = Either Double
+
+  type F2 :: Type -> Type -> Type
+  type family F2 a b where
+    F2 Int       Double    = Char
+    F2 (Maybe a) (Maybe a) = a
+
+Even though ``F1`` and ``F2`` have the same kind (``Type -> Type -> Type``),
+they have a different arity. Thus, writing e.g. ``StateT Int (F1 b) a`` is allowed,
+while ``StateT Int (F2 b) a`` would not be: the latter does not fully apply
+``F2`` to all of its arguments, and GHC does not (yet!) support unsaturated
+type families (or synonyms).
+
+Importantly, arity applies both to *visible* arguments, like the ones above,
+and *invisible* arguments, such as appear in e.g. ``type F3 :: forall k. k -> k``.
+
+*Breakage*. The second source of breakage is the change to arity inference. Consider::
 
   type F :: Type -> forall k. Maybe k
-  type family F x
+  type family F x where
+    F Int @Type = Just Bool
+    F Int       = Just Either
 
 This definition is currently assigned the arity of 2, but with the proposed
-changes will be assigned arity of 1. To keep the arity of 2, the user must rewrite it thus::
+changes will be assigned arity of 1. The arity of 2 is important, because
+the equations match on the kind variable. (The second equation does this, too, by
+choosing ``k = Type -> Type -> Type``, according to the RHS. This confusing
+situation is also barred by this proposal.) To keep the arity of 2, the user must rewrite it thus::
 
   type F :: Type -> forall k. Maybe k
-  type family F x @k
+  type family F x @k where ...
 
 See "Argument 5: Arity Inference" for the motivation.
 
@@ -663,7 +692,9 @@ We assume that this is an obscure situation and the change will go
 unnoticed by most users, because in order to encounter it, one must use
 ``StandaloneKindSignatures`` – a relatively recent addition in itself.
 
-No migration strategy is provided.
+No migration strategy is provided: GHC must assign *some* arity to definition
+with a trailing invisible variable, and having this behavior user-configurable
+seems undesirable.
 
 Breakage 3: Scoping in Instances
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
