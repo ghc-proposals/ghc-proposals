@@ -2,7 +2,7 @@ DuplicateRecordFields without ambiguous field access
 ====================================================
 
 .. author:: Adam Gundry
-.. date-accepted:: 2011-11-16
+.. date-accepted:: 2020-11-16
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
