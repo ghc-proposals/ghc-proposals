@@ -45,6 +45,7 @@ to find (e.g. with Ctrl+F) the abbreviation within this page.
 Accepted principles
 -------------------
 
+.. _`#281`: proposals/0281-visible-forall.rst
 .. _`#378`: proposals/0378-dependent-type-design.rst
 .. _`#448`: proposals/0448-type-variable-scoping.rst
 

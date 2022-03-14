@@ -48,7 +48,7 @@ together many existing proposals:
 * `#238`_: Not yet accepted proposal that updates and extends `#155`_ to
   include a reshuffling of extensions around scoped type variables, as well
   as describing clearer rules mediating between the old ``-XScopedTypeVariables``
-  bahavior and the new proposed behavior.
+  behavior and the new proposed behavior.
 * `#285`_: Accepted, not implemented proposal introducing ``-XNoImplicitForAll``
   and ``-XNoPatternSignatureBinds``, restricting where type variables may implicitly
   be brought into scope.
@@ -194,7 +194,8 @@ The other part of `#285`_ is about ``-XPatternSignatureBinds``, as noted in that
 
 1. Re-purpose deprecated extension ``-XPatternSignatures``. With ``-XPatternSignatures``, we
    allow type signatures in patterns. These signatures can mention in-scope
-   type variables as variable occurrences, but can not bind type variables.
+   type variables as variable occurrences, but can not bind type variables (without the
+   separate ``-XPatternSignatureBinds``, which is on by default but might be turned off).
 
    The current ``-XPatternSignatures`` is just a synonym for ``-XScopedTypeVariables``.
    This change is thus not backward-compatible, but given that the existing extension
@@ -318,7 +319,11 @@ because we no longer have to check whether ``a`` is in scope before identifying
 the ``a`` in ``f (Just @a x) = ...`` is a binding site or an occurrence.
 
 The other change in this restatement is the use of new extension ``-XTypeAbstractions``
-instead of the current status of piggy-backing on ``-XTypeApplications``.
+instead of the current status of piggy-backing on the combination of
+``-XTypeApplications`` and ``-XScopedTypeVariables`` (*both* need to be enabled today).
+This proposal suggests instead that ``-XScopedTypeVariables`` implies ``-XTypeAbstractions``
+so that we remain backward-compatible with what is current implemented (though there
+may be some redundant enablings of ``-XTypeApplications`` that would no longer be needed).
 
 Motivation
 ~~~~~~~~~~
@@ -350,6 +355,7 @@ Proposed Change Specification
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. Introduce a new extension ``-XTypeAbstractions``, implied by ``-XScopedTypeVariables``.
+   (This extension is further extended in the next part of this proposal.)
 
 #. When ``-XTypeAbstractions`` is enabled, allow type application syntax
    in constructor patterns.
@@ -402,7 +408,7 @@ Proposed Change Specification
 Examples
 ~~~~~~~~
 
-Here is an example (taken from _#15050 <https://gitlab.haskell.org/ghc/ghc/issues/15050#note_152286>_)::
+Here is an example (taken from `#15050 <https://gitlab.haskell.org/ghc/ghc/issues/15050#note_152286>`_)::
 
     type family F a where
       F Bool = Int
@@ -1225,7 +1231,7 @@ beyond any previous proposal.
 Motivation
 ~~~~~~~~~~
 
-1. The careful reader will notes that the `secction above <#type-let>`_ defining
+1. The careful reader will notes that the `section above <#type-let>`_ defining
    the ability to bind type synonyms in ``let`` expressions does not actually address
    a motivating example. This component of this proposal allows us to avoid repetition
    within a type signature.
@@ -1281,7 +1287,7 @@ Effects and Interactions
 The effects of this proposal are written out in the individual sections. Here,
 I summarize the effects on the principles_.
 
-1. With the right extensions, the `Lexical Scoping Principle`_, part (a), is upheld. Binders occur in patterns, after ``forall``, in
+1. The `Lexical Scoping Principle`_, part (a), is upheld. Binders occur in patterns, after ``forall``, in
    ``let`` declarations, and a few other discrete places in the AST -- and
    nowhere else. In particular, binders do not occur in pattern signatures.
    Instead, with ``-XPatternSignatureBinds``, an occurrence of an out-of-scope
