@@ -1118,13 +1118,14 @@ Specification Alternative 1
 Specification Alternative 2
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-0. **Background**. Here are some productions from the `Haskell 2010 Report`_::
+0. **Background**. Here are some productions from the `Haskell 2010 Report`_ (to be changed
+   by this proposal)::
 
      funlhs → var apat {apat}
             | pat varop pat
             | '(' funlhs ')' apat {apat}
 
-     apat → gcon
+     apat → gcon               -- this one is unchanged, but provides context
           | literal
           | …
 
