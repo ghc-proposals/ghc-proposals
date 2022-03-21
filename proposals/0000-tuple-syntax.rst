@@ -115,95 +115,6 @@ Proposed Change Specification
      class (...) => CTuple64 ...
      instance (...) => CTuple64 ...
 
-#. Remove existing tuple definitions from ``GHC.Tuple``.
-
-#. Export the following definitions from ``GHC.Tuple``::
-
-     type TupleNKind :: Nat -> Type     -- Nat is from GHC.TypeLits
-     type family TupleNKind n = r | r -> n where
-       TupleNKind 0 = Type
-       TupleNKind n = Type -> TupleNKind (n-1)   -- this fails the injectivity check, but a little magic will allow this
-
-     type TupleN :: forall (n :: Nat). TupleNKind n
-     type family TupleN @n where     -- using syntax from #425
-       TupleN @0 = Unit
-       TupleN @1 = Solo
-       TupleN @2 = Tuple2
-       TupleN @3 = Tuple3
-       TupleN @4 = Tuple4
-       -- ...
-       TupleN @64 = Tuple64
-       TupleN @n  = TypeError (ShowType n :<>: Text " is too large; the maximum size for a tuple is 64.")
-
-     type Length :: List a -> Nat   -- not exported
-     type family Length xs where
-       Length []     = 0
-       Length (_:xs) = 1 + Length xs
-
-     type Tuple :: List Type -> Type
-     type family Tuple ts where
-       Tuple []    = Unit
-       Tuple [a]   = Solo a
-       Tuple [a,b] = Tuple2 a b
-       -- ...
-       Tuple [...] = Tuple64 ...
-       Tuple ts    = TypeError (ShowType (Length ts) :<>: Text " is too large; the maximum size for a tuple is 64.")
-
-     type CTupleNKind :: Nat -> Type
-     type family CTupleNKind n = r | r -> n where
-       CTupleNKind 0 = Constraint
-       CTupleNKind n = Constraint -> CTupleNKind (n-1)
-
-     type CTupleN :: forall (n :: Nat). CTupleNKind n
-     type family CTupleN @n where
-       CTupleN @0  = CUnit
-       CTupleN @1  = CSolo
-       CTupleN @2  = CTuple2
-       CTupleN @3  = CTuple3
-       CTupleN @4  = CTuple4
-       -- ...
-       CTupleN @64 = CTuple64
-       CTupleN @n  = TypeError (ShowType n :<>: Text " is too large; the maximum size for a tuple is 64.")
-
-     type Constraints :: List Constraint -> Constraint
-     type family Constraints cs where
-       Constraints []    = CUnit
-       Constraints [a]   = CSolo a
-       Constraints [a,b] = CTuple2 a b
-       -- ...
-       Constraints [...] = CTuple64 ...
-       Constraints ts    = TypeError (ShowType (Length ts) :<>: Text " is too large; the maximum size for a tuple is 64.")
-
-     type TupleNKind# :: List RuntimeRep -> List RuntimeRep -> Type
-     type family TupleNKind# all_reps reps_to_go = r | r -> all_reps reps_to_go where
-       TupleNKind# all_reps '[]                      = TYPE (TupleRep all_reps)
-       TupleNKind# all_reps (first_rep : reps_to_go) = TYPE first_rep -> TupleNKind# all_reps reps_to_go
-
-     type TupleN# :: forall (reps :: List RuntimeRep). TupleNKind# reps reps
-     type family TupleN# where
-       TupleN# @[]                 = Unit#
-       TupleN# @[rep1]             = Solo#
-       TupleN# @[rep1, rep2]       = Tuple2#
-       TupleN# @[rep1, rep2, rep3] = Tuple3#
-       -- ...
-       TupleN# @[...]              = Tuple64#
-       TupleN# @reps               = TypeError (ShowType (Length reps) :<>: Text " is too large; the maximum size for a tuple is 64.")
-
-     type SumNKind# :: List RuntimeRep -> List RuntimeRep -> Type
-     type family SumNKind# all_reps reps_to_go = r | r -> all_reps reps_to_go where
-      SumNKind# all_reps '[]                      = TYPE (SumRep all_reps)
-      SumNKind# all_reps (first_rep : reps_to_go) = TYPE first_rep -> SumNKind# all_reps reps_to_go
-
-     type SumN# :: forall (reps :: List RuntimeRep). SumNKind# reps reps
-     type family SumN# where
-      SumN# @[]                 = TypeError (Text "GHC does not support empty unboxed sums. Consider Data.Void.Void instead.")
-      SumN# @[rep1]             = TypeError (Text "GHC does not support unary unboxed sums. Consider Data.Tuple.Solo# instead.")
-      SumN# @[rep1, rep2]       = Sum2#
-      SumN# @[rep1, rep2, rep3] = Sum3#
-      -- ...
-      SumN# @[...]              = Sum64#
-      SumN# @reps               = TypeError (ShowType (Length reps) :<>: Text " is too large; the maximum size for a Sum is 64.")
-
 #. Export the following pseudo-definitions from ``GHC.Exts``. (Implementation note:
    These would likely be exported from ``GHC.Prim`` originally.) ::
 
@@ -236,6 +147,78 @@ Proposed Change Specification
 
      type Sum64# :: TYPE r1 -> ... -> TYPE r64 -> TYPE (SumRep [r1, ..., r64])
      data Sum64# ... = ...
+
+#. Remove existing tuple definitions from ``GHC.Tuple``.
+
+#. Export the following definitions from ``GHC.Tuple``::
+
+     type Length :: List a -> Nat   -- not exported
+     type family Length xs where
+       Length []     = 0
+       Length (_:xs) = 1 + Length xs
+
+     type TupleArgKind :: Type -> Nat -> Type
+     type family TupleArgKind t_or_c n = r | r -> n where
+       TupleArgKind _      0 = Unit
+       TupleArgKind t_or_c 1 = t_or_c       -- *not* Solo t; see below
+       TupleArgKind t_or_c 2 = Tuple2 t_or_c t_or_c
+       TupleArgKind t_or_c 3 = Tuple3 t_or_c t_or_c t_or_c
+       TupleArgKind t_or_c 4 = Tuple4 t_or_c t_or_c t_or_c t_or_c
+       -- ...
+       TupleArgKind t_or_c 64 = Tuple64 t_or_c ... t_or_c
+       TupleArgKind _      n  = TypeError (ShowType n :<>: Text " is too large; the maximum size for a tuple is 64.")
+
+     type Tuple :: forall (n :: Nat). TupleArgKind Type n -> Type
+     type family Tuple ts where
+       Tuple () = Unit
+       Tuple a = a    -- see below
+       Tuple (a, b) = Tuple2 a b
+       Tuple (a, b, c) = Tuple3 a b c
+       Tuple (a, b, c, d) = Tuple4 a b c d
+       -- ...
+       Tuple (a, b, ..., bk, bl) = Tuple64 a b ... bk bl
+       Tuple @n _ = TypeError (ShowType n :<>: Text " is too large; the maximum size for a tuple is 64.")
+
+     type Constraints :: forall (n :: Nat). TupleArgKind Constraint n -> Constraint
+     type family Constraints ts where
+       Constraints () = Unit
+       Constraints a = a    -- see below
+       Constraints (a, b) = CTuple2 a b
+       Constraints (a, b, c) = CTuple3 a b c
+       Constraints (a, b, c, d) = CTuple4 a b c d
+       -- ...
+       Constraints (a, b, ..., bk, bl) = CTuple64 a b ... bk bl
+       Constraints @n _ = TypeError (ShowType n :<>: Text " is too large; the maximum size for a tuple is 64.")
+
+     type TupleArgKind# :: List RuntimeRep -> Type
+     type family TupleArgKind# reps where
+       TupleArgKind# [] = Unit
+       TupleArgKind# [r1] = TYPE r1     -- *not* Solo (TYPE r1); see below
+       TupleArgKind# [r1, r2] = Tuple2 (TYPE r1) (TYPE r2)
+       TupleArgKind# [r1, r2, r3] = Tuple3 (TYPE r1) (TYPE r2) (TYPE r3)
+       -- ...
+       TupleArgKind# [r1, ..., r64] = Tuple64 (TYPE r1) ... (TYPE r64)
+       TupleArgKind# other = TypeError (ShowType (Length other) :<>: Text " is too large; the maximum size of a tuple is 64.")
+
+     type Tuple# :: forall (reps :: List RuntimeRep). TupleArgKind# reps -> TYPE (TupleRep reps)
+     type family Tuple# ts where
+       Tuple# () = Unit#
+       Tuple# (a :: TYPE r) = TypeError (Text "Tuple# does not work for 1-tuples; use Solo#.")  -- see below
+       Tuple# (a, b) = Tuple2# a b
+       Tuple# (a, b, c) = Tuple3# a b c
+       -- ...
+       Tuple# (a, b, ..., bk, bl) = Tuple64# a b ... bk bl
+       Tuple# @reps _ = TypeError (ShowType (Length reps) :<>: Text " is too large; the maximum size of a tuple is 64.")
+
+     type Sum# :: forall (reps :: List RuntimeRep). TupleArgKind# reps -> TYPE (SumRep reps)
+     type family Sum# ts where
+       Sum# () = TypeError (Text "GHC does not support empty unboxed sums. Consider Data.Void.Void instead.")
+       Sum# (a :: TYPE r) = TypeError (Text "GHC does not support unary unboxed sums. Consider Data.Tuple.Solo# instead.")
+       Sum# (a, b) = Sum2# a b
+       Sum# (a, b, c) = Sum3# a b c
+       -- ...
+       Sum# (a, b, ..., bk, bl) = Sum64# a b ... bk bl
+       Sum# @reps _ = TypeError (ShowType (Length reps) :<>: Text " is too large; the maximum size of a sum is 64.")
 
 #. Change ``GHC.Types`` to have the following definition::
 
@@ -327,9 +310,13 @@ Proposed Change Specification
 
    #. A use of ``(# ... | ... | ... #)``, where each of the ``...`` is filled in, (among other arities) is now disallowed.
 
-   #. An occurrence of ``GHC.Tuple.Tuple<n> ty1 ty2 ... ty<n>`` is pretty-printed as ``Tuple [ty1, ty2, ..., ty<n>]``.
+   #. An occurrence of ``GHC.Tuple.Tuple<n> ty1 ty2 ... ty<n>`` is pretty-printed as ``Tuple (ty1, ty2, ..., ty<n>)``.
 
-   #. An occurrence of ``GHC.Tuple.CTuple<n> ty1 ty2 ... ty<n>`` is pretty-printed as ``Constraints [ty1, ty2, ..., ty<n>]``.
+   #. An occurrence of ``GHC.Tuple.CTuple<n> ty1 ty2 ... ty<n>`` is pretty-printed as ``Constraints (ty1, ty2, ..., ty<n>)``.
+
+   #. An occurrence of ``GHC.Exts.Tuple<n># ty1 ty2 ... ty<n>`` is pretty-printed as ``Tuple# (ty1, ty2, ..., ty<n>)``.
+
+   #. An occurrence of ``GHC.Exts.Sum<n># ty1 ty2 ... ty<n>`` is pretty-printed as ``Sum# (ty1, ty2, ..., ty<n>)``.
 
    #. A use of ``'[ty1, ..., ty<n>]`` (for *n* ≧ 0) is now disallowed.
 
@@ -368,7 +355,7 @@ Effect and Interactions
    be accepted under ``-XNoListTuplePuns``. Instead, the user should flatten the constraints or
    write ``(Eq a, Constraints [Show a, Read a]) => a -> a``.
 
-#. An instance declaration like ``instance (C a, C b) => C (Tuple [a, b]) where ...`` would be
+#. An instance declaration like ``instance (C a, C b) => C (Tuple (a, b)) where ...`` would be
    rejected because it uses a type family in the instance head. We might choose to relax
    this restriction, by allowing type families in an instance head, as long as they can
    reduce to a ground (i.e. type-family-free) type. This proposal does *not* include such
@@ -398,6 +385,37 @@ Effect and Interactions
      instance Functor ((,) a)
 
    and others.
+
+#. The mixfix syntax for tuples is achieved by the e.g. ``Tuple`` type family. Note that
+   ``Tuple (Int, Bool)`` use the term-level data constructor ``(,)`` to package up the
+   type arguments ``Int`` and ``Bool``. Some have expressed discomfort at the loopiness
+   of this definition, but I like it: it is easy to read, reminiscent of the old syntax
+   for tuple types, and works both for boxed tuples and unboxed tuples.
+
+   Handling singletons is a bit interesting:
+
+   ``TupleArgKind t_or_c 1`` is defined to be ``t_or_c``, *not* ``Solo t_or_c``, as you would
+   otherwise expect. This is because we expect to see e.g. ``Tuple (Int)``, not ``Tuple (MkSolo Int)``.
+   (Actually, we would probably not expect these at all, but the current design allows us to be forgiving
+   during refactoring.)
+
+   In ``Tuple``, we see ``Tuple a = a``, which looks like a universally applicable equation. It is
+   not. Because ``a :: Type`` (resp. ``a :: Constraint``) we learn the invisible argument to ``Tuple``
+   (resp. ``Constraints``) must be ``1``, and thus this equation fires only when the argument to ``Tuple``
+   is not a tuple of types (resp. constraints).
+
+   A beautiful, unexpected consequence of this design is that it aids migration. Now, with or without
+   ``-XListTuplePuns``, a user can write e.g. ``Tuple (Int, Bool, Double)``, and this will be the type
+   of e.g. ``(1, True, 3.14)``. With ``-XListTuplePuns``, the argument to ``Tuple`` will be the tuple
+   type, of kind ``Type``. That is, the type will really be understood as ``Tuple @1 (Tuple3 Int Bool Double)``.
+   The "``1``" equation fires, reducing to ``Tuple3 Int Bool Double``. On the other hand, with
+   ``-XNoListTuplePuns``, the user's type is understood as ``Tuple @3 (Int, Bool, Double)``, and the "``3``"
+   equation fires, reducing to ``Tuple3 Int Bool Double`` -- the same answer! And so, all users
+   can write ``Tuple`` before their tuples and not get hurt.
+
+   For unboxed tuples (``Tuple#``), this non-uniformity is not as happy. For example, ``Tuple# (Int, Bool)``
+   means either ``Tuple2# Int Bool`` (with ``-XNoListTuplePuns``) or ``Solo# (Tuple2 Int Bool)`` (with
+   ``-XListTuplePuns``). Furthermore, ``Tuple# (Int#, Double#)`` would not kind-check with ``-XListTuplePuns``. So we avoid these problems by simply erroring in the 1-element case.
 
 Costs and Drawbacks
 -------------------
@@ -456,109 +474,102 @@ Alternatives
    This is purely an implementation detail, though, and would not affect users (except
    via the GHC API).
 
-#. We do not need all these different ways of naming tuples. In particular, the ``N``
-   families may not be worth it.
+#. The following definitions were included in an earlier version of this proposal,
+   but the committee decided we were better without::
 
-#. This proposal includes the syntax ``Tuple [Int, Bool]`` as an alternative for
-   ``Tuple2 Int Bool``. Sadly, this syntax cannot be easily extended to unboxed tuples,
-   because e.g. ``Tuple# [Int#, Double#]`` includes a heterogeneous list. (Recall that
-   ``Int# :: TYPE IntRep`` while ``Double# :: TYPE DoubleRep``. Contributor @matpyz
-   `suggests <https://github.com/ghc-proposals/ghc-proposals/pull/475#issuecomment-1032991175>`_
-   a way forward, though. The starting idea is to use ``Tuple (Int, Bool)`` in place
-   of ``Tuple [Int, Bool]``: that is, use tuples instead of a list to store the type
-   arguments. This lends itself naturally to heterogeneity.
+     type TupleNKind :: Nat -> Type     -- Nat is from GHC.TypeLits
+     type family TupleNKind n = r | r -> n where
+       TupleNKind 0 = Type
+       TupleNKind n = Type -> TupleNKind (n-1)   -- this fails the injectivity check, but a little magic will allow this
 
-   Concretely, this alternative would be to replace the definition for ``Tuple`` and ``Constraints``
-   above with the following::
+     type TupleN :: forall (n :: Nat). TupleNKind n
+     type family TupleN @n where     -- using syntax from #425
+       TupleN @0 = Unit
+       TupleN @1 = Solo
+       TupleN @2 = Tuple2
+       TupleN @3 = Tuple3
+       TupleN @4 = Tuple4
+       -- ...
+       TupleN @64 = Tuple64
+       TupleN @n  = TypeError (ShowType n :<>: Text " is too large; the maximum size for a tuple is 64.")
 
-      type TupleArgKind :: Type -> Nat -> Type
-      type family TupleArgKind t_or_c n = r | r -> n where
-        TupleArgKind _      0 = Unit
-        TupleArgKind t_or_c 1 = t_or_c       -- *not* Solo t; see below
-        TupleArgKind t_or_c 2 = Tuple2 t_or_c t_or_c
-        TupleArgKind t_or_c 3 = Tuple3 t_or_c t_or_c t_or_c
-        TupleArgKind t_or_c 4 = Tuple4 t_or_c t_or_c t_or_c t_or_c
-        -- ...
-        TupleArgKind t_or_c 64 = Tuple64 t_or_c ... t_or_c
-        TupleArgKind _      n  = TypeError (ShowType n :<>: Text " is too large; the maximum size for a tuple is 64.")
+     type CTupleNKind :: Nat -> Type
+     type family CTupleNKind n = r | r -> n where
+       CTupleNKind 0 = Constraint
+       CTupleNKind n = Constraint -> CTupleNKind (n-1)
 
-      type Tuple :: forall (n :: Nat). TupleArgKind Type n -> Type
-      type family Tuple ts where
-        Tuple () = Unit
-        Tuple a = a    -- see below
-        Tuple (a, b) = Tuple2 a b
-        Tuple (a, b, c) = Tuple3 a b c
-        Tuple (a, b, c, d) = Tuple4 a b c d
-        -- ...
-        Tuple (a, b, ..., bk, bl) = Tuple64 a b ... bk bl
-        Tuple @n _ = TypeError (ShowType n :<>: Text " is too large; the maximum size for a tuple is 64.")
+     type CTupleN :: forall (n :: Nat). CTupleNKind n
+     type family CTupleN @n where
+       CTupleN @0  = CUnit
+       CTupleN @1  = CSolo
+       CTupleN @2  = CTuple2
+       CTupleN @3  = CTuple3
+       CTupleN @4  = CTuple4
+       -- ...
+       CTupleN @64 = CTuple64
+       CTupleN @n  = TypeError (ShowType n :<>: Text " is too large; the maximum size for a tuple is 64.")
 
-      type Constraints :: forall (n :: Nat). TupleArgKind Constraint n -> Constraint
-      type family Constraints ts where
-        Constraints () = Unit
-        Constraints a = a    -- see below
-        Constraints (a, b) = CTuple2 a b
-        Constraints (a, b, c) = CTuple3 a b c
-        Constraints (a, b, c, d) = CTuple4 a b c d
-        -- ...
-        Constraints (a, b, ..., bk, bl) = CTuple64 a b ... bk bl
-        Constraints @n _ = TypeError (ShowType n :<>: Text " is too large; the maximum size for a tuple is 64.")
+     type TupleNKind# :: List RuntimeRep -> List RuntimeRep -> Type
+     type family TupleNKind# all_reps reps_to_go = r | r -> all_reps reps_to_go where
+       TupleNKind# all_reps '[]                      = TYPE (TupleRep all_reps)
+       TupleNKind# all_reps (first_rep : reps_to_go) = TYPE first_rep -> TupleNKind# all_reps reps_to_go
 
-      type TupleArgKind# :: List RuntimeRep -> Type
-      type family TupleArgKind# reps where
-        TupleArgKind# [] = Unit
-        TupleArgKind# [r1] = TYPE r1     -- *not* Solo (TYPE r1); see below
-        TupleArgKind# [r1, r2] = Tuple2 (TYPE r1) (TYPE r2)
-        TupleArgKind# [r1, r2, r3] = Tuple3 (TYPE r1) (TYPE r2) (TYPE r3)
-        -- ...
-        TupleArgKind# [r1, ..., r64] = Tuple64 (TYPE r1) ... (TYPE r64)
-        TupleArgKind# other = TypeError (ShowType (Length other) :<>: Text " is too large; the maximum size of a tuple is 64.")
+     type TupleN# :: forall (reps :: List RuntimeRep). TupleNKind# reps reps
+     type family TupleN# where
+       TupleN# @[]                 = Unit#
+       TupleN# @[rep1]             = Solo#
+       TupleN# @[rep1, rep2]       = Tuple2#
+       TupleN# @[rep1, rep2, rep3] = Tuple3#
+       -- ...
+       TupleN# @[...]              = Tuple64#
+       TupleN# @reps               = TypeError (ShowType (Length reps) :<>: Text " is too large; the maximum size for a tuple is 64.")
 
-      type Tuple# :: forall (reps :: List RuntimeRep). TupleArgKind# reps -> TYPE (TupleRep reps)
-      type family Tuple# ts where
-        Tuple# () = Unit#
-        Tuple# (a :: TYPE r) = TypeError (Text "Tuple# does not work for 1-tuples; use Solo#.")  -- see below
-        Tuple# (a, b) = Tuple2# a b
-        Tuple# (a, b, c) = Tuple3# a b c
-        -- ...
-        Tuple# (a, b, ..., bk, bl) = Tuple64# a b ... bk bl
-        Tuple# @reps _ = TypeError (ShowType (Length reps) :<>: Text " is too large; the maximum size of a tuple is 64.")
+     type SumNKind# :: List RuntimeRep -> List RuntimeRep -> Type
+     type family SumNKind# all_reps reps_to_go = r | r -> all_reps reps_to_go where
+      SumNKind# all_reps '[]                      = TYPE (SumRep all_reps)
+      SumNKind# all_reps (first_rep : reps_to_go) = TYPE first_rep -> SumNKind# all_reps reps_to_go
 
-      type Sum# :: forall (reps :: List RuntimeRep). TupleArgKind# reps -> TYPE (SumRep reps)
-      type family Sum# ts where
-        Sum# () = TypeError (Text "GHC does not support empty unboxed sums. Consider Data.Void.Void instead.")
-        Sum# (a :: TYPE r) = TypeError (Text "GHC does not support unary unboxed sums. Consider Data.Tuple.Solo# instead.")
-        Sum# (a, b) = Sum2# a b
-        Sum# (a, b, c) = Sum3# a b c
-        -- ...
-        Sum# (a, b, ..., bk, bl) = Sum64# a b ... bk bl
-        Sum# @reps _ = TypeError (ShowType (Length reps) :<>: Text " is too large; the maximum size of a sum is 64.")
+     type SumN# :: forall (reps :: List RuntimeRep). SumNKind# reps reps
+     type family SumN# where
+      SumN# @[]                 = TypeError (Text "GHC does not support empty unboxed sums. Consider Data.Void.Void instead.")
+      SumN# @[rep1]             = TypeError (Text "GHC does not support unary unboxed sums. Consider Data.Tuple.Solo# instead.")
+      SumN# @[rep1, rep2]       = Sum2#
+      SumN# @[rep1, rep2, rep3] = Sum3#
+      -- ...
+      SumN# @[...]              = Sum64#
+      SumN# @reps               = TypeError (ShowType (Length reps) :<>: Text " is too large; the maximum size for a Sum is 64.")
 
-   This creates a uniform mixfix syntax for boxed tuples, constraint tuples, unboxed tuples, and unboxed sums.
-   Handling singletons is a bit interesting:
+#. This proposal includes the syntax ``Tuple (Int, Bool)`` as an alternative for
+   ``Tuple2 Int Bool``. Because this syntax uses the tuple data constructor in order
+   to describe a tuple type, some have said it's loopy. An alternative would be to
+   use lists of types instead of tuples of types, thus::
 
-   ``TupleArgKind t_or_c 1`` is defined to be ``t_or_c``, *not* ``Solo t_or_c``, as you would
-   otherwise expect. This is because we expect to see e.g. ``Tuple (Int)``, not ``Tuple (MkSolo Int)``.
-   (Actually, we would probably not expect these at all, but the current design allows us to be forgiving
-   during refactoring.)
+     type Length :: List a -> Nat   -- not exported
+     type family Length xs where
+       Length []     = 0
+       Length (_:xs) = 1 + Length xs
 
-   In ``Tuple``, we see ``Tuple a = a``, which looks like a universally applicable equation. It is
-   not. Because ``a :: Type`` (resp. ``a :: Constraint``) we learn the invisible argument to ``Tuple``
-   (resp. ``Constraints``) must be ``1``, and thus this equation fires only when the argument to ``Tuple``
-   is not a tuple of types (resp. constraints).
+     type Tuple :: List Type -> Type
+     type family Tuple ts where
+       Tuple []    = Unit
+       Tuple [a]   = Solo a
+       Tuple [a,b] = Tuple2 a b
+       -- ...
+       Tuple [...] = Tuple64 ...
+       Tuple ts    = TypeError (ShowType (Length ts) :<>: Text " is too large; the maximum size for a tuple is 64.")
 
-   A beautiful, unexpected consequence of this design is that it aids migration. Now, with or without
-   ``-XListTuplePuns``, a user can write e.g. ``Tuple (Int, Bool, Double)``, and this will be the types
-   of e.g. ``(1, True, 3.14)``. With ``-XListTuplePuns``, the argument to ``Tuple`` will be the tuple
-   type, of kind ``Type``. That is, the type will really be understood as ``Tuple (Tuple3 Int Bool Double)``.
-   The "``1``" equation fires, reducing to ``Tuple3 Int Bool Double``. On the other hand, with
-   ``-XNoListTuplePuns``, the user's type is understood as ``Tuple @3 (Int, Bool, Double)``, and the "``3``"
-   equation fires, reducing to ``Tuple3 Int Bool Double`` -- the same answer! And so, all users
-   can write ``Tuple`` before their tuples and not get hurt.
+     type Constraints :: List Constraint -> Constraint
+     type family Constraints cs where
+       Constraints []    = CUnit
+       Constraints [a]   = CSolo a
+       Constraints [a,b] = CTuple2 a b
+       -- ...
+       Constraints [...] = CTuple64 ...
+       Constraints ts    = TypeError (ShowType (Length ts) :<>: Text " is too large; the maximum size for a tuple is 64.")
 
-   For unboxed tuples (``Tuple#``), this non-uniformity is not as happy. For example, ``Tuple# (Int, Bool)``
-   means either ``Tuple2# Int Bool`` (with ``-XNoListTuplePuns``) or ``Solo# (Tuple2 Int Bool)`` (with
-   ``-XListTuplePuns``). Furthermore, ``Tuple# (Int#, Double#)`` would not kind-check with ``-XListTuplePuns``. So we avoid these problems by simply erroring in the 1-element case.
+   A drawback of this approach is that it does not extend to unboxed tuples or sums, because
+   unboxed tuples and sums can contain unlifted types, which have a variety of kinds: the
+   list would have to be heterogeneous.
 
 Unresolved Questions
 --------------------
