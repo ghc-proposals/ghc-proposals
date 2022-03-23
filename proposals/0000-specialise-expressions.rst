@@ -1,0 +1,197 @@
+Allow expressions in SPECIALISE pragmas
+=======================================
+
+.. author:: Richard Eisenberg
+.. date-accepted::
+.. ticket-url::
+.. implemented::
+.. highlight:: haskell
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_.
+            **After creating the pull request, edit this file again, update the
+            number in the link, and delete this bold sentence.**
+.. contents::
+.. sectnum::
+
+GHC today supports ``SPECIALISE`` pragmas (American spelling also accepted) that cause
+GHC to create a (partially) monomorphised version of a polymorphic function, often
+increasing efficiency::
+
+  addMult :: Num a => a -> a -> a
+  addMult x y = x * 2 + y
+
+  {-# SPECIALISE addMult :: Int -> Int -> Int #-}
+
+With the ``SPECIALISE`` pragma, GHC will produce ::
+
+  addMultInt :: Int -> Int -> Int
+  addMultInt x y = x * 2 + y
+  {-# RULES "addMult/Int" addMult = addMultInt #-}  -- NB: applies only at type Int
+
+Note that ``addMultInt`` uses no indirection in its use of addition and multiplication,
+unlike ``addMult``, which makes two calls to dictionary functions, confounding branch
+prediction and slowing down execution. The ``RULE`` means that GHC will replace
+all calls of ``addMult`` at ``Int`` to use the faster version.
+
+The syntax of today's ``SPECIALISE`` requires a function and its specialised type.
+
+This proposal suggests to generalise the syntax of ``SPECIALISE`` to allow an
+arbitrary expression, not just a function name and a type. Happily, this is backward
+compatible, because type signatures are expressions, too. This will allow, for example ::
+
+  {-# SPECIALISE addMult @Double #-}
+  {-# SPECIALISE addMult (5 :: Int) #-}
+
+The first of these is a more succinct phrasing of what we have today: it simply
+specialises ``addMult`` to work on ``Double``\ s, but without having to repeat the
+entire type. The second does something new: it allows expression specialisation,
+which can then lead to further evaluation within the function body. In this case,
+GHC will create ::
+
+  addMult5 :: Int -> Int -> Int
+  addMult5 y = 5 * 2 + y
+  {-# RULES "addMult/5" addMult 5 = addMult5 #-}
+
+GHC can then further optimize the right-hand side of ``addMult5`` to avoid doing
+any multiplication at run time.
+
+Motivation
+----------
+
+See the introduction. In addition to the examples there, we can imagine
+a case like this ::
+
+  frob :: Bool -> ...
+  frob b ... = ...
+    where
+      ... if b then helper1 else helper2 ...
+
+The function ``frob`` is a big, complicated function. Deep in its bowels, it
+either uses ``helper1`` or ``helper2`` to do a critical step. However, most (or maybe all)
+call sites of ``frob`` pass in a literal ``True`` or ``False``. Really, it would
+make sense to have ``frobHelper1`` and ``frobHelper2`` as separate functions, but
+that would cause unhappy duplication of all the complexity inherent in ``frob``.
+
+With the ability to specialise expressions, we can write ::
+
+  {-# SPECIALISE frob True #-}
+  {-# SPECIALISE frob False #-}
+
+This will make two copies of ``frob``, one for ``True`` and one for ``False``. These
+will then be optimised to make direct calls to ``helper1`` or ``helper2``, respectively.
+Call sites (that use a literal ``True`` or ``False``) will be rewritten to use the
+specialised versions.
+
+Proposed Change Specification
+-----------------------------
+
+1. Here is the new BNF for ``SPECIALISE`` pragmas::
+
+     pragma ::= ...
+             |  '{-#' specialise_keyword activation rule_foralls infixexp '#-}'
+             |  '{-#' specialise_keyword activation qvar '::' types1 '#-}'  -- as today
+
+     specialise_keyword ::= 'SPECIALISE' | 'SPECIALIZE' | 'SPECIALISE INLINE' | 'SPECIALISE INLINE'
+
+       -- as today
+     activation ::= ...  -- this encompasses "[2]" and "[~0]"
+
+       -- as today
+     rule_foralls ::= 'forall' rule_vars '.' 'forall' rule_vars '.'
+                  |   'forall' rule_vars '.'
+                  |   {- empty -}
+
+       -- as today
+     infixexp ::= ... -- as in the Report
+
+       -- as today
+     types1 ::= types1, type
+            |   type
+
+#. The grammar above includes syntax for specifying multiplie specialised
+   types for an identifier. Its syntax and semantics are completely unchanged
+   from today; it is included here only for completeness.
+
+#. As today, ``SPECIALISE`` pragmas may be written only at top-level or
+   in a class or instance declaration, never in a ``let`` or ``where``.
+
+#. The optional ``forall`` clauses operate just like in rewrite rules:
+   If there is one ``forall``, it binds term variables. If there are two ``forall``\ s,
+   the first binds type variables and the second binds term variables.
+
+#. All free variables of a ``SPECIALISE`` pragma must be in scope, and the
+   expression must be well typed.
+
+#. The expresion in a ``SPECIALISE`` pragma must be suitable for the left-hand
+   side of a rewrite rule. As the `manual <https://downloads.haskell.org/ghc/latest/docs/html/users_guide/exts/rewrite_rules.html>`_
+   says, "The left hand side of a rule must consist of a top-level variable applied to arbitrary expressions."
+
+#. A ``SPECIALISE`` pragma, binding term variables ``vars`` and with expression ``exp`` headed by variable ``f`` and activation ``act``,
+   causes GHC to do the following:
+
+   1. Create a fresh name (we'll call it ``f'``).
+
+   #. Create a new top-level binding behaving as ``f' vars = inline exp``, where ``inline`` is from ``GHC.Exts``
+      and causes its argument to be unconditionally inlined (see the `documentation <https://hackage.haskell.org/package/base-4.16.0.0/docs/GHC-Exts.html#v:inline>`_).
+      Note here that ``exp`` is a meta-variable in the context of this proposal, so this will look like
+      ``inline f a b c`` in practice, causing ``f`` to inline.
+
+   #. Create a new rewrite rule behaving as ``{-# RULES "f/f'" [act] forall vars. exp = f' vars #-}``.
+
+   #. If the ``SPECIALISE INLINE`` pragma is used (or its American spelling), then GHC additionally
+      adds ``{-# INLINE [act] f' #-}``. This behavior is unchanged from today.
+
+   Note that this specification says "behaving as": we do not require GHC to e.g. build the syntax exactly
+   as written above. In particular, type inference will *not* be run on these declarations; instead, type
+   inference will be run on ``exp`` (and ``vars``) in the original pragma, and the new top-level binding
+   and rewrite rule will be constructed to be well-typed.
+
+Examples
+--------
+See the Introduction_ and Motivation_ sections. As an example with variables, we have ::
+
+  {-# SPECIALISE forall (x :: Int). x - 1 #-}
+
+This will cause the following declarations::
+
+  minus' :: Int -> Int
+  minus' x = inline (-) x 1
+  {-# RULES "minus1" forall x. x - 1 = minus' x #-}
+
+Now, every time we say ``any_expression - 1`` in our (optimised) program, we will actually
+invoke ``minus'``.
+
+Effect and Interactions
+-----------------------
+1. This generalises the current syntax for specialisation pragmas in a natural way.
+   Indeed, I have written specialisation pragmas using the type applications syntax
+   just expecting them to work.
+
+#. Specialisation is now possible for functions with ambiguous types, previously
+   impossible.
+
+#. Term-level specialisation is now possible, a new feature that will enable
+   users to avoid repetition with no runtime cost.
+
+#. Given how this builds on the existing machinery so nicely, the implementation burden
+   is expected to be small.
+
+#. The syntax allowing multiple types to be specified is not documented in the
+   `manual <https://downloads.haskell.org/ghc/latest/docs/html/users_guide/exts/pragmas.html?highlight=specialise#specialize-pragma>`_
+   and is rarely used, according to a `Hackage search <https://hackage-search.serokell.io/?q=SPECIALI%5BSZ%5DE.*%2C>`_.
+   However, there seems to be no great need to remove the syntax, and so
+   this proposal leaves it untouched.
+
+Costs and Drawbacks
+-------------------
+1. It is a bit annoying that the multiple-types syntax is not covered by
+   this proposal, but the world is not perfect.
+
+Alternatives
+------------
+1. We do not have to do anything. But it seems the language is crying out
+   for this generalisation, so doing nothing would be very unsatisfying.
+
+
+Unresolved Questions
+--------------------
+None at this time.
