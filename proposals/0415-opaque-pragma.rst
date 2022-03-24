@@ -154,14 +154,16 @@ to inline and unbox.
 Costs and Drawbacks
 -------------------
 
-Implementation should be straightforward: \* Add an ``Opaque``
-constructor to ``GHC.Types.Basic.InlineSpec`` \* Extend the parser and
-lexer to process the ``OPAQUE`` pragma \* Treat ``Opaque`` like
-``NoInline`` throughout the rest of the GHC compiler, with the exception
-of W/W and specialisation related code. \* Add guards to W/W related
-code to not transform ``Opaque`` annotated binders \* Add guards to
-specialisation related code to not specialise ``Opaque`` annotated
-binders.
+Implementation should be straightforward: 
+
+- Add an ``Opaque`` constructor to ``GHC.Types.Basic.InlineSpec`` 
+- Extend the parser and lexer to process the ``OPAQUE`` pragma 
+- Treat ``Opaque`` like ``NoInline`` throughout the rest of the GHC 
+  compiler, with the exception of W/W and specialisation related code. 
+- Add guards to W/W related code to not transform ``Opaque`` annotated 
+  binders 
+- Add guards to specialisation related code to not specialise ``Opaque`` 
+  annotated binders.
 
 Drawbacks: \* W/W transformation is quite important for performance, and
 disabling it seems like something you need extremely rarely. This pragma
@@ -188,12 +190,10 @@ be elided during ``-O0 -fno-pre-worker-wrapper`` runs. However, such a
 
 Unresolved Questions
 --------------------
+- Should there be the two-word pragma combinations ``OPAQUE SPECIALIZE`` 
+  and ``OPAQUE CONLIKE``?
 
-[STRIKEOUT:\* Should there be the two-word pragma combinations
-``OPAQUE SPECIALIZE`` and ``OPAQUE CONLIKE``? They do not make sense for
-the original motivation.]
-
-They do not make sense, given that:
+No, they do not make sense, given that:
 
    The ultimate goal is that every call of ``f`` generates, well, a call
    of ``f``, not of some name-mangled variant.
