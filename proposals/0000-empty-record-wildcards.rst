@@ -30,7 +30,7 @@ But this is not::
 
   f (Foo {..}) = 1
 
-This doesn't seem good:
+Prohibiting this doesn't seem good:
 
 #. It feels arbitrary and artificial.
    Does anyone expect this behavior?
