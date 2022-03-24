@@ -12,7 +12,7 @@ the link, and delete this bold sentence.**
 # Warning mechanism for incomplete field bindings
 
 This proposes a new warning `-Wincomplete-field-binds` which would warn a record pattern that silently discards one or more fields.
-To garnish it, this proposal also includes a new record wildcard syntax `_` which would be available under `RecordWildCards`.
+To garnish it, this proposal also includes a new language extension `RecordDontCarePatterns` which introduces a record wildcard syntax `_`.
 
 ## Motivation
 
@@ -37,11 +37,11 @@ Currently, even if a new field is added to `User`, nothing stops from `validateU
 
 ## Proposed Change Specification
 
-The proposal consists of two parts: a new warning that warns unbound record fields `-Wincomplete-field-binds`, and a new `RecordWildCards` syntax to match rest of the fields without binding any variables.
+The proposal consists of two parts: a new warning that warns unbound record fields `-Wincomplete-field-binds`, and a new syntax to match rest of the fields without binding any variables.
 
 When `-Wincomplete-field-binds` is enabled, the compiler checks if record field bindings exactly correspond to the set of the fields. If it doesn't, it would produce a warning with a suggestion to bind the remaining fields.
 
-There would be a new record binding syntax available under `RecordWildCards` -- `_`, which is similar to `..` except that it does not bind anything.
+There would be a new record binding syntax `_`, which is similar to `RecordWildCards`'s `..` except that it does not bind anything. This would be available ina a new language extension `RecordDontCarePatterns` (naming subject to bikeshedding), implied by `RecordWildCards` and `NamedFieldPuns`.
 More concretely, given a datatype `data Foo = Foo { a :: () }`, a pattern `Foo{ _ }` desugars to `Foo { a = _ }`. Therefore, `_` suppresses a warning `-Wincomplete-field-binds` would otherwise produce.
 Node that this has nothing to do with record construction; it would be illegal to use `_` in record construction.
 
