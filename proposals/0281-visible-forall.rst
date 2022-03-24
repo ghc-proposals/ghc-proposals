@@ -625,57 +625,10 @@ Syntax
    This change applies to ``∀`` (the ``UnicodeSyntax`` rendition of ``forall``)
    as well.
 
-4. Introduce a new extension, ``ListTupleTypeSyntax``, on by default,
-   which enables:
-
-   * ``[]`` as the list type constructor
-   * ``()`` as the unit type
-   * ``[a]`` the syntax of a list type
-   * ``(,)`` as the pair type constructor
-   * ``(a, b)`` as the syntax of a pair type
-
-   When the extension is on, these constructs retain their Haskell 2010
-   meaning, which depends on whether we are in a type-level or term-level
-   context.
-
-   When the extension is off, all of the above are interpreted as in terms:
-
-   * ``[]`` is always an empty list
-   * ``()`` is always the unit data constructor
-   * ``[a]`` is always a singleton list (not the list type)
-   * ``(,)`` is always the pair data constructor (not the type constructor)
-   * ``(a, b)`` is always a pair (not the type of a pair)
-
-   Likewise for tuples of higher arities.
-
-   Export the following synonym from the ``Data.List`` module::
-
-     type List = []
-
-   Export the following synonym from the ``Data.Tuple`` module::
-
-     type Unit = ()
-
-   For tuples of higher arities, users may want to define their own
-   synonyms, such as::
-
-     type TupleOf2 = (,)
-     type TupleOf3 = (,,)
-     type TupleOf4 = (,,,)
-     ... -- up to the maximum tuple arity
-
-   We do not propose adding them to ``Data.Tuple`` for the time being,
-   as better APIs are possible (e.g. based on variadic data families)
-   but are blocked by other technical issues. We leave it as future work.
-
-   This change allows the use of built-in lists and tuples without any
-   disambugation syntax (the ``'`` promotion syntax at the type level or the
-   ``type`` herald at the term level).
-
-5. When ``ViewPatterns`` are enabled, interpret ``f (a -> b) = ...``
+4. When ``ViewPatterns`` are enabled, interpret ``f (a -> b) = ...``
    as a view pattern, otherwise as ``f ((->) a b) = ...``.
 
-6. ``case ... of x -> y -> z`` is an error. We require parentheses to
+5. ``case ... of x -> y -> z`` is an error. We require parentheses to
    disambiguate:
 
    * ``case ... of (x -> y) -> z``
@@ -684,7 +637,7 @@ Syntax
 Name resolution
 ~~~~~~~~~~~~~~~
 
-7. During name resolution,
+6. During name resolution,
 
    * Identifiers bound in term syntax populate the term namespace;
      identifiers bound in type syntax populate the type namespace.
@@ -709,7 +662,7 @@ Name resolution
 Implicit quantification
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-8. Implicit quantification is an existing feature that allows the programmer to
+7. Implicit quantification is an existing feature that allows the programmer to
    omit a ``forall``::
 
      g ::           a -> a    -- implicit
@@ -746,7 +699,7 @@ Implicit quantification
 Type checking
 ~~~~~~~~~~~~~
 
-9. Generalize the ``ITVDQ`` rule introduced earlier
+8. Generalize the ``ITVDQ`` rule introduced earlier
    by using ``t2t``::
 
      rho = t2t(e)
@@ -760,7 +713,7 @@ Type checking
    In other words, given ``f :: forall a -> t``, the ``x`` in ``f x`` is
    parsed and renamed as a term, but then mapped to a type.
 
-10. Any uses of terms in types are ill-typed:
+9.  Any uses of terms in types are ill-typed:
     ::
 
       a = 42; f :: Proxy a -> Proxy b   -- invalid occurrence of "a" in a type-level position
@@ -770,7 +723,7 @@ Type checking
 
       f _ = Int                         -- invalid occurrence of "Int" in a term-level position
 
-11. When in the checking mode of bidirectional type checking (e.g. in a function
+10. When in the checking mode of bidirectional type checking (e.g. in a function
     binding with an explicit type signature), allow a pattern to bind type
     variables in the term namespace, such as ``x`` here::
 
@@ -801,7 +754,7 @@ Type checking
 Namespaces vs Semantics
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-12. With the proposed changes, the namespace of an identifier is no longer tied
+11. With the proposed changes, the namespace of an identifier is no longer tied
     to whether it stands for a type variable or a term variable.
 
     Before this proposal, all term variables (retained, values, runtime) used
@@ -1038,9 +991,9 @@ Corner Cases
    is a promoted pair, and ``[Int]`` is a promoted singleton list.
 
    One way to change this is to use synonyms
-   from ``Data.Tuple`` and ``Data.List``::
+   from ``GHC.Tuple``::
 
-     x1 = g (TupleOf2 Int Bool)
+     x1 = g (TupleN Int Bool)
      x2 = g (List Int)
 
    Another way is to use the ``type`` herald::
@@ -1059,10 +1012,10 @@ Corner Cases
    In ``a``, the argument is the pair type, in ``b`` it is a promoted pair.
 
    One way to resolve this is to use synonyms
-   from ``Data.Tuple`` and ``Data.List``::
+   from ``GHC.Tuple``::
 
-      a = f @(TupleOf2 Int Bool)
-      b = g  (TupleOf2 Int Bool)
+      a = f @(TupleN Int Bool)
+      b = g  (TupleN Int Bool)
 
    Another way is to use the ``type`` herald::
 
