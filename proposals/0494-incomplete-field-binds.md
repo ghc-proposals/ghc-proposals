@@ -33,6 +33,8 @@ validateUser{ident = ident, name = name, email = email} = do
 
 Currently, even if a new field is added to `User`, nothing stops from `validateUser` from compiling.
 
+In contrast, Rust and OCaml (missing-record-field-pattern) have warning mechanisms for such patterns.
+
 ## Proposed Change Specification
 
 The proposal consists of two parts: a new warning that warns unbound record fields `-Wincomplete-field-binds`, and a new syntax to match rest of the fields without binding any variables.
