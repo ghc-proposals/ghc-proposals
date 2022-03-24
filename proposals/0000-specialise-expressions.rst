@@ -143,6 +143,12 @@ Proposed Change Specification
    inference will be run on ``exp`` (and ``vars``) in the original pragma, and the new top-level binding
    and rewrite rule will be constructed to be well-typed.
 
+#. GHC will issue a warning (controlled by ``-Wuseless-specialisations`` and part of the default warnings)
+   if a specialisation can be determined to be useless (that is, not specialise anything). Examples:
+   ``{-# SPECIALISE addMult #-}``, ``{-# SPECIALISE forall x y. addMult x y #-}``, and
+   ``{-# SPECIALISE addMult :: Num a => a -> a -> a #-}``. This warning should trigger when
+   the elaborated expression is eta-equivalent to the function being specialised.
+
 Examples
 --------
 See the introduction and Motivation_ sections. As an example with variables, we have ::
