@@ -1,0 +1,107 @@
+---
+author: Fumiaki Kinoshita
+date-accepted: ""
+ticket-url: ""
+implemented: ""
+---
+
+This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/0>).
+**After creating the pull request, edit this file again, update the number in
+the link, and delete this bold sentence.**
+
+# Warning mechanism for incomplete field bindings
+
+This proposes a new warning `-Wincomplete-field-binds` which would warn a record pattern that silently discards one or more fields.
+To garnish it, this proposal also includes a new record wildcard syntax `_` which would be available under `RecordWildCards`.
+
+## Motivation
+
+Consider the following record type:
+
+```haskell
+data User = User { ident :: Text, name :: Text, email :: Text }
+```
+
+It is perfectly valid to bind a part of the fields like `case user of User {ident = i} -> ...`, discarding the rest of the fields.
+However, sometimes it is desirable to ensure that each field is bound in a record pattern, when validating values in a record for example.
+
+```haskell
+validateUser :: User -> Either String ()
+validateUser{ident = ident, name = name, email = email} = do
+    validateIdent ident
+    validateName name
+    validateEmail email
+```
+
+Currently, even if a new field is added to `User`, nothing stops from `validateUser` from compiling.
+
+## Proposed Change Specification
+
+The proposal consists of two parts: a new warning that warns unbound record fields `-Wincomplete-field-binds`, and a new `RecordWildCards` syntax to match rest of the fields without binding any variables.
+
+When `-Wincomplete-field-binds` is enabled, the compiler checks if record field bindings exactly correspond to the set of the fields. If it doesn't, it would produce a warning with a suggestion to bind the remaining fields.
+
+There would be a new record binding syntax available under `RecordWildCards` -- `_`, which is similar to `..` except that it does not bind anything.
+More concretely, given a datatype `data Foo = Foo { a :: () }`, a pattern `Foo{ _ }` desugars to `Foo { a = _ }`. Therefore, `_` suppresses a warning `-Wincomplete-field-binds` would otherwise produce.
+Node that this has nothing to do with record construction; it would be illegal to use `_` in record construction.
+
+## Examples
+
+The following code would produce the warning below:
+
+```haskell
+{-# OPTIONS -Wall #-}
+data User = User { ident :: String, name :: String, email :: String }
+
+validateUser :: User -> Either String ()
+validateUser User{ident = _ident, name = _name} = pure ()
+```
+
+```
+hs/example.hs:5:1: warning: [-Wincomplete-field-binds]
+    Record field bind(s) are non-exhaustive
+    In an equation for ‘validateUser’:
+        Field not matched:
+            User{ email = _ }
+  |
+5 | validateUser User{ident = _ident, name = _name, email = "foo"} = pure ()
+
+    Suggestion: add a binding for ‘email’ explicitly, or add `_` with the RecordWildCards extension enabled
+```
+
+This can be suppressed by `_` to the list of bindings:
+
+```haskell
+validateUser :: User -> Either String ()
+validateUser User{ident = _ident, name = _name, _} = pure () -- no warnings!
+```
+
+## Effect and Interactions
+
+This won't affect existing code because the warning is not going to be included to -Wall, and a single underscore is not a valid field name.
+
+## Costs and Drawbacks
+
+In general, warnings that are not enabled by `-Wall -Wcompat` are quite obscure and rarely used in the ecosystem. Thus, it would add a bit more code to the compiler without being frequently used.
+
+## Alternatives
+
+There could be a variant of `-Wredundant-record-wildcards` which warns if *any* of the variables bound is unused, instead of *all*.
+While that's a lot easier to implement, this proposal has an advantage of allowing arbitrary patterns.
+
+## Unresolved Questions
+
+TBD
+
+## Implementation Plan
+
+If accepted, @fumieval is going to implement these features.
+
+## Endorsements
+
+(Optional) This section provides an opportunity for any third parties to express their
+support for the proposal, and to say why they would like to see it adopted.
+It is not mandatory for have any endorsements at all, but the more substantial
+the proposal is, the more desirable it is to offer evidence that there is
+significant demand from the community.  This section is one way to provide
+such evidence.
