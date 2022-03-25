@@ -10,7 +10,7 @@ This proposal is [discussed at this pull request](https://github.com/ghc-proposa
 # Warning mechanism for incomplete field bindings
 
 This proposes a new warning `-Wincomplete-field-binds` which would warn a record pattern that silently discards one or more fields.
-To garnish it, this proposal also includes a new language extension `RecordDontCarePatterns` which introduces a record wildcard syntax `_`.
+To garnish it, this proposal also includes a new language extension `RecordDontCarePatterns` which introduces a record "don't care" pattern `_`.
 
 ## Motivation
 
@@ -43,7 +43,8 @@ When `-Wincomplete-field-binds` is enabled, the compiler checks if record field 
 
 There would be a new record binding syntax `_`, which is similar to `RecordWildCards`'s `..` except that it does not bind anything. This would be available ina a new language extension `RecordDontCarePatterns` (naming subject to bikeshedding), implied by `RecordWildCards` and `NamedFieldPuns`.
 More concretely, given a datatype `data Foo = Foo { a :: () }`, a pattern `Foo{ _ }` desugars to `Foo { a = _ }`. Therefore, `_` suppresses a warning `-Wincomplete-field-binds` would otherwise produce.
-Node that this has nothing to do with record construction; it would be illegal to use `_` in record construction.
+
+Note that this has nothing to do with record construction; it would be illegal to use `_` in record construction.
 
 The syntactic treatment for `_` is almost identical to `..`. The following patterns would be _rejected_:
 
@@ -74,7 +75,7 @@ hs/example.hs:5:1: warning: [-Wincomplete-field-binds]
   |
 5 | validateUser User{ident = _ident, name = _name, email = "foo"} = pure ()
 
-    Suggestion: add a binding for ‘email’ explicitly, or add `_` with the RecordWildCards extension enabled
+    Suggestion: add a binding for ‘email’ explicitly, or discard the remaining fields by ‘_’
 ```
 
 This can be suppressed by `_` to the list of bindings:
