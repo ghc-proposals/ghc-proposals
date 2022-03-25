@@ -45,6 +45,14 @@ There would be a new record binding syntax `_`, which is similar to `RecordWildC
 More concretely, given a datatype `data Foo = Foo { a :: () }`, a pattern `Foo{ _ }` desugars to `Foo { a = _ }`. Therefore, `_` suppresses a warning `-Wincomplete-field-binds` would otherwise produce.
 Node that this has nothing to do with record construction; it would be illegal to use `_` in record construction.
 
+The syntactic treatment for `_` is almost identical to `..`. The following patterns would be _rejected_:
+
+```haskell
+User{ _, ident = x } -- field binding after a wildcard
+User{ _, _ } -> () -- multiple wildcards
+(){ _ } -> () -- the constructor has no labelled fields
+```
+
 ## Examples
 
 The following code would produce the warning below:
