@@ -24,11 +24,15 @@ Currently this is allowed::
 
   f (Foo {..}) = 1
 
+  x = Foo {..}
+
 But this is not::
 
   data Foo = Foo { }
 
   f (Foo {..}) = 1
+
+  x = Foo {..}
 
 Prohibiting this doesn't seem good:
 
@@ -41,7 +45,7 @@ Proposed Change Specification
 -----------------------------
 
 Allow record wildcard syntax for empty variants.
-There are no (named) fields, so no variables are bound.
+There are no (named) fields, so no variables are bound in patterns, and no variables are used in expressions.
 
 Examples
 --------
@@ -53,6 +57,8 @@ This is also allowed::
   data Foo = Foo -- no {}
 
   f (Foo {..}) = 1
+
+  x = Foo {..}
 
 for it doesn't matter today whether empty variants are declared with ``{}``, and this should remain true.
 
