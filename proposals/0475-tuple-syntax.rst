@@ -3,7 +3,7 @@ Non-punning list and tuple syntax
 
 .. author:: Richard Eisenberg (with much influence from collaborators)
 .. date-accepted:: 2022-03-24
-.. ticket-url::
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/21294
 .. implemented::
 .. highlight:: haskell
 .. header::  This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/475>`_.
