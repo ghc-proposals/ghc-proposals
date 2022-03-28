@@ -73,12 +73,12 @@ hs/example.hs:5:1: warning: [-Wincomplete-field-binds]
         Field not matched:
             User{ email = _ }
   |
-5 | validateUser User{ident = _ident, name = _name, email = "foo"} = pure ()
+5 | validateUser User{ident = _ident, name = _name} = pure ()
 
     Suggestion: add a binding for ‘email’ explicitly, or discard the remaining fields by ‘_’
 ```
 
-This can be suppressed by `_` to the list of bindings:
+This can be suppressed by adding `_` to the list of bindings:
 
 ```haskell
 validateUser :: User -> Either String ()
