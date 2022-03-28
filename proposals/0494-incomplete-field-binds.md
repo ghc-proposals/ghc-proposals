@@ -59,7 +59,7 @@ User{ _, _ } -> () -- multiple wildcards
 The following code would produce the warning below:
 
 ```haskell
-{-# OPTIONS -Wall -Wincomplete-field-binds #-}
+{-# OPTIONS -Wincomplete-field-binds #-}
 data User = User { ident :: String, name :: String, email :: String }
 
 validateUser :: User -> Either String ()
@@ -81,6 +81,10 @@ hs/example.hs:5:1: warning: [-Wincomplete-field-binds]
 This can be suppressed by adding `_` to the list of bindings:
 
 ```haskell
+{-# OPTIONS -Wincomplete-field-binds #-}
+{-# LANGUAGE RecordDontCarePatterns #-}
+data User = User { ident :: String, name :: String, email :: String }
+
 validateUser :: User -> Either String ()
 validateUser User{ident = _ident, name = _name, _} = pure () -- no warnings!
 ```
