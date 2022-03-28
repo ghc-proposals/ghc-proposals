@@ -98,9 +98,20 @@ In general, warnings that are not enabled by `-Wall -Wcompat` are quite obscure 
 There could be a variant of `-Wredundant-record-wildcards` which warns if *any* of the variables bound is unused, instead of *all*.
 While that's a lot easier to implement, this proposal has an advantage of allowing arbitrary patterns.
 
+An alternative syntax `.. = _` for `RecordDontCarePatterns` is suggested, however, the author thinks that a single `_` is more reasonable because:
+
+* Simpler syntax: `_` is syntactically the same as `..`. `.. = _` would require an addition to the parser.
+* `.. = _` would make sense if it were a specialisation `.. = <pattern>`, but matching multiple fields against the same pattern does not make sense in general.
+
 ## Unresolved Questions
 
-TBD
+* Is there a better name for `RecordDontCarePatterns`? `_` is generally called a wildcard, but `RecordWildCards` has been taken. A few suggestions have been made:
+    * SkippedRecordFields
+    * UnboundRecordFields
+    * RecordFieldTails
+    * RecordPatternBlanks
+
+* Should there be a special treatment for single-constructor types? Namely, should `Foo {}` be exempted from `-Wincomplete-field-binds` if the data declaration is `data Foo = Foo { foo :: () }`? While it makes sense as a dual of the semantics of the pattern matching against `Void`-like types, it would require adding a brand-new single-constructorness checker to the compiler.
 
 ## Implementation Plan
 
