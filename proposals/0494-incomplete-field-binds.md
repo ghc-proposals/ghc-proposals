@@ -59,7 +59,7 @@ User{ _, _ } -> () -- multiple wildcards
 The following code would produce the warning below:
 
 ```haskell
-{-# OPTIONS -Wall #-}
+{-# OPTIONS -Wall -Wincomplete-field-binds #-}
 data User = User { ident :: String, name :: String, email :: String }
 
 validateUser :: User -> Either String ()
