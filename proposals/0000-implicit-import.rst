@@ -46,7 +46,7 @@ The status quo is not satisfactory because it requires adding explicit imports:
 ::
 
  -- Without this proposal, these imports are required
- import Data.Proxy
+ import qualified Data.Proxy
  import qualified Network.Wai
  import qualified Network.Wai.Handler.Warp
  import qualified Servant
