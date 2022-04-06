@@ -88,7 +88,7 @@ The proposed change enables using any module without requiring an import stateme
 
 Interactions with existing language or compiler features:
 
-- Hidden imports (using ``hidding``) must not be available implicitely.
+- Hidden imports (using ``hiding``) must not be available implicitly.
 - Modules available through multiple package will be disambiguated using the PackageImports extension.
 - Only unknown fully qualified names will be affected.
 
