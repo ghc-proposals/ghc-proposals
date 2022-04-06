@@ -64,7 +64,7 @@ I propose an extension to enable implicit qualified imports.
 
 When the ``ImplicitQualifiedImport`` language extension is enabled,
 unknown fully qualified symbols are gracefully resolved early in the compilation pipeline by
-injecting implicit ``import qualified`` statement when necessary.
+injecting an implicit ``import qualified`` statement when necessary.
 
 
 Examples
