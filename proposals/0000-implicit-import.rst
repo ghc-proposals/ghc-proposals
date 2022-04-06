@@ -72,14 +72,14 @@ Examples
 Here are some example functions that are often used locally and
 it would be useful to call them without having to add an import statement:
 
-- Control.Concurrent.threadDelay
-- Data.Char.isAlpha
-- Data.Foldable.traverse_
-- Data.Maybe.mapMaybe
-- Data.Set.fromList
-- Data.Text.pack
-- System.Environment.getArgs
-- Text.Printf.printf
+- ``Control.Concurrent.threadDelay``
+- ``Data.Char.isAlpha``
+- ``Data.Foldable.traverse_``
+- ``Data.Maybe.mapMaybe``
+- ``Data.Set.fromList``
+- ``Data.Text.pack``
+- ``System.Environment.getArgs``
+- ``Text.Printf.printf``
 
 
 Effect and Interactions
