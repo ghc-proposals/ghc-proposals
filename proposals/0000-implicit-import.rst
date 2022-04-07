@@ -65,6 +65,13 @@ I propose an extension to enable implicit qualified imports.
 When the ``ImplicitQualifiedImport`` language extension is enabled,
 unknown fully qualified symbols are gracefully resolved early in the compilation pipeline by
 injecting an implicit ``import qualified`` statement when necessary.
+The pipeline might need an extra pass to collect missing imports.
+
+GHCi already implements this feature thanks to the flag ``-fimplicit-import-qualified``,
+but the flag does not seem to work with GHC.
+Moreover the flag is not documented in ``ghc --show-options``, but it is accepted.
+Thus this proposal deprecates the ``-fimplicit-import-qualified`` flag in favor of the
+``-XImplicitQualifiedImport`` modifier, so that the behavior is consistent between GHC and GHCi.
 
 
 Examples
@@ -78,6 +85,7 @@ it would be useful to call them without having to add an import statement:
 - ``Data.Maybe.mapMaybe``
 - ``Data.Set.fromList``
 - ``Data.Text.pack``
+- ``Debug.Trace.trace``
 - ``System.Environment.getArgs``
 - ``Text.Printf.printf``
 
@@ -88,7 +96,7 @@ The proposed change enables using any module without requiring an import stateme
 
 Interactions with existing language or compiler features:
 
-- Hidden imports (using ``hiding``) must not be available implicitly.
+- Fully qualified import with hidden declarations are not affected: with ``import Data.Maybe hiding (mapMaybe)``, using ``Data.Maybe.mapMaybe`` should not be valid.
 - Modules available through multiple package will be disambiguated using the PackageImports extension.
 - Only unknown fully qualified names will be affected.
 
@@ -108,9 +116,6 @@ its external requirements would no longer be explicitely listed in the import se
 
 Alternatives
 ------------
-Perhaps this could be supported by default, without an extension, if this new
-behavior does not conflict with already valid code.
-
 Another helpful solution would be to enable local import, e.g. in a function definition.
 
 
