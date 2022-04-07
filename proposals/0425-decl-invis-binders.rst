@@ -3,11 +3,11 @@ Invisible binders in type declarations
 
 .. author:: Vladislav Zavialov
 .. co-author:: John Ericson, Simon Peyton Jones
-.. date-accepted::
+.. date-accepted:: 2022-04-07
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/425>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/425>`_.
 .. contents::
 
 We propose to allow invisible type variable binders (i.e. ``@k``) in type
