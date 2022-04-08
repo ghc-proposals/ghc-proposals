@@ -111,7 +111,7 @@ This extension may improve the language's learnability for novice users by:
 - Simplying new module usage, e.g. for one-off experiments and temporary annotations.
 
 The main drawback is that the extension may reduce the readability of a module:
-its external requirements would no longer be explicitely listed in the import section.
+its external requirements would no longer be explicitly listed in the import section.
 
 
 Alternatives
