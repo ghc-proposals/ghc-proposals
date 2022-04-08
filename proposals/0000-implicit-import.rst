@@ -67,11 +67,11 @@ unknown fully qualified symbols are gracefully resolved early in the compilation
 injecting an implicit ``import qualified`` statement when necessary.
 The pipeline might need an extra pass to collect missing imports.
 
-GHCi already implements this feature thanks to the flag ``-fimplicit-import-qualified``,
-but the flag does not seem to work with GHC.
+GHCi already implements this feature via the ``-fimplicit-import-qualified`` flag,
+but it does not seem to work with GHC.
 Moreover the flag is not documented in ``ghc --show-options``, but it is accepted.
-Thus this proposal deprecates the ``-fimplicit-import-qualified`` flag in favor of the
-``-XImplicitQualifiedImport`` modifier, so that the behavior is consistent between GHC and GHCi.
+Therefore this proposal deprecates the ``-fimplicit-import-qualified`` flag in favor of
+``-XImplicitQualifiedImport``, so that the behavior is consistent between GHC and GHCi.
 
 
 Examples
