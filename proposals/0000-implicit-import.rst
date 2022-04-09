@@ -18,7 +18,13 @@ This removes an unnecessary restriction, making the language simpler.
 
 Motivation
 ----------
-The main purpose is to be able to directly use a package.
+This proposal's main purpose is to enable direct package use.
+This is particularly useful for:
+
+- Functions that are used only once, such as ``Servant.serve``.
+- Temporary type annotations and debugging functions, such as ``Debug.Trace.trace``.
+- Portable code samples that can be moved without affecting the module imports.
+
 This is particularly useful for single use functions, such as ``Servant.serve``.
 For example, this propose change would make the following program valid
 (assuming a cabal file with build depends and default extensions):
@@ -54,24 +60,24 @@ The status quo is not satisfactory because it requires adding explicit imports:
 Managing such imports has the following negative effects:
 
 - It increases the file length.
-- The author needs to jump to the top of the file each time a new module is used.
-- It complicates code refactoring when moving a definition requires moving (or copying) its import.
+- The author needs to jump to the top of the file each time a new module is added or removed.
+- It encourages using unqualified imports because unqualified is the default, which can lead to import conflicts.
+
 
 
 Proposed Change Specification
 -----------------------------
 I propose an extension to enable implicit qualified imports.
 
-When the ``ImplicitQualifiedImport`` language extension is enabled,
-unknown fully qualified symbols are gracefully resolved early in the compilation pipeline by
-injecting an implicit ``import qualified`` statement when necessary.
-The pipeline might need an extra pass to collect missing imports.
-
 GHCi already implements this feature via the ``-fimplicit-import-qualified`` flag,
 but it does not seem to work with GHC.
 Moreover the flag is not documented in ``ghc --show-options``, but it is accepted.
 Therefore this proposal deprecates the ``-fimplicit-import-qualified`` flag in favor of
 ``-XImplicitQualifiedImport``, so that the behavior is consistent between GHC and GHCi.
+
+When the ``ImplicitQualifiedImport`` extension is enabled, GHC calls the qualified name lookup
+function GHCi uses (``GHC.Rename.Env.lookupQualifiedNameGHCi``) before throwing
+a ``Not in scope`` error.
 
 
 Examples
@@ -96,22 +102,27 @@ The proposed change enables using any module without requiring an import stateme
 
 Interactions with existing language or compiler features:
 
-- Fully qualified import with hidden declarations are not affected: with ``import Data.Maybe hiding (mapMaybe)``, using ``Data.Maybe.mapMaybe`` should not be valid.
-- Modules available through multiple package will be disambiguated using the PackageImports extension.
-- Only unknown fully qualified names will be affected.
+- Fully qualified imports with hidden declarations are not respected. With ``import qualified Data.Maybe hiding (mapMaybe)``, using ``Data.Maybe.mapMaybe`` is valid.
+  If necessary, it might be possible to handle this case by adding extra checks to the new qualified name lookup implementation.
+- Only unknown fully qualified names are affected, the other language or compiler features are left unchanged.
+  In particular, typeclass imports are not changed. With ``Data.Generics.Labels.Field'``, the Field instance of Symbol from the generic-lens package is not imported
+  The user still needs to add ``import Data.Generics.Labels ()``.
 
 
 Costs and Drawbacks
 -------------------
-TBD: estimate development and maintenance costs.
+The development cost should be minimal because the feature is already implemented for GHCi.
 
 This extension may improve the language's learnability for novice users by:
 
 - Reducing the length of code samples, and,
 - Simplying new module usage, e.g. for one-off experiments and temporary annotations.
 
-The main drawback is that the extension may reduce the readability of a module:
-its external requirements would no longer be explicitly listed in the import section.
+The drawbacks are:
+
+- It may reduce a module's readability: its external requirements would no longer be explicitly listed in the import section.
+- It may complicate changing modules dependencies order.
+- It makes it harder to swap out dependencies for ones with similar interfaces but different implementations.
 
 
 Alternatives
