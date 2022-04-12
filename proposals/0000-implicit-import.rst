@@ -133,6 +133,10 @@ Alternatives
 ------------
 Another helpful solution would be to enable local import, e.g. in a function definition.
 
+Local modules proposed in `#283 <https://github.com/ghc-proposals/ghc-proposals/pull/283>`_ can also enable
+using fully qualified names without adding imports. However this requires using a fat prelude to export a
+curated list of modules, while ImplicitQualifiedImport enables using any module without relying on such fat prelude.
+
 
 Unresolved Questions
 --------------------
