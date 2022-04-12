@@ -9,7 +9,7 @@ Allow implicit qualified module import
 .. implemented:: Leave blank. This will be filled in with the first GHC version which
                  implements the described feature.
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/497>`_.
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/500>`_.
 .. contents::
 
 The goal of this proposal is to enable direct access to any available module without requiring an import statement.
