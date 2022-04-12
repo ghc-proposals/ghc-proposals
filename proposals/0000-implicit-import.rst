@@ -76,8 +76,9 @@ Therefore this proposal deprecates the ``-fimplicit-import-qualified`` flag in f
 
 When the ``ImplicitQualifiedImport`` extension is enabled:
 
-- The downsweep phase builds the ModuleGraph by parsing the whole module (instead of just the headers)
-  to collect the dependencies arising from implicit qualified name use.
+- The downsweep phase builds the ModuleGraph by looking at the whole module (instead of just the header)
+  to collect the dependencies arising from implicit qualified name usage. This may be done by using the
+  Lexer to collect ``ITq*`` tokens and looking up matching home modules.
 - GHC calls the qualified name lookup function GHCi uses (``GHC.Rename.Env.lookupQualifiedNameGHCi``)
   before throwing a ``Not in scope`` error.
 
@@ -106,7 +107,8 @@ Interactions with existing language or compiler features:
 
 - Fully qualified imports with hidden declarations are not respected. With ``import qualified Data.Maybe hiding (mapMaybe)``, using ``Data.Maybe.mapMaybe`` is valid.
   If necessary, it might be possible to handle this case by adding extra checks to the new qualified name lookup implementation.
-- Only unknown fully qualified names are affected, the other language or compiler features are left unchanged.
+- Only unknown fully qualified names (that would otherwise throw ``Not in scope`` errors) are affected.
+  The other language or compiler features are left unchanged.
   In particular, typeclass instances are not changed. With ``Data.Generics.Labels.Field'``, the Field instance of Symbol from the generic-lens package is not imported,
   and the user still needs to add ``import Data.Generics.Labels ()``.
 
