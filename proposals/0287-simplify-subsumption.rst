@@ -241,7 +241,7 @@ some manual eta-expansion.
 There are some implementation consequences:
 
 -  ``TcUnify.matchExpectedFunTys`` would need to be extended to deal
-   with the possiblity of a ``forall``. Very strightforward.
+   with the possiblity of a ``forall``. Very straightforward.
 -  The ambiguity check would need a bit more code than at present.
    Currently, we just check whether ``ty <= ty`` using the existing
    subsumption check: if this check fails, the type is ambiguous. With
