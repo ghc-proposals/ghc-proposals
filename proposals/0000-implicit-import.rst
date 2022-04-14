@@ -145,6 +145,7 @@ Local modules proposed in `#283 <https://github.com/ghc-proposals/ghc-proposals/
 using fully qualified names without adding imports. However this requires using a fat prelude to export a
 curated list of modules, while ImplicitQualifiedImport enables using any module without relying on such fat prelude.
 
+This feature is enabled by default in some languages such as OCaml and Rust.
 
 Unresolved Questions
 --------------------
