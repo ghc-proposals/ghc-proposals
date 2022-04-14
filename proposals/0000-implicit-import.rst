@@ -74,29 +74,39 @@ Moreover the flag is not documented in ``ghc --show-options``, but it is accepte
 Therefore this proposal deprecates the ``-fimplicit-import-qualified`` flag in favor of
 ``-XImplicitQualifiedImport``, so that the behavior is consistent between GHC and GHCi.
 
-When the ``ImplicitQualifiedImport`` extension is enabled:
+When ``ImplicitQualifiedImport`` is on:
 
-- The downsweep phase builds the ModuleGraph by looking at the whole module (instead of just the header)
-  to collect the dependencies arising from implicit qualified name usage. This may be done by using the
-  Lexer to collect ``ITq*`` tokens and looking up matching home modules.
-- GHC calls the qualified name lookup function GHCi uses (``GHC.Rename.Env.lookupQualifiedNameGHCi``)
-  before throwing a ``Not in scope`` error.
+- A qualified name ``M.N.x`` is looked up in the top level environment
+  (see `Import Declarations <https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1010005.3>`_
+  in the Hakell report).
+- If that lookup fails, and if there is no module ``M.N`` already in scope,
+  then instead of reporting an out-of-scope error, behave as if an extra import declaration is added:
+
+::
+
+ import qualified M.N(x)
+
 
 
 Examples
 --------
-Here are some example functions that are often used locally and
-it would be useful to call them without having to add an import statement:
 
-- ``Control.Concurrent.threadDelay``
-- ``Data.Char.isAlpha``
-- ``Data.Foldable.traverse_``
-- ``Data.Maybe.mapMaybe``
-- ``Data.Set.fromList``
-- ``Data.Text.pack``
-- ``Debug.Trace.trace``
-- ``System.Environment.getArgs``
-- ``Text.Printf.printf``
+::
+
+ module A.B( g ) where
+   g = True
+
+ module C.D( f ) where
+   f = False
+
+ module M where
+   import A.B as C.D
+   foo = (C.D.g, A.B.g)
+   baz = C.D.f
+
+- ``C.D.g`` binds to the ``g`` exported by ``A.B`` (as usual).
+- ``A.B.g`` isn't in scope by the usual rules, so we try adding an extra import ``import qualified A.B(g)``. That works, and binds to the ``g`` exported by ``A.B``.
+- ``C.D.f`` isn't in scope by the usual rules, but because ``C.D`` is already in scope we don't try to add an extra import. This fails with a not-in-scope error (as usual).
 
 
 Effect and Interactions
@@ -105,12 +115,10 @@ The proposed change enables using any module without requiring an import stateme
 
 Interactions with existing language or compiler features:
 
-- Fully qualified imports with hidden declarations are not respected. With ``import qualified Data.Maybe hiding (mapMaybe)``, using ``Data.Maybe.mapMaybe`` is valid.
-  If necessary, it might be possible to handle this case by adding extra checks to the new qualified name lookup implementation.
-- Only unknown fully qualified names (that would otherwise throw ``Not in scope`` errors) are affected.
-  The other language or compiler features are left unchanged.
-  In particular, typeclass instances are not changed. With ``Data.Generics.Labels.Field'``, the Field instance of Symbol from the generic-lens package is not imported,
-  and the user still needs to add ``import Data.Generics.Labels ()``.
+Only unknown fully qualified names (that would otherwise throw ``Not in scope`` errors) are affected.
+The other language or compiler features are left unchanged.
+In particular, typeclass instances are not changed. With ``Data.Generics.Labels.Field'``, the Field instance of Symbol from the generic-lens package is not imported,
+and the user still needs to add ``import Data.Generics.Labels ()``.
 
 
 Costs and Drawbacks
