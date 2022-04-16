@@ -79,17 +79,14 @@ When ``ImplicitQualifiedImport`` is on:
 - A qualified name ``M.N.x`` is looked up in the top level environment
   (see `Import Declarations <https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1010005.3>`_
   in the Hakell report).
-- If that lookup fails, and if there is no module ``M.N`` already in scope,
-  then instead of reporting an out-of-scope error, behave as if an extra import declaration is added:
-
-::
-
- import qualified M.N(x)
-
+- If that lookup fails, and if there is no matching qualified module or renamed module already defined,
+  then instead of reporting an out-of-scope error, behave as if an extra import declaration is added: ``import qualified M.N(x)``.
 
 
 Examples
 --------
+
+Ambiguous imports are forbidden, for example:
 
 ::
 
@@ -106,7 +103,23 @@ Examples
 
 - ``C.D.g`` binds to the ``g`` exported by ``A.B`` (as usual).
 - ``A.B.g`` isn't in scope by the usual rules, so we try adding an extra import ``import qualified A.B(g)``. That works, and binds to the ``g`` exported by ``A.B``.
-- ``C.D.f`` isn't in scope by the usual rules, but because ``C.D`` is already in scope we don't try to add an extra import. This fails with a not-in-scope error (as usual).
+- ``C.D.f`` isn't in scope by the usual rules, but a module is already renamed as ``C.D``, so we don't try to add an extra import. This fails with a not-in-scope error (as usual).
+
+
+Existing qualified imports are not re-imported:
+
+::
+
+ module Main
+
+ import Data.Maybe hiding (fromJust)
+ import qualified Data.List hiding (head)
+
+ ok = Data.Maybe.fromJust
+ ko = Data.List.head
+
+- ``Data.Maybe.fromJust`` is implicitely imported because ``Data.Maybe`` isn't already defined as a qualified module, or as a renamed module.
+- ``Data.List.head`` is not imported because ``Data.List`` is already defined as a qualified module. It fails with a not-in-scope error (as usual).
 
 
 Effect and Interactions
