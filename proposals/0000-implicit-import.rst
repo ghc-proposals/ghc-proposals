@@ -77,6 +77,7 @@ Change 1: add a new ``ImplicitQualifiedImport`` language extension. When the ext
 
 User-written import declarations are taken into account following the principle of least surprise: the extension does not interfer with explicit import declarations.
 In particular, if the module ``X`` is renamed as ``M.N``, implicitly resolving ``M.N.x`` may be ambiguous: it could be found in ``X`` or in the original ``M.N`` module.
+
 Note that user-written unqualified import declarations, such as ``import M.N(y)``, are not taken into account,
 because in those cases, adding the extra import declaration is unambiguous (see the "Unqualified_" example).
 
@@ -95,6 +96,9 @@ Examples
 
 .. _Qualified:
 
+Qualified Import
+~~~~~~~~~~~~~~~~
+
 When a module is explicitly imported qualified, the extension does not try to add extra imports to the module name:
 
 ::
@@ -112,6 +116,9 @@ When a module is explicitly imported qualified, the extension does not try to ad
 
 
 .. _Renamed:
+
+Renamed Import
+~~~~~~~~~~~~~~
 
 When a module is renamed, the extension does not try to add extra imports to the new name:
 
@@ -137,6 +144,9 @@ It is unclear what to do in this situation, therefore we don't add an extra impo
 
 
 .. _Unqualified:
+
+Unqualified Import
+~~~~~~~~~~~~~~~~~~
 
 The extension may adds extra imports to existing unqualified imports:
 
@@ -170,6 +180,9 @@ This behavior is particularly useful for such module:
 
 
 .. _GHCi:
+
+GHCi Session
+~~~~~~~~~~~~
 
 The following GHCi session is presently valid with ``-fimplicit-import-qualified``:
 
