@@ -164,9 +164,7 @@ Lexical Scoping Principle (LSP)
 
 a. For every appearance of
 an identifier, it is possible to determine whether that appearance is a *binding site*
-or an *occurrence*, without involving the type system. Furthermore, for *occurrences*,
-it is possible to identify the binding site of that identifier, still without involving
-the type system.
+or an *occurrence*, without involving the type system.
 
 b. For every *occurrence* of an
 identifier, it is possible to uniquely identify its *binding site*, without
