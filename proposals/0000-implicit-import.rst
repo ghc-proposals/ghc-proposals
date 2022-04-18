@@ -66,60 +66,129 @@ Managing such imports has the following negative effects:
 
 Proposed Change Specification
 -----------------------------
-I propose an extension to enable implicit qualified imports.
-
-GHCi already implements this feature via the ``-fimplicit-import-qualified`` flag,
-but it does not seem to work with GHC.
-Moreover the flag is not documented in ``ghc --show-options``, but it is accepted.
-Therefore this proposal deprecates the ``-fimplicit-import-qualified`` flag in favor of
-``-XImplicitQualifiedImport``, so that the behavior is consistent between GHC and GHCi.
-
-When ``ImplicitQualifiedImport`` is on:
+Change 1: add a new ``ImplicitQualifiedImport`` language extension. When the extension is on:
 
 - A qualified name ``M.N.x`` is looked up in the top level environment
   (see `Import Declarations <https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1010005.3>`_
   in the Hakell report).
-- If that lookup fails, and if there is no matching qualified module or renamed module already defined,
+
+- If the lookup fails, and if there is no user-written import declaration ``import qualified M.N ...`` (see the "Qualified_" example below) or ``import X ... as M.N`` (see the "Renamed_" example),
   then instead of reporting an out-of-scope error, behave as if an extra import declaration is added: ``import qualified M.N(x)``.
+
+User-written import declarations are taken into account following the principle of least surprise: the extension does not interfer with explicit import declarations.
+In particular, if the module ``X`` is renamed as ``M.N``, implicitly resolving ``M.N.x`` may be ambiguous: it could be found in ``X`` or in the original ``M.N`` module.
+Note that user-written unqualified import declarations, such as ``import M.N(y)``, are not taken into account,
+because in those cases, adding the extra import declaration is unambiguous (see the "Unqualified_" example).
+
+
+Change 2: deprecate the ``-fimplicit-import-qualified`` flag.
+
+GHCi already enables implicit qualified import via this flag, but that does not work with GHC.
+Moreover, supporting this feature in source files requires a new language extension because it changes how to interpret the source file, and other tools would have to understand it as well.
+Lastly, the current flag implementation does not follow the same principle of least surprise (see the "GHCi_" example below).
+Therefore this proposal deprecates the ``-fimplicit-import-qualified`` flag in favor of
+``-XImplicitQualifiedImport``, so that the behavior is consistent between GHC and GHCi.
 
 
 Examples
 --------
 
-Ambiguous imports are forbidden, for example:
+.. _Qualified:
+
+When a module is explicitly imported qualified, the extension does not try to add extra imports to the module name:
 
 ::
 
- module A.B( g ) where
-   g = True
+ import qualified Data.List hiding (head)
+ import qualified Data.Maybe (fromMaybe)
+
+ foo = Data.List.head []
+ bar = Data.Maybe.fromJust Nothing
+
+- ``Data.List.head`` isn't in scope by the usual rules, but ``Data.List`` is already imported as a qualified module, so we don't add an extra import.
+  This fails with a not-in-scope error (as usual).
+- ``Data.Maybe.fromJust`` isn't in scope by the usual rules, but ``Data.Maybe`` is already imported as a qualified module, so we don't add an extra import.
+  This fails with a not-in-scope error (as usual).
+
+
+.. _Renamed:
+
+When a module is renamed, the extension does not try to add extra imports to the new name:
+
+::
+
+ module A.B( f, g ) where
+   (f, g) = (True, True)
 
  module C.D( f ) where
    f = False
 
  module M where
-   import A.B as C.D
+   import A.B as C.D hiding (f)
    foo = (C.D.g, A.B.g)
-   baz = C.D.f
+   bar = C.D.f
 
 - ``C.D.g`` binds to the ``g`` exported by ``A.B`` (as usual).
-- ``A.B.g`` isn't in scope by the usual rules, so we try adding an extra import ``import qualified A.B(g)``. That works, and binds to the ``g`` exported by ``A.B``.
+- ``A.B.g`` isn't in scope by the usual rules, but we can try adding an extra import ``import qualified A.B(g)``. That works, and binds to the ``g`` exported by ``A.B``.
 - ``C.D.f`` isn't in scope by the usual rules, but a module is already renamed as ``C.D``, so we don't try to add an extra import. This fails with a not-in-scope error (as usual).
 
+Trying to resolve ``C.D.f`` would be ambiguous because it can be found through ``import qualified C.D(f)`` or ``import qualified A.B as C.D(f)``.
+It is unclear what to do in this situation, therefore we don't add an extra import.
 
-Existing qualified imports are not re-imported:
+
+.. _Unqualified:
+
+The extension may adds extra imports to existing unqualified imports:
 
 ::
 
  module Main
 
- import Data.Maybe hiding (fromJust)
- import qualified Data.List hiding (head)
+ import A (a)
+ import B hiding (b)
 
- ok = Data.Maybe.fromJust
- ko = Data.List.head
+ foo = (A.x, B.b)
 
-- ``Data.Maybe.fromJust`` is implicitely imported because ``Data.Maybe`` isn't already defined as a qualified module, or as a renamed module.
-- ``Data.List.head`` is not imported because ``Data.List`` is already defined as a qualified module. It fails with a not-in-scope error (as usual).
+- ``A.x`` isn't in scope by the usual rules, and ``A`` is not imported qualified and it is not a renamed module, so we can try adding an extra import ``import qualified A(x)``.
+- Similary for ``B.b``, even though ``b`` is hidden at the top level, we can try adding an extra import ``import qualified B(b)``.
+
+
+This behavior is particularly useful for such module:
+
+::
+
+ module Demo
+
+ import Data.Text (Text, pack)
+
+ foo = pack "hello" :: Text
+ bar = Data.Text.unpack foo
+
+
+- ``Data.Text.unpack`` isn't in scope by the usual rules, but we can try adding an extra import ``import qualified Data.Text(unpack)``.
+  That works as expected.
+
+
+.. _GHCi:
+
+The following GHCi session is presently valid with ``-fimplicit-import-qualified``:
+
+::
+
+ $ ghci -fimplicit-import-qualified
+ Prelude> import qualified Data.List hiding (head)
+ Prelude Data.List> Data.List.head [42]
+ 42
+ Prelude> import Data.List as Data.List.NonEmpty
+ Prelude Data.List Data.List.NonEmpty> Data.List.NonEmpty.fromList [42]
+ 42 :| []
+
+
+With ``-XImplicitQualifiedImport``:
+
+- ``Data.List.head`` is not implicitly imported (because ``Data.List`` is already imported qualified) and the expression fails with a not-in-scope error.
+- ``Data.List.NonEmpty.fromList`` is not implicitly imported (because ``Data.List.NonEmpty`` is a renamed module) and the expression fails with a not-in-scope error.
+
 
 
 Effect and Interactions
