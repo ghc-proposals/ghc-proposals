@@ -76,9 +76,7 @@ Change 1: add a new ``ImplicitQualifiedImport`` language extension. When the ext
   then instead of reporting an out-of-scope error, behave as if an extra import declaration is added: ``import qualified M.N(x)``.
 
 User-written import declarations are taken into account following the principle of least surprise: the extension does not interfer with explicit import declarations.
-In particular, if the module ``X`` is renamed as ``M.N``, implicitly resolving ``M.N.x`` may be ambiguous: it could be found in ``X`` or in the original ``M.N`` module.
-
-Note that user-written unqualified import declarations, such as ``import M.N(y)``, are not taken into account,
+Note that unqualified import declarations, such as ``import M.N(y)``, are not taken into account,
 because in those cases, adding the extra import declaration is unambiguous (see the "Unqualified_" example).
 
 
@@ -99,7 +97,7 @@ Examples
 Qualified Import
 ~~~~~~~~~~~~~~~~
 
-When a module is explicitly imported qualified, the extension does not try to add extra imports to the module name:
+In this example, the ``Data.List`` and ``Data.Maybe`` modules are imported qualified.
 
 ::
 
@@ -109,10 +107,10 @@ When a module is explicitly imported qualified, the extension does not try to ad
  foo = Data.List.head []
  bar = Data.Maybe.fromJust Nothing
 
-- ``Data.List.head`` isn't in scope by the usual rules, but ``Data.List`` is already imported as a qualified module, so we don't add an extra import.
-  This fails with a not-in-scope error (as usual).
-- ``Data.Maybe.fromJust`` isn't in scope by the usual rules, but ``Data.Maybe`` is already imported as a qualified module, so we don't add an extra import.
-  This fails with a not-in-scope error (as usual).
+The extension does not enable using names that would contradict the user-written declarations:
+
+- ``Data.List.head`` is explicitely hidden, so we don't add an extra import. This fails with a not-in-scope error (as usual).
+- ``Data.Maybe.fromJust`` is explicitly not imported, so we don't add an extra import. This fails with a not-in-scope error (as usual).
 
 
 .. _Renamed:
@@ -120,7 +118,7 @@ When a module is explicitly imported qualified, the extension does not try to ad
 Renamed Import
 ~~~~~~~~~~~~~~
 
-When a module is renamed, the extension does not try to add extra imports to the new name:
+In this example, the module ``A.B`` is imported in place of the module ``C.D``.
 
 ::
 
@@ -135,8 +133,10 @@ When a module is renamed, the extension does not try to add extra imports to the
    foo = (C.D.g, A.B.g)
    bar = C.D.f
 
+The extension does not enable using names that would be ambiguous:
+
 - ``C.D.g`` binds to the ``g`` exported by ``A.B`` (as usual).
-- ``A.B.g`` isn't in scope by the usual rules, but we can try adding an extra import ``import qualified A.B(g)``. That works, and binds to the ``g`` exported by ``A.B``.
+- ``A.B.g`` isn't in scope by the usual rules, but we can try adding an extra import ``import qualified A.B(g)``. This is not ambiguous, and binds to the ``g`` exported by ``A.B``.
 - ``C.D.f`` isn't in scope by the usual rules, but a module is already renamed as ``C.D``, so we don't try to add an extra import. This fails with a not-in-scope error (as usual).
 
 Trying to resolve ``C.D.f`` would be ambiguous because it can be found through ``import qualified C.D(f)`` or ``import qualified A.B as C.D(f)``.
@@ -148,7 +148,7 @@ It is unclear what to do in this situation, therefore we don't add an extra impo
 Unqualified Import
 ~~~~~~~~~~~~~~~~~~
 
-The extension may adds extra imports to existing unqualified imports:
+In this example, the module ``A`` and ``B`` are imported unqualified:
 
 ::
 
@@ -158,6 +158,8 @@ The extension may adds extra imports to existing unqualified imports:
  import B hiding (b)
 
  foo = (A.x, B.b)
+
+The extension enables using qualified names that are unambiguous:
 
 - ``A.x`` isn't in scope by the usual rules, and ``A`` is not imported qualified and it is not a renamed module, so we can try adding an extra import ``import qualified A(x)``.
 - Similary for ``B.b``, even though ``b`` is hidden at the top level, we can try adding an extra import ``import qualified B(b)``.
@@ -176,7 +178,6 @@ This behavior is particularly useful for such module:
 
 
 - ``Data.Text.unpack`` isn't in scope by the usual rules, but we can try adding an extra import ``import qualified Data.Text(unpack)``.
-  That works as expected.
 
 
 .. _GHCi:
