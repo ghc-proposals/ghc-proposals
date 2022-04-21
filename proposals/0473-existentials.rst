@@ -135,6 +135,10 @@ Motivation
    described here seems necessary if we are to integrate Liquid Haskell with the
    rest of GHC's type system.
 
+#. This extension allows for the projection of record fields with existential types;
+   see `this example <https://github.com/ghc-proposals/ghc-proposals/pull/473#issuecomment-1104505995>`_
+   and `this further example <https://github.com/ghc-proposals/ghc-proposals/pull/473#issuecomment-1104808083>`_.
+
 Proposed Change Specification
 -----------------------------
 
