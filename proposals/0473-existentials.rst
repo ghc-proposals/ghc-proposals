@@ -17,11 +17,13 @@ Crisis Resolved: Type inference for first-class existential types <https://richa
 
 .. _paper: https://richarde.dev/papers/2021/exists/exists.pdf
 .. _`#270`: https://github.com/ghc-proposals/ghc-proposals/pull/270
+.. _`#194`: https://github.com/ghc-proposals/ghc-proposals/pull/194
 .. _`#378`: https://github.com/ghc-proposals/ghc-proposals/pull/378
 .. _`#285`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0285-no-implicit-binds.rst
 .. _`#281`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0281-visible-forall.rst
 .. _T2T: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0281-visible-forall.rst#t2t-mapping
 .. _`#17934`: https://gitlab.haskell.org/ghc/ghc/-/issues/17934
+.. _`Implicit/Explicit Principle`: ../principles.rst#implicit-explicit-principle
 
 Motivation
 ----------
@@ -156,17 +158,21 @@ Proposed Change Specification
                          | 'forall' tv_bndrs '->'
 
         exists_telescope → 'exists' tv_bndrs '.'
+                         | 'exists' tv_bndrs '|'
 
       An existential is a new form of type, not equal to any current form.
+      The ``exists tv_bndrs .`` form is constructed and matched against implicitly;
+      the ``exists tv_bndrs |`` form is constructed and matched against explicitly.
 
    #. The ``ty`` in ``exists tv_bndrs . ty`` is not allowed to be a
       ``forall`` type or a qualified type (headed by ``=>``).
+      (No such restriction exists for ``exists tv_bndrs | ty``).
 
-   #. In a type ``exists tv_bndrs . ty``, the ``tv_bndrs`` are in scope
+   #. In the types ``exists tv_bndrs . ty`` and ``exists tv_bndrs | ty``, the ``tv_bndrs`` are in scope
       in the ``ty``.
 
-   #. In a type ``exists tv_bndrs . ty``, the ``ty`` must have kind
-      ``TYPE rep`` for some ``rep``. The type ``exists tv_bndrs. ty`` itself
+   #. In the types ``exists tv_bndrs . ty`` and ``exists tv_bndrs | ty``, the ``ty`` must have kind
+      ``TYPE rep`` for some ``rep``. The existential type itself
       has the same kind. (This is just like how ``forall`` is kinded.)
 
    #. Existential quantification is not allowed in the top-level "spine" of
@@ -200,21 +206,32 @@ Proposed Change Specification
 
       See `Optional Extension`_ below to see how to extract the witness from a type.
 
-   #. Here is the typing rule for ``Witness``, where the ``k`` argument is optional::
+   #. Here are the typing rules for ``Witness``, where the ``k`` argument is optional::
 
         ty = exists (a :: k). inner_ty
         e <= ty              -- the "<=" denotes checking mode, not synthesis mode
         ---------------------
         Witness @k ty e : k
 
-   #. The following equality axiom holds for ``Witness``::
+        ty = exists (a :: k) | inner_ty
+        e <= ty              -- the "<=" denotes checking mode, not synthesis mode
+        ---------------------
+        Witness @k ty e : k
+
+
+   #. The following equality axioms hold for ``Witness``::
 
         ty = exists (a :: k). inner_ty
         e <= inner_ty[witness_ty/a]
         -------------------------
         Witness @k ty e ~ witness_ty
 
-      We can implement this rule by using a fresh unification variable
+        ty = exists (a :: k) | inner_ty
+        e <= inner_ty[witness_ty/a]
+        -------------------------
+        Witness @k ty e ~ witness_ty
+
+      We can implement these rules by using a fresh unification variable
       for ``witness_ty`` before checking ``e`` against ``inner_ty``.
 
    #. Types in the type-checker are represented using the same GHC type ``Type``
@@ -236,6 +253,8 @@ Proposed Change Specification
    ``GHC.Exists`` exports a type operator ``(/\#) :: forall (rep :: RuntimeRep). Constraint -> TYPE rep -> TYPE (TupleRep [LiftedRep, rep])``.
    The representation for ``(/\#)`` differs from that of ``(/\)``, but is otherwise treated similarly.
    From here on, assume statements about ``(/\)`` apply also to ``(/\#)``.
+
+   .. _`Type inference`:
 
 #. **Type inference.** Type inference for these constructs is addressed at length in the paper_, including
    the extension in Section 9.2. Some
@@ -302,6 +321,82 @@ Proposed Change Specification
 
       (See the paper for the typing rule. This is ``iAbs`` in Fig. 4. Elaboration is ``Elab-iAbs`` in Appendix
       A of the extended version of the paper. See also the relevant `example <#existential-wrapping>`_.)
+
+#. ``GHC.Exists`` exports a term-level name ``Pack`` that allows for explicit
+   construction and matching of values of type ``exists (a :: k) | ty``.
+
+   1. ``Pack`` is treated like any other constructor during name resolution. In
+      particular, it can be the head of a pattern, just like a constructor.
+
+   #. When used in an expression, ``Pack`` has the following typing rule, where the ``k``
+      argument is optional. The rule applies in both synthesis and checking modes of
+      bidirectional type checking. In synthesis mode, the ``exists_ty`` argument must be
+      supplied (with its ``@`` prefix); in checking more, it is optional. ::
+
+        exists_ty = exists (a :: k) | inner_ty
+        witness_ty : k
+        e <= inner_ty[witness_ty/a]
+        -------------------------------------------
+        Pack @k @exists_ty witness_ty e : exists_ty
+
+      Note that the ``witness_ty`` argument is a *type*, not a *term*, behaving
+      like the visible dependent arguments of `#281`_.
+
+   #. When used in a pattern, ``Pack`` has an analogous typing rule. (Typing rules
+      for patterns have a more complicated setup, and I conjecture that simply
+      stating that the pattern rule is analogous conveys more intuition than writing
+      out the rule.)
+
+   #. Note that ``Pack`` makes *two* aspects of existentials visible that were previously
+      invisible: the act of packing, and the witness type. Both are made visible by the
+      ``exists (a :: k) | ty`` syntax. If the user wishes to specify packing explicitly
+      but have the witness type inferred, they can use ``_`` in place of the witness type.
+      Using ``_`` in this way creates no diagnostics (but see `#194`_ for more design
+      that could allow the user to control whether or not they see a diagnostic).
+
+   #. ``Pack`` is strict, as it is completely erased at runtime. (It is much like
+      a ``newtype`` constructor in this way.)
+
+#. According to the `Implicit/Explicit Principle`_, we must offer a way for users to
+   specify an existential witness type explicitly.
+
+   1. The grammar for expressions is modified as follows::
+
+        fexp → fexp aexp
+             | fexp '@' atype   -- '@' in prefix
+             | 'static' aexp
+             | aexp
+             | '@' conid        -- NEW! '@' in prefix
+
+      Intuitively, an ``fexp`` is an expression that can appear at the beginning of an
+      application chain, such as the first expression after a ``(``.
+
+      This grammar is ambiguous, with an overlap between the new form and the existing ``fexp '@' atype`` form.
+      It will be written to prefer the old form in the case of ambiguity. (Exactly how this is done
+      is an implementation detail, omitted here.)
+
+   #. The ``conid`` in ``'@' conid`` above must resolve to ``GHC.Exists.Pack``; otherwise, the expression
+      is an error.
+
+   #. The typing rules for ``@Pack`` is as below. Compare against the typing rules in the `Type inference`_ section
+      above. ::
+
+        exists_ty = exists (a :: k). inner_ty
+        witness_ty : k
+        Γ ⊢ e <= inner_ty[witness_ty/a] ~> e'
+        ----------------------------------------------------------------------------------
+        Γ ⊢ @Pack @k @exists_ty witness_ty e : exists_ty ~> Pack witness_ty e' a inner_ty
+
+      This rule applies both in synthesis mode and checking mode. The ``@exists_ty`` must be included
+      in synthesis mode.
+
+      This typing rule overlaps with the general typing rule for checking existentials given in the `Type inference`_
+      section. When this rule applies (that is, when the expression is a ``@Pack`` expression), use this rule,
+      not the general one. Equivalently, add a premise to the other rule saying the expression is not headed
+      by ``@Pack``.
+
+    #. The ``@Pack`` syntax is available in patterns, too, with a typing rule analogous to
+       the one above.
 
 #. ``GHC.Exists`` exports ::
 
@@ -586,6 +681,51 @@ Examples
 
    Without the substitution, that would not type-check.
 
+#. This demonstrates the use of visible existentials::
+
+     import Type.Reflection
+
+     data Ty = IntT | BoolT | Ty :-> Ty
+
+     type WTExp :: Ty -> Type
+     data WTExp t where
+       IntLit :: Int -> WTExp IntT
+       BoolLit :: Bool -> WTExp BoolT
+       WTApp :: WTExp (t1 :-> t2) -> WTExp t1 -> WTExp t2
+       ...
+
+     data UExp where   -- "U" for "unchecked"
+       UIntLit :: Int -> UExp
+       UBoolLit :: Bool -> UExp
+       UApp :: UExp -> UExp -> UExp
+
+     check :: UExp -> Maybe (exists (ty :: Ty) | Typeable ty /\ WTExp ty)
+     check (UIntLit i) = Just (Pack IntT (IntLit ty))
+     check (UBoolLit b) = Just (Pack BoolT (BoolLit ty))
+     check (UApp e1 e2) = do    -- Maybe monad
+       Pack ty1 e1' <- check e1
+       Pack ty2 e2' <- check e2
+       App (App arrow arg) res) <- return (typeRep @ty1)   -- App from Type.Reflection
+       HRefl <- eqTypeRep arrow (typeRep @(:->))
+       HRefl <- eqTypeRep ty2 arg
+       return (Pack (arg :-> res) (WTApp e1' e2'))
+
+   But that includes more information than we really need. We can do it less
+   verbosely with ``@Pack``::
+
+     check :: UExp -> Maybe (exists (ty :: Ty). Typeable ty /\ WTExp ty)
+     check (UIntLit i) = Just (IntLit ty)
+     check (UBoolLit b) = Just (BoolLit ty)
+     check (UApp e1 e2) = do    -- Maybe monad
+       @Pack ty1 e1' <- check e1
+       @Pack ty2 e2' <- check e2
+       App (App arrow arg) res) <- return (typeRep @ty1)   -- App from Type.Reflection
+       HRefl <- eqTypeRep arrow (typeRep @(:->))
+       HRefl <- eqTypeRep ty2 arg
+       return (WTApp e1' e2')
+
+   Now, doesn't that just make you happy?
+
 Effect and Interactions
 -----------------------
 
@@ -670,12 +810,9 @@ Costs and Drawbacks
    be so easy to use in practice. It may take an iteration or two before we
    settle on just the right presentation to users.
 
-..
-    This proposal includes no way of eta-expanding an existential. For example,
-    if I know that ``expr :: (a, b)``, then I can rewrite ``expr`` as
-    ``(fst expr, snd expr)``. If I know that ``expr :: Bool``, then I can
-    rewrite ``expr`` as ``if expr then True else False`` or ``case expr of True -> True; False -> False``.
-    On the other hand, if I know that ``expr :: exists a. ty``,
+#. The ``@Pack`` syntax breaks new syntactic ground, and it prevents us
+   from using a prefix ``@`` on an expression at the head of an application
+   chain for other reasons. I still really like this syntax, though.
 
 #. A key step in the proof that this all holds water is that Haskell is a
    *pure* language. This is necessary when we assert reflexivity of type
