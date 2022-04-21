@@ -260,7 +260,9 @@ Cabal
    N.B ``build-tool-depends`` can be thought of as a stage -1 executable dependencies list.
    "Those executables are executed at build time, like top-evel splices, and so need to be built for the build platform."
    `<https://github.com/haskell/cabal/issues/5411>`_ asks for a ``run-tool-depends`` which would be nothing but a stage 0 executable depends.
-   ``setup-depends`` can also be thought of as a stage -1 executable dependencies list.
+   ``setup-depends`` can also be thought of as a stage -1 dependencies list.
+   In both cases though, the metaphor is not perfect because separate executable are only loosely coupled.
+   E.g libraries for Template-Haskell must be built with the same compiler / same ABI, but executable deps (including `./Setup` itself), need not be.
 
 #. Connect today's "qualified goals" to stages.
    [TODO exact formalism, is it in scope?]
