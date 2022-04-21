@@ -97,7 +97,7 @@ Extension shuffling
 Right now, ``-XScopedTypeVariables`` does a lot of heavy lifting. This proposal
 breaks up ``-XScopedTypeVariables`` into its components. This enables finer-grained
 control, and the ability for e.g. the ``a`` in ``f :: forall a. a -> a`` not to
-scope over the definition of ``a``.
+scope over the definition of ``f``.
 
 The new meaning of ``-XScopedTypeVariables`` is the same as the old one. The only
 backward-incompatible part of this is that, today, ``-XPatternSignatures`` is a deprecated
