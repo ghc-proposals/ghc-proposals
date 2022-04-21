@@ -58,7 +58,7 @@ The status quo is not satisfactory because it requires adding explicit imports:
 
 Managing such imports has the following negative effects:
 
-- It increases the file length.
+- It increases the file length and can cause merge conflicts.
 - The author needs to jump to the top of the file each time a new module is added or removed.
 - It encourages using unqualified imports because unqualified is the default, which can lead to import conflicts.
 
