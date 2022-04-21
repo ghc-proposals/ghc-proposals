@@ -219,7 +219,13 @@ and the user still needs to add ``import Data.Generics.Labels ()``.
 
 Costs and Drawbacks
 -------------------
-TBD: estimate development and maintenance costs.
+I have a `proof of concept <https://gitlab.haskell.org/TristanCacqueray/ghc/-/tree/ImplicitQualifiedImport>`_ of this proposal.
+This demonstrates how the implicit dependency can be discovered using the Lexer.
+Though further works is needed to reduce the overhead.
+
+Since this is a syntactic extension, there is a potential cultural fragmentation within the community.
+Though I believe that using the proposed extension will be quite clear,
+even for those who do not know about the extension.
 
 This extension may improve the language's learnability for novice users by:
 
@@ -246,3 +252,8 @@ This feature is enabled by default in some languages such as OCaml, Rust and Jav
 Unresolved Questions
 --------------------
 TBD
+
+Implementation Plan
+-------------------
+
+I (Tristan de Cacqueray) will implement this change.
