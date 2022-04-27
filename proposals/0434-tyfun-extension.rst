@@ -26,47 +26,100 @@ Reduce type family application via precompiled term-level functions
             number in the link, and delete this bold sentence.**
 .. contents::
 
-The current mechanism of reducing type families applications has a few drawbacks: 
- 1. Cumbersome and restricted implementation of complex type families 
- 2. Slow reduction of complex type families 
- 3. There are useful families which can't be implemented as usual families.
-    This leads to a grown built-in families set or lack of useful families. 
-    (paste here a link to the discussion about type families for char kind types)
+Type families are currently defined using a set of equations. This approach has
+a few drawbacks:
 
-We propose to add a possibility to define type families which applications 
-will be reduced via an application of precompiled term-level functions.   
+1. Lack of expressive power to define complex computations (no ``let``, ``where``, ``case of``, and so on).
+2. Inefficient and slow reduction.
+3. Inability to use FFI or low-level primitives.
 
+We propose to make it possible to define type families whose applications are
+reduced by evaluating a precompiled term-level function.
 
 Motivation
 ----------
 There are two major motivations:
 
- 1. To allow users to write basic functions over built-in types, like type literals. 
-    Without proposed changes, such functions also must be built-in into the compiler growing its 
-    codebase. A great example is `https://gitlab.haskell.org/ghc/ghc/-/merge_requests/3598`: 
-    most of these type families could be written using the proposed way without expanding GHC. 
+1. To allow users to define primitive functions over promoted built-in types,
+   such as ``Char`` or ``Natural``. Currently such functions must be built into
+   the compiler, leading to excessive amounts of code. A great example is
+   `!3598 <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/3598>`_ that
+   adds over 1500 lines of code, mostly due to built-in type families.
 
- 2. To allow using complex type families like parsers. Although a user can write such families now 
-    in most cases, but in reality, a set of necessary families would be so complicated and a process of their 
-    reduction would be so slow that no one would write it, otherwise, a user would get hard-to-read and huge piece of code 
-    and unacceptably slow compilation.     
+2. To make it practical to perform complex computations at the type level, for
+   example parsing. Although it is already possible to encode such computations
+   as type families using existing language features, the resulting type families
+   are slow to reduce, and their code is hard to read and understand.
 
+We propose a new language extension ``TypeFunctions`` to address these issues.
+Enabling this extension allows the programmer to declare a new variant of
+closed type families::
+
+  type family F a | F = fn
+
+The following restrictions apply:
+
+* ``fn`` must be a term-level function imported from another module.
+* The kind of ``F`` is taken to be equal to the type of ``fn``.
+* ``F`` may not have any additional equations.
+
+The first issue is solved by making it possible to reuse existing term-level
+function over built-in types::
+
+  type ToUpper :: Char -> Char                -- optional standalone kind signature
+  type family ToUpper a | ToUpper = toUpper
+
+  type IsDigit :: Char -> Bool                -- optional standalone kind signature
+  type family IsDigit a | IsDigit = isDigit
+
+The second issue is solved by enabling the programmer to offload the
+implementation of a complex type family to a term-level definition::
+
+  type ParseRGB s | ParseRGB = parseRGB
+
+  parseRGB :: String -> Maybe (Integer, Integer, Integer)
+  parseRGB = ...
 
 Proposed Change Specification
 -----------------------------
-We propose a new language extension ``TypeFunctions``. 
-Enabling this extension allows a user to declare a new type of closed type families: 
-::
-  type family F a | F = fn
 
-It must have zero equations and ``fn`` must be imported from another module.  
-A type of the term-level function must be the same as a kind of the type family. 
+* Introduce a new language extension, ``TypeFunctions``.
 
-Every mentioned type in the type of function must be promotable, to have a corresponding kind. 
+* Under ``TypeFunctions``, extend the syntax of type family declarations with a
+  new form::
 
-The evaluation order of such families is strict by their arguments. 
-Meeting with type variable or unevaluated type family application causes giving up 
-and returning an unevaluated application. 
+    ty_decl ::=
+          ...
+        | 'type' 'family' type '|' oqtycon '=' qvar
+        | ...
+
+  Those type families are to be called "type functions".
+
+* The kind of the type function is split into input types and the output type
+  according to its arity. Those types must be **promotable**. At least the
+  following types are promotable:
+
+    * ``Char``, ``Natural``, ``Bool``, ``()``, ``Void``
+    * ``Maybe a`` if ``a`` is promotable
+    * ``[a]`` if ``a`` is promotable
+    * ``Either a b`` if ``a`` and ``b`` are promotable
+    * ``(a, b)`` if ``a`` and ``b`` are promotable
+    * ``(a, b, c)`` if ``a``, ``b`` and ``c`` are promotable
+
+  The set of promotable types can be extended in the future and must be
+  specified in the User's Guide.
+
+* A saturated application of a type function is reduced as follows:
+
+    1. Reducing its arguments to normal form. If any of them contain stuck type
+       families or skolems, the type function is also stuck.
+    2. Evaluate the term-level function.
+    3. Force the result of evaluation to normal form.
+       Synchronous exceptions are caught and reported as type errors.
+       Asynchronous exceptions crash the compiler.
+
+Examples
+--------
 
 These families work ok with variables in constraints:: 
 
@@ -84,8 +137,6 @@ All the machinery works via compiling term-level functions at the beginning of t
 pre-compiled function to types turned into usual Haskell values. 
 A result of such application is interpreted as a type. 
 
-Examples
---------
 Examples of basic functions over built-in types: 
 ::
   type family ToUpper (a :: Char) | ToUpper = toUpper 
