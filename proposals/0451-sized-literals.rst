@@ -3,7 +3,7 @@ Sized primitive literals
 
 .. author:: Sylvain Henry
 .. date-accepted:: 2022-04-23
-.. ticket-url::
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/21422
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/451>`_.
