@@ -21,7 +21,7 @@ Motivation
 This proposal's main purpose is to enable direct package use.
 This is particularly useful for:
 
-- Functions that are used only once, such as ``Servant.serve``.
+- Functions that are used only once, such as ``System.Environment.getArgs``.
 - Temporary type annotations and debugging functions, such as ``Debug.Trace.trace``.
 - Portable code samples that can be moved without affecting the module imports.
 
@@ -58,7 +58,7 @@ The status quo is not satisfactory because it requires adding explicit imports:
 
 Managing such imports has the following negative effects:
 
-- It increases the file length and can cause merge conflicts.
+- It increases the line count and can cause merge conflicts.
 - The author needs to jump to the top of the file each time a new module is added or removed.
 - It encourages using unqualified imports because unqualified is the default, which can lead to import conflicts.
 
@@ -216,6 +216,12 @@ The other language or compiler features are left unchanged.
 In particular, typeclass instances are not changed. With ``Data.Generics.Labels.Field'``, the Field instance of Symbol from the generic-lens package is not imported,
 and the user still needs to add ``import Data.Generics.Labels ()``.
 
+The extension does not take into account names that are part of a Quasiquotation, e.g. between ``[|`` and ``|]``.
+
+Interactions with `Local modules (under review) <https://github.com/ghc-proposals/ghc-proposals/pull/283>`_ may be implemented similarly to Java, where the first
+matching import is used, as demonstrated in this `experiment <https://github.com/ghc-proposals/ghc-proposals/pull/500#issuecomment-1101814148>`_. Or, by following
+the principle of least surprise, the extension may refuse to implicitly import a module that can be found in multiple locations.
+
 
 Costs and Drawbacks
 -------------------
@@ -234,9 +240,8 @@ This extension may improve the language's learnability for novice users by:
 
 The drawbacks are:
 
-- It may reduce a module's readability: its external requirements would no longer be explicitly listed in the import section.
-- It may complicate changing modules dependencies order.
-- It makes it harder to swap out dependencies for ones with similar interfaces but different implementations.
+It may reduce a module's readability: its external requirements would no longer be explicitly listed in the import section. To know what a module imports, readers have to read through the entire module.
+This may also complicate changing modules dependencies order.
 
 
 Alternatives
@@ -247,7 +252,14 @@ Local modules proposed in `#283 <https://github.com/ghc-proposals/ghc-proposals/
 using fully qualified names without adding imports. However this requires using a fat prelude to export a
 curated list of modules, while ImplicitQualifiedImport enables using any module without relying on such fat prelude.
 
-This feature is enabled by default in some languages such as OCaml, Rust and Java.
+Imports may be stored in a special ``Mod.imports`` as described in `this comment <https://github.com/ghc-proposals/ghc-proposals/pull/500#issuecomment-1101972865>`_.
+However such listing still need to be maintained, and the proposal may be implemented independently.
+
+The extension may work only for modules outside the current package.
+The advantage of that would be that implicit imports wouldn't affect the dependency analysis and the implementation is much simpler.
+The (admittedly major) disadvantage is that specifying the semantics requires talking about packages, which otherwise are not part of the Haskell standard.
+
+The propose change is enabled by default in some languages such as OCaml, Rust, Elixir and Java.
 
 Unresolved Questions
 --------------------
