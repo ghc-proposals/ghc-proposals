@@ -225,10 +225,17 @@ the principle of least surprise, the extension may refuse to implicitly import a
 
 Costs and Drawbacks
 -------------------
-I have a `proof of concept <https://gitlab.haskell.org/TristanCacqueray/ghc/-/tree/ImplicitQualifiedImport>`_ of this proposal.
-This demonstrates how the implicit dependency can be discovered using the Lexer.
-Though further works is needed to reduce the overhead.
 
+Development and Maintenance Costs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To compile a module source file, GHC parses the import declarations in order to get the module's dependencies and define a build plan.
+When ``ImplicitQualifiedImport`` is on, the module's dependencies may be implicitly imported anywhere in the module, therefore GHC needs to parse the whole module to get its dependencies.
+
+Thereafter, when the ``implicit-import-qualified`` flag is on, GHCi looks up *all* the available modules before reporting a not-in-scope error.
+When ``ImplicitQualifiedImport`` is on, this lookup needs to be restricted to *all* the available modules, except the ones that have been renamed or imported qualified, in order to respect the principle of least surprise (see the Change Specification).
+
+Learnability
+~~~~~~~~~~~~
 Since this is a syntactic extension, there is a potential cultural fragmentation within the community.
 Though I believe that using the proposed extension will be quite clear,
 even for those who do not know about the extension.
@@ -238,9 +245,9 @@ This extension may improve the language's learnability for novice users by:
 - Reducing the length of code samples, and,
 - Simplying new module usage, e.g. for one-off experiments and temporary annotations.
 
-The drawbacks are:
-
-It may reduce a module's readability: its external requirements would no longer be explicitly listed in the import section. To know what a module imports, readers have to read through the entire module.
+Drawbacks
+~~~~~~~~~
+The extension may reduce a module's readability: its external requirements would no longer be explicitly listed in the import section. To know what a module imports, readers have to read through the entire module.
 This may also complicate changing modules dependencies order.
 
 
@@ -268,4 +275,4 @@ TBD
 Implementation Plan
 -------------------
 
-I (Tristan de Cacqueray) will implement this change.
+I (Tristan de Cacqueray) could implement this change.
