@@ -62,7 +62,7 @@ together with specialised type synonyms with universally quantified type variabl
 is key to use a type synonym rather than a newtype, so that the specialised
 versions can still work with more general combinators.
 
-For example, `pipes` defines the following data types::
+For example, ``pipes`` defines the following data types::
 
   data Proxy x' x a b m r = ....
 
@@ -149,7 +149,7 @@ change would require adding CPP.
 Example 2
 ---------
 
-Another consumer hit hard by the change is the `Integrated Haskell Platform<https://github.com/digitallyinduced/ihp/pull/1342>`_.
+Another consumer hit hard by the change is the `Integrated Haskell Platform <https://github.com/digitallyinduced/ihp/pull/1342>`_.
 
 In particular they define a type synonym which contains an implicit parameter::
 
@@ -178,7 +178,7 @@ the "solution" is to eta-expand the call to ``renderUser``::
     </ul>
   |]
 
-But such changes were `deemed unsatisfactory<https://github.com/digitallyinduced/ihp/pull/1342#issuecomment-1058870639>`_ 
+But such changes were `deemed unsatisfactory <https://github.com/digitallyinduced/ihp/pull/1342#issuecomment-1058870639>`_
 by the maintainers:
 
   All of them break existing IHP apps / require a lot of changes when updating.
