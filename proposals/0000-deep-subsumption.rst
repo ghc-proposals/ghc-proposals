@@ -42,8 +42,17 @@ Proposed Change Specification
 We propose to add a language extension ``DeepSubsumption`` which provides a best
 effort attempt to restore the previous deep subsumption behaviour. The extension
 will implement the 4 subsumption rules which were removed by simplified subsumption.
-The extension is off by default, and must be enabled in client code if they want
-the subsumption rules and associated eta-expansion.
+
+* The extension will be **on** by default, as-if it was added to the Haskell2010 extension set.
+* The extension will be **off** in the Haskell2021 extension set.
+
+As the Haskell2021 extension was introduced in GHC 9.0, the same release as simplified
+subsumption, any user who has upgraded and is already specifying the Haskell2021 extension
+set will have had to update their code to work with deep subsumption.
+Otherwise, older programs which are still using Haskell2010 should continue to work
+as before, because DeepSubsumption will be enabled until the user updates to the
+2021 extensions.
+
 
 It is not recommended that people use this extension as it makes type inference
 less predictable and the language semantics more confusing. However, in a manner
@@ -51,8 +60,27 @@ similar to ``NoMonoLocalBinds``, users who really want such a feature are free t
 enable the extension, with the understanding that doing so might introduce changes
 to type inference or runtime behaviour that are difficult to predict.
 
-Example 1
----------
+Warnings
+^^^^^^^^
+
+Given that we don't think that using ``DeepSubsumption`` is a good idea, we also
+propose to add two warnings to help users migrate to simplified
+subsumption.
+
+* When ``-XDeepSubsumption`` is off, the error message can be improved to suggest
+  eta-expansion (and optionally enabling ``DeepSubsumption``).
+* When ``-XDeepSubsumption`` is on and used, we can warn about these occurences.
+  This would be used to migrate module by module away from ``DeepSubsumption``.
+
+Examples
+--------
+
+In this section we present two case studies about how migrating to simplified
+subsumption has been challenging for users.
+
+
+Example 1: Type synonyms with quantified variables
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The example given by ParetoOptimalDev on `Discourse <https://discourse.haskell.org/t/r-haskell-was-simplified-subsumption-worth-it-for-industry-haskell/4486>`_
 was carefully analysed by Jaro R.
@@ -79,7 +107,7 @@ subsumption::
 
 
 Solution 1: Eta-expansion
-^^^^^^^^^^^^^^^^^^^^^^^^^
++++++++++++++++++++++++++
 
 As described in the simplfied subsumption proposal, the simplest fix is to eta-expand
 the call to ``fromHandle`` in the definition of ``readFreqSumFile``::
@@ -98,7 +126,7 @@ However, ParetoOptimalDev isn't so satisfied by this solution because
 This led Jaro to explore some other alteratives.
 
 Solution 2: Newtype Wrapper
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
++++++++++++++++++++++++++++
 
 Simon PJ suggests making these type synonyms into newtypes::
 
@@ -117,7 +145,7 @@ the ``optics`` library uses to get their lenses to compose, but that seems like
 quite a big change here.
 
 Solution 3: Rewrite type synonyms in place
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+++++++++++++++++++++++++++++++++++++++++++
 
 Another simple change to resolve this is to avoid using type synonyms altogether,
 by inlining their definition in-place::
@@ -131,7 +159,7 @@ must be a producer. It is also another invasive change to rewrite all the type
 signatures of all downstream libraries which use this pattern.
 
 Solution 4: Deep Subsumption
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+++++++++++++++++++++++++++++
 
 With this proposal, the user enables ``DeepSubsumption`` and the program continues
 to typecheck as before::
@@ -146,8 +174,8 @@ This change is not backwards-compatible, as the ``DeepSubsumption`` extension wo
 available on earlier versions of GHC (in particular GHC-9.0). A backwards-compatible
 change would require adding CPP.
 
-Example 2
----------
+Example 2: Type synonyms with implicit parameters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Another consumer hit hard by the change is the `Integrated Haskell Platform <https://github.com/digitallyinduced/ihp/pull/1342>`_.
 
