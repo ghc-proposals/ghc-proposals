@@ -40,8 +40,10 @@ Proposed Change Specification
 -----------------------------
 
 We propose to add a language extension ``DeepSubsumption`` which provides a best
-effort attempt to restore the previous deep subsumption behaviour. The extension
-will implement the 4 subsumption rules which were removed by simplified subsumption.
+effort attempt to restore the previous deep subsumption behaviour.
+The extension will implement deep skolemisation and the co/contra subtyping
+rules, which were removed by simplified subsumption. It will not re-introduce
+deep instantiation.
 
 * The extension will be **on** by default, as-if it was added to the Haskell2010 extension set.
 * The extension will be **off** in the GHC2021 extension set.
