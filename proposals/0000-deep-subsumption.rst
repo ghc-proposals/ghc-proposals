@@ -44,10 +44,10 @@ effort attempt to restore the previous deep subsumption behaviour. The extension
 will implement the 4 subsumption rules which were removed by simplified subsumption.
 
 * The extension will be **on** by default, as-if it was added to the Haskell2010 extension set.
-* The extension will be **off** in the Haskell2021 extension set.
+* The extension will be **off** in the GHC2021 extension set.
 
-As the Haskell2021 extension was introduced in GHC 9.0, the same release as simplified
-subsumption, any user who has upgraded and is already specifying the Haskell2021 extension
+As the GHC2021 extension was introduced in GHC 9.0, the same release as simplified
+subsumption, any user who has upgraded and is already specifying the GHC2021 extension
 set will have had to update their code to work with deep subsumption.
 Otherwise, older programs which are still using Haskell2010 should continue to work
 as before, because DeepSubsumption will be enabled until the user updates to the
