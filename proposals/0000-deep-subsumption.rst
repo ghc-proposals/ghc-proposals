@@ -28,51 +28,66 @@ semantics, as well as being a stepping-stone to the implementation of Quick-look
 
 Unfortunately, the breakage study failed to accurately predict how annoying this
 change would be to users. Some common patterns found in libraries now require
-"pointless" eta-expansion, when the compiler used to automatically insert the
+eta-expansion, when the compiler used to automatically insert the
 appropiate lambdas.
 
 This proposal suggests adding a new language extension, ``DeepSubsumption``,
-which can be enabled to recover the previous subsumption rules. This would allow
+enabled by default in the common case when the language is set to ``-XHaskell2010``,
+which recovers the previous subsumption rules. This would allow
 users to opt-in to deep subsumption as it was before GHC-9.0.
 
 
 Proposed Change Specification
 -----------------------------
 
-We propose to add a language extension ``DeepSubsumption`` which provides a best
-effort attempt to restore the previous deep subsumption behaviour.
+We propose to add a language extension ``DeepSubsumption`` which restores the previous deep subsumption behaviour.
 The extension will implement deep skolemisation and the co/contra subtyping
 rules, which were removed by simplified subsumption. It will not re-introduce
-deep instantiation.
+deep instantiation, which was not a cause of breakage (it changes only some types
+reported in error messages and in GHCi).
 
-* The extension will be **on** by default, as-if it was added to the Haskell2010 extension set.
-* The extension will be **off** in the GHC2021 extension set.
+* ``DeepSubsumption`` will be part of the ``Haskell2010`` and ``Haskell98`` extension sets.
+* ``DeepSubsumption`` will not be part of ``GHC2021``.
 
-As the GHC2021 extension was introduced in GHC 9.0, the same release as simplified
+As the ``GHC2021`` language was introduced in GHC 9.0, the same release as simplified
 subsumption, any user who has upgraded and is already specifying the GHC2021 extension
 set will have had to update their code to work with deep subsumption.
-Otherwise, older programs which are still using Haskell2010 should continue to work
-as before, because DeepSubsumption will be enabled until the user updates to the
+Otherwise, older programs which are still using Haskell2010 (as frequently set by a ``default-language``
+setting in a cabal file) should continue to work
+as before, because ``DeepSubsumption`` will be enabled until the user updates to the
 2021 extensions.
 
-
-It is not recommended that people use this extension as it makes type inference
-less predictable and the language semantics more confusing. However, in a manner
+The ``DeepSubsumption`` extension is not recommended.
+In makes the runtime semantics (including performance) of Haskell programs
+less predictable. Furthermore, with ``ImpredicativeTypes``, ``DeepSubsumption`` makes
+type inference less predictable, with possible changes in behavior between minor-version
+releases of GHC. However, in a manner
 similar to ``NoMonoLocalBinds``, users who really want such a feature are free to
-enable the extension, with the understanding that doing so might introduce changes
+enable ``DeepSubsumption``, with the understanding that doing so might introduce changes
 to type inference or runtime behaviour that are difficult to predict.
 
 Warnings
 ^^^^^^^^
 
 Given that we don't think that using ``DeepSubsumption`` is a good idea, we also
-propose to add two warnings to help users migrate to simplified
+propose to improve diagnostics to help users migrate to simplified
 subsumption.
 
 * When ``-XDeepSubsumption`` is off, the error message can be improved to suggest
   eta-expansion (and optionally enabling ``DeepSubsumption``).
-* When ``-XDeepSubsumption`` is on and used, we can warn about these occurences.
-  This would be used to migrate module by module away from ``DeepSubsumption``.
+
+* When ``-XDeepSubsumption`` is on:
+
+  * A new warning ``-Wdeep-subsumption``, in ``-Wcompat`` and ``-Weverything`` (but
+    not other warning sets), will warn whenever deep subsumption is used, suggesting
+    that the user eta-expand.
+
+  * A new warning ``-Wauto-lambda-destroys-sharing``, in ``-W``, will warn (on a
+    best effort basis) when deep subsumption creates a lambda that may destroy
+    runtime sharing (and thus pessimise runtimes).
+
+In the text above, "eta-expansion" is a short-hand used in this proposal. The actual
+error message will be crafted to either avoid or introduce this terminology.
 
 Examples
 --------
@@ -230,7 +245,7 @@ Costs and Drawbacks
 -------------------
 
 * We really do not recommend that people use this feature. It makes the language
-  more complicated and type inference less predictable.
+  more complicated and runtime performance less predictable.
 * In situations where the eta-expansion behaviour is desired for its user-friendliness,
   the requirement to enable a strange ``DeepSubsumption`` extension might just lead to even more confusion.
 * Alejandro Serrano `suggests <https://github.com/ghc-proposals/ghc-proposals/pull/287#issuecomment-1128134798>`_
