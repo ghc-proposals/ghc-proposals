@@ -18,11 +18,15 @@ Deep Subsumption
 subsumption as it existed before GHC-9.0.
 
 
-Motivation
+1. Motivation
 ----------
 
 The `simplified subsumption proposal <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0287-simplify-subsumption.rst>`_
-argued in favour of simplifying GHC's type system by removing 4 cases from the subsumption judgement.
+argued in favour of simplifying the subsumption judgement in GHC's type system, by removing:
+* Covariance and contravariance of function types
+* Deep skolemisation
+* Deep instantiation.
+
 The change was motivated by wanting to simplify both the implementation and language
 semantics, as well as being a stepping-stone to the implementation of Quick-look impredicativity.
 
@@ -37,15 +41,45 @@ which recovers the previous subsumption rules. This would allow
 users to opt-in to deep subsumption as it was before GHC-9.0.
 
 
-Proposed Change Specification
+2. Proposed Change Specification
 -----------------------------
 
-We propose to add a language extension ``DeepSubsumption`` which restores the previous deep subsumption behaviour.
-The extension will implement deep skolemisation and the co/contra subtyping
-rules, which were removed by simplified subsumption. It will not re-introduce
-deep instantiation, which was not a cause of breakage (it changes only some types
-reported in error messages and in GHCi).
+We propose to add a language extension ``DeepSubsumption`` which restores the previous deep subsumption behaviour:
+* The extension implements deep skolemisation and the co/contra subtyping rules, which were removed by simplified subsumption.
+* It does not re-introduce deep instantiation.  Doing only shallow instantation is not a cause of breakage: it changes only some types reported in error messages and in GHCi.  Moreover, deep instantiation is fundamentally incompatible with the widely used ``TypeApplications`` extension.
+* It makes no changes to the Quick Look algorithm, which implements `ImpredicativeTypes`.  As its name suggests, Quick Look takes a quick look at an application, searching for opportunities for impredicative instantiation, but leaves the main type inference algorithm unaffected.
 
+This change is not backwards-compatible, as the ``DeepSubsumption`` extension won't be
+available on earlier versions of GHC (in particular GHC-9.0). A backwards-compatible
+library change would require using CPP to add ``DeepSubsumption`` for specific GHC versions.
+
+2.1 DeepSubsumption is not recommended
+^^^^^^^^^^^^^^^^^^^
+
+The ``DeepSubsumption`` extension is not recommended:
+* In makes the runtime semantics (including performance) of Haskell programs
+less predictable (due to silent eta-expansion), as the original proposal describes.
+The situation is even more complicated when type classes are involved.  You can find some intricate discussion on the `Simplified subsumption proposal discussion thread <https://github.com/ghc-proposals/ghc-proposals/pull/287>`_, especially towards the end.
+* The interaction between ``DeepSubsumption`` and ``ImpredicativeTypes`` is hard to predict.  Quick Look treats function arrow as invariant, which is different to ``DeepSubsumption``, but it is hard to come up with concrete examples that show strange behaviour.  Perhaps surprisingly, the two different treatments of function arrow, while infelicitous, do not seem to have an immediately bad effects.
+* ``DeepSubsumption`` (notably deep skolemisation) seems to be fundamentally incompatible with the accepted proposal 155: `Binding type variables in lambda expressions <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0155-type-lambda.rst>`_. Consider::
+
+      f :: Int -> forall a. a -> a
+      f = \x-> let v = x+x in
+               \ @a -> blah
+
+  To correctly bind the ``\ @a`` we must not deeply skolemise ``f``'s type at the outset;
+  yet we must do so to implement ``DeepSubsumption``.  So GHC will reject an attempt to switch both on at once.
+
+Despite these shortcomings, in a manner similar to
+``NoMonoLocalBinds``, users who really want such a feature are free to
+enable ``DeepSubsumption``, with the understanding that doing so might
+introduce changes to type inference or runtime behaviour that are
+difficult to predict.
+
+2.2 When DeepSubsumption is on by default
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Under this proposal:
 * ``DeepSubsumption`` will be part of the ``Haskell2010`` and ``Haskell98`` extension sets.
 * ``DeepSubsumption`` will not be part of ``GHC2021``.
 
@@ -57,16 +91,7 @@ setting in a cabal file) should continue to work
 as before, because ``DeepSubsumption`` will be enabled until the user updates to the
 2021 extensions.
 
-The ``DeepSubsumption`` extension is not recommended.
-In makes the runtime semantics (including performance) of Haskell programs
-less predictable. Furthermore, with ``ImpredicativeTypes``, ``DeepSubsumption`` makes
-type inference less predictable, with possible changes in behavior between minor-version
-releases of GHC. However, in a manner
-similar to ``NoMonoLocalBinds``, users who really want such a feature are free to
-enable ``DeepSubsumption``, with the understanding that doing so might introduce changes
-to type inference or runtime behaviour that are difficult to predict.
-
-Warnings
+2.3 Warnings
 ^^^^^^^^
 
 Given that we don't think that using ``DeepSubsumption`` is a good idea, we also
@@ -89,7 +114,7 @@ subsumption.
 In the text above, "eta-expansion" is a short-hand used in this proposal. The actual
 error message will be crafted to either avoid or introduce this terminology.
 
-Examples
+3. Examples
 --------
 
 In this section we present two case studies about how migrating to simplified
@@ -106,7 +131,6 @@ Certain libraries such as `pipes <https://hackage.haskell.org/package/pipes>`_ d
 together with specialised type synonyms with universally quantified type variables. It
 is key to use a type synonym rather than a newtype, so that the specialised
 versions can still work with more general combinators.
-
 For example, ``pipes`` defines the following data types::
 
   data Proxy x' x a b m r = ....
@@ -117,11 +141,15 @@ and also provides the ``fromHandle`` function, which uses the ``Producer'`` type
 
   fromHandle :: MonadIO m => Handle -> Producer' ByteString m ()
 
-using the ``fromHandle`` function can lead to compilation failures with simplified
-subsumption::
+Using the ``fromHandle`` function can lead to compilation failures with simplified
+subsumption. For example::
+
+  withFile :: FilePath -> IOMode -> (Handle -> IO r) -> IO r
 
   readFreqSumFile file = readFreqSumProd $ withFile file ReadMode fromHandle
 
+Here `fromHandle` has a forall to the right of its arrow,
+whereas `withFile`'s third argument does not.
 
 Solution 1: Eta-expansion
 +++++++++++++++++++++++++
@@ -140,7 +168,7 @@ However, ParetoOptimalDev isn't so satisfied by this solution because
    is not worth breaking. We have lived with deep subsumption for
    many years.
 
-This led Jaro to explore some other alteratives.
+This led Jaro to explore some other alternatives.
 
 Solution 2: Newtype Wrapper
 +++++++++++++++++++++++++++
@@ -156,7 +184,6 @@ If you implement all the required constraints for this type then you can just wr
 But this is not quite a good solution here, because you can't
 automatically derive all the instances, and you cannot compose these producers
 with other pipes.
-
 This interoperability could possibly be restored by using the same tricks that
 the ``optics`` library uses to get their lenses to compose, but that seems like
 quite a big change here.
@@ -187,15 +214,11 @@ to typecheck as before::
 
   readFreqSumFile file = readFreqSumProd $ withFile file ReadMode PB.fromHandle
 
-This change is not backwards-compatible, as the ``DeepSubsumption`` extension won't be
-available on earlier versions of GHC (in particular GHC-9.0). A backwards-compatible
-change would require adding CPP.
 
 Example 2: Type synonyms with implicit parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Another consumer hit hard by the change is the `Integrated Haskell Platform <https://github.com/digitallyinduced/ihp/pull/1342>`_.
-
 In particular they define a type synonym which contains an implicit parameter::
 
   type Html = (?context :: ControllerContext) => Html5.Html
@@ -207,6 +230,8 @@ which is used to create the ``renderUser`` combinator::
 
 but now ``renderUser`` fails to typecheck in ``renderUsers`` without eta-expansion::
 
+  forEach :: (MonoFoldable mono, Applicative m) => mono -> (Element mono -> m ()) -> m ()
+
   renderUsers :: [User] -> Html
   renderUsers users = [hsx|
     <ul>
@@ -214,7 +239,9 @@ but now ``renderUser`` fails to typecheck in ``renderUsers`` without eta-expansi
     </ul>
   |]
 
-the "solution" is to eta-expand the call to ``renderUser``::
+Again, ``renderUser`` has a forall to the right of its function arrow (hidden under ``Html``),
+while ``forEach``'s second arguemnt does not.
+The "solution" is to eta-expand the call to ``renderUser``::
 
   renderUsers :: [User] -> Html
   renderUsers users = [hsx|
@@ -233,42 +260,44 @@ in terms of usability and user-friendliness. This too suggests re-instating the 
 an opt-in by adding a ``DeepSubsumption`` extension.
 
 
-Effect and Interactions
+4. Effect and Interactions
 -----------------------
 
-* The ``DeepSubsumption`` language pragma has all the drawbacks identified in
-  the simplified subsumption proposal, but crucially allows users to opt-in to
-  the drawbacks if their value judgement is different to that of the steering committee.
+The ``DeepSubsumption`` language pragma has all the drawbacks identified in
+the simplified subsumption proposal, but crucially allows users to opt-in to
+the drawbacks if their value judgement is different to that of the steering committee.
 
-
-Costs and Drawbacks
+5. Costs and Drawbacks
 -------------------
 
-* We really do not recommend that people use this feature. It makes the language
+* We do not recommend that people use this feature. It makes the language
   more complicated and runtime performance less predictable.
 * In situations where the eta-expansion behaviour is desired for its user-friendliness,
   the requirement to enable a strange ``DeepSubsumption`` extension might just lead to even more confusion.
 * Alejandro Serrano `suggests <https://github.com/ghc-proposals/ghc-proposals/pull/287#issuecomment-1128134798>`_
-  that reintroducing this feature will not alleviate any pain, because by the time it's introduced
+  that reintroducing this feature will not alleviate any pain, because by the time it is introduced
   maintainers will have already updated their libraries to account for the changes, and will not want to
   introduce more churn by enabling ``DeepSubsumption`` and removing the eta-expansions they recently added.
 
-Alternatives
+
+
+6. Alternatives
 ------------
 
 * The alternative is to do nothing. Users will have to accept that simplified subsumption
   is here to stay and update their code appropiately.
 
-Unresolved Questions
+7. Unresolved Questions
 --------------------
 
 * We need to decide whether we would want to backport this feature to the 9.2 branch.
 
 
-Implementation Plan
+8. Implementation
 -------------------
 
-* A draft patch has been prepared by Simon PJ. `!8210 <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/8210>`_.
+Fortunately, the implementation complexity of adding ``DeepSubsumption`` is modest, and well
+localised.  We already have an MR that implements it: `!8210 <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/8210>`_.
 
-Endorsements
+9. Endorsements
 -------------
