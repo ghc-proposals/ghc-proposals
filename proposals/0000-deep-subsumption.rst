@@ -57,6 +57,7 @@ library change would require using CPP to add ``DeepSubsumption`` for specific G
 ^^^^^^^^^^^^^^^^^^^
 
 The ``DeepSubsumption`` extension is not recommended:
+
 * In makes the runtime semantics (including performance) of Haskell programs
 less predictable (due to silent eta-expansion), as the original proposal describes.
 The situation is even more complicated when type classes are involved.  You can find some intricate discussion on the `Simplified subsumption proposal discussion thread <https://github.com/ghc-proposals/ghc-proposals/pull/287>`_, especially towards the end.
