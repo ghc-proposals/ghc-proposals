@@ -59,9 +59,11 @@ library change would require using CPP to add ``DeepSubsumption`` for specific G
 The ``DeepSubsumption`` extension is not recommended:
 
 * In makes the runtime semantics (including performance) of Haskell programs
-less predictable (due to silent eta-expansion), as the original proposal describes.
-The situation is even more complicated when type classes are involved.  You can find some intricate discussion on the `Simplified subsumption proposal discussion thread <https://github.com/ghc-proposals/ghc-proposals/pull/287>`_, especially towards the end.
+  less predictable (due to silent eta-expansion), as the original proposal describes.
+  The situation is even more complicated when type classes are involved.  You can find some intricate discussion on the `Simplified subsumption proposal discussion thread <https://github.com/ghc-proposals/ghc-proposals/pull/287>`_, especially towards the end.
+
 * The interaction between ``DeepSubsumption`` and ``ImpredicativeTypes`` is hard to predict.  Quick Look treats function arrow as invariant, which is different to ``DeepSubsumption``, but it is hard to come up with concrete examples that show strange behaviour.  Perhaps surprisingly, the two different treatments of function arrow, while infelicitous, do not seem to have an immediately bad effects.
+
 * ``DeepSubsumption`` (notably deep skolemisation) seems to be fundamentally incompatible with the accepted proposal 155: `Binding type variables in lambda expressions <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0155-type-lambda.rst>`_. Consider::
 
       f :: Int -> forall a. a -> a
