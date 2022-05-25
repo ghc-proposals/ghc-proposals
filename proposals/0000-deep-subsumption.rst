@@ -83,6 +83,7 @@ difficult to predict.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Under this proposal:
+
 * ``DeepSubsumption`` will be part of the ``Haskell2010`` and ``Haskell98`` extension sets.
 * ``DeepSubsumption`` will not be part of ``GHC2021``.
 
