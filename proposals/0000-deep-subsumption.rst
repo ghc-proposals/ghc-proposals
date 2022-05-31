@@ -1,5 +1,5 @@
 Deep Subsumption
-==============
+================
 
 .. author:: Matthew Pickering, Simon Peyton Jones, Jaro Reinders
 .. date-accepted:: Leave blank. This will be filled in when the proposal is accepted.
@@ -19,10 +19,11 @@ subsumption as it existed before GHC-9.0.
 
 
 1. Motivation
-----------
+-------------
 
 The `simplified subsumption proposal <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0287-simplify-subsumption.rst>`_
 argued in favour of simplifying the subsumption judgement in GHC's type system, by removing:
+
 * Covariance and contravariance of function types
 * Deep skolemisation
 * Deep instantiation.
@@ -42,9 +43,10 @@ users to opt-in to deep subsumption as it was before GHC-9.0.
 
 
 2. Proposed Change Specification
------------------------------
+--------------------------------
 
 We propose to add a language extension ``DeepSubsumption`` which restores the previous deep subsumption behaviour:
+
 * The extension implements deep skolemisation and the co/contra subtyping rules, which were removed by simplified subsumption.
 * It does not re-introduce deep instantiation.  Doing only shallow instantation is not a cause of breakage: it changes only some types reported in error messages and in GHCi.  Moreover, deep instantiation is fundamentally incompatible with the widely used ``TypeApplications`` extension.
 * It makes no changes to the Quick Look algorithm, which implements `ImpredicativeTypes`.  As its name suggests, Quick Look takes a quick look at an application, searching for opportunities for impredicative instantiation, but leaves the main type inference algorithm unaffected.
@@ -62,7 +64,7 @@ Note that any project using ``GHC2021`` must also have upgraded to use shallow s
 the two features came out in the same GHC release.
 
 2.1 DeepSubsumption is not recommended
-^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The ``DeepSubsumption`` extension is not recommended:
 
@@ -88,7 +90,7 @@ introduce changes to type inference or runtime behaviour that are
 difficult to predict.
 
 2.3 Warnings
-^^^^^^^^
+^^^^^^^^^^^^
 
 Given that we don't think that using ``DeepSubsumption`` is a good idea, we also
 propose to improve diagnostics to help users migrate to simplified
@@ -111,7 +113,7 @@ In the text above, "eta-expansion" is a short-hand used in this proposal. The ac
 error message will be crafted to either avoid or introduce this terminology.
 
 3. Examples
---------
+-----------
 
 In this section we present two case studies about how migrating to simplified
 subsumption has been challenging for users.
@@ -257,14 +259,14 @@ an opt-in by adding a ``DeepSubsumption`` extension.
 
 
 4. Effect and Interactions
------------------------
+--------------------------
 
 The ``DeepSubsumption`` language pragma has all the drawbacks identified in
 the simplified subsumption proposal, but crucially allows users to opt-in to
 the drawbacks if their value judgement is different to that of the steering committee.
 
 5. Costs and Drawbacks
--------------------
+----------------------
 
 * We do not recommend that people use this feature. It makes the language
   more complicated and runtime performance less predictable.
@@ -278,13 +280,13 @@ the drawbacks if their value judgement is different to that of the steering comm
 
 
 6. Alternatives
-------------
+---------------
 
 * The alternative is to do nothing. Users will have to accept that simplified subsumption
   is here to stay and update their code appropiately.
 
 7. Unresolved Questions
---------------------
+-----------------------
 
 * We need to decide whether we would want to backport this feature to the 9.2 branch.
 
@@ -296,4 +298,4 @@ Fortunately, the implementation complexity of adding ``DeepSubsumption`` is mode
 localised.  We already have an MR that implements it: `!8210 <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/8210>`_.
 
 9. Endorsements
--------------
+---------------
