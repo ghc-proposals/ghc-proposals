@@ -49,9 +49,17 @@ We propose to add a language extension ``DeepSubsumption`` which restores the pr
 * It does not re-introduce deep instantiation.  Doing only shallow instantation is not a cause of breakage: it changes only some types reported in error messages and in GHCi.  Moreover, deep instantiation is fundamentally incompatible with the widely used ``TypeApplications`` extension.
 * It makes no changes to the Quick Look algorithm, which implements `ImpredicativeTypes`.  As its name suggests, Quick Look takes a quick look at an application, searching for opportunities for impredicative instantiation, but leaves the main type inference algorithm unaffected.
 
-This change is not backwards-compatible, as the ``DeepSubsumption`` extension won't be
-available on earlier versions of GHC (in particular GHC-9.0). A backwards-compatible
-library change would require using CPP to add ``DeepSubsumption`` for specific GHC versions.
+When ``DeepSubsumption`` is on by default:
+
+* ``DeepSubsumption`` will be part of the ``Haskell2010`` and ``Haskell98`` extension sets.
+* ``DeepSubsumption`` will not be part of ``GHC2021``.
+
+Like any other extension, ``DeepSubsumption`` can be turned on or off with a ``LANGUAGE`` pragma
+or in a ``.cabal`` file. Because ``DeepSubsumption`` is part of ``Haskell2010`` and ``Haskell98``,
+projects compiled with ``.cabal`` files that declare either of these to be the ``default-language``
+will get the benefits of deep subsumption, much like it was implemented prior to GHC-9.0.
+Note that any project using ``GHC2021`` must also have upgraded to use shallow subsumption, because
+the two features came out in the same GHC release.
 
 2.1 DeepSubsumption is not recommended
 ^^^^^^^^^^^^^^^^^^^
@@ -78,22 +86,6 @@ Despite these shortcomings, in a manner similar to
 enable ``DeepSubsumption``, with the understanding that doing so might
 introduce changes to type inference or runtime behaviour that are
 difficult to predict.
-
-2.2 When DeepSubsumption is on by default
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Under this proposal:
-
-* ``DeepSubsumption`` will be part of the ``Haskell2010`` and ``Haskell98`` extension sets.
-* ``DeepSubsumption`` will not be part of ``GHC2021``.
-
-As the ``GHC2021`` language was introduced in GHC 9.0, the same release as simplified
-subsumption, any user who has upgraded and is already specifying the GHC2021 extension
-set will have had to update their code to work with deep subsumption.
-Otherwise, older programs which are still using Haskell2010 (as frequently set by a ``default-language``
-setting in a cabal file) should continue to work
-as before, because ``DeepSubsumption`` will be enabled until the user updates to the
-2021 extensions.
 
 2.3 Warnings
 ^^^^^^^^
