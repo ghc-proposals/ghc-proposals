@@ -34,7 +34,7 @@ semantics, as well as being a stepping-stone to the implementation of Quick-look
 Unfortunately, the breakage study failed to accurately predict how annoying this
 change would be to users. Some common patterns found in libraries now require
 eta-expansion, when the compiler used to automatically insert the
-appropiate lambdas.
+appropriate lambdas.
 
 This proposal suggests adding a new language extension, ``DeepSubsumption``,
 enabled by default in the common case when the language is set to ``-XHaskell2010``,
