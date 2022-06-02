@@ -1,13 +1,11 @@
 ---
-author: Your name
+author: Matt Parsons
 date-accepted: ""
-ticket-url: ""
+ticket-url: "https://github.com/ghc-proposals/ghc-proposals/pull/512"
 implemented: ""
 ---
 
-This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/0>).
-**After creating the pull request, edit this file again, update the number in
-the link, and delete this bold sentence.**
+This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/512>).
 
 # `NoFieldSelector`s as a datatype annotation
 
