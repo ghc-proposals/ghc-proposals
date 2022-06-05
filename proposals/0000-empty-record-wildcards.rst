@@ -41,6 +41,16 @@ Prohibiting this doesn't seem good:
 
 #. It is a pitfall for generated code, which cannot uniformly use record wildcard syntax no matter how many fields there are.
 
+Furthermore this is allowed ::
+
+  data Foo = Foo { a :: Int }
+
+  f (Foo { a = 1, ..}) = 1
+
+  x = Foo { a = 1, ..}
+
+So we see ``..`` binding or using no fields isn't even consistently prohibited!
+
 Proposed Change Specification
 -----------------------------
 
