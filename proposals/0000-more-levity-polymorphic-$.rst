@@ -7,9 +7,7 @@ Levity-polymorphic ``$``
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_.
-            **After creating the pull request, edit this file again, update the
-            number in the link, and delete this bold sentence.**
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/514>`_.
 .. contents::
 
 ``$`` currently has type ``forall r a (b :: TYPE r). (a -> b) -> a -> b``. Change it to ``forall ra rb (a :: TYPE ra) (b :: TYPE rb). (a -> b) -> a -> b``.
