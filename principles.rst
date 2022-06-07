@@ -246,7 +246,7 @@ where it is violated:
    its pattern, to the right of its binding site, but then not in ``action``. It is in scope
    again in ``blah``. Example of potential confusion: ``f x = do x <- x; g x``.
 
-#. List comrephensions. Example: ``[ (x, y) | x <- thing1, y <- thing2, condition3 ]``. The
+#. List comprehensions. Example: ``[ (x, y) | x <- thing1, y <- thing2, condition3 ]``. The
    variable ``y`` is in scope in ``condition3`` and the ``(x, y)`` at the
    beginning, but nowhere else. Example of potential confusion:
    ``f x y = [ (x, y) | x <- y, y <- x ]``.
