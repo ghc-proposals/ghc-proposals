@@ -89,7 +89,10 @@ enable ``DeepSubsumption``, with the understanding that doing so might
 introduce changes to type inference or runtime behaviour that are
 difficult to predict.
 
-2.3 Warnings
+Despite not being recommended, there is no deprecation plan for ``DeepSubsumption``, it will
+be available as an extension indefinitely.
+
+2.2 Warnings
 ^^^^^^^^^^^^
 
 Given that we don't think that using ``DeepSubsumption`` is a good idea, we also
