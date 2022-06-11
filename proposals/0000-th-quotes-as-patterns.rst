@@ -1,4 +1,4 @@
-Template Haskell Quotes as patterns
+Template Haskell quotes as patterns
 ===================================
 
 .. author:: John Ericson
@@ -47,7 +47,7 @@ Here is a `recent change <https://github.com/reflex-frp/reflex/pull/472/files#di
 ``ConP`` got an additional parameter so I had to introduce some CPP and a `conPCompat` function.
 Even if such functions are changed to pattern synonyms and factored out into a library to avoid everyone reinventing the wheel (generally the best we can do for smoothing about data type changes), they is still an annoying source of boilerplate / chores for release management.
 
-But Template Haskell gives us a better option, which I used in a `subsequent commit <https://github.com/reflex-frp/reflex/commit/4cd322604596ac652f35bbe72c1ad8fe42f2efdc>`:
+But Template Haskell gives us a better option, which I used in a `subsequent commit <https://github.com/reflex-frp/reflex/commit/4cd322604596ac652f35bbe72c1ad8fe42f2efdc>`_:
 
 .. code-block:: diff
 
