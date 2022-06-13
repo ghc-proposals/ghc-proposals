@@ -112,8 +112,7 @@ wit, Core allows ::
 
   KindCo axDefault :: Constraint ~# Type
 
-For this reason, the type system must treat ``Constraint`` and ``Type`` as
-not *apart*. For this reason, the following is not allowed::
+Now, suppose that you could write this::
 
   type family F a
   type instance F Type = Int
@@ -126,10 +125,12 @@ produce a coercion between ``Int`` and ``Bool``, thus::
         ~#  F Type         -- By KindCo axDefault
         ~#  Int            -- By type instance F Type
 
-That would be Very, Very Bad.  So, although `Type` and `Constraint` are built
-with different (un-equal) primitive type constructors, GHC's type checker nevertheless
-treats them as *not apart*; that in turn makes GHC complain that the above
-instances overlap, and are hence illegal.
+That would be Very, Very Bad.  So, although ``Type`` and ``Constraint`` are built
+with different (un-equal) primitive type constructors,
+
+* **GHC's type checker nevertheless treats ``Type`` and ``Constraint`` as *not apart* **
+
+That in turn makes GHC complain that the above instances overlap, and are hence illegal.
 
 
 Proposed Change Specification
