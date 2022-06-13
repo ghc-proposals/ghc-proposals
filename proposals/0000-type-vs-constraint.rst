@@ -21,7 +21,7 @@ Just like how the existence of ``TYPE`` directly opened the door to new innovati
 in datatype and newtype definitions, we expect the similar treatment of constraints
 to allow for strict classes and unlifted and unboxed implicit parameters.
 
-In addition, the new treatment proposes here allows GHC's internal language, Core,
+In addition, the new treatment proposed here allows GHC's internal language, Core,
 to more properly tell the difference between types and constraints, eliminating a
 troubling class of bugs that keeps recurring.
 
@@ -32,7 +32,7 @@ Motivation
    using the existing ``(?x :: Int#)`` syntax. This allows programs to abstract over
    implicit parameters without suffering inefficiencies due to boxing.
 
-2. This proposal allows a fix to several type-checker bugs that is otherwise elusive.
+2. This proposal allows a fix to several type-checker bugs that are otherwise elusive.
    With this proposal, we can eliminate this entire class of bugs, that we otherwise
    believe will continue to haunt GHC.  Currently in GHC, `Type` and `Constraint` are
    *distinct* in the typechecker, but *identical* in Core.  That leads to massive duplication;
@@ -161,7 +161,7 @@ Changes to the type structure
 
 This proposal introduces ``(=>)`` and ``(==>)`` as proper type constructors, just like
 any other. Just like ``(->)``, they have kinds and can be abstracted over.
-Unlike ``FUN``, they do not take a ``Multiplicity`` argument; implicity, it is ``Many``.
+Unlike ``FUN``, they do not take a ``Multiplicity`` argument; implicitly, it is ``Many``.
 
 The ``==>`` arrow is used in two places:
 
