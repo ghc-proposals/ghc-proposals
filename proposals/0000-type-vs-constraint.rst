@@ -43,6 +43,10 @@ Motivation
 3. Although we do not propose unlifted constraints in this proposal, we believe that
    this paves the way toward new innovations in constraint representations.
 
+There is a lot of discussion about the gnarly Type-vs-Constraint problem in
+`GHC issue #11715 <https://gitlab.haskell.org/ghc/ghc/-/issues/11715>`_, which is six
+years old (gnarly!) and in turn lists a raft of other tickets blocked on this issue.
+
 Background
 ----------
 
@@ -62,8 +66,6 @@ The current root of our type system contains these definitions::
   type FUN :: forall (m :: Multiplicity) ->
               forall (r1 :: RuntimeRep) (r2 :: RuntimeRep).
               TYPE r1 -> TYPE r2 -> Type
-  -- (=>) is not something that can be written unsaturated;
-  --      it's just some concrete syntax
 
   -- Data type declarations, used only at the type level
   data Multiplicity = Many | One
@@ -74,6 +76,10 @@ The current root of our type system contains these definitions::
   type LiftedRep   = BoxedRep Lifted
   type UnliftedRep = BoxedRep Unlifted
   type Type        = TYPE LiftedRep
+  type (->)        = FUN Many
+
+  -- (=>) is not something that can be written unsaturated;
+  --      rat
 
 NB: in GHC, implicit parameters are internally represented as a special class,
 but that is not user-visible.
@@ -148,9 +154,6 @@ We propose the following new setup, not repeating any types that remains unchang
   type (==>) :: forall (r1 :: RuntimeRep) (r2 :: RuntimeRep).
                 CONSTRAINT r1 -> CONSTRAINT r2 -> Constraint
 
-  -- Implicit parameters
-  class IP name ty | name -> ty where ...  -- Special case to allow with unusual kind
-
 Changes to the type structure
 :::::::::::::::::::::::::::::
 
@@ -187,25 +190,29 @@ So now this is accepted::
 Type and Constraint are not apart
 :::::::::::::::::::::::::::::::::
 
-It remains the case that ``Type`` is not be apart from ``Constraint``, because
-this proposal has no effect on the ``newtype`` optimization for one-element classes.
+It remains the case that ``Type`` must not be apart from ``Constraint``, because
+making them apart is unsound in the presence of the current ``newtype`` optimization for
+one-element classes.
 Accordingly, under this proposal,
 
   * ``TypeLike`` and ``ConstraintLike`` will be considered not *apart*.
 
 As a consequence, ``Type`` and ``Constraint`` are also not *apart*, just as today.
+This a wart, but it is an *existing* wart, and one that is not easy to fix.
 
 Future stability
 :::::::::::::::::::::::::::::::::
 
 We anticipate that the kind of ``SORT`` may change again, for example to accommodate the ideas
 of `Kinds are calling conventions <https://simon.peytonjones.org/kinds-are-calling-conventions/>`_.
-So:
+Accordingly:
 
-* ``Type``, ``TYPE``, ``Constraint``, ``CONSTRAINT``, ``RuntimeRep`` are exported by ``Data.Kind``;
-  their kinds will not change.
+* ``Data.Kind`` exports: ``Symbol``, ``Type``, ``TYPE``, ``Constraint``,
+  ``CONSTRAINT``, ``RuntimeRep``, ``Multiplicity``, ``Levity``, ``(->)``, ``(=>)``, and ``(==>)``.
+  ``Data.Kind`` should have a stable API; the kinds of these type
+  constructors will not change.
 
-* ``SORT``, ``TypeOrConstraint`` are exported only by ``GHC.Prim``.
+* ``GHC.Prim`` exports ``SORT``, ``TypeOrConstraint``, ``IP``.
   Users may import them from ``GHC.Prim``, but they should not complain if they change in future.
 
 Implementation notes
