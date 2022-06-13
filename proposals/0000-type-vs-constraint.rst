@@ -140,7 +140,7 @@ We propose the following new setup, not repeating any types that remains unchang
 
   -- Primitive type constructors
   type SORT :: TypeOrConstraint -> RuntimeRep -> Type
-  type IP   :: formal (r :: RuntimeRep). Symbol -> TYPE r -> CONSTRAINT r
+  type IP   :: forall (r :: RuntimeRep). Symbol -> TYPE r -> CONSTRAINT r
 
   type (=>)  :: forall (r1 :: RuntimeRep) (r2 :: RuntimeRep).
                 CONSTRAINT r1 -> TYPE r2 -> Type  -- primitive
@@ -181,7 +181,7 @@ the door is open to having unlifted constraints, or constraints whose representa
 an unboxed type like ``Int#``.  In this proposal we exploit this opportunity only in a
 limited way, by generalising the kind of ``IP``, thus::
 
-  type IP   :: formal (r :: RuntimeRep). Symbol -> TYPE r -> CONSTRAINT r
+  type IP   :: forall (r :: RuntimeRep). Symbol -> TYPE r -> CONSTRAINT r
 
 So now this is accepted::
 
