@@ -84,7 +84,7 @@ This section outlines what stages a proposal may go through. The stage is identi
    Acceptance of the proposal implies that the implementation will be accepted
    into GHC provided it is well-engineered, well-documented, and does not
    complicate the code-base too much. Those mentioned in the proposal as likely
-   implementers should now open a ticekt in `GHC’s issue tracker
+   implementers should now open a ticket in `GHC’s issue tracker
    <https://gitlab.haskell.org/ghc/ghc/-/issues/new>`_, and update the proposal’s
    metadata to point to that ticket.
 
