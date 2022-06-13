@@ -108,6 +108,6 @@ the steering committee.
 
 ## Implementation Plan
 
-If accepted who will implement the change? If its is not the proposal authors,
-the proposal authors should someone who is motivated and able to work on an
-implementation of this proposal.
+If accepted who will implement the change? Before the proposal is submitted,
+the proposal authors should identify someone who is motivated and able to work on an
+implementation of this proposal. This may or may not be the proposal authors themselves.
