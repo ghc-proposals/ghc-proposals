@@ -108,15 +108,6 @@ the steering committee.
 
 ## Implementation Plan
 
-(Optional) If accepted who will implement the change? Which other resources
-and prerequisites are required for implementation?
-
-## Endorsements
-
-(Optional) This section provides an opportunity for any third parties to express their
-support for the proposal, and to say why they would like to see it adopted.
-It is not mandatory for have any endorsements at all, but the more substantial
-the proposal is, the more desirable it is to offer evidence that there is
-significant demand from the community.  This section is one way to provide
-such evidence.
-
+If accepted who will implement the change? If its is not the proposal authors,
+the proposal authors should someone who is motivated and able to work on an
+implementation of this proposal.

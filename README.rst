@@ -60,8 +60,7 @@ This section outlines what stages a proposal may go through. The stage is identi
 
    `How to submit a proposal <#how-to-start-a-new-proposal>`_
 
-3. (No label.)  The wider community discusses the proposal in the commit section of the pull
-   request, while the author refines the proposal. This phase lasts as long as necessary.
+3. (No label.) The wider community discusses the proposal in the commit section of the pull request, while the author refines the proposal. If the author does not plan to implement the proposal themselves, this is also the phase where they try to find someone motivated and able to do so. This phase lasts as long as necessary.
 
    `Discussion goals <#discussion-goals>`_ •
    `How to comment on a proposal <#how-to-comment-on-a-proposal>`_ •
@@ -84,7 +83,10 @@ This section outlines what stages a proposal may go through. The stage is identi
 
    Acceptance of the proposal implies that the implementation will be accepted
    into GHC provided it is well-engineered, well-documented, and does not
-   complicate the code-base too much.
+   complicate the code-base too much. Those mentioned in the proposal as likely
+   implementers should now open a ticekt in `GHC’s issue tracker
+   <https://gitlab.haskell.org/ghc/ghc/-/issues/new>`_, and update the proposal’s
+   metadata to point to that ticket.
 
    `≡ List of accepted proposals <https://github.com/ghc-proposals/ghc-proposals/tree/master/proposals>`_ •
    `≡ List of proposals being revised <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`_ •
@@ -97,10 +99,9 @@ This section outlines what stages a proposal may go through. The stage is identi
    `≡ List of dormant proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22dormant%22>`_
 
 
-8. Label: `Implemented <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`_.   Once a proposal is accepted, it still has to be implemented.  The author
-   may do that, or someone else. We mark the proposal as “implemented” once it
-   hits GHC’s ``master`` branch (and we are happy to be nudged to do so by
-   email, GitHub issue, or a comment on the relevant pull request).
+8. Label: `Implemented <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`_.
+
+   Once the implemenation hits GHC’s ``master`` branch, the implementors should update the metadata to indicate the version of GHC that will ship with this feature, and we label the PR as “implemented”.
 
    `≡ List of proposals pending implementation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Accepted%22+-label%3A%22Implemented%22>`_ •
    `≡ List of implemented proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`_
