@@ -135,7 +135,7 @@ Effect and Interactions
 -----------------------
 The ``NoFieldSelectors`` extension allows users to suppress field selector
 functions, thereby avoiding the risk of calling a partial selector function in
-an expression.  This does prevent use of ``OverloadedRecordDot`` for the field,
+an expression.  This does not prevent use of ``OverloadedRecordDot`` for the field,
 however, so the proposed warning is still useful.
 
 This proposal assumes that ``HasField`` constraints always represent selectors,
