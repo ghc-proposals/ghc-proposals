@@ -142,6 +142,11 @@ We propose the following new setup, not repeating any types that remains unchang
   type SORT :: TypeOrConstraint -> RuntimeRep -> Type
   type IP   :: formal (r :: RuntimeRep). Symbol -> TYPE r -> CONSTRAINT r
 
+  type (=>)  :: forall (r1 :: RuntimeRep) (r2 :: RuntimeRep).
+                CONSTRAINT r1 -> TYPE r2 -> Type  -- primitive
+  type (==>) :: forall (r1 :: RuntimeRep) (r2 :: RuntimeRep).
+                CONSTRAINT r1 -> CONSTRAINT r2 -> Constraint
+
   -- Data types
   data TypeOrConstraint = TypeLike | ConstraintLike
 
@@ -150,10 +155,6 @@ We propose the following new setup, not repeating any types that remains unchang
   type CONSTRAINT = SORT ConstraintLike
   type Constraint = CONSTRAINT LiftedRep
 
-  type (=>)  :: forall (r1 :: RuntimeRep) (r2 :: RuntimeRep).
-                CONSTRAINT r1 -> TYPE r2 -> Type  -- primitive
-  type (==>) :: forall (r1 :: RuntimeRep) (r2 :: RuntimeRep).
-                CONSTRAINT r1 -> CONSTRAINT r2 -> Constraint
 
 Changes to the type structure
 :::::::::::::::::::::::::::::
