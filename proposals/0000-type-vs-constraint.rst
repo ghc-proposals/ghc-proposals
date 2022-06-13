@@ -128,7 +128,7 @@ produce a coercion between ``Int`` and ``Bool``, thus::
 That would be Very, Very Bad.  So, although ``Type`` and ``Constraint`` are built
 with different (un-equal) primitive type constructors,
 
-* **GHC's type checker nevertheless treats ``Type`` and ``Constraint`` as *not apart* **
+* **GHC's type checker nevertheless treats ``Type`` and ``Constraint`` as *not apart*.**
 
 That in turn makes GHC complain that the above instances overlap, and are hence illegal.
 
