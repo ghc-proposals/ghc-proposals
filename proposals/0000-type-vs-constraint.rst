@@ -163,15 +163,34 @@ This proposal introduces ``(=>)`` and ``(==>)`` as proper type constructors, jus
 any other. Just like ``(->)``, they have kinds and can be abstracted over.
 Unlike ``FUN``, they do not take a ``Multiplicity`` argument; implicitly, it is ``Many``.
 
-The ``==>`` arrow is used in two places:
-
-* In instance heads, like ``instance Eq a => Eq (Maybe a)``
-* In quantified constraints, like ``forall x. c x => Eq x``
-
 In order to be backward compatible,
-we allow writing ``=>`` instead of ``==>`` in instance heads and in quantified constraints.
-That is, the *concrete* syntax for the type construtor ``==>`` can still use ``=>``.
-However, users may also choose to write ``==>`` (imported from ``GHC.Exts``) if they choose.
+we allow programmers to use infix ``=>`` instead of ``==>`` in instance heads
+and in quantified constraints:
+
+* In instance heads:
+  ```
+  instance Eq a => Eq (Maybe a) where ...
+  ```
+  means
+  ```
+  instance Eq a ==> Eq (Maybe a) where ...
+  ```
+  
+* In quantified constraints:
+  ```
+  f :: (forall x. Eq x => Eq (c x)) => c Int -> c Bool
+  ```
+  means
+  ```
+  f :: (forall x. Eq x ==> Eq (c x)) => c Int -> c Bool
+  ```
+
+If you choose, you can also write the latter forms,
+using ``==>``  (imported from ``GHC.Exts``), in these two places.
+
+However, if you want to use ``==>`` in any other syntactic context, you *must* use ``==>``.
+For example ``x :: T (==>)`` applies ``T`` to ``==>``.
+
 
 Implicit parameters
 :::::::::::::::::::::::::::::
@@ -197,7 +216,7 @@ making them apart is unsound in the presence of the current ``newtype`` optimiza
 one-element classes.
 Accordingly, under this proposal,
 
-  * ``TypeLike`` and ``ConstraintLike`` will be considered not *apart*.
+* ``TypeLike`` and ``ConstraintLike`` will be considered not *apart*.
 
 As a consequence, ``Type`` and ``Constraint`` are also not *apart*, just as today.
 This a wart, but it is an *existing* wart, and one that is not easy to fix.
