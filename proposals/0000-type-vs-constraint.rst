@@ -167,23 +167,22 @@ In order to be backward compatible,
 we allow programmers to use infix ``=>`` instead of ``==>`` in instance heads
 and in quantified constraints:
 
-* In instance heads:
-  ```
-  instance Eq a => Eq (Maybe a) where ...
-  ```
-  means
-  ```
-  instance Eq a ==> Eq (Maybe a) where ...
-  ```
+* In instance heads::
+
+     instance Eq a => Eq (Maybe a) where ...
+
+  means::
+
+     instance Eq a ==> Eq (Maybe a) where ...
+
   
-* In quantified constraints:
-  ```
-  f :: (forall x. Eq x => Eq (c x)) => c Int -> c Bool
-  ```
-  means
-  ```
-  f :: (forall x. Eq x ==> Eq (c x)) => c Int -> c Bool
-  ```
+* In quantified constraints::
+
+     f :: (forall x. Eq x => Eq (c x)) => c Int -> c Bool
+
+  means::
+
+     f :: (forall x. Eq x ==> Eq (c x)) => c Int -> c Bool
 
 If you choose, you can also write the latter forms,
 using ``==>``  (imported from ``GHC.Exts``), in these two places.
