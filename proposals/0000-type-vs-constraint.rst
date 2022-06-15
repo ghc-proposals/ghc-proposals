@@ -220,6 +220,19 @@ Accordingly, under this proposal,
 As a consequence, ``Type`` and ``Constraint`` are also not *apart*, just as today.
 This a wart, but it is an *existing* wart, and one that is not easy to fix.
 
+Note that nothing prevents writing instances like::
+
+  instance C (Proxy @Type a) where ...
+
+In particular, ``SORT`` and ``TypeLike`` and ``ConstraintLike`` (and the synonyms ``TYPE``, ``CONSTRAINT`` etc)
+are all allowed in instance heads. It's just that
+``TypeLike`` is not apart from ``ConstraintLike``
+so that instance would irretrievably overlap with::
+
+  instance C (Proxy @Constraint a) where ...
+
+But this is just the status quo; it is not a change.
+
 Future stability
 :::::::::::::::::::::::::::::::::
 
@@ -277,16 +290,65 @@ Costs and Drawbacks
 
 Alternatives
 ------------
-* This seems to be the best way to support unlifted and unboxed constraints.
 
-* We have another putative fix to the type-checker bugs, but it would take a
-  major sea-change to the compiler, requiring a full separation between Haskell
-  types and Core types.
-  (Currently, GHC uses the same representation for both,
-  a considerable simplification, as only one type needs to be e.g. written to
-  interface files.) This other fix would likely require several solid weeks
-  of implementation work, and would have consequences (both implementation and end-user) that are hard to anticipate.
-  In constrast, the one presented here is simple, and we have a clear grasp of its consequences.
+Two different type constructors
+::::::::::::::::::::::::::::::::::
+
+We considered having two distinct primitive type constructors, ``TYPE`` exactly as now, and ``Constraint :: Type``.
+Indeed that was our first plan. But
+
+* In Core we would have to say "If ``e :: ty :: ki`` then ``ki`` must be ``TYPE rr`` or ``Constraint``.
+  Similarly for the types of binders. That "or" isn't fatal, but it's inelegant.
+
+* We anticipate that it will not be long before people want unlifted constraints. So then we'd add ``CONSTRAINT``, thus::
+
+    TYPE :: RuntimeRep -> Type
+    CONSTRAINT :: RuntimeRep -> Type
+
+  And now we have something isomorphic to what we propose (two types, vs one with a flag), except that our proposal allows all value-level terms with runtime rep rr to be treated uniformly. E.g. ``isUnliftedType`` has one case rather than two.
+
+* Collapsing the two into one SORT is witnessing the idea that types and constraints are the same thing at runtime.
+
+* We anticipate further movement in this area, perhpas via "Kinds are Calling Conventions". If so, ``SORT`` gives us wiggle room to do that; and (even more important) we don't want to duplicate any such changes across two distinct type constructors, ``SORT`` and ``CONSTRAINT``.
+
+So the balance came down pretty firmly in favour of the design we offer.
+
+Fully separate Haskell types from Core types
+::::::::::::::::::::::::::::::::::::::::::::
+
+An alternative approach would be to fully separate Haskell types from Core types,
+where ``Type`` and ``Constraint`` are distinct in the former but the same in the latter.
+(Currently, GHC uses the same representation for both,
+a considerable simplification, as only one type needs to be e.g. written to
+interface files.)
+This would be a major sea-change to the compiler, requiring weeks of effort, code duplication,
+and knock-on effects (both implementation-wise and end-user-visible) that are hard to predict and might be unwelcom.
+
+In constrast, the one presented here is simple, and we have a clear grasp of its consequences.
+
+Tuples
+:::::::::::::
+
+This proposal does not address the problem of tuples, although is tempting to do so.  In GHC today we have::
+
+      (,)   :: Type -> Type -> Type
+      (%,%) :: Constraint -> Constraint -> Constraint
+
+except that the latter is written, in source Haskell, as ``(c1,c2)``.  That leads to syntactic ambiguity. If I write::
+
+      type S a b a = ((a,b), c)
+
+do I intend to define a Constraint synonym, or a Type synonym?  It's tempting to give (,) a polymorphic type::
+
+      (,) :: forall (v:TypeOrConstraint). SORT v LiftedRep -> SORT v LiftedRep -> SORT v LiftedRep
+
+But, tempting as it is, we do not propose this.  The tuples problem
+is all about concrete syntax. It just so happens that we use the
+same parentheses and commas for normal tuples and constraint
+tuples. No one has asked for polymorphism here. And it seems
+overwrought to complexify our type system just to allow for this
+little concrete-syntax convenience. Letting tuple syntax drive the
+type system is the tail wagging the dog.  We leave this for the future.
 
 Unresolved Questions
 --------------------
