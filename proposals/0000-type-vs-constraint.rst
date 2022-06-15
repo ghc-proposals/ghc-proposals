@@ -297,17 +297,17 @@ Two different type constructors
 We considered having two distinct primitive type constructors, ``TYPE`` exactly as now, and ``Constraint :: Type``.
 Indeed that was our first plan. But
 
-* In Core we would have to say "If ``e :: ty :: ki`` then ``ki`` must be ``TYPE rr`` or ``Constraint``.
+* In Core we would have to say that if ``e :: ty :: ki`` then ``ki`` must be ``TYPE rr`` or ``Constraint``.
   Similarly for the types of binders. That "or" isn't fatal, but it's inelegant.
 
 * We anticipate that it will not be long before people want unlifted constraints. So then we'd add ``CONSTRAINT``, thus::
 
-    TYPE :: RuntimeRep -> Type
+    TYPE       :: RuntimeRep -> Type
     CONSTRAINT :: RuntimeRep -> Type
 
-  And now we have something isomorphic to what we propose (two types, vs one with a flag), except that our proposal allows all value-level terms with runtime rep rr to be treated uniformly. E.g. ``isUnliftedType`` has one case rather than two.
+  And now we have something isomorphic to what we propose (two types *vs* one with a flag), except that our proposal allows the types of all value-level terms with runtime rep rr to be treated uniformly. E.g. ``isUnliftedType`` has one case rather than two.
 
-* Collapsing the two into one SORT is witnessing the idea that types and constraints are the same thing at runtime.
+* Collapsing the two into one SORT witnesses the idea that types and constraints are the same thing at runtime.
 
 * We anticipate further movement in this area, perhpas via "Kinds are Calling Conventions". If so, ``SORT`` gives us wiggle room to do that; and (even more important) we don't want to duplicate any such changes across two distinct type constructors, ``SORT`` and ``CONSTRAINT``.
 
@@ -358,7 +358,8 @@ Unresolved Questions
 
 Implementation Plan
 -------------------
-* Simon or Richard will implement.
+
+Simon or Richard will implement.
 
 Endorsements
 -------------
