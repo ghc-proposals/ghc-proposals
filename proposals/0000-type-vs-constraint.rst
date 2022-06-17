@@ -1,4 +1,4 @@
-Separating Type from Constraint
+Generalising Type and Constraint
 ==============================
 
 .. author:: Richard Eisenberg and Simon Peyton Jones
@@ -128,9 +128,38 @@ produce a coercion between ``Int`` and ``Bool``, thus::
 That would be Very, Very Bad.  So, although ``Type`` and ``Constraint`` are built
 with different (un-equal) primitive type constructors,
 
-* **GHC's type checker treats `Type` and `Constraint` as *not apart*.**
+* **GHC's type checker treats `Type` and `Constraint` as not "apart".**
 
 That in turn makes GHC complain that the above instances overlap, and are hence illegal.
+You can read more about what "apart" means in
+`Closed type families with overlapping equations <https://simon.peytonjones.org/closed-type-families/>`_,
+sections 3.2 and 3.3.
+
+Apartness affects type-class instances as well as type-family instances.
+Suppose we have::
+
+  instance {-# OVERLAPPABLE #-} C Int a  where ...
+  instance {-# OVERLAPPING #-}  C Int Bool where ...
+
+and we are trying to solve the constraint ``C Int (F gamma)``, where ``F`` is a type family and ``gamma``
+is an as-yet-unknown unification variable. Since ``(F gamma)`` is not
+apart from ``Bool``, it could be that (once we know ``gamma``) the second
+instance should be chosen. So GHC declines to commit to the first.
+
+If ``(F gamma)`` later simplifes to, say ``Char`` (which *is* apart from ``Bool``),
+then and only then GHC can commit to the first instance.
+
+Similarly with ``Type`` and ``Constraint``. Suppose we have::
+
+  instance D Type where...
+  instance D Constraint where ...
+
+and try to solve ``C Int Type``. This matches the first instance, but
+since ``Type`` is not apart from ``Constraint`` GHC thinks "oh, the
+second one could match in the future" and declines to commit to the
+first.  In fact, you can have either of these instances separately,
+but if they occur together neither will ever be chosen: they overlap
+irretrievably.
 
 
 Proposed Change Specification
@@ -220,7 +249,7 @@ Accordingly, under this proposal,
 As a consequence, ``Type`` and ``Constraint`` are also not *apart*, just as today.
 This a wart, but it is an *existing* wart, and one that is not easy to fix.
 
-Note that nothing prevents writing instances like::
+As before, nothing prevents writing instances like::
 
   instance C (Proxy @Type a) where ...
 
@@ -231,7 +260,7 @@ so that instance would irretrievably overlap with::
 
   instance C (Proxy @Constraint a) where ...
 
-But this is just the status quo; it is not a change.
+But this is just the status quo; it is not a change (see Sectionn 2.2).
 
 Future stability
 :::::::::::::::::::::::::::::::::
@@ -309,7 +338,7 @@ Indeed that was our first plan. But
 
 * Collapsing the two into one SORT witnesses the idea that types and constraints are the same thing at runtime.
 
-* We anticipate further movement in this area, perhpas via "Kinds are Calling Conventions". If so, ``SORT`` gives us wiggle room to do that; and (even more important) we don't want to duplicate any such changes across two distinct type constructors, ``SORT`` and ``CONSTRAINT``.
+* We anticipate further movement in this area, perhaps via "Kinds are Calling Conventions". If so, ``SORT`` gives us wiggle room to do that; and (even more important) we don't want to duplicate any such changes across two distinct type constructors, ``TYPE`` and ``CONSTRAINT``.
 
 So the balance came down pretty firmly in favour of the design we offer.
 
