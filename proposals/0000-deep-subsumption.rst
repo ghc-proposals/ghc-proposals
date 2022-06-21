@@ -49,7 +49,7 @@ We propose to add a language extension ``DeepSubsumption`` which restores the pr
 
 * The extension implements deep skolemisation and the co/contra subtyping rules, which were removed by simplified subsumption.
 * It does not re-introduce deep instantiation.  Doing only shallow instantation is not a cause of breakage: it changes only some types reported in error messages and in GHCi.  Moreover, deep instantiation is fundamentally incompatible with the widely used ``TypeApplications`` extension.
-* It makes no changes to the Quick Look algorithm, which implements `ImpredicativeTypes`.  As its name suggests, Quick Look takes a quick look at an application, searching for opportunities for impredicative instantiation, but leaves the main type inference algorithm unaffected.
+* It makes no changes to the Quick Look algorithm, which implements `ImpredicativeTypes`.  That is, Quick Look treats function arrows as invariant, even if ``DeepSubsumption`` is on. As its name suggests, Quick Look takes a quick look at an application, searching for opportunities for impredicative instantiation, but leaves the main type inference algorithm unaffected.
 
 When ``DeepSubsumption`` is on by default:
 
@@ -68,7 +68,7 @@ the two features came out in the same GHC release.
 
 The ``DeepSubsumption`` extension is not recommended:
 
-* In makes the runtime semantics (including performance) of Haskell programs
+* It makes the runtime semantics (including performance) of Haskell programs
   less predictable (due to silent eta-expansion), as the original proposal describes.
   The situation is even more complicated when type classes are involved.  You can find some intricate discussion on the `Simplified subsumption proposal discussion thread <https://github.com/ghc-proposals/ghc-proposals/pull/287>`_, especially towards the end.
 
