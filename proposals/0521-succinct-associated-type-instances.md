@@ -94,7 +94,7 @@ In addition, there will be two new warnings:
 - `-Wnamed-associated-type-instance-variables` that warns when you don't use `_` in associated type instances.
 
 The first one will be part of `-Wcompat` (and part of `-Wall` in the future).
-The second one will only be part of `-Weverything`, since it should be opt-in, not opt-out.
+The second one will not be part of `-Wcompat`, nor `-Wall`, since it should be opt-in, not opt-out.
 
 ## Examples
 
