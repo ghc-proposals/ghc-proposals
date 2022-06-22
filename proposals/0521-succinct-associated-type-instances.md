@@ -69,7 +69,7 @@ class C (a :: Type) (b :: Type) | a -> b where
 data A
 data B
 instance C A B
--- implies: F A ~ b
+-- implies: F A ~ B
 ```
 
 ## Proposed Change Specification
