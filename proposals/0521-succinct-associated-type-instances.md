@@ -29,9 +29,13 @@ class C (a :: Type) where
 instance C [a] where
   type F [a] = a
 
+-- also before
+instance C (Maybe a) where
+  type F _ = () -- can't refer to `a` before this proposal
+
 -- now
 instance C [a] where
-  type F _ = a
+  type F _ = a -- can refer to `a` now
 ```
 While seemingly a small change, this can heavily reduce the amount of noise in code
 with complex instance declarations.
