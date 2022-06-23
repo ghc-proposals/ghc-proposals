@@ -31,7 +31,7 @@ instance C [a] where
 
 -- also before
 instance C (Maybe a) where
-  type F _ = () -- can't refer to `a` before this proposal
+  type F _ = () -- couldn't refer to `a` before this proposal
 
 -- now
 instance C [a] where
