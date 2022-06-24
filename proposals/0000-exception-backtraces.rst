@@ -9,52 +9,54 @@ Decorate exceptions with backtrace information
 .. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/330>`_.
 .. contents::
 
-Ease localization of errors reported via the synchronous exception mechanism
+Ease localization of runtime errors reported via the synchronous exception mechanism
 by attaching backtraces to exceptions.
 
 
 Motivation
 ----------
 Exceptions are one of the primary mechanisms by which Haskell programs report
-errors. However, in contrast to most languages, Haskell provides few tools for
+errors. However, in contrast to most languages, Haskell provides only few tools for
 identifying the source of such errors. This leads to a poor debugging experience
 and makes it difficult to monitor systems in production.
 
-While GHC has grown a variety of mechanisms for reporting backtraces over the
-past few years (e.g. ``HasCallStack``, ``GHC.Stack.CCS``, and DWARF debug
-information), currently we do not have a story for attaching such backtraces to
-exceptions. This proposal endeavors to fix this `long-standing
+While over the past few years GHC has grown a variety of mechanisms for reporting
+backtraces (e.g. ``HasCallStack``, ``GHC.Stack.CCS``, and DWARF debug
+information), currently we do not have a means to attach such backtraces to
+exceptions. The goal of this proposal is to fix this `long-standing
 <https://www.youtube.com/watch?v=J0c4L-AURDQ>`_ problem.
 
-In short, we want to ensure that exceptions report provenance information *by
-default* without requiring action on the part of the ``throw``-er by leveraging
+We want to ensure that exceptions report provenance information *by
+default* without requiring action on the part of the developer. To provide this provenance we leverage
 the existing mechanisms for collecting backtraces listed above. Furthermore, we
 want to ensure that this information is available for consumption in structured
 form by the user program, to allow use by logging libraries (for instance, see
 `kaptip-raven #1
-<https://github.com/cachix/katip-raven/issues/1#issuecomment-625389463>`_ and
-the like.
+<https://github.com/cachix/katip-raven/issues/1#issuecomment-625389463>`_),
+automatic error reporting, code analysis tools, and the like.
 
 Proposed Change Specification
 -----------------------------
 
-This proposal consists of two largely independent pieces:
+This proposal consists of two largely-independent parts:
 
-1. a new root of the exception hierarchy, ``SomeExceptionWithBacktrace``, which
+1. a new root of the exception hierarchy, ``SomeExceptionWithBacktrace``,
+   which replaces ``SomeException`` which currently 
    underlies GHC's exception mechanism. ``SomeExceptionWithBacktrace``
-   accommodates backtrace information and wraps a ``SomeException`` (the current
-   root of the exception hierarchy).
-2. a facility for choosing how backtraces should be collected
+   includes backtrace information and wraps a ``SomeException``.
+2. a common representation of backtraces from the above-described mechanisms
+3. a facility for choosing which backtrace mechanism(s)
+   should be used to collect exception provenance.
 
-We will consider these two pieces in turn.
+We will describe these two parts below.
 
 Adding ``SomeExceptionWithBacktrace``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 All exceptions in Haskell are currently represented by the
-``Control.Exception.SomeException`` type. In order to extend this while keeping
-backwards compatibility, we propose to keep ``SomeException`` as is but add
-``Control.Exception.SomeExceptionWithBacktrace`` as a wrapper in which to attach
+``Control.Exception.SomeException`` type. In order to extend this while preserving
+backwards compatibility, we propose to keep ``SomeException`` as-is but add
+``Control.Exception.SomeExceptionWithBacktrace`` "above" it as a wrapper in which to add
 backtrace information. Hence all exceptions will be represented by a
 ``SomeException`` wrapped in a ``SomeExceptionWithBacktrace`` as follows: ::
 
@@ -66,17 +68,19 @@ backtrace information. Hence all exceptions will be represented by a
 We will leave the details of the representation of the ``Backtrace`` type for
 later.
 
-The ``Exception`` class and ``SomeException`` must be updated to reflect the new
+The ``Exception`` class and ``SomeException`` instance will be updated to reflect the new
 root of the hierarchy: ::
 
     class (Typeable e, Show e) => Exception e where
-        -- | Represent the exception as 'SomeExceptionWithBacktrace'
-        -- If @e@ isn't already of type 'SomeExceptionWithBacktrace' this means some kind of wrapping.
+        -- | Represent the exception as 'SomeExceptionWithBacktrace'.
+        -- If @e@ isn't already of type 'SomeExceptionWithBacktrace' this usually implies some kind of wrapping.
         toException   :: e -> SomeExceptionWithBacktrace
-        -- | Extract and cast the exception from its wrapped representation
+        
+        -- | Extract and cast the exception from its wrapped representation.
         -- If the exception cannot be casted to the expected type then the result is 'Nothing'.
         fromException :: SomeExceptionWithBacktrace -> Maybe e
 
+        -- Default definitions:
         toException e = SomeExceptionWithBacktrace (SomeException e) []
         fromException (SomeExceptionWithBacktrace (SomeException e) _) = cast e
 
@@ -97,11 +101,11 @@ root of the hierarchy: ::
         fromException = Just
         displayException (SomeExceptionWithBacktrace e _) = displayException e
 
-A quick search through github.com and cabal packages reveals that the vast
-majority of ``Exception`` instances are fully default and/or follow the pattern
+A quick search through ``github.com`` and Hackage packages reveals that the vast
+majority of ``Exception`` instances use the default definitions or follow the pattern
 described in the `documentation
-<https://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Exception.html#t:Exception>`_.
-Such instances are backwards compatible with this proposed change.
+<https://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Exception.html#t:Exception>`_;
+such instances are backwards compatible with this proposed change.
 
 Representing and capturing backtraces
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -109,33 +113,46 @@ Representing and capturing backtraces
 GHC has four distinct mechanisms for capturing backtraces, each with
 its own backtrace representation:
 
-* ``HasCallStack`` is available in all programs, but requires modification of
-  the source program.
+* ``HasCallStack`` is available in all programs and provides precise backtraces
+  but requires modification of the source program.
 * the cost-centre profiler (accessible from Haskell with
-  ``GHC.Stack.CCS.getCurrentCCS``) can provide cost-center stacks, but requires
-  the program to be built with the ``-prof``flag.
-* DWARF debug information in conjunction with GHC's `built-in stack unwinder
-  <https://www.haskell.org/ghc/blog/20200405-dwarf-3.html>`_ can be used
-  to provide terse (but nevertheless useful) backtraces with no runtime
+  ) can provide cost-center stacks, but requires
+  the program to be built with the ``-prof`` flag.
+* DWARF debug information  can be used
+  to provide terse, but still often useful, backtraces with no runtime
   overhead in the non-failing case (although backtrace collection is quite
-  slow). However, it's not available on some important platforms like
-  Windows or MacOS.
-* Info Table Provenance Entry (IPE) based stacktraces implemented in
+  slow). However, it is currently not available on some widely-used platforms like
+  Windows and MacOS.
+* Stack-traces based on Info Table Provenance Entry (IPE) information are provided by
   ``GHC.Stack.CloneStack``, are enabled with ``-finfo-table-map``. This is a
-  mechanism with (almost) no runtime overhead, but it contains less entries
+  mechanism with (almost) no runtime overhead, but it contains fewer stack frames
   because it uses return stack frame addresses to provide backtraces.
 
-All of these backtrace options have their time and place, offering a range of
-levels of detail, executable size, and runtime overhead. GHC, being a compiler,
-shouldn't be in the business of dictating which of these mechanisms should be
+* ``HasCallStack``:
+   * Pros: Can be used on all platforms; provides precise backtraces
+   * Cons: Requires manual modification of the source program; runtime overhead
+* Cost-centre profiler (via ``GHC.Stack.CCS.getCurrentCCS``)
+   * Pros: Can be used on all platforms; fairly precise backtraces
+   * Requires profiled executable; runtime overhead; may require manual ``SCC`` pragmas
+* DWARF debug information in conjunction with GHC's `built-in stack unwinder
+  <https://www.haskell.org/ghc/blog/20200405-dwarf-3.html>`_
+   * Pros: No runtime overhead; can trace through foreign code
+   * Cons: Highly platform-specific (currently only available on Linux); slow backtrace collection; imprecise backtraces; large binary size overhead
+* Info-table provenance (IPE) information (via ``GHC.Stack.CloneStack``)
+   * Pros: Can be used on all platforms; no runtime overhead
+   * Cons: Large binary size overhead; no visibility into foreign code
+
+All of these backtrace mechanisms have their uses, offering a range of
+levels of detail, executable size, and runtime overhead. Given the complementary nature of these mechanisms, GHC
+shouldn't dictate which of these mechanisms should be
 used to report exception backtraces.  Consequently, our ``Backtrace`` type is
-designed to capture them all: ::
+designed to capture all of them: ::
 
     -- | An exception backtrace.
     --
     -- @since 4.15
     data Backtrace
-      = -- | a cost center profiler backtrace
+      = -- | a cost-centre profiler backtrace
         CostCenterBacktrace (Ptr CostCentreStack)
       | -- | a stack from 'GHC.Stack.HasCallStack'
         HasCallStackBacktrace GHC.Stack.CallStack
@@ -144,37 +161,36 @@ designed to capture them all: ::
       | -- | a backtrace from Info Table Provenance Entries
         IPEBacktrace [StackEntry]
 
-With such a type we can easily write a variant of ``throwIO`` that, for
-instance, attaches a ``HasCallStack`` backtrace: ::
+With the machinery described above
+GHC could, for instance, provide a variant of ``throwIO`` that
+attaches a ``HasCallStack`` backtrace to the thrown exception: ::
 
     module GHC.IO where
 
     -- | Throw an exception with a 'Backtrace' gathered by the 'HasCallStackBacktraceMech' mechanism.
     -- If the exception already has backtraces, the new one is added.
     throwIOWithCallStack :: (HasCallStack, Exception e) => e -> IO a
-    throwIOWithCallStack e =
-      let
-          !maybeBt = unsafePerformIO collectHasCallStackBacktrace
-          !e' = case maybeBt of
-                  Just bt -> addBacktrace bt $ toException e
-                  Nothing -> toException e
-        in
-          IO(raiseIO# e')
+    throwIOWithCallStack e = do
+        maybeBt <- collectHasCallStackBacktrace
+        let !e' = case maybeBt of
+                    Just bt -> addBacktrace bt $ toException e
+                    Nothing -> toException e
+        IO (raiseIO# e')
 
 We propose that ``GHC.Exception`` provides a family of these functions for
 the ``HasCallStack``, cost-center stack, info table provenance (IPE) and execution
 stack cases. ::
 
-    throwIOWithCallStack :: (HasCallStack, Exception e) => e -> IO a
-
-    throwIOWithIPEStack :: Exception e => e -> IO a
-
     throwIOWithCostCenterStack :: Exception e => e -> IO a
+
+    throwIOWithCallStack :: (HasCallStack, Exception e) => e -> IO a
 
     throwIOWithExecutionStack :: Exception e => e -> IO a
 
-We also propose to apply the same ideas to ``throw``, keeping some symmetry
-between ``GHC.Exception`` and ``GHC.IO``. ::
+    throwIOWithIPEStack :: Exception e => e -> IO a
+
+We also propose to apply the same ideas to the pure ``throw`` function,
+keeping some symmetry between ``GHC.Exception`` and ``GHC.IO``: ::
 
     module GHC.Exception where
 
@@ -192,29 +208,31 @@ between ``GHC.Exception`` and ``GHC.IO``. ::
 
 (The prototype implementation showed that these functions do not add much code.)
 
-Pretty Printing
-~~~~~~~~~~~~~~~
+Pretty Printing Backtraces
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To be compliant with the convention that ``Show`` instances should output
 valid Haskell code, the ``Show`` instance of ``Backtrace`` delegates to the
 instances of the inner types.
 
-An additional pretty printing function is added to output the ``Backtrace``
-in a more readable way. ::
+However, since backtraces often need to be presented to the user, an
+additional pretty printing function will be provided to output the ``Backtrace``
+in a more readable form: ::
 
     module GHC.Exception
 
-    -- | Pretty print a list of 'Backtrace's
+    -- | Pretty print a list of 'Backtrace's.
     -- This function should be used to output the backtraces to a terminal.
     -- The format is subject to change. The caller should not depend on it.
-    pprBacktraces :: SomeExceptionWithBacktrace -> String
+    showBacktrace :: Backtrace -> String
+    
+    showExceptionWithBacktrace :: SomeExceptionWithBacktrace -> String
 
-Making backtraces ubiquitous
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Selecting the backtrace mechanism
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-While these functions are useful building blocks, they do not
-address the most common debugging scenario: searching for an exception
-thrown by a third-party library (which likely calls the old ``throw`` and
+With the machinery described above, we can now address a common debugging scenario: locating for an exception
+thrown by a third-party library. As most Haskell code is legacy code,  likely calls the old ``throw`` and
 consequently would not produce a backtrace). For this we propose a pragmatic,
 stateful approach to allow the user to select which mechanism(s) should be used
 for backtrace collection in ``throw``, ``throwIO`` and similar functions: ::
