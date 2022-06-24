@@ -119,8 +119,7 @@ its own backtrace representation:
 * Cost-centre profiler (via ``GHC.Stack.CCS.getCurrentCCS``):
    * Pros: Can be used on all platforms; fairly precise backtraces
    * Requires profiled executable (``-prof``); runtime overhead; may require manual ``SCC`` pragmas
-* DWARF debug information in conjunction with GHC's `built-in stack unwinder
-  <https://www.haskell.org/ghc/blog/20200405-dwarf-3.html>`_:
+* DWARF debug information in conjunction with GHC's `built-in stack unwinder <https://www.haskell.org/ghc/blog/20200405-dwarf-3.html>`_:
    * Pros: No runtime overhead; can trace through foreign code
    * Cons: Highly platform-specific (currently only available on Linux); slow backtrace collection; imprecise backtraces; large binary size overhead (built with ``-g3``)
 * Info-table provenance (IPE) information (via ``GHC.Stack.CloneStack``):
