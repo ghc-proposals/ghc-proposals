@@ -465,7 +465,7 @@ Alternatives
 
 Exception hierarchy design
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-The original proposal suggested keeping ``SomeException`` as the root exception
+An earlier version of this proposal suggested keeping ``SomeException`` as the root exception
 type, changing the constructor to add a ``Maybe Backtrace`` field and a pattern
 synonym for backwards compatibility: ::
 
@@ -495,29 +495,27 @@ Backtrace mechanism selection
 In addition, there are several alternatives to the global
 ``setGlobalBacktraceMechanisms`` backtrace-mechanism selection facility.
 For instance:
- * GHC could gain support for setting the backtrace mechanism at compile-time via a compiler flag (this would essentially come down to GHC emitting a call to ``setGlobalBacktraceMechanisms`` in its start-up code).
- * the backtrace mechanism could be set in a lexically-scoped manner, at the expense of implementation complexity and runtime cost
- * alternatively, the community might rather choose one of the backtrace
-mechanisms discussed above and use this mechanism exclusively in exception
-backtraces.
+
+* GHC could gain support for setting the backtrace mechanism at compile-time via a compiler flag (this would essentially come down to GHC emitting a call to ``setGlobalBacktraceMechanisms`` in its start-up code).
+* the backtrace mechanism could be set in a lexically-scoped manner, at the expense of implementation complexity and runtime cost
+* alternatively, the community might rather choose one of the backtrace mechanisms discussed above and use this mechanism exclusively in exception backtraces.
 
 While the last approach may be simpler, we suspect that a single mechanism will not be sufficient:
 
-* there have been `previous efforts <https://gitlab.haskell.org/ghc/ghc/issues/17040>`_
+* There have been `previous efforts <https://gitlab.haskell.org/ghc/ghc/issues/17040>`_
   to add ``HasCallStack`` constraints to all partial functions in ``base``. While we
   believe that this is a worthwhile complementary goal, we don't believe that
-  ``HasCallStack`` alone can address the full scope of the problem due to its
+  ``HasCallStack`` alone can be our sole backtrace source due to its
   invasive nature.
-* likewise, the cost center profiler can provide descriptive backtraces but is
+* The cost center profiler can provide descriptive backtraces but is
   widely regarded as being impractical for use in production environments due
   to its performance overhead.
-* native stack unwinding approaches offer stacktraces that are necessarily
+* Native stack unwinding approaches offer stacktraces that are necessarily
   approximate (due to tail calls) and can be harder to interpret but have no
   runtime overhead in the non-failing case.
-* polyglot production environments often require visibility through foreign
-  calls, which only DWARF backtraces can provide.
+* Only DWARF backtraces can provide visibility through foreign calls, as provided by many polyglot deployment environments
 
-Yet another design would be to relegate handling and reporting of backtraces
+Yet another design would be a complete relegation of handling and reporting of backtraces
 completely to the runtime system. This would avoid the thorny design questions
 surrounding adding ``SomeExceptionWithBacktrace`` but we would lose out on many of
 the benefits of offering structured backtraces to the user and significantly complicate implementation.
