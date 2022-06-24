@@ -424,11 +424,8 @@ be preserved by defining the ``SomeExceptionWithBacktrace`` type as a type synon
 
     handleAll :: MonadCatch m => (SomeExceptionWithBacktrace -> m a) -> m a -> m a
 
-This is only needed when ``SomeExceptionWithBacktrace`` should be used as type
-in the program (e.g. to be able to access the backtraces).
-As already discussed, in most cases it is fine to continue to use
-``SomeException`` which is supported both by old versions of GHC and those that
-implement this proposal.
+This is only needed when ``SomeExceptionWithBacktrace`` is used as type
+in the program.
 
 In general, "down-casting" to ``SomeException`` will nearly always be a viable
 option for addressing compatibility concerns at the expense of losing the
@@ -437,8 +434,8 @@ exception's provenance.
 Type and pattern synonym
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-If there are existing pattern matches on the structure of ``SomeException``, a
-combination of type and a pattern synonym could be applied. ::
+While we advise against it, the ``SomeExceptionWithBacktrace`` type and data constructor
+can be provided on older GHC versions using a pair of a type synonym and a pattern synonym: ::
 
     #if __GLASGOW_HASKELL__ < 903
     type SomeExceptionWithBacktrace = SomeException
@@ -450,13 +447,14 @@ combination of type and a pattern synonym could be applied. ::
         SomeExceptionWithBacktrace (SomeException e) _ = SomeException e
     #endif
 
-This should be considered to be a measure of last resort! Please refer to `Alternatives`_
-about why this is not a general solution and might break existing code.
+This should be considered to be a measure of last resort since GHC is will consider
+matches on the pattern synonym to be refutable. As described in `Alternatives`_
+this refutability may introduce redundant warnings and may render some programs
+inexpressible.
 
-The preferred solution should always be to rewrite the code to not pattern
+Consequently, the preferred solution should always be to rewrite the code to not pattern
 match on the internals of the root exception (``SomeExceptionWithBacktrace``
-or ``SomeException``, respectively), but use ``fromException`` and
-``toException`` instead.
+or ``SomeException``, respectively), but use ``fromException`` and ``toException`` instead.
 
 This combination of type and pattern synonym was successfully applied in prior 
 incarnations of the prototype's implementation. Though we advise to better not use
@@ -465,6 +463,8 @@ it, we don't want to leave it unmentioned.
 Alternatives
 ------------
 
+Exception hierarchy design
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 The original proposal suggested keeping ``SomeException`` as the root exception
 type, changing the constructor to add a ``Maybe Backtrace`` field and a pattern
 synonym for backwards compatibility: ::
@@ -490,6 +490,8 @@ longer typecheck due to the lack of a ``MonadFail m`` constraint: ::
       SomeException e <- pure someException   -- Pattern synonym is assumed fallible
       ...
 
+Backtrace mechanism selection
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 In addition, there are several alternatives to the global
 ``setGlobalBacktraceMechanisms`` backtrace-mechanism selection facility.
 For instance:
