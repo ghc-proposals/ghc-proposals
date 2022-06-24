@@ -231,9 +231,8 @@ in a more readable form: ::
 Selecting the backtrace mechanism
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-With the machinery described above, we can now address a common debugging scenario: locating for an exception
-thrown by a third-party library. As most Haskell code is legacy code,  likely calls the old ``throw`` and
-consequently would not produce a backtrace). For this we propose a pragmatic,
+With the machinery described above, we can now address a common debugging scenario: locating the origin of an exception
+thrown by a third-party library. By far, the most common means of throwing exceptions are `throw`, `throwIO`, `error`, and `undefined`. This raises the question of how the user should select which backtrace mechanism these functions should use to collect their provenance. For this we propose a pragmatic,
 stateful approach to allow the user to select which mechanism(s) should be used
 for backtrace collection in ``throw``, ``throwIO`` and similar functions: ::
 
@@ -259,14 +258,14 @@ for backtrace collection in ``throw``, ``throwIO`` and similar functions: ::
     setDefaultBacktraceMechanisms :: [BacktraceMechanism] -> IO ()
     setDefaultBacktraceMechanisms = writeIORef currentBacktraceMechanisms
 
-    -- | Returns the currently selected 'BacktraceMechanism'.
+    -- | Returns the currently selected 'BacktraceMechanism's.
     getDefaultBacktraceMechanisms :: IO [BacktraceMechanism]
     getDefaultBacktraceMechanisms = readIORef currentBacktraceMechanisms
 
 
 A ``collectBacktrace`` primitive used by ``throw`` (and likewise ``throwIO``)
 simply dispatches to the appropriate backtrace collection scheme as determined
-by the currently selected ``BacktraceMechanism``s: ::
+by the currently selected ``BacktraceMechanism``\ s: ::
 
     module GHC.Exception.Backtrace where
 
@@ -309,8 +308,8 @@ by the currently selected ``BacktraceMechanism``s: ::
         )
 
 Note that this proposed change to ``throw`` (and likewise ``throwIO``) includes
-adding a ``HasCallStack`` constraint. The prototype implementation showed that this
-likely does not imply a big performance decrease.
+adding a ``HasCallStack`` constraint. Our prototype implementation showed that this
+likely does not imply a large performance decrease.
 
 Examples
 --------
@@ -339,29 +338,23 @@ configuration found in other languages. As it could be added at any time,
 ``setBacktraceMechanismFromEnv`` is not part of the scope of this proposal.
 
 
-Effect and Interactions
------------------------
+Effects and Interactions
+------------------------
 
 The described mechanism provides users with a convenient means of gaining greater
-insight into the sources of exceptions. Currently the runtime system's ``+RTS
--xc`` flag provides an ad-hoc mechanism in the runtime system which relies on the
+insight into the sources of exceptions. Currently the ``+RTS
+-xc`` runtime system flag provides an ad-hoc mechanism for reporting exception provenance using the
 cost-center profiler. In principle the ``-xc`` mechanism is subsumed by the
-mechanism proposed here.
+mechanism proposed here. However, we do not propose to remove ``-xc``.
 
-In a later step all ``Exception``s that reach the end of ``main`` could be pretty
-printed with their corresponding backtraces.
 
 Costs and Drawbacks
 -------------------
 
-While the global backtrace mechanism is convenient, it suffers from the usual
+We consider this approach to be a compromise  which makes backtraces available by default with minimal additional code.
+Exception backtraces are primarily a debugging tool and are a cross-cutting concern. The global backtrace mechanism selection facility proposed here recognizes this but it suffers from the usual
 drawbacks associated with global state: it does not compose well and may result
 in surprising behavior when manipulated by more than one actor.
-
-This being said, we consider this approach to be a compromise which reflects
-the fact that stack traces are primarily a debugging tool and somewhat of a
-cross-cutting concern. While a stateless approach would be preferred, we
-believe that this compromise is a significant improvement over the status quo.
 
 The Haskell community will have to adapt its code to the new exception structure.
 As described in `Adding ``SomeExceptionWithBacktrace```_ the expected impact isn't
@@ -371,47 +364,45 @@ Migration
 ---------
 
 There was an intense discussion in the comments of the pull request of this
-proposal about how to reach two goals
+proposal about how to achieve two competing goals
 (<https://github.com/ghc-proposals/ghc-proposals/pull/330>):
-- Keep the migration costs as low as possible (i.e. most usages should work)
-  without any change.
-- Get a type checking error when the changed exception structure breaks existing
-  code (i.e. no silent changes in behaviour.)
+
+- Keep the migration costs as low as possible (i.e. most usages should work
+  without any change)
+- Ensure that users are notified with type errors when semantics change
 
 The solution presented in this proposal has been agreed upon by all involved
 parties.
 
-``catch``and ``handle`` work with both, ``SomeExceptionWithBacktrace`` and
+``catch`` and ``handle`` work with both ``SomeExceptionWithBacktrace`` and
 ``SomeException``. This is the main reason for keeping ``SomeException``
 as a layer in the exception hierarchy.
 
-The usages of ``throw`` and ``throwIO`` don't have to be changed, too.
-In fact, it showed that most submodules of GHC don't need any changes.
-Only a few changes were needed to be made to GHC itself (e.g. in ``compiler/``).
+Under this proposal, existing usages of ``throw`` and ``throwIO`` will continue to work as-is but will offer provenance where previously they did not.
+In fact, our prototype showed that most submodules of GHC do nott need any changes and 
+only a handful of changes were needed to be made to GHC itself (e.g. in ``compiler/``).
 
 Direct calls to ``toException`` and ``fromException``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-As the types of ``toException`` and ``fromException`` changed, calls to them might
-need to be adjusted to the new types. This is guided by type checking errors.
+As the types of ``toException`` and ``fromException`` change under this proposal, calls to them will in some cases
+need to be adjusted, although our experience during prototyping suggests that most uses will work unchanged.
 
-Usually, when these calls aren't bound to ``SomeException`` specific types, no
-change should be needed.
-
-In expressions where ``fromException``'s changed parameter type leads to type 
+In expressions where ``fromException``\ 's changed parameter type leads to type 
 errors, one common solution is to convert the exception value first with
 ``toException``.
 
-As an example let's consider the case of GHC's internal `GHC.TopHandler.real_handler` function; to ease compatibility, we may want to avoid changing the `SomeException` argument to `SomeExceptionWithBacktrace`. We can achieve this with a strategically-placed `fromException . toException`:
-``GHC.TopHandler.real_handler`` to keep the needed migration effort small. ::
+As an example let us consider the case of GHC's internal ``GHC.TopHandler.real_handler`` 
+function; to ease compatibility, we may want to avoid changing the ``SomeException`` argument
+to ``SomeExceptionWithBacktrace``. We can achieve this with a strategically-placed 
+``fromException . toException``:
 
     real_handler :: (Int -> IO a) -> SomeException -> IO a
     real_handler exit se = do
       flushStdHandles -- before any error output
-      -- The call to fromException needs to be preceded by a call to
-      -- toException. (Original line from master commented out.)
-      -- case fromException se of
-      case (fromException . toException) se of
+      -- The call to fromException needs to be preceded by a call to toException.
+      -- case fromException se of                -- <--- original line from GHC `master`
+      case (fromException . toException) se of   -- <--- here we introduce a `toException` to coerce 
           Just StackOverflow -> do
               reportStackOverflow
               exit 2
@@ -421,7 +412,8 @@ As an example let's consider the case of GHC's internal `GHC.TopHandler.real_han
 Type synonym
 ~~~~~~~~~~~~
 
-If no pattern matches are needed, compatibility with older compilers can be preserved by defining the `SomeExceptionWithBacktrace` type as a type synonym: ::
+If no pattern matches are needed, compatibility with older compilers can
+be preserved by defining the ``SomeExceptionWithBacktrace`` type as a type synonym: ::
 
     module Control.Monad.Catch where
 
@@ -435,14 +427,13 @@ If no pattern matches are needed, compatibility with older compilers can be pres
 
 This is only needed when ``SomeExceptionWithBacktrace`` should be used as type
 in the program (e.g. to be able to access the backtraces).
-As already discussed, in very most cases it is fine to stick with
-``SomeException`` which is supported by old versions of GHC and those that
+As already discussed, in most cases it is fine to continue to use
+``SomeException`` which is supported both by old versions of GHC and those that
 implement this proposal.
 
-In general, it should always be considered if a "down cast" to ``SomeException``
-using ``toException`` and ``fromException`` would not be sufficient to solve the
-issue at hand. But, as ``SomeException`` does not carry backtraces, these would
-be lost.
+In general, "down-casting" to ``SomeException`` will nearly always be a viable
+option for addressing compatibility concerns at the expense of losing the
+exception's provenance.
 
 Type and pattern synonym
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -492,23 +483,24 @@ synonym for backwards compatibility: ::
 
 The problem with this is that the pattern match completeness checker does not
 play well with pattern synonyms. Additionally, it may introduce a ``MonadFail``
-constraint where one did not exits before. For example, the following would no
-longer type check due to the lack of a ``MonadFail m`` constraint: ::
+constraint where one previously did not exist. For example, the following would no
+longer typecheck due to the lack of a ``MonadFail m`` constraint: ::
 
     f :: Monad m => SomeException -> m ()
     f someException = do
       SomeException e <- pure someException   -- Pattern synonym is assumed fallible
       ...
 
-In addition to the runtime-configurable ``setGlobalBacktraceMechanisms``
-mechanism described above, GHC could gain support for setting the backtrace
-mechanism at compile-time via a compiler flag (this would essentially come down
-to GHC emitting a call to ``setGlobalBacktraceMechanisms`` in its start-up
-code).
-
-Alternatively, the community might rather choose one of the backtrace
+In addition, there are several alternatives to the global
+``setGlobalBacktraceMechanisms`` backtrace-mechanism selection facility.
+For instance:
+ * GHC could gain support for setting the backtrace mechanism at compile-time via a compiler flag (this would essentially come down to GHC emitting a call to ``setGlobalBacktraceMechanisms`` in its start-up code).
+ * the backtrace mechanism could be set in a lexically-scoped manner, at the expense of implementation complexity and runtime cost
+ * alternatively, the community might rather choose one of the backtrace
 mechanisms discussed above and use this mechanism exclusively in exception
-backtraces. However, we suspect that a single mechanism won't be sufficient:
+backtraces.
+
+While the last approach may be simpler, we suspect that a single mechanism will not be sufficient:
 
 * there have been `previous efforts <https://gitlab.haskell.org/ghc/ghc/issues/17040>`_
   to add ``HasCallStack`` constraints to all partial functions in ``base``. While we
@@ -521,11 +513,13 @@ backtraces. However, we suspect that a single mechanism won't be sufficient:
 * native stack unwinding approaches offer stacktraces that are necessarily
   approximate (due to tail calls) and can be harder to interpret but have no
   runtime overhead in the non-failing case.
+* polyglot production environments often require visibility through foreign
+  calls, which only DWARF backtraces can provide.
 
 Yet another design would be to relegate handling and reporting of backtraces
 completely to the runtime system. This would avoid the thorny design questions
 surrounding adding ``SomeExceptionWithBacktrace`` but we would lose out on many of
-the benefits of offering structured backtraces to the user.
+the benefits of offering structured backtraces to the user and significantly complicate implementation.
 
 
 Implementation Plan
