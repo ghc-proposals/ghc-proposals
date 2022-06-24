@@ -263,9 +263,8 @@ for backtrace collection in ``throw``, ``throwIO`` and similar functions: ::
     getDefaultBacktraceMechanisms = readIORef currentBacktraceMechanisms
 
 
-A ``collectBacktrace`` primitive used by ``throw`` (and likewise ``throwIO``)
-simply dispatches to the appropriate backtrace collection scheme as determined
-by the currently selected ``BacktraceMechanism``\ s: ::
+A ``collectBacktrace`` primitive used by ``throw`` and ``throwIO``
+simply dispatches to the currently-selected ``BacktraceMechanism``\ s: ::
 
     module GHC.Exception.Backtrace where
 
@@ -309,7 +308,7 @@ by the currently selected ``BacktraceMechanism``\ s: ::
 
 Note that this proposed change to ``throw`` (and likewise ``throwIO``) includes
 adding a ``HasCallStack`` constraint. Our prototype implementation showed that this
-likely does not imply a large performance decrease.
+likely does not imply a significant performance impact.
 
 Examples
 --------
@@ -333,7 +332,7 @@ global backtrace mechanism from the environment: ::
     setBacktraceMechanismFromEnv =
         getEnv "GHC_BACKTRACE" >>= setGlobalBacktraceMechanisms . parseBacktraceMechanisms
 
-This could then be called during program initialization, providing the ease of
+This could be called during program initialization, providing the ease of
 configuration found in other languages. As it could be added at any time,
 ``setBacktraceMechanismFromEnv`` is not part of the scope of this proposal.
 
@@ -344,21 +343,21 @@ Effects and Interactions
 The described mechanism provides users with a convenient means of gaining greater
 insight into the sources of exceptions. Currently the ``+RTS
 -xc`` runtime system flag provides an ad-hoc mechanism for reporting exception provenance using the
-cost-center profiler. In principle the ``-xc`` mechanism is subsumed by the
-mechanism proposed here. However, we do not propose to remove ``-xc``.
+cost-center profiler. While the ``-xc`` mechanism is subsumed by the
+mechanism proposed here, we do not propose to remove it in the near future.
 
 
 Costs and Drawbacks
 -------------------
 
+The Haskell community will have to adapt its code to the new exception structure.
+As described in `Adding ``SomeExceptionWithBacktrace```_ the expected impact isn't
+very high. This is further discussed in `Migration`_ .
+
 We consider this approach to be a compromise  which makes backtraces available by default with minimal additional code.
 Exception backtraces are primarily a debugging tool and are a cross-cutting concern. The global backtrace mechanism selection facility proposed here recognizes this but it suffers from the usual
 drawbacks associated with global state: it does not compose well and may result
 in surprising behavior when manipulated by more than one actor.
-
-The Haskell community will have to adapt its code to the new exception structure.
-As described in `Adding ``SomeExceptionWithBacktrace```_ the expected impact isn't
-very high. This is further discussed in `Migration`_ .
 
 Migration
 ---------
@@ -395,7 +394,7 @@ errors, one common solution is to convert the exception value first with
 As an example let us consider the case of GHC's internal ``GHC.TopHandler.real_handler`` 
 function; to ease compatibility, we may want to avoid changing the ``SomeException`` argument
 to ``SomeExceptionWithBacktrace``. We can achieve this with a strategically-placed 
-``fromException . toException``:
+``fromException . toException``: ::
 
     real_handler :: (Int -> IO a) -> SomeException -> IO a
     real_handler exit se = do
