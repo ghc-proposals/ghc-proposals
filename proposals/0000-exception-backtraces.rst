@@ -113,34 +113,19 @@ Representing and capturing backtraces
 GHC has four distinct mechanisms for capturing backtraces, each with
 its own backtrace representation:
 
-* ``HasCallStack`` is available in all programs and provides precise backtraces
-  but requires modification of the source program.
-* the cost-centre profiler (accessible from Haskell with
-  ) can provide cost-center stacks, but requires
-  the program to be built with the ``-prof`` flag.
-* DWARF debug information  can be used
-  to provide terse, but still often useful, backtraces with no runtime
-  overhead in the non-failing case (although backtrace collection is quite
-  slow). However, it is currently not available on some widely-used platforms like
-  Windows and MacOS.
-* Stack-traces based on Info Table Provenance Entry (IPE) information are provided by
-  ``GHC.Stack.CloneStack``, are enabled with ``-finfo-table-map``. This is a
-  mechanism with (almost) no runtime overhead, but it contains fewer stack frames
-  because it uses return stack frame addresses to provide backtraces.
-
 * ``HasCallStack``:
    * Pros: Can be used on all platforms; provides precise backtraces
    * Cons: Requires manual modification of the source program; runtime overhead
-* Cost-centre profiler (via ``GHC.Stack.CCS.getCurrentCCS``)
+* Cost-centre profiler (via ``GHC.Stack.CCS.getCurrentCCS``):
    * Pros: Can be used on all platforms; fairly precise backtraces
-   * Requires profiled executable; runtime overhead; may require manual ``SCC`` pragmas
+   * Requires profiled executable (``-prof``); runtime overhead; may require manual ``SCC`` pragmas
 * DWARF debug information in conjunction with GHC's `built-in stack unwinder
-  <https://www.haskell.org/ghc/blog/20200405-dwarf-3.html>`_
+  <https://www.haskell.org/ghc/blog/20200405-dwarf-3.html>`_:
    * Pros: No runtime overhead; can trace through foreign code
-   * Cons: Highly platform-specific (currently only available on Linux); slow backtrace collection; imprecise backtraces; large binary size overhead
-* Info-table provenance (IPE) information (via ``GHC.Stack.CloneStack``)
+   * Cons: Highly platform-specific (currently only available on Linux); slow backtrace collection; imprecise backtraces; large binary size overhead (built with ``-g3``)
+* Info-table provenance (IPE) information (via ``GHC.Stack.CloneStack``):
    * Pros: Can be used on all platforms; no runtime overhead
-   * Cons: Large binary size overhead; no visibility into foreign code
+   * Cons: Large binary size overhead; no visibility into foreign code; must be built with ``-finfo-table-map``
 
 All of these backtrace mechanisms have their uses, offering a range of
 levels of detail, executable size, and runtime overhead. Given the complementary nature of these mechanisms, GHC
