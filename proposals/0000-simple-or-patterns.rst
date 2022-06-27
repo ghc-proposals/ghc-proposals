@@ -90,8 +90,9 @@ Or patterns solve the problem by allowing us to do this:
 
 This function doesn't match ``T4``, so we get our warning.
 
+----------
 
-Ultimately, we'd like or patterns to also allow binding variables. Then when extending `T` by a new constructor we could write something like:
+Ultimately, we'd like or patterns to also allow *binding variables*. Then when extending `T` by a new constructor we could write something like:
 
 ::
 
@@ -99,7 +100,9 @@ Ultimately, we'd like or patterns to also allow binding variables. Then when ext
     stringOfT (T1 s ; T4 s) = Just s
     stringOfT (T2{} ; T3{}) = Nothing
 
-This however is **not** in the scope of this (modified) proposal, see `here <https://github.com/ghc-proposals/ghc-proposals/pull/43#issuecomment-1127812720>`__.
+This however is **not** in the scope of this proposal.
+
+See `here <https://github.com/ghc-proposals/ghc-proposals/pull/43#issuecomment-1127812720>`__ for the discussion on the original proposal. After the proposal petered out due to complexities in the specification and interplay with language extensions like GADTs, we decided to create this simplified proposal which would still be of a lot of use but much simpler to correctly specify and implement.
 
 Real-world examples
 -------------------
@@ -204,6 +207,8 @@ The ``;`` between the parenthesis have lower precedence than anything else. Or
 patterns are associative, so N-ary version ``( pat1 ; … ; patN )`` is also
 accepted.
 
+TODO: forbid patterns matching variables
+
 Some examples that this new grammar produces: ::
 
   -- in expression context
@@ -255,8 +260,6 @@ patterns. The desugaring rule is: ::
     =
     ((\x -> case x of p1 -> True; p2 -> True; _ -> False)
         -> True)
-
-Note that ``p1`` and ``p2`` bind no variables.
 
 The desugaring rule defines both static and dynamic semantics of or patterns.
 An or pattern type checks whenever the desugared pattern type checks. Dynamic
@@ -370,7 +373,8 @@ be generalized in the future in a backwards compatible way.
 Alternatives
 ------------
 
-See `here <https://github.com/osa1/ghc-proposals/blob/or_patterns/proposals/0000-or-patterns.rst#15alternatives>`__
+The alternative is to allow or patterns to bind variables as long as every subpattern binds the same set of variables.
+This however was already proposed `here <https://github.com/osa1/ghc-proposals/blob/or_patterns/proposals/0000-or-patterns.rst>`__, a dormant proposal which was closed 2 years ago.
 
 Or patterns in other languages
 ------------------------------
