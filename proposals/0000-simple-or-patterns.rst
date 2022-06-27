@@ -374,7 +374,7 @@ Alternatives
 ------------
 
 The alternative is to allow or patterns to bind variables as long as every subpattern binds the same set of variables.
-This however was already proposed `here <https://github.com/osa1/ghc-proposals/blob/or_patterns/proposals/0000-or-patterns.rst>`__, a dormant proposal which was closed 2 years ago.
+This however was already proposed `here <https://github.com/osa1/ghc-proposals/blob/or_patterns/proposals/0000-or-patterns.rst>`__, a dormant proposal which was closed 2 years ago. It petered out due to complexities in the specification and interplay with language extensions like GADTs and so we decided to create this simplified proposal which would still be of a lot of use but much simpler to correctly specify and implement.
 
 Or patterns in other languages
 ------------------------------
