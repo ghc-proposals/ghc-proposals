@@ -78,8 +78,7 @@ The current root of our type system contains these definitions::
   type Type        = TYPE LiftedRep
   type (->)        = FUN Many
 
-  -- (=>) is not something that can be written unsaturated;
-  --      rat
+  -- (=>) is not something that can be written unsaturated
 
 NB: in GHC, implicit parameters are internally represented as a special class,
 but that is not user-visible.
@@ -88,7 +87,7 @@ Type and Constraint are not apart
 :::::::::::::::::::::::::::::::::::
 
 GHC has an optimization for one-element classes (where the element
-is either a superclass or a method), defining these in like a newtype, not a datatype.
+is either a superclass or a method), defining these like a newtype, not a datatype.
 For example, if we have ::
 
   class Default a where
@@ -308,7 +307,7 @@ Effect and Interactions
 * This proposal is fully backward compatible.
 
 * This proposal is forward compatible with more glorious updates to the type/constraint
-  system we might imagine in the future, as detailed at TODO.
+  system we might imagine in the future, as we've [detailed elsewhere](https://gitlab.haskell.org/ghc/ghc/-/issues/21623).
 
 Costs and Drawbacks
 -------------------
