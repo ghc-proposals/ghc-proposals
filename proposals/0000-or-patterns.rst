@@ -288,9 +288,7 @@ Since extensions like ``LambdaCase`` and ``MultiWayIf`` (in pattern guards) use 
 
 Costs and Drawbacks
 -------------------
-Give an estimate on development and maintenance costs. List how this effects
-learnability of the language for novice users. Define and list any remaining
-drawbacks that cannot be resolved.
+Or patterns are a small feature which is quite simple to implement given that we forbid binding any variables. There are no obvious drawbacks.
 
 
 Alternatives
