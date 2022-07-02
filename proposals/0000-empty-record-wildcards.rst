@@ -25,6 +25,7 @@ Currently this is allowed::
   f (Foo {..}) = 1
 
   x = Foo {..}
+    where a = 1
 
 But this is not::
 
@@ -76,7 +77,17 @@ Effect and Interactions
 -----------------------
 
 ``Foo {..}`` has the same meaning as ``Foo {}`` for an empty record.
+Note that means that::
 
+  data Foo = Foo
+  f (Foo {..}) = 42
+
+is newly accepted just as::
+
+  data Foo = Foo
+  f (Foo {}) = 42
+
+is today
 
 Costs and Drawbacks
 -------------------
