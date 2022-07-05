@@ -105,7 +105,7 @@ Proposed Change Specification
      types1 ::= types1, type
             |   type
 
-#. The grammar above includes syntax for specifying multiplie specialised
+#. The grammar above includes syntax for specifying multiple specialised
    types for an identifier. Its syntax and semantics are completely unchanged
    from today; it is included here only for completeness.
 
