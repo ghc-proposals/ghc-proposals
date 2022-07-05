@@ -88,13 +88,16 @@ Examples::
   const x y = ...    -- there must be some way to name the types of x and y here
   -- using `const (x :: a) (y :: b) = ...` is not powerful enough, because it relies
   -- on matching the pattern signature with the argument type from the type signature
+  const @a @b x y = ...  -- this version makes it easier to bind `a` and `b`
 
   data Ex = forall a. Ex a
   f (Ex x) = ...     -- there must be some way to name the type of x here
+  f (Ex @a x) = ...  -- this version does it
 
   hr :: (forall a. a -> a -> a) -> ...
   hr = ...
-  g = hr (\ x y -> ...)   -- there must be some way to name the type of x or y here
+  g = hr (\ x y -> ...)     -- there must be some way to name the type of x or y here
+  g = hf (\ @a x y -> ...)  -- this version bind the variable
 
 The `Explicit Variable Principle`_ does not hold today:
 
@@ -219,11 +222,11 @@ Examples::
    id :: a -> a    -- the variable `a` has no explicit binding site, but we can write `forall a.` to provide one
 
    f :: (Bool, Bool) -> Bool
-   not (x :: (b, b)) = ...   -- the variable `b` is bound to `Bool` by this
-                             -- pattern signature. But either the first b is a binding
-                             -- site, in violation of the Local Lexical Scoping Principle,
-                             -- or there is no explicit binding site, in violation of
-                             -- the Explicit Binding Principle.
+   f (x :: (b, b)) = ...   -- the variable `b` is bound to `Bool` by this
+                           -- pattern signature. But either the first b is a binding
+                           -- site, in violation of the Local Lexical Scoping Principle,
+                           -- or there is no explicit binding site, in violation of
+                           -- the Explicit Binding Principle.
 
 *Motivation:* The `Explicit Binding Principle`_ allows programmers to control exactly how variables come into
 scope. It also prevents the possibility of typos that accidentally introduce new
