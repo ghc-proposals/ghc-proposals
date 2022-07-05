@@ -928,6 +928,84 @@ Alternatives
    Yes. Yet it seems less flexible than the approach described here, where existentials
    can simply be opened where they need to be, without any advanced directive.
 
+#. @simonpj is (understandably) nervous about admitting expressions in types. I have thus
+   formulated an alternative Core language that could support first-class existentials
+   in Haskell. Please view this section as a drop-in replacement for the **Core language**
+   point in the specification.
+
+   **Core language.** There are several modifications to the Core language
+   necessary to support this proposal. This version differs substantially from
+   the paper_: this version uses a lazy ``unpack`` instead of ``open``. The
+   key advantage to this change is that we no longer have terms in types. The
+   key disadvantage is that it is harder to define an operational semantics
+   for such a language. In GHC, though, we do not implement operational
+   semantics directly, so this drawback does not bite much: though we will
+   learn more through experience, it would seem that the drawback would mainly
+   bite in the challenge of implementing certain optimizations. As more people
+   adopt existentials, this may become problematic and we may wish to revisit,
+   but such a limitation is reasonable for an initial implementation.
+
+   1. The ``exists`` type would need to be added to Core as a new constructor of ``Type``::
+
+        | ExistsTy TyVar Type
+          -- typing rule:
+          -- Γ ⊢ ki : Type
+          -- Γ, tv:ki ⊢ inner_ty : TYPE rep
+          -- tv # rep
+          -- ------------------------------------
+          -- Γ ⊢ ExistsTy (tv:ki) inner_ty : TYPE rep
+
+   #. While packing and opening existentials is implicit in Haskell, it is
+      explicit in Core, using two new constructors of ``Expr b``.
+      Operationally, ``Unpack`` is just like (non-recursive) ``Let``, but it
+      also binds a type variable to the packed witness type of an existential.
+      ::
+
+        | Pack Type (Expr b) TyVar Type
+          -- typing rule:
+          -- Γ ⊢ witness_ty : ki
+          -- Γ ⊢ exists (bound_tv :: ki). inner_ty : TYPE rep
+          -- Γ ⊢ expr : inner_ty[witness_ty/bound_tv]
+          -- -----------------------------------------------------------------------
+          -- Γ ⊢ Pack witness_ty expr (bound_tv:ki) inner_ty : exists bound_tv. inner_ty
+
+        | Unpack TyVar Id (Expr b) (Expr b)
+          -- typing rule:
+          -- Γ ⊢ ex_expr : exists (b :: ki). inner_ty
+          -- Γ, a :: ki, x :: inner_ty[a/b] ⊢ inner_expr : ty
+          -- a # ty    -- skolem escape check
+          -- ---------------------------------------
+          -- Γ ⊢ Unpack a x ex_expr inner_expr : ty
+
+   #. The simplifier would now look for opportunities to eliminate corresponding
+      uses of ``Pack`` and ``Unpack``, transforming ::
+
+        Unpack a x (Pack witness_ty packed_expr b inner_ty) inner_expr
+
+      to ::
+
+        inner_expr[packed_expr/x][witness_ty/a]
+
+   #. A new coercion form is necessary in order to support ``liftCoSubst``, added to ``Coercion``::
+
+        | ExistsCo TyVar Coercion    -- lifts ExistsTy
+
+   #. The ``InstCo`` and ``NthCo`` coercion forms now work on ``ExistsTy`` analogously
+      to how they work on ``ForAllTy``.
+
+   #. Suppose ``f args :: C /\ ty`` and the constraint ``C`` is used. GHC will then
+      generate bindings that look like ::
+
+        let result :: C /\ ty
+            result = f args
+
+            dictC :: C
+            dictC = fstC result   -- fstC :: forall c ty. c /\ ty -> c
+
+      in its evidence bindings. Note the separate binding for ``result``. This will
+      mean that multiple uses of ``f args`` in the body of a function will get commoned
+      up during optimization. This is important in order to avoid unexpected repeated
+      evaluation of ``f args`` due to the use of ``C``.
 
 Unresolved Questions
 --------------------
@@ -938,6 +1016,12 @@ Unresolved Questions
    would be easier to implement first. I think this one is easier, and could plausibly
    let us gain experience with expressions in types without the major changes inherent
    in supporting dependent types in full, but it's not obvious.
+
+#. Should we use the simpler (alternative) Core language? It appears considerably simpler,
+   though I expect we'll have trouble optimizing it. Furthermore, no proofs have been written
+   about it, so there could be problems lurking. (I doubt it, though.) Desugaring would
+   be considerably harder in the alternative, effectively requiring A-normalization during
+   desugaring (though that's not really so difficult).
 
 Future Work
 -----------
