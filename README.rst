@@ -60,7 +60,7 @@ This section outlines what stages a proposal may go through. The stage is identi
 
    `How to submit a proposal <#how-to-start-a-new-proposal>`_
 
-3. (No label.) The wider community discusses the proposal in the commit section of the pull request, while the author refines the proposal. If the author does not plan to implement the proposal themselves, this is also the phase where they try to find someone motivated and able to do so. This phase lasts as long as necessary.
+3. (No label.) The wider community discusses the proposal in the conversation section of the pull request, while the author refines the proposal. If the author does not plan to implement the proposal themselves, this is also the phase where they try to find someone motivated and able to do so. This phase lasts as long as necessary.
 
    `Discussion goals <#discussion-goals>`_ •
    `How to comment on a proposal <#how-to-comment-on-a-proposal>`_ •
