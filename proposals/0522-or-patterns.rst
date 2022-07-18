@@ -115,13 +115,40 @@ Some examples that this new grammar produces: ::
 
 The new production doesn't add any ambiguities because of the mandatory parentheses, just like for tuples.
 
+NB: The new grammar allows or patterns which bind variables. These will however be rejected in `2.2`_.
+
+.. _2.2:
 
 Static semantics of or pattern matching
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-All components of an or pattern must have the same type. This type is the type of the or pattern.
+Or patterns which bind variables are rejected in the renamer.
 
-Or patterns which bind variables are syntactically valid but will be refuted by the renamer.
+
+We give the static semantics in terms of pattern types.
+
+A pattern type, as defined `here <https://mpickering.github.io/pattern-synonyms-extended.pdf>`__ (chapter 6), has the form ``req => prov => arg_1 -> ... -> arg_k -> res``, where ``req`` denotes required constraints and ``prov`` denotes provided constraints.
+
+
+When we have two patterns ``p1`` and ``p2`` with pattern types
+::
+
+    p1 :: forall xs1. T1 => prov1 => arg1_1 -> ... -> arg1_k -> res1,
+    p2 :: forall xs2. T2 => prov2 => arg2_1 -> ... -> arg2_l -> res2
+
+then the or pattern ``(p1; p2)`` has the pattern type ::
+
+    (p1; p2) :: forall xs. (T1[xs/xs1], T2[xs/xs2]) => () => arg1_1[xs/xs1] -> ... -> arg_k[xs/xs1] -> res1[xs/xs1]
+
+
+where we require ::
+
+    l == k, arg1_i[xs/xs1] == arg2_i[xs/xs2] (1 ≤ i ≤ k), res1[xs/xs1] == res2[xs/xs2]
+
+for successful typing.
+
+An or pattern consisting of more than two parts works the same: the individual required constraints are merged together, the provided constraints are dropped and we require the remaining type signature to be identical modulo alpha conversion.
+
 
 Dynamic semantics of or pattern matching
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -144,7 +171,12 @@ Here are a few examples: ::
     (\ (([1] ; [2, _]) ; ([3, _, _] ; [4, _, _, _])) -> True) [4, undefined, undefined, undefined] => True
     (\ (1 ; 2 ; 3) -> True) 3 => True
 
+We do not employ backtracking in or patterns. The following would yield ``"no backtracking"``: ::
 
+ case (True, error "backtracking") of
+   ((True, _) ; (_, True))
+     | False -> error "inaccessible"
+   _ -> error "no backtracking"
 
 Examples
 --------
@@ -255,8 +287,18 @@ The main effect of or patterns is twofold:
 GADTs & Existential quantification
 ~~~~~~~~~~~~~~~~~
 
-With existential quantification and GADTs, patterns can not only bind values, but also equality constraints, dictionaries and existential type variables. This however does not interfere with or patterns in any way - binding variables (or equality constraints etc.) explicitly is a non-goal of this proposal.
+With existential quantification and GADTs, patterns can not only bind values, but also equality constraints, dictionaries and existential type variables. We described in `2.2`_ how these new constraints are handled: required constraints of the individual patterns are merged while provided constraints are deleted.
 
+So the following example would not type check because the or pattern doesn't provide the constraint ``a = Int``:
+
+::
+
+ data GADT a where
+     IsInt1 :: GADT Int
+     IsInt2 :: GADT Int
+
+ foo :: a -> GADT a -> a
+ foo x (IsInt1 {}; IsInt2 {}) = x + 1
 
 Costs and Drawbacks
 -------------------
@@ -307,6 +349,8 @@ parens. However, this causes ambiguities in the syntax. Two examples: ::
     -- constuctor) or for an or pattern (matching the argument of Foo)
     case x of Foo { ... } -> ...
 
+Yet another suggestion is to use the syntax ``T1 or T2`` by making ``or`` a keyword inside or patterns. This however leaves room for ambiguity: ``fun (T1 or T2) = 0`` could either denote an or pattern or a simple pattern matching on the binary constructor ``T1``. If we enforce it to denote an or pattern then this would be a breaking change.
+
 Binding pattern variables
 ~~~~~~~~~~~~~~~~~~
 
@@ -319,7 +363,7 @@ The `parent proposal <https://github.com/ghc-proposals/ghc-proposals/pull/43>`__
  getInt (T1 a ; T2 a) = Just a
  getInt (T3 ; T4) = Nothing
 
-This is a non-goal of this proposal: with binding pattern variables come multiple challenges like binding existential constraints and the question of whether and how we would be handling backtracking. Correctly specifying the semantics is hard and caused the parent proposal to become dormant after no progress has been made.
+This is a non-goal of this proposal: with binding pattern variables come challenges like binding existential constraints. Correctly specifying the semantics is hard and caused the parent proposal to become dormant after no progress has been made.
 
 Future proposals could build on the current one and further specify it to eventually allow binding pattern variables.
 
