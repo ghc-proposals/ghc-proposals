@@ -36,7 +36,6 @@ together many existing proposals:
 .. _`Explicit Binding Principle`: ../principles.rst#explicit-binding-principle
 .. _`Explicit Variable Principle`: ../principles.rst#explicit-variable-principle
 .. _`Visibility Orthogonality Principle`: ../principles.rst#visibility-orthogonality-principle
-.. _`Local Lexical Scoping Principle`: ../principles.rst#local-lexical-scoping-principle
 .. _`Syntactic Unification Principle`: ../principles.rst#syntactic-unification-principle
 .. _`Lexical Scoping Principle`: ../principles.rst#lexical-scoping-principle
 
@@ -221,7 +220,7 @@ it will not, and thus can refer to the ``t`` defined above, once such a referenc
 Motivation for ``-Wpattern-signature-binds``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This is necessary in order to uphold the `Local Lexical Scoping Principle`_.
+This is necessary in order to uphold the `Lexical Scoping Principle`_, part (a).
 
 Proposed Change Specification
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -517,7 +516,7 @@ Effects
 #. Having type variables have the same behavior as term variables with
    respect to shadowing (and repeated binding) upholds the `Visibility Orthogonality Principle`_. In addition,
    the fact that type variables are unconditionally brought into scope upholds
-   the `Local Lexical Scoping Principle`_.
+   the `Lexical Scoping Principle`_, part (a).
 
 #. It may be useful to write a variable occurrence to instantiate a universal
    argument. This proposal prevents this possibility. We expect a future proposal
@@ -1323,7 +1322,7 @@ I summarize the effects on the principles_.
    This would not be the case without the parts of the proposal around ``-XExtendedLet`` (allowing ``let``
    in types is not needed) because of the behavior of pattern signatures.
 
-#. The `Local Lexical Scoping Principle`_ is made to hold, by describing pattern-signature binds as occurrences
+#. The `Lexical Scoping Principle`_ part (a) is made to hold, by describing pattern-signature binds as occurrences
    and making type applications in patterns unconditionally bring new variables
    into scope.
 

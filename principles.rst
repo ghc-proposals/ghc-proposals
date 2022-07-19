@@ -167,47 +167,35 @@ Lexical Scoping Principle (LSP)
 
 a. For every appearance of
 an identifier, it is possible to determine whether that appearance is a *binding site*
-or an *occurrence*, without involving the type system.
+or an *occurrence* without examining the context.
 
 b. For every *occurrence* of an
 identifier, it is possible to uniquely identify its *binding site*, without
 involving the type system.
 
-The `Lexical Scoping Principle`_ is true today, with two complications:
+The `Lexical Scoping Principle`_ is almost true today, with the following nuances:
 
 1. Template Haskell splices may need to be run before completing name resolution (and running those splices requires type-checking them).
 
 2. The `deprecated mechanism <https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/exts/duplicate_record_fields.html#selector-functions>`_ for disambiguating duplicate record fields violates the `Lexical Scoping Principle`_ by requiring the type system.
 
+3. In a pattern signature, if we have ``f (x :: Maybe a)``, the ``a``
+   is an occurrence if ``a`` is already in scope, and it is a binding site otherwise.
+
+4. In a type signature, any out-of-scope variable is implicitly bound. This is not
+   technically a violation of this principle (the seemingly-unbound identifier in the type signature
+   is always an occurrence), but it's worth noting here.
+
 *Motivation:* These principles mean that we can understand the binding
 structure of a program without relying on type inference, important both for the
-implementation of GHC and the sanity of programmers.
-
-(a) from `#448`_; (b) from `#378`_.
-
-Local Lexical Scoping Principle (LLSP)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. _`Local Lexical Scoping Principle`:
-
-**Principle**: For every appearance of an identifier, it is possible to determine
-whether that appearance is a *binding site* or an *occurrence*, without looking to see what identifiers are
-already in scope.
-
-This is a stronger version of the `Lexical Scoping Principle`_, part (a), that forbids even knowing what is in scope.
-
-The `Local Lexical Scoping Principle`_ is not true today, because of pattern signatures. If we have ``f (x :: Maybe a)``, the ``a``
-is an occurrence if ``a`` is already in scope, and it is a binding site otherwise.
-
-Along similar lines (though not strictly affected by the current phrasing of the `Local Lexical Scoping Principle`_), the
-type signature ``f :: a -> a`` might implicitly include ``forall a.`` or not, depending on whether ``a`` is in scope.
-
-*Motivation:* Tracking the set of in-scope variables is laborious for human readers. (The compiler is already
-doing this during name resolution.) This fact becomes even more poignant if we consider the possibility
+implementation of GHC and the sanity of programmers. Furthermore, it allows
+readers to identify which variables should be brought newly into scope without
+tracking the list of variables already in scope. This last point
+becomes even more poignant if we consider the possibility
 of mixing the term-level and type-level namespaces (`#270`_) and need to think about clashes between type
 variables and imported term variables.
 
-From `#448`_.
+(a) from `#448`_; (b) from `#378`_.
 
 Explicit Binding Principle (EBP)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -224,7 +212,7 @@ Examples::
    f :: (Bool, Bool) -> Bool
    f (x :: (b, b)) = ...   -- the variable `b` is bound to `Bool` by this
                            -- pattern signature. But either the first b is a binding
-                           -- site, in violation of the Local Lexical Scoping Principle,
+                           -- site, in violation of the Lexical Scoping Principle (a),
                            -- or there is no explicit binding site, in violation of
                            -- the Explicit Binding Principle.
 
