@@ -287,12 +287,12 @@ The main effect of Or patterns is twofold:
 2. Or patterns allow more code reuse as right hand sides can be shared by many patterns.
 
 
-GADTs & Existential quantification
+GADTs & View Patterns
 ~~~~~~~~~~~~~~~~~
 
 With existential quantification and GADTs, patterns can not only bind values, but also equality constraints, dictionaries and existential type variables. We described in `2.2`_ how these new constraints are handled: required constraints of the individual patterns are merged while provided constraints are deleted.
 
-So the following example would not type check because the Or pattern doesn't provide the constraint ``a = Int``:
+So the following example would not type check because the Or pattern doesn't provide the constraint ``a ~ Int``:
 
 ::
 
@@ -303,10 +303,18 @@ So the following example would not type check because the Or pattern doesn't pro
  foo :: a -> GADT a -> a
  foo x (IsInt1 {}; IsInt2 {}) = x + 1
 
+
+Considering view patterns, these do work seamlessly with Or patterns. As specified in `2.2`_, Or patterns will just merge the required constraints which come from view patterns. This would work: ::
+
+ f :: (Eq a, Show a) => a -> a -> Bool
+ f a ((== a) -> True; show -> "yes") = True
+ f _ _ = False
+
 Costs and Drawbacks
 -------------------
 The cost is a small implementation overhead. Also, as Or patterns are syntactic sugar, they add to the amount of syntax Haskell beginners have to learn. 
 We believe however that the mentioned advantages more than compensate for these disadvantages.
+Or patterns are available in all of the top seven programming languages on the TIOBE index (Python, Java, Javascript, C#, C, etc.), which suspects that the concept won't be particularly troublesome for beginners to learn.
 
 
 Alternatives
@@ -385,6 +393,23 @@ patterns. The desugaring rule is: ::
 The desugaring rule defines both static and dynamic semantics of Or patterns:
 
 An Or pattern type checks whenever the desugared pattern type checks; the dynamic semantics of an Or pattern is the same as the dynamic semantics of its desugared pattern.
+
+Using pattern synonyms
+~~~~~~~~~~~~~~~~~~~~~~
+
+Why not just use pattern synonyms? With these we can even bind variables, which is not possible with Or patterns currently!
+
+While true, pattern synonyms require lots of boilerplate code. Wherever we'd use an Or pattern, we would have to write a pattern synonym, a view pattern and a ``COMPLETE`` pragma. Example: ::
+
+ t2OrT3 T2{} = True
+ t2OrT3 T3{} = True
+ t2OrT3 _    = False
+
+ pattern T2OrT3 :: T
+ pattern T2OrT3 <- (t2OrT3 -> True)
+ {-# COMPLETE T1, T2OrT3 #-}
+
+It seems that most developers would rather continue conveniently using wildcard patterns instead of making the extra effort required to use pattern synonyms everywhere.
 
 Unresolved Questions
 --------------------
