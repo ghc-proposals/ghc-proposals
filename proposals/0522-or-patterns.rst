@@ -12,10 +12,10 @@ Or Patterns
 
 Instead of spelling out all the trivial cases of a function, we often use wildcards to summarise shared behaviour. This however becomes inconvenient once we extend the domain datatype by adding new constructors: the function in question does still compile as the newly added constructor is subsumed in the function's wildcard pattern. This is often unwanted and makes refactoring hard, because existing tools provide no way to find functions that may need to be adjusted after the new constructor was added. `GHC issue #21572 <https://gitlab.haskell.org/ghc/ghc/-/issues/21572>`_ is a recent example.
 
-We propose a new syntax extension for "or patterns": *an or pattern matches
+We propose a new syntax extension for "Or patterns": *an Or pattern matches
 a list of patterns, none of which matches any variables.*
-Compared to writing out one clause per pattern, or patterns endorse code reuse of the shared right-hand side.
-Compared to wildcard patterns, or patterns list matched patterns explicitly, to support refactorings in the above sense.
+Compared to writing out one clause per pattern, Or patterns endorse code reuse of the shared right-hand side.
+Compared to wildcard patterns, Or patterns list matched patterns explicitly, to support refactorings in the above sense.
 
 Motivation
 ----------
@@ -90,7 +90,7 @@ The relevant non-terminal is ``apat``: ::
 
 Or patterns extension adds one more production: ::
 
-          |    ( pat1 ; … ; patk )                (or pattern, k ≥ 2)
+          |    ( pat1 ; … ; patk )                (Or pattern, k ≥ 2)
 
 The ``;`` between the parentheses have (shift) priority that is lower than any other ``apat``'s (reduction) priority.
 
@@ -109,23 +109,23 @@ Some examples that this new grammar produces: ::
     , guard x
     = e2
 
-  -- nested or patterns
+  -- nested Or patterns
   case e1 of
     (((T1 ; T2) ; T3) ; T4) -> e2
 
 The new production doesn't add any ambiguities because of the mandatory parentheses, just like for tuples.
 
-NB: The new grammar allows or patterns which bind variables. These will however be rejected in `2.2`_.
+NB: The new grammar allows Or patterns which bind variables. These will however be rejected in `2.2`_.
 
 .. _2.2:
 
-Static semantics of or pattern matching
+Static semantics of Or pattern matching
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Or patterns which bind variables are rejected in the renamer.
 
 
-We give the static semantics in terms of pattern types.
+We give the static semantics in terms of *pattern types*.
 
 A pattern type, as defined `here <https://mpickering.github.io/pattern-synonyms-extended.pdf>`__ (chapter 6), has the form ``req => prov => arg_1 -> ... -> arg_k -> res``, where ``req`` denotes required constraints and ``prov`` denotes provided constraints.
 
@@ -133,10 +133,10 @@ A pattern type, as defined `here <https://mpickering.github.io/pattern-synonyms-
 When we have two patterns ``p1`` and ``p2`` with pattern types
 ::
 
-    p1 :: forall xs1. T1 => prov1 => arg1_1 -> ... -> arg1_k -> res1,
-    p2 :: forall xs2. T2 => prov2 => arg2_1 -> ... -> arg2_l -> res2
+    p1 :: forall xs1. Theta1 => prov1 => arg1_1 -> ... -> arg1_k -> res1,
+    p2 :: forall xs2. Theta2 => prov2 => arg2_1 -> ... -> arg2_l -> res2
 
-then the or pattern ``(p1; p2)`` has the pattern type ::
+then the Or pattern ``(p1; p2)`` has the pattern type ::
 
     (p1; p2) :: forall xs. (T1[xs/xs1], T2[xs/xs2]) => () => arg1_1[xs/xs1] -> ... -> arg_k[xs/xs1] -> res1[xs/xs1]
 
@@ -147,10 +147,10 @@ where we require ::
 
 for successful typing.
 
-An or pattern consisting of more than two parts works the same: the individual required constraints are merged together, the provided constraints are dropped and we require the remaining type signature to be identical modulo alpha conversion.
+An Or pattern consisting of more than two parts works the same: the individual required constraints are merged together, the provided constraints are dropped and we require the remaining type signature to be identical modulo alpha conversion.
 
 
-Dynamic semantics of or pattern matching
+Dynamic semantics of Or pattern matching
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Informal semantics in the style of `Haskell 2010 chapter 3.17.2: Informal
@@ -171,7 +171,7 @@ Here are a few examples: ::
     (\ (([1] ; [2, _]) ; ([3, _, _] ; [4, _, _, _])) -> True) [4, undefined, undefined, undefined] => True
     (\ (1 ; 2 ; 3) -> True) 3 => True
 
-We do not employ backtracking in or patterns. The following would yield ``"no backtracking"``: ::
+We do not employ backtracking in Or patterns. The following would yield ``"no backtracking"``: ::
 
  case (True, error "backtracking") of
    ((True, _) ; (_, True))
@@ -213,7 +213,7 @@ Examples
 
         urk pat = pprPanic "isIrrefutableHsPat:" (ppr pat)
 
-  Using or patterns this code can be simplified to: ::
+  Using Or patterns this code can be simplified to: ::
 
     isIrrefutableHsPat pat
       = go pat
@@ -272,13 +272,16 @@ GHC also has wildcard patterns in many places (here  ``Core.hs``):
 
 Would ``Unfolding`` be expanded by another constructor, all these functions would still compile but some would become semantically wrong, laying an additional burden on the code author.
 
+Actually, a `recent issue <https://gitlab.haskell.org/ghc/ghc/-/issues/21831>`_ (point 1) has to do with ``isEvaldUnfolding`` and ``isValueUnfolding`` returning ``False`` for too many input values.
+Had we had Or patterns, the code authors probably would have thought more thoroughly about the other cases instead of using a wildcard pattern.
+
 
 Effect and Interactions
 -----------------------
 
-The main effect of or patterns is twofold:
+The main effect of Or patterns is twofold:
 
-1. With or patterns developers can avoid ``_`` wildcard patterns which can
+1. With Or patterns developers can avoid ``_`` wildcard patterns which can
    unintentionally match constructors as types are being extended.
 
 2. Or patterns allow more code reuse as right hand sides can be shared by many patterns.
@@ -289,7 +292,7 @@ GADTs & Existential quantification
 
 With existential quantification and GADTs, patterns can not only bind values, but also equality constraints, dictionaries and existential type variables. We described in `2.2`_ how these new constraints are handled: required constraints of the individual patterns are merged while provided constraints are deleted.
 
-So the following example would not type check because the or pattern doesn't provide the constraint ``a = Int``:
+So the following example would not type check because the Or pattern doesn't provide the constraint ``a = Int``:
 
 ::
 
@@ -302,7 +305,8 @@ So the following example would not type check because the or pattern doesn't pro
 
 Costs and Drawbacks
 -------------------
-Or patterns are a small feature which is quite simple to implement given that we forbid binding any variables. There are no obvious drawbacks.
+The cost is a small implementation overhead. Also, as Or patterns are syntactic sugar, they add to the amount of syntax Haskell beginners have to learn. 
+We believe however that the mentioned advantages more than compensate for these disadvantages.
 
 
 Alternatives
@@ -324,7 +328,7 @@ for separating case alternatives, so it looks familiar. Example: ::
 
 An alternative to the originally proposed syntax is using ``/`` instead of ``|``
 to avoid parentheses in some cases. This can't completely eliminate parentheses
-around or patterns, as the following example demonstrates: ::
+around Or patterns, as the following example demonstrates: ::
 
   f T1{} / T2{} / T3 T4 = ...
 
@@ -339,22 +343,22 @@ This could mean one of these two: ::
   -- where the argument is defined like
   data T = T1 | T2 | T3 T
 
-Another suggestion was to use curly braces around or patterns, instead of
+Another suggestion was to use curly braces around Or patterns, instead of
 parens. However, this causes ambiguities in the syntax. Two examples: ::
 
     -- Not clear if curly braces are for a do block or for a binding LHS
     do { ... } <- ...
 
     -- Not clear if curly braces are for a record pattern (where Foo is a record
-    -- constuctor) or for an or pattern (matching the argument of Foo)
+    -- constuctor) or for an Or pattern (matching the argument of Foo)
     case x of Foo { ... } -> ...
 
-Yet another suggestion is to use the syntax ``T1 or T2`` by making ``or`` a keyword inside or patterns. This however leaves room for ambiguity: ``fun (T1 or T2) = 0`` could either denote an or pattern or a simple pattern matching on the binary constructor ``T1``. If we enforce it to denote an or pattern then this would be a breaking change.
+Yet another suggestion is to use the syntax ``T1 or T2`` by making ``or`` a keyword inside Or patterns. This however leaves room for ambiguity: ``fun (T1 or T2) = 0`` could either denote an Or pattern or a simple pattern matching on the binary constructor ``T1``. If we enforce it to denote an Or pattern then this would be a breaking change.
 
 Binding pattern variables
 ~~~~~~~~~~~~~~~~~~
 
-The `parent proposal <https://github.com/ghc-proposals/ghc-proposals/pull/43>`__ allowed or patterns to bind variables as long as they are shared by all individual patterns:
+The `parent proposal <https://github.com/ghc-proposals/ghc-proposals/pull/43>`__ allowed Or patterns to bind variables as long as they are shared by all individual patterns:
 
 ::
 
@@ -370,7 +374,7 @@ Future proposals could build on the current one and further specify it to eventu
 Alternative semantics using view patterns
 ~~~~~~~~~~~~~~~~~~~~~~
 
-We could define the semantics of or patterns as a simple desugaring to view
+We could define the semantics of Or patterns as a simple desugaring to view
 patterns. The desugaring rule is: ::
 
     (p1; … ; pk)
@@ -378,9 +382,9 @@ patterns. The desugaring rule is: ::
     ((\x -> case x of p1 -> True; p2 -> True; … ; pk -> True; _ -> False)
         -> True)
 
-The desugaring rule defines both static and dynamic semantics of or patterns:
+The desugaring rule defines both static and dynamic semantics of Or patterns:
 
-An or pattern type checks whenever the desugared pattern type checks; the dynamic semantics of an or pattern is the same as the dynamic semantics of its desugared pattern.
+An Or pattern type checks whenever the desugared pattern type checks; the dynamic semantics of an Or pattern is the same as the dynamic semantics of its desugared pattern.
 
 Unresolved Questions
 --------------------
