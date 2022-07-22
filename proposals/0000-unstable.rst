@@ -114,6 +114,8 @@ Technical specification
    unstable. After warning the user of the consequences, the error would inform users
    that specifying ``-XUnstable`` makes the error go away.
 
+#. Remove ``FUN`` from the export list of ``GHC.Exts`` (so that ``FUN`` becomes unstable).
+
 #. (Technically beyond the scope of this proposal process) The module-level documentation
    for each of the exported modules of ``ghc-prim`` will include a note that users
    should not import that module directly; instead, users will be directed where to
@@ -266,6 +268,14 @@ Effect and Interactions
    this proposal is accepted and implemented, other than specifying ``-XUnstable``
    (which isn't backward compatible). If we believe that any of the above functions
    are used beyond GHC itself, we should introduce a migration period.
+
+#. The ``FUN`` type is currently exported from ``GHC.Exts``, but this export would
+   be removed as part of this proposal. Accordingly, any user of ``FUN`` will have
+   a hard breakage, where they have to now import ``GHC.Prim`` (to get ``FUN``) and
+   have to use CPP to specify ``-XUnstable``.
+
+   ``FUN :: forall (m :: Multiplicity) -> forall {r1 :: RuntimeRep} {r2 :: RuntimeRep}. TYPE r1 -> TYPE r2 -> Type``
+   is the primitive function type, but its current kind is likely to change.
 
 Costs and Drawbacks
 -------------------
