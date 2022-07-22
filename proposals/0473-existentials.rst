@@ -526,6 +526,20 @@ Proposed Change Specification
       This stops the generality of ``TransformEC`` from "leaking" other type
       equalities.
 
+#. **Core representation of ``/\``.**
+
+   1. The type constructor ``/\`` is just an ordinary pair in Core. Here might be its definition::
+
+     type (/\) :: Constraint -> Type -> Type
+     data c /\ a = MkCPair c a
+     fstC :: c /\ a -> c
+     fstC (MkCPair c a) = c
+     sndC :: c /\ a -> a
+     sndC (MkCPair c a) = a
+
+   As described above, type inference will figure out when to construct and eliminate the ``/\`` type,
+   and desugaring will insert calls to ``MkCPair``, ``fstC``, and ``sndC``.
+
    #. Suppose ``f args :: C /\ ty`` and the constraint ``C`` is used. GHC will then
       generate bindings that look like ::
 
@@ -864,14 +878,7 @@ Costs and Drawbacks
 Alternatives
 ------------
 
-1. The current proposal allows the argument to ``Witness`` to be an arbitrary
-   expression. We could imagine a restriction requiring this to be a variable,
-   not an expression. This would mean that users would have to manually bind
-   the results of function calls that return existentials.
-
-   I do not favor this restriction, but it is plausible.
-
-#. We could imagine just adding ``exists`` without ``/\`` (using e.g. ``Dict``
+1. We could imagine just adding ``exists`` without ``/\`` (using e.g. ``Dict``
    to accomplish the goal of ``/\``). However, I think these features go nicely
    together: would we want ``forall`` without ``=>``?
 
@@ -992,20 +999,6 @@ Alternatives
 
    #. The ``InstCo`` and ``NthCo`` coercion forms now work on ``ExistsTy`` analogously
       to how they work on ``ForAllTy``.
-
-   #. Suppose ``f args :: C /\ ty`` and the constraint ``C`` is used. GHC will then
-      generate bindings that look like ::
-
-        let result :: C /\ ty
-            result = f args
-
-            dictC :: C
-            dictC = fstC result   -- fstC :: forall c ty. c /\ ty -> c
-
-      in its evidence bindings. Note the separate binding for ``result``. This will
-      mean that multiple uses of ``f args`` in the body of a function will get commoned
-      up during optimization. This is important in order to avoid unexpected repeated
-      evaluation of ``f args`` due to the use of ``C``.
 
 Unresolved Questions
 --------------------
