@@ -273,8 +273,11 @@ Accordingly:
   ``Data.Kind`` should have a stable API; the kinds of these type
   constructors will not change.
 
-* ``GHC.Prim`` exports ``SORT``, ``TypeOrConstraint``, ``IP``.
-  Users may import them from ``GHC.Prim``, but they should not complain if they change in future.
+* A module within ``ghc-prim`` exports: ``CONSTRAINT``, ``(=>)``, ``(==>)``, ``SORT``, ``TypeOrConstraint(..)``,
+  and ``IP``. If `#524`_ is accepted and implemented, importing the module from ``ghc-prim``
+  will require the user to enable ``-XUnstable``.
+
+.. _`#524`: https://github.com/ghc-proposals/ghc-proposals/pull/524
 
 Implementation notes
 :::::::::::::::::::::::::::::::::
