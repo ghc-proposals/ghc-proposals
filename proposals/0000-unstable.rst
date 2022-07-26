@@ -84,7 +84,7 @@ we might be able to roll out more features, learn from their use, and then refin
 ``-XStable``
 ~~~~~~~~~~~~
 
-Unstable features are, well, unstable. This means that some developers and enterprises
+Unstable features are, well, unstable. Consequently, some developers and enterprises
 may wish to forbid these features in their code. It works best to have an automated
 way of enforcing this prohibition. The ``-XStable`` extension does exactly this: it prevents
 the use of ``-XUnstable`` (only). Now, a developer might put ``-XStable`` in its ``default-extensions``
