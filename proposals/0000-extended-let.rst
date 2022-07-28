@@ -11,11 +11,12 @@ Let Extensions
 .. contents::
 
 .. _`#448`: https://github.com/ghc-proposals/ghc-proposals/pull/448
+.. _`#378`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0378-dependent-type-design.rst
 
 This proposal suggests several extensions to Haskell's ``let`` syntax,
-allowing for local type synonyms (but not datatypes or classes), ``let`` in
-types, and ``let`` amongst patterns. The different features in this proposal
-may be accepted independent of the others, but I think they synergize nicely.
+allowing for local type synonyms (but not datatypes or classes) and ``let`` in
+types. The two different features in this proposal
+may be accepted independent of the other, but I think they synergize nicely.
 
 This proposal was spun off from `#448`_, but you do not need to read that
 proposal to understand this one.
@@ -43,6 +44,9 @@ Motivation
    type variable: in the scope of ``b``, ``b`` is synonymous with ``Bool``. Yet the only way
    to make such a ``b`` is via a pattern (or result, `#228`_) signature. Why force users
    to use matching instead of binding the variable directly?
+
+#. Supporting ``let``\ -binding in types gets us a bit closer to unifying the syntax
+   of types and terms, in sympathy with `#378`_.
 
 Proposed Change Specification
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -87,151 +91,10 @@ Effects
    is nothing stopping us from doing so, but it would seem to violate expectations of Haskellers
    and would be the first instance of a lower-case type variable being in scope at the top level.
 
-``let`` in patterns
--------------------
-
-This part of this proposal allows introducing a ``let``\ -binding in a pattern.
-The bound variable(s) scope over the same region of code as the pattern-bound
-variables do.
-
-The syntax for this feature is a bit awkward, and so this proposal presents
-two alternatives for discussion. I have a slight preference for Alternative 2.
-
-This goes beyond any previous proposal.
-
-Motivation
-~~~~~~~~~~
-
-1. This is needed to uphold the `Explicit Binding Principle`_.
-
-#. Though admittedly a weakish motivation, there is currently no way to share
-   expressions used in common in multiple view patterns. See `examples <#let-in-pattern-example>`_
-   below.
-
-Specification Alternative 1
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-1. With ``-XExtendedLet``, add a new form of pattern as follows::
-
-     pat → 'let' decls 'in' pat
-
-#. Any entites bound in ``decls`` scope over the same region of the program
-   that pattern-bound variables scope over, with the addition of the ``decls``
-   themselves (that is, the declarations can be recursive).
-
-Specification Alternative 2
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-0. **Background**. Here are some productions from the `Haskell 2010 Report`_ (to be changed
-   by this proposal)::
-
-     funlhs → var apat {apat}
-            | pat varop pat
-            | '(' funlhs ')' apat {apat}
-
-     apat → gcon               -- this one is unchanged, but provides context
-          | literal
-          | …
-
-     lexp → '\' apat1 … apatn '->' exp   (n ≧ 1)
-          | …
-
-     lpat → apat
-          | '-' (integer|float)
-          | gcon apat1 … apatn
-
-   (Recall that braces mean "0 or more".)
-
-1. With ``-XExtendedLet``, change the grammar to be ::
-
-     funlhs → var apats1
-            | pat varop pat
-            | '(' funlhs ')' apats
-
-     apats1 → apat
-            | apat apats
-            | '(' 'let' decls ')' apats
-
-     apats →
-           | apats1
-
-     lexp → '\' apats1 '->' exp
-          | …
-
-     lpat → apat
-          | '-' (integer|float)
-          | gcon apats
-
-   This allows phrases like ``f x (let y = g x x) (frob y -> True) = ...``, where we can include
-   a ``let`` construct in the middle of a list of patterns. The pattern grammar itself is unaffected.
-
-2. Any entities bound in ``decls`` scope over the same region of the program
-   that pattern-bound variables scope over, with the addition of the ``decls``
-   themselves (that is, the declarations can be recursive).
-
-Examples
-~~~~~~~~
-
-.. _let-in-pattern-example:
-
-1. Instead of ::
-
-     f :: Maybe Bool -> Bool -> Bool
-     f (x :: Maybe b) (y :: b) = ...
-
-   we can write (Alternative 1) ::
-
-     f :: Maybe Bool -> Bool -> Bool
-     f (let type b = Bool in x) (y :: b) = ...
-
-   or (Alternative 2) ::
-
-     f :: Maybe Bool -> Bool -> Bool
-     f (let type b = Bool) x (y :: b) = ...
-
-   Note that the ``b`` is in scope in the type signature for ``y``.
-
-   If we instead say (Alternative 1) ::
-
-     f (let type b = _ in (x :: Maybe b)) (y :: b) = ...
-
-   or (Alternative 2) ::
-
-     f (let type b = _) (x :: Maybe b) (y :: b) = ...
-
-   now the choice ``b ~ Bool`` is inferred, but we have an explicit binding
-   site for ``b``, in accordance with the `Explicit Binding Principle`_.
-
-#. Instead of ::
-
-     f x y z (frob x y z -> True) (frob x y z -> False) = ...
-
-   we can write (Alternative 1) ::
-
-     f x y z (let test = frob x y z in (test -> True)) (test -> False) = ...
-
-   or (Alternative 2) ::
-
-     f x y z (let test = frob x y z) (test -> True) (test -> False) = ...
-
-   avoiding some repetition.
-
-Effects
-~~~~~~~
-
-1. In concert with binding type variables in a ``let``, this helps uphold the `Explicit Binding Principle`_.
-   Without this feature, a line such as ``f (x :: Either b b) = ...``
-   has no binding site for ``b``. (Alternatively, we could say that the first ``b`` is a binding site,
-   but then we lose the `Local Lexical Scoping Principle`_, as the binding-site-vs-occurrence distinction depends on what is in scope.)
-
-   The ability to bind variables that would otherwise be pattern-bound is why this feature
-   allows binding type variables.
-
 ``let`` in types
 ----------------
 
-This part of the proposal allows ``let`` to be used in types. This part goes
-beyond any previous proposal.
+This part of the proposal allows ``let`` to be used in types.
 
 Motivation
 ~~~~~~~~~~
@@ -244,7 +107,7 @@ Motivation
 Proposed Change Specification
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-1. With ``-XExtendedLets``, expand the grammar for types to include the following::
+1. With ``-XExtendedLet``, expand the grammar for types to include the following::
 
      type → 'let' tdecls 'in' type
 
@@ -282,10 +145,6 @@ Effects
    aggressively. We can think about ways to preserve synonyms as we gain experience
    with the feature.
 
-#. This part of the proposal does not directly serve any of the principles outlined
-   at the top of this proposal, but now seems a convenient time to introduce this
-   extension, which should be relatively easy to implement.
-
 Effect and Interactions
 -----------------------
 
@@ -294,7 +153,23 @@ Effect and Interactions
    us closer to getting this principle.
 
 #. The ``-XExtendedLet`` features work as a convenient replacement
-   for pattern signature binds, without sacrificing the `Explicit Binding Principle`_.
+   for pattern signature binds, without sacrificing the `Explicit Binding Principle`_. For example::
+
+     f :: Maybe (Either Int (Char, Double, Bool)) -> Maybe (Either Int (Char, Double, Bool))
+     f Nothing = Just (Left 5)
+     f (x :: a) = (x :: a)
+
+   could be rewritten to ::
+
+     f :: Maybe (Either Int (Char, Double, Bool)) -> Maybe (Either Int (Char, Double, Bool))
+     f = \cases
+       Nothing -> Just (Left 5)
+       x :: a -> x :: a
+       where
+         type a = _
+
+   While this second version is more verbose, it makes the binding site of ``a`` explicit, the
+   linchpin of the `Explicit Binding Principle`_.
 
 #. The existing trick of using e.g. ``f :: forall a. (a ~ SomeBigType). ... a ... a ... a `` to
    bind a type variable can be retired (though it would still work just as well as it does today).
@@ -308,9 +183,11 @@ Costs and Drawbacks
 Alternatives
 ------------
 
-1. There are two possible syntaxes proposed for ``let`` in patterns. We must choose one.
+1. A `previous version of this proposal <https://github.com/goldfirere/ghc-proposals/blob/29abac166f44dc02b492462c2bcb942a8717354f/proposals/0000-extended-let.rst#id15>`_ included two possible syntaxes for a ``let`` amongst a list of patterns. Neither was very satisfactory, and
+   discussion revealed that the syntax was really unnecessary. So I've removed this part of the proposal.
+
 
 Unresolved Questions
 --------------------
 
-1. What syntax to use for ``let`` in patterns?
+None at this time.
