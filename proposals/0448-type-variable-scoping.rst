@@ -3,11 +3,11 @@ Modern Scoped Type Variables
 
 .. sectnum::
 .. author:: Richard Eisenberg
-.. date-accepted::
+.. date-accepted:: 2022-07-25
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/448>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/448>`_.
 .. contents::
 
 This proposal updates the treatment of scoped type variables in GHC, tying
