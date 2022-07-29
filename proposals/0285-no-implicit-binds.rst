@@ -3,7 +3,7 @@
 
 .. author:: John Ericson (@Ericson2314)
 .. date-accepted:: 2020-05-04
-.. ticket-url::
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/merge_requests/8629
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/285>`_.
