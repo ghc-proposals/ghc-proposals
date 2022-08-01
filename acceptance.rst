@@ -30,7 +30,7 @@ Before accepting, the shepherd should check for the following
 3. Is the proposal sufficiently illustrated with examples? Examples help
    us understand the details that will be needed during implementation.
 
-4. Does the proposal indicate someone plans to implement it.
+4. Does the proposal indicate someone plans to implement it?
 
 Acceptance steps
 ----------------
