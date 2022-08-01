@@ -269,7 +269,7 @@ of `Kinds are calling conventions <https://simon.peytonjones.org/kinds-are-calli
 Accordingly:
 
 * ``Data.Kind`` exports: ``Symbol``, ``Type``, ``TYPE``, ``Constraint``,
-  ``CONSTRAINT``, ``RuntimeRep``, ``Multiplicity``, ``Levity``, ``(->)``, ``(=>)``, and ``(==>)``.
+  ``CONSTRAINT``, ``RuntimeRep``, ``Multiplicity``, ``Levity``, and ``(->)``.
   ``Data.Kind`` should have a stable API; the kinds of these type
   constructors will not change.
 
