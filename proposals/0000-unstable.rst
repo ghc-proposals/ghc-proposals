@@ -228,41 +228,13 @@ Effect and Interactions
    other modules in the ``base`` package. However,
    the following identifiers are exported from ``ghc-prim`` but not elsewhere::
 
-     GHC.CString.unpackAppendCStringUtf8#
-     GHC.CString.unpackFoldrCstringUtf8#
-     GHC.Classes.IP
-     GHC.Classes.compareInt
-     GHC.Classes.compareInt#
-     GHC.Classes.compareWord
-     GHC.Classes.compareWord#
-     GHC.Classes.divInt#
-     GHC.Classes.divInt8#
-     GHC.Classes.divInt16#
-     GHC.Classes.divInt32#
-     GHC.Classes.modInt#
-     GHC.Classes.modInt8#
-     GHC.Classes.modInt16#
-     GHC.Classes.modInt32#
-     GHC.Classes.divModInt#
-     GHC.Classes.divModInt8#
-     GHC.Classes.divModInt16#
-     GHC.Classes.divModInt32#
      GHC.Debug.debugLn
      GHC.Debug.debugErrLn
-     GHC.Magic.oneShot
-     GHC.Prim.Ext.getThreadAllocationCounter#
-     GHC.Prim.Ext.asyncRead#   -- only on mingw32
-     GHC.Prim.Ext.asyncWrite#  -- only on mingw32
-     GHC.Prim.Ext.asyncDoProc# -- only on mingw32
      GHC.Prim.Panic.absentSumFieldError
      GHC.Prim.Panic.panicError
      GHC.Prim.Panic.absentError
      GHC.Prim.Exception.raiseOverflow   -- other similar functions are exported by "ghc-bignum".GHC.Num.Primitives
      GHC.Tuple.getSolo                  -- other similar definitions are exported by "base".GHC.Tuple
-     GHC.Types.Module                   -- other similar definitions are exported by "base".Type.Reflection.Unsafe
-     GHC.Types.TrName                   -- other similar definitions are exported by "base".Type.Reflection.Unsafe
-     GHC.Types.TyCon                    -- other similar definitions are exported by "base".Type.Reflection.Unsafe
-     GHC.Types.KindBndr                 -- other similar definitions are exported by "base".Type.Reflection.Unsafe
 
    Any user of any of these exports will have no backward-compatible way forward if
    this proposal is accepted and implemented, other than specifying ``-XUnstable``
