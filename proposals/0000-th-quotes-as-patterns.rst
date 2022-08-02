@@ -145,7 +145,7 @@ Relax the rules so that TH Quotes only impose a ``Quote`` constraint when ``newN
 Quotes as patterns
 ~~~~~~~~~~~~~~~~~~
 
-With the new extension ``TemplateHaskellQuotes`` as patterns, quotes which do contain variable bindings are usable in pattern position.
+With the new extension ``TemplateHaskellQuotesAsPatterns``, quotes which do contain variable bindings are usable in pattern position.
 
 Quotes as pattern match raw syntax, not (monadic) actions producing syntax.
 The tying rules are as follows:
@@ -191,7 +191,8 @@ Effect and Interactions
 -----------------------
 
 The banned binding constructs are precisely those which would need ``newName`` in expression position.
-The relaxation of the expression position rules is supposed to make those restrictions more familiar to the reader.
+Through this, the optional propoposed relaxation of the expression position rules is supposed to make those restrictions more familiar to the programmer.
+Specifically, by distinguishing the same subset of quotes in two ways (they're the only ones allowed in pattern position, they get a more general type in expresssion position), we give programmers two different ways to learn the difference between them and quotes in general.
 
 Costs and Drawbacks
 -------------------
