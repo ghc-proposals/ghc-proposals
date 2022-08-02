@@ -37,7 +37,7 @@ Motivation
    This proposal allows the modules to remain internal while still being
    available for testing without recompilation.
 
-2. Suppose package ``pack`` exports a very general interface to an particular
+2. Suppose package ``pack`` exports a very general interface to a particular
    algorithm. Because it is so general, ``pack`` offers no way of, say, using
    real-world data to seed the algorithm. Instead, downstream packages such as
    ``pack-json`` and ``pack-csv`` provide such access.
