@@ -305,5 +305,10 @@ Implementation Plan
 
 I lack the time capacity to implement these changes all by myself, and would submit this to the Haskell Foundation as part of whatever fund as part of whatever https://discourse.haskell.org/t/pre-hftt-ongoing-focus-on-migration-tools/4626 becomes.
 
+That said, I would be happy to pair / code review / etc. with whoever does end up working on it.
+I likewise have been pitching in while @tek is leading the charge on `Proposal 285`_, and that process has felt very good to me.
+
+.. _`Proposal 285`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0246-overloaded-bracket.rst
+
 Endorsements
 -------------
