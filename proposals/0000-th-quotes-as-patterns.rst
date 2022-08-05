@@ -131,6 +131,27 @@ This is all accomplished without trying to minimize TH AST changes, which is qui
 Proposed Change Specification
 -----------------------------
 
+Quotes as patterns
+~~~~~~~~~~~~~~~~~~
+
+With the new extension ``TemplateHaskellQuotesAsPatterns``, slightly modified quotes are usable in pattern position.
+
+The first difference is that quotes as pattern match raw syntax, not (monadic) actions producing syntax.
+The tying rules are as follows:
+
+- ``[e| ... |]`` matches ``Exp``
+- ``[p| ... |]`` matches ``Pat``
+- ``[t| ... |]`` matches ``Type``
+- ``[d| ... |]`` matches ``Dec``
+
+The second differences is that splices within these quotes contain patterns instead of expressions::
+
+  p is in <pat>
+  --------------------------------
+  [| ... $(p) ... |] is in <apat>
+
+The third and final difference is that names in quotes must all be uses, never bindings.
+
 Optional: Fine-grained Quotation constraints
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -142,23 +163,6 @@ Optional: Fine-grained Quotation constraints
 The ``Quote`` class has a ``newName`` method, and is just used when binding local variables.
 Relax the rules so that TH Quotes only impose a ``Quote`` constraint when ``newName`` is in fact needed.
 
-Quotes as patterns
-~~~~~~~~~~~~~~~~~~
-
-With the new extension ``TemplateHaskellQuotesAsPatterns``, quotes which do contain variable bindings are usable in pattern position.
-
-Quotes as pattern match raw syntax, not (monadic) actions producing syntax.
-The tying rules are as follows:
-
-- ``[e| ... |]`` matches ``Exp``
-- ``[p| ... |]`` matches ``Pat``
-- ``[t| ... |]`` matches ``Type``
-- ``[d| ... |]`` matches ``Dec``
-
-Splices in quotes are binding points for arbitrary sub-patterns.
-
-Names in patterns must be uses not bindingsresolved.
-Bindings
 
 Examples
 --------
@@ -185,7 +189,7 @@ Examples
 
      f [| \x -> x |] = ...
 
-   It is disallowed because ``x`` is bound in the quote.
+   It is disallowed because the first ``x`` in the quote is a binding not a use.
 
 Effect and Interactions
 -----------------------
