@@ -243,7 +243,7 @@ Quotes that bind local variables do in fact have an interpretation as non-linear
 
   f (LamE [VarP __x0] (VarE __x1) | nameBase __x0 == "x" && __x0 == __x1 = ...
 
-This gets especially interesting with multiple scope::
+This gets especially interesting with multiple scopes::
 
   f [| (\x -> x, \x -> x) |] = ...
 
