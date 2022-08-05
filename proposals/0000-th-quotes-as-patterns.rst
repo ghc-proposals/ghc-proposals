@@ -16,6 +16,7 @@ Template Haskell quotes as patterns
 
 The Template Haskell AST is inherently unstable.
 Let's make that less of an issue.
+We can do that by allowing Quotes to be used instead of Template Haskell AST data constructors in patterns.
 
 Motivation
 ----------
