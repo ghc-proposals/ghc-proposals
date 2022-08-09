@@ -283,13 +283,13 @@ Examples of langauges with also implement this feature
 Scheme and Racket
 ~~~~~~~~~~~~~~~~~
 
-- `syntax-rules`, see https://docs.racket-lang.org/guide/syntax-rules.html .
-- `syntax-case`, see https://docs.racket-lang.org/guide/syntax-case.html .
+- ``syntax-rules``, see https://docs.racket-lang.org/guide/syntax-rules.html .
+- ``syntax-case``, see https://docs.racket-lang.org/guide/syntax-case.html .
 
 Rust
 ~~~~
 
-- Pattern-based macros (like `syntax-rules`) https://doc.rust-lang.org/reference/macros-by-example.html .
+- Pattern-based macros (like ``syntax-rules``) https://doc.rust-lang.org/reference/macros-by-example.html .
 
 - Procedural macros don't have great pattern matching, but https://github.com/nrc/proc-macro-rules is an library-level experiment to try to bridge the gap.
 
