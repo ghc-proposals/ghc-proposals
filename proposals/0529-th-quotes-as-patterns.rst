@@ -15,6 +15,7 @@ Template Haskell quotes as patterns
 The Template Haskell AST is inherently unstable.
 Let's make that less of an issue.
 We can do that by allowing Quotes to be used instead of Template Haskell AST data constructors in patterns.
+This is a well-known technique used in many other languages' macro systems.
 
 Motivation
 ----------
@@ -273,6 +274,37 @@ Unresolved Questions
 --------------------
 
 None at this time.
+
+Related Work
+------------
+
+Examples of langauges with also implement this feature
+
+Scheme and Racket
+~~~~~~~~~~~~~~~~~
+
+- `syntax-rules`, see https://docs.racket-lang.org/guide/syntax-rules.html .
+- `syntax-case`, see https://docs.racket-lang.org/guide/syntax-case.html .
+
+Rust
+~~~~
+
+- Pattern-based macros (like `syntax-rules`) https://doc.rust-lang.org/reference/macros-by-example.html .
+
+- Procedural macros don't have great pattern matching, but https://github.com/nrc/proc-macro-rules is an library-level experiment to try to bridge the gap.
+
+
+Idris
+~~~~~
+
+- https://davidchristiansen.dk/pubs/type-directed-elaboration-of-quasiquotations.pdf
+
+Lean
+~~~~
+
+- https://dl.acm.org/doi/pdf/10.1145/3110278
+
+- https://arxiv.org/pdf/2001.10490.pdf
 
 Future Work
 -----------
