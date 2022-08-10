@@ -72,7 +72,7 @@ There are several reasons this might happen:
 
       -- Example: Type.Reflection.SomeTypeRep (in base)
       data SomeTypeRep where
-          SomeTypeRep :: forall k (a :: k) !(TypeRep a) %1 -> SomeTypeRep
+          SomeTypeRep :: forall k (a :: k). !(TypeRep a) %1 -> SomeTypeRep
 
       -- Very desirable, but not yet legal:
       -- newtype SomeTypeRep = SomeTypeRep (exists k (a :: k). TypeRep a)
