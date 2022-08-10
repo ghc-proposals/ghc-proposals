@@ -307,7 +307,7 @@ while MkExample4Int and MkExample4Bool are found to be
 denestable, satisfying condition 1 because they do not belong to
 the same data instance declaration.
 
-But this distinction is appropriate: the data family constructors
+This distinction is appropriate: the data family constructors
 provide users less freedom.  Consider this function:
 
 ::
@@ -316,8 +316,8 @@ provide users less freedom.  Consider this function:
    example3Motivator (MkExample3Int  li) = last (14 : li)
    example3Motivator (MkExample3Bool li) = and li
 
-This function type-checks.  At runtime, the calls it must be able to
-choose the appropriate branch, and since types are erased at runtime,
+This function type-checks.  When called at runtime, it must be able to
+choose the appropriate branch. Since types are erased at runtime,
 the only way it can do so is by distinguishing between the
 ``MkExample3Int`` and ``MkExample3Bool`` constructors.  This feat
 becomes impossible if both constructors are denested, and at least
