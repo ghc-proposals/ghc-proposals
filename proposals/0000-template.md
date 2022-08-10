@@ -78,7 +78,7 @@ during the PR discussion.
 
 ## Costs and Drawbacks
 
-Give an estimate on development and maintenance costs. List how this effects
+Give an estimate on development and maintenance costs. List how this affects
 learnability of the language for novice users. Define and list any remaining
 drawbacks that cannot be resolved.
 
