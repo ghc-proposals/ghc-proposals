@@ -140,7 +140,7 @@ There are several reasons this might happen:
 
    ..
      The real Ur is lazy in its field.
-     TODO: Investigate. Is this important in any way?
+     TODO: Investigate.  Is this important in any way?
 
  ..
    The links in "many examples of wrapper types" in the next paragraph
@@ -197,7 +197,7 @@ such as arrays, lists, sets, and tuples will never be unpacked.
 These limitations should be familiar: The same ones apply to unboxing
 ``Int``\ s.  It is usually possible to work around these limitations,
 and libraries defining such types often strive to do so at their
-internal use-sites.  However, doing so can be a chore. The workarounds
+internal use-sites.  However, doing so can be a chore.  The workarounds
 can have costs to code readability and are only effective when they
 are maintained.  (The workaround of monomorphising containers even has
 runtime cost, since it necessarily increases code size.)
@@ -285,9 +285,10 @@ to be active.
    data    Example1 a = MkExample1 { exampleField1 :: !a }
    newtype Example2 a = MkExample2 { exampleField2 ::  a }
 
-The MkExample1 constructor is inferred as denestable.
-The MkExample2 constructor is not denestable, because it corresponds
-to a newtype declaration rather than a data or data instance declaration.
+The ``MkExample1`` constructor is inferred as denestable.
+The ``MkExample2`` constructor is not denestable, because it
+corresponds to a ``newtype`` declaration rather than a ``data`` or
+``data instance`` declaration.
 
 
 
@@ -301,9 +302,9 @@ to a newtype declaration rather than a data or data instance declaration.
    data instance Example4 Int  = MkExample4Int  ![Int]
    data instance Example4 Bool = MkExample4Bool ![Bool]
 
-Examples 3 and 4 may appear similar.  However, MkExample3Int and
-MkExample3Bool violate condition 1 and so are not denestable,
-while MkExample4Int and MkExample4Bool are found to be
+Examples 3 and 4 may appear similar.  However, ``MkExample3Int`` and
+``MkExample3Bool`` violate condition 1 and so are not denestable,
+while ``MkExample4Int`` and ``MkExample4Bool`` are found to be
 denestable, satisfying condition 1 because they do not belong to
 the same data instance declaration.
 
@@ -317,14 +318,14 @@ provide users less freedom.  Consider this function:
    example3Motivator (MkExample3Bool li) = and li
 
 This function type-checks.  When called at runtime, it must be able to
-choose the appropriate branch. Since types are erased at runtime,
+choose the appropriate branch.  Since types are erased at runtime,
 the only way it can do so is by distinguishing between the
 ``MkExample3Int`` and ``MkExample3Bool`` constructors.  This feat
 becomes impossible if both constructors are denested, and at least
 becomes more difficult if only one of the two constructors is
 denested.
 
-The analogous function for Example4 fails to typecheck because
+The analogous function for ``Example4`` fails to typecheck because
 pattern-matching against a data instance constructor is only
 possible when the scrutinee type matches the data instance head.
 
@@ -335,20 +336,20 @@ possible when the scrutinee type matches the data instance head.
    data Example5 (c :: Constraint) where
      MkExample5 :: c => Example5 c
 
-The MkExample5 constructor of Example5 has one field, which holds the
-run-time evidence for the constraint c, represented by a GC-managed
+The ``MkExample5`` constructor of ``Example5 c`` has one field, which holds the
+run-time evidence for the constraint ``c``, represented by a GC-managed
 pointer, usually to an instance-method-dictionary-object.  However,
-even with -fdicts-strict, GHC will not make this a strict field, as
+even with ``-fdicts-strict``, GHC will not make this a strict field, as
 doing so is incompatible with the newtype-class optimization.
 Today, the only evidence fields GHC makes strict are the implicit
-equality evidence fields of a GADT constructor.  So, MkExample5
+equality evidence fields of a GADT constructor.  So, ``MkExample5``
 does not satisfy condition 4 and is therefore not denestable.
 
 ..
   TODO: Even more examples? There are quite a few in the Motivation
   section as well.
 
-  Do I really need a DataToTag examples? I hypothesize nobody is
+  Do I really need a DataToTag example? I hypothesize nobody is
   actually affected by that change except the proposal implementors.
 
 
@@ -364,7 +365,7 @@ the data constructor (if it exists) used to produce the resulting
 evaluated heap object.  Since ``-fstrict-box-denesting`` affects the
 set of things that produce new evaluated heap objects, it can affect
 the result of a call to the current implementation of
-``dataToTag#``. For example, ``dataToTag# (MkExample1 [True])`` with
+``dataToTag#``.  For example, ``dataToTag# (MkExample1 [True])`` with
 its current implementation may return either
 
  * the index ``0#`` of the ``MkExample1`` constructor, or
@@ -400,7 +401,9 @@ Costs and Drawbacks
 3. The heap objects elided at runtime by ``-fstrict-box-denesting``
    may occasionally provide useful information for debugging or profiling.
 
+
 ..
+  TODO:
   Give an estimate on development and maintenance costs. List how this
   affects learnability of the language for novice users. Define and
   list any remaining drawbacks that cannot be resolved.
@@ -410,7 +413,7 @@ Alternatives
 ------------
 1. To avoid the first listed drawback, it is possible to place
    restrictions on when a constructor with a boxed unlifted
-   field of type is considered denestable. Options include:
+   field of type is considered denestable.  Options include:
 
    1. Only allow denesting when the constructor's result type is also unlifted.
    2. Only allow denesting when the field's type is an algebraic data type.
