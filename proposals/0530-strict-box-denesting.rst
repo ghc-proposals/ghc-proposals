@@ -252,15 +252,17 @@ pattern-matching a value against a denestable constructor does force
 evaluation of that value.
 
 Additionally, the type of the somewhat obscure ``dataToTag#``
-primitive will be changed as follows:
+primitive (and that of its alias ``GHC.Base.getTag``) will be changed
+as follows:
 
 ::
 
    -- Today,
-   dataToTag# :: a -> Int#
+   dataToTag#, getTag
+     :: a -> Int#
 
    -- Under this proposal,
-   dataToTag#
+   dataToTag#, getTag
      :: forall {l :: Levity} (a :: TYPE (BoxedRep l))
      .  DataToTag a => a -> Int#
 
