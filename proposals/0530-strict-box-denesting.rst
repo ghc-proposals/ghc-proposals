@@ -426,6 +426,17 @@ three largely independent parts:
   compilation to actually elide them.
 
 
+This proposal is expected to have almost no impact on Haskell's
+learnability: Its only effect on program meaning is a change to the
+type of an obscure primitive.  Like almost any optimization, it does
+increase the complexity of GHC-Haskell's runtime cost behavior.  But
+this proposal should not greatly affect users' optimization decisions
+outside of the relatively advanced use-cases described in the
+Motivation section, since newtypes will remain more easily optimized
+by GHC in Core.  As a result, this proposal should also not contribute
+much to the difficulty of learning that runtime cost behavior.
+
+
 
 Alternatives
 ------------
