@@ -442,9 +442,15 @@ Alternatives
    enough to make the uselessness apparent to any human programmer with
    enough arcane knowledge to know what ``dataToTag#`` actually does.
 
-   This proposal's approach to managing this interaction has already
-   been independently suggested and is tracked at `GHC issue 20532
-   <https://gitlab.haskell.org/ghc/ghc/-/issues/20532>`_.
+   This user-facing part of this proposal's approach to managing this
+   interaction (introducing a built-in typeclass to validate uses of
+   ``dataToTag#``) has already been independently suggested and is
+   tracked at `GHC issue 20532 <https://gitlab.haskell.org/ghc/ghc/-/issues/20532>`_.
+   Selecting an implementation of ``dataToTag#`` based on its argument
+   type can also be used to make it more efficient, for example by
+   skipping the large-tag check when the relevant type does not have
+   too many constructors. (This is tracked at `GHC issue 21710
+   <https://gitlab.haskell.org/ghc/ghc/-/issues/21710>`_.)
 
 3. There are many possible designs for user control over when this
    optimization is performed:
