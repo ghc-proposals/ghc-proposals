@@ -214,6 +214,8 @@ runtime cost, since it necessarily increases code size.)
   TODO: perhaps add links to past conversations demonstrating demand
 
 
+
+
 Proposed Change Specification
 -----------------------------
 ..
@@ -393,8 +395,15 @@ Costs and Drawbacks
    been useful for GHC developers in the past, but are incompatible
    with this proposal as it is currently written, since it allows
    a wrapper such as ``ShortByteString`` to be represented at runtime
-   by its underlying ``ByteArray#``.  (See also `GHC issue 21792
-   <https://gitlab.haskell.org/ghc/ghc/-/issues/21792>`_\ .)
+   by its underlying ``ByteArray#``.
+
+   Since entering these objects involves an indirection that would
+   largely defeat the purpose of denesting their lifted wrappers, this
+   must be dealt with by changing the proper tag for their pointers.
+   The panicking entry code can very likely be kept, but will now
+   detect a different class of bugs: those where pointer tags are not
+   preserved or where tag inference incorrectly concludes that a
+   pointer must be untagged.
 
 2. This proposal calls for a breaking change to the type of the
    ``dataToTag#`` primitive, making it not applicable in some
@@ -404,11 +413,18 @@ Costs and Drawbacks
    may occasionally provide useful information for debugging or profiling.
 
 
-..
-  TODO:
-  Give an estimate on development and maintenance costs. List how this
-  affects learnability of the language for novice users. Define and
-  list any remaining drawbacks that cannot be resolved.
+The implementation of this proposal is not expected to pose major
+challenges or incur much ongoing maintenance cost.  It consists of
+three largely independent parts:
+
+* Wire in and give special solving behavior to a ``DataToTag`` class.
+  This is expected to be very similar to the recent work that
+  implemented the ``WithDict`` class.
+* Modify the boxed primitives and their operations so that their
+  pointers are tagged with 1 instead of 0.
+* Detect denestable constructors and modify the post-Core phases of
+  compilation to actually elide them.
+
 
 
 Alternatives
@@ -485,6 +501,7 @@ Unresolved Questions
    some ``DecidedDenesting`` field to ``GHC.Generics.MetaCons``?
 
 2. Is there a better/clearer name for this optimization/feature?
+
 
 
 Implementation Plan
