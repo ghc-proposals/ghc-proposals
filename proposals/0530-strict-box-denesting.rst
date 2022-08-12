@@ -403,7 +403,8 @@ Costs and Drawbacks
    The panicking entry code can very likely be kept, but will now
    detect a different class of bugs: those where pointer tags are not
    preserved or where tag inference incorrectly concludes that a
-   pointer must be untagged.
+   pointer must be untagged.  (See also `GHC issue 21792
+   <https://gitlab.haskell.org/ghc/ghc/-/issues/21792>`_\ .)
 
 2. This proposal calls for a breaking change to the type of the
    ``dataToTag#`` primitive, making it not applicable in some
