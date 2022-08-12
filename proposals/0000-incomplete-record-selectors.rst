@@ -72,18 +72,20 @@ Proposed Change Specification
 A **partial field** is a field that does not belong to every constructor of the
 corresponding datatype.
 
-A new warning flag ``-Wincomplete-record-selectors`` will emit a warning whenever:
+A **partial selector occurrence** is a use of a record selector for a partial
+field, either as a selector function in an expression, or as the solution to a
+``HasField`` constraint.
 
-- An expression contains a record selector function for a partial field, and the
-  pattern match checker cannot statically determine that the selector is applied
-  to a constructor which includes the field.
-
-- A ``HasField`` constraint is solved for a partial field.
+The new warning flag ``-Wincomplete-record-selectors`` will emit a warning for
+each partial selector occurrence for which the pattern match checker cannot
+statically determine that the selector is applied to a constructor that
+includes the field.
 
 The exact capabilities of the pattern match checker are out of scope for this
-proposal.  It is acceptable if all uses of a partial field as a selector emit a
-warning.  For ``HasField`` it is likely to be difficult to use knowledge about
-the expression to which the selector is applied.
+proposal.  It is acceptable if all partial selector occurrences emit a warning,
+but the implementation may choose to suppress the warning in particular cases
+where it can determine that any argument to the partial selector will contain
+the field.
 
 This warning is not implied by ``-Wall``, just as
 ``-Wincomplete-record-updates`` and ``-Wpartial-fields`` are not.
@@ -126,9 +128,40 @@ When ``-Wincomplete-record-selectors`` is enabled:
     k3 T1{x=x'} = x'
     k3 T2{} = 0
 
-4. Optionally, expressions such as ``x (T1 { x = 0, y = True })`` and ``case r
-   of { T2 _ -> 0 ; _ -> x r }`` may skip the warning, depending on the
-   capabilities of the pattern match coverage checker.
+
+Long range information
+~~~~~~~~~~~~~~~~~~~~~~
+
+Expressions such as the following will obviously never cause a pattern match
+failure at runtime, because ``x`` is applied to an argument that will
+necessarily use the ``T1`` constructor::
+
+    x (T1 { x = 0, y = True })
+
+    case r of { T2 _ -> 0 ; _ -> x r }
+
+    let t1 = T1 { x = 0, y = True } in t1.x
+
+Thus the implementation may be able to suppress the warning, depending on the
+capabilities of the pattern match coverage checker.
+
+
+GADTs
+~~~~~
+
+Consider the following GADT::
+
+    data G a where
+      MkG1 :: { x :: Int    } -> G Bool
+      MkG2 :: { y :: Double } -> G Char
+
+Any use of ``x`` or ``getField @"x"`` applied to a term of type ``G a`` will
+result in a warning.  However if the argument type is ``G Bool`` then the
+warning may optionally be suppressed, for example, this definition need not emit
+a warning::
+
+    f :: G Bool -> Int
+    f r = getField @"x" r
 
 
 Effect and Interactions
@@ -146,6 +179,18 @@ implemented as currently specified.  I intend to bring forward a separate
 proposal to split updates into a separate class, thereby avoiding this issue
 (see also `proposal #286
 <https://github.com/ghc-proposals/ghc-proposals/pull/286>`_).
+
+This proposal makes no changes to ``-Wpartial-fields``, so that users may choose
+to receive warnings at definition sites or at use sites.  Both may be useful in
+different contexts:
+
+- a library author may wish to enable ``-Wpartial-fields`` to avoid ever
+  defining a partial field in their library, since they have no guarantee that
+  downstream users will enable the use-site warnings;
+
+- an application author may be using an existing library that defines partial
+  fields, but may wish to avoid using them by enabling
+  ``-Wincomplete-record-selectors -Wincomplete-record-updates``.
 
 
 Costs and Drawbacks
