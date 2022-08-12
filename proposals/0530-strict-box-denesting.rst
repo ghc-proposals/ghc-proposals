@@ -372,9 +372,9 @@ the result of a call to the current implementation of
 ``dataToTag#``.  For example, ``dataToTag# (MkExample1 [True])`` with
 its current implementation may return either
 
- * the index ``0#`` of the ``MkExample1`` constructor, or
- * the index ``1#`` of the ``(:)`` constructor of the underlying
-   heap object ``(:) True []``
+* the index ``0#`` of the ``MkExample1`` constructor, or
+* the index ``1#`` of the ``(:)`` constructor of the underlying
+  heap object ``(:) True []``
 
 \...depending on whether or not the ``-fstrict-box-denesting`` flag is
 active when in the module containing ``Example1`` is compiled.  This
