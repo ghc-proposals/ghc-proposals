@@ -127,7 +127,7 @@ produce a coercion between ``Int`` and ``Bool``, thus::
 That would be Very, Very Bad.  So, although ``Type`` and ``Constraint`` are built
 with different (un-equal) primitive type constructors,
 
-* **GHC's type checker treats `Type` and `Constraint` as not "apart".**
+* **GHC's type checker treats ``Type`` and ``Constraint`` as not "apart".**
 
 That in turn makes GHC complain that the above instances overlap, and are hence illegal.
 You can read more about what "apart" means in
@@ -167,57 +167,63 @@ Proposed Change Specification
 We propose the following new setup, not repeating any types that remains unchanged::
 
   -- Primitive type constructors
-  type SORT :: TypeOrConstraint -> RuntimeRep -> Type
+  type CONSTRAINT :: RuntimeRep -> Type
   type IP   :: forall (r :: RuntimeRep). Symbol -> TYPE r -> CONSTRAINT r
 
   type (=>)  :: forall (r1 :: RuntimeRep) (r2 :: RuntimeRep).
                 CONSTRAINT r1 -> TYPE r2 -> Type  -- primitive
   type (==>) :: forall (r1 :: RuntimeRep) (r2 :: RuntimeRep).
                 CONSTRAINT r1 -> CONSTRAINT r2 -> Constraint
-
-  -- Data types
-  data TypeOrConstraint = TypeLike | ConstraintLike
+  type (-=>) :: forall (r1 :: RuntimeRep) (r2 :: RuntimeRep).
+                TYPE r1 -> CONSTRAINT r2 -> Constraint
 
   -- Synonyms
-  type TYPE       = SORT TypeLike
-  type CONSTRAINT = SORT ConstraintLike
   type Constraint = CONSTRAINT LiftedRep
 
 
 Changes to the type structure
 :::::::::::::::::::::::::::::
 
-This proposal introduces ``(=>)`` and ``(==>)`` as proper type constructors, just like
-any other. Just like ``(->)``, they have kinds and can be abstracted over.
+This proposal introduces ``(=>)``, ``(==>)``, ``(-=>)`` as proper type constructors, just like
+any other, with the kinds specified above.
+Just like ``(->)``, they have kinds and can be abstracted over.
 Unlike ``FUN``, they do not take a ``Multiplicity`` argument; implicitly, it is ``Many``.
+Internally, the new arrows are used as follows:
 
-In order to be backward compatible,
-we allow programmers to use infix ``=>`` instead of ``==>`` in instance heads
-and in quantified constraints:
+* ``(=>)`` is used for type-class-overloaded types, just as in Haskell, e.g.
+  ``f :: forall a. Num a => a -> a``
 
-* In instance heads::
+* ``(==>)`` is used for the dictionary function that arise from an instance declaration such::
+
+      instance Eq a => Eq [a] where ...
+
+  This instance declaration gives rise to a dictionary function ``$fEqList :: forall a. Eq a ==> Eq [a]``.
+
+* ``(-=>)`` is used in the type of the data type for a dictionary.  For example, the data constructor for an ``Eq`` dictionary has the type ``forall a. (a->a->Bool) -=> (a->a->Bool) -=> Eq a``.
+
+The concrete syntax of types and instance declarations is unchanged.
+In particular:
+
+* In instance heads we continue to write::
 
      instance Eq a => Eq (Maybe a) where ...
 
-  means::
+  and not::
 
      instance Eq a ==> Eq (Maybe a) where ...
 
-  
-* In quantified constraints::
+* In quantified constraints we continue to write::
 
      f :: (forall x. Eq x => Eq (c x)) => c Int -> c Bool
 
-  means::
+  and not::
 
      f :: (forall x. Eq x ==> Eq (c x)) => c Int -> c Bool
 
-If you choose, you can also write the latter forms,
-using ``==>``  (imported from ``GHC.Exts``), in these two places.
+The new arrow type constructors are exported by ``ghc-prim:GHC.Types``, but
+are not part of GHC's stable API, and might be subject to future change: see Section 3.4.
 
-However, if you want to use ``==>`` in any other syntactic context, you *must* use ``==>``.
-For example ``x :: T (==>)`` applies ``T`` to ``==>``.
-
+So for users who do not import GHC's unstable API, there is no visible change.
 
 Implicit parameters
 :::::::::::::::::::::::::::::
@@ -264,26 +270,59 @@ But this is just the status quo; it is not a change (see Sectionn 2.2).
 Future stability
 :::::::::::::::::::::::::::::::::
 
-We anticipate that the kind of ``SORT`` may change again, for example to accommodate the ideas
-of `Kinds are calling conventions <https://simon.peytonjones.org/kinds-are-calling-conventions/>`_.
-Accordingly:
+In the past it has not been very clear which parts of GHC's API are stable and which
+are unstable:
 
-* ``Data.Kind`` exports: ``Symbol``, ``Type``, ``TYPE``, ``Constraint``,
-  ``RuntimeRep``, ``Multiplicity``, ``Levity``, and ``(->)``.
-  ``Data.Kind`` should have a stable API; the kinds of these type
-  constructors will not change.
+* By "stable" we mean that efforts will be made to avoid change, and any
+changes should require a GHC proposal.
 
-* A module within ``ghc-prim`` exports: ``CONSTRAINT``, ``(=>)``, ``(==>)``, ``SORT``, ``TypeOrConstraint(..)``,
-  and ``IP``. If `#524`_ is accepted and implemented, importing the module from ``ghc-prim``
-  will require the user to enable ``-XUnstable``.
+* By "unstable" we mean that the API should be considered part of GHC's internal
+  implementation.  Changes may be made to the unstable API without a proposal.
+  Clients are not prevented from importing GHC's unsable API, but they are explicitly
+  using parts of GHC's internal implementation, which is subject to change.
+
+Other proposals aim for formalise this stable/unstable distinction, including
 
 .. _`#524`: https://github.com/ghc-proposals/ghc-proposals/pull/524
+
+But, pending a more systematic approach,
+this proposal makes a modest start on clarifying the distinction.  In particular:
+
+* The unstable API includes:
+
+  * The new type constructors ``CONSTRAINT``, ``(=>)``, ``(==>)``, and ``(-=>)`` are
+    exported by ``GHC.Types``.
+
+  * The existing type constructors ``FUN`` and ``IP``, also exported by ``GHC.Types``.
+
+* The stable API includes:
+
+  * ``Symbol``, ``Type``, ``TYPE``, ``Constraint``,
+  ``RuntimeRep``, ``Multiplicity``, ``Levity``, and ``(->)``; all exported by ``Data.Kind``
+
+We keep ``CONSTRAINT`` in the unstable API for now, exposing it only though the possiblity
+of having unlifted implicit paramters.
+
+We anticipate that the definition of ``TYPE`` or ``CONSTRAINT``
+(currently specified as primitive) may change again,
+for example to accommodate the ideas
+of `Kinds are calling conventions <https://simon.peytonjones.org/kinds-are-calling-conventions/>`_. For example, we might define::
+
+    type TYPEC :: Maybe Convention -> RuntimeRep -> Type
+    type TYPE = TYPEC Nothing
+    data Convention = Eval levity | Call ArityDescription
+    data ArityDecription = ACons RuntimeRep ArityDescription | AZero | AConv Convention
+
+where ``TYPE`` becomes a type synonym for ``TYPEC``, where the latter embodies
+information about arity.  All this is for the future, however, and does not form part of
+this proposal.
 
 Implementation notes
 :::::::::::::::::::::::::::::::::
 
-The fully-applied types ``FUN m r1 r2 t1 t2``, ``(=>) r1 r2 t1 t2``, and ``(==>) r1 r2 t1 t2`` can
-all be represented inside GHC by ``FunTy m t1 t2`` (where ``m`` is ``Many`` for ``(=>)`` and ``(==>)``),
+The fully-applied types ``FUN m r1 r2 t1 t2``, ``(=>) r1 r2 t1 t2``,
+``(==>) r1 r2 t1 t2`` and ``(-=>) r1 r2 t1 t2`` can
+all be represented inside GHC by ``FunTy m t1 t2`` (where ``m`` is ``Many`` for ``(=>)``, ``(==>)``, and ``(-=>)``),
 just as today.  That is, the proposal does not impose
 a new burden on GHC's internal representations.
 
@@ -294,12 +333,6 @@ This is now accepted::
   f :: (?x :: Int#) => Int# -> Int#
   f y = ?x +# y
 
-So is this::
-
-  g :: (=>) (Eq a) (a -> Bool)
-  g x = x == x
-
-along with other abstractions over ``(=>)``.
 
 Effect and Interactions
 -----------------------
@@ -325,24 +358,19 @@ Alternatives
 Two different type constructors
 ::::::::::::::::::::::::::::::::::
 
-We considered having two distinct primitive type constructors, ``TYPE`` exactly as now, and ``Constraint :: Type``.
-Indeed that was our first plan. But
+Instead of two distinct primitive type constructors, ``TYPE`` and ``CONSTRAINT``,
+we considered having just one, ``SORT``, with an argument to distinguish ``TYPE`` from ``CONSTRAINT``::
 
-* In Core we would have to say that if ``e :: ty :: ki`` then ``ki`` must be ``TYPE rr`` or ``Constraint``.
-  Similarly for the types of binders. That "or" isn't fatal, but it's inelegant.
+  type SORT :: TypeOrConstraint -> RuntimeRep -> Type
 
-* We anticipate that it will not be long before people want unlifted constraints. So then we'd add ``CONSTRAINT``, thus::
+  data TypeOrConstraint = TypeLike | ConstraintLike
+  type TYPE       = SORT TypeLike
+  type CONSTRAINT = SORT ConstraintLike
 
-    TYPE       :: RuntimeRep -> Type
-    CONSTRAINT :: RuntimeRep -> Type
+However, experience with a draft implementation convinced us to have two distinct constructors.  With the ``SORT`` approach we would have to worry what ``SORT a`` might mean, where ``a :: TypeOrConstraint`` is a type variable; or ``SORT (F Int)``, where ``F`` is a type function.  These questions could be resolved in a similar way that we ensure concrete runtime-reps for lambdas and applicatdions, but this seems like a sledgehammer to crack a nut.  We do not seek type-or-constraint polymorphism, and it seems simplest to rule it out by construction.
 
-  And now we have something isomorphic to what we propose (two types *vs* one with a flag), except that our proposal allows the types of all value-level terms with runtime rep rr to be treated uniformly. E.g. ``isUnliftedType`` has one case rather than two.
+However:, in Core we have to say that if ``e :: ty :: ki`` then ``ki`` must be ``TYPE rr`` or ``CONSTRAINT rr``.  Similarly for the types of binders. That "or" isn't really a problem, but it's a bit inelegant.
 
-* Collapsing the two into one SORT witnesses the idea that types and constraints are the same thing at runtime.
-
-* We anticipate further movement in this area, perhaps via "Kinds are Calling Conventions". If so, ``SORT`` gives us wiggle room to do that; and (even more important) we don't want to duplicate any such changes across two distinct type constructors, ``TYPE`` and ``CONSTRAINT``.
-
-So the balance came down pretty firmly in favour of the design we offer.
 
 Fully separate Haskell types from Core types
 ::::::::::::::::::::::::::::::::::::::::::::
@@ -352,8 +380,8 @@ where ``Type`` and ``Constraint`` are distinct in the former but the same in the
 (Currently, GHC uses the same representation for both,
 a considerable simplification, as only one type needs to be e.g. written to
 interface files.)
-This would be a major sea-change to the compiler, requiring weeks of effort, code duplication,
-and knock-on effects (both implementation-wise and end-user-visible) that are hard to predict and might be unwelcom.
+This would be a major sea-change to the compiler, requiring weeks of effort, considerable code duplication,
+and knock-on effects (both implementation-wise and end-user-visible) that are hard to predict and might be unwelcome.
 
 In constrast, the one presented here is simple, and we have a clear grasp of its consequences.
 
