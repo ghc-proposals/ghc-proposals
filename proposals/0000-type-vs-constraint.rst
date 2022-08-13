@@ -249,7 +249,7 @@ making them apart is unsound in the presence of the current ``newtype`` optimiza
 one-element classes.
 Accordingly, under this proposal,
 
-* ``TypeLike`` and ``ConstraintLike`` will be considered not *apart*.
+* ``TYPE`` and ``CONSTRAINT`` will be considered not *apart*.
 
 As a consequence, ``Type`` and ``Constraint`` are also not *apart*, just as today.
 This a wart, but it is an *existing* wart, and one that is not easy to fix.
@@ -258,9 +258,9 @@ As before, nothing prevents writing instances like::
 
   instance C (Proxy @Type a) where ...
 
-In particular, ``SORT`` and ``TypeLike`` and ``ConstraintLike`` (and the synonyms ``TYPE``, ``CONSTRAINT`` etc)
+In particular, ``TYPE``, ``CONSTRAINT``, ``Type`` and ``Constraint``
 are all allowed in instance heads. It's just that
-``TypeLike`` is not apart from ``ConstraintLike``
+``TYPE`` is not apart from ``CONSTRAINT``
 so that instance would irretrievably overlap with::
 
   instance C (Proxy @Constraint a) where ...
@@ -273,8 +273,7 @@ Future stability
 In the past it has not been very clear which parts of GHC's API are stable and which
 are unstable:
 
-* By "stable" we mean that efforts will be made to avoid change, and any
-changes should require a GHC proposal.
+* By "stable" we mean that efforts will be made to avoid change, and any changes should require a GHC proposal.
 
 * By "unstable" we mean that the API should be considered part of GHC's internal
   implementation.  Changes may be made to the unstable API without a proposal.
@@ -290,15 +289,14 @@ this proposal makes a modest start on clarifying the distinction.  In particular
 
 * The unstable API includes:
 
-  * The new type constructors ``CONSTRAINT``, ``(=>)``, ``(==>)``, and ``(-=>)`` are
+  * The new type constructors ``CONSTRAINT``, ``(=>)``, ``(==>)``, and ``(-=>)``;
     exported by ``GHC.Types``.
 
-  * The existing type constructors ``FUN`` and ``IP``, also exported by ``GHC.Types``.
+  * The existing type constructors ``FUN`` and ``IP``; also exported by ``GHC.Types``.
 
 * The stable API includes:
 
-  * ``Symbol``, ``Type``, ``TYPE``, ``Constraint``,
-  ``RuntimeRep``, ``Multiplicity``, ``Levity``, and ``(->)``; all exported by ``Data.Kind``
+  * ``Symbol``, ``Type``, ``TYPE``, ``Constraint``, ``RuntimeRep``, ``Multiplicity``, ``Levity``, and ``(->)``; all exported by ``Data.Kind``
 
 We keep ``CONSTRAINT`` in the unstable API for now, exposing it only though the possiblity
 of having unlifted implicit paramters.
