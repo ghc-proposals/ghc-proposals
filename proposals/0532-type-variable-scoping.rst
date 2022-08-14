@@ -1,137 +1,116 @@
-Notes on reStructuredText - delete this section before submitting
-==================================================================
-
-The proposals are submitted in reStructuredText format.  To get inline code, enclose text in double backticks, ``like this``.  To get block code, use a double colon and indent by at least one space
-
-::
-
- like this
- and
-
- this too
-
-To get hyperlinks, use backticks, angle brackets, and an underscore `like this <http://www.haskell.org/>`_.
-
-
-Proposal title
+Clean up and simplify the treatment of implicit binding
 ==============
 
-.. author:: Your name
-.. date-accepted:: Leave blank. This will be filled in when the proposal is accepted.
-.. ticket-url:: Leave blank. This will eventually be filled with the
+..
+author:: John Ericson
+..
+date-accepted:: Leave blank.
+This will be filled in when the proposal is accepted.
+..
+ticket-url:: Leave blank.
+This will eventually be filled with the
                 ticket URL which will track the progress of the
                 implementation of the feature.
-.. implemented:: Leave blank. This will be filled in with the first GHC version which
+..
+implemented:: Leave blank.
+This will be filled in with the first GHC version which
                  implements the described feature.
-.. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_.
-            **After creating the pull request, edit this file again, update the
-            number in the link, and delete this bold sentence.**
-.. sectnum::
-.. contents::
+..
+highlight:: haskell
+..
+header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/523>`_.
+..
+sectnum::
+..
+contents::
 
-Here you should write a short abstract motivating and briefly summarizing the proposed change.
+I believe #448 landed with some ill-advised decisions, and I wish to correct them.
 
 
 Motivation
 ----------
-Give a strong reason for why the community needs this change. Describe the use
-case as clearly as possible and give an example. Explain how the status quo is
-insufficient or not ideal.
 
-A good Motivation section is often driven by examples and real-world scenarios.
+Summary of changes to other documents in this repo, and their motivation
 
+Principles
+~~~~~~~~~~
 
-Proposed Change Specification
------------------------------
-Specify the change in precise, comprehensive yet concise language. Avoid words
-like "should" or "could". Strive for a complete definition. Your specification
-may include,
+A positive (to me) thing I appreciated near the end of the #448 review process was that @gridaphobe agreed with my assessment that some of the principles were insufficiently distinct.
+We were thus able to reach an agreement with @goldfirere to axe the "local lexical scoping principle", and fold it in to the "lexical scoping principle".
 
-* BNF grammar and semantics of any new syntactic constructs
-  (Use the `Haskell 2010 Report <https://www.haskell.org/onlinereport/haskell2010/>`_ or GHC's ``alex``\- or ``happy``\-formatted files
-  for the `lexer <https://gitlab.haskell.org/ghc/ghc/-/blob/master/compiler/GHC/Parser/Lexer.x>`_ or `parser <https://gitlab.haskell.org/ghc/ghc/-/blob/master/compiler/GHC/Parser.y>`_
-  for a good starting point.)
-* the types and semantics of any new library interfaces
-* how the proposed change interacts with existing language or compiler
-  features, in case that is otherwise ambiguous
+This was a great start, but upon rereading the principles (in order to connect the amended proposals to them), I realized that the "lexical scoping principle" an "explicit binding principle" still felt too close, and awkwardly dividing the labor between them.
 
-Strive for *precision*. The ideal specification is described as a
-modification of the `Haskell 2010 report
-<https://www.haskell.org/definition/haskell2010.pdf>`_. Where that is
-not possible (e.g. because the specification relates to a feature that
-is not in the Haskell 2010 report), try to adhere its style and level
-of detail. Think about corner cases. Write down general rules and
-invariants.
+I thus flipped their order ("explicit binding principle" first) and gave them the following roles (pithily summarized):
 
-Note, however, that this section should focus on a precise
-*specification*; it need not (and should not) devote space to
-*implementation* details -- there is a separate section for that.
-
-The specification can, and almost always should, be illustrated with
-*examples* that illustrate corner cases. But it is not sufficient to
-give a couple of examples and regard that as the specification! The
-examples should illustrate and elucidate a clearly-articulated
-specification that covers the general case.
-
-Examples
---------
-This section illustrates the specification through the use of examples of the
-language change proposed. It is best to exemplify each point made in the
-specification, though perhaps one example can cover several points. Contrived
-examples are OK here. If the Motivation section describes something that is
-hard to do without this proposal, this is a good place to show how easy that
-thing is to do with the proposal.
-
-Effect and Interactions
------------------------
-Your proposed change addresses the issues raised in the motivation. Explain how.
-
-Also, discuss possibly contentious interactions with existing language or compiler
-features. Complete this section with potential interactions raised
-during the PR discussion.
+#.
+**Explicit Binding Principle**: Every implicit binding form needs an explicit equivalent.
+#.
+**lexical scoping principle**: Must be possible to turn off implicit binding forms so only the explicit ones remain.
 
 
-Costs and Drawbacks
--------------------
-Give an estimate on development and maintenance costs. List how this affects
-learnability of the language for novice users. Define and list any remaining
-drawbacks that cannot be resolved.
+I think this is much simpler and easy to understand.
 
+Proposal #425
+~~~~~~~~~~~~~
 
-Alternatives
-------------
-List alternative designs to your proposed change. Both existing
-workarounds, or alternative choices for the changes. Explain
-the reasons for choosing the proposed change over these alternative:
-*e.g.* they can be cheaper but insufficient, or better but too
-expensive. Or something else.
+I just updated to refer to principles.
+Most of this is about very nuanced arity, but the "easy parts" are very much part of the 448 story and thus relate to the same principle.
 
-The PR discussion often raises other potential designs, and they should be
-added to this section. Similarly, if the proposed change
-specification changes significantly, the old one should be listed in
-this section.
+Proposal #448
+~~~~~~~~~~~~~
 
-Unresolved Questions
---------------------
-Explicitly list any remaining issues that remain in the conceptual design and
-specification. Be upfront and trust that the community will help. Please do
-not list *implementation* issues.
+A single unified ``-XImplicitBinds``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Hopefully this section will be empty by the time the proposal is brought to
-the steering committee.
+Originally this is how #285 was.
+Then someone convinced me pattern synonym binding and implicit foralls are quite different.
+More recently, we realized some of the #285 examples were not covered by *either* extension.
+Too bad! Because those examples are of things people wanting the other restricted behavior would also want.
 
+One solution was to make a *third* `-XNo` relating to binds, to pick up the missing things.
+Believe me, I was tempted! But, I know everyone is getting weary of type variable extensions :).
 
-Implementation Plan
--------------------
-(Optional) If accepted who will implement the change? Which other resources
-and prerequisites are required for implementation?
+I think the better solution --- which I went with --- is just to recombine things.
+Yes, implicit foralls and implicit pattern synonym binds are indeed *not* the same, but the *motivations* for why to disable them are.
+The same people that dislike one of them dislike all of them, and vice versa.
+Likewise, the same motivations around education and syntactic consistency that apply to one of them apply to all of them.
 
-Endorsements
--------------
-(Optional) This section provides an opportunity for any third parties to express their
-support for the proposal, and to say why they would like to see it adopted.
-It is not mandatory for have any endorsements at all, but the more substantial
-the proposal is, the more desirable it is to offer evidence that there is
-significant demand from the community.  This section is one way to provide
-such evidence.
+``-Werror=pattern-signature-binds`` considered inadequate
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Finally, note that `-XNoPatternSignatureBinds`, one of the former constituents of `-XNoImplicitBinds`, had been downgraded to a warning.
+This might seem fine (use `-Werror=...`!) but it really isn't, because it fails each step of the motivation:
+
+Education
+^^^^^^^^^
+
+The point of disabling features with `-XNo` is so the student can be *completely unaware* they exist.
+But warnings must always be phrased in terms "that thing you did you might not have wanted to".
+That means making the student aware of the thing after all --- "that thing you did" is something the student was never taught and therefore should never be goaded by a warning into learning about after all.
+
+Concretely, for educational purposes we want to get rid of implicit bindings, and get rid of the *concept* of implicit binding.
+We want the student to be *unable* to write them, and we want the compiler to *not* tell them with other configuration options feature exists, the same way a Haskell 98 users should not be told about "type families" or weather.
+
+Single namespace syntactic uniformity
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+#270 has a very nice story about making single name-space code not fork-like by accepting fewer programs.
+``-Werror=pattern-signature-binds`` either breaks the "non fork-like" condition, or breaks the "single namespace" condition.
+Either is not acceptable.
+
+This relates to the education case in that both are about being able to hide what "might have been" under other config settings.
+
+Proposal #523
+~~~~~~~~~~~~~
+
+This unmerged proposal is referenced in #448 (in PR form, with no implication that it is eventually accepted).
+The reason for this I think is worth elaborating on.
+
+I think the reason we got into the confusing situations we have so far is because pattern signature binds are not obviously "syntactic sugar", in that there is no simple non-type-directed desugaring of what they do.
+I am steadfast that any such "weird" feature is "sugar in waiting" --- we simply need to create the much simpler primitives until it is sugar, but others are more "wait and see" and "by the book", and therefore don't want to ascribe to something the negative connotations of syntactic sugar until it is manifestly clear that it in fact is syntactic sugar.
+
+#523 fixes this, by hinting at (it is not fully specified yet) the ``let type var = _ in`` syntax that can be used instead of pattern synonym binds.
+The desugaring is simple, not type directed, and only rename-directed in that we need to know what variables are as-of-yet not explicitly bound.
+
+I don't call pattern signature binding "sugar" in the revised text, but I do call it "implicit', because any syntax that could be either a use or a binding based on the context (of in-scope variables) I define as "implicit".
+For those not comfortable with this yet, I suggest we hurry up and accept #523 so that it is also unambiguously "implicit" and "sugar" by having the explicit ``let type var = _ in`` syntax it can be desugared to.
