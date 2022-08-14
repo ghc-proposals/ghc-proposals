@@ -205,7 +205,7 @@ Examples:
    We could declare one or both of the ``b`` occurrences above a binding site,
    as was the historical interpretation of this, but that doesn't help as this
    syntax isn't unambiguously a binding site regardless of context (i.e.
-   regardless of whether there is a `b` already in scope).
+   regardless of whether there is a ``b`` already in scope).
 
 *Motivation:* The `Explicit Binding Principle`_ allows programmers to control exactly how variables come into
 scope.
