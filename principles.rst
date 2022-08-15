@@ -217,7 +217,7 @@ It ensures all short-hands can be explained in terms of an explicit, unambiguous
 
   - Signatures on term patterns (pattern signatures) cause implicit ``let type ... = _ in``
 
-  - Signatures on type variables (kind signatures) case implicit ``@...``
+  - Signatures on type variables (kind signatures) cause implicit ``@...``
 
 From `#425`_, `#448`_.
 
@@ -252,10 +252,10 @@ The `Lexical Scoping Principle`_ is almost true today, with the following nuance
    is an occurrence if ``a`` is already in scope, and is implicitly bound otherwise.
 
 #. In a type signature, if we have ``f :: a -> a``, the ``a``
-   is an occurrence if ``a`` is already in scope, and it implicitly bound otherwise.
+   is an occurrence if ``a`` is already in scope, and is implicitly bound otherwise.
 
 #. In a kind signature, if we have ``data Foo (a :: k)``, the ``k``
-   is an occurrence if ``k`` is already in scope (historically impossible), and it implicitly bound otherwise.
+   is an occurrence if ``k`` is already in scope (historically impossible), and is implicitly bound otherwise.
 
    Technically this might be a violation of this principle as the ``k`` is in fact always a use with the implicit bind coming before,
    but implicit foot-gun behavior
