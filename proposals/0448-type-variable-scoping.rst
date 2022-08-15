@@ -114,7 +114,7 @@ proposal `#285`_, and differ from that proposal in that:
 
   - ``RULES`` was forgotten as an example.
 
-  - Examples of implicit binds falsely categorized as pattern signature binds are now explicitly included.
+  - Examples of implicit binds falsely categorized as pattern signature binds are now properly included under the proposed change specification.
 
     "Pattern signatures" has a narrow meaning but @Ericson2314 misunderstood it to include other negative-position type signatures.
     Now that the extensions are combined we side-step the phrase "pattern signature" more easily.
