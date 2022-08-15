@@ -144,7 +144,6 @@ A secondary goal is to clean up some issues with proposal `#285`_ while simplify
 
 Having separated out ``-XExtendedForAllScope``, it seemed strange to have a ``-XRumpEndOfOldScopedTypeVariables``
 extension, and so I've introduced separate ``-XMethodTypeVariables`` and ``-XPatternSignatures``.
-``-XPatternSignatures`` is more narrow than it's GHC 6.x namesake so as not to violate any principles by default, and to match ``-XKindSignatures`` which is narrow in the same fashion.
 
 Motivation for ``-XPatternSignatures``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -201,13 +200,19 @@ just state that ``PatternSignatures``.
 Motivation for not doing binding
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+``-XPatternSignatures`` as proposed here is more narrow than it's GHC 6 namesake.
+This is because it just allows signatures using already-bound variables, and doesn't include any implicit binding mechanism for variables in the signature that aren't yet bound.
+(That instead is left for ``-XImplicitBinds``.)
+
+We here discuss the motivation for this decision.
+
 Consistency
 """""""""""
 
-Firstly, it matches ``KindSignatures``.
+This more narrow formulation of ``-XPatternSignatures`` matches ``KindSignatures``.
 ``KindSignatures`` doesn't allow implicit binds for a rather roundabout reason: implicit binds would imply implicit kind-level foralls, which would require ``-XPolyKinds``.
 Given the other extensions being proposed here, we can retroactively reinterpret this as a simple syntactic rule: ``-XKindSignatures`` alone doesn't do implicit binding.
-Now, ``PatternSignature``
+Now, both extension just allow, respectively, term-level and type-level signatures, with no other functionality like implicit binding mechanisms also thrown in.
 
 Conservativism for standardization
 """"""""""""""""""""""""""""""""""
