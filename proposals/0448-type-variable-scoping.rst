@@ -200,7 +200,7 @@ just state that ``PatternSignatures``.
 Motivation for not doing binding
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-``-XPatternSignatures`` as proposed here is more narrow than it's GHC 6 namesake.
+``-XPatternSignatures`` as proposed here is more narrow than its GHC 6 namesake.
 This is because it just allows signatures using already-bound variables, and doesn't include any implicit binding mechanism for variables in the signature that aren't yet bound.
 (That instead is left for ``-XImplicitBinds``.)
 
