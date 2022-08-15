@@ -165,7 +165,7 @@ Explicit Binding Principle (EBP)
 .. _`Explicit Binding Principle`:
 
 **Principle**: Through the right combination of extensions, every implicit form of variable binding
-is must have an explicit equivalent that, regardless of the context, is unambiguously a binding site.
+must have an explicit equivalent that, regardless of the context, is unambiguously a binding site.
 
 Examples:
 
