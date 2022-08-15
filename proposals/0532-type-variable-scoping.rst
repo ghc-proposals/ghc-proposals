@@ -54,7 +54,8 @@ Proposal #425
 ~~~~~~~~~~~~~
 
 I just updated to refer to principles.
-Most of this is about very nuanced arity, but the "easy parts" are very much part of the 448 story and thus relate to the same principle.
+Most of this proposal ended up being about clarifying very nuanced issues with type families and data families, as that was where the complexity lies.
+But the "easy parts" for just explicitness and syntactic uniformity are very much part of the 448 story and thus relate to the same principles.
 
 Proposal #448
 ~~~~~~~~~~~~~
