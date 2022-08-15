@@ -63,7 +63,7 @@ A single unified ``-XImplicitBinds``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Originally this is how #285 was.
-Then someone convinced me pattern synonym binding and implicit foralls are quite different.
+Then someone convinced me pattern signature binding and implicit foralls are quite different.
 More recently, we realized some of the #285 examples were not covered by *either* extension.
 Too bad! Because those examples are of things people wanting the other restricted behavior would also want.
 
@@ -71,7 +71,7 @@ One solution was to make a *third* `-XNo` relating to binds, to pick up the miss
 Believe me, I was tempted! But, I know everyone is getting weary of type variable extensions :).
 
 I think the better solution --- which I went with --- is just to recombine things.
-Yes, implicit foralls and implicit pattern synonym binds are indeed *not* the same, but the *motivations* for why to disable them are.
+Yes, implicit foralls and implicit pattern signature binds are indeed *not* the same, but the *motivations* for why to disable them are.
 The same people that dislike one of them dislike all of them, and vice versa.
 Likewise, the same motivations around education and syntactic consistency that apply to one of them apply to all of them.
 
@@ -109,7 +109,7 @@ The reason for this I think is worth elaborating on.
 I think the reason we got into the confusing situations we have so far is because pattern signature binds are not obviously "syntactic sugar", in that there is no simple non-type-directed desugaring of what they do.
 I am steadfast that any such "weird" feature is "sugar in waiting" --- we simply need to create the much simpler primitives until it is sugar, but others are more "wait and see" and "by the book", and therefore don't want to ascribe to something the negative connotations of syntactic sugar until it is manifestly clear that it in fact is syntactic sugar.
 
-#523 fixes this, by hinting at (it is not fully specified yet) the ``let type var = _ in`` syntax that can be used instead of pattern synonym binds.
+#523 fixes this, by hinting at (it is not fully specified yet) the ``let type var = _ in`` syntax that can be used instead of pattern signature binds.
 The desugaring is simple, not type directed, and only rename-directed in that we need to know what variables are as-of-yet not explicitly bound.
 
 I don't call pattern signature binding "sugar" in the revised text, but I do call it "implicit', because any syntax that could be either a use or a binding based on the context (of in-scope variables) I define as "implicit".
