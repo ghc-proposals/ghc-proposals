@@ -7,12 +7,12 @@ implemented: ""
 
 This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/512>).
 
-# `NoFieldSelector`s as a datatype annotation
+# `NoFieldSelector`s as a datatype and field annotation
 
 GHC recently implemented a feature `NoFieldSelectors` which disables generation of record fields on a per-module basis.
 The motivation for this is that `DuplicateRecordFields` and `OverloadedRecordDot` can now be used to access fields on a record in a way that permits sharing field names on records, and even allows polymorphism on the record in question.
 
-I propose that we allow `NoFieldSelectors` as datatype annotation.
+I propose that we allow a datatype and field level override of the module default.
 
 ## Motivation
 
@@ -73,11 +73,13 @@ But this is too coarse grained - you usually want to specify a *single* instance
 
 ## Proposed Change Specification
 
-Introduce an annotation `{-# NoFieldSelectors #-}` that can appear on a datatype.
+Introduce an annotation `{-# NoFieldSelectors #-}` that can appear on a datatype, a constructor, or a field.
 
 This works exactly the same as if `NoFieldSelectors` were present for the module it is defined in, without interacting with the other datatypes.
 
-For completeness and consistency, allowing `{-# FieldSelectors #-}` as a datatype annotation also make sense.
+For completeness and consistency, allowing `{-# FieldSelectors #-}` as a datatype or field annotation also make sense.
+
+When the Modifiers syntax has landed in GHC, then we can switch to using modifiers instead of pragmas.
 
 ## Examples
 
@@ -121,9 +123,37 @@ data MkPoint = MkPoint
     }
 ```
 
+The pragma may apply to a single constructor in a sum type.
+
+```haskell
+module OnlyOneSelector where
+
+data CoolSumType 
+    = HasFieldSelectors { x :: Int, y :: Int }
+    | Doesn'tHaveSelectors {-# NoFieldSelectors #-} { a :: Char, b :: Char }
+```
+
+Field level annotations will look similar to `{-# UNPACK #-}` pragmas.
+
+```haskell
+{-# language FieldSelectors #-}
+
+module Foo where
+
+-- This datatype does not have the `secretInformation` field selectors generated
+-- but the other two are fine
+data 
+    Foo 
+    = Foo 
+        { name :: String
+        , age :: Int
+        , secretInformation :: {-# NoFieldSelector #-} [String]
+        }
+```
+
 ## Effect and Interactions
 
-This interacts with the `NoFieldSelectors` and `FieldSelectors` language extension by allowing a per-datatype override.
+This interacts with the `NoFieldSelectors` and `FieldSelectors` language extension by allowing a per-datatype or per-field override.
 Otherwise, this has the same effects and interactions as the original `NoFieldSelectors` extension.
 
 Syntactically, a common trick is to `grep` for `^(type|newtype|data) TypeName` to find the declaration for a given type name. Putting an annotation between the `data` and type name would break this sort of search.
@@ -158,7 +188,7 @@ The `StrictData` analogy is already implemented here with `BangPatterns`.
 -- This datatpye generates the `age` field selector, but not the `name`
 -- selector.
 data Foo = Foo
-    { {-# NoFieldSelector #-} name :: String 
+    { name :: {-# NoFieldSelector #-} String 
     , age :: Int
     }
 ```
@@ -171,11 +201,36 @@ module X where
 data Point = Point
     { x :: Int
     , y :: Int
-    , {-# FieldSelector #-} z :: Int 
+    , z :: {-# FieldSelector #-} Int 
     }
 ```
 
-Syntactically, the `{-# Blah #-}` style is lifted from `{-# Overlapping #-}`.
+While `{-# FieldSelector #-}` on a field can borrow syntax from `UNPACK` pragmas, the pragma for a datatype or a constructor could be changed.
+The proposal currently puts the pragma before the type name, but after the constructor name:
+
+```haskell
+-- Current status
+data {-# NoFieldSelectors #-} Foo = Bar {-# FieldSelectors #-} { a :: Int }
+```
+
+But it could just as easily move the pragma before or after the type or constructor.
+
+```haskell
+-- Consistent after:
+data Foo {-# NoFieldSelectors #-} = Bar {-# FieldSelectors #-} { a :: Int }
+-- Consistent before:
+data {-# NoFieldSelectors #-} Foo = {-# FieldSelectors #-} Bar  { a :: Int }
+
+-- Inconsistent, but the other way
+data Foo {-# NoFieldSelectors #-} = {-# FieldSelectors #-} Bar { a :: Int }
+```
+
+Putting the pragma between the keyword and the type name has symmetry with `instance {-# OVERLAPPING #-}`.
+However, this makes it harder to `grep` for definitions.
+Putting the pragma before the field has symmetry with `{-# UNPACK #-}`, and it seems reasonable to stick with that convention for fields.
+There is no existing convention for constructors.
+
+Syntactically, the `{-# Blah #-}` style is lifted from `{-# Overlapping #-}` and `{-# Unpack #-}`.
 However, it's pretty ugly and verbose.
 A further extension could introduce new keywords that are only used in record declaration syntax with the same meaning, allowing you to write, eg,
 
@@ -185,6 +240,8 @@ data Point = Point
     , y :: lazy field Int
     }
 ```
+
+We could also use the modifiers syntax.
 
 ## Unresolved Questions
 
@@ -197,6 +254,8 @@ The datatype for a record declaration is extended with a field `Maybe FieldSelec
 When GHC is deciding whether or not to generate field selectors, this field is checked as a final source of truth.
 
 This change is also propagated to `template-haskell`.
+
+The implementation of this feature will be sponsored by Mercury.
 
 ## Endorsements
 
