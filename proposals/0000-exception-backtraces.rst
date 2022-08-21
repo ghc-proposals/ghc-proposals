@@ -68,8 +68,8 @@ relevant metadata about the exception.
 As a first step towards attaching backtraces to exceptions, we propose to extend
 ``SomeException`` to carry an additional "context" value, consisting of a collection
 of dynamically-typed annotations. The dynamic nature of these annotations
-allows the mechanism to handle not just backtraces but any arbitrary value,
-which may be later inspected for analysis and logging.
+allows the mechanism to handle not just backtraces but any arbitrary
+context-relevant value which may be inspected by a handler for analysis and logging.
 To avoid breaking existing users of ``SomeException``, we introduce this
 context as an implicit parameter constraint:  ::
 
@@ -136,9 +136,9 @@ contexts: ::
 Since the ``SomeException``'s ``displayException`` implementation is used to
 by GHC's top-level exception handler to display uncaught exceptions, this
 change carries the consequence that uncaught exceptions will have their context
-automatically printed as part of the user-facing error message.
+automatically printed as part of the error message presented to the user.
 
-To make exceptions carrying context easier to work with, we propose to
+To make context-carrying exceptions easier to work with, we propose to
 introduce the following combinators: ::
 
     -- In Control.Exception:
@@ -149,6 +149,7 @@ introduce the following combinators: ::
 
     catchWithContext   :: Exception e => m a -> (e -> ExceptionContext -> m a) -> m a
     handleWithContext  :: Exception e => (e -> ExceptionContext -> m a) -> m a -> m a
+
     throwWithContext   :: Exception e => e -> ExceptionContext -> a
     throwIOWithContext :: Exception e => e -> ExceptionContext -> m a
 
@@ -164,7 +165,7 @@ to add context to "upward-flowing" exceptions: ::
 Representing and capturing backtraces
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-GHC has four distinct mechanisms for capturing backtraces, each with
+GHC currently has four distinct mechanisms for capturing backtraces, each with
 its own backtrace representation:
 
 * ``HasCallStack``:
@@ -186,7 +187,7 @@ its own backtrace representation:
 
 All of these backtrace mechanisms have their uses, offering a range of levels
 of detail, executable size, and runtime overhead. Given the complementary
-nature of these mechanisms, GHC shouldn't dictate which of these mechanisms
+nature of these mechanisms, GHC should not dictate which of these mechanisms
 should be used to report exception backtraces. Consequently, we use the
 above-described context mechanism to allow backtraces from any of these
 mechanisms to be captured attached to exceptions.
@@ -216,12 +217,14 @@ Selecting backtrace mechanisms
 
 With the machinery described above, we can now address a common debugging
 scenario: locating the origin of an exception thrown by a third-party library.
-By far, the most common means of throwing exceptions are ``throw``, ``throwIO``,
-``error``, and ``undefined``. This raises the question of how the user should
-select which of the above mechanism(s) these functions should use to collect their
-backtrace. For this we propose a pragmatic, stateful approach to allow the
-user to select which mechanism(s) should be used for backtrace collection in
-``throw``, ``throwIO`` and similar functions: ::
+By far the most common means of throwing exceptions are ``throw``, ``throwIO``,
+``error``, and ``undefined``, none of which have any notion of backtrace collection.
+This raises the question of how the user should select which of the above
+mechanism(s) these functions should use to collect their backtrace.
+
+For this we propose a pragmatic, stateful approach to allow the user to select
+which mechanism(s) should be used for backtrace collection in ``throw``,
+``throwIO`` and similar functions: ::
 
     module GHC.Exception.Backtrace where
 
