@@ -135,14 +135,14 @@ There are several reasons this might happen:
 
    ::
 
-     data Ur a where
-       Ur :: !a %Many -> Ur a
+     data StrictUr a where
+       StrictUr :: !a %Many -> Ur a
 
-   ..
-     The real Ur is lazy in its field.
-     TODO: Investigate.  Is this important in any way?
+   (It is not possible to consume a value of type ``StrictUr a``
+   linearly without forcing the contents of its "unrestricted" field,
+   making this type slightly less flexible than the lazy ``Ur``.)
 
- ..
+..
    The links in "many examples of wrapper types" in the next paragraph
    provide almost exactly the denestable constructors found in the
    boot libraries of a prototype GHC detecting them, with three omissions.
@@ -337,6 +337,7 @@ possible when the scrutinee type matches the data instance head.
 
 ::
 
+   -- isomorphic to Data.Constraints.Dict (in constraints)
    data Example5 (c :: Constraint) where
      MkExample5 :: c => Example5 c
 
