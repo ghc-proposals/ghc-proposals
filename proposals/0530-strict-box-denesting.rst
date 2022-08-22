@@ -491,7 +491,7 @@ Alternatives
    Option 1 has the advantage that it does not need denesting
    information to be stored in interface files, but the disadvantage
    that it provides no way to turn the optimization off without
-   modifying the compiler.  Options 2 is more extensible than option
+   modifying the compiler.  Option 2 is more extensible than option
    3, since in the future denesting may be allowed even in some cases
    where there is more than one constructor.
 
