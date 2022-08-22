@@ -623,9 +623,9 @@ inference and scoping rules.
 
 This gets us closer to upholding two principles:
 
-- The `Explicit Binding Principle`_, because the new ``@``-binders is explicit unlike previous alternatives
+- The `Explicit Binding Principle`_, because the new ``@``-binders are explicit unlike previous alternatives
 
-- The `Lexical Scoping Principle`_, because the new simplified rules about variables needing to occur on the LHS in certain situations.
+- The `Lexical Scoping Principle`_, because of the new simplified rules about variables needing to occur on the LHS in certain situations.
 
 .. _`Explicit Binding Principle`: ../principles.rst#explicit-binding-principle
 .. _`Lexical Scoping Principle`: ../principles.rst#lexical-scoping-principle

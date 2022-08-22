@@ -233,7 +233,7 @@ All other variables are explicitly bound, and the inconsistency means more to le
 Also, implicit syntax in general allows the beginner to not realize what they are doing.
 What are tedious tasks for the expert may be helpful learning steps to them.
 
-Further, the most beginnning students may be taught with both ``-XImplicitBinds``, ``-XNoExplicitForAll``, and ``-XNoPolyKinds``.
+Further, most beginning students may be taught with both ``-XImplicitBinds``, ``-XNoExplicitForAll``, and ``-XNoPolyKinds``.
 This means it's impossible to write forall types by any means.
 Combine with ``-Wmissing-signatures`` and ``-Wmissing-local-signatures``, so inferred polymorphic types of bindings are also prohibited, and a monomorphic custom prelude, and forall types are all but expunged entirely.
 
@@ -287,7 +287,7 @@ Should the ``t`` in ``x :: t`` cause implicit ``forall t.`` and ``let t = I in``
 With ``-XNoImplicitBinds``, we know it will not, and thus can refer to the ``t`` defined above, once such a reference is possible (left to another proposal).
 
 Without ``-XImplicitBinds`` we have no choice but do the implicit desugaring that violates the unified namespace abstraction
---- otherwise we would be *forklike* in the that rather than giving new meaning to previously invalid programs, we would be *changing* the meaning of previously *valid* programs.
+--- otherwise we would be *forklike* in the sense that rather than giving new meaning to previously invalid programs, we would be *changing* the meaning of previously *valid* programs.
 Put another way, ``-XImplicitBinds`` and any ``-XUnifiedNamespace`` must be mutually exclusive, so we need a way for Haskell programmers to opt out of ``-XImplicitBinds`` first.
 
 Proposed Change Specification
@@ -379,7 +379,7 @@ Points below up to and including the new (backward-compatible) definition of
 
    #. Implicit binds in kind signatures:
 
-      Out-of-scope type variables written in a negative position kind signatures (positive ones are implicit foralls) are bound as implicit capital lambdas to the left of the parameter they occur in.
+      Out-of-scope type variables written in a negative position kind signature (positive ones are implicit foralls) are bound as implicit capital lambdas to the left of the parameter they occur in.
 
       This was intended to be included in the former ``-XPatternSignatureBinds`` from accepted, unimplemented proposal `#285`_, but mistakenly wasn't as these are not "pattern signatures" in the current terminology.
 
@@ -395,12 +395,12 @@ Effects
 Alternatives
 ~~~~~~~~~~~~
 
-1. We could further breaking down ``-XImplicitBinds``, like before.
+1. We could further break down ``-XImplicitBinds``, like before.
 
    But fixing the drafting error would require a *third* extension, ``-XNegativeSignatureBinds``, in addition to the original two.
    This would allow more conservative defaults --- we must have Haskell98 implicit foralls but not the others which are all guarded behind language extensions today.
 
-   However, @Ericson2314 sense there is a weariness with too many extensions coming from this, and so didn't so it.
+   However, @Ericson2314 sensed there is a weariness with too many extensions coming from this, and so didn't do it.
 
 Type arguments in constructor patterns
 --------------------------------------
@@ -708,7 +708,7 @@ When ``-XStandaloneKindSignatures`` is on, these new standalone signatures are a
 
 Pattern signatures in GADT declarations, family declarations, and class declarations are also restricted.
 I'll first use a hypothetical yet-unproposed ``@``-abstraction syntax to "fix" these examples to demonstrate the analogy to the previous examples.
-Then I'll put the inline signature or top-level signature workaround that exist today.
+Then I'll put the inline signature or top-level signature workaround that exists today.
 
 #. ::
 
@@ -737,7 +737,7 @@ Then I'll put the inline signature or top-level signature workaround that exist 
    Note that since there is no ``class F :: ...`` syntax analogous to ``data F :: ...``,
    so ``-XStandaloneKindSignatures`` are the only way to write explicitly kind-polymorphic classes.
 
-Note that the variables to the left of the ``::`` are are deemed explicit bindings analogous to ``f (y :: x) (z :: z) = ...`` and permitted.
+Note that the variables to the left of the ``::`` are deemed explicit bindings analogous to ``f (y :: x) (z :: z) = ...`` and permitted.
 However ``x`` to the right of the ``::`` is a use, not otherwise bound, and thus implicit binding today.
 It is not permitted as-is, and must be explicitly bound or discarded as done in the working alternatives.
 
@@ -1313,11 +1313,11 @@ I summarize the effects on the principles_.
 
 #. The `Explicit Binding Principle`_ is made to hold under ``-XNoImplicitBinds`` and ``-XPatternSignatures`` by side-stepping the need for new explicit syntax.
 
-   Making ``-XPatternSignatures`` not imply implicit bindings keeps that exntension in accordance with the `Explicit Binding Principle`_.
+   Making ``-XPatternSignatures`` not imply implicit bindings keeps that extension in accordance with the `Explicit Binding Principle`_.
    That principle says implicit binding constructions should have explicit counterparts they desugar to.
 
    In general, solutions to `Lexical Scoping Principle`_ are also solutions to `Explicit Binding Principle`_.
-   It is just for implicit forms ones wishes to leave enabled that explicit syntax is needed, and explicit syntax forms an additional solution to the `Explicit Binding Principle`_ (and not the `Lexical Scoping Principle`_).
+   It is just for implicit forms which one wishes to leave enabled that explicit syntax is needed, and explicit syntax forms an additional solution to the `Explicit Binding Principle`_ (and not the `Lexical Scoping Principle`_).
 
    ``let type name = _ in``, proposed in Proposal `#523`_, would be such explicit syntax.
    If that proposal is accepted, then we can say ``-XNoImplicitBinds`` goes back to just being a solution for the `Lexical Scoping Principle`_, and ``let type name = _ in`` is just the solution for the `Explicit Binding Principle`_.

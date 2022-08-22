@@ -45,7 +45,7 @@ I thus flipped their order ("explicit binding principle" first) and gave them th
 #.
 **Explicit Binding Principle**: Every implicit binding form needs an explicit equivalent.
 #.
-**lexical scoping principle**: Must be possible to turn off implicit binding forms so only the explicit ones remain.
+**Lexical scoping principle**: Must be possible to turn off implicit binding forms so only the explicit ones remain.
 
 
 I think this is much simpler and easy to understand.
