@@ -244,7 +244,7 @@ A constructor determined to be denestable will not generate any code
 at any of its use sites (even use-sites in modules for which
 ``-fstrict-box-denesting`` is disabled), so that using or
 pattern-matching against this constructor has no runtime cost, except
-to the extent that doing so forces evaluation of the field.
+to the extent that doing so forces evaluation to take place.
 
 Whether a constructor is determined denestable or not has no effect on
 the surface-language semantics of that constructor.  In particular,
