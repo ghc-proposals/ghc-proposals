@@ -276,13 +276,13 @@ If `#270`_ is accepted, there will be a way to program Haskell with "morally" on
 However, there is one exception to the unification of namespaces: lower case variables in type signatures bound "like terms" still are treated as free and implicitly bound instead::
 
   t = Int
-  x :: t -- sugar for 'forall t. t', not 't ~ Int'
+  x :: t -- sugar for 'forall t. t', not a use of 't' resolving to 'Int'
   x = 0
 
   t = Int
   foo (x :: t) = 0 -- sugar for 'foo = let t = _ in \(x :: t) -> 0'
 
-Should the ``t`` in ``x :: t`` cause implicit ``forall t.`` and ``let t = I in`` to be synthesized or not?
+Should the ``t`` in each ``x :: t`` cause implicit ``forall t.`` and ``let t = _ in`` to be synthesized or not?
 
 With ``-XNoImplicitBinds``, we know it will not, and thus can refer to the ``t`` defined above, once such a reference is possible (left to another proposal).
 
@@ -1305,11 +1305,12 @@ I summarize the effects on the principles_.
    in `#126`_, where the choice between a binding site and an occurrence depends on whether a
    type variable is in scope.
 
-#. The `Syntactic Unification Principle`_ is bolstersted by ``-XNoImplicitBinds``
+#. The `Syntactic Unification Principle`_ is bolstered by ``-XNoImplicitBinds``
 
    As discussed in the "Consistency" section of the motivation for that extension, the different forms of implicit binding we have today work quite differently.
-   In many case, those different forms are chiefly distinguished by being confined to one of the type- or term- level, e.g. regular pattern for type synonym right hand sides.
-   A lack of inconsistency on this front therefore is part of the type and term syntax unification espoused by this principle.
+   In many case, those different forms are chiefly distinguished by being confined to one of the type- or term- level.
+   For example, "regular patterns" in expressions and the right hand sides of type synonyms ought to be basically the same in a unified-namespace world, but the implicit binding mechanisms they each support today are unrelated.
+   Avoiding this inconsistency is therefore part of the type and term syntax unification espoused by this principle.
 
 #. The `Explicit Binding Principle`_ is made to hold under ``-XNoImplicitBinds`` and ``-XPatternSignatures`` by side-stepping the need for new explicit syntax.
 
