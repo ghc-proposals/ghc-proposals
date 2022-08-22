@@ -280,11 +280,23 @@ Related Work
 
 Examples of langauges with also implement this feature
 
-Scheme and Racket
-~~~~~~~~~~~~~~~~~
+Scheme
+~~~~~~
 
 - ``syntax-rules``, see https://docs.racket-lang.org/guide/pattern-macros.html#%28part._define-syntax_and_syntax-rules%29 .
 - ``syntax-case``, see https://docs.racket-lang.org/guide/syntax-case.html .
+
+Racket
+~~~~~~
+
+``syntax-parse`` is a more powerful alternative to ``syntax-case``.
+See:
+
+- Docs: https://docs.racket-lang.org/syntax/Parsing_Syntax.html
+
+- Paper: `"Fortifying Macros" by Culpepper and Felleisen <https://www2.ccs.neu.edu/racket/pubs/icfp10-cf.pdf>`_
+
+There's a Haskell implementation of ``syntax-parse``'s core as part of the Crucible language's `concrete syntax <https://github.com/GaloisInc/crucible/blob/master/crucible-syntax/src/Lang/Crucible/Syntax/ExprParse.hs>`_.
 
 Rust
 ~~~~
