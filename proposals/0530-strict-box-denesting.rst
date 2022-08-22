@@ -508,9 +508,9 @@ Alternatives
 
 Unresolved Questions
 --------------------
-1. The closely related ``DecidedStrictness`` information about a
-   constructor's fields is made available via the ``GHC.Generics``
-   interface.  Why is that?  Does the same reasoning suggest adding
+1. The closely related field unpacking information is exposed in the
+   ``GHC.Generics`` interface as part of the ``DecidedStrictness`` for
+   that field.  Why is that?  Does the same reasoning suggest adding
    some ``DecidedDenesting`` field to ``GHC.Generics.MetaCons``?
 
 2. Is there a better/clearer name for this optimization/feature?
