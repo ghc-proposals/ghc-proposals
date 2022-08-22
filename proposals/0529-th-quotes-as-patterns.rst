@@ -283,7 +283,7 @@ Examples of langauges with also implement this feature
 Scheme and Racket
 ~~~~~~~~~~~~~~~~~
 
-- ``syntax-rules``, see https://docs.racket-lang.org/guide/syntax-rules.html .
+- ``syntax-rules``, see https://docs.racket-lang.org/guide/pattern-macros.html#%28part._define-syntax_and_syntax-rules%29 .
 - ``syntax-case``, see https://docs.racket-lang.org/guide/syntax-case.html .
 
 Rust
