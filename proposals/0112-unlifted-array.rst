@@ -3,8 +3,8 @@ UnliftedArray
 
 .. author:: Andrew Martin
 .. date-accepted:: 2018-05-14
-.. ticket-url::
-.. implemented::
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/14196
+.. implemented:: 9.4.1
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/112>`_.
 .. contents::
