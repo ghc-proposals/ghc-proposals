@@ -7,6 +7,7 @@ Add warning for incomplete record selectors
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/516>`_.
+.. sectnum::
 .. contents::
 
 This proposal introduces a new warning flag, ``-Wincomplete-record-selectors``,
