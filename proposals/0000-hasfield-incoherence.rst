@@ -7,6 +7,7 @@ Relaxing ``HasField`` constraints
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/515>`_.
+.. sectnum::
 .. contents::
 
 In the `overloaded record fields proposal
