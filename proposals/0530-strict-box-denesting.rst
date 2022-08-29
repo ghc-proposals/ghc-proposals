@@ -398,7 +398,7 @@ Costs and Drawbacks
    a wrapper such as ``ShortByteString`` to be represented at runtime
    by its underlying ``ByteArray#``.
 
-   Since entering these objects involves an indirection that would
+   Since entering these primitive objects involves an indirection that would
    largely defeat the purpose of denesting their lifted wrappers, this
    must be dealt with by changing the proper tag for their pointers.
    The panicking entry code can very likely be kept, but will now
