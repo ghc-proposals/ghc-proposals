@@ -102,14 +102,14 @@ Every language that has field labels in sum types allows you to use them in reco
 Contrasting these languages, then, we have this table:
 
 | Language   | Sum Labels?  | Field Access? | Runtime errors? |
-+------------+--------------+---------------+-----------------+
+|------------|--------------|---------------|-----------------|
 | Haskell    |     Y        |       Y       |      Y          |
 | Rust       |     Y        |               |                 |      
 | F#         |     Y        |               |                 |
 | OCaml      |              |               |                 |
 | TypeScript |     Y        |       Y       |                 |
 | PureScript |              |               |                 |
-+------------+--------------+---------------+-----------------+
+|------------|--------------|---------------|-----------------|
 
 I don't know about you, but I don't like being the only language in the table with runtime errors about this.
 
