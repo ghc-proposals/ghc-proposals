@@ -109,7 +109,6 @@ Contrasting these languages, then, we have this table:
 | OCaml      |              |               |                 |
 | TypeScript |     Y        |       Y       |                 |
 | PureScript |              |               |                 |
-|------------|--------------|---------------|-----------------|
 
 I don't know about you, but I don't like being the only language in the table with runtime errors about this.
 
