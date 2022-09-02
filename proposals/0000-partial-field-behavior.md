@@ -101,7 +101,6 @@ To access named fields on an enum, you must use pattern matching.
 Every language that has field labels in sum types allows you to use them in record construction and pattern matching.
 Contrasting these languages, then, we have this table:
 
-+------------+--------------+---------------+-----------------+
 | Language   | Sum Labels?  | Field Access? | Runtime errors? |
 +------------+--------------+---------------+-----------------+
 | Haskell    |     Y        |       Y       |      Y          |
