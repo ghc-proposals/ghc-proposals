@@ -5,7 +5,7 @@ ticket-url: ""
 implemented: ""
 ---
 
-This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/545).
+This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/535).
 
 # Partial Field Behavior
 
