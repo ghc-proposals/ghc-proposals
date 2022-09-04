@@ -5,7 +5,7 @@ ticket-url: "https://github.com/ghc-proposals/ghc-proposals/pull/512"
 implemented: ""
 ---
 
-This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/512>).
+This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/512).
 
 # `NoFieldSelector`s as a datatype and field annotation
 
