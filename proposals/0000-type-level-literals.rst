@@ -1,5 +1,5 @@
-Separate tag for type-level literals
-====================================
+Type-level literals as a separate language extension
+====================================================
 
 .. author:: Ross Paterson
 .. date-accepted::
@@ -10,7 +10,7 @@ Separate tag for type-level literals
 .. sectnum::
 .. contents::
 
-Introduce a language tag ``TypeLevelLiterals`` (implied by ``DataKinds``)
+Introduce a language extension ``TypeLevelLiterals`` (implied by ``DataKinds``)
 to turn on the features in the *Type-Level Literals* section of the
 *User's Guide*.
 
@@ -18,7 +18,7 @@ to turn on the features in the *Type-Level Literals* section of the
 
 Motivation
 ----------
-Currently type-level literals are turned on by the language tag
+Currently type-level literals are turned on by the language extension
 ``DataKinds``, but some programmers want to use them without turning on
 datatype promotion.
 
@@ -69,7 +69,7 @@ will behave as before, because ``DataKinds`` will imply ``TypeLevelLiterals``.
 
 Costs and Drawbacks
 -------------------
-The cost is an extra language tag.
+The cost is an extra language extension name.
 It is trivial to implement.
 
 Alternatives
