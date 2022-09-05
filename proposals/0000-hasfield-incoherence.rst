@@ -83,7 +83,7 @@ In the `overloaded record fields proposal
 there is a `set of limitations
 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0023-overloaded-record-fields.rst#virtual-record-fields>`_
 as to when a user can declare custom ``HasField`` instances. These conditions
-are:
+prevent defining a ``HasField`` instance when:
 
 * ``HasField _ r _`` where ``r`` is a variable;
 
