@@ -7,14 +7,14 @@ implemented: ""
 
 This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/512).
 
-# `NoFieldSelector`s as a datatype and field annotation
+# 1. `NoFieldSelector`s as a datatype and field annotation
 
 GHC recently implemented a feature `NoFieldSelectors` which disables generation of record fields on a per-module basis.
 The motivation for this is that `DuplicateRecordFields` and `OverloadedRecordDot` can now be used to access fields on a record in a way that permits sharing field names on records, and even allows polymorphism on the record in question.
 
 I propose that we allow a datatype and field level override of the module default.
 
-## Motivation
+## 1.1 Motivation
 
 The database library `esqueleto` recently implemented support for `OverloadedRecordDot` on the `SqlExpr (Entity rec)` type, which represents a row from a database table.
 The syntax for projecting a field in the old and new styles is this:
@@ -71,7 +71,7 @@ Another motivation is consistency.
 The `OverlappingInstances` pragma is used to allow *all* instances in a module to be overlapping or overlappable.
 But this is too coarse grained - you usually want to specify a *single* instance as `{-# OVERLAPPABLE #-}` directly in the instance body.
 
-## Proposed Change Specification
+## 1.2 Proposed Change Specification
 
 Introduce an annotation `{-# NoFieldSelectors #-}` that can appear on a datatype, a constructor, or a field.
 
@@ -81,7 +81,7 @@ For completeness and consistency, allowing `{-# FieldSelectors #-}` as a datatyp
 
 When the Modifiers syntax has landed in GHC, then we can switch to using modifiers instead of pragmas.
 
-## Examples
+## 1.3 Examples
 
 Suppose we had a module that did not enable the `NoFieldSelectors` extension.
 
@@ -151,14 +151,14 @@ data
         }
 ```
 
-## Effect and Interactions
+## 1.4 Effect and Interactions
 
 This interacts with the `NoFieldSelectors` and `FieldSelectors` language extension by allowing a per-datatype or per-field override.
 Otherwise, this has the same effects and interactions as the original `NoFieldSelectors` extension.
 
 Syntactically, a common trick is to `grep` for `^(type|newtype|data) TypeName` to find the declaration for a given type name. Putting an annotation between the `data` and type name would break this sort of search.
 
-## Costs and Drawbacks
+## 1.5 Costs and Drawbacks
 
 GHC already has a facility for deciding on whether or not to generate field selectors for a datatype.
 Extending this facility to check for a datatype local override should not be particularly thorny.
@@ -175,7 +175,7 @@ Using a `{-# Blah #-}` comment as a field annotation introduces a second means o
 If we're able to annotate fields, we may also want the ability to say that some fields are "private" or "public" much like other object and record systems permit.
 Finally, field annotations could potentially be used in `DerivingVia` - see [this Reddit post by `Iceland_jack`](https://www.reddit.com/r/haskell/comments/pbq9rn/via_fields_finer_granularity_in_deriving/).
 
-## Alternatives
+## 1.6 Alternatives
 
 There is currently no way to get record selectors for record construction and record pattern matching without record syntax.
 
@@ -243,12 +243,12 @@ data Point = Point
 
 We could also use the modifiers syntax.
 
-## Unresolved Questions
+## 1.7 Unresolved Questions
 
 Since this is a specialization of an existing language behavior, I don't believe there is anything to be resolved here.
 
 
-## Implementation Plan
+## 1.8 Implementation Plan
 
 The datatype for a record declaration is extended with a field `Maybe FieldSelectorOverride`.
 When GHC is deciding whether or not to generate field selectors, this field is checked as a final source of truth.
@@ -257,6 +257,6 @@ This change is also propagated to `template-haskell`.
 
 The implementation of this feature will be sponsored by Mercury.
 
-## Endorsements
+## 1.9 Endorsements
 
 *crickets are screaming in the distance*
