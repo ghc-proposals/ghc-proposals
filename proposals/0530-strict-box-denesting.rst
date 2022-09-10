@@ -416,17 +416,7 @@ Costs and Drawbacks
 
 
 The implementation of this proposal is not expected to pose major
-challenges or incur much ongoing maintenance cost.  It consists of
-three largely independent parts:
-
-* Wire in and give special solving behavior to a ``DataToTag`` class.
-  This is expected to be very similar to the recent work that
-  implemented the ``WithDict`` class.
-* Modify the boxed primitives and their operations so that their
-  pointers are tagged with 1 instead of 0.
-* Detect denestable constructors and modify the post-Core phases of
-  compilation to actually elide them.
-
+challenges or incur much ongoing maintenance cost.
 
 This proposal is expected to have almost no impact on Haskell's
 learnability: Its only effect on program meaning is a change to the
@@ -520,8 +510,23 @@ Unresolved Questions
 Implementation Plan
 -------------------
 
-If accepted, I, the proposer, will work to implement this feature.
+The implementation of this proposal will consist of three largely
+independent parts:
+
+1. Wire in and give special solving behavior to a ``DataToTag`` class.
+   This is expected to be very similar to the recent work that
+   implemented the ``WithDict`` class.
+2. Modify the boxed primitives and their operations so that their
+   pointers are tagged with 1 instead of 0.
+3. Detect denestable constructors and modify the post-Core phases of
+   compilation to actually elide them.
+
+If accepted, the proposal author will work to implement this feature.
+I have already prepared a fully-functional `draft implementation
+<https://gitlab.haskell.org/ghc/ghc/-/merge_requests/8912>`_ of the
+``DataToTag`` part of this proposal.
+
 Andreas Klebinger has also expressed an interest in working on this
 feature and has already produced a `prototype implementation
 <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/8445>`_ of the
-main feature of this proposal.
+main feature (3) of this proposal.
