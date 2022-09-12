@@ -495,6 +495,24 @@ Alternatives
    Moreover, a pragma is easy to add later if this prediction proves
    incorrect.
 
+4. Another way of allowing efficient lifted wrappers around unlifted
+   primitives is to provide an opaque built-in type ``Lazy`` with kind
+   ``UnliftedType -> Type`` and primitive operations
+   ``toLazy :: a -> Lazy a`` and ``fromLazy :: Lazy a -> a`` that, in
+   the same way as this proposal's denestable constructors, perform no
+   boxing or unboxing at run-time.
+
+   Although this alternative can provide comparable performance
+   advantages in the most important motivating examples and avoids any
+   interaction with ``dataToTag#``, existing wrappers must be
+   re-written before they can actually take advantage of a blessed
+   ``Lazy`` wrapper.  This creates work for downstream maintainers.
+   Additionally, this technique does not yet generalize conveniently
+   to all of the motivating examples.
+
+   ..
+     TODO? Elaborate more on why and how it fails to generalize...
+
 
 Unresolved Questions
 --------------------
