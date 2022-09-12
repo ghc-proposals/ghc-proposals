@@ -221,6 +221,26 @@ to impose restrictions such as preventing selection or update, but this is not
 part of the current proposal.
 
 
+Naming
+~~~~~~
+
+The new flag is named ``-Wincomplete-record-selectors`` for consistency with the
+existing ``-Wincomplete-record-updates`` (and similarly-named warnings such as
+``-Wincomplete-patterns``).  These all share the property of warning about code
+that necessarily performs an incomplete pattern match.
+
+The naming of ``-Wpartial-fields`` at first seems inconsistent with this, and we
+might imagine changing it to something like ``-Wincomplete-record-definitions``.
+However, it is somewhat different to the others, because it is possible to
+define a partial field but use it only through total mechanisms (e.g. pattern
+matching).  If we were to define a warning group ``-Wincomplete`` to collect
+together incompleteness warnings (as suggested in discussion on `proposal 351
+<https://github.com/ghc-proposals/ghc-proposals/pull/351>`_) it would make sense
+to include ``-Wincomplete-record-selectors`` and ``-Wincomplete-record-updates``
+but not ``-Wpartial-fields``.  Thus this proposal does not change the name of
+``-Wpartial-fields``.
+
+
 Unresolved Questions
 --------------------
 None.
