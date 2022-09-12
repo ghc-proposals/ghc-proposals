@@ -253,9 +253,9 @@ constructor does not introduce ``Coercible`` instances and
 pattern-matching a value against a denestable constructor does force
 evaluation of that value.
 
-Additionally, the type of the somewhat obscure ``dataToTag#``
-primitive (and that of its alias ``GHC.Base.getTag``) will be changed
-as follows:
+Additionally, to mitigate an obscure breaking interaction, the type of
+the somewhat obscure ``dataToTag#`` primitive (and that of its alias
+``GHC.Base.getTag``) will be changed as follows:
 
 ::
 
