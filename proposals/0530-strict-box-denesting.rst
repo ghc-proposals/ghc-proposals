@@ -29,13 +29,13 @@ constructors.  To see what that means, compare the following two examples:
    newtype Example2 a = MkExample2 { exampleField2 ::  a }
 
 Today, any calls to ``MkExample1`` that remain after simplification
-will allocate a heap object at runtime, while calls to ``MkExample2``
+will allocate a heap object at run-time, while calls to ``MkExample2``
 are no-ops.  As a result, a call to ``exampleField1`` requires
 pointer-chasing to access the field stored in that heap object, while
 a call to ``exampleField2`` is again a no-op.  But the semantic
 differences between their declarations are minor, and do not actually
 prevent a newtype-like elision of the ``MkExample1`` constructor at
-runtime.
+run-time.
 
 Under this proposal, when ``-fstrict-box-denesting`` is enabled, GHC
 will automatically perform this newtype-like elision for constructors
@@ -200,7 +200,7 @@ and libraries defining such types often strive to do so at their
 internal use-sites.  However, doing so can be a chore.  The workarounds
 can have costs to code readability and are only effective when they
 are maintained.  (The workaround of monomorphising containers even has
-runtime cost, since it necessarily increases code size.)
+run-time cost, since it necessarily increases code size.)
 
 ..
   There are a few less essential limitations in today's GHC as well.
@@ -243,7 +243,7 @@ satisfies these four conditions:
 A constructor determined to be denestable will not generate any code
 at any of its use sites (even use-sites in modules for which
 ``-fstrict-box-denesting`` is disabled), so that using or
-pattern-matching against this constructor has no runtime cost, except
+pattern-matching against this constructor has no run-time cost, except
 to the extent that doing so forces evaluation to take place.
 
 Whether a constructor is determined denestable or not has no effect on
@@ -325,8 +325,8 @@ provide users less freedom.  Consider this function:
    example3Motivator (MkExample3Int  li) = last (14 : li)
    example3Motivator (MkExample3Bool li) = and li
 
-This function type-checks.  When called at runtime, it must be able to
-choose the appropriate branch.  Since types are erased at runtime,
+This function type-checks.  When called at run-time, it must be able to
+choose the appropriate branch.  Since types are erased at run-time,
 the only way it can do so is by distinguishing between the
 ``MkExample3Int`` and ``MkExample3Bool`` constructors.  This feat
 becomes impossible if both constructors are denested, and at least
@@ -399,7 +399,7 @@ Costs and Drawbacks
    evaluated) but entering them results in a panic.  These panics have
    been useful for GHC developers in the past, but are incompatible
    with this proposal as it is currently written, since it allows
-   a wrapper such as ``ShortByteString`` to be represented at runtime
+   a wrapper such as ``ShortByteString`` to be represented at run-time
    by its underlying ``ByteArray#``.
 
    Since entering these primitive objects involves an indirection that would
@@ -415,7 +415,7 @@ Costs and Drawbacks
    ``dataToTag#`` primitive, making it not applicable in some
    situations where it can currently be used.
 
-3. The heap objects elided at runtime by ``-fstrict-box-denesting``
+3. The heap objects elided at run-time by ``-fstrict-box-denesting``
    may occasionally provide useful information for debugging or profiling.
 
 
@@ -425,12 +425,12 @@ challenges or incur much ongoing maintenance cost.
 This proposal is expected to have almost no impact on Haskell's
 learnability: Its only effect on program meaning is a change to the
 type of an obscure primitive.  Like almost any optimization, it does
-increase the complexity of GHC-Haskell's runtime cost behavior.  But
+increase the complexity of GHC-Haskell's run-time cost behavior.  But
 this proposal should not greatly affect users' optimization decisions
 outside of the relatively advanced use-cases described in the
 Motivation section, since newtypes will remain more easily optimized
 by GHC in Core.  As a result, this proposal should also not contribute
-much to the difficulty of learning that runtime cost behavior.
+much to the difficulty of learning that run-time cost behavior.
 
 
 
