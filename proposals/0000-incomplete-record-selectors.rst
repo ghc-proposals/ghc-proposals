@@ -88,8 +88,8 @@ but the implementation may choose to suppress the warning in particular cases
 where it can determine that any argument to the partial selector will contain
 the field.
 
-This warning is not implied by ``-Wall``, just as
-``-Wincomplete-record-updates`` and ``-Wpartial-fields`` are not.
+This warning is implied by ``-Wall``, just like ``-Wincomplete-record-updates``
+following `proposal #71 <https://github.com/ghc-proposals/ghc-proposals/pull/71>`_.
 
 
 Examples
@@ -198,7 +198,10 @@ Costs and Drawbacks
 -------------------
 The implementation cost of this warning should be low, as GHC can easily
 determine which fields are partial, and record this information for later use.
-Users who do not explicitly opt in to the warning will not be affected.
+
+Users who set ``-Wall -Werror`` may see build failures if they use partial
+fields as selectors, but if this is not desired they can set
+``-Wno-incomplete-record-selectors``.
 
 
 Alternatives
