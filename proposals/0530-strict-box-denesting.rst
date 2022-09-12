@@ -274,6 +274,10 @@ Specifically, the constraint ``DataToTag t`` is always soluble when
 ``t`` is an algebraic data type (i.e. ``t`` matches a ``data`` or
 ``data instance`` declaration) with all of its constructors in scope.
 
+Finally, since it is no longer a primop, ``dataToTag#`` will be moved
+from ``GHC.Prim`` to ``GHC.Magic``.  It will remain re-exported from
+``GHC.Exts``.
+
 
 Examples
 --------
