@@ -402,9 +402,13 @@ Costs and Drawbacks
    a wrapper such as ``ShortByteString`` to be represented at run-time
    by its underlying ``ByteArray#``.
 
-   Since entering these primitive objects involves an indirection that would
-   largely defeat the purpose of denesting their lifted wrappers, this
-   must be dealt with by changing the proper tag for their pointers.
+   Today, evaluating a zero-tagged lifted object involves (at best)
+   two levels of pointer-chasing to read the closure type from the
+   info table, while non-zero-tagged pointers are recognized as
+   evaluated without any memory accesses.  So, for performance
+   reasons, the 'panic-on-eval' problem is best resolved by making the
+   proper tag for unlifted primitives non-zero.
+
    The panicking entry code can very likely be kept, but will now
    detect a different class of bugs: those where pointer tags are not
    preserved or where tag inference incorrectly concludes that a
