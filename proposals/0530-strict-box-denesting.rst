@@ -41,19 +41,25 @@ Under this proposal, when ``-fstrict-box-denesting`` is enabled, GHC
 will automatically perform this newtype-like elision for constructors
 that satisfy the following four conditions:
 
-1. There is no other constructor in the relevant ``data`` or
-   ``data instance`` declaration.  (Otherwise, pattern-matching gets tricky.)
-2. Among the constructor's fields (after unpacking, counting
+1. Among the constructor's fields (after unpacking, counting
    existentials and constraints), exactly one field has
    non-zero-width.  (Otherwise, no field alone has all of the relevant
    information.)
-3. That field's type is represented by a GC-managed pointer.
+2. That field's type is represented by a GC-managed pointer.
    (Otherwise, passing it in lieu of a constructed heap object makes no
    sense.)
-4. If that field is of lifted type, it must be a strict field.
+3. If that field is of lifted type, it must be a strict field.
    (Otherwise, ``undefined`` and ``WithLazyField undefined`` would
    need to be distinct.)
+4. Either
 
+   1. There is no other constructor in the relevant ``data`` or
+      ``data instance`` declaration, or
+   2. The underlying heap object for any evaluated expression with the
+      field's type has the same tag as the constructor.
+
+Condition 4 ensures that pattern-matching remains efficient.
+Condition 4(ii) is checked on a best-effort basis.
 
 Motivation
 ----------
@@ -224,24 +230,45 @@ Proposed Change Specification
 
 This proposal introduces a new optimization flag, tentatively named
 ``-fstrict-box-denesting``, which will be enabled by default with
-``-O1``.  When this flag is active while compiling a ``data`` or
-``data instance`` declaration, its constructors are tested for
-"denestability." A constructor is considered denestable when it
-satisfies these four conditions:
+``-O1``.  It also introduces two new pragmas, ``{-# DENEST #-}`` and
+``{-# NODENEST #-}`` which may appear before data constructors. When
+the ``-fstrict-box-denesting`` flag is active while compiling a
+``data`` or ``data instance`` declaration, its constructors not marked
+``{-# NODENEST #-}`` are tested for "denestability." A constructor is
+considered denestable when it satisfies these four conditions:
 
 ..
   These are identical to the four conditions given in the introduction.
 
-1. There is no other constructor in the relevant ``data`` or
-   ``data instance`` declaration.
-2. Among the constructor's fields (after unpacking, counting
+1. Among the constructor's fields (after unpacking, counting
    existentials and constraints), exactly one field has
    non-zero-width.
-3. That field's type is represented by a GC-managed pointer.
-4. If that field is of lifted type, it must be a strict field.
+2. That field's type is represented by a GC-managed pointer.
+3. If that field is of lifted type, it must be a strict field.
+4. Either
+
+   1. There is no other constructor in the relevant ``data`` or
+      ``data instance`` declaration, or
+   2. The underlying heap object for any evaluated expression with the
+      field's type has the same tag as the constructor.
+
+All constructors are checked for condition 4(i) before condition
+4(ii).  Condition 4(ii) is checked on a best-effort basis, but
+the following particular cases are expected to work:
+
+* If a constructor is the first in its ``data`` or ``data instance``
+  declaration, the field's type corresponds to a ``data`` or ``data
+  instance`` declaration with exactly one constructor, and that
+  field's constructor was not itself denested with condition 4(i)
+* If a constructor is the first in its ``data`` or ``data instance``
+  declaration, and the field's type is a boxed unlifted primitive
+
+If a constructor is marked ``{-# DENEST #-}`` but is determined not
+to be denestable, a warning is emitted.  This is the only effect of
+the ``{-# DENEST #-}`` pragma.
 
 A constructor determined to be denestable will not generate any code
-at any of its use sites (even use-sites in modules for which
+at any of its saturated use sites (even use-sites in modules for which
 ``-fstrict-box-denesting`` is disabled), so that using or
 pattern-matching against this constructor has no run-time cost, except
 to the extent that doing so forces evaluation to take place.
@@ -253,8 +280,9 @@ constructor does not introduce ``Coercible`` instances and
 pattern-matching a value against a denestable constructor does force
 evaluation of that value.
 
+
 Additionally, to mitigate an obscure breaking interaction, the type of
-the somewhat obscure ``dataToTag#`` primitive (and that of its alias
+the ``dataToTag#`` primitive (and that of its alias
 ``GHC.Base.getTag``) will be changed as follows:
 
 ::
@@ -311,9 +339,9 @@ corresponds to a ``newtype`` declaration rather than a ``data`` or
    data instance Example4 Bool = MkExample4Bool ![Bool]
 
 Examples 3 and 4 may appear similar.  However, ``MkExample3Int`` and
-``MkExample3Bool`` violate condition 1 and so are not denestable,
+``MkExample3Bool`` violate condition 4 and so are not denestable,
 while ``MkExample4Int`` and ``MkExample4Bool`` are found to be
-denestable, satisfying condition 1 because they do not belong to
+denestable, satisfying condition 4(i) because they do not belong to
 the same data instance declaration.
 
 This distinction is appropriate: the data family constructors
@@ -352,11 +380,12 @@ even with ``-fdicts-strict``, GHC will not make this a strict field, as
 doing so is incompatible with the newtype-class optimization.
 Today, the only evidence fields GHC makes strict are the implicit
 equality evidence fields of a GADT constructor.  So, ``MkExample5``
-does not satisfy condition 4 and is therefore not denestable.
+does not satisfy condition 3 and is therefore not denestable.
 
 ..
-  TODO: Even more examples? There are quite a few in the Motivation
-  section as well.
+  TODO: examples with condition 4(ii)
+        motivating example for NODENEST
+        performance examples
 
   Do I really need a DataToTag example? I hypothesize nobody is
   actually affected by that change except the proposal implementors.
@@ -479,31 +508,22 @@ Alternatives
    too many constructors. (This is tracked at `GHC issue 21710
    <https://gitlab.haskell.org/ghc/ghc/-/issues/21710>`_.)
 
-3. There are many possible designs for user control over when this
-   optimization is performed:
+3. It may be desirable to weaken condition 4(ii) to allow a
+   non-zero-cost "tag-changing denesting" in some cases where all
+   values of the field's type have the same tag, but this tag does not
+   match the constructor's tag.  However, doing so would break some
+   invariants in the RTS that are currently used for sanity-checking
+   and debugging of GHC and its RTS, so this proposal does not call
+   for any form of denesting in these cases.
 
-   1. Always perform this optimization.
-   2. Use a per-constructor "Denest" pragma or modifier to decide.
-   3. Use a per-``data``-declaration "Denest" pragma or modifier to decide.
-   4. Use a per-module flag to decide.
+4. This proposal specifies that, when compiling with optimizations,
+   denesting is opt-out rather than opt-in.  The opt-in alternative of
+   making ``{-# DENEST #-}`` pragmas mandatory before denesting is
+   applied was rejected because it serves little purpose beyond
+   creating busy-work for library maintainers before users can take
+   full advantage of the performance benefits denesting brings.
 
-   Option 1 has the advantage that it does not need denesting
-   information to be stored in interface files, but the disadvantage
-   that it provides no way to turn the optimization off without
-   modifying the compiler.  Option 2 is more extensible than option
-   3, since in the future denesting may be allowed even in some cases
-   where there is more than one constructor.
-
-   This proposal's choice (option 4) allows users to take advantage of
-   this optimization with no code changes.  It can be combined with
-   option 2 or option 3, but this proposal does not do so because no
-   demand for finer control of this optimization is foreseen: The
-   benefits of disabling the optimization (to compilation times and to
-   program debuggability) are expected to be minimal in most cases.
-   Moreover, a pragma is easy to add later if this prediction proves
-   incorrect.
-
-4. Another way of allowing efficient lifted wrappers around unlifted
+5. Another way of allowing efficient lifted wrappers around unlifted
    primitives is to provide an opaque built-in type ``Lazy`` with kind
    ``UnliftedType -> Type`` and primitive operations
    ``toLazy :: a -> Lazy a`` and ``fromLazy :: Lazy a -> a`` that, in
