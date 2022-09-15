@@ -5,7 +5,7 @@ ticket-url: ""
 implemented: ""
 ---
 
-This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/0>).
+This proposal is [discussed at this pull request](<https://github.com/ghc-proposals/ghc-proposals/pull/539>).
 
 Note this proposal is currently a WIP, and we would like to request feedback from the community.
 
