@@ -44,7 +44,7 @@ testing.
 
 Point to the fork of GHC that already implements tracing of *recently* evaluated expressions,
 [https://github.com/Tritlo/ghc/tree/extended-ticks](https://github.com/Tritlo/ghc/tree/extended-ticks),
-which will be extened to address some of the suggestions in ## ALternatives.
+which will be extened to address some of the suggestions in [alternatives](#alternatives)
 
 
 ## Examples
@@ -60,7 +60,7 @@ The technique based on recently evaluated expressions has minimal effects
 on performance, however, the technique based on storing the entire trace
 and having thunks point to that trace is a more fundamental change.
 
-See ## Alternatives
+See [alternatives](#alternatives) for more details.
 
 
 ## Costs and Drawbacks
@@ -95,6 +95,8 @@ with MPG focusing on the RTS and DB on HPC the library and binary.
 
 + Agustín Mista has expressed support that would benefit his work on generators.
 
+
+## References
 
 [1] Andy Gill and Colin Runciman. 2007. Haskell Program Coverage. In Proceedings of the ACM SIGPLAN Workshop on Haskell Workshop (Freiburg, Germany) (Haskell ’07). Association for Computing Machinery, New York, NY, USA, 1–12. 
 [2] Matthías Páll Gissurarson, Leonhard Applis, Annibale Panichella, Arie van Deursen, and David Sands. 2022. PropR: Property-Based Automatic Program Repair. In The 44th IEEE/ACM International Conference on Software Engineering (ICSE). IEEE/ACM.
