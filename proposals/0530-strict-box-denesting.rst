@@ -148,17 +148,42 @@ There are several reasons this might happen:
    linearly without forcing the contents of its "unrestricted" field,
    making this type slightly less flexible than the lazy ``Ur``.)
 
+
+5. There may be more than one constructor in the data type.  In this
+   case, only condition 4(ii) can apply.  The original motivating
+   example here is ``GHC.ForeignPtr.ForeignPtrContents``.
+
+   ::
+
+      data ForeignPtrContents
+        = PlainForeignPtr !(IORef Finalizers)
+        | FinalPtr
+        | MallocPtr (MutableByteArray# RealWorld) !(IORef Finalizers)
+        | PlainPtr (MutableByteArray# RealWorld)
+
+   This type is used to optionally provide support for finalizers on
+   ``ForeignPtr``\ s, as well as to keep alive GC-managed pinned
+   buffers that may be stored in ``ForeignPtr``\ s.  Depending on a
+   potential re-ordering of its constructors, either ``PlainPtr`` or
+   ``PlainForeignPtr`` (but not both) could satisfy condition 4(ii)
+   and be made denestable.  The former would remove two words of
+   allocation overhead in the buffer creation for any fresh
+   ``StrictByteString``, while the latter would make attaching
+   finalizers to external buffers received from the FFI more
+   efficient.
+
+
 ..
    The links in "many examples of wrapper types" in the next paragraph
-   provide almost exactly the denestable constructors found in the
+   provide almost exactly the 4(i)-denestable constructors found in the
    boot libraries of a prototype GHC detecting them, with three omissions.
    Two are the examples above for reasons 1 and 2: SomeTypeRep and SBS.
    The last one is base:Control.Concurrent.QSemN.QSemN, which I omitted
    because it could have been written as a newtype around IORef, but was not,
    for reasons unknown to me.
 
-All four of these situations are fairly niche in general-purpose Haskell code.
-However,
+All five of these situations are fairly uncommon in general-purpose
+Haskell code.  However,
 `m <https://hackage.haskell.org/package/base-4.17.0.0/docs/src/GHC.Event.Arr.html#Arr>`_\
 `a <https://hackage.haskell.org/package/base-4.17.0.0/docs/src/GHC.Conc.Sync.html#TVar>`_\
 `n <https://hackage.haskell.org/package/base-4.17.0.0/docs/src/GHC.Conc.Sync.html#ThreadId>`_\
@@ -263,6 +288,9 @@ the following particular cases are expected to work:
 * If a constructor is the first in its ``data`` or ``data instance``
   declaration, and the field's type is a boxed unlifted primitive
 
+The latter implies that, under this proposal, the boxed unlifted
+primitives have (one-indexed) tag 1.
+
 If a constructor is marked ``{-# DENEST #-}`` but is determined not
 to be denestable, a warning is emitted.  This is the only effect of
 the ``{-# DENEST #-}`` pragma.
@@ -305,6 +333,9 @@ Specifically, the constraint ``DataToTag t`` is always soluble when
 Finally, since it is no longer a primop, ``dataToTag#`` will be moved
 from ``GHC.Prim`` to ``GHC.Magic``.  It will remain re-exported from
 ``GHC.Exts``.
+
+..
+  TODO: Specify syntax for the (NO)?DENEST pragmas
 
 
 Examples
@@ -437,6 +468,10 @@ Costs and Drawbacks
    evaluated without any memory accesses.  So, for performance
    reasons, the 'panic-on-eval' problem is best resolved by making the
    proper tag for unlifted primitives non-zero.
+
+   Making the proper tag on these unlifted primitives non-zero also
+   has the benefit of making condition 4(ii) applicable to more
+   constructors.
 
    The panicking entry code can very likely be kept, but will now
    detect a different class of bugs: those where pointer tags are not
