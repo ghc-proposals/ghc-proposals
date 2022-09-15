@@ -150,8 +150,8 @@ There are several reasons this might happen:
 
 
 5. There may be more than one constructor in the data type.  In this
-   case, only condition 4(ii) can apply.  The original motivating
-   example here is ``GHC.ForeignPtr.ForeignPtrContents``.
+   case, condition 4(ii) must apply.  The original motivating
+   example for this condition is ``GHC.ForeignPtr.ForeignPtrContents``:
 
    ::
 
@@ -603,9 +603,9 @@ independent parts:
    compilation to actually elide them.
 
 If accepted, the proposal author will work to implement this feature.
-I have already prepared a fully-functional `draft implementation
-<https://gitlab.haskell.org/ghc/ghc/-/merge_requests/8912>`_ of the
-``DataToTag`` part of this proposal.
+Toward that end, a fully-functional
+`draft implementation <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/8912>`_
+of the ``DataToTag`` part of this proposal has already been produced.
 
 Andreas Klebinger has also expressed an interest in working on this
 feature and has already produced a `prototype implementation
