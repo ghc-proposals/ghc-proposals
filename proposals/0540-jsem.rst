@@ -1,0 +1,342 @@
+
+jsem: parallelism semaphores for GHC
+====================================
+
+.. author:: Douglas Wilson and Sam Derbyshire
+.. date-accepted:: 
+.. ticket-url:: 
+.. implemented:: 
+.. highlight:: haskell
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/540>`_.
+.. sectnum::
+
+.. contents::
+
+We propose to extend GHC to allow many GHC processes to cooperate in sharing
+compute resources. Clients, such as ``cabal-install`` and ``stack``, may
+exploit this feature to execute build plans in shorter wall-time durations.
+
+For the proposal to offer any value, the protocol herein should be implemented
+by ``cabal-install`` and ``stack``. Therefore we seek advice and agreement from
+the community.
+
+Motivation
+----------
+
+Background
+~~~~~~~~~~
+
+GHC, when invoked as ``ghc --make``, compiles a single package component
+(or *unit*) consisting of many *modules*. ``cabal-install``, ``stack``, and
+other clients compute the dependencies of a unit, compose a build plan, and
+execute many ``ghc --make`` subprocesses; first to build the dependencies of the
+target unit and then the unit itself.
+
+The ``ghc --make`` command accepts a ``-jN`` option to instruct it to compile up
+to ``N`` modules in parallel  [1]_ . Each of these modules consumes one OS
+thread (a GHC *capability*).
+
+``cabal-install`` and ``stack`` both also accept a ``-jN`` option [2]_  [3]_ ,
+however the meaning here is different. It instructs the build tool to build up
+to ``N`` units (or packages) in parallel. Each of those units will be built by
+an invocation of ``ghc --make -j1``.
+
+In the sequel (and for brevity), we will use ``cabal`` commands in the examples
+and exposition.
+
+Problem Description
+~~~~~~~~~~~~~~~~~~~
+
+While both GHC and cabal provide ways to parallelise their workloads, these two
+mechanisms do not compose well [4]_ .
+
+Consider how to compile the following build plans using `8` capabilities:
+
+1. **Many small packages.**
+   In this case, we can use the invocation ``cabal build -j8 --ghc-options=-j1``,
+   which compiles 8 units at a time, with modules from each unit being
+   compiled serially.
+
+2. **A single large package.**
+   In this case, we can use the invocation ``cabal build -j1 --ghc-options=-j8``,
+   which compiles the package in a single ``ghc`` invocation, with GHC compiling
+   8 modules at a time in parallel.
+
+In practice, however, a build plan is “wide” in some parts and “tall” in others.
+Some packages, e.g. ``vector`` have many large modules, while a build plan may
+have many small units depending on ``vector``.
+
+Consider the following build plan:
+
+.. image:: jsem_modules_plain.svg
+  :width: 600
+  :alt: Example dependency graph: big packages at the top and bottom,
+        and many small packages in the middle.
+
+The optimal build strategy here is to assign all cores to building the bottom
+unit. Once that is complete, build all the middle units in parallel, each on
+a single core. Finally, compile the top package in parallel.
+
+Crucially, in order to saturate all the cores, we need to be able to dynamically
+assign a number of capabilities to compile each package. No single command of
+the form:
+
+.. code:: shell
+
+  cabal build -j<n> --ghc-options=-j<m>
+
+would be suitable.
+
+Note that cabal always uses ``--ghc-options=-j1``, even when compiling the
+"top" package, so a top-level application with 500 modules is, by default,
+always compiled serially even though many more capabilities might be available.
+
+Proposed Change Specification
+-----------------------------
+
+We want to allow the build tool and individual invocations of GHC to share
+capabilities, by communicating through a semaphore. To do this, we introduce
+the ``-jsem <sem>`` flag, which specifies a system semaphore through which GHC
+invocations can acquire and release capabilities.
+
+Change to user manual
+~~~~~~~~~~~~~~~~~~~~~
+
+.. code:: ReST
+
+    .. ghc-flag:: -jsem ⟨sem⟩
+        :shortdesc: When compiling with :ghc-flag:`--make`, coordinate with
+                    other processes through the semaphore ⟨sem⟩ to compile
+                    modules in parallel.
+        :type: dynamic
+        :category: misc
+
+        Perform compilation in parallel when possible, coordinating with other
+        processes through the semaphore ⟨sem⟩.
+
+        Use of ``-jsem`` will override use of :ghc-flag:``-j[⟨n⟩]``,
+        and vice-versa.
+
+GHC Jobserver Protocol
+~~~~~~~~~~~~~~~~~~~~~~
+
+The GHC Jobserver Protocol allows a client to dynamically invoke many instances
+of GHC, while restricting all of those instances to use no more than
+<n> capabilities. This is achieved by coordination over a system semaphore
+(either a POSIX semaphore [6]_  in the case of Linux and Darwin, or a
+Win32 semaphore [7]_  in the case of Windows platforms).
+
+There are two kinds of participants in the GHC Jobserver protocol:
+
+- The *jobserver* creates a system semaphore with a certain number of
+  available tokens.
+
+  Each time the jobserver wants to spawn a new jobclient subprocess, it **must**
+  first acquire a single token from the semaphore, before spawning
+  the subprocess. This token **must** be released once the subprocess terminates.
+
+  Once work is finished, the jobserver **must** destroy the semaphore it created.
+
+- A *jobclient* is a subprocess spawned by the jobserver or another jobclient.
+
+  Each jobclient starts with one available token (its *implicit token*,
+  which was acquired by the parent which spawned it), and can request more
+  tokens within the Jobserver Protocol by waiting on the semaphore.
+
+  Each time a jobclient wants to spawn a new jobclient subprocess, it **must**
+  pass on a single token to the child jobclient. This token can either be the
+  jobclient's implicit token, or another token which the jobclient acquired
+  from the semaphore.
+
+  Each jobclient **must** release exactly as many tokens as it has acquired from
+  the semaphore (this does not include its implicit token).
+
+Implementation details
+~~~~~~~~~~~~~~~~~~~~~~
+
+There is a hidden cost in having a GHC program (such as ``ghc`` itself) run on
+fewer CPU cores than its capabilities: the stop-the-world cost of garbage
+collection becomes much more expensive. If we were to give GHC a fixed number
+``N`` of capabilities, then parallel garbage collections in that GHC would
+recruit ``N`` OS threads. Instead we propose that GHC will adjust its number
+of capabilities, via ``setNumCapabilities`` [8]_ , to the number of modules
+it is compiling.
+Note that GHC already calls ``setNumCapabilities`` with the argument to ``-j``.
+
+We have concerns that rapidly adjusting the number of capabilities may have
+adverse effects: we propose that GHC will rate limit the release of tokens so as
+to reduce this thrashing. The exact mechanism of rate limiting is unspecified
+here.
+
+We also believe that GHC invocations should not be too eager to release
+resources, so we propose a minimum delay between acquiring a resource and
+releasing a resource. This allows us to prioritise completing a single large
+package before moving on to other work. The exact mechanism through which this
+is achieved is also left unspecified in this proposal.
+
+Examples
+--------
+
+Let us explain how we envision ``cabal`` handle the following build plan, with
+8 capabilities.
+
+.. image:: jsem_modules_plain.svg
+  :width: 600
+  :alt: Same dependency graph as before: a big unit at the top and bottom,
+        and many single-module units in the middle.
+
+1. To start, ``cabal`` would create a semaphore ``⟨sem⟩`` with 8 available tokens.
+
+2. Next, we compile the ``Bot`` unit, which is a large unit, with many modules,
+   which sits at the bottom of the dependency graph and must thus be compiled
+   before anything else.
+
+   a. ``cabal`` acquires one token from the semaphore and spawns one
+      ``ghc --make -jsem ⟨sem⟩`` invocation.
+   b. This invocation of ``ghc`` notices it has a lot of work to do (many modules
+      to compile from the ``Bot`` unit), so it requests more resources from the
+      semaphore, obtaining the remaining 7 tokens.
+   c. ``ghc`` finishes compiling the ``Bot`` unit, releasing the 7 tokens it
+      acquired.
+   d. ``cabal`` notices the ``ghc`` subprocess has terminated, and releases
+      the final (8th) token to the semaphore.
+
+3. After that, we move to compiling the middle units.
+
+   a. ``cabal`` will acquire tokens from the semaphore and spawn
+      ``ghc --make -jsem ⟨sem⟩`` invocations.
+   b. These ``ghc`` invocations won't query for more resources from the
+      semaphore, so ``cabal`` will manage running 8 concurrent ``ghc`` processes,
+      spawning new ones as previous ones terminate.
+
+4. Once all the middle units are compiled, ``cabal`` will move on to compiling
+   the top unit, which will proceed as in (2) with a single
+   ``ghc --make -jsem ⟨sem⟩`` invocation compiling 8 modules in parallel.
+
+5. Once all ``ghc`` processes have terminated, we are done, and ``cabal``
+   destroys ``⟨sem⟩``.
+
+In this situation, ``cabal`` is the jobserver: it manages the semaphore and
+spawns ``ghc`` subprocesses. The ``ghc`` subprocesses are jobclients, and they
+communicate by use of the semaphore.
+
+We can also imagine ``cabal`` or ``stack`` being jobclients, if there is a
+parent jobserver. For example, this would happen if ``nix`` manages the
+semaphore, with ``nix`` spawning ``cabal`` subprocesses, and those ``cabal``
+subprocesses spawning ``ghc`` subprocesses in turn.
+
+Effects and Interactions
+------------------------
+
+Comparison with multiple home units
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Support for multiple home units provides an alternative way to saturate the
+number of available capabilities. This is because compilation is achieved using
+a single GHC invocation, which thus doesn't have to worry about contention with
+other processes.
+
+In general, it is preferred to use multiple home units when possible, as it is
+expected to be more performant than ``-jsem``:
+
+- no scheduling between different GHC invocations is necessary;
+- modules are loaded directly into the home unit graph, which avoids having
+  to load the same interface files in different GHC invocations,
+- it doesn't require the entire unit to finish compiling before compilation
+  can start on another unit that depends on it: we can begin as soon as all
+  the modules we need have been compiled.
+
+However, it's not always possible to compile everything with a single GHC
+invocation, e.g. if the build plan involves non-Haskell dependencies somewhere
+in the middle. In comparison, the ``-jsem`` functionality can fit into any build
+system that one might be using (such as ``nix``), so it supports a wider range
+of use cases.
+
+Costs and Drawbacks
+-------------------
+
+The implementation in GHC is self-contained and doesn't impact the rest of the
+compiler much. It does however add a new flag (which interacts with ``-j``),
+and a complete implementation requires coordination with ``cabal`` and ``stack``.
+
+Alternatives
+------------
+
+GNU make supports a Jobserver protocol [9]_ [5]_ which is the same as the
+GHC Jobserver protocol described above, except that:
+
+- it uses POSIX pipes to exchange token's between processes.
+
+- participants in the protocol learn about it through environment variables
+  and the state of file descriptors on process entry.
+
+We have decided to depart from this design for the following reasons:
+
+- Other communities have considered the Make jobserver, and decided some
+  aspects of the protocol are unsuitable:
+
+  - ocaml [10]_ [11]_
+
+  - nix [12]_
+
+- We expect ``cabal-install`` and ``stack`` to be the only users of this feature
+  in the near term. We think the proposed protocol is adequate for this use case.
+
+- We can extend GHC to use the GNU make Jobserver protocol in the future, if
+  there are users for it.
+
+Notes:
+
+- rust's ``cargo`` does implement the GNU make Jobserver protocol [13]_ ,
+- a prototype implementation of the GNU make Jobserver protocol for GHC
+  was made by Ellie Hermaszewska [15]_ .
+
+Unresolved Questions
+--------------------
+
+Syntax of command line flags.
+
+Should we also offer configuration of this feature via environment variables?
+
+Implementation Plan
+-------------------
+
+Douglas Wilson and Sam Derbyshire have implemented a prototype at [14]_ .
+
+Once this proposal is agreed we will prepare a patch for ``cabal-install``
+and deliver it upstream.
+
+Ongoing work from Well-Typed LLP is funded by Hasura.
+
+Footnotes
+---------
+
+.. [1] `https://downloads.haskell.org/ghc/latest/docs/html/users_guide/using.html?highlight=j#using-ghc-make <https://downloads.haskell.org/ghc/latest/docs/html/users_guide/using.html?highlight=j#using-ghc-make>`_
+
+.. [2] `https://cabal.readthedocs.io/en/3.6/cabal-project.html?highlight=%22-j%22#cfg-flag---jobs <https://cabal.readthedocs.io/en/3.6/cabal-project.html?highlight=%22-j%22#cfg-flag---jobs>`_
+
+.. [3] `https://docs.haskellstack.org/en/stable/yaml_configuration/#jobs <https://docs.haskellstack.org/en/stable/yaml_configuration/#jobs>`_
+
+.. [4] `https://github.com/haskell/cabal/issues/976 <https://github.com/haskell/cabal/issues/976>`_
+
+.. [5] `http://make.mad-scientist.net/papers/jobserver-implementation/ <http://make.mad-scientist.net/papers/jobserver-implementation/>`_
+
+.. [6] `https://man7.org/linux/man-pages/man7/sem_overview.7.html <https://man7.org/linux/man-pages/man7/sem_overview.7.html>`_
+
+.. [7] `https://docs.microsoft.com/en-us/windows/win32/sync/semaphore-objects <https://docs.microsoft.com/en-us/windows/win32/sync/semaphore-objects>`_
+
+.. [8] `https://hackage.haskell.org/package/base-4.16.1.0/docs/Control-Concurrent.html#v:setNumCapabilities <https://hackage.haskell.org/package/base-4.16.1.0/docs/Control-Concurrent.html#v:setNumCapabilities>`_
+
+.. [9] `https://www.gnu.org/software/make/manual/make.html#Job-Slots <https://www.gnu.org/software/make/manual/make.html#Job-Slots>`_
+
+.. [10] `https://github.com/ocaml/opam/wiki/Spec-for-GNU-make-jobserver-support <https://github.com/ocaml/opam/wiki/Spec-for-GNU-make-jobserver-support>`_
+
+.. [11] `https://github.com/ocaml/dune/pull/4331 <https://github.com/ocaml/dune/pull/4331>`_
+
+.. [12] `https://github.com/NixOS/nixpkgs/pull/143820 <https://github.com/NixOS/nixpkgs/pull/143820>`_
+
+.. [13] `https://github.com/rust-lang/cargo/pull/4110 <https://github.com/rust-lang/cargo/pull/4110>`_
+
+.. [14] `https://gitlab.haskell.org/ghc/ghc/-/merge_requests/8970 <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/8970>`_
+
+.. [15] `https://gitlab.haskell.org/ghc/ghc/-/merge_requests/7000 <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/7000>`_
