@@ -2,11 +2,11 @@ Generalising Type and Constraint
 ==============================
 
 .. author:: Richard Eisenberg and Simon Peyton Jones
-.. date-accepted::
+.. date-accepted:: 2022-07-28
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/518>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/518>`_.
 .. sectnum::
 .. contents::
 
