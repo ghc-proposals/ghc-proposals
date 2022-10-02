@@ -164,7 +164,7 @@ irretrievably.
 Proposed Change Specification
 -----------------------------
 
-We propose the following new setup, not repeating any types that remains unchanged::
+We propose the following new setup, not repeating any types that remain unchanged::
 
   -- Primitive type constructors
   type CONSTRAINT :: RuntimeRep -> Type
