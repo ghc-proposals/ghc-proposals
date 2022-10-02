@@ -2,11 +2,11 @@ Add warning for incomplete record selectors
 ===========================================
 
 .. author:: Adam Gundry
-.. date-accepted::
+.. date-accepted:: 2022-09-27
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/18650
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/516>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/516>`_.
 .. sectnum::
 .. contents::
 
