@@ -252,7 +252,6 @@ The current members, including their GitHub handle, when they joined first, when
 |int-index|   Vladislav Zavialov      `@int-index <https://github.com/int-index/>`_         2021/03
 |gridaphobe|  Eric Seidel             `@gridaphobe <https://github.com/gridaphobe>`_        2018/09  2022/03
 |cdornan|     Chris Dornan            `@cdornan <https://github.com/cdornan>`_              2022/03
-|icelandjack| Baldur Blöndal          `@icelandjack <https://github.com/icelandjack>`_      2022/03
 ============= ======================  ====================================================  =======  =======  =========
 
 .. |aspiwack| image:: https://github.com/aspiwack.png?size=24
@@ -282,6 +281,7 @@ Iavor Diatchki          `@yav <https://github.com/yav>`_                      20
 Cale Gibbard            `@cgibbard <https://github.com/cgibbard/>`_           2020/01 - 2021/07
 Alejandro Serrano       `@serras <https://github.com/serras/>`_               2020/01 - 2022/01
 Vitaly Bragilevsky      `@bravit <https://github.com/bravit>`_                2018/09 - 2022/02
+Baldur Blöndal          `@icelandjack <https://github.com/icelandjack>`_      2022/03 - 2022/09
 ======================  ====================================================  =================
 
 
