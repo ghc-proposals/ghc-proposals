@@ -11,7 +11,7 @@
 .. contents::
 
 This proposal extends the syntax of ``WARNING`` pragmas to allow them to specify
-one or more "warning categories".  Users can then enable or disable specific
+a "warning category".  Users can then enable or disable specific
 warning categories using command-line flags.  This will make it more reasonable
 to attach ``WARNING`` pragmas in cases where it is desirable to give users the
 option to disable the warning individually.
@@ -41,48 +41,42 @@ controversial than it should be, as it potentially inconveniences existing
 users.
 
 Instead, this ghc-proposal extends ``WARNING`` pragmas so they can be annotated
-with one or more "warning categories".  Users can then enable or disable these
+with a "warning category".  Users can then enable or disable these
 categories individually.  For example, it would allow the core-libraries
 proposal to introduce::
 
-    {-# WARNING [head,partial] head "This is a partial function, it throws an error on empty lists." #-}
-    {-# WARNING [tail,partial] tail "This is a partial function, it throws an error on empty lists." #-}
+    {-# WARNING [partial] head "This is a partial function, it throws an error on empty lists." #-}
+    {-# WARNING [partial] tail "This is a partial function, it throws an error on empty lists." #-}
 
-By default, ``-Wwarnings-deprecations`` is enabled, so the appropriate warning
-would be displayed at any use of ``head`` or ``tail``.  However, users may
-control this behaviour to their liking:
+Such warnings are enabled by default, so the appropriate warning would be
+displayed at any use of ``head`` or ``tail``.  However, users may control this
+behaviour to their liking, prefixing the warning category name with an ``x-`` to
+distinguish it from the built-in warning flags:
 
 * Users who prefer to use the functions unimpeded may specify
-  ``-Wno-warnings:partial`` to suppress all warnings annotated with the
+  ``-Wno-x-partial`` to suppress all warnings annotated with the
   ``partial`` warning category, while still seeing other warnings.
 
 * Users who do not wish to use the functions at all may specify
-  ``-Werror=warnings:partial`` so that any use of the functions will be reported
+  ``-Werror=x-partial`` so that any use of the functions will be reported
   as an error, while other warnings are unaffected.
-
-* Since multiple warning categories can be applied to an identifier, users may
-  distinguish more finely if needed, for example ``-Werror -Wwarn=warnings:head
-  -Wno-warnings:tail`` could be used in a codebase where most warnings are
-  considered errors, except uses of ``head`` are merely warned about, and uses
-  of ``tail`` are not mentioned.
 
 
 Proposed Change Specification
 -----------------------------
 
-The `WARNING and DEPRECATED pragmas
+The `WARNING pragma
 <https://downloads.haskell.org/ghc/9.4.1/docs/users_guide/exts/pragmas.html#warning-deprecated-pragma>`_
-may be immediately followed by a comma-separated list of warning categories in
-square brackets. Each warning category is an identifier beginning with a letter
+may be immediately followed by a single warning category in
+square brackets. A warning category is an identifier beginning with a letter
 and followed by valid identifier characters or dashes.
 
 More formally, the grammar of declarations is extended as follows:
 
 ============  =  =====================================================================
-*decl*        →  ``{-# WARNING`` [*categories*] *things* *strings* ``#-}``
-*decl*        →  ``{-# DEPRECATED`` [*categories*] *things* *strings* ``#-}``
+*decl*        →  ``{-# WARNING`` [*categories*] [*things*] *strings* ``#-}``
 
-*categories*  →  ``[`` *category1*, ..., *categoryN* ``]``
+*categories*  →  ``[`` *category* ``]``
 *category*    →  (*small* | *large*) { *small* | *large* | *digit* | ``'`` | ``-`` }
 
 *things*      →  *thing1*, ..., *thingN*
@@ -90,29 +84,40 @@ More formally, the grammar of declarations is extended as follows:
 *strings*     →  *string* | ``[`` *string1*, ..., *stringN* ``]``
 ============  =  =====================================================================
 
-The list of categories can be omitted entirely, so this subsumes the existing
-syntax for ``WARNING`` and ``DEPRECATED`` pragmas.  That is, [*categories*]
+The category can be omitted entirely, so this subsumes the existing
+syntax for ``WARNING`` pragmas.  That is, [*categories*]
 means that the presence of the *categories* non-terminal is optional; if present
-it is a list in square brackets (hence the use of typewriter font ``[``
+it is a single category in square brackets (hence the use of typewriter font ``[``
 ... ``]`` in the definition of the *categories* production).
+Similarly the list of *things* is optional as it may be omitted (for a ``WARNING`` on a module header).
 
-The *category* non-terminal subsumes both *varid* and *conid*, so it is always
+The *category* non-terminal subsumes both *varid* and *conid*, so it is
 possible to use the name of the thing to which a warning is being attached as
-one of the categories.  The dash character (``-``) is permitted as a character
+the category, provided it is not an operator.  The dash character (``-``) is permitted as a character
 in addition to identifier characters, since dashes are frequently used in
 warning names.
 
-There is no change to the existing rules for when ``WARNING`` or ``DEPRECATED``
+There is no change to the existing rules for when ``WARNING``
 pragmas give rise to warnings, except that individual warning categories may be
-enabled or disabled using new ``-Wwarnings:<category>`` or
-``-Wno-warnings:<category>`` options, and their priority may be controlled using
-the ``-Werror=warnings:<category>`` or ``-Wwarn=warnings:<category>`` options.
+enabled or disabled using new ``-Wx-<category>`` or
+``-Wno-x-<category>`` options, and their priority may be controlled using
+the ``-Werror=x-<category>`` or ``-Wwarn=x-<category>`` options.
 Here ``<category>`` represents the name of a *category* according to the grammar
-above.  The ``-Wwarnings-deprecations`` warning flag (and its synonym
-``-Wdeprecations``) controls the display of all warnings from ``WARNING`` or
-``DEPRECATED`` pragmas, regardless of category.  The command-line flags are
+above.  The command-line flags are
 processed from left to right, with later flags overriding previous ones, as at
 present.
+
+A ``WARNING`` pragma without a category, or a ``DEPRECATED`` pragma, is
+interpreted as if it was a ``WARNING`` pragma with the single category
+``deprecations`` specified.  The ``-Wwarnings-deprecations`` warning flag (and
+its synonym ``-Wdeprecations``) are interpreted as synonyms for
+``-Wx-deprecations``.  This makes the proposal backwards compatible.
+
+A new warning flag ``-Wextended-warnings`` controls the display of all warnings
+from ``WARNING`` pragmas, regardless of category.  This is not strictly
+necessary, but allows users to suppress all ``WARNING`` messages much like
+``-Wno-warnings-deprecations`` does at present.  The naming is chosen to allow
+for other sources of "extended warnings" in the future.
 
 
 Examples
@@ -120,8 +125,8 @@ Examples
 
 Suppose the definitions of ``head`` and ``tail`` are annotated with::
 
-    {-# WARNING [head,partial] head "This is a partial function, it throws an error on empty lists." #-}
-    {-# WARNING [tail,partial] tail "This is a partial function, it throws an error on empty lists." #-}
+    {-# WARNING [partial-head] head "This is a partial function, it throws an error on empty lists." #-}
+    {-# WARNING [partial-tail] tail "This is a partial function, it throws an error on empty lists." #-}
 
 and the user program contains occurrences of both ``head`` and ``tail``::
 
@@ -131,22 +136,22 @@ and the user program contains occurrences of both ``head`` and ``tail``::
 
 This will result in the following warnings::
 
-    M.hs:2:7: warning: [-Wwarnings:head, -Wwarnings:partial]
+    M.hs:2:7: warning: [-Wx-partial-head]
         In the use of ‘head’ (imported from Prelude):
         "This is a partial function, it throws an error on empty lists."
       |
     2 | foo = head
       |       ^^^^
 
-    M.hs:3:7: warning: [-Wwarnings:tail, -Wwarnings:partial]
+    M.hs:3:7: warning: [-Wx-partial-tail]
         In the use of ‘tail’ (imported from Prelude):
         "This is a partial function, it throws an error on empty lists."
       |
     3 | bar = tail
       |       ^^^^
 
-Notice that the message lists all the warning categories that apply.  In current
-version of GHC, this displays ``-Wdeprecations`` alone.
+Notice that the message lists the warning category that applies.  In current
+versions of GHC, this displays ``-Wdeprecations``.
 
 The following examples show the effect of various combinations of warning
 flags:
@@ -154,18 +159,18 @@ flags:
 ===============================  ===============================================
 Warning flags                    Result
 ===============================  ===============================================
-None                             Warnings displayed
-``-Wno-warnings-deprecations``   No warnings
-``-Wno-warnings:partial``        No warnings
-``-Wno-warnings:tail``           Warning displayed for ``head`` but not ``tail``
+None                             Warnings displayed by default
+``-Wno-x-partial-tail``          Warning for ``head`` but not ``tail``
+``-Wno-extended-warnings``       No warnings
+``-Wno-warnings-deprecations``   Warnings displayed (category is not ``deprecations``)
 ===============================  ===============================================
 
 Warning severity levels may be overridden by subsequent arguments on the
-command-line.  For example, ``-Wno-warnings-deprecations
--Wwarnings:head -Werror=warnings:tail`` will result in warnings about ``head``
-and errors about ``tail``, but no other ``-Wwarnings-deprecations`` messages.
-On the other hand, ``-Werror=warnings:partial -Wno-warnings-deprecations`` will
-result in no warnings because the second option overrides the first.
+command-line.  For example, ``-Wno-extended-warnings -Werror=x-partial-head``
+will result in errors instead of warnings with the category ``partial-head``,
+but no other warnings from ``WARNING`` or ``DEPRECATED`` pragmas.  On the other
+hand, ``-Werror=x-partial-head -Wno-extended-warnings`` will result in no
+warnings because the second option overrides the first.
 
 
 Effect and Interactions
@@ -175,6 +180,14 @@ This proposal should help resolve the controversy over whether ``head`` and
 ``tail`` should be annotated with ``WARNING`` pragmas.  By annotating them with
 categorised warnings, users will be warned about their use by default, but may
 choose to override the warnings as they wish.
+
+This approach also provides an alternative to `proposal #528
+<https://github.com/ghc-proposals/ghc-proposals/pull/528>`_, which is about
+discouraging users from importing from "internal" modules, without completely
+prohibiting their import.  For example, a ``WARNING [ghc-prim-internals]``
+pragma could be attached to all module in ``ghc-prim``.  Users would then be
+advised that such imports are discouraged, but could silence the warning with
+``-Wno-x-ghc-prim-internals``.
 
 These pragmas may be useful for libraries outside ``base`` as well, in
 particular where library authors wish to selectively discourage use of certain
@@ -198,11 +211,8 @@ individual uses as having been approved and the warning suppressed for that use
 alone, rather than for all uses in the module.
 
 It might be helpful to establish conventions around which categories exist, such
-as ``partial`` for warnings about partial functions.  Moreover it is unclear
-whether every identifier with an attached warning should have a category
-corresponding to the name of the identifier, as with the ``-Wwarnings:head`` and
-``-Wwarnings:tail`` examples.  These issues are currently left to individual
-library authors.
+as ``partial`` for warnings about partial functions.  These issues are currently
+left to individual library authors.
 
 This proposal does not provide a mechanism for organising or namespacing warning
 categories, as they are simply bare identifiers.  Thus if libraries use the
@@ -212,6 +222,9 @@ distinguish definitions from separate modules.
 
 Alternatives
 ------------
+
+Custom type warnings
+~~~~~~~~~~~~~~~~~~~~
 
 This proposal may be contrasted with `proposal #454
 <https://github.com/ghc-proposals/ghc-proposals/pull/454>`_, which introduces a
@@ -227,26 +240,51 @@ risk that introducing ``Warning`` constraints may have unexpected effects on
 program semantics.  Assuming this proposal is accepted, it would be fairly
 simple to change the ``Warning`` class to be controlled using the same flags.
 
-`Proposal #454 <https://github.com/ghc-proposals/ghc-proposals/pull/454>`_ does
-not allow multiple categories to be attached to a single warning, but it seems
-useful to include this feature, because it allows for multiple categories at
-different levels of granularity (potentially including a different category for
-every identifier).
+
+Multiple categories
+~~~~~~~~~~~~~~~~~~~
+
+The current version of this proposal (like `proposal #454
+<https://github.com/ghc-proposals/ghc-proposals/pull/454>`_) does not allow
+multiple categories to be attached to a single warning.  It could be useful to
+include this feature, because it allows for multiple categories at different
+levels of granularity (potentially including a different category for every
+identifier).
+
+Support for multiple categories it is omitted for now in the interests of
+simplicity. It can lead to confusing effects, e.g. if a warning on ``head`` was
+given both the ``head`` and ``partial`` categories, a user might specify
+``-Werror=head -Wno-partial``.
+
+It would be easy to change this later and allow a comma-separated list of
+warning categories.
+
+
+Control over severity
+~~~~~~~~~~~~~~~~~~~~~
+
+Under this proposal, all warnings from ``WARNING`` pragmas are treated as
+belonging to ``-Wdefault``.  One might imagine libraries wanting to customise
+this, e.g. showing them only with ``-Wall`` or ``-Wcompat``, or treating them as
+errors with ``-Werror``.  This introduces more complexity, however.  Ideally,
+severity should be a property of the entire category, but there is no up-front
+definition of categories.
+
+A plausible alternative would be to have ``WARNING``, ``ERROR``, and ``NOTICE``
+pragmas (for ``-Wdefault``, ``-Werror``, ``-Wall``) and indicate that
+classification in the prefix (``xw-``, ``xe-``, ``xi-``).  For example,
+``-Wno-xw-partial`` would silence warnings from ``WARNING`` pragmas with
+category ``partial``, but not errors from ``ERROR`` pragmas.  This does not
+currently seem worth the additional complexity.
 
 
 Unresolved Questions
 --------------------
 
-GHC currently supports both ``WARNING`` and ``DEPRECATED`` pragmas, which are
-synonymous.  Similarly the flags ``-Wwarnings-deprecations`` and
-``-Wdeprecations`` are synonymous, and there is no ``-Wwarnings`` flag.  This
-seems somewhat inconsistent.  Should we reduce the redundancy by considering
-deprecations one particular category of warnings?
-
-Could the use of a colon in the command-line flag name cause issues on some
-platforms?  Is there another syntax that would be preferable?
+None.
 
 
 Implementation Plan
 -------------------
+
 Support with the implementation of this proposal would be welcome.
