@@ -123,7 +123,11 @@ Other than the extension flag, it touches 3 modules in the compiler: one each in
 Drawbacks
 -------------------
 
-It may not be obvious to some users why a particular comprehension gets a `Monad` constraint (much like `ApplicativeDo` now).
+Some criticisms of `ApplicativeDo` also apply here. For example:
+
+- It may not be obvious to some users why a particular comprehension gets a `Monad` constraint.
+- The optimal desugaring algorithm is O(n³).
+- Desugaring seems unpredictable to some users.
 
 Alternatives
 ------------
