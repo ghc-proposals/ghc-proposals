@@ -3,11 +3,13 @@
 
 .. author:: John Ericson (@Ericson2314)
 .. date-accepted:: 2020-05-04
-.. ticket-url::
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/merge_requests/8629
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/285>`_.
 .. contents::
+
+**This proposal is one of several that affect the way type variables are brought into scope. `Proposal #448 <0448-type-variable-scoping.rst>`_ supersedes the content of this proposal and puts it in context.**
 
 Provide a way to strictly separate bindings and use of varariables, so the distinction never depends on what is in scope.
 This means opting out of implicit ``forall`` binding of free variables in type signatures, and opting out of the binding of variables in pattern signatures.

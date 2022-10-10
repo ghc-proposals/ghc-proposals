@@ -4,7 +4,7 @@ Unicode Ellipsis
 
 .. author:: Ignat Insarov
 .. date-accepted:: 2022-03-30
-.. ticket-url::
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/merge_requests/8697
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/477>`_.
