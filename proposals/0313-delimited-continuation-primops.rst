@@ -3,8 +3,8 @@ Delimited continuation primops
 
 .. author:: Alexis King
 .. date-accepted:: 2021-01-18
-.. ticket-url::
-.. implemented::
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/merge_requests/7942
+.. implemented:: 9.6.1
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/313>`_.
 .. contents::
