@@ -388,7 +388,7 @@ patterns. The desugaring rule is: ::
 
     (p1 || … || pk)
     =
-    ((\x -> case x of p1 -> True || p2 -> True || … || pk -> True || _ -> False)
+    ((\x -> case x of p1 -> True; p2 -> True; …; pk -> True; _ -> False)
         -> True)
 
 The desugaring rule defines both static and dynamic semantics of Or patterns:
