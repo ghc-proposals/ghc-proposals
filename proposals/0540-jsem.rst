@@ -3,9 +3,9 @@ jsem: parallelism semaphores for GHC
 ====================================
 
 .. author:: Douglas Wilson and Sam Derbyshire
-.. date-accepted:: 
-.. ticket-url:: 
-.. implemented:: 
+.. date-accepted::
+.. ticket-url::
+.. implemented::
 .. highlight:: haskell
 .. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/540>`_.
 .. sectnum::
@@ -169,7 +169,16 @@ to reduce this thrashing. The exact mechanism of rate limiting is unspecified
 here.
 
 We also believe that GHC invocations should not be too eager to release
-resources, so we propose a minimum delay between acquiring a resource and
+semaphore tokens, once we have started compiling a package we want to finish compiling
+it as quickly as possible as long as it can saturate all our capabilities.
+This means any memory used by compiling that package can be released before
+starting another parallel process. If resources are released quickly you may end
+up compiling a large number of packages in parallel which each have a large loaded
+EPS which combined will use a significant amount of memory. We are trying to skew
+the system to prefer compiling 1 package with N capabilities rather than N packages
+with 1 capability when both are options.
+
+Therefore we propose a minimum delay between acquiring a resource and
 releasing a resource. This allows us to prioritise completing a single large
 package before moving on to other work. The exact mechanism through which this
 is achieved is also left unspecified in this proposal.
@@ -220,11 +229,6 @@ In this situation, ``cabal`` is the jobserver: it manages the semaphore and
 spawns ``ghc`` subprocesses. The ``ghc`` subprocesses are jobclients, and they
 communicate by use of the semaphore.
 
-We can also imagine ``cabal`` or ``stack`` being jobclients, if there is a
-parent jobserver. For example, this would happen if ``nix`` manages the
-semaphore, with ``nix`` spawning ``cabal`` subprocesses, and those ``cabal``
-subprocesses spawning ``ghc`` subprocesses in turn.
-
 Effects and Interactions
 ------------------------
 
@@ -249,7 +253,7 @@ expected to be more performant than ``-jsem``:
 However, it's not always possible to compile everything with a single GHC
 invocation, e.g. if the build plan involves non-Haskell dependencies somewhere
 in the middle. In comparison, the ``-jsem`` functionality can fit into any build
-system that one might be using (such as ``nix``), so it supports a wider range
+system that one might be using, so it supports a wider range
 of use cases.
 
 Costs and Drawbacks
@@ -281,15 +285,30 @@ We have decided to depart from this design for the following reasons:
 
 - We expect ``cabal-install`` and ``stack`` to be the only users of this feature
   in the near term. We think the proposed protocol is adequate for this use case.
+  ``-jsem`` doesn't provide a general solution either for mixed-language code bases
+  which require coordination with other build tools but then there isn't a widely
+  adopted solution which does.
 
 - We can extend GHC to use the GNU make Jobserver protocol in the future, if
   there are users for it.
+
+Some operating systems also have OS-specific methods of mediating parallelism between
+processes. For example on MacOS there is "Grand Central Dispatch" which allows applications
+to queue up tasks to be run in parallel and deals with scheduling specific tasks.
+
+In order to implement parallelism at this level it seems necessary to modify the RTS
+and GHC's own thread scheduling algorithms. Not only this, the implementation would
+be specific to a platform.
 
 Notes:
 
 - rust's ``cargo`` does implement the GNU make Jobserver protocol [13]_ ,
 - a prototype implementation of the GNU make Jobserver protocol for GHC
   was made by Ellie Hermaszewska [15]_ .
+
+The other option for build systems is to use GHC in oneshot mode so that the build
+system can control the scheduling of all the jobs. This is what hadrian and rules_haskell
+do when building projects but cabal currently does not.
 
 Unresolved Questions
 --------------------
