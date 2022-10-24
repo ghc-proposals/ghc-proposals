@@ -4,7 +4,7 @@ Decorate exceptions with backtrace information
 .. authors:: Ben Gamari; David Eichmann; Sven Tennie
 .. date-accepted::
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/18159
-.. implemented::
+.. implemented:: in-progress <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/8869>
 .. highlight:: haskell
 .. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/330>`_.
 .. contents::
@@ -74,7 +74,7 @@ To avoid breaking existing users of ``SomeException``, we introduce this
 context as an implicit parameter constraint:  ::
 
     data SomeException where
-        SomeException :: forall a. (Exception a, ?exceptionContext :: ExceptionContext)
+        SomeException :: forall a. (Exception a, ?context :: ExceptionContext)
                       => a -> SomeException
 
     data ExceptionContext = ExceptionContext [SomeExceptionAnnotation]
@@ -108,7 +108,7 @@ To allow users to populate this new annotation field we propose that the
 
         -- This is new:
         toExceptionWithContext :: e -> ExceptionContext -> SomeException
-        toExceptionWithContext e ?exceptionContext = SomeException e
+        toExceptionWithContext e ?context = SomeException e
 
         -- toException is implemented in terms of toExceptionWithContext
         toException e = toExceptionWithContext e mempty
@@ -122,13 +122,11 @@ contexts: ::
         fromException = Just
 
         -- toExceptionWithContext *adds* context to an existing SomeException:
-        toExceptionWithContext se@(SomeException e) ctxt =
-            SomeException e
-          where ?exc_context = ctxt <> exceptionContext se
+        toExceptionWithContext se ctxt = addExceptionContext ctxt se
 
         -- displayException shows context after the exception itself:
         displayException (SomeException e) =
-            displayException e ++ "\n" ++ displayExceptionContext ?exc_context
+            displayException e ++ "\n" ++ displayExceptionContext ?context
 
     displayExceptionContext :: ExceptionContext -> String
     displayExceptionContext = ...
@@ -143,24 +141,17 @@ introduce the following combinators: ::
 
     -- In Control.Exception:
     exceptionContext :: SomeException -> ExceptionContext
-    exceptionContext (SomeException _) = ?exceptionContext
+    exceptionContext (SomeException _) = ?context
 
-    addContext :: ExceptionContext -> SomeException -> SomeException
-
-    catchWithContext   :: Exception e => m a -> (e -> ExceptionContext -> m a) -> m a
-    handleWithContext  :: Exception e => (e -> ExceptionContext -> m a) -> m a -> m a
-
-    throwWithContext   :: Exception e => e -> ExceptionContext -> a
-    throwIOWithContext :: Exception e => e -> ExceptionContext -> m a
-
-With this machinery in place, the user can define additional combinators, e.g.,
-to add context to "upward-flowing" exceptions: ::
+    -- | Add the given 'ExceptionContext' to an exception.
+    addExceptionContext :: ExceptionContext -> SomeException -> SomeException
 
     -- | Add the given 'ExceptionContext' to any exception thrown by the given
     -- action.
-    addExceptionContext :: ExceptionContext -> IO a -> IO a
-    addExceptionContext ctxt action = 
-        catch action $ \(e :: SomeException) -> throwIO (addContext ctxt e)
+    withExceptionContext :: ExceptionContext -> IO a -> IO a
+    withExceptionContext ctxt action = 
+        catch action $ \(e :: SomeException) ->
+           throwIO (addExceptionContext ctxt e)
 
 Representing and capturing backtraces
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -222,11 +213,12 @@ By far the most common means of throwing exceptions are ``throw``, ``throwIO``,
 This raises the question of how the user should select which of the above
 mechanism(s) these functions should use to collect their backtrace.
 
-For this we propose a pragmatic, stateful approach to allow the user to select
-which mechanism(s) should be used for backtrace collection in ``throw``,
+For this we propose a pragmatic, stateful approach to allow the user to enable
+individual mechanism(s) should be used for backtrace collection in ``throw``,
 ``throwIO`` and similar functions: ::
 
-    module GHC.Exception.Backtrace where
+    module GHC.Exception.Backtrace
+        ( enableMechanism, BacktraceMechanism(..) ) where
 
     -- | Which kind of backtrace to collect when an exception is thrown.
     data BacktraceMechanism
@@ -237,20 +229,17 @@ which mechanism(s) should be used for backtrace collection in ``throw``,
       | -- | collect backtraces from Info Table Provenance Entries
         IPEBacktraceMech
       | -- | use 'HasCallStack'
-      HasCallStackBacktraceMech
+        HasCallStackBacktraceMech
       deriving (Eq, Show)
 
-    enabledBacktraceMechanisms :: IORef [BacktraceMechanism]
-    enabledBacktraceMechanisms = unsafePerformIO $ newIORef []
-    {-# NOINLINE enabledBacktraceMechanisms #-}
+    -- | Enable the given 'BacktraceMechanism' to be used when
+    -- 'Control.Exception.throwIO', et al. collect backtraces.
+    enableMechanism :: BacktraceMechanism -> IO ()
+    enableMechanism = ...
+        -- Internally this would be mutate program-global state
 
-    -- | Set how 'Control.Exception.throwIO', et al. collect backtraces.
-    setEnabledBacktraceMechanisms :: [BacktraceMechanism] -> IO ()
-    setEnabledBacktraceMechanisms = writeIORef currentBacktraceMechanisms
-
-    -- | Returns the currently selected 'BacktraceMechanism's.
-    getEnabledBacktraceMechanisms :: IO [BacktraceMechanism]
-    getEnabledBacktraceMechanisms = readIORef currentBacktraceMechanisms
+    disableMechanism :: BacktraceMechanism -> IO ()
+    disableMechanism = ...
 
 A ``collectBacktrace`` primitive used by ``throwWithContext``
 simply dispatches to the currently-selected ``BacktraceMechanism``\ s: ::
@@ -261,11 +250,11 @@ simply dispatches to the currently-selected ``BacktraceMechanism``\ s: ::
     -- 'BacktraceMechanism's.
     collectBacktraces :: HasCallStack => IO ExceptionContext
     collectBacktraces = do
-        mechs <- enabledBacktraceMechanisms
+        mechs <- readIORef currentBacktraceMechanisms
         mconcat `fmap` mapM collectBacktrace mechs
 
     -- | Collect a 'Backtrace' via the given 'BacktraceMechanism'.
-    collectBacktraces' :: HasCallStack => BacktraceMechanism -> IO ExceptionContext
+    collectBacktrace :: HasCallStack => BacktraceMechanism -> IO ExceptionContext
 
 
     module GHC.Exception where
@@ -279,7 +268,7 @@ simply dispatches to the currently-selected ``BacktraceMechanism``\ s: ::
     throwWithContext e ctxt = do
         -- (implementation simplified for clarity)
         backtraces <- collectBacktraces
-        raise# (addContext (ctxt <> backtraces) (toException e))
+        raise# (addExceptionContext (ctxt <> backtraces) (toException e))
 
 Note that in order to provide ``HasCallStack`` backtraces we propose that a
 ``HasCallStack`` constraint be added to ``throw``, ``throwIO``, and similar
@@ -287,15 +276,27 @@ functions. Our prototype implementation suggests that this likely does not
 carry a significant performance impact.
 
 Since some users may want to explicitly opt out of backtrace collection when
-throwing certain exceptions, we also propose to add non-backtrace-collecting
+throwing certain exceptions (e.g. in codebases where exceptions are used for
+non-exceptional flow control), we also propose to add non-backtrace-collecting
 ``throw`` variants: ::
 
     throwNoBacktrace   :: forall e a. (Exception e) => e -> a
     throwIONoBacktrace :: forall e a. (Exception e) => e -> a
 
-    throwWithContextNoBacktrace   :: forall e a. (Exception e) => e -> ExceptionContext -> a
-    throwIOWithContextNoBacktrace :: forall e a. (Exception e) => e -> ExceptionContext -> a
+Teach top-level handler to use ``displayException``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+For historical reasons, GHC's top-level exception handler currently displays
+unhandled exceptions using ``Show`` rather than the ``Exception`` class's
+``displayException``.
+
+Since only ``displayException`` will display exception
+context, we propose that this behavior is changed: unhandled exceptions
+should be displayed to the user using ``displayException``.
+As the default implementation of ``displayException`` simply delegates to
+``show``, we expect that the messages produced by most exceptions will be
+unaffected by this change (except for the context added by ``SomeException``\'s
+``displayException`` implementation).
 
 Examples
 --------
@@ -346,14 +347,6 @@ Costs and Drawbacks
 
 The introduction of exception context adds a bit of complexity to GHC's
 exception machinery in exchange for a significant improvement in observability.
-GHC already offers a multitude of combinators for handling exceptions
-(``catch``, ``catchAll``, ``catches``, ``catchJust``, their ``flip``'d
-``handle*`` variants) and under this proposal this number grows further with
-the introduction of  ``WithContext`` variants. Furthermore, we extend the space
-of throw'ing combinators (which currently include ``throw`` and ``throwIO``) in two axes:
-
- * throw while providing ``ExceptionContext`` (e.g. ``throwWithContext``)
- * throw without collecting a backtrace (e.g. ``throwNoBacktrace``)
 
 All-in-all, GHC's exception interface grows considerably under this proposal,
 even if we don't provide every possible variant. Moreover, these changes will
@@ -382,7 +375,7 @@ Unlike previous versions of this proposal, the change described above has
 nearly no impact on existing user-code while allowing existing users to benefit
 from backtraces. The only direct breakage will result in applications of the
 ``SomeException`` data constructor, where the user will be faced with a
-compile-time error complaining that ``?exceptionContext`` is not in scope.
+compile-time error complaining that ``?context`` is not in scope.
 In our experience, this sort of code is rare and generally quite
 straightforward to adapt; a survey of Hackage suggests that nearly all uses of
 ``SomeException`` are in pattern contexts.
@@ -450,8 +443,8 @@ longer typecheck due to the lack of a ``MonadFail m`` constraint: ::
 
 Backtrace mechanism selection
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-In addition, there are several alternatives to the global
-``enabledBacktraceMechanisms`` backtrace-mechanism selection facility.
+In addition, there are several alternatives to the
+``enableMechanism`` backtrace-mechanism selection facility.
 For instance:
 
 * GHC could gain support for setting the backtrace mechanism at compile-time
