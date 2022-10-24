@@ -125,23 +125,21 @@ Static semantics of Or pattern matching
 Or patterns which bind variables are rejected in the renamer.
 
 
-We give the static semantics in terms of *pattern types*.
+We give the static semantics in terms of *pattern types*. A pattern type has the form ``Γ, Σ ⊢ pat : τ ⤳ Γ,Σ,Ψ`` where
 
-A pattern type, as defined `here <https://mpickering.github.io/pattern-synonyms-extended.pdf>`__ (section 6), has the form ``forall xs. Theta_req => forall ys. Theta_prov => result``, where ``Theta_req`` denotes required constraints and ``Theta_prov`` denotes provided constraints.
+ - Γ is an in/out param that corresponds to a binding context that is populated with match vars
+ - Σ is an in/out param that collects Given constraints. So Σ\ :sub:`in`\  is used to discharge Θ\ :sub:`req`\  and Σ\ :sub:`out`\  contains any Θ\ :sub:`prov`\  unleashed by the match.
+ - Ψ collect existential variables
 
-
-When we have two patterns ``p1`` and ``p2`` with pattern types
+Then the typing rule for Or patterns is:
 ::
 
-    p1 :: forall xs1. Theta_req1 => forall ys1. Theta_prov1 => result1,
-    p2 :: forall xs2. Theta_req2 => forall ys2. Theta_prov2 => result2
-
-then the Or pattern ``(p1 || p2)`` has the pattern type ::
-
-    (p1 || p2) :: forall xs. (Theta_req1[xs/xs1], Theta_req2[xs/xs2], result1[xs/xs1] ~ result2[xs/xs2]) => () => result1[xs/xs1]
+    Γ0, Σ0 ⊢ pat1 : τ ⤳ Γ0,Σ1,Ψ1    Γ0, Σ0 ⊢ pat2 : τ ⤳ Γ0,Σ2,Ψ2    
+    -------------------------------------------------------------
+                 Γ0, Σ0 ⊢ (pat1 || pat2) : τ ⤳ Γ0,Σ0,∅
 
 
-An Or pattern consisting of more than two parts works the same: the individual required constraints are merged together, the provided constraints are dropped and the individual patterns' result types must unify.
+An Or pattern consisting of more than two parts works the same.
 
 
 Dynamic semantics of Or pattern matching
