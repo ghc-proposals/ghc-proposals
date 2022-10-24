@@ -252,7 +252,7 @@ The current members, including their GitHub handle, when they joined first, when
 |gridaphobe|  Eric Seidel             `@gridaphobe <https://github.com/gridaphobe>`_        2018/09  2022/03
 |cdornan|     Chris Dornan            `@cdornan <https://github.com/cdornan>`_              2022/03
 |aspiwack|    Arnaud Spiwack          `@aspiwack <https://github.com/aspiwack/>`_           2019/07  2022/10
-|adamgundry|  Adam Gundry             `@adamgundry <https://github.com/adamgundry/>`_       2022/10
+              Adam Gundry             `@adamgundry <https://github.com/adamgundry/>`_       2022/10
 ============= ======================  ====================================================  =======  =======  =========
 
 .. |aspiwack| image:: https://github.com/aspiwack.png?size=24
@@ -264,7 +264,6 @@ The current members, including their GitHub handle, when they joined first, when
 .. |int-index| image:: https://github.com/int-index.png?size=24
 .. |gridaphobe| image:: https://github.com/gridaphobe.png?size=24
 .. |cdornan| image:: https://github.com/cdornan.png?size=24
-.. |adamgundry| image:: https://github.com/adamgundry.png?size=24
 
 The committee members have committed to adhere to the `Haskell committee guidelines for respectful communication <GRC.rst>`_ and are subject to the
 `committee bylaws <https://github.com/ghc-proposals/ghc-proposals/blob/master/committee.rst>`_.
