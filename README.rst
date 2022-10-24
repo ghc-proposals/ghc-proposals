@@ -252,7 +252,7 @@ The current members, including their GitHub handle, when they joined first, when
 |gridaphobe|  Eric Seidel             `@gridaphobe <https://github.com/gridaphobe>`_        2018/09  2022/03
 |cdornan|     Chris Dornan            `@cdornan <https://github.com/cdornan>`_              2022/03
 |aspiwack|    Arnaud Spiwack          `@aspiwack <https://github.com/aspiwack/>`_           2019/07  2022/10
-&nbsp;        Adam Gundry             `@adamgundry <https://github.com/adamgundry/>`_       2022/10
+☺             Adam Gundry             `@adamgundry <https://github.com/adamgundry/>`_       2022/10
 ============= ======================  ====================================================  =======  =======  =========
 
 .. |aspiwack| image:: https://github.com/aspiwack.png?size=24
