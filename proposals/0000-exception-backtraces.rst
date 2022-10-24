@@ -203,6 +203,33 @@ annotations: ::
     data HasCallStackBacktrace = HasCallStackBacktrace { ... }
     instance ExceptionAnnotation HasCallStackBacktrace
 
+Handling of rethrowing
+^^^^^^^^^^^^^^^^^^^^^^
+
+One pattern frequently seen in Haskell programs is *rethrowing*. Typically this
+takes the form of catching one type of exception and throwing in its place
+another exception more specific to the application domain. For instance,
+
+:: haskell
+
+    data MyAppError = MissingConfigurationError | ...
+
+    readFile "my-app.conf" `catch` $ \ (ioe :: IOError) ->
+        if isDoesNotExistError ioe
+          then throwIO MissingConfigurationError
+          else throwIO ioe
+
+This pattern can be problematic in the presence of exception context: the
+exception thrown by the handler lacks any of the context attached to the
+original ``IOError``, including any backtraces.
+
+While in some select cases dropping context may be desireable (e.g. to avoid
+exposing implementation details unnecessarily to the user), in general this
+proposal seeks to make exception provenance information ubiquitous and
+reliable. Consequently, we propose to that ``catch`` and ``handle`` be modified
+to preserve exception context when an exception is thrown from a handler.
+
+
 Selecting backtrace mechanisms
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -268,7 +295,7 @@ simply dispatches to the currently-selected ``BacktraceMechanism``\ s: ::
     throwWithContext e ctxt = do
         -- (implementation simplified for clarity)
         backtraces <- collectBacktraces
-        raise# (addExceptionContext (ctxt <> backtraces) (toException e))
+        raise# (toExceptionWithContext (ctxt <> backtraces) e)
 
 Note that in order to provide ``HasCallStack`` backtraces we propose that a
 ``HasCallStack`` constraint be added to ``throw``, ``throwIO``, and similar
@@ -282,6 +309,7 @@ non-exceptional flow control), we also propose to add non-backtrace-collecting
 
     throwNoBacktrace   :: forall e a. (Exception e) => e -> a
     throwIONoBacktrace :: forall e a. (Exception e) => e -> a
+
 
 Teach top-level handler to use ``displayException``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -478,6 +506,25 @@ addressed by this proposal but would lose out on many of the benefits of
 offering structured backtraces to the user, in addition to significantly
 complicating implementation.
 
+Handling of rethrowing
+~~~~~~~~~~~~~~~~~~~~~~
+
+The preservation of ``ExceptionContext`` in ``catch``, et al. is a design
+choice whose value (namely, assurance context is not lost on rethrowing) may
+not be worth the slight overhead it imposes.
+
+In addition, there is the question of whether rethrown exceptions should gain a
+backtrace for the ``catch`` callsite. We currently err on "no" here to avoid
+undue overhead, but it may be worth revisiting this in the future.
+
+
+Ubiquity of ``HasCallStack``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Today, ``HasCallStack`` is the most commonly available and therefore widely
+used backtrace mechanism. However, it can introduce overhead by way of small
+amounts of allocation in otherwise non-allocating code. The proposal above adds
+a ``HasCallStack`` constraints to ``throw``.
 
 Implementation Plan
 -------------------
