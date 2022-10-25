@@ -325,9 +325,10 @@ do when building projects but cabal currently does not.
 Unresolved Questions
 --------------------
 
-Syntax of command line flags.
+* What should the name of the command-line flag be? Perhaps ``-juse-jobserver``?
 
-Should we also offer configuration of this feature via environment variables?
+* Should we also offer configuration of this feature via environment variables?
+
 
 Implementation Plan
 -------------------
