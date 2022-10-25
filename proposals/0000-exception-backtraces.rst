@@ -208,9 +208,7 @@ Handling of rethrowing
 
 One pattern frequently seen in Haskell programs is *rethrowing*. Typically this
 takes the form of catching one type of exception and throwing in its place
-another exception more specific to the application domain. For instance,
-
-:: haskell
+another exception more specific to the application domain. For instance, ::
 
     data MyAppError = MissingConfigurationError | ...
 
