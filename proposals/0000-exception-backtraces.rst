@@ -74,7 +74,7 @@ To avoid breaking existing users of ``SomeException``, we introduce this
 context as an implicit parameter constraint:  ::
 
     data SomeException where
-        SomeException :: forall a. (Exception a, ?context :: ExceptionContext)
+        SomeException :: forall a. (Exception a, ?exceptionContext :: ExceptionContext)
                       => a -> SomeException
 
     data ExceptionContext = ExceptionContext [SomeExceptionAnnotation]
@@ -108,7 +108,7 @@ To allow users to populate this new annotation field we propose that the
 
         -- This is new:
         toExceptionWithContext :: e -> ExceptionContext -> SomeException
-        toExceptionWithContext e ?context = SomeException e
+        toExceptionWithContext e ?exceptionContext = SomeException e
 
         -- toException is implemented in terms of toExceptionWithContext
         toException e = toExceptionWithContext e mempty
@@ -126,7 +126,7 @@ contexts: ::
 
         -- displayException shows context after the exception itself:
         displayException (SomeException e) =
-            displayException e ++ "\n" ++ displayExceptionContext ?context
+            displayException e ++ "\n" ++ displayExceptionContext ?exceptionContext
 
     displayExceptionContext :: ExceptionContext -> String
     displayExceptionContext = ...
@@ -141,7 +141,7 @@ introduce the following combinators: ::
 
     -- In Control.Exception:
     exceptionContext :: SomeException -> ExceptionContext
-    exceptionContext (SomeException _) = ?context
+    exceptionContext (SomeException _) = ?exceptionContext
 
     -- | Add the given 'ExceptionContext' to an exception.
     addExceptionContext :: ExceptionContext -> SomeException -> SomeException
@@ -403,7 +403,7 @@ Unlike previous versions of this proposal, the change described above has
 nearly no impact on existing user-code while allowing existing users to benefit
 from backtraces. The only direct breakage will result in applications of the
 ``SomeException`` data constructor, where the user will be faced with a
-compile-time error complaining that ``?context`` is not in scope.
+compile-time error complaining that ``?exceptionContext`` is not in scope.
 In our experience, this sort of code is rare and generally quite
 straightforward to adapt; a survey of Hackage suggests that nearly all uses of
 ``SomeException`` are in pattern contexts.
