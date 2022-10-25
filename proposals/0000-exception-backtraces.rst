@@ -536,14 +536,14 @@ There is an active branch with an implementation of this proposal:
 Acknowledgments
 ---------------
 
- * Sven Tennie (``@supersven``) has been the driving force through most of this proposal, having
-   implemented an early version of this proposal and helped considerably in the
-   proposal's language
- * Vladislav Zavialov (``@int-index``) contributed significantly to the library design
-   with his proposed use of implicit parameters to avoid changing the exception
-   hierarchy.
- * Matt Parsons (``@parsonsmatt``) also significantly improved the library design by
-   pointing out the generalization to dynamically-typed annotations.
+* Sven Tennie (``@supersven``) has been the driving force through most of this proposal, having
+  implemented an early version of this proposal and helped considerably in the
+  proposal's language
+* Vladislav Zavialov (``@int-index``) contributed significantly to the library design
+  with his proposed use of implicit parameters to avoid changing the exception
+  hierarchy.
+* Matt Parsons (``@parsonsmatt``) also significantly improved the library design by
+  pointing out the generalization to dynamically-typed annotations.
 
 Endorsements
 -------------
