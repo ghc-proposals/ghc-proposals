@@ -520,9 +520,11 @@ Ubiquity of ``HasCallStack``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Today, ``HasCallStack`` is the most commonly available and therefore widely
-used backtrace mechanism. However, it can introduce overhead by way of small
-amounts of allocation in otherwise non-allocating code. The proposal above adds
-a ``HasCallStack`` constraints to ``throw``.
+used backtrace mechanism. The proposal above adds ``HasCallStack`` constraints
+to ``throw`` and ``throwIO``. However, it can introduce overhead by way of
+small amounts of allocation in otherwise non-allocating code. One could also
+leave these functions as-is at the expense of giving up ``HasCallStack``
+backtraces on exceptions.
 
 Implementation Plan
 -------------------
