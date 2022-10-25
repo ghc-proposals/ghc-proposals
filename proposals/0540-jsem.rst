@@ -306,6 +306,18 @@ Notes:
 - a prototype implementation of the GNU make Jobserver protocol for GHC
   was made by Ellie Hermaszewska [15]_ .
 
+The GNU make jobserver has two shortcomings and there is opposition to its adoption
+by common build tools [16]_ [12]_.
+
+- The protocol relies on spawned processes cooperating and returning tokens on
+  termination. At least with the ``-jsem`` approach, the final token is controlled by
+  the server so the build will continue but with reduced parrallism.
+- The protocol uses anonymous file descriptors to communicate between processes which
+  causes complications when spawning new processes. The way pipes are used to
+  communicate between processes seems to be fragile with many edge-cases. In 2019
+  changes to the linux kernel broke the make job server protocol due to subtle changes
+  in the semantics of pipes [18]_.
+
 The other option for build systems is to use GHC in oneshot mode so that the build
 system can control the scheduling of all the jobs. This is what hadrian and rules_haskell
 do when building projects but cabal currently does not.
@@ -359,3 +371,7 @@ Footnotes
 .. [14] `https://gitlab.haskell.org/ghc/ghc/-/merge_requests/8970 <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/8970>`_
 
 .. [15] `https://gitlab.haskell.org/ghc/ghc/-/merge_requests/7000 <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/7000>`_
+
+.. [16] `https://github.com/ninja-build/ninja/issues/1139 <https://github.com/ninja-build/ninja/issues/1139>`_
+
+.. [18] `https://lwn.net/Articles/864947/ <https://lwn.net/Articles/864947/>`_
