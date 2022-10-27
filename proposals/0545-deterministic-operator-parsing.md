@@ -89,6 +89,11 @@ an operator not in `base` without `()`-ing it.
 
 The specific values in the tables.
 
+How should fixity declarations in modules compiled with this extension
+be handled? Should it even be allowed? How would this affect users of the
+operator that don't use the extension? Would it use the same rules, or would it
+use simplified rules that can assign the operator a concrete integer precedence?
+
 ## Implementation Plan
 
 I, Las Safin, would implement this change, assuming minor guidance is given (wrt. where to look in GHC).
