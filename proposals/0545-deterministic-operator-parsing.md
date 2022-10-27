@@ -61,9 +61,13 @@ then the next symbol of the operator is considered.
 ## Examples
 
 `a +| b *| c` is equivalent to `a +| (b *| c)`.
+
 `a +| b -> c` is equivalent to `(a +| b) -> c`.
+
 `a $$$ b $$$ c` is equivalent to `a $$$ (b $$$ c)`.
+
 `a ~~~ b ~~~ c` is invalid.
+
 `a +* b + c` is equivalent to `(a +* b) + c`.
 
 ## Effect and Interactions
