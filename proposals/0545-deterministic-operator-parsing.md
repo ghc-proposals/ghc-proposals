@@ -23,7 +23,7 @@ associativities for the custom operators.
 However, this means you can _not_ parse Haskell code without knowing how the operators
 were defined, e.g. `a $$$ b $$$ c` could mean either `(a $$$ b) $$$ c` or `a $$$ (b $$$ c)`.
 
-This means formatterse like Ormolu need to keep a database of all common operators,
+This means formatters like Ormolu need to keep a database of all common operators,
 and support specifying custom operators in the configuration file, rather than Just Working™.
 See e.g. https://github.com/tweag/ormolu/issues/927
 
