@@ -25,7 +25,16 @@ were defined, e.g. `a $$$ b $$$ c` could mean either `(a $$$ b) $$$ c` or `a $$$
 
 This means formatters like Ormolu need to keep a database of all common operators,
 and support specifying custom operators in the configuration file, rather than Just Working™.
-See e.g. https://github.com/tweag/ormolu/issues/927
+See e.g. https://github.com/tweag/ormolu/issues/927 (the issue isn't the performance, but rather
+the fact that it's even needed)
+
+In addition, it becomes easier for Haskellers to read Haskell source code.
+Without this extension, you can not know in what way to parse Haskell source
+code without remembering all the fixities involved, which can be a pain for some
+people when reading optics-heavy code.
+
+By making the fixity of the operator a function of its name rather than something to be declared,
+the (possibly robotic) Haskeller has less to keep in mind.
 
 Nim already does a similar thing: https://nim-lang.org/docs/manual.html#syntax-associativity
 
