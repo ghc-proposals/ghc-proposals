@@ -13,6 +13,9 @@ Introduce `DeterministicOperatorParsing` language extension
 to determine associativity and precedence from the operator name
 instead of from its definition.
 
+This can help heavily simplify the implementation and use of Haskell tooling,
+e.g. Ormolu, apply-refact, retrie, hlint.
+
 ## Motivation
 
 Haskell supports custom operators and allows you to specify custom precedences and
@@ -137,14 +140,14 @@ Symbols from Unicode not in ASCII are subject to the default.
 
 ## Precedence table for custom operators not in `base`
 
-| Symbol    | Precedence (higher is tighter) |
-|:---------:|:------------------------------:|
-| ! .       | 9 |
-| # ^       | 8 |
-| % * /     | 7 |
-| - +       | 6 |
-| : \\      | 5 |
-| < > = ? ~ | 4 |
-| \|        | 2 |
-| & @       | 1 |
-| $         | 0 |
+| Symbol        | Precedence (higher is tighter) |
+|:-------------:|:------------------------------:|
+| ! . otherwise | 9 |
+| # ^           | 8 |
+| % * /         | 7 |
+| - +           | 6 |
+| : \\          | 5 |
+| < > = ? ~     | 4 |
+| \|            | 2 |
+| & @           | 1 |
+| $             | 0 |
