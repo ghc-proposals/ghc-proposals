@@ -373,4 +373,4 @@ Footnotes
 
 .. [18] `https://lwn.net/Articles/864947/ <https://lwn.net/Articles/864947/>`_
 
-.. [19] `https://github.com/mpickering/cabal/tree/wip/jsem <https://github.com/mpickering/cabal/tree/wip/jsem>`_
+.. [19] `https://github.com/haskell/cabal/pull/8557 <https://github.com/haskell/cabal/pull/8557>`_
