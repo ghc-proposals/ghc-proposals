@@ -2,7 +2,7 @@
 jsem: parallelism semaphores for GHC
 ====================================
 
-.. author:: Douglas Wilson and Sam Derbyshire
+.. author:: Douglas Wilson, Sam Derbyshire, Matthew Pickering
 .. date-accepted::
 .. ticket-url::
 .. implemented::
@@ -27,8 +27,8 @@ Background
 ~~~~~~~~~~
 
 GHC, when invoked as ``ghc --make``, compiles a single package component
-(or *unit*) consisting of many *modules*. ``cabal-install``, ``stack``, and
-other clients compute the dependencies of a unit, compose a build plan, and
+(or *unit*) consisting of many *modules*. Build tools, such as ``cabal-install``
+and ``stack``, compute the dependencies of a unit, compose a build plan, and
 execute many ``ghc --make`` subprocesses; first to build the dependencies of the
 target unit and then the unit itself.
 
@@ -63,7 +63,7 @@ Consider how to compile the following build plans using `8` capabilities:
    8 modules at a time in parallel.
 
 In practice, however, a build plan is “wide” in some parts and “tall” in others.
-Some packages, e.g. ``vector`` have many large modules, while a build plan may
+Some packages, e.g. ``vector``, have many large modules, while a build plan may
 have many small units depending on ``vector``.
 
 Consider the following build plan:
@@ -141,7 +141,7 @@ There are two kinds of participants in the GHC Jobserver protocol:
 
   Each jobclient starts with one available token (its *implicit token*,
   which was acquired by the parent which spawned it), and can request more
-  tokens within the Jobserver Protocol by waiting on the semaphore.
+  tokens through the Jobserver Protocol by waiting on the semaphore.
 
   Each time a jobclient wants to spawn a new jobclient subprocess, it **must**
   pass on a single token to the child jobclient. This token can either be the
@@ -149,7 +149,7 @@ There are two kinds of participants in the GHC Jobserver protocol:
   from the semaphore.
 
   Each jobclient **must** release exactly as many tokens as it has acquired from
-  the semaphore (this does not include its implicit token).
+  the semaphore (this does not include the implicit tokens).
 
 Implementation details
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -169,19 +169,19 @@ to reduce this thrashing. The exact mechanism of rate limiting is unspecified
 here.
 
 We also believe that GHC invocations should not be too eager to release
-semaphore tokens, once we have started compiling a package we want to finish compiling
-it as quickly as possible as long as it can saturate all our capabilities.
-This means any memory used by compiling that package can be released before
-starting another parallel process. If resources are released quickly you may end
-up compiling a large number of packages in parallel which each have a large loaded
-EPS which combined will use a significant amount of memory. We are trying to skew
-the system to prefer compiling 1 package with N capabilities rather than N packages
-with 1 capability when both are options.
+semaphore tokens. This skews the balance in favour of in-unit parallelism
+(1 unit with many capabilities), and against compiling many units in parallel
+(many units with a single capability).
+The justification is that the memory used by compiling units can be released
+before starting another parallel process. Were GHC to release semaphore tokens
+too eagerly, it could end up compiling a large number of packages in parallel
+which each have a large loaded EPS. Combined, this will use a significant amount
+of memory.
 
-Therefore we propose a minimum delay between acquiring a resource and
+To achieve this, we propose a minimum delay between acquiring a resource and
 releasing a resource. This allows us to prioritise completing a single large
 package before moving on to other work. The exact mechanism through which this
-is achieved is also left unspecified in this proposal.
+is achieved is left unspecified in this proposal.
 
 Examples
 --------
@@ -274,14 +274,26 @@ GHC Jobserver protocol described above, except that:
 - participants in the protocol learn about it through environment variables
   and the state of file descriptors on process entry.
 
-We have decided to depart from this design for the following reasons:
+For example, rust's ``cargo`` implement the GNU make Jobserver protocol [13]_ .
+A prototype implementation of the GNU make Jobserver protocol for GHC was also
+made by Ellie Hermaszewska [15]_ .
 
-- Other communities have considered the Make jobserver, and decided some
-  aspects of the protocol are unsuitable:
+However, we have decided to depart from this design, for the following reasons:
 
-  - ocaml [10]_ [11]_
+- Other communities have considered the Make jobserver, and decided that some
+  aspects of the protocol are unsuitable (OCaml [10]_ [11]_ , Nix [12]_ ,
+  ninja [16]_ ). To summarise:
 
-  - nix [12]_
+  - The protocol relies on spawned processes cooperating and returning tokens on
+    termination. If this doesn't happen, semaphore tokens can be lost entirely.
+    In comparison, with the approach described in this proposal, implicit tokens
+    are controlled by the server; this means that, at worst, the build will
+    continue with reduced parallelism, and mitigation strategies are available.
+
+  - The protocol uses anonymous file descriptors to communicate between
+    processes. This seems to be fragile, with many edge-cases. In 2019,
+    changes to the Linux kernel broke the Make jobserver protocol, due to
+    subtle changes in the semantics of pipes [18]_.
 
 - We expect ``cabal-install`` and ``stack`` to be the only users of this feature
   in the near term. We think the proposed protocol is adequate for this use case.
@@ -292,35 +304,19 @@ We have decided to depart from this design for the following reasons:
 - We can extend GHC to use the GNU make Jobserver protocol in the future, if
   there are users for it.
 
-Some operating systems also have OS-specific methods of mediating parallelism between
-processes. For example on MacOS there is "Grand Central Dispatch" which allows applications
-to queue up tasks to be run in parallel and deals with scheduling specific tasks.
+Some operating systems also have OS-specific methods of mediating parallelism
+between processes. For example, MacOS's "Grand Central Dispatch" mechanism
+allows applications to queue up tasks to be run in parallel, and handles
+the scheduling.
+In order to implement parallelism at this level, it seems necessary to modify*
+the RTS and GHC's own thread scheduling algorithms. Not only this, the
+implementation would be specific to a platform.
 
-In order to implement parallelism at this level it seems necessary to modify the RTS
-and GHC's own thread scheduling algorithms. Not only this, the implementation would
-be specific to a platform.
 
-Notes:
-
-- rust's ``cargo`` does implement the GNU make Jobserver protocol [13]_ ,
-- a prototype implementation of the GNU make Jobserver protocol for GHC
-  was made by Ellie Hermaszewska [15]_ .
-
-The GNU make jobserver has two shortcomings and there is opposition to its adoption
-by common build tools [16]_ [12]_.
-
-- The protocol relies on spawned processes cooperating and returning tokens on
-  termination. At least with the ``-jsem`` approach, the final token is controlled by
-  the server so the build will continue but with reduced parrallism.
-- The protocol uses anonymous file descriptors to communicate between processes which
-  causes complications when spawning new processes. The way pipes are used to
-  communicate between processes seems to be fragile with many edge-cases. In 2019
-  changes to the linux kernel broke the make job server protocol due to subtle changes
-  in the semantics of pipes [18]_.
-
-The other option for build systems is to use GHC in oneshot mode so that the build
-system can control the scheduling of all the jobs. This is what hadrian and rules_haskell
-do when building projects but cabal currently does not.
+The other option for build systems is to use GHC in one-shot mode. In that case,
+the build system can control the scheduling of all the jobs. This is what
+``hadrian`` and ``rules_haskell`` do when building projects (``cabal``
+currently does not).
 
 Unresolved Questions
 --------------------
@@ -333,10 +329,10 @@ Unresolved Questions
 Implementation Plan
 -------------------
 
-Douglas Wilson and Sam Derbyshire have implemented a prototype at [14]_ .
+Douglas Wilson, Sam Derbyshire and Matthew Pickering have implemented a
+prototype at [14]_ .
 
-Once this proposal is agreed we will prepare a patch for ``cabal-install``
-and deliver it upstream.
+Matthew Pickering has implemented the feature in ``cabal-install`` in [19]_ .
 
 Ongoing work from Well-Typed LLP is funded by Hasura.
 
@@ -376,3 +372,5 @@ Footnotes
 .. [16] `https://github.com/ninja-build/ninja/issues/1139 <https://github.com/ninja-build/ninja/issues/1139>`_
 
 .. [18] `https://lwn.net/Articles/864947/ <https://lwn.net/Articles/864947/>`_
+
+.. [19] `https://github.com/mpickering/cabal/tree/wip/jsem <https://github.com/mpickering/cabal/tree/wip/jsem>`_
