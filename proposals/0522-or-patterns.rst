@@ -62,7 +62,7 @@ function we get
 
     stringOfT :: T -> Maybe String
     stringOfT (T1 s)        = Just s
-    stringOfT (T2{} || T3{}) = Nothing
+    stringOfT (T2{} ;; T3{}) = Nothing
 
 This function doesn't match ``T4``, so we get our warning in the very first compile
 cycle or (even faster) in our IDE powered by a language server implementation.
@@ -90,28 +90,28 @@ The relevant non-terminal is ``apat``: ::
 
 Or patterns extension adds one more production: ::
 
-          |    ( pat1 || … || patk )                (Or pattern, k ≥ 2)
+          |    ( pat1 ;; … ;; patk )                (Or pattern, k ≥ 2)
 
-The ``||`` between the parentheses have (shift) priority that is lower than any other ``apat``'s (reduction) priority.
+The ``;;`` between the parentheses have (shift) priority that is lower than any other ``apat``'s (reduction) priority.
 
 Some examples that this new grammar produces: ::
 
   -- in expression context
   case e of
-    (T1 || T2{} || T3 a b) -> ...
+    (T1 ;; T2{} ;; T3 a b) -> ...
 
   -- in expression context
-  let ([x] || (x : y : z)) = e1 in e2
+  let ([x] ;; (x : y : z)) = e1 in e2
 
   -- pattern guards in declarations
   f x y
-    | x@(T1 _ || T2 a b) <- e1
+    | x@(T1 _ ;; T2 a b) <- e1
     , guard x
     = e2
 
   -- nested Or patterns
   case e1 of
-    (((T1 || T2) || T3) || T4) -> e2
+    (((T1 ;; T2) ;; T3) ;; T4) -> e2
 
 The new production doesn't add any ambiguities because of the mandatory parentheses, just like for tuples.
 
@@ -136,7 +136,7 @@ Then the typing rule for Or patterns is:
 
     Γ0, Σ0 ⊢ pat1 : τ ⤳ Γ0,Σ1,Ψ1    Γ0, Σ0 ⊢ pat2 : τ ⤳ Γ0,Σ2,Ψ2    
     -------------------------------------------------------------
-                 Γ0, Σ0 ⊢ (pat1 || pat2) : τ ⤳ Γ0,Σ0,∅
+                 Γ0, Σ0 ⊢ (pat1 ;; pat2) : τ ⤳ Γ0,Σ0,∅
 
 
 An Or pattern consisting of more than two parts works the same.
@@ -149,8 +149,8 @@ Informal semantics in the style of `Haskell 2010 chapter 3.17.2: Informal
 Semantics of Pattern Matching
 <https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-600003.17.2>`_:
 
-- Matching the pattern ``(p1 || … || pk)`` against the value ``v`` is the result of matching ``v`` against ``p1`` if it is not a failure, or the result of
-  matching ``(p2 || … || pk)`` against ``v`` otherwise.
+- Matching the pattern ``(p1 ;; … ;; pk)`` against the value ``v`` is the result of matching ``v`` against ``p1`` if it is not a failure, or the result of
+  matching ``(p2 ;; … ;; pk)`` against ``v`` otherwise.
 
   ``p1``, …, ``pk`` bind no variables.
 
@@ -158,15 +158,15 @@ Semantics of Pattern Matching
 
 Here are a few examples: ::
 
-    (\ (1 || 2) -> 3) 1 => 3
-    (\ (Left 0 || Right 1) -> True) (Right 1) => True
-    (\ (([1] || [2, _]) || ([3, _, _] || [4, _, _, _])) -> True) [4, undefined, undefined, undefined] => True
-    (\ (1 || 2 || 3) -> True) 3 => True
+    (\ (1 ;; 2) -> 3) 1 => 3
+    (\ (Left 0 ;; Right 1) -> True) (Right 1) => True
+    (\ (([1] ;; [2, _]) ;; ([3, _, _] ;; [4, _, _, _])) -> True) [4, undefined, undefined, undefined] => True
+    (\ (1 ;; 2 ;; 3) -> True) 3 => True
 
 We do not employ backtracking in Or patterns. The following would yield ``"no backtracking"``: ::
 
  case (True, error "backtracking") of
-   ((True, _) || (_, True))
+   ((True, _) ;; (_, True))
      | False -> error "inaccessible"
    _ -> error "no backtracking"
 
@@ -212,10 +212,10 @@ Examples
       where
         go (L _ pat) = go1 pat
 
-        go1 (WildPat{} || VarPat{} || LazyPat{})
+        go1 (WildPat{} ;; VarPat{} ;; LazyPat{})
           = True
 
-        go1 (PArrPat{} || ConPatIn{} || LitPat{} || NPat{} || NPlusKPat{} || ListPat {})
+        go1 (PArrPat{} ;; ConPatIn{} ;; LitPat{} ;; NPat{} ;; NPlusKPat{} ;; ListPat {})
           = False
 
         go1 (BangPat pat)       = go pat
@@ -293,13 +293,13 @@ So the following example would not type check because the Or pattern doesn't pro
      IsInt2 :: GADT Int
 
  foo :: a -> GADT a -> a
- foo x (IsInt1 {} || IsInt2 {}) = x + 1
+ foo x (IsInt1 {} ;; IsInt2 {}) = x + 1
 
 
 Considering view patterns, these do work seamlessly with Or patterns. As specified in `2.2`_, Or patterns will just merge the required constraints which come from view patterns. This would work: ::
 
  f :: (Eq a, Show a) => a -> a -> Bool
- f a ((== a) -> True || show -> "yes") = True
+ f a ((== a) -> True ;; show -> "yes") = True
  f _ _ = False
 
 Costs and Drawbacks
@@ -315,51 +315,31 @@ Alternatives
 Alternative syntax
 ~~~~~~~~~~~~~~~~~~
 
-Previously, ``;`` was used as separator.
+We previously considered ``;`` or ``||`` as a separator.
+
 One nice thing about using ``;`` for the separator is that it is also used
 for separating case alternatives, so it looks familiar. Example: ::
 
-    case x of p1 -> e || p2 -> e
-    case x of (p1 || p2) -> e
+    case x of p1 -> e; p2 -> e
+    case x of (p1; p2) -> e
 
-We think however ``||`` looks more natural as it resembles the `or` much better. Using ``||`` could steal syntax, but only when redefining ``(||)``: ::
+``||`` has the downside that it already is an operator, so we don't want to lower its precedence. This however means that this ::
 
-    (||) :: (a -> Bool) -> (a -> Bool) -> (a -> Bool)
-    f (not || id -> True) = False -- not possible with or patterns, will fail to compile
+    f (a -> True || b -> True) = 2
+
+parses as ::
+
+    f (a -> (True || b -> True)) = 2
+
+which is probably unexpected. Also, ``||`` could steal syntax in a similar fashion when defining it as a function ``(||) :: (a -> Bool) -> (a -> Bool) -> (a -> Bool)``.
+
 
 In the `parent proposal <https://github.com/ghc-proposals/ghc-proposals/pull/43>`__, ``|`` had previously been suggested for the separator. However, ``|`` is
 used for guards, so it's reserved for a future `proposal
 <https://ghc.haskell.org/trac/ghc/wiki/ViewPatternsAlternative>`_ that
 generalizes view patterns to allow guards inside patterns.
 
-An alternative to the originally proposed syntax is using ``/`` instead of ``|``
-to avoid parentheses in some cases. This can't completely eliminate parentheses
-around Or patterns, as the following example demonstrates: ::
-
-  f T1{} / T2{} / T3 T1 = ...
-
-This could mean one of these two: ::
-
-  -- a function with two arguments
-  f (T1{} / T2{} / T3) T1 = ...
-
-  -- a function with one argument
-  f (T1{} / T2{} / T3 T1) = ...
-
-  -- where the argument is defined like
-  data T = T1 | T2 | T3 T
-
-Another suggestion was to use curly braces around Or patterns, instead of
-parens. However, this causes ambiguities in the syntax. Two examples: ::
-
-    -- Not clear if curly braces are for a do block or for a binding LHS
-    do { ... } <- ...
-
-    -- Not clear if curly braces are for a record pattern (where Foo is a record
-    -- constuctor) or for an Or pattern (matching the argument of Foo)
-    case x of Foo { ... } -> ...
-
-Yet another suggestion is to use the syntax ``T1 or T2`` by making ``or`` a keyword inside Or patterns. This however leaves room for ambiguity: ``fun (T1 or T2) = 0`` could either denote an Or pattern or a simple pattern matching on the binary constructor ``T1``. If we enforce it to denote an Or pattern then this would be a breaking change.
+Another suggestion is to use the syntax ``T1 or T2`` by making ``or`` a keyword inside Or patterns. This however leaves room for ambiguity: ``fun (T1 or T2) = 0`` could either denote an Or pattern or a simple pattern matching on the binary constructor ``T1``. If we enforce it to denote an Or pattern then this would be a breaking change.
 
 Binding pattern variables
 ~~~~~~~~~~~~~~~~~~
@@ -370,8 +350,8 @@ The `parent proposal <https://github.com/ghc-proposals/ghc-proposals/pull/43>`__
 
  data T = T1 Int | T2 Int | T3 | T4
 
- getInt (T1 a || T2 a) = Just a
- getInt (T3 || T4) = Nothing
+ getInt (T1 a ;; T2 a) = Just a
+ getInt (T3 ;; T4) = Nothing
 
 This is a non-goal of this proposal: with binding pattern variables come challenges like binding existential constraints. Correctly specifying the semantics is hard and caused the parent proposal to become dormant after no progress has been made.
 
@@ -384,14 +364,14 @@ We think the following semantics in terms of view patterns is equivalent.
 We could define the semantics of Or patterns as a simple desugaring to view
 patterns. The desugaring rule is: ::
 
-    (p1 || … || pk)
+    (p1 ;; … ;; pk)
     =
     ((\x -> case x of p1 -> True; p2 -> True; …; pk -> True; _ -> False)
         -> True)
 
 The desugaring rule defines both static and dynamic semantics of Or patterns:
 
-An Or pattern type checks whenever the desugared pattern type checks || the dynamic semantics of an Or pattern is the same as the dynamic semantics of its desugared pattern.
+An Or pattern type checks whenever the desugared pattern type checks ;; the dynamic semantics of an Or pattern is the same as the dynamic semantics of its desugared pattern.
 
 But because of forward compatibility we decided not to define it in this way. 
 
