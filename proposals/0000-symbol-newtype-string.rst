@@ -85,6 +85,9 @@ Yet, it serves as specific purpose.
 Alternatives
 ------------
 
+One alternative is to keep ``Symbol`` semi-opaque. (Like ``Natural`` is not-completely opaque).
+And export the constructors only from ``GHC.Types`` and ``GHC.Exts`` modules.
+
 An alternative is to make ``String`` promote to ``Symbol``.
 That won't work out well, because lists of characters (i.e. ``String``)
 can be promoted already.
