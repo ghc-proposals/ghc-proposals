@@ -19,9 +19,6 @@ to be
 
     newtype Symbol = MkSymbol String
 
-and exporting this fact from ``GHC.TypeLits``.
-
-
 Motivation
 ----------
 
@@ -59,13 +56,12 @@ Proposed Change Specification
 
 * Change ``data Symbol`` to ``newtype Symbol = MkSymbol String``
 
-* Re-export full ``Symbol`` definition from ``GHC.TypeLits``.
-
-We don't propose any further changes in ``GHC.TypeLits`` interface.
-For example ``symbolVal`` will continue to return ``String`` value.
-A possible future ``GHC.Symbol`` interface mirroring
-``GHC.TypeLits`` functionlity, but using ``Symbol`` also for the term level
-can be made as CLC proposal, as that would be only a library change.
+In particular, we don't propose any changes to ``GHC.TypeLits`` interface.
+Firstly the implementation of ``Symbol`` stays internal.
+Also ``symbolVal`` will continue to return ``String`` value.
+In future the ``GHC.Symbol`` interface mirroring ``GHC.TypeLits`` functionlity
+could be vreated , but using ``Symbol`` also for the term level can be made as
+CLC proposal, as that would be only a library change.
 
 Technically this is a library only change, but maybe it's only
 a happy coincidence that GHC internals don't need to be changed,
@@ -85,8 +81,19 @@ Yet, it serves as specific purpose.
 Alternatives
 ------------
 
-One alternative is to keep ``Symbol`` semi-opaque. (Like ``Natural`` is not-completely opaque).
-And export the constructors only from ``GHC.Types`` and ``GHC.Exts`` modules.
+An alternative is to export ``Symbol`` definition from ``GHC.TypeLits``.
+This however raises questions like whether ``MkSymbol '[] ~ ""``.
+For now we pretend that ``MkSymbol`` should not be promoted,
+until that can be resticted.
+
+It is also possible to prevent ``MkSymbol`` usage on the type level by
+defining ``Symbol`` like::
+
+  data Symbol = MkSymbol (# String #)
+
+As unlifted types cannot be promoted, it won't be possible to successfully
+use ``MkSymbol`` on the type level. (No more success than with ``NS`` and
+``NB`` constructors of type ``Natural``).A
 
 An alternative is to make ``String`` promote to ``Symbol``.
 That won't work out well, because lists of characters (i.e. ``String``)
