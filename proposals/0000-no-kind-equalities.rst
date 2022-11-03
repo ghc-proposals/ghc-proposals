@@ -85,6 +85,10 @@ Disallow the constraint arrow ``=>`` in the following contexts:
 In addition, any data constructor whose type includes a constraint is
 not available for use in types.
 
+Note that class constraints are already forbidden in exactly these places,
+so this proposal changes only the status of equality constraints (both
+homogeneous, with ``~``, and heterogeneous, with ``~~``).
+
 Examples
 --------
 In addition to the example in the introduction, which would now be rejected,
@@ -118,11 +122,11 @@ Alternatives
 ------------
 
 * We don't have to do this. We could live with the inconsistency in the Motivation_, and
-Simon and I have indeed worked out how to land ``Constraint``\ -vs-\ ``Type`` even with
-this feature. But this is a poor plan, in my opinion.
+  Simon and I have indeed worked out how to land ``Constraint``\ -vs-\ ``Type`` even with
+  this feature. But this is a poor plan, in my opinion.
 
 * We could fully implement the feature. However, this is quite a lot of work with very
-little payoff.
+  little payoff.
 
 Unresolved Questions
 --------------------
