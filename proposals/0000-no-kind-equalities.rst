@@ -1,5 +1,5 @@
-Disallow kind equalities on type declarations
-=============================================
+Disallow constraints in kinds
+=============================
 
 .. author:: Richard Eisenberg and Simon Peyton Jones
 .. date-accepted::
