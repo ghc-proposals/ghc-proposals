@@ -121,7 +121,7 @@ Here's an example::
   type family F
   newtype N a b c = MkN ([a], F c)
 
-  --                   a            b      c
+  -- Inferred roles    a            b      c
   -- type role N representational phantom nominal
 
 Here
@@ -144,10 +144,19 @@ to ``representational``.
 
 If we continue to allow this, the new CO-NTH rule would be unsound.  Clearly, knowing ``(P t1) ~R (P t2)`` does **not** imply that ``t1 ~R t2``.
 
-Conclusion: **the new CO-NTH requires that we do not allow a user to give a representational role for a phantom argument.**  Any such
+Hence change 2: **In a newtype declaration, we do not allow a user to give a representational role for a phantom argument.**  Any such
 attempt would simply be rejected.
 
 With that change, CO-NTH is sound.
+
+It is perfectly OK to specify a ``nominal`` role for a ``phantom`` argument, however.  Thus, returning to the example ``N`` in the
+"Change 1" section:
+* ``type role N representational nominal nominal`` is OK: we have changed ``phantom`` into ``nominal``.
+* ``type role N nominal phantom nominal`` is OK: we have changed ``representational`` into ``nominal``.
+* ``type role N representational reprsentational nominal`` is BAD: we have changed ``phantom`` into ``representational``.
+
+So far as role ascription is concerned, ``representational`` is the most informative role of the three: it guarantees that the
+type variable appears, in at least guaranteed-injective position in the RHS.
 
 Effect and Interactions
 -----------------------
