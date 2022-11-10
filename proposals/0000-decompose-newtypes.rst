@@ -151,6 +151,7 @@ With that change, CO-NTH is sound.
 
 It is perfectly OK to specify a ``nominal`` role for a ``phantom`` argument, however.  Thus, returning to the example ``N`` in the
 "Change 1" section:
+
 * ``type role N representational nominal nominal`` is OK: we have changed ``phantom`` into ``nominal``.
 * ``type role N nominal phantom nominal`` is OK: we have changed ``representational`` into ``nominal``.
 * ``type role N representational reprsentational nominal`` is BAD: we have changed ``phantom`` into ``representational``.
