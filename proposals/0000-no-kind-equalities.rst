@@ -70,6 +70,10 @@ so. No one asked for it. It just seemed like an easy addition. However, it has
 proved anything but easy. (This is not the first time we've been stymied supporting it.)
 So let's just send it back to the void whence it came.
 
+Ryan Scott's `blog post <https://ryanglscott.github.io/2021/08/01/equality-constraints-in-kinds/>`_
+provides additional background and gotchas around the existing feature. He even has to
+say "They're not totally useless" to defend the feature.
+
 Proposed Change Specification
 -----------------------------
 
@@ -100,6 +104,14 @@ For example::
   -- definition of S is OK
 
   p :: Proxy (MkS True False)  -- this is rejected
+  p = Proxy
+
+This proposal does *not* affect normal GADT constructors. So this still works::
+
+  data T a where
+    MkT :: Bool -> T Bool
+
+  p :: Proxy (MkT True)
   p = Proxy
 
 Effect and Interactions
