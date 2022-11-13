@@ -102,10 +102,10 @@ Examples::
 The `Explicit Variable Principle`_ does not hold today:
 
 * Even forgetting about the "no matching" restriction, if we have ``hr2 :: (forall a. F a -> Int) -> ...``,
-where ``F`` is a type family, there is no way for a function passed to ``hr2`` to locally bind ``a``.
+  where ``F`` is a type family, there is no way for a function passed to ``hr2`` to locally bind ``a``.
 * With the "no matching" restriction, if we have ``hr3 :: (forall a. Maybe (Either (Int, Bool, a) Double) -> ...) -> ...``,
-the only way a function passed to ``hr3`` can bind ``a`` is to repeat the type of the argument to
-that function.
+  the only way a function passed to ``hr3`` can bind ``a`` is to repeat the type of the argument to
+  that function.
 
 Once we have the `Explicit Variable Principle`_, there will never be a need for ``Proxy``.
 
@@ -195,7 +195,8 @@ becomes even more poignant if we consider the possibility
 of mixing the term-level and type-level namespaces (`#270`_) and need to think about clashes between type
 variables and imported term variables.
 
-(a) from `#448`_; (b) from `#378`_.
+\(a) from `#448`_;
+\(b) from `#378`_.
 
 Explicit Binding Principle (EBP)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
