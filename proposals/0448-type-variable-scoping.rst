@@ -105,7 +105,8 @@ synonym of ``-XScopedTypeVariables``. Under this change, that would no longer be
 
 This component of this proposal is taken
 from the not-yet-accepted proposal `#238`_, changing the name of what I now call
-``-XExtendedForAllScope``.
+``-XExtendedForAllScope``, and simplifying the binding story around pattern signatures
+(getting rid of ``-XPatternSignatureBinds``).
 
 ``-XImplicitBinds`` is the combination of ``-XImplicitBindsForAll`` and ``-XPatternSignatureBinds``) from accepted
 proposal `#285`_, and differ from that proposal in that:
