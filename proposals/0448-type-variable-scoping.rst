@@ -27,6 +27,7 @@ tying together many existing proposals:
 .. _`#378`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0378-dependent-type-design.rst
 .. _`#402`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0402-gadt-syntax.rst
 .. _`#420`: https://github.com/ghc-proposals/ghc-proposals/pull/420
+.. _`#425`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0425-decl-invis-binders.rst
 .. _`#523`: https://github.com/ghc-proposals/ghc-proposals/pull/523
 .. _Type Variables in Patterns: https://richarde.dev/papers/2018/pat-tyvars/pat-tyvars.pdf
 .. _Kind Inference for Datatypes: https://richarde.dev/papers/2020/kind-inference/kind-inference.pdf
