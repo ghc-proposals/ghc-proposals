@@ -76,12 +76,12 @@ Explicit Variable Principle (EVP)
 
 .. _`Explicit Variable Principle`:
 
-**Principle:** It is possible to write out all (specified)
-type arguments in every polymorphic function application,
+**Principle:**
+It is possible to write out all (specified) type arguments in every polymorphic function application,
 give the type for every bound variable,
-and write a type signature for every expression. This requires the ability to
-bring type variables into scope. These variables can be brought into scope
-without relying on matching or unification.
+and write a type signature for every expression.
+This requires the ability to bring type variables into scope.
+These variables can be brought into scope without relying on matching or unification.
 
 Examples::
 
@@ -103,20 +103,22 @@ Examples::
 The `Explicit Variable Principle`_ does not hold today:
 
 * Even forgetting about the "no matching" restriction, if we have ``hr2 :: (forall a. F a -> Int) -> ...``,
-where ``F`` is a type family, there is no way for a function passed to ``hr2`` to locally bind ``a``.
-* With the "no matching" restriction, if we have ``hr3 :: (forall a. Maybe (Either (Int, Bool, a) Double) -> ...) -> ...``,
-the only way a function passed to ``hr3`` can bind ``a`` is to repeat the type of the argument to
-that function.
+  where ``F`` is a type family,
+  there is no way for a function passed to ``hr2`` to locally bind ``a``.
+
+* With the "no matching" restriction,
+  if we have ``hr3 :: (forall a. Maybe (Either (Int, Bool, a) Double) -> ...) -> ...``,
+  the only way a function passed to ``hr3`` can bind ``a`` is to repeat the type of the argument to that function.
 
 Once we have the `Explicit Variable Principle`_, there will never be a need for ``Proxy``.
 
-*Motivation:* As GHC supports more and more type-level programming, the ability
-to write out type signatures, arguments, and annotations has become increasingly
-important. With ``-XScopedTypeVariables``, GHC allows us to bring type variables
-into scope, but often requires us to do so by cumbersome matching. If we have
-a type ``Maybe (Either (Int, Bool, a) Double)``, that's a lot to type just to
-be able to, say, bind ``a``. The EVP says we do *not* have to resort to matching,
-ever.
+*Motivation:*
+As GHC supports more and more type-level programming,
+the ability to write out type signatures, arguments, and annotations has become increasingly important.
+With ``-XScopedTypeVariables``, GHC allows us to bring type variables into scope,
+but often requires us to do so by cumbersome matching.
+If we have a type ``Maybe (Either (Int, Bool, a) Double)``,
+that's a lot to type just to be able to, say, bind ``a``. The EVP says we do *not* have to resort to matching, ever.
 
 From `#448`_.
 
@@ -164,8 +166,11 @@ Explicit Binding Principle (EBP)
 
 .. _`Explicit Binding Principle`:
 
-**Principle**: Through the right combination of extensions, every implicit form of variable binding
-must have an explicit equivalent that, regardless of the context, is unambiguously a binding site.
+**Principle**:
+Through the right combination of extensions,
+every implicit form of variable binding must have an explicit equivalent that,
+regardless of the context,
+is unambiguously a binding site.
 
 Examples:
 
@@ -207,8 +212,8 @@ Examples:
    syntax isn't unambiguously a binding site regardless of context (i.e.
    regardless of whether there is a ``b`` already in scope).
 
-*Motivation:* The `Explicit Binding Principle`_ allows programmers to control exactly how variables come into
-scope.
+*Motivation:*
+The `Explicit Binding Principle`_ allows programmers to control exactly how variables come into scope.
 It ensures all short-hands can be explained in terms of an explicit, unambiguous equivalent that is easier to understand at the cost of being more verbose:
 
 - Positive-position signatures' free vars cause  implicit ``forall ... .``
@@ -228,15 +233,14 @@ Lexical Scoping Principle (LSP)
 
 **Principle**:
 
-a. For every appearance of an identifier, it is possible to determine whether that appearance is
-   a mere *occurrence*, and thus must be bound elsewhere for the program to be valid.
-   or the variable is a *binding site* (or causes an implicit binding site, basically the same thing).
+a. For every appearance of an identifier,
+   it is possible to determine whether that appearance is a mere *occurrence*,
+   and thus must be bound elsewhere for the program to be valid,
+   or the variable is a *binding site* (or causes an implicit binding, which is close enough),
+   without examining the context.
 
-without examining the context.
-
-b. For every *occurrence* of an
-identifier, it is possible to uniquely identify its *binding site*, without
-involving the type system.
+b. For every *occurrence* of an identifier,
+   it is possible to uniquely identify its *binding site*, without involving the type system.
 
 This builds upon the `Explicit Binding Principle`_:
 whereas that former principle ensures that explicit alternatives to implicit binding constructs *exist at all*,
@@ -248,31 +252,29 @@ The `Lexical Scoping Principle`_ is almost true today, with the following nuance
 
 #. The `deprecated mechanism <https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/exts/duplicate_record_fields.html#selector-functions>`_ for disambiguating duplicate record fields violates the `Lexical Scoping Principle`_ by requiring the type system.
 
-#. In a pattern signature, if we have ``f (x :: Maybe a)``, the ``a``
-   is an occurrence if ``a`` is already in scope, and is implicitly bound otherwise.
+#. In a pattern signature,
+   if we have ``f (x :: Maybe a)``,
+   the ``a`` is an occurrence if ``a`` is already in scope,
+   and is implicitly bound otherwise.
 
-#. In a type signature, if we have ``f :: a -> a``, the ``a``
-   is an occurrence if ``a`` is already in scope, and is implicitly bound otherwise.
+#. In a type signature,
+   if we have ``f :: a -> a``,
+   the ``a`` is an occurrence if ``a`` is already in scope,
+   and is implicitly bound otherwise.
 
-#. In a kind signature, if we have ``data Foo (a :: k)``, the ``k``
-   is an occurrence if ``k`` is already in scope (historically impossible), and is implicitly bound otherwise.
+#. In a kind signature,
+   if we have ``data Foo (a :: k)``,
+   the ``k`` is an occurrence if ``k`` is already in scope,
+   and is implicitly bound otherwise.
 
-   Technically this might be a violation of this principle as the ``k`` is in fact always a use with the implicit bind coming before,
-   but implicit foot-gun behavior
+*Motivation:*
+These principles mean that we can understand the binding structure of a program without relying on type inference,
+important both for the implementation of GHC and the sanity of programmers.
+Furthermore, it allows readers to identify which variables should be brought newly into scope without tracking the list of variables already in scope.
+This last point becomes even more poignant if we consider the possibility of mixing the term-level and type-level namespaces (`#270`_) and need to think about clashes between type variables and imported term variables.
 
-   (the seemingly-unbound identifier in the type signature
-   is always an occurrence), but it's worth noting here.
-
-*Motivation:* These principles mean that we can understand the binding
-structure of a program without relying on type inference, important both for the
-implementation of GHC and the sanity of programmers. Furthermore, it allows
-readers to identify which variables should be brought newly into scope without
-tracking the list of variables already in scope. This last point
-becomes even more poignant if we consider the possibility
-of mixing the term-level and type-level namespaces (`#270`_) and need to think about clashes between type
-variables and imported term variables.
-
-(a) from `#448`_; (b) from `#378`_.
+\(a) from `#448`_;
+\(b) from `#378`_.
 
 Contiguous Scoping Principle (CSP)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -282,38 +284,42 @@ Contiguous Scoping Principle (CSP)
 **Principle**: The region of a program for which an identifier
 is in scope is contiguous.
 
-The `Contiguous Scoping Principle`_ is *not* respected by Haskell 2010 nor some of GHC's extensions. Here are some places
-where it is violated:
+The `Contiguous Scoping Principle`_ is *not* respected by Haskell 2010 nor some of GHC's extensions.
+Here are some places where it is violated:
 
-1. ``do``\ -notation. Example: ``do (x, (f x -> Pat)) <- action; blah``. ``x`` is in scope in
-   its pattern, to the right of its binding site, but then not in ``action``. It is in scope
-   again in ``blah``. Example of potential confusion: ``f x = do x <- x; g x``.
+1. ``do``\ -notation.
+   Example: ``do (x, (f x -> Pat)) <- action; blah``.
+   ``x`` is in scope in its pattern, to the right of its binding site, but then not in ``action``.
+   It is in scope again in ``blah``.
+   Example of potential confusion: ``f x = do x <- x; g x``.
 
-#. List comprehensions. Example: ``[ (x, y) | x <- thing1, y <- thing2, condition3 ]``. The
-   variable ``y`` is in scope in ``condition3`` and the ``(x, y)`` at the
-   beginning, but nowhere else. Example of potential confusion:
+#. List comprehensions.
+   Example: ``[ (x, y) | x <- thing1, y <- thing2, condition3 ]``.
+   The variable ``y`` is in scope in ``condition3`` and the ``(x, y)`` at the beginning, but nowhere else.
+   Example of potential confusion:
    ``f x y = [ (x, y) | x <- y, y <- x ]``.
 
-#. Arrow notation. Example: ``proc x -> do y <- task1 -< input1; task2 -< input2``. The variable
-   ``x`` is in scope in ``input1`` and ``input2`` but not in ``task1`` or ``task2``.
-   Example of potential confusion: ``f x = proc x -> x -< x``. The two ``x``\ s at the end
-   refer to *different* variables.
+#. Arrow notation.
+   Example: ``proc x -> do y <- task1 -< input1; task2 -< input2``.
+   The variable ``x`` is in scope in ``input1`` and ``input2`` but not in ``task1`` or ``task2``.
+   Example of potential confusion: ``f x = proc x -> x -< x``.
+   The two ``x``\ s at the end refer to *different* variables.
 
-#. ``-XScopedTypeVariables``. Example: ``f :: forall a. a -> a; x :: Int; f y = (y :: a)``. The
-   type variable ``a`` is in scope in the definition of ``f`` but not in
-   the type signature for ``x``.
+#. ``-XScopedTypeVariables``.
+   Example: ``f :: forall a. a -> a; x :: Int; f y = (y :: a)``.
+   The type variable ``a`` is in scope in the definition of ``f`` but not in the type signature for ``x``.
 
-#. GADT header variables. Example of potential confusion:
-   ``data G a where MkG :: a Int -> G Bool deriving C a``. The ``a`` in the type of ``MkG`` is
-   completely unrelated to the ``a`` toward the beginning and in the deriving
-   clause.
+#. GADT header variables.
+   Example of potential confusion:
+   ``data G a where MkG :: a Int -> G Bool deriving C a``.
+   The ``a`` in the type of ``MkG`` is completely unrelated to the ``a`` toward the beginning and in the deriving clause.
 
-There may be others beyond this. The goal here is *not* to establish the `Contiguous Scoping Principle`_,
-but to be mindful of new violations.
+There may be others beyond this.
+The goal here is *not* to establish the `Contiguous Scoping Principle`_, but to be mindful of new violations.
 
-*Motivation:* The `Contiguous Scoping Principle`_ makes programs easier to read, in that a reader can add a variable
-to their internal tracking of in-scope variables then
-remove that variable from their in-scope set just once.
+*Motivation:*
+The `Contiguous Scoping Principle`_ makes programs easier to read,
+in that a reader can add a variable to their internal tracking of in-scope variables then remove that variable from their in-scope set just once.
 
 From `#448`_.
 

@@ -4,7 +4,7 @@ Unrestricted Overloaded Labels
 .. author:: howtonotwin
 .. date-accepted:: 2018-11-05
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/11671
-.. implemented::
+.. implemented:: 9.6
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/170>`_
 .. contents::

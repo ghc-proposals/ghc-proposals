@@ -243,7 +243,6 @@ You can reach the committee by email at ghc-steering-committee@haskell.org.
 The current members, including their GitHub handle, when they joined first, when their term last renewed and their role, are listed at (sorted when the term last started):
 
 ============= ======================  ====================================================  =======  =======  =========
-|aspiwack|    Arnaud Spiwack          `@aspiwack <https://github.com/aspiwack/>`_           2019/07
 |i-am-tom|    Tom Harding             `@i-am-tom <https://github.com/i-am-tom/>`_           2020/01
 |simonmar|    Simon Marlow            `@simonmar <https://github.com/simonmar>`_            2017/02  2021/02  co-chair
 |simonpj|     Simon Peyton-Jones      `@simonpj <https://github.com/simonpj>`_              2017/02  2021/02  co-chair
@@ -252,7 +251,8 @@ The current members, including their GitHub handle, when they joined first, when
 |int-index|   Vladislav Zavialov      `@int-index <https://github.com/int-index/>`_         2021/03
 |gridaphobe|  Eric Seidel             `@gridaphobe <https://github.com/gridaphobe>`_        2018/09  2022/03
 |cdornan|     Chris Dornan            `@cdornan <https://github.com/cdornan>`_              2022/03
-|icelandjack| Baldur Blöndal          `@icelandjack <https://github.com/icelandjack>`_      2022/03
+|aspiwack|    Arnaud Spiwack          `@aspiwack <https://github.com/aspiwack/>`_           2019/07  2022/10
+☺             Adam Gundry             `@adamgundry <https://github.com/adamgundry/>`_       2022/10
 ============= ======================  ====================================================  =======  =======  =========
 
 .. |aspiwack| image:: https://github.com/aspiwack.png?size=24
@@ -264,7 +264,6 @@ The current members, including their GitHub handle, when they joined first, when
 .. |int-index| image:: https://github.com/int-index.png?size=24
 .. |gridaphobe| image:: https://github.com/gridaphobe.png?size=24
 .. |cdornan| image:: https://github.com/cdornan.png?size=24
-.. |icelandjack| image:: https://github.com/icelandjack.png?size=24
 
 The committee members have committed to adhere to the `Haskell committee guidelines for respectful communication <GRC.rst>`_ and are subject to the
 `committee bylaws <https://github.com/ghc-proposals/ghc-proposals/blob/master/committee.rst>`_.
@@ -282,6 +281,7 @@ Iavor Diatchki          `@yav <https://github.com/yav>`_                      20
 Cale Gibbard            `@cgibbard <https://github.com/cgibbard/>`_           2020/01 - 2021/07
 Alejandro Serrano       `@serras <https://github.com/serras/>`_               2020/01 - 2022/01
 Vitaly Bragilevsky      `@bravit <https://github.com/bravit>`_                2018/09 - 2022/02
+Baldur Blöndal          `@icelandjack <https://github.com/icelandjack>`_      2022/03 - 2022/09
 ======================  ====================================================  =================
 
 
