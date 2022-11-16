@@ -21,6 +21,9 @@ Summary of changes to other documents in this repo, and their motivation
 Principles
 ~~~~~~~~~~
 
+Philosophical reason for change
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 A positive (to me) thing I appreciated near the end of the #448 review process was that @gridaphobe agreed with my assessment that some of the principles were insufficiently distinct.
 We were thus able to reach an agreement with @goldfirere to axe the "local lexical scoping principle", and fold it in to the "lexical scoping principle".
 
@@ -33,8 +36,26 @@ I thus flipped their order ("explicit binding principle" first) and gave them th
 #.
 **Lexical scoping principle**: Must be possible to turn off implicit binding forms so only the explicit ones remain.
 
-
 I think this is much simpler and easy to understand.
+
+Practical reason for change
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A main change to Proposal #448, as described below, is combining mechanisms to disable implicit-binding
+Idea of have multiple mechanism dates back to #285 (also by me).
+Originally that *did* propose a single language extension knob, and then it was requested that that knob be split into two.
+
+I am undoing that here, something which was explicitly requested by the committee, and so I want to be sure I get the reasoning right (and am not being merely contrarian).
+
+I think the root cause for the request of the spliting into multiple knobs was a sense that the different forms of implicit binding we had are *not* alike.
+I think the old version of the two principles I changed somewhat obliquely supported that view, in its distinction-making.
+I do think the division of labor between the old two principles was subtle and confusing, and the two old knobs overkill, but I do want to respect the fact that the principles and design were in sync.
+
+The two new reworked principles, by contrast, have a chief goal in emphasizing the *commonalities* between all implicit binds.
+They don't all (yet!) have an explicit alternative, but they should, and tentative proposals exist (see below) fill in those gaps.
+(I.e. we are in the process of satisfying the **Explicit Binding Principle**, and I suspect we will complete it.)
+This leaves the **Lexical scoping principle**, and then we have a *single* knob to bring us into compliance with a *single* feature.
+The principles and design are once again back in sync!
 
 Proposal #425
 ~~~~~~~~~~~~~
