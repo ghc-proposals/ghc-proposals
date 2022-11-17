@@ -120,19 +120,19 @@ In GHC today, a template variable `v` matches any expression `e` if
 * `e` has the same type as `v`
 * No local binder of the template is free in `e`.
 
-The change proposed here is that a **template application** matches any expression (of the same type):
-* *Template application*.
-  A template application is an expression of form `f x y z` where:
+The change proposed here is that a **template pattern** matches any expression (of the same type):
+* *template pattern*.
+  A template pattern is an expression of form `f x y z` where:
   * `f` is a template variable
   * `x`,`y`,`z` are locally bound in the template (like `y` in rule "wombat" above).
     They are specifically not template variables, nor are they free in the entire rule.
   * The arguments `x`, `y`, `z` are *distinct* variables
   * `x`, `y`, `z` must be term variables (not type applications).
 
-* A template application `f x y z` matches *any expression* `e` provided:
+* A template pattern `f x y z` matches *any expression* `e` provided:
   * The target has the same type as the template
   * no local binder is free in `e`, other than `x`, `y`, `z`.
-* If these two condition hold, the template application `f x y z` matches the target expression `e`, yielding the substitution `[f :-> \x y z. e]`.
+* If these two condition hold, the template pattern `f x y z` matches the target expression `e`, yielding the substitution `[f :-> \x y z. e]`.
   Notice that this substitution is type preserving, and the RHS of the substitution has no free local binders.
 
 ### Uniqueness of matching
@@ -178,7 +178,7 @@ It would match expressions like:
 foo (\x -> x * 2 + x)
 ```
 
-The template application may involve multiple locally bound variables, e.g.:
+The template pattern may involve multiple locally bound variables, e.g.:
 ```haskell
 {-# RULES "foo" forall f. foo (\x y z -> f x y z) = "RULE FIRED" #-}
 ```
@@ -214,14 +214,14 @@ This would **not** match:
 ```haskell
 foo (\x y -> x * 2 + y)`
 ```
-But again it does contain the template application `f x`, so it would match:
+But again it does contain the template pattern `f x`, so it would match:
 ```haskell
 foo (\x y -> (bar x . baz) 2 y)
 ```
 
 ## Effect and Interactions
 
-The main effect of this proposal is that rewrite rules involving template applications now match more expressions.
+The main effect of this proposal is that rewrite rules involving template patterns now match more expressions.
 But the additional matches are guaranteed to be beta equivalent, so this change does not cause existing rules to become semantically incorrect.
 
 The only contentious interactions could occur due to rules that now overlap under the new rules, for example:
@@ -251,7 +251,7 @@ Roughly in order of cheap to expensive alternatives:
 
 1. Do nothing.
 
-2. Introduce explicit syntax for template applications.
+2. Introduce explicit syntax for template patterns.
    This requires modifying the parser and bikeshedding over syntax, but it may make the rules completely backwards compatible and the intent of the programmer is clearer to the compiler so the compiler can give better error messages and warnings.
    We have chosen against this alternative, because we do not think any existing rewrite rules depend critically on the previous behaviour and we expect error messages and warnings can still be written for the most common mistakes with a bit more effort.
 
@@ -294,11 +294,12 @@ Roughly in order of cheap to expensive alternatives:
    ```
    (Note: we assume deep subsumption here for simplicity of presentation)
 
-   Now `@[a]` is no longer a plain locally bound variable, so this is no longer a template application.
+   Now `@[a]` is no longer a plain locally bound variable, so this is no longer a template pattern.
 
-   This seems fragile and we do not know of any practical programs that requires polymorphic template variables in template applications.
+   This seems fragile and we do not know of any practical programs that requires polymorphic template variables in template patterns.
 
-2. The name "template application" feels unsatisfactory. Any other suggestions?
+2. The name "template pattern" is still up for debate.
+   Suggestions are welcome.
 
 ## Implementation Plan
 
