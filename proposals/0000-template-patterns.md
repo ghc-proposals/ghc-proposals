@@ -162,55 +162,55 @@ More generally, we think that if a match exists it is unique (moudulo eta-reduct
 
 ## Examples
 
-One of the simplest examples is this rule:
-```haskell
-{-# RULES "foo" forall f. foo (\x -> f x) = "RULE FIRED" #-}
-```
-It would match expressions like:
-```haskell
-foo (\x -> x * 2 + x)
-```
+* One of the simplest examples is this rule:
+  ```haskell
+  {-# RULES "foo" forall f. foo (\x -> f x) = "RULE FIRED" #-}
+  ```
+  It would match expressions like:
+  ```haskell
+  foo (\x -> x * 2 + x)
+  ```
 
-The template pattern may involve multiple locally bound variables, e.g.:
-```haskell
-{-# RULES "foo" forall f. foo (\x y z -> f x y z) = "RULE FIRED" #-}
-```
-Which would match:
-```haskell
-foo (\x y z -> x * y + z)
-```
-But not every variable has to occur in the match. It would also match this expression where `y` does not occur:
-```haskell
-foo (\x y z -> x * 2 + z)
-```
+* The template pattern may involve multiple locally bound variables, e.g.:
+  ```haskell
+  {-# RULES "foo" forall f. foo (\x y z -> f x y z) = "RULE FIRED" #-}
+  ```
+  Which would match:
+  ```haskell
+  foo (\x y z -> x * y + z)
+  ```
+  But not every variable has to occur in the match. It would also match this expression where `y` does not occur:
+  ```haskell
+  foo (\x y z -> x * 2 + z)
+  ```
 
-Locally bound variables may only occur once.
-Consider the following rule:
-```haskell
-{-# RULES "foo" forall f. foo (\x -> f x x) = "RULE FIRED" #-}
-```
-This would **not** match:
-```haskell
-foo (\x -> x * 2 + x)
-```
-But it does contain the valid subrule `f x`, so it would match:
-```haskell
-foo (\x -> (bar x . baz) x)
-```
+* Locally bound variables may only occur once.
+  Consider the following rule:
+  ```haskell
+  {-# RULES "foo" forall f. foo (\x -> f x x) = "RULE FIRED" #-}
+  ```
+  This would **not** match:
+  ```haskell
+  foo (\x -> x * 2 + x)
+  ```
+  But it does contain the valid subrule `f x`, so it would match:
+  ```haskell
+  foo (\x -> (bar x . baz) x)
+  ```
 
-Similarly if the template variable `f` is applied to non-variable arguments then it only matches a literal application.
-Consider this rule:
-```haskell
-{-# RULES "foo" forall f. foo (\x y -> f x 2 y) = "RULE FIRED" #-}
-```
-This would **not** match:
-```haskell
-foo (\x y -> x * 2 + y)`
-```
-But again it does contain the template pattern `f x`, so it would match:
-```haskell
-foo (\x y -> (bar x . baz) 2 y)
-```
+* Similarly if the template variable `f` is applied to non-variable arguments then it only matches a literal application.
+  Consider this rule:
+  ```haskell
+  {-# RULES "foo" forall f. foo (\x y -> f x 2 y) = "RULE FIRED" #-}
+  ```
+  This would **not** match:
+  ```haskell
+  foo (\x y -> x * 2 + y)`
+  ```
+  But again it does contain the template pattern `f x`, so it would match:
+  ```haskell
+  foo (\x y -> (bar x . baz) 2 y)
+  ```
 
 ## Effect and Interactions
 
