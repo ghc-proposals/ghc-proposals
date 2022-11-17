@@ -6,8 +6,6 @@ implemented: ""
 ---
 
 This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/555>).
-**After creating the pull request, edit this file again, update the number in
-the link, and delete this bold sentence.**
 
 # Higher Order Template Patterns in Rewrite Rules
 
@@ -31,7 +29,7 @@ As a refresher, here is a snippet of `Note [The rules for map]` which explains h
 > switch on the "mapList" rule, which rewrites the foldr/mapFB
 > thing back into plain map.
 
-These are rules in question:
+These are the rules in question:
 
 ```haskell
 {-# RULES
