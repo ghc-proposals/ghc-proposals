@@ -25,7 +25,7 @@ The second is a major roadblock to the adoption of stream fusion, namely optimis
 
 The most immediate motivation is the removal of warts in the foldr/build fusion mechanism.
 
-As a refresher, here is a snippet of `Note [The rules for map]` which explains how a part of foldr/build fusion works:
+As a refresher, here is a snippet of `Note [The rules for map]` which explains how a part of foldr/build fusion works (remember phase numbers decrease towards zero which is the last phase):
 
 > Up to (but not including) phase 1, we use the "map" rule to
 > rewrite all saturated applications of map with its build/fold
@@ -70,11 +70,11 @@ For example take the program:
 ```haskell
 foo xs = map (\x -> x * 2 + x) xs
 ```
-Phase 0 optimises this program to:
+Before phase 1, the program is transformed into:
 ```haskell
 foo xs = foldr (\x ys -> x * 2 + x : ys) [] xs
 ```
-In phase 0, when we try to match the "mapList" rule to this function all parts match except for `f x` which should match `x * 2 + x`.
+In phase 1, when we try to match the "mapList" rule to this function all parts match except for `f x` which should match `x * 2 + x`.
 The current rule matcher will only match `f x` literally to a application of some function `f` to the locally bound variable `x`.
 The expression `x * 2 + x` is not literally an application, so the rule does not match.
 Under this proposal the rule will match and recover the original program:
