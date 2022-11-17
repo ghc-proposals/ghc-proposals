@@ -162,13 +162,6 @@ More generally, we think that if a match exists it is unique (moudulo eta-reduct
 
 ## Examples
 
-> This section illustrates the specification through the use of examples of the
-> language change proposed. It is best to exemplify each point made in the
-> specification, though perhaps one example can cover several points. Contrived
-> examples are OK here. If the Motivation section describes something that is
-> hard to do without this proposal, this is a good place to show how easy that
-> thing is to do with the proposal.
-
 One of the simplest examples is this rule:
 ```haskell
 {-# RULES "foo" forall f. foo (\x -> f x) = "RULE FIRED" #-}
