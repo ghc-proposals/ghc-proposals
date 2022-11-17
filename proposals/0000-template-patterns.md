@@ -137,20 +137,20 @@ The change proposed here is that a **template pattern** matches any expression (
 
 Consider this rule and target:
 ```
-  RULE "funny"   foo (\x y. Just (f y x))
+  RULE "funny"   foo (\x y. Just (f x y))
 
-  Target:  ...(foo (\ p q. Just (h (p+q) p)))....
+  Target:  ...(foo (\ p q. Just (h (p+1) q)))....
 ```
 Then during matching we will encounter:
 ```
   Template:    f x y
-  Target:      h (p+q) p      [p:->x, q:->y]
+  Target:      h (p+1) q      [p:->x, q:->y]
 ```
 The renaming `[p:->x, q:->y]` is done by the matcher (today) on the fly, to make the bound variables of the template and target "line up".
 
 Now, we can:
-  * Either use the new template-application rule to succeed with `[f :-> \x y. h (x+y) y]`.
-  * Or use the existing decompose-application rule to match `(f x)` against `(h (p+q))` and `y` against `p`.  This will succeed, with `[f :-> \x. h (x+y)]`.
+  * Either use the new template-application rule to succeed with `[f :-> \x y. h (x+1) y]`.
+  * Or use the existing decompose-application rule to match `(f x)` against `(h (p+1))` and `y` against `q`.  This will succeed, with `[f :-> \x. h (x+1)]`.
 
 Critically, *it doesn't matter which we do*.
 We get the same result either way.
