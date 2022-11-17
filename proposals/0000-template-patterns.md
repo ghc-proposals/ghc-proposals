@@ -17,6 +17,12 @@ This proposal extends rewrite rules with a lightweight form of higher order matc
 
 ## Motivation
 
+There are two practical problems that motivat this change.
+The first is a wart in the current fusion mechanism in base which is exemplified by the `mapFB` function.
+The second is a major roadblock to the adoption of stream fusion, namely optimising the `concatMap` function. 
+
+### Removing the mapFB wart
+
 The most immediate motivation is the removal of warts in the foldr/build fusion mechanism.
 
 As a refresher, here is a snippet of `Note [The rules for map]` which explains how a part of foldr/build fusion works:
@@ -75,6 +81,8 @@ Under this proposal the rule will match and recover the original program:
 ```haskell
 foo xs = map (\x -> x * 2 + x) xs
 ```
+
+### Optimising the concatMap function under stream fusion
 
 Another source of motivation for this proposal is the optimisation of the `concatMap` function under stream fusion.
 
