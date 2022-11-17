@@ -7,7 +7,7 @@ implemented: ""
 
 This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/555).
 
-# Higher Order Template Patterns in Rewrite Rules
+# Template Patterns in Rewrite Rules
 
 User defined rewrite rules allow for powerful optimisations such as shortcut fusion.
 
