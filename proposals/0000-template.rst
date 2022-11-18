@@ -66,7 +66,7 @@ invariants.
 
 Note, however, that this section should focus on a precise
 *specification*; it need not (and should not) devote space to
-*implementation* details -- there is a separate section for that.
+*implementation* details -- the "Implementation Plan" section can be used for that.
 
 The specification can, and almost always should, be illustrated with
 *examples* that illustrate corner cases. But it is not sufficient to
