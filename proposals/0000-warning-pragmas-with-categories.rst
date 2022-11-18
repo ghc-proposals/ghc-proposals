@@ -281,6 +281,19 @@ starting with `xe-` are errors by default. This does not
 currently seem worth the additional complexity.
 
 
+Glob patterns
+~~~~~~~~~~~~~
+
+Users may wish to disable multiple related warning categories in one go. One way
+to achieve this would be to support glob-style command-line flags such as
+``-Wno-x-partial*``, which would disable all of the warning categories
+``x-partial``, ``x-partial-foo``, ``x-partial-bar`` and so on.
+
+However, glob support is not part of the current proposal, in the interests of
+simplicity. If in the future categorised warnings become sufficiently widely
+used that glob support becomes necessary, this question can be revisited.
+
+
 Unresolved Questions
 --------------------
 
