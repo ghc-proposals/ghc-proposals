@@ -65,13 +65,65 @@ distinguish it from the built-in warning flags:
 Proposed Change Specification
 -----------------------------
 
-The `WARNING pragma
-<https://downloads.haskell.org/ghc/9.4.1/docs/users_guide/exts/pragmas.html#warning-deprecated-pragma>`_
-may be immediately followed by a single warning category in
-square brackets. A warning category is an identifier beginning with a letter
-and followed by valid identifier characters or dashes.
+A warning *category* is an identifier beginning with a letter and followed by
+valid identifier characters or dashes.
 
-More formally, the grammar of declarations is extended as follows:
+#. A `WARNING pragma
+   <https://downloads.haskell.org/ghc/9.4.1/docs/users_guide/exts/pragmas.html#warning-deprecated-pragma>`_
+   may be immediately followed by a single warning category in square brackets.
+   See below for details of the grammatical changes.
+
+#. Individual warning categories may be enabled or disabled using new
+   ``-W<category>`` or ``-Wno-<category>`` options, and their priority may be
+   controlled using the ``-Werror=<category>`` or ``-Wwarn=<category>`` options.
+
+#. A ``WARNING`` pragma without a category, or a ``DEPRECATED`` pragma, is
+   interpreted as if it was a ``WARNING`` pragma with the single category
+   ``deprecations`` specified.
+
+#. The existing ``-Wwarnings-deprecations`` warning flag is interpreted as a
+   synonym for ``-Wdeprecations`` (and similarly for
+   ``-Wno-warnings-deprecations``, ``-Werror=warnings-deprecations`` and so on).
+
+#. A new warning flag ``-Wextended-warnings`` switches on warnings from
+   ``WARNING`` pragmas regardless of category; ``-Wno-extended-warnings``
+   switches them all off.
+
+#. A category is *recognised* if it either starts with ``x-`` or is
+   ``deprecations``.  GHC will emit an error if a ``WARNING`` pragma uses a
+   category that is not recognised.
+
+There is no change to the existing rules for when ``WARNING`` pragmas give rise
+to warnings; these changes merely affect whether the warnings are displayed.
+The command-line flags are processed from left to right, with later
+flags overriding previous ones, as at present.
+
+Points 3 and 4 make the proposal backwards compatible: existing ``WARNING`` or
+``DEPRECATED`` pragmas will still be controlled via the ``-Wdeprecations`` or
+``-Wwarnings-deprecations`` options.  However if a library introduces a category
+for a previously uncategorised warning, the warning will no longer be suppressed
+by ``-Wno-deprecations``.  (Prior to this proposal, all ``WARNING`` and
+``DEPRECATED`` pragmas were treated uniformly and could be disabled either by
+``-Wno-deprecations`` or by ``-Wno-warnings-deprecations``.)
+
+Point 5 is not strictly necessary, but ``-Wno-extended-warnings`` will allow
+users to suppress all ``WARNING`` messages much like
+``-Wno-warnings-deprecations`` does at present.  The naming is chosen to allow
+for other sources of "extended warnings" in the future.
+
+The restriction to recognised categories in point 6 means that ``WARNING``
+pragmas cannot extend the behaviour of existing GHC warning flags such as
+``-Wtabs`` or groups such as ``-Wall``.  Moreover it means that GHC can still
+report unrecognised warning flags, rather than silently accepting them.  In the
+future we may extend the set of recognised categories, if it appears useful to
+let users extend specific built-in warning categories (e.g. ``-Wcompat``) or to
+allow prefixes other than ``x-``.
+
+
+Grammar of warning declarations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The grammar of declarations is extended as follows:
 
 ============  =  =====================================================================
 *decl*        →  ``{-# WARNING`` [*categories*] [*things*] *strings* ``#-}``
@@ -97,32 +149,6 @@ the category, provided it is not an operator.  The dash character (``-``) is per
 in addition to identifier characters, since dashes are frequently used in
 warning names.
 
-The compiler only allows a *category* that starts with `x-` or is `deprecations`.
-(This restriction is not part of the syntax change because we may expect later
-extensions to that list.)
-
-
-There is no change to the existing rules for when ``WARNING``
-pragmas give rise to warnings, except that individual warning categories may be
-enabled or disabled using new ``-W<category>`` or
-``-Wno-<category>`` options, and their priority may be controlled using
-the ``-Werror=<category>`` or ``-Wwarn=<category>`` options.
-Here ``<category>`` represents the name of a *category* according to the grammar
-above.  The command-line flags are
-processed from left to right, with later flags overriding previous ones, as at
-present.
-
-A ``WARNING`` pragma without a category, or a ``DEPRECATED`` pragma, is
-interpreted as if it was a ``WARNING`` pragma with the single category
-``deprecations`` specified.  The ``-Wwarnings-deprecations`` warning flag and
-its synonym ``-Wdeprecations`` control these warnings.
-This makes the proposal backwards compatible.
-
-A new warning flag ``-Wextended-warnings`` controls the display of all warnings
-from ``WARNING`` pragmas, regardless of category.  This is not strictly
-necessary, but allows users to suppress all ``WARNING`` messages much like
-``-Wno-warnings-deprecations`` does at present.  The naming is chosen to allow
-for other sources of "extended warnings" in the future.
 
 
 Examples
