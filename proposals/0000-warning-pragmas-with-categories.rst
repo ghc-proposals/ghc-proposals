@@ -190,7 +190,7 @@ This approach also provides an alternative to `proposal #528
 <https://github.com/ghc-proposals/ghc-proposals/pull/528>`_, which is about
 discouraging users from importing from "internal" modules, without completely
 prohibiting their import.  For example, a ``WARNING [x-ghc-prim-internals]``
-pragma could be attached to all module in ``ghc-prim``.  Users would then be
+pragma could be attached to all modules in ``ghc-prim``.  Users would then be
 advised that such imports are discouraged, but could silence the warning with
 ``-Wno-x-ghc-prim-internals``.
 
