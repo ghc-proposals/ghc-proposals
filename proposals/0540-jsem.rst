@@ -96,8 +96,8 @@ Proposed Change Specification
 
 We want to allow the build tool and individual invocations of GHC to share
 capabilities, by communicating through a semaphore. To do this, we introduce
-the ``-jsem <sem>`` flag, which specifies a system semaphore through which GHC
-invocations can acquire and release capabilities.
+the ``-jsem <sem>`` flag, which specifies by name a system semaphore through
+which GHC invocations can acquire and release capabilities.
 
 Change to user manual
 ~~~~~~~~~~~~~~~~~~~~~
@@ -120,11 +120,12 @@ Change to user manual
 GHC Jobserver Protocol
 ~~~~~~~~~~~~~~~~~~~~~~
 
-The GHC Jobserver Protocol allows a client to dynamically invoke many instances
-of GHC, while restricting all of those instances to use no more than
-<n> capabilities. This is achieved by coordination over a system semaphore
-(either a POSIX semaphore [6]_  in the case of Linux and Darwin, or a
-Win32 semaphore [7]_  in the case of Windows platforms).
+This proposal introduces the GHC Jobserver Protocol. This protocol allows
+a server to dynamically invoke many instances of a client process,
+while restricting all of those instances to use no more than <n> capabilities.
+This is achieved by coordination over a system semaphore (either a POSIX
+semaphore [6]_  in the case of Linux and Darwin, or a Win32 semaphore [7]_
+in the case of Windows platforms).
 
 There are two kinds of participants in the GHC Jobserver protocol:
 
@@ -151,37 +152,43 @@ There are two kinds of participants in the GHC Jobserver protocol:
   Each jobclient **must** release exactly as many tokens as it has acquired from
   the semaphore (this does not include the implicit tokens).
 
-Implementation details
-~~~~~~~~~~~~~~~~~~~~~~
+Implementation of the protocol
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-There is a hidden cost in having a GHC program (such as ``ghc`` itself) run on
-fewer CPU cores than its capabilities: the stop-the-world cost of garbage
-collection becomes much more expensive. If we were to give GHC a fixed number
-``N`` of capabilities, then parallel garbage collections in that GHC would
-recruit ``N`` OS threads. Instead we propose that GHC will adjust its number
-of capabilities, via ``setNumCapabilities`` [8]_ , to the number of modules
-it is compiling.
-Note that GHC already calls ``setNumCapabilities`` with the argument to ``-j``.
+We then propose that GHC and ``cabal``/``stack`` implement the GHC jobserver
+protocol, with GHC as a jobclient and ``cabal``/``stack` as the jobserver.
 
-We have concerns that rapidly adjusting the number of capabilities may have
-adverse effects: we propose that GHC will rate limit the release of tokens so as
-to reduce this thrashing. The exact mechanism of rate limiting is unspecified
-here.
+As far as the GHC jobclient implementation is concerned, we have identified
+two salient points:
 
-We also believe that GHC invocations should not be too eager to release
-semaphore tokens. This skews the balance in favour of in-unit parallelism
-(1 unit with many capabilities), and against compiling many units in parallel
-(many units with a single capability).
-The justification is that the memory used by compiling units can be released
-before starting another parallel process. Were GHC to release semaphore tokens
-too eagerly, it could end up compiling a large number of packages in parallel
-which each have a large loaded EPS. Combined, this will use a significant amount
-of memory.
+A. There is a hidden cost in having a GHC program (such as ``ghc`` itself) run on
+   fewer CPU cores than its capabilities: the stop-the-world cost of garbage
+   collection becomes much more expensive. If we were to give GHC a fixed number
+   ``N`` of capabilities, then parallel garbage collections in that GHC would
+   recruit ``N`` OS threads. Instead we propose that GHC will adjust its number
+   of capabilities, via ``setNumCapabilities`` [8]_ , to the number of modules
+   it is compiling.
+   Note that GHC already calls ``setNumCapabilities`` with the argument to ``-j``.
 
-To achieve this, we propose a minimum delay between acquiring a resource and
-releasing a resource. This allows us to prioritise completing a single large
-package before moving on to other work. The exact mechanism through which this
-is achieved is left unspecified in this proposal.
+   We have concerns that rapidly adjusting the number of capabilities may have
+   adverse effects: we propose that GHC will limit the rate at which it can
+   release tokens to the semaphore so as to reduce this thrashing.
+   The exact mechanism of rate limiting is unspecified here.
+
+B. We believe that GHC invocations should not be too eager to release
+   semaphore tokens. This skews the balance in favour of in-unit parallelism
+   (1 unit with many capabilities), and against compiling many units in parallel
+   (many units with a single capability).
+   The justification is that the memory used by compiling units can be released
+   before starting another parallel process. Were GHC to release semaphore tokens
+   too eagerly, it could end up compiling a large number of packages in parallel
+   which each have a large loaded EPS. Combined, this will use a significant amount
+   of memory.
+
+   To achieve this, we propose a minimum delay between acquiring a resource and
+   releasing a resource. This allows us to prioritise completing a single large
+   package before moving on to other work. The exact mechanism through which this
+   is achieved is left unspecified in this proposal.
 
 Examples
 --------
@@ -204,7 +211,8 @@ Let us explain how we envision ``cabal`` handle the following build plan, with
       ``ghc --make -jsem ⟨sem⟩`` invocation.
    b. This invocation of ``ghc`` notices it has a lot of work to do (many modules
       to compile from the ``Bot`` unit), so it requests more resources from the
-      semaphore, obtaining the remaining 7 tokens.
+      semaphore. As no other processes are competing for semaphore tokens, this
+      GHC invocation obtains the remaining 7 tokens.
    c. ``ghc`` finishes compiling the ``Bot`` unit, releasing the 7 tokens it
       acquired.
    d. ``cabal`` notices the ``ghc`` subprocess has terminated, and releases
@@ -235,13 +243,14 @@ Effects and Interactions
 Comparison with multiple home units
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Support for multiple home units provides an alternative way to saturate the
-number of available capabilities. This is because compilation is achieved using
-a single GHC invocation, which thus doesn't have to worry about contention with
+Support for multiple home units (not yet fully implemented in ``cabal``)
+would provide an alternative way to saturate the number of available capabilities.
+This is because compilation with multiple home units is achieved using a single
+GHC invocation, which thus doesn't have to worry about contention with
 other processes.
 
-In general, it is preferred to use multiple home units when possible, as it is
-expected to be more performant than ``-jsem``:
+In general, it would be preferred to use multiple home units when possible, as
+it is expected to be more performant than ``-jsem``:
 
 - no scheduling between different GHC invocations is necessary;
 - modules are loaded directly into the home unit graph, which avoids having
@@ -253,8 +262,7 @@ expected to be more performant than ``-jsem``:
 However, it's not always possible to compile everything with a single GHC
 invocation, e.g. if the build plan involves non-Haskell dependencies somewhere
 in the middle. In comparison, the ``-jsem`` functionality can fit into any build
-system that one might be using, so it supports a wider range
-of use cases.
+system that one might be using, so it supports a wider range of use cases.
 
 Costs and Drawbacks
 -------------------
