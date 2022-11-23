@@ -86,8 +86,7 @@ The latest `State of Haskell 2021 Survey results
 default”. It also missed ``GHC2021`` by just two votes. There is a whole style
 of writing Haskell that makes extensive use of ``\case``. And (unlike the runner up in the survey, `OverloadedStrings_`), it only enables *new* syntax, i.e. it does not change existing code.
 
-
-Why no add LambdaCase?
+Why not add LambdaCase?
 ----------------------
 
 We just extended the meaning of `LambdaCase`_ with ``\cases`` in `#302
