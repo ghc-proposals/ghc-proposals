@@ -107,3 +107,9 @@ Implementation Plan
 -------------------
 The actual changes to GHC to add a new language edition are small, and likely
 I (Joachim) can prepare a MR.
+
+.. _ExplicitNamespaces: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/explicit_namespaces.html#extension-ExplicitNamespaces
+.. _TypeOperators: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/type_operators.html#extension-TypeOperators
+.. _OverloadedStrings: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/overloaded_strings.html#extension-OverloadedStrings
+.. _LambdaCase: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/lambda_case.html#extension-LambdaCase
+
