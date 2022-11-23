@@ -98,7 +98,7 @@ this one probably isn’t yet.
 Alternatives
 ------------
 We could not do ``GHC2023`` and wait another year, or more, because we shy away from
-making what may look like a stability-threatning change.
+making what may look like a stability-threatening change.
 In my view that is worse: The fixes and improvements suggested above would reach our users later, we would not establish a regular and predicatable pattern, and in the worst case never dare to make a new release, which would make the ``GHC20xx`` idea fall into a similar pattern than the ``Haskell20xx`` report process, which at the moment is stalled.
 
 
