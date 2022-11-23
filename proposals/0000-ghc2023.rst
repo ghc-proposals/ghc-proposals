@@ -77,7 +77,7 @@ Thing™, adding `ExplicitNamespaces`_ alone should be sufficient to cut a new
 release.
 
 A counter-argument to `ExplicitNamespaces`_ is that it has seen changes
-recently, e.g. in `#281 <https://github.com/ghc-proposals/ghc-proposals/pull/302>_` and
+recently, e.g. in `#281 <https://github.com/ghc-proposals/ghc-proposals/pull/281>`_ and
 thus may not yet be as stable as we want them for ``GHC20xx``.
 
 
