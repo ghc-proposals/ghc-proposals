@@ -14,7 +14,7 @@ GHC2023
 Motivation
 ----------
 
-The `GHC20xx process proposal <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0372-ghc-extensions.rst#motivation>`_ motivates why we feel the need for ``GHC20xx`` language editoins in general.
+The `GHC20xx process proposal <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0372-ghc-extensions.rst#motivation>`_ motivates why we feel the need for ``GHC20xx`` language editions in general.
 
 The first edition, ``GHC2021``, is now two years old, and I propose we define
 ``GHC2023`` now, even if turns out to be a modest change, to keep the process alive.
@@ -40,18 +40,18 @@ instability.
 
 I believe that neither are good reasons to not define ``GHC2023``:
 
-* There is an inherent latecy between defining language editions and them
+* There is an inherent latency between defining language editions and them
 reaching the users. It reaches users who do not have to worry about supporting
 older GHC first, and thus library authors later. This is somewhat unavoidable,
 but not per se a reason to reduce the frequency.
 
 * Relatively frequent language editions do not introduce undue instability:
 Users who pin the language edition in their `.cabal` file or so are not
-affected by the exitance of a new one. Neither are users who pin their GHC
+affected by the existence of a new one. Neither are users who pin their GHC
 version. Only those users who upgrade their version of GHC _and_ ask for the
 latest edition may now have access to new features.
 .
-As `Arnaud explained on the mailing list <https://mail.haskell.org/pipermail/ghc-steering-committee/2022-November/002949.html>`_, Rust (generally not perceived as a languge with a perception of low stability) has a very similar model with their “language editions”.
+As `Arnaud explained on the mailing list <https://mail.haskell.org/pipermail/ghc-steering-committee/2022-November/002949.html>`_, Rust (generally not perceived as a language with a perception of low stability) has a very similar model with their “language editions”.
 
 Furthermore, a regular, not too slow cadence makes the whole process more
 predictable, which I expect *improves* the perception of stability, in the
@@ -64,7 +64,7 @@ Why add ExplicitNamespaces?
 As discussed in `issue #551
 <https://github.com/ghc-proposals/ghc-proposals/issues/551>`_, ``GHC2021``
 includes `TypeOperators`_, but does not include `ExplicitNamespaces`_. This was
-a very strange (and probably inadvertant) decision, given that the flag
+a very strange (and probably inadvertent) decision, given that the flag
 ``-XTypeOperators`` enables both the `TypeOperators`_ and the
 `ExplicitNamespaces`_ language extension.
 
