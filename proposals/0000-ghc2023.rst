@@ -76,6 +76,10 @@ And – at least if one accepts that regular releases of ``GHC20xx`` are a Good
 Thing™, adding `ExplicitNamespaces`_ alone should be sufficient to cut a new
 release.
 
+A counter-argument to `ExplicitNamespaces`_ is that it has seen changes
+recently, e.g. in `#281 <https://github.com/ghc-proposals/ghc-proposals/pull/302>_` and
+thus may not yet be as stable as we want them for ``GHC20xx``.
+
 
 Why add LambdaCase?
 -------------------
@@ -86,10 +90,8 @@ The latest `State of Haskell 2021 Survey results
 default”. It also missed ``GHC2021`` by just two votes. There is a whole style
 of writing Haskell that makes extensive use of ``\case``. And (unlike the runner up in the survey, `OverloadedStrings_`), it only enables *new* syntax, i.e. it does not change existing code.
 
-Why not add LambdaCase?
-----------------------
-
-We just extended the meaning of `LambdaCase`_ with ``\cases`` in `#302
+A counter-agument to adding `LambdaCase` is that just extended the meaning of
+`LambdaCase`_ with ``\cases`` in `#302
 <https://github.com/ghc-proposals/ghc-proposals/pull/302>`_, and if one only
 wants to add extensions to ``GHC20xx`` that have been proven to be stable, then
 this one probably isn’t yet.
