@@ -127,8 +127,8 @@ Costs and Drawbacks
 * Putting a constraint on a kind is very modestly useful, and this proposal destroys that use case. Instead, users are welcome to constrain data constructors instead of the type itself.
 
 * If and when we get full dependent types -- including the ability to have type class constraints in kinds (which is not permitted today) -- we may need to reintroduce
-this feature, thus making the work of removing it redundant. However, it is quite likely that the new implementation will be much more well-grounded than the
-current one. It is even possible that it will be easier to implement this feature correctly after the current incorrect implementation is ripped out.
+  this feature, thus making the work of removing it redundant. However, it is quite likely that the new implementation will be much more well-grounded than the
+  current one. It is even possible that it will be easier to implement this feature correctly after the current incorrect implementation is ripped out.
 
 Alternatives
 ------------
