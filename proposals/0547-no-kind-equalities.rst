@@ -2,11 +2,11 @@ Disallow constraints in kinds
 =============================
 
 .. author:: Richard Eisenberg and Simon Peyton Jones
-.. date-accepted::
+.. date-accepted:: 2022-11-25
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/547>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/547>`_.
 .. sectnum::
 .. contents::
 
