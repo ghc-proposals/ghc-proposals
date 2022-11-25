@@ -111,13 +111,12 @@ users to suppress all ``WARNING`` messages much like
 ``-Wno-warnings-deprecations`` does at present.  The naming is chosen to allow
 for other sources of "extended warnings" in the future.
 
-The restriction to recognised categories in point 6 means that ``WARNING``
-pragmas cannot extend the behaviour of existing GHC warning flags such as
-``-Wtabs`` or groups such as ``-Wall``.  Moreover it means that GHC can still
-report unrecognised warning flags, rather than silently accepting them.  In the
-future we may extend the set of recognised categories, if it appears useful to
-let users extend specific built-in warning categories (e.g. ``-Wcompat``) or to
-allow prefixes other than ``x-``.
+Point 6 makes sure that the command line options `-Wx-partial` and `-Wno-x-partial`
+can readily be distinguished from the existing large number of built-in warning
+categories, such as `-Wtabs`, `-Wdodgy-import`, `-Winaccessible-code` etc. (See the
+`user manual section <https://ghc.gitlab.haskell.org/ghc/doc/users_guide/using-warnings.html?highlight=warning#warnings-and-sanity-checking>`_ for a complete list).
+This way GHC can still
+report unrecognised warning flags, rather than silently accepting them.
 
 
 Grammar of warning declarations
