@@ -191,3 +191,16 @@ Unresolved Questions
 --------------------
 
 None at this time.
+
+Implementation Plan
+-------------------
+
+The implementation here should be relatively easy, and should be done
+in two phases (for the two parts of the proposal). Given the challenge
+of finding time, I would love to work with a collaborator on the
+implementation, where I do an initial implementation, but someone else
+sees the work through. (This should be a fun opportunity to learn more
+about GHC's internals.) I'm also happy for someone else to take over
+from the beginning! Though I imagine my experience will be helpful in
+putting together a design for the implementation that goes along with
+the grain in GHC.
