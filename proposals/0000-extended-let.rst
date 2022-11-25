@@ -82,6 +82,9 @@ Effects
 1. We can now bind local type synonyms, avoiding the need to do so via pattern or result
    signatures.
 
+#. Due to the way the grammar is written, binding types in this way
+   applies equally in ``where`` clauses as it does in ``let`` clauses.
+
 #. One challenge is how to present these local synonyms in error messages. It might be
    best to aggressively expand (unlike top-level type synonyms), especially because these
    local synonyms might refer to other local type variables that are in scope. As we gain
@@ -121,7 +124,22 @@ Proposed Change Specification
 #. The type synonyms introduced in a ``let`` in types scope over the type after the
    ``in``.
 
-#. As above, the synonyms may mention wildcards, and the definitions may not be recursive.
+#. As above, the synonyms may mention wildcards, and the definitions
+   may not be recursive.
+
+#. Add the possibility of a ``where`` clause to the end of the
+   following syntax productions (all taken from the `Haskell 2010
+   Report
+   <https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#x17-17500010>`_)
+   and brackets denote optional elements (following the report)::
+
+     topdecl → 'type' simpletype = type ['where' tdecls]    -- perhaps amended above to start with 'decl', not 'topdecl'
+             | 'data' [context '=>'] simpletype ['=' constrs] [deriving] ['where' tdecls]
+             | 'newtype' [context '=>'] simpletype '=' newconstr [deriving] ['where' tdecls]
+     gendecl → vars '::' [context '=>'] type ['where' tdecls]
+
+   In addition, a ``tdecl`` is allowed among the constructors in GADT syntax;
+   it scopes over the entire ``where`` block, but not beyond it.
 
 Examples
 ~~~~~~~~
@@ -145,6 +163,8 @@ Effects
    aggressively. We can think about ways to preserve synonyms as we gain experience
    with the feature.
 
+#. Over time, we might decide to add ``where`` in more places.
+   
 Effect and Interactions
 -----------------------
 
