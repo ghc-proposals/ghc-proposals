@@ -41,9 +41,9 @@ I think this is much simpler and easy to understand.
 Practical reason for change
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A main change to Proposal #448, as described below, is combining mechanisms to disable implicit-binding
-Idea of have multiple mechanism dates back to #285 (also by me).
-Originally that *did* propose a single language extension knob, and then it was requested that that knob be split into two.
+A main change to Proposal #448, as described below, is combining mechanisms to disable implicit-binding.
+The idea of having multiple mechanism dates back to #285 (also by me).
+Originally I *did* propose in #285 a single language extension knob, but then it was requested that that knob be split into two, and so I changed it.
 
 I am undoing that here, something which was explicitly requested by the committee, and so I want to be sure I get the reasoning right (and am not being merely contrarian).
 
