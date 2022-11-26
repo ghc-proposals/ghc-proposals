@@ -86,13 +86,7 @@ In particular, when enabled, the compiler would desugar all comprehensions appli
 
 Modifying, deleting, or usurping `ApplicativeDo` is not in scope of this proposal.
 
-The typing rule is as follows:
-
-::
-
-  Γ, a₁ : t₁, x₁ : f s₁, a₂ : t₂, x₂ : f s₂, … ⊢ y : r
-  ----------------------------------------------------
-  Γ ⊢ [y | a₁ ← x₁, a₂ ← x₂, …] : f r
+The typing rule is the same as type-checking the desugared code.
 
 The desugaring rules are as for `ApplicativeDo`, except the last statement (the return value of the comprehension) has an implicit `pure`, so checking that is not needed.
 
