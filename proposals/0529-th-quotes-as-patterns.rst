@@ -10,6 +10,7 @@ Template Haskell quotes as patterns
                  implements the described feature.
 .. highlight:: haskell
 .. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/529>`_.
+.. sectnum::
 .. contents::
 
 The Template Haskell AST is inherently unstable.
@@ -139,12 +140,12 @@ With the new extension ``TemplateHaskellQuotesAsPatterns``, slightly modified qu
 The first difference is that quotes as pattern match raw syntax, not (monadic) actions producing syntax.
 The tying rules are as follows:
 
-- ``[e| ... |]`` matches ``Exp``
-- ``[p| ... |]`` matches ``Pat``
-- ``[t| ... |]`` matches ``Type``
-- ``[d| ... |]`` matches ``Dec``
+- ``[| ... |] or [e| ... |]``, where "..." is an expression, is a pattern that matches ``Exp``
+- ``[p| ... |]``, where "..." is a pattern, is a pattern that matches ``Pat``
+- ``[t| ... |]``, where "..." is a type, is a pattern that matches ``Type``
+- ``[d| ... |]``, where "..." is a top-level declaration, is a pattern that matches ``Dec``
 
-The second differences is that splices within these quotes contain patterns instead of expressions::
+The second difference is that splices within these quotes contain patterns instead of expressions::
 
   p is in <pat>
   --------------------------------
@@ -278,7 +279,7 @@ None at this time.
 Related Work
 ------------
 
-Examples of langauges with also implement this feature
+Examples of languages that also implement this feature:
 
 Scheme
 ~~~~~~
@@ -345,7 +346,7 @@ The goal is for the TH AST to increasingly be a historical artifact, or debuggin
 Implementation Plan
 -------------------
 
-I lack the time capacity to implement these changes all by myself, and would submit this to the Haskell Foundation as part of whatever fund as part of whatever https://discourse.haskell.org/t/pre-hftt-ongoing-focus-on-migration-tools/4626 becomes.
+I lack the time capacity to implement these changes all by myself, and would submit this to the Haskell Foundation to fund as part of whatever https://discourse.haskell.org/t/pre-hftt-ongoing-focus-on-migration-tools/4626 becomes.
 
 That said, I would be happy to pair / code review / etc. with whoever does end up working on it.
 I likewise have been pitching in while @tek is leading the charge on `Proposal 285`_, and that process has felt very good to me.
