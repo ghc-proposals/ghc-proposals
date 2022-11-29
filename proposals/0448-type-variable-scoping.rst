@@ -384,8 +384,10 @@ Points below up to and including the new (backward-compatible) definition of
          ``type instance forall a. F (Maybe a) = Int``.
 
       #. ``RULES`` pragmas.
-         Example: ``{-# RULES "name" forall (x :: Maybe a). foo x = 5 #-}``
-         becomes ``{-# RULES "name" forall a. forall (x :: Maybe a). foo x = 5 #-}``.
+         Example:
+         ``{-# RULES "name" forall (x :: Maybe a). foo x = 5 #-}``
+         becomes
+         ``{-# RULES "name" forall a. forall (x :: Maybe a). foo x = 5 #-}``.
          (The double-\ ``forall`` syntax separates type variables like ``a`` from
          term variables like ``x``.)
 
@@ -396,11 +398,21 @@ Points below up to and including the new (backward-compatible) definition of
 
       Out-of-scope type variables written in a pattern signature would be bound there and would remain in scope over the same region of code that term-level variables introduced in a pattern scope over.
 
+      Example:
+      ``id (x :: a) = a``
+      becomes (using not-yet-approved syntax from `#523`_ to make the wildcard explicit):
+      ``id = let type a = _ in \(x :: a) -> a``.
+
       This is the former ``-XPatternSignatureBinds`` from accepted, unimplemented proposal `#285`_.
 
    #. Implicit binds in kind signatures:
 
       Out-of-scope type variables written in a negative position kind signature (positive ones are implicit foralls) are bound as implicit capital lambdas to the left of the parameter they occur in.
+
+      Example:
+      ``data Foo (b :: a)``
+      becomes
+      ``data Foo @a (b :: a)``.
 
       This was intended to be included in the former ``-XPatternSignatureBinds`` from accepted, unimplemented proposal `#285`_, but mistakenly wasn't as these are not "pattern signatures" in the current terminology.
 
