@@ -102,7 +102,40 @@ Single namespace syntactic uniformity
 
 `#270`_ has a very nice story about making single name-space code not fork-like by accepting fewer programs.
 ``-Werror=pattern-signature-binds`` either breaks the "non fork-like" condition, or breaks the "single namespace" condition.
-Either is not acceptable.
+
+For example, suppose a single namespace user wrote::
+
+  import Foo (B) -- from `type B = Int`
+
+  a = Int
+
+  f (x :: a) = ....
+  f (x :: B) = ....
+
+``x :: B`` definitely doesn't bind ``B``, but what about ``x :: a``?
+
+#. If ``a`` is a use, then if this code is copy pasted to another file without ``-Wpuns -Wpun-bindings`` it will *change meaning**::
+
+     f (x :: Int) = ... -- no puns, after inlining
+     f = let type a = _ in \(x :: a) -> ... -- yes puns
+
+   This makes the pun change fork-like, and disqualifies it from being a warning.
+   That is exactly the sort of outcome many people are worried about "no pun idem" code leading to, and which the authors of `#270`_ have worked strenuously to avoid.
+
+#. If ``a`` is a bind, the meaning with and without puns will be the same::
+
+     f = let type a = _ in \(x :: a) -> ... -- no puns
+     f = let type a = _ in \(x :: a) -> ... -- yes puns
+
+   but the "illusion" of a single namespace is shattered, because ``a`` and ``B`` are *not* treated the same way.
+
+   Furthermore, as a practical matter, how *should* ``a`` be used here?
+   ``-Werror=pattern-signature-binds`` will catch and error on our pattern signature bind, but it won't allow us to refer to ``a``.
+   Not being able to use without rebinding it leaves an awkward tripping point that must be worked around with more variable indirection.
+
+With ``-XNoImplicitBinds`` instead, we go with option 2 to ``-Wpuns`` and ``-Wpun-binding`` stay genuine warnings that do not change behavior.
+``-XImplicitBinds`` however *can* change behavior, and it results in the same behavior (unification variable) regardless of ``-Wpuns`` and ``-Wpun-binding``.
+Documentation can make clear that, yes, the punning warnings are insufficient on their own to create the single-namespace "illusions", but that are intended to work with ``-XNoImplicitBinds`` in which case they do succeed in their intended purpose.
 
 This relates to the education case in that both are about being able to hide what "might have been" under other config settings.
 
