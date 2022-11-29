@@ -209,10 +209,29 @@ We here discuss the motivation for this decision.
 Consistency
 """""""""""
 
-This more narrow formulation of ``-XPatternSignatures`` matches ``KindSignatures``.
-``KindSignatures`` doesn't allow implicit binds for a rather roundabout reason: implicit binds would imply implicit kind-level foralls, which would require ``-XPolyKinds``.
-Given the other extensions being proposed here, we can retroactively reinterpret this as a simple syntactic rule: ``-XKindSignatures`` alone doesn't do implicit binding.
-Now, both extension just allow, respectively, term-level and type-level signatures, with no other functionality like implicit binding mechanisms also thrown in.
+This more narrow formulation of ``-XPatternSignatures`` matches ``-XKindSignatures``.
+``KindSignatures`` doesn't allow implicit binds for a rather roundabout reason: implicit binds would imply implicit kind-level foralls, which would require ``-XPolyKinds``::
+
+  ghci> :set -XKindSignatures
+  ghci> :set -XNoPolyKinds
+  ghci> data Foo (a :: b)
+
+  <interactive>:3:16: error:
+      Unexpected kind variable ‘b’
+      Perhaps you intended to use PolyKinds
+      In the data type declaration for ‘Foo’
+
+Given the other extensions being proposed here, we can retroactively reinterpret this as a simple syntactic rule: ``-XKindSignatures`` alone doesn't do implicit binding::
+
+  ghci> :set -XKindSignatures
+  ghci> :set -XNoImplicitBinds
+  ghci> data Foo (a :: b)
+
+  <interactive>:3:16: error: Not in scope: type variable ‘b’
+
+The error message is completely different, but the effect with respect to merely whether the program was rejected is the same.
+
+Now, both extensions (``-XPatternSignatures`` and ``-XKindSignatures``) just allow, respectively, term-level and type-level signatures, with no other functionality like implicit binding mechanisms also thrown in.
 
 Conservativism for standardization
 """"""""""""""""""""""""""""""""""
