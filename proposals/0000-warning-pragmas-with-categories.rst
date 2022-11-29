@@ -111,9 +111,9 @@ users to suppress all ``WARNING`` messages much like
 ``-Wno-warnings-deprecations`` does at present.  The naming is chosen to allow
 for other sources of "extended warnings" in the future.
 
-Point 6 makes sure that the command line options `-Wx-partial` and `-Wno-x-partial`
+Point 6 makes sure that the command line options ``-Wx-partial`` and ``-Wno-x-partial``
 can readily be distinguished from the existing large number of built-in warning
-categories, such as `-Wtabs`, `-Wdodgy-import`, `-Winaccessible-code` etc. (See the
+categories, such as ``-Wtabs``, ``-Wdodgy-import``, ``-Winaccessible-code`` etc. (See the
 `user manual section <https://ghc.gitlab.haskell.org/ghc/doc/users_guide/using-warnings.html?highlight=warning#warnings-and-sanity-checking>`_ for a complete list).
 This way GHC can still
 report unrecognised warning flags, rather than silently accepting them.
