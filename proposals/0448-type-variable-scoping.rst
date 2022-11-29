@@ -106,7 +106,7 @@ This component of this proposal is taken from the not-yet-accepted proposal `#23
 changing the name of what I now call ``-XExtendedForAllScope``,
 and simplifying the binding story around pattern signatures (getting rid of ``-XPatternSignatureBinds``).
 
-``-XImplicitBinds`` is the combination of ``-XImplicitBindsForAll`` and ``-XPatternSignatureBinds``) from accepted
+``-XImplicitBinds`` is the combination of ``-XImplicitBindsForAll`` and ``-XPatternSignatureBinds`` from accepted
 proposal `#285`_, and differ from that proposal in that:
 
   - The extensions are combined for fewer knobs when the motivations are the same.
@@ -217,7 +217,7 @@ Now, both extension just allow, respectively, term-level and type-level signatur
 Conservativism for standardization
 """"""""""""""""""""""""""""""""""
 
-With both of these signatures being very minimal, I think they would be easy uncontroversial candidates for a new language report.
+With both of these extensions being very minimal, I think they would be easy uncontroversial candidates for a new language report.
 Conversely, all implicit binding constructs are very fraught with a complicated mix of upsides and downsides, we and should only standardize them with great care.
 
 Motivation for ``-XNoImplicitBinds``
@@ -1222,16 +1222,17 @@ Here, I summarize the effects on the principles_.
 #. The `Explicit Variable Principle`_ is made to hold, by allowing explicit binders for type variables for existentials and the variables bound by an inner ``forall`` in a higher-rank
    type.
 
-#. The `Lexical Scoping Principle`_ is made to hold with ``-XNoImplicitBinds``
+#. The `Lexical Scoping Principle`_ outside of Template Haskell is made to hold with ``-XNoImplicitBinds``
 
    Indeed, the purpose of ``-XNoImplicitBinds`` is to be the single extension which is both necessary and sufficient to do this.
+   (The Template Haskell issue is something would be solved by more rigorous notations of hygiene. That has little to do with ``-XNoImplicitBinds`` as currently specified, and is much more work of a very different nature.) 
 
    The `Lexical Scoping Principle`_, part (a), is upheld.
    Binders occur in patterns, after ``forall``, in
    ``let`` declarations, and a few other discrete places in the AST -- and
    nowhere else. In particular, binders do not occur in pattern signatures.
 
-   The `Lexical Scoping Principle`_ part (a) is made to hold,
+   The `Lexical Scoping Principle`_ part (b) is made to hold,
    by describing pattern-signature binds as occurrences and making type applications in patterns unconditionally bring new variables into scope.
 
    This would not be the case with the treatment of in-scope variables as originally written in `#126`_,

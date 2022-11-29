@@ -31,10 +31,8 @@ This was a great start, but upon rereading the principles (in order to connect t
 
 I thus flipped their order ("explicit binding principle" first) and gave them the following roles (pithily summarized):
 
-#.
-**Explicit Binding Principle**: Every implicit binding form needs an explicit equivalent.
-#.
-**Lexical scoping principle**: Must be possible to turn off implicit binding forms so only the explicit ones remain.
+#. **Explicit Binding Principle**: Every implicit binding form needs an explicit equivalent.
+#. **Lexical scoping principle**: Must be possible to turn off implicit binding forms so only the explicit ones remain.
 
 I think this is much simpler and easy to understand.
 
