@@ -437,8 +437,10 @@ By contrast, the implementation errors in this case.
 
 Not-yet-accepted amendment `#291`_ says that type variables scope just like term variables: they can be shadowed.
 Accordingly, ``f (Just @a x) = ...`` would always, unconditionally bind a new type variable ``a``, possibly shadowing any in-scope type variable ``a``.
-This design supports the `Visibility Orthogonality Principle`_, which states that the presence of an ``@`` should affect only whether a thing is visible or not, not other characteristics (like its shadowing and scoping behavior).
-Additionally, this choice edges us closer to the `Lexical Scoping Principle`_, because we no longer have to check whether ``a`` is in scope before identifying the ``a`` in ``f (Just @a x) = ...`` is a binding site or an occurrence.
+This design supports the `Visibility Orthogonality Principle`_,
+which states that the presence of an ``@`` should affect only whether a thing is visible or not, not other characteristics (like its shadowing and scoping behavior).
+Additionally, this choice edges us closer to the `Lexical Scoping Principle`_,
+because we no longer have to check whether ``a`` is in scope before identifying the ``a`` in ``f (Just @a x) = ...`` is a binding site or an occurrence.
 
 The other change in this restatement is the use of new extension ``-XTypeAbstractions`` instead of the current status of piggy-backing on the combination of ``-XTypeApplications`` and ``-XScopedTypeVariables`` (*both* need to be enabled today).
 This proposal suggests instead that ``-XScopedTypeVariables`` implies ``-XTypeAbstractions`` so that we remain backward-compatible with what is current implemented
