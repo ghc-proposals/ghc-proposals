@@ -276,6 +276,12 @@ This last point becomes even more poignant if we consider the possibility of mix
 \(a) from `#448`_;
 \(b) from `#378`_.
 
+Here is one more recent historical historical example:
+Prior to `#425`_, if we had ``type T1 = 'Nothing :: Maybe a``,
+the ``a`` was an occurence if ``a`` is already in scope,
+and was implicity bound otherwise.
+But since `#425`_ it is never implicitly bound.
+
 Contiguous Scoping Principle (CSP)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
