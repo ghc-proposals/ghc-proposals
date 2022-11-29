@@ -248,16 +248,16 @@ this latter principle makes those explicit alternatives *compulsory*, because we
 
 The `Lexical Scoping Principle`_ is almost true today, with the following nuances:
 
-#. Template Haskell splices may need to be run before completing name resolution (and running those splices requires type-checking them).
+1. Template Haskell splices may need to be run before completing name resolution (and running those splices requires type-checking them).
 
-#. The `deprecated mechanism <https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/exts/duplicate_record_fields.html#selector-functions>`_ for disambiguating duplicate record fields violates the `Lexical Scoping Principle`_ by requiring the type system.
+2. The `deprecated mechanism <https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/exts/duplicate_record_fields.html#selector-functions>`_ for disambiguating duplicate record fields violates the `Lexical Scoping Principle`_ by requiring the type system.
 
-#. In a pattern signature,
+3. In a pattern signature,
    if we have ``f (x :: Maybe a)``,
    the ``a`` is an occurrence if ``a`` is already in scope,
    and is implicitly bound otherwise.
 
-#. In a type signature,
+4. In a type signature,
    if we have ``f :: a -> a``,
    the ``a`` is an occurrence if ``a`` is already in scope,
    and is implicitly bound otherwise.
