@@ -1,12 +1,12 @@
 Or Patterns
 ==============
 
-.. author:: David Knothe, Ömer Sinan Ağacan, Sebastian Graf 
-.. date-accepted::
+.. author:: David Knothe, Ömer Sinan Ağacan, Sebastian Graf
+.. date-accepted:: 2022-11-29
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/522>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/522>`_.
 .. sectnum::
 .. contents::
 
