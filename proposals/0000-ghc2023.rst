@@ -26,6 +26,7 @@ The ``GHC2023`` language extension set comprises of all language extensions
 that ``GHC2021`` comprises, plus the following
 
 * `ExplicitNamespaces`_
+* `GADTs`_ (and the implied `MonoLocalBinds`_)
 * `LambdaCase`_
 
 
@@ -81,6 +82,65 @@ recently, e.g. in `#281 <https://github.com/ghc-proposals/ghc-proposals/pull/281
 thus may not yet be as stable as we want them for ``GHC20xx``.
 
 
+Why add GADTs and MonoLocalBinds?
+---------------------------------
+
+``GHC2021`` includes both `GADTSyntax`_ and `ExistentialQuantification`_, but
+does not include `GADTs`_ or `MonoLocalBinds`_.  Moreover, the combination of
+``GADTSyntax`` and ``ExistentialQuantification`` is enough to define GADTs and
+pattern match on them (see `GHC issue #21102
+<https://gitlab.haskell.org/ghc/ghc/-/issues/21102>`_ for detailed discussion).
+
+GHC 9.4 and later permits pattern-matching on an imported GADT regardless of
+which extensions are enabled, but doing so will emit a warning from
+``-Wgadt-mono-local-binds`` if ``MonoLocalBinds`` is disabled.  This is
+consistent with the principle that extensions are required at definition sites
+but not use sites.  (GHC 9.2 and previous versions required ``GADTs`` or
+``TypeFamilies`` to be enabled in order to pattern match on a GADT.)
+
+Enabling ``MonoLocalBinds`` is considered necessary for robust type inference
+when pattern matching on GADTs (see section 4.2 of `OutsideIn(X): Modular type
+inference with local assumptions
+<https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/jfp-outsidein.pdf>`_).
+Moreover, writing type signatures for polymorphic local bindings generally makes
+it easier to understand the code.  However, the type signature requirement makes
+it more difficult to factor out repeated code into a ``where`` clause (e.g. see
+`GHC issue #19396 <https://gitlab.haskell.org/ghc/ghc/-/issues/19396>`_), and
+this can surprise users and cause backwards incompatibility.
+
+Since ``ExistentialQuantification`` allows defining types with contexts that
+include equality constraints, there is not really a principled distinction
+between ``ExistentialQuantification`` and ``GADTs``.  (While there is a
+syntactic distinction between GADT syntax and "traditional" datatype syntax,
+both forms are capable of expressing simple ADTs, existentially quantified
+types, and GADTs.)
+
+Possible ways to resolve this infelicity include:
+
+* Add ``GADTs`` and ``MonoLocalBinds`` to ``GHC2023``.  This makes it clear
+  that GADTs/existentials are a core part of the language, and makes the type
+  inference compromises necessary to accommodate them.  Migration advice for
+  ``GHC2023`` should make clear that type signatures may need to be added for
+  local bindings (or ``NoMonoLocalBinds`` specified explicitly).  Given that
+  ``MonoLocalBinds`` is a simpler design which can safely be extended with
+  ``GADTs``, it makes sense to have it be part of the base language; users can
+  then opt-in explicitly to ``NoMonoLocalBinds`` as an extension if required.
+
+* Add ``GADTs`` but not ``MonoLocalBinds``.  This is mostly consistent with
+  ``GHC2021``, but means that type inference for local bindings may not be
+  predictable when using GADTs.  Moreover, including an extension but not the
+  extensions it implies is itself confusing (as with
+  ``TypeOperators``/``ExplicitNamespaces`` in ``GHC2021``).
+
+* Remove ``ExistentialQuantification`` from ``GHC2023``.  This means
+  existentials/GADTs are clearly treated as an extension, albeit an extension
+  that makes type inference "worse". Users will need to understand the impact
+  of ``MonoLocalBinds`` only if they import a GADT or define one after enabling
+  ``GADTs`` explicitly. Migration advice for ``GHC2023`` should make clear that
+  users may need to enable ``GADTs`` explicitly (and possibly give type
+  signatures for local bindings or specify ``NoMonoLocalBinds``).
+
+
 Why add LambdaCase?
 -------------------
 
@@ -110,7 +170,10 @@ The actual changes to GHC to add a new language edition are small, and likely
 I (Joachim) can prepare a MR.
 
 .. _ExplicitNamespaces: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/explicit_namespaces.html#extension-ExplicitNamespaces
+.. _ExistentialQuantification: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/existential_quantification.html#extension-ExistentialQuantification
+.. _GADTs: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/gadt.html#extension-GADTs
+.. _GADTSyntax: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/gadt_syntax.html#extension-GADTSyntax
 .. _TypeOperators: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/type_operators.html#extension-TypeOperators
 .. _OverloadedStrings: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/overloaded_strings.html#extension-OverloadedStrings
 .. _LambdaCase: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/lambda_case.html#extension-LambdaCase
-
+.. _MonoLocalBinds: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/let_generalisation.html#extension-MonoLocalBinds
