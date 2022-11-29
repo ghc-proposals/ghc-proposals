@@ -10,7 +10,7 @@ Clean up and simplify the treatment of implicit binding
 .. sectnum::
 .. contents::
 
-I believe #448 landed with some ill-advised decisions, and I wish to correct them.
+I believe `#448`_ landed with some ill-advised decisions, and I wish to correct them.
 
 
 Motivation
@@ -24,7 +24,7 @@ Principles
 Philosophical reason for change
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A positive (to me) thing I appreciated near the end of the #448 review process was that @gridaphobe agreed with my assessment that some of the principles were insufficiently distinct.
+A positive (to me) thing I appreciated near the end of the `#448`_ review process was that @gridaphobe agreed with my assessment that some of the principles were insufficiently distinct.
 We were thus able to reach an agreement with @goldfirere to axe the "local lexical scoping principle", and fold it in to the "lexical scoping principle".
 
 This was a great start, but upon rereading the principles (in order to connect the amended proposals to them), I realized that the "lexical scoping principle" an "explicit binding principle" still felt too close, and awkwardly dividing the labor between them.
@@ -39,9 +39,9 @@ I think this is much simpler and easy to understand.
 Practical reason for change
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A main change to Proposal #448, as described below, is combining mechanisms to disable implicit-binding.
-The idea of having multiple mechanism dates back to #285 (also by me).
-Originally I *did* propose in #285 a single language extension knob, but then it was requested that that knob be split into two, and so I changed it.
+A main change to Proposal `#448`_, as described below, is combining mechanisms to disable implicit-binding.
+The idea of having multiple mechanism dates back to `#285`_ (also by me).
+Originally I *did* propose in `#285`_ a single language extension knob, but then it was requested that that knob be split into two, and so I changed it.
 
 I am undoing that here, something which was explicitly requested by the committee, and so I want to be sure I get the reasoning right (and am not being merely contrarian).
 
@@ -55,22 +55,22 @@ They don't all (yet!) have an explicit alternative, but they should, and tentati
 This leaves the **Lexical scoping principle**, and then we have a *single* knob to bring us into compliance with a *single* feature.
 The principles and design are once again back in sync!
 
-Proposal #425
-~~~~~~~~~~~~~
+Proposal `#425`_
+~~~~~~~~~~~~~~~~
 
 I just updated to refer to principles.
 Most of this proposal ended up being about clarifying very nuanced issues with type families and data families, as that was where the complexity lies.
 But the "easy parts" for just explicitness and syntactic uniformity are very much part of the 448 story and thus relate to the same principles.
 
-Proposal #448
-~~~~~~~~~~~~~
+Proposal `#448`_
+~~~~~~~~~~~~~~~~
 
 A single unified ``-XImplicitBinds``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Originally this is how #285 was.
+Originally this is how `#285`_ was.
 Then someone convinced me pattern signature binding and implicit foralls are quite different.
-More recently, we realized some of the #285 examples were not covered by *either* extension.
+More recently, we realized some of the `#285`_ examples were not covered by *either* extension.
 Too bad! Because those examples are of things people wanting the other restricted behavior would also want.
 
 One solution was to make a *third* `-XNo` relating to binds, to pick up the missing things.
@@ -100,23 +100,29 @@ We want the student to be *unable* to write them, and we want the compiler to *n
 Single namespace syntactic uniformity
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-#270 has a very nice story about making single name-space code not fork-like by accepting fewer programs.
+`#270`_ has a very nice story about making single name-space code not fork-like by accepting fewer programs.
 ``-Werror=pattern-signature-binds`` either breaks the "non fork-like" condition, or breaks the "single namespace" condition.
 Either is not acceptable.
 
 This relates to the education case in that both are about being able to hide what "might have been" under other config settings.
 
-Proposal #523
-~~~~~~~~~~~~~
+Proposal `#523`_
+~~~~~~~~~~~~~~~~
 
-This unmerged proposal is referenced in #448 (in PR form, with no implication that it is eventually accepted).
+This unmerged proposal is referenced in `#448`_ (in PR form, with no implication that it is eventually accepted).
 The reason for this I think is worth elaborating on.
 
 I think the reason we got into the confusing situations we have so far is because pattern signature binds are not obviously "syntactic sugar", in that there is no simple non-type-directed desugaring of what they do.
 I am steadfast that any such "weird" feature is "sugar in waiting" --- we simply need to create the much simpler primitives until it is sugar, but others are more "wait and see" and "by the book", and therefore don't want to ascribe to something the negative connotations of syntactic sugar until it is manifestly clear that it in fact is syntactic sugar.
 
-#523 fixes this, by hinting at (it is not fully specified yet) the ``let type var = _ in`` syntax that can be used instead of pattern signature binds.
+`#523`_ fixes this, by hinting at (it is not fully specified yet) the ``let type var = _ in`` syntax that can be used instead of pattern signature binds.
 The desugaring is simple, not type directed, and only rename-directed in that we need to know what variables are as-of-yet not explicitly bound.
 
 I don't call pattern signature binding "sugar" in the revised text, but I do call it "implicit', because any syntax that could be either a use or a binding based on the context (of in-scope variables) I define as "implicit".
-For those not comfortable with this yet, I suggest we hurry up and accept #523 so that it is also unambiguously "implicit" and "sugar" by having the explicit ``let type var = _ in`` syntax it can be desugared to.
+For those not comfortable with this yet, I suggest we hurry up and accept `#523`_ so that it is also unambiguously "implicit" and "sugar" by having the explicit ``let type var = _ in`` syntax it can be desugared to.
+
+.. _`#270`: https://github.com/ghc-proposals/ghc-proposals/pull/270
+.. _`#285`: proposals/0285-no-implicit-binds.rst
+.. _`#425`: proposals/0425-decl-invis-binders.rst
+.. _`#448`: proposals/0448-type-variable-scoping.rst
+.. _`#523`: https://github.com/ghc-proposals/ghc-proposals/pull/523
