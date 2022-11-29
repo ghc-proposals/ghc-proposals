@@ -241,7 +241,9 @@ data Point = Point
     }
 ```
 
-We could also use the modifiers syntax.
+We could also use the modifiers syntax, when that is implemented.
+At that point, the pragma syntax could be deprecated and marked for deletion.
+Since pragmas are comments, GHC could reasonably provide a good warning message with a migration path, even after the pragma parsing/using code was deleted.
 
 ## 1.7 Unresolved Questions
 
