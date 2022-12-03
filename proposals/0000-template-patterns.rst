@@ -138,7 +138,7 @@ The change proposed here is that a **template pattern** matches any expression (
 	A template pattern is an expression of form ``f x y z`` where:
 
 	- ``f`` is a template variable
-	- ``x``,``y``,``z`` are locally bound in the template (like ``y`` in rule "wombat" above).
+	- ``x``, ``y``, ``z`` are locally bound in the template (like ``y`` in rule "wombat" above).
 
 	They are specifically not template variables, nor are they free in the entire rule.
 
