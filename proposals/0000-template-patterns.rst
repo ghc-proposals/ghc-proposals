@@ -1,5 +1,5 @@
 Template Patterns in Rewrite Rules
-===
+=================================
 
 .. author:: Jaro Reinders
 .. date-accepted:: 
@@ -17,14 +17,14 @@ Unfortunately, rewrite rules which contain local variable bindings, for example 
 This proposal extends rewrite rules with a lightweight form of higher order matching to make rewrite rules involving local variable bindings much more powerful.
 
 Motivation
----
+----------
 
 There are two practical problems that motivat this change.
 The first is a wart in the current fusion mechanism in base which is exemplified by the ``mapFB`` function.
 The second is a major roadblock to the adoption of stream fusion, namely optimising the ``concatMap`` function. 
 
 Removing the mapFB wart
-~~~
+~~~~~~~~~~~~~~~~~~~~~~~
 
 The most immediate motivation is the removal of warts in the foldr/build fusion mechanism.
 
@@ -86,7 +86,7 @@ Under this proposal the rule will match and recover the original program:
 	foo xs = map (\x -> x * 2 + x) xs
 
 Optimising the concatMap function under stream fusion
-~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Another source of motivation for this proposal is the optimisation of the ``concatMap`` function under stream fusion.
 
@@ -104,7 +104,8 @@ This could potentially make stream fusion general enough to replace foldr/build 
 
 
 Proposed Change Specification
----
+-----------------------------
+
 This proposal only changes the semantics of rewrite rules. No new syntax is introduced.
 
 Let us start with some terminology of rewrite rules.
@@ -155,7 +156,7 @@ The change proposed here is that a **template pattern** matches any expression (
 	Notice that this substitution is type preserving, and the RHS of the substitution has no free local binders.
 
 Uniqueness of matching
-~~~
+~~~~~~~~~~~~~~~~~~~~~~
 
 Consider this rule and target:
 
@@ -244,7 +245,7 @@ Examples
 		foo (\x y -> (bar x . baz) 2 y)
 
 Effect and Interactions
----
+-----------------------
 
 The main effect of this proposal is that rewrite rules involving template patterns now match more expressions.
 But the additional matches are guaranteed to be beta equivalent, so this change does not cause existing rules to become semantically incorrect.
@@ -262,7 +263,7 @@ However, we do not expect that this occurs in practice.
 
 
 Costs and Drawbacks
----
+-------------------
 
 1. The changes required for this proposal are small (the core of the change is an addition of just 22 lines of code).
 	Small changes can add up, but we think the benefits far outweigh this cost in this case.
@@ -272,7 +273,7 @@ Costs and Drawbacks
 	We do not expect this to happen in practice.
 
 Alternatives
----
+------------
 
 Roughly in order of cheap to expensive alternatives:
 
@@ -336,7 +337,7 @@ Unresolved Questions
 	Suggestions are welcome.
 
 Implementation Plan
----
+-------------------
 
 The proposed changes have already been implemented in `#9343 <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/9343>`_.
 Only tests still need to be written.
