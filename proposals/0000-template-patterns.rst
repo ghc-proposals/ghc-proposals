@@ -292,6 +292,17 @@ Roughly in order of cheap to expensive alternatives:
 	We have not chosen this syntax because it is less explicit about which locally bound variables are allowed to occur in which template variables.
 
 4. 	Implement more powerful higher order matching, for example as proposed by De Moor and Sittampalam in `"Higher-order matching for program transformation" <https://www.sciencedirect.com/science/article/pii/S0304397500004023>`_.
+	
+	They show an example of higher order matching that is not covered by this proposal, namely the template ``forall f x. f x``.
+	Here they apply one template variable ``f`` to another template variable ``x``.
+	This often leads to ambiguity.
+	For example if we match that template against the term 0 we can get many possible substitutions: ::
+
+		[f :-> \a -> a, x :-> 0]
+		[f :-> \a -> 0]
+		[f :-> \g -> g 0, x :-> \a -> a]
+		[f :-> \g -> g (g 0), x :-> \a -> a]
+	
 	We expect that this alternative would require much more significant changes to the rule matcher in GHC.
 
 
