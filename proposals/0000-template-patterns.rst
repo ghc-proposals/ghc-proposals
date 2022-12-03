@@ -39,8 +39,8 @@ As a refresher, here is a snippet of ``Note [The rules for map]`` which explains
 	thing back into plain map.
 
 These are the rules in question:
-
 ::
+
 	{-# RULES
 	"map"       [~1] forall f xs.   map f xs                = build (\c n -> foldr (mapFB c f) n xs)
 	"mapList"   [1]  forall f.      foldr (mapFB (:) f) []  = map f
@@ -49,16 +49,16 @@ These are the rules in question:
 	#-}
 
 where
-
 ::
+
 	mapFB c f = \x ys -> c (f x) ys
 
 The ``mapFB`` helper function is necessary to avoid the limitations of lambdas in rewrite rules.
 But unfortunately `issue #22361 <https://gitlab.haskell.org/ghc/ghc/-/issues/22361>`_ shows that the presence of ``mapFB`` can inhibit optimisations.
 
 Ideally, we would like to write the rules where ``mapFB`` is inlined as follows:
-
 ::
+
 	{-# RULES
 	"map"     [~1] forall f xs. map f xs                     = build (\c n -> foldr (\x ys -> c (f x) ys) n xs)
 	"mapList" [1]  forall f.    foldr (\x ys -> f x : ys) [] = map f
@@ -68,21 +68,21 @@ Note how the two ``mapFB`` rules are now unnecessary, because the simplifier can
 
 The reason why the rules are not implemented like this is that it is unlikely to match anything in practice.
 For example take the program:
-
 ::
+
 	foo xs = map (\x -> x * 2 + x) xs
 
 Before phase 1, the program is transformed into:
-
 ::
+
 	foo xs = foldr (\x ys -> x * 2 + x : ys) [] xs
 
 In phase 1, when we try to match the "mapList" rule to this function all parts match except for ``f x`` which should match ``x * 2 + x``.
 The current rule matcher will only match ``f x`` literally to a application of some function ``f`` to the locally bound variable ``x``.
 The expression ``x * 2 + x`` is not literally an application, so the rule does not match.
 Under this proposal the rule will match and recover the original program:
-
 ::
+
 	foo xs = map (\x -> x * 2 + x) xs
 
 Optimising the concatMap function under stream fusion
@@ -92,8 +92,8 @@ Another source of motivation for this proposal is the optimisation of the ``conc
 
 This problem has plagued stream fusion for a very long time (see e.g. `discussion on issue #915 <https://gitlab.haskell.org/ghc/ghc/-/issues/915#note_26104>`_).
 Duncan Coutts proposed using the following rewrite rule in `"Stream Fusion: Practical shortcut fusion for coinductive sequence types" (Section 4.8.3) <https://ora.ox.ac.uk/objects/uuid:b4971f57-2b94-4fdf-a5c0-98d6935a44da/download_file?file_format=pdf&hyrax_fileset_id=m8450e05775b1a9a35267c4e58184492e&safe_filename=Thesis%2BPDF%2C%2Bstandard%2Blayout&type_of_work=Thesis>`_:
-
 ::
+
 	"concatMap"   forall next f.   concatMap (\x -> Stream next (f x)) = concatMap' next f
 
 Currently, this rule only matches if the target contains a literal application of some function ``f`` to the local variable ``x``.
@@ -110,8 +110,8 @@ This proposal only changes the semantics of rewrite rules. No new syntax is intr
 
 Let us start with some terminology of rewrite rules.
 Consider the rule:
-
 ::
+
 	{-# RULES "wombat"  forall f x.  foo x (\y. f y) = bar x f  #-}
 
 * *Template*.
@@ -159,15 +159,15 @@ Uniqueness of matching
 ~~~~~~~~~~~~~~~~~~~~~~
 
 Consider this rule and target:
-
 ::
+
 	RULE "funny"   foo (\x y. Just (f x y))
 
 	Target:  ...(foo (\ p q. Just (h (p+1) q)))....
 
 Then during matching we will encounter:
-
 ::
+
 	Template:    f x y
 	Target:      h (p+1) q      [p:->x, q:->y]
 
@@ -188,60 +188,60 @@ Examples
 --------
 
 * One of the simplest examples is this rule:
-	
 	::
+
 		{-# RULES "foo" forall f. foo (\x -> f x) = "RULE FIRED" #-}
 	
 	It would match expressions like:
-	
 	::
+
 		foo (\x -> x * 2 + x)
 
 * The template pattern may involve multiple locally bound variables, e.g.:
-	
 	::
+
 		{-# RULES "foo" forall f. foo (\x y z -> f x y z) = "RULE FIRED" #-}
 
 	Which would match:
-	
 	::
+
 		foo (\x y z -> x * y + z)
 	
 	But not every variable has to occur in the match. It would also match this expression where ``y`` does not occur:
-
 	::
+
 		foo (\x y z -> x * 2 + z)
 
 * Locally bound variables may only occur once.
 	Consider the following rule:
-
 	::
+
 		{-# RULES "foo" forall f. foo (\x -> f x x) = "RULE FIRED" #-}
 
 	This would **not** match:
-
 	::
+
 		foo (\x -> x * 2 + x)
 	
 	But it does contain the valid subrule ``f x``, so it would match:
-	
 	::
+
 		foo (\x -> (bar x . baz) x)
 
 * Similarly if the template variable ``f`` is applied to non-variable arguments then it only matches a literal application.
 	Consider this rule:
-	
 	::
+
 		{-# RULES "foo" forall f. foo (\x y -> f x 2 y) = "RULE FIRED" #-}
 	
 	This would **not** match:
-	
 	::
+
 		foo (\x y -> x * 2 + y)`
 	
 	But again it does contain the template pattern ``f x``, so it would match:
-	
 	::
+
 		foo (\x y -> (bar x . baz) 2 y)
 
 Effect and Interactions
@@ -251,8 +251,8 @@ The main effect of this proposal is that rewrite rules involving template patter
 But the additional matches are guaranteed to be beta equivalent, so this change does not cause existing rules to become semantically incorrect.
 
 The only contentious interactions could occur due to rules that now overlap under the new rules, for example:
-
 ::
+
 	{-# RULES
 	"foo->bar"  forall f x.  foo x (\y. f y) = bar x f
 	"foo->baz"  forall   x.  foo x (\y. y * 2 + y) = baz x
@@ -285,8 +285,8 @@ Roughly in order of cheap to expensive alternatives:
 
 3. Use lambda binders instead of applications to figure out the scope of local variables automatically.
 	For example the "mapList" rule could look like this:
-
 	::
+
 		"mapList" [1]  forall f.    foldr (\x ys -> f : ys) [] = map (\x -> f)
 	
 	Where the the rule matcher would recognise that the ``\x ->`` binders on the left and the right is the same.
@@ -302,8 +302,8 @@ Unresolved Questions
 
 1. What to do with polymorphic template variables?
 	Consider the code:
-	
 	::
+
 		foo :: (forall a. [a] -> Int) -> Int
 		foo len = len [1,2,3] + len "abc"
 		{-# NOINLINE foo #-}
@@ -312,19 +312,19 @@ Unresolved Questions
 	
 	Here, the template variable ``f`` has a polymorphic type.
 	With explicit type abstractions and applications the rule looks like this:
-	
 	::
+
 		{-# RULES "foo" forall (f :: forall a. [a] -> Int). foo (/\a. \(xs::[a]) -> 1 + f @a xs) = 2 + foo f #-}  
 	
 	The proposal could be change such that this rule would match the expression:
-	
 	::
+
 		foo (/\b. \(ys::[b]). 1 + (reverse @b (take @b 3 ys)))
 	
 
 	However, if we change the type of the template variable ``f`` to ``forall a. a -> Int``, then the rule with explicit type abstractions and applications looks like this:
-	
 	::
+		
 		{-# RULES "foo" forall (f :: forall a. a -> Int). foo (/\a. \(xs::[a]) -> 1 + f @[a] xs) = 2 + foo f #-}  
 	
 	(Note: we assume deep subsumption here for simplicity of presentation)
