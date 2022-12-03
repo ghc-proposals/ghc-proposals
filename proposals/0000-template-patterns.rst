@@ -150,7 +150,7 @@ The change proposed here is that a **template pattern** matches any expression (
 	- The target has the same type as the template
 	- no local binder is free in ``e``, other than ``x``, ``y``, ``z``.
 
-*	 If these two condition hold, the template pattern ``f x y z`` matches the target expression ``e``, yielding the substitution ``[f :-> \x y z. e]``.
+*	If these two condition hold, the template pattern ``f x y z`` matches the target expression ``e``, yielding the substitution ``[f :-> \x y z. e]``.
 	Notice that this substitution is type preserving, and the RHS of the substitution has no free local binders.
 
 Uniqueness of matching
