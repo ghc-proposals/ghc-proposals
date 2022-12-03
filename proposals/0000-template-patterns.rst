@@ -101,8 +101,6 @@ This proposal would allow matching the above rule to more complicated targets li
 
 This could potentially make stream fusion general enough to replace foldr/build fusion in base.
 
-
-
 Proposed Change Specification
 -----------------------------
 
@@ -114,19 +112,19 @@ Consider the rule:
 
 	{-# RULES "wombat"  forall f x.  foo x (\y. f y) = bar x f  #-}
 
-* *Template*.
+* 	*Template*.
 	The LHS of a rule is called its *template*.
-* *Template variables*.
+* 	*Template variables*.
 	The ``forall``'d variables are called the *template variables*.
 	In rule "wombat", ``f`` and ``x`` are template variables.
-* *Local binders*.
+* 	*Local binders*.
 	The *local binders* of a rule are the variables bound inside the template.
 	Example: ``y`` is a local binder of rule "wombat".
-* *Target*.
+* 	*Target*.
 	The rule matcher matches the LHS of the rule (the template) against an expression in the program (the *target*).
-* *Substitution*.
+* 	*Substitution*.
 	A sucessful match finds a *substitution* S: a binding for each template variable, such that applying S to the LHS yields the target.
-* After a successful match we replace the target expression with the substitution S applied to the RHS of the rule.
+* 	After a successful match we replace the target expression with the substitution S applied to the RHS of the rule.
 
 
 In GHC today, a template variable ``v`` matches any expression ``e`` if
@@ -136,23 +134,23 @@ In GHC today, a template variable ``v`` matches any expression ``e`` if
 
 The change proposed here is that a **template pattern** matches any expression (of the same type):
 
-* *template pattern*.
+* 	*template pattern*.
 	A template pattern is an expression of form ``f x y z`` where:
 
-	* ``f`` is a template variable
-	* ``x``,``y``,``z`` are locally bound in the template (like ``y`` in rule "wombat" above).
+	- ``f`` is a template variable
+	- ``x``,``y``,``z`` are locally bound in the template (like ``y`` in rule "wombat" above).
 
 	They are specifically not template variables, nor are they free in the entire rule.
 
-	* The arguments ``x``, ``y``, ``z`` are *distinct* variables
-	* ``x``, ``y``, ``z`` must be term variables (not type applications).
+	- The arguments ``x``, ``y``, ``z`` are *distinct* variables
+	- ``x``, ``y``, ``z`` must be term variables (not type applications).
 
-* A template pattern ``f x y z`` matches *any expression* ``e`` provided:
+* 	A template pattern ``f x y z`` matches *any expression* ``e`` provided:
 
-	* The target has the same type as the template
-	* no local binder is free in ``e``, other than ``x``, ``y``, ``z``.
+	- The target has the same type as the template
+	- no local binder is free in ``e``, other than ``x``, ``y``, ``z``.
 
-* If these two condition hold, the template pattern ``f x y z`` matches the target expression ``e``, yielding the substitution ``[f :-> \x y z. e]``.
+*	 If these two condition hold, the template pattern ``f x y z`` matches the target expression ``e``, yielding the substitution ``[f :-> \x y z. e]``.
 	Notice that this substitution is type preserving, and the RHS of the substitution has no free local binders.
 
 Uniqueness of matching
@@ -175,8 +173,8 @@ The renaming ``[p:->x, q:->y]`` is done by the matcher (today) on the fly, to ma
 
 Now, we can:
 
-  * Either use the new template-application rule to succeed with ``[f :-> \x y. h (x+1) y]``.
-  * Or use the existing decompose-application rule to match ``(f x)`` against ``(h (p+1))`` and ``y`` against ``q``.  This will succeed, with ``[f :-> \x. h (x+1)]``.
+* Either use the new template-application rule to succeed with ``[f :-> \x y. h (x+1) y]``.
+* Or use the existing decompose-application rule to match ``(f x)`` against ``(h (p+1))`` and ``y`` against ``q``.  This will succeed, with ``[f :-> \x. h (x+1)]``.
 
 Critically, *it doesn't matter which we do*.
 We get the same result either way.
@@ -187,7 +185,7 @@ More generally, we think that if a match exists it is unique (moudulo eta-reduct
 Examples
 --------
 
-* One of the simplest examples is this rule:
+* 	One of the simplest examples is this rule:
 	::
 
 		{-# RULES "foo" forall f. foo (\x -> f x) = "RULE FIRED" #-}
@@ -197,7 +195,7 @@ Examples
 
 		foo (\x -> x * 2 + x)
 
-* The template pattern may involve multiple locally bound variables, e.g.:
+* 	The template pattern may involve multiple locally bound variables, e.g.:
 	::
 
 		{-# RULES "foo" forall f. foo (\x y z -> f x y z) = "RULE FIRED" #-}
@@ -212,7 +210,7 @@ Examples
 
 		foo (\x y z -> x * 2 + z)
 
-* Locally bound variables may only occur once.
+* 	Locally bound variables may only occur once.
 	Consider the following rule:
 	::
 
@@ -228,7 +226,7 @@ Examples
 
 		foo (\x -> (bar x . baz) x)
 
-* Similarly if the template variable ``f`` is applied to non-variable arguments then it only matches a literal application.
+* 	Similarly if the template variable ``f`` is applied to non-variable arguments then it only matches a literal application.
 	Consider this rule:
 	::
 
@@ -265,10 +263,10 @@ However, we do not expect that this occurs in practice.
 Costs and Drawbacks
 -------------------
 
-1. The changes required for this proposal are small (the core of the change is an addition of just 22 lines of code).
+1. 	The changes required for this proposal are small (the core of the change is an addition of just 22 lines of code).
 	Small changes can add up, but we think the benefits far outweigh this cost in this case.
 
-2. This proposal causes a silent change of behaviour of existing code.
+2. 	This proposal causes a silent change of behaviour of existing code.
 	It is possible to come up with an artificial system of rewrite rules that produces suboptimal results due to this change.
 	We do not expect this to happen in practice.
 
@@ -277,13 +275,13 @@ Alternatives
 
 Roughly in order of cheap to expensive alternatives:
 
-1. Do nothing.
+1. 	Do nothing.
 
-2. Introduce explicit syntax for template patterns.
+2. 	Introduce explicit syntax for template patterns.
 	This requires modifying the parser and bikeshedding over syntax, but it may make the rules completely backwards compatible and the intent of the programmer is clearer to the compiler so the compiler can give better error messages and warnings.
 	We have chosen against this alternative, because we do not think any existing rewrite rules depend critically on the previous behaviour and we expect error messages and warnings can still be written for the most common mistakes with a bit more effort.
 
-3. Use lambda binders instead of applications to figure out the scope of local variables automatically.
+3. 	Use lambda binders instead of applications to figure out the scope of local variables automatically.
 	For example the "mapList" rule could look like this:
 	::
 
@@ -293,14 +291,14 @@ Roughly in order of cheap to expensive alternatives:
 	From this we could deduce that the variables ``x`` should be allowed to occur in ``f``.
 	We have not chosen this syntax because it is less explicit about which locally bound variables are allowed to occur in which template variables.
 
-4. Implement more powerful higher order matching, for example as proposed by De Moor and Sittampalam in ["Higher-order matching for program transformation"](https://www.sciencedirect.com/science/article/pii/S0304397500004023).
+4. 	Implement more powerful higher order matching, for example as proposed by De Moor and Sittampalam in `"Higher-order matching for program transformation" <https://www.sciencedirect.com/science/article/pii/S0304397500004023>`_.
 	We expect that this alternative would require much more significant changes to the rule matcher in GHC.
 
 
 Unresolved Questions
 --------------------
 
-1. What to do with polymorphic template variables?
+1. 	What to do with polymorphic template variables?
 	Consider the code:
 	::
 
@@ -324,7 +322,7 @@ Unresolved Questions
 
 	However, if we change the type of the template variable ``f`` to ``forall a. a -> Int``, then the rule with explicit type abstractions and applications looks like this:
 	::
-		
+
 		{-# RULES "foo" forall (f :: forall a. a -> Int). foo (/\a. \(xs::[a]) -> 1 + f @[a] xs) = 2 + foo f #-}  
 	
 	(Note: we assume deep subsumption here for simplicity of presentation)
@@ -333,7 +331,7 @@ Unresolved Questions
 
 	This seems fragile and we do not know of any practical programs that requires polymorphic template variables in template patterns.
 
-2. The name "template pattern" is still up for debate.
+2. 	The name "template pattern" is still up for debate.
 	Suggestions are welcome.
 
 Implementation Plan
