@@ -74,7 +74,8 @@ Proposed Change Specification
 
 #. Wildcards are allowed in the right-hand side of local synonyms. At usage sites of the
    synonym, the synonym is expanded. It is an error if that location does not allow wildcards.
-   The wildcard is understood to stand for just one type shared among all the expansions.
+   The wildcard is understood to stand for just one type shared among all the expansions,
+   and the type it is unified with must be in scope at the location the synonym is defined.
 
 Effects
 ~~~~~~~
@@ -93,6 +94,15 @@ Effects
 #. Note that this proposal does *not* allow for top-level lower-case type synonyms. There
    is nothing stopping us from doing so, but it would seem to violate expectations of Haskellers
    and would be the first instance of a lower-case type variable being in scope at the top level.
+
+Example
+~~~~~~~
+
+The following program is rejected because the wildcard synonym requires being unified with
+a type that is not yet in scope::
+
+  id :: forall a. a -> a
+  id = let type b = _ in \ @a x -> ((x :: b) :: a)
 
 ``let`` in types
 ----------------
