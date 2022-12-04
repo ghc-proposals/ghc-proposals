@@ -16,7 +16,7 @@ namespace-qualified imports.
 These changes should help the users write pun-free code to take advantage of
 *Syntactic Unification Principle* described in #378.
 
-The warnings introduced in this proposal are merely indended to add support
+The warnings introduced in this proposal are merely intended to add support
 and help programmers enforce a pun-free style of programming in their Haskell
 projects if they so desire. It does not claim that one style of programming
 is strictly better than the other and acceptance or rejection of this proposal
