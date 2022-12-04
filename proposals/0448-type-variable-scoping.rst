@@ -303,11 +303,14 @@ However, there is one exception to the unification of namespaces: lower case var
 
 Should the ``t`` in each ``x :: t`` cause implicit ``forall t.`` and ``let t = _ in`` to be synthesized or not?
 
-With ``-XNoImplicitBinds``, we know it will not, and thus can refer to the ``t`` defined above, once such a reference is possible (left to another proposal).
+Without ``-XImplicitBinds`` we have no choice but do the implicit desugaring that violates the unified namespace abstraction.
+Concretely, in both ``x :: t`` above, the ``t`` would have to not refer to the top-level ``t = Int`` but to a fresh implicit binding, as has historically been the case.
+Otherwise we would be changing the meaning of valid programs based on the presence of mere warnings (``-Wpuns`` and ``-Wpattern-binds``), which is not allowed.
+This works, but isn't very satisfactory to users who, never having thought of "type versus term namespaces", are suddenly confronted with this distinction when the try to use ``t``.
+``-Wpattern-binds`` should at least cache this so it is not a silent "gotcha", but it is still surprising.
 
-Without ``-XImplicitBinds`` we have no choice but do the implicit desugaring that violates the unified namespace abstraction
---- otherwise we would be *forklike* in the sense that rather than giving new meaning to previously invalid programs, we would be *changing* the meaning of previously *valid* programs.
-Put another way, ``-XImplicitBinds`` and any ``-XUnifiedNamespace`` must be mutually exclusive, so we need a way for Haskell programmers to opt out of ``-XImplicitBinds`` first.
+With ``-XNoImplicitBinds``, however, we know no implicit bindings will be synthesized, and thus can refer to the ``t`` defined above (with the semantics of this usage given in `281#_`).
+There is no gotcha, and the pun-free users can stay blissfully ignorant of type vs term variable namespacing.
 
 Proposed Change Specification
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -452,6 +455,37 @@ Alternatives
    This would allow more conservative defaults --- we must have Haskell98 implicit foralls but not the others which are all guarded behind language extensions today.
 
    However, @Ericson2314 sensed there is a weariness with too many extensions coming from this, and so didn't do it.
+
+Costs and Drawbacks
+~~~~~~~~~~~~~~~~~~~
+
+Unified Namespacing and extension monotonicity
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Unified namespacing was touted as a beneficiary of ``-XNoImplicitBinds`` above.
+But on the other hand, `270#`_ and `281#_`, the latter of which is accepted and partially implemented, adopt a model where variables in types resolving to variables defined in the term namespace as a fallback unconditionally.
+This is indeed backwards compatible, however it breaks the property of ``-XImplicitBinds`` being strictly *non-forklike* in allowing only more programs, not changing the meaning of existing programs.
+
+To wit, if ::
+
+  t = Int
+  x :: t -- out of scope, no type variable `t` in scope.
+  x = 0
+
+is an invalid program, we can *either* give make it valid by saying the second ``t`` is a use or implicit bind, but we cannot do *both*.
+Assuming either interpretation, switching the other is a reinterpretation of an already invalid program.
+
+One way to reconcile this is to say ``-Wpuns`` must in fact be an extension ``-XNoPuns``, and that ``-XPuns`` and ``-XImplicitBinds`` are mutually exclusive.
+This removes the "both extensions" case from the extension configuration partial order, and restore monotonicity.
+
+But I don't think this is a good idea.
+Punning is rather more controversial than expected, and it was very polite of the anti-punning / Dependent Haskell caucus to restrict themselves to a mere warning.
+There is precedent for extensions like ``-XScopedTypeVariables`` changing the meaning meaning of previously-valid programs,
+and ``-XImplicitBinds`` could just do so in much the same.
+The "type variable usage resolving to term variable binding" use-case is very new so no existing programs would be impacted.
+
+`281#_` also contains ``-Wterm-variable-capture``, which is the subset of ``-Wpun-bindings`` that just refers to *implicit* binding, and we could imagine turning it on more default (e.g. with ``-Wcompat`` as stepping stone).
+That would prepare us for a world where implicit binding only happens when a variable is unbound in both namespaces, and in that world ``-XImplicitBinds`` is one again monotonic.
 
 Type arguments in constructor patterns
 --------------------------------------
