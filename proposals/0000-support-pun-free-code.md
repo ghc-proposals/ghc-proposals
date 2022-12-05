@@ -14,7 +14,7 @@ This proposal introduces `-Wpuns` and `-Wpun-bindings` and introduces
 namespace-qualified imports.
 
 These changes should help the users write pun-free code to take advantage of
-*Syntactic Unification Principle* described in #378.
+*Syntactic Unification Principle* described in [#378](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0378-dependent-type-design.rst).
 
 The warnings introduced in this proposal are merely intended to add support
 and help programmers enforce a pun-free style of programming in their Haskell
@@ -22,11 +22,15 @@ projects if they so desire. It does not claim that one style of programming
 is strictly better than the other and acceptance or rejection of this proposal
 should not mean that one style is preferred over the other by GHC.
 
-## Motivation
+## 1 Motivation
 
-### Background
+### 1.1 Background
 
-#### Punning
+Before we move on to laying out the problem statement there are 3 concepts
+that the reader is adviced to be familiar with: Punning, Syntactic
+Unification Principle and Lexical Scoping Principle.
+
+#### 1.1.1 Punning
 
 Haskell has two namespaces: one for types (the type namespace), and one for
 terms (the data namespace).
@@ -72,7 +76,7 @@ r = Const :& RNil
 Note that we had to qualify both the list syntax and the `T` data constructor
 with a tick.
 
-#### Syntactic Unification Principle (from #378)
+#### 1.1.2 Syntactic Unification Principle (from [#378](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0378-dependent-type-design.rst))
 
 In the absence of punning, there is no difference between type-syntax and
 term-syntax.
@@ -80,17 +84,18 @@ term-syntax.
 Syntactic Unification Principle implies that if the user is not using punning
 they can simply forget about the distinction between terms and types.
 
-#### Lexical Scoping Principle (from #378)
+#### 1.1.3 Lexical Scoping Principle (from [#378](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0378-dependent-type-design.rst))
 
 For every occurrence of an identifier, it is possible to uniquely identify its
 binding site, without involving the type system.
 
-### Problem Statement
+### 1.2 Problem Statement
 
-As we step towards Dependent Haskell (with #378 acceptance), the distinction
-between types and terms becomes blurrier and blurrier and the need arises to
-use terms and types interchangeably. Indeed, we can begin to see this need in
-#281, which introduces "visible `forall`" syntax that lets us write functions
+As we step towards Dependent Haskell (with [#378](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0378-dependent-type-design.rst)
+acceptance), the distinction between types and terms becomes blurrier and
+blurrier and the need arises to use terms and types interchangeably. Indeed,
+we can begin to see this need in [#281](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0281-visible-forall.rst),
+which introduces "visible `forall`" syntax that lets us write functions
 like this:
 
 ```haskell
@@ -113,7 +118,7 @@ We can't use the type of `sizeOf` to determine which `T` to use because of
 #281 tackles this issue by defaulting `T` to a data constructor in this case
 (to keep compatibility with existing code) and introduces `type` syntactic marker.
 
-However, thanks to *Syntactic Unification Principle* (adhered by #281), if
+However, thanks to *Syntactic Unification Principle* (adhered by [#281](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0281-visible-forall.rst)), if
 the user chooses to not use punning, there is no need to use this syntactic
 marker, resulting in less context-dependent and syntax cluttered code.
 
@@ -127,16 +132,16 @@ Unfortunately, GHC has no good support for such style of programming:
   Consider this import statement: `import Data.Proxy`. It is impossible to
   distinguish between `Proxy` the type and `Proxy` the data constructor.
 
-#### Beginner confusion
+#### 1.2.1 Beginner confusion
 
 Even without Dependent Haskell an argument can be made for pun-free code:
 punning can be a source of confusion for beginners. The difference between
 the terms namespace and the types namespace can be hard to understand at first,
 especially when things like `()` or `[a]` are used ([as seen in this StackOverflow question](https://stackoverflow.com/questions/16892570/what-is-in-haskell-exactly)).
 
-### Solution Overview
+### 1.3 Solution Overview
 
-#### Namespace qualified imports
+#### 1.3.1 Namespace qualified imports
 
 To help programmers deal with the external code that uses punning we propose
 to introduce namespace qualified import syntax, guarded behind
@@ -148,7 +153,7 @@ import Data.Proxy type qualified as T   -- import only the type namespace
 import Data.Proxy data qualified as D   -- import only the data namespace
 ```
 
-#### Punning usage warnings
+#### 1.3.2 Punning usage warnings
 
 We also propose to introduce two new warnings to GHC: `-Wpuns` and
 `-Wpun-bindings`.
@@ -174,7 +179,7 @@ f :: forall a. a -> a -- no warning, because with a single unified namespace 'fo
 
 There are more detailed examples in Examples section.
 
-## Proposed Change Specification
+## 2 Proposed Change Specification
 
 * To disambiguate the namespaces of identifiers from modules that use punning,
   the `-XExplicitNamespaces` extension is extended with new syntax:
@@ -213,9 +218,9 @@ There are more detailed examples in Examples section.
     * Three releases after this proposal is implemented add
       `-Wpattern-namespace-qualified` warning to `-Wall`.
 
-## Examples
+## 3 Examples
 
-### Namespace-Qualified Imports
+### 3.1 Namespace-Qualified Imports
 
 ```haskell
 import Data.Proxy type as T
@@ -227,14 +232,14 @@ f :: T
 f = D.Proxy
 ```
 
-### Punnning Warnings
+### 3.2 Punnning Warnings
 
 Recall that `-Wpun-bindings` is triggered at definition sites that use punning,
 and `-Wpuns` is triggered at use sites. To see what qualifies as punning, we
 will look at the code that works today and analyze the breakage that would
 occur if Haskell had a single unified namespace.
 
-#### `-Wpuns`, example #1
+#### 3.2.1 `-Wpuns`, example #1
 
 ```haskell
 module A where { data A = T }
@@ -260,7 +265,7 @@ import A
 import B
 ```
 
-#### `-Wpuns`, example #2
+#### 3.2.2 `-Wpuns`, example #2
 
 ```haskell
 a = 15
@@ -281,7 +286,7 @@ f :: forall a. a -> a
 
 Does not use punning because if Haskell had a single unified namespace, explicitly bound type variable `a` would shadow the top-level `a`.
 
-#### `-Wpuns`, example #3
+#### 3.2.3 `-Wpuns`, example #3
 
 ```haskell
 {-# LANGUAGE ScopedTypeVariabels #-}
@@ -300,7 +305,7 @@ last case, however, currently, the `a` would refer to the type variable, but if
 Haskell had a single namespace it would refer to the term-level variable. Thus the
 warning is triggered.
 
-#### `-Wpuns`, example #4
+#### 3.2.4 `-Wpuns`, example #4
 
 ```haskell
 f :: [] a -- warning
@@ -315,7 +320,7 @@ very last one will emit `-Wpuns` warning because in all of them it is not clear
 whether the data constructor or a type constructor is being referred to, except
 in the very last case.
 
-#### `-Wpuns`, example #5
+#### 3.2.5 `-Wpuns`, example #5
 
 ```haskell
 f :: ()      -- warning
@@ -333,7 +338,7 @@ Note that for both lists and tuples if `-XListTupleTypeSyntax` is disabled,
 the type constructors will not be in scope anymore and no warnings will be
 emitted.
 
-#### `-Wpun-bindings`, example #1
+#### 3.2.6 `-Wpun-bindings`, example #1
 
 (This example uses [GHC Proposal #155](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0155-type-lambda.rst)).
 
@@ -361,7 +366,7 @@ f :: t -> ()
 f @a = \a -> ()
 ```
 
-#### `-Wpun-bindings`, example #2
+#### 3.2.7 `-Wpun-bindings`, example #2
 
 ```haskell
 data T = T
@@ -370,7 +375,7 @@ data T = T
 If Haskell had a single unified namespace, type constructor `T` and data
 constructor `T` would conflict, thus this should trigger the warning.
 
-#### `-Wpun-bindings`, example #3
+#### 3.2.8 `-Wpun-bindings`, example #3
 
 ```haskell
 data T = MkT
@@ -380,7 +385,7 @@ data B = T | F
 Even though type constructor `T` and data constructor `T` are defined in
 different declarations, they would still cause a conflict, same as example #2.
 
-#### `-Wpun-bindings`, example #4
+#### 3.2.9 `-Wpun-bindings`, example #4
 
 ```haskell
 data J = Bool
@@ -395,18 +400,18 @@ import Prelude (Bool)
 data Bool -- no conflict
 ```
 
-## Effect and Interactions
+## 4 Effect and Interactions
 
 * Users will be able to make sure their code is pun-free as well as have all
   the necessary tools to interact with the code that does use punning (for
   example, with libraries)
 
-## Costs and Drawbacks
+## 5 Costs and Drawbacks
 
 * This proposal introduces new syntax (namespace-qualified imports), however
   it should be easy to discover by searching for the keyword.
 
-## Alternatives
+## 6 Alternatives
 
 * We could use `value`, `pattern`, or any other keyword instead of `data` to
   denote the data namespace.
@@ -437,11 +442,11 @@ data Bool -- no conflict
   However it is significantly less convenient: you can't import all the things
   at once without manually listing every single one of them.
 
-## Unresolved Questions
+## 7 Unresolved Questions
 
 None
 
-## Implementation Plan
+## 8 Implementation Plan
 
 I (Artyom Kuznetsov) will implement the change.
 
