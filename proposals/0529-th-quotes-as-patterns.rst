@@ -140,7 +140,7 @@ With the new extension ``TemplateHaskellQuotesAsPatterns``, slightly modified qu
 The first difference is that quotes as pattern match raw syntax, not (monadic) actions producing syntax.
 The tying rules are as follows:
 
-- ``[| ... |] or [e| ... |]``, where "..." is an expression, is a pattern that matches ``Exp``
+- ``[| ... |]`` or ``[e| ... |]``, where "..." is an expression, is a pattern that matches ``Exp``
 - ``[p| ... |]``, where "..." is a pattern, is a pattern that matches ``Pat``
 - ``[t| ... |]``, where "..." is a type, is a pattern that matches ``Type``
 - ``[d| ... |]``, where "..." is a top-level declaration, is a pattern that matches ``Dec``
@@ -154,16 +154,17 @@ The second difference is that splices within these quotes contain patterns inste
 The third and final difference is that names in quotes must all be uses, never bindings.
 
 Optional: Fine-grained Quotation constraints
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. _`Proposal 246`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0246-overloaded-bracket.rst
+.. _`Proposal #246`: ./0246-overloaded-bracket.rst
 
-*This is optional but fits well with the rest.*
+*This is optional, but fits well with the rest.*
 
-`Proposal 246`_ made it so that quotes are polymorphic, e.g. ``[| 1 + 1 |] :: Quote m => m Exp``.
+`Proposal #246`_ made it so that quotes are polymorphic, e.g. ``[| 1 + 1 |] :: Quote m => m Exp``.
 The ``Quote`` class has a ``newName`` method, and is just used when binding local variables.
-Relax the rules so that TH Quotes only impose a ``Quote`` constraint when ``newName`` is in fact needed.
 
+Relax the rules so that TH Quotes only impose a ``Quote`` constraint when ``newName`` is in fact needed.
+[This was a `alaternative that was rejected <./0246-overloaded-bracket.rst#alternatives>` of Proposal #246, but now we have additional movation for it (as detailed in "Effectas and Interactions") below.]
 
 Examples
 --------
@@ -196,7 +197,11 @@ Effect and Interactions
 -----------------------
 
 The banned binding constructs are precisely those which would need ``newName`` in expression position.
-Through this, the optional propoposed relaxation of the expression position rules is supposed to make those restrictions more familiar to the programmer.
+
+Optional Proposed Change: Fine-grained Quotation constraints
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The optional proposed relaxation of the expression position rules is supposed to make these pattern-position restrictions more familiar to the programmer.
 Specifically, by distinguishing the same subset of quotes in two ways (they're the only ones allowed in pattern position, they get a more general type in expresssion position), we give programmers two different ways to learn the difference between them and quotes in general.
 
 Costs and Drawbacks
@@ -349,9 +354,9 @@ Implementation Plan
 I lack the time capacity to implement these changes all by myself, and would submit this to the Haskell Foundation to fund as part of whatever https://discourse.haskell.org/t/pre-hftt-ongoing-focus-on-migration-tools/4626 becomes.
 
 That said, I would be happy to pair / code review / etc. with whoever does end up working on it.
-I likewise have been pitching in while @tek is leading the charge on `Proposal 285`_, and that process has felt very good to me.
+I likewise have been pitching in while @tek is leading the charge on `Proposal #285`_, and that process has felt very good to me.
 
-.. _`Proposal 285`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0246-overloaded-bracket.rst
+.. _`Proposal #285`: ./0285-no-implicit-binds.rst
 
 Endorsements
 -------------
