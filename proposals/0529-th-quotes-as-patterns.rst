@@ -164,10 +164,15 @@ Optional: Fine-grained Quotation constraints
 The ``Quote`` class has a ``newName`` method, and is just used when binding local variables.
 
 Relax the rules so that TH Quotes only impose a ``Quote`` constraint when ``newName`` is in fact needed.
+Otherwise, merely impose a ``Monad`` constraint.
+
 [This was a `alaternative that was rejected <./0246-overloaded-bracket.rst#alternatives>` of Proposal #246, but now we have additional movation for it (as detailed in "Effectas and Interactions") below.]
 
 Examples
 --------
+
+Quotes as Patterns
+~~~~~~~~~~~~~~~~~~
 
 #. This is allowed::
 
@@ -193,6 +198,15 @@ Examples
 
    It is disallowed because the first ``x`` in the quote is a binding not a use.
 
+Optional: Fine-grained Quotation constraints
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+#. ``[| 1 + 1 |]`` would have type ``Monad m => m Exp`` instead of ``Quote m => m Exp``.
+
+#. ``[| \x -> x |]`` however would continue to have type ``Quote m => m Expr``.
+
+(Note, we could relax ``Monad`` to ``Applicative`` at an any point, but ``Monad`` is the current superclas of ``Quote``.)
+
 Effect and Interactions
 -----------------------
 
@@ -203,6 +217,10 @@ Optional Proposed Change: Fine-grained Quotation constraints
 
 The optional proposed relaxation of the expression position rules is supposed to make these pattern-position restrictions more familiar to the programmer.
 Specifically, by distinguishing the same subset of quotes in two ways (they're the only ones allowed in pattern position, they get a more general type in expresssion position), we give programmers two different ways to learn the difference between them and quotes in general.
+
+If we go with the alternative of supporting local variables, however, this extra motivation dries up.
+The cases where ``newName`` is needed in expression position will not no longer correspond to anything obvious in pattern position in this alternative.
+The originally motivation from `Proposal #246`_ of more flexible typing for flexibility's sake still stands, however.
 
 Costs and Drawbacks
 -------------------
