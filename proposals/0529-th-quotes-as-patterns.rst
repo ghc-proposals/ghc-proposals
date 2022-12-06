@@ -287,6 +287,8 @@ Optional: Fine-grained Quotation constraints
 Effect and Interactions
 -----------------------
 
+``TemplateHaskell`` will not imply ``TemplateHaskellQuotesAsPatterns``, though it does imply ``TemplateHaskellQuotes``.
+
 The banned binding constructs are precisely those which would need ``newName`` in expression position.
 
 Optional Proposed Change: Fine-grained Quotation constraints
