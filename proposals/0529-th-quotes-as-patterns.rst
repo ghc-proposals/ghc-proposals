@@ -457,6 +457,20 @@ A goo ways to figure out what is needed could be trying to convert existing in-d
 
 The goal is for the TH AST to increasingly be a historical artifact, or debugging aid, that doesn't unlock any additional expressive power.
 
+Typed Template Haskell
+~~~~~~~~~~~~~~~~~~~~~~
+
+This could also work for typed template haskell expressions.
+For example, in::
+
+  f :: Code m alpha -> delta
+  f [|| $$(x) $$(y) ||] = ... :: delta
+
+``x`` would be bound as ``x :: Code m (beta -> alpha)``, and
+``y`` would be bound as ``y :: Code m beta``.
+
+This doesn't seem too hard, but is left as future work.
+
 Implementation Plan
 -------------------
 
