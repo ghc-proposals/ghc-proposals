@@ -319,13 +319,13 @@ For example::
 
   [| a + $(x) |]
 
-could match any ``t Exp`` where ``t`` is an bind ``x :: t Expr`` with this desugaring::
+could match any ``t Exp`` where ``t`` is ``Traversable`` and bind ``x :: t Expr`` with this desugaring::
 
   f [| a + $(x) |] = ...
 
   =>
 
-  f (Just x <- traverse __inner) = ...
+  f (traverse __inner -> Just x) = ...
 
   __inner (AppE (VarE __a) x) | __a == 'a = Just x
   __inner _                               = Nothing
