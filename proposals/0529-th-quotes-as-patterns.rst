@@ -147,9 +147,10 @@ The tying rules are as follows:
 
 The second difference is that splices within these quotes contain patterns instead of expressions::
 
-  p is in <pat>
-  --------------------------------
-  [| ... $(p) ... |] is in <apat>
+  <pat> ::= ...
+
+  <apat> ::= [| ... $(p) ... |]
+          |  ...
 
 The third and final difference is that names in quotes must all be uses, never bindings.
 
