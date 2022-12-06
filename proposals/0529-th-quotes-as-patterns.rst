@@ -143,7 +143,7 @@ The tying rules are as follows:
 - ``[| ... |]`` or ``[e| ... |]``, where "..." is an expression, is a pattern that matches ``Exp``
 - ``[p| ... |]``, where "..." is a pattern, is a pattern that matches ``Pat``
 - ``[t| ... |]``, where "..." is a type, is a pattern that matches ``Type``
-- ``[d| ... |]``, where "..." is a top-level declaration, is a pattern that matches ``Dec``
+- ``[d| ... |]``, where "..." is a top-level declaration, is a pattern that matches a ``List Dec`` with a single item.
 
 The second difference is that splices within these quotes contain patterns instead of expressions::
 
@@ -173,6 +173,9 @@ Examples
 
 Quotes as Patterns
 ~~~~~~~~~~~~~~~~~~
+
+Quotes of expressions as patterns
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 #. This is allowed::
 
@@ -226,6 +229,51 @@ Quotes as Patterns
    ?
 
    Those would *not* be equivalent because the syntax being matched is different, even though both syntaxes have the same semantics.
+
+Quotes of types as patterns
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+#. This is allowed::
+
+     f [t| $(x) -> $(y) |] = ...
+
+     =>
+
+     f (AppT x y) = ...
+
+#. This is not allowed::
+
+     f [t| forall x. x |] = ...
+
+   It is disallowed because the first ``x`` in the quote is a binding not a use.
+
+Quotes of patterns as patterns
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+#. This is allowed::
+
+     f [p| !$(x) |] = ...
+
+     =>
+
+     f (BangP x) = ...
+
+Quotes of declarations as patterns
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+#. This is allowed::
+
+     f [d| _ = $(x) |] = ...
+
+     =>
+
+     f [ValD WildP (NormalB x) []] = ...
+
+#. This is not allowed::
+
+     f [d| _ = $(x); _ = $(y) |] = ...
+
+   because matching on lists of multiple declarations is left as future work.
 
 Optional: Fine-grained Quotation constraints
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
