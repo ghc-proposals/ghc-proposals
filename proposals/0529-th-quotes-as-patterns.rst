@@ -198,6 +198,35 @@ Quotes as Patterns
 
    It is disallowed because the first ``x`` in the quote is a binding not a use.
 
+#. This is allowed::
+
+     isLambda [| \$(_) -> $(_) |] = True
+     isLambda _                   = False
+
+   `isLambda` returns `True` for any single parameter lambda.
+
+#. This is allowed::
+
+     isLambda [| \_ -> $(_) |] = True`
+     isLambda _                = False
+
+   `isLambda` returns `True` for any lambda with a single `_` parameter.
+   Not the same!
+
+#. Question: is::
+
+     isLambdaLambda [| \$(_) -> \$(_) -> $(_) |] = True
+     isLambdaLambda _                            = False
+
+   equivalent to::
+
+     isLambdaLambda [| \$(_) $(_) -> $(_) |] = True
+     isLambdaLambda _                        = False
+
+   ?
+
+   Those would *not* be equivalent because the syntax being matched is different, even though both syntaxes have the same semantics.
+
 Optional: Fine-grained Quotation constraints
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
