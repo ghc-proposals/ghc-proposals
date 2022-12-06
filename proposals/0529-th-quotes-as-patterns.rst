@@ -354,7 +354,7 @@ This gets especially interesting with multiple scopes::
           , Just (LamE [VarP __x2] (VarE __x3))
           ])
     | nameBase __x0 == "x" && __x0 == __x1
-    | nameBase __x0 == "x" && __x2 == __x3
+    | nameBase __x2 == "x" && __x2 == __x3
     = ...
 
 Note how ``__x0`` is related to ``__x1`` and  ``__x2`` likewise to ``__x3``, but the former two are *not* related to the latter two.
@@ -364,7 +364,18 @@ This is perhaps convenient, but it rather baroque.
 It is also unclear whether the ``nameBase _ == "x"`` is useful in practice, or whether it is better to just "bake in" alpha equivalence and not care whether the local variable is an "x" or not provided the usage lines up with the binding.
 
 Finally, the non-linear patterns trick is not a true dual because it merely checks whether the variables "ended up" being the same *once the action is run*, rather than pattern matching on the action *itself*.
-De Bruijn indices encode actions in a way that makes equality of the easily decidable, for example, and thus would be a less hacky solution.
+For example, De Bruijn indices encode actions in a way that makes equality between the actions *themselves*, rather than their results, easily decidable.
+This would be a less hacky solution.
+
+Note that without this alternative, we still don't have to full back completely on not using our new feature for this use-case.
+The second example we can write as::
+
+  f [| (\$(VarP x0) -> $(VarE x1), \$(VarP x2) -> $(VarE x3)) |]
+    | nameBase x0 == "x" && x0 == x1
+    | nameBase x2 == "x" && x2 == x3
+    = ...
+
+which, while not as terse, is still an improvement.
 
 ---------
 
