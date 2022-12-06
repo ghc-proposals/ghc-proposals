@@ -140,6 +140,7 @@ With the new extension ``TemplateHaskellQuotesAsPatterns``, slightly modified qu
 The first difference is that quotes as pattern match raw syntax, not (monadic) actions producing syntax.
 The tying rules are as follows:
 
+- ``'...`` or ``''...``,. where "..." is a name, is a pattern that matches ``Name``
 - ``[| ... |]`` or ``[e| ... |]``, where "..." is an expression, is a pattern that matches ``Exp``
 - ``[p| ... |]``, where "..." is a pattern, is a pattern that matches ``Pat``
 - ``[t| ... |]``, where "..." is a type, is a pattern that matches ``Type``
@@ -153,6 +154,14 @@ The second difference is that splices within these quotes contain patterns inste
           |  ...
 
 The third and final difference is that names in quotes must all be uses, never bindings.
+The semantics of matching a name, either standalone, or inside a larger quote, is name equality.
+This is formalized on the deguaring of a case alternative below::
+
+  ''name -> ...
+
+  =>
+
+  __internalName | __internalName == ''name -> ...
 
 Optional: Fine-grained Quotation constraints
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -174,6 +183,17 @@ Examples
 
 Quotes as Patterns
 ~~~~~~~~~~~~~~~~~~
+
+Quotes of names as patterns
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+#. This is allowed::
+
+     f ''foo = ...
+
+     =>
+
+     f __secret | __secret == ''foo = ...
 
 Quotes of expressions as patterns
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -269,6 +289,14 @@ Quotes of declarations as patterns
      =>
 
      f [ValD WildP (NormalB x) []] = ...
+
+#. This is allowed::
+
+     f [d| instance $(t) |] = ...
+
+     =>
+
+     f [InstanceD Nothing [] t []] = ...
 
 #. This is not allowed::
 
