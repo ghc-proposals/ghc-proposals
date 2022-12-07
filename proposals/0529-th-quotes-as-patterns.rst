@@ -22,7 +22,7 @@ Motivation
 ----------
 
 As is well known, the Template Haskell AST is inherently unstable.
-Changes that are backwards compatible in surface Haskell nonetheless compatibility issues with the TH AST.
+Changes that are backwards compatible in surface Haskell nonetheless cause compatibility issues with the TH AST.
 
 Here is a `recent change <https://github.com/reflex-frp/reflex/pull/472/files#diff-2c01379db9dd160bd3f212e3ce06c34bdeee89c19e08f41fdc94f7e66cca5aa8>`_ I made to support GHC 9.2 in a library illustrating the problem:
 
