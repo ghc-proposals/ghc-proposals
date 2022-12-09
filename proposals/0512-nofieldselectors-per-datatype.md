@@ -71,6 +71,10 @@ Another motivation is consistency.
 The `OverlappingInstances` pragma is used to allow *all* instances in a module to be overlapping or overlappable.
 But this is too coarse grained - you usually want to specify a *single* instance as `{-# OVERLAPPABLE #-}` directly in the instance body.
 
+Another motivation: today it's generally considered Bad Practice to use record syntax for the constructors of datatypes with alternatives, because this generates partial field accessors.
+With NoFieldSelectors, we can avoid this, but at the cost of turning off field selector generation for the entire module, which we might not want.
+Being able to control field selector generation on a per-datatype level lets you use this trick while keeping other "normal" records the same.
+
 ## 1.2 Proposed Change Specification
 
 Introduce an annotation `{-# NoFieldSelectors #-}` that can appear on a datatype, a constructor, or a field.
