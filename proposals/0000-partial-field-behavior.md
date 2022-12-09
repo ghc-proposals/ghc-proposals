@@ -159,6 +159,19 @@ main = do
 ```
 
 This should give an error stating that `fromSome` is a partial field, and cannot be used for field access.
+This can take the form of a `TypeError` instance for `HasField`:
+
+```haskell
+instance 
+    TypeError 
+        ( Text "The field 'fromSome' is partial, and was not generated because of 
+        :<>: Text "NoPartialFieldSelectors."
+        )
+  =>
+    HasField "fromSome" (OptionRec a) a
+  where
+    getField _ = error "impossible"
+```
 
 #### Record Construction + Pattern Matching
 
@@ -168,7 +181,13 @@ Record  construction continues to work as usual, since these are completely safe
 main = do
     run (Some { fromSome = 2 })
 
+run (Some { fromSome = val }) = 
+    print val
+
 run (Some { fromSome }) = 
+    print fromSome
+
+run (Some { .. }) = 
     print fromSome
 ```
 
@@ -229,9 +248,27 @@ instance HasField "eventId" Message (Maybe EventId) where
 #### Record Update??
 
 It's unclear how this extension would interact with record update.
-The safest thing is to simply ban it, as in `NoPartialRecordField`, but this may not be an implication that the end user actually wants.
+The status quo is to throw an exception:
 
-This suggests a separate extension, `NoPartialRecordUpdate`, that would ban partial selectors from record update.
+```haskell
+>>> data T = A { x :: Int } | B { y :: Int }
+>>> deriving instance Show T
+>>> (A 3) { y = 2 }
+*** Exception: Non-exhaustive patterns in record update
+```
+
+With `-Wincomplete-record-updates` (part of `-Wall`), this issues a warning:
+
+```haskell
+λ> (A 3) { y = 2 }
+
+interactive:10:1: warning: [-Wincomplete-record-updates]
+    Pattern match(es) are non-exhaustive
+    In a record-update construct: Patterns of type ‘T’ not matched: A 3
+*** Exception: interactive:10:1-15: Non-exhaustive patterns in record update
+```
+
+The conservative choice would be to continue with the status quo for the purposes of this proposal, and require a separate proposal for altering the safety of partial fields in record update.
 
 #### Record Construction + Pattern Matching
 
@@ -241,7 +278,7 @@ Field labels would retain their original type.
 ### Per Type and Per Field
 
 The [proposal to enable `NoFieldSelectors` on a per-type and per-field basis](https://github.com/ghc-proposals/ghc-proposals/pull/512), while not currently accepted, seems to be positively received by the community.
-In the spirit of anticipating obvious extensions, these extensions should *also* be applicable on a per-datatype and per-field basis, instead of only on the per-moduel basis.
+In the spirit of anticipating obvious extensions, these extensions should *also* be applicable on a per-datatype and per-field basis, instead of only on the per-module basis.
 
 ## Examples
 
@@ -253,10 +290,25 @@ This proposal can introduce potentially tricky behavior with the partial field w
 Were this proposal implemented, [this PR about warning on partial field uses](https://github.com/ghc-proposals/ghc-proposals/pull/516) would need to take it into account.
 I suspect that a field can simply be marked `partial`, and if it is partial, then it is warned on (or turned into a `Maybe`, etc).
 
+A partial field generated with the `MaybeFieldSelectors` would silence the warning provided by `-Wpartial-fields` on the definition site:
+
+```
+λ> data T = A { x :: Int } | B { y :: Int } deriving stock Show
+
+<interactive>:19:14: warning: [-Wpartial-fields]
+    Use of partial record field selector: ‘x’
+
+<interactive>:19:31: warning: [-Wpartial-fields]
+    Use of partial record field selector: ‘y’
+```
+
+With #516's `-Wincomplete-field-selectors`, a warning will occur whenever a *partial* field is used.
+This proposal intends to turn partial fields into "safe" fields using `Maybe`.
+A datatype or field that is marked as a `MaybeFieldSelector` would not trigger a warning for solving `HasField sym rec (Maybe typ)` nor for using the field as an accessor function.
+
 ## Costs and Drawbacks
 
 - I'm unfamiliar with how difficult this might be to implement.
-- The inability to safely do this is a common roadblock for new Haskell developers. Adding this feature would reduce the amount of surprise and training required when designing datatypes.
 - I'm sure there are others!
 
 ## Alternatives
@@ -294,9 +346,6 @@ However, that simply *warns* about the bad behavior, while this proposal allows 
 
 ## Unresolved Questions
 
-- How should `MaybePartialFields` interact with record update?
-- Unknown unknowns I guess
-
 ## Implementation Plan
 
 (Optional) If accepted who will implement the change? Which other resources
@@ -310,4 +359,3 @@ It is not mandatory for have any endorsements at all, but the more substantial
 the proposal is, the more desirable it is to offer evidence that there is
 significant demand from the community.  This section is one way to provide
 such evidence.
-
