@@ -156,7 +156,7 @@ Examples
 
 1. Instead of ::
 
-     f :: forall a b. (c ~ Very Big Type a b) => c -> c -> c
+     f :: forall a b c. (c ~ Very Big Type a b) => c -> c -> c
 
    we can write ::
 
