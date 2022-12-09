@@ -178,6 +178,9 @@ Effects
 Effect and Interactions
 -----------------------
 
+.. _`Explicit Binding Principle`: ../principles.rst#explicit-binding-principle
+.. _`Syntactic Unification Principle`: ../principles.rst#syntactic-unification-principle
+
 1. The `Syntactic Unification Principle`_ is supported. The new ``let`` syntax in types is a strict subset
    of its syntax in terms, and the semantics are compatible. Note that allowing ``let`` in types brings
    us closer to getting this principle.
