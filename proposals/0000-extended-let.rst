@@ -201,7 +201,7 @@ Effect and Interactions
    While this second version is more verbose, it makes the binding site of ``a`` explicit, the
    linchpin of the `Explicit Binding Principle`_.
 
-#. The existing trick of using e.g. ``f :: forall a. (a ~ SomeBigType). ... a ... a ... a `` to
+#. The existing trick of using e.g. ``f :: forall a. (a ~ SomeBigType). ... a ... a ... a`` to
    bind a type variable can be retired (though it would still work just as well as it does today).
 
 Costs and Drawbacks
