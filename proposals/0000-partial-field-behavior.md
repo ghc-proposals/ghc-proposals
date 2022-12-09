@@ -118,12 +118,6 @@ I don't know about you, but I don't like being the only language in the table wi
 I propose we introduce a few new language extensions that allow us to customize the behavior of partial field selectors.
 The following are *options*, and are not intended to be a complete set that must remain unbroken.
 
-### `NoSumRecords`
-
-Following in the footsteps of OCaml and PureScript, we could simply ban record syntax in sum types with this extension.
-
-This seems relatively low value, but also relatively easy to implement.
-
 ### `NoPartialFieldSelectors` + `PartialFieldSelectors`
 
 `PartialFieldSelectors` is the current behavior of GHC.
