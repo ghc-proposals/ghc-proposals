@@ -120,7 +120,7 @@ None.
 Implementation Plan
 -------------------
 
-The patch is very small. I'll write it.
+The patch is very small.
 
 Endorsements
 -------------
