@@ -1,7 +1,7 @@
 Make Symbol a newtype over String
 =================================
 
-.. author:: Oleg Grenrus
+.. author:: Oleg Grenrus (with ammendments by Chris Dornan and Adam Gundry)
 .. date-accepted::
 .. ticket-url::
 .. implemented::
@@ -49,12 +49,18 @@ an ordinary ``newtype`` over ``String``, we would avoid this issue entirely.
 (Note: ``singletons-base`` demotes ``Symbol`` to ``Text`` which is
 incorrect, as ``Text`` cannot represent all ``String`` values)
 
+(Note: An API for working with Symbol at the term level is out of scope for this proposal,
+but may be the subject of a subsequent CLC proposal.)
+
 Proposed Change Specification
 -----------------------------
 
 * Change ``data Symbol`` to ``newtype Symbol = MkSymbol String``
 
-In particular, we don't propose any changes to ``GHC.TypeLits`` interface.
+The definition being changed lives in ``GHC.Types``, and thus accessing the newtype constructor
+requires importing ``ghc-prim``.
+
+We don't propose any changes to ``GHC.TypeLits`` interface.
 Firstly the implementation of ``Symbol`` stays internal.
 Also ``symbolVal`` will continue to return ``String`` value.
 In future the ``GHC.Symbol`` interface mirroring ``GHC.TypeLits`` functionlity
@@ -68,7 +74,9 @@ when ``Symbol`` definition is changed.
 Effect and Interactions
 -----------------------
 
-This change is completely backwards-compatible.
+This change is generally backwards-compatible, but:
+ * code might rely on ` ``Symbol`` being an empty datatype, e.g. via an empty case analysis on a ``Symbol`` value; or
+ * code might import ``GHC.Types`` and introduce a name collision on ``MkSymbol``.
 
 Costs and Drawbacks
 -------------------
