@@ -472,7 +472,7 @@ To wit, if ::
   x :: t -- out of scope, no type variable `t` in scope.
   x = 0
 
-is an invalid program, we can *either* give make it valid by saying the second ``t`` is a use or implicit bind, but we cannot do *both*.
+is an invalid program, we can *either* make it valid by saying the second ``t`` is a use or implicit bind, but we cannot do *both*.
 Assuming either interpretation, switching the other is a reinterpretation of an already invalid program.
 
 One way to reconcile this is to say ``-Wpuns`` must in fact be an extension ``-XNoPuns``, and that ``-XPuns`` and ``-XImplicitBinds`` are mutually exclusive.
