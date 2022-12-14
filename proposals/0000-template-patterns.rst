@@ -2,9 +2,9 @@ Template Patterns in Rewrite Rules
 =================================
 
 .. author:: Jaro Reinders
-.. date-accepted:: 
-.. ticket-url:: 
-.. implemented:: 
+.. date-accepted::
+.. ticket-url::
+.. implemented::
 .. highlight:: haskell
 .. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/555>`_.
 .. sectnum::
@@ -19,9 +19,9 @@ This proposal extends rewrite rules with a lightweight form of higher order matc
 Motivation
 ----------
 
-There are two practical problems that motivat this change.
+There are two practical problems that motivate this change.
 The first is a wart in the current fusion mechanism in base which is exemplified by the ``mapFB`` function.
-The second is a major roadblock to the adoption of stream fusion, namely optimising the ``concatMap`` function. 
+The second is a major roadblock to the adoption of stream fusion, namely optimising the ``concatMap`` function.
 
 Removing the mapFB wart
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -189,7 +189,7 @@ Examples
 	::
 
 		{-# RULES "foo" forall f. foo (\x -> f x) = "RULE FIRED" #-}
-	
+
 	It would match expressions like:
 	::
 
@@ -204,7 +204,7 @@ Examples
 	::
 
 		foo (\x y z -> x * y + z)
-	
+
 	But not every variable has to occur in the match. It would also match this expression where ``y`` does not occur:
 	::
 
@@ -220,7 +220,7 @@ Examples
 	::
 
 		foo (\x -> x * 2 + x)
-	
+
 	But it does contain the valid subrule ``f x``, so it would match:
 	::
 
@@ -231,12 +231,12 @@ Examples
 	::
 
 		{-# RULES "foo" forall f. foo (\x y -> f x 2 y) = "RULE FIRED" #-}
-	
+
 	This would **not** match:
 	::
 
 		foo (\x y -> x * 2 + y)`
-	
+
 	But again it does contain the template pattern ``f x``, so it would match:
 	::
 
@@ -286,13 +286,13 @@ Roughly in order of cheap to expensive alternatives:
 	::
 
 		"mapList" [1]  forall f.    foldr (\x ys -> f : ys) [] = map (\x -> f)
-	
+
 	Where the the rule matcher would recognise that the ``\x ->`` binders on the left and the right is the same.
 	From this we could deduce that the variables ``x`` should be allowed to occur in ``f``.
 	We have not chosen this syntax because it is less explicit about which locally bound variables are allowed to occur in which template variables.
 
 4. 	Implement more powerful higher order matching, for example as proposed by De Moor and Sittampalam in `"Higher-order matching for program transformation" <https://www.sciencedirect.com/science/article/pii/S0304397500004023>`_.
-	
+
 	They show an example of higher order matching that is not covered by this proposal, namely the template ``forall f x. f x``.
 	Here they apply one template variable ``f`` to another template variable ``x``.
 	This often leads to ambiguity.
@@ -302,7 +302,7 @@ Roughly in order of cheap to expensive alternatives:
 		[f :-> \a -> 0]
 		[f :-> \g -> g 0, x :-> \a -> a]
 		[f :-> \g -> g (g 0), x :-> \a -> a]
-	
+
 	We expect that this alternative would require much more significant changes to the rule matcher in GHC.
 
 
@@ -318,24 +318,24 @@ Unresolved Questions
 		{-# NOINLINE foo #-}
 
 		{-# RULES "foo" forall (f :: forall a. [a] -> Int). foo (\xs -> 1 + f xs) = 2 + foo f #-}
-	
+
 	Here, the template variable ``f`` has a polymorphic type.
 	With explicit type abstractions and applications the rule looks like this:
 	::
 
-		{-# RULES "foo" forall (f :: forall a. [a] -> Int). foo (/\a. \(xs::[a]) -> 1 + f @a xs) = 2 + foo f #-}  
-	
+		{-# RULES "foo" forall (f :: forall a. [a] -> Int). foo (/\a. \(xs::[a]) -> 1 + f @a xs) = 2 + foo f #-}
+
 	The proposal could be change such that this rule would match the expression:
 	::
 
 		foo (/\b. \(ys::[b]). 1 + (reverse @b (take @b 3 ys)))
-	
+
 
 	However, if we change the type of the template variable ``f`` to ``forall a. a -> Int``, then the rule with explicit type abstractions and applications looks like this:
 	::
 
-		{-# RULES "foo" forall (f :: forall a. a -> Int). foo (/\a. \(xs::[a]) -> 1 + f @[a] xs) = 2 + foo f #-}  
-	
+		{-# RULES "foo" forall (f :: forall a. a -> Int). foo (/\a. \(xs::[a]) -> 1 + f @[a] xs) = 2 + foo f #-}
+
 	(Note: we assume deep subsumption here for simplicity of presentation)
 
 	Now ``@[a]`` is no longer a plain locally bound variable, so this is no longer a template pattern.
