@@ -10,36 +10,57 @@ Template Patterns in Rewrite Rules
 .. sectnum::
 .. contents::
 
-User defined rewrite rules allow for powerful optimisations such as shortcut fusion.
+Overview
+-----------
 
-Unfortunately, rewrite rules which contain local variable bindings, for example in lambdas or case expressions, are not very useful because rewrite rules cannot match arbitrary expressions which contain occurrences of locally bound variables.
-
-This proposal extends rewrite rules with a lightweight form of higher order matching to make rewrite rules involving local variable bindings much more powerful.
+User defined rewrite rules allow for powerful optimisations such as
+shortcut fusion.  This proposal extends rewrite rules with a
+lightweight form of higher order matching to make rewrite rules
+involving local variable bindings much more powerful.  Doing so is very cheap: it is
+easy to explain and easy to implement.  But it unlocks powerful new expressiveness
+in rewrite rules.
 
 Motivation
 ----------
 
-There are two practical problems that motivate this change.
-The first is a wart in the current fusion mechanism in base which is exemplified by the ``mapFB`` function.
-The second is a major roadblock to the adoption of stream fusion, namely optimising the ``concatMap`` function.
+Having more powerful matching in rewrite rules is generally a Good Thing, especially
+if it is easy to specify and implement.  We illustrate by showing two problems
+that are solved by the change.
 
 Removing the mapFB wart
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-The most immediate motivation is the removal of warts in the foldr/build fusion mechanism.
+The rules for ``map`` in the ``base`` library are intended to:
 
-As a refresher, here is a snippet of ``Note [The rules for map]`` which explains how a part of foldr/build fusion works (remember phase numbers decrease towards zero which is the last phase):
+* fuse ``map`` with other list producers and/or consumers, and
+* yield a simple call to ``map`` in the cases where no fusion happens.
 
-	Up to (but not including) phase 1, we use the "map" rule to
-	rewrite all saturated applications of map with its build/fold
-	form, hoping for fusion to happen.
-
-	In phase 1 and 0, we switch off that rule, inline build, and
-	switch on the "mapList" rule, which rewrites the foldr/mapFB
-	thing back into plain map.
-
-These are the rules in question:
+Here is how you might hope to achieve this:
 ::
+
+	{-# RULES
+	"map"       [~1] forall f xs.   map f xs                = build (\c n -> foldr (\x ys -> c (f x) ys) n xs)
+	"mapList" [1]  forall f.    foldr (\x ys -> f x : ys) [] = map f
+	#-}
+
+Before (but not including) phase 1, rule "map" turns a call to ``map`` into a call to ``build`` and ``foldr``.
+Now suppose that nothing fuses with the ``build`` or ``foldr``.  Then, in the following phase 1,
+``build`` is inlined.  Recall::
+
+        build g = g (:) []
+
+So a call ``map f xs`` will now look like ``foldr (\x ys -> f x : ys) [] xs)``; and rule "mapList" can rewrite
+it back to ``map f xs``.  But alas this simply doesn't work in practice. Suppose we had::
+
+        map (\x -> x+1) xs
+
+Then we'd get the expression ``foldr (\x ys -> x+1 : ys) [] xs``, adn that doesn't syntactically match the pattern in ``mapList``.
+We need a more powerful matcher to find a suitable ``f`` when matching.
+
+Similarly, if we started with ``map p (map q xs)``, we would get fusion, and end up with ``foldr (\x ys -> p (q x) : ys) [] xs``, which again does not syntactically match the pattern.  Yet if only, when matching rule "matchList` the matcher could
+cough up the binding ``f :-> \x -> p (q x)]``, we could rewrite the ``foldr`` call to ``map (\x -> p (q x)) xs``, which is of course what we want.
+
+Since we do not have this more powerful matcher, what happens now in library ``base`` is a hack.  The actual rules are these::
 
 	{-# RULES
 	"map"       [~1] forall f xs.   map f xs                = build (\c n -> foldr (mapFB c f) n xs)
@@ -48,13 +69,15 @@ These are the rules in question:
 	"mapFB/id"  forall c.           mapFB c (\x -> x)       = c
 	#-}
 
-where
-::
+where::
 
 	mapFB c f = \x ys -> c (f x) ys
 
-The ``mapFB`` helper function is necessary to avoid the limitations of lambdas in rewrite rules.
-But unfortunately `issue #22361 <https://gitlab.haskell.org/ghc/ghc/-/issues/22361>`_ shows that the presence of ``mapFB`` can inhibit optimisations.
+Here the ``mapFB`` combinator abstracts the little pattern from ``map``, which means that ``mapList`` can spot it.
+But alas we need extra rules "mapFB` and "mapFB/id" to get map/map fusion to work.
+
+But the hack does not scale well.  For example `issue #22361 <https://gitlab.haskell.org/ghc/ghc/-/issues/22361>`_ shows an example of nested fusion that does not work well -- the ``mapFB`` itself gets in the way of fusion
+
 
 Ideally, we would like to write the rules where ``mapFB`` is inlined as follows:
 ::
@@ -66,32 +89,22 @@ Ideally, we would like to write the rules where ``mapFB`` is inlined as follows:
 
 Note how the two ``mapFB`` rules are now unnecessary, because the simplifier can now operate on the lambdas directly.
 
-The reason why the rules are not implemented like this is that it is unlikely to match anything in practice.
-For example take the program:
-::
-
-	foo xs = map (\x -> x * 2 + x) xs
-
-Before phase 1, the program is transformed into:
-::
-
-	foo xs = foldr (\x ys -> x * 2 + x : ys) [] xs
-
-In phase 1, when we try to match the "mapList" rule to this function all parts match except for ``f x`` which should match ``x * 2 + x``.
-The current rule matcher will only match ``f x`` literally to a application of some function ``f`` to the locally bound variable ``x``.
-The expression ``x * 2 + x`` is not literally an application, so the rule does not match.
-Under this proposal the rule will match and recover the original program:
-::
-
-	foo xs = map (\x -> x * 2 + x) xs
 
 Optimising the concatMap function under stream fusion
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Another source of motivation for this proposal is the optimisation of the ``concatMap`` function under stream fusion.
+Another source, even more powerful, motivation for this proposal is the optimisation of the ``concatMap`` function under stream fusion. This celebrated challenge has been an open problem for a very long time (see e.g. `this comment in GHC issue #915 <https://gitlab.haskell.org/ghc/ghc/-/issues/915#note_26104>`_).
+It's an important one too: in their paper `"The Hermit in the stream"` <https://dl.acm.org/doi/10.1145/2543728.2543736>`_, Farmer et al describe an entire plugin for GHC devoted to this one task.  Here's part of the abstract
 
-This problem has plagued stream fusion for a very long time (see e.g. `discussion on issue #915 <https://gitlab.haskell.org/ghc/ghc/-/issues/915#note_26104>`_).
-Duncan Coutts proposed using the following rewrite rule in `"Stream Fusion: Practical shortcut fusion for coinductive sequence types" (Section 4.8.3) <https://ora.ox.ac.uk/objects/uuid:b4971f57-2b94-4fdf-a5c0-98d6935a44da/download_file?file_format=pdf&hyrax_fileset_id=m8450e05775b1a9a35267c4e58184492e&safe_filename=Thesis%2BPDF%2C%2Bstandard%2Blayout&type_of_work=Thesis>`_:
+    Stream Fusion, a popular deforestation technique in the Haskell community, cannot fuse the concatMap combinator. This is a serious limitation, as concatMap represents computations on nested streams. The original implementation of Stream Fusion used the Glasgow Haskell Compiler's user-directed rewriting system. A transformation which allows the compiler to fuse many uses of concatMap has previously been proposed, but never implemented, because the host rewrite system was not expressive enough to implement the proposed transformation.
+    In this paper, we develop a custom optimization plugin which implements the proposed concatMap transformation, and study the effectiveness of the transformation in practice. We also provide a new translation scheme for list comprehensions which enables them to be optimized. Within this framework, we extend the transformation to monadic streams. Code featuring uses of concatMap experiences significant speedup when compiled with this optimization. This allows Stream Fusion to outperform its rival, foldr/build, on many list computations, and enables performance-sensitive code to be expressed at a higher level of abstraction.
+
+
+See also
+* The earlier paper `From lists to streams to nothing at all <https://dl.acm.org/doi/10.1145/1291151.1291199>`_
+* `GHC issue #915 <https://gitlab.haskell.org/ghc/ghc/-/issues/915>`_ 
+
+Thus motivated, Duncan Coutts proposed using the following rewrite rule in `"Stream Fusion: Practical shortcut fusion for coinductive sequence types" (Section 4.8.3) <https://ora.ox.ac.uk/objects/uuid:b4971f57-2b94-4fdf-a5c0-98d6935a44da/download_file?file_format=pdf&hyrax_fileset_id=m8450e05775b1a9a35267c4e58184492e&safe_filename=Thesis%2BPDF%2C%2Bstandard%2Blayout&type_of_work=Thesis>`_:
 ::
 
 	"concatMap"   forall next f.   concatMap (\x -> Stream next (f x)) = concatMap' next f
@@ -99,7 +112,10 @@ Duncan Coutts proposed using the following rewrite rule in `"Stream Fusion: Prac
 Currently, this rule only matches if the target contains a literal application of some function ``f`` to the local variable ``x``.
 This proposal would allow matching the above rule to more complicated targets like ``concatMap (\x. Stream next (x * 2 + x))`` producing ``concatMap' next (\x -> x * 2 + x)``.
 
-This could potentially make stream fusion general enough to replace foldr/build fusion in base.
+*By using more powerful matching, we solve the long-standing problem of fusing
+``concatMap`` under stream fusion.*  In turn, this could
+potentially make stream fusion general enough to replace foldr/build
+fusion in base.
 
 Proposed Change Specification
 -----------------------------
