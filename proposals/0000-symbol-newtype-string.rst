@@ -27,7 +27,7 @@ Consider the data type with fields of type ``String``::
 
   data Fields = Fields [String]
 
-``Fields`` is inhabitaed by terms, and since recently (`The Char Kind <https://github.com/ghc-proposals/ghc-proposals/pull/387>`_) also by 
+``Fields`` is inhabited by terms, and since recently (`The Char Kind <https://github.com/ghc-proposals/ghc-proposals/pull/387>`_) also by 
 types. However type literals produce ``Symbol``, not ``String`` ::
 
   fs = Fields ["foo", "bar"]           -- ok
