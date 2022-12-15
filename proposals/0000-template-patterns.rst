@@ -45,22 +45,22 @@ Here is how you might hope to achieve this:
 
 Before (but not including) phase 1, rule "map" turns a call to ``map`` into a call to ``build`` and ``foldr``.
 Now suppose that nothing fuses with the ``build`` or ``foldr``.  Then, in the following phase 1,
-``build`` is inlined.  Recall::
+``build`` is inlined.  Recall that ``build g = g (:) []``.
 
-        build g = g (:) []
+So a call ``map f xs`` will now look like ``foldr (\x ys -> f x : ys) [] xs)``.  Finally, rule "mapList" can rewrite
+it back to ``map f xs``.
 
-So a call ``map f xs`` will now look like ``foldr (\x ys -> f x : ys) [] xs)``; and rule "mapList" can rewrite
-it back to ``map f xs``.  But alas this simply doesn't work in practice. Suppose we had::
+But alas this simply doesn't work in practice. Suppose we had::
 
         map (\x -> x+1) xs
 
-Then we'd get the expression ``foldr (\x ys -> x+1 : ys) [] xs``, adn that doesn't syntactically match the pattern in ``mapList``.
+Then we'd get the expression ``foldr (\x ys -> x+1 : ys) [] xs``, and that doesn't syntactically match the pattern in ``mapList``.
 We need a more powerful matcher to find a suitable ``f`` when matching.
 
-Similarly, if we started with ``map p (map q xs)``, we would get fusion, and end up with ``foldr (\x ys -> p (q x) : ys) [] xs``, which again does not syntactically match the pattern.  Yet if only, when matching rule "matchList` the matcher could
-cough up the binding ``f :-> \x -> p (q x)]``, we could rewrite the ``foldr`` call to ``map (\x -> p (q x)) xs``, which is of course what we want.
+Similarly, if we started with ``map p (map q xs)``, we would indded get foldr/build fusion, and end up with ``foldr (\x ys -> p (q x) : ys) [] xs``.  Alas again this does not syntactically match the pattern in "mapList".  Yet if, when matching rule "matchList", the matcher could
+cough up the binding ``f :-> \x -> p (q x)``, we could rewrite the ``foldr`` call to ``map (\x -> p (q x)) xs``, which is of course what we want.
 
-Since we do not have this more powerful matcher, what happens now in library ``base`` is a hack.  The actual rules are these::
+Since we do not have this more powerful matcher, the ``base`` uses a clever (but ultimately inadequate) hack.  The actual rules are these::
 
 	{-# RULES
 	"map"       [~1] forall f xs.   map f xs                = build (\c n -> foldr (mapFB c f) n xs)
@@ -79,28 +79,21 @@ But alas we need extra rules "mapFB` and "mapFB/id" to get map/map fusion to wor
 But the hack does not scale well.  For example `issue #22361 <https://gitlab.haskell.org/ghc/ghc/-/issues/22361>`_ shows an example of nested fusion that does not work well -- the ``mapFB`` itself gets in the way of fusion
 
 
-Ideally, we would like to write the rules where ``mapFB`` is inlined as follows:
-::
-
-	{-# RULES
-	"map"     [~1] forall f xs. map f xs                     = build (\c n -> foldr (\x ys -> c (f x) ys) n xs)
-	"mapList" [1]  forall f.    foldr (\x ys -> f x : ys) [] = map f
-	#-}
-
-Note how the two ``mapFB`` rules are now unnecessary, because the simplifier can now operate on the lambdas directly.
-
+This unsatisfactory ``mapFB`` hack is replicated in many other functions in ``base``.
 
 Optimising the concatMap function under stream fusion
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Another source, even more powerful, motivation for this proposal is the optimisation of the ``concatMap`` function under stream fusion. This celebrated challenge has been an open problem for a very long time (see e.g. `this comment in GHC issue #915 <https://gitlab.haskell.org/ghc/ghc/-/issues/915#note_26104>`_).
-It's an important one too: in their paper `"The Hermit in the stream"` <https://dl.acm.org/doi/10.1145/2543728.2543736>`_, Farmer et al describe an entire plugin for GHC devoted to this one task.  Here's part of the abstract
+It's an important one too: in their paper `"The Hermit in the stream" <https://dl.acm.org/doi/10.1145/2543728.2543736>`_, Farmer et al describe an entire plugin for GHC devoted to this one task.  Here's part of the abstract
 
     Stream Fusion, a popular deforestation technique in the Haskell community, cannot fuse the concatMap combinator. This is a serious limitation, as concatMap represents computations on nested streams. The original implementation of Stream Fusion used the Glasgow Haskell Compiler's user-directed rewriting system. A transformation which allows the compiler to fuse many uses of concatMap has previously been proposed, but never implemented, because the host rewrite system was not expressive enough to implement the proposed transformation.
+
     In this paper, we develop a custom optimization plugin which implements the proposed concatMap transformation, and study the effectiveness of the transformation in practice. We also provide a new translation scheme for list comprehensions which enables them to be optimized. Within this framework, we extend the transformation to monadic streams. Code featuring uses of concatMap experiences significant speedup when compiled with this optimization. This allows Stream Fusion to outperform its rival, foldr/build, on many list computations, and enables performance-sensitive code to be expressed at a higher level of abstraction.
 
 
 See also
+
 * The earlier paper `From lists to streams to nothing at all <https://dl.acm.org/doi/10.1145/1291151.1291199>`_
 * `GHC issue #915 <https://gitlab.haskell.org/ghc/ghc/-/issues/915>`_ 
 
@@ -109,11 +102,11 @@ Thus motivated, Duncan Coutts proposed using the following rewrite rule in `"Str
 
 	"concatMap"   forall next f.   concatMap (\x -> Stream next (f x)) = concatMap' next f
 
-Currently, this rule only matches if the target contains a literal application of some function ``f`` to the local variable ``x``.
+In GHC today, this rule only matches if the target contains a literal application of some function ``f`` to the local variable ``x``.
 This proposal would allow matching the above rule to more complicated targets like ``concatMap (\x. Stream next (x * 2 + x))`` producing ``concatMap' next (\x -> x * 2 + x)``.
 
 *By using more powerful matching, we solve the long-standing problem of fusing
-``concatMap`` under stream fusion.*  In turn, this could
+concatMap under stream fusion.*  In turn, this could
 potentially make stream fusion general enough to replace foldr/build
 fusion in base.
 
