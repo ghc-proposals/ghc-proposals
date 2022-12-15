@@ -12,7 +12,7 @@ the link, and delete this bold sentence.**
 # Namespaces
 
 One of the pain-points for building structured, succinct, and easy to read Haskell code is name conflicts. 
-The lack of a fine-grained namespace controls lead to developers either creating many small files or ad-hoc namespace measures as prefixing names to variable names.
+The lack of a fine-grained namespace controls lead developers to either creating many small files, unwanted type classes, or ad-hoc namespace measures as prefixing names to variable names.
 
 Many prior proposals have tried to come up with a solution to this, especially [#283](https://github.com/ghc-proposals/ghc-proposals/pull/283) and [#295](https://github.com/ghc-proposals/ghc-proposals/pull/295), however they have all gone dormant.
 This proposal, is yet another try.
@@ -73,11 +73,11 @@ With namespaces you can write this:
 ```haskell
 module Vec where
 
-space V2 = V2 where
+namespace V2 = V2 where
   data V2 = Mk { x :: Int, y :: Int }
   fromV2 :: V2 -> V2
 
-space V3 = V3 where
+namespace V3 = V3 where
   data V3 = Mk { x :: Int, y :: Int, z :: Int }
   fromV2 :: V2 -> Int -> V3
 
@@ -114,6 +114,7 @@ fromV2 :: V2 -> V2
 ```haskell
 -- src/Vec/V3.hs
 module Vec.V3 where
+import Vec.V2 (V2)
 import Vec.V2 qualified as V2
 data V3 = Mk { x :: Int, y :: Int, z :: Int }
 fromV2 :: V2 -> Int -> V3
@@ -135,14 +136,13 @@ create a cyclic dependency.
 ### Example 2: Associated Functions
 
 By using namespaces, we can associate specific functions with the data it operates
-on. The `= Set` notation means that, the namespace `Set` will act like the type 
-or class `Set` when not used as a qualifier, e.g., `Set:a`.
+on. The `= Set` notation means that, the namespace `Set` will act like the entity `Set` when not used as a qualifier, e.g., `Set:a`.
 
 ```haskell
 -- in Data/Set.hs
 module Data.Set (Set) where
 
-space Set = Set (Set, fromList) where
+namespace Set = Set (Set, fromList) where
   data Set = ..
 
   fromList :: [a] -> Set a
@@ -192,26 +192,25 @@ We can declare data types locally to a function without polluting the namespace.
 ```haskell
 module Spec where
 
-open X (f) -- ^ instantly export f to the scope
-space X where
+namespace (f) where
   f = getCollection . foldMap MkCollection
   data Collection = MkCollection { getCollection :: ... }
 ```
-or if auto namespaces is turned on:
+or if the extra extension `-XAutoNamespaces` is turned on:
 ```haskell
 module Spec where
 
-open X (f) -- ^ instantly export f to the scope
-space X where
+namespace (f) where
   f = Collection:get . foldMap Collection:Mk
   data Collection = Mk { get :: ... }
 ```
 
 ### Example 5: Local imports and sane operators
 
-It's often not the case that we want to reuse operators for other things
-but overloading a common used operator requires the user to either not use the other 
-operator or import ours qualified. 
+It's often the case that we want to reuse operators
+but overloading a common used operator, 
+requires the user to either not use the other operator or import one 
+of them qualified. This is especially awkward with operators.
 
 Example, `FilePath` uses the `</>` operator to avoid classes with the standard library, 
 but if we have namespaces it could use `/`:
@@ -227,10 +226,11 @@ main = do
 ```
 
 Another good example is the `lens` library. When importing lens, we have to import 
-it unqualified to use the operators, but not all code needs it.
+it unqualified to use the operators, but not all code needs 
+all the operators:
 
 ```haskell
-import Control.Lens named
+import namespace Control.Lens 
 
 nonLensCode = do 
   --- this code can use ^. for other things.
@@ -251,13 +251,13 @@ here for context if necessary.
 
 This proposal suggest doing the following in a nutshell:
 ```haskell
-space A where
+namespace A where
   x, y :: Int
   x = 0
   y = 10
 ```
 
-Create a new top-level-declaration, `space A where ...`, which can declare a new namespace.
+Create a new top-level-declaration, `namespace A where ...`, which can declare a new namespace.
 Every declaration inside the where clause is hidden from the rest of the module behind 
 the named-qualifier `A`. We can access the variables under `A` either by using 
 named quantification `A:x` or by opening the namespace. 
@@ -296,32 +296,67 @@ A note on `Data.List.:` and on constructor operators. The choice of `:` as the d
 least worst choice. We'll use the same semantics as in Haskell 2010. `A::+` means the type operator 
 `:+` from `A:`, but we expect that people will mostly use operators unqualified.
 
+We'll add a new `open` expression construct of the form:
+```
+lexp
+  → ...
+ | 'open' qnameid [impspec] 'in' exp      
+```
+
+This expression makes the content of the namespace available in the 
+exp. 
+
+```haskell
+namespace X where
+  x = 0
+
+one = open X (x) in x + 1
+```
+
+Note: This is just a lets bloated from of `let open X (x) in x + 1` or 
+`x + 1 where open X (x)`, introduced later
+
+We'll and a `open` statement construct of the form:
+```
+stmt
+  → ...
+ | 'open' qnameid [impspec] ';'
+```
+
+Which does the same, but in do-notation.
+
+```haskell
+main = do 
+  open X (x)
+  print x
+```
+
 #### Extensions to Declarations and Bindings ($4)
 
 We'll add a new top-level namespace construct of the form:
 ```
 topdecl 
   → ...
- | 'space' [nameid ['=' conid]] [exports] 'where' topdecls;
+ | 'namespace' [nameid ['=' conid]] [exports] 'where' topdecls;
 ```
 
 This will have the semantics of capturing the declarations in `topdecls` and encapsulating them from the rest of the module.
 The declarations in the `topdecls` can access the variables of the `topdecls`.
 
-It will then create a fresh variable `nameid` which is the namespace, which is limited by the `exports` 
+It will then create a fresh variable `nameid` which is the namespace. 
+The exported content of the namespace is limited by the `exports` 
 specification. 
 The `= conid` syntax allows the user to bind a type or class to the `nameid`.
 
-If the 'nameid' is omitted, then we'll refer to the space as anonymous, and loads 
-everything limited by the (x) into scope.
+If the 'nameid' is omitted, then we'll refer to the namespace as anonymous, and loads everything limited by the exports into scope.
  ```haskell
- space (x) where
+ namespace (x) where
     x = y + 1
     y = 1
  ```
  which is equlivalent to 
  ```
- space _Unbindable (x) where
+ namespace _Unbindable (x) where
     x = 0
  open _Unbindable
  ```
@@ -330,7 +365,7 @@ Example, borrowing the notation from [#283](https://github.com/ghc-proposals/ghc
 where environments are mappings from qualified variables to original name `{ X |-> (M, m)}`.
 ```haskell
 module M where
-space Truth = Bool (True, False) where
+namespace Truth = Bool (True, False) where
   data Bool = True | False
 
 -- Environment outside Thruth is 
@@ -340,7 +375,7 @@ space Truth = Bool (True, False) where
 -- }
 ```
 
-As is customs: It's okay to declare two namespaces of the same name, but referring to either would give an ambiguity error.
+As is customs: It's okay to declare two entities (and in this case namespaces) of the same name, but referring to either would give an ambiguity error.
 
 We'll add a new declaration `open` construct of the form:
 ```
@@ -367,11 +402,14 @@ open Truth (False);
 -- }
 ```
 
+Note: `open` is explicitly chosen to be small, so that it fits inside most
+expressions. This will hopefully encourage more quantified imports.
+
 #### Extensions to Modules ($5)
 
 We'll introduce a new import statement, of the form:
 
-`impdecl → 'import' modid 'named' ['as' nameid] [impspec]`
+`impdecl → 'import' 'namespace' modid ['as' nameid] [impspec]`
 
 Which saves the content of the module into a namespace.
 The `as nameid` uses the name `nameid` as the name of the namespace, otherwise use the 
@@ -379,7 +417,7 @@ name after the last `.` in the `modid`.
 
 Continuing the example from before we get:
 ```haskell
-import M named as X
+import namespace M as X
 -- { X:Truth |-> (M, Truth:Bool)
 -- , X:Truth:True -> (M, Truth:True)
 -- , X:Truth:False |-> (M, Truth:False)
@@ -394,9 +432,9 @@ The semantics of `exports` does not change, `module A (X(y)) where` will export
 
 ### (Optional) Extensions
 
-We could think of many extensions, the most obvious are:
+We could think of many extensions, though not part of this proposal, the most obvious are:
 
--  `-XAutoNamespaces`: Automatically create namespaces for data, newtype and classes; so that fields and subfunctions do not polute the current space:
+-  `-XAutoNamespaces`: Automatically create namespaces for data, newtype and classes; so that fields and subfunctions do not polute the current namespace:
 
    ```haskell
    data Nat = Zero | Succ Nat
@@ -419,7 +457,24 @@ We could think of many extensions, the most obvious are:
    open Nat
    ```
 
--  Renaming variables at open, imports, and on exports, seem valuable, but might be better in another proposal.
+-  Extended namespaces, used in conjunction with `-XAutoNamespaces`, 
+   allows users to assign extra names to an auto namespace:
+
+   ```haskell
+   data Nat = Zero | Succ Nat
+    where
+     pattern One = Succ Zero
+     (+) :: Nat -> Nat -> Nat
+     a + b = case a of 
+      Zero -> b
+      Succ a -> a + Succ a
+
+   check a = case a of
+    Nat:One -> print "Is One!"
+    _ -> print "It's not one!"
+   ```
+
+-  Renaming variables at open, imports, and on exports, seem valuable, but might be orthogonal to this proposal.
    For example: 
    ```haskell
    open FilePath ((</>) as (/))
@@ -433,7 +488,7 @@ Here are a list of illustrative examples of edge cases:
 
 Given a namespace `S`:
 ```haskell
-space S where
+namespace S where
   x = 0
 ```
 
@@ -453,10 +508,10 @@ f a = x where open S (x)
 ### Nested namespaces
 
 ```haskell
-space S where
-  space Y where
+namespace S where
+  namespace Y where
     x = 0
-    space Z where
+    namespace Z where
       z = 0;
 
 -- This will bring x into scope.
@@ -466,18 +521,18 @@ open S:Y (x);
 open S (Y (x)); 
 
 -- This is currently illegal:
-open S (Y (Z (x))); 
+open S (Y (Z (z))); 
 
 -- This is fine
-open S:Y:Z (x))); 
+open S:Y:Z (z))); 
 ```
 
 ### Nested assigns
 
 ```haskell
 module T where
-space X = Y where
-  space Y = Z where
+namespace X = Y where
+  namespace Y = Z where
     data Z; 
 
 -- The scope is now
@@ -494,18 +549,18 @@ type V = X:Z
 
 It's impossible to extend a namespace; but we can merge two namespaces under a new name.
 ```haskell
-space S1 where
+namespace S1 where
   ...
 
-space S2 where
+namespace S2 where
   ...
 
-space S where
+namespace S where
   open S1
   open S2
 ```
 
-Conflicts between S1 and S2 are handled as usual.
+Conflicts between the names in S1 and S2 are handled as usual.
 
 
 ### Conflicting Modules and Namespaces
@@ -515,7 +570,7 @@ modules and namespaces, so they can co-exists, like modules and types currently 
 
 ```haskell
 import M
-space M where
+namespace M where
   x = 1
 -- both valid M.x M:x 
 ```
@@ -531,9 +586,13 @@ Hopefully this will allow a possible incremental adoption.
 
 Interactions:
 
+1.  TH, due to the way this extension is build, splices should work
+    as they would with defining type classes.
+
+1.  Haddock, new syntax and/or document producers would need to be made to correctly document namespaces. Maybe an extension to the current type-class layout could be enough.
+
 1.  Backpack?
 
-1.  TH?
 
 
 ### Future Work
@@ -548,13 +607,13 @@ import Module.A
 import qualified Module.A  
 -- stops to exist
 
-import Module.A named as X
+import namespace Module.A as X
 -- could be written
 from "package" 
   include "Module/A" as X
 
 -- namespaces now canibalize the module syntax.
-space A () where
+namespace A () where
   ..
 -- ->
 module A () where
@@ -570,12 +629,11 @@ import A
 module (f, g) where
 ...
 ```
-These changes would not be visible outside of the module, but might cause confusion when read.
+These changes would not be visible outside of the module.
 
 ## Costs and Drawbacks
 
-1. Adding a new language feature is costly, and a feature that is close to but not quite a module, might be
-   confusing to newcommers. 
+1. Adding a new language feature is costly, and a feature that is close to but not quite a module, might be confusing to newcommers. We have tried to make the syntax clear and break as little code if enabled by default.
 
 2. Using the delimiter `:` will break some list code; and maybe code which uses type operators `a:|x`.
    But this should only be a problem if the extension is on.
@@ -583,8 +641,7 @@ These changes would not be visible outside of the module, but might cause confus
 3. Since libraries can export namespaces, they might proliferate the extension to the projects that uses the
    libraries.
    We don't want to force people to use namespaces against their will.
-   However, the adoption cost is fairly limited (putting spaces around `:`) and not using `space`
-   ,`open`, and `named` as identifiers.
+   However, the adoption cost is fairly limited (putting spaces around `:`) and not using `open`, and `namespace` as identifiers.
    For library developers it might be an extra burden to maintain both a namespace version and a namespace free
    version. However this can be mitigated, for example to regain the syntax from the original `Hedgehog` (see 
    example), the developer (or user) of the library can add two files, to emulate the old style:
@@ -597,6 +654,11 @@ These changes would not be visible outside of the module, but might cause confus
    module Hedgehog.Range where import Hedgehog (Range(..))
    ```
 
+1. When introducing a new namespace is "qualified", and does not leak its internals. This is
+   contrary to the current haskell mindset where `import A` will export everything except if it is qualified. 
+   We believe that this choice makes sense regardless, as you can
+   always open a namespace after.
+
 ## Alternatives
 
 1. Compared to [#283](https://github.com/ghc-proposals/ghc-proposals/pull/283), this proposal 
@@ -606,15 +668,17 @@ These changes would not be visible outside of the module, but might cause confus
 2. Compared to [#295](https://github.com/ghc-proposals/ghc-proposals/pull/295), this proposal is a
    compromise which allows for incremental addoption.
 
-3. Rebuilding the module system from scratch. This properly requires a new version of Haskell.
+3. Rebuilding the module system from scratch. This properly requires a new version of Haskell, which would cause a fork between old and new developers of the language.
+
+4. Doing nothing. We fell like this is unsatisfactory, for the
+   reasons given in the motivation.
 
 ## Unresolved Questions
 
-1. The choice of seperator. I have chosen `:` mostly as a starting point but other operators could be chosen.
+1. The choice of separator. I have chosen `:` mostly as a starting point but other operators could be chosen.
    Using the `::` seperator might be a soloution, but is problematic with types. `A::B :: C` is less clear
    than `A:B :: C`, and `A:a : []` not much worse than `A::a : []`. In a normal file `::` is used more than `:`.
-   Choosing `.` as the seperator seems to create a lot of edge cases when working with modules and
-   namespaces.
+   Choosing `.` as the separator seems to create a lot of edge cases when working with modules and namespaces.
 
    ```haskell
    import Data.Set 
@@ -625,24 +689,28 @@ These changes would not be visible outside of the module, but might cause confus
    Data.Set.x
    ```
 
-1. Adding two new tokens `open` and `space` will shadow some names possible used by developers.
+1. Adding two new tokens `open` and `namespace` will shadow some names possible used by developers.
    Using `import` and `module` would reduce this problem but make the semantics difference harder to notice for newcomers.
    Furthermore, `import` cannot be used at the top level as it clashes with `import` statements.
-   We could use `import module` to mean `open`, however it is verbose.
+   We could use `import module` to mean `open`, however it is verbose, and would probably less people use the feature.
 
-1. Should the spaces be explicitly disallowed to export modules `space X (module Y) where .. `? I lean towards yes.
+1. Should the namespaces be explicitly disallowed to export modules `namespace X (module Y) where .. `? I lean towards yes.
    The same effect can be gained by the cleaner:
    ```haskell
-   import Y named as NY
-   space X where
+   import namespace Y as NY
+   namespace X where
      open NY
-     other things.
+     -- other things.
    ```
 
-1. Should we be able to rebind namespaces in this proposal, both in imports/exports but also 
-   in namespaces?
+1. Should we intoduce special syntax so that we can rebind namespaces in this proposal?
+   Currently to rebind a namespace you have to write:
    ```haskell
-   space M = NY 
+   namespace M = Y where open Y 
+   ```
+   this could be shorted to
+   ```haskell
+   namespace M = Y 
    ```
 
 
