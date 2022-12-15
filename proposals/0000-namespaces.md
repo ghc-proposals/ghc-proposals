@@ -33,19 +33,33 @@ The proposal will enable us to write succinct code and have better control of th
 **Why?** currently, due to the lack of namespaces, if you have two constructors, types, functions, patterns,
 or type classes named the same, you have one of three options:
 1.  Use the module system and move the different entities to different modules and import them qualified.
-    This have several down-sides. 
-    One, it promotes many small files which can be hard to get an overlook at.
-    Two, it is hard to teach and communicate as some example are spread over multiple files. 
-    Three, this is not an option when using Haskell as a scripting language, as single files are often a requirement.
+    This have several down-sides:
+    
+    a) it promotes many small files which can be hard to get an overlook at;
+    
+    a) modules cannot have cyclic dependencies, eliminating some cases;
+    
+    b) it is hard to teach and communicate as some example are spread over multiple files; and
+    
+    c) this is not an option when using Haskell as a scripting language, as single files are often a requirement.
 
 2.  Use type classes to capture similarities. This leads to developers creating type classes without any meaning, purely
     to capture similar named functions. This solution also breaks down fast if the similar named items have
     different arity or arguments.
 
 3.  Renaming things. This is the most common solution. Pre- or Suffixing namespace identifies to solutions; 
-    e.g. `prettyExpr`, `prettyType`, `prettyVar`, `MkT`, `runState`, `applyEndo`, and so on. All of these 
-    ad-hoc namespaces can often be infered by context, which makes them aqward to use. Also this trick does
-    not work for operators.
+    e.g. `prettyExpr`, `prettyType`, `prettyVar`, `MkT`, `runState`, `applyEndo`, and so on. 
+    Besides (subjectivly) being akward to use and read, it has multiple drawbacks.
+    
+    a) It prompotes unqualified import of modules, e.g., `State.runState` seems redundant.
+       This is turn will pull more items into scope making it harder to present good completion
+       options for the user of an IDE.
+    
+    b) With suffix notation is hard to discover the abilities of a types using an IDE, e.g., 
+       typing `pretty` will yield `{prettyExpr, prettyType, prettyVar}`, but typing 
+       `Expr:` could yield `{Expr:pretty, Expr:evaluate, Expr:normalize, ...}`.
+    
+    c) The trick does not work for operators.
 
 The rest of the motivation is a list of examples mirroring [#283](https://github.com/ghc-proposals/ghc-proposals/pull/283)
 
@@ -57,20 +71,66 @@ to create two files, create a type class, or prefix the names of the function.
 With namespaces you can write this:
 
 ```haskell
-module Pretty where
+module Vec where
 
-space V2 where
+space V2 = V2 where
   data V2 = Mk { x :: Int, y :: Int }
-  pretty :: V2 -> Text
-  pretty = ...
+  fromV2 :: V2 -> V2
 
-space V3 where
+space V3 = V3 where
   data V3 = Mk { x :: Int, y :: Int, z :: Int }
-  pretty :: V3 -> Text
-  pretty = ...
+  fromV2 :: V2 -> Int -> V3
 
-main = print (V2:pretty (V2:Mk 0 1) <> V3:pretty (V3:Mk 0 1 0)) 
+-- Creates the vector (V3:Mk 0 1 1) 
+vec_0_1_1 :: V3
+vec_0_1_1 = V3:fromV2 (V2:fromV2 (V2:Mk 0 1)) 1
 ```
+
+This illustrates a common problem that you cannot easily fix with type classes, multiple functions
+with the same name, but different arguments. I that case you have to use adhoc-namespaces:
+
+```haskell
+module Vec where
+
+data V2 = MkV2 { v3x :: Int, v3y :: Int }
+fromV2V2 :: V2 -> V2
+
+data V3 = MkV3 { v3x :: Int, v3y :: Int, v3z :: Int }
+fromV2V3 :: V2 -> Int -> V3
+
+vec_0_1_1 :: V3
+vec_0_1_1 = fromV2V3 (fromV2V2 (MkV2 0 1)) 1
+```
+
+Or split it over multiple files:
+
+```haskell
+-- src/Vec/V2.hs
+module Vec.V2 where
+data V2 = Mk { x :: Int, y :: Int }
+fromV2 :: V2 -> V2
+```
+
+```haskell
+-- src/Vec/V3.hs
+module Vec.V3 where
+import Vec.V2 qualified as V2
+data V3 = Mk { x :: Int, y :: Int, z :: Int }
+fromV2 :: V2 -> Int -> V3
+```
+
+```haskell
+-- src/Vec.hs
+module Vec where
+import Vec.V2 qualified as V2
+import Vec.V3 qualified as V3
+
+vec_0_1_1 :: V3.V3
+vec_0_1_1 = V3.fromV2 (V2.fromV2 (V2.Mk 0 1)) 1
+```
+
+However, in the last case you can't write a function `fromV3` in `Vec.V2` as it would 
+create a cyclic dependency.
 
 ### Example 2: Associated Functions
 
@@ -147,7 +207,7 @@ space X where
   data Collection = Mk { get :: ... }
 ```
 
-### Example 5: Sane operators
+### Example 5: Local imports and sane operators
 
 It's often not the case that we want to reuse operators for other things
 but overloading a common used operator requires the user to either not use the other 
@@ -165,6 +225,23 @@ main = do
   path = "my" / "interesting" / "half.txt"
    where open FilePath ((/))
 ```
+
+Another good example is the `lens` library. When importing lens, we have to import 
+it unqualified to use the operators, but not all code needs it.
+
+```haskell
+import Control.Lens named
+
+nonLensCode = do 
+  --- this code can use ^. for other things.
+  ...
+
+lensCode = do 
+  name .= "hello"
+ where
+  open Lens
+```
+
 
 ## Proposed Change Specification
 
@@ -344,7 +421,7 @@ We could think of many extensions, the most obvious are:
 
 -  Renaming variables at open, imports, and on exports, seem valuable, but might be better in another proposal.
    For example: 
-   ```
+   ```haskell
    open FilePath ((</>) as (/))
    ```
 
@@ -393,6 +470,24 @@ open S (Y (Z (x)));
 
 -- This is fine
 open S:Y:Z (x))); 
+```
+
+### Nested assigns
+
+```haskell
+module T where
+space X = Y where
+  space Y = Z where
+    data Z; 
+
+-- The scope is now
+-- { X |-> (T, X:Y:Z)
+-- , X:Y |-> (T, X:Y:Z)
+-- , X:Y:Z |-> (T, Z:Y:Z)
+-- }
+
+-- But this is illegal, as X does not inherit the scope of Y.
+type V = X:Z
 ```
 
 ### Merging Namespaces
@@ -488,11 +583,12 @@ These changes would not be visible outside of the module, but might cause confus
 3. Since libraries can export namespaces, they might proliferate the extension to the projects that uses the
    libraries.
    We don't want to force people to use namespaces against their will.
-   However, the adoption cost is fairly limited (putting spaces around `:`).
+   However, the adoption cost is fairly limited (putting spaces around `:`) and not using `space`
+   ,`open`, and `named` as identifiers.
    For library developers it might be an extra burden to maintain both a namespace version and a namespace free
    version. However this can be mitigated, for example to regain the syntax from the original `Hedgehog` (see 
    example), the developer (or user) of the library can add two files, to emulate the old style:
-   ```
+   ```haskell
    -- Hedgehog/Gen.hs
    {- LANGUAGE Namespaces -}
    module Hedgehog.Gen where import Hedgehog (Gen(..))
@@ -530,8 +626,9 @@ These changes would not be visible outside of the module, but might cause confus
    ```
 
 1. Adding two new tokens `open` and `space` will shadow some names possible used by developers.
-   Using `import` and `module` would reduce this problem but make the semantics difference, harder to notice for
-   newcomers.
+   Using `import` and `module` would reduce this problem but make the semantics difference harder to notice for newcomers.
+   Furthermore, `import` cannot be used at the top level as it clashes with `import` statements.
+   We could use `import module` to mean `open`, however it is verbose.
 
 1. Should the spaces be explicitly disallowed to export modules `space X (module Y) where .. `? I lean towards yes.
    The same effect can be gained by the cleaner:
