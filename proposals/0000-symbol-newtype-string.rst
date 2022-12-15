@@ -1,7 +1,7 @@
 Make Symbol a newtype over String
 =================================
 
-.. author:: Oleg Grenrus (with ammendments by Chris Dornan and Adam Gundry)
+.. author:: Oleg Grenrus (with amendments by Chris Dornan and Adam Gundry)
 .. date-accepted::
 .. ticket-url::
 .. implemented::
