@@ -121,17 +121,18 @@ Consider the rule:
 
 	{-# RULES "wombat"  forall f x.  foo x (\y. f y) = bar x f  #-}
 
-* 	*Template*.
+* 	**Template**.
 	The LHS of a rule is called its *template*.
-* 	*Template variables*.
+* 	**Template variables**.
 	The ``forall``'d variables are called the *template variables*.
 	In rule "wombat", ``f`` and ``x`` are template variables.
-* 	*Local binders*.
+* 	**Local binders**.
 	The *local binders* of a rule are the variables bound inside the template.
 	Example: ``y`` is a local binder of rule "wombat".
-* 	*Target*.
+	A local binder is specifically not a template variable, nor is it free in the entire rule.
+* 	**Target**.
 	The rule matcher matches the LHS of the rule (the template) against an expression in the program (the *target*).
-* 	*Substitution*.
+* 	**Substitution**.
 	A sucessful match finds a *substitution* S: a binding for each template variable, such that applying S to the LHS yields the target.
 * 	After a successful match we replace the target expression with the substitution S applied to the RHS of the rule.
 
@@ -143,21 +144,18 @@ In GHC today, a template variable ``v`` matches any expression ``e`` if
 
 The change proposed here is that a **template pattern** matches any expression (of the same type):
 
-* 	*template pattern*.
+* 	**Template pattern**.
 	A template pattern is an expression of form ``f x y z`` where:
 
-	- ``f`` is a template variable
-	- ``x``, ``y``, ``z`` are locally bound in the template (like ``y`` in rule "wombat" above).
-
-	They are specifically not template variables, nor are they free in the entire rule.
-
+	- ``f`` is a *template variable*
+	- ``x``, ``y``, ``z`` are *local binders* (like ``y`` in rule "wombat" above; see definitions).
 	- The arguments ``x``, ``y``, ``z`` are *distinct* variables
 	- ``x``, ``y``, ``z`` must be term variables (not type applications).
 
 * 	A template pattern ``f x y z`` matches *any expression* ``e`` provided:
 
 	- The target has the same type as the template
-	- no local binder is free in ``e``, other than ``x``, ``y``, ``z``.
+	- No local binder is free in ``e``, other than ``x``, ``y``, ``z``.
 
 *	If these two condition hold, the template pattern ``f x y z`` matches the target expression ``e``, yielding the substitution ``[f :-> \x y z. e]``.
 	Notice that this substitution is type preserving, and the RHS of the substitution has no free local binders.
