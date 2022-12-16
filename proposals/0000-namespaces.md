@@ -589,7 +589,24 @@ Interactions:
 
 1.  Haddock, new syntax and/or document producers would need to be made to correctly document namespaces. Maybe an extension to the current type-class layout could be enough.
 
+2.  `OverloadedRecordDot` should not be affected by this langauge feature, even if
+    `AutoNamespaces` is enabled, since it esentially creates class instances of 
+    the `HasField` class:
+
+    ```haskell
+    data V2 = Mk { x :: Int, y :: Int }
+
+    V2:x :: V2 -> Int
+    (.x) :: HasField "x" a Int => a -> Int
+
+    validExpr = (V2:Mk 1 0).x :: Int
+    alsoValidExpr = V2:x (V2:Mk 1 0) :: Int
+    ```
+
+3. `NoFieldSelectors` and `DuplicateRecordFields` could be considered obsolete by the `AutoNamespaces` feature.
+
 1.  Backpack?
+
 
 
 
