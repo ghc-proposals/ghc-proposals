@@ -335,7 +335,7 @@ We'll add a new top-level namespace construct of the form:
 ```
 topdecl 
   → ...
- | 'namespace' [nameid ['=' conid]] [exports] 'where' topdecls;
+ | 'namespace' [nameid ['=' qconid]] [exports] ['where' topdecls];
 ```
 
 This will have the semantics of capturing the declarations in `topdecls` and encapsulating them from the rest of the module.
@@ -344,7 +344,15 @@ The declarations in the `topdecls` can access the variables of the `topdecls`.
 It will then create a fresh variable `nameid` which is the namespace. 
 The exported content of the namespace is limited by the `exports` 
 specification. 
-The `= conid` syntax allows the user to bind a type or class to the `nameid`.
+The `= qconid` syntax allows the user to bind a qualified type or class to the `nameid`.
+
+If the `['where' topdecl]` is omitted then the `qconid` must be a reference to another namespace. 
+And essentially acts as a rename.
+```haskell
+namespace C = Containers
+-- Now C is an alias for Containers.
+```
+
 
 If the 'nameid' is omitted, then we'll refer to the namespace as anonymous, and loads everything limited by the exports into scope.
  ```haskell
@@ -352,7 +360,7 @@ If the 'nameid' is omitted, then we'll refer to the namespace as anonymous, and 
     x = y + 1
     y = 1
  ```
- which is equlivalent to 
+ which is equivalent to 
  ```
  namespace _Unbindable (x) where
     x = 0
@@ -648,7 +656,8 @@ These changes would not be visible outside of the module.
 
 ## Costs and Drawbacks
 
-1. Adding a new language feature is costly, and a feature that is close to but not quite a module, might be confusing to newcommers. We have tried to make the syntax clear and break as little code if enabled by default.
+1. Adding a new language feature is costly, and a feature that is close to but not quite a module, might be confusing to newcommers. 
+   We have tried to make the syntax clear and break as little code if enabled by default.
 
 2. Using the delimiter `:` will break some list code; and maybe code which uses type operators `a:|x`.
    But this should only be a problem if the extension is on.
@@ -690,26 +699,64 @@ These changes would not be visible outside of the module.
 
 ## Unresolved Questions
 
-1. The choice of separator. I have chosen `:` mostly as a starting point but other operators could be chosen.
-   Using the `::` seperator might be a soloution, but is problematic with types. `A::B :: C` is less clear
-   than `A:B :: C`, and `A:a : []` not much worse than `A::a : []`. In a normal file `::` is used more than `:`.
-   Choosing `.` as the separator seems to create a lot of edge cases when working with modules and namespaces.
+1. The choice of separator. We have chosen `:` mostly as a starting point but other operators could be used instead.
+   - Choosing `.` as the separator seems to create a lot of edge cases when working with modules and namespaces.
 
-   ```haskell
-   import Data.Set 
-   import Data
+     ```haskell
+     import Data.Set 
+     import Data
 
-   -- Is this a module lookup of 'x' from Data.Set or 
-   -- a namespace lookup of 'Set.x' from Data. 
-   Data.Set.x
-   ```
+     -- Is this a module lookup of 'x' from Data.Set or 
+     -- a namespace lookup of 'Set.x' from Data. 
+     Data.Set.x
+     ```
+   - Using the `::` separator might be a solution, but is problematic with types. `A::B :: C` is less clear
+     than `A:B :: C`, and `A:a : []` not much worse than `A::a : []`. In a normal file `::` is used more than `:`.
+
+   - Using the `#` separator might be a solution: it's used mostly with `MagicHash` and the `CPP` extensions, however only
+     in suffix and prefix mode.
+     A module selector would be infix.
+     Example:
+     ```haskell
+     fromSet :: Set#Set -> [Int]
+     fromSet = Set#foldr (List#:) []
+     ```
+
+   - Using the `\` separator might also be a solution. It's used for lambdas which are rarely not prepended with a space, 
+     e.g., `a\x ->b` is an illegal construction unless BlockArguments are enabled (Credit to AntC for the suggestion).
+     Example:
+     ```haskell
+     fromSet :: Set\Set a -> [a]
+     fromSet = Set\foldr (List\:) []
+     ```
 
 1. Adding two new tokens `open` and `namespace` will shadow some names possible used by developers.
    Using `import` and `module` would reduce this problem but make the semantics difference harder to notice for newcomers.
    Furthermore, `import` cannot be used at the top level as it clashes with `import` statements.
-   We could use `import module` to mean `open`, however it is verbose, and would probably less people use the feature.
+   We could use `namespace import` to mean `open`, however it is verbose, and that would make less people use the feature.
+   ```haskell
+   consIncr a l = 
+    fmap (+1) (open List in a : l)
+   ```
+   ```haskell
+   consIncr a l = 
+    fmap (+1) (namespace import List in a : l) 
+   ```
 
-1. Should the namespaces be explicitly disallowed to export modules `namespace X (module Y) where .. `? I lean towards yes.
+   Potentially we could suffix `open` or `import` with the separator to make conflicts impossible `open:` or `import:`:
+   ```haskell
+   open:Functor
+   consIncr a l = 
+    fmap (+1) (open:List in a : l)
+   ```
+   ```haskell
+   import:Functor
+   consIncr a l = 
+    fmap (+1) (import:List in a : l)
+   ```
+
+
+1. Should the namespaces be explicitly disallowed to export modules `namespace X (module Y) where .. `? We lean towards yes.
    The same effect can be gained by the cleaner:
    ```haskell
    import namespace Y as NY
@@ -717,17 +764,6 @@ These changes would not be visible outside of the module.
      open NY
      -- other things.
    ```
-
-1. Should we intoduce special syntax so that we can rebind namespaces in this proposal?
-   Currently to rebind a namespace you have to write:
-   ```haskell
-   namespace M = Y where open Y 
-   ```
-   this could be shorted to
-   ```haskell
-   namespace M = Y 
-   ```
-
 
 ## Implementation Plan
 
