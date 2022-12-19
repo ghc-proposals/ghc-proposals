@@ -161,6 +161,15 @@ mySet :: Set String
 mySet = Set:fromList ["A", "B"]
 ```
 
+Using the `namespace Set = Set` notation is done to enable users to use the common Haskell
+pattern. 
+```haskell
+import Data.Set (Set)
+import qualified Data.Set as Set
+```
+Furthermore, it enables a straight forward syntactic description of turning all entities 
+into namespaces, see the `-XAutoNamespaces` extension.
+
 ### Example 3: MyPrelude
 
 By using namespaces, we can collect names used often in a prelude and export them qualified.
@@ -169,8 +178,8 @@ By using namespaces, we can collect names used often in a prelude and export the
 -- In MyPrelude.hs
 module MyPrelude ( BL, BS ) where
 
-import Data.ByteString.Lazy named as BL
-import Data.ByteString named as BS
+import namespace Data.ByteString.Lazy as BL
+import namespace Data.ByteString as BS
 
 -- In Lib.hs
 module Lib where
@@ -214,7 +223,7 @@ Example, `FilePath` uses the `</>` operator to avoid classes with the standard l
 but if we have namespaces it could use `/`:
 
 ```haskell
-import System.FilePath named
+import namespace System.FilePath 
 
 main = do 
   write path (show ( 1.0 / 2.0 :: Float))
