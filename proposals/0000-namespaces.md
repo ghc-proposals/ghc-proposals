@@ -77,7 +77,7 @@ namespace V2 where
 
 namespace V3 where
   data V3 = Mk { x :: Int, y :: Int, z :: Int }
-  fromV2 :: V2 -> Int -> V3
+  fromV2 :: V2:V2 -> Int -> V3
 
 -- Creates the vector (V3:Mk 0 1 1) 
 vec_0_1_1 :: V3:V3
