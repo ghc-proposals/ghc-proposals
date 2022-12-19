@@ -133,8 +133,11 @@ vec_0_1_1 :: V3.V3
 vec_0_1_1 = V3.fromV2 (V2.fromV2 (V2.Mk 0 1)) 1
 ```
 
-However, in the last case you can't write a function `fromV3` in `Vec.V2` as it would 
-create a cyclic dependency.
+However, in the last case you can't write a function `fromV3` in `Vec.V2`
+directly as it would create a cyclic dependency. In this case you would have 
+to follow [5.8.10](https://downloads.haskell.org/ghc/latest/docs/users_guide/separate_compilation.html#how-to-compile-mutually-recursive-modules) in the user guide; create a `hs-boot` file for `Vec.V3`, containing only 
+the datatype `V3` and written in a subset of Haskell; then you would have to import
+it using the `{#- SOURCE #-}` pragma. Needless to say this is a little complicated.
 
 ### Example 2: Associated Functions
 
@@ -594,7 +597,7 @@ Interactions:
 
 1.  Haddock, new syntax and/or document producers would need to be made to correctly document namespaces. Maybe an extension to the current type-class layout could be enough.
 
-2.  `OverloadedRecordDot` should not be affected by this langauge feature, even if
+2.  `OverloadedRecordDot` should not be affected by this language feature, even if
     `AutoNamespaces` is enabled, since it esentially creates class instances of 
     the `HasField` class:
 
@@ -653,7 +656,7 @@ These changes would not be visible outside of the module.
 
 ## Costs and Drawbacks
 
-1. Adding a new language feature is costly, and a feature that is close to but not quite a module, might be confusing to newcommers. 
+1. Adding a new language feature is costly, and a feature that is close to, but not quite a module, might be confusing to newcommers. 
    We have tried to make the syntax clear and break as little code if enabled by default.
 
 2. Using the delimiter `:` will break some list code; and maybe code which uses type operators `a:|x`.
@@ -679,6 +682,12 @@ These changes would not be visible outside of the module.
    contrary to the current haskell mindset where `import A` will export everything except if it is qualified. 
    We believe that this choice makes sense regardless, as you can
    always open a namespace after.
+
+1. Adding namespaces might make the code a little harder to read as the name at definition
+   point might not be the same as at use point. 
+
+1. Automatic documentation might also be less clear. Thought needs to go into a good way of
+   pressenting namespaces to developers.
 
 ## Alternatives
 
