@@ -71,18 +71,24 @@ With namespaces you can write this:
 ```haskell
 module Vec where
 
-namespace V2 = V2 where
+namespace V2 where
   data V2 = Mk { x :: Int, y :: Int }
   fromV2 :: V2 -> V2
 
-namespace V3 = V3 where
+namespace V3 where
   data V3 = Mk { x :: Int, y :: Int, z :: Int }
   fromV2 :: V2 -> Int -> V3
 
 -- Creates the vector (V3:Mk 0 1 1) 
-vec_0_1_1 :: V3
+vec_0_1_1 :: V3:V3
 vec_0_1_1 = V3:fromV2 (V2:fromV2 (V2:Mk 0 1)) 1
 ```
+
+This example creates two namespaces to contain the V2 and V3 data structures, 
+their field accessors, constructors, and their
+associated functions `fromV2`. 
+We can access the inners of `V2` and `V3` using the namespace operator, `:`, 
+this means that `V2:fromV2` points to the `fromV2` function in `V2`.
 
 This illustrates a common problem that you cannot easily fix with type classes, multiple functions
 with the same name, but different arguments. I that case you have to use adhoc-namespaces:
@@ -112,10 +118,9 @@ fromV2 :: V2 -> V2
 ```haskell
 -- src/Vec/V3.hs
 module Vec.V3 where
-import Vec.V2 (V2)
 import Vec.V2 qualified as V2
 data V3 = Mk { x :: Int, y :: Int, z :: Int }
-fromV2 :: V2 -> Int -> V3
+fromV2 :: V2.V2 -> Int -> V3
 ```
 
 ```haskell
@@ -191,15 +196,7 @@ We can declare data types locally to a function without polluting the namespace.
 module Spec where
 
 namespace (f) where
-  f = getCollection . foldMap MkCollection
-  data Collection = MkCollection { getCollection :: ... }
-```
-or if the extra extension `-XAutoNamespaces` is turned on:
-```haskell
-module Spec where
-
-namespace (f) where
-  f = Collection:get . foldMap Collection:Mk
+  f = get . foldMap Mk
   data Collection = Mk { get :: ... }
 ```
 
