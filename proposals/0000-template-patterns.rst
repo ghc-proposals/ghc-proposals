@@ -20,6 +20,8 @@ involving local variable bindings much more powerful.  Doing so is very cheap: i
 easy to explain and easy to implement.  But it unlocks powerful new expressiveness
 in rewrite rules.
 
+See discussion in `GHC ticket #22465 <https://gitlab.haskell.org/ghc/ghc/-/issues/22465>`_.
+
 Motivation
 ----------
 
