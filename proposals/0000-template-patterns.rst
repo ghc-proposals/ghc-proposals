@@ -1,4 +1,4 @@
-Template Patterns in Rewrite Rules
+Higher Order Patterns in Rewrite Rules
 =================================
 
 .. author:: Jaro Reinders
@@ -23,7 +23,7 @@ in rewrite rules.
 Motivation
 ----------
 
-Having more powerful matching in rewrite rules is generally a Good Thing, especially
+Having more powerful matching in rewrite rules is an Excellent Thing, especially
 if it is easy to specify and implement.  We illustrate by showing two problems
 that are solved by the change.
 
@@ -142,22 +142,22 @@ In GHC today, a template variable ``v`` matches any expression ``e`` if
 * ``e`` has the same type as ``v``
 * No local binder of the template is free in ``e``.
 
-The change proposed here is that a **template pattern** matches any expression (of the same type):
+The change proposed here is that a **higher order pattern** matches any expression (of the same type):
 
-* 	**Template pattern**.
-	A template pattern is an expression of form ``f x y z`` where:
+* 	**higher order pattern**.
+	A higher order pattern is an expression of form ``f x y z`` where:
 
 	- ``f`` is a *template variable*
 	- ``x``, ``y``, ``z`` are *local binders* (like ``y`` in rule "wombat" above; see definitions).
 	- The arguments ``x``, ``y``, ``z`` are *distinct* variables
 	- ``x``, ``y``, ``z`` must be term variables (not type applications).
 
-* 	A template pattern ``f x y z`` matches *any expression* ``e`` provided:
+* 	A higher order pattern ``f x y z`` matches *any expression* ``e`` provided:
 
 	- The target has the same type as the template
 	- No local binder is free in ``e``, other than ``x``, ``y``, ``z``.
 
-*	If these two condition hold, the template pattern ``f x y z`` matches the target expression ``e``, yielding the substitution ``[f :-> \x y z. e]``.
+*	If these two condition hold, the higher order pattern ``f x y z`` matches the target expression ``e``, yielding the substitution ``[f :-> \x y z. e]``.
 	Notice that this substitution is type preserving, and the RHS of the substitution has no free local binders.
 
 Uniqueness of matching
@@ -189,7 +189,7 @@ That's encouraging.
 
 More generally, we think that if a match exists it is unique (moudulo eta-reduction).
 
-Uniqueness of matching
+Related work
 ~~~~~~~~~~~~~~~~~~~~~~
 
 There are two notable streams of research: *higher order matching* and *higher order unification*. Both problems are about finding a substitution such that two expressions containing variables become equal. The difference is that unification applies to two expressions that both can contain (unification) variables, while matching applies to one expression with (template) variables and one concrete expression. Matching is an easier problem to solve.
@@ -217,7 +217,7 @@ Examples
 
 		foo (\x -> x * 2 + x)
 
-* 	The template pattern may involve multiple locally bound variables, e.g.:
+* 	The higher order pattern may involve multiple locally bound variables, e.g.:
 	::
 
 		{-# RULES "foo" forall f. foo (\x y z -> f x y z) = "RULE FIRED" #-}
@@ -259,7 +259,7 @@ Examples
 
 		foo (\x y -> x * 2 + y)`
 
-	But again it does contain the template pattern ``f x``, so it would match:
+	But again it does contain the higher order pattern ``f x``, so it would match:
 	::
 
 		foo (\x y -> (bar x . baz) 2 y)
@@ -267,7 +267,7 @@ Examples
 Effect and Interactions
 -----------------------
 
-The main effect of this proposal is that rewrite rules involving template patterns now match more expressions.
+The main effect of this proposal is that rewrite rules involving higher order patterns now match more expressions.
 But the additional matches are guaranteed to be beta equivalent, so this change does not cause existing rules to become semantically incorrect.
 
 The only contentious interactions could occur due to rules that now overlap under the new rules, for example:
@@ -299,7 +299,7 @@ Roughly in order of cheap to expensive alternatives:
 
 1. 	Do nothing.
 
-2. 	Introduce explicit syntax for template patterns.
+2. 	Introduce explicit syntax for higher order patterns.
 	This requires modifying the parser and bikeshedding over syntax, but it may make the rules completely backwards compatible and the intent of the programmer is clearer to the compiler so the compiler can give better error messages and warnings.
 	We have chosen against this alternative, because we do not think any existing rewrite rules depend critically on the previous behaviour and we expect error messages and warnings can still be written for the most common mistakes with a bit more effort.
 
@@ -360,11 +360,11 @@ Unresolved Questions
 
 	(Note: we assume deep subsumption here for simplicity of presentation)
 
-	Now ``@[a]`` is no longer a plain locally bound variable, so this is no longer a template pattern.
+	Now ``@[a]`` is no longer a plain locally bound variable, so this is no longer a higher order pattern.
 
-	This seems fragile and we do not know of any practical programs that requires polymorphic template variables in template patterns.
+	This seems fragile and we do not know of any practical programs that requires polymorphic template variables in higher order patterns.
 
-2. 	The name "template pattern" is still up for debate.
+2. 	The name "higher order pattern" is still up for debate.
 	Suggestions are welcome.
 
 Implementation Plan
