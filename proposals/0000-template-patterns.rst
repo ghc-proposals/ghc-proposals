@@ -144,22 +144,24 @@ In GHC today, a template variable ``v`` matches any expression ``e`` if
 * ``e`` has the same type as ``v``
 * No local binder of the template is free in ``e``.
 
-The change proposed here is that a **higher order pattern** matches any expression (of the same type):
+The change proposed here makes matching more powerful by introducing the notion of a **higher order pattern**
+(a sub-expression of the template) that matches *any* target expression of the same type as the higher order pattern:
 
-* 	**Higher order pattern (HOP)**.
-	A *higher order pattern* is an expression of form ``f x y z`` where:
+* 	**Definition**.
+	A **higher order pattern (HOP)** is a sub-expression of the template of form ``f x y z`` where:
 
 	- ``f`` is a *template variable*
 	- ``x``, ``y``, ``z`` are *local binders* (like ``y`` in rule "wombat" above; see definitions).
 	- The arguments ``x``, ``y``, ``z`` are *distinct* variables
 	- ``x``, ``y``, ``z`` must be term variables (not type applications).
 
-* 	A higher order pattern ``f x y z`` matches *any expression* ``e`` provided:
+* 	**Matching of higher order patterns (HOP-matching)**.
+        A higher order pattern ``f x y z`` (in the template) matches *any target expression* ``e`` provided:
 
 	- The target has the same type as the template
 	- No local binder is free in ``e``, other than ``x``, ``y``, ``z``.
 
-*	If these two condition hold, the higher order pattern ``f x y z`` matches the target expression ``e``, yielding the substitution ``[f :-> \x y z. e]``.
+	If these two condition hold, the higher order pattern ``f x y z`` matches the target expression ``e``, yielding the substitution ``[f :-> \x y z. e]``.
 	Notice that this substitution is type preserving, and the RHS of the substitution has no free local binders.
 
 Uniqueness of matching
@@ -182,7 +184,7 @@ The renaming ``[p:->x, q:->y]`` is done by the matcher (today) on the fly, to ma
 
 Now, we can:
 
-* Either use the new template-application rule to succeed with ``[f :-> \x y. h (x+1) y]``.
+* Either use HOP-matching to succeed with ``[f :-> \x y. h (x+1) y]``.
 * Or use the existing decompose-application rule to match ``(f x)`` against ``(h (p+1))`` and ``y`` against ``q``.  This will succeed, with ``[f :-> \x. h (x+1)]``.
 
 Critically, *it doesn't matter which we do*.
@@ -196,15 +198,15 @@ Related work
 
 There are two notable streams of research: *higher order matching* and *higher order unification*. Both problems are about finding a substitution such that two expressions containing variables become equal. The difference is that unification applies to two expressions that both can contain (unification) variables, while matching applies to one expression with (template) variables and one concrete expression. Matching is an easier problem to solve.
 
-The main related work on matching is `"Higher-order matching for program transformation" <https://www.sciencedirect.com/science/article/pii/S0304397500004023>`_ by De Moor and Sittampalam. This work identifies a subset of the higher order matching problem which is decidable and always has a finite set of possible substitutions. This subset is strictly larger than the subset of template applications which we consider in this proposal. For example, their subset is able to find substitutions to match `forall f x. f x` to `0`. Our proposal does not support this form of higher order matching.
+The main related work on matching is `"Higher-order matching for program transformation" <https://www.sciencedirect.com/science/article/pii/S0304397500004023>`_ by De Moor and Sittampalam. This work identifies a subset of the higher order matching problem which is decidable and always has a finite set of possible substitutions. This subset is strictly larger than the higher order patterns that we consider in this proposal. For example, their subset is able to find substitutions to match `forall f x. f x` to `0`. Our proposal does not support this form of higher order matching.
 
 However De Moor and Sittampalam identify the (potential) importance of the special case that we exploit:
 
     There is a wealth of related work on higher-order matching and unification [5, 7, 11, 13, 16, 18, 24, 25], to name just a few. One important concept identified in some of these works (in particular [16, 18]) is that of a restricted notion of higher-order pattern. To wit, a restricted pattern is a normal term where every occurrence of a free function variable is applied to a list of distinct local variables, and nothing else. For such restricted patterns, much simpler and more efficient matching and unification algorithms are possible. Our algorithm returns all higher-order matches for rules where the pattern satisfies the above restriction; in fact there is at most one such match. We have not yet investigated the efficiency of our algorithm in this important special case.
 
-Existing work on higher order unification has revealed that higher order unification of the template application form is a useful decidable subset of the general problem. This was first observed by Miller in `"Unification Under a Mixed Prefix" <https://repository.upenn.edu/cis_reports/454/>`_. Miller called these template applications 'patterns', but we decided against using that terminology because of the confusion with regular pattern matching in Haskell. Nowadays higher unification with Miller's pattern restriction is commonplace in dependently typed languages such as `Agda <http://www.cse.chalmers.se/~ulfn/papers/thesis.pdf>`_ and `Idris <https://www.type-driven.org.uk/edwinb/papers/impldtp.pdf>`_, which shows that higher order unification with this restriction is still very powerful.
+Existing work on higher order unification has revealed that higher order unification of higher order patterns is a useful decidable subset of the general problem. This was first observed by Miller in `"Unification Under a Mixed Prefix" <https://repository.upenn.edu/cis_reports/454/>`_. (Miller called our higher order patterns just 'patterns', but we decided against using that terminology because of the confusion with regular pattern matching in Haskell.) Nowadays higher unification with Miller's pattern restriction is commonplace in dependently typed languages such as `Agda <http://www.cse.chalmers.se/~ulfn/papers/thesis.pdf>`_ and `Idris <https://www.type-driven.org.uk/edwinb/papers/impldtp.pdf>`_, which shows that higher order unification with this restriction is still very powerful.
 
-One notable extension of Miller's patterns is the extension by Duggan in his paper `"Unification with extended patterns" <https://doi.org/10.1016/S0304-3975(97)00141-2>`_. Duggan extends the simple template application form to allow projections of local binders as arguments to the template variables. Such an extension might also be applicable to the template application form in this proposal.
+One notable extension of Miller's patterns is the extension by Duggan in his paper `"Unification with extended patterns" <https://doi.org/10.1016/S0304-3975(97)00141-2>`_. Duggan extends the simple higher order pattern form to allow projections of local binders as arguments to the template variables. Such an extension might also be applicable to the higher order patterns in this proposal.  András Kovács writes about further extensions `"in this StackOverflow" <https://cstheory.stackexchange.com/questions/50914/swapping-arguments-of-variables-in-higher-order-pattern-unification/50918#50918>`_.
 
 Examples
 --------
@@ -234,8 +236,9 @@ Examples
 
 		foo (\x y z -> x * 2 + z)
 
-* 	Locally bound variables may only occur once.
-	Consider the following rule:
+* 	Locally bound variables may only occur once in a higher order pattern.
+        But that doesn't mean we reject such non-linear template variable applications in a pattern.
+        Consider the following rule:
 	::
 
 		{-# RULES "foo" forall f. foo (\x -> f x x) = "RULE FIRED" #-}
@@ -243,9 +246,9 @@ Examples
 	This would **not** match:
 	::
 
-		foo (\x -> x * 2 + x)
+		foo (\x -> x + (x*2))
 
-	But it does contain the valid subrule ``f x``, so it would match:
+	But it does contain the valid HOP ``f x``, so it would match:
 	::
 
 		foo (\x -> (bar x . baz) x)
@@ -256,12 +259,12 @@ Examples
 
 		{-# RULES "foo" forall f. foo (\x y -> f x 2 y) = "RULE FIRED" #-}
 
-	This would **not** match:
+	The template sub-expression ``f x 2 y`` is not a HOP, so the rule would **not** match:
 	::
 
 		foo (\x y -> x * 2 + y)`
 
-	But again it does contain the higher order pattern ``f x``, so it would match:
+	But again it does contain the valid HOP ``f x``, so it would match:
 	::
 
 		foo (\x y -> (bar x . baz) 2 y)
@@ -272,7 +275,7 @@ Effect and Interactions
 The main effect of this proposal is that rewrite rules involving higher order patterns now match more expressions.
 But the additional matches are guaranteed to be beta equivalent, so this change does not cause existing rules to become semantically incorrect.
 
-The only contentious interactions could occur due to rules that now overlap under the new rules, for example:
+The only potentially-contentious interactions could occur due to rules that now overlap under the new rules, for example:
 ::
 
 	{-# RULES
@@ -280,8 +283,9 @@ The only contentious interactions could occur due to rules that now overlap unde
 	"foo->baz"  forall   x.  foo x (\y. y * 2 + y) = baz x
 	#-}
 
-Previously, the rule ``"foo->baz"`` would always fire when encountering the expression ``foo x (\y. y * 2 + y)``, but now the rule ``"foo->bar"`` also matches.
-However, we do not expect that this occurs in practice.
+Previously, only the rule ``"foo->baz"`` would fire when encountering the expression ``foo x (\y. y * 2 + y)``, but now the rule ``"foo->bar"`` also matches.  However, when multiple rules match, GHC picks the most specific; and
+in fact ``"foo->baz"`` is more specific than ``"foo->bar"``, so the former will "win".
+We are not aware of any rule-sets whose behaviour would change under this proposal.
 
 
 Costs and Drawbacks
@@ -349,7 +353,7 @@ Unresolved Questions
 
 		{-# RULES "foo" forall (f :: forall a. [a] -> Int). foo (/\a. \(xs::[a]) -> 1 + f @a xs) = 2 + foo f #-}
 
-	The proposal could be change such that this rule would match the expression:
+	The proposal could be changed such that this rule would match the expression:
 	::
 
 		foo (/\b. \(ys::[b]). 1 + (reverse @b (take @b 3 ys)))
@@ -372,5 +376,5 @@ Unresolved Questions
 Implementation Plan
 -------------------
 
-The proposed changes have already been implemented in `#9343 <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/9343>`_.
+The proposed changes have already been implemented in `!9343 <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/9343>`_.
 Only tests still need to be written.
