@@ -144,8 +144,8 @@ In GHC today, a template variable ``v`` matches any expression ``e`` if
 
 The change proposed here is that a **higher order pattern** matches any expression (of the same type):
 
-* 	**higher order pattern**.
-	A higher order pattern is an expression of form ``f x y z`` where:
+* 	**Higher order pattern (HOP)**.
+	A *higher order pattern* is an expression of form ``f x y z`` where:
 
 	- ``f`` is a *template variable*
 	- ``x``, ``y``, ``z`` are *local binders* (like ``y`` in rule "wombat" above; see definitions).
