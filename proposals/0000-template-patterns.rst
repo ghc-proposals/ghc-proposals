@@ -189,6 +189,21 @@ That's encouraging.
 
 More generally, we think that if a match exists it is unique (moudulo eta-reduction).
 
+Uniqueness of matching
+~~~~~~~~~~~~~~~~~~~~~~
+
+There are two notable streams of research: *higher order matching* and *higher order unification*. Both problems are about finding a substitution such that two expressions containing variables become equal. The difference is that unification applies to two expressions that both can contain (unification) variables, while matching applies to one expression with (template) variables and one concrete expression. Matching is an easier problem to solve.
+
+The main related work on matching is `"Higher-order matching for program transformation" <https://www.sciencedirect.com/science/article/pii/S0304397500004023>`_ by De Moor and Sittampalam. This work identifies a subset of the higher order matching problem which is decidable and always has a finite set of possible substitutions. This subset is strictly larger than the subset of template applications which we consider in this proposal. For example, their subset is able to find substitutions to match `forall f x. f x` to `0`. Our proposal does not support this form of higher order matching.
+
+However De Moor and Sittampalam identify the (potential) importance of the special case that we exploit:
+
+    There is a wealth of related work on higher-order matching and unification [5, 7, 11, 13, 16, 18, 24, 25], to name just a few. One important concept identified in some of these works (in particular [16, 18]) is that of a restricted notion of higher-order pattern. To wit, a restricted pattern is a normal term where every occurrence of a free function variable is applied to a list of distinct local variables, and nothing else. For such restricted patterns, much simpler and more efficient matching and unification algorithms are possible. Our algorithm returns all higher-order matches for rules where the pattern satisfies the above restriction; in fact there is at most one such match. We have not yet investigated the efficiency of our algorithm in this important special case.
+
+Existing work on higher order unification has revealed that higher order unification of the template application form is a useful decidable subset of the general problem. This was first observed by Miller in `"Unification Under a Mixed Prefix" <https://repository.upenn.edu/cis_reports/454/>`_. Miller called these template applications 'patterns', but we decided against using that terminology because of the confusion with regular pattern matching in Haskell. Nowadays higher unification with Miller's pattern restriction is commonplace in dependently typed languages such as `Agda <http://www.cse.chalmers.se/~ulfn/papers/thesis.pdf>`_ and `Idris <https://www.type-driven.org.uk/edwinb/papers/impldtp.pdf>`_, which shows that higher order unification with this restriction is still very powerful.
+
+One notable extension of Miller's patterns is the extension by Duggan in his paper `"Unification with extended patterns" <https://doi.org/10.1016/S0304-3975(97)00141-2>`_. Duggan extends the simple template application form to allow projections of local binders as arguments to the template variables. Such an extension might also be applicable to the template application form in this proposal.
+
 Examples
 --------
 
