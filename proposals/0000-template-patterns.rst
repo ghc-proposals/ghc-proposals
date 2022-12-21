@@ -164,6 +164,9 @@ The change proposed here makes matching more powerful by introducing the notion 
 	If these two condition hold, the higher order pattern ``f x y z`` matches the target expression ``e``, yielding the substitution ``[f :-> \x y z. e]``.
 	Notice that this substitution is type preserving, and the RHS of the substitution has no free local binders.
 
+*       **Ambiguity breaking**.  When matching template ``(etmpl x)`` against target ``(etarget x)``, do *not* use HOP-matching even if ``(etmpl x)`` is a HOP; instead simply match ``etmpl`` (which is also a HOP) against ``etarget``.  (See the next subsection for the justification for this refinement.)
+
+
 Uniqueness of matching and backward compatibility
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -173,21 +176,21 @@ and perhaps-incompatible match.  But in fact not: if the existing mechanism find
 the HOP-matching will also find a match, and it will be identical up to eta-equivalence.
 
 For example consider::
+
      RULE "old" forall f. foo (\x y z -> negate (f z x)) = map f
 
 and the target expression::
+
      foo (\p q r -> negate (wim r p))
 
 We can see that:
-* The existing rule-matcher will succeed, binding ``[f :-> wim]``, rewriting the target to ``(map wim)``
+
+* The existing rule-matcher will succeed, binding ``[f :-> wim]``, rewriting the target to ``map wim``
 * Under this proposal since ``(f z x)`` is a higher-order pattern, HOP-matching ``(f z x)`` against the target ``(wim r p)`` will succeed, binding ``[f :-> \r p -> wim r p]``, thus rewriting the target to ``map (\r p -> wim r p)``.
 
 You might worry that the two results are not quite the same, because eta-reduction is not sound in Haskell.
-So we propose the following refinement:
-
-* when matching template ``(etmpl x)`` against target ``(etarget x)``, do *not* use HOP-matching even if ``(etmpl x)`` is a HOP; instead just match ``etmpl`` (which is also a HOP) against ``etarget``.
-
-Now, in the case where the existing matching mechanism succeeds, the new mechanism will give the same results.
+That is the reason for the "ambiguity breaking" bullet in the specification.
+With this refinement, in all cases where the existing matching mechanism succeeds, the new mechanism will give the same results because it will simply use the old existing mechanism.
 
 As a more complicated example, consider this rule and target:
 ::
