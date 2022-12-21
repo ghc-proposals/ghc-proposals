@@ -16,6 +16,14 @@ I propose that we allow a datatype and field level override of the module defaul
 
 ## 1.1 Motivation
 
+There are three main motivations for this proposal:
+
+1. Generating records in `TemplateHaskell` without field selectors
+2. Ability to suppress selectors for partial fields
+3. Consistency with `OverlappingInstances` pragma being specialized
+
+### 1.1.1 Template Haskell Record Generation
+
 The database library `esqueleto` recently implemented support for `OverloadedRecordDot` on the `SqlExpr (Entity rec)` type, which represents a row from a database table.
 The syntax for projecting a field in the old and new styles is this:
 
@@ -67,13 +75,29 @@ Instead of exposing the constructor (and forcing a breaking change with each fie
 This type shares the same field names as `SqlBackend`, but the intent is not ever to *use* them as a function but to use them as constructor labels.
 The types are currently defined in separate modules to avoid duplicate field warnings and issues, but if it were possible to do `NoFieldSelectors` on a single type, then I could easily keep them together.
 
-Another motivation is consistency.
+### 1.1.2 Suppressing selectors for partial fields
+
+Today, many style guides consider partial functions to be a problem.
+You can create partial fields on sum types if all constructors do not share the field.
+For example, consider:
+
+```haskell
+data T 
+    = A { x :: Int, y :: Double }
+    | B { x :: Int, z :: Char }
+```
+
+The field `x` is a total function with type `x :: T -> Int`. However, the selectors `y :: T -> Double` and `z :: T -> Char` are partial, and will fail at runtime if used on the wrong constructor.
+This proposal would allow you to disable field selectors for the partial fields, while retaining them for the total field.
+
+With `NoFieldSelectors`, we can avoid this, but at the cost of turning off field selector generation for the entire module, which we might not want.
+Being able to control field selector generation on a per-datatype level and per-field level lets you use this trick while keeping other "normal" records the same.
+
+### 1.1.3 Consistency with `OverlappingInstances`
+
 The `OverlappingInstances` pragma is used to allow *all* instances in a module to be overlapping or overlappable.
 But this is too coarse grained - you usually want to specify a *single* instance as `{-# OVERLAPPABLE #-}` directly in the instance body.
-
-Another motivation: today it's generally considered Bad Practice to use record syntax for the constructors of datatypes with alternatives, because this generates partial field accessors.
-With NoFieldSelectors, we can avoid this, but at the cost of turning off field selector generation for the entire module, which we might not want.
-Being able to control field selector generation on a per-datatype level lets you use this trick while keeping other "normal" records the same.
+This proposal is motivated in a similar manner to specializing `OverlappingInstances` to specific places where you want it.
 
 ## 1.2 Proposed Change Specification
 
