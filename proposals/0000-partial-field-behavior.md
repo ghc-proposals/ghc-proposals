@@ -245,9 +245,10 @@ instance HasField "eventId" Message (Maybe EventId) where
 ```
 
 
-#### Record Update??
+#### Record Update
 
-It's unclear how this extension would interact with record update.
+This extension would not change the behavior of partial record fields used in an update.
+
 The status quo is to throw an exception:
 
 ```haskell
@@ -268,7 +269,7 @@ interactive:10:1: warning: [-Wincomplete-record-updates]
 *** Exception: interactive:10:1-15: Non-exhaustive patterns in record update
 ```
 
-The conservative choice would be to continue with the status quo for the purposes of this proposal, and require a separate proposal for altering the safety of partial fields in record update.
+Users interested in safety can set `-Werror=incomplete-record-updates` while still being able to use partial fields safely in other contexts.
 
 #### Record Construction + Pattern Matching
 
