@@ -164,7 +164,7 @@ The change proposed here makes matching more powerful by introducing the notion 
 	If these two condition hold, the higher order pattern ``f x y z`` matches the target expression ``e``, yielding the substitution ``[f :-> \x y z. e]``.
 	Notice that this substitution is type preserving, and the RHS of the substitution has no free local binders.
 
-*       **Ambiguity breaking**.  When matching template ``(etmpl x)`` against target ``(etarget x)``, do *not* use HOP-matching even if ``(etmpl x)`` is a HOP; instead simply match ``etmpl`` (which is also a HOP) against ``etarget``.  (See the next subsection for the justification for this refinement.)
+*       **Ambiguity breaking**.  When matching template ``(etmpl x)`` against target ``(etarget x)``, do *not* use HOP-matching even if ``(etmpl x)`` is a HOP; instead simply match ``etmpl`` (which is also a HOP) against ``etarget``.  See the next subsection for the justification for this refinement.
 
 
 Uniqueness of matching and backward compatibility
@@ -314,12 +314,9 @@ We are not aware of any rule-sets whose behaviour would change under this propos
 Costs and Drawbacks
 -------------------
 
-1. 	The changes required for this proposal are small (the core of the change is an addition of just 22 lines of code).
-	Small changes can add up, but we think the benefits far outweigh this cost in this case.
+The changes required for this proposal are small (the core of the change is an addition of just 22 lines of code).
+Small changes can add up, but we think the benefits far outweigh this cost in this case.
 
-2. 	This proposal causes a silent change of behaviour of existing code.
-	It is possible to come up with an artificial system of rewrite rules that produces suboptimal results due to this change.
-	We do not expect this to happen in practice.
 
 Alternatives
 ------------
