@@ -156,7 +156,7 @@ Examples
 Suppose the definitions of ``head`` and ``nub`` are annotated with::
 
     {-# WARNING [x-partial] head "This is a partial function, it throws an error on empty lists." #-}
-    {-# WARNING [x-quadratic] tail "The nub function has quadratic run-time complexity. If possible, use nubBy or nubOn." #-}
+    {-# WARNING [x-quadratic] nub "The nub function has quadratic run-time complexity. If possible, use nubBy or nubOn." #-}
 
 and the user program contains occurrences of both ``head`` and ``nub``::
 
