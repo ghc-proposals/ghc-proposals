@@ -28,7 +28,7 @@ that ``GHC2021`` comprises, plus the following
 * `ExplicitNamespaces`_
 * `GADTs`_ (and the implied `MonoLocalBinds`_)
 * `LambdaCase`_
-
+* `RoleAnnotations`_
 
 (*The committe will vote on each extension separately. Until then, this is the
 list of nominated extensions, and will be updated after a vote.*)
@@ -157,6 +157,15 @@ wants to add extensions to ``GHC20xx`` that have been proven to be stable, then
 this one probably isn’t yet.
 
 
+Why add RoleAnnotations?
+------------------------
+
+Roles are essential part of modern GHC Haskell.
+
+As `GeneralisedNewtypeDeriving` is in GHC2021 language, so should be `RoleAnnotations`. They are different sides of the same feature: without correct role annotations GND cannot be used safely.
+
+Role annotations are required for correctly writing types with internal invariants like `Set` or "fast" implementations like `data Fin (n :: Nat) = UnsafeFin Int`.
+
 Alternatives
 ------------
 We could not do ``GHC2023`` and wait another year, or more, because we shy away from
@@ -177,3 +186,4 @@ I (Joachim) can prepare a MR.
 .. _OverloadedStrings: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/overloaded_strings.html#extension-OverloadedStrings
 .. _LambdaCase: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/lambda_case.html#extension-LambdaCase
 .. _MonoLocalBinds: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/let_generalisation.html#extension-MonoLocalBinds
+.. _RoleAnnotations: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/roles.html#extension-RoleAnnotations
