@@ -162,9 +162,9 @@ Why add RoleAnnotations?
 
 Roles are essential part of modern GHC Haskell.
 
-As `GeneralisedNewtypeDeriving` is in GHC2021 language, so should be `RoleAnnotations`. They are different sides of the same feature: without correct role annotations GND cannot be used safely.
+As `GeneralisedNewtypeDeriving`_ is in the GHC2021 language set, so should be `RoleAnnotations`_. They are different sides of the same feature: without correct role annotations GND cannot be used safely.
 
-Role annotations are required for correctly writing types with internal invariants like `Set` or "fast" implementations like `data Fin (n :: Nat) = UnsafeFin Int`.
+Role annotations are required for correctly writing types with internal invariants like ``Set`` or "fast" implementations like ``data Fin (n :: Nat) = UnsafeFin Int``.
 
 Alternatives
 ------------
@@ -187,3 +187,4 @@ I (Joachim) can prepare a MR.
 .. _LambdaCase: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/lambda_case.html#extension-LambdaCase
 .. _MonoLocalBinds: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/let_generalisation.html#extension-MonoLocalBinds
 .. _RoleAnnotations: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/roles.html#extension-RoleAnnotations
+.. _GeneralisedNewtypeDeriving: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/roles.html#extension-GeneralisedNewtypeDeriving
