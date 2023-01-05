@@ -378,8 +378,7 @@ Points below up to and including the new (backward-compatible) definition of
          ``pattern P :: a -> Maybe a``
          becomes
          ``pattern P :: forall a. a -> Maybe a``.
-         Implicit quantification in pattern synonyms
-         always produces *universal* variables, never existential ones.
+         Implicit quantification in pattern synonyms always produces *universal* variables, never existential ones.
 
       #. Type annotations in expressions and ``SPECIALISE`` pragmas.
          Example:
@@ -410,8 +409,7 @@ Points below up to and including the new (backward-compatible) definition of
          ``{-# RULES "name" forall (x :: Maybe a). foo x = 5 #-}``
          becomes
          ``{-# RULES "name" forall a. forall (x :: Maybe a). foo x = 5 #-}``.
-         (The double-\ ``forall`` syntax separates type variables like ``a`` from
-         term variables like ``x``.)
+         (The double-\ ``forall`` syntax separates type variables like ``a`` from term variables like ``x``.)
 
       This is the former ``-XImplicitForAll`` from accepted but unimplemented proposal `#285`_;
       the only change is including ``RULES`` pragmas, which @Ericson2314 simply forgot to include in `#285`_ (his own admission).
