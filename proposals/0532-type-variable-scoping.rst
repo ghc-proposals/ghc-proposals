@@ -12,6 +12,26 @@ Clean up and simplify the treatment of implicit binding
 
 I believe `#448`_ landed with some ill-advised decisions, and I wish to correct them.
 
+Proposed Change Summary
+-----------------------
+
+Principles
+~~~~~~~~~~
+
+- The **Explicit Binding Principle** now comes before --- in the document but also conceptually --- the **Lexical Scoping Principle**.
+
+  The revised **Explicit Binding Principle** says we should be able to explicitly bind everything that can be bound, and tries to provide a tighter definition of what makes a binding "explicit".
+
+  The **Lexical Scoping Principle** says we *additionally* should be able to disable implicit binding, so the explicit alternatives are in fact the only alternatives.
+
+Proposal `#448`_
+~~~~~~~~~~~~~~~~
+
+- ``-XImplicitForAll`` and ``-Werror=pattern-signature-binds`` are combined in ``-XImplicitBinds``.
+
+- A few more cases of implicit binding in signatures in negative position are also banned in ``-XImplicitBinds``.
+
+  These were incorrectly considered "pattern signature binding" in prior versions of this proposal, and thus slipped through the cracks once it was realized that they are not by the usual definition of "pattern signature binding" which we do not mean to change.
 
 Motivation
 ----------
