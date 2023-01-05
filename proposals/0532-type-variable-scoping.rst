@@ -155,7 +155,7 @@ I don't call pattern signature binding "sugar" in the revised text, but I do cal
 For those not comfortable with this yet, I suggest we hurry up and accept `#523`_ so that it is also unambiguously "implicit" and "sugar" by having the explicit ``let type var = _ in`` syntax it can be desugared to.
 
 .. _`#270`: https://github.com/ghc-proposals/ghc-proposals/pull/270
-.. _`#285`: proposals/0285-no-implicit-binds.rst
-.. _`#425`: proposals/0425-decl-invis-binders.rst
-.. _`#448`: proposals/0448-type-variable-scoping.rst
+.. _`#285`: ./0285-no-implicit-binds.rst
+.. _`#425`: ./0425-decl-invis-binders.rst
+.. _`#448`: ./0448-type-variable-scoping.rst
 .. _`#523`: https://github.com/ghc-proposals/ghc-proposals/pull/523
