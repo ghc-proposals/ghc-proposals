@@ -1292,7 +1292,7 @@ Here, I summarize the effects on the principles_.
 #. The `Lexical Scoping Principle`_ outside of Template Haskell is made to hold with ``-XNoImplicitBinds``
 
    Indeed, the purpose of ``-XNoImplicitBinds`` is to be the single extension which is both necessary and sufficient to do this.
-   (The Template Haskell issue is something would be solved by more rigorous notations of hygiene. That has little to do with ``-XNoImplicitBinds`` as currently specified, and is much more work of a very different nature.) 
+   (The Template Haskell issue is something would be solved by more rigorous notations of hygiene. That has little to do with ``-XNoImplicitBinds`` as currently specified, and is much more work of a very different nature.)
 
    The `Lexical Scoping Principle`_, part (a), is upheld.
    Binders occur in patterns, after ``forall``, in
