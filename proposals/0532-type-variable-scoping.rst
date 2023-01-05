@@ -55,13 +55,6 @@ They don't all (yet!) have an explicit alternative, but they should, and tentati
 This leaves the **Lexical scoping principle**, and then we have a *single* knob to bring us into compliance with a *single* feature.
 The principles and design are once again back in sync!
 
-Proposal `#425`_
-~~~~~~~~~~~~~~~~
-
-I just updated to refer to principles.
-Most of this proposal ended up being about clarifying very nuanced issues with type families and data families, as that was where the complexity lies.
-But the "easy parts" for just explicitness and syntactic uniformity are very much part of the 448 story and thus relate to the same principles.
-
 Proposal `#448`_
 ~~~~~~~~~~~~~~~~
 
