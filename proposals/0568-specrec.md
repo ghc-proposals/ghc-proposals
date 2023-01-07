@@ -22,7 +22,7 @@ elem = ...
 elems :: (Foldable t, Eq a) => a -> t [a] -> Bool
 elems x = any (elem x)
 
-foo :: [String]
+foo :: [String] -> Bool
 foo xs = elems 'c'
 ```
 
@@ -37,7 +37,7 @@ elem = ...
 elems :: (Foldable t, Eq a) => a -> t [a] -> Bool
 elems x = any (elem x)
 
-foo :: [String]
+foo :: [String] -> Bool
 foo xs = elems 'c'
 ```
 
