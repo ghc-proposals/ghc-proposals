@@ -171,6 +171,12 @@ of the same specialization at different use sites.
 When a binding with an INLINEABLE or INLINE pragma get's marked as `SPECIALIZEABLE_REC` the only difference
 would be that GHC would expose the original rhs instead of the optimized one.
 
+Note that using INLINEABLE would also mean GHC will inline and specialize the unoptimised RHS of a bindings.
+Which can cause difference in regards to what get's inlining, which rules fire, compile times and optimization
+outcomes.
+
+However it should ensure the same level of monomorphization as the use of `SPECIALIZEABLE_REC`.
+
 ### Default methods
 
 Instance methods can be annotated with SPECIALIZEABLE_REC and instances implemented using the default
