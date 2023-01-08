@@ -293,6 +293,12 @@ Alternatives
 
 * Hide behind a ``MultilineStrings`` extension
 
+* Enable any number of ``"""+`` quotes to delimit strings
+
+* Reuse single-quoted ``"`` for multiline syntax
+
+  * Would require escaping double quotes in the multiline string, which, while not a major part of the proposal, is a nice bonus
+
 Unresolved Questions
 --------------------
 
