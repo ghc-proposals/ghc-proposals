@@ -1,5 +1,5 @@
 Higher Order Patterns in Rewrite Rules
-=================================
+======================================
 
 .. author:: Jaro Reinders
 .. date-accepted::
@@ -11,7 +11,7 @@ Higher Order Patterns in Rewrite Rules
 .. contents::
 
 Overview
------------
+--------
 
 User defined rewrite rules allow for powerful optimisations such as
 shortcut fusion.  This proposal extends rewrite rules with a
@@ -59,7 +59,7 @@ But alas this simply doesn't work in practice. Suppose we had::
 Then we'd get the expression ``foldr (\x ys -> x+1 : ys) [] xs``, and that doesn't syntactically match the pattern in ``mapList``.
 We need a more powerful matcher to find a suitable ``f`` when matching.
 
-Similarly, if we started with ``map p (map q xs)``, we would indded get foldr/build fusion, and end up with ``foldr (\x ys -> p (q x) : ys) [] xs``.  Alas again this does not syntactically match the pattern in "mapList".  Yet if, when matching rule "matchList", the matcher could
+Similarly, if we started with ``map p (map q xs)``, we would indeed get foldr/build fusion, and end up with ``foldr (\x ys -> p (q x) : ys) [] xs``.  Alas again this does not syntactically match the pattern in "mapList".  Yet if, when matching rule "matchList", the matcher could
 cough up the binding ``f :-> \x -> p (q x)``, we could rewrite the ``foldr`` call to ``map (\x -> p (q x)) xs``, which is of course what we want.
 
 Since we do not have this more powerful matcher, the ``base`` uses a clever (but ultimately inadequate) hack.  The actual rules are these::
@@ -135,7 +135,7 @@ Consider the rule:
 * 	**Target**.
 	The rule matcher matches the LHS of the rule (the template) against an expression in the program (the *target*).
 * 	**Substitution**.
-	A sucessful match finds a *substitution* S: a binding for each template variable, such that applying S to the LHS yields the target.
+	A successful match finds a *substitution* S: a binding for each template variable, such that applying S to the LHS yields the target.
 * 	After a successful match we replace the target expression with the substitution S applied to the RHS of the rule.
 
 
@@ -217,7 +217,7 @@ The refined rule picks (2), which yields success with as few lambdas as possible
 
 
 Related work
-~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~
 
 There are two notable streams of research: *higher order matching* and *higher order unification*. Both problems are about finding a substitution such that two expressions containing variables become equal. The difference is that unification applies to two expressions that both can contain (unification) variables, while matching applies to one expression with (template) variables and one concrete expression. Matching is an easier problem to solve.
 
@@ -285,7 +285,7 @@ Examples
 	The template sub-expression ``f x 2 y`` is not a HOP, so the rule would **not** match:
 	::
 
-		foo (\x y -> x * 2 + y)`
+		foo (\x y -> x * 2 + y)
 
 	But again it does contain the valid HOP ``f x``, so it would match:
 	::
@@ -335,7 +335,7 @@ Roughly in order of cheap to expensive alternatives:
 
 		"mapList" [1]  forall f.    foldr (\x ys -> f : ys) [] = map (\x -> f)
 
-	Where the the rule matcher would recognise that the ``\x ->`` binders on the left and the right is the same.
+	Where the rule matcher would recognise that the ``\x ->`` binders on the left and the right is the same.
 	From this we could deduce that the variables ``x`` should be allowed to occur in ``f``.
 	We have not chosen this syntax because it is less explicit about which locally bound variables are allowed to occur in which template variables.
 
@@ -389,9 +389,6 @@ Unresolved Questions
 	Now ``@[a]`` is no longer a plain locally bound variable, so this is no longer a higher order pattern.
 
 	This seems fragile and we do not know of any practical programs that requires polymorphic template variables in higher order patterns.
-
-2. 	The name "higher order pattern" is still up for debate.
-	Suggestions are welcome.
 
 Implementation Plan
 -------------------
