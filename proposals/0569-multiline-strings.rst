@@ -93,13 +93,14 @@ Proposed Change Specification
 
 #. Post-process the string in the following steps:
 
-   #. If the string starts with a newline character, ignore it
-
    #. Collapse line continuations
 
    #. Remove common whitespace prefix in every line
 
+      * Ignore any characters preceding the first newline
       * Blank lines should not be included in this calculation
+
+   #. Remove exactly one newline from the beginning of the string (if one exists)
 
    #. Interpret escape sequences (occurs after removing whitespace prefix so that literal ``\n`` characters are not included)
 
@@ -187,6 +188,37 @@ Note that the whitespace preceding the closing ``"""`` is included. This implies
     c
       """
 
+Ignore leading characters
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The common prefix calculation ignores all characters preceding the first newline. This means that characters immediately after the ``"""`` delimiter will be included verbatim. The same would occur with a line continuation (since line continuations are collapsed before the prefix calculation).
+
+::
+
+  s =
+    """Line 1
+       Line 2
+    Line 3
+    """
+
+  s_2 =
+    """\
+   \Line 1
+       Line 2
+    Line 3
+    """
+
+  -- equivalent to
+  s' = "Line 1\n   Line 2\nLine 3"
+
+This implies that normal strings could also be written using ``"""``
+
+::
+
+  -- the following are equivalent
+  s = """hello world"""
+  s' = "hello world"
+
 Mixing tabs and spaces
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -210,7 +242,7 @@ The common whitespace prefix is 16 spaces, so the first line will remove 2 tabs,
 Leading newline
 ~~~~~~~~~~~~~~~
 
-The specification explicitly calls for ignoring an initial newline, which is the behavior of least surprise for most devs used to multiline strings. To keep the initial newline, add a blank line before the first line:
+The specification strips exactly one leading newline, which is the behavior of least surprise for most devs used to multiline strings. To keep the initial newline, add a blank line before the first line:
 
 ::
 
@@ -224,32 +256,6 @@ The specification explicitly calls for ignoring an initial newline, which is the
 
   -- equivalent to
   s' = "\na\nb\nc\n"
-
-It only ignores the newline if it's the very first character, so putting characters immediately after the ``"""`` delimiter *will include that line in the common prefix calculation*. The same would occur with a line continuation.
-
-::
-
-  s =
-    """Start a line
-    Another line
-    """
-
-  -- equivalent to
-  s' = "Start a line\n    Another line\n"
-
-  s'' =
-    """\
-   \Start a line
-    Another line
-    """
-
-This implies that normal strings could also be written using ``"""``
-
-::
-
-  -- the following are equivalent
-  s = """hello world"""
-  s' = "hello world"
 
 Trailing newline
 ~~~~~~~~~~~~~~~~
