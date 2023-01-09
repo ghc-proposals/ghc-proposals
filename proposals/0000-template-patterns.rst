@@ -357,38 +357,8 @@ Roughly in order of cheap to expensive alternatives:
 Unresolved Questions
 --------------------
 
-1. 	What to do with polymorphic template variables?
-	Consider the code:
-	::
+None.
 
-		foo :: (forall a. [a] -> Int) -> Int
-		foo len = len [1,2,3] + len "abc"
-		{-# NOINLINE foo #-}
-
-		{-# RULES "foo" forall (f :: forall a. [a] -> Int). foo (\xs -> 1 + f xs) = 2 + foo f #-}
-
-	Here, the template variable ``f`` has a polymorphic type.
-	With explicit type abstractions and applications the rule looks like this:
-	::
-
-		{-# RULES "foo" forall (f :: forall a. [a] -> Int). foo (/\a. \(xs::[a]) -> 1 + f @a xs) = 2 + foo f #-}
-
-	The proposal could be changed such that this rule would match the expression:
-	::
-
-		foo (/\b. \(ys::[b]). 1 + (reverse @b (take @b 3 ys)))
-
-
-	However, if we change the type of the template variable ``f`` to ``forall a. a -> Int``, then the rule with explicit type abstractions and applications looks like this:
-	::
-
-		{-# RULES "foo" forall (f :: forall a. a -> Int). foo (/\a. \(xs::[a]) -> 1 + f @[a] xs) = 2 + foo f #-}
-
-	(Note: we assume deep subsumption here for simplicity of presentation)
-
-	Now ``@[a]`` is no longer a plain locally bound variable, so this is no longer a higher order pattern.
-
-	This seems fragile and we do not know of any practical programs that requires polymorphic template variables in higher order patterns.
 
 Implementation Plan
 -------------------
