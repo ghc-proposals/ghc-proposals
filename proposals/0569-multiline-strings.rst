@@ -507,7 +507,9 @@ Alternatives
 
   * The downside of doing this is that generally speaking, developers will want to keep the multiline string at the same indentation level as surrounding code. Not doing any post processing means that reindenting code would change the string content. I would also posit that the common case is wanting leading whitespace stripped, which would lead to devs putting multiline strings at the 0th column or implementing their own deindenter.
 
-* Enable any number of ``"""+`` quotes to delimit strings
+* Use ``''`` to delimit multiline strings, which has the benefit of being a parse error without ``MultilineStrings``
+
+* Enable any number of ``"""+`` quotes to delimit multiline strings
 
 * Reuse single-quoted ``"`` for multiline syntax
 
