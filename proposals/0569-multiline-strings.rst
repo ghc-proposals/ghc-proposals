@@ -190,23 +190,22 @@ Note that the whitespace preceding the closing ``"""`` is included. This implies
 Mixing tabs and spaces
 ~~~~~~~~~~~~~~~~~~~~~~
 
-A tab and a space both count as a single whitespace character, so mixing the two is inconsequential. But don't do this.
+Per the `Haskell report <https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#x17-17800010.3>`_, tabs will be treated as 8 spaces in the calculation. If the common prefix is in the middle of a tab (which would only happen if mixing spaces and tabs), the tab will be converted to 8 spaces first. But don't do this.
 
-In the following example, two ``-`` characters will represent 1 tab, and ``.`` will represent 1 space.
+In the following example, two ``-`` characters will represent 1 tab, and 1 ``.`` character will represent 4 spaces.
 
 ::
 
   s = """
-  ----a
+  ------a
   ....b
-  --..c
-  ..--d
+  .------c
   ...."""
 
   -- equivalent to
-  s' = "a\n..b\n..c\n--d\n"
+  s' = "--a\nb\n.--c\n"
 
-The lexer will interpret the first line as ``"\t\ta"``, which has two leading whitespace characters, so two leading whitespace characters will be removed from every line.
+The common whitespace prefix is 16 spaces, so the first line will remove 2 tabs, the second line will remove 16 spaces, and the third line will remove 4 spaces, a tab, then convert the second tab to 8 spaces before removing 4 spaces from it.
 
 Leading newline
 ~~~~~~~~~~~~~~~
