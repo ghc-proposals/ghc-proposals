@@ -98,7 +98,7 @@ Proposed Change Specification
    #. Remove common whitespace prefix in every line
 
       * Ignore any characters preceding the first newline
-      * Blank lines should not be included in this calculation
+      * Blank lines and lines with only whitespace should not be included in this calculation
 
    #. Remove exactly one newline from the beginning of the string (if one exists)
 
@@ -131,62 +131,37 @@ Line continuations are collapsed first and not included in the whitespace calcul
 Remove common whitespace
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
+In the below examples, leading spaces will be marked as ``.`` for visibility.
+
 ::
 
   s =
         """
-        a b c
+  ......a b c
 
-        d e f
-
-      g h i
-        """
+  ......d e f
+  ..
+  ....g h i
+  ......"""
 
   -- equivalent to
-  s' = "  a b c\n\n  d e f\n\ng h i\n  "
+  s' = "..a b c\n\n..d e f\n\ng h i\n.."
 
 After lexing, the initial multiline above is parsed as
 
 ::
 
-  -- spaces marked as . for visibility
   [ "......a.b.c"
   , ""
   , "......d.e.f"
-  , ""
+  , ".."
   , "....g.h.i"
   , "......"
   ]
 
-The blank lines are excluded from the calculation, and we calculate 4 spaces as the shared whitespace prefix, which are removed from every line.
+The blank line + the whitespace-only line are excluded from the calculation, and we calculate 4 spaces as the shared whitespace prefix, which are removed from every line.
 
-Note that the whitespace preceding the closing ``"""`` is included. This implies that there will be a trailing newline (see the "Trailing newline" example for more information). This also implies that you could change the leading whitespace on every line simply by moving the closing ``"""`` delimiter (although in practice, it'd be recommended to keep the starting/closing delimiters aligned).
-
-::
-
-  -- "a\nb\nc\n"
-  s1 =
-      """
-      a
-      b
-      c
-      """
-
-  -- "  a\n  b\n  c\n"
-  s2 =
-      """
-      a
-      b
-      c
-    """
-
-  -- "a\nb\nc\n  "
-  s3 =
-    """
-    a
-    b
-    c
-      """
+Note that the whitespace preceding the closing ``"""`` is included. This implies that there will be a trailing newline (see the "Trailing newline" example for more information).
 
 Ignore leading characters
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -276,6 +251,38 @@ As mentioned in the "Remove common whitespace" example, trailing newlines are na
     b
     c\
     \"""
+
+Indent every line
+~~~~~~~~~~~~~~~~~
+
+To indent every line, use the ``\&`` escape character
+
+::
+
+  s1 =
+    """
+      a
+      b
+      c
+    """
+
+  s1' = "a\nb\nc"
+
+  s2 =
+    """
+    \&  a
+      b
+      c
+    """
+
+  s2_2 =
+    """
+    \&  a
+    \&  b
+    \&  c
+    """
+
+  s2' = "  a\n  b\n  c"
 
 Escaping triple quotes
 ~~~~~~~~~~~~~~~~~~~~~~
