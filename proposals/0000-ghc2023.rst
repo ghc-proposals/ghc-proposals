@@ -79,8 +79,11 @@ release.
 
 A counter-argument to `ExplicitNamespaces`_ is that it has seen changes
 recently, e.g. in `#281 <https://github.com/ghc-proposals/ghc-proposals/pull/281>`_ and
-thus may not yet be as stable as we want them for ``GHC20xx``.
+thus may not yet be as stable as we want them for ``GHC20xx``. To keep GHC20xx
+stable we could amend #281 to ask for a new extenion name for syntax added there.
 
+__Backward compatibility__: Enabling `ExplicitNamespaces`_ does not affect
+existing ``GHC2021`` code.
 
 Why add GADTs and MonoLocalBinds?
 ---------------------------------
@@ -141,6 +144,9 @@ Possible ways to resolve this infelicity include:
   signatures for local bindings or specify ``NoMonoLocalBinds``).
 
 
+__Backward compatibility__: Enabling ``GADTs`` seems to not break existing ``GHC2021`` code,
+but enabling ``MonoLocalBinds`` could does.
+
 Why add LambdaCase?
 -------------------
 
@@ -156,6 +162,12 @@ A counter-agument to adding `LambdaCase` is that just extended the meaning of
 wants to add extensions to ``GHC20xx`` that have been proven to be stable, then
 this one probably isn’t yet.
 
+__Backward compatibility__: Enabling `LambdaCase`_ does not affect
+existing ``GHC2021`` code, with the exception of lambda-bound variable names
+``casess`` (GHC already forbids the ``\case`` even without ``-XLambdaCase``).
+One could argue that this is ok (just as it was ok for GHC to break the use of ``\case``
+at some point in the past.)
+
 
 Why add RoleAnnotations?
 ------------------------
@@ -165,6 +177,9 @@ Roles are essential part of modern GHC Haskell.
 As `GeneralisedNewtypeDeriving`_ is in the GHC2021 language set, so should be `RoleAnnotations`_. They are different sides of the same feature: without correct role annotations GND cannot be used safely.
 
 Role annotations are required for correctly writing types with internal invariants like ``Set`` or "fast" implementations like ``data Fin (n :: Nat) = UnsafeFin Int``.
+
+__Backward compatibility__: Enabling `LambdaCase`_ does not affect
+existing ``GHC2021`` code.
 
 Alternatives
 ------------
