@@ -164,7 +164,7 @@ this one probably isn’t yet.
 
 __Backward compatibility__: Enabling `LambdaCase`_ does not affect
 existing ``GHC2021`` code, with the exception of lambda-bound variable names
-``casess`` (GHC already forbids the ``\case`` even without ``-XLambdaCase``).
+``cases`` (GHC already forbids the ``\case`` even without ``-XLambdaCase``).
 One could argue that this is ok (just as it was ok for GHC to break the use of ``\case``
 at some point in the past.)
 
@@ -178,7 +178,7 @@ As `GeneralisedNewtypeDeriving`_ is in the GHC2021 language set, so should be `R
 
 Role annotations are required for correctly writing types with internal invariants like ``Set`` or "fast" implementations like ``data Fin (n :: Nat) = UnsafeFin Int``.
 
-__Backward compatibility__: Enabling `LambdaCase`_ does not affect
+__Backward compatibility__: Enabling `RoleAnnotations`_ does not affect
 existing ``GHC2021`` code.
 
 Alternatives
