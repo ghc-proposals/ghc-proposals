@@ -202,7 +202,7 @@ Interpolating expressions including braces:
 Effect and Interactions
 -----------------------
 
-No interactions with existing language features.
+No interactions with existing language features outside of the ``OverloadedStrings`` behavior mentioned in the Specification.
 
 Costs and Drawbacks
 -------------------
@@ -227,6 +227,10 @@ Alternatives
 ------------
 
 * Status quo (discussed in the "Motivation" section)
+
+* Don't enable ``OverloadedStrings`` for string interpolation
+
+  * ``OverloadedStrings`` currently has the semantics that ``fromString`` should only be called on string literals, so things like SQL query builders can define safe ``IsString`` instances, assuming that it's only used for literal strings, which don't have injection risk. Letting ``StringInterpolation`` use ``OverloadedStrings`` would break this assumption.
 
 * Generalize to any type class outputting ``String`` (not just ``Interpolate``)
 
@@ -289,8 +293,17 @@ Alternatives
       safe :: Int -> SqlQuery
       safe id = [s.MySqlQuery|SELECT * FROM foo WHERE id = ${id}|]
 
-  * Benefit: one more metaprogramming technique, except this wouldn't require Template Haskell
-  * Drawback: requires ``MultiParamTypeClasses``, probably has worse type inference, not sure how to integrate ``OverloadedStrings``
+  * Benefits:
+
+    * Gives devs another technique for doing metaprogramming, with the benefit that this technique differs from existing ones in that it avoids Template Haskell
+    * Avoids reusing ``OverloadedStrings``, so existing ``IsString`` instances are still safe (e.g. SQL query ``IsString`` instances are still safe)
+
+  * Drawbacks:
+
+    * Requires ``MultiParamTypeClasses``
+    * Requires redefining ``Interpolate`` instances for types wanting to take advantage of this (e.g. ``Text``) instead of reusing ``OverloadedStrings`` (but this could be a feature, not a bug; ref. SQL injection)
+    * Probably has worse type inference
+
   * Perhaps this should just be left to third-party QuasiQuoters using something like ``ghc-meta``?
 
 * Different delimiter
