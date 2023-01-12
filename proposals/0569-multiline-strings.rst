@@ -530,6 +530,8 @@ Alternatives
   * Everyone will use a different terminator, which I think would contribute to a reduction in overall readability
   * I think ``"""`` is an uncommon enough delimiter, and it can be escaped, that I don't think this is necessary
 
+* Use some delimiter to start the string, but use layout indentation rules to dictate when the string ends
+
 * Strip trailing whitespace in post-processing
 
   * Nice to have, but not necessary. I think it would be better to keep post-processing as minimal as possible, and it doesn't seem as common as removing leading whitespace.
