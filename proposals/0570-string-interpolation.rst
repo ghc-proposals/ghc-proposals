@@ -104,36 +104,35 @@ When a new ``StringInterpolation`` extension is enabled, the following syntax:
 will be syntax sugar for:
 ::
 
-  ("foo " ++)
+  interpolateRaw "foo "
   . interpolatePrec 0 (f a b)
-  . (" bar " ++)
+  . interpolateRaw " bar "
   . interpolatePrec 0 (g x)
-  . (" baz " ++)
+  . interpolateRaw " baz "
   . interpolatePrec 0 name
-  $ ""
+  $ interpolateEmpty
 
 where:
 ::
 
-  class Interpolate a where
+  class Interpolate s where
+    interpolateRaw :: String -> s -> s
+    default interpolateRaw :: (IsString s, Monoid s) => String -> s -> s
+    interpolateRaw s = (fromString s <>)
+
+    interpolateEmpty :: s
+    default interpolateEmpty :: IsString s => s
+    interpolateEmpty = fromString ""
+
+  class Interpolate s => InterpolateValue s a where
     {-# MINIMAL interpolate | interpolatePrec #-}
 
-    interpolate :: a -> String
-    interpolate a = interpolatePrec 0 a ""
+    interpolate :: a -> s
+    interpolate a = interpolatePrec 0 a interpolateEmpty
 
-    interpolatePrec :: Int -> a -> ShowS
-    interpolatePrec _ a s = interpolate a ++ s
-
-    -- personally I would rather leave this out and just use
-    -- OVERLAPPING + TypeSynonymInstances to define
-    -- `Interpolate String`, but I'll mimic Show entirely for now
-    interpolateList :: [a] -> ShowS
-    interpolateList xs = ('[':) . go True xs . (']':)
-      where
-        go _ [] = id
-        go isStart (x:xs) = (if isStart then id else (',' :)) . interpolatePrec 0 x . go False xs
-
-with instances mostly mirroring ``Show``, except for things like ``Char`` or ``String``, which would not include the quotes.
+    interpolatePrec :: Int -> a -> s -> s
+    default interpolatePrec :: Monoid s => Int -> a -> s -> s
+    interpolatePrec _ a s = interpolate a <> s
 
 This proposal adds a new class instead of ``Show`` because ``Show`` is intended to return the Haskell source code used to create the value. A quick search indicates that nothing on Stackage currently defines an ``Interpolate`` type class (alternatively, the class + functions could be named ``Display``, which is only in use by ``rio``).
 
@@ -153,8 +152,6 @@ We will always require interpolation to be of the form ``${foo}``, unlike other 
 
 Any Haskell expression may go inside the braces, but an unmatched ``}`` will immediately end processing. This restriction simplifies the implementation and isn't a big deal in practice, since one could always break it out into a helper variable.
 
-When ``OverloadedStrings`` is enabled, calls ``fromString`` with the result.
-
 If the `multiline proposal gets accepted <https://github.com/ghc-proposals/ghc-proposals/pull/569>`_, interpolation syntax will also be enabled for multiline syntax, e.g.
 ::
 
@@ -170,7 +167,65 @@ If the `multiline proposal gets accepted <https://github.com/ghc-proposals/ghc-p
 Examples
 --------
 
-An ``Interpolate`` instance different from ``Show``:
+Instances that would be provided:
+::
+
+  instance Interpolate String
+
+  instance Interpolate s => InterpolateValue s Char where
+    interpolatePrec p c = interpolatePrec p [c]
+
+  instance InterpolateValue String String where
+    interpolatePrec _ = (<>)
+
+  instance Interpolate s => InterpolateValue s [a] where
+    interpolatePrec _ xs = go True xs . interpolatePrec 0 "]"
+      where
+        go _ [] = id
+        go isStart (x:xs) =
+          interpolatePrec 0 (if isStart then "[" else ", ")
+          . interpolatePrec 0 x
+          . go False xs
+
+  -- Most instances would follow this format
+  instance InterpolateValue s String => InterpolateValue s Int where
+    interpolatePrec p = interpolatePrec p . show
+
+An example ``Interpolate`` instance for ``Text``:
+::
+
+  -- default implementations should be good for existing IsString types
+  instance Interpolate Text
+
+  instance InterpolateValue Text Text where
+    interpolatePrec _ = id
+
+  instance InterpolateValue Text String where
+    interpolatePrec p = interpolatePrec p . T.pack
+
+  -- common instances like `Int` should Just Work
+
+An example ``Interpolate`` instance for a hypothetical``SqlQuery`` type:
+::
+
+  data SqlQuery = SqlQuery { queryText :: String, queryVals :: [SqlValue] }
+
+  instance Interpolate SqlQuery where
+    interpolateRaw q1 (SqlQuery q2 vs) = SqlQuery (q1 <> q2) vs
+    interpolateEmpty = SqlQuery "" []
+
+  instance InterpolateValue SqlQuery SqlQuery where
+    interpolatePrec _ (SqlQuery q1 vs1) (SqlQuery q2 vs2) = SqlQuery (q1 <> q2) (vs1 <> vs2)
+
+  instance InterpolateValue SqlQuery String where
+    interpolatePrec p = interpolatePrec p . T.pack
+
+  instance InterpolateValue SqlQuery Text where
+    interpolatePrec _ s (SqlQuery q vs) = SqlQuery q (SqlText s : vs)
+
+  -- common instances like `Int` should Just Work
+
+An ``InterpolateValue`` instance different from ``Show``:
 ::
 
   data TestFailure = TestFailure { message :: String, file :: FilePath, lineNumber :: Int }
@@ -227,84 +282,6 @@ Alternatives
 ------------
 
 * Status quo (discussed in the "Motivation" section)
-
-* Don't enable ``OverloadedStrings`` for string interpolation
-
-  * ``OverloadedStrings`` currently has the semantics that ``fromString`` should only be called on string literals, so things like SQL query builders can define safe ``IsString`` instances, assuming that it's only used for literal strings, which don't have injection risk. Letting ``StringInterpolation`` use ``OverloadedStrings`` would break this assumption.
-
-* Generalize to any type class outputting ``String`` (not just ``Interpolate``)
-
-  * Change the syntax to enable specifying any module defining an ``Interpolate``-compatible interface, similar to ``QualifiedDo`` e.g.
-    ::
-
-      module MyInterpolate where
-
-      class MyInterpolate a where
-        interpolatePrec :: Int -> a -> ShowS
-
-      module Main where
-
-      -- desugars to `("Example " ++) . interpolatePrec 0 foo $ ""`
-      original :: String
-      original = [s|Example ${foo}|]
-
-      -- desugars to `("Example " ++) . MyInterpolate.interpolatePrec 0 foo $ ""`
-      custom :: String
-      custom = [s.MyInterpolate|Example ${foo}|]
-
-* Generalize to any output type
-
-  * Break out a type class representing "Type that an interpolation can result in" and enable specifying any module defining a compatible interface, similar to ``QualifiedDo`` (would also enable swapping out the ``Interpolate`` type class, like the previous bulletpoint). e.g.
-    ::
-
-      {----- built-in to GHC -----}
-
-      class Interpolate s where
-        interpolateRaw :: String -> s -> s
-      class Interpolate s => InterpolateValue s a where
-        interpolatePrec :: Int -> a -> s -> s
-
-      instance Interpolate String where
-        interpolateRaw = (++)
-
-      -- the usual instances
-      instance InterpolateValue String String
-      instance InterpolateValue String Int
-
-      {----- user-defined -----}
-
-      module MySqlQuery where
-
-      data SqlQuery = SqlQuery { queryText :: String, queryVals :: [SqlVal] }
-      instance Interpolate SqlQuery where
-        interpolateRaw q1 (SqlQuery q2 vs) = SqlQuery (q1 <> q2) vs
-      instance InterpolateValue SqlQuery String where
-        interpolatePrec _ s (SqlQuery text vs) = SqlQuery text (SqlString s : vs)
-      instance InterpolateValue SqlQuery Int where
-        interpolatePrec _ x (SqlQuery text vs) = SqlQuery text (SqlInt x : vs)
-
-      module Main where
-
-      -- desugars to `interpolateRaw "SELECT * FROM foo WHERE id = " . interpolatePrec 0 id $ ""`
-      pwnable :: Int -> String
-      pwnable id = [s|SELECT * FROM foo WHERE id = ${id}|]
-
-      -- desugars to `MySqlQuery.interpolateRaw "SELECT * FROM foo WHERE id = " . MySqlQuery.interpolatePrec 0 id $ ""`
-      safe :: Int -> SqlQuery
-      safe id = [s.MySqlQuery|SELECT * FROM foo WHERE id = ${id}|]
-
-  * Benefits:
-
-    * Gives devs another technique for doing metaprogramming, with the benefit that this technique differs from existing ones in that it avoids Template Haskell
-    * Avoids reusing ``OverloadedStrings``, so existing ``IsString`` instances are still safe (e.g. SQL query ``IsString`` instances are still safe)
-
-  * Drawbacks:
-
-    * Requires ``MultiParamTypeClasses``
-    * Requires redefining ``Interpolate`` instances for types wanting to take advantage of this (e.g. ``Text``) instead of reusing ``OverloadedStrings`` (but this could be a feature, not a bug; ref. SQL injection)
-    * Probably has worse type inference
-
-  * Perhaps this should just be left to third-party QuasiQuoters using something like ``ghc-meta``?
 
 * Different delimiter
 
