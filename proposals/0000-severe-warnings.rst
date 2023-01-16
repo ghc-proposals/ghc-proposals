@@ -45,7 +45,8 @@ Motivation
     and that instance's mempty will loop.
     Currently GHC will just warn if someone writes such (new) code by accident.
 
-  It seems to me we are doing our users a service if we make that particular foot a little less easy to fire accidentially
+  It seems to me we are doing our users a service if we make that particular foot gun
+  a little less easy to fire accidentally.
   
 * The motivation for ``-Werror=missing-fields`` follows by duality – instances are just records for implicitly passed parameters, in a way.
 
