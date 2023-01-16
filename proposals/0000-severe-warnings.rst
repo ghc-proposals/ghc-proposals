@@ -73,10 +73,10 @@ Proposed Change Specification
   * ``missing-methods``
   * ``missing-fields``
 
-*  The set of allowed names of custom warning categories (`#454 <https://github.com/ghc-proposals/ghc-proposals/pull/454>`_) is
+*  The set of allowed names of custom warning categories (`#541 <https://github.com/ghc-proposals/ghc-proposals/pull/541>`_) is
    extended by those prefixed with ``xs-*` (for “custom extended – severe”). The flags
-   ``-Wno=severe``, ``-Wwarn=severe`` and ``-Werror=severe``
-   also affect all custom warnigns with ah name starting in ``xs-*``.
+   ``-Wno-severe``, ``-Wwarn=severe`` and ``-Werror=severe``
+   also affect all custom warnings with a name starting in ``xs-*``.
  
 
 Examples
