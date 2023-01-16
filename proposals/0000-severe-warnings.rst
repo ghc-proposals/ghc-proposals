@@ -52,7 +52,7 @@ Motivation
 * From the need to have *some* warnings being errors by default follows the need for the suitable infrastructure, hence the
   ``-Wsevere`` warning group.
   
-* Given that we have custom warning categories (`x-foo`, `#454 <https://github.com/ghc-proposals/ghc-proposals/pull/454>`_),
+* Given that we have custom warning categories (``x-foo``, `#541 <https://github.com/ghc-proposals/ghc-proposals/pull/541>`_),
   we anticipate that users of custom warning categories will want a way to add “their” warning group to ``-Wsevere`` as well.
   
   Because there is no registry of custom categories, we let the prefix indicate the group. The prefix ``x-`` indicates a custom warning in ``-Wdefault``.
