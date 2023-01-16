@@ -9,13 +9,13 @@
 .. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/571>`_.
 .. contents::
 
-It seems helpful if some warning categories (e.g. ``missing-methods``) to be
+It seems helpful for some warnings (e.g. ``missing-methods``) to be
 *errors* by default (as if ``-Werror=missing-methods`` was given), but still
-allow them to be turns to warnings (``-Wwarn=missing=methods``) or quiet
+allow them to be turned into warnings (``-Wwarn=missing=methods``) or being disabled
 (``-Wno-missing-methods``). This proposal
 adds a new warning group ``-Wsevere`` (like ``-Wextra`` or ``-Wdefault``) for such warnings
 and upgrades ``missing-methods``,  ``missing-fields`` from ``-Wdefault`` to ``-Wsevere``
-(fixing `#544 <https://github.com/ghc-proposals/ghc-proposals/issues/544>`_)
+(fixing `#544 <https://github.com/ghc-proposals/ghc-proposals/issues/544>`_).
 
 Motivation
 ----------
@@ -47,7 +47,7 @@ Motivation
 
   It seems to me we are doing our users a service if we make that particular foot a little less easy to fire accidentially
   
-* The motivation for ``-Werror=missing-fields`` follows by dualty – instances are just records for implicitly passed parameters, in a way.
+* The motivation for ``-Werror=missing-fields`` follows by duality – instances are just records for implicitly passed parameters, in a way.
 
 * From the need to have *some* warnings being errors by default follows the need for the suitable infrastructure, hence the
   ``-Wsevere`` warning group.
@@ -74,7 +74,7 @@ Proposed Change Specification
   * ``missing-fields``
 
 *  The set of allowed names of custom warning categories (`#541 <https://github.com/ghc-proposals/ghc-proposals/pull/541>`_) is
-   extended by those prefixed with ``xs-*` (for “custom extended – severe”). The flags
+   extended by those prefixed with ``xs-*`` (for “custom extended – severe”). The flags
    ``-Wno-severe``, ``-Wwarn=severe`` and ``-Werror=severe``
    also affect all custom warnings with a name starting in ``xs-*``.
  
