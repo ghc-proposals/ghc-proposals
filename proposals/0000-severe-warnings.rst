@@ -104,7 +104,7 @@ Alternatives
   ``-Werror=errors-by-default`` or something looks kinda strange, and after someone says ``-Wwarn=severe``, the ``severe`` group still
   exists, but it not an error.
   
-  I briefly considered ``-Wfatal`, but that’s a lie – these errors are *not* ``fatal``, else we couldn’t turn them
+  I briefly considered ``-Wfatal``, but that’s a lie – these errors are *not* ``fatal``, else we couldn’t turn them
   into warnings.
   
 * We could add more warnings to the group right away.
