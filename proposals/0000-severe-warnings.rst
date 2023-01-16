@@ -56,7 +56,7 @@ Motivation
   we anticipate that users of custom warning categories will want a way to add “their” warning group to ``-Wsevere`` as well.
   
   Because there is no registry of custom categories, we let the prefix indicate the group. The prefix ``x-`` indicates a custom warning in ``-Wdefault``.
-  This proposal allows the prefix ``xs-` to indicate that this group should be part of the severe group.
+  This proposal allows the prefix ``xs-`` to indicate that this group should be part of the severe group.
    
   
 Proposed Change Specification
