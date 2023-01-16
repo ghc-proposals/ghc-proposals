@@ -6,7 +6,7 @@
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_.
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/571>`_.
 .. contents::
 
 It seems helpful if some warning categories (e.g. ``missing-methods``) to be
@@ -15,13 +15,13 @@ allow them to be turns to warnings (``-Wwarn=missing=methods``) or quiet
 (``-Wno-missing-methods``). This proposal
 adds a new warning group ``-Wsevere`` (like ``-Wextra`` or ``-Wdefault``) for such warnings
 and upgrades ``missing-methods``,  ``missing-fields`` from ``-Wdefault`` to ``-Wsevere``
-(fixing _`#544 <https://github.com/ghc-proposals/ghc-proposals/issues/544>`_)
+(fixing `#544 <https://github.com/ghc-proposals/ghc-proposals/issues/544>`_)
 
 Motivation
 ----------
 
 * We can start for the motivation for making ``missing-methods`` an error by default, copying from @phadej’s
-  _`#544 <https://github.com/ghc-proposals/ghc-proposals/issues/544>`_:
+  `#544 <https://github.com/ghc-proposals/ghc-proposals/issues/544>`_:
   
     Currently omitting method implementations in type-class instances
     is just a warning, but it is enabled by default.
