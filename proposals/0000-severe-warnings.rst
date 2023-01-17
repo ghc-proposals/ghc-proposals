@@ -79,6 +79,72 @@ Proposed Change Specification
    ``-Wno-severe``, ``-Wwarn=severe`` and ``-Werror=severe``
    also affect all custom warnings with a name starting in ``xs-*``.
  
+Somewhat formal description
+===========================
+
+To clarify things, and concisely write down the existing semantics of warning flags, here is an attempt at a rigorous specification,
+in haskelly pseudocode (I’m liberally mixing constructors and strings and allowing non-linear patterns)::
+
+  data Category = "missing-methods" | "tabs" | "identities" | …
+  data Groups = "default" | "extra" | "compat" | "all" | "severe" | "everything"
+  type Flag = String
+  data ShowAndAbort = Don'tShow | Show | ShowAndAbort
+
+  -- | Main function: Decides for a concrete warning, given the current line flags, whether it should be shown and whether
+  -- it should abort compilation
+  shouldShowAndMaybeAbort :: [Flag] -> Category -> ShowAndAbort
+  shouldShowAndAbort flags category
+    | shouldShow (reverse flags) cateogry && shouldAbort flags category = ShowAndAbort
+    | shouldShow (reverse flags) cateogry                               = Show
+    | otherwise                                                         = DontShow
+  
+  -- Should we even show this flag? Flags in reverse order, so last one wins
+  shouldShow :: [Flag] -> Category -> ShowAndAbort
+  shouldShow ("-W" ++ cat       : _) cat = True
+  shouldShow ("-Werror=" ++ cat : _) cat = True
+  shouldShow ("-Weverything"    : _) cat = True
+  shouldShow ("-no-" ++ cat     : _) cat = False
+
+  shouldShow ("-W" ++ groupOf cat       : _ ) cat = True
+  shouldShow ("-Werror=" ++ groupOf cat : _ ) cat = True
+  shouldShow ("-no-" ++ groupOf cat     : _)  cat = False
+
+  shouldShow ("-Weverything"       : _) cat = True
+  shouldShow ("-Werror=everything" : _) cat = True
+  shouldShow ("-no-everything"     : _) cat = False
+  
+  shouldShow (_ : flags') cat = shouldShow flags' cat
+  shouldShow [] cat = groupOf cat `elem` ["default", "severe"]
+  
+  
+  -- _If_ we show its, should we abort?
+  shouldAbort ("-Werror=" ++ cat : _) cat = True
+  shouldAbort ("-Warn=" ++ cat   : _) cat = False
+  
+  shouldAbort ("-Werror=" ++ groupOf cat : _ ) cat = True
+  shouldAbort ("-Wwarn=" ++ groupOf cat  : _ ) cat = False
+  
+  shouldAbort ("-Werror=everything" : _ ) cat = True
+  shouldAbort ("-Wwarn=everything"  : _ ) cat = False
+
+  shouldAbort ("-Werror" : _ ) cat = True
+  shouldAbort ("-Wwarn"  : _ ) cat = False
+
+  shouldAbort (_ : flags') cat = shouldShow flags' cat
+  shouldAbort [] cat = groupOf cat `elem` ["severe"]
+  
+  -- See https://downloads.haskell.org/ghc/latest/docs/users_guide/using-warnings.html
+  -- 
+  groupOf :: Category -> Group
+  groupOf "overlapping-patterns" = "default"
+  …
+  groupOf "unused-binds" = "extra"
+  …
+  groupOf "missing-binds" = "severe"
+  …
+  groupOf "implicit-prelude" = "everything"
+    
+    
 
 Examples
 --------
