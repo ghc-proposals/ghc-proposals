@@ -50,11 +50,26 @@ Motivation
   
 * The motivation for ``-Werror=missing-fields`` follows by duality – instances are just records for implicitly passed parameters, in a way.
 
-* From the need to have *some* warnings being errors by default follows the need for the suitable infrastructure, hence the
-  ``-Wsevere`` warning group.
+* Making these things errors is a deviation from the Haskell Report, and now some Haskell2010 programs will no longer compile out of the box.
+  We nevertheless propose to make that change even with ``-XHaskell2010`` (i.e. don’t introduce a language extension ``NoMissingFieldsOrMethods`` for
+  this behavior). One reason is given by Oleg:
+  
+  > not having ``-Wsevere=missing-methods`` by default essentially prevents any (true) breakage assessment of adding new, non-defaulted members to
+  > existing type-classes.
+  
+  Users who want to continue using idioms involving undefined fields and methods will be told by the error message that they can use
+  ``-Wno-missing-methods`` to get that back. Also, any Haskell2010 program that continues to compile has its semantics unchanged, it “just” means
+  that GHC by default rejects some Haskel2010 programs.
+  
+  This is a deviation from the usual “deviations from the report must be guarded by language extension flags“ rule, so extra committee scrutiny
+  is advised.
+   
+* From the need to have *some* warnings being errors by default it follows that it’s helpful to give them a name, for conceptualization.
+  Hence we introduce the ``-Wsevere`` warning group (like ``-Wdefault``). This implies that ``-Wwarn=severe`` can be used to demote them
+  to mere warnings, ``-Wno-severe`` to turn them off, and ``-Werror=severe`` to get back to the default state.
   
 * Given that we have custom warning categories (``x-foo``, `#541 <https://github.com/ghc-proposals/ghc-proposals/pull/541>`_),
-  we anticipate that users of custom warning categories will want a way to add “their” warning group to ``-Wsevere`` as well.
+  we anticipate that users of custom warning categories will want a way to add “their” warning category to the ``-Wsevere`` group as well.
   
   Because there is no registry of custom categories, we let the prefix indicate the group. The prefix ``x-`` indicates a custom warning in ``-Wdefault``.
   This proposal allows the prefix ``xs-`` to indicate that this group should be part of the severe group.
@@ -89,6 +104,7 @@ Effect and Interactions
 -----------------------
 TODO
 
+
 Costs and Drawbacks
 -------------------
 In terms of GHC development, this is a modest extension of the existing warning category and group infrastructure.
@@ -121,6 +137,16 @@ Alternatives
   
   Although now that I write it out, it seems that we don't actually need ``-Wsevere`` for that. Maybe it’s useful to *strongly deprecate* features,
   by introducing a warning about their use, and raising its severity from ``-Wcompat`` to ``-Wdefault`` to ``-Werror`` over time.
+
+* We could guard this change behind a suitable language extension, so that ``Haskell2010`` stays untouched. It could be the default eventually, but
+  would not affect code under ``Haskell2010`` or ``GHC2021``.
+  
+  It would set precedent for langauge extensions changing the default mode (warning vs. errors) of warnings, and I’d propose that the semantics
+  would be that all language flags (``-X``) are processed, from that the default on/off and error/warn sets are derived, and then all ``-W`` flags
+  are processed, so that ``-X`` and ``-W`` flags commute.
+  
+  But as explained in the motivation the motiviation comes from imposing this more rigid discipline on existing code, and so no language extension
+  is being proposed at this point.
 
 Unresolved Questions
 --------------------
