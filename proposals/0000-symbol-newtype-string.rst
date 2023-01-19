@@ -64,7 +64,7 @@ We don't propose any changes to ``GHC.TypeLits`` interface.
 Firstly the implementation of ``Symbol`` stays internal.
 Also ``symbolVal`` will continue to return ``String`` value.
 In future the ``GHC.Symbol`` interface mirroring ``GHC.TypeLits`` functionality
-could be vreated , but using ``Symbol`` also for the term level can be made as
+could be created , but using ``Symbol`` also for the term level can be made as
 CLC proposal, as that would be only a library change.
 
 Technically this is a library only change, but maybe it's only
