@@ -141,11 +141,11 @@ Alternatives
 * We could guard this change behind a suitable language extension, so that ``Haskell2010`` stays untouched. It could be the default eventually, but
   would not affect code under ``Haskell2010`` or ``GHC2021``.
   
-  It would set precedent for langauge extensions changing the default mode (warning vs. errors) of warnings, and I’d propose that the semantics
+  It would set precedent for language extensions changing the default mode (warning vs. errors) of warnings, and I’d propose that the semantics
   would be that all language flags (``-X``) are processed, from that the default on/off and error/warn sets are derived, and then all ``-W`` flags
   are processed, so that ``-X`` and ``-W`` flags commute.
   
-  But as explained in the motivation the motiviation comes from imposing this more rigid discipline on existing code, and so no language extension
+  But as explained in the motivation the motivation comes from imposing this more rigid discipline on existing code, and so no language extension
   is being proposed at this point.
 
 Unresolved Questions
