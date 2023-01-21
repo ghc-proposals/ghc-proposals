@@ -105,11 +105,11 @@ will be syntax sugar for:
 ::
 
   interpolateRaw "foo "
-  . interpolatePrec 0 (f a b)
+  . doInterpolate (f a b)
   . interpolateRaw " bar "
-  . interpolatePrec 0 (g x)
+  . doInterpolate (g x)
   . interpolateRaw " baz "
-  . interpolatePrec 0 name
+  . doInterpolate name
   $ interpolateEmpty
 
 where:
@@ -117,36 +117,38 @@ where:
 
   class Interpolate s where
     interpolateRaw :: String -> s -> s
-    default interpolateRaw :: (IsString s, Monoid s) => String -> s -> s
+    default interpolateRaw :: (IsString s, Semigroup s) => String -> s -> s
     interpolateRaw s = (fromString s <>)
 
     interpolateEmpty :: s
     default interpolateEmpty :: IsString s => s
     interpolateEmpty = fromString ""
 
-  class Interpolate s => InterpolateValue s a where
+  class Interpolate s => InterpolateValueRunner s a where
+    doInterpolate :: a -> s -> s
+
+  class Interpolate s => InterpolateValue flag s a where
     {-# MINIMAL interpolate | interpolatePrec #-}
 
-    interpolate :: a -> s
-    interpolate a = interpolatePrec 0 a interpolateEmpty
+    interpolate :: Proxy flag -> a -> s
+    interpolate proxy a = interpolatePrec proxy 0 a interpolateEmpty
 
-    interpolatePrec :: Int -> a -> s -> s
-    default interpolatePrec :: Monoid s => Int -> a -> s -> s
-    interpolatePrec _ a s = interpolate a <> s
+    interpolatePrec :: Proxy flag -> Int -> a -> s -> s
+    default interpolatePrec :: Semigroup s => Proxy flag -> Int -> a -> s -> s
+    interpolatePrec proxy _ a s = interpolate proxy a <> s
 
-This proposal adds a new class instead of ``Show`` because ``Show`` is intended to return the Haskell source code used to create the value. A quick search indicates that nothing on Stackage currently defines an ``Interpolate`` type class (alternatively, the class + functions could be named ``Display``, which is only in use by ``rio``).
+  data InterpolateDefault
+  data InterpolateOverride
 
-Could optionally provide a newtype for easy derivation with ``DerivingVia``, or even make ``Interpolate`` one of the built-in class that can be derived (like ``Show``):
-::
+  class InterpolateValueFlag s a flag | s a -> flag
+  instance {-# OVERLAPPABLE #-} (flag ~ InterpolateDefault) => InterpolateValueFlag s a flag
 
-  newtype InterpolateFromShow a = InterpolateFromShow a
-
-  instance Interpolate (InterpolateFromShow a) where
-    interpolatePrec = showsPrec
-
-  data Foo = Foo Int Bool
-    deriving (Show)
-    deriving (Interpolate) via InterpolateFromShow Foo
+  instance
+    ( Interpolate s
+    , InterpolateValueFlag s a flag
+    , InterpolateValue flag s a
+    ) => InterpolateValueRunner s a where
+    doInterpolate = interpolatePrec (Proxy :: Proxy flag) 0
 
 We will always require interpolation to be of the form ``${foo}``, unlike other languages where ``$foo`` is allowed for single-variable interpolation. This simplifies the syntax and avoids the need for escaping bare ``$``. Interpolation may be escaped by escaping the dollar sign; e.g. ``"\${foo}"`` is equivalent to ``['$', '{', 'f', 'o', 'o', '}']``.
 
@@ -167,92 +169,12 @@ If the `multiline proposal gets accepted <https://github.com/ghc-proposals/ghc-p
 Examples
 --------
 
-Instances that would be provided:
-::
+See the `brandonchinn178/string-syntax <https://github.com/brandonchinn178/string-syntax>`_ GitHub repo for a working prototype, including:
 
-  instance Interpolate String
-
-  instance Interpolate s => InterpolateValue s Char where
-    interpolatePrec p c = interpolatePrec p [c]
-
-  instance InterpolateValue String String where
-    interpolatePrec _ = (<>)
-
-  instance Interpolate s => InterpolateValue s [a] where
-    interpolatePrec _ xs = go True xs . interpolatePrec 0 "]"
-      where
-        go _ [] = id
-        go isStart (x:xs) =
-          interpolatePrec 0 (if isStart then "[" else ", ")
-          . interpolatePrec 0 x
-          . go False xs
-
-  -- Most instances would follow this format
-  instance InterpolateValue s String => InterpolateValue s Int where
-    interpolatePrec p = interpolatePrec p . show
-
-An example ``Interpolate`` instance for ``Text``:
-::
-
-  -- default implementations should be good for existing IsString types
-  instance Interpolate Text
-
-  instance InterpolateValue Text Text where
-    interpolatePrec _ = id
-
-  instance InterpolateValue Text String where
-    interpolatePrec p = interpolatePrec p . T.pack
-
-  -- common instances like `Int` should Just Work
-
-An example ``Interpolate`` instance for a hypothetical``SqlQuery`` type:
-::
-
-  data SqlQuery = SqlQuery { queryText :: String, queryVals :: [SqlValue] }
-
-  instance Interpolate SqlQuery where
-    interpolateRaw q1 (SqlQuery q2 vs) = SqlQuery (q1 <> q2) vs
-    interpolateEmpty = SqlQuery "" []
-
-  instance InterpolateValue SqlQuery SqlQuery where
-    interpolatePrec _ (SqlQuery q1 vs1) (SqlQuery q2 vs2) = SqlQuery (q1 <> q2) (vs1 <> vs2)
-
-  instance InterpolateValue SqlQuery String where
-    interpolatePrec p = interpolatePrec p . T.pack
-
-  instance InterpolateValue SqlQuery Text where
-    interpolatePrec _ s (SqlQuery q vs) = SqlQuery q (SqlText s : vs)
-
-  -- common instances like `Int` should Just Work
-
-An ``InterpolateValue`` instance different from ``Show``:
-::
-
-  data TestFailure = TestFailure { message :: String, file :: FilePath, lineNumber :: Int }
-    deriving (Show)
-
-  instance Interpolate TestFailure where
-    interpolate TestFailure{..} = s"${message} (at ${file}:${lineNumber})"
-
-  let failure = TestFailure "Bad value" "test.hs" 10
-
-  -- "TestFailure { message = \\\"Bad value\\\" file = \\\"test.hs\\\", lineNumber = 10 }"
-  let s1 = show failure
-
-  -- "Bad value (at test.hs:10)"
-  let s2 = interpolate failure
-
-  -- "Got a failure: Bad value (at test.hs:10)"
-  let s3 = s"Got a failure: ${failure}"
-
-Interpolating expressions including braces:
-::
-
-  -- "A record: <Person Bob>"
-  let s = s"A record: ${Person{name = "Bob"}}"
-
-  -- parse error: `['` isn't a valid Haskell expression
-  let s2 = s"A brace: ${['}']}"
+* The default instances that would be provided
+* Custom instances
+* Interpolation for an HTML library that auto-escapes interpolated strings
+* Interpolation for a SQL library that prevents SQL injection
 
 Effect and Interactions
 -----------------------
@@ -264,19 +186,23 @@ Costs and Drawbacks
 
 Development should be low-effort, maintenance should be low-effort. Learnability for novice users will go up, since novice users probably expect string interpolation to be available, and might be frustrated at the lack of support currently.
 
-One drawback is that whitespace is now important with this syntax, with ``s"foo"`` semantically different from ``s "foo"``. However, there's precedent for this (Template Haskell splices make ``$(...)`` different from ``$ (...)``), and it's also unlikely for someone to use a one-letter function name, especially naming that function ``s``.
+The major drawback of this approach is the machinery needed behind the scenes. To support instances like:
+::
 
-Other common criticisms to including string interpolation in general:
+  -- implementation of Bool for any s"..." context
+  instance InterpolateValue s String => InterpolateValue s Bool where
+    interpolate = interpolate . show
 
-* Why should ``String`` be special?
+  -- implementation of any ToSqlValue for the SqlQuery s"..." context
+  instance ToSqlValue a => InterpolateValue SqlQuery a where
+    interpolate b = SqlQuery "?" [SqlBool b]
 
-  * It's a common enough use-case that I think warrants nice-to-haves like this proposal. e.g. we already have ``""`` syntax sugar instead of using list of ``Char`` everywhere for ease of use, why not include interpolation for ease of use?
+we need to use the auxiliary overlapping instances technique described in https://wiki.haskell.org/GHC/AdvancedOverlap (See `this comment <https://github.com/brandonchinn178/string-syntax/pull/2#discussion_r1082171539>`_ for more information). This is invisible for basic usage, but it's painfully visible in two instances:
 
-  * It could be made not-special, at the cost of more complex machinery. See "Alternatives"
+1. Library authors who want to write a new interpolation type (e.g. ``SqlQuery``)
+2. Anyone providing a type they want to interpolate (e.g. ``MyUser``)
 
-* String interpolation makes things like SQL injection easier
-
-  * I would argue that someone unaware of injection attacks (and libraries designed to prevent these attacks) would be just as likely to manually concatenate a string as interpolate
+One minor drawback is that whitespace is now important with this syntax, with ``s"foo"`` semantically different from ``s "foo"``. However, there's precedent for this (Template Haskell splices make ``$(...)`` different from ``$ (...)``), and it's also unlikely for someone to use a one-letter function name, especially naming that function ``s``.
 
 Alternatives
 ------------
