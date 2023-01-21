@@ -89,6 +89,8 @@ Third party libraries also provide this functionality with quasiquoters, e.g. ``
 Proposed Change Specification
 -----------------------------
 
+A working prototype is available at `brandonchinn178/string-syntax <https://github.com/brandonchinn178/string-syntax>`_.
+
 #. Lex ``"""`` as an `additional string delimiter <https://gitlab.haskell.org/ghc/ghc/-/blob/8c0ea25fb4a27d4729aabf73f4c00b912bb0c58d/compiler/GHC/Parser/Lexer.x#L577>`_ when the ``MultilineStrings`` language extension is enabled
 
 #. Post-process the string in the following steps:
