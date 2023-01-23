@@ -2,11 +2,11 @@ Higher Order Patterns in Rewrite Rules
 ======================================
 
 .. author:: Jaro Reinders
-.. date-accepted::
+.. date-accepted:: 2023-01-23
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/555>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/555>`_.
 .. sectnum::
 .. contents::
 
