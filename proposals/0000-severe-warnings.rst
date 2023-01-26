@@ -1,7 +1,7 @@
 -Wsevere – erroring warnings
 ============================
 
-.. author:: Joachim Breitner
+.. author:: Oleg Grenrus, Joachim Breitner
 .. date-accepted::
 .. ticket-url::
 .. implemented::
