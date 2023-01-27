@@ -89,7 +89,7 @@ The existing non-terminals in ``Parser.y`` are defined thus::
             : 'instance' overlap_pragma inst_type where_inst
             | ...
 
-The ``maybemodwarning`` is used in module headers. We propose to rename it to
+The ``maybemodwarning`` is used in module headers. Rename it to
 ``maybewarning`` and employ it in ``inst_decl`` as follows::
 
         inst_decl
@@ -99,7 +99,7 @@ The ``maybemodwarning`` is used in module headers. We propose to rename it to
 Semantics
 ~~~~~~~~~
 
-The **use of an instance** is a point in the program where GHC would produce
+The **use of an instance** is a point in the program where GHC would have produced
 an error message if the instance context of the said instance contained
 the ``Unsatisfiable`` constraint (specified in `#433 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0433-unsatisfiable.rst>`_).
 
