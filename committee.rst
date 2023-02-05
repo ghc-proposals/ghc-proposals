@@ -112,6 +112,7 @@ of thoughtful contribution in a public space carries the most weight.
 Membership on the committee comes with a three-year term, extended so
 that a term expires only at the end of a nomination process. Call a
 member who has served for over three years an "expiring" member.
+
 A nomination process is triggered when the number of unexpiring members is
 about to drop below 9.
 
@@ -141,6 +142,11 @@ is not fixed.
 
 The nomination and voting process is kept private, by using direct
 email to committee members, not the mailing list. 
+
+Additionally, anyone may self-nominate themselves anytime (by email to the secretary). 
+Such "out-of-season" appointments are at the discretion of the secretary, and
+would typically be made to fill skills gaps on the committee, or if a previous
+season was under-subscribed so that the committee was short of members.
 
 Any member of the committee is free to step down at any time; such a member
 may choose to leave the committee immediately or to wait until the
