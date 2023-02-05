@@ -143,8 +143,8 @@ is not fixed.
 The nomination and voting process is kept private, by using direct
 email to committee members, not the mailing list. 
 
-Additionally, anyone may self-nominate themselves anytime and trigger a vote. 
-Such "out-of-season" appointments are at the discretion of the committee, and
+Additionally, anyone may self-nominate themselves anytime (by email to the secretary). 
+Such "out-of-season" appointments are at the discretion of the secretary, and
 would typically be made to fill skills gaps on the committee, or if a previous
 season was under-subscribed so that the committee was short of members.
 
