@@ -243,7 +243,6 @@ You can reach the committee by email at ghc-steering-committee@haskell.org.
 The current members, including their GitHub handle, when they joined first, when their term last renewed and their role, are listed at (sorted when the current term started):
 
 ============= ======================  ====================================================  =======  =======  =========
-|i-am-tom|    Tom Harding             `@i-am-tom <https://github.com/i-am-tom/>`_           2020/01
 |simonmar|    Simon Marlow            `@simonmar <https://github.com/simonmar>`_            2017/02  2021/02  co-chair
 |simonpj|     Simon Peyton-Jones      `@simonpj <https://github.com/simonpj>`_              2017/02  2021/02  co-chair
 |nomeata|     Joachim Breitner        `@nomeata <https://github.com/nomeata>`_              2017/02  2021/03  secretary
@@ -284,6 +283,7 @@ Cale Gibbard            `@cgibbard <https://github.com/cgibbard/>`_           20
 Alejandro Serrano       `@serras <https://github.com/serras/>`_               2020/01 - 2022/01
 Vitaly Bragilevsky      `@bravit <https://github.com/bravit>`_                2018/09 - 2022/02
 Baldur Blöndal          `@icelandjack <https://github.com/icelandjack>`_      2022/03 - 2022/09
+Tom Harding             `@i-am-tom <https://github.com/i-am-tom/>`_           2020/01 - 2023/02
 ======================  ====================================================  =================
 
 
