@@ -99,6 +99,18 @@ learnability of the language for novice users. Define and list any remaining
 drawbacks that cannot be resolved.
 
 
+Backward Compatibility
+----------------------
+Will your proposed change cause any existing programs to change behaviour or
+stop working? If so, assess the expected impact on existing code, and explain
+why the benefits of the change outweigh the costs of breakage.
+
+Describe the migration path. Consider specifying a compatibility warning for one
+or more compiler releases before the change is fully implemented. Give examples
+of error messages that will be reported for previously-working code; do they
+make it easy for users understand what needs to change and why?
+
+
 Alternatives
 ------------
 List alternative designs to your proposed change. Both existing
