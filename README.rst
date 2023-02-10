@@ -533,6 +533,13 @@ and any other relevant considerations, appropriately.
   absolutes, and regressions against the principles are possible, if a
   proposal is otherwise very strong.
 
+* *Backward compatibility.* Will the change break existing code, and if so, has
+  an adequate impact assessment been carried out to determine whether the
+  benefits outweigh the costs? Is there a clearly documented migration path?
+  Will users receive warnings in advance of the breaking change, and reasonable
+  error messages afterwards?
+
+
 How to build the proposals?
 ---------------------------
 
