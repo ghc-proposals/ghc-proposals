@@ -108,7 +108,7 @@ why the benefits of the change outweigh the costs of breakage.
 Describe the migration path. Consider specifying a compatibility warning for one
 or more compiler releases before the change is fully implemented. Give examples
 of error messages that will be reported for previously-working code; do they
-make it easy for users understand what needs to change and why?
+make it easy for users to understand what needs to change and why?
 
 
 Alternatives
