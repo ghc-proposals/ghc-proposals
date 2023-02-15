@@ -219,7 +219,7 @@ Let us explain how we envision ``cabal`` handle the following build plan, with
       ``ghc --make -jsem ⟨sem⟩`` invocation.
    b. This invocation of ``ghc`` notices it has a lot of work to do (many modules
       to compile from the ``Bot`` unit), so it requests more resources from the
-      semaphore: at least one token per unit it can compile concurrently.
+      semaphore: at least one token per module it can compile concurrently.
       As no other processes are competing for semaphore tokens, and all modules
       can be compiled in parallel (in this example), this GHC invocation obtains
       the remaining 7 tokens.
