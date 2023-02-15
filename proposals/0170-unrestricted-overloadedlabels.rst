@@ -4,7 +4,7 @@ Unrestricted Overloaded Labels
 .. author:: howtonotwin
 .. date-accepted:: 2018-11-05
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/11671
-.. implemented::
+.. implemented:: 9.6
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/170>`_
 .. contents::
@@ -21,7 +21,7 @@ Proposed Change Specification
 -----------------------------
 Immediately following a ``#``, with no intervening whitespace, allow any nonempty string of characters that is composed out of the same characters that make up variable names and numeric literals. Also, allow strings of characters that look like string literals. In the language of the Report, labels are defined by:
 
-| *labelChar* → *small* | *large* | *digit* | ``'`` | ``.``
+| *labelChar* → *small* | *large* | *digit* | ``'``
 | *label* → ``#``\ (*string* | *labelChar* {*labelChar*})
 
 A "quoted" label ``#``\ ⟨string⟩ translates to ``fromLabel @``\ ⟨string⟩, and a "bare" label ``#``\ ⟨labelChars⟩ translates to ``fromLabel @"``\ ⟨labelChars⟩\ ``"``. This is a table of some example labels and their translations.
@@ -33,11 +33,12 @@ Label syntax               Translation                          Works today?
 ``#number17``              ``fromLabel @"number17"``            Yes
 ``#do``                    ``fromLabel @"do"``                  Yes
 ``#type``                  ``fromLabel @"type"``                Yes
+``#a_2``                   ``fromLabel @"a_2"``                 Yes
 ``#Foo``                   ``fromLabel @"Foo"``                 No
 ``#"Foo"``                 ``fromLabel @"Foo"``                 No
 ``#3``                     ``fromLabel @"3"``                   No
+``#2_3``                   ``fromLabel @"2_3"``                 No
 ``#"3"``                   ``fromLabel @"3"``                   No
-``#199.4``                 ``fromLabel @"199.4"``               No
 ``#17a23b``                ``fromLabel @"17a23b"``              No
 ``#"The quick brown fox"`` ``fromLabel @"The quick brown fox"`` No
 ``#f'a'``                  ``fromLabel @"f'a'"``                Yes
@@ -46,6 +47,8 @@ Label syntax               Translation                          Works today?
 ``#'``                     ``fromLabel @"'"``                   No
 ``#"\""``                  ``fromLabel @"\""``                  No
 ========================== ==================================== ============
+
+A dot ``.`` is not a valid label character. Otherwise the operator ``#.`` would no longer be usable, as it would be an overloaded label instead. Thus ``#1.2`` is interpreted as the sequence of lexemes ``#1 . 2``.
 
 Effect and Interactions
 -----------------------
@@ -58,6 +61,8 @@ The syntax stealing above is one drawback. There is also the somewhat confusing 
 Alternatives
 ------------
 Do nothing and just let libraries keep using tricks like ``#_Foo``.
+
+The exact character set valid in labels is up for debate. It is not clear that unquoted labels starting with a digit or apostrophe need to be accepted, because the original motivation relates to constructors only. Moreover, the quoted syntax can always be used instead. But on balance it seems simpler to require whitespace around ``#`` in order for it to be used as an operator.
 
 Unresolved questions
 --------------------

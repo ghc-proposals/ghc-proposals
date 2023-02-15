@@ -160,7 +160,7 @@ Proposed Change Specification
      type TupleArgKind :: Type -> Nat -> Type
      type family TupleArgKind t_or_c n = r | r -> n where
        TupleArgKind _      0 = Unit
-       TupleArgKind t_or_c 1 = t_or_c       -- *not* Solo t; see below
+       TupleArgKind t_or_c 1 = t_or_c       -- *not* Solo t; see Point 9 in "Effects and Interactions"
        TupleArgKind t_or_c 2 = Tuple2 t_or_c t_or_c
        TupleArgKind t_or_c 3 = Tuple3 t_or_c t_or_c t_or_c
        TupleArgKind t_or_c 4 = Tuple4 t_or_c t_or_c t_or_c t_or_c
@@ -171,7 +171,7 @@ Proposed Change Specification
      type Tuple :: forall (n :: Nat). TupleArgKind Type n -> Type
      type family Tuple ts where
        Tuple () = Unit
-       Tuple a = a    -- see below
+       Tuple a = a    -- see Point 9 in "Effects and Interactions"
        Tuple (a, b) = Tuple2 a b
        Tuple (a, b, c) = Tuple3 a b c
        Tuple (a, b, c, d) = Tuple4 a b c d
@@ -182,7 +182,7 @@ Proposed Change Specification
      type Constraints :: forall (n :: Nat). TupleArgKind Constraint n -> Constraint
      type family Constraints ts where
        Constraints () = Unit
-       Constraints a = a    -- see below
+       Constraints a = a    -- see Point 9 in "Effects and Interactions"
        Constraints (a, b) = CTuple2 a b
        Constraints (a, b, c) = CTuple3 a b c
        Constraints (a, b, c, d) = CTuple4 a b c d
@@ -193,7 +193,7 @@ Proposed Change Specification
      type TupleArgKind# :: List RuntimeRep -> Type
      type family TupleArgKind# reps where
        TupleArgKind# [] = Unit
-       TupleArgKind# [r1] = TYPE r1     -- *not* Solo (TYPE r1); see below
+       TupleArgKind# [r1] = TYPE r1     -- *not* Solo (TYPE r1); see Point 9 in "Effects and Interactions"
        TupleArgKind# [r1, r2] = Tuple2 (TYPE r1) (TYPE r2)
        TupleArgKind# [r1, r2, r3] = Tuple3 (TYPE r1) (TYPE r2) (TYPE r3)
        -- ...
@@ -203,7 +203,7 @@ Proposed Change Specification
      type Tuple# :: forall (reps :: List RuntimeRep). TupleArgKind# reps -> TYPE (TupleRep reps)
      type family Tuple# ts where
        Tuple# () = Unit#
-       Tuple# (a :: TYPE r) = TypeError (Text "Tuple# does not work for 1-tuples; use Solo#.")  -- see below
+       Tuple# (a :: TYPE r) = TypeError (Text "Tuple# does not work for 1-tuples; use Solo#.")  -- see Point 9 in "Effects and Interactions"
        Tuple# (a, b) = Tuple2# a b
        Tuple# (a, b, c) = Tuple3# a b c
        -- ...

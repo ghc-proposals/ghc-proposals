@@ -4,7 +4,7 @@ Define Kinds Without Promotion
 .. author:: Iavor Diatchki
 .. date-accepted:: 2018-09-12
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/6024
-.. implemented::
+.. implemented:: 9.6
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/106>`_.
 .. highlight:: haskell
 .. contents::

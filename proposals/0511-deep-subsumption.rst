@@ -4,9 +4,9 @@ Deep Subsumption
 .. author:: Matthew Pickering, Simon Peyton Jones, Jaro Reinders
 .. date-accepted:: 2022-07-05
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/merge_requests/8210
-.. implemented::
+.. implemented:: 9.2.4
 .. highlight:: haskell
-.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/511>`_.
 .. contents::
 
 ``DeepSubsumption`` is a languge extension which allows users to opt-into deep
