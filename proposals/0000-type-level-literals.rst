@@ -18,17 +18,17 @@ to turn on the features in the *Type-Level Literals* section of the
 
 Motivation
 ----------
-Like the `TypeData` extension (`#102`_, implemented in 9.6), this
+Like the ``TypeData`` extension (`#102`_, implemented in 9.6), this
 proposal aims to allow some type-level programming without connecting
-the constructor and type/class namespaces, as done by `DataKinds`.
+the constructor and type/class namespaces, as done by ``DataKinds``.
 
-It would allow literals like `23`, `'c'` and `"abc"` in both expressions
-and types, but not (unless `DataKinds` were specified) constructors
-like `False` and `Just`.  The difference is that constructors would
-conflict with types of the same name, in which case they would need to
-be disambiguated with the syntax `'False`.
+It would allow literals like ``23``, ``'c'`` and ``"abc"`` in both
+expressions and types, but not (unless ``DataKinds`` were specified)
+constructors like ``False`` and ``Just``.  The difference is that
+constructors would conflict with types of the same name, in which case
+they would need to be disambiguated with the syntax ``'False``.
 
-This will not be enough for users wanting the full power of `DataKinds`,
+This will not be enough for users wanting the full power of ``DataKinds``,
 but not all do, and this refactoring does no harm.
 
 Proposed Change Specification
