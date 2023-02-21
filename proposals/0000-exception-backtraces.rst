@@ -145,6 +145,9 @@ Export the following new definitions from ``Control.Exception.Context``:
 
     data ExceptionContext
 
+    instance Monoid ExceptionContext
+    instance Semigroup ExceptionContext
+
   We do not export its constructors to allow for future changes.
 
 * A constraint synonym for an implicitly passed exception context: ::
