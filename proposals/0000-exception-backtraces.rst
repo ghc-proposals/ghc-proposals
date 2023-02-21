@@ -302,7 +302,7 @@ Export the following new definitions from ``Control.Exception``:
 
     instance Exception e => Exception (NoBacktrace e) where
       fromException = NoBacktrace . fromException
-      toException (NoBacktrace e) = SomeException e
+      toException (NoBacktrace e) = toException e
       backtraceDesired = False
 
 ``HasCallStack`` Backtraces for Thrown Exceptions
