@@ -217,10 +217,6 @@ Export the following new definitions from ``Control.Exception``:
     someExceptionContext :: SomeException -> ExceptionContext
     someExceptionContext (SomeException _) = ?exceptionContext
 
-* A function to add (in the ``Semigroup`` sense) context to ``SomeException``: ::
-
-    addExceptionContext :: ExceptionContext -> SomeException -> SomeException
-
 * A function that catches any exception thrown by an ``IO`` action, adds an
   annotation to it using ``addExceptionAnnotation``, and then rethrows it: ::
 
