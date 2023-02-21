@@ -225,6 +225,25 @@ Export the following new definitions from ``Control.Exception``:
   It never calls ``collectBacktraces``, adding **only** the user-specified
   annotation.
 
+Providing context to handlers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Export the following new definitions from ``Control.Exception`` which provide a
+convenient way to gain access to ``ExceptionContext`` in exception handlers: ::
+
+  data ExceptionWithContext a =
+    ExceptionWithContext ExceptionContext a
+
+  instance Show a => Show (ExceptionWithContext a)
+
+  instance Exception a => Exception (ExceptionWithContext a) where
+      toException (ExceptionWithContext ctxt e) = SomeException e
+        where ?exceptionContext = ctxt
+      fromException se = do
+          e <- fromException se
+          return (ExceptionWithContext (exceptionContext se) e)
+      displayException = displayException . toException
+
 Preserving context on rethrowing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
