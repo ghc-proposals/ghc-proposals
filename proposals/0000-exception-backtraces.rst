@@ -204,11 +204,11 @@ In ``Control.Exception``, modify existing definitions as follows:
 
 * Modify the ``Exception`` instance of ``SomeException`` as follows: ::
 
-    instance Exception SomeException where    
-        toException se = se    
-        fromException = Just    
-        displayException (SomeException e) =    
-            displayException e ++ displayExceptionContext ?exceptionContext    
+    instance Exception SomeException where
+        toException se = se
+        fromException = Just
+        displayException (SomeException e) =
+            displayException e ++ displayExceptionContext ?exceptionContext
 
 Export the following new definitions from ``Control.Exception``:
 
@@ -274,11 +274,11 @@ Export the following new definitions from ``Control.Exception``:
   when throwing an exception to disable backtrace collection: ::
 
     newtype NoBacktrace e = NoBacktrace e
-    
+
     instance Show e => Show (NoBacktrace e)
 
     instance Exception e => Exception (NoBacktrace e) where
-      fromException = NoBacktrace . fromBacktrace
+      fromException = NoBacktrace . fromException
       toException (NoBacktrace e) = SomeException e
       backtraceDesired = False
 
