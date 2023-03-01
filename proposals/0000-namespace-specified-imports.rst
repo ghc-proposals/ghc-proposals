@@ -239,6 +239,17 @@ Notice that:
 * ``data`` may be followed by a data constructor name or a variable name (with
   the latter including record selectors, in particular).
 
+* Where a parent type constructor or class is exported together with its
+  children, any namespace specifier on an individual import/export item will
+  apply only to the parent; the children are unrestricted.  For example,
+  ``import M (type T(..))`` imports both ``T`` in the type namespace and any
+  children in either namespace.
+
+* ``import M (data D(..))`` is syntactically valid, but not useful, as it is not
+  currently possible for identifiers in the data namespace to have children.
+  (We might imagine changing this e.g. for pattern synonym record fields, but
+  doing so is outside the scope of this proposal.)
+
 
 Deprecate use of ``pattern`` in import/export lists
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -291,6 +302,14 @@ it is not an error for the declaration to bring no names into scope,
 e.g. because the ``data`` specifier was used on a module that exports only type
 names. (GHC may of course warn that such an import is redundant.)
 
+Where an import has a namespace specifier, any occurrence of an ellipsis
+``(..)`` will be taken to refer only to identifiers in that namespace.  For
+example, ``import M type (T(..))`` will import only type-level names (so the
+ellipsis will refer to nothing if ``T`` is a normal algebraic datatype).
+However, ``import M (type T (..))`` will (continue to) import the type ``T``
+together with all of its data constructors, because a namespace specifier on a
+single import item applies only to the parent name, not the sub-list.
+
 
 Use ``data`` specifier in fixity declarations and ``WARNING``/``DEPRECATED`` pragmas
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -323,7 +342,7 @@ Import/export lists with namespace specifiers
      , T(data D)    -- Accepted: exports type T and data constructor D
      , data f       -- Accepted: exports field f
      , data v       -- Accepted: exports term v
-     , type T (..)  -- Accepted: exports type T and all its constructors
+     , type T (..)  -- Accepted: exports type T and all its data constructors D, D2
      , T(pattern D) -- Rejected: pattern keyword cannot be used in sub-list
      , data T       -- Rejected: T not in scope in data namespace
      , type E       -- Rejected: E not in scope in type namespace
@@ -369,6 +388,10 @@ Import/export lists with namespace specifiers
 Namespace-specified imports
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+In the following examples, recall that the ``Data.Proxy`` module defines ``data
+Proxy t = Proxy``. (Its other exports are ignored for the purposes of these
+examples.)
+
 The same module can be imported with different qualifiers for the type namespace
 and data namespace:
 
@@ -412,11 +435,37 @@ list, provided they are consistent:
 .. code:: haskell
 
    {-# LANGUAGE ExplicitNamespaces #-}
-   import Data.Proxy type (data Proxy)      -- Rejected (inconsistent namespace specifiers)
-   import Data.Proxy data (data Proxy)      -- Accepted (redundant but consistent)
-   import Data.Proxy type (Proxy)           -- Accepted (imports type constructor)
-   import qualified Data.Proxy as D (Proxy) -- Accepted (imports data constructor qualified)
+   import Data.Proxy type (data Proxy)           -- Rejected: inconsistent namespace specifiers
+   import Data.Proxy type (Proxy(Proxy))         -- Rejected: data constructor not in type namespace
+   import Data.Proxy data (data Proxy)           -- Accepted: redundant but consistent
+   import Data.Proxy type (Proxy)                -- Accepted: imports type constructor
+   import qualified Data.Proxy data as D (Proxy) -- Accepted: imports data constructor qualified
 
+
+The meaning of ``(..)`` depends on the placement of the namespace specifier:
+
+.. code:: haskell
+
+   {-# LANGUAGE ExplicitNamespaces #-}
+   import Data.Proxy type (Proxy(..))  -- Accepted: imports type constructor but not data constructor
+   import Data.Proxy (type Proxy(..))  -- Accepted: imports both type constructor and data constructor
+
+.. code:: haskell
+
+   {-# LANGUAGE ExplicitNamespaces #-}
+   module M
+     ( type T (..)  -- Accepted: exports T and MkT
+     ) where
+     data T = MkT
+
+   {-# LANGUAGE ExplicitNamespaces #-}
+   module N where
+     import M type (T (MkT))  -- Rejected: MkT is not in the type namespace
+     import M type (T (..))   -- Accepted: imports T only
+     import M (type T (..))   -- Accepted: imports both T and MkT
+
+If an occurrence of ``(..)`` does not refer to any names, it will (continue to)
+emit a warning with ``-Wdodgy-exports`` or ``-Wdodgy-imports`` as appropriate.
 
 
 Effect and Interactions
@@ -429,6 +478,59 @@ In an export list, it is not possible to export the entire contents of a
 module's type namespace or data namespace.  If this is desired, exports must be
 listed individually.
 
+
+``TypeData``
+~~~~~~~~~~~~
+
+When `TypeData (proposal #106)
+<https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0106-type-data.rst>`_
+is in use, it introduces both the type constructor name and any data constructor
+names into the type namespace only (and does not permit punning).  For example:
+
+.. code:: haskell
+
+   {-# LANGUAGE TypeData #-}
+   {-# LANGUAGE ExplicitNamespaces #-}
+
+   module M
+     ( type T (type MkT)   -- Accepted
+     , data MkT            -- Rejected
+     ) where
+
+   type data T = MkT
+
+
+``PatternSynonyms``
+~~~~~~~~~~~~~~~~~~~
+
+Referring to pattern synonyms in top-level import/export items requires the
+``data`` namespace specifier (or the deprecated ``pattern`` keyword).
+Alternatively, pattern synonyms and their record fields can be associated with
+parent type constructors by being mentioned in export sub-lists.
+
+.. code:: haskell
+
+   {-# LANGUAGE ExplicitNamespaces #-}
+   {-# LANGUAGE PatternSynonyms #-}
+
+   module M
+     ( type T (data P, data f)  -- Accepted: associates P and f with T
+     , data P                   -- Accepted
+     , data P (f)               -- Rejected: f is not a child of P
+     , P                        -- Rejected: P not in scope in type namespace
+     ) where
+
+     data T = MkT Int
+
+     pattern P {f} = MkT f
+
+   {-# LANGUAGE ExplicitNamespaces #-}
+    module N where
+      import M (P)          -- Rejected: P not in scope in type namespace
+      import M data (P)     -- Accepted
+      import M (T(..))      -- Accepted: imports T, P and f
+      import M type (T(..)) -- Accepted: imports T only
+      import M data (T(..)) -- Rejected: T not in scope in data namespace
 
 
 Costs and Drawbacks
