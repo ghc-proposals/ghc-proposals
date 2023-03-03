@@ -533,6 +533,11 @@ In our experience, this sort of code is rare and generally quite
 straightforward to adapt; a survey of Hackage suggests that nearly all uses of
 ``SomeException`` are in pattern contexts.
 
+We expect that users relying on exceptions (in particular asychronous
+exceptions) to adjust control flow in non-exceptional situations (e.g.
+cancellation in the ``async`` package) will want to
+define ``backtraceDesired = False`` in their ``Exception`` instances.
+
 
 Alternatives
 ------------
