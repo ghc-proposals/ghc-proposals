@@ -257,8 +257,8 @@ In ``Control.Exception``, modify existing definitions as follows:
 * Add the following method and default definition to the ``Exception``
   typeclass: ::
 
-    backtraceDesired :: forall a. Bool
-    backtraceDesired = True
+    backtraceDesired :: e -> Bool
+    backtraceDesired _ = True
 
 * Modify ``throwIO`` as follows: ::
 
@@ -266,7 +266,7 @@ In ``Control.Exception``, modify existing definitions as follows:
     throwIO :: forall e a. Exception e => e -> IO a
     throwIO e = do
         ?exceptionContext <-
-          if backtraceDesired @e
+          if backtraceDesired e
             then do
               bt <- collectBacktraces
               return (addExceptionAnnotation bt emptyExceptionContext)
@@ -287,7 +287,7 @@ Export the following new definitions from ``Control.Exception``:
     instance Exception e => Exception (NoBacktrace e) where
       fromException = NoBacktrace . fromException
       toException (NoBacktrace e) = toException e
-      backtraceDesired = False
+      backtraceDesired _ = False
 
 ``HasCallStack`` Backtraces for Thrown Exceptions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -297,6 +297,21 @@ In ``Control.Exception`` add ``HasCallStack`` constraints to the exception
 
     throwIO :: forall e a. (HasCallStack, Exception e) => e -> IO a
     throw   :: forall e a. (HasCallStack, Exception e) => e -> a
+
+Asynchronous exceptions
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Modify the following definitions in ``GHC.Conc.Sync``: ::
+
+    throwTo :: forall e. (Exception e, HasCallSTack) => ThreadId -> e -> IO ()
+
+To avoid runtime overhead when throwing asynchronous exceptions to change
+control-flow in non-exceptional cases, define ``backtraceDesired = False`` in
+the following ``Exception`` instances:
+
+* ``ThreadKilled`` of ``GHC.IO.Exception.AsyncException``
+* ``UserInterrupt`` of ``GHC.IO.Exception.AsyncException``
+* ``System.Timeout.Timeout``
 
 Modifying the top-level handler
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
