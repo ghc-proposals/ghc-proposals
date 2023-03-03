@@ -257,7 +257,7 @@ In ``Control.Exception``, modify existing definitions as follows:
      where
        handler' e =
          case fromException e of
-           Just e' -> unIO (annotationIO (someExceptionContext e) (handler e'))
+           Just e' -> unIO (annotateIO (someExceptionContext e) (handler e'))
            Nothing -> raiseIO# e
 
   Modify ``catchJust`` and ``handleJust`` accordingly (mutatis mutandis).
@@ -275,6 +275,7 @@ In ``Control.Exception``, modify existing definitions as follows:
 
 * Modify ``throwIO`` as follows: ::
 
+    -- This type will be further refined in section 2.8
     throwIO :: forall e a. Exception e => e -> IO a
     throwIO e = do
         ?exceptionContext <-
