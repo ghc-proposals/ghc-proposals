@@ -81,43 +81,30 @@ Export the following new definitions from ``Control.Exception.Backtrace``:
 
 * An enumeration of the mechanisms by which GHC can collect backtraces: ::
 
-    type BacktraceMechanism :: Type -> Type
-    data BacktraceMechanism a where
-      CostCentreBacktrace   :: BacktraceMechanism (Ptr CostCentreStack)
-      HasCallStackBacktrace :: BacktraceMechanism GHC.Stack.CallStack
-      ExecutionBacktrace    :: BacktraceMechanism [GHC.ExecutionStack.Location]
-      IPEBacktrace          :: BacktraceMechanism [StackEntry]
+    data BacktraceMechanism
+      = CostCentreBacktrace
+      | HasCallStackBacktrace
+      | ExecutionBacktrace
+      | IPEBacktrace
 
 * During program execution, each backtrace mechanism is either enabled or
   disabled. This is tracked in global mutable state that can be accessed using
   the following functions ::
-
-    getEnabledBacktraceMechanisms :: IO EnabledBacktraceMechanisms
-    setEnabledBacktraceMechanisms :: EnabledBacktraceMechanisms -> IO ()
-
-    newtype EnabledBacktraceMechanisms =
-      EnabledBacktraceMechanisms {
-        backtraceMechanismEnabled :: forall a. BacktraceMechanism a -> Bool
-      }
-
-  Note that ``EnabledBacktraceMechanisms`` is isomorphic to ``(Bool, Bool, Bool, Bool)``,
-  i.e. a flag per mechanism.
+    
+    getBacktraceMechanismState :: BacktraceMechanism -> IO Bool
+    setBacktraceMechanismState :: BacktraceMechanism -> Bool -> IO ()
 
   By default, ``HasCallStackBacktrace`` is enabled and other mechanisms are disabled.
 
 * A record of collected backtraces: ::
 
-    newtype Backtraces =
+    data Backtraces =
       Backtraces {
-        getBacktrace :: forall a. BacktraceMechanism a -> Maybe a
+        costCentreBacktrace :: Maybe (Ptr CostCentreStack),
+        hasCallStackBacktrace :: Maybe GHC.Stack.CallStack,
+        executionBacktrace :: Maybe [GHC.ExecutionStack.Location],
+        ipeBacktrace :: Maybe [StackEntry]
       }
-
-  Note that ``Backtraces`` is isomorphic to a record containing:
-
-  * ``Maybe (Ptr CostCentreStack)``
-  * ``Maybe (GHC.Stack.CallStack)``
-  * ``Maybe [GHC.ExecutionStack.Location]``
-  * ``Maybe [StackEntry]``
 
 * A function to render ``Backtraces`` to a user-readable string: ::
 
