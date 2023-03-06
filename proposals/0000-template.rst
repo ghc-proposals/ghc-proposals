@@ -102,13 +102,31 @@ drawbacks that cannot be resolved.
 Backward Compatibility
 ----------------------
 Will your proposed change cause any existing programs to change behaviour or
-stop working? If so, assess the expected impact on existing code, and explain
-why the benefits of the change outweigh the costs of breakage.
+stop working? Assess the expected impact on existing code on the following scale:
 
+0. No breakage
+1. Breakage only in extremely rare cases (e.g. for specifically-constructed
+   examples, but probably no Hackage packages)
+2. Breakage in rare cases (e.g. a few Hackage packages may break, but probably
+   no Stackage packages)
+3. Breakage in uncommon cases (e.g. a few Stackage packages may break, but
+   probably no head.hackage packages)
+4. Breakage in common cases
+
+(For the purposes of this assessment, GHC emitting new warnings is not
+considered to be a breaking change, i.e. packages are assumed not to use
+``-Werror``.  Changing a warning into an error is considered a breaking change.)
+
+Explain why the benefits of the change outweigh the costs of breakage.
 Describe the migration path. Consider specifying a compatibility warning for one
 or more compiler releases before the change is fully implemented. Give examples
 of error messages that will be reported for previously-working code; do they
 make it easy for users to understand what needs to change and why?
+
+When the proposal is implemented, the implementers and/or GHC maintainers should
+test that the actual backwards compatibility impact of the implementation is no
+greater than the expected impact. If not, the proposal should be revised and the
+steering committee approve the change.
 
 
 Alternatives
