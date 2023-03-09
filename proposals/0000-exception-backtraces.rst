@@ -231,7 +231,7 @@ convenient way to gain access to ``ExceptionContext`` in exception handlers: ::
         where ?exceptionContext = ctxt
       fromException se = do
           e <- fromException se
-          return (ExceptionWithContext (exceptionContext se) e)
+          return (ExceptionWithContext (someExceptionContext se) e)
       displayException = displayException . toException
 
 Preserving context on rethrowing
