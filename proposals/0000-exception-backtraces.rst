@@ -326,7 +326,7 @@ Asynchronous exceptions
 
 Modify the following definitions in ``GHC.Conc.Sync``: ::
 
-    throwTo :: forall e. (Exception e, HasCallSTack) => ThreadId -> e -> IO ()
+    throwTo :: forall e. (Exception e, HasCallStack) => ThreadId -> e -> IO ()
 
 To avoid runtime overhead when throwing asynchronous exceptions to change
 control-flow in non-exceptional cases, define ``backtraceDesired = False`` in
