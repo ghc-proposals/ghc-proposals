@@ -688,6 +688,20 @@ generally be mitigated by freezing the callstack at the ``throw`` callsite).
 One could also leave these functions as-is at the expense of giving up
 ``HasCallStack`` backtraces on exceptions.
 
+Providing solver support for ``ExceptionContext``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The fact that the ``SomeException`` constructor now carries an implicit
+argument is the source of the majority of the breakage caused by this proposal.
+One way to mitigate this would be to following the example of ``HasCallStack``
+and introduce ad-hoc constraint solving logic to ensure that the constraint can
+be readily discharged with ``emptyExceptionContext``.
+
+While this would introduce relatively little additional implementation
+complexity, it trades off predictability of the type system. The authors are
+currently witholding judgement on whether this would be a worthwhile addition
+until a concrete assessment of Hackage breakage is available.
+
 
 Implementation Plan
 -------------------
