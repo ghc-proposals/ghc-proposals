@@ -278,7 +278,7 @@ In ``Control.Exception``, modify existing definitions as follows:
           return (addExceptionContext bt (toException e))
       | otherwise = return (toException e)
 
-* Modify ``throwIO`` as follows (N.B. this type will be further refined
+* Modify ``throwIO`` as follows (note that this type will be further refined
   below in :ref:`hascallstack`): ::
 
     throwIO :: forall e a. Exception e => e -> IO a
