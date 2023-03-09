@@ -433,6 +433,17 @@ catching the rethrown exception and augmenting its context with that of the old
 exception. This ensures reliability of backtraces at the expense of a
 constant-time cost when exceptions are handled.
 
+However, this may introduce redundancy in some cases. For instance, consider
+the following program: ::
+
+  rethrow1 :: IO a
+    catch (throw MyException) $ \(se :: SomeException) ->
+      throw se
+
+Under the above proposal, the caller of ``rethrow1`` will be thrown a
+``MyException`` exception with a backtrace containing the locations of
+both the ``throw MyException`` and ``throw se``.
+
 .. top-level-handler:
 
 Teach top-level handler to use ``displayException``
