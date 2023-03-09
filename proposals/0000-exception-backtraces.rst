@@ -331,7 +331,7 @@ Modify the following definitions in ``GHC.Conc.Sync``: ::
     throwTo :: forall e. (Exception e, HasCallStack) => ThreadId -> e -> IO ()
 
 To avoid runtime overhead when throwing asynchronous exceptions to change
-control-flow in non-exceptional cases, define ``backtraceDesired = False`` in
+control-flow in non-exceptional cases, define ``backtraceDesired _ = False`` in
 the following ``Exception`` instances:
 
 * ``ThreadKilled`` of ``GHC.IO.Exception.AsyncException``
@@ -582,7 +582,7 @@ might adapt to the change (see :ref:`solver-support`).
 We expect that users relying on exceptions (in particular asychronous
 exceptions) to adjust control flow in non-exceptional situations (e.g.
 cancellation in the ``async`` package) will want to
-define ``backtraceDesired = False`` in their ``Exception`` instances.
+define ``backtraceDesired _ = False`` in their ``Exception`` instances.
 
 Alternatives
 ------------
