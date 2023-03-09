@@ -393,7 +393,7 @@ rather expensive motivates two features of this proposal:
   for non-exceptional control flow.
 
 * the ability to enable and disable individual exception mechanisms via
-  ``setEnabledBacktraceMechanisms``.
+  ``setBacktraceMechanismState``.
 
 Since most of these mechanisms require changes in build configuration from the
 user to be useful, we proposal to only enable collection of ``HasCallStack``
@@ -470,15 +470,12 @@ context added by ``SomeException``\'s ``displayException`` implementation).
 Examples
 --------
 
-User programs would typically call ``setEnabledBacktraceMechanisms`` during
+User programs would typically call ``setBacktraceMechanismState`` during
 start-up to select a backtrace mechanism appropriate to their usage: ::
 
     main :: IO ()
     main = do
-        setEnabledBacktraceMechanisms $ EnabledBacktraceMechanisms $ \case
-          IPEBacktrace          -> True
-          HasCallStackBacktrace -> True
-          _                     -> False
+        setBacktraceMechanismState IPEBacktrace True
 
         -- do interesting things here...
 
@@ -486,15 +483,10 @@ Some other programming language implementations use environment variables to con
 backtrace reporting (e.g. the Rust runtime enables debugging with
 ``RUST_BACKTRACE=1``). It would be straightforward to provide a utility (either
 in a third-party library or perhaps ``base`` itself) which would configure the
-global backtrace mechanism from the environment: ::
-
-    setBacktraceMechanismFromEnv :: IO ()
-    setBacktraceMechanismFromEnv =
-        getEnv "GHC_BACKTRACE" >>= setEnabledBacktraceMechanisms . parseBacktraceMechanisms
-
-This could be called during program initialization, providing the ease of
-configuration found in other languages. As it could be added at any time,
-``setBacktraceMechanismFromEnv`` is not part of the scope of this proposal.
+global backtrace mechanism from the environment. Such a utility could be called
+during program initialization, providing the ease of configuration found in
+other languages. As it could be added at any time, we do not propose such a
+utility as part of the scope of this proposal.
 
 
 Effects and Interactions
