@@ -680,8 +680,30 @@ choice whose value (namely, assurance context is not lost on rethrowing) may
 not be worth the slight overhead it imposes.
 
 In addition, there is the question of whether rethrown exceptions should gain a
-backtrace for the ``catch`` callsite. We currently err on "no" here to avoid
-undue overhead, but it may be worth revisiting this in the future.
+backtrace for the ``catch`` callsite. We currently err on "no" here since the
+exception will already likely gain a backtrace from the ``throw`` callsite in
+the handler.
+
+Previous discussions on this proposal have suggested that it would be
+beneficial to capture "nested" exceptions while rethrowing (that is, exceptions
+thrown while handling another exception; we will call these the "child" and
+"parent" exceptions here, respectively). This could be acheived with this
+proposal by attaching the child exception to the parent as an ``ExceptionAnnotation``: ::
+
+  data WhileHandling = WhileHandling SomeException
+  instance ExceptionAnnotation WhileHandling
+
+  catchNested :: Exception e => IO a -> (e -> IO a) -> IO a
+  catchNested io handler = catch io handler'
+   where
+     handler' e =
+       catch (handler e) $ \e' ->
+         throw (annotateIO (WhileHandling e) e')
+
+However, this opens up a large space with library design challenges (e.g.
+how does a library author encapsulate internal exceptions) and potential
+security challenges (e.g. via sensitive information leaking via the child
+exception). Consequently, we do not propose any such mechanism here.
 
 Ubiquity of ``HasCallStack``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
