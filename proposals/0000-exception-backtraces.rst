@@ -568,15 +568,19 @@ nearly no impact on existing user-code while allowing existing users to benefit
 from backtraces. The only direct breakage will result in applications of the
 ``SomeException`` data constructor, where the user will be faced with a
 compile-time error complaining that ``?exceptionContext`` is not in scope.
+
 In our experience, this sort of code is rare and generally quite
 straightforward to adapt; a survey of Hackage suggests that nearly all uses of
-``SomeException`` are in pattern contexts.
+``SomeException`` are in pattern contexts. However, the authors intend to perform a
+breakage study using ``head.hackage`` when a prototype implementation is
+available. If the breakage turns out to be significant, we propose to provide
+transitional solver logic to allow for a migration period over which users
+might adapt to the change (see :ref:`solver-support`).
 
 We expect that users relying on exceptions (in particular asychronous
 exceptions) to adjust control flow in non-exceptional situations (e.g.
 cancellation in the ``async`` package) will want to
 define ``backtraceDesired = False`` in their ``Exception`` instances.
-
 
 Alternatives
 ------------
@@ -688,6 +692,9 @@ generally be mitigated by freezing the callstack at the ``throw`` callsite).
 One could also leave these functions as-is at the expense of giving up
 ``HasCallStack`` backtraces on exceptions.
 
+
+.. solver-support:
+
 Providing solver support for ``ExceptionContext``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -698,9 +705,23 @@ and introduce ad-hoc constraint solving logic to ensure that the constraint can
 be readily discharged with ``emptyExceptionContext``.
 
 While this would introduce relatively little additional implementation
-complexity, it trades off predictability of the type system. The authors are
+complexity, it trades off predictability of the type system. Moreover, it is
+possible that there is relatively little breakage due to this. The authors are
 currently witholding judgement on whether this would be a worthwhile addition
 until a concrete assessment of Hackage breakage is available.
+
+Another option to avoid forever polluting the language with an ad-hoc special
+case would be to instead add solving logic only as a means of providing a deprecation
+period:
+
+1. With the introduction of this change in GHC $n$, a solver rule would be
+   introduced to solve ``?exceptionContext = emptyExceptionContext``,
+   throwing a ``-Wcompat`` warning when it does so.
+2. In GHC $n+1$ this warning would be added to ``-Wall``
+3. In GHC $n+2$ the warning would be enabled by default
+4. In GHC $n+3$ the warning would turn into an error (but one more helpful than
+   the usual insoluable constraint error)
+5. In GHC $n+4$ the solver logic and warning would be removed
 
 
 Implementation Plan
