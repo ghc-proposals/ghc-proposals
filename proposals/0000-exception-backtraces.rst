@@ -202,7 +202,10 @@ Export the following new definitions from ``Control.Exception``:
 * A function to retrieve the ``ExceptionContext`` attached to an exception: ::
 
     someExceptionContext :: SomeException -> ExceptionContext
-    someExceptionContext (SomeException _) = ?exceptionContext
+
+* A function that adds an annotation to a ``SomeException``: ::
+
+    addExceptionContext :: ExceptionAnnotation a => a -> SomeException -> SomeException
 
 * A function that catches any exception thrown by an ``IO`` action, adds an
   annotation to it using ``addExceptionAnnotation``, and then rethrows it: ::
@@ -260,20 +263,36 @@ In ``Control.Exception``, modify existing definitions as follows:
     backtraceDesired :: e -> Bool
     backtraceDesired _ = True
 
+* Add the following method implementation to the ``Exception SomeException``
+  instance: ::
+
+    backtraceDesired (SomeException e) = backtraceDesired e
+
+* Introduce a (non-exposed) helper (mentioned here only to elucidate behavior): ::
+
+    toExceptionWithBacktrace :: (HasCallStack, Exception e)
+                             => e -> IO SomeException
+    toExceptionWithBacktrace e
+      | backtraceDesired e = do
+          bt <- collectBacktraces
+          return (addExceptionContext bt (toException e))
+      | otherwise = return (toException e)
+
 * Modify ``throwIO`` as follows: ::
 
-    -- This type will be further refined in section 2.8
+    -- This type will be further refined in the HasCallStack section below.
     throwIO :: forall e a. Exception e => e -> IO a
     throwIO e = do
-        ?exceptionContext <-
-          if backtraceDesired e
-            then do
-              bt <- collectBacktraces
-              return (addExceptionAnnotation bt emptyExceptionContext)
-            else return emptyExceptionContext
-        let se :: SomeException
-            se = SomeException e
+        se <- toExceptionWithBacktrace e
         raiseIO# se
+
+* Modify ``throw`` similarly: ::
+
+    throw :: forall (r :: RuntimeRep). forall (a :: TYPE r). forall e.
+             (?callStack :: CallStack, Exception e) => e -> a
+    throw e =
+        let !se = unsafePerformIO (toExceptionWithBacktrace e)
+        in raise# se
 
 Export the following new definitions from ``Control.Exception``:
 
