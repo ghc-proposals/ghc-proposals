@@ -294,6 +294,10 @@ In ``Control.Exception``, modify existing definitions as follows:
         let !se = unsafePerformIO (toExceptionWithBacktrace e)
         in raise# se
 
+* Modify ``GHC.Exception.errorCallWithCallStackException`` to use
+  ``toExceptionWithBacktrace`` instead of ``toException``. This ensures that
+  ``error`` and ``undefined`` gain ``Backtraces``.
+
 Export the following new definitions from ``Control.Exception``:
 
 * The following ``newtype`` wrapper and instance which can be used by the user
@@ -466,6 +470,19 @@ context added by ``SomeException``\'s ``displayException`` implementation).
    <https://mail.haskell.org/pipermail/libraries/2014-November/024176.html>`_
    and GHC `#9822 <https://gitlab.haskell.org/ghc/ghc/-/issues/9822>`_.
 
+
+Legacy backtraces from ``error``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The exception thrown by ``error`` and ``undefined``,
+``GHC.Exception.ErrorCall``, currently already captures a backtrace of type
+``String``, which is populated with backtraces from ``HasCallStack`` and
+(where available) cost-centre stack. For the sake of keeping this proposal
+minimal, we do not propose that this redundant field be removed at this time.
+
+We also propose no changes to ``errorWithoutBacktrace``. Consequently, the
+exception arising from ``errorWithoutBacktrace`` will not carry a ``Backtrace``
+in its ``ExceptionContext``.
 
 Examples
 --------
