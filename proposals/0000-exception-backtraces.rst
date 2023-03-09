@@ -278,9 +278,9 @@ In ``Control.Exception``, modify existing definitions as follows:
           return (addExceptionContext bt (toException e))
       | otherwise = return (toException e)
 
-* Modify ``throwIO`` as follows: ::
+* Modify ``throwIO`` as follows (N.B. this type will be further refined
+  below in :ref:`hascallstack`): ::
 
-    -- This type will be further refined in the HasCallStack section below.
     throwIO :: forall e a. Exception e => e -> IO a
     throwIO e = do
         se <- toExceptionWithBacktrace e
@@ -311,6 +311,8 @@ Export the following new definitions from ``Control.Exception``:
       fromException = NoBacktrace . fromException
       toException (NoBacktrace e) = toException e
       backtraceDesired _ = False
+
+.. hascallstack:
 
 ``HasCallStack`` Backtraces for Thrown Exceptions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
