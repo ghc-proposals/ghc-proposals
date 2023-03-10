@@ -444,7 +444,11 @@ the following program: ::
 
 Under the above proposal, the caller of ``rethrow1`` will be thrown a
 ``MyException`` exception with a backtrace containing the locations of
-both the ``throw MyException`` and ``throw se``.
+both the ``throw MyException`` and ``throw se``. Moreover, the former will
+appear *twice*: once from the initial ``throw MyException`` and again due to
+``catch`` propagating context to the rethrown exception. This duplication is
+unfortunate but not easily avoidable without some means of comparing
+``ExceptionAnnotation``s.
 
 .. top-level-handler:
 
