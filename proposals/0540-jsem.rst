@@ -116,6 +116,7 @@ Change to user manual
 
         Perform compilation in parallel when possible, coordinating with other
         processes through the semaphore ⟨sem⟩.
+        Error if the semaphore doesn't exist.
 
         Use of ``-jsem`` will override use of :ghc-flag:``-j[⟨n⟩]``,
         and vice-versa.
@@ -207,13 +208,20 @@ D. GHC should rate-limit the release of semaphore tokens (the precise mechanism
       which each have a large loaded EPS. Combined, this will use a significant amount
       of memory.
 
-In practice, the core of the implementation is contained within a single module
-implementing the protocol. This module implements acquisition and release of
-tokens, with a local pool of tokens. This local pool avoids excessive
+In practice, the core of GHC's jobclient implementation is contained within a
+single module implementing the protocol. This module implements acquisition and
+release of tokens, with a local pool of tokens. This local pool avoids excessive
 communication with the semaphore upon completion of every short-lived task,
 as per (D) above.
 The rest of the implementation simply consists of threading through the
 ``jsem`` flag information through the driver.
+
+System semaphores can be created using the functionality provided by the ``unix``
+and ``Win32`` libraries. In practice, our implementation ships with a compatibility
+layer which provides an abstraction over those two libraries. This handles
+creation and destruction of semaphores, acquiring and releasing of tokens,
+including a mechanism for interrupting a wait on a semaphore when a token is
+no longer needed.
 
 Examples
 --------
