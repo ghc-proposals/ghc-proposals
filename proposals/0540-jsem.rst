@@ -99,6 +99,9 @@ capabilities, by communicating through a semaphore. To do this, we introduce
 the ``-jsem <sem>`` flag, which specifies by name a system semaphore through
 which GHC invocations can acquire and release capabilities.
 
+All changes are gated behind this ``-jsem`` flag. If it is not enabled, there
+should be no observable changes in GHC's behaviour.
+
 Change to user manual
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -155,10 +158,16 @@ There are two kinds of participants in the GHC Jobserver protocol:
 Implementation of the protocol
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We then propose that GHC and ``cabal``/``stack`` implement the GHC jobserver
-protocol, with GHC as a jobclient and ``cabal``/``stack` as the jobserver.
+We want GHC to act as a ``jobclient`` and ``cabal``/``stack` to be jobservers.
 
-The GHC jobclient implementation would have the following characteristics:
+The implementation of the jobserver protocol is very straightforward, as it
+mostly consists of switching to using a system semaphore to control the tokens.
+This means that the implementation in ``cabal`` is non-invasive and easy to
+maintain.
+
+The implementation of the jobclient protocol is more complex, while still
+remaining very non-invasive. The GHC jobclient implementation should have
+the following characteristics:
 
 A. GHC requests tokens for each module it is compiling concurrently.
    (The current implementation requests one token per module, but it could make
@@ -167,7 +176,7 @@ A. GHC requests tokens for each module it is compiling concurrently.
 
 B. GHC always returns all the tokens it has acquired from the semaphore,
    either upon successful completion or when an exception is raised,
-   by using the `bracket` pattern.
+   by using the ``bracket`` pattern.
 
 C. GHC should adjust its number of capabilities, via ``setNumCapabilities`` [8]_ ,
    to the number of tokens it is using (up to the number of available CPU cores).
@@ -198,8 +207,19 @@ D. GHC should rate-limit the release of semaphore tokens (the precise mechanism
       which each have a large loaded EPS. Combined, this will use a significant amount
       of memory.
 
+In practice, the core of the implementation is contained within a single module
+implementing the protocol. This module implements acquisition and release of
+tokens, with a local pool of tokens. This local pool avoids excessive
+communication with the semaphore upon completion of every short-lived task,
+as per (D) above.
+The rest of the implementation simply consists of threading through the
+``jsem`` flag information through the driver.
+
 Examples
 --------
+
+Illustration of the functionality
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Let us explain how we envision ``cabal`` handle the following build plan, with
 8 capabilities.
@@ -248,6 +268,22 @@ Let us explain how we envision ``cabal`` handle the following build plan, with
 In this situation, ``cabal`` is the jobserver: it manages the semaphore and
 spawns ``ghc`` subprocesses. The ``ghc`` subprocesses are jobclients, and they
 communicate by use of the semaphore.
+
+Performance results
+~~~~~~~~~~~~~~~~~~~
+
+Preliminary benchmarking results confirm the expected benefit of ``-jsem``
+over any possible combination ``cabal -jN, ghc -jM``.
+
+For example, we noted:
+
+  - a 29% speedup in compiling ``lens`` using 8 tokens with ``-jsem``
+    versus ``cabal -j8, ghc -j1`` (118s vs 152s).
+  - a 42% speedup in compiling ``pandoc`` using 8 tokens with ``-jsem``
+    versus ``cabal -j8, ghc -j1`` (556s vs 788s).
+
+Note that, in both of these examples, ``cabal -j8, ghc -j1`` outperformed all
+other combination of the form ``cabal -jN, ghc -jM``.
 
 Effects and Interactions
 ------------------------
