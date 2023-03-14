@@ -179,6 +179,8 @@ Export the following new definitions from ``Control.Exception.Context``:
 
     displayExceptionContext :: ExceptionContext -> String
 
+.. attach-context:
+
 Attaching Context to Exceptions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -189,10 +191,22 @@ In ``Control.Exception``, modify existing definitions as follows:
     - data SomeException = forall e.                      (Exception e) => SomeException e
     + data SomeException = forall e. (HasExceptionContext, Exception e) => SomeException e
 
+* Add the following law to the ``Exception`` class: ::
+
+    class Exception a where
+      -- | @toException@ should produce an exception with an empty 'ExceptionContext.
+      -- That is,
+      --
+      -- >>> someExceptionContext (toException a) == emptyExceptionContext
+      --
+      toException :: a -> SomeException
+
 * Modify the ``Exception`` instance of ``SomeException`` as follows: ::
 
     instance Exception SomeException where
-        toException se = se
+        toException (SomeException e) =
+            let ?exceptionContext = emptyExceptionContext
+            in SomeException e
         fromException = Just
         displayException (SomeException e) =
             displayException e ++ displayExceptionContext ?exceptionContext
@@ -435,8 +449,7 @@ catching the rethrown exception and augmenting its context with that of the old
 exception. This ensures reliability of backtraces at the expense of a
 constant-time cost when exceptions are handled.
 
-However, this may introduce redundancy in some cases. For instance, consider
-the following program: ::
+To see how this works, consider the following program: ::
 
   rethrow1 :: IO a
     catch (throw MyException) $ \(se :: SomeException) ->
@@ -444,11 +457,10 @@ the following program: ::
 
 Under the above proposal, the caller of ``rethrow1`` will be thrown a
 ``MyException`` exception with a backtrace containing the locations of
-both the ``throw MyException`` and ``throw se``. Moreover, the former will
-appear *twice*: once from the initial ``throw MyException`` and again due to
-``catch`` propagating context to the rethrown exception. This duplication is
-unfortunate but not easily avoidable without some means of comparing
-``ExceptionAnnotation``s.
+both the ``throw MyException`` and ``throw se``. The law imposed on
+``toException`` in :ref:`attach-context` ensures that the rethrow of ``se``
+drops the ``ExceptionContext``, avoiding redundancy when it is is reintroduced
+by ``catch``.
 
 .. top-level-handler:
 
