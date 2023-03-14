@@ -309,7 +309,7 @@ Alternatives
 Multiple home units
 ~~~~~~~~~~~~~~~~~~~
 
-Support for [multiple home units](https://well-typed.com/blog/2022/01/multiple-home-units/)
+Support for `multiple home units <https://well-typed.com/blog/2022/01/multiple-home-units/>`_
 (not yet fully implemented in ``cabal``) would provide an alternative way
 to saturate the number of available capabilities.
 This is because compilation with multiple home units is achieved using a single
