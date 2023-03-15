@@ -83,12 +83,12 @@ This section outlines what stages a proposal may go through. The stage is identi
    author for review (label: `Needs revision <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`_), or accepts it (label: `Accepted <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Accepted%22>`_).
 
    Acceptance of the proposal implies that the implementation will be accepted
-   into GHC provided it is well-engineered, well-documented, and does not
-   complicate the code-base too much.  Moreover the GHC maintainers may decline
-   to accept (or revert) an implementation pending revisions to the proposal, if
-   there turn out to be significant gaps in the specification, unforeseen
-   interactions with existing features, or unexpected breaking changes not
-   covered by the backwards compatibility assessment.
+   into GHC provided it is well-engineered, well-documented, conforms to the
+   specification and does not complicate the code-base too much.  However, the
+   GHC maintainers may reject an implementation if there turn out to be
+   significant gaps in the specification, unforeseen interactions with existing
+   features, or unexpected breaking changes not covered by the backwards
+   compatibility assessment.  In this case the proposal should be revised.
 
    `≡ List of accepted proposals <https://github.com/ghc-proposals/ghc-proposals/tree/master/proposals>`_ •
    `≡ List of proposals being revised <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`_ •
@@ -541,7 +541,9 @@ and any other relevant considerations, appropriately.
   an adequate impact assessment been carried out to determine whether the
   benefits outweigh the costs? Is there a clearly documented migration path?
   Will users receive warnings in advance of the breaking change, and reasonable
-  error messages afterwards?
+  error messages afterwards? See `the Backward Compatibility section of the
+  proposal template <proposals/0000-template.rst#backward-compatibility>`_
+  for specifics of how breakage is assessed.
 
 
 How to build the proposals?

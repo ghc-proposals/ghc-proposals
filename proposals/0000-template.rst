@@ -106,11 +106,10 @@ stop working? Assess the expected impact on existing code on the following scale
 
 0. No breakage
 1. Breakage only in extremely rare cases (e.g. for specifically-constructed
-   examples, but probably no Hackage packages)
+   examples, but probably no packages published in the Hackage package repository)
 2. Breakage in rare cases (e.g. a few Hackage packages may break, but probably
-   no Stackage packages)
-3. Breakage in uncommon cases (e.g. a few Stackage packages may break, but
-   probably no head.hackage packages)
+   no packages included in recent Stackage package sets)
+3. Breakage in uncommon cases (e.g. a few Stackage packages may break)
 4. Breakage in common cases
 
 (For the purposes of this assessment, GHC emitting new warnings is not
