@@ -190,9 +190,11 @@ GHC's implementation of the jobclient protocol should have the following
 characteristics:
 
 A. GHC requests one token for each unit of work it can do concurrently.
-   (The current implementation requests one token per module, but it could make
-   sense to request more, e.g. if one is able to parallelise the simplifier
-   workload.)
+   (In the current implementation, a unit of work is the compilation of a single
+   module. This means that GHC wants to have as many tokens as it can compile
+   modules in parallel. In the future, we could envision GHC being able to use
+   more than one token per module, e.g. if one is able to parallelise the
+   simplifier workload.)
 
    Note that all work is done in parallel with waiting on the semaphore. For
    example, if GHC has 3 tokens (including the implicit token) but could use
