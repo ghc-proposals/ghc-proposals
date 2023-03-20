@@ -154,12 +154,16 @@ There are two kinds of participants in the GHC Jobserver protocol:
   from the semaphore.
 
   Each jobclient **must** release exactly as many tokens as it has acquired from
-  the semaphore (this does not include the implicit tokens).
+  the semaphore (this does not include the implicit token).
+
+All communication between the jobserver and the jobclient happens through the
+semaphore. This ensures modularity of the protocol: jobclients don't need to
+know anything about the jobserver that has spawned them.
 
 Implementation of the protocol
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We want GHC to act as a ``jobclient`` and ``cabal``/``stack` to be jobservers.
+We want GHC to act as a jobclient and ``cabal``/``stack`` to be jobservers.
 
 The implementation of the jobserver protocol is very straightforward, as it
 mostly consists of switching to using a system semaphore to control the tokens.
@@ -167,13 +171,33 @@ This means that the implementation in ``cabal`` is non-invasive and easy to
 maintain.
 
 The implementation of the jobclient protocol is more complex, while still
-remaining very non-invasive. The GHC jobclient implementation should have
-the following characteristics:
+remaining very non-invasive, as it can be implemented in a single standalone
+module which contains all the logic for interacting with the semaphore. The only
+other changes required consist of threading through the ``-jsem`` information
+through the driver. If ``-jsem`` is not passed, GHC goes back to using the
+``-jN`` flag to determine the number of jobs to run concurrently, and we don't
+use the jobclient protocol. If ``-jsem=<sem>`` is passed but the semaphore
+``<sem>`` does not exist, GHC should report an error.
 
-A. GHC requests tokens for each module it is compiling concurrently.
+System semaphores can be created using the functionality provided by the ``unix``
+and ``Win32`` libraries. In practice, our implementation ships with a compatibility
+layer which provides an abstraction over those two libraries. This handles
+creation and destruction of semaphores, acquiring and releasing of tokens,
+including a mechanism for interrupting a wait on a semaphore when a token is
+no longer needed.
+
+GHC's implementation of the jobclient protocol should have the following
+characteristics:
+
+A. GHC requests one token for each unit of work it can do concurrently.
    (The current implementation requests one token per module, but it could make
    sense to request more, e.g. if one is able to parallelise the simplifier
    workload.)
+
+   Note that all work is done in parallel with waiting on the semaphore. For
+   example, if GHC has 3 tokens (including the implicit token) but could use
+   more, it will continue compiling with 3 concurrent jobs while it waits on
+   the semaphore for more tokens.
 
 B. GHC always returns all the tokens it has acquired from the semaphore,
    either upon successful completion or when an exception is raised,
@@ -208,20 +232,11 @@ D. GHC should rate-limit the release of semaphore tokens (the precise mechanism
       which each have a large loaded EPS. Combined, this will use a significant amount
       of memory.
 
-In practice, the core of GHC's jobclient implementation is contained within a
-single module implementing the protocol. This module implements acquisition and
-release of tokens, with a local pool of tokens. This local pool avoids excessive
-communication with the semaphore upon completion of every short-lived task,
-as per (D) above.
-The rest of the implementation simply consists of threading through the
-``jsem`` flag information through the driver.
-
-System semaphores can be created using the functionality provided by the ``unix``
-and ``Win32`` libraries. In practice, our implementation ships with a compatibility
-layer which provides an abstraction over those two libraries. This handles
-creation and destruction of semaphores, acquiring and releasing of tokens,
-including a mechanism for interrupting a wait on a semaphore when a token is
-no longer needed.
+In practice, we suggest to implement the token acquire/release mechanism by
+having GHC use a local pool of tokens, in order to avoid excessive communication
+with the semaphore: instead of systematically releasing a token to the semaphore
+once a job is done, we can instead re-use this token if we have other pending
+jobs. This prioritises the compilation of a single unit.
 
 Examples
 --------
@@ -302,6 +317,21 @@ and a complete implementation requires coordination with jobservers such as
 ``cabal`` and ``stack``. However, these changes are small and non-invasive,
 as it usually only involves switching over to using a system semaphore
 to control the behaviour of ``-j``.
+
+Other interactions of the ``-jsem`` flag:
+
+  - If ``-jsem`` is not passed to GHC, we fall back to the existing mechanisms
+    for concurrency.
+  - The ``-jsem`` and ``-j`` flags override eachother.
+  - The GHC jobserver protocol specifies that all communication happens through
+    the semaphore. This means that it doesn't matter which jobserver created
+    the semaphore. If nothing else is competing for resources on the semaphore,
+    GHC will acquire as many tokens as it can make use of.
+  - If GHC can't acquire any tokens from the semaphore, compilation will proceed
+    serially (as if running with ``-j1``). This is because we always have the
+    one implicit token, and because resource acquisition is done in parallel, so
+    we don't block the world just because we are indefinitely waiting on the
+    semaphore.
 
 Alternatives
 ------------
