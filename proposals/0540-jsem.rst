@@ -101,11 +101,8 @@ through which GHC invocations can acquire and release capabilities.
 
 All changes are gated behind this ``-jsem`` flag:
 
-- If ``-jsem`` is not enabled, there should be no observable changes in
-  GHC's behaviour. That is, GHC goes back to using the ``-jN`` flag to determine
-  the number of jobs to run concurrently.
-- If both ``-jsem`` and ``-j`` are passed, ``-jsem`` and ``-j`` flags override
-  eachother.
+- The ``-jsem`` and ``-j`` flags override eachother to determine which mechanism
+  to use to control paralellism.
 - If no semaphore named ``<sem>`` exists, GHC reports an error.
 
 Change to user manual
@@ -174,6 +171,14 @@ know anything about the jobserver that has spawned them.
 Implementation of the protocol
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+The implementation relies on an interface for system semaphores. For this, we
+propose to using the functionality provided by the ``unix`` and ``Win32``
+libraries. In practice, our implementation ships with a compatibility layer
+which provides an abstraction over those two libraries. This handles creation of
+fresh semaphores, acquisition, and release of tokens, including a mechanism for
+interrupting a wait on a semaphore when a token is no longer needed.
+
+The implementation consists of two separate parts: jobservers and jobclients.
 We want GHC to act as a jobclient and ``cabal``/``stack`` to be jobservers.
 
 The implementation of the jobserver protocol is very straightforward, as it
@@ -186,13 +191,6 @@ remaining very non-invasive, as it can be implemented in a single standalone
 module which contains all the logic for interacting with the semaphore. The only
 other changes required consist of threading through the ``-jsem`` information
 through the driver.
-
-System semaphores can be created using the functionality provided by the ``unix``
-and ``Win32`` libraries. In practice, our implementation ships with a compatibility
-layer which provides an abstraction over those two libraries. This handles
-creation and destruction of semaphores, acquiring and releasing of tokens,
-including a mechanism for interrupting a wait on a semaphore when a token is
-no longer needed.
 
 GHC's implementation of the jobclient protocol should have the following
 characteristics:
@@ -262,9 +260,10 @@ Let us explain how we envision ``cabal`` handle the following build plan, with
   :alt: Same dependency graph as before: a big unit at the top and bottom,
         and many single-module units in the middle.
 
-1. To start, ``cabal`` would create a semaphore ``⟨sem⟩`` with 8 available tokens.
+1. To start, ``cabal`` would create a new semaphore ``⟨sem⟩``, with 8 available
+   tokens.
 
-2. Next, we compile the ``Bot`` unit, which is a large unit, with many modules,
+3. Next, we compile the ``Bot`` unit, which is a large unit, with many modules,
    which sits at the bottom of the dependency graph and must thus be compiled
    before anything else.
 
@@ -281,7 +280,7 @@ Let us explain how we envision ``cabal`` handle the following build plan, with
    d. ``cabal`` notices the ``ghc`` subprocess has terminated, and releases
       the final (8th) token to the semaphore.
 
-3. After that, we move to compiling the middle units.
+4. After that, we move to compiling the middle units.
 
    a. ``cabal`` will acquire tokens from the semaphore and spawn
       ``ghc --make -jsem ⟨sem⟩`` invocations.
@@ -291,11 +290,11 @@ Let us explain how we envision ``cabal`` handle the following build plan, with
       As a result, so ``cabal`` will manage running 8 concurrent ``ghc`` processes,
       spawning new ones as previous ones terminate.
 
-4. Once all the middle units are compiled, ``cabal`` will move on to compiling
+5. Once all the middle units are compiled, ``cabal`` will move on to compiling
    the top unit, which will proceed as in (2) with a single
    ``ghc --make -jsem ⟨sem⟩`` invocation compiling 8 modules in parallel.
 
-5. Once all ``ghc`` processes have terminated, we are done, and ``cabal``
+6. Once all ``ghc`` processes have terminated, we are done, and ``cabal``
    destroys ``⟨sem⟩``.
 
 In this situation, ``cabal`` is the jobserver: it manages the semaphore and
@@ -338,13 +337,16 @@ to control the behaviour of ``-j``.
     their implicit token. As resource acquisition is done in parallel, we won't
     block the world just because we are indefinitely waiting on the semaphore.
 
-  - Different jobserver invocations create distinct semaphores through which
-    their respective child jobclients communicate. To enable multiple invocations
-    of e.g. ``cabal`` to cooperate over resources, these invocations should
-    themselves be spawned by an overarching jobserver. In that case, some
-    jobserver would create a unique semaphore, spawn ``cabal`` jobclient processes
-    (to which the semaphore name is passed), and the ``cabal`` processes would
-    in turn spawn GHC jobclient process (to which the semaphore name is passed).
+  - Different jobserver invocations create distinct semaphores (with different
+    names) through which their respective child jobclients communicate. (In
+    practice, the uniqueness is achieved by generating new uniques names that
+    don't clash with any existing semaphore names.)
+    To enable multiple invocations of e.g. ``cabal`` to cooperate over resources,
+    these invocations should themselves be spawned by an overarching jobserver.
+    In that case, some jobserver would create a unique semaphore, spawn ``cabal``
+    jobclient processes (to which the semaphore name is passed), and the ``cabal``
+    processes would in turn spawn GHC jobclient process (to which the semaphore
+    name is passed).
 
 Alternatives
 ------------
