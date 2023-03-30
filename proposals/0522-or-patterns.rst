@@ -1,4 +1,4 @@
-Or Patterns
+Or Patterns (Amended)
 ==============
 
 .. author:: David Knothe, Ömer Sinan Ağacan, Sebastian Graf 
@@ -6,7 +6,7 @@ Or Patterns
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/todo>`_.
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/585>`_.
 .. sectnum::
 .. contents::
 
