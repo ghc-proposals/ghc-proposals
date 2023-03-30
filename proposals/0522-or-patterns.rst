@@ -1,12 +1,12 @@
 Or Patterns
 ==============
 
-.. author:: David Knothe, Ömer Sinan Ağacan, Sebastian Graf
-.. date-accepted:: 2022-11-29
+.. author:: David Knothe, Ömer Sinan Ağacan, Sebastian Graf 
+.. date-accepted::
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/522>`_.
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/todo>`_.
 .. sectnum::
 .. contents::
 
@@ -62,7 +62,7 @@ function we get
 
     stringOfT :: T -> Maybe String
     stringOfT (T1 s)        = Just s
-    stringOfT (one of T2{}, T3{}) = Nothing
+    stringOfT (one of T2{}; T3{}) = Nothing
 
 This function doesn't match ``T4``, so we get our warning in the very first compile
 cycle or (even faster) in our IDE powered by a language server implementation.
@@ -76,45 +76,51 @@ Changes in the grammar
 
 We consider this as an extension to `Haskell 2010 grammar
 <https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#x17-18000010.5>`_.
-The relevant non-terminal is ``apat``: ::
+The relevant non-terminal is ``pat``: ::
 
-  apat    →    var [ @ apat]                     (as pattern)
-          |    gcon                              (arity gcon  =  0)
-          |    qcon { fpat1 , … , fpatk }        (labeled pattern, k ≥ 0)
-          |    literal
-          |    _                                 (wildcard)
-          |    ( pat )                           (parenthesized pattern)
-          |    ( pat1 , … , patk )               (tuple pattern, k ≥ 2)
-          |    [ pat1 , … , patk ]               (list pattern, k ≥ 1)
-          |    ~ apat
+   pat    →    lpat qconop pat
+          |    lpat
 
 Or patterns extension adds one more production: ::
 
-          |    (one of pat1, …, patk )                (Or pattern, k ≥ 2)
+          |    one of { pat1 ; ... ; patk }                (Or pattern, k ≥ 0)
 
 ``one`` is a conditional keyword in patterns, but can still be used for variable patterns.
-The ``,`` between the parentheses have (shift) priority that is lower than any other ``apat``'s (reduction) priority.
+
+Similar to ``case of``, ``of`` introduces a layout block and implicitly adds opening and closing curly braces when not explicitly given. Therefore, both of these are equivalent:
+
+  - ``one of {1;2}``
+  - ``one of 1;2``
+
+When ``k=0``, we only allow ``one of {}``, not ``one of`` however.
 
 Some examples that this new grammar produces: ::
 
-  -- in expression context
-  case e of
-    (one of T1, T2{}, T3 a b) -> ...
+  case e of (one of T1; T2{}; T3 a b) -> ...
+  
+  case e of (one of T1
+                    T2{}
+                    T3 a b) -> ...
+                    
+  case e of (one of {}) -> ...
 
+  f :: (Int, Int) -> Int
+  f (5, one of {6;7})
+  f (fst -> one of 0) -> Int
+  
   -- in expression context
-  let (one of [x], (x : y : z)) = e1 in e2
+  let (one of [x]; (x : y : z)) = e1 in e2
 
   -- pattern guards in declarations
   f x y
-    | x@(one of T1 _, T2 a b) <- e1
+    | x@(one of T1 _; T2 a b) <- e1
     , guard x
     = e2
 
   -- nested Or patterns
   case e1 of
-    (one of (one of T1, T2), T3, T4) -> e2
-
-The new production doesn't add any ambiguities because of the mandatory parentheses, just like for tuples.
+    (one of one of {T1; T2}; T3; T4) -> e2
+    (one of one of one of {})
 
 NB: The new grammar allows Or patterns which bind variables. These will however be rejected in `2.2`_.
 
@@ -135,12 +141,10 @@ We give the static semantics in terms of *pattern types*. A pattern type has the
 Then the typing rule for Or patterns is:
 ::
 
-    Γ0, Σ0 ⊢ pat1 : τ ⤳ Γ0,Σ1,Ψ1    Γ0, Σ0 ⊢ pat2 : τ ⤳ Γ0,Σ2,Ψ2    
-    -------------------------------------------------------------
-                 Γ0, Σ0 ⊢ (one of pat1, pat2) : τ ⤳ Γ0,Σ0,∅
+          Γ0, Σ0 ⊢ pat_i : τ ⤳ Γ0,Σi,Ψi
+    -----------------------------------------
+    Γ0, Σ0 ⊢ (one of { pat_i }) : τ ⤳ Γ0,Σ0,∅
 
-
-An Or pattern consisting of more than two parts works the same.
 
 
 Dynamic semantics of Or pattern matching
@@ -150,24 +154,25 @@ Informal semantics in the style of `Haskell 2010 chapter 3.17.2: Informal
 Semantics of Pattern Matching
 <https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-600003.17.2>`_:
 
-- Matching the pattern ``(one of p1, …, pk)`` against the value ``v`` is the result of matching ``v`` against ``p1`` if it is not a failure, or the result of
-  matching ``(one of p2, …, pk)`` against ``v`` otherwise.
+- Matching the pattern ``one of {p1; ... ; pk}`` against the value ``v`` is the result of matching ``v`` against ``p1`` if it is not a failure, or the result of
+  matching ``(one of {p2; ... ; pk}`` against ``v`` otherwise. We require that ``p1``, …, ``pk`` bind no variables.
+- Matching the pattern ``one of {}`` against the value ``v`` fails after evaluating ``v``.
 
-  ``p1``, …, ``pk`` bind no variables.
-
-  NB: For k=1, the pattern ``(p1)`` is meant to denote a parenthesized pattern.
 
 Here are a few examples: ::
 
-    (\ (one of 1, 2) -> 3) 1 => 3
-    (\ (one of Left 0, Right 1) -> True) (Right 1) => True
-    (\ (one of (one of [1], [2, _]), (one of [3, _, _], [4, _, _, _])) -> True) [4, undefined, undefined, undefined] => True
-    (\ (one of 1, 2, 3) -> True) 3 => True
+    (\ (one of 1; 2) -> 3) 1 => 3
+    (\ (one of Left 0; Right 1) -> True) (Right 1) => True
+    (\ (one of (one of [1]; [2, _]); (one of [3, _, _]; [4, _, _, _])) -> True) [4, undefined, undefined, undefined] => True
+    (\ (one of 1; 2; 3) -> True) 3 => True
+    
+    g (one of {}) = 1
+    g (error "a") => error "a"
 
 We do not employ backtracking in Or patterns. The following would yield ``"no backtracking"``: ::
 
  case (True, error "backtracking") of
-   (one of (True, _), (_, True))
+   (one of (True, _); (_, True))
      | False -> error "inaccessible"
    _ -> error "no backtracking"
 
@@ -213,10 +218,10 @@ Examples
       where
         go (L _ pat) = go1 pat
 
-        go1 (one of WildPat{}, VarPat{}, LazyPat{})
+        go1 (one of WildPat{}; VarPat{}; LazyPat{})
           = True
 
-        go1 (one of PArrPat{}, ConPatIn{}, LitPat{}, NPat{}, NPlusKPat{}, ListPat {})
+        go1 (one of PArrPat{}; ConPatIn{}; LitPat{}; NPat{}; NPlusKPat{}; ListPat{})
           = False
 
         go1 (BangPat pat)       = go pat
@@ -294,13 +299,13 @@ So the following example would not type check because the Or pattern doesn't pro
      IsInt2 :: GADT Int
 
  foo :: a -> GADT a -> a
- foo x (one of IsInt1 {}, IsInt2 {}) = x + 1
+ foo x (one of IsInt1 {}; IsInt2 {}) = x + 1
 
 
 Considering view patterns, these do work seamlessly with Or patterns. As specified in `2.2`_, Or patterns will just merge the required constraints which come from view patterns. This would work: ::
 
  f :: (Eq a, Show a) => a -> a -> Bool
- f a (one of (== a) -> True, show -> "yes") = True
+ f a (one of (== a) -> True; show -> "yes") = True
  f _ _ = False
 
 Costs and Drawbacks
@@ -316,7 +321,7 @@ Alternatives
 Alternative syntax
 ~~~~~~~~~~~~~~~~~~
 
-We previously considered ``;``, ``;;`` and ``||`` as separators.
+We previously considered ``;``, ``;;`` and ``||`` as separators, without the `one of` prefix.
 
 One nice thing about using ``;`` for the separator is that it is also used
 for separating case alternatives, so it looks familiar. Example: ::
@@ -351,8 +356,8 @@ The `parent proposal <https://github.com/ghc-proposals/ghc-proposals/pull/43>`__
 
  data T = T1 Int | T2 Int | T3 | T4
 
- getInt (one of T1 a, T2 a) = Just a
- getInt (one of T3, T4) = Nothing
+ getInt (one of T1 a; T2 a) = Just a
+ getInt (one of T3; T4) = Nothing
 
 This is a non-goal of this proposal: with binding pattern variables come challenges like binding existential constraints. Correctly specifying the semantics is hard and caused the parent proposal to become dormant after no progress has been made.
 
@@ -365,7 +370,7 @@ We think the following semantics in terms of view patterns is equivalent.
 We could define the semantics of Or patterns as a simple desugaring to view
 patterns. The desugaring rule is: ::
 
-    (one of p1, …, pk)
+    (one of p1; ...; pk)
     =
     ((\x -> case x of p1 -> True; p2 -> True; …; pk -> True; _ -> False)
         -> True)
