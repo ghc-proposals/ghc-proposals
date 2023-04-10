@@ -14,11 +14,11 @@ Introduce a language extension ``TypeLevelLiterals`` (implied by ``DataKinds``)
 to turn on the features in the *Type-Level Literals* section of the
 *User's Guide*.
 
-.. _`#102`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0106-type-data.rst
+.. _`#106`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0106-type-data.rst
 
 Motivation
 ----------
-Like the ``TypeData`` extension (`#102`_, implemented in 9.6), this
+Like the ``TypeData`` extension (`#106`_, implemented in 9.6), this
 proposal aims to allow some type-level programming without connecting
 the constructor and type/class namespaces, as done by ``DataKinds``.
 
