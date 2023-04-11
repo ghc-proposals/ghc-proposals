@@ -92,8 +92,6 @@ Similar to ``case of``, ``of`` introduces a layout block and implicitly adds ope
   - ``one of {1;2}``
   - ``one of 1;2``
 
-When ``k=0``, we only allow ``one of {}``, not ``one of`` however.
-
 Some examples that this new grammar produces: ::
 
   case e of (one of T1; T2{}; T3 a b) -> ...
@@ -102,7 +100,7 @@ Some examples that this new grammar produces: ::
                     T2{}
                     T3 a b) -> ...
                     
-  case e of (one of {}) -> ...
+  case e of (one of) -> ...
 
   f :: (Int, Int) -> Int
   f (5, one of {6;7})
