@@ -87,7 +87,7 @@ Or patterns extension adds one more production: ::
 
 ``one`` is a conditional keyword in patterns, but can still be used for variable patterns.
 
-Similar to ``case of``, ``of`` introduces a layout block and implicitly adds opening and closing curly braces when not explicitly given. Therefore, both of these are equivalent:
+As stated in the Haskell report and for consistency with ``case of``, ``of`` introduces a layout block and implicitly adds opening and closing curly braces when not explicitly given. Therefore, both of these are equivalent:
 
   - ``one of {1;2}``
   - ``one of 1;2``
