@@ -248,23 +248,38 @@ convenient way to gain access to ``ExceptionContext`` in exception handlers: ::
           return (ExceptionWithContext (someExceptionContext se) e)
       displayException = displayException . toException
 
-Preserving context on rethrowing
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Preserving exception causes on rethrowing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In ``Control.Exception``, modify existing definitions as follows:
 
-* Modify ``catch`` to preserve ``ExceptionContext`` when a handler rethrows an
-  exception: ::
+* Introduce a ``newtype``: ::
+
+    newtype CausedBy = CausedBy SomeException
+
+    instance ExceptionAnnotation CausedBy
+
+* Modify ``catch`` to add ``CausedBy`` annotations to exceptions thrown from handlers: ::
 
     catch :: Exception e => IO a -> (e -> IO a) -> IO a
     catch (IO io) handler = IO $ catch# io handler'
      where
        handler' e =
          case fromException e of
-           Just e' -> unIO (annotateIO (someExceptionContext e) (handler e'))
+           Just e' -> unIO (annotateIO (CausedBy e) (handler e'))
            Nothing -> raiseIO# e
 
   Modify ``catchJust`` and ``handleJust`` accordingly (mutatis mutandis).
+
+* Introduce ``catchNoCause`` to exposing the old semantics of ``catch``: ::
+
+    catch :: Exception e => IO a -> (e -> IO a) -> IO a
+    catch (IO io) handler = IO $ catch# io handler'
+     where
+       handler' e =
+         case fromException e of
+           Just e' -> unIO (handler e')
+           Nothing -> raiseIO# e
 
 Capturing Backtraces on Exceptions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -444,23 +459,15 @@ While in some select cases dropping context may be desireable (e.g. to avoid
 exposing implementation details unnecessarily to the user), in general this
 proposal seeks to make exception provenance information ubiquitous and
 reliable. Consequently, we propose to that ``catch`` and ``handle`` be modified
-to preserve exception context when an exception is thrown from a handler by
-catching the rethrown exception and augmenting its context with that of the old
-exception. This ensures reliability of backtraces at the expense of a
-constant-time cost when exceptions are handled.
+to preserve "parent" exceptions via ``CausedBy`` annotations when an exception
+is thrown from a handler.
 
-To see how this works, consider the following program: ::
+One implication of this change is that it becomes harder for library authors to
+hide internal exceptions from the user. In principle this could result in
+leakage of secrets from an application via ``CausedBy`` annotations; for this reason
+we allow users to opt out of ``CausedBy`` annotation via ``catchNoCause``. The
+authors would like to hear users' thoughts on the implications of this design.
 
-  rethrow1 :: IO a
-    catch (throw MyException) $ \(se :: SomeException) ->
-      throw se
-
-Under the above proposal, the caller of ``rethrow1`` will be thrown a
-``MyException`` exception with a backtrace containing the locations of
-both the ``throw MyException`` and ``throw se``. The law imposed on
-``toException`` in :ref:`attach-context` ensures that the rethrow of ``se``
-drops the ``ExceptionContext``, avoiding redundancy when it is is reintroduced
-by ``catch``.
 
 .. top-level-handler:
 
