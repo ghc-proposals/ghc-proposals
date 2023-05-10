@@ -239,35 +239,42 @@ convenient way to gain access to ``ExceptionContext`` in exception handlers: ::
 Preserving exception causes on rethrowing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In ``Control.Exception``, modify existing definitions as follows:
+In ``Control.Exception``:
 
 * Introduce a ``newtype``: ::
 
-    newtype CausedBy = CausedBy SomeException
+    newtype WhileHandling = WhileHandling SomeException
 
-    instance ExceptionAnnotation CausedBy
+    instance ExceptionAnnotation WhileHandling
 
-* Modify ``catch`` to add ``CausedBy`` annotations to exceptions thrown from handlers: ::
+* Modify ``catch`` to add ``WhileHandling`` annotations to exceptions thrown from handlers: ::
 
     catch :: Exception e => IO a -> (e -> IO a) -> IO a
     catch (IO io) handler = IO $ catch# io handler'
      where
        handler' e =
          case fromException e of
-           Just e' -> unIO (annotateIO (CausedBy e) (handler e'))
+           Just e' -> unIO (annotateIO (WhileHandling e) (handler e'))
            Nothing -> raiseIO# e
 
   Modify ``catchJust`` and ``handleJust`` accordingly (mutatis mutandis).
 
-* Introduce ``catchNoCause`` to exposing the old semantics of ``catch``: ::
+* Introduce ``catchNoAnnotation`` to exposing the old semantics of ``catch``: ::
 
-    catch :: Exception e => IO a -> (e -> IO a) -> IO a
-    catch (IO io) handler = IO $ catch# io handler'
+    catchNoAnnotation :: Exception e => IO a -> (e -> IO a) -> IO a
+    catchNoAnnotation (IO io) handler = IO $ catch# io handler'
      where
        handler' e =
          case fromException e of
            Just e' -> unIO (handler e')
            Nothing -> raiseIO# e
+
+In ``GHC.IO``:
+
+* Introduce ``catchNoAnnotation`` to exposing the old semantics of ``catch``: ::
+
+    catchExceptionNoAnnotation :: Exception e => IO a -> (e -> IO a) -> IO a
+    catchExceptionNoAnnotation !io handler = catchNoAnnotation io handler
 
 Capturing Backtraces on Exceptions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -328,6 +335,15 @@ Export the following new definitions from ``Control.Exception``:
       fromException = NoBacktrace . fromException
       toException (NoBacktrace e) = toException e
       backtraceDesired _ = False
+
+In ``GHC.IO``:
+
+* Modify ``onException`` to avoid capturing a new backtrace: ::
+
+    onException :: IO a -> IO b -> IO a
+    onException io what = io `catchExceptionNoAnnotate` \e -> do
+        _ <- what
+        throwIO $ NoBacktrace (e :: SomeException)
 
 .. hascallstack:
 
@@ -447,13 +463,13 @@ While in some select cases dropping context may be desireable (e.g. to avoid
 exposing implementation details unnecessarily to the user), in general this
 proposal seeks to make exception provenance information ubiquitous and
 reliable. Consequently, we propose to that ``catch`` and ``handle`` be modified
-to preserve "parent" exceptions via ``CausedBy`` annotations when an exception
+to preserve "parent" exceptions via ``WhileHandling`` annotations when an exception
 is thrown from a handler.
 
 One implication of this change is that it becomes harder for library authors to
 hide internal exceptions from the user. In principle this could result in
-leakage of secrets from an application via ``CausedBy`` annotations; for this reason
-we allow users to opt out of ``CausedBy`` annotation via ``catchNoCause``. The
+leakage of secrets from an application via ``WhileHandling`` annotations; for this reason
+we allow users to opt out of ``WhileHandling`` annotation via ``catchNoAnnotation``. The
 authors would like to hear users' thoughts on the implications of this design.
 
 
@@ -507,6 +523,21 @@ minimal, we do not propose that this redundant field be removed at this time.
 We also propose no changes to ``errorWithoutBacktrace``. Consequently, the
 exception arising from ``errorWithoutBacktrace`` will not carry a ``Backtrace``
 in its ``ExceptionContext``.
+
+``onException`` and ``finally``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``onException`` and ``finally`` operations are currently implemented by ``catch``\ ing
+and re-``throw``\ ing. This means that as-written they would produce new backtraces and
+``WhileHandling`` context. However, this runs counter to the user intent expressed by these
+operations, which is merely to perform some effect while unwinding for an exception.
+
+For this reason we propose to modify ``onException`` to:
+
+* avoid capturing a new backtrace on ``throw`` through use of ``NoBacktrace``
+* avoid adding a ``WhileHandling`` annotation through use of ``catchRaw``
+
+As ``finally`` is implemented in terms of ``onException`` this change should cover both functions.
 
 Examples
 --------
