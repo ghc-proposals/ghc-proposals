@@ -191,22 +191,10 @@ In ``Control.Exception``, modify existing definitions as follows:
     - data SomeException = forall e.                      (Exception e) => SomeException e
     + data SomeException = forall e. (HasExceptionContext, Exception e) => SomeException e
 
-* Add the following law to the ``Exception`` class: ::
-
-    class Exception a where
-      -- | @toException@ should produce an exception with an empty 'ExceptionContext.
-      -- That is,
-      --
-      -- >>> someExceptionContext (toException a) == emptyExceptionContext
-      --
-      toException :: a -> SomeException
-
 * Modify the ``Exception`` instance of ``SomeException`` as follows: ::
 
     instance Exception SomeException where
-        toException (SomeException e) =
-            let ?exceptionContext = emptyExceptionContext
-            in SomeException e
+        toException e = e
         fromException = Just
         displayException (SomeException e) =
             displayException e ++ displayExceptionContext ?exceptionContext
