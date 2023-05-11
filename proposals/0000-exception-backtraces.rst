@@ -341,7 +341,7 @@ In ``GHC.IO``:
 * Modify ``onException`` to avoid capturing a new backtrace: ::
 
     onException :: IO a -> IO b -> IO a
-    onException io what = io `catchExceptionNoAnnotate` \e -> do
+    onException io what = io `catchExceptionNoAnnotation` \e -> do
         _ <- what
         throwIO $ NoBacktrace (e :: SomeException)
 
