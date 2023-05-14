@@ -57,11 +57,11 @@ import Z
 ```
 A "duplicate import" looks like this:
 ```haskell
-import X
-import X (f)
+import X -- X exports f
+import Y (f)
 ...f is used here...
 ```
-Here, one of the imports is currently marked as unused.
+Here, one of the imports is currently marked as unused. Note that `X` and `Y` could be the same module just as well.
 
 The proposal is for `-Wunused-imports` to be changed so that only the "unused import" case emits a warning.
 
