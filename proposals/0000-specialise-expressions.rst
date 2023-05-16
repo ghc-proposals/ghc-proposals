@@ -46,7 +46,7 @@ which can then lead to further evaluation within the function body. In this case
 GHC will create ::
 
   addMult5 :: Int -> Int -> Int
-  addMult5 y = 5 * 2 + y
+  addMult5 y = let x = 5 in x * 2 + y
   {-# RULES "addMult/5" addMult 5 = addMult5 #-}
 
 GHC can then further optimize the right-hand side of ``addMult5`` to avoid doing
