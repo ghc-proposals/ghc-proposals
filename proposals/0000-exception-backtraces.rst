@@ -259,7 +259,7 @@ In ``Control.Exception``:
 
   Modify ``catchJust`` and ``handleJust`` accordingly (mutatis mutandis).
 
-* Introduce ``catchNoAnnotation`` to exposing the old semantics of ``catch``: ::
+* Introduce ``catchNoAnnotation`` exposing the old semantics of ``catch``: ::
 
     catchNoAnnotation :: Exception e => IO a -> (e -> IO a) -> IO a
     catchNoAnnotation (IO io) handler = IO $ catch# io handler'
