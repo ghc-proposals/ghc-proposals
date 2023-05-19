@@ -271,7 +271,7 @@ In ``Control.Exception``:
 
 In ``GHC.IO``:
 
-* Introduce ``catchNoAnnotation`` to exposing the old semantics of ``catch``: ::
+* Introduce ``catchExceptionNoAnnotation`` exposing the old semantics of ``catch``: ::
 
     catchExceptionNoAnnotation :: Exception e => IO a -> (e -> IO a) -> IO a
     catchExceptionNoAnnotation !io handler = catchNoAnnotation io handler
