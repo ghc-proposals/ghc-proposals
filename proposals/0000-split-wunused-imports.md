@@ -13,8 +13,6 @@ The current iteration of `-Wunused-imports` fulfills two arguably different purp
 
 We're suggesting that we split off the "duplicate imports" part from `-Wunused-imports` into another warning, called `-Wduplicate-imports`, and crucially, **do not** include `-Wduplicate-imports` into `-Wall`.
 
-We additionally introduce a new **"meta" warning**, which will be used to loudly communicate, but without erroring, that the behaviour of `-Wunused-imports` has changed, so that users can adapt accordingly.
-
 ## Motivation
 
 `-Wunused-imports` has long been a thorn in the side of people who want both:
@@ -90,18 +88,6 @@ Proposed:
 1. `-Wduplicate-imports`
     * warnDuplicateImports: import M + import M(f), even when f is used complain about duplicate import of f
 2. `-Wall` includes `-Wunused-imports`, but **not** `-Wduplicate-imports`
-
-### Meta warning
-
-One big drawback of the proposed changed is that, as is, the default behaviour will change silently - the user was not asked and has not agreed for this to change.
-
-Therefore, we propose that we introduce a "meta warning", let's say `-Wmeta-unused-imports` (names here are placeholders for now), with the following properties:
-
-0. Whenever a user has `-Wunused-imports` on, and they don't have `-Wno-meta-unused-imports` on, emit a warning that highlights the changed behaviour of `-Wunused-imports`.
-1. It is on by default.
-2. It **is not made into an error by `-Werror`**. Optionally there could be `-Wmeta-error` or something along those lines for users who want to get errors for potential future meta warnings.
-
-This `-Wmeta-unused-improts` warning is only present for a few release cycles, and is removed afterwards, or alternatively, turned off by default.
 
 ## Examples
 
@@ -191,17 +177,11 @@ Unsure what to fill in here, it seems that the [Proposed Change Specification](#
 
 The main cost is changing the behaviour of a warning without notice, even if we explicitly warn users that it has changed.
 
-Is this acceptable?
+Is this acceptable? From initial feedback given in the proposal discussion, it seems that it is.
 
-We're in the camp of "yes, it is", **if** we include the meta warning, since anyone who is maintaining code and cares about keeping things warning free should be able to
-easily notice the meta warning and turn on `-Wduplicate-imports` (or turn off the meta warning).
-
-There's also the cost of introducing the new concept of a "meta warning". These could arguably warrant their own standalone proposal, where they are more precisely specified.
+However, for an extension of this proposal which includes some mitigation for this issue, see [the unresolved question section on Meta warnings](#meta-warning).
 
 ## Alternatives
-
-### Don't include the meta warning and let users deal with the silently changed behaviour.
-This seems potentially frustrating. Who knows if someone has some niche use case that they really like for the "duplicate imports" part of `-Wunused-imports`?
 
 ### Relaxed redundant imports
 
@@ -219,7 +199,22 @@ potentially amending the new `-Wduplicate-imports` warning instead.
 
 ## Unresolved Questions
 
-N/A
+### Meta warning
+
+One big drawback of the proposed changed is that, as is, the default behaviour will change silently - the user was not asked and has not agreed for this to change.
+
+Therefore, we propose that we introduce a "meta warning", let's say `-Wmeta-unused-imports` (names here are placeholders for now), with the following properties:
+
+0. Whenever a user has `-Wunused-imports` on, and they don't have `-Wno-meta-unused-imports` on, emit a warning that highlights the changed behaviour of `-Wunused-imports`.
+1. It is on by default.
+2. It **is not made into an error by `-Werror`**. Optionally there could be `-Wmeta-error` or something along those lines for users who want to get errors for potential future meta warnings.
+
+This `-Wmeta-unused-improts` warning is only present for a few release cycles, and is removed afterwards, or alternatively, turned off by default.
+
+There are two issues with this approach:
+* On older ghcs, meta warnings are not something that exists, hence if you silence the meta warning with `-Wno-meta-unused-imports`, older ghcs will start warning about an unrecognised warning flag
+* In general it seems like quite a sledgehammer to apply here. Meta warnings are a new concept for ghc  in two ways - in being a new type of warning, but also a warning that doesn't error under `-Werror`.
+    Initial feedback has indicated that this cost may not be worth it.
 
 ## Implementation Plan
 
