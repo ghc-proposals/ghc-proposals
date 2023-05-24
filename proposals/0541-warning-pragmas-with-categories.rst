@@ -45,8 +45,8 @@ with a "warning category".  Users can then enable or disable these
 categories individually.  For example, it would allow the core-libraries
 proposal to introduce::
 
-    {-# WARNING [x-partial] head "This is a partial function, it throws an error on empty lists." #-}
-    {-# WARNING [x-partial] tail "This is a partial function, it throws an error on empty lists." #-}
+    {-# WARNING in "x-partial" head "This is a partial function, it throws an error on empty lists." #-}
+    {-# WARNING in "x-partial" tail "This is a partial function, it throws an error on empty lists." #-}
 
 Such warnings are enabled by default, so the appropriate warning would be
 displayed at any use of ``head`` or ``tail``.  However, users may control this
@@ -65,12 +65,11 @@ distinguish it from the built-in warning flags:
 Proposed Change Specification
 -----------------------------
 
-A warning *category* is an identifier beginning with a letter and followed by
-valid identifier characters or dashes.
+A warning *category* is a string consisting of valid identifier characters or dashes.
 
 #. A `WARNING pragma
    <https://downloads.haskell.org/ghc/9.4.1/docs/users_guide/exts/pragmas.html#warning-deprecated-pragma>`_
-   may be immediately followed by a single warning category in square brackets.
+   may be immediately followed by the ``in`` keyword and a single warning category in double quotes.
    See below for details of the grammatical changes.
 
 #. Individual warning categories may be enabled or disabled using new
@@ -125,10 +124,9 @@ Grammar of warning declarations
 The grammar of declarations is extended as follows:
 
 ============  =  =====================================================================
-*decl*        →  ``{-# WARNING`` [*categories*] [*things*] *strings* ``#-}``
+*decl*        →  ``{-# WARNING`` [``in`` ``"`` *category* ``"``] [*things*] *strings* ``#-}``
 
-*categories*  →  ``[`` *category* ``]``
-*category*    →  (*small* | *large*) { *small* | *large* | *digit* | ``'`` | ``-`` }
+*category*    →  { *small* | *large* | *digit* | ``'`` | ``-`` }
 
 *things*      →  *thing1*, ..., *thingN*
 *thing*       →  *varid* | *conid*
@@ -136,11 +134,14 @@ The grammar of declarations is extended as follows:
 ============  =  =====================================================================
 
 The category can be omitted entirely, so this subsumes the existing
-syntax for ``WARNING`` pragmas.  That is, [*categories*]
-means that the presence of the *categories* non-terminal is optional; if present
-it is a single category in square brackets (hence the use of typewriter font ``[``
-... ``]`` in the definition of the *categories* production).
+syntax for ``WARNING`` pragmas. If present,
+the ``in`` keyword is followed by a single category as a double-quoted string.
 Similarly the list of *things* is optional as it may be omitted (for a ``WARNING`` on a module header).
+
+The *strings* may be a single string or a list (with the latter giving a
+multi-line warning message).  Since a module header may have a pragma with no
+*things*, e.g. ``{-# WARNING "message" #-}`` or ``{-# WARNING ["message1", "message2"] #-}``,
+we use the ``in`` keyword to indicate the presence of a warning category.
 
 The *category* non-terminal subsumes both *varid* and *conid*, so it is
 possible to use the name of the thing to which a warning is being attached as
@@ -148,6 +149,10 @@ the category, provided it is not an operator.  The dash character (``-``) is per
 in addition to identifier characters, since dashes are frequently used in
 warning names.
 
+(The original version of this proposal used square brackets surrounding the
+warning category, and did not put the category in quotes, but then it was not
+obvious whether ``{-# WARNING [`` should be followed by a category or a string,
+and it was difficult to lex category names containing dashes.)
 
 
 Examples
@@ -155,8 +160,8 @@ Examples
 
 Suppose the definitions of ``head`` and ``nub`` are annotated with::
 
-    {-# WARNING [x-partial] head "This is a partial function, it throws an error on empty lists." #-}
-    {-# WARNING [x-quadratic] nub "The nub function has quadratic run-time complexity. If possible, use nubBy or nubOn." #-}
+    {-# WARNING in "x-partial" head "This is a partial function, it throws an error on empty lists." #-}
+    {-# WARNING in "x-quadratic" nub "The nub function has quadratic run-time complexity. If possible, use nubBy or nubOn." #-}
 
 and the user program contains occurrences of both ``head`` and ``nub``::
 
@@ -214,7 +219,7 @@ choose to override the warnings as they wish.
 This approach also provides an alternative to `proposal #528
 <https://github.com/ghc-proposals/ghc-proposals/pull/528>`_, which is about
 discouraging users from importing from "internal" modules, without completely
-prohibiting their import.  For example, a ``WARNING [x-ghc-prim-internals]``
+prohibiting their import.  For example, a ``WARNING in "x-ghc-prim-internals"``
 pragma could be attached to all modules in ``ghc-prim``.  Users would then be
 advised that such imports are discouraged, but could silence the warning with
 ``-Wno-x-ghc-prim-internals``.

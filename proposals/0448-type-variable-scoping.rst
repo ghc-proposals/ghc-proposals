@@ -565,7 +565,23 @@ Proposed Change Specification
    (Right now, pattern synonyms require all such quantifications to occur before any term arguments,
    but accepted proposal `#402`_ allows these quantifications to occur in any order in data constructors.)
 
-#. Any type variables mentioned in a type application are considered binding sites, shadowing any in-scope type variables.
+#. In accordance with the `Visibility Orthogonality Principle`_,
+   the rules that determine whether a variable occurrence is a binding site or a use site are not affected by the presence of a ``@``.
+   At the time of writing, the rules for patterns and pattern signatures are as follows:
+
+   * Outside pattern signatures,
+     variable occurrences are considered binding sites,
+     shadowing any other in-scope variables.
+     It is an error to bring the same type variable into scope in two (or more) places within the same match group.
+
+   * Inside pattern signatures (i.e. on the right-hand side of ``pat :: sig``),
+     occurrences of in-scope type variables are usages,
+     whereas occurrences of out-of-scope type variables create implicit bindings.
+     It is allowed to mention the same out-of-scope variable more than once.
+
+   Generalize these rules to apply not only to pattern signatures but also to
+   kind signatures in type applications in constructor patterns
+   (and to kind signatures in type variable patterns defined in the "Type arguments in lambda patterns" section).
 
 #. Typing follows the rules in `Type Variables in Patterns`_.
    In particular, see Figure 7, which we modify here in two ways:
@@ -579,8 +595,6 @@ Proposed Change Specification
 #. A wildcard ``_`` as a type argument says simply to skip that argument;
    it does not trigger any behavior associated with partial type signatures.
    In particular, ``-XPartialTypeSignatures`` is not necessary, and no diagnostic is produced.
-
-#. As with term variables, it is an error to bring the same type variable into scope in two (or more) places within the same pattern.
 
 Examples
 ~~~~~~~~
@@ -598,7 +612,7 @@ Here is an example (taken from `#15050 <https://gitlab.haskell.org/ghc/ghc/issue
 This should type-check, because the following code does::
 
     foo :: T Bool -> ()
-    foo (MkT (_ :: Int _)) = ()
+    foo (MkT (_ :: Int)) = ()
 
 Note that the data constructor expects up-to two type arguments (``forall b a.…``), but we are passing only one type argument, which then corresponds to the *first* type argument of of the data constructor.
 
@@ -650,6 +664,26 @@ This shadowing behavior mimics what happens with term variables in patterns.
 
 This is accepted.
 The type variable ``a`` is bound to ``Int``, by pattern-matching.
+
+Here is an example of pattern signatures within a type abstraction in a pattern::
+
+   data Proxy a = P
+   g2 :: Proxy (Nothing @(a, a)) -> ()
+   g2 (P @(Nothing :: Maybe (t, t))) = ()
+
+Note multiple occurrences of ``t`` in the pattern. Normally, we would disallow
+multiple bindings of a single variable::
+
+   f1 (P x) (P x) = x               -- Rejected (multiple bindings of ‘x’)
+   f2 (P @a x) (P @a y) = x         -- Rejected (multiple bindings of ‘a’)
+
+Pattern and kind signatures, however, are not subject to this restriction,
+since variable occurrences in pattern signatures are considered usages (not bindings)::
+
+   g1 (P x :: Proxy (a,a)) = x               -- Accepted (multiple occurrences of ‘a’ notwithstanding)
+
+   g2 :: Proxy (Nothing @(a, a)) -> ()
+   g2 (P @(Nothing :: Maybe (t, t))) = ()    -- Accepted (multiple occurrences of ‘t’ notwithstanding)
 
 ``-XNoImplicitBinds``
 ^^^^^^^^^^^^^^^^^^^^^
@@ -887,6 +921,11 @@ Proposed Change Specification
    Conveniently, ``apat``\ s are used both in function left-hand sides and in lambda-expressions, so this change covers both use-cases.
 
    (Note that this does not subsume the new grammar for constructor patterns, which allow *types*, not just variables.)
+
+#. In accordance with the `Visibility Orthogonality Principle`_,
+   the rules that determine whether a variable occurrence is a binding site or a use site are not affected by the presence of a ``@``.
+   That is, name resolution in kind signatures in type variable patterns follows the rules for pattern signatures.
+   (The rules for pattern signatures are given in the "Type arguments in constructor patterns" section).
 
 #. A type variable pattern is not allowed in the following contexts:
 
