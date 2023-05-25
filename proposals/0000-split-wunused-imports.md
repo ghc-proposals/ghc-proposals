@@ -216,6 +216,21 @@ There are two issues with this approach:
 * In general it seems like quite a sledgehammer to apply here. Meta warnings are a new concept for ghc  in two ways - in being a new type of warning, but also a warning that doesn't error under `-Werror`.
     Initial feedback has indicated that this cost may not be worth it.
 
+### Niche `-Weverything` breakage
+
+Almost directly [quoting Adam Gundry](https://github.com/ghc-proposals/ghc-proposals/pull/586#discussion_r1193415851) here:
+
+An obscure backwards compatibility point: with this proposal, compiling a module with duplicate imports will fail under `-Werror -Weverything -Wno-unused-imports`, whereas previously it would have succeeded (since `-Wno-unused-imports` previously suppressed both).
+
+We could avoid this by making `-Wunused-imports` into a group that includes both `-Wreally-unused-imports` (what this proposal currently calls `-Wunused-imports`, included in `-Wall`) and `-Wduplicate-imports` (in `-Weverything`). This would also mean that users who explicitly ask for `-Wunused-imports` continue to get both.
+
+Is this worth it? I'm not sure. Adding a group feels a bit fiddly for a comparatively rare edge case.
+
+A quick GitHub search for `-Werror` `-Weverything` and `-Wno-unused-imports` in the same filed turned up ~70 results, with almost all of them being in editor plugins
+or the ghc user guide.
+
+This is not conclusive or exhaustive, and it relies on the search correctly finding things, but it might be a good indication that this is indeed a niche case.
+
 ## Implementation Plan
 
 One of the proposal authors will implement this.
