@@ -179,8 +179,6 @@ The main cost is changing the behaviour of a warning without notice, even if we 
 
 Is this acceptable? From initial feedback given in the proposal discussion, it seems that it is.
 
-However, for an extension of this proposal which includes some mitigation for this issue, see [the unresolved question section on Meta warnings](#meta-warning).
-
 ## Alternatives
 
 ### Relaxed redundant imports
@@ -198,23 +196,6 @@ if someone wants to have duplicate import warnings as per the "relaxed redundant
 potentially amending the new `-Wduplicate-imports` warning instead.
 
 ## Unresolved Questions
-
-### Meta warning
-
-One big drawback of the proposed changed is that, as is, the default behaviour will change silently - the user was not asked and has not agreed for this to change.
-
-Therefore, we propose that we introduce a "meta warning", let's say `-Wmeta-unused-imports` (names here are placeholders for now), with the following properties:
-
-0. Whenever a user has `-Wunused-imports` on, and they don't have `-Wno-meta-unused-imports` on, emit a warning that highlights the changed behaviour of `-Wunused-imports`.
-1. It is on by default.
-2. It **is not made into an error by `-Werror`**. Optionally there could be `-Wmeta-error` or something along those lines for users who want to get errors for potential future meta warnings.
-
-This `-Wmeta-unused-improts` warning is only present for a few release cycles, and is removed afterwards, or alternatively, turned off by default.
-
-There are two issues with this approach:
-* On older ghcs, meta warnings are not something that exists, hence if you silence the meta warning with `-Wno-meta-unused-imports`, older ghcs will start warning about an unrecognised warning flag
-* In general it seems like quite a sledgehammer to apply here. Meta warnings are a new concept for ghc  in two ways - in being a new type of warning, but also a warning that doesn't error under `-Werror`.
-    Initial feedback has indicated that this cost may not be worth it.
 
 ### Niche `-Weverything` breakage
 
