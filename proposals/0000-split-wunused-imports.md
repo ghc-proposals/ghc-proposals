@@ -13,7 +13,7 @@ The current iteration of `-Wunused-imports` fulfills two arguably different purp
 
 We're suggesting that we split off the "duplicate imports" part from `-Wunused-imports` into another warning, called `-Wduplicate-imports`, and crucially, **do not** include `-Wduplicate-imports` into `-Wall`.
 
-## Motivation
+## 1. Motivation
 
 `-Wunused-imports` has long been a thorn in the side of people who want both:
 * to not have unused imports (in the sense described in the [proposed change specification section](#proposed-change-specification))
@@ -45,7 +45,7 @@ This not only a theoretic concern:
 
 * The [export `foldl'` proposal](https://github.com/haskell/core-libraries-committee/issues/167) seems like it would encounter the same implementation issues as the export `liftA2` proposal, and similar concerns to the sized integer types proposal
 
-## Proposed Change Specification
+## 2. Proposed Change Specification
 
 An "unused import" looks like this:
 ```haskell
@@ -89,9 +89,9 @@ Proposed:
     * warnDuplicateImports: import M + import M(f), even when f is used complain about duplicate import of f
 2. `-Wall` includes `-Wunused-imports`, but **not** `-Wduplicate-imports`
 
-## Examples
+## 3. Examples
 
-###
+### 3.1.
 
 ```haskell
 import Foo
@@ -107,7 +107,7 @@ Proposed:
 * with `-Wunused-imports` - nothing
 * with `-Wduplicate-imports` - warn that the `Foo` import is duplicate
 
-###
+### 3.2.
 
 ```haskell
 import Foo (x)
@@ -123,7 +123,7 @@ Proposed:
 * with `-Wunused-imports` - nothing
 * with `-Wduplicate-imports` - warn that the `Bar` import is duplicate
 
-###
+### 3.3.
 
 ```haskell
 import Foo
@@ -139,7 +139,7 @@ Proposed:
 * with `-Wunused-imports` - nothing
 * with `-Wduplicate-imports` - warn that the `Bar` import is duplicate
 
-###
+### 3.4.
 
 ```haskell
 import Foo
@@ -154,7 +154,7 @@ Proposed:
 * with `-Wunused-imports` - warn that the `Foo` import is unused
 * with `-Wduplicate-imports` - nothing
 
-###
+### 3.5.
 
 ```haskell
 import Foo (x)
@@ -169,19 +169,19 @@ Proposed:
 * with `-Wunused-imports` - warn that the `Foo` import is unused
 * with `-Wduplicate-imports` - nothing
 
-## Effect and Interactions
+## 4. Effect and Interactions
 
 Unsure what to fill in here, it seems that the [Proposed Change Specification](#proposed-change-specification) covers the effects of this change.
 
-## Costs and Drawbacks
+## 5. Costs and Drawbacks
 
 The main cost is changing the behaviour of a warning without notice, even if we explicitly warn users that it has changed.
 
 Is this acceptable? From initial feedback given in the proposal discussion, it seems that it is.
 
-## Alternatives
+## 6. Alternatives
 
-### Relaxed redundant imports
+### 6.1. Relaxed redundant imports
 
 We could also instead implement the spec that's suggested in the ["relaxed redundant imports" proposal](https://gitlab.haskell.org/ghc/ghc/-/wikis/commentary/compiler/relaxed-unused-imports), however
 We feel that that's an unnecessary complication for several reasons:
@@ -195,9 +195,9 @@ They also seem to be mostly orthogonal to me -
 if someone wants to have duplicate import warnings as per the "relaxed redundant imports" spec, then we could have another proposal after this one,
 potentially amending the new `-Wduplicate-imports` warning instead.
 
-## Unresolved Questions
+## 7. Unresolved Questions
 
-### Niche `-Weverything` breakage
+### 7.1. Niche `-Weverything` breakage
 
 Almost directly [quoting Adam Gundry](https://github.com/ghc-proposals/ghc-proposals/pull/586#discussion_r1193415851) here:
 
@@ -212,10 +212,10 @@ or the ghc user guide.
 
 This is not conclusive or exhaustive, and it relies on the search correctly finding things, but it might be a good indication that this is indeed a niche case.
 
-## Implementation Plan
+## 8. Implementation Plan
 
 One of the proposal authors will implement this.
 
-## Endorsements
+## 9. Endorsements
 
 https://gitlab.haskell.org/ghc/ghc/-/issues/21879
