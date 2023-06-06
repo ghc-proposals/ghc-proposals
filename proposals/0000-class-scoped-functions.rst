@@ -6,7 +6,7 @@ Class Scoped Functions
 .. ticket-url:: 
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_.
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/590>`_.
 .. sectnum::
 .. contents::
 
@@ -88,7 +88,8 @@ It is a Class Scoped function, so it could be named as ``function`` (PHP/JS/Lua-
     class Bar a where
 
         function foo
-        foo :: a-> a
+        
+        foo :: a -> a
         foo = bar
 
         bar :: a -> a
@@ -122,6 +123,7 @@ Now we can rewrite ``Monoid a`` class as follows::
     class Semigroup a => Monoid a where
 
         function mappend
+        
         mappend :: a -> a -> a
         mappend = (<>)
 
