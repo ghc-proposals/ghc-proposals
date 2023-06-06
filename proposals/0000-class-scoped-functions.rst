@@ -55,9 +55,11 @@ Let we have::
 
       -- Main.hs:
       module Main where
+            -- (B) case
             import Bar (Bar(foo)) -- explicit
             import Bar (Bar(..))  -- implicit
 
+            -- (A) case
             instance Bar T where
                   foo = somefunc
 
@@ -70,7 +72,7 @@ And we decided to rename ``foo`` into ``bar``. Is it possible? ::
       foo :: Bar a => a -> a
       foo = bar
 
-But what to do with all instances and imports? These changes fully broke backward compatibility.
+But what to do with all instances (A) and imports (B)? These changes fully broke backward compatibility.
 
 
 Proposed Change Specification
@@ -104,6 +106,7 @@ It is a Class Scoped function, so it could be named as ``function`` (PHP/JS/Lua-
     import Bar (Bar(foo)) -- explicit
     import Bar (Bar(..))  -- implicit
 
+    -- (A) case
     instance Bar T where
         foo = somefunc
 
@@ -111,7 +114,7 @@ It is a Class Scoped function, so it could be named as ``function`` (PHP/JS/Lua-
 Semantics
 ~~~~~~~~~
 
-Class Scoped function (CSF) has simple rules:
+Class Scoped function (CSF for (A) case) has simple rules:
 
 * CSF could be defined in where-part of classes and instances only
 * CSF has a scope of an instance(where it is defined),  a class (where it is defined) and it's instances
@@ -139,7 +142,7 @@ Now we can rewrite ``Monoid a`` class as follows::
     mappend = (<>)
 
 
-Unfortunately, these changes require changes for detailed import.
+Unfortunately, these changes require changes for detailed import ((B) case).
 
 So we need to have implicit extension "``ImportFromClassFunction``" for omitting these changes in import and we 
 need to explicit switch it off by "``NoImportFromClassFunction``" language pragma. 
