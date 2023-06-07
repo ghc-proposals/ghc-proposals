@@ -6,7 +6,7 @@ Class Instances of Injective Synonyms
 .. ticket-url:: 
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_.
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/591>`_.
 .. sectnum::
 .. contents::
 
