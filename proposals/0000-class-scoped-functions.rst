@@ -10,15 +10,15 @@ Class Scoped Functions
 .. sectnum::
 .. contents::
 
-GHC has lack of support for renaming of class methods if class is already public.
+GHC has a lack of support for renaming class methods if the class is already public.
 This proposal gives a way how to do this painlessly.
 
 Background
 ----------
 
-GHC has lack of support for renaming of class methods if class is already public.
+GHC has a lack of support for renaming class methods if the class is already public.
 
-Here is an real example of a ``Monoid a`` class in "base" module::
+Here is a real example of the ``Monoid a`` class in ``base``::
 
   class Semigroup a => Monoid a where
 
@@ -41,10 +41,10 @@ Here is an real example of a ``Monoid a`` class in "base" module::
 Motivation
 ----------
 
-Once class become public and renaming or even removing methods becomes practically impossible 
+Once a class becomes public, renaming or even removing methods becomes practically impossible 
 without breaking backward compatibility.
 
-Let we have::
+Let's say we have::
 
       -- Bar.hs:
       module Bar where
@@ -83,8 +83,8 @@ Syntax
 
 We add a keyword, which is important in class declaration only.
 
-It is a Class Scoped function, so it could be named as ``function`` (PHP/JS/Lua-like), ``func`` (Go-like), 
-``fun`` (OCaml/F#/SML-like), ``fn`` (Rust-like), ``defun`` (Lisp-like), ``define`` (Scheme-like), ``def`` (Phyton/Ruby-like),
+It denotes a class scoped function, so it could be named ``function`` (PHP/JS/Lua-like), ``func`` (Go-like), 
+``fun`` (OCaml/F#/SML-like), ``fn`` (Rust-like), ``defun`` (Lisp-like), ``define`` (Scheme-like), ``def`` (Python/Ruby-like),
 ``lambda`` (Lisp/Python-like),  ``sub`` (Perl-like) ::
 
     class Bar a where
@@ -114,14 +114,13 @@ It is a Class Scoped function, so it could be named as ``function`` (PHP/JS/Lua-
 Semantics
 ~~~~~~~~~
 
-Class Scoped function (CSF for (A) case) has simple rules:
+Class scoped functions (CSF for (A) case) have simple rules:
 
-* CSF could be defined in where-part of classes and instances only
-* CSF has a scope of an instance(where it is defined),  a class (where it is defined) and it's instances
-* CSF has no scope outside of class and instances 
-* CSF is always shadows outside function with same name
+* CSFs can only be defined in classes and instances
+* CSFs are only in scope in class and instance definitions
+* CSFs always shadow outside functions with the same name
 
-Now we can rewrite ``Monoid a`` class as follows::
+Now we can rewrite the ``Monoid`` class as follows::
 
     class Semigroup a => Monoid a where
 
@@ -144,8 +143,8 @@ Now we can rewrite ``Monoid a`` class as follows::
 
 Unfortunately, these changes require changes for detailed import ((B) case).
 
-So we need to have implicit extension "``ImportFromClassFunction``" for omitting these changes in import and we 
-need to explicit switch it off by "``NoImportFromClassFunction``" language pragma. 
+So we need to have the implicit extension "``ImportFromClassFunction``" for omitting these changes in import and we 
+need to explicit switch it off by a "``NoImportFromClassFunction``" language pragma. 
 
 Alternatively we could control specific imports with "``{-# NOIMPORTFN Mod #-}``" / "``{-# IMPORTFN Mod #-}``" pragma.
 
