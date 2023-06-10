@@ -11,7 +11,7 @@ Namespace-specified imports
 .. contents::
 
 This proposal supports users who wish to write code without relying on punning,
-by allowing imports to be limited to either the type or data namespace.
+by allowing imports of all names in either the type or data namespace.
 Moreover it clarifies the specification of ``ExplicitNamespaces`` and related
 extensions.
 
@@ -165,14 +165,14 @@ Solution Overview
 ~~~~~~~~~~~~~~~~~
 
 To help programmers deal with the external code that uses punning we propose to
-introduce namespace-specified import syntax, guarded behind the
-``ExplicitNamespaces`` extension. The syntax introduces two keywords as part of
-imports, ``data`` and ``type``:
+extend the ``ExplicitNamespaces`` extension to allow the ``data`` and ``type``
+keywords to be used as part of import or export lists, potentially with a ``..``
+wildcard. For example:
 
 .. code:: haskell
 
-   import qualified Data.Proxy type as T   -- import only the type namespace
-   import qualified Data.Proxy data as D   -- import only the data namespace
+   import qualified Data.Proxy as T (type ..)   -- import only the type namespace
+   import qualified Data.Proxy as D (data ..)   -- import only the data namespace
 
 This avoids needing to name each item individually, but otherwise has the same
 effect as writing out an explicit import list, like this:
@@ -182,25 +182,24 @@ effect as writing out an explicit import list, like this:
    import qualified Data.Proxy as T (type Proxy)   -- import only the Proxy type
    import qualified Data.Proxy as D (data Proxy)   -- import only the Proxy constructor
 
-For consistency, this proposal introduces ``data`` as a namespace specifier
-within an import list, guarded by ``ExplicitNamespaces``.  (This replaces the
-existing use of ``pattern`` in import lists, guarded by ``PatternSynonyms``.)
-Moreover, this proposal modifies `proposal #65
+The ``data`` namespace specifier replaces the
+existing limited use of ``pattern`` in import lists, guarded by ``PatternSynonyms``.
+Moreover, for consistency this proposal modifies `proposal #65
 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0065-type-infix.rst>`_
 to use ``data`` rather than ``value`` as the keyword for the data namespace in
 fixity declarations and pragmas.
 
 This proposal does not directly make changes to the tick syntax, or provide an
 equivalent at use sites. However it should reduce the need for disambiguating
-promoted data constructors using ticks, because namespace-specified qualified
+promoted data constructors using ticks, because qualified
 imports can be used instead.
 
 
 Proposed Change Specification
 -----------------------------
 
-Allow ``data`` namespace specifier in import/export lists
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Allow namespace specifiers with wildcards in import/export lists
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When ``ExplicitNamespaces`` is enabled, anywhere the ``type`` keyword may appear
 in an import or export list, the ``data`` keyword may also appear.  Call such an
@@ -208,6 +207,10 @@ occurrence a *namespace specifier*. Any import/export of an identifier with a
 namespace specifier will be taken to refer only identifiers in the given
 namespace.  It is an error to use a namespace specifier if the identifier is not
 in scope in the given namespace.
+
+Moreover, a namespace specifier may be followed by a ``..`` wildcard instead of
+a single name. This is equivalent to importing or exporting all the available
+names in the corresponding namespace.
 
 More precisely, the existing grammar of import/export items accepted by GHC is
 essentially the following (after some minor simplifications): ::
@@ -223,12 +226,15 @@ essentially the following (after some minor simplifications): ::
                  |  qtycon
                  | 'type' oqtycon  -- with ExplicitNamespaces
 
-This proposal extends ``qcname_ext`` as follows: ::
+This proposal redefines ``qcname_ext`` as follows: ::
 
       qcname_ext -> qvar
                  |  qtycon
-                 | 'type' oqtycon  -- with ExplicitNamespaces
-                 | 'data' qvarcon  -- with ExplicitNamespaces
+                 | 'type' oqtycon_w_wildcard  -- with ExplicitNamespaces
+                 | 'data' qvarcon_w_wildcard  -- with ExplicitNamespaces
+
+      oqtycon_w_wildcard -> oqtycon | '..'
+      qvarcon_w_wildcard -> qvarcon | '..'
 
 Notice that:
 
@@ -236,8 +242,8 @@ Notice that:
   whereas ``type`` and ``data`` are valid either at the top or nested inside a
   type constructor or typeclass name.
 
-* ``data`` may be followed by a data constructor name or a variable name (with
-  the latter including record selectors, in particular).
+* ``data`` may be followed by a data constructor name, a variable name
+  (including record selectors, in particular), or a ```..`` wildcard.
 
 * Where a parent type constructor or class is exported together with its
   children, any namespace specifier on an individual import/export item will
@@ -245,10 +251,33 @@ Notice that:
   ``import M (type T(..))`` imports both ``T`` in the type namespace and any
   children in either namespace.
 
-* ``import M (data D(..))`` is syntactically valid, but not useful, as it is not
-  currently possible for identifiers in the data namespace to have children.
-  (We might imagine changing this e.g. for pattern synonym record fields, but
-  doing so is outside the scope of this proposal.)
+
+Dodgy import/export warnings
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The existing ``-Wdodgy-imports`` and ``-Wdodgy-exports`` flags (part of the
+``-W`` warning group) emit warnings if a ``..`` wildcard does not refer to any
+names in scope.  For example this arises in an export of ``T(..)`` if ``T`` is a
+type synonym or a data type with no constructors.
+
+Similarly, under this proposal a warning will be emitted if a ``type ..`` or
+``data ..`` item does not refer to any names in the corresponding namespace.
+
+For example:
+
+* ``import M (data D(..))``, ``import M (data D(type ..))`` and ``import M (data
+  D(data ..))`` are syntactically valid, but will always give rise to a warning,
+  as it is not currently possible for identifiers in the data namespace to have
+  children.  (We might imagine changing this, e.g. for record fields, but doing
+  so is outside the scope of this proposal.)
+
+* ``import M (type T (data ..))`` is accepted. When ``T`` is a type its only
+  sub-items are in the data namespace so this is somewhat redundant, but a class
+  may have both children in either namespace.
+
+* Similarly, ``import M (type T (type ..))`` is accepted but will give rise of a
+  warning when ``T`` is a type or a class that does not have any associated
+  types.
 
 
 Deprecate use of ``pattern`` in import/export lists
@@ -268,49 +297,6 @@ because the simplification to the compiler does not seem worth the backwards
 compatibility cost.
 
 
-Namespace-specified imports
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-When the ``ExplicitNamespaces`` extension is enabled, the syntax of import
-declarations is extended to include a namespace specifier immediately after the
-module identifier.
-
-More concretely, in the grammar accepted by GHC, ::
-
-      importdecl -> 'import' [src] ['safe'] ['qualified'] [package] modid ['qualified'] ['as' modid] [impspec]
-
-is changed to ::
-
-      importdecl -> 'import' [src] ['safe'] ['qualified'] [package] modid [namespace] ['qualified'] ['as' modid] [impspec]
-
-      namespace  -> 'data'
-                 |  'type'
-
-With a namespace specified in the import, only identifiers belonging to the
-corresponding namespace will be brought into the scope, as if an explicit import
-list was given mentioning only those identifiers (with the namespace specifier
-on each item).
-
-If an import declaration uses both a namespace specifier and an explicit import
-list, the explicit import list may not mention a different namespace specifier,
-nor an identifier that is not available in the given namespace, otherwise a name
-resolution error will be reported.  It is allowed to redundantly specify the
-same namespace specifier on the import declaration and on an individual item.
-
-If an import declaration uses a namespace specifier but no explicit import list,
-it is not an error for the declaration to bring no names into scope,
-e.g. because the ``data`` specifier was used on a module that exports only type
-names. (GHC may of course warn that such an import is redundant.)
-
-Where an import has a namespace specifier, any occurrence of an ellipsis
-``(..)`` will be taken to refer only to identifiers in that namespace.  For
-example, ``import M type (T(..))`` will import only type-level names (so the
-ellipsis will refer to nothing if ``T`` is a normal algebraic datatype).
-However, ``import M (type T (..))`` will (continue to) import the type ``T``
-together with all of its data constructors, because a namespace specifier on a
-single import item applies only to the parent name, not the sub-list.
-
-
 Use ``data`` specifier in fixity declarations and ``WARNING``/``DEPRECATED`` pragmas
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -326,8 +312,8 @@ Examples
 ---------
 
 
-Import/export lists with namespace specifiers
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Export lists with namespace specifiers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: haskell
 
@@ -337,19 +323,27 @@ Import/export lists with namespace specifiers
      ( D            -- Accepted: exports data family D
      , data D       -- Accepted: exports data constructor D
      , C(type D)    -- Accepted: exports class C and data family D
+     , C(type ..)   -- Accepted: exports class C and data family D
+     , C(data ..)   -- Accepted: exports class C and method m
      , D(data f)    -- Accepted: exports data family D and field f
-     , pattern D    -- Accepted: exports data constructor D but emits warning
+     , D(type ..)   -- Accepted: exports data family D; -Wdodgy-exports warning
+     , pattern D    -- Accepted: exports data constructor D; -Wpattern-namespace-specifier warning
      , T(data D)    -- Accepted: exports type T and data constructor D
      , data f       -- Accepted: exports field f
      , data v       -- Accepted: exports term v
      , type T (..)  -- Accepted: exports type T and all its data constructors D, D2
+     , type T (data ..) -- Accepted: exports type T and all its data constructors D, D2
+     , type T (type ..) -- Accepted: exports type T; -Wdodgy-exports warning
      , T(pattern D) -- Rejected: pattern keyword cannot be used in sub-list
      , data T       -- Rejected: T not in scope in data namespace
      , type E       -- Rejected: E not in scope in type namespace
+     , type ..      -- Accepted: exports data family D, C, T
+     , data ..      -- Accepted: exports data constructor D, m, E, f, D2, v
      ) where
 
    class C a where
      data D a
+     m :: a
 
    instance C Int where
      data D Int = E { f :: Int }
@@ -385,8 +379,18 @@ Import/export lists with namespace specifiers
    data a +++ b = X
 
 
-Namespace-specified imports
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. code:: haskell
+
+   module M
+     ( type .. -- Accepted: exports T
+     , data .. -- Accepted: exports MkT
+     ) where
+
+   data T = MkT
+
+
+Imports with namespace specifiers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In the following examples, recall that the ``Data.Proxy`` module defines ``data
 Proxy t = Proxy``. (Its other exports are ignored for the purposes of these
@@ -398,8 +402,8 @@ and data namespace:
 .. code:: haskell
 
    {-# LANGUAGE ExplicitNamespaces #-}
-   import Data.Proxy type as T
-   import Data.Proxy data as D
+   import Data.Proxy as T (type ..)
+   import Data.Proxy as D (data ..)
 
    -- This is accepted:
    f :: T.Proxy Int
@@ -417,8 +421,8 @@ and data namespace:
 .. code:: haskell
 
    {-# LANGUAGE ExplicitNamespaces, ImportQualifiedPost #-}
-   import Data.Proxy type qualified as T
-   import Data.Proxy data qualified as D
+   import Data.Proxy qualified as T (type ..)
+   import Data.Proxy qualified as D (data ..)
 
    -- This is accepted:
    f :: T.Proxy Int
@@ -428,27 +432,12 @@ and data namespace:
    g :: Proxy Int
    g = Proxy
 
-
-It is possible to use both a namespace-specified import and an explicit import
-list, provided they are consistent:
-
 .. code:: haskell
 
    {-# LANGUAGE ExplicitNamespaces #-}
-   import Data.Proxy type (data Proxy)           -- Rejected: inconsistent namespace specifiers
-   import Data.Proxy type (Proxy(Proxy))         -- Rejected: data constructor not in type namespace
-   import Data.Proxy data (data Proxy)           -- Accepted: redundant but consistent
-   import Data.Proxy type (Proxy)                -- Accepted: imports type constructor
-   import qualified Data.Proxy data as D (Proxy) -- Accepted: imports data constructor qualified
-
-
-The meaning of ``(..)`` depends on the placement of the namespace specifier:
-
-.. code:: haskell
-
-   {-# LANGUAGE ExplicitNamespaces #-}
-   import Data.Proxy type (Proxy(..))  -- Accepted: imports type constructor but not data constructor
-   import Data.Proxy (type Proxy(..))  -- Accepted: imports both type constructor and data constructor
+   import Data.Proxy (type Proxy(..))       -- Accepted: imports both type constructor and data constructor
+   import Data.Proxy (type Proxy(data ..))  -- Accepted: imports both type constructor and data constructor
+   import Data.Proxy (type Proxy(type ..))  -- Accepted: imports type constructor; -Wdodgy-imports warning
 
 .. code:: haskell
 
@@ -460,12 +449,13 @@ The meaning of ``(..)`` depends on the placement of the namespace specifier:
 
    {-# LANGUAGE ExplicitNamespaces #-}
    module N where
-     import M type (T (MkT))  -- Rejected: MkT is not in the type namespace
-     import M type (T (..))   -- Accepted: imports T only
+     import M (T (data MkT))  -- Accepted: imports both T and MkT
+     import M (T (data ..))   -- Accepted: imports both T and MkT
+     import M (T (type MkT))  -- Rejected: MkT is not in the type namespace
+     import M (T (type ..))   -- Accepted: imports T only; -Wdodgy-imports warning
      import M (type T (..))   -- Accepted: imports both T and MkT
+     import M (data T (..))   -- Rejected: T is not in the data namespace
 
-If an occurrence of ``(..)`` does not refer to any names, it will (continue to)
-emit a warning with ``-Wdodgy-exports`` or ``-Wdodgy-imports`` as appropriate.
 
 
 Effect and Interactions
@@ -474,9 +464,14 @@ Effect and Interactions
 This proposal makes ``ExplicitNamespaces`` more coherent and more useful for
 avoiding punning via qualified imports.
 
-In an export list, it is not possible to export the entire contents of a
-module's type namespace or data namespace.  If this is desired, exports must be
-listed individually.
+In either an import or an export list, it is possible to import or export the
+entire contents of a module's type namespace or data namespace.
+Importing/exporting ``type .., data ..`` is equivalent to omitting the
+import/export list, except that it will not emit a ``-Wmissing-import-lists`` or
+``-Wmissing-export-lists`` warning.
+
+Since there are two disjoint namespaces, ``import M hiding (type ..)`` is
+equivalent to ``import M (data ..)``.  We permit both, however.
 
 
 ``TypeData``
@@ -493,8 +488,9 @@ names into the type namespace only (and does not permit punning).  For example:
    {-# LANGUAGE ExplicitNamespaces #-}
 
    module M
-     ( type T (type MkT)   -- Accepted
-     , data MkT            -- Rejected
+     ( type T (type MkT)   -- Accepted: exports both T and MkT
+     , data MkT            -- Rejected: MkT not in data namespace
+     , type ..             -- Accepted: exports both T and MkT
      ) where
 
    type data T = MkT
@@ -512,12 +508,14 @@ parent type constructors by being mentioned in export sub-lists.
 
    {-# LANGUAGE ExplicitNamespaces #-}
    {-# LANGUAGE PatternSynonyms #-}
+   {-# OPTIONS_GHC -W #-}
 
    module M
      ( type T (data P, data f)  -- Accepted: associates P and f with T
      , data P                   -- Accepted
      , data P (f)               -- Rejected: f is not a child of P
      , P                        -- Rejected: P not in scope in type namespace
+     , pattern P                -- Accepted; -Wpattern-namespace-specifier warning
      ) where
 
      data T = MkT Int
@@ -526,20 +524,19 @@ parent type constructors by being mentioned in export sub-lists.
 
    {-# LANGUAGE ExplicitNamespaces #-}
     module N where
-      import M (P)          -- Rejected: P not in scope in type namespace
-      import M data (P)     -- Accepted
-      import M (T(..))      -- Accepted: imports T, P and f
-      import M type (T(..)) -- Accepted: imports T only
-      import M data (T(..)) -- Rejected: T not in scope in data namespace
+      import M (P)               -- Rejected: P not in scope in type namespace
+      import M (data P)          -- Accepted
+      import M (T(..))           -- Accepted: imports T, P and f
+      import M (type T(type ..)) -- Accepted: imports T only; -Wdodgy-imports warning
 
 
 Costs and Drawbacks
 -------------------
 
-This proposal introduces new syntax for namespace-specified imports, however its
-meaning is consistent with the existing namespace specifiers on individual
-import items.  By making the ``ExplicitNamespaces`` extension more consistent it
-should become easier to learn.
+This proposal introduces new syntax for namespace specifiers with wildcards,
+however its meaning is consistent with the existing namespace specifiers on
+individual import items.  By making the ``ExplicitNamespaces`` extension more
+consistent it should become easier to learn.
 
 The implementation and maintenance cost of this proposal is expected to be
 relatively low.
@@ -572,6 +569,28 @@ so is not part of this proposal, so this is not a breaking change.
 
 Alternatives
 ------------
+
+The original version of this proposal extended the import declaration itself
+with a namespace specifier (e.g. ``import M type as T``).  The current revision
+instead makes this part of the import list (e.g. ``import M as T (type ..)``).
+The revised version has several advantages over the original:
+
+* The meaning of ``import M (type ..)`` is arguably more obvious than ``import M type``.
+
+* ``type ..`` or ``data ..`` can now be used in an export list, whereas the original
+  proposal did not have a way to export all names in a single namespace.
+
+* The original version had a subtle distinction between ``import M type (T(..))`` and
+  ``import M (type T (..))``.
+
+* The original version had redundant constructions such as ``import M type (type T)``
+  and had to rule out inconsistencies such as ``import M data (type T)``.
+
+There are various other alternative possibilities:
+
+* We could imagine supporting ``import M (..)`` for consistency, however this
+  would be entirely redundant as it is equivalent to ``import M``.  Ideally the
+  implementation would issue a sensible error in this case.
 
 * We could use ``value``, ``term``, ``pattern``, or any other keyword instead of
   ``data`` to denote the data namespace.  It seems preferable to use ``data`` as
@@ -609,8 +628,8 @@ Alternatives
   would be syntactically noisy and there was difficulty gathering consensus for
   that approach.
 
-* Rather than modifying ``ExplicitNamespaces`` to allow namespace-specified
-  imports, we could introduce a new extension ``NamespacedImports``.  This would
+* Rather than modifying ``ExplicitNamespaces``,
+  we could introduce a new extension.  This would
   make it clearer whether code depends on the new feature, or whether the older
   version of ``ExplicitNamespaces`` was enough.  However the general consensus
   seems to favour reducing the number of extensions over avoiding change to
@@ -648,9 +667,5 @@ None
 
 Implementation Plan
 -------------------
-
-A `draft of new GHC User's Guide documentation for ExplicitNamespaces
-<https://github.com/cdornan/ExplicitNamespaces-doc/pull/1>`_, reflecting the
-changes in this proposal, is in progress.
 
 Support with the implementation of this proposal would be welcome.
