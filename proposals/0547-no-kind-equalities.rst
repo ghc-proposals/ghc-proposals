@@ -3,8 +3,8 @@ Disallow constraints in kinds
 
 .. author:: Richard Eisenberg and Simon Peyton Jones
 .. date-accepted:: 2022-11-25
-.. ticket-url::
-.. implemented::
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/22298
+.. implemented:: 9.8
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/547>`_.
 .. sectnum::
