@@ -32,12 +32,12 @@ Accept type synonyms in deriving heads, by rewriting it to regular constraints.
 
 ## Examples
 
-```
+```haskell
 type Synonym x = (Show x, Eq x)
 
 -- Should works exactly the same
-derive instance ... => (Synonym x)
-derive instance ... => (Show x, Eq x)
+deriving instance ... => (Synonym x)
+deriving instance ... => (Show x, Eq x)
 ```
 
 Non-standalone instances do not have explicit params,
