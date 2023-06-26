@@ -178,6 +178,5 @@ Alternatives
 
 Implementation Plan
 -------------------
-`@Jadefalke256 <https://github.com/Jadefalke256>`_ has
- `expressed interest <https://gitlab.haskell.org/ghc/ghc/-/issues/20190#note_505317>`_ in
-implementing this proposal.
+
+`@Jadefalke256 <https://github.com/Jadefalke256>`_ has `expressed interest <https://gitlab.haskell.org/ghc/ghc/-/issues/20190#note_505317>`_ in implementing this proposal.
