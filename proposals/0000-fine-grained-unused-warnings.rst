@@ -92,7 +92,7 @@ proposal and may be chosen by the implementation.
 If a binding ``b`` is only used recursively, it will be treated as being unused.
 
 If a group of bindings ``b1``, ..., ``bn`` is mutually recursive, and none of
-the bindings are otherwise used, a corresponding warning of the form
+the bindings are otherwise used, the result is a warning of the form
 
 ::
 
