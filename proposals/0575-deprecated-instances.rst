@@ -2,11 +2,11 @@ Deprecated instances
 ====================
 
 .. author:: Vladislav Zavialov
-.. date-accepted::
+.. date-accepted:: 2023-06-28
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/17485
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/575>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/575>`_.
 .. sectnum::
 .. contents::
 
