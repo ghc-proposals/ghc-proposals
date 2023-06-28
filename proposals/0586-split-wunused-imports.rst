@@ -1,8 +1,14 @@
-This proposal was `discussed at this pull
-request <https://github.com/ghc-proposals/ghc-proposals/pull/586>`__.
-
 Split ``-Wunused-imports``
 ==========================
+
+.. author:: Georgi Lyubenov, Torsten Schmits
+.. date-accepted:: 2023-06-28
+.. ticket-url::
+.. implemented::
+.. highlight:: haskell
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/586>`_.
+.. sectnum::
+.. contents::
 
 The current iteration of ``-Wunused-imports`` fulfills two arguably
 different purposes - warn on “unused imports”, and warn on
@@ -14,8 +20,8 @@ We’re suggesting that we split off the “duplicate imports” part from
 ``-Wduplicate-imports``, and crucially, **do not** include
 ``-Wduplicate-imports`` into ``-Wall``.
 
-1. Motivation
--------------
+Motivation
+----------
 
 ``-Wunused-imports`` has long been a thorn in the side of people who
 want both: \* to not have unused imports (in the sense described in the
@@ -74,8 +80,8 @@ This not only a theoretic concern:
    export ``liftA2`` proposal, and similar concerns to the sized integer
    types proposal
 
-2. Proposed Change Specification
---------------------------------
+Proposed Change Specification
+-----------------------------
 
 An “unused import” looks like this:
 
@@ -143,11 +149,11 @@ Proposed:
 2. ``-Wall`` includes ``-Wunused-imports``, but **not**
    ``-Wduplicate-imports``
 
-3. Examples
------------
+Examples
+--------
 
-3.1.
-~~~~
+Example 1
+~~~~~~~~~
 
 .. code:: haskell
 
@@ -164,8 +170,8 @@ Proposed: \* with ``-Wunused-imports`` - nothing \* with
 
 .. _section-1:
 
-3.2.
-~~~~
+Example 2
+~~~~~~~~~
 
 .. code:: haskell
 
@@ -182,8 +188,8 @@ Proposed: \* with ``-Wunused-imports`` - nothing \* with
 
 .. _section-2:
 
-3.3.
-~~~~
+Example 3
+~~~~~~~~~
 
 .. code:: haskell
 
@@ -200,8 +206,9 @@ Proposed: \* with ``-Wunused-imports`` - nothing \* with
 
 .. _section-3:
 
-3.4.
-~~~~
+Example 4
+~~~~~~~~~
+
 
 .. code:: haskell
 
@@ -217,8 +224,8 @@ unused \* with ``-Wduplicate-imports`` - nothing
 
 .. _section-4:
 
-3.5.
-~~~~
+Example 5
+~~~~~~~~~
 
 .. code:: haskell
 
@@ -232,15 +239,15 @@ unused
 Proposed: \* with ``-Wunused-imports`` - warn that the ``Foo`` import is
 unused \* with ``-Wduplicate-imports`` - nothing
 
-4. Effect and Interactions
---------------------------
+Effect and Interactions
+-----------------------
 
 Unsure what to fill in here, it seems that the `Proposed Change
 Specification <#proposed-change-specification>`__ covers the effects of
 this change.
 
-5. Costs and Drawbacks
-----------------------
+Costs and Drawbacks
+-------------------
 
 The main cost is changing the behaviour of a warning without notice,
 even if we explicitly warn users that it has changed.
@@ -248,11 +255,11 @@ even if we explicitly warn users that it has changed.
 Is this acceptable? From initial feedback given in the proposal
 discussion, it seems that it is.
 
-6. Alternatives
----------------
+Alternatives
+------------
 
-6.1. Relaxed redundant imports
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Relaxed redundant imports
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We could also instead implement the spec that’s suggested in the
 `“relaxed redundant imports”
@@ -273,11 +280,11 @@ duplicate import warnings as per the “relaxed redundant imports” spec,
 then we could have another proposal after this one, potentially amending
 the new ``-Wduplicate-imports`` warning instead.
 
-7. Unresolved Questions
------------------------
+Unresolved Questions
+--------------------
 
-7.1. Niche ``-Weverything`` breakage
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Niche ``-Weverything`` breakage
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Almost directly `quoting Adam
 Gundry <https://github.com/ghc-proposals/ghc-proposals/pull/586#discussion_r1193415851>`__
@@ -306,12 +313,12 @@ This is not conclusive or exhaustive, and it relies on the search
 correctly finding things, but it might be a good indication that this is
 indeed a niche case.
 
-8. Implementation Plan
-----------------------
+Implementation Plan
+-------------------
 
 One of the proposal authors will implement this.
 
-9. Endorsements
----------------
+Endorsements
+------------
 
 https://gitlab.haskell.org/ghc/ghc/-/issues/21879
