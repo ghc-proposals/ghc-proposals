@@ -5,7 +5,7 @@ ticket-url: ""
 implemented: ""
 ---
 
-This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/601>).
+This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/601).
 
 # Extension Lifecycle Framework
 
