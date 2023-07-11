@@ -63,14 +63,26 @@ variable in a bit of code. This allows us to e.g. refer to ``Tuple2`` and ``Tupl
 Proposed Change Specification
 -----------------------------
 
-1. Create a new module in ``base`` called ``GHC.Prelude``. This module exports definitions
-   peculiar to GHC that are safe to use in ordinary code.
-   This module is *not* intended as a replacement to ``Prelude``,
-   but instead a complement to it. This module is a counterpart to ``GHC.Exts``, which exports
+1. Create three new modules in ``ghc-experimental`` called ``GHC.Prelude``,
+   ``GHC.Tuple`` and ``GHC.Sum``.
+   Since this new paradigm may evolve in response to users' experience, we want
+   to avoid committing to an API in ``base`` too early, and therefore choose the
+   new package as the home for the exports of the new entities.
+
+   ``GHC.Prelude`` exports definitions peculiar to GHC that are safe to use in
+   ordinary code, but whose API may evolve rapidly over subsequent releases.
+   This module is *not* intended as a replacement to ``Prelude``, but instead a
+   complement to it. This module is a counterpart to ``GHC.Exts``, which exports
    many *unsafe* internals.
 
    This proposal lists several definitions to be exported from ``GHC.Prelude``, but leaves other
    definitions to be added in separate proposal(s).
+
+   ``GHC.Tuple`` will clash with the same module from ``ghc-prim``.
+   The plan is to accept that a user of both packages will have to use
+   package-qualified imports for now, and to rename the module in ``ghc-prim``
+   in a separate proposal, while re-exporting the names from ``ghc-prim``'s
+   module in ``ghc-experimental``.
 
 #. Export the following definitions from ``GHC.Tuple`` and ``GHC.Prelude``. (Implementation note:
    These would probably end up in a new module ``GHC.Tuple.Prim``, due to the dependency from
@@ -94,7 +106,7 @@ Proposed Change Specification
      -- ...
      data Tuple64 ... = (...)
 
-#. Export the following definitions from ``GHC.Exts`` and ``GHC.Prelude``. These replace
+#. Export the following definitions from ``GHC.Tuple`` and ``GHC.Prelude``. These replace
    the existing tuple definitions (in ``GHC.Classes``) today. (Note that ``(...) =>`` is special syntax, and does not
    construct tuples. See more on this point `below <#constraint-special-syntax>`_.)::
 
@@ -115,7 +127,7 @@ Proposed Change Specification
      class (...) => CTuple64 ...
      instance (...) => CTuple64 ...
 
-#. Export the following pseudo-definitions from ``GHC.Exts``. (Implementation note:
+#. Export the following pseudo-definitions from ``GHC.Tuple``. (Implementation note:
    These would likely be exported from ``GHC.Prim`` originally.) ::
 
      type Unit# :: TYPE (TupleRep [])
@@ -135,6 +147,9 @@ Proposed Change Specification
      type Tuple64# :: TYPE r1 -> ... -> TYPE r64 -> TYPE (TupleRep [r1, ..., r64])
      data Tuple64# ... = (# ... #)
 
+#. Export the following pseudo-definitions from ``GHC.Sum``. (Implementation note:
+   These would likely be exported from ``GHC.Prim`` originally.) ::
+
      -- NB: There are no 0-sums or 1-sums in Haskell, today or tomorrow.
 
      type Sum2# :: TYPE r1 -> TYPE r2 -> TYPE (SumRep [r1, r2])
@@ -148,7 +163,7 @@ Proposed Change Specification
      type Sum64# :: TYPE r1 -> ... -> TYPE r64 -> TYPE (SumRep [r1, ..., r64])
      data Sum64# ... = ...
 
-#. Remove existing tuple definitions from ``GHC.Tuple``.
+#. Remove existing tuple definitions from ``GHC.Tuple`` in ``ghc-prim``.
 
 #. Export the following definitions from ``GHC.Tuple``::
 
