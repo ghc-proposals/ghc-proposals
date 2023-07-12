@@ -91,7 +91,7 @@ Development and ongoing costs are expected to exist primarily in the form of add
 
 ### Transition Costs
 
-Organizations that use `-Werror` may incur a one-time cost in updating their compiler flags to disable experimental or deprecated extension warnings.
+Organizations that use `-Werror` may incur a one-time cost in updating their compiler flags to disable warnings about experimental or deprecated extensions.
 
 ### Experts vs Less-Expert Users
 
