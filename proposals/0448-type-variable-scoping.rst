@@ -103,7 +103,7 @@ Under this change, that would no longer be true.
 This component of this proposal is taken from the not-yet-accepted proposal `#238`_,
 changing the name of what I now call ``-XExtendedForAllScope``,
 and simplifying the binding story around pattern signatures (getting rid of ``-XPatternSignatureBinds``).
-This part of the proposal also introduces a new warning ``-Wpattern-signature-binds`` (available only in ``-Weverything``) as a new way of handling the pattern-signature-binding part of `#285`_.
+This part of the proposal also refines ``-XPatternSignatures`` as a new way of handling the pattern-signature-binding part of `#285`_.
 
 This component includes the ``-XNoImplicitForAll`` of `#285`_ unchanged.
 
@@ -179,6 +179,56 @@ it may actually break my program somewhere!
 What I really want in this case is a pattern signature,
 and it would be nice if I could just state that ``PatternSignatures``.
 
+Motivation for not doing binding
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``-XPatternSignatures`` as proposed here is more narrow than its GHC 6 namesake.
+This is because it just allows signatures using already-bound variables, and doesn't include any implicit binding mechanism for variables in the signature that aren't yet bound.
+(That instead is left for ``-XImplicitBinds``.)
+
+We here discuss the motivation for this decision.
+
+Principles
+""""""""""
+
+This is necessary in order to uphold the `Lexical Scoping Principle`_, part (a).
+
+Avoiding Redundancy
+"""""""""""""""""""
+
+Consistency
+"""""""""""
+
+This more narrow formulation of ``-XPatternSignatures`` matches ``-XKindSignatures``.
+``KindSignatures`` doesn't allow implicit binds for a rather roundabout reason: implicit binds would imply implicit kind-level foralls, which would require ``-XPolyKinds``::
+
+  ghci> :set -XKindSignatures
+  ghci> :set -XNoPolyKinds
+  ghci> data Foo (a :: b)
+
+  <interactive>:3:16: error:
+      Unexpected kind variable ‘b’
+      Perhaps you intended to use PolyKinds
+      In the data type declaration for ‘Foo’
+
+Given the other extensions being proposed here, we can retroactively reinterpret this as a simple syntactic rule: ``-XKindSignatures`` alone doesn't do implicit binding::
+
+  ghci> :set -XKindSignatures
+  ghci> :set -XNoImplicitBinds
+  ghci> data Foo (a :: b)
+
+  <interactive>:3:16: error: Not in scope: type variable ‘b’
+
+The error message is completely different, but the effect with respect to merely whether the program was rejected is the same.
+
+Now, both extensions (``-XPatternSignatures`` and ``-XKindSignatures``) just allow, respectively, term-level and type-level signatures, with no other functionality like implicit binding mechanisms also thrown in.
+
+Conservativism for standardization
+""""""""""""""""""""""""""""""""""
+
+With both of these extensions being very minimal, I think they would be easy uncontroversial candidates for a new language report.
+Conversely, all implicit binding constructs are very fraught with a complicated mix of upsides and downsides, we and should only standardize them with great care.
+
 Motivation for ``-XNoImplicitForAll``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -214,23 +264,17 @@ However, there is one exception to the unification of namespaces: lower case var
 Should the ``t`` in ``x :: t`` cause an implicit ``forall t.`` to be synthesized or not? With ``-XNoImplicitForAll``, we know
 it will not, and thus can refer to the ``t`` defined above, once such a reference is possible (left to another proposal).
 
-Motivation for ``-Wpattern-signature-binds``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-This is necessary in order to uphold the `Lexical Scoping Principle`_, part (a).
-
 Proposed Change Specification
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Points below up to and including the new (backward-compatible) definition of
 ``-XScopedTypeVariables`` come from not-yet-accepted proposal `#238`_. The point
 about ``-XImplicitForAll`` is a restatement of (part of) accepted proposal `#285`_.
-The other part of `#285`_ has been modified to use ``-Wpattern-signature-binds``.
+The other part of `#285`_ has been made not so urgent by ``-XPatternSignatures`` no longer allowing pattern signature binds.
 
 1. Re-purpose deprecated extension ``-XPatternSignatures``.
    With ``-XPatternSignatures``, we allow type signatures in patterns.
-   These signatures can mention in-scope type variables as variable occurrences.
-   A mention of an out-of-scope variable binds the type variable as an alias of the type it is unified with (as today).
+   These signatures can mention in-scope type variables as variable occurrences, but can not bind type variables without the (separate) ``-XScopedTypeVariables`` extension.
 
    The current ``-XPatternSignatures`` is just a synonym for ``-XScopedTypeVariables``.
    This change is thus not backward-compatible, but given that the existing extension is deprecated, I think this change is acceptable.
@@ -320,19 +364,11 @@ The other part of `#285`_ has been modified to use ``-Wpattern-signature-binds``
 
    Being able to turn off this extension is necessary to uphold the `Explicit Binding Principle`_.
 
-#. Introduce a new warning ``-Wpattern-signature-binds`` (available in ``-Weverything``) that warns whenever an out-of-scope type variable is mentioned in a pattern signature.
-
 Effects
 ~~~~~~~
 
 1. We could now advocate for avoiding ``-XExtendedForAllScope``, in favor of ``-XTypeAbstractions`` (introduced below).
    The other parts of the old ``-XScopedTypeVariables`` (namely, ``-XPatternSignatures`` and ``-XMethodTypeVariables``) could be considered for inclusion in a future language standard.
-
-Alternatives
-~~~~~~~~~~~~
-
-1. Previous versions of this proposal, along with the accepted `#285`_, use ``-XNoPatternSignatureBinds`` instead of ``-Wpattern-signature-binds``.
-   However, there seems to be no good reason this must be an extension, instead of a warning.
 
 Type arguments in constructor patterns
 --------------------------------------
