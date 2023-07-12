@@ -43,9 +43,9 @@ The expected extension lifecycle includes the following transitions:
  * `Legacy` -> `Deprecated`
  * `Deprecated` -> `Legacy`
 
-However, it also seems plausible that new knowledge might from time to time cause a mature extension to once again be considered experimental, e.g. in the face of soundness bugs or subtle interactions with other features. We also do not rule out any transition explicity to allow for unforeseen circumstances. 
+However, it also seems plausible that new knowledge might from time to time cause a mature extension to once again be considered experimental, e.g. in the face of soundness bugs or subtle interactions with other features. We also do not rule out any transition explicitly to allow for unforeseen circumstances. 
 
-For existing, or future, language sets such as `GHC2021` or `Haskell98`, it is expected that none of the contained extensions would be `Experimental`.
+For existing, or future, language sets such as `GHC2021` or `Haskell98`, it is expected that none of the contained extensions would be `Experimental`. However, this proposal does not seek to impose any particular policy on the inclusion of extensions into language sets - the developers and the steering committee are always in the best position to make a decision about a concrete extension and extension set.
 
 ### 2.2. User Interface
 
