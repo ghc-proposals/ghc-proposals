@@ -27,6 +27,7 @@ tying together many existing proposals:
 .. _`#378`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0378-dependent-type-design.rst
 .. _`#402`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0402-gadt-syntax.rst
 .. _`#420`: https://github.com/ghc-proposals/ghc-proposals/pull/420
+.. _`#523`: https://github.com/ghc-proposals/ghc-proposals/pull/523
 .. _Type Variables in Patterns: https://richarde.dev/papers/2018/pat-tyvars/pat-tyvars.pdf
 .. _Kind Inference for Datatypes: https://richarde.dev/papers/2020/kind-inference/kind-inference.pdf
 .. _`Haskell 2010 Report`: https://www.haskell.org/onlinereport/haskell2010/haskellch10.html
@@ -195,6 +196,43 @@ This is necessary in order to uphold the `Lexical Scoping Principle`_, part (a).
 
 Avoiding Redundancy
 """""""""""""""""""
+
+A `comment <https://github.com/ghc-proposals/ghc-proposals/pull/523#issuecomment-1346449731>`_ SPJ left in now-closed proposal `#523`_ states the argument well:
+
+  In discussion with Richard, we did find one possible payoff.
+  Currently pattern signatures are funny: you can only tell whether ``(\(x::a) -> blah)`` brings ``a`` into scope if you know whether or not ``a`` is already in scope.
+  Not a beautiful thing.
+
+  [...]
+
+  An alternative would be to abolish pattern signatures --- or at least abolish the rule that allows a pattern signature to bring a variable into scope.
+  _That rule was only present to allow us to give a name to existential type variables._ E.g.
+
+  ::
+
+    data T = MkT [a] (a->Int)
+    f :: T -> [Int]
+    f (MkT (xs :: [a]) f) = let mf :: [a] -> Int
+                                mf = map f
+                            in mf xs
+
+  Here the pattern signature on ``xs`` brings ``a`` into scope, so that it can be mentioned in the type signature for `mf`.
+  In the past there was no other way to do this.
+  But now we can say
+
+  ::
+
+    f :: T -> [Int]
+    f (MkT @a xs f) = let mf :: [a] -> Int
+                          mf = map f
+                      in mf xs
+
+  So we could, if we chose, deprecate and ultimately abolish the ability for pattern signatures to bring a new type variable into scope.
+  Instead of *adding* complexity to the language, let's *remove* it.
+
+It would be hard to change ``-XScopedTypeVariables``, so we don't propose that.
+But right now, and *only* right now, it is easy to adjust ``-XPatternSignatures`` before it is reintroduced.
+This is are best shot to stear people away from pattern signature binds and towards ``@`` instead!
 
 Consistency
 """""""""""
