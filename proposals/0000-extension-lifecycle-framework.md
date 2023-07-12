@@ -59,7 +59,7 @@ There will be an additional set of warnings:
 
 Each category will also support the usual`-Wno-` syntax, so `-Wno-XDeprecated` will turn off warnings for deprecated extensions. Additionally, each extension should have a configurable warning that can be individually enabled or disabled, allowing users and teams to inform GHC about their local policies and needs. For instance, `-WXDeprecated -Wno-XRank2Types` would warn about all deprecated extensions except `Rank2Types`.
 
-Furthermore, `-WXDeprecated` and `-WXExperimental` would be added to `-Wcompat` for the next release to allow the community time to adjust prior to being on by default. However, the goal is for `-WXDeprecated` and `-WXExperimental` to be on by default.
+Furthermore, `-WXDeprecated` and `-WXExperimental` would be added to `-Wcompat` for the next release to allow the community time to adjust, and then they will be on by default. This is because these two categories describe extensions that are likelier to lead to incompatibilities with future releases of GHC. `-WXLegacy` should be added to `-Wall`, so that only those who request extra feedback will get it.
 
 Note that this warning syntax rules out the names `Deprecated`, `Mature`, `Experimental`, and `Legacy` for future language extensions.
 
