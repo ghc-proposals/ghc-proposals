@@ -85,9 +85,27 @@ The primary interaction that we anticipate from this change is with existing war
 
 ## 5. Costs and Drawbacks
 
-Development and ongoing costs are expected to exist primarily in the form of additional time to sufficiently warn users of upcoming changes, creating and updating the status of extensions, and maintenance of the warning flags.
+### Development Costs
+
+Development and ongoing costs are expected to exist primarily in the form of additional time to sufficiently warn users of upcoming changes, creating and updating the status of extensions, and maintenance of the warning flags. We expect that the costs associated with moving an extension from one category to another will be small, but the discussion around doing so might take time.
+
+### Transition Costs
 
 Organizations that use `-Werror` may incur a one-time cost in updating their compiler flags to disable experimental or deprecated extension warnings.
+
+### Experts vs Less-Expert Users
+
+There is a trade-off in the selection of default warnings. Making `-WXExperimental` be on by default (after a suitable period in `-Wcompat`) means that some Haskell users will need to carry out two steps to use experimental features: after turning on the extension, the warning will need to be suppressed. For instance, a user might introduce a scoped wombat pun into their file, which requires enabling the hypothetical experimental extension `ScopedWombatPunning`. First, GHC will advise that they enable this extension in an error message. Upon following this advice, the user will then be presented with a warning on their `LANGUAGE` pragma along the lines of:
+```
+SomeModule.hs:1:4-1:32: warning: [-WXExperimental]
+The ScopedWombatPunning extension is experimental, and the features that it enables may have breaking changes in an upcoming version.
+
+You can suppress this warning with the `-Wno-XScopedWombatPunning` option.
+```
+If this user additionally uses `-Werror` or simply prefers to not have warnings in their code, then they must then add a further `GHC_OPTIONS -Wno-XScopedWombatPunning` pragma to the program, or turn on "advanced mode" by adding `-Wno-XExperimental` to the compiler configuration in their build system.
+
+If this user is a Haskell expert, then this extra step may be unwelcome - the compiler already told them to use `LANGUAGE ScopedWombatPunning`, why should it then chide them for doing so? However, if the user is not yet an expert, then this default warning is valuable because it can prevent them from depending on less-stable behavior without realizing it. This can reduce the difficulty of deciding which parts of the language to use in a project, especially one with other people. If the warning were off by default, then this user would need to first find out how to enable it, and this may not happen until after lots of code was written that depended on scoped wombat punning. A series of relatively small annoyance to expert Haskellers seems preferable to expensive code migrations.
+
 
 ## 6. Alternatives
 
