@@ -111,6 +111,8 @@ If this user is a Haskell expert, then this extra step may be unwelcome - the co
 
 One alternative design is to not add warnings to the compiler, and communicate about the status of extensions only in the User's Guide. We consider this to be unlikely to provide as much value, because users typically do not return to sections of the User's Guide that cover features that they already understand. The migration of an extension into a warning set provides a reason for them to consult the documentation.
 
+Warnings could additionally be implemented with a canonical configuration for a tool such as `hlint` or `stan`. However, these tools seem least likely to help those who need these messages most, as there is likely to be a positive correlation between knowledge of the tradeoffs of Haskell extensions and knowledge of additional Haskell tooling. Furthermore, the configuration of these tools would not automatically follow changes in new GHC versions, which might cause users to miss a deprecation warning.
+
 Another alternative consists of not having an explicit lifecycle for extensions, but only adding deprecation warnings. This has the advantage of being a lighter-weight process that requires less from the developers of language extensions. Also, because any model necessarily neglects certain details, an implicit discussion of an extension's status provides space for more nuance. However, we believe that a simpler model that captures the world well enough is able to provide the vast majority of the information that's relevant to make decisions without incurring nearly as much of a cost in time and training as a fully-detailed and nuanced view (which can still be available in the documentation).
 
 
