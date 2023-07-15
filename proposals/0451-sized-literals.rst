@@ -136,6 +136,9 @@ literals.
 
 (This can probably be factored with ``@signed_suffix`` and ``@unsigned_suffix``).
 
+For types such as ``data T = MkT Int8# deriving Show``, the derived instance
+should use the extended literal syntax.
+
 Examples
 --------
 
