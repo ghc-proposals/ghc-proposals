@@ -2,11 +2,11 @@ Namespace-specified imports
 ===========================
 
 .. author:: Adam Gundry, Artyom Kuznetsov, Chris Dornan
-.. date-accepted::
+.. date-accepted:: 2023-07-15
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/581>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/581>`_.
 .. sectnum::
 .. contents::
 
