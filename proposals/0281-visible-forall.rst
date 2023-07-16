@@ -343,8 +343,6 @@ Part I: Proposed Change Specification
    follows type-level name resolution rules (i.e. uses of punned identifiers
    resolve to the type namespace), both at binding sites and at use sites.
 
-   Without ``ScopedTypeVariables``, no type variable may be bound in a pattern.
-
    The ``ScopedTypeVariables`` extension has no effect on variables introduced
    by ``forall a ->``.
 
