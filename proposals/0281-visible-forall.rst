@@ -778,8 +778,7 @@ and fails on expressions outside of this subset.
 * Variables and constructors (regardless of their namespace) are mapped
   directly, without modification.
 
-  * In the type checking environment, the variable must stand for a type variable,
-    or else it treated as a fresh skolem constant.
+  * In the type checking environment, the variable must stand for a type variable.
 
   * In the type checking environment, the constructor must stand for a type
     constructor, or else require ``DataKinds``.
