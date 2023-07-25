@@ -414,10 +414,8 @@ Proposed Change Specification
        tyapp_or_pat → '@' atype    -- '@' is in prefix position
                     → apat
 
-#. For backwards compatibility, accept the previous extension to the pattern grammar (a) if ``-XTypeAbstractions`` is enabled or (b) if both ``-XScopedTypeVariables`` and ``-XTypeApplications`` are enabled.
-
-   If the new pattern form is encountered and (b) holds but not (a), emit a warning.
-   The warning states that the (b) way of enabling it is deprecated and will be removed, and suggests using the (a) way instead.
+#. For backward compatiblity, *also* accept type application syntax in constructor patterns if both ``-XScopedTypeVariables`` and ``-XTypeApplications`` are enabled, but ``-XTypeAbstractions`` is not.
+   In that case, emit a warning, stating that type applications in constructor patterns should be enabled with ``-XTypeAbstractions``, and that the temporary expedient of enabling it by the combination of ``-XScopedTypeVariables`` and ``-XTypeApplications`` will be removed.
 
    After 2 releases remove clause (b); ``-XTypeAbstractions`` will be the only way to enable this feature.
 
@@ -567,7 +565,7 @@ Effects
 #. Backward-compatibility with the current implementation,
    which requires both ``-XScopedTypeVariables`` and ``-XTypeApplications`` to be in effect but nothing more,
    is preserved.
-   But whenver this is used a deprecation warning will be issued.
+   But whenever this is used a deprecation warning will be issued.
 
 #. We have the option of removing the above implication (when is not proposed).
    That will clean up new experimental functionality from leaking under established extensions.
