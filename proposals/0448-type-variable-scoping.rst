@@ -567,8 +567,9 @@ Effects
    is preserved.
    But whenever this is used a deprecation warning will be issued.
 
-#. We have the option of removing the above implication (when is not proposed).
-   That will clean up new experimental functionality from leaking under established extensions.
+#. After 2 releases of deprecation with the warning, the above implication is removed.
+   That cleans up new experimental functionality from leaking under established extensions.
+   This *is* a breaking change, but with the advanced notice given via the warning, the costs are reduced to the point that the benefits are deemed to outweigh them.
 
 Type arguments in lambda patterns
 ---------------------------------
