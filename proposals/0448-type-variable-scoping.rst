@@ -360,7 +360,7 @@ We have conflicting principles at play:
 
 - New experimental functionality should not be gated under older established extensions
 
-- Breaking changes under established extensions --- even if it only effects experimental functionality that should have not been there in the first place --- should be avoided.
+- Breaking changes under established extensions --- even if it only affects experimental functionality that should have not been there in the first place --- should be avoided.
 
 Given these too things, a small deprecation cycle / migration path to ``-XTypeAbstractions`` seems the best we can do.
 
