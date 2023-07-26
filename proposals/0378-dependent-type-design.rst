@@ -706,7 +706,7 @@ themselves. (After all, ``reverse`` might be defined in a separately compiled
 module, and might be defined with arbitrary Haskell terms.)
 
 This approach keeps things simple for now; we might imagine retaining the
-knowledge that ``o = 2 + 3`` when, say, the right-hand side of a ``let`` is
+knowledge that ``n = 5`` when, say, the right-hand side of a ``let`` is
 in the Static Subset, but we leave that achievement for later.
 
 Dependent application and the Static Subset
