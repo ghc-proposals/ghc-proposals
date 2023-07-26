@@ -676,7 +676,7 @@ use a term variable in a type. For example, say we have::
     line <- getLine
     let n = read line
     let intVec = vReplicate n 42
-    let boolVec = vReplicate n 256
+    let boolVec = vReplicate n True
     print (vZip intVec boolVec)
 
 Here, the term ``n`` is given as an argument to ``vReplicate`` (defined above).
