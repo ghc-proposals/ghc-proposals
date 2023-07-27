@@ -711,7 +711,7 @@ This approach keeps things simple for now; we might imagine retaining the
 knowledge that ``n = 5`` when, say, the right-hand side of a ``let`` is
 in the Static Subset, but we leave that achievement for later.
 
-Note that to demonstrate why this is useful, we had to use a function (``vReplicate``) that uses the retained quantifier ``foreach``.
+Note that to demonstrate why this is useful, we had to use a function (``vReplicate``, defined in section 4.5, `Dependent pattern-match`_) that uses the retained quantifier ``foreach`` (see section 4.4 on `quantifiers`_).
 This is because we need to be able to use a `dependent pattern-match`_ on the argument to be able to gain any useful knowledge for type-checking about it, since we can't look at the right-hand side of the binding.
 But the dependent pattern-match is only available with a retained quantifier like ``foreach``. Thus, it's likely that we won't need to support term variables
 in types until some retained quantifier as well as dependent pattern-matching have been added to the language.
