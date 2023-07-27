@@ -638,6 +638,8 @@ are applied (eliminated) and defined (introduced).
 Dependent pattern-match
 ^^^^^^^^^^^^^^^^^^^^^^^
 
+.. _dependent pattern-match:
+
 When we pattern-match on a value that also appears in a type (that is,
 something bound by a ``foreach``), the type-checker can use the
 matched-against pattern to refine the type. For example, consider an
@@ -708,6 +710,11 @@ module, and might be defined with arbitrary Haskell terms.)
 This approach keeps things simple for now; we might imagine retaining the
 knowledge that ``n = 5`` when, say, the right-hand side of a ``let`` is
 in the Static Subset, but we leave that achievement for later.
+
+Note that to demonstrate why this is useful, we had to use a function (``vReplicate``) that uses the retained quantifier ``foreach``.
+This is because we need to be able to use a `dependent pattern-match`_ on the argument to be able to gain any useful knowledge for type-checking about it, since we can't look at the right-hand side of the binding.
+But the dependent pattern-match is only available with a retained quantifier like ``foreach``. Thus, it's likely that we won't need to support term variables
+in types until some retained quantifier as well as dependent pattern-matching have been added to the language.
 
 Dependent application and the Static Subset
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
