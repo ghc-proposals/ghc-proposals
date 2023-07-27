@@ -780,7 +780,7 @@ and fails on expressions outside of this subset.
 
   * In the type checking environment, the variable must stand for a type variable.
 
-    * `#378 Design for Dependent Types <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0378-dependent-type-design.rst#term-variables-in-types>`_ allows term variables in types. However, while it presents how this can be useful with ``foreach``, it's much less clear that it can provide utility with ``forall``. Hence, we save this part of the design of DH for a future proposal.
+    * `#378 Design for Dependent Types <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0378-dependent-type-design.rst#term-variables-in-types>`_ allows term variables in types. However, while the referenced section presents how this can be useful with ``foreach``, it also explains that it seems much less useful without it. Hence, we save this part of the design of DH for a future proposal that includes a retained quantifier like ``foreach``.
 
   * In the type checking environment, the constructor must stand for a type
     constructor, or else require ``DataKinds``.
