@@ -63,12 +63,20 @@ Main usecase:
 type ToFromJSON x = (ToJSON x, FromJSON x)
 
 -- Allowed by this proposal
-derive instance ... => (ToFromJSON x)
+derive instance ... => (ToFromJSON MyData)
+
+-- Allowed by this proposal and working same as example above
+data MyData = MkMyData deriving (ToFromJSON)
 
 -- Should work the same with syntax allowed before proposal
-derive instance ... => ToJSON x
-derive instance ... => FromJSON x
+derive instance ... => ToJSON MyData
+derive instance ... => FromJSON MyData
 ```
+
+Non-standalone instances do not have explicit params,
+so rewriting implementation may be little different.
+But they have just the same samantics as standalone instances with holes,
+covered by examples before, so could be handled the same.
 
 Instance context case is simpler:
 
@@ -95,11 +103,6 @@ Last example may be not the most natural,
 because `MyContainer` would probably have `ToFromJSON` conditional instance
 anyway. But my goal was to show instance context changes separately,
 while more natural examples involve instance head as well.
-
-Non-standalone instances do not have explicit params,
-so rewriting implementation may be little different.
-But they have just the same samantics as standalone instances with holes,
-covered by examples before, so could be handled the same.
 
 ## Effect and Interactions
 
