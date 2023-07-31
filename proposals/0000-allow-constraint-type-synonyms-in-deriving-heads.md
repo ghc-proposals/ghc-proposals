@@ -16,7 +16,7 @@ for repeating classes. Most of time there is some default list
 of classes to be defined.
 
 Making type synonym for that seems like the obvious thing to do,
-because jet it does not work.
+yet it does not work.
 
 There are two constructions forbidden now, but required for that usecase:
 
@@ -29,18 +29,18 @@ Reasoning for that is covered in Note "Instances and constraint synonyms"
 and [issue 13267](https://gitlab.haskell.org/ghc/ghc/-/issues/13267).
 
 Main usecase only affect deriving instances head,
-but another usecase is usage of tuples/synonims in context of any instance.
+but another usecase is usage of tuples/synonyms in context of any instance.
 It seems to be less common, but natural to cover in same proposal
-to allow tuples/synonims anywhere in instance declaration,
+to allow tuples/synonyms anywhere in instance declaration,
 leading to more consistent semantics.
 
 ## Proposed Change Specification
 
-Proposal requires two purely syntaxic rewrites for in instance declarations
+Proposal requires two purely syntaxic rewrites for instance declarations
 to happen:
 
 1. Apply all type synonyms in instance declarations.
-   This should be done recrusively, until no type synonim is present anymore.
+   This should be done recursively, until no type synonym is present anymore.
 2. For any constraint tuple in derived instance head,
    split such declarations into multiple.
 
@@ -131,11 +131,10 @@ For deriving instances there are two alternatives:
 
 For user-defined instances one may define type class instead of synonym:
 
-```haskellb
+```haskell
 class (ToJSON x, FromJSON x) => ToFromJSON x
 
 instance (ToJSON x, FromJSON x) => ToFromJSON x
-```
 
 While this trick works, Haskell begginers may be not aware of it,
 and it makes less clear API.
@@ -157,7 +156,7 @@ Also implementation paths are similar any may be switched later.
 The main question is how to check that constraint synonym rewriting
 will lead to correct code.
 
-There are two principial solutions to that:
+There are two principal solutions to that:
 
 1. Check that rewriting will be correct before applying it.
    In this context this probably amounts to checking for each referenced
