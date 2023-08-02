@@ -7,7 +7,7 @@ Modern Scoped Type Variables
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/448>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/448>`_ and `amended by #604 <hhttps://github.com/ghc-proposals/ghc-proposals/pull/604`_.
 .. contents::
 
 This proposal updates the treatment of scoped type variables in GHC,
