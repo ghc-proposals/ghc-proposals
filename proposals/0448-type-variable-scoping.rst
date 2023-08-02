@@ -565,7 +565,7 @@ Effects
 #. Backward-compatibility with the current implementation,
    which merely requires both ``-XScopedTypeVariables`` and ``-XTypeApplications`` to be in effect and not any extension dedicated to this feature,
    is preserved.
-   But whenever this is used a deprecation warning will be issued.
+   But whenever the old way of enabling this feature is used, a deprecation warning will be issued.
 
 #. After 2 releases of deprecation with the warning, the above implication is removed.
    That cleans up new experimental functionality from leaking under established extensions.
