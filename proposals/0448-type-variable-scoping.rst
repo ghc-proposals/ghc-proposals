@@ -429,12 +429,12 @@ Additionally, this choice edges us closer to the `Local Lexical Scoping Principl
 because we no longer have to check whether ``a`` is in scope before identifying the ``a`` in ``f (Just @a x) = ...`` is a binding site or an occurrence.
 
 The other change in this restatement is the use of new extension ``-XTypeAbstractions`` instead of the current status of piggy-backing on the combination of ``-XTypeApplications`` and ``-XScopedTypeVariables`` (*both* need to be enabled today).
-This proposal suggests instead that ``-XScopedTypeVariables`` and ``-XScopedTypeVariables`` should enable this feature in a deprecated manner, to encourage users to use ``-XTypeAbstractions`` instead.
+This proposal suggests that initially ``-XScopedTypeVariables`` and ``-XScopedTypeVariables`` should jointly enable type applications in constructor patterns; but that this combination doing so should be deprecated, and at some later point removed.
 We have conflicting principles at play:
 
 - New experimental functionality should not be gated under older established extensions
 
-- Breaking changes under established extensions --- even if it only effects experimental functionality that should have not been there in the first place --- should be avoided.
+- Breaking changes under established extensions --- even if it only affects experimental functionality that should have not been there in the first place --- should be avoided.
 
 Given these too things, a small deprecation cycle / migration path to ``-XTypeAbstractions`` seems the best we can do.
 
@@ -488,10 +488,8 @@ Proposed Change Specification
        tyapp_or_pat → '@' atype    -- '@' is in prefix position
                     → apat
 
-#. For backwards compatibility, accept the previous extension to the pattern grammar (a) if ``-XTypeAbstractions`` is enabled or (b) if both ``-XScopedTypeVariables`` and ``-XTypeApplications`` are enabled.
-
-   If the new pattern form is encountered and (b) holds but not (a), emit a warning.
-   The warning states that the (b) way of enabling it is deprecated and will be removed, and suggests using the (a) way instead.
+#. For backward compatiblity, *also* accept type application syntax in constructor patterns if both ``-XScopedTypeVariables`` and ``-XTypeApplications`` are enabled, but ``-XTypeAbstractions`` is not.
+   In that case, emit a warning, stating that type applications in constructor patterns should be enabled with ``-XTypeAbstractions``, and that the temporary expedient of enabling it by the combination of ``-XScopedTypeVariables`` and ``-XTypeApplications`` will be removed.
 
    After 2 releases remove clause (b); ``-XTypeAbstractions`` will be the only way to enable this feature.
 
@@ -639,12 +637,13 @@ Effects
    For example, perhaps we would say e.g. ``f (Just @(*a) x) = ...`` to denote an occurrence of already-in-scope type variable ``a``.
 
 #. Backward-compatibility with the current implementation,
-   which requires both ``-XScopedTypeVariables`` and ``-XTypeApplications`` to be in effect but nothing more,
+   which merely requires both ``-XScopedTypeVariables`` and ``-XTypeApplications`` to be in effect and not any extension dedicated to this feature,
    is preserved.
-   But whenver this is used a deprecation warning will be issued.
+   But whenever the old way of enabling this feature is used, a deprecation warning will be issued.
 
-#. We have the option of removing the above implication (when is not proposed).
-   That will clean up new experimental functionality from leaking under established extensions.
+#. After 2 releases of deprecation with the warning, the above implication is removed.
+   That cleans up new experimental functionality from leaking under established extensions.
+   This *is* a breaking change, but with the advanced notice given via the warning, the costs are reduced to the point that the benefits are deemed to outweigh them.
 
 Type arguments in lambda patterns
 ---------------------------------
