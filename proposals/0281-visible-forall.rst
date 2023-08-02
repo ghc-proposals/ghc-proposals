@@ -1,5 +1,5 @@
-Visible ``forall`` in types of terms
-====================================
+Visible `forall` in types of terms, and types in terms
+======================================================
 
 .. author:: Vladislav Zavialov
 .. date-accepted:: 2021-11-01
