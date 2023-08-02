@@ -355,7 +355,7 @@ Additionally, this choice edges us closer to the `Local Lexical Scoping Principl
 because we no longer have to check whether ``a`` is in scope before identifying the ``a`` in ``f (Just @a x) = ...`` is a binding site or an occurrence.
 
 The other change in this restatement is the use of new extension ``-XTypeAbstractions`` instead of the current status of piggy-backing on the combination of ``-XTypeApplications`` and ``-XScopedTypeVariables`` (*both* need to be enabled today).
-This proposal suggests instead that ``-XScopedTypeVariables`` and ``-XScopedTypeVariables`` should enable this feature in a deprecated manner, to encourage users to use ``-XTypeAbstractions`` instead.
+This proposal suggests that initially ``-XScopedTypeVariables`` and ``-XScopedTypeVariables`` should jointly enable type applications in constructor patterns; but that this combination doing so should be deprecated, and at some later point removed.
 We have conflicting principles at play:
 
 - New experimental functionality should not be gated under older established extensions
@@ -563,7 +563,7 @@ Effects
    For example, perhaps we would say e.g. ``f (Just @(*a) x) = ...`` to denote an occurrence of already-in-scope type variable ``a``.
 
 #. Backward-compatibility with the current implementation,
-   which requires both ``-XScopedTypeVariables`` and ``-XTypeApplications`` to be in effect but nothing more,
+   which merely requires both ``-XScopedTypeVariables`` and ``-XTypeApplications`` to be in effect and not any extension dedicated to this feature,
    is preserved.
    But whenever this is used a deprecation warning will be issued.
 
