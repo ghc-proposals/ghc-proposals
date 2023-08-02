@@ -355,8 +355,14 @@ Additionally, this choice edges us closer to the `Local Lexical Scoping Principl
 because we no longer have to check whether ``a`` is in scope before identifying the ``a`` in ``f (Just @a x) = ...`` is a binding site or an occurrence.
 
 The other change in this restatement is the use of new extension ``-XTypeAbstractions`` instead of the current status of piggy-backing on the combination of ``-XTypeApplications`` and ``-XScopedTypeVariables`` (*both* need to be enabled today).
-This proposal suggests instead that ``-XScopedTypeVariables`` implies ``-XTypeAbstractions`` so that we remain backward-compatible with what is current implemented
-(though there may be some redundant enablings of ``-XTypeApplications`` that would no longer be needed).
+This proposal suggests that initially ``-XScopedTypeVariables`` and ``-XScopedTypeVariables`` should jointly enable type applications in constructor patterns; but that this combination doing so should be deprecated, and at some later point removed.
+We have conflicting principles at play:
+
+- New experimental functionality should not be gated under older established extensions
+
+- Breaking changes under established extensions --- even if it only affects experimental functionality that should have not been there in the first place --- should be avoided.
+
+Given these too things, a small deprecation cycle / migration path to ``-XTypeAbstractions`` seems the best we can do.
 
 Motivation
 ~~~~~~~~~~
@@ -390,7 +396,7 @@ For a constructor with type like ``C :: forall a. a -> …`` the meaning of ``C 
 Proposed Change Specification
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-1. Introduce a new extension ``-XTypeAbstractions``, implied by ``-XScopedTypeVariables``.
+1. Introduce a new extension ``-XTypeAbstractions``
    (This extension is further extended in the next part of this proposal.)
 
 #. When ``-XTypeAbstractions`` is enabled, allow type application syntax in constructor patterns.
@@ -407,6 +413,11 @@ Proposed Change Specification
 
        tyapp_or_pat → '@' atype    -- '@' is in prefix position
                     → apat
+
+#. For backward compatiblity, *also* accept type application syntax in constructor patterns if both ``-XScopedTypeVariables`` and ``-XTypeApplications`` are enabled, but ``-XTypeAbstractions`` is not.
+   In that case, emit a warning, stating that type applications in constructor patterns should be enabled with ``-XTypeAbstractions``, and that the temporary expedient of enabling it by the combination of ``-XScopedTypeVariables`` and ``-XTypeApplications`` will be removed.
+
+   After 2 releases remove clause (b); ``-XTypeAbstractions`` will be the only way to enable this feature.
 
 #. Type applications in constructor patterns do *not* affect whether the pattern-match is successful.
 
@@ -551,10 +562,14 @@ Effects
    We expect a future proposal to remedy this problem, with either a modifier or some symbol.
    For example, perhaps we would say e.g. ``f (Just @(*a) x) = ...`` to denote an occurrence of already-in-scope type variable ``a``.
 
-#. Because ``-XScopedTypeVariables`` implies ``-XTypeAbstractions``,
-   people using ``-XScopedTypeVariables`` would have access to the new features without enabling a new extension.
-   This is backward-compatible with the current implementation, which requires both ``-XScopedTypeVariables`` and ``-XTypeApplications`` to be in effect.
-   (With this proposal, ``-XScopedTypeVariables`` alone would be enough.)
+#. Backward-compatibility with the current implementation,
+   which merely requires both ``-XScopedTypeVariables`` and ``-XTypeApplications`` to be in effect and not any extension dedicated to this feature,
+   is preserved.
+   But whenever the old way of enabling this feature is used, a deprecation warning will be issued.
+
+#. After 2 releases of deprecation with the warning, the above implication is removed.
+   That cleans up new experimental functionality from leaking under established extensions.
+   This *is* a breaking change, but with the advanced notice given via the warning, the costs are reduced to the point that the benefits are deemed to outweigh them.
 
 Type arguments in lambda patterns
 ---------------------------------
