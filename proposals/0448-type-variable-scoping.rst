@@ -532,6 +532,27 @@ Proposed Change Specification
 Examples
 ~~~~~~~~
 
+There are examples of pattern signatures using type variables which are already in scope::
+
+    foo :: forall b. Maybe b -> ()
+    foo @a (_ :: Maybe a) = ()
+
+    bar :: forall b. Maybe b -> ()
+    bar (Just @a (_ :: a)) = ()
+
+    baz :: forall b. b ~ () -> ()
+    baz @b () = ()
+      where
+        () :: b = ()
+
+These examples are all accepted with ``-XPatternSignatures``.
+
+This is an example of a pattern signture binding a type variable::
+
+    id (x :: a) = x :: a
+
+This example is allowed with ``-XScopedTypeVariables`` as today, but disallowed with just ``-XPatternSignatures``.
+
 Here is an example (taken from `#15050 <https://gitlab.haskell.org/ghc/ghc/issues/15050#note_152286>`_)::
 
     type family F a where
@@ -600,6 +621,7 @@ The type variable ``a`` is bound to ``Int``, by pattern-matching.
 
 Here is an example of pattern signatures within a type abstraction in a pattern::
 
+   {-# LANGUAGE ScopedTypeVariables #-} -- for pattern signture bindings
    data Proxy a = P
    g2 :: Proxy (Nothing @(a, a)) -> ()
    g2 (P @(Nothing :: Maybe (t, t))) = ()
@@ -612,6 +634,8 @@ multiple bindings of a single variable::
 
 Pattern and kind signatures, however, are not subject to this restriction,
 since variable occurrences in pattern signatures are considered usages (not bindings)::
+
+   {-# LANGUAGE ScopedTypeVariables #-} -- for pattern signture bindings
 
    g1 (P x :: Proxy (a,a)) = x               -- Accepted (multiple occurrences of ‘a’ notwithstanding)
 
