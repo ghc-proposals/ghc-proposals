@@ -201,7 +201,7 @@ and it would be nice if I could just state that ``PatternSignatures``.
 Motivation for not doing binding
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-``-XPatternSignatures`` as proposed here is more narrow than its GHC 6 namesake.
+``-XPatternSignatures`` as proposed here is more narrow than its prior incarnation circa GHC 6.
 This is because it just allows signatures using already-bound variables, and doesn't include any implicit binding mechanism for variables in the signature that aren't yet bound.
 (That instead is left for ``-XImplicitBinds``.)
 
@@ -217,7 +217,6 @@ Avoiding Redundancy
 
 A `comment <https://github.com/ghc-proposals/ghc-proposals/pull/523#issuecomment-1346449731>`_ SPJ left in now-closed proposal `#523`_ states the argument well:
 
-  In discussion with Richard, we did find one possible payoff.
   Currently pattern signatures are funny: you can only tell whether ``(\(x::a) -> blah)`` brings ``a`` into scope if you know whether or not ``a`` is already in scope.
   Not a beautiful thing.
 
@@ -250,7 +249,7 @@ A `comment <https://github.com/ghc-proposals/ghc-proposals/pull/523#issuecomment
 
 It would be hard to change ``-XScopedTypeVariables``, so we don't propose that.
 But right now, and *only* right now, it is easy to adjust ``-XPatternSignatures`` before it is reintroduced.
-This is are best shot to stear people away from pattern signature binds and towards ``@`` instead!
+This is our best shot to steer people away from pattern signature binds and towards ``@`` instead!
 
 Consistency
 """""""""""
