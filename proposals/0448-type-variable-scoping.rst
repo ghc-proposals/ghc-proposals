@@ -203,7 +203,7 @@ Motivation for not doing binding
 
 ``-XPatternSignatures`` as proposed here is more narrow than its prior incarnation circa GHC 6.
 This is because it just allows signatures using already-bound variables, and doesn't include any implicit binding mechanism for variables in the signature that aren't yet bound.
-(That instead is left for ``-XImplicitBinds``.)
+(That instead is left as part of ``-XScopedTypeVariables``.)
 
 We here discuss the motivation for this decision.
 
@@ -266,15 +266,15 @@ This more narrow formulation of ``-XPatternSignatures`` matches ``-XKindSignatur
       Perhaps you intended to use PolyKinds
       In the data type declaration for ‘Foo’
 
-Given the other extensions being proposed here, we can retroactively reinterpret this as a simple syntactic rule: ``-XKindSignatures`` alone doesn't do implicit binding::
+We can reinterpret this as a simple syntactic rule: ``-XKindSignatures`` alone doesn't do implicit binding::
 
   ghci> :set -XKindSignatures
-  ghci> :set -XNoImplicitBinds
   ghci> data Foo (a :: b)
 
   <interactive>:3:16: error: Not in scope: type variable ‘b’
 
 The error message is completely different, but the effect with respect to merely whether the program was rejected is the same.
+(Choosing a way to disable the implicit binding part of ``-XPolyKinds`` is left as future work --- possibly a future amendment to this proposal.)
 
 Now, both extensions (``-XPatternSignatures`` and ``-XKindSignatures``) just allow, respectively, term-level and type-level signatures, with no other functionality like implicit binding mechanisms also thrown in.
 
