@@ -128,8 +128,8 @@ We give the static semantics in terms of *pattern types*. A pattern type has the
 Then the typing rule for Or patterns is:
 ::
 
-          Γ0, Σ0 ⊢ pat_i : τ ⤳ Γ0,Σi,Ψi
-    -----------------------------------------
+      Γ0, Σ0 ⊢ pat_i : τ ⤳ Γ0,Σi,Ψi
+    ---------------------------------
     Γ0, Σ0 ⊢ ( pat_i ) : τ ⤳ Γ0,Σ0,∅
 
 
