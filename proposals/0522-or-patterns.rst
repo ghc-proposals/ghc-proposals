@@ -141,8 +141,8 @@ Informal semantics in the style of `Haskell 2010 chapter 3.17.2: Informal
 Semantics of Pattern Matching
 <https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-600003.17.2>`_:
 
-- Matching the pattern ``(p1; ... ; pk)`` against the value ``v`` is the result of matching ``v`` against ``p1`` if it is not a failure, or the result of
-  matching ``(p2; ... ; pk)`` against ``v`` otherwise. We require that ``p1``, …, ``pk`` bind no variables.
+- Matching the pattern ``(p1; ...; pk)`` against the value ``v`` is the result of matching ``v`` against ``p1`` if it is not a failure, or the result of
+  matching ``(p2; ...; pk)`` against ``v`` otherwise. We require that ``p1``, …, ``pk`` bind no variables.
 - Matching the pattern ``(p1)`` against the value ``v`` performs a normal pattern match.
 
 
