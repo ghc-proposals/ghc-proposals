@@ -62,7 +62,7 @@ function we get
 
     stringOfT :: T -> Maybe String
     stringOfT (T1 s)        = Just s
-    stringOfT (T2{} ; T3{}) = Nothing
+    stringOfT (T2{}; T3{}) = Nothing
 
 This function doesn't match ``T4``, so we get our warning in the very first compile
 cycle or (even faster) in our IDE powered by a language server implementation.
