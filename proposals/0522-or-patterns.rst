@@ -1,12 +1,12 @@
 Or Patterns
 ==============
 
-.. author:: David Knothe, Ömer Sinan Ağacan, Sebastian Graf
-.. date-accepted:: 2022-11-29
+.. author:: Sebastian Graf, David Knothe
+.. date-accepted::
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/522>`_.
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/609>`_.
 .. sectnum::
 .. contents::
 
@@ -62,7 +62,7 @@ function we get
 
     stringOfT :: T -> Maybe String
     stringOfT (T1 s)        = Just s
-    stringOfT (one of T2{}, T3{}) = Nothing
+    stringOfT (T2{} ; T3{}) = Nothing
 
 This function doesn't match ``T4``, so we get our warning in the very first compile
 cycle or (even faster) in our IDE powered by a language server implementation.
@@ -76,45 +76,38 @@ Changes in the grammar
 
 We consider this as an extension to `Haskell 2010 grammar
 <https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#x17-18000010.5>`_.
-The relevant non-terminal is ``apat``: ::
+This proposal adds one more production to the nonterminal ``apat``: ::
 
-  apat    →    var [ @ apat]                     (as pattern)
-          |    gcon                              (arity gcon  =  0)
-          |    qcon { fpat1 , … , fpatk }        (labeled pattern, k ≥ 0)
-          |    literal
-          |    _                                 (wildcard)
-          |    ( pat )                           (parenthesized pattern)
-          |    ( pat1 , … , patk )               (tuple pattern, k ≥ 2)
-          |    [ pat1 , … , patk ]               (list pattern, k ≥ 1)
-          |    ~ apat
+    apat -> ( orpats )
 
-Or patterns extension adds one more production: ::
+where ``orpats`` is a new nonterminal with the following productions: ::
 
-          |    (one of pat1, …, patk )                (Or pattern, k ≥ 2)
+    orpats -> pat
+            | pat ';' orpats
 
-``one`` is a conditional keyword in patterns, but can still be used for variable patterns.
-The ``,`` between the parentheses have (shift) priority that is lower than any other ``apat``'s (reduction) priority.
+
+N.B.: In the concrete GHC Parser, we use the nonterminals `aexp` and `exp` instead of `apat` and `pat` because of the ECP parsing.
+
 
 Some examples that this new grammar produces: ::
 
-  -- in expression context
-  case e of
-    (one of T1, T2{}, T3 a b) -> ...
+  case e of (T1; T2{}; T3 a b) -> ...
+
+  f :: (Int, Int) -> Int
+  f (5, (6;7)) = 2
 
   -- in expression context
-  let (one of [x], (x : y : z)) = e1 in e2
+  let ([x]; (x : y : z)) = e1 in e2
 
   -- pattern guards in declarations
   f x y
-    | x@(one of T1 _, T2 a b) <- e1
+    | x@(T1 _; T2 a b) <- e1
     , guard x
     = e2
 
   -- nested Or patterns
   case e1 of
-    (one of (one of T1, T2), T3, T4) -> e2
-
-The new production doesn't add any ambiguities because of the mandatory parentheses, just like for tuples.
+    ((T1; T2); T3; T4) -> e2
 
 NB: The new grammar allows Or patterns which bind variables. These will however be rejected in `2.2`_.
 
@@ -135,12 +128,10 @@ We give the static semantics in terms of *pattern types*. A pattern type has the
 Then the typing rule for Or patterns is:
 ::
 
-    Γ0, Σ0 ⊢ pat1 : τ ⤳ Γ0,Σ1,Ψ1    Γ0, Σ0 ⊢ pat2 : τ ⤳ Γ0,Σ2,Ψ2    
-    -------------------------------------------------------------
-                 Γ0, Σ0 ⊢ (one of pat1, pat2) : τ ⤳ Γ0,Σ0,∅
+          Γ0, Σ0 ⊢ pat_i : τ ⤳ Γ0,Σi,Ψi
+    -----------------------------------------
+    Γ0, Σ0 ⊢ ( pat_i ) : τ ⤳ Γ0,Σ0,∅
 
-
-An Or pattern consisting of more than two parts works the same.
 
 
 Dynamic semantics of Or pattern matching
@@ -150,25 +141,22 @@ Informal semantics in the style of `Haskell 2010 chapter 3.17.2: Informal
 Semantics of Pattern Matching
 <https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-600003.17.2>`_:
 
-- Matching the pattern ``(one of p1, …, pk)`` against the value ``v`` is the result of matching ``v`` against ``p1`` if it is not a failure, or the result of
-  matching ``(one of p2, …, pk)`` against ``v`` otherwise.
+- Matching the pattern ``(p1; ... ; pk)`` against the value ``v`` is the result of matching ``v`` against ``p1`` if it is not a failure, or the result of
+  matching ``(p2; ... ; pk)`` against ``v`` otherwise. We require that ``p1``, …, ``pk`` bind no variables.
+- Matching the pattern ``(p1)`` against the value ``v`` performs a normal pattern match.
 
-  ``p1``, …, ``pk`` bind no variables.
-
-  NB: For k=1, the pattern ``(p1)`` is meant to denote a parenthesized pattern.
 
 Here are a few examples: ::
 
-    (\ (one of 1, 2) -> 3) 1 => 3
-    (\ (one of Left 0, Right 1) -> True) (Right 1) => True
-    (\ (one of (one of [1], [2, _]), (one of [3, _, _], [4, _, _, _])) -> True) [4, undefined, undefined, undefined] => True
-    (\ (one of 1, 2, 3) -> True) 3 => True
+    (\ (1; 2) -> 3) 1 => 3
+    (\ (Left 0; Right 1) -> True) (Right 1) => True
+    (\ (([1]; [2, _]); ([3, _, _]; [4, _, _, _])) -> True) [4, undefined, undefined, undefined] => True
+    (\ (1; 2; 3) -> True) 3 => True
 
 We do not employ backtracking in Or patterns. The following would yield ``"no backtracking"``: ::
 
  case (True, error "backtracking") of
-   (one of (True, _), (_, True))
-     | False -> error "inaccessible"
+   ((True, _); (_, True)) | False -> error "inaccessible"
    _ -> error "no backtracking"
 
 Examples
@@ -213,10 +201,10 @@ Examples
       where
         go (L _ pat) = go1 pat
 
-        go1 (one of WildPat{}, VarPat{}, LazyPat{})
+        go1 (WildPat{}; VarPat{}; LazyPat{})
           = True
 
-        go1 (one of PArrPat{}, ConPatIn{}, LitPat{}, NPat{}, NPlusKPat{}, ListPat {})
+        go1 (PArrPat{}; ConPatIn{}; LitPat{}; NPat{}; NPlusKPat{}; ListPat{})
           = False
 
         go1 (BangPat pat)       = go pat
@@ -259,7 +247,7 @@ GHC also has wildcard patterns in many places (here  ``Core.hs``):
  hasSomeUnfolding _             = True
 
  neverUnfoldGuidance UnfNever = True
- neverUnfoldGuidance _        = False                                           
+ neverUnfoldGuidance _        = False
 
  ...
 
@@ -294,18 +282,18 @@ So the following example would not type check because the Or pattern doesn't pro
      IsInt2 :: GADT Int
 
  foo :: a -> GADT a -> a
- foo x (one of IsInt1 {}, IsInt2 {}) = x + 1
+ foo x (IsInt1 {}; IsInt2 {}) = x + 1
 
 
 Considering view patterns, these do work seamlessly with Or patterns. As specified in `2.2`_, Or patterns will just merge the required constraints which come from view patterns. This would work: ::
 
  f :: (Eq a, Show a) => a -> a -> Bool
- f a (one of (== a) -> True, show -> "yes") = True
+ f a (((== a) -> True); (show -> "yes")) = True
  f _ _ = False
 
 Costs and Drawbacks
 -------------------
-The cost is a small implementation overhead. Also, as Or patterns are syntactic sugar, they add to the amount of syntax Haskell beginners have to learn. 
+The cost is a small implementation overhead. Also, as Or patterns are syntactic sugar, they add to the amount of syntax Haskell beginners have to learn.
 We believe however that the mentioned advantages more than compensate for these disadvantages.
 Or patterns are available in all of the top seven programming languages on the TIOBE index (Python, Java, Javascript, C#, C, etc.), which suspects that the concept won't be particularly troublesome for beginners to learn.
 
@@ -313,34 +301,31 @@ Or patterns are available in all of the top seven programming languages on the T
 Alternatives
 ------------
 
-Alternative syntax
-~~~~~~~~~~~~~~~~~~
+There have been proposed a **lot** of alternatives in regard to the exact syntax of or-patterns (see the discussion [here](https://github.com/ghc-proposals/ghc-proposals/pull/585)).
 
-We previously considered ``;``, ``;;`` and ``||`` as separators.
+After performing two community votes ([Vote 1](https://github.com/ghc-proposals/ghc-proposals/issues/587), [Vote 2](https://github.com/ghc-proposals/ghc-proposals/issues/598)), the relative majority voted for the here-proposed `(p1; p2)` syntax, with `(p1 | p2)` being close behind (with 48-43 votes).
+So, a suitable alternative would be to use the syntax `(p1 | p2)`. On the positive side, the `|` seperator naturally resembles an *or*-operation, while on the negative side this syntax could be better used by a future "guards in patterns" proposal.
 
-One nice thing about using ``;`` for the separator is that it is also used
-for separating case alternatives, so it looks familiar. Example: ::
+Layout Rule
+~~~~~~~~~~~
 
-    case x of p1 -> e; p2 -> e
-    case x of (p1; p2) -> e
+It would be nice if or-patterns could make use of the layout rule introduced by `of` to allow writing alternatives of the or-patterns simply below each other, the `;` being inserted automatically:
 
-``||`` has the downside that it already is an operator, so we don't want to lower its precedence. This however means that this ::
+```
+f x = case x of
+  A
+  B
+  C -> 3
+  D
+  E -> 4
+  F -> 5
+```
 
-    f (a -> True || b -> True) = 2
+Note that, in this case, or-patterns would not require parentheses.
+For this to work however, a minor change to the `pattern_synonym_decl` production is required (as outlined [`here`](https://github.com/ghc-proposals/ghc-proposals/issues/598#issuecomment-1602600326)).
 
-parses as ::
+This change (or-patterns without mandatory parentheses and required changes to `pattern_synonym_decl`) will be proposed in a follow-up proposal - it is not part of this one.
 
-    f (a -> (True || b -> True)) = 2
-
-which is probably unexpected. Also, ``||`` could steal syntax in a similar fashion when defining it as a function ``(||) :: (a -> Bool) -> (a -> Bool) -> (a -> Bool)``.
-
-
-In the `parent proposal <https://github.com/ghc-proposals/ghc-proposals/pull/43>`__, ``|`` had previously been suggested for the separator. However, ``|`` is
-used for guards, so it's reserved for a future `proposal
-<https://ghc.haskell.org/trac/ghc/wiki/ViewPatternsAlternative>`_ that
-generalizes view patterns to allow guards inside patterns.
-
-Another suggestion is to use the syntax ``T1 or T2`` by making ``or`` a keyword inside Or patterns. This however leaves room for ambiguity: ``fun (T1 or T2) = 0`` could either denote an Or pattern or a simple pattern matching on the binary constructor ``T1``. If we enforce it to denote an Or pattern then this would be a breaking change.
 
 Binding pattern variables
 ~~~~~~~~~~~~~~~~~~
@@ -351,8 +336,8 @@ The `parent proposal <https://github.com/ghc-proposals/ghc-proposals/pull/43>`__
 
  data T = T1 Int | T2 Int | T3 | T4
 
- getInt (one of T1 a, T2 a) = Just a
- getInt (one of T3, T4) = Nothing
+ getInt (T1 a; T2 a) = Just a
+ getInt (T3; T4) = Nothing
 
 This is a non-goal of this proposal: with binding pattern variables come challenges like binding existential constraints. Correctly specifying the semantics is hard and caused the parent proposal to become dormant after no progress has been made.
 
@@ -365,7 +350,7 @@ We think the following semantics in terms of view patterns is equivalent.
 We could define the semantics of Or patterns as a simple desugaring to view
 patterns. The desugaring rule is: ::
 
-    (one of p1, …, pk)
+    (p1; ...; pk)
     =
     ((\x -> case x of p1 -> True; p2 -> True; …; pk -> True; _ -> False)
         -> True)
@@ -374,7 +359,7 @@ The desugaring rule defines both static and dynamic semantics of Or patterns:
 
 An Or pattern type checks whenever the desugared pattern type checks; the dynamic semantics of an Or pattern is the same as the dynamic semantics of its desugared pattern.
 
-But because of forward compatibility we decided not to define it in this way. 
+But because of forward compatibility we decided not to define it in this way.
 
 Using pattern synonyms
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -401,7 +386,8 @@ Not any at this time.
 
 Implementation Plan
 -------------------
-The implementation will be done by `@knothed <https://github.com/knothed>`__ and `@sgraf812 <https://github.com/sgraf812>`__.
+
+Or patterns have been fully implemented by `@knothed <https://github.com/knothed>`__ and `@sgraf812 <https://github.com/sgraf812>`__ [here](https://gitlab.haskell.org/ghc/ghc/-/merge_requests/9229).
 
 Endorsements
 -------------
