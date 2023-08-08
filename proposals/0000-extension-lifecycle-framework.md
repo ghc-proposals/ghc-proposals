@@ -19,7 +19,7 @@ However, once an extension clears the review process and gets implemented in the
 
 The weakness of this model is that, over time, the accumulation of programming extensions in various states of use and disuse can create confusion, especially for developers being introduced to Haskell. There is not one Haskell, but many, and each individual or team must necessarily choose their own. Not everyone has yet had the opportunity to accumulate the experience and knowledge that will allow them to quickly determine whether or not to use a given language extension, leading to various points of stress. 
 
-The authors of this proposal believe that a clear lifecycle for these programming language extensions would make it easier for newcomers, those responsible for onboarding new Haskell developers, and the community more broadly, to make sense of the Haskell language extensions. This framework would make it clear which extensions are experimental and prone to rapid evolution, which of them are mature and thus relatively stable and suitable for serious use, and those that are generally not considered suitable for new development. Extending GHC's warnings to account for these categories allows projects to find out when features they use have been deprecated in a new compiler version as well as to specify general policies about language stability that can be checked mechanically.
+The authors of this proposal believe that a clear lifecycle for these programming language extensions would make it easier for newcomers, those responsible for onboarding new Haskell developers, and the community more broadly, to make sense of the Haskell language extensions. This framework would make it clear which extensions are experimental and prone to rapid evolution, which of them are stable and suitable for serious use, and those that are generally not considered suitable for new development. Extending GHC's warnings to account for these categories allows projects to find out when features they use have been deprecated in a new compiler version as well as to specify general policies about language stability that can be checked mechanically.
 
 ## 2. Proposed Change Specification
 
@@ -27,7 +27,7 @@ The authors of this proposal believe that a clear lifecycle for these programmin
 Language extensions will be classified into the following categories
  * `Experimental` extensions are undergoing active development. The syntax and semantics that are enabled by the extension are likely to change regularly. It is expected that most new language extensions will begin as experimental. At the time of writing, `LinearTypes` and `OverloadedRecordUpdate` seem to be in this category.
  
- * `Mature` extensions are considered to be finished and are not expected to undergo regular changes. These features can be used without worry of unexpected changes, and they are not known to contain serious design or implementation deficiencies. Any breaking change to a mature extension will be announced well in advance of the change being made, with a migration path provided if possible. Some extensions in this category might be `MultiWayIf`, `MonoLocalBinds`, and `ViewPatterns`.
+ * `Stable` extensions are considered to be finished and are not expected to undergo regular changes. These features can be used without worry of unexpected changes, and they are not known to contain serious design or implementation deficiencies. Any breaking change to a stable extension will be announced well in advance of the change being made, with a migration path provided if possible. Some extensions in this category might be `MultiWayIf`, `MonoLocalBinds`, and `ViewPatterns`.
 
  * `Deprecated` extensions are considered to be design or implementation dead ends, and should probably not be used in new code. Deprecating an extension _must_ come with a statement about the longevity of the extension. This need not be a commitment to remove it at a concrete time, but is a commitment to either remove it or transition it to another state at a time stated by GHC HQ when it is marked as `Deprecated`. Any extension will be deprecated prior to removal. Deprecated extensions are expected to include `IncoherentInstances`, `OverlappingInstances`, `Rank2Types`, `RecordPuns`, and `TypeInType`.
  
@@ -36,14 +36,14 @@ Language extensions will be classified into the following categories
 Above we list expected categorizations of several extensions based on statements in the user's guide. We do not attempt to prescribe any particular categorizations as part of this proposal and simply provide a small number of expectations from the perspective of someone reading the existing documentation.
 
 The expected extension lifecycle includes the following transitions:
- * `Experimental` -> `Mature`
+ * `Experimental` -> `Stable`
  * `Experimental` -> `Deprecated`
- * `Mature` -> `Legacy`
- * `Mature` -> `Deprecated`
+ * `Stable` -> `Legacy`
+ * `Stable` -> `Deprecated`
  * `Legacy` -> `Deprecated`
  * `Deprecated` -> `Legacy`
 
-However, it also seems plausible that new knowledge might from time to time cause a mature extension to once again be considered experimental, e.g. in the face of soundness bugs or subtle interactions with other features. We also do not rule out any transition explicitly to allow for unforeseen circumstances. 
+However, it also seems plausible that new knowledge might from time to time cause a stable extension to once again be considered experimental, e.g. in the face of soundness bugs or subtle interactions with other features. We also do not rule out any transition explicitly to allow for unforeseen circumstances. 
 
 For existing, or future, language sets such as `GHC2021` or `Haskell98`, it is expected that none of the contained extensions would be `Experimental`. However, this proposal does not seek to impose any particular policy on the inclusion of extensions into language sets - the developers and the steering committee are always in the best position to make a decision about a concrete extension and extension set.
 
@@ -53,7 +53,7 @@ Haskell users have different tolerances for risks related to language change. So
 
 There will be an additional set of warnings:
  * `-WXDeprecated`: Issue a warning when a deprecated extension is used
- * `-WXMature`: Issue a warning when a mature extension is used
+ * `-WXStable`: Issue a warning when a stable extension is used
  * `-WXExperimental`: Issue a warning when an experimental extension is used 
  * `-WXLegacy`: Issue a warning when a legacy extension is used.
 
@@ -61,11 +61,11 @@ Each category will also support the usual`-Wno-` syntax, so `-Wno-XDeprecated` w
 
 Furthermore, `-WXDeprecated` and `-WXExperimental` would be added to `-Wcompat` for the next release to allow the community time to adjust, and then they will be on by default. This is because these two categories describe extensions that are likelier to lead to incompatibilities with future releases of GHC. `-WXLegacy` should be added to `-Wall`, so that only those who request extra feedback will get it.
 
-Note that this warning syntax rules out the names `Deprecated`, `Mature`, `Experimental`, and `Legacy` for future language extensions.
+Note that this warning syntax rules out the names `Deprecated`, `Stable`, `Experimental`, and `Legacy` for future language extensions.
 
 ### 2.3. Documentation
 
-The user's guide for each extension documents where it is in the extension lifecycle. We expect this to be next to the "Since" and "Implied by" fields in extension documentation. Additionally, the user's guide should provide a history of the extension's sojourn through the various states, and the GHC versions in which it went from being experimental to mature, or from mature to deprecated.
+The user's guide for each extension documents where it is in the extension lifecycle. We expect this to be next to the "Since" and "Implied by" fields in extension documentation. Additionally, the user's guide should provide a history of the extension's sojourn through the various states, and the GHC versions in which it went from being experimental to stable, or from stable to deprecated.
 
 ## 3. Examples
 
