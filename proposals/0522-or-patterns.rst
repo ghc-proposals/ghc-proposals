@@ -74,42 +74,74 @@ Proposed Change Specification
 Changes in the grammar
 ~~~~~~~~~~~~~~~~~~~~~~
 
-We consider this as an extension to `Haskell 2010 grammar
-<https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#x17-18000010.5>`_.
-This proposal adds one more production to the nonterminal ``apat``: ::
+We consider this as an extension to GHC's [Parser.y](https://gitlab.haskell.org/ghc/ghc/-/blob/master/compiler/GHC/Parser.y).
+This proposal adds one more production to the nonterminal ``aexp``: ::
 
-    apat -> ( orpats )
+    aexp -> ( orpats )
+
+It also adds one more production to the nonterminal ``pat``: ::
+
+    pat -> pat ';' orpats
 
 where ``orpats`` is a new nonterminal with the following productions: ::
 
-    orpats -> pat
-            | pat ';' orpats
+    orpats -> exp
+            | exp ';' orpats
+
+In addition, the nonterminal ``pattern_synonym_decl`` currently has three productions: ::
+
+    pattern_synonym_decl -> 'pattern' pattern_synonym_lhs '=' pat
+    pattern_synonym_decl -> 'pattern' pattern_synonym_lhs '<-' pat
+    pattern_synonym_decl -> 'pattern' pattern_synonym_lhs '<-' pat where_decls
+
+We propose to change the ``pat`` nonterminal in all of these productions to the ``infixexp`` nonterminal.
 
 
-N.B.: In the concrete GHC Parser, we use the nonterminals `aexp` and `exp` instead of `apat` and `pat` because of the ECP parsing.
+N.B.: The mixture of `exp` and `pat` nonterminals is due to the ECP parsing.
 
 
-Some examples that this new grammar produces: ::
+**Some examples that this new grammar produces:**
+
+Or-patterns with parentheses: ::
 
   case e of (T1; T2{}; T3 a b) -> ...
 
   f :: (Int, Int) -> Int
   f (5, (6;7)) = 2
 
-  -- in expression context
-  let ([x]; (x : y : z)) = e1 in e2
+Unparenthesized or-patterns:
 
-  -- pattern guards in declarations
-  f x y
-    | x@(T1 _; T2 a b) <- e1
-    , guard x
-    = e2
+  case e of
+    1; 2; 3 -> x
+    4; (5; 6) -> y
 
-  -- nested Or patterns
-  case e1 of
-    ((T1; T2); T3; T4) -> e2
+Unparenthesized or-patterns using layout:
 
-NB: The new grammar allows Or patterns which bind variables. These will however be rejected in `2.2`_.
+  case e of
+    1
+    2
+    3 -> a
+    4
+    5;6 -> b
+    7;8 -> c
+
+  f x = case x of
+    A _ _; B _
+    C -> 3
+    (D; E (Just _) Nothing)
+     -> 4
+    F -> 5
+
+N.B.: Unparenthesized or-patterns only work in some places where patterns are expected. For example, in ::
+
+  g x = do
+    A; B <- x
+    return 1
+
+the ``A; B <- x`` is interpreted as two statements. Parentheses would have to be used around ``A; B`` to make it denote an or-pattern.
+
+
+N.B.: The new grammar allows or-patterns which bind variables. These will however be rejected in `2.2`_.
 
 .. _2.2:
 
@@ -291,12 +323,24 @@ Considering view patterns, these do work seamlessly with Or patterns. As specifi
  f a (((== a) -> True); (show -> "yes")) = True
  f _ _ = False
 
+.. 4.2:
 Costs and Drawbacks
 -------------------
 The cost is a small implementation overhead. Also, as Or patterns are syntactic sugar, they add to the amount of syntax Haskell beginners have to learn.
 We believe however that the mentioned advantages more than compensate for these disadvantages.
 Or patterns are available in all of the top seven programming languages on the TIOBE index (Python, Java, Javascript, C#, C, etc.), which suspects that the concept won't be particularly troublesome for beginners to learn.
 
+Additionally, the changes to the ``pattern_synonym_decl`` nonterminal are required to allow unparenthesized or-patterns in the syntax. This breaks pattern synonym declarations using a type annotation such as: ::
+
+  pattern X <- 42 :: Int
+
+One would now have to parenthesize the right side of the pattern synonym and write ::
+
+  pattern X <- (42 :: Int)
+
+A search on Hackage shows that this syntax is currently only used in very few places.
+
+The syntax change also makes 3 tests in the `patsyn` testsuite fail, out of 250 total `patsyn` tests. The fix is always to enclose the right side in parentheses.
 
 Alternatives
 ------------
@@ -304,28 +348,44 @@ Alternatives
 There have been proposed a **lot** of alternatives in regard to the exact syntax of or-patterns (see the discussion [here](https://github.com/ghc-proposals/ghc-proposals/pull/585)).
 
 After performing two community votes ([Vote 1](https://github.com/ghc-proposals/ghc-proposals/issues/587), [Vote 2](https://github.com/ghc-proposals/ghc-proposals/issues/598)), the relative majority voted for the here-proposed `(p1; p2)` syntax, with `(p1 | p2)` being close behind (with 48-43 votes).
-So, a suitable alternative would be to use the syntax `(p1 | p2)`. On the positive side, the `|` seperator naturally resembles an *or*-operation, while on the negative side this syntax could be better used by a future "guards in patterns" proposal.
+So, a suitable alternative would be to use the syntax `(p1 | p2)`.
 
-Layout Rule
-~~~~~~~~~~~
+While we like both options `(p1 ; p2)` and `(p1 | p2)`, as both convey the alternative nature of the *or*-pattern pretty well, we tend towards the semicolon.
 
-It would be nice if or-patterns could make use of the layout rule introduced by `of` to allow writing alternatives of the or-patterns simply below each other, the `;` being inserted automatically:
+While `|` is a pretty natural choice regarding an *or* operation, the semicolon does a better job in showing the asymmetry of the pattern as later alternatives are only evaluated when earlier ones fail to match.
 
-```
-f x = case x of
-  A
-  B
-  C -> 3
-  D
-  E -> 4
-  F -> 5
-```
+Also, the `(p1 | p2)` syntax could be better used by a future "guards in patterns" proposal.
 
-Note that, in this case, or-patterns would not require parentheses.
-For this to work however, a minor change to the `pattern_synonym_decl` production is required (as outlined [`here`](https://github.com/ghc-proposals/ghc-proposals/issues/598#issuecomment-1602600326)).
+Another great advantage of `;` over `|` is the use of the layout rule: in a layout context introduced by `of`, semicolons are automatically inserted into equally-indented lines. This makes it possible to write ::
 
-This change (or-patterns without mandatory parentheses and required changes to `pattern_synonym_decl`) will be proposed in a follow-up proposal - it is not part of this one.
+  f x = case x of
+    1
+    2
+    3 -> x
 
+where the or-pattern is implicitly parsed as `1; 2; 3`.
+This resembles the `switch/case`-syntax known from languages like C and Java.
+
+No unparenthesized or-patterns
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+As described in `4.2`_, the changes to the `pattern_synonym_decl` nonterminal are breaking changes in some rare cases.
+We could avoid introducing these breaking changes by requiring or-patterns to be parenthesised. This means, the proposal would not include the following production ::
+
+      pat -> pat ';' orpats
+
+and would not include the changes to the `pattern_synonym_decl` nonterminal.
+
+Beware that it would still be possible to use the layout rule even with parenthesized or-patterns as follows: ::
+
+    case a of
+      (A
+      B
+      C) -> 1
+
+This is an artifact of the layout rule and is not intended to be used. It could even be made into a syntax error.
+
+When disallowing the unparenthesized syntax `p1; p2`, we do not see much advantage of the `;` separator over the `|` separator, except that the unparenthesized syntax could be added some time in the future.
 
 Binding pattern variables
 ~~~~~~~~~~~~~~~~~~
