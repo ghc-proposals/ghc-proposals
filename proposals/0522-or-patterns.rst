@@ -74,31 +74,37 @@ Proposed Change Specification
 Changes in the grammar
 ~~~~~~~~~~~~~~~~~~~~~~
 
-We consider this as an extension to GHC's [Parser.y](https://gitlab.haskell.org/ghc/ghc/-/blob/master/compiler/GHC/Parser.y).
-This proposal adds one more production to the nonterminal ``aexp``: ::
+We consider this as an extension to GHC's .
+We consider this as an extension to `Haskell 2010 grammar
+<https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#x17-18000010.5>`_.
+This proposal adds one more production to the nonterminal ``pat``: ::
 
-    aexp -> ( orpats )
+    pat -> pat_1; ...; pat_n (n >= 2)
 
-It also adds one more production to the nonterminal ``pat``: ::
+Regarding pattern synonym declarations, we propose to use ``infixpat`` instead of ``pat`` on the right side of the pattern synonym.
 
-    pat -> pat ';' orpats
+Concretely, as Haskell 2010 grammar does not cover pattern synonyms, in GHC's `Parser.y <https://gitlab.haskell.org/ghc/ghc/-/blob/master/compiler/GHC/Parser.y>`_, the ``pattern_synonym_decl`` nonterminal would then have the following productions: ::
 
-where ``orpats`` is a new nonterminal with the following productions: ::
+    pattern_synonym_decl -> 'pattern' pattern_synonym_lhs '=' infixpat
+                          | 'pattern' pattern_synonym_lhs '<-' infixpat
+                          | 'pattern' pattern_synonym_lhs '<-' infixpat where_decls
 
-    orpats -> exp
-            | exp ';' orpats
-
-In addition, the nonterminal ``pattern_synonym_decl`` currently has three productions: ::
-
-    pattern_synonym_decl -> 'pattern' pattern_synonym_lhs '=' pat
-                          | 'pattern' pattern_synonym_lhs '<-' pat
-                          | 'pattern' pattern_synonym_lhs '<-' pat where_decls
-
-We propose to change the ``pat`` nonterminal in all of these productions to the ``infixexp`` nonterminal.
+where ``infixpat`` is a nonterminal only delegating to ``infixexp``.
 
 
-N.B.: The mixture of `exp` and `pat` nonterminals is due to the ECP parsing.
+N.B.: For the concrete implementation in `Parser.y <https://gitlab.haskell.org/ghc/ghc/-/blob/master/compiler/GHC/Parser.y>`_, we would need to amend both the ``aexp`` and the ``pat`` nonterminals.
+This is an effect of the ECP parsing. In particular, ::
 
+  aexp -> ( orpats )
+
+and ::
+
+  pat -> pat ';' orpats
+
+where ``orpats`` is a new nonterminal: ::
+
+   orpats -> exp
+           | exp ';' orpats
 
 **Some examples that this new grammar produces:**
 
@@ -117,7 +123,7 @@ Unparenthesized Or patterns: ::
 
 Unparenthesized Or patterns using layout: ::
 
-  case e of
+  sane e = case e of
     1
     2
     3 -> a
@@ -125,7 +131,7 @@ Unparenthesized Or patterns using layout: ::
     5;6 -> b
     7;8 -> c
 
-  f x = case x of
+  insane e = case e of
     A _ _; B _
     C -> 3
     (D; E (Just _) Nothing)
@@ -162,7 +168,7 @@ Then the typing rule for Or patterns is:
 
       Γ0, Σ0 ⊢ pat_i : τ ⤳ Γ0,Σi,Ψi
     ---------------------------------
-    Γ0, Σ0 ⊢ ( pat_i ) : τ ⤳ Γ0,Σ0,∅
+    Γ0, Σ0 ⊢ ( pat_1; ...; pat_n ) : τ ⤳ Γ0,Σ0,∅
 
 
 
@@ -331,7 +337,7 @@ The cost is a small implementation overhead. Also, as Or patterns are syntactic 
 We believe however that the mentioned advantages more than compensate for these disadvantages.
 Or patterns are available in all of the top seven programming languages on the TIOBE index (Python, Java, Javascript, C#, C, etc.), which suspects that the concept won't be particularly troublesome for beginners to learn.
 
-Additionally, the changes to the ``pattern_synonym_decl`` nonterminal are required to allow unparenthesized Or patterns in the syntax. This breaks pattern synonym declarations using a type annotation such as: ::
+Additionally, the changes to the ``pattern_synonym_decl`` nonterminal are required to allow unparenthesized Or patterns in the syntax. This breaks pattern synonym declarations using a pattern signature such as: ::
 
   pattern X <- 42 :: Int
 
@@ -339,7 +345,7 @@ One would now have to parenthesize the right side of the pattern synonym and wri
 
   pattern X <- (42 :: Int)
 
-A search on Hackage shows that this syntax is currently only used in very few places.
+A search on Hackage shows that this syntax is currently only used (without enclosing parentheses) in `haskell-src-exts-simple <https://hackage-search.serokell.io/?q=%5Epattern.*%3C-.*%3A%3A%5B%5E%5C%29%5D*%24>`_.
 
 The syntax change also makes 3 tests in the `patsyn` testsuite fail, out of 250 total `patsyn` tests. The fix is always to enclose the right side in parentheses.
 
@@ -350,8 +356,6 @@ There have been proposed a **lot** of alternatives in regard to the exact syntax
 
 After performing two community votes (https://github.com/ghc-proposals/ghc-proposals/issues/587 and https://github.com/ghc-proposals/ghc-proposals/issues/598), the relative majority voted for the here-proposed ``(p1; p2)`` syntax, with ``(p1 | p2)`` being close behind (with 48-43 votes).
 So, a suitable alternative would be to use the syntax ``(p1 | p2)``.
-
-While we like both options ``(p1 ; p2)`` and ``(p1 | p2)``, as both convey the alternative nature of the *or*-pattern pretty well, we tend towards the semicolon.
 
 While ``|`` is a pretty natural choice regarding an *or* operation, the semicolon does a better job in showing the asymmetry of the pattern as later alternatives are only evaluated when earlier ones fail to match.
 
@@ -371,7 +375,7 @@ No unparenthesized Or patterns
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 As described in `5`_, the changes to the ``pattern_synonym_decl`` nonterminal are breaking changes in some rare cases.
-We could avoid introducing these breaking changes by requiring Or patterns to be parenthesised. This means, the proposal would not include the following production ::
+We could avoid introducing these breaking changes by requiring Or patterns to be parenthesised. This means, the concrete changes to Parser.y would not include the following production ::
 
       pat -> pat ';' orpats
 
@@ -384,7 +388,7 @@ Beware that it would still be possible to use the layout rule even with parenthe
       B
       C) -> 1
 
-This is an artifact of the layout rule and is not intended to be used. It could even be made into a syntax error.
+This is an artifact of the layout rule and is not intended to be used.
 
 When disallowing the unparenthesized syntax ``p1; p2``, we do not see much advantage of the ``;`` separator over the ``|`` separator, except that the unparenthesized syntax could be added some time in the future.
 
