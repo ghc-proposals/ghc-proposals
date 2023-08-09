@@ -91,8 +91,8 @@ where ``orpats`` is a new nonterminal with the following productions: ::
 In addition, the nonterminal ``pattern_synonym_decl`` currently has three productions: ::
 
     pattern_synonym_decl -> 'pattern' pattern_synonym_lhs '=' pat
-    pattern_synonym_decl -> 'pattern' pattern_synonym_lhs '<-' pat
-    pattern_synonym_decl -> 'pattern' pattern_synonym_lhs '<-' pat where_decls
+                          | 'pattern' pattern_synonym_lhs '<-' pat
+                          | 'pattern' pattern_synonym_lhs '<-' pat where_decls
 
 We propose to change the ``pat`` nonterminal in all of these productions to the ``infixexp`` nonterminal.
 
@@ -102,20 +102,20 @@ N.B.: The mixture of `exp` and `pat` nonterminals is due to the ECP parsing.
 
 **Some examples that this new grammar produces:**
 
-Or-patterns with parentheses: ::
+Or patterns with parentheses: ::
 
   case e of (T1; T2{}; T3 a b) -> ...
 
   f :: (Int, Int) -> Int
   f (5, (6;7)) = 2
 
-Unparenthesized or-patterns:
+Unparenthesized Or patterns: ::
 
   case e of
     1; 2; 3 -> x
     4; (5; 6) -> y
 
-Unparenthesized or-patterns using layout:
+Unparenthesized Or patterns using layout: ::
 
   case e of
     1
@@ -132,16 +132,16 @@ Unparenthesized or-patterns using layout:
      -> 4
     F -> 5
 
-N.B.: Unparenthesized or-patterns only work in some places where patterns are expected. For example, in ::
+N.B.: Unparenthesized Or patterns only work in some places where patterns are expected. For example, in ::
 
   g x = do
     A; B <- x
     return 1
 
-the ``A; B <- x`` is interpreted as two statements. Parentheses would have to be used around ``A; B`` to make it denote an or-pattern.
+the ``A; B <- x`` is interpreted as two statements. Parentheses would have to be used around ``A; B`` to make it denote an Or pattern.
 
 
-N.B.: The new grammar allows or-patterns which bind variables. These will however be rejected in `2.2`_.
+N.B.: The new grammar allows Or patterns which bind variables. These will however be rejected in `2.2`_.
 
 .. _2.2:
 
@@ -317,20 +317,21 @@ So the following example would not type check because the Or pattern doesn't pro
  foo x (IsInt1 {}; IsInt2 {}) = x + 1
 
 
-Considering view patterns, these do work seamlessly with Or patterns. As specified in `2.2`_, Or patterns will just merge the required constraints which come from view patterns. This would work: ::
+Considering view patterns, these do work seamlessly with Or patterns. As specified in `5`_, Or patterns will just merge the required constraints which come from view patterns. This would work: ::
 
  f :: (Eq a, Show a) => a -> a -> Bool
  f a (((== a) -> True); (show -> "yes")) = True
  f _ _ = False
 
-.. 4.2:
+.. _5:
+
 Costs and Drawbacks
 -------------------
 The cost is a small implementation overhead. Also, as Or patterns are syntactic sugar, they add to the amount of syntax Haskell beginners have to learn.
 We believe however that the mentioned advantages more than compensate for these disadvantages.
 Or patterns are available in all of the top seven programming languages on the TIOBE index (Python, Java, Javascript, C#, C, etc.), which suspects that the concept won't be particularly troublesome for beginners to learn.
 
-Additionally, the changes to the ``pattern_synonym_decl`` nonterminal are required to allow unparenthesized or-patterns in the syntax. This breaks pattern synonym declarations using a type annotation such as: ::
+Additionally, the changes to the ``pattern_synonym_decl`` nonterminal are required to allow unparenthesized Or patterns in the syntax. This breaks pattern synonym declarations using a type annotation such as: ::
 
   pattern X <- 42 :: Int
 
@@ -345,38 +346,38 @@ The syntax change also makes 3 tests in the `patsyn` testsuite fail, out of 250 
 Alternatives
 ------------
 
-There have been proposed a **lot** of alternatives in regard to the exact syntax of or-patterns (see the discussion [here](https://github.com/ghc-proposals/ghc-proposals/pull/585)).
+There have been proposed a **lot** of alternatives in regard to the exact syntax of Or patterns (see the discussion at https://github.com/ghc-proposals/ghc-proposals/pull/585).
 
-After performing two community votes ([Vote 1](https://github.com/ghc-proposals/ghc-proposals/issues/587), [Vote 2](https://github.com/ghc-proposals/ghc-proposals/issues/598)), the relative majority voted for the here-proposed `(p1; p2)` syntax, with `(p1 | p2)` being close behind (with 48-43 votes).
-So, a suitable alternative would be to use the syntax `(p1 | p2)`.
+After performing two community votes (https://github.com/ghc-proposals/ghc-proposals/issues/587 and https://github.com/ghc-proposals/ghc-proposals/issues/598), the relative majority voted for the here-proposed ``(p1; p2)`` syntax, with ``(p1 | p2)`` being close behind (with 48-43 votes).
+So, a suitable alternative would be to use the syntax ``(p1 | p2)``.
 
-While we like both options `(p1 ; p2)` and `(p1 | p2)`, as both convey the alternative nature of the *or*-pattern pretty well, we tend towards the semicolon.
+While we like both options ``(p1 ; p2)`` and ``(p1 | p2)``, as both convey the alternative nature of the *or*-pattern pretty well, we tend towards the semicolon.
 
-While `|` is a pretty natural choice regarding an *or* operation, the semicolon does a better job in showing the asymmetry of the pattern as later alternatives are only evaluated when earlier ones fail to match.
+While ``|`` is a pretty natural choice regarding an *or* operation, the semicolon does a better job in showing the asymmetry of the pattern as later alternatives are only evaluated when earlier ones fail to match.
 
-Also, the `(p1 | p2)` syntax could be better used by a future "guards in patterns" proposal.
+Also, the ``(p1 | p2)`` syntax could be better used by a future "guards in patterns" proposal.
 
-Another great advantage of `;` over `|` is the use of the layout rule: in a layout context introduced by `of`, semicolons are automatically inserted into equally-indented lines. This makes it possible to write ::
+Another great advantage of ``;`` over ``|`` is the use of the layout rule: in a layout context introduced by ``of``, semicolons are automatically inserted into equally-indented lines. This makes it possible to write ::
 
   f x = case x of
     1
     2
     3 -> x
 
-where the or-pattern is implicitly parsed as `1; 2; 3`.
-This resembles the `switch/case`-syntax known from languages like C and Java.
+where the Or pattern is implicitly parsed as ``1; 2; 3``.
+This resembles the ``switch/case``-syntax known from languages like C and Java.
 
-No unparenthesized or-patterns
+No unparenthesized Or patterns
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-As described in `4.2`_, the changes to the `pattern_synonym_decl` nonterminal are breaking changes in some rare cases.
-We could avoid introducing these breaking changes by requiring or-patterns to be parenthesised. This means, the proposal would not include the following production ::
+As described in `5`_, the changes to the ``pattern_synonym_decl`` nonterminal are breaking changes in some rare cases.
+We could avoid introducing these breaking changes by requiring Or patterns to be parenthesised. This means, the proposal would not include the following production ::
 
       pat -> pat ';' orpats
 
-and would not include the changes to the `pattern_synonym_decl` nonterminal.
+and would not include the changes to the ``pattern_synonym_decl`` nonterminal.
 
-Beware that it would still be possible to use the layout rule even with parenthesized or-patterns as follows: ::
+Beware that it would still be possible to use the layout rule even with parenthesized Or patterns as follows: ::
 
     case a of
       (A
@@ -385,7 +386,7 @@ Beware that it would still be possible to use the layout rule even with parenthe
 
 This is an artifact of the layout rule and is not intended to be used. It could even be made into a syntax error.
 
-When disallowing the unparenthesized syntax `p1; p2`, we do not see much advantage of the `;` separator over the `|` separator, except that the unparenthesized syntax could be added some time in the future.
+When disallowing the unparenthesized syntax ``p1; p2``, we do not see much advantage of the ``;`` separator over the ``|`` separator, except that the unparenthesized syntax could be added some time in the future.
 
 Binding pattern variables
 ~~~~~~~~~~~~~~~~~~
