@@ -801,10 +801,13 @@ constraint solver being invoked.
 
 On the other hand, it would be possible in principle to solve constraints such
 as ``HasField "identity" Rank1 (a -> a)`` for arbitrary ``a``, making it appear
-as if the field has an infinite family of types.  However, this does not extend
+as if the field has an infinite family of types.  However, this would not extend
 to ``SetField``, because there we really need the value being set to be
-polymorphic.  Moreover, it violates the functional dependency ``x r -> a`` on
-the ``HasField`` class.
+polymorphic.  Moreover, it would violate the functional dependency ``x r -> a``
+on the ``HasField`` class, leading to a violation of confluence: given wanteds
+``HasField "identity" r (α -> α)`` and ``HasField "identity" r (β -> β)``,
+applying the fundep forces ``α ~ β``; whereas if we were first to learn ``r ~
+Rank1`` then we could solve both constraints without requiring ``α ~ β``.
 
 Accordingly, we propose that ``HasField`` or ``SetField`` constraints
 involving fields with higher-rank types should not be solved automatically.
