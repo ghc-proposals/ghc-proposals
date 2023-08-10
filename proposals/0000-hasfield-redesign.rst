@@ -848,8 +848,8 @@ corresponding feature for ``SetField``.  This relies on the fact that
 appropriate warning for selection and update.
 
 
-Updates to partial fields
-^^^^^^^^^^^^^^^^^^^^^^^^^
+Updates could ignore partial fields
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In principle, it is not necessary for ``setField`` or ``modifyField`` to emit a
 runtime error if used with a field that is not present in the datatype; they
 could silently return the value unchanged instead.  This behaviour may be more
@@ -861,6 +861,20 @@ datatype definition.  Somewhat related is `proposal #535
 <https://github.com/ghc-proposals/ghc-proposals/pull/535>`_, which suggests an
 extension ``MaybeFieldSelectors`` to control whether partial fields can lead to
 runtime exceptions.
+
+
+Refrain from solving partial fields?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Another option would be for GHC to refrain from solving ``HasField`` or
+``SetField`` constraints automatically where the fields involved are partial.
+This would allow users to define virtual fields with the behaviour they want,
+without conflicting with the automatic solutions.  See `this comment from
+@pnotequalnp <https://github.com/ghc-proposals/ghc-proposals/pull/583#issuecomment-1489278894>`_
+for more motivation for this idea.
+
+However, this would make ``getField`` and ``setField`` less consistent with
+traditional record selectors and record updates.  Moreover it would lead to
+backwards incompatibility for ``HasField``.
 
 
 Affine traversals
