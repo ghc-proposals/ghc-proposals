@@ -278,6 +278,13 @@ automatically. Specifically, this occurs when ``r`` is a concrete record type,
 ``x`` is a ``Symbol`` naming one of the fields of the record, the field is in
 scope and is not existentially quantified or higher-rank.
 
+When a constraint is solved automatically, GHC will generate a dictionary with
+an implementation of ``modifyField``, as if an instance for ``SetField``
+existed. It will not actually generate instances of ``SetField``, however,
+because instances have global scope whereas ``SetField`` constraints are solved
+automatically only if the field is in scope.  (This is identical to the
+behaviour for ``HasField``.)
+
 If ``R x y`` is a record type with a field ``f :: T x`` belonging to
 constructors ``MkR1`` and ``MkR2`` but not ``MkR3``, the generated dictionary
 for ``SetField "f" (R x) a`` will be equivalent to: ::
@@ -357,8 +364,9 @@ which point the representation of the argument is necessarily fixed).  See
 Examples
 --------
 
-For each example datatype, we give the automatically-generated instances that
-GHC makes available when the first field is in scope.
+For the first field of each example datatype, we describe the behaviour of the
+constraint solver by giving the corresponding instances (though GHC does not
+actually generate these instances).
 
 
 Simple record
