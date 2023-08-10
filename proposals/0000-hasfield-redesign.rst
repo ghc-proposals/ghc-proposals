@@ -464,6 +464,47 @@ Splitting ``HasField`` into separate ``HasField`` and ``SetField`` classes means
 it is possible to define get-only or set-only virtual fields (although set-only
 fields must still have the ability to define ``modifyField``).
 
+Unlike the automatic constraint solving, which takes account of whether the
+field name is in scope, normal ``instance`` declarations are globally scoped and
+cannot be hidden at module boundaries.  This means that once a virtual field is
+defined, its existence cannot be hidden from client code, which may be
+undesirable as it may expose internal implementation details.
+
+Virtual fields are sometimes useful for backwards compatibility after a field
+has been refactored, since pattern synonym fields do not lead to automatic
+constraint solving for ``HasField``.
+
+It is sometimes useful to define virtual ``HasField`` instances that are
+polymorphic in the field name, to give a specific datatype a convenient syntax
+using ``OverloadedRecordDot``. For example, this is used by
+`esqueleto <https://hackage.haskell.org/package/esqueleto-3.5.10.0/docs/src/Database.Esqueleto.Internal.Internal.html#line-2276>`_.
+
+Various more general virtual field ``HasField`` instances have been proposed,
+some of which (to be non-orphan) would need to live in ``GHC.Records``, such as:
+
+* `Instances for tuples with numeric field names
+  <https://github.com/haskell/core-libraries-committee/issues/143>`_
+  (currently available in the
+  `tuple-fields package <https://hackage.haskell.org/package/tuple-fields>`_).
+
+* An `instance for Maybe <https://github.com/haskell/core-libraries-committee/issues/191>`_
+  or `for a general Functor <https://github.com/ghc-proposals/ghc-proposals/issues/600>`_.
+
+* `Unit datatypes with virtual fields based on MonadReader or MonadWriter
+  <https://github.com/ghc-proposals/ghc-proposals/pull/583#issuecomment-1646789620>`_.
+
+While these are undoubtedly convenient in some cases, some of them may lead to
+code that cannot be easily understood in terms of field selection and update,
+and (having been designed for ``RecordDotSyntax``) they may or may not interact
+well with uses of ``HasField``/``SetField`` in optics libraries. Thus we do not
+propose to add such instances to ``GHC.Records`` for now, pending further
+experimentation.  In some cases it may be more appropriate to define new
+operators, rather than overloading ``.`` with yet more potential
+interpretations.  The intent of ``HasField``/``SetField`` is to allow type
+information to help resolve otherwise ambiguous field names from Haskell
+records, not to be a general abstraction over all possible notions of record or
+uses of dot syntax.
+
 
 Costs and Drawbacks
 -------------------
