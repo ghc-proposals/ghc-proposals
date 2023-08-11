@@ -27,9 +27,9 @@ The authors of this proposal believe that a clear lifecycle for these programmin
 Language extensions will be classified into the following categories
  * `Experimental` extensions are undergoing active development. The syntax and semantics that are enabled by the extension are likely to change regularly. It is expected that most new language extensions will begin as experimental. At the time of writing, `LinearTypes` and `OverloadedRecordUpdate` seem to be in this category.
  
- * `Stable` extensions are considered to be finished and are not expected to undergo regular changes. These features can be used without worry of unexpected changes, and they are not known to contain serious design or implementation deficiencies. Any breaking change to a stable extension will be announced well in advance of the change being made, with a migration path provided if possible. Some extensions in this category might be `MultiWayIf`, `MonoLocalBinds`, and `ViewPatterns`.
+ * `Stable` extensions are considered to be finished and are not expected to undergo regular changes. These features can be used without worry of unexpected changes, and they are not known to contain serious design or implementation deficiencies. Any breaking change to a stable extension will be announced well in advance of the change being made, with a migration path provided if possible. Ideally, no breaking change will be made to a `Stable` extension, with incompatible changes resulting instead in a new, related extension to enable smooth migration. Some extensions in this category might be `MultiWayIf`, `MonoLocalBinds`, and `ViewPatterns`.
 
- * `Deprecated` extensions are considered to be design or implementation dead ends, and should probably not be used in new code. Deprecating an extension _must_ come with a statement about the longevity of the extension. This need not be a commitment to remove it at a concrete time, but is a commitment to either remove it or transition it to another state at a time stated by GHC HQ when it is marked as `Deprecated`. Any extension will be deprecated prior to removal. Deprecated extensions are expected to include `IncoherentInstances`, `OverlappingInstances`, `Rank2Types`, `RecordPuns`, and `TypeInType`.
+ * `Deprecated` extensions are considered to be design or implementation dead ends, and should not be used in new code. Deprecating an extension means that GHC intends to remove support for it in a future release (though this decision may be revised in the light of user feedback). When an extension is deprecated, the user's guide _must_ include a statement about the longevity of the extension, though this need not necessarily commit to a concrete time for removal. Any extension will be deprecated prior to removal. Deprecated extensions are expected to include `IncoherentInstances`, `OverlappingInstances`, `Rank2Types`, `RecordPuns`, and `TypeInType`.
  
  * `Legacy` extensions are explicitly not recommended for new code, much like `Deprecated`, however, they are expected to be supported indefinitely. This may be to maintain an older language set, maintain a bridge to a newer feature, or otherwise keep backward compatibility. Expected legacy extensions include `CUSKs`, `DeepSubsumption`,  and `NPlusKPatterns`.
 
@@ -38,30 +38,85 @@ Above we list expected categorizations of several extensions based on statements
 The expected extension lifecycle includes the following transitions:
  * `Experimental` -> `Stable`
  * `Experimental` -> `Deprecated`
+ * `Experimental` -> `Legacy`
  * `Stable` -> `Legacy`
- * `Stable` -> `Deprecated`
  * `Legacy` -> `Deprecated`
- * `Deprecated` -> `Legacy`
 
 However, it also seems plausible that new knowledge might from time to time cause a stable extension to once again be considered experimental, e.g. in the face of soundness bugs or subtle interactions with other features. We also do not rule out any transition explicitly to allow for unforeseen circumstances. 
 
 For existing, or future, language sets such as `GHC2021` or `Haskell98`, it is expected that none of the contained extensions would be `Experimental`. However, this proposal does not seek to impose any particular policy on the inclusion of extensions into language sets - the developers and the steering committee are always in the best position to make a decision about a concrete extension and extension set.
 
+Moving an extension through the lifecycle will require a GHC proposal. This will give users a chance to provide their input, it will help catch unexpected interactions (such as a `Stable` extension implying an `Experimental` one, and thus triggering warnings by default), and it provides a way for language implementers and users to clarify their mutual expectations.
+
 ### 2.2. User Interface
 
-Haskell users have different tolerances for risks related to language change. Some derive great value from using the newest features, while others are conservative. GHC should serve the whole spectrum.
+Haskell users have different tolerances for risks related to language change. Some derive great value from using the newest features, while others are conservative. GHC should serve the whole spectrum. Similarly, users typically do not revisit the documentation for a language feature unless the compiler's behavior surprises them, so users should be able to specify their extension use policies and then receive feedback from the compiler when their code violates said policies, whether this violation is due to changes in the code or changes in the compiler.
 
 There will be an additional set of warnings:
- * `-WXDeprecated`: Issue a warning when a deprecated extension is used
- * `-WXStable`: Issue a warning when a stable extension is used
- * `-WXExperimental`: Issue a warning when an experimental extension is used 
- * `-WXLegacy`: Issue a warning when a legacy extension is used.
+ * `-WXDeprecated`: Issue a warning when a deprecated extension is enabled
+ * `-WXStable`: Issue a warning when a stable extension is enabled
+ * `-WXExperimental`: Issue a warning when an experimental extension is enabled 
+ * `-WXLegacy`: Issue a warning when a legacy extension is enabled.
 
 Each category will also support the usual`-Wno-` syntax, so `-Wno-XDeprecated` will turn off warnings for deprecated extensions. Additionally, each extension should have a configurable warning that can be individually enabled or disabled, allowing users and teams to inform GHC about their local policies and needs. For instance, `-WXDeprecated -Wno-XRank2Types` would warn about all deprecated extensions except `Rank2Types`.
 
 Furthermore, `-WXDeprecated` and `-WXExperimental` would be added to `-Wcompat` for the next release to allow the community time to adjust, and then they will be on by default. This is because these two categories describe extensions that are likelier to lead to incompatibilities with future releases of GHC. `-WXLegacy` should be added to `-Wall`, so that only those who request extra feedback will get it.
 
 Note that this warning syntax rules out the names `Deprecated`, `Stable`, `Experimental`, and `Legacy` for future language extensions.
+
+#### 2.2.1. Warnings are for Enabled Extensions
+
+Extension warnings will be issued when an extension is enabled, not when the language features that it supports are used in a program. The following program should issue a warning, even though no multi-way conditionals occur in it:
+```
+{-# OPTIONS_GHC -WXMultiWayIf #-}
+{-# LANGUAGE MultiWayIf #-}
+module Main where
+
+main :: IO ()
+main = pure ()
+```
+
+There are two main reasons to do this, rather than wait for the associated code path in the compiler to be invoked:
+
+ 1. Users don't need to think about when one extension implies features from another. The mental model for warnings is simple and straightforward, and it's easier to see the connection between a change in the code and a new warning in CI.
+ 
+ 2. The implementation is likely to be simpler, because the extension lifecycle warnings can presumably be issued without needing to scatter them throughout the parser and type checker.
+
+Warnings should be issued for extensions no matter how they are enabled. For instance, the following program should also issue a warning:
+```
+{-# OPTIONS_GHC -WXBangPatterns #-}
+module Main where
+```
+This is because GHC defaults to `GHC2021`, which enables the `BangPatterns` extension. The extension lifecycle warnings issued for language extension sets such as `GHC2021` and `Haskell98` should be equivalent to the union of the warnings issued for the included extensions.
+
+#### 2.2.2. Warnings and Extensions Commute
+
+Warning flags should commute with extensions, whether at the command line or in pragmas. The user interface should be as if the complete warning configuration is computed, followed by the set of enabled extensions, after which the set of displayed warnings is determined.
+
+In other words, both of the following programs should be equivalent with respect to warnings:
+```
+{-# LANGUAGE MultiWayIf #-}
+{-# OPTIONS_GHC -WXMultiWayIf #-}
+module Main where
+...
+```
+
+```
+{-# OPTIONS_GHC -WXMultiWayIf #-}
+{-# LANGUAGE MultiWayIf #-}
+module Main where
+...
+```
+
+In particular, both should emit a warning.
+
+#### 2.2.3. Comments 
+
+The user interface should allow the GHC developers to easily add comments about an extension's lifecycle status that are then conveyed to the user with the warning. For instance, if `OverlappingInstances` is `Deprecated`, the compiler should be able to direct the user to the `{-# OVERLAPPING #-}` and `{-# OVERLAPPABLE #-}` pragmas, and if `Rank2Types` ends up being a legacy synonym for `RankNTypes`, the compiler should inform users of this fact in its warning about the extension's `Legacy` status. The ability to add these comments about extension lifecycles does not impose an obligation to do so - it should be done when the developers deem it helpful to users.
+
+#### 2.2.4. Identifying Flags
+
+When possible, the implementation should distinguish between extension lifecycle warnings that result from extension set flags and those that result from individual flags. This is because the individual extension warnings may be used for reasons other than stability - a company might decide to warn on an extension simply because the team has decided that it doesn't fit the house style.
 
 ### 2.3. Documentation
 
@@ -74,7 +129,118 @@ With the use of `-Wcompat`, and presuming the categorization of `IncoherentInsta
 {-# LANGUAGE IncoherentInstances #-}
 module Foo where
 ```
-This would result in a warning at compilation stating the use of a `Deprecated` extension.
+This would result in a warning at compilation time stating the use of a `Deprecated` extension.
+
+### 3.1. Ordering of Warning Flags and Extensions
+
+Even though extension pragmas and flags and warning flags should commute with one another, ordering of extensions and warning flags is still important, with later flags overriding earlier ones.
+
+Just as
+```
+{-# OPTIONS_GHC -Wno-missing-signatures #-}
+{-# OPTIONS_GHC -Wall #-}
+
+module Foo where
+
+foo x = 5
+```
+emits a warning for the missing signature for `foo`, while
+```
+{-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wno-missing-signatures #-}
+
+module Foo where
+
+foo x = 5
+```
+does not, none of the following three programs should emit an extension warning:
+```
+{-# OPTIONS_GHC -WXLegacy #-}
+{-# OPTIONS_GHC -Wno-XNPlusKPatterns #-}
+{-# LANGUAGE NPlusKPatterns #-}
+module Main where
+```
+```
+{-# LANGUAGE NPlusKPatterns #-}
+{-# OPTIONS_GHC -WXLegacy #-}
+{-# OPTIONS_GHC -Wno-XNPlusKPatterns #-}
+module Main where
+```
+```
+{-# OPTIONS_GHC -WXLegacy #-}
+{-# LANGUAGE NPlusKPatterns #-}
+{-# OPTIONS_GHC -Wno-XNPlusKPatterns #-}
+module Main where
+```
+
+These three should:
+```
+{-# OPTIONS_GHC -Wno-XNPlusKPatterns #-}
+{-# OPTIONS_GHC -WXLegacy #-}
+{-# LANGUAGE NPlusKPatterns #-}
+module Main where
+```
+```
+{-# OPTIONS_GHC -Wno-XNPlusKPatterns #-}
+{-# LANGUAGE NPlusKPatterns #-}
+{-# OPTIONS_GHC -WXLegacy #-}
+module Main where
+```
+```
+{-# LANGUAGE NPlusKPatterns #-}
+{-# OPTIONS_GHC -Wno-XNPlusKPatterns #-}
+{-# OPTIONS_GHC -WXLegacy #-}
+module Main where
+```
+
+### 3.2. Warnings for Extension Flags vs Extension Set Flags
+
+Assuming that `BlockArguments` is `Stable`, a team may nonetheless wish to rule it out simply because it doesn't fit the house style. One way to do this is to enable a warning for it in either `stack.yaml`:
+```
+ghc-options:
+  "$locals": -WXBlockArguments
+```
+or `cabal.project`:
+```
+program-options
+  ghc-options: -WXBlockArguments
+```
+
+While this use case is not a primary motivating factor for this proposal, it seems inevitable that it will occur. Thus, the warning message should _not_ be something like:
+```
+Foo.hs:3:5: warning: [-WXStable]
+    The extension BlockArguments is stable
+```
+but rather
+```
+Foo.hs:3:5: warning: [-WXBlockArguments]
+    Use of extension BlockArguments
+```
+or
+```
+Foo.hs:3:5: warning: [-WXBlockArguments]
+    Use of (stable) extension BlockArguments
+```
+
+
+On the other hand, when the warnings are used to express a stability policy, the messages should support this. On the assumption that `LinearTypes` is `Experimental` and a build system is configured as with the following `stack.yaml` snippet:
+```
+ghc-options:
+  "$locals": -WXExperimental -WXLegacy -WXDeprecated
+```
+or `cabal.project` snippet:
+```
+program-options
+  ghc-options: -WXExperimental -WXLegacy -WXDeprecated
+```
+then a module that enables `LinearTypes` should get a warning like:
+```
+Foo.hs:3:5: warning: [-WXExperimental]
+    The extension `LinearTypes` is experimental and subject to breaking changes.
+```
+
+If this can't be accomplished for technical reasons, then the message should be written such that it makes sense for both use cases.
+
 
 ## 4. Effect and Interactions
 
@@ -85,15 +251,15 @@ The primary interaction that we anticipate from this change is with existing war
 
 ## 5. Costs and Drawbacks
 
-### Development Costs
+### 5.1. Development Costs
 
-Development and ongoing costs are expected to exist primarily in the form of additional time to sufficiently warn users of upcoming changes, creating and updating the status of extensions, and maintenance of the warning flags. We expect that the costs associated with moving an extension from one category to another will be small, but the discussion around doing so might take time.
+Development and ongoing costs are expected to exist primarily in the form of additional time to sufficiently warn users of upcoming changes, creating and updating the status of extensions, and maintenance of the warning flags. We expect that the costs associated with moving an extension from one category to another will be small, but the discussion around doing so might take time - in particular, this may result in an increased workload for the GHC Steering Committee to process lifecycle transitions.
 
-### Transition Costs
+### 5.2. Transition Costs
 
 Organizations that use `-Werror` may incur a one-time cost in updating their compiler flags to disable warnings about experimental or deprecated extensions.
 
-### Experts vs Less-Expert Users
+### 5.3. Experts vs Less-Expert Users
 
 There is a trade-off in the selection of default warnings. Making `-WXExperimental` be on by default (after a suitable period in `-Wcompat`) means that some Haskell users will need to carry out two steps to use experimental features: after turning on the extension, the warning will need to be suppressed. For instance, a user might introduce a scoped wombat pun into their file, which requires enabling the hypothetical experimental extension `ScopedWombatPunning`. First, GHC will advise that they enable this extension in an error message. Upon following this advice, the user will then be presented with a warning on their `LANGUAGE` pragma along the lines of:
 ```
@@ -109,11 +275,33 @@ If this user is a Haskell expert, then this extra step may be unwelcome - the co
 
 ## 6. Alternatives
 
+### 6.1. Omitting Compiler Warnings
+
 One alternative design is to not add warnings to the compiler, and communicate about the status of extensions only in the User's Guide. We consider this to be unlikely to provide as much value, because users typically do not return to sections of the User's Guide that cover features that they already understand. The migration of an extension into a warning set provides a reason for them to consult the documentation.
+
+### 6.2. Implement Warnings Elsewhere
 
 Warnings could additionally be implemented with a canonical configuration for a tool such as `hlint` or `stan`. Warnings from GHC itself have a number of advantages, however. First off, the categorization of extensions is maintained in one place, so teams don't need to construct and then maintain their own set. It's much easier to have a minor local deviation from an established standard than it is to create one. Secondly, compiler updates that change the status of an extension will trigger warnings without someone needing to remember to modify the configuration of an external linter, and projects that support a range of GHC versions will get the appropriate warnings for each version they run in CI without any extra configuration. And, perhaps most importantly, defaults matter most for less-experienced users. How would a new team know that they should install an extra linter and configure it this way? How would they decide between competing linter configurations? It seems valuable to provide them with something that basically reflects the consensus of the experts that comes by default.
 
+### 6.3. Use Only Deprecations
+
 Another alternative consists of not having an explicit lifecycle for extensions, but only adding deprecation warnings. This has the advantage of being a lighter-weight process that requires less from the developers of language extensions. Also, because any model necessarily neglects certain details, an implicit discussion of an extension's status provides space for more nuance. However, we believe that a simpler model that captures the world well enough is able to provide the vast majority of the information that's relevant to make decisions without incurring nearly as much of a cost in time and training as a fully-detailed and nuanced view (which can still be available in the documentation).
+
+### 6.4. Lazily Add the `Deprecated` Set
+
+It is extremely rare that GHC actually removes an extension. It would be possible to refrain from adding the `Deprecated` category until it actually becomes needed. However, having this category (even if unused) serves important purposes:
+
+ 1. Right now, the GHC documentation uses the term "deprecated" to refer both to things that are expected to disappear soon and to language extensions that are expected to remain for the forseeable future. Making it clear that these extensions are not facing imminent removal is valuable, and having the codified distinction helps communicate this.
+ 
+ 2. The definition of an extension being `Stable` requires a deprecation process before removing it. The presence of`-WXDeprecated` allows teams to prepare for this future eventuality.
+ 
+### 6.5 Conservativity Warnings and Syntactic vs Semantic Warnings
+
+It would be possible to further classify extensions along two more dimensions:
+  * Whether they change the meaning of a program when enabled (such as `ScopedTypeVariables` and `MonoLocalBinds`) and those that add features without changing existing programs (such as `MultiWayIf`, `NPlusKPatterns`, and `LinearTypes`)
+  * Extensions that merely enable syntactic sugar (such as `MultiWayIf`, `NPlusKPatterns`, `DoAndIfThenElse`) and those that enrich the type system with new features (such as `DataKinds`, `TypeFamilies`, or `PolyKinds`).
+
+This is clearly something that's desirable for users to know. However, this information is orthogonal to the stability, so we believe that mechanisms to communicate these aspects should be designed in a separate proposal.
 
 
 ## 7. Unresolved Questions
