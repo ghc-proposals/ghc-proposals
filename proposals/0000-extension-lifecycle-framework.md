@@ -314,3 +314,5 @@ The Haskell Foundation will either recruit volunteers or pay for the technical w
 
 
 ## 9. Endorsements
+
+A number of endorsements from industry users were provided for the prior version of this proposal in its [discussion thread](https://github.com/ghc-proposals/ghc-proposals/pull/601).
