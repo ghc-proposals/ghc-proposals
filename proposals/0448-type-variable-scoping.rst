@@ -209,9 +209,10 @@ A `comment <https://github.com/ghc-proposals/ghc-proposals/pull/523#issuecomment
 
   ::
 
-    data T = MkT [a] (a->Int)
+    data T = forall a. MkT [a] (a -> Int)
+
     f :: T -> [Int]
-    f (MkT (xs :: [a]) f) = let mf :: [a] -> Int
+    f (MkT (xs :: [a]) f) = let mf :: [a] -> [Int]
                                 mf = map f
                             in mf xs
 
@@ -222,7 +223,7 @@ A `comment <https://github.com/ghc-proposals/ghc-proposals/pull/523#issuecomment
   ::
 
     f :: T -> [Int]
-    f (MkT @a xs f) = let mf :: [a] -> Int
+    f (MkT @a xs f) = let mf :: [a] -> [Int]
                           mf = map f
                       in mf xs
 
