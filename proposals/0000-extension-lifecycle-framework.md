@@ -129,7 +129,7 @@ With the use of `-Wcompat`, and presuming the categorization of `IncoherentInsta
 {-# LANGUAGE IncoherentInstances #-}
 module Foo where
 ```
-This would result in a warning at compilation time stating the use of a `Deprecated` extension.
+This would result in a warning on the language pragma at compilation time stating the use of a `Deprecated` extension.
 
 ### 3.1. Ordering of Warning Flags and Extensions
 
