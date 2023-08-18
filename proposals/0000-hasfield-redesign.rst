@@ -187,13 +187,21 @@ Defining ``getField`` and ``modifyField`` in separate classes is a better design
 Proposed Change Specification
 -----------------------------
 
-When this proposal is implemented, the ``GHC.Records`` module will be defined as
-follows::
+This proposal involves both changes to existing definitions in ``base``, and
+adding new definitions. As per the `plan agreed with CLC
+<https://github.com/haskellfoundation/tech-proposals/blob/main/proposals/accepted/051-ghc-base-libraries.rst>`_,
+the latter should first be added to the forthcoming ``ghc-experimental``
+package.  Thus it adds two new modules, ``GHC.Records`` and
+``GHC.Records.Experimental``.
 
-  {-# LANGUAGE AllowAmbiguousTypes #-}     -- for type of getField/setField
-  {-# LANGUAGE FunctionalDependencies #-}  -- for HasField/SetField classes
+The ``GHC.Records`` module (in the ``base`` package) will be defined as follows::
 
-  module GHC.Records where
+  {-# LANGUAGE AllowAmbiguousTypes #-}     -- for type of getField
+  {-# LANGUAGE FunctionalDependencies #-}  -- for HasField class
+
+  module GHC.Records
+    ( HasField(getField)
+    ) where
 
   import GHC.Types (Constraint, TYPE)
 
@@ -203,13 +211,27 @@ follows::
   -- This will be solved automatically for built-in records where the field is
   -- in scope, but manual instances may be provided as well.
   --
-  -- Where a 'SetField' instance is available as well as an instance of this
-  -- class, they must together satisfy the laws defined on 'Field'.
-  --
   type HasField :: forall {k} {r_rep} {a_rep} . k -> TYPE r_rep -> TYPE a_rep -> Constraint
   class HasField x r a | x r -> a where
     -- | Selector function to extract the field @x@ from the record @r@.
     getField :: r -> a
+
+
+The ``GHC.Records.Experimental`` module (in the ``ghc-experimental`` package)
+will be defined as follows::
+
+  {-# LANGUAGE AllowAmbiguousTypes #-}     -- for type of setField
+  {-# LANGUAGE FunctionalDependencies #-}  -- for SetField class
+
+  module GHC.Records.Experimental
+    ( HasField(getField)
+    , SetField(modifyField)
+    , setField
+    , Field
+    ) where
+
+  import GHC.Records (HasField(getField))
+  import GHC.Types (Constraint, TYPE)
 
   -- | Constraint representing the fact that a field @x@ of type @a@ can be
   -- updated in the record type @r@.
@@ -342,7 +364,7 @@ Expression              Previous interpretation            New interpretation
 ======================= ================================== ==================================
 
 This includes the case where ``RebindableSyntax`` is enabled, so ``setField``
-refers to whichever name is in scope, rather than to ``GHC.Records.setField``.
+refers to whichever name is in scope, rather than to ``GHC.Records.Experimental.setField``.
 While this is a breaking change, the support for ``OverloadedRecordUpdate`` in
 GHC 9.2 was explicitly advertised as experimental, so this should not
 inconvenience users unexpectedly.
@@ -525,15 +547,18 @@ Backward Compatibility
 
 This proposal is more limited in its backward compatibility impact than the
 previously accepted design (which would break all user-defined ``HasField``
-instances). In particular:
+instances).
 
-* Users relying on ``OverloadedRecordUpdate`` plus ``RebindableSyntax`` will
-  need to follow the change to the order of arguments to ``setField``.
+Users relying on ``OverloadedRecordUpdate`` plus ``RebindableSyntax`` will need
+to follow the change to the order of arguments to ``setField``.  This is a
+breaking change, but ``OverloadedRecordUpdate`` has been `explicitly advertised
+as experimental and subject to change <https://downloads.haskell.org/ghc/9.2.1/docs/html/users_guide/exts/overloaded_record_update.html>`_.
 
-* Otherwise, this does not break backward compatibility except by exporting new
-  identifiers.  That is, user code might break if it imports ``GHC.Records``
-  unqualified and thereby introduces a name collision (e.g. with a local
-  definition of the name ``setField``).
+Otherwise, this proposal does not break backward compatibility.  Existing code
+importing ``GHC.Records`` is unaffected because the module does not expose the
+new definitions. While ``HasField`` has been generalised to support
+representation polymorphism, GHC's existing defaulting support for
+``RuntimeRep`` should ensure that user code continues to compile unchanged.
 
 
 Alternatives
@@ -655,7 +680,7 @@ We propose to keep the name ``HasField`` for the existing class.  This is
 backwards-compatible with existing code, avoiding unnecessary breaking changes.
 
 However, this will lead to a long-lasting inconsistency in naming, because
-``GHC.Records`` will export ``HasField(getField)`` and ``SetField(modifyField)``.
+``GHC.Records.Experimental`` will export ``HasField(getField)`` and ``SetField(modifyField)``.
 An alternative would be to rename ``HasField`` (e.g. to ``GetField``), at the
 cost of breaking any code with an explicit import like ``HasField(getField)``,
 or that defines a virtual field instance of ``HasField``.
@@ -679,7 +704,7 @@ However, practical cases where the choice of ``hasField`` vs. the combination of
 normal record types with the built-in constraint-solving behaviour do not gain
 anything from ``hasField`` being a single method. Where this matters, users are
 likely to be better off using an optics library.  Thus we prefer the simplicity
-of separate classes in the ``GHC.Records`` API.
+of separate classes.
 
 If users do wish to organise field-like lenses into a class, they can define an
 auxiliary class such as the following::
@@ -692,7 +717,7 @@ auxiliary class such as the following::
   -- instance for a specific type with a non-default 'fieldLens' implementation
   instance {-# OVERLAPPABLE #-} Field x r a => FieldLens x r a
 
-We do not propose to add such a class to ``GHC.Records``, since it is better
+We do not propose to add such a class to ``GHC.Records.Experimental``, since it is better
 defined by specific optics libraries.  (The ``optics`` library defines a class
 ``LabelOptic`` that plays essentially this role.)
 
