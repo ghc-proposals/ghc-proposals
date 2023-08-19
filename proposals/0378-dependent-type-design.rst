@@ -685,7 +685,7 @@ Here, the term ``n`` is given as an argument to ``vReplicate`` (defined above).
 
 Crucially, the ``vZip`` call will type check only if we know that both ``intVec`` and ``boolVec``
 have the same length. And we do know that – their length is determined by the term-level variable ``n`` introduced in a local let-binding.
-What's on the right-hand side of thaht binding is not relevant for this.
+What's on the right-hand side of that binding is not relevant for this.
 
 Contrary to some other cases, we cannot simply construct a type-level expression that we could pass instead, and which would evaulate to the value of ``n``, since we do not know at compile
 time what the value of ``n`` will be.
