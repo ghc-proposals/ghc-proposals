@@ -59,7 +59,7 @@ The accepted `proposal #158
 <https://github.com/ghc-proposals/ghc-proposals/pull/158>`_ plans to change the
 definition of ``HasField`` to support updates, which is necessary for the full
 implementation of the ``OverloadedRecordUpdate`` extension.
-An implementation of this proposal is available as `GHC merge request !3257
+An implementation of proposal #158 is available as `GHC merge request !3257
 <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/3257>`_, but has not yet
 been merged, because the compile-time performance cost of the selected
 implementation strategy is unacceptably high.  Such costs were not really
@@ -751,7 +751,7 @@ the specific laws are:
 Where the constraint solver automatically solves one of these constraints, the
 laws will be satisfied.
 
-Where a field is partial, ``getField`` is necessarily not defined.  In this case
+Where a field is absent, that is where ``getField`` is undefined,
 the laws permit ``modifyField`` to be defined (to be a no-op) or undefined.
 However it may not change the constructor so that the field is present.
 
