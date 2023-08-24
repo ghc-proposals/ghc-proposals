@@ -57,6 +57,43 @@ give a couple of examples and regard that as the specification! The
 examples should illustrate and elucidate a clearly-articulated
 specification that covers the general case.
 
+## Proposed Library Change Specification
+
+Specify the changes to libraries in the GHC repository, especially `base` and
+others under the purview of the
+[Core Libraries Committee](https://github.com/haskell/core-libraries-committee).
+
+Generally speaking, if your proposal adds new function or data types, the place
+to do so is in the `ghc-experimental` package, whose API is under the control of
+the GHC Steering Committee.
+After your proposal is implemented, stable, and widely used, you (or anyone
+else) can subsequently propose to move those types into `base` via a CLC
+proposal.
+
+Sometimes, however, your proposal necessarily changes something in `base`, whose
+API is curated by the CLC.
+In that case, assuming your proposal is accepted, at the point when it is
+implemented (by you or anyone else), CLC approval will be needed for these
+changes, via a CLC proposal made by the implementor.
+By signalling those changes now, at the proposal stage, the CLC will be alerted
+and have an opportunity to offer feedback, and agreement in principle.
+
+See [GHC base libraries](https://github.com/Ericson2314/tech-proposals/blob/ghc-base-libraries/proposals/accepted/051-ghc-base-libraries.rst?rgh-link-date=2023-07-09T17%3A01%3A15Z)
+for some useful context.
+
+Therefore, in this section:
+
+* If your proposal makes any changes to the API of `base` (including its
+  exports, types, semantics, and performance), please specify these changes
+  in this section.
+
+* If your proposal makes any change to the API of `ghc-experimental`, please
+  also specify these changes.
+
+If you propose to change both, use subsections, so that the changes are clearly
+distinguished.
+Similarly, if any other libraries are affected, please lay it all out here.
+
 ## Examples
 
 This section illustrates the specification through the use of examples of the
@@ -149,4 +186,3 @@ It is not mandatory for have any endorsements at all, but the more substantial
 the proposal is, the more desirable it is to offer evidence that there is
 significant demand from the community.  This section is one way to provide
 such evidence.
-
