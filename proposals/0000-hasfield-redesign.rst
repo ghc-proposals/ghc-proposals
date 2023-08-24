@@ -1191,3 +1191,30 @@ Support with the implementation of this proposal would be welcome.  The
 implementation of ``setField`` (in some form) is
 currently blocking the full implementation of ``OverloadedRecordUpdate``
 (`proposal #282 <https://github.com/ghc-proposals/ghc-proposals/pull/282>`_).
+
+
+Compile-time performance
+~~~~~~~~~~~~~~~~~~~~~~~~
+It is important that the implementation of this proposal should not regress
+compile-time (or runtime) performance.  This was a problem for the previous
+implementation of proposal #158 (`GHC merge request !3257
+<https://gitlab.haskell.org/ghc/ghc/-/merge_requests/3257>`_).
+
+The existing implementation of ``HasField`` benefits from being able to reuse
+the record selector functions that GHC already generates ahead of time for every
+field of every datatype.  Since ``HasField`` has a single method corresponding
+to this function, the constraint solver is able to construct a dictionary merely
+by casting the existing selector function.
+
+The previous implementation attempt followed this, generating additional
+functions ahead of time for every field of every datatype.  However, this can
+add a significant cost when defining large record datatypes, especially if
+``SetField`` is not subsequently used.  Thus a better implementation strategy
+would probably be to generate the dictionaries on-the-fly in the constraint
+solver (much as when GHC compiles a traditional record update it generates and
+type-checks a suitable case expression).
+
+If necessary, we could imagine adding flags to allow the user to control whether
+to generate the needed functions at datatype definition sites (which may be more
+efficient if ``SetField`` is used frequently) or at use sites (which may be more
+efficient if records are large and ``SetField`` is used rarely).
