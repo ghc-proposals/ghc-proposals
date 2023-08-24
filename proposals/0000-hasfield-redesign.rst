@@ -180,9 +180,6 @@ Defining ``getField`` and ``modifyField`` in separate classes is a better design
   update in a future proposal (though this is a controversial point, and this
   proposal does not commit to doing so).
 
-* Defining ``modifyField`` is preferable to ``setField`` in cases where fields
-  may not belong to all constructors of a datatype.
-
 
 Proposed Change Specification
 -----------------------------
