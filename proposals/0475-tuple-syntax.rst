@@ -80,7 +80,7 @@ Proposed Change Specification
 
 #. Export the following definitions from ``Data.Tuple.Experimental`` and
    ``Prelude.Experimental``. (Implementation note: These would probably end up
-   in a new module ``Data.Tuple.Experimental.Prim``, due to the dependency from
+   in a new module ``Data.Tuple.Prim``, due to the dependency from
    the definitions below in ``Data.Tuple.Experimental`` on ``GHC.TypeLits``.) ::
 
      data Unit = ()
@@ -158,7 +158,7 @@ Proposed Change Specification
      type Sum64# :: TYPE r1 -> ... -> TYPE r64 -> TYPE (SumRep [r1, ..., r64])
      data Sum64# ... = ...
 
-#. Remove existing tuple definitions from ``Data.Tuple.Experimental`` in ``ghc-prim``.
+#. Remove existing tuple definitions from ``GHC.Tuple``.
 
 #. Export the following definitions from ``Data.Tuple.Experimental``::
 
@@ -220,6 +220,8 @@ Proposed Change Specification
        Tuple# (a, b, ..., bk, bl) = Tuple64# a b ... bk bl
        Tuple# @reps _ = TypeError (ShowType (Length reps) :<>: Text " is too large; the maximum size of a tuple is 64.")
 
+#. Export the following definitions from ``Data.Sum.Experimental``::
+
      type Sum# :: forall (reps :: List RuntimeRep). TupleArgKind# reps -> TYPE (SumRep reps)
      type family Sum# ts where
        Sum# () = TypeError (Text "GHC does not support empty unboxed sums. Consider Data.Void.Void instead.")
@@ -247,16 +249,16 @@ Proposed Change Specification
    #. An occurrence of ``[ty]`` in type-syntax is a synonym for ``GHC.List.List ty``.
 
    #. An occurrence of ``()`` in type-syntax, where the type is not expected to be of kind ``Constraint``,
-      is a synonym for ``Data.Tuple.Experimental.Unit``.
+      is a synonym for ``GHC.Tuple.Prim.Unit``.
 
    #. An occurrence of ``(,,...,,)`` where there are *n* commas (for *n* ≧ 1) in type-syntax
-      is a synonym for ``Data.Tuple.Experimental.Tuple<n+1>``.
+      is a synonym for ``GHC.Tuple.Prim.Tuple<n+1>``.
 
    #. An occurrence of ``(ty1,ty2,...,ty<n-1>,ty<n>)`` (for *n* ≧ 2) in type-syntax, where neither the type
       is expected to be of kind ``Constraint`` and either none of the ``ty<i>`` are inferred to have kind ``Constraint``
       or there exists a ``ty<i>`` inferred to kind ``Type`` and none of the ``ty<j>`` (with *j* < i) are inferred to have
       kind ``Constraint``, is
-      a synonym for ``Data.Tuple.Experimental.Tuple<n>`` ``ty1 ty2 ... ty<n-1> ty<n>``. (This rule retains today's behavior.)
+      a synonym for ``GHC.Tuple.Prim.Tuple<n>`` ``ty1 ty2 ... ty<n-1> ty<n>``. (This rule retains today's behavior.)
 
    #. With ``-XUnboxedTuples``, an occurrence of ``(# #)`` in type-syntax is a synonym for ``GHC.Exts.Unit#``.
 
@@ -275,41 +277,41 @@ Proposed Change Specification
       synonym for ``GHC.Exts.Sum<n># ty1 ty2 ... ty<n-1> ty<n>``.
 
    #. An occurrence of ``()`` in type-syntax, where the type is expected to be of kind ``Constraint``,
-      is a synonym for ``Data.Tuple.Experimental.CUnit``.
+      is a synonym for ``GHC.Classes.CUnit``.
 
    #. An occurrence of ``(ty1, ty2, ..., ty<n-1>, ty<n>)`` (for *n* ≧ 2) in type-syntax, where the type is
       expected to be of kind ``Constraint``, is a synonym for ``Data.Tuple.Experimental.CTuple<n> ty1 ty2 ... ty<n-1> ty<n>``.
 
    #. An occurrence of ``(ty1, ty2, ..., ty<n-1>, ty<n>)`` (for *n* ≧ 2) in type-syntax, where the first
       ``ty<i>`` inferred to have kind ``Type`` or ``Constraint`` has kind ``Constraint``, is a synonym
-      for ``Data.Tuple.Experimental.CTuple<n> ty1 ty2 ... ty<n-1> ty<n>``.
+      for ``GHC.Classes.CTuple<n> ty1 ty2 ... ty<n-1> ty<n>``.
 
    #. An unapplied occurrence of ``GHC.List.List`` is pretty-printed as ``[]``.
 
    #. An occurrence of ``GHC.List.List ty`` is pretty-printed as ``[ty]``.
 
-   #. An occurrence of ``Data.Tuple.Experimental.Unit`` is pretty-printed as ``()``.
+   #. An occurrence of ``GHC.Tuple.Prim.Unit`` is pretty-printed as ``()``.
 
-   #. An occurrence of ``Data.Tuple.Experimental.Tuple<n> ty1 ty2 ... ty<n>`` is pretty-printed as ``(ty1, ty2, ..., ty<n>)``.
+   #. An occurrence of ``GHC.Tuple.Prim.Tuple<n> ty1 ty2 ... ty<n>`` is pretty-printed as ``(ty1, ty2, ..., ty<n>)``.
 
-   #. An occurrence of ``Data.Tuple.Experimental.Tuple<n>``, but not applied to a full *n* arguments, is pretty-printed as ``(,,...,,)``,
+   #. An occurrence of ``GHC.Tuple.Prim.Tuple<n>``, but not applied to a full *n* arguments, is pretty-printed as ``(,,...,,)``,
       where there are *n-1* commas.
 
-   #. An occurrence of ``GHC.Exts.Unit#`` is pretty-printed as ``(# #)``.
+   #. An occurrence of ``GHC.Types.Unit#`` is pretty-printed as ``(# #)``.
 
-   #. An occurrence of ``GHC.Exts.Tuple<n># ty1 ty2 ... ty<n>`` is pretty-printed as ``(# ty1, ty2, ..., ty<n> #)``.
+   #. An occurrence of ``GHC.Types.Tuple<n># ty1 ty2 ... ty<n>`` is pretty-printed as ``(# ty1, ty2, ..., ty<n> #)``.
 
-   #. An occurrence of ``GHC.Exts.Tuple<n>#``, but not applied to a full *n* arguments, is pretty-printed as ``(#,,...,,#)``,
+   #. An occurrence of ``GHC.Types.Tuple<n>#``, but not applied to a full *n* arguments, is pretty-printed as ``(#,,...,,#)``,
       where there are *n-1* commas.
 
-   #. An occurrence of ``GHC.Exts.Sum<n># ty1 ty2 ... ty<n>`` is pretty-printed as ``(# ty1 | ty2 | ... | ty<n> #)``.
+   #. An occurrence of ``GHC.Types.Sum<n># ty1 ty2 ... ty<n>`` is pretty-printed as ``(# ty1 | ty2 | ... | ty<n> #)``.
 
-   #. An occurrence of ``GHC.Exts.Sum<n>#``, but not applied to a full *n* arguments, is pretty-printed as ``(# | | ... | | #)``,
+   #. An occurrence of ``GHC.Types.Sum<n>#``, but not applied to a full *n* arguments, is pretty-printed as ``(# | | ... | | #)``,
       where there are *n-1* pipes.
 
-   #. An occurrence of ``Data.Tuple.Experimental.CUnit`` is pretty-printed as ``()``.
+   #. An occurrence of ``GHC.Classes.CUnit`` is pretty-printed as ``()``.
 
-   #. An occurrence of ``Data.Tuple.Experimental.CTuple<n> ty1 ty2 ... ty<n>`` is pretty-printed as ``(ty1, ty2, ..., ty<n>)``.
+   #. An occurrence of ``GHC.Classes.CTuple<n> ty1 ty2 ... ty<n>`` is pretty-printed as ``(ty1, ty2, ..., ty<n>)``.
 
 #. With ``-XNoListTuplePuns``:
 
@@ -320,13 +322,13 @@ Proposed Change Specification
 
    #. A use of ``(# ... | ... | ... #)``, where each of the ``...`` is filled in, (among other arities) is now disallowed.
 
-   #. An occurrence of ``Data.Tuple.Experimental.Tuple<n> ty1 ty2 ... ty<n>`` is pretty-printed as ``Tuple (ty1, ty2, ..., ty<n>)``.
+   #. An occurrence of ``GHC.Tuple.Prim.Tuple<n> ty1 ty2 ... ty<n>`` is pretty-printed as ``Tuple (ty1, ty2, ..., ty<n>)``.
 
-   #. An occurrence of ``Data.Tuple.Experimental.CTuple<n> ty1 ty2 ... ty<n>`` is pretty-printed as ``Constraints (ty1, ty2, ..., ty<n>)``.
+   #. An occurrence of ``GHC.Classes.CTuple<n> ty1 ty2 ... ty<n>`` is pretty-printed as ``Constraints (ty1, ty2, ..., ty<n>)``.
 
-   #. An occurrence of ``GHC.Exts.Tuple<n># ty1 ty2 ... ty<n>`` is pretty-printed as ``Tuple# (ty1, ty2, ..., ty<n>)``.
+   #. An occurrence of ``GHC.Types.Tuple<n># ty1 ty2 ... ty<n>`` is pretty-printed as ``Tuple# (ty1, ty2, ..., ty<n>)``.
 
-   #. An occurrence of ``GHC.Exts.Sum<n># ty1 ty2 ... ty<n>`` is pretty-printed as ``Sum# (ty1, ty2, ..., ty<n>)``.
+   #. An occurrence of ``GHC.Types.Sum<n># ty1 ty2 ... ty<n>`` is pretty-printed as ``Sum# (ty1, ty2, ..., ty<n>)``.
 
    #. A use of ``'[ty1, ..., ty<n>]`` (for *n* ≧ 0) is now disallowed.
 
@@ -336,7 +338,7 @@ Proposed Change Specification
 
    #. Lists and tuples on the type-level are printed without any tick.
 
-#. Three releases after this proposal is implemented, remove the ``Solo`` pattern synonym from ``Data.Tuple.Experimental``.
+#. Three releases after this proposal is implemented, remove the ``Solo`` pattern synonym from ``GHC.Tuple``.
 
 Effect and Interactions
 -----------------------
@@ -471,18 +473,6 @@ Alternatives
 #. Controlling the ``(# ... | ... | ... #)`` syntax for unboxed sum types with
    ``-XNoListTuplePuns`` is not necessary to avoid punning, but is done only for
    consistency. We could skip this, but I prefer keeping it as proposed.
-
-#. There was an objection in the commentary about the name ``Prelude.Experimental``. I continue
-   to like that name: the module exports basic definitions one will likely want when
-   using the GHC compiler for Haskell. However, an alternative might be
-   ``GHC.SafeExts`` or something similar. (I'd actually rather have the safe extensions
-   be in ``GHC.Exts`` and the unsafe ones be in ``GHC.Exts.Unsafe``, but that ship has
-   sailed and is not worth calling back to port.)
-
-   Note that GHC itself already has a module named ``Prelude.Experimental`` that would have to
-   be renamed if we keep ``Prelude.Experimental`` as the choice for the new module in ``base``.
-   This is purely an implementation detail, though, and would not affect users (except
-   via the GHC API).
 
 #. The following definitions were included in an earlier version of this proposal,
    but the committee decided we were better without::
