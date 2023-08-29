@@ -115,9 +115,8 @@ of the new contents of this module, including auxiliary definitions, see the
   type SetField :: forall {k} {r_rep} {a_rep} . k -> TYPE r_rep -> TYPE a_rep -> Constraint
   class SetField x r a | x r -> a where
     modifyField :: (a -> a) -> r -> r
-
-  setField :: forall {k} {r_rep} {a_rep} (x :: k)(r :: TYPE r_rep)(a :: TYPE a_rep) . SetField x r a => a -> r -> r
-  setField = modifyField . const
+    setField :: a -> r -> r
+    {-# MINIMAL modifyField | setField #-}
 
 These are the key points of the new design.  Detailed justification for each
 point is deferred to subsequent sections.
@@ -129,12 +128,8 @@ point is deferred to subsequent sections.
   both selection and update into the ``HasField`` class (as in `proposal #158
   <https://github.com/ghc-proposals/ghc-proposals/pull/158>`_).
 
-* ``SetField x r a`` has a single method ``modifyField :: (a -> a) -> r -> r``
-  that allows a field value to be transformed (`proposal #158
-  <https://github.com/ghc-proposals/ghc-proposals/pull/158>`_ does not support
-  this operation).
-
-* The ``setField`` function is implemented in terms of ``modifyField``.
+* ``SetField x r a`` has two methods  ``setField :: a -> r -> r`` and
+  ``modifyField :: (a -> a) -> r -> r``.
 
 * The order of arguments to ``setField :: a -> r -> r`` is reversed compared to
   the status quo: it takes the new field value first, followed by the record
@@ -218,12 +213,12 @@ The ``GHC.Records.Experimental`` module (in the ``ghc-experimental`` package)
 will be defined as follows::
 
   {-# LANGUAGE AllowAmbiguousTypes #-}     -- for type of setField
+  {-# LANGUAGE DefaultSignatures #-}       -- for setField/modifyField
   {-# LANGUAGE FunctionalDependencies #-}  -- for SetField class
 
   module GHC.Records.Experimental
     ( HasField(getField)
-    , SetField(modifyField)
-    , setField
+    , SetField(setField, modifyField)
     , Field
     ) where
 
@@ -241,6 +236,7 @@ will be defined as follows::
   --
   -- > modifyField @x id r === r or ⊥
   -- > (modifyField @x g . modifyField @x f) r === modifyField @x (g . f) r
+  -- > setField @x v r == modifyField @x (\ _ -> v) r
   --
   -- Where a 'HasField' instance is available as well as an instance of this
   -- class, they must together satisfy the laws defined on 'Field'.
@@ -249,10 +245,15 @@ will be defined as follows::
   class SetField x r a | x r -> a where
     -- | Change the value stored in the field @x@ of the record @r@.
     modifyField :: (a -> a) -> r -> r
+    default modifyField :: (r_rep ~ LiftedRep, a_rep ~ LiftedRep, HasField x r a) => (a -> a) -> r -> r
+    modifyField f r = setField @x (f (getField @x r)) r
 
-  -- | Update function to set the field @x@ in the record @r@.
-  setField :: forall {k} {r_rep} {a_rep} (x :: k)(r :: TYPE r_rep)(a :: TYPE a_rep) . SetField x r a => a -> r -> r
-  setField x = modifyField (\ _ -> x) -- actually a compulsory unfolding
+    -- | Update function to set the field @x@ in the record @r@.
+    setField :: a -> r -> r
+    default setField :: a_rep ~ LiftedRep => a -> r -> r
+    setField v = modifyField @x (\ _ -> v)
+
+    {-# MINIMAL modifyField | setField #-}
 
   -- | Constraint representing the fact that a field @x@ of type @a@ can be
   --  selected from or updated in the record @r@.
@@ -367,18 +368,6 @@ GHC 9.2 was explicitly advertised as experimental, so this should not
 inconvenience users unexpectedly.
 
 
-Compulsory unfolding for ``setField``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The definition of the ``setField`` function as given above is not accepted by
-GHC as-is, because it requires binding a representation-polymorphic variable.
-However this can be worked around by giving ``setField`` a "compulsory
-unfolding", meaning that ``setField x`` will be inlined at every call site (at
-which point the representation of the argument is necessarily fixed).  See
-`previous discussion on the ghc-devs mailing list
-<https://mail.haskell.org/pipermail/ghc-devs/2021-October/020241.html>`_.
-
-
 
 Examples
 --------
@@ -430,6 +419,7 @@ With an unlifted field: ::
 
   instance a ~ Int# => SetField "f" U a where
     modifyField g (MkU f) = MkU (g f)
+    setField v (MkU f) = MkU v
 
 
 With ``UnliftedDatatypes``: ::
@@ -442,6 +432,7 @@ With ``UnliftedDatatypes``: ::
 
   instance a ~ x => SetField "f" (V x) a where
     modifyField g (MkV f) = MkV (g f)
+    setField v (MkV f) = MkV v
 
 
 
@@ -969,7 +960,7 @@ like this, in the interests of minimizing complexity.
 Setting vs modification
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-The previous design supported only ``setField :: a -> r -> r`` and not
+A previous iteration of the design supported only ``setField :: a -> r -> r`` and not
 ``modifyField :: (a -> a) -> r -> r``.  The latter generalises ``setField`` to
 allow modifying any ``a`` values in the datatype (of which there may be none).
 
@@ -984,12 +975,27 @@ partial if ``getField`` is partial (whereas ``modifyField`` can in principle be
 total, although this will not be the case for automatically solved constraints,
 as discussed above).
 
-Thus we propose to use ``modifyField`` in the class, and define ``setField`` in
-terms of it.
+Thus we propose to include both ``modifyField`` and ``setField`` as class
+methods. Default implementations can be provided such that users implementing
+virtual field instances typically need implement only one (except where
+representation polymorphism is in use, or where there is no ``HasField``
+instance).
 
 A consequence of this is that it is not possible to use ``SetField`` for types
 that are "write-only", e.g. where they do not contain a value for the field at
 all, and hence ``modifyField`` cannot be defined.
+
+Another possibility would be to define ``setField`` at the top level, rather
+than being a class method.  This would make the ``SetField`` dictionary smaller
+(and lead to it being represented as a newtype).  However, from the perspective
+of a user defining instances of ``SetField`` it seems preferable to be able to
+define either ``setField`` or ``modifyField`` (or both, if there is some runtime
+performance advantage to doing so).  Moreover, the presence of representation
+polymorphism would require this definition to be given a "compulsory unfolding",
+meaning that ``setField x`` would be inlined at every call site (at which point
+the representation of the argument is necessarily fixed).  See `previous
+discussion on the ghc-devs mailing list
+<https://mail.haskell.org/pipermail/ghc-devs/2021-October/020241.html>`_.
 
 
 Kind of field labels
@@ -1051,14 +1057,24 @@ particular, we can define::
 
 This makes it possible to formulate and solve constraints such as ``HasField
 "foo" T Int#``.
+See `#22156 <https://gitlab.haskell.org/ghc/ghc/-/issues/22156>`_ for a request
+for this feature.
 
 Observe that the ``RuntimeRep`` parameters are inferred rather than specified
 (hence the curly braces in the kind signature).  This means that when
 ``getField`` is used with explicit type application, the ``RuntimeRep``
 parameters are skipped.
 
-See `#22156 <https://gitlab.haskell.org/ghc/ghc/-/issues/22156>`_ for a request
-for this feature.
+The default implementation of ``setField`` in terms of ``modifyField`` (and vice
+versa) works only when the representation is constrained via a default signature
+to be ``LiftedRep``.  This is currently necessary for the default definition to
+typecheck, because there is no other way to express the requirement that at each
+instance the representation should be concrete.  It may be possible to lift this
+restriction in the future (see `#14917
+<https://gitlab.haskell.org/ghc/ghc/-/issues/14917>`_), but for the moment,
+users defining their own ``SetField`` instances for unlifted types will need to
+define both ``setField`` and ``modifyField``.
+
 
 
 Linear types
@@ -1215,3 +1231,12 @@ If necessary, we could imagine adding flags to allow the user to control whether
 to generate the needed functions at datatype definition sites (which may be more
 efficient if ``SetField`` is used frequently) or at use sites (which may be more
 efficient if records are large and ``SetField`` is used rarely).
+
+
+Default methods
+~~~~~~~~~~~~~~~
+
+The default definitions of ``setField`` and ``modifyField`` as written above are
+not currently accepted by GHC, which appears to be a bug (see `#23884
+<https://gitlab.haskell.org/ghc/ghc/-/issues/23884>`_).  If it turns out to be
+difficult to resolve this, we may wish to revisit the design.
