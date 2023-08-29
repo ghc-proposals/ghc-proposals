@@ -673,6 +673,11 @@ An alternative would be to rename ``HasField`` (e.g. to ``GetField``), at the
 cost of breaking any code with an explicit import like ``HasField(getField)``,
 or that defines a virtual field instance of ``HasField``.
 
+While we could use a type synonym ``type HasField = GetField`` for partial
+backwards compatibility, this would not allow defining instances, and would mean
+that a ``HasField(..)`` import could no longer import ``getField``.
+
+
 
 Downsides of keeping the classes independent
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
