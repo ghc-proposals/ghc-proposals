@@ -260,21 +260,21 @@ Proposed Change Specification
       kind ``Constraint``, is
       a synonym for ``GHC.Tuple.Prim.Tuple<n>`` ``ty1 ty2 ... ty<n-1> ty<n>``. (This rule retains today's behavior.)
 
-   #. With ``-XUnboxedTuples``, an occurrence of ``(# #)`` in type-syntax is a synonym for ``GHC.Exts.Unit#``.
+   #. With ``-XUnboxedTuples``, an occurrence of ``(# #)`` in type-syntax is a synonym for ``GHC.Types.Unit#``.
 
-   #. With ``-XUnboxedTuples``, an occurrence of ``(# ty #)`` in type-syntax is a synonym for ``GHC.Exts.Solo# ty``.
+   #. With ``-XUnboxedTuples``, an occurrence of ``(# ty #)`` in type-syntax is a synonym for ``GHC.Types.Solo# ty``.
 
    #. With ``-XUnboxedTuples``, an occurrence of ``(#,,...,,#)`` where there are *n* commas (for *n* ≧ 1) in type-syntax
-      is a synonym for ``GHC.Exts.Tuple<n+1>#``.
+      is a synonym for ``GHC.Types.Tuple<n+1>#``.
 
    #. With ``-XUnboxedTuples``, an occurrence of ``(# ty1, ty2, ... , ty<n-1>, ty<n> #)`` (for *n* ≧ 2) in type-syntax is a synonym
-      for ``GHC.Exts.Tuple<n># ty1 ty2 ... ty<n-1> ty<n>``.
+      for ``GHC.Types.Tuple<n># ty1 ty2 ... ty<n-1> ty<n>``.
 
    #. With ``-XUnboxedSums``, an occurrence of ``(# | | ... | | #)`` where there are *n* pipes (for *n* ≧ 1) in type-syntax
-      is a synonym for ``GHC.Exts.Sum<n+1>#``.
+      is a synonym for ``GHC.Types.Sum<n+1>#``.
 
    #. With ``-XUnboxedSums``, an occurrence of ``(# ty1 | ty2 | ... | ty<n-1> | ty<n> #)`` (for *n* ≧ 2) in type-syntax is a
-      synonym for ``GHC.Exts.Sum<n># ty1 ty2 ... ty<n-1> ty<n>``.
+      synonym for ``GHC.Types.Sum<n># ty1 ty2 ... ty<n-1> ty<n>``.
 
    #. An occurrence of ``()`` in type-syntax, where the type is expected to be of kind ``Constraint``,
       is a synonym for ``GHC.Classes.CUnit``.
