@@ -80,7 +80,7 @@ Proposed Change Specification
 
 #. Export the following definitions from ``Data.Tuple.Experimental`` and
    ``Prelude.Experimental``. (Implementation note: These would probably end up
-   in a new module ``Data.Tuple.Prim``, due to the dependency from
+   in a new module ``GHC.Tuple.Prim``, due to the dependency from
    the definitions below in ``Data.Tuple.Experimental`` on ``GHC.TypeLits``.) ::
 
      data Unit = ()
