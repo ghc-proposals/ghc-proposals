@@ -809,19 +809,31 @@ definitions, for the following reasons:
   with functional dependencies, and GHC will automatically hide unused representation
   polymorphism.
 
-* If extending ``SetField`` to support type-changing update (to be discussed in
-  a follow-up proposal), it is desirable that either the original or updated
-  types may be used to infer the other.  This can be achieved with type families
+* If we wish to extend ``SetField`` to support type-changing update in the
+  future, it is desirable that either the original or updated types may be used
+  to infer the other.  This can be achieved using multiple functional
+  dependencies, something like this::
+
+    class SetField (x :: k) s t a b | x s -> a, x t -> b, x s b -> t, x t a -> s
+
+  A similar effect is possible to achieve with type families
   (e.g. see `the SameModulo approach by @effectfully
   <https://github.com/effectfully-ou/sketches/tree/master/has-lens-done-right#the-samemodulo-approach-full-code>`_)
-  but requires additional complexity.
+  but requires additional complexity.  While we do not propose type-changing
+  update for now, we wish to leave the door open for adding it in a follow-up
+  proposal.
 
 * It is desirable to permit user-defined ``HasField`` instances that may not
   strictly be consistent with the automatic constraint-solving behaviour in some
   corner cases (see `proposal #515
   <https://github.com/ghc-proposals/ghc-proposals/pull/515>`_).  This is
-  relatively harmless with functional dependencies, but with type families more
-  care would be needed to avoid type unsoundness.
+  relatively harmless with functional dependencies, because the worst that can
+  happen is the equivalent of incoherent instance resolution (risking the
+  results of type inference being confusing, but not threatening type
+  soundness).  In contrast, type family consistency checks are crucial to type
+  soundness, so more care would be needed to ensure the ``FieldType`` type
+  family could not reduce to inconsistent values as a result of user-defined
+  instances interacting with the built-in constraint solver.
 
 Functional dependencies do not carry evidence.  This means that from the given
 constraints ``(HasField x r a, HasField x r b)`` it would not be possible to
@@ -959,7 +971,8 @@ class would allow an optics library to determine whether a particular field was
 total and hence whether it should produce a lens or an affine traversal.
 
 For now we propose not to include support for partial fields through classes
-like this, in the interests of minimizing complexity.
+like this, in the interests of minimizing complexity, and because it is not
+clear how they could be used together with ``OverloadedRecordDot``.
 
 
 Setting vs modification
@@ -1031,6 +1044,12 @@ composition of fields.  In particular, it defines an instance like::
 
 which means ``getField @("foo", "bar")`` will be treated like the composition
 ``getField @"bar" . getField @"foo"``.
+
+Another potential application could be to use labels of kind ``Nat`` to index
+into a tuple::
+
+  instance HasField 1 (x,y) where
+    getField = fst
 
 
 
