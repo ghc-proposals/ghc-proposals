@@ -622,7 +622,7 @@ The type variable ``a`` is bound to ``Int``, by pattern-matching.
 
 Here is an example of pattern signatures within a type abstraction in a pattern::
 
-   {-# LANGUAGE ScopedTypeVariables #-} -- for pattern signture bindings
+   {-# LANGUAGE ScopedTypeVariables #-} -- for pattern signature bindings
    data Proxy a = P
    g2 :: Proxy (Nothing @(a, a)) -> ()
    g2 (P @(Nothing :: Maybe (t, t))) = ()
@@ -636,7 +636,7 @@ multiple bindings of a single variable::
 Pattern and kind signatures, however, are not subject to this restriction,
 since variable occurrences in pattern signatures are considered usages (not bindings)::
 
-   {-# LANGUAGE ScopedTypeVariables #-} -- for pattern signture bindings
+   {-# LANGUAGE ScopedTypeVariables #-} -- for pattern signature bindings
 
    g1 (P x :: Proxy (a,a)) = x               -- Accepted (multiple occurrences of ‘a’ notwithstanding)
 
