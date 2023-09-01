@@ -19,13 +19,13 @@ However, once an extension clears the review process and gets implemented in the
 
 The weakness of this model is that, over time, the accumulation of programming extensions in various states of use and disuse can create confusion, especially for developers being introduced to Haskell. There is not one Haskell, but many, and each individual or team must necessarily choose their own. Not everyone has yet had the opportunity to accumulate the experience and knowledge that will allow them to quickly determine whether or not to use a given language extension, leading to various points of stress. 
 
-The authors of this proposal believe that a clear lifecycle for these programming language extensions would make it easier for newcomers, those responsible for onboarding new Haskell developers, and the community more broadly, to make sense of the Haskell language extensions. This framework would make it clear which extensions are experimental and prone to rapid evolution, which of them are stable and suitable for serious use, and those that are generally not considered suitable for new development. Extending GHC's warnings to account for these categories allows projects to find out when features they use have been deprecated in a new compiler version as well as to specify general policies about language stability that can be checked mechanically.
+The authors of this proposal believe that a clear lifecycle for these programming language extensions would make it easier for newcomers, those responsible for onboarding new Haskell developers, and the community more broadly, to make sense of the Haskell language extensions. This framework would make it clear which extensions are prone to rapid evolution, which of them are stable and suitable for serious use, and which of them are generally not considered suitable for new development. Extending GHC's warnings to account for these categories allows projects to find out when features they use have been deprecated in a new compiler version as well as to specify general policies about language stability that can be checked mechanically.
 
 ## 2. Proposed Change Specification
 
 ### 2.1. Categories and Lifecycle
 Language extensions will be classified into the following categories
- * `Experimental` extensions are undergoing active development. The syntax and semantics that are enabled by the extension are likely to change regularly. It is expected that most new language extensions will begin as experimental. At the time of writing, `LinearTypes` and `OverloadedRecordUpdate` seem to be in this category.
+ * `Unstable` extensions are undergoing active development, or have consequences that make it impossible in practice to avoid breaking changes. The syntax and semantics that are enabled by the extension are likely to change regularly. It is expected that most new language extensions will begin as unstable, while the developers and the community gain experience with their use. At the time of writing, `LinearTypes` and `OverloadedRecordUpdate` seem to be in this category.
  
  * `Stable` extensions are considered to be finished and are not expected to undergo regular changes. These features can be used without worry of unexpected changes, and they are not known to contain serious design or implementation deficiencies. Any breaking change to a stable extension will be announced well in advance of the change being made, with a migration path provided if possible. Ideally, no breaking change will be made to a `Stable` extension, with incompatible changes resulting instead in a new, related extension to enable smooth migration. Some extensions in this category might be `MultiWayIf`, `MonoLocalBinds`, and `ViewPatterns`.
 
@@ -36,17 +36,17 @@ Language extensions will be classified into the following categories
 Above we list expected categorizations of several extensions based on statements in the user's guide. We do not attempt to prescribe any particular categorizations as part of this proposal and simply provide a small number of expectations from the perspective of someone reading the existing documentation.
 
 The expected extension lifecycle includes the following transitions:
- * `Experimental` -> `Stable`
- * `Experimental` -> `Deprecated`
- * `Experimental` -> `Legacy`
+ * `Unstable` -> `Stable`
+ * `Unstable` -> `Deprecated`
+ * `Unstable` -> `Legacy`
  * `Stable` -> `Legacy`
  * `Legacy` -> `Deprecated`
 
-However, it also seems plausible that new knowledge might from time to time cause a stable extension to once again be considered experimental, e.g. in the face of soundness bugs or subtle interactions with other features. We also do not rule out any transition explicitly to allow for unforeseen circumstances. 
+However, it also seems plausible that new knowledge might from time to time cause a stable extension to once again be considered unstable, e.g. in the face of soundness bugs or subtle interactions with other features. We do not rule out any transition explicitly to allow for unforeseen circumstances. 
 
-For existing, or future, language sets such as `GHC2021` or `Haskell98`, it is expected that none of the contained extensions would be `Experimental`. However, this proposal does not seek to impose any particular policy on the inclusion of extensions into language sets - the developers and the steering committee are always in the best position to make a decision about a concrete extension and extension set.
+For existing, or future, language sets such as `GHC2021` or `Haskell98`, it is expected that none of the contained extensions would be `Unstable`. However, this proposal does not seek to impose any particular policy on the inclusion of extensions into language sets - the developers and the steering committee are always in the best position to make a decision about a concrete extension and extension set.
 
-Moving an extension through the lifecycle will require a GHC proposal. This will give users a chance to provide their input, it will help catch unexpected interactions (such as a `Stable` extension implying an `Experimental` one, and thus triggering warnings by default), and it provides a way for language implementers and users to clarify their mutual expectations.
+Moving an extension through the lifecycle will require a GHC proposal. This will give users a chance to provide their input, it will help catch unexpected interactions (such as a `Stable` extension implying an `Unstable` one, and thus triggering warnings by default), and it provides a way for language implementers and users to clarify their mutual expectations.
 
 ### 2.2. User Interface
 
@@ -55,14 +55,14 @@ Haskell users have different tolerances for risks related to language change. So
 There will be an additional set of warnings:
  * `-WXDeprecated`: Issue a warning when a deprecated extension is enabled
  * `-WXStable`: Issue a warning when a stable extension is enabled
- * `-WXExperimental`: Issue a warning when an experimental extension is enabled 
+ * `-WXUnstable`: Issue a warning when an unstable extension is enabled 
  * `-WXLegacy`: Issue a warning when a legacy extension is enabled.
 
 Each category will also support the usual`-Wno-` syntax, so `-Wno-XDeprecated` will turn off warnings for deprecated extensions. Additionally, each extension should have a configurable warning that can be individually enabled or disabled, allowing users and teams to inform GHC about their local policies and needs. For instance, `-WXDeprecated -Wno-XRank2Types` would warn about all deprecated extensions except `Rank2Types`.
 
-Furthermore, `-WXDeprecated` and `-WXExperimental` would be added to `-Wcompat` for the next release to allow the community time to adjust, and then they will be on by default. This is because these two categories describe extensions that are likelier to lead to incompatibilities with future releases of GHC. `-WXLegacy` should be added to `-Wall`, so that only those who request extra feedback will get it.
+Furthermore, `-WXDeprecated` and `-WXUnstable` would be added to `-Wcompat` for the next release to allow the community time to adjust, and then they will be on by default. This is because these two categories describe extensions that are likelier to lead to incompatibilities with future releases of GHC. `-WXLegacy` should be added to `-Wall`, so that only those who request extra feedback will get it.
 
-Note that this warning syntax rules out the names `Deprecated`, `Stable`, `Experimental`, and `Legacy` for future language extensions.
+Note that this warning syntax rules out the names `Deprecated`, `Stable`, `Unstable`, and `Legacy` for future language extensions.
 
 #### 2.2.1. Warnings are for Enabled Extensions
 
@@ -120,7 +120,7 @@ When possible, the implementation should distinguish between extension lifecycle
 
 ### 2.3. Documentation
 
-The user's guide for each extension documents where it is in the extension lifecycle. We expect this to be next to the "Since" and "Implied by" fields in extension documentation. Additionally, the user's guide should provide a history of the extension's sojourn through the various states, and the GHC versions in which it went from being experimental to stable, or from stable to deprecated.
+The user's guide for each extension documents where it is in the extension lifecycle. We expect this to be next to the "Since" and "Implied by" fields in extension documentation. Additionally, the user's guide should provide a history of the extension's sojourn through the various states, and the GHC versions in which it went from being unstable to stable, or from stable to deprecated.
 
 ## 3. Examples
 
@@ -223,19 +223,19 @@ Foo.hs:3:5: warning: [-WXBlockArguments]
 ```
 
 
-On the other hand, when the warnings are used to express a stability policy, the messages should support this. On the assumption that `LinearTypes` is `Experimental` and a build system is configured as with the following `stack.yaml` snippet:
+On the other hand, when the warnings are used to express a stability policy, the messages should support this. On the assumption that `LinearTypes` is `Unstable` and a build system is configured as with the following `stack.yaml` snippet:
 ```
 ghc-options:
-  "$locals": -WXExperimental -WXLegacy -WXDeprecated
+  "$locals": -WXUnstable -WXLegacy -WXDeprecated
 ```
 or `cabal.project` snippet:
 ```
 program-options
-  ghc-options: -WXExperimental -WXLegacy -WXDeprecated
+  ghc-options: -WXUnstable -WXLegacy -WXDeprecated
 ```
 then a module that enables `LinearTypes` should get a warning like:
 ```
-Foo.hs:3:5: warning: [-WXExperimental]
+Foo.hs:3:5: warning: [-WXUnstable]
     The extension `LinearTypes` is experimental and subject to breaking changes.
 ```
 
@@ -244,7 +244,7 @@ If this can't be accomplished for technical reasons, then the message should be 
 
 ## 4. Effect and Interactions
 
-The tension between large-scale industrial users of Haskell who desire stability and predictability and GHC's traditional role as a venue for language experiments is very real. This system addresses some of the industrial concern by providing clear communication to users that sets realistic expectations for language extensions. By providing users with an explicit way to indicate their own tolerances for legacy, experimental, and deprecated features, this proposal aims to ease the tension in a way that requires as little as possible additional investment on the part of the GHC team.
+The tension between large-scale industrial users of Haskell who desire stability and predictability and GHC's traditional role as a venue for language experiments is very real. This system addresses some of the industrial concern by providing clear communication to users that sets realistic expectations for language extensions. By providing users with an explicit way to indicate their own tolerances for legacy, unstable, and deprecated features, this proposal aims to ease the tension in a way that requires as little as possible additional investment on the part of the GHC team.
 
 The primary interaction that we anticipate from this change is with existing warning flags and build configurations. Because this proposal does not change the semantics of any programs, we expect that it will not be a major disturbance.
 
@@ -257,18 +257,18 @@ Development and ongoing costs are expected to exist primarily in the form of add
 
 ### 5.2. Transition Costs
 
-Organizations that use `-Werror` may incur a one-time cost in updating their compiler flags to disable warnings about experimental or deprecated extensions.
+Organizations that use `-Werror` may incur a one-time cost in updating their compiler flags to disable warnings about unstable or deprecated extensions.
 
 ### 5.3. Experts vs Less-Expert Users
 
-There is a trade-off in the selection of default warnings. Making `-WXExperimental` be on by default (after a suitable period in `-Wcompat`) means that some Haskell users will need to carry out two steps to use experimental features: after turning on the extension, the warning will need to be suppressed. For instance, a user might introduce a scoped wombat pun into their file, which requires enabling the hypothetical experimental extension `ScopedWombatPunning`. First, GHC will advise that they enable this extension in an error message. Upon following this advice, the user will then be presented with a warning on their `LANGUAGE` pragma along the lines of:
+There is a trade-off in the selection of default warnings. Making `-WXUnstable` be on by default (after a suitable period in `-Wcompat`) means that some Haskell users will need to carry out two steps to use still-experimental features: after turning on the extension, the warning will need to be suppressed. For instance, a user might introduce a scoped wombat pun into their file, which requires enabling the hypothetical unstable extension `ScopedWombatPunning`. First, GHC will advise that they enable this extension in an error message. Upon following this advice, the user will then be presented with a warning on their `LANGUAGE` pragma along the lines of:
 ```
-SomeModule.hs:1:4-1:32: warning: [-WXExperimental]
+SomeModule.hs:1:4-1:32: warning: [-WXUnstable]
 The ScopedWombatPunning extension is experimental, and the features that it enables may have breaking changes in an upcoming version.
 
 You can suppress this warning with the `-Wno-XScopedWombatPunning` option.
 ```
-If this user additionally uses `-Werror` or simply prefers to not have warnings in their code, then they must then add a further `GHC_OPTIONS -Wno-XScopedWombatPunning` pragma to the program, or turn on "advanced mode" by adding `-Wno-XExperimental` to the compiler configuration in their build system.
+If this user additionally uses `-Werror` or simply prefers to not have warnings in their code, then they must then add a further `GHC_OPTIONS -Wno-XScopedWombatPunning` pragma to the program, or turn on "advanced mode" by adding `-Wno-XUnstable` to the compiler configuration in their build system.
 
 If this user is a Haskell expert, then this extra step may be unwelcome - the compiler already told them to use `LANGUAGE ScopedWombatPunning`, why should it then chide them for doing so? However, if the user is not yet an expert, then this default warning is valuable because it can prevent them from depending on less-stable behavior without realizing it. This can reduce the difficulty of deciding which parts of the language to use in a project, especially one with other people. If the warning were off by default, then this user would need to first find out how to enable it, and this may not happen until after lots of code was written that depended on scoped wombat punning. A series of relatively small annoyance to expert Haskellers seems preferable to expensive code migrations.
 
