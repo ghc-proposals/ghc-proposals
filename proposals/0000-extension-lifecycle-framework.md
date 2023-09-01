@@ -118,6 +118,10 @@ The warning feature should allow the GHC developers to easily add comments about
 
 When possible, the implementation should distinguish between extension lifecycle warnings that result from extension set flags and those that result from individual flags. This is because the individual extension warnings may be used for reasons other than stability - a company might decide to warn on an extension simply because the team has decided that it doesn't fit the house style.
 
+#### 2.2.5 Extension Warnings vs Extension Category Warnings
+
+For the sake of consistency, extension warnings and their categories should use the usual GHC mechanisms to communicate to users which flags control the warnings. In particular, GHC should show the specific extension warning, and then show which category it is in if [`-fshow-warning-groups`](https://downloads.haskell.org/ghc/9.0.1/docs/html/users_guide/using-warnings.html#ghc-flag--fshow-warning-groups) is enabled.
+
 ### 2.3. Documentation
 
 The user's guide for each extension documents where it is in the extension lifecycle. We expect this to be next to the "Since" and "Implied by" fields in extension documentation. Additionally, the user's guide should provide a history of the extension's sojourn through the various states, and the GHC versions in which it went from being unstable to stable, or from stable to deprecated.
@@ -208,17 +212,17 @@ program-options
 
 While this use case is not a primary motivating factor for this proposal, it seems inevitable that it will occur. Thus, the warning message should _not_ be something like:
 ```
-Foo.hs:3:5: warning: [-WXStable]
+Foo.hs:3:5: warning: [-WXBlockArguments (in -WXStable)]
     The extension BlockArguments is stable
 ```
 but rather
 ```
-Foo.hs:3:5: warning: [-WXBlockArguments]
+Foo.hs:3:5: warning: [-WXBlockArguments (in -WXStable)]
     Use of extension BlockArguments
 ```
 or
 ```
-Foo.hs:3:5: warning: [-WXBlockArguments]
+Foo.hs:3:5: warning: [-WXBlockArguments (in -WXStable)]
     Use of (stable) extension BlockArguments
 ```
 
@@ -235,7 +239,7 @@ program-options
 ```
 then a module that enables `LinearTypes` should get a warning like:
 ```
-Foo.hs:3:5: warning: [-WXUnstable]
+Foo.hs:3:5: warning: [-WXLinearTypes (in -WXUnstable)]
     The extension `LinearTypes` is experimental and subject to breaking changes.
 ```
 
@@ -263,7 +267,7 @@ Organizations that use `-Werror` may incur a one-time cost in updating their com
 
 There is a trade-off in the selection of default warnings. Making `-WXUnstable` be on by default (after a suitable period in `-Wcompat`) means that some Haskell users will need to carry out two steps to use still-experimental features: after turning on the extension, the warning will need to be suppressed. For instance, a user might introduce a scoped wombat pun into their file, which requires enabling the hypothetical unstable extension `ScopedWombatPunning`. First, GHC will advise that they enable this extension in an error message. Upon following this advice, the user will then be presented with a warning on their `LANGUAGE` pragma along the lines of:
 ```
-SomeModule.hs:1:4-1:32: warning: [-WXUnstable]
+SomeModule.hs:1:4-1:32: warning: [-WXScopedWomatPunnin (in -WXUnstable)]
 The ScopedWombatPunning extension is experimental, and the features that it enables may have breaking changes in an upcoming version.
 
 You can suppress this warning with the `-Wno-XScopedWombatPunning` option.
