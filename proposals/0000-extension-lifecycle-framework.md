@@ -87,7 +87,7 @@ Warnings should be issued for extensions no matter how they are enabled. For ins
 {-# OPTIONS_GHC -WXBangPatterns #-}
 module Main where
 ```
-This is because GHC defaults to `GHC2021`, which enables the `BangPatterns` extension. The extension lifecycle warnings issued for language extension sets such as `GHC2021` and `Haskell98` should be equivalent to the union of the warnings issued for the included extensions.
+This is because GHC defaults to `GHC2021`, which enables the `BangPatterns` extension. The extension lifecycle warnings issued for language extension sets such as `GHC2021` and `Haskell98` should be equivalent to the union of the warnings issued for the included extensions. In other words, `-WXGHC2021` is equivalent to `-WXMultiParamTypeClasses -WXDeriveFunctor ...`.
 
 #### 2.2.2. Warnings and Extensions Commute
 
@@ -116,7 +116,13 @@ The warning feature should allow the GHC developers to easily add comments about
 
 #### 2.2.4. Identifying Flags
 
-When possible, the implementation should distinguish between extension lifecycle warnings that result from extension set flags and those that result from individual flags. This is because the individual extension warnings may be used for reasons other than stability - a company might decide to warn on an extension simply because the team has decided that it doesn't fit the house style.
+This section is non-normative, in the sense that an implementation of this proposal need not fulfill these criteria. However, we believe that the use case served by this section's specification is important, and that the feature will be more useful if this is done.
+
+When possible, the implementation should internally distinguish between extension stability warnings that result from `-WXUnstable`, `-WXStable`, `-WXLegacy`, or `-WXDeprecated`, and those that result from single-extension warnings flags (such as `-WXLinearTypes`), making it possible to phrase the warning differently. This is because the individual extension warnings may be used for reasons other than stability - a company might decide to warn on an extension simply because the team has decided that it doesn't fit the house style, so an error message mentioning that the extension is stable would be misleading.
+
+Warnings that result from one of the four lifecycle warning flags (`-WXUnstable`, `-WXStable`, `-WXLegacy`, or `-WXDeprecated`) should mention the lifecycle in their text, while warnings that result from a single extension flag (e.g. `-WXBlockArguments`) should not.
+
+See section 3.2 for examples of how the warning text may usefully distinguish between these cases.
 
 #### 2.2.5 Extension Warnings vs Extension Category Warnings
 
@@ -198,6 +204,8 @@ module Main where
 ```
 
 ### 3.2. Warnings for Extension Flags vs Extension Set Flags
+
+These examples illustrate section 2.2.4.
 
 Assuming that `BlockArguments` is `Stable`, a team may nonetheless wish to rule it out simply because it doesn't fit the house style. One way to do this is to enable a warning for it in either `stack.yaml`:
 ```
