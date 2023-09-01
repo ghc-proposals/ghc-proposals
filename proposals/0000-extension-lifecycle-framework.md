@@ -35,14 +35,14 @@ Language extensions will be classified into the following categories
 
 Above we list expected categorizations of several extensions based on statements in the user's guide. We do not attempt to prescribe any particular categorizations as part of this proposal and simply provide a small number of expectations from the perspective of someone reading the existing documentation.
 
-The expected extension lifecycle includes the following transitions:
+Non-normatively, the expected extension lifecycle includes the following transitions:
  * `Unstable` -> `Stable`
  * `Unstable` -> `Deprecated`
  * `Unstable` -> `Legacy`
  * `Stable` -> `Legacy`
  * `Legacy` -> `Deprecated`
 
-However, it also seems plausible that new knowledge might from time to time cause a stable extension to once again be considered unstable, e.g. in the face of soundness bugs or subtle interactions with other features. We do not rule out any transition explicitly to allow for unforeseen circumstances. 
+However, it also seems plausible that new knowledge might from time to time cause a stable extension to once again be considered unstable, e.g. in the face of soundness bugs or subtle interactions with other features. We explicitly do not rule out any transition to allow for unforeseen circumstances. The extension classifications are first and foremost a machine-checked communications channel between language designers, compiler developers, and users.
 
 For existing, or future, language sets such as `GHC2021` or `Haskell98`, it is expected that none of the contained extensions would be `Unstable`. However, this proposal does not seek to impose any particular policy on the inclusion of extensions into language sets - the developers and the steering committee are always in the best position to make a decision about a concrete extension and extension set.
 
