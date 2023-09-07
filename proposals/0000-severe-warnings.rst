@@ -84,7 +84,7 @@ Proposed Change Specification
   It behaves like the other groups in that ``-Wno=severe``, ``-Wwarn=severe`` and ``-Werror=severe`` behave as if the flag
   had been specified for each warning in the groups.
   
-  Warning categories in this group are on and erroring by default (as if``-Werror=severe`` was the first argument).
+  Warning categories in this group are on and erroring by default (as if ``-Werror=severe`` was the first argument).
   
 * The warning group is initialized with the following warning categories:
 
