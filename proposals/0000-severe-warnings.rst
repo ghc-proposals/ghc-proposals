@@ -81,7 +81,7 @@ Proposed Change Specification
 * GHC learns a new warning group flag ``-Wsevere``, next to the existing ``-Wdefault``, ``-Wextra``, ``-Wall`` and ``-Wcompat``.
   See `“5.2. Warnings and sanity-checking” <https://downloads.haskell.org/ghc/latest/docs/users_guide/using-warnings.html>`_.
 
-  It behaves like the ``compat`` group in that ``-Wno=severe``, ``-Wwarn=severe`` and ``-Werror=severe`` behave as if the flag
+  It behaves like the ``compat`` group in that ``-Wno-severe``, ``-Wwarn=severe`` and ``-Werror=severe`` behave as if the flag
   had been specified for each warning in the groups.
 
   Warning categories in this group are on and erroring by default (as if ``-Werror=severe`` was the first argument).
@@ -98,7 +98,7 @@ Proposed Change Specification
    ``-Wno-severe``, ``-Wwarn=severe`` and ``-Werror=severe``
    also affect all custom warnings with a name starting in ``xs-*``.
 
-* For uniformity, the warning groups ``default`, ``extra``, ``all`` and ``everything`` can also be used in ``-Wno=<group>``,
+* For uniformity, the warning groups ``default`, ``extra``, ``all`` and ``everything`` can also be used in ``-Wno-<group>``,
   ``-Wwarn=<group>``  and ``-Werror=<group>``. (This is already implemented in `MR9679 <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/9679>`_).
 
 Examples
