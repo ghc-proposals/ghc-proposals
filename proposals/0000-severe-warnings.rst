@@ -80,10 +80,10 @@ Proposed Change Specification
 
 * GHC learns a new warning group flag ``-Wsevere``, next to the existing ``-Wdefault``, ``-Wextra``, ``-Wall`` and ``-Wcompat``.
   See `“5.2. Warnings and sanity-checking” <https://downloads.haskell.org/ghc/latest/docs/users_guide/using-warnings.html>`_.
-  
-  It behaves like the other groups in that ``-Wno=severe``, ``-Wwarn=severe`` and ``-Werror=severe`` behave as if the flag
+
+  It behaves like the ``compat`` group in that ``-Wno=severe``, ``-Wwarn=severe`` and ``-Werror=severe`` behave as if the flag
   had been specified for each warning in the groups.
-  
+
   Warning categories in this group are on and erroring by default (as if ``-Werror=severe`` was the first argument).
   
 * The warning group is initialized with the following warning categories:
@@ -91,20 +91,75 @@ Proposed Change Specification
   * ``missing-methods``
   * ``missing-fields``
 
+  They are no longer part of ``-Wdefault``.
+
 *  The set of allowed names of custom warning categories (`#541 <https://github.com/ghc-proposals/ghc-proposals/pull/541>`_) is
    extended by those prefixed with ``xs-*`` (for “custom extended – severe”). The flags
    ``-Wno-severe``, ``-Wwarn=severe`` and ``-Werror=severe``
    also affect all custom warnings with a name starting in ``xs-*``.
- 
+
+* For uniformity, the warning groups ``default`, ``extra``, ``all`` and ``everything`` can also be used in ``-Wno=<group>``,
+  ``-Wwarn=<group>``  and ``-Werror=<group>``.
 
 Examples
 --------
-TODO
 
+Consider file ``Test.hs``::
+
+  module Test where
+  data Foo = Foo { a :: Int, b :: Bool }
+  foo = Foo { a = 1 }
+
+We would get::
+
+  $ ghc Test.hs
+  [1 of 1] Compiling Test             ( Test.hs, Test.o )
+  
+  Test.hs:3:9: error: [-Wmissing-fields, -Werror=missing-fields]
+      • Fields of ‘Foo’ not initialised:
+          b :: Bool
+      • In the expression: Foo {a = 1}
+        In an equation for ‘foo’: foo = Foo {a = 1}
+    |
+  3 |   foo = Foo { a = 1 }
+    |         ^^^^^^^^^^^^^
+  $ echo $?
+  1
+  $ ghc -Wwarn=missing-fields Test.hs
+  [1 of 1] Compiling Test             ( Test.hs, Test.o )
+  
+  Test.hs:3:9: warning: [-Wmissing-fields]
+      • Fields of ‘Foo’ not initialised:
+          b :: Bool
+      • In the expression: Foo {a = 1}
+        In an equation for ‘foo’: foo = Foo {a = 1}
+    |
+  3 |   foo = Foo { a = 1 }
+    |         ^^^^^^^^^^^^^
+  $ echo $?
+  0
+  $ ghc -Wno-missing-fields Test.hs
+  $ echo $?
+  0
+
+Disabling the ``default`` warnings, but not the ``severe`` warnings, will leave the ``severe`` warnings on::
+
+  $ ghc Test.hs -Wno-default
+  [1 of 1] Compiling Test             ( Test.hs, Test.o )
+  
+  Test.hs:3:9: error: [-Wmissing-fields, -Werror=missing-fields]
+      • Fields of ‘Foo’ not initialised:
+          b :: Bool
+      • In the expression: Foo {a = 1}
+        In an equation for ‘foo’: foo = Foo {a = 1}
+    |
+  3 |   foo = Foo { a = 1 }
+    |         ^^^^^^^^^^^^^
+  
 
 Effect and Interactions
 -----------------------
-TODO
+None yet.
 
 
 Costs and Drawbacks
@@ -156,4 +211,4 @@ None yet.
 
 Implementation Plan
 -------------------
-TODO
+None yet.
