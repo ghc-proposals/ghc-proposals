@@ -54,8 +54,8 @@ Motivation
   We nevertheless propose to make that change even with ``-XHaskell2010`` (i.e. don’t introduce a language extension ``NoMissingFieldsOrMethods`` for
   this behavior). One reason is given by Oleg:
   
-  > not having ``-Wsevere=missing-methods`` by default essentially prevents any (true) breakage assessment of adding new, non-defaulted members to
-  > existing type-classes.
+    not having ``-Wsevere=missing-methods`` by default essentially prevents any (true) breakage assessment of adding new, non-defaulted members to
+    existing type-classes.
   
   Users who want to continue using idioms involving undefined fields and methods will be told by the error message that they can use
   ``-Wno-missing-methods`` to get that back. Also, any Haskell2010 program that continues to compile has its semantics unchanged, it “just” means
