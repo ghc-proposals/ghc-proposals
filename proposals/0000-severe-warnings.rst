@@ -99,7 +99,7 @@ Proposed Change Specification
    also affect all custom warnings with a name starting in ``xs-*``.
 
 * For uniformity, the warning groups ``default`, ``extra``, ``all`` and ``everything`` can also be used in ``-Wno=<group>``,
-  ``-Wwarn=<group>``  and ``-Werror=<group>``.
+  ``-Wwarn=<group>``  and ``-Werror=<group>``. (This is already implemented in `MR9679 <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/9679>`_).
 
 Examples
 --------
