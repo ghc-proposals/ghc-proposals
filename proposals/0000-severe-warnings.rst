@@ -59,7 +59,7 @@ Motivation
   
   Users who want to continue using idioms involving undefined fields and methods will be told by the error message that they can use
   ``-Wno-missing-methods`` to get that back. Also, any Haskell2010 program that continues to compile has its semantics unchanged, it “just” means
-  that GHC by default rejects some Haskel2010 programs.
+  that GHC by default rejects some Haskell2010 programs.
   
   This is a deviation from the usual “deviations from the report must be guarded by language extension flags“ rule, so extra committee scrutiny
   is advised.
@@ -98,7 +98,7 @@ Proposed Change Specification
    ``-Wno-severe``, ``-Wwarn=severe`` and ``-Werror=severe``
    also affect all custom warnings with a name starting in ``xs-*``.
 
-* For uniformity, the warning groups ``default`, ``extra``, ``all`` and ``everything`` can also be used in ``-Wno-<group>``,
+* For uniformity, the warning groups ``default``, ``extra``, ``all`` and ``everything`` can also be used in ``-Wno-<group>``,
   ``-Wwarn=<group>``  and ``-Werror=<group>``. (This is already implemented in `MR9679 <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/9679>`_).
 
 Examples
