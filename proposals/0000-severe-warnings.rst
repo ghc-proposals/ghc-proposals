@@ -166,7 +166,19 @@ Costs and Drawbacks
 -------------------
 In terms of GHC development, this is a modest extension of the existing warning category and group infrastructure.
 
-In terms of breakage, @phadej has made an impact analysis at <https://github.com/ghc-proposals/ghc-proposals/issues/544#issue-1410125536>.
+Backward Compatibility
+----------------------
+We assess the expected impact on existing code as follows:
+
+3. Breakage in uncommon cases (e.g. a few Stackage packages may break)
+
+@phadej has made an impact analysis for ``-Werror=missing-methods`` <https://github.com/ghc-proposals/ghc-proposals/issues/544#issue-1410125536>
+and one for ``-Werror=missing-fields``` <https://github.com/ghc-proposals/ghc-proposals/issues/544#issuecomment-1279948737>.
+
+  22 packages out of nearly 3000 in the build plan [had] missing methods.
+  In other word the impact isn't huge, and in most cases easy to fix.
+
+This breakage may be warranted by the gains from this change, assuming it’s better for builds to begin to fail with an error after a dependency change, than to compile but error and loop at runtime. 
 
 
 Alternatives
@@ -180,6 +192,11 @@ Alternatives
   
   I briefly considered ``-Wfatal``, but that’s a lie – these errors are *not* ``fatal``, else we couldn’t turn them
   into warnings.
+
+* We could leave out ``missing-fields``.
+
+  It is less severe than ``missing-methods`` (no possibly recursive default methods, clear runtime error), so we could leave it out if we
+  want to tread more carefully.
   
 * We could add more warnings to the group right away.
 
