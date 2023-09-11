@@ -6,7 +6,7 @@ Or Patterns
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/609>`_.
+.. header:: The old proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/522>`_. This amendment proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/609>`_.
 .. sectnum::
 .. contents::
 
@@ -74,8 +74,7 @@ Proposed Change Specification
 Changes in the grammar
 ~~~~~~~~~~~~~~~~~~~~~~
 
-We consider this as an extension to GHC's .
-We consider this as an extension to `Haskell 2010 grammar
+We consider this as an extension to the `Haskell 2010 grammar
 <https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#x17-18000010.5>`_.
 This proposal adds one more production to the nonterminal ``pat``: ::
 
@@ -337,7 +336,14 @@ The cost is a small implementation overhead. Also, as Or patterns are syntactic 
 We believe however that the mentioned advantages more than compensate for these disadvantages.
 Or patterns are available in all of the top seven programming languages on the TIOBE index (Python, Java, Javascript, C#, C, etc.), which suspects that the concept won't be particularly troublesome for beginners to learn.
 
-Additionally, the changes to the ``pattern_synonym_decl`` nonterminal are required to allow unparenthesized Or patterns in the syntax. This breaks pattern synonym declarations using a pattern signature such as: ::
+.. _5.1:
+
+PatternSynonyms
+~~~~~~~~~~~~~~~
+
+The changes to the ``pattern_synonym_decl`` nonterminal in ``Parser.y`` are required to allow unparenthesized Or patterns.
+
+When ``XPatternSynonyms`` is enabled however,  this breaks pattern synonym declarations which use a pattern signature or a type such as: ::
 
   pattern X <- 42 :: Int
 
@@ -348,6 +354,8 @@ One would now have to parenthesize the right side of the pattern synonym and wri
 A search on Hackage shows that this syntax is currently only used (without enclosing parentheses) in `haskell-src-exts-simple <https://hackage-search.serokell.io/?q=%5Epattern.*%3C-.*%3A%3A%5B%5E%5C%29%5D*%24>`_.
 
 The syntax change also makes 3 tests in the `patsyn` testsuite fail, out of 250 total `patsyn` tests. The fix is always to enclose the right side in parentheses.
+
+An alternative solution which does not introduce this breaking change is described in `6.1`_.
 
 Alternatives
 ------------
@@ -371,17 +379,20 @@ Another great advantage of ``;`` over ``|`` is the use of the layout rule: in a 
 where the Or pattern is implicitly parsed as ``1; 2; 3``.
 This resembles the ``switch/case``-syntax known from languages like C and Java.
 
+.. _6.1:
+
 No unparenthesized Or patterns
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-As described in `5`_, the changes to the ``pattern_synonym_decl`` nonterminal are breaking changes in some rare cases.
-We could avoid introducing these breaking changes by requiring Or patterns to be parenthesised. This means, the concrete changes to Parser.y would not include the following production ::
+As described in `5.1`_, the changes to the ``pattern_synonym_decl`` nonterminal are breaking in some rare cases when ``XPatternSynonyms`` is active.
 
-      pat -> pat ';' orpats
+We could avoid introducing these breaking changes by *requiring Or patterns to be parenthesised*. This means, we would amend the Haskell 2010 grammar by: ::
 
-and would not include the changes to the ``pattern_synonym_decl`` nonterminal.
+      pat -> (pat_1; ...; pat_n) (n >= 2)
 
-Beware that it would still be possible to use the layout rule even with parenthesized Or patterns as follows: ::
+Also, we would not perform the above-mentioned change to the ``pattern_synonym_decl`` nonterminal.
+
+Beware that it would then still be possible to use the layout rule even with parenthesized Or patterns as follows: ::
 
     case a of
       (A
@@ -390,7 +401,7 @@ Beware that it would still be possible to use the layout rule even with parenthe
 
 This is an artifact of the layout rule and is not intended to be used.
 
-When disallowing the unparenthesized syntax ``p1; p2``, we do not see much advantage of the ``;`` separator over the ``|`` separator, except that the unparenthesized syntax could be added some time in the future.
+When disallowing the unparenthesized syntax ``p1; p2``, we do not see much advantage of the ``;`` separator over the ``|`` separator however, except that the unparenthesized syntax could be added some time in the future.
 
 Binding pattern variables
 ~~~~~~~~~~~~~~~~~~
