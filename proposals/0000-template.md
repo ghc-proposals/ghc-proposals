@@ -41,7 +41,7 @@ For example, here is an example on [Stack Overflow](https://stackoverflow.com/qu
 the fact that the program crashes if there is a `.tix` file still around. None of the other users was able to correctly identify the underlying problem.
 And here is an issue that describes that even `cabal` was not able to correctly implement the logic for enabling code coverage in a project: [Cabal Issue #7384](https://github.com/haskell/cabal/issues/7384)
 
-If a user wants to combine the results of multiple runs, then this behaviour can be trivially implemented in userland. 
+If a user wants to combine the results of multiple runs, then this behaviour can be implemented in userland. 
 The `hpc` binary has the subcommand `hpc combine` which allows to do this on the commandline, and the HPC library  on [Hackage](https://hackage.haskell.org/package/hpc) provides the tools to do that programmatically from within Haskell programs.
 
 
@@ -129,13 +129,14 @@ multiple tix files by hand. This is already possible using the functionality of 
 This is a breaking change w.r.t. to the semantics of `-fhpc`.
 It will only affect users of `-fhpc` which rely on the described functionality,
 namely that the coverage collected in the `.tix` file is accumulated over multiple
-program runs. It is very hard to be sure, but my guess is that nobody is currently
+program runs. It is very hard to be sure, but my guess is that very few people are currently
 using `-fhpc` in this way. They will only notice the change of behaviour in that
 their `.tix` files contain less ticks than they expected.
 
 ## Alternatives
 
 Do nothing and leave the semantic as it is.
+Alternatively, the old behaviour is kept but guarded by an RTS flag.
 
 ## Unresolved Questions
 
