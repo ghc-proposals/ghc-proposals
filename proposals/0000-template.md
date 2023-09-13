@@ -108,7 +108,7 @@ Hpc failure: module mismatch with .tix/.mix file hash number
 ```
 
 The crash occurs during the startup phase of the RTS, when it tries to initialize the
-tix datastructures of the `.tix` file in the directory, but finds out that the hashes
+tix data structures with the information from the `.tix` file in the directory, but finds out that the hashes
 don't match.
 
 ## Effect and Interactions
