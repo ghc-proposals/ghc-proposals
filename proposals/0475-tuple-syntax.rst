@@ -63,26 +63,35 @@ variable in a bit of code. This allows us to e.g. refer to ``Tuple2`` and ``Tupl
 Proposed Change Specification
 -----------------------------
 
-1. Create three new modules in ``ghc-experimental`` called ``Prelude.Experimental``,
-   ``Data.Tuple.Experimental`` and ``Data.Sum.Experimental``.
+1. Create two new modules in ``ghc-experimental`` called ``Data.Tuple.Experimental``
+   and ``Data.Sum.Experimental``.
    Since this new paradigm may evolve in response to users' experience, we want
    to avoid committing to an API in ``base`` too early, and therefore choose the
    new package as the home for the exports of the new entities.
 
-   ``Prelude.Experimental`` exports definitions peculiar to GHC that are safe to
-   use in ordinary code, but whose API may evolve rapidly over subsequent releases.
+   Implementation note: Many type definitions will be "wired-in", defined in ``ghc-prim``,
+   and simply re-exported from `ghc-experimental`.
+
+#. Create a new module in ``ghc-experimental`` called ``Prelude.Experimental`` that
+   shall export definitions peculiar to GHC that are safe to use in ordinary code,
+   but whose API may evolve rapidly over subsequent releases.
    This module is *not* intended as a replacement to ``Prelude``, but instead a
    complement to it. This module is a counterpart to ``GHC.Exts``, which exports
    many *unsafe* internals.
 
-   This proposal lists several definitions to be exported from ``Prelude.Experimental``,
-   but leaves other definitions to be added in separate proposal(s).
+   For this proposal, ``Prelude.Experimental`` will re-export the entire contents
+   of ``Data.Tuple.Experimental`` and ``Data.Sum.Experimental`` as well as ``List``::
 
-   All of the wired-in types must be declared in ``ghc-prim``, and re-exported from
-   ``ghc-experimental``.
+     module Prelude.Experimental (
+       List,
+       module Data.Tuple.Experimental,
+       module Data.Sum.Experimental,
+     ) where
+     import GHC.Types (List)
+     import Data.Tuple.Experimental
+     import Data.Sum.Experimental
 
-#. Replace the existing tuples in ``GHC.Tuple`` with the following definitions
-   and export them from ``Data.Tuple.Experimental`` and ``Prelude.Experimental``. ::
+#. Export the following definitions from ``Data.Tuple.Experimental``::
 
      data Unit = ()
      data Solo a = MkSolo a    -- this is a change from today's `data Solo a = Solo a`
@@ -102,8 +111,7 @@ Proposed Change Specification
      -- ...
      data Tuple64 ... = (...)
 
-#. Replace the existing constraint tuples in ``GHC.Classes`` with the following
-   definitions and export them from ``Data.Tuple.Experimental`` and ``Prelude.Experimental``. ::
+#. Export the following definitions from ``Data.Tuple.Experimental``.
    (Note that ``(...) =>`` is special syntax, and does not
    construct tuples. See more on this point `below <#constraint-special-syntax>`_.)::
 
@@ -125,7 +133,7 @@ Proposed Change Specification
      instance (...) => CTuple64 ...
 
 #. Add the following pseudo-definitions to ``GHC.Types`` and export them from
-   ``Data.Tuple.Experimental`` and ``Prelude.Experimental``. ::
+   ``Data.Tuple.Experimental``::
 
      type Unit# :: TYPE (TupleRep [])
      data Unit# = (# #)
@@ -145,7 +153,7 @@ Proposed Change Specification
      data Tuple64# ... = (# ... #)
 
 #. Add the following pseudo-definitions to ``GHC.Types`` and export them from
-   ``Data.Sum.Experimental`` and ``Prelude.Experimental``. ::
+   ``Data.Sum.Experimental``::
 
      -- NB: There are no 0-sums or 1-sums in Haskell, today or tomorrow.
 
@@ -236,7 +244,7 @@ Proposed Change Specification
 
      data List a = [] | a : List a
 
-#. Re-export ``List`` from ``GHC.List`` and ``Prelude.Experimental``.
+#. Re-export ``List`` from ``GHC.List``.
 
 #. Introduce a new extension ``-XListTuplePuns``; this extension is part
    of ``-XHaskell98``, ``-XHaskell2010``, and ``-XGHC2021``. It is thus on by default.
@@ -344,16 +352,19 @@ Proposed Library Change Specification
 -------------------------------------
 
 1. ``base``:
+
    - ``GHC.List`` will export ``GHC.Types.List``.
      The proposal and the implementation of the ``List`` part predate the
      stability practice of introducing experimental entities in ``ghc-experimental``.
 
 #. ``ghc-experimental``:
+
    - ``Data.Tuple.Experimental`` will export all tuple-related entities.
    - ``Data.Sum.Experimental`` will export all sum-related entities.
-   - ``Prelude.Experimental`` will export all of the above.
+   - ``Prelude.Experimental`` will export all of the above and ``List``.
 
 #. ``ghc-prim``:
+
    - ``GHC.Tuple`` will contain the new boxed tuple data declarations.
    - ``GHC.Types`` will contain the new unboxed tuple and sum data declarations.
    - ``GHC.Classes`` will contain the new constraint tuple class and instance declarations.
