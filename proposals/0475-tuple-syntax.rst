@@ -70,7 +70,7 @@ Proposed Change Specification
    new package as the home for the exports of the new entities.
 
    Implementation note: Many type definitions will be "wired-in", defined in ``ghc-prim``,
-   and simply re-exported from `ghc-experimental`.
+   and simply re-exported from ``ghc-experimental``.
 
 #. Create a new module in ``ghc-experimental`` called ``Prelude.Experimental`` that
    shall export definitions peculiar to GHC that are safe to use in ordinary code,
