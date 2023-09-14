@@ -96,11 +96,6 @@ Proposed Change Specification
      data Unit = ()
      data Solo a = MkSolo a    -- this is a change from today's `data Solo a = Solo a`
 
-     {-# DEPRECATED Solo "The Solo constructor has been renamed to MkSolo to avoid punning." #-}
-     pattern Solo :: a -> Solo a
-     pattern Solo x = MkSolo x
-     {-# COMPLETE Solo #-}
-
      getSolo :: Solo a -> a
      getSolo (Solo a) = a   -- as today
 
@@ -110,6 +105,14 @@ Proposed Change Specification
      data Tuple3 a b c = (a, b, c)
      -- ...
      data Tuple64 ... = (...)
+
+#. Export the following definitions from ``Data.Tuple``, The API change here consists
+   only of the deprecation of the punned constructor::
+
+     {-# DEPRECATED Solo "The Solo constructor has been renamed to MkSolo to avoid punning." #-}
+     pattern Solo :: a -> Solo a
+     pattern Solo x = MkSolo x
+     {-# COMPLETE Solo #-}
 
 #. Export the following definitions from ``Data.Tuple.Experimental``.
    (Note that ``(...) =>`` is special syntax, and does not
@@ -346,7 +349,7 @@ Proposed Change Specification
 
    #. Lists and tuples on the type-level are printed without any tick.
 
-#. Three releases after this proposal is implemented, remove the ``Solo`` pattern synonym from ``GHC.Tuple``.
+#. Three releases after this proposal is implemented, remove the ``Solo`` pattern synonym from ``Data.Tuple``.
 
 Proposed Library Change Specification
 -------------------------------------
@@ -354,8 +357,10 @@ Proposed Library Change Specification
 1. ``base``:
 
    - ``GHC.List`` will export ``GHC.Types.List``.
-     The proposal and the implementation of the ``List`` part predate the
-     stability practice of introducing experimental entities in ``ghc-experimental``.
+   - The constructor ``Solo`` exported from ``Data.Tuple`` is now deprecated.
+
+   The proposal and the implementation of the ``List`` and ``Solo`` parts predate the
+   stability practice of introducing experimental entities in ``ghc-experimental``.
 
 #. ``ghc-experimental``:
 
