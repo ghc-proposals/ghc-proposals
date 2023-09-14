@@ -155,6 +155,29 @@ Disabling the ``default`` warnings, but not the ``severe`` warnings, will leave 
     |
   3 |   foo = Foo { a = 1 }
     |         ^^^^^^^^^^^^^
+
+The semantics of when these warnings are triggered are unaffected. In particular, `{-# MINIMAL -#}` pragmas are still taken into account::
+
+  $ cat Test.hs
+  module Test where
+  class Foo a where
+      foo :: a
+      foo = bar
+      bar :: a
+      bar = foo
+      {-# MINIMAL foo | bar #-}
+  instance Foo Int
+  instance Foo () where foo = ()
+  $ ghc Test.hs
+  [1 of 1] Compiling Test             ( Test.hs, Test.o )
+  
+  Test.hs:8:10: error: [-Wmissing-methods, -Werror=missing-methods]
+      • No explicit implementation for
+          either ‘foo’ or ‘bar’
+      • In the instance declaration for ‘Foo Int’
+    |
+  8 | instance Foo Int
+    |          ^^^^^^^
   
 
 Effect and Interactions
