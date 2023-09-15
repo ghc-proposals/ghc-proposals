@@ -71,6 +71,9 @@ cycle or (even faster) in our IDE powered by a language server implementation.
 Proposed Change Specification
 -----------------------------
 
+
+.. _2.1:
+
 Changes in the grammar
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -79,17 +82,6 @@ We consider this as an extension to the `Haskell 2010 grammar
 This proposal adds one more production to the nonterminal ``pat``: ::
 
     pat -> pat_1; ...; pat_n (n >= 2)
-
-Regarding pattern synonym declarations, we propose to use ``infixpat`` instead of ``pat`` on the right side of the pattern synonym.
-
-Concretely, as Haskell 2010 grammar does not cover pattern synonyms, in GHC's `Parser.y <https://gitlab.haskell.org/ghc/ghc/-/blob/master/compiler/GHC/Parser.y>`_, the ``pattern_synonym_decl`` nonterminal would then have the following productions: ::
-
-    pattern_synonym_decl -> 'pattern' pattern_synonym_lhs '=' infixpat
-                          | 'pattern' pattern_synonym_lhs '<-' infixpat
-                          | 'pattern' pattern_synonym_lhs '<-' infixpat where_decls
-
-where ``infixpat`` is a nonterminal only delegating to ``infixexp``.
-
 
 N.B.: For the concrete implementation in `Parser.y <https://gitlab.haskell.org/ghc/ghc/-/blob/master/compiler/GHC/Parser.y>`_, we would need to amend both the ``aexp`` and the ``pat`` nonterminals.
 This is an effect of the ECP parsing. In particular, ::
@@ -105,7 +97,37 @@ where ``orpats`` is a new nonterminal: ::
    orpats -> exp
            | exp ';' orpats
 
-**Some examples that this new grammar produces:**
+.. _2.1.1:
+
+Changes due to pattern synonyms
+""""""""""""""""""""""""""""""""
+
+With only the changes listed in `2.1`_, there are 2 shift/reduce conflicts in `Parser.y`.
+Both have to do with *pattern synonyms*, which are a GHC feature that is not in Haskell 2010.
+
+Concretely, in the following state: ::
+
+  pattern_synonym_decl -> 'pattern' pattern_synonym_lhs '<-' pat .
+  pat -> pat . ';' or_pats
+
+when a semicolon follows, the parser does not know whether the pattern synonym declaration is over or whether the pattern synonym consists of an or-pattern.
+
+To mitigate this, the ``pattern_synonym_decl`` rules should have a pattern nonterminal on the right side which cannot produce an unparanthesised or-pattern.
+We propose the following additional change:
+
+1. The three ``pattern_synonym_decl`` rules use the new nonterminal ``pat_syn_pat`` instead of ``pat`` on their right hand sides.
+2. ``pat_syn_pat`` has only one rule ``pat_syn_pat -> exp``.
+
+We could also use ``exp`` directly instead of ``pat_syn_pat`` but ``pat_syn_pat`` is more expressive as it signifies that there is a *pattern* on the right-hand-side.
+
+This fixes all conflicts in the grammar and does not introduce any breaking changes. All tests succeed.
+
+Also, no syntax is stolen; the only thing that is forbidden on the right side of a pattern synonym is an *unparenthesized* Or pattern. Parenthesized Or-patterns and all other patterns can still be used.
+
+
+
+Some examples that this new grammar produces:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Or patterns with parentheses: ::
 
@@ -336,27 +358,6 @@ The cost is a small implementation overhead. Also, as Or patterns are syntactic 
 We believe however that the mentioned advantages more than compensate for these disadvantages.
 Or patterns are available in all of the top seven programming languages on the TIOBE index (Python, Java, Javascript, C#, C, etc.), which suspects that the concept won't be particularly troublesome for beginners to learn.
 
-.. _5.1:
-
-PatternSynonyms
-~~~~~~~~~~~~~~~
-
-The changes to the ``pattern_synonym_decl`` nonterminal in ``Parser.y`` are required to allow unparenthesized Or patterns.
-
-When ``XPatternSynonyms`` is enabled however,  this breaks pattern synonym declarations which use a pattern signature or a type such as: ::
-
-  pattern X <- 42 :: Int
-
-One would now have to parenthesize the right side of the pattern synonym and write ::
-
-  pattern X <- (42 :: Int)
-
-A search on Hackage shows that this syntax is currently only used (without enclosing parentheses) in `haskell-src-exts-simple <https://hackage-search.serokell.io/?q=%5Epattern.*%3C-.*%3A%3A%5B%5E%5C%29%5D*%24>`_.
-
-The syntax change also makes 3 tests in the `patsyn` testsuite fail, out of 250 total `patsyn` tests. The fix is always to enclose the right side in parentheses.
-
-An alternative solution which does not introduce this breaking change is described in `6.1`_.
-
 Alternatives
 ------------
 
@@ -384,13 +385,13 @@ This resembles the ``switch/case``-syntax known from languages like C and Java.
 No unparenthesized Or patterns
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-As described in `5.1`_, the changes to the ``pattern_synonym_decl`` nonterminal are breaking in some rare cases when ``XPatternSynonyms`` is active.
+In `2.1.1`_, we introduced a harmless change to the ``pattern_synonym_decl`` nonterminal that is required for unparanthesised Or patterns to work with pattern synonyms.
 
-We could avoid introducing these breaking changes by *requiring Or patterns to be parenthesised*. This means, we would amend the Haskell 2010 grammar by: ::
+We could avoid this change by *requiring all Or patterns to be parenthesised*. This means, we would amend the Haskell 2010 grammar by: ::
 
       pat -> (pat_1; ...; pat_n) (n >= 2)
 
-Also, we would not perform the above-mentioned change to the ``pattern_synonym_decl`` nonterminal.
+We would then not need to perform the above-mentioned change to the ``pattern_synonym_decl`` nonterminal.
 
 Beware that it would then still be possible to use the layout rule even with parenthesized Or patterns as follows: ::
 
