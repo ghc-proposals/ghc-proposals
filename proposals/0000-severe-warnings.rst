@@ -7,6 +7,7 @@
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/571>`_.
+.. sectnum::
 .. contents::
 
 It seems helpful for some warnings (e.g. ``missing-methods``) to be
