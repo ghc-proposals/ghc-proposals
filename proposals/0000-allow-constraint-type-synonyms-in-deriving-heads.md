@@ -7,66 +7,65 @@ implemented: ""
 
 This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/597).
 
-# Allow constraint tuples and synonyms in typeclass instances
+# Allow constraint tuples and synonyms in typeclass instance head
 
 ## Motivation
 
 Most of Haskell projects do a lot of `stock` and `anyclass` deriving
-for repeating classes. Most of time there is some default list
-of classes to be defined.
+for same list of common classes. This involves a lot of code duplication.
 
-Making type synonym for that seems like the obvious thing to do,
-yet it does not work.
+Such usecase would be natually covered by defining type synonym
+for tuple of such reused classes, but GHC does not support deriving
+not for constaint synonyms, nor for tuples.
 
-There are two constructions forbidden now, but required for that usecase:
+This may be unexpected for user, because both of this constructs
+are supported in the instance context, but not in the head.
 
-* Constraint synonyms
-* Constraint tuples
+Another usecase is typeclasses which are semantically same as composition of
+multiple classes. They too could be replaced by constraint synonym instances.
 
-Synonyms worked at some moment,
-but was disabled due to wrong behaviour in some cases.
+Case of constaraint synonyms in instance head worked at some moment,
+but was disabled due to wrong user-facing error messages in some cases.
 Reasoning for that is covered in Note "Instances and constraint synonyms"
 and [issue 13267](https://gitlab.haskell.org/ghc/ghc/-/issues/13267).
 
-Main usecase only affect deriving instances head,
-but another usecase is usage of tuples/synonyms in context of any instance.
-It seems to be less common, but natural to cover in same proposal
-to allow tuples/synonyms anywhere in instance declaration,
-leading to more consistent semantics.
+Relevant SA question (was provided by @yaitskov):
+https://stackoverflow.com/questions/28037837/deriving-clause-with-arbitrary-constraint-aliases
 
 ## Proposed Change Specification
 
-Proposal requires two purely syntaxic rewrites for instance declarations
-to happen:
+Proposal requires two new constructions allowed in instance head:
+constraint tuple and constraint synonym.
 
-1. Apply all type synonyms in instance declarations.
-   This should be done recursively, until no type synonym is present anymore.
-2. For any constraint tuple in derived instance head,
+New semantics can be described by two purely syntaxic rewrites,
+translating all new constructions away from instance declaration:
+
+1. Apply all constraint synonyms in instance declaration.
+   This should be done recursively,
+   until no constraint synonym is present anymore.
+2. For any constraint tuple in instance head,
    split such declarations into multiple.
 
-After that rewrites happen, existing GHC semantics is applied to result,
-with same error messages or produced code.
+This should work the same for any kind of instances:
+stanalone derived instances with or without explicit context,
+non-standalone derived instances
+and user-defined instances.
 
-There are two cases not covered by this rewrites:
-
-1. Using tuples in instance context leads to nested tuples.
-   But they already have the same semantics as flatten tuples,
-   so this is concern only affecting AST handling.
-2. Syntax and need for user-defined instances of class tuples is not clear.
-   So tuples in user-defined instances head remain forbidden.
+Thus proposal do not introduce any changes to instance semantics,
+only allowed syntax and user error messages would be improved.
 
 ## Examples
 
-Main usecase:
+### Common derived instances usecase
 
 ```haskell
 type ToFromJSON x = (ToJSON x, FromJSON x)
 
--- Allowed by this proposal
-derive instance ... => (ToFromJSON MyData)
-
 -- Allowed by this proposal and working same as example above
 data MyData = MkMyData deriving (ToFromJSON)
+
+-- Allowed by this proposal
+derive instance ... => (ToFromJSON MyData)
 
 -- Should work the same with syntax allowed before proposal
 derive instance ... => ToJSON MyData
@@ -78,31 +77,27 @@ so rewriting implementation may be little different.
 But they have just the same samantics as standalone instances with holes,
 covered by examples before, so could be handled the same.
 
-Instance context case is simpler:
+### Tuple of classes instance usecase
+
+Example from @VitWW :
 
 ```haskell
-class ToFromJSON x => MyProtocolEncoding x where
-   ...
+type Num x = (Arithm x, Abs x)
+type Arithm x = (Add x, Sub x, Mult x)
 
-data MyContainer x = ...
+data MyData
 
--- Allowed by this proposal
-instance
-   (MyProtocolEncoding x, ToFromJSON (MyContainer x)) =>
-   MyContainer x where
-   ...
+instance Num MyData where
+    (+) = ...
+    (*) = ...
 
--- Should work the same with syntax allowed before proposal
-instance
-   (MyProtocolEncoding x, ToJSON (MyContainer x), FromJSON (MyContainer x)) =>
-   MyContainer x where
-   ...
+-- same as
+instance Add MyData where
+    (+) = ...
+
+instance Mult MyData where
+    (*) = ...
 ```
-
-Last example may be not the most natural,
-because `MyContainer` would probably have `ToFromJSON` conditional instance
-anyway. But my goal was to show instance context changes separately,
-while more natural examples involve instance head as well.
 
 ## Effect and Interactions
 
@@ -138,18 +133,19 @@ For user-defined instances one may define type class instead of synonym:
 class (ToJSON x, FromJSON x) => ToFromJSON x
 
 instance (ToJSON x, FromJSON x) => ToFromJSON x
+```
 
-While this trick works, Haskell begginers may be not aware of it,
-and it makes less clear API.
+While this trick works, Haskell begginers may be not aware of it.
+Also it makes less clear API, because `ToFromJSON` is should be same as
+typeclass tuple only by syntaxic convention.
 
 ## Unresolved Questions
 
-* Are there any other "wrong" cases not covered in existing issue?
-* Which implementation approach to use?
+The only question is, which implementation approach to use.
 
-I think all those questions are not blocking,
-because they never lead to bad semantics,
-only potential problems are slightly less-clear type errors.
+I think this question is not blocking,
+because all implementation paths lead to same semantics,
+only potential difference may be slightly less-clear type errors.
 Also implementation paths are similar any may be switched later.
 
 ## Implementation Plan
@@ -164,9 +160,15 @@ There are two principal solutions to that:
 1. Check that rewriting will be correct before applying it.
    In this context this probably amounts to checking for each referenced
    type synonym if it belongs to some list of known bad cases.
-2. Optimistically apply transformation and check for errors in later stages
+2. Optimistically apply transformation and check for errors in later stages.
 
 Also we can just do both.
+
+Tuple of constraints implementation, on other hand, is clear.
+There is slight difference in cases of user-defined and derived instances,
+because in user-defined instances we need to keep track of which
+method is relevant to each instance,
+but overall the only thing needed is to split instances.
 
 ### Potential problems
 
@@ -191,7 +193,7 @@ The potential problem for solution 2 would be error messages clarity.
 Since checks are applied to rewritten code,
 they might miss original context or show non-original AST.
 I believe such problems could be solved by means of
-tracking relation to original AST.
+tracking relation of transformed AST to original AST.
 
 ### Proposed solution
 
