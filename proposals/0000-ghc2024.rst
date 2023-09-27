@@ -41,16 +41,9 @@ instability.
 
 I believe that neither are good reasons to not define ``GHC2024``:
 
-* There is an inherent latency between defining language editions and them
-reaching the users. It reaches users who do not have to worry about supporting
-older GHC first, and thus library authors later. This is somewhat unavoidable,
-but not per se a reason to reduce the frequency.
+* There is an inherent latency between defining language editions and them reaching the users. It reaches users who do not have to worry about supporting older GHC first, and thus library authors later. This is somewhat unavoidable, but not per se a reason to reduce the frequency.
 
-* Relatively frequent language editions do not introduce undue instability:
-Users who pin the language edition in their `.cabal` file or so are not
-affected by the existence of a new one. Neither are users who pin their GHC
-version. Only those users who upgrade their version of GHC _and_ ask for the
-latest edition may now have access to new features.
+* Relatively frequent language editions do not introduce undue instability: Users who pin the language edition in their `.cabal` file or so are not affected by the existence of a new one. Neither are users who pin their GHC version. Only those users who upgrade their version of GHC _and_ ask for the latest edition may now have access to new features.
 .
 As `Arnaud explained on the mailing list <https://mail.haskell.org/pipermail/ghc-steering-committee/2022-November/002949.html>`_, Rust (generally not perceived as a language with a perception of low stability) has a very similar model with their “language editions”.
 
@@ -82,7 +75,7 @@ recently, e.g. in `#281 <https://github.com/ghc-proposals/ghc-proposals/pull/281
 thus may not yet be as stable as we want them for ``GHC20xx``. To keep GHC20xx
 stable we could amend #281 to ask for a new extenion name for syntax added there.
 
-__Backward compatibility__: Enabling `ExplicitNamespaces`_ does not affect
+*Backward compatibility*: Enabling `ExplicitNamespaces`_ does not affect
 existing ``GHC2021`` code.
 
 Why add GADTs and MonoLocalBinds?
@@ -144,7 +137,7 @@ Possible ways to resolve this infelicity include:
   signatures for local bindings or specify ``NoMonoLocalBinds``).
 
 
-__Backward compatibility__: Enabling ``GADTs`` seems to not break existing ``GHC2021`` code,
+*Backward compatibility*: Enabling ``GADTs`` seems to not break existing ``GHC2021`` code,
 but enabling ``MonoLocalBinds`` could does.
 
 Why add LambdaCase?
@@ -162,7 +155,7 @@ A counter-agument to adding `LambdaCase` is that just extended the meaning of
 wants to add extensions to ``GHC20xx`` that have been proven to be stable, then
 this one probably isn’t yet.
 
-__Backward compatibility__: Enabling `LambdaCase`_ does not affect
+*Backward compatibility*: Enabling `LambdaCase`_ does not affect
 existing ``GHC2021`` code, with the exception of lambda-bound variable names
 ``cases`` (GHC already forbids the ``\case`` even without ``-XLambdaCase``).
 
@@ -176,7 +169,7 @@ As `GeneralisedNewtypeDeriving`_ is in the GHC2021 language set, so should be `R
 
 Role annotations are required for correctly writing types with internal invariants like ``Set`` or "fast" implementations like ``data Fin (n :: Nat) = UnsafeFin Int``.
 
-__Backward compatibility__: Enabling `RoleAnnotations`_ does not affect
+*Backward compatibility*: Enabling `RoleAnnotations`_ does not affect
 existing ``GHC2021`` code.
 
 Alternatives
