@@ -49,7 +49,9 @@ The GHC user guide currently specifies the effect of `-fhpc` as follows:
 
 > The program may be run multiple times (e.g. with different test data), and the coverage data from the separate runs is accumulated in the .tix file. To reset the coverage data and start again, just remove the .tix file. 
 
-These two sentences will be removed, and the feature of accumulating coverage data over multiple runs will be removed from the implementation.
+This paragraph will be removed.
+Instead, a new RTS flag `--read-tix-file=<yes|no>` will be introduced which guards this behaviour.
+The old behaviour will still be available using the flag `--read-tix-file=yes`, but the default behaviour will be to not read the tix file and to always initialize the tix data structures with zeroes.
 
 ## Examples
 
@@ -134,7 +136,9 @@ their `.tix` files contain less ticks than they expected.
 ## Alternatives
 
 Do nothing and leave the semantic as it is.
-Alternatively, the old behaviour is kept but guarded by an RTS flag.
+It is also possible to completely remove the tix file parser from the runtime system.
+This would lead to a simplification in the RTS codebase, but the old behaviour would no longer
+be available.
 
 ## Unresolved Questions
 
@@ -142,8 +146,8 @@ None.
 
 ## Implementation Plan
 
-I will implement this change: the change is localized to the file [rts/Hpc.c](https://gitlab.haskell.org/ghc/ghc/-/blob/master/rts/Hpc.c).
-The `readTix()` function which enables the RTS to parse `.tix` files will be removed, and the startup logic in the function `startupHpc()` will be simplified so that the data structures are always initialized with 0 instead of being initialized from the `.tix` file.
+I will implement this change: the change is mostly localized to the file [rts/Hpc.c](https://gitlab.haskell.org/ghc/ghc/-/blob/master/rts/Hpc.c) and to the files related to RTS flags.
+The startup logic in the function `startupHpc()` will be modified and will take the `--read-tix-file` flag into account.
 
 ## Endorsements
 
