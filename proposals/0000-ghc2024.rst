@@ -25,6 +25,7 @@ Proposed Change Specification
 The ``GHC2024`` language extension set comprises of all language extensions
 that ``GHC2021`` comprises, plus the following
 
+* `DisambiguateRecordFields`_
 * `ExplicitNamespaces`_
 * `GADTs`_ (and the implied `MonoLocalBinds`_)
 * `LambdaCase`_
@@ -50,6 +51,43 @@ As `Arnaud explained on the mailing list <https://mail.haskell.org/pipermail/ghc
 Furthermore, a regular, not too slow cadence makes the whole process more
 predictable, which I expect *improves* the perception of stability, in the
 sense of delivering a stable flow of changes.
+
+
+Why add DisambiguateRecordFields?
+---------------------------------
+
+Suppose there are two record fields from different data types in scope, and they
+have the same name.  When the field is used in record construction or pattern
+matching, it is easy to resolve which datatype is meant using the name of the
+data constructor, but ``Haskell2010`` and ``GHC2021`` do not do so.  For
+example, the following is rejected: ::
+
+  module M where
+    data S = MkS { x :: Int }
+
+  module N where
+    data T = MkT { x :: Int }
+
+  module P where
+    import M
+    import N
+
+    t = MkS { x = 3 }  -- ambiguous name resolution error for "x"
+
+For a long time, GHC has supported the `DisambiguateRecordFields`_ extension,
+which makes use of the constructor name to allow this program to be accepted.
+This is a small quality-of-life improvement for users, who may otherwise see
+this error and not immediately understand why GHC does not make the "obvious"
+choice.
+
+This is a simple extension, affecting name resolution only, without involving
+any type-directed disambiguation.  It does not allow the definition of clashing
+field names in a single module, but makes it easier to avoid unnecessary errors
+when importing two modules that happen to use the same field name in different
+records.
+
+*Backward compatibility*: Enabling `DisambiguateRecordFields`_ does not affect
+existing ``GHC2021`` code.
 
 
 Why add ExplicitNamespaces?
@@ -188,6 +226,7 @@ Implementation Plan
 
 (None yet)
 
+.. _DisambiguateRecordFields: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/disambiguate_record_fields.html#extension-DisambiguateRecordFields
 .. _ExplicitNamespaces: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/explicit_namespaces.html#extension-ExplicitNamespaces
 .. _ExistentialQuantification: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/existential_quantification.html#extension-ExistentialQuantification
 .. _GADTs: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/gadt.html#extension-GADTs
