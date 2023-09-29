@@ -44,7 +44,7 @@ I believe that neither are good reasons to not define ``GHC2024``:
 * There is an inherent latency between defining language editions and them reaching the users. It reaches users who do not have to worry about supporting older GHC first, and thus library authors later. This is somewhat unavoidable, but not per se a reason to reduce the frequency.
 
 * Relatively frequent language editions do not introduce undue instability: Users who pin the language edition in their `.cabal` file or so are not affected by the existence of a new one. Neither are users who pin their GHC version. Only those users who upgrade their version of GHC _and_ ask for the latest edition may now have access to new features.
-.
+
 As `Arnaud explained on the mailing list <https://mail.haskell.org/pipermail/ghc-steering-committee/2022-November/002949.html>`_, Rust (generally not perceived as a language with a perception of low stability) has a very similar model with their “language editions”.
 
 Furthermore, a regular, not too slow cadence makes the whole process more
@@ -72,11 +72,13 @@ release.
 
 A counter-argument to `ExplicitNamespaces`_ is that it has seen changes
 recently, e.g. in `#281 <https://github.com/ghc-proposals/ghc-proposals/pull/281>`_ and
-thus may not yet be as stable as we want them for ``GHC20xx``. To keep GHC20xx
-stable we could amend #281 to ask for a new extenion name for syntax added there.
+`#581 <https://github.com/ghc-proposals/ghc-proposals/pull/581>`_.
+Thus it may not yet be as stable as we want for ``GHC20xx``. To keep GHC20xx
+stable we could amend #281 to ask for a new extension name for syntax added there.
 
 *Backward compatibility*: Enabling `ExplicitNamespaces`_ does not affect
 existing ``GHC2021`` code.
+
 
 Why add GADTs and MonoLocalBinds?
 ---------------------------------
@@ -136,9 +138,10 @@ Possible ways to resolve this infelicity include:
   users may need to enable ``GADTs`` explicitly (and possibly give type
   signatures for local bindings or specify ``NoMonoLocalBinds``).
 
+*Backward compatibility*: Enabling ``GADTs`` alone does not break existing ``GHC2021`` code
+(because it is equivalent to the current situation),
+but enabling ``MonoLocalBinds`` does.
 
-*Backward compatibility*: Enabling ``GADTs`` seems to not break existing ``GHC2021`` code,
-but enabling ``MonoLocalBinds`` could does.
 
 Why add LambdaCase?
 -------------------
@@ -163,11 +166,12 @@ existing ``GHC2021`` code, with the exception of lambda-bound variable names
 Why add RoleAnnotations?
 ------------------------
 
-Roles are essential part of modern GHC Haskell.
-
-As `GeneralisedNewtypeDeriving`_ is in the GHC2021 language set, so should be `RoleAnnotations`_. They are different sides of the same feature: without correct role annotations GND cannot be used safely.
-
+Roles are an essential part of modern GHC Haskell.
 Role annotations are required for correctly writing types with internal invariants like ``Set`` or "fast" implementations like ``data Fin (n :: Nat) = UnsafeFin Int``.
+
+As `GeneralisedNewtypeDeriving`_ is in the ``GHC2021`` language set, so should be `RoleAnnotations`_. They are different sides of the same feature: without correct role annotations GND cannot be used safely.
+
+At the moment, using ``GHC2021`` together with `Safe`_ causes a warning, because Safe Haskell regards `GeneralisedNewtypeDeriving`_ as unsafe (see `#19605 <https://gitlab.haskell.org/ghc/ghc/-/issues/19605>`_ for discussion of this issue). A plausible way to resolve this would be to regard `GeneralisedNewtypeDeriving`_ as safe, but that assumes library authors are aware of the need for correct role annotations and insert them as needed.
 
 *Backward compatibility*: Enabling `RoleAnnotations`_ does not affect
 existing ``GHC2021`` code.
@@ -193,4 +197,5 @@ Implementation Plan
 .. _LambdaCase: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/lambda_case.html#extension-LambdaCase
 .. _MonoLocalBinds: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/let_generalisation.html#extension-MonoLocalBinds
 .. _RoleAnnotations: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/roles.html#extension-RoleAnnotations
+.. _Safe: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/safe_haskell.html#extension-Safe
 .. _GeneralisedNewtypeDeriving: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/roles.html#extension-GeneralisedNewtypeDeriving
