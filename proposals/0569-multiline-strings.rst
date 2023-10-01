@@ -286,6 +286,8 @@ To indent every line, use the ``\&`` escape character
 
   s2' = "  a\n  b\n  c"
 
+In this example, ``s2`` and ``s2_2`` are equivalent, both resulting in ``s2'``. One noteworthy aspect of this technique is that it comes for free with the current rules, since ``\&`` is already an escape character meaning "empty string" (https://www.haskell.org/onlinereport/haskell2010/haskellch2.html#x7-200002.6).
+
 Escaping triple quotes
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -509,6 +511,21 @@ Alternatives
 
   * The downside of doing this is that generally speaking, developers will want to keep the multiline string at the same indentation level as surrounding code. Not doing any post processing means that reindenting code would change the string content. I would also posit that the common case is wanting leading whitespace stripped, which would lead to devs putting multiline strings at the 0th column or implementing their own deindenter.
 
+* Only strip leading whitespace with delimiter
+
+  * This alternative can be done in one of two ways:
+
+    #. Special case the delimiter and resolve it at compile-time
+    #. Add new ``trimMargin`` / ``trimMarginWith`` functions that trim the delimiter (or some custom delimiter) at runtime
+
+  * The first option involves hardcoding the delimiter in the compiler, which is Not Great. Plus, wanting to actually use the delimiter to start a line in the string would require escaping it.
+
+  * The second option requires adding new functions to ``Prelude`` and would trim the margins at run-time, instead of compile-time.
+
+  * Furthermore, any use case that doesn't want to strip leading whitespace either:
+    #. Is agnostic to the whitespace (e.g. HTML) so it doesn't matter if it's stripped or not, or
+    #. Explicitly needs leading whitespace on every line. In this case, the developer would not be able to reindent their code without changing behavior, so IMO, the developer *should* explicitly opt-in to specify exactly where the indentation should start. This is possible with the "indent every lines" technique listed above. Since it's possible to do this, and I believe a priori that stripping is more common than not-stripping, it doesn't make sense to make this use-case the default.
+
 * Use ``''`` to delimit multiline strings, which has the benefit of being a parse error without ``MultilineStrings``
 
 * Enable any number of ``"""+`` quotes to delimit multiline strings
@@ -542,7 +559,63 @@ Out of scope
 ~~~~~~~~~~~~
 
 * String interpolation
+  * See https://github.com/ghc-proposals/ghc-proposals/pull/570
+  * One way this proposal can work with raw strings is by allowing both ``s"..."`` and ``s"""..."""`` syntaxes. In general, any raw strings proposal that works with the current double quoted string syntax should be able to work with a triple-quoted string syntax as well, since the proposed triple-quoted string syntax desugars to a single-quoted string.
+
 * "Raw" strings (without escaping)
+  * To an extent, this proposal already helps this a little bit, since double quotes no longer need to be escaped within a triple-quoted string. But this proposal doesn't address needing to escape backslashes.
+  * This is particularly useful for regexes or any other situation where the backslash character is useful as an actual character.
+  * One way this proposal can work with raw strings is by allowing both ``r"..."`` and ``r"""..."""`` syntaxes. See comment in "String interpolation".
+
+Comparisons with other languages
+--------------------------------
+
+* Java
+
+  * As mentioned in the beginning, this proposal draws a lot from Java.
+
+  * Java strips trailing whitespace. See "Strip trailing whitespace" under "Alternatives".
+
+  * Java defines the content to start after the first newline after the opening ``"""``, and disallows any non-whitespace characters after the opening delimiter. Instead of adding this restriction, we added the rule to remove exactly one newline from the beginning of the string, if one exists. This allows people to start the multiline string on the same line, enabling one-line strings to use the syntax, e.g. ``"""A string using "unescaped" quotes"""``.
+
+  * Java includes the line that the closing ``"""`` delimiter is on, so that the position of the closing delimiter is included in the common-prefix calculation. One motivation for this was to enable indenting every line. However, discussion on this proposal indicated that this was too magical and would be confusing behavior. Instead of this, we can reuse Haskell's existing ``\&`` escape character to add indentation to every line. See the "Indent every line" example and the "Only strip leading whitespaces with delimiter" alternative.
+
+  * This proposal also adds the addition of collapsing line continuations before any post-processing, which is a Haskell-specific syntax.
+
+* Python, Groovy, Kotlin, Scala, Swift
+
+  * All of these languages use ``"""`` to delimit multi-line strings.
+
+  * Most of them keep the multiline string verbatim; to strip indentation, each language provides functions: Python = ``textwrap.dedent``, Kotlin/Groovy/Scala provide some version of ``stripIndent`` or ``stripMargin``.
+
+  * Swift uses Java's method of using the closing delimiter to determine the leading whitespace to strip
+
+* Go, Javascript
+
+  * These languages use a single backtick to delimit multi-line strings.
+
+  * None of them strip indentation automatically. Go has the ``dedent`` library, Javascript can do ``s.replace(/^\s{4}/g, '')``.
+
+* C#
+
+  * Allows opening with at least 3 ``"`` characters
+
+  * Strips newline after opening delimiter and before closing delimiter.
+
+  * Uses Java's method of using the closing delimiter to determine the leading whitespace to strip
+
+  * Also allows ``@"..."`` syntax, which won't work for us, as ``@`` is used for type applications, in this case, a type application for a ``Symbol``.
+
+* Ruby
+
+  * Normal double quoted strings can be on multiple lines, does not strip whitespace
+  * ``<<-EOF``: heredoc, does not strip whitespace
+  * ``<<~EOF``: heredoc, strips whitespace
+  * ``%q(...)``: does not strip whitespace
+
+* C, C++
+
+  * Raw string literals with ``R"..."``.
 
 Unresolved Questions
 --------------------
