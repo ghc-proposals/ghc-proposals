@@ -25,6 +25,7 @@ Proposed Change Specification
 The ``GHC2024`` language extension set comprises of all language extensions
 that ``GHC2021`` comprises, plus the following
 
+* `DerivingStrategies`_
 * `DisambiguateRecordFields`_
 * `ExplicitNamespaces`_
 * `GADTs`_ (and the implied `MonoLocalBinds`_)
@@ -51,6 +52,26 @@ As `Arnaud explained on the mailing list <https://mail.haskell.org/pipermail/ghc
 Furthermore, a regular, not too slow cadence makes the whole process more
 predictable, which I expect *improves* the perception of stability, in the
 sense of delivering a stable flow of changes.
+
+
+Why add DerivingStrategies?
+---------------------------
+
+Since `GeneralisedNewtypeDeriving`_ is part of ``GHC2021``, it would make sense
+to allow users to be explicit about when it is being used using
+`DerivingStrategies`_.  For example: ::
+
+  newtype T = MkT String
+    deriving stock Eq
+    deriving newtype Show
+
+Some users prefer this style, and there is little downside to being explicit
+about the deriving strategy in use.  Note that ``GHC2021`` does not include
+``DerivingVia`` or ``DeriveAnyClass``, so these strategies will still need the
+corresponding extension to be enabled explicitly.
+
+*Backward compatibility*: Enabling `DerivingStrategies`_ does not affect
+existing ``GHC2021`` code.
 
 
 Why add DisambiguateRecordFields?
@@ -226,6 +247,7 @@ Implementation Plan
 
 (None yet)
 
+.. _DerivingStrategies: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/deriving_strategies.html#extension-DerivingStrategies
 .. _DisambiguateRecordFields: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/disambiguate_record_fields.html#extension-DisambiguateRecordFields
 .. _ExplicitNamespaces: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/explicit_namespaces.html#extension-ExplicitNamespaces
 .. _ExistentialQuantification: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/existential_quantification.html#extension-ExistentialQuantification
