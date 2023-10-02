@@ -49,9 +49,10 @@ file and preprocessor output are diffed at the token level and the
 "missing" parts inserted as comments. This works in some cases, but
 for many it fails, for reasons such as
 
-- A comparison to a numeric constant
+- A comparison to a numeric constant:
 
-  ::
+.. code:: haskell
+
    #if __GLASGOW_HASKELL__ < 707
 
   Shows up as a stray ``906`` if compiled with GHC 9.6.x
@@ -76,9 +77,10 @@ in other CPP directives.
 Proposed Change Specification
 -----------------------------
 
-When enabled, the lexer has the additional rules
+When enabled, the lexer has the additional rules:
 
-::
+.. code:: haskell
+
    cpp -> '#' cppkeyword [ anysymbol {any} ] newline
          | '#' cppkeyword [ anysymbol {any} ] '\' newline cppcont
    cppcont -> [ anysymbol {any} ] '\' newline cppcont
@@ -118,9 +120,10 @@ which are stored or not as per normal comment processing.
 In either case, the ``cpp`` and ``cppcont`` tokens are converted to
 comments, as above, and not passed on to the parser.
 
-Example
+Example:
 
 .. code:: haskell
+
    {-# LANGUAGE GhcCPP #-}
    #define FOO
    #ifndef FOO
@@ -129,9 +132,10 @@ Example
    x = 5
    #endif
 
-Results in the following token stream (showing comments as they are lexed)
+Results in the following token stream (showing comments as they are lexed):
 
-::
+.. code:: haskell
+
    Comment ({-# LANGUAGE GhcCPP #-})
    Comment (ITcpp "#define FOO")
    Comment (ITcpp "#ifndef FOO")
