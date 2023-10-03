@@ -55,7 +55,7 @@ for many it fails, for reasons such as
 
    #if __GLASGOW_HASKELL__ < 707
 
-  Shows up as a stray ``906`` if compiled with GHC 9.6.x
+Shows up as a stray ``906`` if compiled with GHC 9.6.x
 
 - Preprocessor directives inside haskell comments are also processed.
   This makes the diff fail too.
@@ -106,8 +106,12 @@ These will be passed to the actual preprocessor for processing. This will
   https://gcc.gnu.org/onlinedocs/cpp/Overview.html)
 - Any preprocessor state will be inserted into an (opaque) field in
   the parser state, made available to it by get and set operators.
+- Any include file processing will temporarily switch the lexer input,
+  then continue.  See https://gcc.gnu.org/onlinedocs/cpp/Header-Files.html
+
 
 The result of this processing is to put the preprocessor into one of two states
+
 - Normal
 - Ignoring
 
@@ -164,6 +168,10 @@ Effect and Interactions
 
 There may be potential interactions between this extension and CPP.
 It would probably be wise to emit a warning if both are enabled at the same time.
+
+We will have to ensure that the appropriate file search paths for any
+``#include "filename"`` directives match what would happen in the CPP
+case.
 
 
 Costs and Drawbacks
