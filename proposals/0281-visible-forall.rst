@@ -343,8 +343,6 @@ Part I: Proposed Change Specification
    follows type-level name resolution rules (i.e. uses of punned identifiers
    resolve to the type namespace), both at binding sites and at use sites.
 
-   Without ``ScopedTypeVariables``, no type variable may be bound in a pattern.
-
    The ``ScopedTypeVariables`` extension has no effect on variables introduced
    by ``forall a ->``.
 
@@ -778,8 +776,9 @@ and fails on expressions outside of this subset.
 * Variables and constructors (regardless of their namespace) are mapped
   directly, without modification.
 
-  * In the type checking environment, the variable must stand for a type variable,
-    or else it treated as a fresh skolem constant.
+  * In the type checking environment, the variable must stand for a type variable.
+
+    * `#378 Design for Dependent Types <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0378-dependent-type-design.rst#term-variables-in-types>`_ allows term variables in types. However, while the referenced section presents how this can be useful with ``foreach``, it also explains that it seems much less useful without it. Hence, we save this part of the design of DH for a future proposal that includes a retained quantifier like ``foreach``.
 
   * In the type checking environment, the constructor must stand for a type
     constructor, or else require ``DataKinds``.

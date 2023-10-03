@@ -638,6 +638,8 @@ are applied (eliminated) and defined (introduced).
 Dependent pattern-match
 ^^^^^^^^^^^^^^^^^^^^^^^
 
+.. _dependent pattern-match:
+
 When we pattern-match on a value that also appears in a type (that is,
 something bound by a ``foreach``), the type-checker can use the
 matched-against pattern to refine the type. For example, consider an
@@ -659,6 +661,60 @@ pattern-matching only when in *checking* mode of bidirectional type-checking,
 never in *inference* mode.) In the ``vReplicate`` example above, we do indeed
 know the result type: ``Vec n a``. We can thus perform an informative
 pattern-match, as required to accept the definition.
+
+Term variables in types
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. _term variables in types:
+
+To use types that depend on terms to their full extent, we may sometimes wish to
+use a term variable in a type. For example, say we have::
+
+  vZip :: Vec n a -> Vec n b -> Vec n (Tuple2 a b)
+  vZip VNil VNil = VNil
+  vZip (VCons x xs) (VCons y ys) = VCons (x, y) (vZip xs ys)
+
+  main = do
+    line <- getLine
+    let n = read line
+    let intVec = vReplicate n 42
+    let boolVec = vReplicate n True
+    print (vZip intVec boolVec)
+
+Here, the term ``n`` is given as an argument to ``vReplicate`` (defined above).
+
+Crucially, the ``vZip`` call will type check only if we know that both ``intVec`` and ``boolVec``
+have the same length. And we do know that – their length is determined by the term-level variable ``n`` introduced in a local let-binding.
+What's on the right-hand side of that binding is not relevant for this.
+
+Contrary to some other cases, we cannot simply construct a type-level expression that we could pass instead, and which would evaulate to the value of ``n``, since we do not know at compile
+time what the value of ``n`` will be.
+
+In some cases, it may be desirable to be able to exploit knowledge we have of the definition of a term variable. For example::
+
+  let n = 5
+  let m = 5
+  let o = 2 + 3
+  let v = vZip (vReplicate n mkInt) (vReplicate m mkBool)
+  let u = vZip (vReplicate m mkInt) (vReplicate o mkBool)
+
+One might expect this to type check, since ``n``, ``m``, and ``o`` all evaluate to ``5``. However, in DH, we choose not to allow either ``v`` or ``u``.
+Instead, each term-level variable, when used in a type, becomes its own skolem, or in other words, is equal only to itself.
+
+Similarly, if we see ``f :: forall xs. T (reverse xs) -> blah``, can the
+``(reverse xs)`` ever reduce (e.g. when ``f`` is instantiated at a call site)?
+Our answer for now is no: variables used in types are equal only to
+themselves. (After all, ``reverse`` might be defined in a separately compiled
+module, and might be defined with arbitrary Haskell terms.)
+
+This approach keeps things simple for now; we might imagine retaining the
+knowledge that ``n = 5`` when, say, the right-hand side of a ``let`` is
+in the Static Subset, but we leave that achievement for later.
+
+Note that to demonstrate why this is useful, we had to use a function (``vReplicate``, defined in section 4.5, `Dependent pattern-match`_) that uses the retained quantifier ``foreach`` (see section 4.4 on `quantifiers`_).
+This is because we need to be able to use a `dependent pattern-match`_ on the argument to be able to gain any useful knowledge for type-checking about it, since we can't look at the right-hand side of the binding.
+But the dependent pattern-match is only available with a retained quantifier like ``foreach``. Thus, it's likely that we won't need to support term variables
+in types until some retained quantifier as well as dependent pattern-matching have been added to the language.
 
 Dependent application and the Static Subset
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -751,33 +807,7 @@ The technology for treating application chains specially is worked out in detail
 It is *already* used to govern Visible Type Application (which also requires knowledge of whether the
 function part of the application has a forall-type). This aspect is well understood.
 
-The examples above include applications to variables. These variables will be
-treated exactly as skolems at compile-time, *even if they are ``let``-bound
-with known right-hand sides*. For example, suppose we now have ``f2 :: foreach
-(bs :: [Bool]) -> T bs -> blah``. Then::
-
-  g :: [Bool] -> blah
-  g bs t = f2 bs (undefined :: T bs)    -- this is allowed, but the second argument must have type `T bs`
-
-  h = let bs = [True]
-          t :: T [True]
-          t = ...
-      in
-      f2 bs t    -- surprisingly rejected, as bs is equal only to itself
-
-In the ``h`` example, we might expect ``f2 bs t`` to be accepted, but it will
-not be, as variables used in types are equal only to themselves. That is, GHC
-will forget the relationship between ``bs`` and ``[True]``.
-
-Similarly, if we see ``f :: forall xs. T (reverse xs) -> blah``, can the
-``(reverse xs)`` ever reduce (e.g. when ``f`` is instantiated at a call site)?
-Our answer for now is no: variables used in types are equal only to
-themselves. (After all, ``reverse`` might be defined in a separately compiled
-module, and might be defined with arbitrary Haskell terms.)
-
-This approach keeps things simple for now; we might imagine retaining the
-knowledge that ``bs = [True]`` when, say, the right-hand side of a ``let`` is
-in the Static Subset, but we leave that achievement for later.
+The examples above include applications to variables, see `term variables in types`_ for an explanation of this.
 
 Dependent definition
 ^^^^^^^^^^^^^^^^^^^^

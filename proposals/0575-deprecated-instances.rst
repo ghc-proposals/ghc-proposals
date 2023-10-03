@@ -4,7 +4,7 @@ Deprecated instances
 .. author:: Vladislav Zavialov
 .. date-accepted:: 2023-06-28
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/17485
-.. implemented::
+.. implemented:: 9.10
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/575>`_.
 .. sectnum::
