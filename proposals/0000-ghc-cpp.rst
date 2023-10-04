@@ -10,8 +10,8 @@ Ghc CPP
 .. sectnum::
 .. contents::
 
-Haskell code uses the CPP pragma extensively. I'm proposing to
-introduce a new GhcCPP pragma to perform a subset of CPP processing as
+Haskell code uses the ``CPP`` extension extensively. I'm proposing to
+introduce a new ``GhcCPP`` extension to perform a subset of CPP processing as
 an alternative, as part of the normal GHC compilation process.
 
 This subset will be just enough to control conditional compilation,
@@ -25,10 +25,10 @@ processor will be saved as comments, if comments are being processed.
 Motivation
 ----------
 
-Haskell code uses the CPP pragma to manage version changes, when the
+Haskell code uses the ``CPP`` extension to manage version changes, when the
 compiler or a library changes.
 
-CPP gets the job done, but it is not haskell-friendly, and so has a
+CPP gets the job done, but it is not Haskell-friendly, and so has a
 side-effect of mangling otherwise normal haskell code, which is not
 intended to be processed for the version-selection process.
 
@@ -184,8 +184,8 @@ evolution in the GHC lexer and parser.
 Backward Compatibility
 ----------------------
 
-This proposal introduces a new pragma, ``GhcCPP``, as an alternative
-to the existing ``CPP`` pragma.
+This proposal introduces a new extension, ``GhcCPP``, as an alternative
+to the existing ``CPP`` extension.
 
 It explicitly does not set out to be a drop-in replacement for
 ``CPP``, as it has a reduced and changed functionality.
