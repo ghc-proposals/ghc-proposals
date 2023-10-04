@@ -28,15 +28,12 @@ Motivation
 Haskell code uses the ``CPP`` extension to manage version changes, when the
 compiler or a library changes.
 
-CPP gets the job done, but it is not Haskell-friendly, and so has a
-side-effect of mangling otherwise normal haskell code, which is not
-intended to be processed for the version-selection process.
-
-It is also not tooling-friendly. It runs as a separate pass over the
-source code, emitting updated source for compilation which can
-actually change pretty much anything, if a person decides to use the
-full power of CPP to redefine existing Haskell, or introduce macros to
-generate boilerplate code.
+CPP gets the job done, but it is not Haskell-native, and so has a
+side-effect of not being tooling-friendly. It runs as a separate pass
+over the source code, emitting updated source for compilation which
+can actually change pretty much anything, if a person decides to use
+the full power of CPP to redefine existing Haskell, or introduce
+macros to generate boilerplate code.
 
 The primary motivation for this proposal is to make it possible to
 safely perform source-code transformations on code containing
@@ -54,6 +51,10 @@ for many it fails, for reasons such as
    #if __GLASGOW_HASKELL__ < 707
 
 Shows up as a stray ``906`` if compiled with GHC 9.6.x
+
+.. code:: haskell
+
+   #if __GLASGOW_HASKELL__906 < 707
 
 - Preprocessor directives inside haskell comments are also processed.
   This makes the diff fail too.
@@ -91,7 +92,8 @@ When enabled, the lexer has the additional rules:
 
 Note: as per
 https://gcc.gnu.org/onlinedocs/cpp/Initial-processing.html the
-CPP-style comments do not nest.
+CPP-style comments do not nest. They are needed because they are valid
+CPP syntax, and are emitted in files such as ``cabal_macros.h``.
 
 The only tokens emitted are ``cpp`` and ``cppcont``. The additional
 comment type is stored with the others if they are being kept.
@@ -151,6 +153,13 @@ Results in the following token stream (showing comments as they are lexed):
    Comment (ITcpp "#endif")
    ITeof
 
+Note that the commented out region is shown as being individual
+tokens. In the GHC Lexer they are pushed into the parser state and
+attached to the appropriate ``ParsedSource`` during parsing, if
+``Opt_KeepRawTokenStream`` is set.
+
+They can be recombined during lexing, or afterwards in anything using
+the tokens.
 
 
 Proposed Library Change Specification
@@ -170,6 +179,10 @@ It would probably be wise to emit a warning if both are enabled at the same time
 We will have to ensure that the appropriate file search paths for any
 ``#include "filename"`` directives match what would happen in the CPP
 case.
+
+Also, to do include file processing, the preprocessor leg at least
+will have to be in the IO monad, or have some protocol to request the
+source for an include.
 
 
 Costs and Drawbacks
