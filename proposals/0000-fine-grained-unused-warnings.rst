@@ -191,7 +191,7 @@ have a somewhat higher maintenance cost.
 Alternatives
 ------------
 * We could combine warnings of unused bindings and the transitive non-uses they induce. This could be similar to how error locations are combined in a single error message for duplicate declarations.
-  - A possible advantage is that we could simplify the mechanism by removing the configurability of turning the warnings off.
+  * A possible advantage is that we could simplify the mechanism by removing the configurability of turning the warnings off.
     This would still give us the benefit of reducing the potential for confusion from these warnings, however users that wish to turn these warnings off could not do so.
 
 * A different name could be chosen for the new flag, ``-freport-indirectly-unsed-bindings``
