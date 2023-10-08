@@ -194,6 +194,8 @@ Alternatives
   - A possible advantage is that we could simplify the mechanism by removing the configurability of turning the warnings off.
     This would still give us the benefit of reducing the potential for confusion from these warnings, however users that wish to turn these warnings off could not do so.
 
+* A different name could be chosen for the new flag, ``-freport-indirectly-unsed-bindings``
+
 Implementation Plan
 -------------------
 
