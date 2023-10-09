@@ -113,7 +113,7 @@ behind the `-experimental` flag. New features should by default be behind
 the `-experimental` flag, unless the respective authors consider them stable
 and not subject to sudden change.
 
-Conditionality Compilation
+Conditional Compilation
 --------------------------
 For maintainers there will be a ``__GHC_EXPERIMENTAL__`` macro to use with ``CPP``
 to allow for conditional compilation if ``-experimental`` is active. This can
