@@ -1,8 +1,8 @@
 Or Patterns
 ==============
 
-.. author:: Sebastian Graf, David Knothe
-.. date-accepted::
+.. author:: David Knothe, Ömer Sinan Ağacan, Sebastian Graf
+.. date-accepted:: 2022-11-29
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
@@ -83,48 +83,7 @@ This proposal adds one more production to the nonterminal ``pat``: ::
 
     pat -> pat_1; ...; pat_n (n >= 2)
 
-N.B.: For the concrete implementation in `Parser.y <https://gitlab.haskell.org/ghc/ghc/-/blob/master/compiler/GHC/Parser.y>`_, we would need to amend both the ``aexp`` and the ``pat`` nonterminals.
-This is an effect of the ECP parsing. In particular, ::
-
-  aexp -> ( orpats )
-
-and ::
-
-  pat -> pat ';' orpats
-
-where ``orpats`` is a new nonterminal: ::
-
-   orpats -> exp
-           | exp ';' orpats
-
-.. _2.1.1:
-
-Changes due to pattern synonyms
-""""""""""""""""""""""""""""""""
-
-With only the changes listed in `2.1`_, there are 2 shift/reduce conflicts in `Parser.y`.
-Both have to do with *pattern synonyms*, which are a GHC feature that is not in Haskell 2010.
-
-Concretely, in the following state: ::
-
-  pattern_synonym_decl -> 'pattern' pattern_synonym_lhs '<-' pat .
-  pat -> pat . ';' or_pats
-
-when a semicolon follows, the parser does not know whether the pattern synonym declaration is over or whether the pattern synonym consists of an or-pattern.
-
-To mitigate this, the ``pattern_synonym_decl`` rules should have a pattern nonterminal on the right side which cannot produce an unparanthesised or-pattern.
-We propose the following additional change:
-
-1. The three ``pattern_synonym_decl`` rules use the new nonterminal ``pat_syn_pat`` instead of ``pat`` on their right hand sides.
-2. ``pat_syn_pat`` has only one rule ``pat_syn_pat -> exp``.
-
-We could also use ``exp`` directly instead of ``pat_syn_pat`` but ``pat_syn_pat`` is more expressive as it signifies that there is a *pattern* on the right-hand-side.
-
-This fixes all conflicts in the grammar and does not introduce any breaking changes. All tests succeed.
-
-Also, no syntax is stolen; the only thing that is forbidden on the right side of a pattern synonym is an *unparenthesized* Or pattern. Parenthesized Or-patterns and all other patterns can still be used.
-
-
+The concrete changes to GHC's grammar (that is, `Parser.y <https://gitlab.haskell.org/ghc/ghc/-/blob/master/compiler/GHC/Parser.y>`_) are given in section `8.1`_.
 
 Some examples that this new grammar produces:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -159,7 +118,7 @@ Unparenthesized Or patterns using layout: ::
      -> 4
     F -> 5
 
-N.B.: Unparenthesized Or patterns only work in some places where patterns are expected. For example, in ::
+N.B.: Unparenthesized Or patterns only work in some places where patterns are expected (see section `8.1`_). For example, in ::
 
   g x = do
     A; B <- x
@@ -385,9 +344,9 @@ This resembles the ``switch/case``-syntax known from languages like C and Java.
 No unparenthesized Or patterns
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In `2.1.1`_, we introduced a harmless change to the ``pattern_synonym_decl`` nonterminal that is required for unparanthesised Or patterns to work with pattern synonyms.
+In `8.1`_, we introduce a harmless change to the ``pattern_synonym_decl`` nonterminal that is required for unparanthesised Or patterns to work with pattern synonyms.
 
-We could avoid this change by *requiring all Or patterns to be parenthesised*. This means, we would amend the Haskell 2010 grammar by: ::
+We could avoid this change by *requiring all Or patterns to be parenthesised*. This means, we would amend the Haskell 2010 grammar only by: ::
 
       pat -> (pat_1; ...; pat_n) (n >= 2)
 
@@ -464,7 +423,61 @@ Not any at this time.
 Implementation Plan
 -------------------
 
-Or patterns have been fully implemented by `@knothed <https://github.com/knothed>`__ and `@sgraf812 <https://github.com/sgraf812>`__ [here](https://gitlab.haskell.org/ghc/ghc/-/merge_requests/9229).
+Or patterns have been fully implemented by `@knothed <https://github.com/knothed>`__ and `@sgraf812 <https://github.com/sgraf812>`__ `here <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/9229>?`__.
+
+.. _8.1:
+
+Concrete Implementation
+~~~~~~~~~~~~~~~~~~~~
+
+This section describes concrete changes that have been made to GHC's grammar (that is, to `Parser.y <https://gitlab.haskell.org/ghc/ghc/-/blob/master/compiler/GHC/Parser.y>`_) to implement the changes proposed in section `2.1`_.
+
+We need to amend both the ``aexp2`` and the ``pat`` nonterminals. In particular, ::
+
+  + aexp2 -> '(' orpats ')'
+
+and ::
+
+  - pat -> exp
+  + pat -> orpats
+
+where ``orpats`` is a new nonterminal: ::
+
+   + orpats -> exp
+   +         | exp ';' orpats
+
+
+This is needed to allow both parenthesised Or patterns and unparenthesised ones.
+
+Changes due to pattern synonyms
+""""""""""""""""""""""""""""""""
+
+With only the changes given above, we would change the behaviour of pattern synonyms. Concretely, a valid program like ::
+
+  pattern A = True ; pattern B = False
+
+would be interpreted containing an Or pattern as follows (and thus rejected): ::
+
+  pattern A = (True ; pattern B = False)
+
+To mitigate this, the ``pattern_synonym_decl`` rules should have a pattern nonterminal on the right side which *cannot* produce an unparenthesised or-pattern but only a parenthesised one.
+
+We therefore propose the following additional change to Parser.y: ::
+
+  - pattern_synonym_decl : 'pattern' pattern_synonym_lhs '=' pat
+  -                      | 'pattern' pattern_synonym_lhs '<-' pat
+  -                      | 'pattern' pattern_synonym_lhs '<-' pat where_decls
+  + pattern_synonym_decl : 'pattern' pattern_synonym_lhs '=' pat_syn_pat
+  +                      | 'pattern' pattern_synonym_lhs '<-' pat_syn_pat
+  +                      | 'pattern' pattern_synonym_lhs '<-' pat_syn_pat where_decls
+  +
+  + pat_syn_pat : exp
+
+As ``pat_syn_pat`` only produces ``exp``, we can only go the ``exp -> aexp2 -> ( orpats )`` route to produce parenthesised Or patterns but cannot produce unparenthesised ones.
+(We could also use ``exp`` directly instead of ``pat_syn_pat`` but ``pat_syn_pat`` is more expressive as it signifies that there is a *pattern* on the right-hand-side).
+
+This fixes all conflicts in the grammar and does not introduce any breaking changes. All tests succeed. No syntax is stolen.
+
 
 Endorsements
 -------------
