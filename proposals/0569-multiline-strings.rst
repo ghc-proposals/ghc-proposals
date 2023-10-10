@@ -97,6 +97,8 @@ A working prototype is available at `brandonchinn178/string-syntax <https://gith
 
    #. Collapse line continuations
 
+   #. Convert leading tabs into spaces (See "Mixing tabs and spaces" example)
+
    #. Remove common whitespace prefix in every line
 
       * Ignore any characters preceding the first newline
@@ -144,7 +146,7 @@ In the below examples, leading spaces will be marked as ``.`` for visibility.
   ......d e f
   ..
   ....g h i
-  ......"""
+  ..."""
 
   -- equivalent to
   s' = "..a b c\n\n..d e f\n\ng h i\n.."
@@ -158,7 +160,7 @@ After lexing, the initial multiline above is parsed as
   , "......d.e.f"
   , ".."
   , "....g.h.i"
-  , "......"
+  , "..."
   ]
 
 The blank line + the whitespace-only line are excluded from the calculation, and we calculate 4 spaces as the shared whitespace prefix, which are removed from every line.
@@ -199,22 +201,23 @@ This implies that normal strings could also be written using ``"""``
 Mixing tabs and spaces
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Per the `Haskell report <https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#x17-17800010.3>`_, tabs will be treated as 8 spaces in the calculation. If the common prefix is in the middle of a tab (which would only happen if mixing spaces and tabs), the tab will be converted to 8 spaces first. But don't do this.
-
-In the following example, two ``-`` characters will represent 1 tab, and 1 ``.`` character will represent 4 spaces.
+Leading tabs will be immediately converted into spaces per the `Haskell report <https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#x17-17800010.3>`_: "A tab character causes the insertion of enough spaces to align the current position with the next tab stop."
 
 ::
 
-  s = """
-  ------a
-  ....b
-  .------c
-  ...."""
+  s =
+  ⇥"""
+  ⇥␣␣␣␣␣␣␣␣a
+  ⇥␣⇥b
+  ⇥␣␣␣␣⇥c
+  ⇥"""
 
   -- equivalent to
-  s' = "--a\nb\n.--c\n"
+  s' = "a\nb\nc"
 
-The common whitespace prefix is 16 spaces, so the first line will remove 2 tabs, the second line will remove 16 spaces, and the third line will remove 4 spaces, a tab, then convert the second tab to 8 spaces before removing 4 spaces from it.
+Each line will be considered to have 16 leading spaces which will all be stripped.
+
+Like normal strings, any tabs in the middle of a multiline string will be a lexical error.
 
 Leading newline
 ~~~~~~~~~~~~~~~
@@ -520,7 +523,7 @@ Alternatives
 
   * The first option involves hardcoding the delimiter in the compiler, which is Not Great. Plus, wanting to actually use the delimiter to start a line in the string would require escaping it.
 
-  * The second option requires adding new functions to ``Prelude`` and would trim the margins at run-time, instead of compile-time.
+  * The second option requires adding new functions to ``Prelude`` and would trim the margins at run-time, instead of compile-time. This would also not work with ``OverloadedStrings``
 
   * Furthermore, any use case that doesn't want to strip leading whitespace either:
     #. Is agnostic to the whitespace (e.g. HTML) so it doesn't matter if it's stripped or not, or
