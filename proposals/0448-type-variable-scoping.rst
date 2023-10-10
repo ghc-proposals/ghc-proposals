@@ -252,6 +252,52 @@ It would be hard to change ``-XScopedTypeVariables``, so we don't propose that.
 But right now, and *only* right now, it is easy to adjust ``-XPatternSignatures`` before it is reintroduced.
 This is our best shot to steer people away from pattern signature binds and towards ``@`` instead!
 
+Unified Namespace
+^^^^^^^^^^^^^^^^^
+
+`#281`_ introduces ``-XRequiredTypeArguments`` which is *almost* backwards compatible, except for conflicting with implicit binding.
+The general method of ``-XRequiredTypeArguments`` w.r.t namespacing is to simulate a single namespace by having variable usages check the "other" namespace" when what they are looking for is not found in "proper" namespace for the location of the identifier.
+For example,
+
+::
+
+  x = Int
+  y = 1 :: x -- OK renaming, x is found in the term namespace.
+
+::
+
+  type X = Int
+  y :: Type = X -- OK renaming, X is found in the type namespace
+
+(There are errors after renaming in the above examples, but lets ignore them for now.
+The goal is to make those errors go away long term, so we should not rely on them giving us "syntax to steal".
+More complicated examples *will* work completely with `#281`_ without further generalizations that rely on the same cross-namespace variable lookup in both directions.)
+
+This is an extension of the same method of namespace used for ``-XDataKinds``, as is backwards-compatible for the same reason.
+
+The issues arise with implicit binding (pattern signature bindings and implicit ``forall`` bindings alike).
+Consider this program::
+
+  t = Int
+  foo (x :: t) = 0
+
+With ``-XScopedTypeVariables`` today, ``t`` is considered unbound, and so ``t`` is implicitly bound.
+But this breaks the single-namespace illusion --- ``t`` *would* have been found in the other namespace, if it weren't for the implicit binding.
+``-XRequiredTypeArguments`` is thus forced to choose between being a monotonic extension (allowing more programs, changing the meaning of no existing program) or faithfully simulating a unified single namespace;
+it chooses the latter at the expense of the former.
+It does so by changing the implicit binding rules to consult both namespaces first: ``t`` above is is a use not a bind.
+
+The goal of this proposal, `#448`_ is to move away away from ``-XScopeTypeVariables``, and adopt designs that are compatible with ``-XRequiredTypeArguments`` without requiring it.
+``-XPatternSignatures`` *without* implicit bindings is just that:
+
+- Adding just implicit bindings is a monotonic extension
+- Adding just cross-namespece variable resolution is a monotonic extension
+
+It therefore serves as a "least common ancestor" of these other extensions.
+It is useful to materialize these points in the design space with language extensions:
+both to isolate the points of agreement from the points of controversy in the design space,
+and allow people to write less restricted code that they are nonetheless confident they can copy between between different modules with different versions of the language without issue.
+
 Consistency
 """""""""""
 
@@ -337,8 +383,9 @@ That it takes a complicated example to show why these false desugarings aren't t
 Unified Namespace
 ^^^^^^^^^^^^^^^^^
 
-If `#270`_ is accepted, there will be a way to program Haskell with "morally" one namespace for types and terms alike.
-However, there is one exception to the unification of namespaces: lower case variables in type signatures bound "like terms" still are treated as free and implicitly bound instead::
+See the discussion above for ``-XPatternSignatures``.
+The same exact principles apply.
+Problemantic programs with implicit binding look something like these::
 
   t = Int
   x :: t -- sugar for 'forall t. t', not a use of 't' resolving to 'Int'
@@ -346,6 +393,8 @@ However, there is one exception to the unification of namespaces: lower case var
 
   t = Int
   foo (x :: t) = 0 -- sugar for 'foo = let t = _ in \(x :: t) -> 0'
+
+(That is a new example for implicit ``forall``, and the same example for implicit pattern signature binds.)
 
 Should the ``t`` in each ``x :: t`` cause implicit ``forall t.`` and ``let t = _ in`` to be synthesized or not?
 
@@ -357,6 +406,10 @@ This works, but isn't very satisfactory to users who, never having thought of "t
 
 With ``-XNoImplicitBinds``, however, we know no implicit bindings will be synthesized, and thus can refer to the ``t`` defined above (with the semantics of this usage given in `281#_`).
 There is no gotcha, and the pun-free users can stay blissfully ignorant of type vs term variable namespacing.
+
+``-XRequiredTypeArguments`` chooses to break with ``-XScopedTypeVariables`` to make ``t`` above refer to ``Int`` and not a freshly-quantified type variable in the second example.
+We cover both interactions with ``-XImplicitForAll``, so now it is clear that ``-XRequiredTypeArguments`` and ``-XImplicitForAll`` are the extensions at all.
+With ``-XNoImplicitBinds``, ``-XRequiredTypeArguments`` is a montonic extension.
 
 Proposed Change Specification
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
