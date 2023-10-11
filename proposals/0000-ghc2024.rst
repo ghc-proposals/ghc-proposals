@@ -23,7 +23,7 @@ Proposed Change Specification
 -----------------------------
 
 The ``GHC2024`` language extension set comprises of all language extensions
-that ``GHC2021`` comprises, plus the following
+that ``GHC2021`` comprises (`official list <https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/control.html#extension-GHC2021>`_), plus the following
 
 * `DerivingStrategies`_
 * `DisambiguateRecordFields`_
