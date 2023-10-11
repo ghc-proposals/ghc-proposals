@@ -101,12 +101,11 @@ The new meaning of ``-XScopedTypeVariables`` is the same as the old one.
 The only backward-incompatible part of this is that, today, ``-XPatternSignatures`` is a deprecated synonym of ``-XScopedTypeVariables``.
 Under this change, that would no longer be true.
 
-This component of this proposal is taken from the not-yet-accepted proposal `#238`_,
-changing the name of what I now call ``-XExtendedForAllScope``,
-and simplifying the binding story around pattern signatures (getting rid of ``-XPatternSignatureBinds``).
-This part of the proposal also refines ``-XPatternSignatures`` as a new way of handling the pattern-signature-binding part of `#285`_.
-
-This component includes the ``-XNoImplicitForAll`` of `#285`_ unchanged.
+This component of this proposal is taken from the accepted proposal `#285`_, and not-yet-accepted proposals `#238`_ and `#420`_.
+The difference from `#238`_ is that ``-XScopedForAlls`` has become in this proposal ``-XExtendedForAllScope``.
+The difference from `#285`_ is that ``-XPatternSignatureBinds`` is disabled, not enabled by default, which was proposed in both `#238`_ and `#420`_.
+(John Ericson is the author of `#285`_ and `#420`_, and views the latter as correcting and oversight in the former.)
+``-XNoImplicitForAll`` is included from `#285`_ unchanged.
 
 Motivation for any extension shuffling
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -124,6 +123,7 @@ This separation is motivated by two reasons:
 
 Having separated out ``-XExtendedForAllScope``, it seemed strange to have a ``-XRumpEndOfOldScopedTypeVariables``
 extension, and so I've introduced separate ``-XMethodTypeVariables`` and ``-XPatternSignatures``.
+The latter is further broken down to separate out ``-XPatternSignatureBinds``, as a part of accepted proposal `#285`_.
 
 Motivation for ``-XPatternSignatures``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -348,20 +348,35 @@ In this case, problemantic programs with implicit binding look something like th
 
 ``-XRequiredTypeArguments`` again chooses to break with ``-XScopedTypeVariables`` (and in particular ``-XImplicitForAll``) to make ``t`` above refer to ``Int`` and not a freshly-quantified type variable.
 
+Motivation for ``-XPatternSignatureBinds``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Given that ``-XPatternSignatures`` does not include pattern signature binds (as argued above), we have a choice:
+
+#. Have ``-XScopedTypeVariables`` directly allow pattern signature binds in addition to implying other proposals
+
+#. Introduce ``-XPatternSignatureBinds`` so that ``-XScopedTypeVariables`` is *just* an alias for other extensions, and does nothing on its own separate from those other extensions.
+
+In discussion, it seems the latter is preferred.
+
 Proposed Change Specification
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Points below up to and including the new (backward-compatible) definition of
-``-XScopedTypeVariables`` come from not-yet-accepted proposal `#238`_. The point
-about ``-XImplicitForAll`` is a restatement of (part of) accepted proposal `#285`_.
-The other part of `#285`_ has been made not so urgent by ``-XPatternSignatures`` no longer allowing pattern signature binds.
+Points below up to and including the new (backward-compatible) definition of ``-XScopedTypeVariables`` come from not-yet-accepted proposal `#238`_.
+The point about ``-XImplicitForAll`` and ``-XPatternSignatureBinds`` is a restatement of (part of) accepted proposal `#285`_,
+except for the fact that ``-XPatternSignatureBinds`` is off by default (as proposed in not-yet-accepted proposals `#238`_ and `#420`_, the latter of which modified `#285`_).
 
 1. Re-purpose deprecated extension ``-XPatternSignatures``.
    With ``-XPatternSignatures``, we allow type signatures in patterns.
-   These signatures can mention in-scope type variables as variable occurrences, but can not bind type variables without the (separate) ``-XScopedTypeVariables`` extension.
+   These signatures can mention in-scope type variables as variable occurrences, but can not bind type variables without the (separate) ``-XPatternSignatureBinds`` extension.
 
    The current ``-XPatternSignatures`` is just a synonym for ``-XScopedTypeVariables``.
    This change is thus not backward-compatible, but given that the existing extension is deprecated, I think this change is acceptable.
+
+#. Introduce ``-XPatternSignatureBinds``.
+   With ``-XPatternSignatureBinds``, any out-of-scope type variables written in a pattern signature would be bound there and would remain in scope over the same region of code that term-level variables introduced in a pattern scope over.
+   This extension is off by default.
+   (This extension is a part of accepted, unimplemented proposal `#285`_.)
 
 #. Introduce ``-XMethodTypeVariables``.
    With ``-XMethodTypeVariables``, type variables introduced in an instance head would scope over the bodies of method implementations.
@@ -378,7 +393,7 @@ The other part of `#285`_ has been made not so urgent by ``-XPatternSignatures``
    Separating out ``-XExtendedForAllScope`` gets us closer to the `Contiguous Scoping Principle`_.
 
 #. The extension ``-XScopedTypeVariables`` would imply all of the above extensions:
-   ``-XPatternSignatures``, ``-XMethodTypeVariables``, and ``-XExtendedForAllScope``;
+   ``-XPatternSignatures``, ``-XPatternSignatureBinds``, ``-XMethodTypeVariables``, and ``-XExtendedForAllScope``;
    this way, ``-XScopedTypeVariables`` does not change from its current meaning.
 
 #. Introduce ``-XImplicitForAll``, on by default.
@@ -453,6 +468,19 @@ Effects
 
 1. We could now advocate for avoiding ``-XExtendedForAllScope``, in favor of ``-XTypeAbstractions`` (introduced below).
    The other parts of the old ``-XScopedTypeVariables`` (namely, ``-XPatternSignatures`` and ``-XMethodTypeVariables``) could be considered for inclusion in a future language standard.
+
+Alternatives
+~~~~~~~~~~~~
+
+Previous versions of this proposal had a warning ``-Wpattern-signature-binds``, indended to be used with `-Werror=...` as an alternative to ``-XNoPatternSignatureBinds``.
+The argument was that we don't need a proliferation of `-XNo...` extensions for people to disable parts of the language they don't like when warnings, or even an external-to-GHC linter will not do.
+I think this argument makes sense when there is a single "all extensions on" language we can agree on such everyone's preference is just a sublanguage of it.
+
+The problem is that we do *not* have such an "all extensions on" consensus here.
+As discussed earlier in the motivation section, we have *multiple* notions of implicit binding based on whether the user wants to program with a single unified namespace or multiple overlapping namespaces.
+That is a fundamental unavoidable conflict between implicit binding and the choice of namespaces, and there is no way around it.
+Given this "fork" in the design space, a separate language extension makes a lot more sense:
+we're not "just" disabling functionality some people don't like, we are formalizing the "last point of agreement" before design preferences split in multiple irreconcilable directions.
 
 Type arguments in constructor patterns
 --------------------------------------
@@ -1176,7 +1204,7 @@ The effects of this proposal are written out in the individual sections.
 Here, I summarize the effects on the principles_.
 
 1. We get closer to the `Lexical Scoping Principle`_:
-   with ``-Werror=pattern-signature-binds``, type variables cannot be bound in pattern signatures,
+   with ``-XNoPatternSignatureBinds`, type variables cannot be bound in pattern signatures,
    closing one of the places where the `Lexical Scoping Principle`_ is currently violated.
 
    This would not be the case with the treatment of in-scope variables as originally written in `#126`_,
@@ -1186,7 +1214,7 @@ Here, I summarize the effects on the principles_.
    by allowing explicit binders for type variables for existentials and the variables bound by an inner ``forall`` in a higher-rank type.
 
 #. The `Explicit Binding Principle`_ is made to hold,
-   by introducing ``-XNoImplicitForAll`` and ``-Werror=pattern-signature-binds``.
+   by introducing ``-XNoImplicitForAll`` and ``-XNoPatternSignatureBinds``.
    However, it is impossible to use pattern signatures in this mode;
    there is no alternative way to bind pattern-signature variables.
 
