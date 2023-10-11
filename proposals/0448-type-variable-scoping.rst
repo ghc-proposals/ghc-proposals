@@ -7,7 +7,7 @@ Modern Scoped Type Variables
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/448>`_ and amended by `#604`_ and `#608`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/448>`_ and amended by `#556`_, `#604`_, and `#608`_.
 .. contents::
 
 This proposal updates the treatment of scoped type variables in GHC,
@@ -28,6 +28,7 @@ tying together many existing proposals:
 .. _`#402`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0402-gadt-syntax.rst
 .. _`#420`: https://github.com/ghc-proposals/ghc-proposals/pull/420
 .. _`#523`: https://github.com/ghc-proposals/ghc-proposals/pull/523
+.. _`#556`: https://github.com/ghc-proposals/ghc-proposals/pull/556
 .. _`#604`: https://github.com/ghc-proposals/ghc-proposals/pull/604
 .. _`#608`: https://github.com/ghc-proposals/ghc-proposals/pull/608
 .. _Type Variables in Patterns: https://richarde.dev/papers/2018/pat-tyvars/pat-tyvars.pdf
