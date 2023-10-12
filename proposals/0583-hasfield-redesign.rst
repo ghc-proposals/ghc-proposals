@@ -2,11 +2,11 @@ HasField redesign
 =================
 
 .. author:: Adam Gundry
-.. date-accepted::
+.. date-accepted:: 2023-10-12
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/583>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/583>`_.
 .. sectnum::
 .. contents::
 
