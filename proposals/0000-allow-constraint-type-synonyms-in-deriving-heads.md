@@ -13,29 +13,37 @@ This proposal is [discussed at this pull request](https://github.com/ghc-proposa
 
 Most of Haskell projects do a lot of `stock` and `anyclass` deriving
 for same list of common classes. This involves a lot of code duplication.
-
 Such usecase would be natually covered by defining type synonym
-for tuple of such reused classes, but GHC does not support deriving
-neither for constraint synonyms, nor for tuples.
+for tuple of such reused classes.
+Examples section has
+[code sample how this could look](#common-derived-instances-usecase).
 
-This may be unexpected for user, because both of this constructs
-are supported in the context of an instance, but not in the head of an instance
+But GHC does not support deriving neither for constraint synonyms,
+nor for tuples.
+This behaviour is inconsistent and may be unexpected for user,
+because both of this constructs are supported in the context of an instance,
+but not in the head of an instance.
+For example in instance looking like `instance Context MyData => Head MyData`,
+`Context` can be synonym to tuple of constraints, while `Head` cannot.
 
 Another usecase is typeclasses which are semantically same as composition of
 multiple classes. They too could be replaced by constraint synonym instances.
+See [detailed code sample](#tuple-of-classes-instance-usecase).
 
-Case of constraint synonyms in instance head worked at some point in time,
-but was disabled due to wrong user-facing error messages in some cases.
-Reasoning for that is covered in Note "Instances and constraint synonyms"
-and [issue 13267](https://gitlab.haskell.org/ghc/ghc/-/issues/13267).
-
-Relevant SA question (was provided by @yaitskov):
-https://stackoverflow.com/questions/28037837/deriving-clause-with-arbitrary-constraint-aliases
+There is already
+[existing SA question](https://stackoverflow.com/questions/28037837/deriving-clause-with-arbitrary-constraint-aliases),
+asking about GHC proposal with similar scope and usecase
+(was provided by @yaitskov).
 
 ## Proposed Change Specification
 
 The proposal requires two new declarations to be allowed in head of the instance:
 constraint tuple and constraint synonym.
+
+Case of constraint synonyms in instance head worked at some point in time,
+but was disabled due to wrong user-facing error messages in some cases.
+Reasoning for that is covered in Note "Instances and constraint synonyms"
+and [issue 13267](https://gitlab.haskell.org/ghc/ghc/-/issues/13267).
 
 New semantics can be described by two purely syntactic rewrites,
 translating all new constructions away from instance declaration:
@@ -47,9 +55,10 @@ translating all new constructions away from instance declaration:
    split such declarations into multiple.
 
 This should work the same for any kind of instances:
-stanalone derived instances with or without explicit context,
-non-standalone derived instances
-and user-defined instances.
+
+* Stanalone derived instances with or without explicit context
+* Non-standalone derived instances
+* User-defined instances
 
 Thus, the proposal does not introduce any changes to instance semantics,
 only the allowed syntax and error messages would be improved.
