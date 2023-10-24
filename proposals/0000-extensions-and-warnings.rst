@@ -25,33 +25,36 @@ Warnings can warn.  Language extensions cannot: they can only error.
 
 This proposal seeks to unify the features of language extensions and warnings, and then present a simplified user interface over the unified feature.
 
-"Good" and "bad".  In general, language extensions often enable a good new behaviour, while disabling a warning enables a bad new behaviour. But "good" and "bad" are clearly subjective, and we've already gotten this wrong a few times. (For example, -XDatatypeContexts allows a bad behaviour and -Wno-unticked-promoted-constructor allows a good one, at least in Richard's opinion.)  So we propose the following principle: 
+An important direction of travel is that we want a **language edition**, such as `-XGHC20201`, to fix a particular language specification.
+In particular, our aspirational goal is that if a program compiles with `ghc-9.8 -XGHC2021` then it should also compile with `ghc-9.10 -XGHC2021`.
 
-Principle of neutrality.  GHC itself should not have an opinion about "good" and "bad", for example by categorising one as a language extension and the other as a warning flag; rather language editions should express that choice.
+*"Good" and "bad"*.  In general, language extensions often enable a good new behaviour, while disabling a warning enables a bad new behaviour. But "good" and "bad" are clearly subjective, and we've already gotten this wrong a few times. (For example, ``-XDatatypeContexts`` allows a bad behaviour and ``-Wno-unticked-promoted-constructor`` allows a good one, at least in Richard's opinion.)  So we propose the following principle:
 
-Not in scope: There are flags that control GHC's language that we are not (yet) including, such as -fdefer-type-errors and -fpedantic-bottoms that control GHC's behaviour. While they fit within the overall framework here, there is no great need to consider them now and will only serve to complicate the debate.
+  **Principle of neutrality.**  GHC itself should not have an opinion about "good" and "bad", for example by categorising one as a language extension and the other as a warning flag; rather language editions should express that choice.
+
+Not in scope: There are flags that control GHC's language that we are not (yet) including, such as ``-fdefer-type-errors`` and ``-fpedantic-bottoms`` that control GHC's behaviour. While they fit within the overall framework here, there is no great need to consider them now and will only serve to complicate the debate.
 
 
 
 Proposed Change Specification
 -----------------------------
 
-1. **Extensions can warn**a. For any given language extension, say GADTs:
+1. **Extensions can warn**. For any given language extension, say GADTs:
 
    * ``-XGADTs`` allows ``GADTs``
    * ``-XNoGADTs`` errors on a use of ``GADTs``
-   * `` -XWarnGADTs`` warns on a use of ``GADTs``
+   * ``-XWarnGADTs`` warns on a use of ``GADTs``
 
 
-1. **Warnings are just extensions**. Almost all current warnings, such as -Wname-shadowing, become a language extension -XWarnNameShadowing, with the obvious algorithmic name conversion.
+2. **Warnings are just extensions**. Almost all current warnings, such as -Wname-shadowing, become a language extension -XWarnNameShadowing, with the obvious algorithmic name conversion.
 
    Back-compat: all existing warning-flag syntax remains (perhaps indefinitely); but almost all are re-interpreted as a synonym for language extension flags.   For example ``-Wname-shadowing`` is a synonym for ``-XWarnNameShadowing``.  ("Almost all" because a few warnings are extra-linguistic, such as ``-Winconsistent-flags``.)
 
-1. **Implications**.  A language extension may imply others.  This is true today; for example ``-XTypeFamilyDependencies`` implies ``-XTypeFamilies``.    The warning form has a similar dependency: -``XWarnTypeFamilyDependencies`` implies ``-XWarnTypeFamilies``.
+3. **Implications**.  A language extension may imply others.  This is true today; for example ``-XTypeFamilyDependencies`` implies ``-XTypeFamilies``.    The warning form has a similar dependency: -``XWarnTypeFamilyDependencies`` implies ``-XWarnTypeFamilies``.
 
-1. **Conservative and non-conservative extensions**.   A conservative extension adds a feature to the language, without affecting the meaning of any existing program; a non-conservative extension changes the meaning of a program.
+4. **Conservative and non-conservative extensions**.   A conservative extension adds a feature to the language, without affecting the meaning of any existing program; a non-conservative extension changes the meaning of a program.
 
-1. **Non-warnable extensions**.  Some language extensions are non-warnable, so you are not allowed to say ``-XWarnAlternativeLayoutRule`` for example.
+5. **Non-warnable extensions**.  Some language extensions are non-warnable, so you are not allowed to say ``-XWarnAlternativeLayoutRule`` for example.
 
    The vast majority of extensions are warnable; in particular, all conservative extensions are warnable.  Most non-conservative extensions could usefully be made warnable, although it might take extra work to do so.  Examples:
 
@@ -59,20 +62,23 @@ Proposed Change Specification
    *  ``-XWarnRebindableSyntax``: this would be new, but we would warn on every use of a rebindable construct that does not refer to the appropriate name from base.
    * ``-XWarnDeepSubsumption``: would warn when deep subsumption was actually used, and simple subsumption would not have sufficed.
 
-1. **Non-negatable extensions**. Some language extensions are non-negatable; for example, you cannot say ``-XNoSafe``.  (This is the case today, because someone might want to ensure that all files are compiled Safely, and an individual module should not be able to opt out.)
+6. **Non-negatable extensions**. Some language extensions are non-negatable; for example, you cannot say ``-XNoSafe``.  (This is the case today, because someone might want to ensure that all files are compiled Safely, and an individual module should not be able to opt out.)
 
-1. **Incompatible extensions**.  Two language extensions can be mutually incompatible.  For example ``-XSafe`` and ``-XUnsafe``.   It is an error to specify both at "warn" level or above.
+7. **Incompatible extensions**.  Two language extensions can be mutually incompatible.  For example ``-XSafe`` and ``-XUnsafe``.   It is an error to specify both at "warn" level or above.
 
-1. A language edition, like ``-XGHC2024``, simply implies a bunch of other extensions, just as today.  Each language edition is incompatible with other language editions, so you can specify at most one language edition.
+8. **Language editions**.  A language edition, like ``-XGHC2024``, simply implies a bunch of other extensions, just as today.  Each language edition is incompatible with other language editions, so you can specify at most one language edition.
 
    Any particular version of GHC comes with its own "default language edition". For example, GHC 9.8 has default language edition GHC2021.   What that means is that the language extensions implied by GHC2021 are switched on; but GHC2021 itself is not, so that the user can say ``ghc -XGHC2024`` without an incompatible-extension warning.
 
-Extensions are processed in order, as today (but see Proposal 3 for an alternative).
+Extensions are processed in order, as today.  (Richard has a separate proposal in preparation, to make extensions order-independent.)
 
-The meaning of -W and -Wall would continue to be "enable all recommended warnings" and "enable all reasonable warnings", just as in GHC today.  These lists may vary with GHC version.
+The meaning of `-W` and `-Wall` would continue to be "enable all recommended warnings" and "enable all reasonable warnings", just as in GHC today.
+These lists may therefore vary with GHC version; so a later GHC version may warn about things that an earlier GHC version does not.
 
 Effect and Interactions
 -----------------------
+
+This design has the following happy consequences.
 
 * The tension between warnings and language extensions disappears.  For example, at the top of a module we can write::
 
