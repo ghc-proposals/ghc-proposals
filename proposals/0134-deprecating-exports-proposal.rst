@@ -4,7 +4,7 @@ Deprecating Exports
 .. author:: Alanas Plascinskas
 .. date-accepted:: 2018-07-14
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/4879
-.. implemented::
+.. implemented:: 9.8
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/134>`_.
 .. contents::
