@@ -95,6 +95,10 @@ We also propose that we become more systematic about specifying extension proper
 * **Compatibility**. List the other extensions wrt which X is incompatible.
 * **Implications**.  List which other extensions are implied by X.
 
+The change here is mostly one of perspective: rather than these
+properties being ad-hoc, one-off behaviours of particular extensions,
+they are systematically specified for each extension.
+
 Consequences and examples
 --------------------------
 
