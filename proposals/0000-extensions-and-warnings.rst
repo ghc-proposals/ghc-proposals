@@ -30,9 +30,9 @@ In particular, our aspirational goal is that if a program compiles with ``ghc-9.
 
 *"Good" and "bad"*.  In general, language extensions often enable a good new behaviour, while disabling a warning enables a bad new behaviour. But "good" and "bad" are clearly subjective, and we've already gotten this wrong a few times. (For example, ``-XDatatypeContexts`` allows a bad behaviour and ``-Wno-unticked-promoted-constructor`` allows a good one, at least in Richard's opinion.)  So we propose the following principle:
 
-  **Principle of neutrality.**  GHC itself should not have an opinion about "good" and "bad", for example by categorising one as a language extension and the other as a warning flag; rather language editions should express that choice.
+  **Principle of neutrality.**  GHC itself should not have an opinion about "good" and "bad", for example by categorising one as a language extension and the other as a warning flag.  Instead, a language edition should express that choice.
 
-Not in scope: There are flags that control GHC's language that we are not (yet) including, such as ``-fdefer-type-errors`` and ``-fpedantic-bottoms`` that control GHC's behaviour. While they fit within the overall framework here, there is no great need to consider them now and will only serve to complicate the debate.
+Not in scope: There are a few non-language-extension flags that affect the semantics of the program, such as ``-fdefer-type-errors`` and ``-fpedantic-bottoms``. They could be included within the overall framework described here, there is no great need to consider them now and will only serve to complicate the debate.
 
 
 
@@ -41,6 +41,7 @@ Background information
 This section contains some definitions and other background information about the status quo.
 
 * **Order of specification**.  Extensions are processed left-to-right in the following order:
+
   * ``default-extensions`` field of Cabal file
   * ``--ghc-options`` command-line argument to ``cabal``
   * ``-X`` Command-line argments to ``ghc``
@@ -57,7 +58,7 @@ This section contains some definitions and other background information about th
 * **Language editions**.  A language edition, like ``-XGHC2024``, simply implies a bunch of other extensions.  However language-edition extensions are treated slightly differently to other extensions:
 
   * Any particular version of GHC comes with its own "default language edition". For example, GHC 9.8 has default language edition ``GHC2021``.
-  * This default is overridden if any language extension is specified explicitly, e.g. ``-XGHC2010``.
+  * This default is overridden if a language edition is specified explicitly, e.g. ``-XGHC2010``.
   * The language-edition extension (if present) is always treated as if it came first.  Thus, ``-XNoPatternGuards -XGHC2021`` and ``-XGHC2021 -XNoPatternGuards`` are equivalent.
 
 
@@ -75,8 +76,8 @@ We propose the following changes:
    *Implied extensions*: when a language extension implies others, its warning form has a similar dependency.
    For example, ``-XTypeFamilyDependencies`` implies ``-XTypeFamilies``, and hence ``-XWarnTypeFamilyDependencies`` implies ``-XWarnTypeFamilies``.
 
-2. **Non-warnable extensions**.  Not *every* extension can warn; the ones that cannot are
-   called *non-warnable extensions*.  For example, you are not allowed to say ``-XWarnAlternativeLayoutRule``.
+2. **Non-warnable extensions**.  A few extensions cannot warn; the
+   *non-warnable extensions*.  For example, you are not allowed to say ``-XWarnAlternativeLayoutRule``.
 
    The *vast majority* of extensions are warnable; in particular, all conservative extensions are warnable.
 
@@ -91,15 +92,15 @@ We propose the following changes:
    * Back-compat: all existing warning-flag syntax remains (perhaps indefinitely); but almost all are re-interpreted as a synonym for language extension flags.   For example ``-Wname-shadowing`` is a synonym for ``-XWarnNameShadowing``.
    * We say that "almost all" current warnings can become extensions, because a few warnings are extra-linguistic, such as ``-Winconsistent-flags``.
 
-4. **Clarifying ``-XNo``**.  For extensions that imply others, GHC's manual does not specify what happes if they are switched off.  For example, ``-XGADTs`` implies ``-XMonoLocalBinds``; so does ``-XNoGADTs`` imply ``-XNoMonoLocalBinds``?  In the implementation, the answer is "no"; but we propose to make the answer "yes", so that the semantics lines up with warnings (item 1 above).
+4. **Clarifying extension negation**.  For extensions that imply others, GHC's manual does not specify what happes if they are switched off.  For example, ``-XGADTs`` implies ``-XMonoLocalBinds``; so does ``-XNoGADTs`` imply ``-XNoMonoLocalBinds``?  In the current implementation, the answer is "no"; but we propose to make the answer "yes", so that the semantics lines up with warnings (item 1 above).  That is, if ``-XWombat`` implies ``-XSquirrel`` then ``-XNoWombat`` implies ``-XNoSquirrel``.
 
    There is one exceptional case. Currrently ``-XRebindableSyntax`` implies ``-XNoImplicitPrelude``.  So what does ``-XNoRebindableSyntax`` mean?  Presumbly it just restores ``-XImplicitPrelude``.
 
-5. **Warning categories**.  `Accepted GHC proposal 541 on warning categories <https://github.com/adamgundry/ghc-proposals/blob/tweak-warning-category-syntax/proposals/0541-warning-pragmas-with-categories.rst>`_ introduces so-called *warning categories*, so you can say; ::
+5. **Warning categories**.  `Accepted GHC proposal 541 on warning categories <https://github.com/adamgundry/ghc-proposals/blob/tweak-warning-category-syntax/proposals/0541-warning-pragmas-with-categories.rst>`_ introduces so-called *warning categories*, allowing you to say; ::
 
        {-# WARNING in "x-partial" tail "This is a partial function" #-}
 
-   and then enable/disable the warning with ``-Wx-partial`` and ``-Wno-x-partial``.  We would need ot adapt proposal 541 for the new scheme.  We propose:
+   and then enable/disable the warning with ``-Wx-partial`` and ``-Wno-x-partial``.  We propose to adapt proposal 541 for the new scheme, as follows:
 
    * The pragma would look like ::
 
@@ -109,7 +110,7 @@ We propose the following changes:
    * Warning disabled (partial functions allowed) with ``-XU-Partial``.
    * Warning is an error (partial functions disallowed) with ``-XNoU-Partial``.
 
-   Here ``U-`` (for "user") seems better than ``X-``, to separate user-defined categories from other built-in extensions.
+   The prefix ``U-`` (for "user") seems better than ``X-``, to separate user-defined categories from other built-in extensions, because ``X`` is already being used to signal language extensions, e.g. ``-XGADTs``.
 
 Extensions are processed in order, as today.  (Richard has a separate proposal in preparation, to make extensions order-independent.)
 
@@ -155,13 +156,11 @@ This design has the following happy consequences.
 
 * ``-Wcompat`` currently turns on warnings that will be enabled by default in the future, but remain off in normal compilations for the time being.  It can continue to do so.  But under this proposal, warnings "enabled by default in the future" will simply be part of the default language edition. 
 
-* Today language editions are not mutually incompatible -- you can say `-XGHC2010 -XGHC2021` withtou complaint.  (The rightmost one "wins".)  They really should be, and that would be an easy change with this proposal.
+* Today language editions are not mutually incompatible -- you can say ``-XGHC2010 -XGHC2021`` withtou complaint.  (The rightmost one "wins".)  They really should be incompatible, and that would be an easy change with this proposal.
 
 
 Unresolved questions
 ----------------------
-
-* How does this play with the new user defined warning categories?
 
 * Currently we have two long lists: one for extensions and one for warnings.  Under this proposal we would have one list, but twice as long.  Maybe that woul feel more uniform; but it might also feel intimidating.
 
