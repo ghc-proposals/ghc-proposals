@@ -14,6 +14,8 @@ Integrate language extensions and warnings
 
 This proposal unifies language extensions and warnings into one mechanism, thus simplifying GHC's user interface while offering more expressiveness, including allowing the language edition to specify a default set of warnings.
 
+It is dicussed at `this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/620>`_.
+
 Motivation
 -------------
 This proposal discusses both language extensions and warning flags. These features may seem distinct, but in fact (see `this discussion <https://github.com/ghc-proposals/ghc-proposals/issues/615>`_:
