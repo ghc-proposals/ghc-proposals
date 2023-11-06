@@ -25,12 +25,14 @@ Proposed Change Specification
 The ``GHC2024`` language extension set comprises of all language extensions
 that ``GHC2021`` comprises (`official list <https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/control.html#extension-GHC2021>`_), plus the following
 
+* `DataKinds`_
 * `DerivingStrategies`_
 * `DisambiguateRecordFields`_
 * `ExplicitNamespaces`_
 * `GADTs`_ (and the implied `MonoLocalBinds`_)
 * `LambdaCase`_
 * `RoleAnnotations`_
+* `TypeData`_
 * `TypeFamilies`_
 
 (*The committe will vote on each extension separately. Until then, this is the
@@ -54,6 +56,53 @@ Furthermore, a regular, not too slow cadence makes the whole process more
 predictable, which I expect *improves* the perception of stability, in the
 sense of delivering a stable flow of changes.
 
+
+Why add DataKinds and TypeData?
+-------------------------------
+
+We're considering ``GADTs`` and ``TypeFamilies`` for adoption. Both of
+them greatly benefit from ``DataKinds`` and ``TypeData`` (so do
+phantom types in plain Haskell 2010 for that matter). They let us
+inject more types at the type level. On the other hand if we reject ``GADTs`` and
+``TypeFamilies`` from ``GHC2024``, then we ``DataKinds`` and
+``TypeData`` may not pull their weight.
+
+That being said, `it's been suggested
+<https://github.com/ghc-proposals/ghc-proposals/pull/613#issuecomment-1761015976>`_
+that having ``DataKinds`` on yields better error messages when
+mistakenly using a data constructor in types:
+
+::
+
+  foo :: Just Int
+  foo = Just 0
+
+With ``DataKinds`` the error message is::
+
+  <interactive>:2:19: error: [GHC-83865]
+      • Expected a type, but ‘Just Int’ has kind ‘Maybe (*)’
+      • In the type signature: foo :: Int -> Just Int
+
+With ``NoDataKinds``::
+
+  <interactive>:4:19: error: [GHC-76037]
+      Not in scope: type constructor or class ‘Just’
+      Suggested fix:
+        Perhaps you intended to use DataKinds
+        to refer to the data constructor of that name?
+
+Both ``DataKinds`` and ``TypeData`` are used the same way at the
+type-level, the former lets us reuse types that we are using in
+computations at the type level, whereas the latter lets us define type
+purely for type level computations.
+
+*Counterarguments*: ``TypeData`` is still rather new, being only
+released in GHC 9.6. It's probably too early to consider that we have
+sufficient feedback on its merits. Nevertheless, it's innocuous enough
+to deserve a vote.
+
+*Backward compatibility*: Enabling `DataKinds`_ or `TypeData`_ does
+not affect existing ``GHC2021`` code.
 
 Why add DerivingStrategies?
 ---------------------------
@@ -288,3 +337,5 @@ Implementation Plan
 .. _Safe: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/safe_haskell.html#extension-Safe
 .. _GeneralisedNewtypeDeriving: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/roles.html#extension-GeneralisedNewtypeDeriving
 .. _TypeFamilies: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/type_families.html#extension-TypeFamilies
+.. _DataKinds: https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/data_kinds.html?highlight=datakinds#extension-DataKinds
+.. _TypeData: https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/type_data.html#extension-TypeData
