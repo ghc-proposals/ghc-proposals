@@ -26,6 +26,7 @@ The ``GHC2024`` language extension set comprises of all language extensions
 that ``GHC2021`` comprises (`official list <https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/control.html#extension-GHC2021>`_), plus the following
 
 * `DataKinds`_
+* `DefaultSignatures`_
 * `DerivingStrategies`_
 * `DisambiguateRecordFields`_
 * `ExplicitNamespaces`_
@@ -103,6 +104,28 @@ to deserve a vote.
 
 *Backward compatibility*: Enabling `DataKinds`_ or `TypeData`_ does
 not affect existing ``GHC2021`` code.
+
+Why add DefaultTypeSignatures?
+------------------------------
+
+There is no strong argument for inclusion of
+`DefaultTypeSignatures`_. But nor is there for rejecting
+it. ``DefaultTypeSignatures`` seems quite stable and there hasn't been
+any pushback against the feature. It's a situational, but useful
+extension that we don't really have expectations to change.
+
+*Counterarguments*: `It's been pointed out
+<https://github.com/ghc-proposals/ghc-proposals/pull/613#issuecomment-1759419147>`_
+that the most common use of default type signatures is with generic
+deriving and ``DeriveAnyClass`` (which is not considered for inclusion
+in ``GHC2024`` because it's seen as too error prone). An alternative,
+for this use-case would be to use deriving-via with the
+``Generically`` type class. But there are other uses, and
+`Deriving-via doesn't always work
+<https://github.com/ghc-proposals/ghc-proposals/pull/613#issuecomment-1760024807>`_.
+
+*Backward compatibility*: Enabling `DefaultTypeSignatures`_ does not
+affect existing ``GHC2021`` code.
 
 Why add DerivingStrategies?
 ---------------------------
@@ -339,3 +362,4 @@ Implementation Plan
 .. _TypeFamilies: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/type_families.html#extension-TypeFamilies
 .. _DataKinds: https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/data_kinds.html?highlight=datakinds#extension-DataKinds
 .. _TypeData: https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/type_data.html#extension-TypeData
+.. _DefaultSignatures: https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/default_signatures.html#extension-DefaultSignatures
