@@ -31,6 +31,7 @@ that ``GHC2021`` comprises (`official list <https://downloads.haskell.org/ghc/la
 * `DisambiguateRecordFields`_
 * `ExplicitNamespaces`_
 * `GADTs`_ (and the implied `MonoLocalBinds`_)
+* `ImpredicativeTypes`_
 * `LambdaCase`_
 * `RoleAnnotations`_
 * `TypeData`_
@@ -274,6 +275,14 @@ Possible ways to resolve this infelicity include:
 (because it is equivalent to the current situation),
 but enabling ``MonoLocalBinds`` does.
 
+
+Why add ImpredicativeTypes?
+---------------------------
+
+The current design seems to work well for many use-cases and is
+unlikely to change. It's been around since GHC 9.2. Besides, some form
+of impredicativity seems to be intuitively expected by many
+programmers. The time seems ripe.
 
 Why add LambdaCase?
 -------------------
