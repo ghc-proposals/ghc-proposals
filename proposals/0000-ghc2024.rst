@@ -31,6 +31,7 @@ that ``GHC2021`` comprises (`official list <https://downloads.haskell.org/ghc/la
 * `GADTs`_ (and the implied `MonoLocalBinds`_)
 * `LambdaCase`_
 * `RoleAnnotations`_
+* `TypeFamilies`_
 
 (*The committe will vote on each extension separately. Until then, this is the
 list of nominated extensions, and will be updated after a vote.*)
@@ -235,12 +236,38 @@ At the moment, using ``GHC2021`` together with `Safe`_ causes a warning, because
 *Backward compatibility*: Enabling `RoleAnnotations`_ does not affect
 existing ``GHC2021`` code.
 
+
+Why add TypeFamilies?
+---------------------
+
+Type families are one of the most used features of GHC. The reason for
+not including `TypeFamilies`_ in ``GHC2021`` was that type families
+don't work so well without `MonoLocalBinds`_, and it was considered at
+the time that ``MonoLocalBinds`` was too steep a change.
+
+But if we add ``MonoLocalBinds`` to ``GHC2024``, there is no
+obstacle to make this very popular feature.
+
+*Counterarguments*: `A reason not to include
+<https://github.com/ghc-proposals/ghc-proposals/pull/613#issuecomment-1759556663>`
+that the semantics of type families (in particular the strictness of
+its evaluation) is unsatisfactory and would like it to change before
+they become a default. But there are two possibility: either the
+semantic change is backward compatible, in which case including
+``TypeFamilies`` in ``GHC2024`` won't cause any issue; or the semantic
+change isn't backward compatible, in which case the massive popularity
+of type families makes it impossible to incorporate the change in the
+``TypeFamilies`` extension, and ``GHC2024`` is safe.
+
+*Backward compatibility*: Assuming that ``MonoLocalBinds`` is enabled,
+enabling ``TypeFamilies`` doesn't affect existing ``GHC2021`` code
+further.
+
 Alternatives
 ------------
 We could not do ``GHC2024`` and wait yet another year, or more, because we shy away from
 making what may look like a stability-threatening change.
 In my view that is worse: The fixes and improvements suggested above would reach our users later, we would not establish a regular and predictable pattern, and in the worst case never dare to make a new release, which would make the ``GHC20xx`` idea fall into a similar pattern than the ``Haskell20xx`` report process, which at the moment is stalled.
-
 
 Implementation Plan
 -------------------
@@ -260,3 +287,4 @@ Implementation Plan
 .. _RoleAnnotations: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/roles.html#extension-RoleAnnotations
 .. _Safe: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/safe_haskell.html#extension-Safe
 .. _GeneralisedNewtypeDeriving: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/roles.html#extension-GeneralisedNewtypeDeriving
+.. _TypeFamilies: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/type_families.html#extension-TypeFamilies
