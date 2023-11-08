@@ -158,7 +158,7 @@ This design has the following happy consequences.
 
 * ``-Wcompat`` currently turns on warnings that will be enabled by default in the future, but remain off in normal compilations for the time being.  It can continue to do so.  But under this proposal, warnings "enabled by default in the future" will simply be part of the default language edition. 
 
-* Today language editions are not mutually incompatible -- you can say ``-XGHC2010 -XGHC2021`` withtou complaint.  (The rightmost one "wins".)  They really should be incompatible, and that would be an easy change with this proposal.
+* Today language editions are not mutually incompatible -- you can say ``-XGHC2010 -XGHC2021`` without complaint.  (The rightmost one "wins".)  They really should be incompatible, and that would be an easy change with this proposal.
 
 
 Unresolved questions
