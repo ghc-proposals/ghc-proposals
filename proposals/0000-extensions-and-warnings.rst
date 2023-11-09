@@ -116,8 +116,9 @@ We propose the following changes:
 
 Extensions are processed in order, as today.  (Richard has a separate proposal in preparation, to make extensions order-independent.)
 
-The meaning of ``-W`` and ``-Wall`` continue to be mean "enable all recommended warnings" and "enable all reasonable warnings", just as in GHC today.
-These lists may therefore vary with GHC version; so a later GHC version may warn about things that an earlier GHC version does not.
+The meanings of ``-W`` and ``-Wall`` continue to be "enable all recommended warnings" and "enable all reasonable warnings", just as in GHC today.
+These lists may therefore vary with GHC version.  That is, they are not fixed by a language edition,
+so a later GHC version may warn about things that an earlier GHC version does not.  If you use (say) ``-XGHC2021`` you will, of course, get all the warnings that are in ``-XGHC2021``. You would only use ``-Wall`` to get *extra* ones, meaning "warn about anything smelly, including stuff not warned about in GHC2021".
 
 We also propose that we become more systematic about specifying extension properties. Specifically, for each language extension X you should specify:
 
