@@ -3,8 +3,8 @@ OPAQUE pragma
 
 .. author:: Christiaan Baaij
 .. date-accepted:: 2021-05-17
-.. ticket-url::
-.. implemented::
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/19553
+.. implemented:: 9.4.1
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/415>`_.
 .. contents::
