@@ -66,7 +66,7 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
 **Warning References and Messages:**
 
 - A binding will produce a warning if it is directly unused, or if it used only by bindings that are unused *and* produce a warning about being unused.
-  - This means that e.g. if a top-level bind is used only in an unused local bind, both ``-Wunused-top-binds`` *and* ``-Wunused-local-binds`` must be enabled.
+    - This means that e.g. if a top-level bind is used only in an unused local bind, both ``-Wunused-top-binds`` *and* ``-Wunused-local-binds`` must be enabled.
 - The warnings for transitively unused bindings will reference all bindings they are used in that throw a warning
 - If there is a chain of indirectly unused bindings, e.g. ``a`` is used in ``b``, which is used in ``c``, which is used in ``d``, the question arises whether the warning about ``a`` should reference ``b``, ``c``, or ``d``. The answer is that it will reference the first binding in that chain that produces a warning (and ``a`` will produce no warning at all if none of them produce a warning). For example:
 
@@ -77,18 +77,18 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
 
   If ``foo`` is used only here, and ``bar`` is not used anywhere, the warning about ``foo`` will reference ``bar`` rather than ``quux``, since ``quux`` does not throw a warning, as according to the exception in the definition above, it is not considered "transitively unused".
 - The warning flags that are relevant are:
-  * ``-Wunused-top-binds``
-  * ``-Wunused-local-binds``
-  * ``-Wunused-pattern-binds``
-  * ``-Wunused-binds``
-  * ``-Wunused-foralls``
-  * ``-Wunused-matches``
-  * ``-Wunused-imports``
-  * ``-Wunused-type-patterns``
+    - ``-Wunused-top-binds``
+    - ``-Wunused-local-binds``
+    - ``-Wunused-pattern-binds``
+    - ``-Wunused-binds``
+    - ``-Wunused-foralls``
+    - ``-Wunused-matches``
+    - ``-Wunused-imports``
+    - ``-Wunused-type-patterns``
 - Related warning flags that are not affected by this proposal since they are not about binding names are:
-  * ``-Wunused-pattern-bindings``
-  * ``-Wunused-packages``
-  * ``-Wunused-do-bind``
+    - ``-Wunused-pattern-bindings``
+    - ``-Wunused-packages``
+    - ``-Wunused-do-bind``
 
 Examples
 --------
