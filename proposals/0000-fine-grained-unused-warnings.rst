@@ -48,7 +48,7 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
 
 1. **Directly Unused Bindings:** A binding is considered directly unused if it is not referenced in any part of the code. These bindings will generate the usual warnings as before.
 
-2. **Transitively Unused Bindings:** A binding is classified as transitively unused if it is only used within other (directly or indirectly) unused bindings. The warning for these bindings will be reported only if ``-freport-indirectly-unused-bindings` and the relevant existing warning flags (e.g., ``-Wunused-top-binds``, ``-Wunused-local-binds``) are enabled.
+2. **Transitively Unused Bindings:** A binding is classified as transitively unused if it is used only within other (directly or indirectly) unused bindings. The warning for these bindings will be reported only if ``-freport-indirectly-unused-bindings` and the relevant existing warning flags (e.g., ``-Wunused-top-binds``, ``-Wunused-local-binds``) are enabled.
 
     An notable exception here is that local bindings are *not* considered transitively unused just because the top-level binding they are defined in is unused. They are only considered transitively unused if they are unused within the scope of the top-level definition. This is to avoid generating a lot of unhelpful warnings in these cases.
 
@@ -61,21 +61,21 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
       Foo.hs:6:1: warning: [-Wunused-top-binds]
           ‘b1’ is defined but used only in the following unused bindings: ‘b2’, ‘b4’
 
-4. **Import and `forall` Bindings:** The proposal also extends to warnings about transitively unused imports and ``forall`` binds. Both are considered to be unused if they are only used in definitions or type declarations of unused bindings, with the same direct vs. indirect distinction.
+4. **Import and `forall` Bindings:** The proposal also extends to warnings about transitively unused imports and ``forall`` binds. Both are considered to be unused if they are used only in definitions or type declarations of unused bindings, with the same direct vs. indirect distinction.
 
 **Warning References and Messages:**
 
 - A binding will produce a warning if it is directly unused, or if it used only by bindings that are unused *and* produce a warning about being unused.
-  - This means that e.g. if a top-level bind is only used in an unused local bind, both ``-Wunused-top-binds`` *and* ``-Wunused-local-binds`` must be enabled.
+  - This means that e.g. if a top-level bind is used only in an unused local bind, both ``-Wunused-top-binds`` *and* ``-Wunused-local-binds`` must be enabled.
 - The warnings for transitively unused bindings will reference all bindings they are used in that throw a warning
 - If there is a chain of indirectly unused bindings, e.g. ``a`` is used in ``b``, which is used in ``c``, which is used in ``d``, the question arises whether the warning about ``a`` should reference ``b``, ``c``, or ``d``. The answer is that it will reference the first binding in that chain that produces a warning (and ``a`` will produce no warning at all if none of them produce a warning). For example:
 
-    ::
+  ::
     
-      bar = quux + 2
-        where quux = foo * 2
+    bar = quux + 2
+      where quux = foo * 2
 
-    If ``foo`` is only used here, and ``bar`` is not used anywhere, the warning about ``foo`` will reference ``bar`` rather than ``quux``, since ``quux`` does not throw a warning, as according to the exception in the definition above, it is not considered "transitively unused".
+  If ``foo`` is used only here, and ``bar`` is not used anywhere, the warning about ``foo`` will reference ``bar`` rather than ``quux``, since ``quux`` does not throw a warning, as according to the exception in the definition above, it is not considered "transitively unused".
 - The warning flags that are relevant are:
   * ``-Wunused-top-binds``
   * ``-Wunused-local-binds``
