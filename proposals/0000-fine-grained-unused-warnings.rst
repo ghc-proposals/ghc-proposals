@@ -207,7 +207,8 @@ Alternatives
 
   * A disadvantage is that most third-party tools dealing with error messages will likely have a harder time parsing the warning messages.
 
-* A different name could be chosen for the new flag, ``-freport-indirectly-unused-bindings``.
+* A different name could be chosen for the new flag, ``-freport-indirectly-unused-bindings``. For example:
+  * ``-freport-indirect-uses``
 
 * Instead of ``-freport-indirectly-unused-bindings``, we could separate each warning flag (like ``-Wunused-imports``)
   into two (like ``-Windirectly-unused-imports`` and ``-Wdirectly-unused-imports``) and a warnings group like ``-Wno-indirect-uses`` to turn off all warnings about indirectly unused bindings at once.
