@@ -53,7 +53,7 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
     An notable exception here is that local bindings are *not* considered transitively unused just because the top-level binding they are defined in is unused. They are only considered transitively unused if they are unused within the scope of the top-level definition. This is to avoid generating a lot of unhelpful warnings in these cases.
 
 3. **Recursive and Mutual Recursive Bindings:** 
-    - If a binding is only used recursively (e.g., a function calling itself), it is treated as unused.
+    - If a binding is used only recursively, it is treated as unused.
     - For mutually recursive bindings, if none of the bindings in the group are used outside their mutual recursion, each binding in the group is considered transitively unused. The warning for each binding will list the other bindings in the group it is directly involved with, e.g.
 
     ::
