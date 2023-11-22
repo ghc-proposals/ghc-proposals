@@ -36,6 +36,7 @@ that ``GHC2021`` comprises (`official list <https://downloads.haskell.org/ghc/la
 * `RoleAnnotations`_
 * `TypeData`_
 * `TypeFamilies`_
+* `BlockArguments`_
 
 (*The committe will vote on each extension separately. Until then, this is the
 list of nominated extensions, and will be updated after a vote.*)
@@ -344,6 +345,15 @@ of type families makes it impossible to incorporate the change in the
 enabling ``TypeFamilies`` doesn't affect existing ``GHC2021`` code
 further.
 
+Why add BlockArguments?
+-----------------------
+
+`BlockArguments`_ denoises common idioms, e.g. `when` for `forM` in do blocks, by not requiring
+parentheses or `$`. The resulting non-verbose syntax is arguably very Haskelly, and some
+people working with languages that have this already (Lean, PureScript) report beeing happy about it.
+
+*Backward compatibility*: No incompatibilities (accoridng to the original proposal).
+
 Alternatives
 ------------
 We could not do ``GHC2024`` and wait yet another year, or more, because we shy away from
@@ -372,3 +382,4 @@ Implementation Plan
 .. _DataKinds: https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/data_kinds.html?highlight=datakinds#extension-DataKinds
 .. _TypeData: https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/type_data.html#extension-TypeData
 .. _DefaultSignatures: https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/default_signatures.html#extension-DefaultSignatures
+.. _BlockArguments: https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/block_arguments.html#extension-BlockArguments
