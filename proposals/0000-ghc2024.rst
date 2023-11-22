@@ -106,11 +106,11 @@ to deserve a vote.
 *Backward compatibility*: Enabling `DataKinds`_ or `TypeData`_ does
 not affect existing ``GHC2021`` code.
 
-Why add DefaultTypeSignatures?
+Why add DefaultSignatures?
 ------------------------------
 
 There is no strong argument for inclusion of
-`DefaultTypeSignatures`_. But nor is there for rejecting
+`DefaultSignatures`_. But nor is there for rejecting
 it. ``DefaultTypeSignatures`` seems quite stable and there hasn't been
 any pushback against the feature. It's a situational, but useful
 extension that we don't really have expectations to change.
@@ -125,7 +125,7 @@ for this use-case would be to use deriving-via with the
 `Deriving-via doesn't always work
 <https://github.com/ghc-proposals/ghc-proposals/pull/613#issuecomment-1760024807>`_.
 
-*Backward compatibility*: Enabling `DefaultTypeSignatures`_ does not
+*Backward compatibility*: Enabling `DefaultSignatures`_ does not
 affect existing ``GHC2021`` code.
 
 Why add DerivingStrategies?
