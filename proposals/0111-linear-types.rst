@@ -7,6 +7,7 @@ Linear Types
 .. implemented:: 9.0 (technology preview)
 .. highlight:: haskell
 .. header:: This proposal was `discussed at pull request #111<https://github.com/ghc-proposals/ghc-proposals/pull/111>`_, `amended by pull request #356<https://github.com/ghc-proposals/ghc-proposals/pull/356>`_ and `pull request #392<https://github.com/ghc-proposals/ghc-proposals/pull/392>`_.
+.. sectnum::
 .. contents::
 
 This proposal previously underwent a round of review `at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/91>`_.
