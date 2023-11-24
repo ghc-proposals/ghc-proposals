@@ -199,9 +199,10 @@ Proposed Change Specification
 
 .. _Specification:
 
-We introduce a new language extension. Types with a linearity
+We introduce a new language extension ``-XLinearTypes``. Types with a linearity
 specification are syntactically legal anywhere in a module if and only
-if ``-XLinearTypes`` is turned on.
+if ``-XLinearTypes`` is turned on. ``-XLinearTypes`` implies
+``-XMonoLocalBinds`` (see `Let bindings and polymorphism`_).
 
 This proposal only introduces a new type for functions. It does not
 take advantage of these new types to perform new optimisations or
@@ -908,6 +909,136 @@ or ``case`` in the surface syntax), we want to infer the multiplicity
 annotation. The process for this is not yet defined (see `Unresolved
 questions`_ below for a more precise description of this issue).
 
+Let and where bindings
+----------------------
+
+*This section is written with let bindings, but all of the same applies
+to where bindings.*
+
+Let bindings can optionally be annotated with a multiplicity:
+
+::
+
+   let %p pat = rhs in body
+
+Note: annotating the function syntax isn't included in this proposal
+
+::
+
+   -- Doesn't work
+   let %p f x y = rhs in body
+
+instead write
+
+::
+
+   -- pat can be a variable
+   let %p f = \x y -> rhs in body
+
+When typechecking ``let %p pat = rhs in body`` the ``rhs`` is consumed
+with multiplicity ``p`` and the variables of ``pat`` must be consumed
+in ``body`` with multiplicity ``p`` (if ``pat`` has some non-linear
+fields, then the variables are scaled appropriately as per
+`Constructors & pattern-matching`_). The pattern ``pat`` can be an
+arbitrary, nested, pattern.
+
+Here are a few examples that illustrate the typing rules
+
+::
+
+   -- good
+   let %1 x = u in x
+
+   -- bad
+   let %1 x = u in (x, x)
+
+   -- bad
+   let %1 x = u in let %Many y = x in …
+
+   -- good
+   let %1 (x, y) = u in (y, x)
+
+   -- bad
+   let %1 (x, y) = u in x
+
+   -- good
+   let %1 (Ur x) = u in (x, x, x)
+
+When the multiplicity annotation isn't specified, the multiplicity is
+inferred, so that both
+
+::
+
+   \(%1 z) -> let !(x, y) = z in (y, x)
+   let !(x, y) = u in (x, x)
+
+are well typed.
+
+Non-variable let-bound patterns must be strict
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Non-variable linear patterns can't be lazy (see `Lazy patterns`_). As
+a consequence, non-variable let-bound patterns must be annotated with
+a ``!`` (because let-bound patterns are lazy by default, as opposed to
+case-bound patterns which are strict by default).
+
+::
+
+   -- good
+   let %1 x = u in …
+
+   -- good
+   let %1 !x = u in …
+
+   -- bad
+   let %1 (x, y) = u in …
+
+   -- good
+   let %1 !(x, y) = u in …
+
+   -- inferred unrestricted
+   let (x, y) = u in …
+
+Toplevel bindings
+~~~~~~~~~~~~~~~~~
+
+Toplevel bindings are always unrestricted and can't be annotated with
+a multiplicity. Only local bindings can be annotated.
+
+Non-variable linear patterns are monomorphic
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. _`Non-variable linear patterns are monomorphic`
+
+Variables in non-variable multiplicity-annotated let-patterns are bound to
+monomorphic types (see `Let bindings and polymorphism`_ for the
+reasoning and a discussion). Unannotated non-variable let-patterns are
+inferred to be unrestricted (by default, since ``-XLinearTypes``
+implies ``-XNoMonoLocalBinds``, only toplevel bindings, which are
+always unrestricted anyway, are inferred to be polymorphic).
+
+::
+
+   {-# LANGUAGE NoMonoLocalBinds #-}
+
+   -- x, y :: Int -> Int
+   let %1 !(x, y) = ((\z->z), (\z->z)) in (x 0, y 1)
+
+   -- x, y :: Int -> Int
+   let %Many !(x, y) = ((\z->z), (\z->z)) in (x 0, x 1, y 2)
+
+   -- x :: forall a. a -> a
+   let %1 x = (\z -> z) in if b then x 1 else x Bool
+
+   -- x, y :: forall a. a -> a
+   let !(x, y) = ((\z->z), (\z->z)) in (x 0, x Bool, y 2)
+
+   -- rejected because x is inferred unrestricted but must be linear
+   \ (%1 w :: T) -> let !(x, y) = ((\z -> (w,z)), (\z -> z)) in (x 0, y 1)
+
+   -- rejected even though it could be useful
+   let %1 (Ur x) = Ur (\z -> z) in (x 0, x Bool)
+
 Effect and Interactions
 =======================
 
@@ -1161,6 +1292,8 @@ Linear wildcard patterns are disallowed.
 Lazy patterns
 ~~~~~~~~~~~~~
 
+.. _`Lazy patterns`
+
 Lazy pattern-matching is only allowed for unrestricted (multiplicity
 ``ω``) patterns: lazy patterns are defined in terms of projections
 which only exist in the unrestricted case. For instance
@@ -1253,6 +1386,101 @@ only programmers aware of ``-XLinearTypes`` would be surprised), we
 interpret GADT-syntax type declaration (both ``data`` and ``newtype``)
 in code without ``-XLinearTypes`` to be *linear*, despite the
 ostensible use of an unrestricted arrow.
+
+Let bindings and polymorphism
+-----------------------------
+
+.. _`Let bindings and polymorphism`
+
+Consider
+
+::
+
+   let (f,g) = ((\x -> x), (\y -> y)) in …
+
+The type-checker (with let-generalisation turned on (aka
+``-XNoMonoLocalBinds``)) infers type `forall a. a -> a` for both ``F``
+and ``g``.
+
+To make this work, there is a lot going on behind the scene (during desugaring
+mostly). GHC creates a binding
+
+::
+
+   let p @a @b = ((\(x::a) -> x), (\(y::b) -> y))
+
+Remember: the type-checker only generalises at let bindings, so neither identity
+function will be given a polymorphic type, only ``p`` is. Then ``f`` and ``g`` are
+materialised as selections of ``p`` (this logic is represented by the AbsBinds type
+in the type-checker). It looks something like this::
+
+      let p' =
+        let p @a @b = ((\(x::a) -> x), (\(y::b) -> y)) in
+        let f @a @b = case p @a @b of { (f,_) -> f } in
+        let g @a @b = case p @a @b of { (_,g) -> g } in
+        (f,g)
+      in
+      let f = case p' of { (f,_) -> f } in
+      let g = case p' of { (_,g) -> g } in
+      …
+
+(``f`` and ``g`` are parameterised by both ``@a`` and ``@b``, this is
+simplified by later compiler passes)
+
+For linearity the problem is that all these selections aren't
+linear and that ``p`` is called several times. It isn't because of lazy pattern
+matching (which is, independently, prohibited by the type-checker), a strict
+pattern:
+
+::
+
+      let (f,g) = ((\x -> x), (\y -> y)) in …
+
+is desugared in a very similar way
+
+::
+
+      let p' =
+        let p @a @b = ((\(x::a) -> x), (\(y::b) -> y)) in
+        let f @a @b = case p @a @b of { (f,_) -> f } in
+        let g @a @b = case p @a @b of { (_,g) -> g } in
+        (p, f, g)
+      in
+      let f = case p' of { (_,f,_) -> f } in
+      let g = case p' of { (_,_,g) -> g } in
+      let to_force = case p' of { (p,_,_) -> p } in
+      p `seq` …
+
+For this to be linear we would like to implement this as one big case expression
+
+::
+
+     let p @a @b = ((\(x::a) -> x), (\(y::b) -> y)) in
+     case p of
+     (f, g) -> …
+
+But this means pattern-matching on a lambda abstraction (albeit a lambda over
+type variables), which is not something that Core understands. Also, ``f`` and ``g``
+should be polymorphic, despite the fact that both fields of ``p`` are
+monomorphic. It's not clear that this makes sense. Even assuming that it makes
+sense, it's not clear how to make such a pattern-matching manifestly typed in
+Core.
+
+This is the reason why this proposal specifies in `Non-variable linear
+patterns are monomorphic`_ that such pattern must be either
+monomorphic or unrestricted. It wouldn't be unsound, to the best of my
+knowledge, to allow generalised linear pattern, this restrictions
+follows, instead, from the necessary limitations of the type-checker,
+as well as the choice of intermediate language.
+
+This is why -XLinearTypes implies -XMonoLocalBinds: -XMonoLocalBinds
+prevents the type-checker from generating AbsBinds, and, as such,
+makes more lets linear, which is almost certainly the right default
+(at least it's the least surprising: a binding doesn't change from
+linear to unrestricted because a small change makes it generalisable).
+
+See also https://gitlab.haskell.org/ghc/ghc/-/issues/18461#note_506330 for the
+initial discussion on this difficulty.
 
 Costs and Drawbacks
 ===================
@@ -2192,6 +2420,36 @@ would define
 
   type CompatibleWithOne p = 1 ⩽ p
 
+Let bindings and polymorphism
+-----------------------------
+
+This proposal specifies (in particular in `Non-variable linear
+patterns are monomorphic`_) that
+
+1. ``-XLinearTypes`` implies ``-XMonoLocalBinds``.
+2. Polymorphic non-multiplicity-annotated let-bound non-variable patterns are inferred to be unrestricted
+3. Multiplicity annotated let-bound non-variable patterns are not generalised.
+
+MonoLocalBinds
+~~~~~~~~~~~~~~
+
+We could choose not to imply ``-XMonoLocalBinds``. The whole point of
+having ``-XMonoLocalBinds`` is to make (2) irrelevant though. Because
+it feels rather unpredictable. Because ``-XMonoLocalBinds`` is quite
+standard already, being more or less necessary for ``-XGADTs`` and
+``-XTypeFamilies``, so it feels unnecessary to add extra worries by
+not not implying ``-XMonoLocalBinds``.
+
+%Many annotated patterns
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+We could try to generalise multiplicity annotated bindings when they
+are annotated with ``%Many``. But it invites a lot of complication
+(what if it's a type synonym that is equivalent to ``Many``? What if
+it's a type family?) that are hard to justify. In particular since we
+take ``-XMonoLocalBinds`` for granted, where generalisation doesn't
+occur anyway.
+
 The Core corner
 ===============
 
@@ -2274,14 +2532,14 @@ Inlining
 
   ::
 
-    let x %1 = u in if b then … x … else … x …
+    let %1 x = u in if b then … x … else … x …
 
   GHC may try to line ``x`` at the some (but not necessarily all) of
   the use sites. For instance, GHC may try to reduce to
 
   ::
 
-    let x %1 = u in if b then … u … else … x …
+    let %1 x = u in if b then … u … else … x …
 
   But this is not recognised as linear under the current typing rules
   (because, among other things ``u`` counts as having been used twice,
@@ -2308,21 +2566,21 @@ Common Subexpression Elimination (CSE)
 
   ::
 
-    let x %1 = u in e
+    let %1 x = u in e
 
   There are several potential strategies:
 
   - Ignore linear lets for the purpose of CSE. After all, we are
     unlikely to find many occurrences of ``u`` if ``u`` is used in a
-    ``let x %1``.
-  - Try and see if we can replace the ``let x %1`` by a ``let x %ω`` (that
+    ``let %1 x``.
+  - Try and see if we can replace the ``let %1 x`` by a ``let %ω x`` (that
     is, if ``u`` only has unrestricted type variables). And continue
-    with ``u --> x`` if the ``let x %1`` was successfully promoted to
-    ``let x %ω``.
-  - Do not change the ``let x %1`` immediately, but when an occurrence of
-    ``u`` is encountered, lazily promote the ``let x %1`` to a ``let x %ω``
+    with ``u --> x`` if the ``let %1 x`` was successfully promoted to
+    ``let %ω x``.
+  - Do not change the ``let %1 x`` immediately, but when an occurrence of
+    ``u`` is encountered, lazily promote the ``let %1 x`` to a ``let %ω x``
     if needed (if we have resolved the issue with inlining, we may not
-    always need to promote the ``let x::(1)``). It is not completely clear
+    always need to promote the ``let %ω x``). It is not completely clear
     how to pursue this option.
 
 Case-binder optimisations:
@@ -2330,15 +2588,15 @@ Case-binder optimisations:
 
   ::
 
-     case x of y %1 {
-       (p:ps) -> (case x of z %1 {…}) (case x of w %1 {…})}
+     case x of %1 y {
+       (p:ps) -> (case x of %1 z {…}) (case x of %1 w {…})}
 
   into
 
   ::
 
     case x of y %1 {
-      (p:ps) -> let x %?? = y in (case x of …) (case x of …)}
+      (p:ps) -> let %?? x = y in (case x of …) (case x of …)}
 
   This transformation, similar to CSE, is valid only because we are
   calling for a ``case_1`` of some unrestricted variable. This is
@@ -2350,7 +2608,7 @@ Case-binder optimisations:
   - Even if we have a more flexible typing rule for ``let`` (see
     below), it remains that ``y`` has multiplicity ``1`` and that for
     the right-hand side of the alternative to type-check, we actually
-    need ``let x %ω = y in …``, which is not well-typed.
+    need ``let %ω x = y in …``, which is not well-typed.
 
   Like for CSE, we can either prevent this optimisation for linear
   cases. Or we can try to promote the ``case_1`` to a ``case_ω``, and
