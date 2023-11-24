@@ -285,7 +285,7 @@ To see why, consider this example
   bad' = (giveC useC, 0)
 
 In ``bad``, if the leftmost ``useC`` uses the linear ``C`` from the
-function signaturev, then ``bad`` would be rejected, it must used the
+function signature, then ``bad`` would be rejected, it must used the
 unrestricted ``C`` from ``giveC``. But in ``bad'`` it must use the
 linear ``C`` instead. So this would force the leftmost ``useC`` to
 make a guess. Instead we reject both ``bad`` and ``bad'``.
@@ -332,6 +332,7 @@ Class declaration can be annotated with the ``%Dupable``
     <methods>
 
 Classes annotated with ``%Dupable`` must:
+
 - Have a single method
 - The method must be of type ``LinearityToken``
 
