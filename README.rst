@@ -42,8 +42,8 @@ Should the GHC maintainers deem a change significant or controversial enough to
 warrant that, they may, at their discretion, involve the committee and ask the
 contributor to write a formal proposal.
 
-Proposals may contain amendments to our principles_, which serve as a guideline
-for future proposals and for the general evolution of GHC.
+Proposals are evaluated against our principles_, which cover both language *design*
+and language *stability*
 
 .. _principles: principles.rst
 
@@ -413,6 +413,8 @@ is a polite ping/enquiry.
 Review criteria
 ---------------
 Here are some characteristics that a good proposal should have.
+
+* *It should follow our design principles*.  These principles_ cover both the language *design* and its *stability* over time.
 
 * *It should be self-standing*.  Some proposals accumulate a long and interesting discussion
   thread, but in ten years' time all that will be gone (except for the most assiduous readers).
