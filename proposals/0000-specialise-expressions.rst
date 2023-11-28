@@ -54,7 +54,6 @@ any multiplication at run time.
 
 Motivation
 ----------
-
 See the introduction. In addition to the examples there, we can imagine
 a case like this ::
 
