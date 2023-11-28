@@ -119,11 +119,11 @@ Proposed Change Specification
 #. All free variables of a ``SPECIALISE`` pragma must be in scope, and the
    expression must be well typed.
 
-#. The ``qvar`` at the head of teh ``specexp`` must not be one of the forall'd variables.
+#. The ``qvar`` at the head of the ``specexp`` must not be one of the forall'd variables.
 
 #. We do not allow infix notation: the function to be specialised must be at the head.  One could change this choice, but it is simple and clear.
 
-#. Assume there is a definition ``f = rhs``.  (It may be defined with argument on the left of course.)   Then a ``SPECIALISE`` pragma ::
+#. Assume there is a definition ``f = rhs``.  (It may be defined with arguments on the left of course.)   Then a ``SPECIALISE`` pragma ::
 
          {-# SPECIALISE [1] forall x,y. f True (x,y) #-}
 
@@ -131,17 +131,17 @@ Proposed Change Specification
 
    1. Create a fresh name (we'll call it ``f'``).
 
-   #. Create a new top-level binding behaving as ``f' x y = rhs True (x,y)``.
+   #. Create a new top-level binding ``f' x y = rhs True (x,y)``.
 
-   #. Create a new rewrite rule behaving as ``{-# RULES "f/f'" [1] forall x,y. f True (x,y) = f' x y #-}``.
+   #. Create a new rewrite rule ``{-# RULES "f/f'" [1] forall x,y. f True (x,y) = f' x y #-}``.
 
    #. If the ``SPECIALISE INLINE`` pragma is used (or its American spelling), then GHC additionally
       adds ``{-# INLINE [act] f' #-}``. This behavior is unchanged from today.
 
-   Note that this specification says "behaving as": we do not require GHC to e.g. build the syntax exactly
-   as written above. In particular, type inference will *not* be run on these declarations; instead, type
-   inference will be run on the original pragma, and the new top-level binding
-   and rewrite rule will be constructed to be well-typed.
+   GHC does not need to build source syntax
+   as written above, and then typecheck and desugar it; it just behaves *as if* that happened.
+   In practice, inference will be run on the original pragma, and the new top-level binding
+   and rewrite rule will be constructed (in Core) to be well-typed.
 
 #. GHC will issue a warning (controlled by ``-Wuseless-specialisations`` and part of the default warnings)
    if a specialisation can be determined to be useless (that is, not specialise anything). Examples:
