@@ -165,6 +165,52 @@ This will cause the following declarations::
 Now, every time we say ``any_expression - 1`` in our (optimised) program, we will actually
 invoke ``minus'``.
 
+Consider a recursive function ::
+
+  f :: Bool -> Int -> Int
+  f b x = ...(if b then e1 else e2)...(f b e3)...
+
+  {-# SPECIALISE f True #-}
+
+Then GHC will generate ::
+
+  f' = (\b x -> ...(if b then e1 else e2)...(f b e3)...) True
+  {-# RULES "f" f True = f' #-}
+
+After simplifying the RHS of ``f'``, including applying the rewrite rule in its RHS, we get ::
+
+  f' = \x -> ...e1...(f' e3)...
+
+Note that ``f'`` has become self-recursive, through the application of the rewrite rule.
+
+Consider another recursive function ::
+
+    loop :: [Int] -> Int
+    loop [] = 1
+    loop (x:xs) = x * loop xs
+
+    {-# SPECIALISE loop [] #-}
+    {-# SPECIALISE forall x xs . loop (x:xs) #-}
+
+This will generate ::
+
+    loopNil = 1
+    loopCons x xs = x * loop xs
+
+    {-# RULES "loop/loopNil" loop [] = loopNil #-}
+    {-# RULES "loop/loopCons" forall x xs . loop (x:xs) = loopCons x xs #-}
+
+So a call like ``loop [1,2]`` will fire the ``loop/loopCons`` rule to give ::
+
+    loop [1,2]  -->   loopCons 1 [2]
+
+But ``loopCons`` is a simple non-recursive function, and may well inline (especially if you say ``SPECIALISE INLINE``) ::
+
+    loopCons 1 [2]  -->  x * loop [2]
+
+Now the process can repeat, and the loop is unrolled.
+
+
 Effect and Interactions
 -----------------------
 1. This generalises the current syntax for specialisation pragmas in a natural way.
