@@ -84,10 +84,14 @@ Proposed Change Specification
 1. Here is the new BNF for ``SPECIALISE`` pragmas::
 
      pragma ::= ...
-             |  '{-#' specialise_keyword activation rule_foralls infixexp '#-}'
+             |  '{-#' specialise_keyword activation rule_foralls specexp '#-}'
              |  '{-#' specialise_keyword activation qvar '::' types1 '#-}'  -- as today
 
      specialise_keyword ::= 'SPECIALISE' | 'SPECIALIZE' | 'SPECIALISE INLINE' | 'SPECIALISE INLINE'
+
+     specexp ::= qvar
+              |  specexp aexp
+              |  specexp '@' atype
 
        -- as today
      activation ::= ...  -- this encompasses "[2]" and "[~0]"
@@ -96,9 +100,6 @@ Proposed Change Specification
      rule_foralls ::= 'forall' rule_vars '.' 'forall' rule_vars '.'
                   |   'forall' rule_vars '.'
                   |   {- empty -}
-
-       -- as today
-     infixexp ::= ... -- as in the Report
 
        -- as today
      types1 ::= types1, type
@@ -118,28 +119,28 @@ Proposed Change Specification
 #. All free variables of a ``SPECIALISE`` pragma must be in scope, and the
    expression must be well typed.
 
-#. The expresion in a ``SPECIALISE`` pragma must be suitable for the left-hand
-   side of a rewrite rule. As the `manual <https://downloads.haskell.org/ghc/latest/docs/html/users_guide/exts/rewrite_rules.html>`_
-   says, "The left hand side of a rule must consist of a top-level variable applied to arbitrary expressions."
+#. The ``qvar`` at the head of teh ``specexp`` must not be one of the forall'd variables.
 
-#. A ``SPECIALISE`` pragma, binding term variables ``vars`` and with expression ``exp`` headed by variable ``f`` and activation ``act``,
+#. We do not allow infix notation: the function to be specialised must be at the head.  One could change this choice, but it is simple and clear.
+
+#. Assume there is a definition ``f = rhs``.  (It may be defined with argument on the left of course.)   Then a ``SPECIALISE`` pragma ::
+
+         {-# SPECIALISE [1] forall x,y. f True (x,y) #-}
+
    causes GHC to do the following:
 
    1. Create a fresh name (we'll call it ``f'``).
 
-   #. Create a new top-level binding behaving as ``f' vars = inline exp``, where ``inline`` is from ``GHC.Exts``
-      and causes its argument to be unconditionally inlined (see the `documentation <https://hackage.haskell.org/package/base-4.16.0.0/docs/GHC-Exts.html#v:inline>`_).
-      Note here that ``exp`` is a meta-variable in the context of this proposal, so this will look like
-      ``inline f a b c`` in practice, causing ``f`` to inline.
+   #. Create a new top-level binding behaving as ``f' x y = rhs True (x,y)``.
 
-   #. Create a new rewrite rule behaving as ``{-# RULES "f/f'" [act] forall vars. exp = f' vars #-}``.
+   #. Create a new rewrite rule behaving as ``{-# RULES "f/f'" [1] forall x,y. f True (x,y) = f' x y #-}``.
 
    #. If the ``SPECIALISE INLINE`` pragma is used (or its American spelling), then GHC additionally
       adds ``{-# INLINE [act] f' #-}``. This behavior is unchanged from today.
 
    Note that this specification says "behaving as": we do not require GHC to e.g. build the syntax exactly
    as written above. In particular, type inference will *not* be run on these declarations; instead, type
-   inference will be run on ``exp`` (and ``vars``) in the original pragma, and the new top-level binding
+   inference will be run on the original pragma, and the new top-level binding
    and rewrite rule will be constructed to be well-typed.
 
 #. GHC will issue a warning (controlled by ``-Wuseless-specialisations`` and part of the default warnings)
@@ -152,13 +153,14 @@ Examples
 --------
 See the introduction and Motivation_ sections. As an example with variables, we have ::
 
-  {-# SPECIALISE forall (x :: Int). x - 1 #-}
+  (-) x y = ...rhs...
+  {-# SPECIALISE forall (x :: Int). (-) x 1 #-}
 
 This will cause the following declarations::
 
   minus' :: Int -> Int
-  minus' x = inline (-) x 1
-  {-# RULES "minus1" forall x. x - 1 = minus' x #-}
+  minus' x = (...rhs...) x 1
+  {-# RULES "minus1" forall x. (-) x 1 = minus' x #-}
 
 Now, every time we say ``any_expression - 1`` in our (optimised) program, we will actually
 invoke ``minus'``.
