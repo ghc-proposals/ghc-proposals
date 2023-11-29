@@ -32,12 +32,14 @@ all calls of ``addMult`` at ``Int`` to use the faster version.
 
 The syntax of today's ``SPECIALISE`` requires a function and its specialised type.
 
-This proposal suggests to generalise the syntax of ``SPECIALISE`` to allow an
-arbitrary expression, not just a function name and a type. Happily, this is backward
+This proposal suggests to generalise the syntax of ``SPECIALISE`` to allow a
+function application with an optional type signature,
+not just a function name and a type. Happily, this is backward
 compatible, because type signatures are expressions, too. This will allow, for example ::
 
   {-# SPECIALISE addMult @Double #-}
   {-# SPECIALISE addMult (5 :: Int) #-}
+  {-# SPECIALISE addMult 5 :: Int -> Int #-}
 
 The first of these is a more succinct phrasing of what we have today: it simply
 specialises ``addMult`` to work on ``Double``\ s, but without having to repeat the
@@ -84,8 +86,8 @@ Proposed Change Specification
 1. Here is the new BNF for ``SPECIALISE`` pragmas::
 
      pragma ::= ...
-             |  '{-#' specialise_keyword activation rule_foralls specexp '#-}'
-             |  '{-#' specialise_keyword activation qvar '::' types1 '#-}'  -- as today
+             |  '{-#' specialise_keyword activation rule_foralls specexp [ '::' type ]'#-}'  -- (1)
+             |  '{-#' specialise_keyword activation qvar '::' type ',' types1 '#-}'          -- (2)
 
      specialise_keyword ::= 'SPECIALISE' | 'SPECIALIZE' | 'SPECIALISE INLINE' | 'SPECIALISE INLINE'
 
@@ -102,12 +104,16 @@ Proposed Change Specification
                   |   {- empty -}
 
        -- as today
-     types1 ::= types1, type
+     types1 ::= types1 ',' type
             |   type
 
-#. The grammar above includes syntax for specifying multiple specialised
-   types for an identifier. Its syntax and semantics are completely unchanged
-   from today; it is included here only for completeness.
+#. The first production (1) includes ``{-# SPECIALISE f :: type #-}`` as a special case
+   in which there are no arguments.  The ``:: type`` part is optional, because it is often
+   unnecessary if arguments are supplied.
+
+#. The second production (2) is there only to support the current (implemented but entirely undocumented)
+   possiblity of having multiple types in one ``SPECIALISE`` pragma.  A welcome alternative would be to
+   eliminate this possiblity.
 
 #. As today, ``SPECIALISE`` pragmas may be written only at top-level or
    in a class or instance declaration, never in a ``let`` or ``where``.
