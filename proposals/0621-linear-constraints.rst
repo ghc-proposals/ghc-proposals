@@ -221,8 +221,8 @@ desugaring. The linear fat arrow ``%1 =>`` desugars to a linear arrow
 - ``⦇e :: C %1 => A⦈ = \(%1 $d :: C) -> ⦇e :: A⦈``
 
 This desugaring means that changes to GHC Core itself are not
-required: we only need the material introduced by linear types and
-already implemented.
+required: we only need the material introduced by linear types, which
+is part of GHC since GHC 9.0.
 
 
 Using type classes linearly
@@ -243,6 +243,7 @@ Type class methods require an unrestricted class constraint:
 
 This is unchanged. But we add one exception: in type classes with exactly
 one method, the one method is linear in the class constraint
+(otherwise there would never be inhabitants in the type ``C %1 => T``)
 
 ::
 
@@ -375,7 +376,7 @@ function can be written as:
         let !(Box x)  = read arr 0
             !(Box y)  = read arr 1
             !()       = free arr
-        (x, y)
+        in (x, y)
 
 The main way in which this differs from our previous function is that
 our array is no longer a linear resource - it is
@@ -389,7 +390,7 @@ The type signatures for  ``read``, ``free``, and ``Box`` are:
 
 ::
 
-   read  :: Read n %1 => MArray a n -> Int -> Read n /\ a
+   read  :: Read n %1 => MArray a n -> Int -> Read n /\ Ur a
 
    free :: (Read n, Write n) %1 => MArray a n -> ()
 
@@ -613,7 +614,7 @@ GADTs. This was our simple mutable array API:
 
 ::
 
-  read  :: Read n %1 => MArray a n -> Int -> Read n /\ a
+  read  :: Read n %1 => MArray a n -> Int -> Read n /\ Ur a
 
   free :: (Read n, Write n) %1 => MArray a n -> ()
 
@@ -634,7 +635,7 @@ With this API we can write functions such as
        let !(Box x)  = read arr 0
            !(Box y)  = read arr 1
            !()       = free arr
-       (x, y)
+       in (x, y)
 
   linearly $
     let
@@ -655,7 +656,7 @@ the same role as that above):
 
 ::
 
-  read  :: Read n %1 => MArray a n -> Int -> Read n /\ a
+  read  :: Read n %1 => MArray a n -> Int -> Read n /\ Ur a
   free :: (Read n, Write n) %1 => MArray a n -> ()
 
   new :: Linearly %1 => Int -> exists n. (Read n, Write n) /\ MArray a n
@@ -665,7 +666,7 @@ the same role as that above):
        let !x  = read arr 0
            !y  = read arr 1
            !() = free arr
-       (x, y)
+       in (x, y)
 
   linearly $
     let
