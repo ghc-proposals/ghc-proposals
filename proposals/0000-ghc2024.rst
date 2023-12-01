@@ -350,7 +350,7 @@ Why add BlockArguments?
 
 `BlockArguments`_ denoises common idioms, e.g. `when` for `forM` in do blocks, by not requiring
 parentheses or `$`. The resulting non-verbose syntax is arguably very Haskelly, and some
-people working with languages that have this already (Lean, PureScript) report beeing happy about it.
+people working with languages that have this already (Agda, PureScript, Lean) report beeing happy about it.
 
 *Backward compatibility*: No incompatibilities (accoridng to the original proposal).
 
