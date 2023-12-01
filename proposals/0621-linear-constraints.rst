@@ -689,6 +689,20 @@ pattern-matching. Therefore, we propose that constraints stored in an
 ``x :: c/\a`` are not available until they are bound by a strict
 pattern. Hence all the ``!`` in the examples above.
 
+Implicit parameters
+^^^^^^^^^^^^^^^^^^^
+
+Referencing an implicit parameter is linear in the implicit
+parameters. This means that linear implicit parameters can effectively
+be used in programs
+
+::
+
+   foo :: (?x :: A) %1 => A
+   foo x = ?x
+
+Note that, because implicit parameters are currently implemented as
+single-method type classes, this comes for free in the implementation.
 
 Costs and Drawbacks
 -------------------
