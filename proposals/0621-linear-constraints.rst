@@ -328,7 +328,7 @@ Class declaration can be annotated with the ``%Dupable``
 
 ::
 
-  class %Dupable <ctx> => <head> where
+   %Dupable class <ctx> => <head> where
     <methods>
 
 Classes annotated with ``%Dupable`` must:
@@ -418,7 +418,7 @@ following API:
 
 ::
 
-  class %Dupable Linearly
+  %Dupable class Linearly
 
   linearly :: (Linearly => Ur a) %1 -> Ur a
   newLinearlyDict :: Linear.IO (Dict Linearly)
@@ -1010,7 +1010,7 @@ In this type, a dupable type class declaration could look like
 
 ::
 
-   class %Dupable Foo where
+   %Dupable class Foo where
      consm %Consume %Many :: T -> ()
      dupl %Dup2 %Many :: T -> (T, T)
      foo :: T
@@ -1030,7 +1030,7 @@ creating the class.
 
 ::
 
-  class %Dupable Foo where
+  %Dupable class Foo where
     consm %Consume = … -- Required to be of type T -> ()
     dupl %Dup2 = … -- Required to be of type T -> (T, T)
     foo : T
