@@ -915,13 +915,52 @@ Let and where bindings
 *This section is written with let bindings, but all of the same applies
 to where bindings.*
 
-Let bindings can optionally be annotated with a multiplicity:
+Note on terminology: following the Haskell 2010 report, a function
+binding is a binding of the form ``f arg1…argn =`` with at least one
+arguments. The other binding is called pattern bindings. In particular
+``let x =`` is a pattern binding (as opposed to how it is in GHC's
+implementation, where ``let x =`` would be a ``FunBind``). This
+proposal will be using the terminology “non-variable pattern”
+for patterns which aren't a single variable.
+
+Let bindings can optionally be annotated with a multiplicity
+(including a multiplicity variable):
 
 ::
 
-   let %p pat = rhs in body
+   let
+     %p1 pat1 = rhs1
+     …
+     %pn patn = rhsn
+   in body
 
-Note: annotating the function syntax isn't included in this proposal
+if
+
+* The binding is not top-level
+* The binding is non-recursive
+* The binding is a pattern binding (including a simple variable)
+  ``p=e``
+* Either ``p`` is of the form ``!p'`` or ``p`` is a variable. In
+  particular neither ``x@y`` nor ``(x)`` are covered by “is a
+  variable”
+
+If there is a multiplicity annotation, the binding is not
+generalised. So ``let %m x = e in b`` and ``(\(%m x) ->  b) e`` have
+the same typing rule.
+
+When the multiplicity annotation isn't specified, the multiplicity is
+inferred, so that both
+
+::
+
+   \(%1 z) -> let !(x, y) = z in (y, x)
+   let !(x, y) = u in (x, x)
+
+are well typed. Recursive bindings, toplevel bindings and non-variable
+lazy-pattern bindings are always inferred to have multiplicity
+``Many``.
+
+Note that, in particular, function bindings are not allowed:
 
 ::
 
@@ -964,16 +1003,6 @@ Here are a few examples that illustrate the typing rules
    -- good
    let %1 (Ur x) = u in (x, x, x)
 
-When the multiplicity annotation isn't specified, the multiplicity is
-inferred, so that both
-
-::
-
-   \(%1 z) -> let !(x, y) = z in (y, x)
-   let !(x, y) = u in (x, x)
-
-are well typed.
-
 Non-variable let-bound patterns must be strict
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -998,12 +1027,6 @@ case-bound patterns which are strict by default).
 
    -- inferred unrestricted
    let (x, y) = u in …
-
-Toplevel bindings
-~~~~~~~~~~~~~~~~~
-
-Toplevel bindings are always unrestricted and can't be annotated with
-a multiplicity. Only local bindings can be annotated.
 
 Non-variable linear patterns are monomorphic
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1392,6 +1415,15 @@ Let bindings and polymorphism
 
 .. _`Let bindings and polymorphism`
 
+It's specified that multiplicity annotated non-variable pattern
+bindings are never generalised (see `Non-variable linear patterns are
+monomorphic`_). This section elaborates why it's problematic to
+generalise such bindings. It wouldn't be unsound, to the best of my
+knowledge, to allow generalised linear pattern, this restrictions
+follows, instead, from the necessary limitations of the type-checker,
+as well as the choice of intermediate language (an untyped intermediate
+language would let us paper over this issue, I believe).
+
 Consider
 
 ::
@@ -1466,16 +1498,9 @@ monomorphic. It's not clear that this makes sense. Even assuming that it makes
 sense, it's not clear how to make such a pattern-matching manifestly typed in
 Core.
 
-This is the reason why this proposal specifies in `Non-variable linear
-patterns are monomorphic`_ that such pattern must be either
-monomorphic or unrestricted. It wouldn't be unsound, to the best of my
-knowledge, to allow generalised linear pattern, this restrictions
-follows, instead, from the necessary limitations of the type-checker,
-as well as the choice of intermediate language.
-
-This is why -XLinearTypes implies -XMonoLocalBinds: -XMonoLocalBinds
-prevents the type-checker from generating AbsBinds, and, as such,
-makes more lets linear, which is almost certainly the right default
+This is also why ``-XLinearTypes`` implies ``-XMonoLocalBinds``: ``-XMonoLocalBinds``
+prevents the type-checker from generating ``AbsBinds``, and, as such,
+makes more inferred lets linear, which is almost certainly the right default
 (at least it's the least surprising: a binding doesn't change from
 linear to unrestricted because a small change makes it generalisable).
 
