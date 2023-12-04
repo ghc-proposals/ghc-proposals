@@ -181,7 +181,7 @@ Proposed Change Specification
 Main Syntax Changes
 ^^^^^^^^^^^^^^^^^^^
 
-Currently, type class constraints in GHC do not support multiplicty
+Currently, type class constraints in GHC do not support multiplicity
 annotations.  GHC currently defines the syntax for type signatures as:
 
 ::
@@ -204,13 +204,13 @@ constraint arrows may only be instantiated with a ``1`` (linear)
 multiplicity. Unlike linear function types, this proposal does not
 introduce multiplicity polymorphism in constraint arrows, so there is
 never a need for the multiplicity to be anything other than a ``1`` -
-an ``Many`` multiplicity is already represented by omitting the
+a ``Many`` multiplicity is already represented by omitting the
 multiplicity entirely (i.e. using a standard constraint). Standard
 non-linear constraints can then still be used in combination with
 linear ones, with the order of linear and unrestricted constraints not
 mattering.
 
-Semantic/Desugaring
+Semantics/Desugaring
 ^^^^^^^^^^^^^^^^^^^
 
 As typical, we define the semantics of linear constraints via
@@ -267,7 +267,7 @@ doesn't follow that the function of type ``C %1 => T`` will be
 accepted. Because GHC's typechecker doesn't make guesses.
 
 The one new rule introduced by this proposal is that when I want a
-linear constraint ``C`` and I've been given both a linear an an
+linear constraint ``C`` and I've been given both a linear and an
 unrestricted ``C``, then this is considered ambiguous and raises a
 type error. See Section 6.3 of the paper_ for more details.
 
