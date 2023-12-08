@@ -1091,10 +1091,11 @@ N/A
 Implementation Plan
 -------------------
 
-A prototype implementation, by Csongor Kiss, is available `here
+The initial prototype implementation, by Csongor Kiss, is available `here
 <https://archive.softwareheritage.org/browse/revision/f6fc5ba23770b42d1d6020e177787757b16a9ea0/?origin_url=https://github.com/kcsongor/ghc&snapshot=aa61d803eaec9eb4425e3eb8ed2b0fbbd60633cc>`_. The
 implementation of this proposal will build upon this foundation and
-will be carried out by Arnaud Spiwack and Thomas Bagrel.
+will be carried out by Arnaud Spiwack and Thomas Bagrel. The current
+work in progress can be found `here <https://github.com/tweag/ghc/tree/linear-constraints>`_.
 
 Endorsements
 -------------
