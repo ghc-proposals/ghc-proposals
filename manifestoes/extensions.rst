@@ -1,10 +1,8 @@
 .. sectnum::
 .. contents::
+.. title:: GHC Language Configuration Renovation
 
 .. _PR: TODO
-
-GHC Language Configuration Renovation
-=====================================
 
 Preamble
 --------
