@@ -424,7 +424,7 @@ With an unlifted field: ::
 
 With ``UnliftedDatatypes``: ::
 
-  type V :: UnliftedType
+  type V :: UnliftedType -> UnliftedType
   data V x = MkV { f :: x }
 
   instance a ~ x => HasField "f" (V x) a where
