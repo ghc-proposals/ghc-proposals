@@ -1,7 +1,7 @@
 .. sectnum::
 .. contents::
 
-.. _PR: TODO
+.. _PR: https://github.com/ghc-proposals/ghc-proposals/pull/628
 
 **GHC Language Configuration Renovation**
 
