@@ -712,7 +712,7 @@ Syntax
      infixpat2 ::=
             | infixpat
       (NEW) | infixpat      '->'  infixpat2      -- only with RequiredTypeArguments and /without/ ViewPatterns (conflict described below)
-      (MOV) | infixexp      '->'  infixpat2      -- only with ViewPatterns and /without/ RequiredTypeArguments (conflict described below)
+      (MOV) | infixexp      '->'  infixpat2      -- only with ViewPatterns (takes precedence over RequiredTypeArguments, conflict described below)
       (NEW) | infixpat mult '->'  infixpat2      -- only with RequiredTypeArguments
       (NEW) | infixpat      '->.' infixpat2      -- only with RequiredTypeArguments
       (NEW) | infixpat      '=>'  infixpat2      -- only with RequiredTypeArguments
@@ -748,9 +748,19 @@ Syntax
    as well.
 
 4. Adding ``p1 -> p2`` to the syntax of patterns (see the BNF of "types-in-terms"
-   above) is incompatible with ``ViewPatterns``. When both ``RequiredTypeArguments``
-   and ``ViewPatterns`` are enabled, the conflict is resolved in favor of ``ViewPatterns``.
-   The programmer can write ``type (t1 -> t2)`` or ``(->) t1 t2`` instead.
+   above) is incompatible with ``ViewPatterns``.
+
+   * When both ``RequiredTypeArguments`` and ``ViewPatterns`` are enabled,
+     the conflict is resolved in favor of ``ViewPatterns``. The programmer can
+     write ``type (t1 -> t2)`` or ``(->) t1 t2`` instead.
+
+   * When only ``ViewPatterns`` is enabled,
+     the conflict is resolved in favor of ``ViewPatterns``.
+
+   * When only ``RequiredTypeArguments`` is enabled, the conflict is not
+     resolved either way. It is reported to the user in an error message.
+     This can be reconsidered if an alternative syntax for view patterns is
+     implemented in GHC.
 
    To make the grammar of Haskell more regular and to simplify the
    implementation of "types-in-terms", change the precedence of view patterns
@@ -1510,12 +1520,6 @@ Alternatives
    (accepted, not implemented). In principle, nothing precludes us from
    extending the syntax of existential quantification in Haskell98-style data
    declarations in a similar manner, but nothing compels us to do so either.
-
-9. We could say that ``a -> b`` is a view pattern regardless of enabled
-   extensions and thereby make this proposal less fork-like; the problem is that
-   it would create an asymmetry: ``(t1 -> t2)`` would be allowed in types,
-   ``(e1 -> e2)`` would be allowed in expressions, but ``(p1 -> p2)`` would not
-   be allowed in patterns (here the arrow stands for the function type).
 
 Unresolved Questions
 --------------------
