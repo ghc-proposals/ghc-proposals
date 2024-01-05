@@ -38,22 +38,22 @@ Tally
 
 The committee held a vote among nominated extensions with the following result. As per the GHC20xx process, quorum was ⅔, so 7 votes.
 
-============================= ========= =======================================
-                    Extension     Votes In favor
-============================= ========= =======================================
-        `DerivingStrategies`_   **10**  VZ, AS, SPJ, SM, AG, RE, ES, MA, CD, JB
-  `DisambiguateRecordFields`_   **10**  VZ, AS, SPJ, SM, AG, RE, ES, MA, CD, JB
- `GADTs`_ + `MonoLocalBinds`_   **10**  VZ, AS, SPJ, SM, AG, RE, ES, MA, CD, JB
-                `LambdaCase`_   **10**  VZ, AS, SPJ, SM, AG, RE, ES, MA, CD, JB
-        `ExplicitNamespaces`_    **9**  AS, SPJ, SM, AG, RE, ES, MA, CD, JB
-           `RoleAnnotations`_    **8**  AS, SPJ, SM, AG, RE, ES, CD, JB
-                 `DataKinds`_    **8**  AS, SPJ, SM, AG, RE, ES, CD, JB
-              `TypeFamilies`_        6  AS, SPJ, SM, RE, ES, JB
-         `DefaultSignatures`_        4  AS, SM, RE, ES
-                  `TypeData`_        4  SPJ, RE, ES, JB
-            `BlockArguments`_        4  VZ, RE, ES, JB
-        `ImpredicativeTypes`_        1  AS
-============================= ========= =======================================
+============================= ========= ==  ==  ===  ==  ==  ==  ==  ==  ==  ==
+                    Extension     Votes VZ  AS  SPJ  SM  AG  RE  ES  MA  CD  JB
+============================= ========= ==  ==  ===  ==  ==  ==  ==  ==  ==  ==
+        `DerivingStrategies`_   **10**  ✓    ✓  ✓    ✓   ✓   ✓   ✓   ✓   ✓   ✓
+  `DisambiguateRecordFields`_   **10**  ✓    ✓  ✓    ✓   ✓   ✓   ✓   ✓   ✓   ✓
+ `GADTs`_ + `MonoLocalBinds`_   **10**  ✓    ✓  ✓    ✓   ✓   ✓   ✓   ✓   ✓   ✓
+                `LambdaCase`_   **10**  ✓    ✓  ✓    ✓   ✓   ✓   ✓   ✓   ✓   ✓
+        `ExplicitNamespaces`_    **9**       ✓  ✓    ✓   ✓   ✓   ✓   ✓   ✓   ✓
+           `RoleAnnotations`_    **8**       ✓  ✓    ✓   ✓   ✓   ✓       ✓   ✓
+                 `DataKinds`_    **8**       ✓  ✓    ✓   ✓   ✓   ✓       ✓   ✓
+              `TypeFamilies`_        6       ✓  ✓    ✓       ✓   ✓           ✓
+         `DefaultSignatures`_        4       ✓       ✓       ✓   ✓
+                  `TypeData`_        4          ✓            ✓   ✓           ✓
+            `BlockArguments`_        4  ✓                    ✓   ✓           ✓
+        `ImpredicativeTypes`_        1       ✓  ✗        ✗   ✗               ✗
+============================= ========= ==  ==  ===  ==  ==  ==  ==  ==  ==  ==
 
 NB: `ImpredicativeTypes`_ was accidentally missing on the original ballot, and
 some committee members may have forgotten to vote. But with explicit votes against from
