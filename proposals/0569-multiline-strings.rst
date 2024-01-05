@@ -97,58 +97,120 @@ A working prototype is available at `brandonchinn178/string-syntax <https://gith
 
    #. Collapse string gaps
 
-   #. Convert leading tabs into spaces (See "Mixing tabs and spaces" example)
+      * See `Section 2.6 <https://www.haskell.org/onlinereport/haskell2010/haskellch2.html#x7-200002.6>`_ of the Haskell 2010 Report
+      * See the example in *Section 3.3 String gaps*
+
+   #. Split the string by newlines
+
+   #. Convert leading tabs into spaces
+
+      * In each line, any tabs preceding non-whitespace characters are replaced with spaces up to the next tab stop
+
+        * Same logic as `Section 10.3 <https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#x17-17800010.3>`_ of the Haskell 2010 Report
+
+      * See the BNF specification in *Section 2.2*
+      * See the example in *Section 3.4 Mixing tabs and spaces*
 
    #. Remove common whitespace prefix in every line
 
-      * Ignore any characters preceding the first newline
-      * Blank lines and lines with only whitespace should not be included in this calculation
+      * See the "Common whitespace prefix calculation" section below for the specification of the calculation
+      * If a line only contains whitespace, remove all of the whitespace
 
-   #. Remove exactly one newline from the beginning of the string (if one exists)
+   #. Join the string back with ``\n`` delimiters
 
-   #. Interpret escape sequences (occurs after removing whitespace prefix so that literal ``\n`` characters are not included)
+      * Use ``\n`` regardless of the line terminators being used in the file. This matches the behavior of ``unlines``.
+
+   #. If the first character of the string is a newline, remove it
 
 #. After parsing, it becomes indistinguishable to the equivalent single-quoted string (modulo annotations for exact-printing)
 
-Line terminators will match whatever line terminators the user is using in the file.
+Common whitespace prefix calculation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The common whitespace prefix can be informally defined as "The longest prefix of whitespace shared by all lines in the string, excluding the first line and any whitespace-only lines". It's more precisely defined with the following algorithm:
+
+#. Split the string by ``\n`` characters
+
+#. Ignore the following elements in the list:
+
+   * The first line - see the example in *Section 3.2 Ignore leading characters*
+   * Empty lines
+   * Lines with only whitespace characters
+
+#. Calculate the longest prefix of whitespace shared by all lines in the remaining list
+
+BNF
+~~~
+
+The BNF in `Section 10.2 <https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#x17-17700010.2>`_ of the Haskell 2010 report is extended as follows::
+
+  literal             → integer | float | char | string | multiLineString
+  multilineString     → """ {{whitechar} multilineStringLine} """
+  multilineStringLine → {graphic⟨\ | """⟩ | space | escape | gap}
 
 Examples
 --------
 
-Remove common whitespace
-~~~~~~~~~~~~~~~~~~~~~~~~
+General Walkthrough
+~~~~~~~~~~~~~~~~~~~
 
-In the below examples, leading spaces will be marked as ``.`` for visibility.
+This example shows a walkthrough of the whole process in the spec. For clarity, leading spaces will be marked as ``.``.
 
-::
+Take the following input::
 
-  s =
+  input =
         """
-  ......a b c
+  ......abc
 
-  ......d e f
+  ......def
   ..
-  ....g h i
+  ....ghi
+  ........\njkl
   ..."""
 
-  -- equivalent to
-  s' = "..a b c\n\n..d e f\n\ng h i\n.."
+Step 1 - After lexing, this input is parsed as::
 
-After lexing, the initial multiline above is parsed as
+  "\n......abc\n\n......def\n..\n....ghi\n........\\njkl\n..."
 
-::
+Here, we distinguish between lexed newlines (``\n``) and escaped newlines written by the user (``\\n``).
 
-  [ "......a.b.c"
+Step 2i - There are no string gaps, so no changes in this step.
+
+Step 2ii - Split the string by newlines::
+
+  [ ""
+  , "......abc"
   , ""
-  , "......d.e.f"
+  , "......def"
   , ".."
-  , "....g.h.i"
+  , "....ghi"
+  ,"........\\njkl"
   , "..."
   ]
 
-The blank line + the whitespace-only line are excluded from the calculation, and we calculate 4 spaces as the shared whitespace prefix, which are removed from every line.
+Step 2iii - There are no tabs, so no changes in this step.
 
-Note that the whitespace preceding the closing ``"""`` is included. This implies that there will be a trailing newline (see the "Trailing newline" example for more information).
+Step 2iv - To calculate the common whitespace prefix, we exclude the blank lines and the whitespace-only lines. So we calculate 4 spaces as the prefix, and remove it from each line::
+
+  [ ""
+  , "..abc"
+  , ""
+  , "..def"
+  , ""
+  , "ghi"
+  , "....\\njkl"
+  , ""
+  ]
+
+Step 2v - Then we join back with newline characters::
+
+  "\\n..abc\\n\\n..def\\n\\nghi\\n....\\njkl\\n"
+
+Step 2vi - Since the first character is a newline character, we remove it and are left with the final result::
+
+  "..abc\\n\\n..def\\n\\nghi\\n....\\njkl\\n"
+
+Step 3 - This gets treated as a normal string from now on, with the escaped ``\\n`` characters interpreted as usual.
 
 Ignore leading characters
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -201,7 +263,7 @@ String gaps are collapsed first and not included in the whitespace calculation
 Mixing tabs and spaces
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Leading tabs will be immediately converted into spaces per the `Haskell report <https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#x17-17800010.3>`_: "A tab character causes the insertion of enough spaces to align the current position with the next tab stop."
+In the following example, each line has 16 leading spaces after expanding tabs.
 
 ::
 
@@ -213,11 +275,7 @@ Leading tabs will be immediately converted into spaces per the `Haskell report <
   ⇥"""
 
   -- equivalent to
-  s' = "a\nb\nc"
-
-Each line will be considered to have 16 leading spaces which will all be stripped.
-
-Like normal strings, any tabs in the middle of a multiline string will be a lexical error.
+  s' = "a\nb\nc\n"
 
 Leading newline
 ~~~~~~~~~~~~~~~
@@ -240,7 +298,7 @@ The specification strips exactly one leading newline, which is the behavior of l
 Trailing newline
 ~~~~~~~~~~~~~~~~
 
-As mentioned in the "Remove common whitespace" example, trailing newlines are naturally included without any explicit rules. As a bonus, it does the same thing that ``unlines`` does. To avoid a trailing newline, put the closing ``"""`` immediately after the last line, or use a string gap:
+As mentioned in the example in *Section 3.1 General Walkthrough*, trailing newlines are naturally included without any explicit rules. As a bonus, it does the same thing that ``unlines`` does. To avoid a trailing newline, put the closing ``"""`` immediately after the last line, or use a string gap:
 
 ::
 
@@ -260,7 +318,9 @@ As mentioned in the "Remove common whitespace" example, trailing newlines are na
 Indent every line
 ~~~~~~~~~~~~~~~~~
 
-To indent every line, use the ``\&`` escape character
+To explicitly include whitespace at the beginning of every line, use the ``\&`` escape character to delimit the start of the whitespace to include on every line. Otherwise, the whitespace would be stripped in the "common whitespace prefix" calculation.
+
+In the following example, desugaring ``s1`` into ``s1'`` removes the 2 spaces before each line that may have been intentional. To keep the 2 spaces before each line, one could write either ``s2`` or ``s2_2``, which both result in ``s2'``. One noteworthy aspect of this technique is that it comes for free with the current rules, since ``\&`` is already an escape character meaning "empty string" (https://www.haskell.org/onlinereport/haskell2010/haskellch2.html#x7-200002.6).
 
 ::
 
@@ -288,8 +348,6 @@ To indent every line, use the ``\&`` escape character
     """
 
   s2' = "  a\n  b\n  c"
-
-In this example, ``s2`` and ``s2_2`` are equivalent, both resulting in ``s2'``. One noteworthy aspect of this technique is that it comes for free with the current rules, since ``\&`` is already an escape character meaning "empty string" (https://www.haskell.org/onlinereport/haskell2010/haskellch2.html#x7-200002.6).
 
 Escaping triple quotes
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -562,10 +620,12 @@ Out of scope
 ~~~~~~~~~~~~
 
 * String interpolation
+
   * See https://github.com/ghc-proposals/ghc-proposals/pull/570
   * One way this proposal can work with raw strings is by allowing both ``s"..."`` and ``s"""..."""`` syntaxes. In general, any raw strings proposal that works with the current double quoted string syntax should be able to work with a triple-quoted string syntax as well, since the proposed triple-quoted string syntax desugars to a single-quoted string.
 
 * "Raw" strings (without escaping)
+
   * To an extent, this proposal already helps this a little bit, since double quotes no longer need to be escaped within a triple-quoted string. But this proposal doesn't address needing to escape backslashes.
   * This is particularly useful for regexes or any other situation where the backslash character is useful as an actual character.
   * One way this proposal can work with raw strings is by allowing both ``r"..."`` and ``r"""..."""`` syntaxes. See comment in "String interpolation".
@@ -581,7 +641,7 @@ Comparisons with other languages
 
   * Java defines the content to start after the first newline after the opening ``"""``, and disallows any non-whitespace characters after the opening delimiter. Instead of adding this restriction, we added the rule to remove exactly one newline from the beginning of the string, if one exists. This allows people to start the multiline string on the same line, enabling one-line strings to use the syntax, e.g. ``"""A string using "unescaped" quotes"""``.
 
-  * Java includes the line that the closing ``"""`` delimiter is on, so that the position of the closing delimiter is included in the common-prefix calculation. One motivation for this was to enable indenting every line. However, discussion on this proposal indicated that this was too magical and would be confusing behavior. Instead of this, we can reuse Haskell's existing ``\&`` escape character to add indentation to every line. See the "Indent every line" example and the "Only strip leading whitespaces with delimiter" alternative.
+  * Java includes the line that the closing ``"""`` delimiter is on, so that the position of the closing delimiter is included in the common-prefix calculation. One motivation for this was to enable indenting every line. However, discussion on this proposal indicated that this was too magical and would be confusing behavior. Instead of this, we can reuse Haskell's existing ``\&`` escape character to add indentation to every line. See the example in *Section 3.7 Indent every line* and the "Only strip leading whitespaces with delimiter" alternative.
 
   * This proposal also adds the addition of collapsing string gaps before any post-processing, which is a Haskell-specific syntax.
 
