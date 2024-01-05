@@ -22,24 +22,58 @@ The first edition, ``GHC2021``, is now three years old, and I propose we define
 Proposed Change Specification
 -----------------------------
 
-The ``GHC2024`` language extension set comprises of all language extensions
+The ``GHC2024`` language extensions set comprises of all language extensions
 that ``GHC2021`` comprises (`official list <https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/control.html#extension-GHC2021>`_), plus the following
 
 * `DataKinds`_
-* `DefaultSignatures`_
 * `DerivingStrategies`_
 * `DisambiguateRecordFields`_
 * `ExplicitNamespaces`_
 * `GADTs`_ (and the implied `MonoLocalBinds`_)
-* `ImpredicativeTypes`_
 * `LambdaCase`_
 * `RoleAnnotations`_
-* `TypeData`_
-* `TypeFamilies`_
-* `BlockArguments`_
 
-(*The committe will vote on each extension separately. Until then, this is the
-list of nominated extensions, and will be updated after a vote.*)
+Tally
+-----
+
+The committee held a vote among nominated extensions with the following result. As per the GHC20xx process, quorum was ⅔, so 7 votes.
+
+============================= ========= =======================================
+                    Extension     Votes In favor
+============================= ========= =======================================
+        `DerivingStrategies`_   **10**  VZ, AS, SPJ, SM, AG, RE, ES, MA, CD, JB
+  `DisambiguateRecordFields`_   **10**  VZ, AS, SPJ, SM, AG, RE, ES, MA, CD, JB
+ `GADTs`_ + `MonoLocalBinds`_   **10**  VZ, AS, SPJ, SM, AG, RE, ES, MA, CD, JB
+                `LambdaCase`_   **10**  VZ, AS, SPJ, SM, AG, RE, ES, MA, CD, JB
+        `ExplicitNamespaces`_    **9**  AS, SPJ, SM, AG, RE, ES, MA, CD, JB
+           `RoleAnnotations`_    **8**  AS, SPJ, SM, AG, RE, ES, CD, JB
+                 `DataKinds`_    **8**  AS, SPJ, SM, AG, RE, ES, CD, JB
+              `TypeFamilies`_        6  AS, SPJ, SM, RE, ES, JB
+         `DefaultSignatures`_        4  AS, SM, RE, ES
+                  `TypeData`_        4  SPJ, RE, ES, JB
+            `BlockArguments`_        4  VZ, RE, ES, JB
+        `ImpredicativeTypes`_        1  AS
+============================= ========= =======================================
+
+NB: `ImpredicativeTypes`_ was accidentally missing on the original ballot, and
+some committee members may have forgotten to vote. But with explicit votes against from
+AG, SPJ, RE, JB it could not have made quorum.
+
+The voting committee members are
+
+=== ======================
+SM  Simon Marlow
+SPJ Simon Peyton-Jones
+JB  Joachim Breitner
+RE  Richard Eisenberg
+VZ  Vladislav Zavialov
+ES  Eric Seidel
+CD  Chris Dornan
+AS  Arnaud Spiwack
+AG  Adam Gundry
+MA  Moritz Angermann
+=== ======================
+
 
 Why GHC2024 in the first place
 ------------------------------
@@ -383,3 +417,4 @@ Implementation Plan
 .. _TypeData: https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/type_data.html#extension-TypeData
 .. _DefaultSignatures: https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/default_signatures.html#extension-DefaultSignatures
 .. _BlockArguments: https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/block_arguments.html#extension-BlockArguments
+.. _ImpredicativeTypes: https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/impredicative_types.html#extension-ImpredicativeTypes
