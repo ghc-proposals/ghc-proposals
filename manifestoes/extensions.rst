@@ -336,7 +336,7 @@ code being compiled, and doesn't need to know that it has a few unused variables
 The only reason that warnings aren't completely useless here is that conscientious
 users might reach out to library authors to tell them that their code is warning.
 
-In scenario (3), warnings are actively harmful. When going through final checks
+In scenario (3), the fact that warnings do not stop compilation is actively harmful. When going through final checks
 before merging a pull request or posting on Hackage, an unresolved warning is a
 potential problem in code that the programmer might have missed. This might be
 disastrous.
