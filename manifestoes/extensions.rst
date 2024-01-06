@@ -648,7 +648,7 @@ The chart below classifies all current extensions and warnings.
       Includes the following: ``DeepSubsumption``, ``IncoherentInstances`` (but without implying
       ``INCOHERENT`` on every instance), ``NoMonomorphismRestriction``, ``-Wno-warn-orphans``
 
-  Here is the for these columns:
+  Here is the key for the "semantic bundle" columns:
 
   * X: The feature is enabled.
 
