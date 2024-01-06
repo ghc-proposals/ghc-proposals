@@ -5,6 +5,7 @@
 
 **GHC Language Configuration Renovation**
 
+This document is discussed at this PR_.
 
 Preamble
 --------
