@@ -434,6 +434,7 @@ Warning of upcoming changes (GR3)
 
 "Provide deprecation cycle" means that (if possible) when a change in GHC will break existing code,
 then
+
 * GHC(N) should *warn* of the upcoming change, and only GHC(N+1) should make the breaking change
 * The library author can adapt their code in such a way that it works in *both* GHC(N) *and* GHC(N+1)
 
@@ -443,21 +444,10 @@ Note that (GR3) is not a reason to say that (GR1) is unimportant.  A deprecation
 
 Notes:
 
-* There is a `separate conversation going on <https://github.com/haskell/pvp/issues/58>`_ about deprecation warnings and the PVP.
 * It may not be possible to satisfy (GR3).  A notable example is that of module exports.  Suppose (say) in GHC(N) an export ``foo`` is added to a module ``M``.  Then, in a module ``X``, if that new import of ``foo`` from ``M`` import clashes with some existing definition or import of ``foo``, compilation will break.  The code can be adapted in a backward-compatible way (e.g. by hiding ``foo`` or importing ``M`` qualified), but immediate action must be taken to make the ``M`` compile with GHC(N).
 * Even changes to Experimental extensions should seek to follow (GR3), but with a significantly lower "bar".
-
-Three release policy
-~~~~~~~~~~~~~~~~~~~~~~~
-
-Many author want their code to compile unmodified with three successive releases of GHC,
-
-* without using CPP
-* and without emitting warnings, at least with `-Wdefault`
-
-That is, after adapting the code to work with GHC(N), it should also work with GHC(N-1) and GHC(N-2).
-
-GHC does not currently have a three-release policy, though that is `under debate here` <https://github.com/ghc-proposals/ghc-proposals/issues/629>`_.
+* There is a `separate conversation going on <https://github.com/haskell/pvp/issues/58>`_ about deprecation warnings and the PVP.
+* (GR3) is not the same as a "three-release policy"; and GHC does not currently have a three-release policy.  That is a `separate debate <https://github.com/ghc-proposals/ghc-proposals/issues/629>`_.
 
 
 Mechanisms for checking stability
