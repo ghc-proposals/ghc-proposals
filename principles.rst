@@ -430,9 +430,9 @@ Changes, especially significant changes, should be introduced gradually: the sub
 Warning of upcoming changes (GR3)
 ~~~~~~~~~~~~~~~~~~~~
 
-**General rule (GR3)**.  *If we break (GR1), for a compelling reason (GR2), we should whenever possible provide a deprecation cycle, as well as copious publicity, so that users are alerted (via depreciation warnings) to the upcoming change, have time to adapt, and can raise concerns.*
+**General rule (GR3)**.  *If we break (GR1), for a compelling reason (GR2), we should whenever possible provide a deprecation cycle, as well as appropriate publicity, so that users are alerted (via warnings) of the upcoming change, have time to adapt, and can raise concerns.*
 
-"Provide deprecation cycle" means that (if possible) when a change in GHC will break existing code,
+"Provide a deprecation cycle" means that (if possible) when a change in GHC will break existing code,
 then
 
 * GHC(N) should *warn* of the upcoming change, and only GHC(N+1) should make the breaking change
@@ -447,7 +447,7 @@ Notes:
 * It may not be possible to satisfy (GR3).  A notable example is that of module exports.  Suppose (say) in GHC(N) an export ``foo`` is added to a module ``M``.  Then, in a module ``X``, if that new import of ``foo`` from ``M`` import clashes with some existing definition or import of ``foo``, compilation will break.  The code can be adapted in a backward-compatible way (e.g. by hiding ``foo`` or importing ``M`` qualified), but immediate action must be taken to make the ``M`` compile with GHC(N).
 * Even changes to Experimental extensions should seek to follow (GR3), but with a significantly lower "bar".
 * There is a `separate conversation going on <https://github.com/haskell/pvp/issues/58>`_ about deprecation warnings and the PVP.
-* (GR3) is not the same as a "three-release policy"; and GHC does not currently have a three-release policy.  That is a `separate debate <https://github.com/ghc-proposals/ghc-proposals/issues/629>`_.
+* (GR3) is not the same as a **three-release policy**.  GHC does not currently have a three-release policy; that is a `separate debate <https://github.com/ghc-proposals/ghc-proposals/issues/629>`_.
 
 
 Mechanisms for checking stability
