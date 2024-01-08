@@ -348,11 +348,12 @@ Terminology
 
 We define a **stable Haskell package** as follows. A stable Haskell package
 
+* Explicitly specifies a language edition (``Haskell98``, ``GHC2021``), in the source code or the build configuration.
 * Does not use Experimental extensions.
 * Does not use experimental features.  (Examples: use of the Javascript or Wasm back end, builds on non-tier-1 platforms.)
 * Does not rely on explicitly-undefined behaviour. (Example: ``INCOHERENT`` instance selection.)
 * Does not use ``-Werror`` in its default build configuration.
-* Explicitly specifies a language edition (``Haskell98``, ``GHC2021``), in the source code or the build configuration.
+* Does not use ``-dxxx`` debug flags in its default build configuration.
 
 Stability (GR1)
 ~~~~~~~~~~~~~~~~
@@ -378,6 +379,11 @@ Notes and clarifications:
 
 * *The base library* is under the careful management of the Core Libraries Committee. Its API grows slowly, usually requiring a major version bump with each major GHC release.  Since almost every package depends directly on ``base``, it would be highly desirable for a new GHC to be released with version(s) of ``base`` that expose earlier ``base`` APIs (requiring a minor bump only) -- the so-called "reinstallable ``base``" goal.  That is, *``base`` should ideally behave like any other package*.  This is a work in progress.
 
+* *Language editions*.
+
+  * A stable package should specify an explicit language edition because subsequent releases of GHC might change the default language edition.  So if the package does not pin a specific language edition, it might then fail when compiled with a later release.
+  * Language editions like ``GHC202x`` should use only stable extensions.
+
 * *Experimental*.  Rule (GR1) applies only to the stable (non-experimental) parts of GHC. The intent is to allow scope for experimentation, while still allowing users to stick to the stable parts of GHC subject to (GR1).
 
   * We will need to enumerate the "experimental extensions" and "experimental features" mentioned above.
@@ -393,10 +399,7 @@ Notes and clarifications:
   * Similarly ``-Werror=wombat`` is excluded from the definition of a stable package, so that a later GHC make ``-Wwombat`` warn in more cases without breaking (GR1).
   * It's fine for a stable package to use ``-Werror`` in a CI build, to help the author find warnings.  But not in the default configuration, used by others when installing the package.
 
-* *Language editions*.
-
-  * A stable package should specify an explicit language edition because subsequent releases of GHC might change the default language edition.  So if the package does not pin a specific language edition, it might then fail when compiled with a later release.
-  * Language editions like ``GHC202x`` should use only Stable extensions.
+* *Debug flags*. The behaviour of debug flags ``-dxxx`` (e.g. ``-ddump-simpl``) may vary without warning.  They are for debugging!
 
 * Notice that
 
