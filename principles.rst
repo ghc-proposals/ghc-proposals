@@ -427,17 +427,38 @@ Choices can occasionally also be influenced by implementation considerations. If
 Changes, especially significant changes, should be introduced gradually: the subject of (GR3).
 
 
-Deprecations (GR3)
+Warning of upcoming changes (GR3)
 ~~~~~~~~~~~~~~~~~~~~
 
 **General rule (GR3)**.  *If we break (GR1), for a compelling reason (GR2), we should whenever possible provide a deprecation cycle, as well as copious publicity, so that users are alerted (via depreciation warnings) to the upcoming change, have time to adapt, and can raise concerns.*
 
-A deprecation cycle should give at least one GHC major release for authors to make changes.  In the case of changes that are more difficult to accommodate, we may consider a second cycle.  (Side note: there is a `separate conversation going on <https://github.com/haskell/pvp/issues/58>`_ about deprecation warnings and the PVP.)
+"Provide deprecation cycle" means that (if possible) when a change in GHC will break existing code,
+then
+* GHC(N) should *warn* of the upcoming change, and only GHC(N+1) should make the breaking change
+* The library author can adapt their code in such a way that it works in *both* GHC(N) *and* GHC(N+1)
 
-Note that (GR3) is not a reason to say that (GR1) is unimportant.  A deprecation cycle defers costs; it does not reduce or eliminate them.
-However, deprecation cycles are very important.  They give users and library authors time to adapt to changes, without a mad panic.  In particular, they allow users to upgrade GHC (e.g. to get an important bugfix) in one step, and then separately, and on a working code base, to adapt to each change individually, instead of having to do it all in one atomic step.
+This gives at least one GHC major release for authors to make changes.  In the case of changes that are more difficult to accommodate, we may consider a second cycle.
 
-Even changes to Experimental extensions should seek to follow (GR3), but with a significantly lower "bar".
+Note that (GR3) is not a reason to say that (GR1) is unimportant.  A deprecation cycle defers costs; it does not reduce or eliminate them. However, deprecation cycles are very important.  They give users and library authors time to adapt to changes, without a mad panic.  In particular, they allow users to upgrade GHC (e.g. to get an important bugfix) in one step, and then separately, and on a working code base, to adapt to each change individually, instead of having to do it all in one atomic step.
+
+Notes:
+
+* There is a `separate conversation going on <https://github.com/haskell/pvp/issues/58>`_ about deprecation warnings and the PVP.
+* It may not be possible to satisfy (GR3).  A notable example is that of module exports.  Suppose (say) in GHC(N) an export ``foo`` is added to a module ``M``.  Then, in a module ``X``, if that new import of ``foo`` from ``M`` import clashes with some existing definition or import of ``foo``, compilation will break.  The code can be adapted in a backward-compatible way (e.g. by hiding ``foo`` or importing ``M`` qualified), but immediate action must be taken to make the ``M`` compile with GHC(N).
+* Even changes to Experimental extensions should seek to follow (GR3), but with a significantly lower "bar".
+
+Three release policy
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Many author want their code to compile unmodified with three successive releases of GHC,
+
+* without using CPP
+* and without emitting warnings, at least with `-Wdefault`
+
+That is, after adapting the code to work with GHC(N), it should also work with GHC(N-1) and GHC(N-2).
+
+GHC does not currently have a three-release policy, though that is `under debate here` <https://github.com/ghc-proposals/ghc-proposals/issues/629>`_.
+
 
 Mechanisms for checking stability
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
