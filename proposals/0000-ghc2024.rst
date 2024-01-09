@@ -2,11 +2,11 @@ GHC2024
 =======
 
 .. author:: Joachim Breitner
-.. date-accepted::
-.. ticket-url::
+.. date-accepted:: 2024-01-09
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/24320
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/613>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/613>`_.
 .. sectnum::
 .. contents::
 
