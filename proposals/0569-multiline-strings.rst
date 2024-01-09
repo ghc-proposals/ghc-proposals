@@ -20,7 +20,7 @@ This proposal is heavily influenced by Java's text blocks in `JEP 378 <https://o
 Motivation
 ----------
 
-Currently you could do this with ``unlines`` (more commonly) or line continuations (`"gaps" <https://www.haskell.org/onlinereport/haskell2010/haskellch2.html#x7-200002.6>`_):
+Currently you could do this with ``unlines`` (more commonly) or string gaps (`report <https://www.haskell.org/onlinereport/haskell2010/haskellch2.html#x7-200002.6>`_):
 
 ::
 
@@ -95,7 +95,7 @@ A working prototype is available at `brandonchinn178/string-syntax <https://gith
 
 #. Post-process the string in the following steps:
 
-   #. Collapse line continuations
+   #. Collapse string gaps
 
    #. Convert leading tabs into spaces (See "Mixing tabs and spaces" example)
 
@@ -114,23 +114,6 @@ Line terminators will match whatever line terminators the user is using in the f
 
 Examples
 --------
-
-Line continuations
-~~~~~~~~~~~~~~~~~~
-
-Line continuations are collapsed first and not included in the whitespace calculation
-
-::
-
-  s =
-      """
-        a b\
-    \ c d e
-        f g
-      """
-
-  -- equivalent to
-  s' = "a b c d e\nf g\n"
 
 Remove common whitespace
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -170,7 +153,7 @@ Note that the whitespace preceding the closing ``"""`` is included. This implies
 Ignore leading characters
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The common prefix calculation ignores all characters preceding the first newline. This means that characters immediately after the ``"""`` delimiter will be included verbatim. The same would occur with a line continuation (since line continuations are collapsed before the prefix calculation).
+The common prefix calculation ignores all characters preceding the first newline. This means that characters immediately after the ``"""`` delimiter will be included verbatim. The same would occur with a string gap (since string gaps are collapsed before the prefix calculation).
 
 ::
 
@@ -197,6 +180,23 @@ This implies that normal strings could also be written using ``"""``
   -- the following are equivalent
   s = """hello world"""
   s' = "hello world"
+
+String gaps
+~~~~~~~~~~~
+
+String gaps are collapsed first and not included in the whitespace calculation
+
+::
+
+  s =
+      """
+        a b\
+    \ c d e
+        f g
+      """
+
+  -- equivalent to
+  s' = "a b c d e\nf g\n"
 
 Mixing tabs and spaces
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -240,7 +240,7 @@ The specification strips exactly one leading newline, which is the behavior of l
 Trailing newline
 ~~~~~~~~~~~~~~~~
 
-As mentioned in the "Remove common whitespace" example, trailing newlines are naturally included without any explicit rules. As a bonus, it does the same thing that ``unlines`` does. To avoid a trailing newline, put the closing ``"""`` immediately after the last line, or use a line continuation:
+As mentioned in the "Remove common whitespace" example, trailing newlines are naturally included without any explicit rules. As a bonus, it does the same thing that ``unlines`` does. To avoid a trailing newline, put the closing ``"""`` immediately after the last line, or use a string gap:
 
 ::
 
@@ -583,7 +583,7 @@ Comparisons with other languages
 
   * Java includes the line that the closing ``"""`` delimiter is on, so that the position of the closing delimiter is included in the common-prefix calculation. One motivation for this was to enable indenting every line. However, discussion on this proposal indicated that this was too magical and would be confusing behavior. Instead of this, we can reuse Haskell's existing ``\&`` escape character to add indentation to every line. See the "Indent every line" example and the "Only strip leading whitespaces with delimiter" alternative.
 
-  * This proposal also adds the addition of collapsing line continuations before any post-processing, which is a Haskell-specific syntax.
+  * This proposal also adds the addition of collapsing string gaps before any post-processing, which is a Haskell-specific syntax.
 
 * Python, Groovy, Kotlin, Scala, Swift
 
