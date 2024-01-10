@@ -917,7 +917,7 @@ to where bindings.*
 
 Note on terminology: following the Haskell 2010 report, a function
 binding is a binding of the form ``f arg1…argn =`` with at least one
-arguments. The other binding is called pattern bindings. In particular
+argument. The other binding form is called a pattern binding. In particular
 ``let x =`` is a pattern binding (as opposed to how it is in GHC's
 implementation, where ``let x =`` would be a ``FunBind``). This
 proposal will be using the terminology “non-variable pattern”
@@ -979,7 +979,7 @@ with multiplicity ``p`` and the variables of ``pat`` must be consumed
 in ``body`` with multiplicity ``p`` (if ``pat`` has some non-linear
 fields, then the variables are scaled appropriately as per
 `Constructors & pattern-matching`_). The pattern ``pat`` can be an
-arbitrary, nested, pattern.
+arbitrary, nested, pattern, as long as the binding is strict.
 
 Here are a few examples that illustrate the typing rules
 
@@ -1037,7 +1037,7 @@ Variables in non-variable multiplicity-annotated let-patterns are bound to
 monomorphic types (see `Let bindings and polymorphism`_ for the
 reasoning and a discussion). Unannotated non-variable let-patterns are
 inferred to be unrestricted (by default, since ``-XLinearTypes``
-implies ``-XNoMonoLocalBinds``, only toplevel bindings, which are
+implies ``-XMonoLocalBinds``, only toplevel bindings, which are
 always unrestricted anyway, are inferred to be polymorphic).
 
 ::
@@ -1418,8 +1418,8 @@ Let bindings and polymorphism
 It's specified that multiplicity annotated non-variable pattern
 bindings are never generalised (see `Non-variable linear patterns are
 monomorphic`_). This section elaborates why it's problematic to
-generalise such bindings. It wouldn't be unsound, to the best of my
-knowledge, to allow generalised linear pattern, this restrictions
+generalise such bindings. It wouldn't be unsound, to the best of Arnaud's
+knowledge, to allow generalised linear patterns. This restriction
 follows, instead, from the necessary limitations of the type-checker,
 as well as the choice of intermediate language (an untyped intermediate
 language would let us paper over this issue, I believe).
@@ -2463,7 +2463,7 @@ having ``-XMonoLocalBinds`` is to make (2) irrelevant though. Because
 it feels rather unpredictable. Because ``-XMonoLocalBinds`` is quite
 standard already, being more or less necessary for ``-XGADTs`` and
 ``-XTypeFamilies``, so it feels unnecessary to add extra worries by
-not not implying ``-XMonoLocalBinds``.
+not implying ``-XMonoLocalBinds``.
 
 %Many annotated patterns
 ~~~~~~~~~~~~~~~~~~~~~~~~
