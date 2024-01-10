@@ -995,13 +995,13 @@ Here are a few examples that illustrate the typing rules
    let %1 x = u in let %Many y = x in …
 
    -- good
-   let %1 (x, y) = u in (y, x)
+   let %1 !(x, y) = u in (y, x)
 
    -- bad
-   let %1 (x, y) = u in x
+   let %1 !(x, y) = u in x
 
    -- good
-   let %1 (Ur x) = u in (x, x, x)
+   let %1 !(Ur x) = u in (x, x, x)
 
 Non-variable let-bound patterns must be strict
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1045,9 +1045,11 @@ always unrestricted anyway, are inferred to be polymorphic).
    {-# LANGUAGE NoMonoLocalBinds #-}
 
    -- x, y :: Int -> Int
+   -- Not generalised despite NoMonoLocalBinds
    let %1 !(x, y) = ((\z->z), (\z->z)) in (x 0, y 1)
 
    -- x, y :: Int -> Int
+   -- Not generalised despite NoMonoLocalBinds
    let %Many !(x, y) = ((\z->z), (\z->z)) in (x 0, x 1, y 2)
 
    -- x :: forall a. a -> a
@@ -1056,11 +1058,19 @@ always unrestricted anyway, are inferred to be polymorphic).
    -- x, y :: forall a. a -> a
    let !(x, y) = ((\z->z), (\z->z)) in (x 0, x Bool, y 2)
 
-   -- rejected because x is inferred unrestricted but must be linear
+   -- rejected because x and y are generalised (since NoMonoLocalBinds
+   -- is on), hence the non-variable pattern binding is inferred
+   -- unrestricted but must be linear
    \ (%1 w :: T) -> let !(x, y) = ((\z -> (w,z)), (\z -> z)) in (x 0, y 1)
 
    -- rejected even though it could be useful
-   let %1 (Ur x) = Ur (\z -> z) in (x 0, x Bool)
+   let %1 !(Ur x) = Ur (\z -> z) in (x 0, x Bool)
+
+Note: in the first two examples, the right-hand side of the binding is
+closed. In this case the variables are normally generalised even with
+`MonoLocalBinds`. Nevertheless, having a multiplicity annotation
+prevents generalisation of non-variable pattern bindings even in this
+case.
 
 Effect and Interactions
 =======================
@@ -1431,7 +1441,7 @@ Consider
    let (f,g) = ((\x -> x), (\y -> y)) in …
 
 The type-checker (with let-generalisation turned on (aka
-``-XNoMonoLocalBinds``)) infers type `forall a. a -> a` for both ``F``
+``-XNoMonoLocalBinds``)) infers type `forall a. a -> a` for both ``f``
 and ``g``.
 
 To make this work, there is a lot going on behind the scene (during desugaring
@@ -1466,7 +1476,7 @@ pattern:
 
 ::
 
-      let (f,g) = ((\x -> x), (\y -> y)) in …
+      let !(f,g) = ((\x -> x), (\y -> y)) in …
 
 is desugared in a very similar way
 
@@ -2452,7 +2462,7 @@ This proposal specifies (in particular in `Non-variable linear
 patterns are monomorphic`_) that
 
 1. ``-XLinearTypes`` implies ``-XMonoLocalBinds``.
-2. Polymorphic non-multiplicity-annotated let-bound non-variable patterns are inferred to be unrestricted
+2. Generalised non-multiplicity-annotated let-bound non-variable patterns are inferred to be unrestricted
 3. Multiplicity annotated let-bound non-variable patterns are not generalised.
 
 MonoLocalBinds
