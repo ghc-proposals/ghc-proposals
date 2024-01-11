@@ -112,8 +112,8 @@ Proposed Change Specification
    unnecessary if arguments are supplied.
 
 #. The second production (2) is there only to support the current (implemented but entirely undocumented)
-   possiblity of having multiple types in one ``SPECIALISE`` pragma.  A welcome alternative would be to
-   eliminate this possiblity.
+   possiblity of having multiple types in one ``SPECIALISE`` pragma. With this proposal, GHC will
+   deprecate this form, and remove it altogether after two compiler releases.
 
 #. As today, ``SPECIALISE`` pragmas may be written only at top-level or
    in a class or instance declaration, never in a ``let`` or ``where``.
