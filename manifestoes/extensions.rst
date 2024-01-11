@@ -460,11 +460,35 @@ Proposed specification
   latest ``Stable`` edition is used. If a user specifies two or more
   editions, an error is reported.
 
-- A language edition can control arbitrary behavior of GHC. The meaning
+- A language edition can control almost all behaviors of GHC. The meaning
   (or existence) of other flags can depend on language edition. While
   we will not implement it this way, we can imagine that GHC becomes
   a set of programs that happen to share a binary; the choice of which
   program is chosen by the language edition.
+
+  The one restriction on the expressive power of language editions
+  is that build products of different language editions must be
+  compatible. We expect the Haskell ecosystem to contain packages
+  compiled with a variety of language editions, and they must work
+  together. The word *compatible* above is doing some heavy lifting,
+  in that it contains a notion that the interface (i.e. exported
+  symbols, their types, etc.) can be translated from one language
+  edition to another. This aspect of Haskell's design has always
+  been present, in that different files can be compiled with different
+  langauge extensions. We often don't notice this, because we have
+  been careful with language extensions not to make the translation
+  apparent.
+
+  Although language editions have wide authority, we must be tasteful
+  in how they work. It would be problematic to have ``Stable2024``
+  and ``Stable2027`` disagree on the meaning of widely used features.
+  Yet I think it's best to be maximally expressive here, relying on
+  our future selves not to abuse our power.
+
+  (In the conversation, it was suggested that a ``Python`` language
+  edition would be beyond reason... but actually I think such a thing
+  would be lovely, if the necessary work was done to translate the
+  interfaces between Python and Haskell.)
 
 - For backward compatibility, a language edition can be specified
   at an arbitrary place in a command-line invocation of GHC, or in a
@@ -499,11 +523,25 @@ Proposed specification
   editions, error messages suggest opting into one of these bundles,
   rather than suggesting individual extensions.
 
+  The bundles described below are all just combinations of existing
+  language extensions and warnings. I expect that bundles will
+  remain as such (though it's conceivable that we might imagine
+  language features that do not get their own extension, just a spot
+  in a bundle). It's also conceivable that the bundles will evolve
+  to encompass more expressive power (such as controlling optimization
+  flags or the meaning of ``import Prelude``).
+
 - When printing out the namne of a warning flag as part of a warning,
   we also include any bundle that also controls the warning.
 
 Detailed specification
 ~~~~~~~~~~~~~~~~~~~~~~
+
+The text above defines language editions generally. This section
+instantiates the general design with some specifics. These language
+editions affect language features (as described by extension name or
+warning flag in the chart below), as well as error messages (not described
+in any detail). They do not affect other aspects of GHC.
 
 The chart below classifies all current extensions and warnings.
 
@@ -663,6 +701,11 @@ The chart below classifies all current extensions and warnings.
   doesn't fit into the rubric of "taking on responsibility", but instead expresses the user's preference
   for how to interpret a program. I expect these extensions to remain as independent extensions (not bundled)
   into perpetuity.
+
+* Though not captured in this table, I also think that language editions should control error messages.
+  That is, the ``Student`` edition might have error messages more tuned to students' needs, over
+  experts' needs. I do not intend to give a specification here of the details, but it's something
+  I think we should keep in mind as considering all of this.
 
 +-----------------------------------------------+-------+-------+------+-----+------+----------+--------+-------+--------+--------+-----+---+--+------+--------+--------+--+--+--+----------------------------------+
 |                                               |GHC2021|Student|Stable|Exper|Latest|FancyTypes|DoSyntax|Classic|LowLevel|Overload|Sugar|FFI|TH|Unused|Explicit|Complete|T1|T2|T3|Notes                             |
@@ -1185,6 +1228,27 @@ By leaning on language editions, we achieve the following:
   the language is preferred, of course, having editions helps provide
   guidance to tool authors for where to focus their efforts.
 
+* The ``Stable`` edition is somewhat restrictive, with warnings that
+  cannot be disabled and extensions that cannot be turned on. Yet
+  there is always an escape hatch: use ``Experimental`` instead.
+  The motivation here is that we want ``Stable`` to mean exactly that.
+  If a ``Stable`` module were allowed to twiddle settings that violate
+  the stability goals, then the user might unintentionally make their
+  program unstable. By making ``Stable`` restrictive, we force the
+  user to be aware of the stability impact of their settings.
+
+* Because a language edition can affect all aspects of GHC, it
+  can also affect the module that is implicitly imported in Haskell
+  files. Maybe it's ``Prelude``. Maybe it's ``Prelude2024``, which
+  might have some new exports. Or maybe importing a module named
+  ``Prelude`` is something like a keyword whose behavior depends
+  on the edition. (This way, you can effectively change the language
+  edition for modules with an explicit ``import Prelude`` and still
+  change what's imported.) Such effects of language editions are
+  not included for the editions spelled out in this proposal, but
+  editions offer a tantalizing way to grow or alter the ``Prelude``
+  over time.
+
 Drawbacks
 ~~~~~~~~~
 
@@ -1222,6 +1286,43 @@ Drawbacks
   which will evolve with every GHC release (possibly even minor releases). To
   me, we're striking the right balance between due caution and our desire for
   evolution, but individual experiences and opinions will differ.
+
+Alternatives
+~~~~~~~~~~~~
+
+* The current proposal makes ``Stable2024`` and ``Experimental2024``
+  into language editions. In the future, we'll have, say, ``2027``
+  editions, too. A different way to slice this cake is to specify
+  the language varietal and its vintage separately, via two flags.
+
+  There's something appealing about the separation, as it makes
+  two axes navigable independently. Maybe it's a better user interface
+  than what I've proposed, but I think the payload doesn't change:
+  the combination of varietal and vintage would together make a language
+  edition, and all the aspects of a language edition that I've
+  described would be controlled by this little product.
+
+* ``Stable`` and ``Experimental`` are central to this proposal; ``Student``
+  and ``Latest`` less so. I can see forgoing either of these two. I like
+  keeping them, but maybe others disagree.
+
+Open questions
+~~~~~~~~~~~~~~
+
+* What's the right cadence for updates? This proposal assumes a 3-year
+  cadence, but there's no great reason to believe that's the right one.
+  Three years feels, to me, about the right balance between cost (each
+  one of these has maintenance and specification costs) and expressiveness,
+  but I can't defend this feeling.
+
+* How soon to drop support for an old language edition? Elsewhere in this
+  text, I assume that at 2030, we'll phase out 2024 editions. Maybe that's
+  too soon.
+
+* Should specifying ``-XComplete`` also change the ``Prelude`` to exclude
+  partial functions? I think probably not -- I'm worried about opaqueness
+  introduced by having these bundles be too expressive -- but it's fun to
+  dream about.
 
 Proposal: Make warnings into errors for deployment
 --------------------------------------------------
