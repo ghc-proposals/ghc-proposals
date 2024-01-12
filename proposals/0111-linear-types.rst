@@ -2485,6 +2485,33 @@ it's a type family?) that are hard to justify. In particular since we
 take ``-XMonoLocalBinds`` for granted, where generalisation doesn't
 occur anyway.
 
+Restrictions of multiplicity-annotated let bindings
+---------------------------------------------------
+
+The proposal specifies that a multiplicity annotated non-variable let binding ``let %p pat``
+must be such that ``pat = !pat'`` even if ``p = 'Many``. It is easy to
+lift this restriction on two dimension:
+
+- We can say, instead, that patterns not of the form ``!pat'`` emit a
+  ``p ~ 'Many`` constraint instead. They already do (for the sake of
+  inference), so this is strictly less code.
+- We can generalise to more strict patterns. For instance, we don't
+  need to require a ``!`` if ``-XStrict`` is on, we can have patterns
+  of the form ``(!pat')`` (with additional parentheses). This is a few
+  lines of codes, inference actually already does this in my
+  implementation, so it's already paid for (though it does annoyingly
+  mostly duplicate another definition of strict pattern which I
+  couldn't find a way to factor as a single function, I don't like
+  this).
+
+The reason that motivated the stronger restriction is to improve error
+messages, because we can then error out with “multiplicity-annotated
+let-bound patterns must be of the form !pat”, instead of the more
+mysterious “Couldn't unify 'Many with 'One”
+(see `#23586 <https://gitlab.haskell.org/ghc/ghc/-/issues/23586>`_).
+But maybe the additional restrictions are more surprising than the
+error messages are helpful.
+
 The Core corner
 ===============
 
