@@ -358,12 +358,20 @@ We define a **stable Haskell package** as follows. A stable Haskell package
 Stability (GR1)
 ~~~~~~~~~~~~~~~~
 
-**General rule (GR1)**.  *A stable Haskell package P that works with GHC X should continue to work in subsequent releases of GHC, say GHC Y, provided P's direct dependencies work with GHC Y with only minor version bumps.*
+Our over-arching stability goal is: if it works with GHC(X), it should work with GHC(X+1).  More precisely:
 
-Consider one of P's dependencies, say Q.  It may need a minor version bump,
-for example to accommodate changes to Template Haskell.  But the principle is that
-provided the new Q works with GHC Y, and Q's API is unchanged (minor
-version bump only), P should work too.
+**General rule (GR1)**.  *A stable Haskell package P that works with GHC(X) should continue to work in subsequent releases of GHC, say GHC(X+1),
+provided that, for each of P's direct dependencies D,
+(a) D works with GHC(X+1), possibly after an update to D, and (b) the API of the bits of D that P uses is unchanged by the update to D.
+
+In this context the term "API" should be taken to include types, semantics, and performance characteristics.
+
+Consider building one of P's dependencies, say D, with GHC(X+1):
+* D may work unchanged with GHC(X+1).
+* D may depend on (say) `ghc-internals`, and require some small change to accomodate the change to `ghc-internals`, but one that does not require changing D's API; so D will have a minor version bump.
+* D may depend on (say) `ghc-internals`, those changes may force a change to D's API; so D will have a major version bump.
+
+In all three cases, **provided the bits of D's API that P uses are unchanged**, compiling P with GHC(X+1) should work.
 
 Notes and clarifications:
 
