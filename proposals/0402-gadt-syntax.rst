@@ -273,11 +273,8 @@ Clarifications and side conditions:
 3. In ``strictness_sigil``, the ``~`` is guarded behind ``-XStrictData``.
 4. Under ``UnicodeSyntax``, the ``::``, ``->``, and ``=>`` terminals can be
    written as ``∷``, ``→``, and ``⇒`` respectively.
-5. If ``forall tvs ->`` quantification is used in a constructor's type, the use
-   of such constructor in an expression or a pattern requires the
-   ``RequiredTypeArguments`` extension (introduced in `#281
-   <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0281-visible-forall.rst>`_).
-   It can also be promoted and used in types under ``DataKinds``.
+5. The use of ``forall tvs ->`` in a constructor's type is guarded behind ``-XRequiredTypeArguments``
+   (`#281 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0281-visible-forall.rst>`_).
 
 Effect and Interactions
 -----------------------
