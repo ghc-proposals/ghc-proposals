@@ -6,7 +6,7 @@ extending CAPI calling convention
 .. ticket-url:: 
 .. implemented:: 
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/[change this]>`_.
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/630>`_.
 .. sectnum::
 .. contents::   
 
