@@ -46,19 +46,37 @@ behavior.
 
 Proposed Change Specification
 -----------------------------
-Add a new typeclass, ``System.Exit.Termination``, with a function
-``report :: Termination a => a -> ExitCode``. If, for a given program,
-``(main >>= exitWith . report) :: IO ()`` type-checks, then
-the resulting program will behave as if that had been written for ``main``
+
+Add a new module to ``ghc-experimental``:
+
+::
+
+ module GHC.IO.Exit where
+
+ import GHC.IO.Exception (ExitCode (..))
+
+ class Termination e where
+   report :: e -> ExitCode
+
+ instance Termination ExitCode where
+   report = id
+
+ -- Not strictly required, but users might expect
+ -- 'Termination' to be the class of /allowed/
+ -- main return types (and perhaps some day it could
+ -- become that).
+ instance Termination () where
+   report = const ExitSuccess
+
+If, for a given program, ``(main >>= exitWith . report) :: IO ()`` type-checks,
+then the resulting program will behave as if that had been written for ``main``
 instead.
 
 Proposed Library Change Specification
 -------------------------------------
 
-Add the ``Termination`` typeclass to ``System.Exit``, with the
-``report`` function/method, as described above.
-
-Add a ``Termination`` instance for ``ExitCode``.
+Eventually, ``Termination`` and its instances should move into ``base``,
+probably in ``System.Exit``.
 
 Examples
 --------
@@ -151,6 +169,12 @@ Some users may expect ``main :: IO Int`` to work, and we could add a
 ``Termination Int`` instance to satisfy that. But this is much more likely
 to cause behavior changes in real programs, and perpetuates a practice of
 semantically loose types.
+
+::
+
+ instance Termination Int where
+   report 0 = ExitSuccess
+   report n = ExitFailure n
 
 Unresolved Questions
 --------------------
