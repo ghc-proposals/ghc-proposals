@@ -122,6 +122,10 @@ caught early in testing, this change will make learning Haskell a bit
 easier and arguably makes for ``main`` functions which better match
 the Haskell ethos of well-typed structured interfaces.
 
+If we did stick to the status quo, users could perhaps
+have ``mainWithTermination :: Termination a => IO a -> IO ()``
+and always define ``main = mainWithTermination $ do { ... }``.
+
 Do it just for ExitCode
 ^^^^^^^^^^^^^^^^^^^^^^^
 
