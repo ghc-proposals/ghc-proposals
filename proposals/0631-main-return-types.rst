@@ -54,6 +54,7 @@ Add a new module to ``ghc-experimental``:
  module GHC.IO.Exit where
 
  import GHC.IO.Exception (ExitCode (..))
+ import Data.Void (Void, absurd)
 
  class Termination e where
    report :: e -> ExitCode
@@ -61,12 +62,15 @@ Add a new module to ``ghc-experimental``:
  instance Termination ExitCode where
    report = id
 
- -- Not strictly required, but users might expect
- -- 'Termination' to be the class of /allowed/
- -- main return types (and perhaps some day it could
- -- become that).
+ -- The remaining instances are not strictly required,
+ -- but users might expect 'Termination' to be the class of
+ -- /allowed/ main return types (and perhaps some day it
+ -- could become that).
  instance Termination () where
    report = const ExitSuccess
+
+ instance Termination Void where
+   report = absurd
 
 If, for a given program, ``(main >>= exitWith . report) :: IO ()`` type-checks,
 then the resulting program will behave as if that had been written for ``main``
