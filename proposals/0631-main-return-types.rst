@@ -1,5 +1,5 @@
 Set program exit code by main return type
-==============
+=========================================
 
 .. author:: Shea Levy
 .. date-accepted::
@@ -154,7 +154,7 @@ give semantic meaning to the exit status in the typical Haskell
 way.
 
 No ExitCode instance
-^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^
 
 To preserve full backwards compatibility and encourage custom domain-specific
 types, we could avoid having a ``Termination ExitCode`` instance, or have one
@@ -175,6 +175,29 @@ semantically loose types.
  instance Termination Int where
    report 0 = ExitSuccess
    report n = ExitFailure n
+
+Restrict main to IO ()
+^^^^^^^^^^^^^^^^^^^^^^
+
+If ``main`` *had* to be ``IO ()``, this would also reduce surprise,
+or at least make it apparent at compile time. This is
+backwards-incompatible, but would likely not break that many
+programs and the fix would be straightforward.
+
+This alternative would break more programs than the proposal,
+and would miss out on the added benefit of program behavior
+being specified by more normal Haskell control flow. Also,
+this appears to have been the behavior in Haskell 1.4, and
+presumably the Haskell 98 authors changed this for a reason.
+
+Restrict main to IO Void
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+This would force programmers to be explicit about exit codes,
+and indicate that program exit is something different than
+normal ``IO`` completion. It might have been a reasonable
+choice when Haskell was new, but as it would break almost
+every program out there today it's not worth the churn.
 
 Unresolved Questions
 --------------------
