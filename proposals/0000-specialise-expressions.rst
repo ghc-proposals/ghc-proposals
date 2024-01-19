@@ -1,7 +1,7 @@
 Allow expressions in SPECIALISE pragmas
 =======================================
 
-.. author:: Richard Eisenberg
+.. author:: Richard Eisenberg, Simon Peyton Jones
 .. date-accepted::
 .. ticket-url::
 .. implemented::
@@ -87,7 +87,7 @@ Proposed Change Specification
 
      pragma ::= ...
              |  '{-#' specialise_keyword activation rule_foralls specexp [ '::' type ]'#-}'  -- (1)
-             |  '{-#' specialise_keyword activation qvar '::' type ',' types1 '#-}'          -- (2)
+             |  '{-#' specialise_keyword activation qvar '::' type ',' types1 '#-}'          -- (2) DEPRECATED
 
      specialise_keyword ::= 'SPECIALISE' | 'SPECIALIZE' | 'SPECIALISE INLINE' | 'SPECIALISE INLINE'
 
@@ -113,7 +113,10 @@ Proposed Change Specification
 
 #. The second production (2) is there only to support the current (implemented but entirely undocumented)
    possiblity of having multiple types in one ``SPECIALISE`` pragma. With this proposal, GHC will
-   deprecate this form, and remove it altogether after two compiler releases.
+   deprecate this form.
+   A new warning, controlled by, `-Wdeprecated-pragmas` (in `-Wdefault`) will be emitted when it
+   is used, and GHC may remove support for the syntax altogether after at least two
+   major releases with the warning.
 
 #. As today, ``SPECIALISE`` pragmas may be written only at top-level or
    in a class or instance declaration, never in a ``let`` or ``where``.
@@ -234,9 +237,9 @@ Effect and Interactions
 
 #. The syntax allowing multiple types to be specified is not documented in the
    `manual <https://downloads.haskell.org/ghc/latest/docs/html/users_guide/exts/pragmas.html?highlight=specialise#specialize-pragma>`_
-   and is rarely used, according to a `Hackage search <https://hackage-search.serokell.io/?q=SPECIALI%5BSZ%5DE.*%2C>`_.
-   However, there seems to be no great need to remove the syntax, and so
-   this proposal leaves it untouched.
+   and is rarely used, according to a `Hackage search <https://hackage-search.serokell.io/?q=SPECIALI%5BSZ%5DE.*%2C>`_, and does not scale to handle the expression-level specialisation of this
+   proposal.  Hence the plan to remove this undocumented feature altogether.
+
 
 Costs and Drawbacks
 -------------------
