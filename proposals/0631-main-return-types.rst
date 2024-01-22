@@ -47,6 +47,13 @@ behavior.
 Proposed Change Specification
 -----------------------------
 
+If, for a given program, ``(main >>= exitWith . GHC.IO.Exit.report) :: IO ()`` type-checks,
+then the resulting program will behave as if that had been written for ``main``
+instead.
+
+Proposed Library Change Specification
+-------------------------------------
+
 Add a new module to ``ghc-experimental``:
 
 ::
@@ -71,13 +78,6 @@ Add a new module to ``ghc-experimental``:
 
  instance Termination Void where
    report = absurd
-
-If, for a given program, ``(main >>= exitWith . report) :: IO ()`` type-checks,
-then the resulting program will behave as if that had been written for ``main``
-instead.
-
-Proposed Library Change Specification
--------------------------------------
 
 Eventually, ``Termination`` and its instances should move into ``base``,
 probably in ``System.Exit``.
