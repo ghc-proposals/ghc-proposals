@@ -3,7 +3,7 @@ Allow expressions in SPECIALISE pragmas
 
 .. author:: Richard Eisenberg, Simon Peyton Jones
 .. date-accepted:: 2024-01-22
-.. ticket-url::
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/24359
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/493>`_.
