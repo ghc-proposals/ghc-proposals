@@ -206,7 +206,7 @@ When the discussion has ebbed down and the author thinks the proposal is ready, 
 2. Add a comment to the pull request, briefly summarizing the major points raised
    during the discussion period and stating your belief that the proposal is
    ready for review. In this comment, tag the committee secretary (currently
-   ``@nomeata``).
+   `@adamgundry <https://github.com/adamgundry/>`_).
 
 `The secretary <#who-is-the-committee>`_ will then label the pull request with
 ``Pending shepherd recommendation`` and start the `committee process
@@ -233,13 +233,13 @@ The current members, including their GitHub handle, when they joined first, when
 ============= ======================  ====================================================  =======  =======  =========
 |simonmar|    Simon Marlow            `@simonmar <https://github.com/simonmar>`_            2017/02  2021/02  co-chair
 |simonpj|     Simon Peyton-Jones      `@simonpj <https://github.com/simonpj>`_              2017/02  2021/02  co-chair
-|nomeata|     Joachim Breitner        `@nomeata <https://github.com/nomeata>`_              2017/02  2021/03  secretary
+|nomeata|     Joachim Breitner        `@nomeata <https://github.com/nomeata>`_              2017/02  2021/03
 |goldfirere|  Richard Eisenberg       `@goldfirere <https://github.com/goldfirere>`_        2017/02  2021/03
 |int-index|   Vladislav Zavialov      `@int-index <https://github.com/int-index/>`_         2021/03
 |gridaphobe|  Eric Seidel             `@gridaphobe <https://github.com/gridaphobe>`_        2018/09  2022/03
 |cdornan|     Chris Dornan            `@cdornan <https://github.com/cdornan>`_              2022/03
 |aspiwack|    Arnaud Spiwack          `@aspiwack <https://github.com/aspiwack/>`_           2019/07  2022/10
-☺             Adam Gundry             `@adamgundry <https://github.com/adamgundry/>`_       2022/10
+☺             Adam Gundry             `@adamgundry <https://github.com/adamgundry/>`_       2022/10           secretary
 |angerman|    Moritz Angermann        `@angerman <https://github.com/angerman/>`_           2023/02
 ============= ======================  ====================================================  =======  =======  =========
 
