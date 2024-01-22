@@ -367,6 +367,7 @@ provided that, for each of P's direct dependencies D,
 In this context the term "API" should be taken to include types, semantics, and performance characteristics.
 
 Consider building one of P's dependencies, say D, with GHC(X+1):
+
 * D may work unchanged with GHC(X+1).
 * D may depend on (say) `ghc-internals`, and require some small change to accomodate the change to `ghc-internals`, but one that does not require changing D's API; so D will have a minor version bump.
 * D may depend on (say) `ghc-internals`, those changes may force a change to D's API; so D will have a major version bump.
