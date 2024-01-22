@@ -114,7 +114,7 @@ Proposed Change Specification
 #. The second production (2) is there only to support the current (implemented but entirely undocumented)
    possiblity of having multiple types in one ``SPECIALISE`` pragma. With this proposal, GHC will
    deprecate this form.
-   A new warning, controlled by, `-Wdeprecated-pragmas` (in `-Wdefault`) will be emitted when it
+   A new warning, controlled by ``-Wdeprecated-pragmas`` (in ``-Wdefault``), will be emitted when it
    is used, and GHC may remove support for the syntax altogether after at least two
    major releases with the warning.
 
