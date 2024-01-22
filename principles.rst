@@ -362,7 +362,7 @@ Our over-arching stability goal is: if it works with GHC(X), it should work with
 
 **General rule (GR1)**.  *A stable Haskell package P that works with GHC(X) should continue to work in subsequent releases of GHC, say GHC(X+1),
 provided that, for each of P's direct dependencies D,
-(a) D works with GHC(X+1), possibly after an update to D, and (b) the API of the bits of D that P uses is unchanged by the update to D.
+(a) D works with GHC(X+1), possibly after an update to D, and (b) the API of the bits of D that P uses is unchanged by the update to D.*
 
 In this context the term "API" should be taken to include types, semantics, and performance characteristics.
 
