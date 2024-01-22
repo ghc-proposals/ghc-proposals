@@ -210,7 +210,7 @@ When the discussion has ebbed down and the author thinks the proposal is ready, 
 
 `The secretary <#who-is-the-committee>`_ will then label the pull request with
 ``Pending shepherd recommendation`` and start the `committee process
-<#committee-process>`_.  (If this does not happen within a day or two, please
+<#committee-process>`_.  (If this does not happen within a few days, please
 ping the secretary or the committee.)
 
 What is a dormant proposal?
@@ -226,7 +226,8 @@ You can see the `list of dormant proposals <https://github.com/ghc-proposals/ghc
 
 Who is the committee?
 --------------------
-You can reach the committee by email at ghc-steering-committee@haskell.org.
+You can reach the committee by email at ghc-steering-committee@haskell.org. This is a mailing list with
+`public archives <https://mail.haskell.org/cgi-bin/mailman/listinfo/ghc-steering-committee>`_.
 
 The current members, including their GitHub handle, when they joined first, when their term last renewed and their role, are listed at (sorted when the current term started):
 
@@ -546,5 +547,5 @@ Questions?
 ----------
 
 Feel free to contact any of the members of the `GHC Steering Committee
-<#who-is-the-committee>`_ with questions. `Email <https://wiki.haskell.org/Mailing_lists>`_
+<#who-is-the-committee>`_ with questions. `Email <https://mail.haskell.org/cgi-bin/mailman/listinfo/ghc-steering-committee>`_
 and IRC (``#ghc`` on ``irc.freenode.net``) are both good ways of accomplishing this.
