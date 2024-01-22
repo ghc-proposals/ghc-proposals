@@ -2,11 +2,11 @@ Allow expressions in SPECIALISE pragmas
 =======================================
 
 .. author:: Richard Eisenberg, Simon Peyton Jones
-.. date-accepted::
+.. date-accepted:: 2024-01-22
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/493>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/493>`_.
 .. contents::
 .. sectnum::
 
