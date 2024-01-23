@@ -84,7 +84,7 @@ The cost is limited to the initial implementation. Little maintenance should be 
 
 Backward Compatibility
 ----------------------
-Since this proposal only affect capi call that previously would have been illegal, it is fully backward compatible.
+Since this proposal only affects capi calls that previously would have been illegal, it is fully backward compatible.
 
 Alternatives
 ------------
