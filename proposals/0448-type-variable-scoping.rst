@@ -107,7 +107,7 @@ Under this change, that would no longer be true.
 This component of this proposal is taken from the accepted proposal `#285`_, and not-yet-accepted proposals `#238`_ and `#420`_.
 The difference from `#238`_ is that ``-XScopedForAlls`` has become in this proposal ``-XExtendedForAllScope``.
 The difference from `#285`_ is that ``-XPatternSignatureBinds`` is disabled, not enabled by default, which was proposed in both `#238`_ and `#420`_.
-(John Ericson is the author of `#285`_ and `#420`_, and views the latter as correcting and oversight in the former.)
+(John Ericson is the author of `#285`_ and `#420`_, and views the latter as correcting an oversight in the former.)
 ``-XNoImplicitForAll`` is included from `#285`_ unchanged.
 
 Motivation for any extension shuffling
@@ -241,7 +241,7 @@ Unified Namespace
 ^^^^^^^^^^^^^^^^^
 
 `#281`_ introduces ``-XRequiredTypeArguments`` which is *almost* backwards compatible, except for conflicting with implicit binding.
-The general method of ``-XRequiredTypeArguments`` w.r.t namespacing is to simulate a single namespace by having variable usages check the "other" namespace" when what they are looking for is not found in "proper" namespace for the location of the identifier.
+``-XRequiredTypeArguments`` effectively simulates a single namespace by having variable usages check the "other" namespace when an identifier is unbound in its "proper" namespace (e.g. in the type namespace when the identifier occurs within a type).
 For example,
 
 ::
@@ -258,7 +258,7 @@ For example,
 The goal is to make those errors go away long term, so we should not rely on them giving us "syntax to steal".
 More complicated examples *will* work completely with `#281`_ without further generalizations that rely on the same cross-namespace variable lookup in both directions.)
 
-This is an extension of the same method of namespace used for ``-XDataKinds``, as is backwards-compatible for the same reason.
+This is an extension of the same method of namespace used for ``-XDataKinds``, and is backwards-compatible for the same reason.
 
 The issues arise with implicit binding (pattern signature bindings and implicit ``forall`` bindings alike).
 Consider this program::
@@ -268,15 +268,15 @@ Consider this program::
 
 With ``-XScopedTypeVariables`` today, ``t`` is considered unbound, and so ``t`` is implicitly bound.
 But this breaks the single-namespace illusion --- ``t`` *would* have been found in the other namespace, if it weren't for the implicit binding.
-``-XRequiredTypeArguments`` is thus forced to choose between being a monotonic extension (allowing more programs, changing the meaning of no existing program) or faithfully simulating a unified single namespace;
+``-XRequiredTypeArguments`` is thus forced to choose between being a conservative extension (allowing more programs, changing the meaning of no existing program) or faithfully simulating a unified single namespace;
 it chooses the latter at the expense of the former.
-It does so by changing the implicit binding rules to consult both namespaces first: ``t`` above is is a use not a bind.
+It does so by changing the implicit binding rules to consult both namespaces first: ``t`` above is a use not a bind.
 
-The goal of this proposal, `#448`_ is to move away away from ``-XScopeTypeVariables``, and adopt designs that are compatible with ``-XRequiredTypeArguments`` without requiring it.
+The goal of this proposal, `#448`_ is to move away away from ``-XScopedTypeVariables``, and adopt designs that are compatible with ``-XRequiredTypeArguments`` without requiring it.
 ``-XPatternSignatures`` *without* implicit bindings is just that:
 
-- Adding just implicit bindings is a monotonic extension
-- Adding just cross-namespece variable resolution is a monotonic extension
+- Adding implicit pattern bindings is a conservative extension
+- Adding just cross-namespace variable resolution is a conservative extension
 
 It therefore serves as a "least common ancestor" of these other extensions.
 It is useful to materialize these points in the design space with language extensions:
@@ -314,7 +314,7 @@ Conservativism for standardization
 """"""""""""""""""""""""""""""""""
 
 With both of these extensions being very minimal, I think they would be easy uncontroversial candidates for a new language report.
-Conversely, all implicit binding constructs are very fraught with a complicated mix of upsides and downsides, we and should only standardize them with great care.
+Conversely, all implicit binding constructs are very fraught with a complicated mix of upsides and downsides, and we should only standardize them with great care.
 
 Motivation for ``-XNoImplicitForAll``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
