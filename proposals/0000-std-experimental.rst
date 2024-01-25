@@ -109,7 +109,7 @@ Backward Compatibility
 The introduction of this flag is expected to have minimal impact on existing
 code. The initial set of features behind the ``-experimental`` flag will be
 the empty set. Follow up proposals will be required to move existing features
-behind the `-experimental` flag. New features should by default be behind
+behind the ``-experimental`` flag. New features should by default be behind
 the `-experimental` flag, unless the respective authors consider them stable
 and not subject to sudden change.
 
