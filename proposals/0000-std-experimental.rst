@@ -80,7 +80,7 @@ Costs and Drawbacks
 The authors believe the benefit of clearly separating experimental and those
 that adhere to a more rigourous change evolution easily offsets the costs for
 both end users and feature developers. For developers of experimental feature
-this also means they reserve the rigth to break them without warning in
+this also means they reserve the right to break them without warning in
 backwards incompatible ways at any moment in time leading to significantly
 lighter processes for experimental features.
 
