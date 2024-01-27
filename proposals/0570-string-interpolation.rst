@@ -154,18 +154,6 @@ We will always require interpolation to be of the form ``${foo}``, unlike other 
 
 Any Haskell expression may go inside the braces, but an unmatched ``}`` will immediately end processing. This restriction simplifies the implementation and isn't a big deal in practice, since one could always break it out into a helper variable.
 
-If the `multiline proposal gets accepted <https://github.com/ghc-proposals/ghc-proposals/pull/569>`_, interpolation syntax will also be enabled for multiline syntax, e.g.
-::
-
-  -- "Line 1: 100\nLine 2: 200\n"
-  let s =
-        s"""
-        Line 1: ${x}
-        Line 2: ${y}
-        """
-      x = 100
-      y = 200
-
 Examples
 --------
 
@@ -180,6 +168,18 @@ Effect and Interactions
 -----------------------
 
 No interactions with existing language features outside of the ``OverloadedStrings`` behavior mentioned in the Specification.
+
+With the new `multiline string proposal <https://github.com/ghc-proposals/ghc-proposals/pull/569>`_ being accepted, interpolation syntax will also be enabled for multiline syntax, e.g.
+::
+
+  -- "Line 1: 100\nLine 2: 200\n"
+  let s =
+        s"""
+        Line 1: ${x}
+        Line 2: ${y}
+        """
+      x = 100
+      y = 200
 
 Costs and Drawbacks
 -------------------
