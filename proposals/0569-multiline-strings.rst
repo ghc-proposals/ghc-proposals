@@ -230,7 +230,7 @@ The common prefix calculation ignores all characters preceding the first newline
     """
 
   -- equivalent to
-  s' = "Line 1\n   Line 2\nLine 3"
+  s' = "Line 1\n   Line 2\nLine 3\n"
 
 This implies that normal strings could also be written using ``"""``
 
@@ -328,7 +328,7 @@ In the following example, desugaring ``s1`` into ``s1'`` removes the 2 spaces be
       c
     """
 
-  s1' = "a\nb\nc"
+  s1' = "a\nb\nc\n"
 
   s2 =
     """
@@ -344,7 +344,7 @@ In the following example, desugaring ``s1`` into ``s1'`` removes the 2 spaces be
     \&  c
     """
 
-  s2' = "  a\n  b\n  c"
+  s2' = "  a\n  b\n  c\n"
 
 Escaping triple quotes
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -379,7 +379,7 @@ Since escaped characters are resolved *after* calculating the common whitespace 
 
 ::
 
-  s' = " name\tage\n Alice\t20\n Bob\t30\n\t40"
+  s' = " name\tage\n Alice\t20\n Bob\t30\n\t40\n"
 
 Example from Fourmolu
 ~~~~~~~~~~~~~~~~~~~~~
