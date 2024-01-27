@@ -3,7 +3,7 @@ Multiline strings
 
 .. author:: Brandon Chinn
 .. date-accepted:: 2020-01-27
-.. ticket-url:: 
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/24390
 .. implemented:: 
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/569>`_.
