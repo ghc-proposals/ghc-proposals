@@ -45,34 +45,28 @@ specifies that
     ``ghci``.
 
 However, switching from ``GHC2021`` to ``GHC2024`` may break existing programs,
-primarily because of ``MonoLocalBinds``.  While Cabal packages will usually
-specify a ``default-language`` and hence be unaffected, this is not guaranteed.
-Moreover, some users compile programs using ``ghc`` directly, so a change in the
+primarily because of ``MonoLocalBinds``.  Cabal packages will
+specify a ``default-language`` (or fall back on ``Haskell98``) and hence will be unaffected.
+But some users compile programs using ``ghc`` directly, so a change in the
 default language edition used by ``ghc`` may cause backwards incompatibility for
 those users.
 
-Thus ``GHC2024`` will be introduced in a phased manner:
+Thus we propose:
 
-* GHC 9.10 will add support for ``GHC2024`` but the default language edition
-  will remain ``GHC2021`` (in both ``ghc`` and ``ghci``).
+* GHC 9.10 will add support for ``GHC2024``, but the default language edition
+  will remain ``GHC2021`` (in both ``ghc`` and ``ghci``) for the time being.
 
-* In addition, GHC 9.10 and later releases will emit a warning (controlled by
-  ``-Wunspecified-language`` and in ``-Wdefault``) when compiling a ``.hs``
+* Any future change to the default language edition, in the light of experience
+  with ``GHC2024``, will require a separate proposal. As with all backwards
+  incompatible proposals this should include appropriate warning and deprecation
+  periods.
+
+* GHC may introduce a warning (controlled by
+  ``-Wunspecified-language`` and in ``-Wcompat``) when compiling a ``.hs``
   file without an explicit choice of language edition.  (Compiling a ``.hs``
   file includes loading it into ``ghci``, but using ``ghci`` interactively
   without specifying a language edition will not emit a warning.)
 
-* The next major release of GHC after 9.10 will switch the default language
-  edition to ``GHC2024``.
-
-This will give users warning of the impending change, and encourage them to
-specify a language edition explicitly, so that future changes of default
-language edition do not affect their code.  It does mean that throw-away uses of
-``ghc M.hs`` will emit a warning by default; one way to avoid this is to define
-an alias, e.g. ``alias ghc21='ghc -XGHC2021'``.  Users of ``ghci`` may be
-affected by the change and not receive a warning (e.g. if they use complex GHCi
-scripts rather than loading modules), but this is likely to be rare, and it
-would seem excessive to warn on every invocation of ``ghci``.
 
 Tally
 -----
