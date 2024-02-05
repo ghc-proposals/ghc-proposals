@@ -331,17 +331,13 @@ On the other hand, GHC has always sought to be a laboratory for innovation.  If 
 * The language may become stuck in a local optimum, because moving to a better design would require breaking changes.
 * We want Haskell to be a beautiful, elegant language, not one riddled with inconsistencies, grandfathered in simply because fixing the inconsistency would risk some breakage.
 
-We can't navigate this tension with simple all-or-nothing rules.  We have to take each case on its merits, aware of both sets of costs.  Rather than starting the debate from scratch each time, we can have some general rules, or principles, to guide us.  The `GHC base library proposal <https://github.com/haskellfoundation/tech-proposals/blob/main/proposals/accepted/051-ghc-base-libraries.rst>`_ made a start in this direction; this section discusses GHC itself.
+We can't navigate this tension with simple all-or-nothing rules.  We have to take each case on its merits, aware of both sets of costs.  This section describes some general rules, or principles, that we use to guide our stability-related discussions for GHC itself.  See also `GHC base library proposal <https://github.com/haskellfoundation/tech-proposals/blob/main/proposals/accepted/051-ghc-base-libraries.rst>`_, which focuses on the stability of the ``base`` library API.
 
 
 Assumptions
 ~~~~~~~~~~~~
 
-We assume:
-
-* That we have adopted the  `GHC base library proposal <https://github.com/haskellfoundation/tech-proposals/blob/main/proposals/accepted/051-ghc-base-libraries.rst>`_, which establishes the ``ghc-experimental`` package.
-* That we have identified some extensions as "Experimental".  These extensions may well change, and are subject to
-  much weaker stability goals.  `GHC Proposal #601 <https://github.com/ghc-proposals/ghc-proposals/pull/601>`_, describes a plan along these lines, but all we need for this document is a list of Experimental extensions.
+We assume that we have identified some extensions as "Experimental".  These extensions may well change, and are subject to much weaker stability goals.  `GHC Proposal #625 <https://github.com/ghc-proposals/ghc-proposals/pull/625>`_ is devoted to agreeing this list.
 
 Terminology
 ~~~~~~~~~~~~~~~
