@@ -151,8 +151,12 @@ and always define ``main = mainWithTermination $ do { ... }``.
 Do it just for ExitCode
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-Rather than a typeclass, we could just have ``main :: IO ExitCode`` be
-respected. Using the typeclass allows using domain-specific types
+Rather than a typeclass, we could just give ``ExitCode``
+special treatment: If ``main`` is typed as ``IO ExitCode``, then the
+program behaves as if ``main >>= exitWith`` had been written for
+``main`` instead.
+
+Using the typeclass allows using domain-specific types
 to exit codes as in `the example <#Examples>`_, letting the user
 give semantic meaning to the exit status in the typical Haskell
 way.
