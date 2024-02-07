@@ -337,7 +337,7 @@ We can't navigate this tension with simple all-or-nothing rules.  We have to tak
 Assumptions
 ~~~~~~~~~~~~
 
-We assume that we have identified some extensions as "Experimental".  These extensions may well change, and are subject to much weaker stability goals.  `GHC Proposal #625 <https://github.com/ghc-proposals/ghc-proposals/pull/625>`_ is devoted to agreeing this list.
+We assume that we have identified some extensions as "Experimental".  These extensions may well change, and are subject to much weaker stability goals.  `GHC Proposal #635 <https://github.com/ghc-proposals/ghc-proposals/pull/635>`_ is devoted to agreeing this list.
 
 Terminology
 ~~~~~~~~~~~~~~~
