@@ -49,7 +49,8 @@ Proposed Change Specification
 
 If, for a given program, ``(main >>= exitWith . GHC.IO.Exit.report) :: IO ()`` type-checks,
 then the resulting program will behave as if that had been written for ``main``
-instead.
+instead. Otherwise, the resulting program will behave as if ``main >> exitWith ExitSuccess``
+had been written, but the compiler will emit a warning.
 
 Proposed Library Change Specification
 -------------------------------------
@@ -183,6 +184,18 @@ semantically loose types.
  instance Termination Int where
    report 0 = ExitSuccess
    report n = ExitFailure n
+
+Require a Termination instance
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Instead of falling back to ``main >> exitWith ExitSuccess`` when there is no ``Termination``
+instance, we could have compilation simply fail in this case. This would be backwards
+incompatible (in particular, breaking any ``main :: forall a. IO a``, which may be
+used to indicate a ``main`` which does not return), but would ensure explicitness and
+probably not impact very many programs.
+
+This is omitted mainly because it can be done as a follow-up without centrally impacting
+the value of this proposal, after the warning has been in place for some time.
 
 Restrict main to IO ()
 ^^^^^^^^^^^^^^^^^^^^^^
