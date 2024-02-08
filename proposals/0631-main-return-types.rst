@@ -47,7 +47,7 @@ behavior.
 Proposed Change Specification
 -----------------------------
 
-If, for a given program, ``(main >>= exitWith . GHC.IO.Exit.report) :: IO ()`` type-checks,
+If, for a given program, ``(main >>= exitWith . GHC.IO.Exit.toExitCode) :: IO ()`` type-checks,
 then the resulting program will behave as if that had been written for ``main``
 instead. Otherwise, the resulting program will behave as if ``main >> exitWith ExitSuccess``
 had been written, but the compiler will emit a warning.
@@ -64,23 +64,19 @@ Add a new module to ``ghc-experimental``:
  import GHC.IO.Exception (ExitCode (..))
  import Data.Void (Void, absurd)
 
- class Termination e where
-   report :: e -> ExitCode
+ class ExitStatus e where
+   toExitCode :: e -> ExitCode
 
- instance Termination ExitCode where
-   report = id
+ instance ExitStatus ExitCode where
+   toExitCode = id
 
- -- The remaining instances are not strictly required,
- -- but users might expect 'Termination' to be the class of
- -- /allowed/ main return types (and perhaps some day it
- -- could become that).
- instance Termination () where
-   report = const ExitSuccess
+ instance ExitStatus () where
+   toExitCode = const ExitSuccess
 
- instance Termination Void where
-   report = absurd
+ instance ExitStatus Void where
+   toExitCode = absurd
 
-Eventually, ``Termination`` and its instances should move into ``base``,
+Eventually, ``ExitStatus`` and its instances should move into ``base``,
 probably in ``System.Exit``.
 
 Examples
@@ -92,9 +88,9 @@ Examples
    = AllsWell
    | NoResults
 
- instance Termination ExitReason where
-   report AllsWell = ExitSuccess
-   report NoResults = ExitFailure 1
+ instance ExitStatus ExitReason where
+   toExitCode AllsWell = ExitSuccess
+   toExitCode NoResults = ExitFailure 1
 
  main = do
    results <- doSomeWork
@@ -130,7 +126,7 @@ writing code like that, and I'd be surprised if it exists in any real program.
 
 Because this behavior change, if it ever actually matters, is likely in the direction
 of *improving* the program behavior, it's not clear that there are any real costs
-to this "breakage". Still, we could add a warning to the ``Termination ExitCode``
+to this "breakage". Still, we could add a warning to the ``ExitStatus ExitCode``
 instance and encourage users to use a custom type, or see the alternatives
 for `an option <#no-exitcode-instance>`_ with no backwards incompatibility.
 
@@ -146,8 +142,8 @@ easier and arguably makes for ``main`` functions which better match
 the Haskell ethos of well-typed structured interfaces.
 
 If we did stick to the status quo, users could perhaps
-have ``mainWithTermination :: Termination a => IO a -> IO ()``
-and always define ``main = mainWithTermination $ do { ... }``.
+have ``mainWithExitStatus :: ExitStatus e => IO e -> IO ()``
+and always define ``main = mainWithExitStatus $ do { ... }``.
 
 Do it just for ExitCode
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -166,7 +162,7 @@ No ExitCode instance
 ^^^^^^^^^^^^^^^^^^^^
 
 To preserve full backwards compatibility and encourage custom domain-specific
-types, we could avoid having a ``Termination ExitCode`` instance, or have one
+types, we could avoid having a ``ExitStatus ExitCode`` instance, or have one
 which is ``const ExitSuccess`` with a warning emitted if it's ever used. Having
 an ``ExitCode`` instance reduces surprise and reduces overhead for simple
 programs.
@@ -175,20 +171,20 @@ Add Int instance
 ^^^^^^^^^^^^^^^^
 
 Some users may expect ``main :: IO Int`` to work, and we could add a
-``Termination Int`` instance to satisfy that. But this is much more likely
+``ExitStatus Int`` instance to satisfy that. But this is more likely
 to cause behavior changes in real programs, and perpetuates a practice of
 semantically loose types.
 
 ::
 
- instance Termination Int where
-   report 0 = ExitSuccess
-   report n = ExitFailure n
+ instance ExitStatus Int where
+   toExitCode 0 = ExitSuccess
+   toExitCode n = ExitFailure n
 
-Require a Termination instance
+Require an ExitStatus instance
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Instead of falling back to ``main >> exitWith ExitSuccess`` when there is no ``Termination``
+Instead of falling back to ``main >> exitWith ExitSuccess`` when there is no ``ExitStatus``
 instance, we could have compilation simply fail in this case. This would be backwards
 incompatible (in particular, breaking any ``main :: forall a. IO a``, which may be
 used to indicate a ``main`` which does not return), but would ensure explicitness and
@@ -219,12 +215,6 @@ and indicate that program exit is something different than
 normal ``IO`` completion. It might have been a reasonable
 choice when Haskell was new, but as it would break almost
 every program out there today it's not worth the churn.
-
-Unresolved Questions
---------------------
-The name of ``Termination`` and ``report`` are copied from ``Rust``, but
-perhaps we want a different paint color.
-
 
 Implementation Plan
 -------------------
