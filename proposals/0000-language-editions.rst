@@ -1073,6 +1073,17 @@ Resolved Questions (i.e. FAQ)
   ``Tribbles`` anywhere, instead using editions and bundles to describe what
   kind of language they want, without sweating the details.
 
+  Put another way (adopting text from Simon Marlow): We must not
+  change an extension's meaning for a given language edition, but we
+  could change the meaning in a new language edition. We might well
+  decide that changing extensions from one edition to the next is too
+  confusing to contemplate (and I would agree!) but given that in the
+  past we've felt it necessary to change the meaning of extensions
+  from one GHC release to the next it seems plausible that we might
+  want to make changes in the future. We could decide that those kind
+  of changes can only be made by adding a new extension, which would
+  be arguably better.
+
 * Q: What's the binary compatibility guarantee?
 
   A: The restriction on the expressive power of language editions is that build
@@ -1090,6 +1101,8 @@ Resolved Questions (i.e. FAQ)
   always had the ability to change the meaning of language extensions (or the
   base language) between releases. However, we have striven to make tasteful
   such changes. We will continue to do so.
+
+
 
 Implementation Plan
 -------------------
