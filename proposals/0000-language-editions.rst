@@ -34,8 +34,11 @@ Though the details are spelled out below, it's necessary to introduce
 some of the language editions I'm proposing:
 
 * ``Stable2024``: Code compiled in the ``Stable2024`` edition will be
-  expected to compile (assuming stability of libraries) for 6 years,
-  until the beginning of 2030.
+  expected to compile (assuming stability of libraries) under that
+  same language edition on all GHCs release for 6 years,
+  until the beginning of 2030. (We may end up falling short of this
+  expectation in corner cases, but it will remain a reasonable expectation
+  to have.)
 
 * ``Experimental2024``: Switching to the ``Experimental`` series of
   editions gives you access to experimental features of GHC, which might
@@ -110,13 +113,19 @@ Proposed Change Specification
   ``Stable2024`` in a language pragma.
 
 - Every file is compiled with respect to precisely one language
-  edition. If a user specifies no edition during compilation,
-  then a default is chosen:
+  edition. Specifying more than one edition is an error. If a user
+  specifies no edition during compilation, then a default is chosen:
 
   * In all versions of GHC released before the end of 2025, the default
-    language edition will be ``GHC2021``. In addition, a new warning
-    ``-Wmissing-language-edition``, on by default, will inform users
-    that they should specify a language edition.
+    language edition will be ``GHC2021``.
+
+  * A new warning
+    ``-Wmissing-language-edition``, will inform users
+    that they should specify a language edition. This warning will be
+    off by default in GHC, but it is expected that cabal will turn it on.
+    In this way, someone experimenting with a standalone Haskell file doesn't
+    have to fuss about language editions, but anyone building a package
+    (presumably for publication) is encouraged to choose.
 
   * Starting in 2026, the default language edition when none is specified
     will be the latest ``Stable`` edition available. (The warning continues,
@@ -125,6 +134,10 @@ Proposed Change Specification
   * In GHCi, the default language edition will be the latest ``Stable``
     edition. ``-Wmissing-language-edition`` will be off by default.
 
+- In GHCi, the top-level can have a distinct language edition from loaded
+  files. If a file is being loaded and does not specify its own language
+  edition, it inherits from the language edition in force at the top-level.
+
 - A language edition can control almost all behaviors of GHC. The meaning
   (or existence) of other flags can depend on language edition. While
   we will not implement it this way, we can imagine that GHC becomes
@@ -132,7 +145,8 @@ Proposed Change Specification
   program is chosen by the language edition.
 
   The one restriction on the expressive power of language editions
-  is that build products of different language editions must be
+  is that build products of different language editions (within the
+  same version of GHC) must be
   compatible. We expect the Haskell ecosystem to contain packages
   compiled with a variety of language editions, and they must work
   together. The word *compatible* above is doing some heavy lifting,
@@ -169,11 +183,11 @@ Proposed Change Specification
   use the default. At some point, it is expected that ``language-edition``
   will become required.
 
-- Once e.g. ``Stable2027`` is released, new language features will *not*
-  be available with the 2024 editions. That is, if we introduce a new
+- Any new language features invented once e.g. ``Stable2027`` is released
+  will not be available with the 2024 editions. That is, if we introduce a new
   feature ``-XDependentTypes`` in 2028, then enabling ``-XDependentTypes``
   with ``Stable2024`` (or even ``Experimental2024``) will be an error.
-  This policy gently encourages users to upgrade their editions in order
+  This policy encourages users to upgrade their editions in order
   to access GHC's new features.
 
 - Once an edition has been eclipsed by newer models (that is, once the
@@ -195,6 +209,14 @@ Proposed Change Specification
   in a bundle). It's also conceivable that the bundles will evolve
   to encompass more expressive power (such as controlling optimization
   flags or the meaning of ``import Prelude``).
+
+  Unlike language editions, a user may specify any number of bundles
+  when compiling a file. In order to simplify their processing, a
+  bundle cannot control the interpretation of other command-line
+  flags. Otherwise, though, a bundle can potentially control arbitrary
+  behavior of GHC, just like a language edition. The big difference
+  between them is that a file is compiled against exactly one language
+  edition, but it can be compiled against an arbitrary number of bundles.
 
 - When printing out the namne of a warning flag as part of a warning,
   we also include any bundle that also controls the warning.
@@ -1000,6 +1022,74 @@ Unresolved Questions
   partial functions? I think probably not -- I'm worried about opaqueness
   introduced by having these bundles be too expressive -- but it's fun to
   dream about.
+
+Resolved Questions (i.e. FAQ)
+-----------------------------
+
+* Q: Why can't we just define language editions and semantic bundles as
+  sets of extensions and warnings?
+
+  A: This proposal almost does this. There are a few places, though, where
+  the current meaning of extensions cuts across several different ideas that
+  might usefully be separated. (Specifically, ``ImpredicativeTypes`` both
+  allows newer fancier types and also newer fancier type inference; these
+  aspects can usefully be separated, as they have different expectations
+  around stability.) Looking forward, I think it's useful to give ourselves
+  the freedom to change other aspects of GHC beyond what is typically controlled
+  by extensions or warnings -- such as error messages.
+
+  In the future, if users end up largely migrating away from using language
+  extensions and warnings and toward using the coarser interfaces (editions
+  and bundles) introduced here, then maybe we can describe editions and bundles
+  just as extensions, because we would have the freedom to invent lots of new
+  extensions (e.g. ``ImpredicativeTypeDefinitions`` and ``ImpredicativeTypeInference2024``)
+  without impacting users.
+
+* Q: Why not just keep ``default-language`` in cabal instead of changing it to
+  ``language-edition``?
+
+  A: Because of the word "default". That word implies that this is the
+  language for all modules except those that specify some other
+  language, but I think the cabal file should be authoritative about
+  language edition. That is, I want to be able to know that a package
+  is stable just by looking at the cabal
+  file. Maybe this is problematic if someone really wants a package
+  mixing language editions? I suppose if that is a use case we want to
+  support, there could be ``language-edition:
+  as-specified-in-each-module`` or something. Alternatively, we could
+  say this field is not required by cabal. Regardless, I don't think
+  the field should specify an overridable default.
+
+* Q: Doesn't this proposal lose the ability to refer to a feature by
+  its language extension?
+
+  A: Yes, though not irrevocably. That is, under this proposal, we might
+  imagine evolving the meaning of ``-XTribbles`` between language editions.
+  Thus, talking about the "Tribbles" feature would be underspecified, as
+  we'd have to name both "Tribbles" and the language edition. For implementors,
+  this could be problematic, and we may to invent a term "Tribbles2024" to talk
+  about a specific version of the Tribbles feature. But for users, the goal
+  is for them not to worry about these details. Indeed, they might never specify
+  ``Tribbles`` anywhere, instead using editions and bundles to describe what
+  kind of language they want, without sweating the details.
+
+* Q: What's the binary compatibility guarantee?
+
+  A: The restriction on the expressive power of language editions is that build
+  products of different language editions must be compatible. The compatibility
+  guarantee applies only *within* one release of GHC. That is, GHC 9.12 will
+  produce binaries compatible with other binaries produced by GHC 9.12, regardless
+  of the language edition. However, *no* guarantee is provided between GHC 9.12
+  and GHC 9.14, even under the same language edition.
+
+* Q: With the power embodied in language editions, might we be inviting a
+  state of chaos, as these can evolve arbitrarily over time?
+
+  A: Technically, yes, we're giving ourselves the power to make arbitrary
+  changes from one version of GHC to the next. But this is nothing new! We've
+  always had the ability to change the meaning of language extensions (or the
+  base language) between releases. However, we have striven to make tasteful
+  such changes. We will continue to do so.
 
 Implementation Plan
 -------------------
