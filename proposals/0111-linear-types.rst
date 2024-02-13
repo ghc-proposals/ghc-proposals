@@ -1003,15 +1003,19 @@ Here are a few examples that illustrate the typing rules
    -- good
    let %1 !(Ur x) = u in (x, x, x)
 
-Non-variable let-bound patterns must be strict
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Non-variable linear let-bound patterns must be strict
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Non-variable linear patterns can't be lazy (see `Lazy patterns`_). As
-a consequence, non-variable let-bound patterns must be annotated with
-a ``!`` (because let-bound patterns are lazy by default, as opposed to
-case-bound patterns which are strict by default).
+Non-variable linear patterns can't be lazy (see `Lazy patterns`_). In
+practice, this means that, in order to be linear, non-variable
+let-bound patterns must
 
-::
+- be annotated with a ``!`` if ``-XStrict`` is off (because let-bound
+  patterns are lazy by default, as opposed to case-bound patterns
+  which are strict by default).
+- not be annotated with ``~`` if ``-XStrict`` is on
+
+Without ``-XStrict``::
 
    -- good
    let %1 x = u in …
@@ -1023,10 +1027,38 @@ case-bound patterns which are strict by default).
    let %1 (x, y) = u in …
 
    -- good
+   let %Many (x, y) = u in …
+
+   -- good
    let %1 !(x, y) = u in …
+
+   -- good
+   let %1 (!(x, y)) = u in …
 
    -- inferred unrestricted
    let (x, y) = u in …
+
+With ``-XStrict``::
+   -- good
+   let %1 x = u in …
+
+   -- good
+   let %1 !x = u in …
+
+   -- good
+   let %1 (x, y) = u in …
+
+   -- bad
+   let %1 ~(x, y) = u in …
+
+   -- good
+   let %Many ~(x, y) = u in …
+
+   -- can be inferred linear
+   let (x, y) = u in …
+
+   -- inferred unrestricted
+   let ~(x, y) = u in …
 
 Non-variable linear patterns are monomorphic
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2488,29 +2520,17 @@ occur anyway.
 Restrictions of multiplicity-annotated let bindings
 ---------------------------------------------------
 
-The proposal specifies that a multiplicity annotated non-variable let binding ``let %p pat``
-must be such that ``pat = !pat'`` even if ``p = 'Many``. It is easy to
-lift this restriction on two dimension:
+A previous version of the proposal had a stronger, more syntactic,
+restriction on multiplicity-annotated bindings. It was required that
+the binding was marked with a ``!`` even with ``-XStrict`` and when
+the annotation is ``%Many``. The motivation for such a restriction was
+to improve the precision of error messages. But we can have nearly as
+precise error messages by using more precise ``CtOrigin``.
 
-- We can say, instead, that patterns not of the form ``!pat'`` emit a
-  ``p ~ 'Many`` constraint instead. They already do (for the sake of
-  inference), so this is strictly less code.
-- We can generalise to more strict patterns. For instance, we don't
-  need to require a ``!`` if ``-XStrict`` is on, we can have patterns
-  of the form ``(!pat')`` (with additional parentheses). This is a few
-  lines of codes, inference actually already does this in my
-  implementation, so it's already paid for (though it does annoyingly
-  mostly duplicate another definition of strict pattern which I
-  couldn't find a way to factor as a single function, I don't like
-  this).
-
-The reason that motivated the stronger restriction is to improve error
-messages, because we can then error out with “multiplicity-annotated
-let-bound patterns must be of the form !pat”, instead of the more
-mysterious “Couldn't unify 'Many with 'One”
-(see `#23586 <https://gitlab.haskell.org/ghc/ghc/-/issues/23586>`_).
-But maybe the additional restrictions are more surprising than the
-error messages are helpful.
+The additional flexibility is, therefore, mostly without cost, and
+it's more consistent with inference. With the stronger restriction we
+would have that ``let %Many (x, y) = u in …`` is never well-typed
+whereas ``let (x, y) = u in …`` (of course) is.
 
 The Core corner
 ===============
