@@ -42,7 +42,7 @@ screen real estate in ghcid.
 Proposed Change Specification
 -----------------------------
 
-The proposed change aims to distinguish between genuinely (or directly) unused bindings and transitively (or indirectly) unused bindings. While the warnings for directly unused bindings remain unchanged, the warnings for indirectly unused bindings will now be controlled by a new flag, ``-freport-indirectly-unused-bindings``.
+The proposed change aims to distinguish between genuinely (or directly) unused bindings and transitively (or indirectly) unused bindings. While the warnings for directly unused bindings remain unchanged, the warnings for indirectly unused bindings will now be controlled by a new flag, ``-freport-indirectly-unused-bindings``, which is enabled by default.
 
 **Criteria for Transitively Unused Bindings:**
 
