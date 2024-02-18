@@ -48,9 +48,9 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
 
 1. **Directly Unused Bindings:** A binding is considered directly unused if it is not referenced in any part of the code. These bindings will generate the usual warnings as before.
 
-2. **Transitively Unused Bindings:** A binding is classified as transitively unused if it is used only within other (directly or indirectly) unused bindings. The warning for these bindings will be reported only if ``-freport-indirectly-unused-bindings` and the relevant existing warning flags (e.g., ``-Wunused-top-binds``, ``-Wunused-local-binds``) are enabled.
+2. **Transitively Unused Bindings:** A binding is classified as transitively unused if it is used only within other (directly or indirectly) unused bindings. The warning for these bindings will be reported only if ``-freport-indirectly-unused-bindings`` and the relevant existing warning flags (e.g., ``-Wunused-top-binds``, ``-Wunused-local-binds``) are enabled.
 
-    An notable exception here is that local bindings are *not* considered transitively unused just because the top-level binding they are defined in is unused. They are only considered transitively unused if they are unused within the scope of the top-level definition. This is to avoid generating a lot of unhelpful warnings in these cases.
+   A notable exception here is that local bindings are *not* considered transitively unused just because the top-level binding they are defined in is unused. They are only considered transitively unused if they are unused within the scope of the top-level definition. This is to avoid generating a lot of unhelpful warnings in these cases.
 
 3. **Recursive and Mutual Recursive Bindings** 
     - If a binding is used only recursively, it is treated as unused.
@@ -66,10 +66,15 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
 **Warning References and Messages:**
 
 - A binding will produce a warning if either
+
   - it is directly unused, or
+
   -  it used only by bindings that are unused *and* produce a warning about being unused (and `-freport-indirectly-unused-bindings` is on)
+
     - This means that e.g. if a top-level bind is used only in an unused local bind, both ``-Wunused-top-binds`` *and* ``-Wunused-local-binds`` must be enabled.
+
 - The warnings for transitively unused bindings will reference all bindings they are used in that throw a warning
+
 - If there is a chain of indirectly unused bindings, e.g. ``a`` is used in ``b``, which is used in ``c``, which is used in ``d``, the question arises whether the warning about ``a`` should reference ``b``, ``c``, or ``d``. The answer is that it will reference the first binding in that chain that produces a warning (and ``a`` will produce no warning at all if none of them produce a warning). For example:
 
   ::
