@@ -42,26 +42,26 @@ screen real estate in ghcid.
 Proposed Change Specification
 -----------------------------
 
-The proposed change aims to distinguish between genuinely (or directly) unused bindings and transitively (or indirectly) unused bindings. While the warnings for directly unused bindings remain unchanged, the warnings for indirectly unused bindings will now be controlled by a new flag, ``-freport-indirectly-unused-bindings``, which is enabled by default.
+The proposed change aims to distinguish between genuinely (or directly) unused bindings and indirectly unused bindings. While the warnings for directly unused bindings remain unchanged, the warnings for indirectly unused bindings will now be controlled by a new flag, ``-freport-indirectly-unused-bindings``, which is enabled by default.
 
-**Criteria for Transitively Unused Bindings:**
+1. **Directly Unused Bindings**: A binding *B* is **directly unused** if it is referenced only in *B*'s own strongly-connected component, or the body of an indirectly unused binding in *B*'s scope.
 
-1. **Directly Unused Bindings:** A binding is considered directly unused if it is not referenced in any part of the code. These bindings will generate the usual warnings as before.
+Viewing a set of definitions as a graph where each binding form a vertex, and each reference in the bindings definition to another binding forms a directed edge, the strongly connected component of a vertex *B* is the largest possible set of vertices including *B* such there is a path from any vertex to any other vertex.
 
-2. **Transitively Unused Bindings:** A binding is classified as transitively unused if it is used only within other (directly or indirectly) unused bindings. The warning for these bindings will be reported only if ``-freport-indirectly-unused-bindings`` and the relevant existing warning flags (e.g., ``-Wunused-top-binds``, ``-Wunused-local-binds``) are enabled.
+2. **Indirectly Unused Bindings:** A binding is classified as indirectly unused if it is used only within other (directly or indirectly) unused bindings. The warning for these bindings will be reported only if ``-freport-indirectly-unused-bindings`` and the relevant existing warning flags (e.g., ``-Wunused-top-binds``, ``-Wunused-local-binds``) are enabled.
 
-   A notable exception here is that local bindings are *not* considered transitively unused just because the top-level binding they are defined in is unused. They are only considered transitively unused if they are unused within the scope of the top-level definition. This is to avoid generating a lot of unhelpful warnings in these cases.
+   A notable exception here is that local bindings are *not* considered indirectly unused just because the top-level binding they are defined in is unused. They are only considered indirectly unused if they are unused within the scope of the top-level definition. This is to avoid generating a lot of unhelpful warnings in these cases.
 
 3. **Recursive and Mutual Recursive Bindings** 
     - If a binding is used only recursively, it is treated as unused.
-    - For mutually recursive bindings, if none of the bindings in the group are used outside their mutual recursion, each binding in the group is considered transitively unused. The warning for each binding will list the other bindings in the group it is directly involved with, e.g.
+    - For mutually recursive bindings, if none of the bindings in the group are used outside their mutual recursion, each binding in the group is considered indirectly unused. The warning for each binding will list the other bindings in the group it is directly involved with, e.g.
 
     ::
     
       Foo.hs:6:1: warning: [-Wunused-top-binds]
           ‘b1’ is defined but used only in the following unused bindings: ‘b2’, ‘b4’
 
-4. **Import and `forall` Bindings:** The proposal also extends to warnings about transitively unused imports and ``forall`` binds. Both are considered to be unused if they are used only in definitions or type declarations of unused bindings, with the same direct vs. indirect distinction.
+4. **Import and `forall` Bindings:** The proposal also extends to warnings about indirectly unused imports and ``forall`` binds. Both are considered to be unused if they are used only in definitions or type declarations of unused bindings, with the same direct vs. indirect distinction.
 
 **Warning References and Messages:**
 
@@ -69,11 +69,11 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
 
   - it is directly unused, or
 
-  -  it used only by bindings that are unused *and* produce a warning about being unused (and ``-freport-indirectly-unused-bindings`` is on)
+  - it used only by bindings that are unused *and* produce a warning about being unused (and ``-freport-indirectly-unused-bindings`` is on)
 
      - This means that e.g. if a top-level bind is used only in an unused local bind, both ``-Wunused-top-binds`` *and* ``-Wunused-local-binds`` must be enabled.
 
-- The warnings for transitively unused bindings will reference all bindings they are used in that throw a warning
+- The warnings for indirectly unused bindings will reference all bindings they are used in that throw a warning
 
 - If there is a chain of indirectly unused bindings, e.g. ``a`` is used in ``b``, which is used in ``c``, which is used in ``d``, the question arises whether the warning about ``a`` should reference ``b``, ``c``, or ``d``. The answer is that it will reference the first binding in that chain that produces a warning (and ``a`` will produce no warning at all if none of them produce a warning). For example:
 
@@ -82,7 +82,7 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
     bar = quux + 2
       where quux = foo * 2
 
-  If ``foo`` is used only here, and ``bar`` is not used anywhere, the warning about ``foo`` will reference ``bar`` rather than ``quux``, since ``quux`` does not throw a warning, as according to the exception in the definition above, it is not considered "transitively unused".
+  If ``foo`` is used only here, and ``bar`` is not used anywhere, the warning about ``foo`` will reference ``bar`` rather than ``quux``, since ``quux`` does not throw a warning, as according to the exception in the definition above, it is not considered "indirectly unused".
 - The warning flags that are relevant are
     - ``-Wunused-top-binds``
     - ``-Wunused-local-binds``
@@ -192,13 +192,13 @@ With this proposal, these warnings would be produced instead, assuming ``-frepor
 Effect and Interactions
 -----------------------
 For the most part, the effects of this proposal are minor. The main differences for existing
-code-bases are that the warning message GHC prints for the transitive warnings
+code-bases are that the warning message GHC prints for the indirect warnings
 is different, although due to the more consistent treatment of warning flags, existing code bases can also sometimes
-get more or fewer warnings in cases of transitively unused bindings where two warning flags interact with one another. There can also be additional warnings about transitively unused imports and `forall` binds.
+get more or fewer warnings in cases of indirectly unused bindings where two warning flags interact with one another. There can also be additional warnings about indirectly unused imports and `forall` binds.
 
 Since the warnings don't have any special formats, existing tools should be able to handle them without issues.
 
-Users that don't wish to see warnings about transitively unused bindings can turn those warnings off.
+Users that don't wish to see warnings about indirectly unused bindings can turn those warnings off.
 
 Costs and Drawbacks
 -------------------
@@ -207,7 +207,7 @@ have a somewhat higher maintenance cost.
 
 Alternatives
 ------------
-* We could combine warnings of unused bindings and the transitive non-uses they induce. This could be similar to how error locations are combined in a single error message for duplicate declarations.
+* We could combine warnings of unused bindings and the indirect non-uses they induce. This could be similar to how error locations are combined in a single error message for duplicate declarations.
 
   * A possible advantage is that we could simplify the mechanism by removing the configurability of turning the warnings off.
     This would still give us the benefit of reducing the potential for confusion from these warnings, however users that wish to turn these warnings off could not do so.
