@@ -69,9 +69,9 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
 
   - it is directly unused, or
 
-  -  it used only by bindings that are unused *and* produce a warning about being unused (and `-freport-indirectly-unused-bindings` is on)
+  -  it used only by bindings that are unused *and* produce a warning about being unused (and ``-freport-indirectly-unused-bindings`` is on)
 
-    - This means that e.g. if a top-level bind is used only in an unused local bind, both ``-Wunused-top-binds`` *and* ``-Wunused-local-binds`` must be enabled.
+     - This means that e.g. if a top-level bind is used only in an unused local bind, both ``-Wunused-top-binds`` *and* ``-Wunused-local-binds`` must be enabled.
 
 - The warnings for transitively unused bindings will reference all bindings they are used in that throw a warning
 
