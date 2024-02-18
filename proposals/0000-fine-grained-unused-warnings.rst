@@ -67,11 +67,13 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
 
 **Warning References and Messages:**
 
-- A binding will produce a warning if either
+- A binding will produce a warning if
+
+  - the relevant warning flag (e.g. ``-Wunused-local-binds``) is enabled, and one of the following is true:
 
   - it is directly unused, or
 
-  - it is indirectly unused *and* the bindings it *is* used in produce a warning about being unused (and ``-freport-indirectly-unused-bindings`` is on)
+  - it is indirectly unused *and* all of the bindings it *is* used in produce a warning about being unused, due to matching the criteria laid out in these bullet points (and ``-freport-indirectly-unused-bindings`` is on)
 
     - This means that e.g. if a top-level bind is used only in an unused local bind, both ``-Wunused-top-binds`` *and* ``-Wunused-local-binds`` must be enabled.
 
