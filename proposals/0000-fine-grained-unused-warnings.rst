@@ -52,9 +52,9 @@ Viewing a set of definitions as a graph where each binding form a vertex, and ea
 
    A notable exception here is that local bindings are *not* considered indirectly unused just because the top-level binding they are defined in is unused. They are only considered indirectly unused if they are unused within the scope of the top-level definition. This is to avoid generating a lot of unhelpful warnings in these cases.
 
-3. **Recursive and Mutual Recursive Bindings** 
-    - If a binding is used only recursively, it is treated as unused.
-    - For mutually recursive bindings, if none of the bindings in the group are used outside their mutual recursion, each binding in the group is considered indirectly unused. The warning for each binding will list the other bindings in the group it is directly involved with, e.g.
+3. **Recursive and Mutual Recursive Bindings**: From point 1. we can infer that:
+    - If a binding is used only recursively, it is directly unused.
+    - For mutually recursive bindings, if none of the bindings in the group are used outside their mutual recursion, each binding in the group is directly unused. The warning for each binding will list the other bindings in the group it is directly involved with, e.g.
 
     ::
     
@@ -73,7 +73,28 @@ Viewing a set of definitions as a graph where each binding form a vertex, and ea
 
      - This means that e.g. if a top-level bind is used only in an unused local bind, both ``-Wunused-top-binds`` *and* ``-Wunused-local-binds`` must be enabled.
 
-- The warnings for indirectly unused bindings will reference all bindings they are used in that throw a warning
+- The warnings for indirectly unused bindings will reference all bindings they are used in that throw a warning. For example, if ``-Wunused-top-binds`` and ``-Wunused-local-binds`` are enabled,
+
+  ::
+
+    foo = bar
+    baz = pureStrLn "Hi"
+      where quux = bar
+    bar = ...
+    main = baz
+
+  will produce three warnings:
+
+  - ``foo`` is directly unused
+
+  - ``quux`` is directly unused
+
+  - ``bar`` is indirectly unused, and will produce a warning stating
+
+    ::
+
+      warning: [-Wunused-top-binds]
+        ‘bar' is defined but used only in the following unused bindings: ‘foo’, ‘quux’
 
 - If there is a chain of indirectly unused bindings, e.g. ``a`` is used in ``b``, which is used in ``c``, which is used in ``d``, the question arises whether the warning about ``a`` should reference ``b``, ``c``, or ``d``. The answer is that it will reference the first binding in that chain that produces a warning (and ``a`` will produce no warning at all if none of them produce a warning). For example:
 
