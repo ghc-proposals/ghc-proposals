@@ -53,9 +53,9 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
    Limiting the second part of the definition to *B*'s scope let's us avoid generating a lot of unhelpful warnings in cases where the top-level binding which local bindings are defined in is unused.
 
 3. **Recursive and Mutual Recursive Bindings**:
-   From point 1. we can infer that:
 
-   - If a binding is used only recursively, it is directly unused.
+   - From point 1. we can infer that if a binding is used only (mututally) recursively, it is directly unused.
+
    - For mutually recursive bindings, if none of the bindings in the group are used outside their mutual recursion, each binding in the group is directly unused. The warning for each binding will list the other bindings in the group it is directly involved with, e.g.
 
      ::
@@ -228,7 +228,7 @@ Users that don't wish to see warnings about indirectly unused bindings can turn 
 Costs and Drawbacks
 -------------------
 The warning mechanism is somewhat more complicated and as a consequence might
-have a somewhat higher maintenance cost.
+have a somewhat higher maintenance cost, which might especially concern listing out all the other bindings that an indirectly unused binding is referenced by.
 
 Alternatives
 ------------
