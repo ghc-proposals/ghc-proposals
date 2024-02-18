@@ -72,7 +72,7 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
 
   - it is indirectly unused *and* the bindings it *is* used in produce a warning about being unused (and ``-freport-indirectly-unused-bindings`` is on)
 
-     - This means that e.g. if a top-level bind is used only in an unused local bind, both ``-Wunused-top-binds`` *and* ``-Wunused-local-binds`` must be enabled.
+    - This means that e.g. if a top-level bind is used only in an unused local bind, both ``-Wunused-top-binds`` *and* ``-Wunused-local-binds`` must be enabled.
 
 - The warnings for indirectly unused bindings will reference all bindings they are used in that throw a warning. For example, if ``-Wunused-top-binds`` and ``-Wunused-local-binds`` are enabled,
 
