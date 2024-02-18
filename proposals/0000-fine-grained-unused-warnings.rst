@@ -50,7 +50,7 @@ Viewing a set of definitions as a graph where each binding form a vertex, and ea
 
 2. **Indirectly Unused Bindings:** A binding *B* is **indirectly unused** if it is referenced only in *B*'s own strongly-connected component, or the body of an indirectly unused binding in the scope *B* is defined in. The warning for these bindings will be reported only if ``-freport-indirectly-unused-bindings`` and the relevant existing warning flags (e.g., ``-Wunused-top-binds``, ``-Wunused-local-binds``) are enabled.
 
-   Limiting the second part of the definition to *B*s scope let's us avoid generating a lot of unhelpful warnings in cases where the top-level binding which local bindings are defined in is unused.
+   Limiting the second part of the definition to *B*'s scope let's us avoid generating a lot of unhelpful warnings in cases where the top-level binding which local bindings are defined in is unused.
 
 3. **Recursive and Mutual Recursive Bindings**: From point 1. we can infer that:
     - If a binding is used only recursively, it is directly unused.
