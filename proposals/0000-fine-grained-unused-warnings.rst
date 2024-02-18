@@ -54,13 +54,14 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
 
 3. **Recursive and Mutual Recursive Bindings**:
    From point 1. we can infer that:
-    - If a binding is used only recursively, it is directly unused.
-    - For mutually recursive bindings, if none of the bindings in the group are used outside their mutual recursion, each binding in the group is directly unused. The warning for each binding will list the other bindings in the group it is directly involved with, e.g.
 
-    ::
+   - If a binding is used only recursively, it is directly unused.
+   - For mutually recursive bindings, if none of the bindings in the group are used outside their mutual recursion, each binding in the group is directly unused. The warning for each binding will list the other bindings in the group it is directly involved with, e.g.
+
+     ::
     
-      Foo.hs:6:1: warning: [-Wunused-top-binds]
-          ‘b1’ is defined but used only in the following unused bindings: ‘b2’, ‘b4’
+       Foo.hs:6:1: warning: [-Wunused-top-binds]
+           ‘b1’ is defined but used only in the following unused bindings: ‘b2’, ‘b4’
 
 4. **Import and `forall` Bindings:** The proposal also extends to warnings about indirectly unused imports and ``forall`` binds. Both are considered to be unused if they are used only in definitions or type declarations of unused bindings, with the same direct vs. indirect distinction.
 
@@ -95,7 +96,7 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
     ::
 
       warning: [-Wunused-top-binds]
-        ‘bar' is defined but used only in the following unused bindings: ‘foo’, ‘quux’
+          ‘bar' is defined but used only in the following unused bindings: ‘foo’, ‘quux’
 
 - If there is a chain of indirectly unused bindings, e.g. ``a`` is used in ``b``, which is used in ``c``, which is used in ``d``, the question arises whether the warning about ``a`` should reference ``b``, ``c``, or ``d``. The answer is that it will reference the first binding in that chain that produces a warning (and ``a`` will produce no warning at all if none of them produce a warning). For example:
 
