@@ -69,7 +69,7 @@ Viewing a set of definitions as a graph where each binding form a vertex, and ea
 
   - it is directly unused, or
 
-  - it used only by bindings that are unused *and* produce a warning about being unused (and ``-freport-indirectly-unused-bindings`` is on)
+  - it is indirectly unused *and* the bindings it *is* used in produce a warning about being unused (and ``-freport-indirectly-unused-bindings`` is on)
 
      - This means that e.g. if a top-level bind is used only in an unused local bind, both ``-Wunused-top-binds`` *and* ``-Wunused-local-binds`` must be enabled.
 
