@@ -44,13 +44,13 @@ Proposed Change Specification
 
 The proposed change aims to distinguish between genuinely (or directly) unused bindings and indirectly unused bindings. While the warnings for directly unused bindings remain unchanged, the warnings for indirectly unused bindings will now be controlled by a new flag, ``-freport-indirectly-unused-bindings``, which is enabled by default.
 
-1. **Directly Unused Bindings**: A binding *B* is **directly unused** if it is referenced only in *B*'s own strongly-connected component, or the body of an indirectly unused binding in *B*'s scope.
+1. **Directly Unused Bindings:** A binding *B* is **directly unused** if it is referenced only in *B*'s own strongly-connected component.
 
-Viewing a set of definitions as a graph where each binding form a vertex, and each reference in the bindings definition to another binding forms a directed edge, the strongly connected component of a vertex *B* is the largest possible set of vertices including *B* such there is a path from any vertex to any other vertex.
+Viewing a set of definitions as a graph where each binding form a vertex, and each reference in the binding's body to another binding forms a directed edge, the strongly connected component of a vertex *B* is the largest possible set of vertices including *B* such there is a path from any vertex to any other vertex.
 
-2. **Indirectly Unused Bindings:** A binding is classified as indirectly unused if it is used only within other (directly or indirectly) unused bindings. The warning for these bindings will be reported only if ``-freport-indirectly-unused-bindings`` and the relevant existing warning flags (e.g., ``-Wunused-top-binds``, ``-Wunused-local-binds``) are enabled.
+2. **Indirectly Unused Bindings:** A binding *B* is **indirectly unused** if it is referenced only in *B*'s own strongly-connected component, or the body of an indirectly unused binding in the scope *B* is defined in. The warning for these bindings will be reported only if ``-freport-indirectly-unused-bindings`` and the relevant existing warning flags (e.g., ``-Wunused-top-binds``, ``-Wunused-local-binds``) are enabled.
 
-   A notable exception here is that local bindings are *not* considered indirectly unused just because the top-level binding they are defined in is unused. They are only considered indirectly unused if they are unused within the scope of the top-level definition. This is to avoid generating a lot of unhelpful warnings in these cases.
+   Limiting the second part of the definition to *B*s scope let's us avoid generating a lot of unhelpful warnings in cases where the top-level binding which local bindings are defined in is unused.
 
 3. **Recursive and Mutual Recursive Bindings**: From point 1. we can infer that:
     - If a binding is used only recursively, it is directly unused.
