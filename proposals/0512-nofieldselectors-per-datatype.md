@@ -173,7 +173,7 @@ module Foo where
 -- but the other two are fine
 data Foo = Foo { name :: String
                , age :: Int
-               , %NoFieldSelectors secretInformation :: [String] }
+               , secretInformation %NoFieldSelectors :: [String] }
 ```
 
 ## 1.4 Effect and Interactions
