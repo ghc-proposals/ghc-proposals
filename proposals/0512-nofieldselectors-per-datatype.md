@@ -101,13 +101,24 @@ This proposal is motivated in a similar manner to specializing `OverlappingInsta
 
 ## 1.2 Proposed Change Specification
 
-Introduce an annotation `{-# NoFieldSelectors #-}` that can appear on a datatype, a constructor, or a field.
+* Export the following data type from a new module `ghc-experimental:GHC.Modifiers.Experimental`:
 
-This works exactly the same as if `NoFieldSelectors` were present for the module it is defined in, without interacting with the other datatypes.
+  ```haskell
+  data FieldSelectorsModifier = NoFieldSelectors | FieldSelectors
+  ```
 
-For completeness and consistency, allowing `{-# FieldSelectors #-}` as a datatype or field annotation also make sense.
+* Allow the use of ``FieldSelectorsModifier`` as a modifier at the level of
+  datatype declarations, data constructor declarations, or record field
+  declarations.
 
-When the Modifiers syntax has landed in GHC, then we can switch to using modifiers instead of pragmas.
+* For each record field, determine whether to generate a top-level field selector as follows:
+
+  1. consult the value of the ``FieldSelectorModifier`` at the field level if present; otherwise
+  2. consult the value of the ``FieldSelectorModifier`` at the data constructor level if present; otherwise
+  3. consult the value of the ``FieldSelectorModifier`` at the data declaration level if present; otherwise
+  4. check whether the ``FieldSelectors`` language extension is enabled in the current module.
+
+  In case of conflicting modifiers, the first takes priority (ordered by the list above).
 
 ## 1.3 Examples
 
@@ -119,16 +130,12 @@ Suppose we had a module that did not enable the `NoFieldSelectors` extension.
 module Foo where
 
 -- This datatype does not have field selectors generated
-data 
-    {-# NoFieldSelectors #-} 
-    Foo 
-    = Foo 
-        { name :: String
-        , age :: Int
-        }
+%NoFieldSelectors
+data Foo = Foo { name :: String
+               , age :: Int }
 ```
 
-Meanwhile, with a `{-# FieldSelectors #-}` annotation, we would be able to override the module behavior on a per datatype basis.
+Meanwhile, with a `%FieldSelectors` annotation, we would be able to override the module behavior on a per datatype basis.
 
 ```haskell
 {-# language NoFieldSelectors #-}
@@ -136,19 +143,13 @@ Meanwhile, with a `{-# FieldSelectors #-}` annotation, we would be able to overr
 module Point where
 
 -- The following declaration has top-level field selector functions
-data 
-    {-# FieldSelectors #-}
-    Point 
-    = Point 
-        { x :: Int
-        , y :: Int
-        }
+%FieldSelectors
+data Point = Point { x :: Int
+                   , y :: Int }
 
 -- This does not have field selectors
-data MkPoint = MkPoint
-    { x :: Int
-    , y :: Int
-    }
+data MkPoint = MkPoint { x :: Int
+                       , y :: Int }
 ```
 
 The pragma may apply to a single constructor in a sum type.
@@ -158,10 +159,10 @@ module OnlyOneSelector where
 
 data CoolSumType 
     = HasFieldSelectors { x :: Int, y :: Int }
-    | Doesn'tHaveSelectors {-# NoFieldSelectors #-} { a :: Char, b :: Char }
+    | %NoFieldSelectors Doesn'tHaveSelectors { a :: Char, b :: Char }
 ```
 
-Field level annotations will look similar to `{-# UNPACK #-}` pragmas.
+Field level annotations are also possible.
 
 ```haskell
 {-# language FieldSelectors #-}
@@ -170,13 +171,9 @@ module Foo where
 
 -- This datatype does not have the `secretInformation` field selectors generated
 -- but the other two are fine
-data 
-    Foo 
-    = Foo 
-        { name :: String
-        , age :: Int
-        , secretInformation :: {-# NoFieldSelector #-} [String]
-        }
+data Foo = Foo { name :: String
+               , age :: Int
+               , %NoFieldSelectors secretInformation :: [String] }
 ```
 
 ## 1.4 Effect and Interactions
@@ -184,94 +181,29 @@ data
 This interacts with the `NoFieldSelectors` and `FieldSelectors` language extension by allowing a per-datatype or per-field override.
 Otherwise, this has the same effects and interactions as the original `NoFieldSelectors` extension.
 
-Syntactically, a common trick is to `grep` for `^(type|newtype|data) TypeName` to find the declaration for a given type name. Putting an annotation between the `data` and type name would break this sort of search.
-
 ## 1.5 Costs and Drawbacks
 
 GHC already has a facility for deciding on whether or not to generate field selectors for a datatype.
 Extending this facility to check for a datatype local override should not be particularly thorny.
 
-An additional annotation is more syntax to learn.
-The `{-# FieldSelectors #-}` syntax is a bit ugly, though it is consistent with other annotations.
-
-Implementing this proposal may spark desire for further datatype annotations.
-The `StrictData` extension comes to mind immediately - being able to write `data X = X {-# Strict #-}` seems like an obvious application.
-
-If the alternative for *field-level* annotations is appealing, then we will need to consider what syntax we may want for this.
-`StrictData` annotations on a per-field basis are done with `BangPatterns` (and a laziness annotation can be provided with `~` as a prefix operator).
-Using a `{-# Blah #-}` comment as a field annotation introduces a second means of annotating a field, and in particular, it is somewhat noisy.
-If we're able to annotate fields, we may also want the ability to say that some fields are "private" or "public" much like other object and record systems permit.
-Finally, field annotations could potentially be used in `DerivingVia` - see [this Reddit post by `Iceland_jack`](https://www.reddit.com/r/haskell/comments/pbq9rn/via_fields_finer_granularity_in_deriving/).
+Implementing this proposal may spark desire for further datatype modifiers.
+The `StrictData` extension comes to mind immediately - being able to write `data X = %Strict X` seems like an obvious application.
 
 ## 1.6 Alternatives
 
-There is currently no way to get record selectors for record construction and record pattern matching without record syntax.
-
-For `OverloadedRecordDot` field access, synthetic `HasField` instances can be defined.
-
-Another potential extension of this design is to apply it to *fields* as well as a type.
-The `StrictData` analogy is already implemented here with `BangPatterns`.
+A previous version of this proposal used pragma-based syntax, e.g.
 
 ```haskell
--- This datatpye generates the `age` field selector, but not the `name`
--- selector.
-data Foo = Foo
-    { name :: {-# NoFieldSelector #-} String 
-    , age :: Int
-    }
+data 
+    {-# FieldSelectors #-}
+    Point 
+    = Point 
+        { x :: Int
+        , y :: Int
+        }
 ```
 
-```haskell
-{-# language NoFieldSelectors #-}
-
-module X where
-
-data Point = Point
-    { x :: Int
-    , y :: Int
-    , z :: {-# FieldSelector #-} Int 
-    }
-```
-
-While `{-# FieldSelector #-}` on a field can borrow syntax from `UNPACK` pragmas, the pragma for a datatype or a constructor could be changed.
-The proposal currently puts the pragma before the type name, but after the constructor name:
-
-```haskell
--- Current status
-data {-# NoFieldSelectors #-} Foo = Bar {-# FieldSelectors #-} { a :: Int }
-```
-
-But it could just as easily move the pragma before or after the type or constructor.
-
-```haskell
--- Consistent after:
-data Foo {-# NoFieldSelectors #-} = Bar {-# FieldSelectors #-} { a :: Int }
--- Consistent before:
-data {-# NoFieldSelectors #-} Foo = {-# FieldSelectors #-} Bar  { a :: Int }
-
--- Inconsistent, but the other way
-data Foo {-# NoFieldSelectors #-} = {-# FieldSelectors #-} Bar { a :: Int }
-```
-
-Putting the pragma between the keyword and the type name has symmetry with `instance {-# OVERLAPPING #-}`.
-However, this makes it harder to `grep` for definitions.
-Putting the pragma before the field has symmetry with `{-# UNPACK #-}`, and it seems reasonable to stick with that convention for fields.
-There is no existing convention for constructors.
-
-Syntactically, the `{-# Blah #-}` style is lifted from `{-# Overlapping #-}` and `{-# Unpack #-}`.
-However, it's pretty ugly and verbose.
-A further extension could introduce new keywords that are only used in record declaration syntax with the same meaning, allowing you to write, eg,
-
-```haskell
-data Point = Point
-    { x :: strict selector Int
-    , y :: lazy field Int
-    }
-```
-
-We could also use the modifiers syntax, when that is implemented.
-At that point, the pragma syntax could be deprecated and marked for deletion.
-Since pragmas are comments, GHC could reasonably provide a good warning message with a migration path, even after the pragma parsing/using code was deleted.
+This is a viable alternative, and it was a judgement call to use modifiers instead of pragmas.
 
 ## 1.7 Unresolved Questions
 
