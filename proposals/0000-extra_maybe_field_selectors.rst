@@ -46,6 +46,9 @@ This creates several functions (if ``NoFieldSelector`` is off): ::
   uid  :: Message -> "magical" (UserId | EventId | SignalId)
 
 
+Extra functions
+~~~~~~~~~~~~~~~
+
 We suggest a language extension: with ``ExtraMaybeFieldSelectors`` extra code is produced:
   
 - For each partial selector ``<field>`` with type signature ``<field> :: <dataType> -> <fieldType>`` we create function ``<newname> :: <dataType> -> Maybe <fieldType>``
@@ -80,11 +83,24 @@ For this specipic example ``data Message`` next functions will be added  ::
 
 *Note: all this code is safe in use, it is error-less in runtime and have "ordinary" types in signatures.*
 
+Import, export
+~~~~~~~~~~~~~~
+
+Sure, we could manually write functions for import and export. We suggest new syntax for field-depended mentioning ::
+
+  module M
+    ( S(x), S(x).maybe
+    , T(..), T(..).maybe
+    ) where 
+    -- ...
+
 
 Effect and Interactions
 -----------------------
 
-Any Effect and Interactions are unknown. But as "future possibilities", inside ``OverloadedRecordDot`` extension (or independently) we could add ``getMaybeField`` function.
+We expect this proposal affects ``OverloadedRecordDot`` extension for maybe-selectors.
+
+We expect this proposal affects ``DisambiguateRecordFields`` extension for reading only maybe-selectors.
 
 Costs and Drawbacks
 -------------------
