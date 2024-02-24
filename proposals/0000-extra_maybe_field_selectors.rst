@@ -1,5 +1,5 @@
 Extra MaybeField Selectors
-====================
+==========================
 
 .. author:: Viktor WW
 .. date-accepted::
@@ -51,48 +51,87 @@ Extra functions
 
 We suggest a language extension: with ``ExtraMaybeFieldSelectors`` extra code is produced:
   
+- For each *de-jure* Sum-Type: ``data`` with at least one ``|`` sign we create maybe-fields-selectors
+
 - For each partial selector ``<field>`` with type signature ``<field> :: <dataType> -> <fieldType>`` we create function ``<newname> :: <dataType> -> Maybe <fieldType>``
 
-- For each **unique** partial selector ``<field>`` we create function ``maybe<Field>`` function (with capitalized first letter of field-selector)
+- For each **unique** partial selector ``<field>`` we create function ``maybeFs<Field>`` function (with capitalized first letter of field-selector), where "Fs" is short from "field-selector"
   
-- For each **repetitive**/**duplicated** partial selector ``<field>`` we create function ``maybe<Construcor><Field>`` function (with capitalized first letter of field-selector)
+- For each **repetitive**/**duplicated** partial selector ``<field>`` we create function ``maybeDp<Constructor>Fs<Field>`` function (with capitalized first letter of field-selector), where "Dp" is short from "duplicated"
 
 
-For this specipic example ``data Message`` next functions will be added  ::
+For this specific example ``data Message`` next functions will be added  ::
 
-  maybeMessage  :: Message -> Maybe Text
+  maybeFsMessage  :: Message -> Maybe Text
 
-  maybeEventId  :: Message -> Maybe EventId
+  maybeFsEventId  :: Message -> Maybe EventId
 
-  maybeSignalId :: Message -> Maybe SignalId
-
-  
-  maybeSendChatUser  :: Message -> Maybe UserId
-
-  maybeSignupUser    :: Message -> Maybe UserId
-
-  maybeSendOrderUser :: Message -> Maybe UserId
+  maybeFsSignalId :: Message -> Maybe SignalId
 
   
-  maybeSendChatUid  :: Message -> Maybe UserId
+  maybeDpSendChatFsUser  :: Message -> Maybe UserId
 
-  maybeSignupUid    :: Message -> Maybe EventId
+  maybeDpSignupFsUser    :: Message -> Maybe UserId
 
-  maybeSendOrderUid :: Message -> Maybe SignalId
+  maybeDpSendOrderFsUser :: Message -> Maybe UserId
+
+  
+  maybeDpSendChatFsUid  :: Message -> Maybe UserId
+
+  maybeDpSignupFsUid    :: Message -> Maybe EventId
+
+  maybeDpSendOrderFsUid :: Message -> Maybe SignalId
 
 
 *Note: all this code is safe in use, it is error-less in runtime and have "ordinary" types in signatures.*
 
+
 Import, export
 ~~~~~~~~~~~~~~
 
-Sure, we could manually write functions for import and export. We suggest new syntax for field-depended mentioning ::
+Sure, we could manually write functions for import and export. We suggest new syntax for field-depended mentioning by adding ``.maybe`` to data-type ::
 
   module M
     ( S(x), S(x).maybe
     , T(..), T(..).maybe
     ) where 
     -- ...
+
+Examples
+--------
+
+Several-parts field type
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+If we have several-parts field type, than parentheses must be added: ``<newname> :: <dataType> -> Maybe (<fieldType>)`` ::
+
+  data OptionRec a = None | Some { fromSome :: Maybe a }
+
+  maybeFsFromSome :: OptionRec a -> Maybe (Maybe a)
+
+
+GADTs fields-selectors
+~~~~~~~~~~~~~~~~~~~~~~
+
+If data type is written using GADTs, this extension create function for each field selector, even if fields are *de-facto* not a Sum-type ::
+
+  data Tag = A | B | C
+
+  data Foo (a :: Tag) where
+     FooA :: { fooa :: () } -> Foo A
+     FooB :: { foob :: Int } -> Foo B
+     FooC :: { fooc :: Maybe Bool } -> Foo C
+     FooD :: { food :: Char } -> Foo C
+
+  -- (Foo A) and (Foo B) are de-facto not a Sum-Types, but they are de-jure a Sum-Type
+
+  maybeFsFooa :: Foo A -> Maybe ()
+
+  maybeFsFoob :: Foo B -> Maybe Int
+
+  maybeFsFooc :: Foo C -> Maybe (Maybe Bool)
+
+  maybeFsFood :: Foo C -> Maybe Char
 
 
 Effect and Interactions
@@ -102,20 +141,40 @@ We expect this proposal affects ``OverloadedRecordDot`` extension for maybe-sele
 
 We expect this proposal affects ``DisambiguateRecordFields`` extension for reading only maybe-selectors.
 
+We expect this proposal could also affect ``HasField`` class.
+
+
 Costs and Drawbacks
 -------------------
 
 We expect the implementation and maintenance costs for this feature to be minimal.
+
 
 Backward Compatibility
 ----------------------
 
 This proposal is fully backward compatible.
 
+
 Alternatives
 ------------
 
 A partial alternative is `Partial Field Behavior #535 <https://github.com/ghc-proposals/ghc-proposals/pull/535>`_
+
+
+Unresolved Questions
+--------------------
+
+Name-collision is possible, but it is highly unlikely ::
+
+  data T
+    = A   {fsB :: Int, b   :: Char}
+    | AFs {b   :: Char, fsB :: Int}
+
+  maybeDpAFsFsB  :: T -> Maybe Int -- Dp + A + Fs + FsB
+
+  maybeDpAFsFsB  :: T -> Maybe Int -- Dp + AFs + Fs + B
+
 
 Implementation Plan
 -------------------
