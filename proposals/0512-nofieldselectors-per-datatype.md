@@ -1,11 +1,11 @@
 ---
 author: Matt Parsons
-date-accepted: ""
-ticket-url: "https://github.com/ghc-proposals/ghc-proposals/pull/512"
+date-accepted: 2024-02-25
+ticket-url: "https://gitlab.haskell.org/ghc/ghc/-/issues/24481"
 implemented: ""
 ---
 
-This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/512).
+This proposal was [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/512).
 
 # 1. `NoFieldSelector`s as a datatype and field annotation
 
