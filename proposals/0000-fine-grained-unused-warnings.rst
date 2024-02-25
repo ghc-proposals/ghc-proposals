@@ -42,17 +42,40 @@ screen real estate in ghcid.
 Proposed Change Specification
 -----------------------------
 
-The proposed change aims to distinguish between genuinely (or directly) unused bindings and indirectly unused bindings. While the warnings for directly unused bindings remain unchanged, the warnings for indirectly unused bindings will now be controlled by a new flag, ``-freport-indirectly-unused-bindings``, which is enabled by default.
+The proposed change aims to distinguish between genuinely (or directly) unused bindings and indirectly unused bindings. While the warnings for directly unused bindings remain unchanged, the warnings for indirectly unused bindings will now be controlled by a new flag, ``-Windirectly-unused-binds``, which is enabled by default.
 
-1. **Directly Unused Bindings:** A binding *B* is **directly unused** if it is referenced only in *B*'s own strongly-connected component.
+1. **Relevant warning flags:** Depending on how a bind is defined, different warning flags control whether or not it can count as unused. These are:
+
+   - ``-Wunused-top-binds`` for top-level binds
+   - ``-Wunused-local-binds`` for binds defined in in ``where`` of ``let`` blocks
+   - Note: ``-Wunused-binds`` will enable both of the above
+   - ``-Wunused-foralls`` for type variables bound by ``forall``
+   - ``-Wunused-matches`` for variables bound in pattern matches
+   - ``-Wunused-imports`` for modules and names from modules that are being imported
+   - ``-Wunused-type-patterns`` for type variables bound in type patterns
+  
+   Related warning flags that are not affected by this proposal since they are not about binding names are
+
+   - ``-Wunused-pattern-binds``
+   - ``-Wunused-packages``
+   - ``-Wunused-do-bind``
+
+2. **Directly Unused Bindings:** A binding *B* is **directly unused** if it is referenced only in *B*'s own strongly-connected component, and the relevant warning flag is enabled.
 
    Viewing a set of definitions as a graph where each binding form a vertex, and each reference in the binding's body to another binding forms a directed edge, the strongly connected component of a vertex *B* is the largest possible set of vertices including *B* such there is a path from any vertex to any other vertex.
 
-2. **Indirectly Unused Bindings:** A binding *B* is **indirectly unused** if it is referenced only in *B*'s own strongly-connected component, or the body of an indirectly unused binding in the scope *B* is defined in. The warning for these bindings will be reported only if ``-freport-indirectly-unused-bindings`` and the relevant existing warning flags (e.g., ``-Wunused-top-binds``, ``-Wunused-local-binds``) are enabled.
+3. **Indirectly Unused Bindings:** A binding *B* is **indirectly unused** if it is directly unused, or referenced only in the body of an indirectly unused binding within the scope *B* is defined in, and the relevant warning flag is enabled.
 
-   Limiting the second part of the definition to *B*'s scope let's us avoid generating a lot of unhelpful warnings in cases where the top-level binding which local bindings are defined in is unused.
+   Limiting the second part of the definition to *B*'s scope let's us avoid generating a lot of unhelpful warnings in cases where the top-level binding which local bindings are defined in is unused:
 
-3. **Recursive and Mutual Recursive Bindings**:
+   ::
+
+     foo = b
+       where b = bar
+
+   Even if ``foo`` is unused, this will not throw a warning for ``b``, since ``foo`` is not defined within the scope ``b`` is defined in.
+
+4. **Recursive and Mutual Recursive Bindings**:
 
    - From point 1. we can infer that if a binding is used only (mututally) recursively, it is directly unused.
 
@@ -63,7 +86,7 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
        Foo.hs:6:1: warning: [-Wunused-top-binds]
            ‘b1’ is defined but used only in the following unused bindings: ‘b2’, ‘b4’
 
-4. **Import and `forall` Bindings:** The proposal also extends to warnings about indirectly unused imports and ``forall`` binds. Both are considered to be unused if they are used only in definitions or type declarations of unused bindings, with the same direct vs. indirect distinction.
+5. **Import and `forall` Bindings:** The proposal also extends to warnings about indirectly unused imports and ``forall`` binds. Both are considered to be unused if they are used only in definitions or type declarations of unused bindings, with the same direct vs. indirect distinction.
 
 **Warning References and Messages:**
 
@@ -73,7 +96,7 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
 
   - it is directly unused, or
 
-  - it is indirectly unused *and* all of the bindings it *is* used in produce a warning about being unused, due to matching the criteria laid out in these bullet points (and ``-freport-indirectly-unused-bindings`` is on)
+  - it is indirectly unused *and* all of the bindings it *is* used in produce a warning about being unused, due to matching the criteria laid out in these bullet points (and ``-Windirectly-unused-binds`` is on)
 
     - This means that e.g. if a top-level bind is used only in an unused local bind, both ``-Wunused-top-binds`` *and* ``-Wunused-local-binds`` must be enabled.
 
@@ -108,19 +131,6 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
       where quux = foo * 2
 
   If ``foo`` is used only here, and ``bar`` is not used anywhere, the warning about ``foo`` will reference ``bar`` rather than ``quux``, since ``quux`` does not throw a warning, as according to the exception in the definition above, it is not considered "indirectly unused".
-- The warning flags that are relevant are
-    - ``-Wunused-top-binds``
-    - ``-Wunused-local-binds``
-    - ``-Wunused-pattern-binds``
-    - ``-Wunused-binds``
-    - ``-Wunused-foralls``
-    - ``-Wunused-matches``
-    - ``-Wunused-imports``
-    - ``-Wunused-type-patterns``
-- Related warning flags that are not affected by this proposal since they are not about binding names are
-    - ``-Wunused-pattern-bindings``
-    - ``-Wunused-packages``
-    - ``-Wunused-do-bind``
 
 Examples
 --------
@@ -175,11 +185,11 @@ Currently, without this proposal, the file results in the following warnings, as
   Foo.hs:15:1: warning: [-Wunused-top-binds]
       Defined but not used: ‘far’
 
-With this proposal, these warnings would be produced instead, assuming ``-freport-indirectly-unused-bindings`` is enabled:
+With this proposal, these warnings would be produced instead, assuming ``-Windirectly-unused-binds`` is enabled:
 
 ::
 
-  Foo.hs:3:1: warning: [-Wunused-imports, -freport-indirectly-unused-bindings]:
+  Foo.hs:3:1: warning: [-Wunused-imports, -Windirectly-unused-binds]:
       The import of ‘Data.List’ is used only by the following unused binding: ‘foo’
         except perhaps to import instances from ‘Data.List’
       To import instances alone, use: import Data.List()
@@ -239,10 +249,10 @@ Alternatives
 
   * A disadvantage is that most third-party tools dealing with error messages will likely have a harder time parsing the warning messages.
 
-* A different name could be chosen for the new flag, ``-freport-indirectly-unused-bindings``. For example:
+* A different name could be chosen for the new flag, ``-Windirectly-unused-binds``. For example:
   * ``-freport-indirect-uses``
 
-* Instead of ``-freport-indirectly-unused-bindings``, we could separate each warning flag (like ``-Wunused-imports``)
+* Instead of ``-Windirectly-unused-binds``, we could separate each warning flag (like ``-Wunused-imports``)
   into two (like ``-Windirectly-unused-imports`` and ``-Wdirectly-unused-imports``) and a warnings group like ``-Wno-indirect-uses`` to turn off all warnings about indirectly unused bindings at once.
 
   * This would offer more configurability if users want to see some warnings about indirectly unused bindings but not others.
