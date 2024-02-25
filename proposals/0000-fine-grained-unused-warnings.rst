@@ -86,7 +86,7 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
        Foo.hs:6:1: warning: [-Wunused-top-binds]
            ‘b1’ is defined but used only in the following unused bindings: ‘b2’, ‘b4’
 
-5. **Import and `forall` Bindings:** The proposal also extends to warnings about indirectly unused imports and ``forall`` binds. Both are considered to be unused if they are used only in definitions or type declarations of unused bindings, with the same direct vs. indirect distinction.
+5. **Import and ``forall`` Bindings:** The proposal also extends to warnings about indirectly unused imports and ``forall`` binds. Both are considered to be unused if they are used only in definitions or type declarations of unused bindings, with the same direct vs. indirect distinction.
 
 **Warning References and Messages:**
 
@@ -123,14 +123,23 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
       warning: [-Wunused-top-binds]
           ‘bar' is defined but used only in the following unused bindings: ‘foo’, ‘quux’
 
-- If there is a chain of indirectly unused bindings, e.g. ``a`` is used in ``b``, which is used in ``c``, which is used in ``d``, the question arises whether the warning about ``a`` should reference ``b``, ``c``, or ``d``. The answer is that it will reference the first binding in that chain that produces a warning (and ``a`` will produce no warning at all if none of them produce a warning). For example:
+- The warning for an indirectly unused binding B will reference the innermost (directly or indirectly) unused binding(s) whose right-hand sides mention B. For example, suppose ``bar`` is
 
   ::
-    
+
+    module M(f) where
+    f = 22
+    foo = 7
+    wombat = 8
     bar = quux + 2
       where quux = foo * 2
+            wux  = wombat + 1
 
-  If ``foo`` is used only here, and ``bar`` is not used anywhere, the warning about ``foo`` will reference ``bar`` rather than ``quux``, since ``quux`` does not throw a warning, as according to the exception in the definition above, it is not considered "indirectly unused".
+  In this example,
+
+  - ``quux`` is not unused (it is used in the right-hand side of ``bar``, which is not defined within the scope of ``quux``'s definition), while ``wux`` and ``bar`` are directly unused.
+  - The binding ``wombat`` is indirectly unused; it's warning will mention ``wux`` (the innermost unused binding in which ``wombat`` is mentioned).
+  - The binding for ``foo`` is also indirectly unused, but its warning will mention ``bar`` (not ``quux``) since ``bar`` is the innermost unused binding enclosing the refernce to ``foo``.
 
 Examples
 --------
