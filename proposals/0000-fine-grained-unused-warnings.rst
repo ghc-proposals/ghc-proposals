@@ -83,7 +83,7 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
 
      ::
     
-       Foo.hs:6:1: warning: [-Wunused-top-binds]
+       Foo.hs:6:1: warning: [-Wunused-top-binds, -Windirectly-unused-binds]
            ‘b1’ is defined but used only in the following unused bindings: ‘b2’, ‘b4’
 
 5. **Import and ``forall`` Bindings:** The proposal also extends to warnings about indirectly unused imports and ``forall`` binds. Both are considered to be unused if they are used only in definitions or type declarations of unused bindings, with the same direct vs. indirect distinction.
@@ -92,15 +92,11 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
 
 - A binding will produce a warning if
 
-  - the relevant warning flag (e.g. ``-Wunused-local-binds``) is enabled, and one of the following is true:
-
   - it is directly unused, or
 
-  - it is indirectly unused *and* all of the bindings it *is* used in produce a warning about being unused, due to matching the criteria laid out in these bullet points (and ``-Windirectly-unused-binds`` is on)
+  - it is indirectly unused and ``-Windirectly-unused-binds`` is enabled
 
-    - This means that e.g. if a top-level bind is used only in an unused local bind, both ``-Wunused-top-binds`` *and* ``-Wunused-local-binds`` must be enabled.
-
-- The warnings for indirectly unused bindings will reference all bindings they are used in that throw a warning. For example, if ``-Wunused-top-binds`` and ``-Wunused-local-binds`` are enabled,
+- The warnings for indirectly unused bindings will reference all bindings they are used in. For example, if ``-Wunused-top-binds`` and ``-Wunused-local-binds`` are enabled,
 
   ::
 
@@ -120,7 +116,7 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
 
     ::
 
-      warning: [-Wunused-top-binds]
+      warning: [-Wunused-top-binds, -Windirectly-unused-binds]
           ‘bar' is defined but used only in the following unused bindings: ‘foo’, ‘quux’
 
 - The warning for an indirectly unused binding B will reference the innermost (directly or indirectly) unused binding(s) whose right-hand sides mention B. For example, suppose ``bar`` is
@@ -206,26 +202,26 @@ With this proposal, these warnings would be produced instead, assuming ``-Windir
   Foo.hs:5:1: warning: [-Wunused-top-binds]
       Defined but not used: ‘foo’
 
-  Foo.hs:7:1: warning: [-Wunused-top-binds]
+  Foo.hs:7:1: warning: [-Wunused-top-binds, -Windirectly-unused-binds]
       ‘bar' is defined but used only in the following unused binding: ‘foo’
 
-  Foo.hs:9:9: warning: [-Wunused-local-binds]
+  Foo.hs:9:9: warning: [-Wunused-local-binds, -Windirectly-unused-binds]
       ‘quux' is defined but used only in the following unused bindings: ‘worble’, ‘wirble’
 
-  Foo.hs:10:9: warning: [-Wunused-local-binds]
+  Foo.hs:10:9: warning: [-Wunused-local-binds, -Windirectly-unused-binds]
       ‘wibble' is defined but used only in the following unused binding: ‘worble’
 
-  Foo.hs:11:9: warning: [-Wunused-local-binds]
+  Foo.hs:11:9: warning: [-Wunused-local-binds, -Windirectly-unused-binds]
       ‘worble' is defined but used only in the following unused binding: ‘wibble’
 
   Foo.hs:12:9: warning: [-Wunused-local-binds]
       Defined but not used: ‘wirble’
 
-  Foo.hs:13:15: warning: [-Wunused-foralls]
+  Foo.hs:13:15: warning: [-Wunused-foralls, -Windirectly-unused-binds]
       Quantified type variable ‘a’ is used only in the following unused variable: ‘(b :: a)’
       In the type signature for ‘far’
 
-  Foo.hs:13:17: warning: [-Wunused-foralls]
+  Foo.hs:13:17: warning: [-Wunused-foralls, -Windirectly-unused-binds]
       Unused quantified type variable ‘(b :: a)’
       In the type signature for ‘far’
 
