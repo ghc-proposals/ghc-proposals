@@ -137,7 +137,7 @@ We expect this proposal could also affect ``HasField`` class ::
     hasField :: r -> (a -> r, a)
     hasField = fromJust . hasMaybeField
 	
-    -- define just "hasField" makes "hasMaybeField" unsafe
+    -- defining just "hasField" makes "hasMaybeField" same unsafe as "hasField"
     {-# MINIMAL hasMaybeField | hasField #-}
 	
   getMaybeField :: forall x r a . HasField x r a => r -> Maybe a
