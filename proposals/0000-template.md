@@ -1,168 +1,188 @@
 ---
-author: David Binder
-date-accepted: "2024-26-02"
+author: Your name
+date-accepted: ""
 ticket-url: ""
 implemented: ""
 ---
 
-This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/612).
+This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/0>).
+**After creating the pull request, edit this file again, update the number in
+the link, and delete this bold sentence.**
 
-# Change the semantics of -fhpc
+# Proposal title
 
-If I compile a program with the `-fhpc` option and run it, I expect to obtain a `.tix` file which contains information about the code covered during the execution of that run.
-This, however, is surprisingly not the behaviour that is implemented.
-Instead, the generated `.tix` file contains the accumulated coverage of this execution of the program and all previous runs.
-I propose to change the semantics to only generate the coverage information for one run of the program.
+Here you should write a short abstract motivating and briefly summarizing the
+proposed change.
+
 
 ## Motivation
 
-The `-fhpc` option compiles a program with additional instrumentation to generate coverage information.
-When the instrumented executable is run, the collected coverage information is written to a `.tix` file.
-Tools such as `hpc` can read the information contained in a `.tix` file and generate useful information, such as
-a html file with markup for the covered parts of the program. Other tools can generate information in other
-formats which are used in various CI systems.
+Give a strong reason for why the community needs this change. Describe the use
+case as clearly as possible and give an example. Explain how the status quo is
+insufficient or not ideal.
 
-Surprisingly, an instrumented executable not only automatically writes a `.tix` file at the end of its execution, it also
-automatically tries to read a `.tix` file at the beginning of the execution.
-If it successfully reads a `.tix` file at the beginning, then the datastructures that the RTS keeps to track coverage
-are initialized with the data from the `.tix` file. The user guide describes this behaviour as follows:
-
-> The program may be run multiple times (e.g. with different test data), and the coverage data from the separate runs is accumulated in the .tix file.
-
-If there already is a `.tix` file, but this file was created for a different version of the program, then the program crashes at the time the RTS is started.
-Both behaviours are demonstrated in the example section below.
-
-This behaviour is only useful for a completely manual way of interacting with instrumented executables.
-It is a nuisance for tool developers who have to manually ensure to always remove
-`.tix` files, and for users not familiar with this behaviour.
-For example, here is an example on [Stack Overflow](https://stackoverflow.com/questions/28416827/cabal-and-hpc-and-errors-when-running-tests-with-code-coverage) of a user bitten by
-the fact that the program crashes if there is a `.tix` file still around. None of the other users was able to correctly identify the underlying problem.
-And here is an issue that describes that even `cabal` was not able to correctly implement the logic for enabling code coverage in a project: [Cabal Issue #7384](https://github.com/haskell/cabal/issues/7384)
-
-If a user wants to combine the results of multiple runs, then this behaviour can be implemented in userland. 
-The `hpc` binary has the subcommand `hpc combine` which allows to do this on the commandline, and the HPC library  on [Hackage](https://hackage.haskell.org/package/hpc) provides the tools to do that programmatically from within Haskell programs.
+A good Motivation section is often driven by examples and real-world scenarios.
 
 
 ## Proposed Change Specification
 
-The GHC user guide currently specifies the effect of `-fhpc` as follows:
+Specify the change in precise, comprehensive yet concise language. Avoid words
+like "should" or "could". Strive for a complete definition. Your specification
+may include,
 
-> The program may be run multiple times (e.g. with different test data), and the coverage data from the separate runs is accumulated in the .tix file. To reset the coverage data and start again, just remove the .tix file. 
+* BNF grammar and semantics of any new syntactic constructs
+  (Use the [Haskell 2010 Report](https://www.haskell.org/onlinereport/haskell2010/) or GHC's
+  `alex`- or `happy`-formatted files
+  for the [lexer](https://gitlab.haskell.org/ghc/ghc/-/blob/master/compiler/GHC/Parser/Lexer.x) or [parser](https://gitlab.haskell.org/ghc/ghc/-/blob/master/compiler/GHC/Parser.y)
+  for a good starting point.)
+* the types and semantics of any new library interfaces
+* how the proposed change interacts with existing language or compiler
+  features, in case that is otherwise ambiguous
 
-This paragraph will be removed.
-Instead, a new RTS flag `--read-tix-file=<yes|no>` will be introduced which guards this behaviour.
-The old behaviour will still be available using the flag `--read-tix-file=yes`, but the default behaviour will be to not read the tix file and to always initialize the tix data structures with zeroes.
+Strive for *precision*. The ideal specification is described as a
+modification of the [Haskell 2010
+report](https://www.haskell.org/definition/haskell2010.pdf). Where
+that is not possible (e.g. because the specification relates to a
+feature that is not in the Haskell 2010 report), try to adhere its
+style and level of detail. Think about corner cases. Write down
+general rules and invariants.
+
+Note, however, that this section should focus on a precise
+*specification*; it need not (and should not) devote space to
+*implementation* details -- the "Implementation Plan" section can be used for that.
+
+The specification can, and almost always should, be illustrated with
+*examples* that illustrate corner cases. But it is not sufficient to
+give a couple of examples and regard that as the specification! The
+examples should illustrate and elucidate a clearly-articulated
+specification that covers the general case.
+
+## Proposed Library Change Specification
+
+Specify the changes to libraries in the GHC repository, especially `base` and
+others under the purview of the
+[Core Libraries Committee](https://github.com/haskell/core-libraries-committee).
+
+Generally speaking, if your proposal adds new function or data types, the place
+to do so is in the `ghc-experimental` package, whose API is under the control of
+the GHC Steering Committee.
+After your proposal is implemented, stable, and widely used, you (or anyone
+else) can subsequently propose to move those types into `base` via a CLC
+proposal.
+
+Sometimes, however, your proposal necessarily changes something in `base`, whose
+API is curated by the CLC.
+In that case, assuming your proposal is accepted, at the point when it is
+implemented (by you or anyone else), CLC approval will be needed for these
+changes, via a CLC proposal made by the implementor.
+By signalling those changes now, at the proposal stage, the CLC will be alerted
+and have an opportunity to offer feedback, and agreement in principle.
+
+See [GHC base libraries](https://github.com/Ericson2314/tech-proposals/blob/ghc-base-libraries/proposals/accepted/051-ghc-base-libraries.rst?rgh-link-date=2023-07-09T17%3A01%3A15Z)
+for some useful context.
+
+Therefore, in this section:
+
+* If your proposal makes any changes to the API of `base` (including its
+  exports, types, semantics, and performance), please specify these changes
+  in this section.
+
+* If your proposal makes any change to the API of `ghc-experimental`, please
+  also specify these changes.
+
+If you propose to change both, use subsections, so that the changes are clearly
+distinguished.
+Similarly, if any other libraries are affected, please lay it all out here.
 
 ## Examples
 
-I will give two examples of the current behaviour which illustrate the surprising behaviour
-and the failure mode this feature entails.
-
-### Example 1: Coverage of multiple runs is accumulated
-
-```console
-> cat Example.hs
-module Main where
-main = print "hello"
-> ghc -fhpc Example.hs
-[1 of 2] Compiling Main             ( Example.hs, Example.o )
-[2 of 2] Linking Example
-> ./Example
-"hello"
-> cat Example.tix
-Tix [ TixModule "Main" 2243069736 3 [1,1,1]]
-> ./Example
-"hello"
-> cat Example.tix
-Tix [ TixModule "Main" 2243069736 3 [2,2,2]]
-```
-
-### Example 2: Tix File with Different Hash Crashes Program
-
-```console
-> cat Example.hs
-module Main where
-main = print "hello"
-> ghc -fhpc Example.hs
-[1 of 2] Compiling Main             ( Example.hs, Example.o )
-[2 of 2] Linking Example
-> ./Example
-"hello"
-> cat Example.tix
-Tix [ TixModule "Main" 2243069736 3 [1,1,1]]
-```
-
-When I now change the definition of the program...
-
-```console
-> cat Example.hs
-module Main where
-main = print "world"
->  ghc -fhpc Example.hs
-[1 of 2] Compiling Main             ( Example.hs, Example.o ) [Source file changed]
-[2 of 2] Linking Example [Objects changed]
-> ./Example
-in module 'Main'
-Hpc failure: module mismatch with .tix/.mix file hash number
-(perhaps remove Example.tix file?)
-```
-
-The crash occurs during the startup phase of the RTS, when it tries to initialize the
-tix data structures with the information from the `.tix` file in the directory, but finds out that the hashes
-don't match.
+This section illustrates the specification through the use of examples of the
+language change proposed. It is best to exemplify each point made in the
+specification, though perhaps one example can cover several points. Contrived
+examples are OK here. If the Motivation section describes something that is
+hard to do without this proposal, this is a good place to show how easy that
+thing is to do with the proposal.
 
 ## Effect and Interactions
 
-The behaviour of programs compiled with `-fhpc` becomes more predictable, we get rid
-of a failure mode which perplexes users and prevents better integration in tools.
+Your proposed change addresses the issues raised in the
+motivation. Explain how.
+
+Also, discuss possibly contentious interactions with existing language or compiler
+features. Complete this section with potential interactions raised
+during the PR discussion.
+
 
 ## Costs and Drawbacks
 
-People relying on the aggregation of multiple runs will have to explicitly use the `--read-tix-file=yes` RTS option to get the old behaviour. It is also possible to sum up multiple tix files by hand, using the `hpc combine` command.
+Give an estimate on development and maintenance costs. List how this affects
+learnability of the language for novice users. Define and list any remaining
+drawbacks that cannot be resolved.
 
 
 ## Backward Compatibility
 
-This is a breaking change w.r.t. to the semantics of `-fhpc`.
-It will only affect users of `-fhpc` which rely on the described functionality,
-namely that the coverage collected in the `.tix` file is accumulated over multiple
-program runs. It is very hard to be sure, but my guess is that very few people are currently
-using `-fhpc` in this way. They will only notice the change of behaviour in that
-their `.tix` files contain less ticks than they expected. The deprecation strategy outlined in the next
-section will warn users that this behaviour will change.
+Will your proposed change cause any existing programs to change behaviour or
+stop working? Assess the expected impact on existing code on the following scale:
 
-## Deprecation Strategy
+0. No breakage
+1. Breakage only in extremely rare cases (e.g. for specifically-constructed
+   examples, but probably no packages published in the Hackage package repository)
+2. Breakage in rare cases (e.g. a few Hackage packages may break, but probably
+   no packages included in recent Stackage package sets)
+3. Breakage in uncommon cases (e.g. a few Stackage packages may break)
+4. Breakage in common cases
 
-The old behaviour will be changed over two consecutive releases:
+(For the purposes of this assessment, GHC emitting new warnings is not
+considered to be a breaking change, i.e. packages are assumed not to use
+`-Werror`.  Changing a warning into an error is considered a breaking change.)
 
-- In the first release, GHC continues with the current behaviour, but
-  if it finds an old file (of any kind, even in the wrong format) it emits
-  a warning (before attempting to read it) saying
+Explain why the benefits of the change outweigh the costs of breakage.
+Describe the migration path. Consider specifying a compatibility warning for one
+or more compiler releases before the change is fully implemented. Give examples
+of error messages that will be reported for previously-working code; do they
+make it easy for users to understand what needs to change and why?
 
-  I am reading in the existing tix file, and will add hpc info from this run
-  to the existing data in that file. GHC 9.12 will cease looking for an
-  existing tix file. If you positively want to add hpc info to the current
-  tix file, use `--read-tix-file=yes`
+When the proposal is implemented, the implementers and/or GHC maintainers should
+test that the actual backwards compatibility impact of the implementation is no
+greater than the expected impact. If not, the proposal should be revised and the
+steering committee approve the change.
 
-- In the next release, it stops reading the file
 
 
 ## Alternatives
 
-Do nothing and leave the semantic as it is.
-It is also possible to completely remove the tix file parser from the runtime system.
-This would lead to a simplification in the RTS codebase, but the old behaviour would no longer
-be available.
+List alternative designs to your proposed change. Both existing
+workarounds, or alternative choices for the changes. Explain
+the reasons for choosing the proposed change over these alternative:
+*e.g.* they can be cheaper but insufficient, or better but too
+expensive. Or something else.
+
+The PR discussion often raises other potential designs, and they should be
+added to this section. Similarly, if the proposed change
+specification changes significantly, the old one should be listed in
+this section.
 
 ## Unresolved Questions
 
-None.
+Explicitly list any remaining issues that remain in the conceptual design and
+specification. Be upfront and trust that the community will help. Please do
+not list *implementation* issues.
+
+Hopefully this section will be empty by the time the proposal is brought to
+the steering committee.
+
 
 ## Implementation Plan
 
-I will implement this change: the change is mostly localized to the file [rts/Hpc.c](https://gitlab.haskell.org/ghc/ghc/-/blob/master/rts/Hpc.c) and to the files related to RTS flags.
-The startup logic in the function `startupHpc()` will be modified and will take the `--read-tix-file` flag into account.
+(Optional) If accepted who will implement the change? Which other resources
+and prerequisites are required for implementation?
 
 ## Endorsements
 
-None.
+(Optional) This section provides an opportunity for any third parties to express their
+support for the proposal, and to say why they would like to see it adopted.
+It is not mandatory for have any endorsements at all, but the more substantial
+the proposal is, the more desirable it is to offer evidence that there is
+significant demand from the community.  This section is one way to provide
+such evidence.
