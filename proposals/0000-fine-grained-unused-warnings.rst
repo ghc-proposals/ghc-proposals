@@ -6,6 +6,7 @@ Fine-Grained Unused Warnings
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
+.. sectnum::
 .. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/434>`_.
 .. contents::
 
