@@ -82,18 +82,7 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
    - Similarly, ``bar1`` is indirectly unused.
    - But ``bar2`` is *not* indirectly unused, because, while it occurs in the body of the unused ``foo2``, ``bar2`` is not in scope at ``foo2``'s definition site.
 
-4. **Recursive and Mutual Recursive Bindings**:
-
-   - From point 1. we can infer that if a binding is used only (mututally) recursively, it is directly unused.
-
-   - For mutually recursive bindings, if none of the bindings in the group are used outside their mutual recursion, each binding in the group is directly unused. The warning for each binding will list the other bindings in the group it is directly involved with, e.g.
-
-     ::
-    
-       Foo.hs:6:1: warning: [-Wunused-top-binds, -Windirectly-unused-binds]
-           ‘b1’ is defined but used only in the following unused bindings: ‘b2’, ‘b4’
-
-5. **Import and ``forall`` Bindings:** The proposal also extends to warnings about indirectly unused imports and ``forall`` binds. Both are considered to be unused if they are used only in definitions or type declarations of unused bindings, with the same direct vs. indirect distinction.
+4. **Import and ``forall`` Bindings:** The proposal also extends to warnings about indirectly unused imports and ``forall`` binds. Both are considered to be unused if they are used only in definitions or type declarations of unused bindings, with the same direct vs. indirect distinction.
 
 **Warning References and Messages:**
 
@@ -103,7 +92,7 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
 
   - it is indirectly unused and ``-Windirectly-unused-binds`` is enabled
 
-- The warnings for indirectly unused bindings will reference all bindings they are used in. For example, if ``-Wunused-top-binds`` and ``-Wunused-local-binds`` are enabled,
+- The warnings for (directly or indirectly) unused bindings will reference all bindings they are used in. For example, if ``-Wunused-top-binds`` and ``-Wunused-local-binds`` are enabled,
 
   ::
 
@@ -126,7 +115,7 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
       warning: [-Wunused-top-binds, -Windirectly-unused-binds]
           ‘bar' is defined but used only in the following unused bindings: ‘foo’, ‘quux’
 
-- The warning for an indirectly unused binding B will reference the innermost (directly or indirectly) unused binding(s) whose right-hand sides mention B. For example, suppose ``bar`` is
+- The warning for an unused binding B will reference the innermost (directly or indirectly) unused binding(s) whose right-hand sides mention B. For example, suppose ``bar`` is
 
   ::
 
@@ -234,6 +223,47 @@ With this proposal, these warnings would be produced instead, assuming ``-Windir
 
   Foo.hs:14:1: warning: [-Wunused-top-binds]
       Defined but not used: ‘far’
+
+
+Recursive and Mutually Recursive Bindings:
+
+Take this as example:
+
+::
+
+  b1 = b2
+  b2 = b3
+  b3 = b1
+
+Currently, these are the warnings GHC produces:
+
+::
+
+  UnusedRecursion.hs:7:1: warning: [-Wunused-top-binds]
+      Defined but not used: ‘b1’
+
+  UnusedRecursion.hs:9:1: warning: [-Wunused-top-binds]
+      Defined but not used: ‘b2’
+
+  UnusedRecursion.hs:11:1: warning: [-Wunused-top-binds]
+      Defined but not used: ‘b3’
+
+With this proposal:
+
+- From point 1. we can infer that if a binding is used only (mututally) recursively, it is directly unused.
+- For mutually recursive bindings, if none of the bindings in the group are used outside their mutual recursion, each binding in the group is directly unused. The warning for each binding will list the other bindings in the group it is directly involved with, so we have
+
+::
+
+  UnusedRecursion.hs:7:1: warning: [-Wunused-top-binds]
+      ‘b1’ is defined but used only in the following unused bindings: ‘b2’, ‘b3’
+
+  UnusedRecursion.hs:9:1: warning: [-Wunused-top-binds]
+      ‘b2’ is defined but used only in the following unused bindings: ‘b1’, ‘b3’
+
+  UnusedRecursion.hs:11:1: warning: [-Wunused-top-binds]
+      ‘b3’ is defined but used only in the following unused bindings: ‘b1’, ‘b2’
+
 
 
 Effect and Interactions
