@@ -44,17 +44,16 @@ Proposed Change Specification
 
 The proposed change aims to distinguish between genuinely (or directly) unused bindings and indirectly unused bindings. While the warnings for directly unused bindings remain unchanged, the warnings for indirectly unused bindings will now be controlled by a new flag, ``-Windirectly-unused-binds``, which is enabled by default.
 
-1. **Relevant warning flags:** Depending on how a bind is defined, different warning flags control whether or not it can count as unused. These are:
+1. **Relevant warning flag**. The **relevant warning flag** for a variable binding is defined as follows:
 
-   - ``-Wunused-top-binds`` for top-level binds
-   - ``-Wunused-local-binds`` for binds defined in in ``where`` of ``let`` blocks
-   - Note: ``-Wunused-binds`` will enable both of the above
-   - ``-Wunused-foralls`` for type variables bound by ``forall``
-   - ``-Wunused-matches`` for variables bound in pattern matches
-   - ``-Wunused-imports`` for modules and names from modules that are being imported
-   - ``-Wunused-type-patterns`` for type variables bound in type patterns
+   - The relevant warning flag for top-level binds is ``-Wunused-top-binds``
+   - The relevant warning flag for binds defined in ``where`` or ``let`` blocks is ``-Wunused-local-binds``
+   - The relevant warning flag for variables bound by a pattern match is ``-Wunused-matches``
+   - The relevant warning flag for type variables bound by ``forall`` is ``-Wunused-foralls``
+   - The relevant warning flag for modules and names from modules that are being imported is ``-Wunused-imports``
+   - The relevant warning flag for type variables bound in type patterns is ``-Wunused-type-patterns``
   
-   Related warning flags that are not affected by this proposal since they are not about binding names are
+   Note: Related warning flags that are not affected by this proposal since they are not about binding names are
 
    - ``-Wunused-pattern-binds``
    - ``-Wunused-packages``
