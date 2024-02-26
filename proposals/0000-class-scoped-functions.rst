@@ -1,5 +1,5 @@
 Class Scoped Functions
-====================
+======================
 
 .. author:: Viktor WW
 .. date-accepted::
@@ -13,8 +13,11 @@ Class Scoped Functions
 GHC has a lack of support for renaming class methods if the class is already public.
 This proposal gives a way how to do this painlessly.
 
-Background
+Motivation
 ----------
+
+Background
+~~~~~~~~~~
 
 GHC has a lack of support for renaming class methods if the class is already public.
 
@@ -38,8 +41,8 @@ Here is a real example of the ``Monoid a`` class in ``base``::
       
       {-# MINIMAL mempty | mconcat #-}
 
-Motivation
-----------
+Flexibility on change of class-functions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Once a class becomes public, renaming or even removing methods becomes practically impossible 
 without breaking backward compatibility.
