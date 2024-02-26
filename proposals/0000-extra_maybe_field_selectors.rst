@@ -143,10 +143,11 @@ We expect this proposal could also affect ``HasField`` class ::
   getMaybeField :: forall x r a . HasField x r a => r -> Maybe a
   getMaybeField = fmap snd . hasMaybeField @x
 
-  setMaybeField :: forall x r a . HasField x r a => r -> a -> r
-  setMaybeField r a = case hasMaybeField @x r of
-		Nothing     -> r    -- do not update if wrong field-selector
-		Just (f, _) -> f a
+  setMaybeField :: forall x r a . HasField x r a => r -> a -> Maybe r
+  setMaybeField r a = fmap fst (hasField @x r) <*> (pure a)
+
+  setMaybeFieldIgnore :: forall x r a . HasField x r a => r -> a -> r
+  setMaybeFieldIgnore r a = fromJust $ (setMaybeField @x r a) <|> (Just r)
 
   getField :: forall x r a . HasField x r a => r -> a
   getField = snd . hasField @x
