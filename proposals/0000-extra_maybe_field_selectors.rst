@@ -16,7 +16,7 @@ This proposal add safety and error-less runtime (on wrong use of field selector)
 Motivation
 ----------
 
-Partial field-selectors could produce runtime errors and this is extremely weak design. Also duplicated partial field-selectors could have "magical" type of sub-types.
+Partial field-selectors could produce runtime errors and this is extremely weak design.
 
 This proposal add simplicity, safety and error-less runtime by using ``ExtraMaybeFieldSelectors`` instead of partial field-selectors.
 
@@ -27,9 +27,9 @@ Proposed Change Specification
 Let we have next Sum-Type ``data`` ::
 
   data Message 
-      = SendChat  { message :: Text,      user :: UserId,  uid :: UserId }
-      | Signup    { eventId :: EventId,   user :: UserId,  uid :: EventId }
-      | SendOrder { signalId :: SignalId, user :: UserId,  uid :: SignalId }
+      = SendChat  { message :: Text,      user :: UserId }
+      | Signup    { eventId :: EventId,   user :: UserId }
+      | SendOrder { signalId :: SignalId }
 
 
 This creates several functions (if ``NoFieldSelector`` is off): ::
@@ -39,11 +39,9 @@ This creates several functions (if ``NoFieldSelector`` is off): ::
   eventId  :: Message -> EventId  -- or runtime Error
 
   signalId :: Message -> SignalId -- or runtime Error
-
   
-  user :: Message -> UserId
+  user :: Message -> UserId -- from SendChat or Signup or runtime Error
 
-  uid  :: Message -> "magical" (UserId | EventId | SignalId)
 
 
 Extra functions
@@ -51,7 +49,7 @@ Extra functions
 
 We suggest a language extension: with ``ExtraMaybeFieldSelectors`` extra code is produced:
   
-- For each *de-jure* Sum-Type: ``data`` with at least one ``|`` sign we create maybe-fields-selectors
+- For each *de-jure* Sum-Type: ``data`` with at least one ``|`` sign we create maybe-fields-selectors (or several constructors on GADTs definitions)
 
 - For each partial selector ``<field>`` with type signature ``<field> :: <dataType> -> <fieldType>`` we create function ``<newname> :: <dataType> -> Maybe <fieldType>``
 
@@ -73,17 +71,8 @@ For this specific example ``data Message`` next functions will be added  ::
 
   maybeDpSignupFsUser    :: Message -> Maybe UserId
 
-  maybeDpSendOrderFsUser :: Message -> Maybe UserId
 
-  
-  maybeDpSendChatFsUid  :: Message -> Maybe UserId
-
-  maybeDpSignupFsUid    :: Message -> Maybe EventId
-
-  maybeDpSendOrderFsUid :: Message -> Maybe SignalId
-
-
-*Note: all this code is safe in use, it is error-less in runtime and have "ordinary" types in signatures.*
+*Note: all this code is safe in use, it is error-less in runtime.*
 
 
 Import, export
@@ -103,7 +92,7 @@ Examples
 Several-parts field type
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-If we have several-parts field type, than parentheses must be added: ``<newname> :: <dataType> -> Maybe (<fieldType>)`` ::
+If we have several-parts field type, than parentheses must be added to final type: ``<newname> :: <dataType> -> Maybe (<fieldType>)`` ::
 
   data OptionRec a = None | Some { fromSome :: Maybe a }
 
@@ -165,7 +154,7 @@ A partial alternative is `Partial Field Behavior #535 <https://github.com/ghc-pr
 Unresolved Questions
 --------------------
 
-Name-collision is possible, but it is highly unlikely ::
+Name-collision is possible, but it is highly unlikely (with "FsFs" collisions) ::
 
   data T
     = A   {fsB :: Int, b   :: Char}
