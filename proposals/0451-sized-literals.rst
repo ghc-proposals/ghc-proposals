@@ -4,7 +4,7 @@ Sized primitive literals
 .. author:: Sylvain Henry
 .. date-accepted:: 2022-04-23
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/21422
-.. implemented::
+.. implemented:: 9.8
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/451>`_.
 .. contents::
@@ -135,6 +135,9 @@ literals.
   @negative 0[xX] @numspc @hexadecimal \#Int8 / { negHashLitPred }                 { tok_primint8 negative 3 4 hexadecimal }
 
 (This can probably be factored with ``@signed_suffix`` and ``@unsigned_suffix``).
+
+For types such as ``data T = MkT Int8# deriving Show``, the derived instance
+should use the extended literal syntax.
 
 Examples
 --------

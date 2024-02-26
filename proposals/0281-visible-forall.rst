@@ -1,12 +1,12 @@
-Visible ``forall`` in types of terms
-====================================
+Visible `forall` in types of terms, and types in terms
+======================================================
 
 .. author:: Vladislav Zavialov
-.. date-accepted:: 2021-11-01
+.. date-accepted:: 2021-11-01, amended 2024-01-15
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/281>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/281>`_ and `amended by #626 <https://github.com/ghc-proposals/ghc-proposals/pull/281>`_.
 .. sectnum::
 .. contents::
 
@@ -343,8 +343,6 @@ Part I: Proposed Change Specification
    follows type-level name resolution rules (i.e. uses of punned identifiers
    resolve to the type namespace), both at binding sites and at use sites.
 
-   Without ``ScopedTypeVariables``, no type variable may be bound in a pattern.
-
    The ``ScopedTypeVariables`` extension has no effect on variables introduced
    by ``forall a ->``.
 
@@ -360,9 +358,9 @@ Part I: Proposed Change Specification
      follow the rules shown in Figure 4 of "A quick look at impredicativity",
      extended as follows::
 
-        G |- sigma[a := rho];                 pis  ~>  Theta; phis; rho_r
-        ------------------------------------------------------------------  ITVDQ
-        G |- (forall a -> sigma); (type rho), pis  ~>  Theta; phis; rho_r
+        G |- sigma_b[a := sigma_a];                     pis  ~>  Theta; phis; rho_r
+        ---------------------------------------------------------------------------  ITVDQ
+        G |- (forall a -> sigma_b);     (type sigma_a), pis  ~>  Theta; phis; rho_r
 
    * In checking mode, in a function binding ``f (type x) = ...`` or a lambda
      ``\(type x) -> ...``, the ``x`` is a fresh skolem.
@@ -376,22 +374,57 @@ Part I: Proposed Change Specification
      x = f (type Int)   -- OK
      x = type Int       -- invalid use of a type in a term
 
-   This is checked during type checking, so Template Haskell is unaffected, and
-   ``[e| type Int |]`` is allowed (but different from ``[t| Int |]``).
+   This is checked during type checking, so Template Haskell is unaffected:
+   ``[e| type Int |]`` and ``[p| type Int |]`` are both allowed but different
+   from ``[t| Int |]``.
 
-   Furthermore, any pattern of form ``type t`` must be either a variable or a
-   wildcard::
-
-     f (type x)   = ...    -- OK
-     f (type _)   = ...    -- OK
-     f (type Int) = ...    -- invalid use of a type in a term
-
-   This is also checked during type checking, so Template Haskell must be able
-   to represent patterns such as ``[p| type Int |]``.
 
 6. **Erasure**. In types of terms, ``forall a ->`` is an erased quantifier.
    Making ``forall a ->`` erased in types of types is out of scope of this
    proposal.
+
+7. **Data constructors**. When ``RequiredTypeArguments`` is in effect, allow
+   ``forall a ->`` in data constructor declarations.
+
+   * The flavour of the parent declaration (data, data instance, newtype,
+     newtype instance) does not affect the validity of ``forall a ->``.
+
+   * The GADT constructor syntax (GHC Proposal `#402 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0402-gadt-syntax.rst>`_)
+     supports ``forall a ->`` quantification both for universals and existentials::
+
+       data T a b where
+         MkT1 :: forall a b.   forall x y.   (x, y, a, b) -> T a b  -- OK
+         MkT2 :: forall a b.   forall x y -> (x, y, a, b) -> T a b  -- OK
+         MkT3 :: forall a b -> forall x y.   (x, y, a, b) -> T a b  -- OK
+         MkT4 :: forall a b -> forall x y -> (x, y, a, b) -> T a b  -- OK
+
+     In Haskell98-style syntax, all data constructors have invisible universal
+     quantifiers, and it is illegal to specify visible existential quantifiers::
+
+       data T a b =
+         forall x y.   MkT1 (x, y, a, b)    -- OK, `forall a b.` is added by GHC
+         forall x y -> MkT2 (x, y, a, b)    -- Illegal syntax
+
+     There is no inherent reason to rule out ``forall a ->`` in Haskell98-style
+     existentials other than to save on implementation costs (see "Alternatives").
+
+   * The use of ``forall a ->`` in the type of a data constructor is compatible
+     with ``DataKinds`` promotion of the said constructor.
+
+   * Pattern matching on a data constructor ``MkT :: forall a -> ...`` implies
+     the use of type patterns in positions that correspond to required type
+     parameters::
+
+       data Ex where { MkEx :: forall a -> Show a => a -> Ex }
+
+       f :: Ex -> String
+       f (MkEx (type a) x) = show (x :: a)
+       --      ^^^^^^^^
+       --      type pattern corresponding to (forall a ->) in the type of MkEx
+
+   * The rules for checking type patterns in constructors are derived from the
+     rules for checking type abstractions ``@a``, mutatis mutandis; for the
+     latter, see GHC Proposal `#448 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0448-type-variable-scoping.rst>`_.
 
 Part I: Examples and Explanation
 --------------------------------
@@ -438,12 +471,36 @@ Part I: Examples and Explanation
      -- Usage
      str = symbolValVis (type "Hello, World")
 
+5. A type pattern in a constructor pattern:
+   ::
+
+     data T a b where
+       MkT :: forall a. forall b -> (a,b) -> T a b
+       --               ^^^^^^^^^^^^
+       --               visible forall in a data constructor
+
+     f :: T a b -> (b, a)
+     f (MkT @a (type b) c) = (snd c :: b, fst c :: a)
+     --        ^^^^^^^^
+     --        the corresponding type pattern
+
+6. A type pattern in a constructor pattern that requires unification:
+   ::
+
+       data U a where { MkU :: forall a -> U a }
+
+       f :: U (Maybe Int) -> Int
+       f (MkU (type (Maybe a))) = 42 :: a
+
+   The type pattern ``type (Maybe a)`` is unified with ``Maybe Int`` in the
+   signature. As a result, ``a`` stands for ``Int`` in ``42 :: a``.
+
 Note that as long as we limit ourselves to part I of this proposal, we need the
 ``type`` marker in all of the above examples, even when the argument is a
-syntactically valid term. If the programer were to write ``symbolValVis "Hello,
-World"``, they would get an error message stating that a term argument was
+syntactically valid term. If the programer were to write ``symbolValVis "Hello, World"``,
+they would get an error message stating that a term argument was
 received where a type argument was expected. That's because our typing rule
-``ITVDQ`` explicitly requires the argument to be of form ``type rho``.
+``ITVDQ`` explicitly requires the argument to be of form ``type sigma``.
 
 Could we extend our system to permit arguments without the ``type`` prefix?
 That is precisely the subject of part II.
@@ -572,14 +629,20 @@ information has been fully determined:
   1. Namespace selection syntax (under ``-XDataKinds``)
   2. Name quotation syntax (under ``-XTemplateHaskell``)
 
+* The meaning of ``->`` has been determined. It can stand for one of the following:
+
+  1. Part of lambda, case-of, or multi-if syntax, as in ``\x -> ...``
+  2. The function type constructor ``(->)``, as in ``Int -> Bool``
+  3. A view pattern ``f (e -> p) = ...`` (under ``-XViewPatterns``)
+
 Part II: Proposed Change Specification
 --------------------------------------
 
 Syntax
 ~~~~~~
 
-1. Extend the term syntax with several constructs that
-   previously could only occur at the type level:
+1. Extend the term syntax (expressions and patterns) with several constructs
+   that previously could only occur at the type level:
 
    * Function arrows: ``a -> b``
    * Multiplicity-polymorphic function arrows: ``a %m -> b`` (under ``-XLinearTypes``)
@@ -589,33 +652,92 @@ Syntax
 
    We will call them **types-in-terms**.
 
-   Grammatically, their constituents are terms, not types::
+   To that end, we change the grammar of expressions and patterns as follows.
+   Start with these nonterminals based on the `Haskell 2010 Report <https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#x17-18000010.5>`_,
+   modified to account for pattern signatures, view patterns, and the ``type`` herald::
 
-                   proposed grammar:                      as opposed to:
-         ┌────────────────────────────────────┬───────────────────────────────────────┐
-         │                                    │                                       │
-         │  exp ::=                           │    exp ::=                            │
-         │      | exp₀ '->' exp₁              │        | type₀ '->' type₁             │
-         │      | exp₀ '=>' exp₁              │        | type₀ '=>' type₁             │
-         │      | 'forall' tv_bndrs '.'  exp  │        | 'forall' tv_bndrs '.'  type  │
-         │      | 'forall' tv_bndrs '->' exp  │        | 'forall' tv_bndrs '->' type  │
-         │                                    │                                       │
-         └────────────────────────────────────┴───────────────────────────────────────┘
+     exp ::=
+       | 'type' ktype                    -- only with ExplicitNamespaces (see Part I of #281)
+       | infixexp :: [context =>] type
+       | infixexp
 
-   This is a necessity to avoid parsing conflicts, with the following
-   consequences:
+     viewpat ::=
+       | pat
+       | exp '->' viewpat                -- only with ViewPatterns
 
-   1. The ``'`` symbol signifies Template Haskell name quotation rather than ``DataKinds`` promotion.
-   2. The ``*`` symbol is treated as an infix operator regardless of ``-XStarIsType``.
-   3. Built-in syntax for tuples and lists is interpreted as in terms.
-      That is, ``[a]`` is a singleton list rather than the type of a list,
-      and ``(a, b)`` is a pair rather than the type of a pair.
+     pat ::=
+       | 'type' ktype                    -- only with ExplicitNamespaces (see Part I of #281)
+       | infixpat :: [context =>] type   -- only with PatternSignatures  (see #448)
+       | infixpat
 
-2. The syntactic descriptions here applying to expressions apply equally to patterns, though
-   we will continue to discuss only expressions.
+     infixexp ::=
+       | lexp qop infixexp
+       | - infixexp
+       | lexp
 
-3. Make ``forall`` a keyword at the term level. Not guarded by any extension
-   (same motivation as `#193 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0193-forall-keyword.rst>`_).
+     infixpat ::=
+       | lpat qconop infixpat
+       | lpat
+
+   Introduce the following changes:
+
+   * add new non-terminals ``infixexp2`` and ``infixpat2`` that include terms-in-types
+   * update ``exp`` and ``pat`` to use the new non-terminals in place
+     of ``infixexp`` and ``infixpat`` respectively
+   * rearrange ``viewpat`` to avoid parsing conflicts
+
+   ::
+
+     exp ::=
+       | 'type' ktype                    -- only with ExplicitNamespaces (see Part I of #281)
+       | infixexp2 :: [context =>] type
+       | infixexp2
+
+     viewpat ::= pat  -- the other production has been moved to infixpat2
+
+     pat ::=
+       | 'type' ktype                    -- only with ExplicitNamespaces (see Part I of #281)
+       | infixpat2 :: [context =>] type  -- only with PatternSignatures  (see #448)
+       | infixpat2
+
+     infixexp2 ::=
+            | infixexp
+      (NEW) | infixexp      '->'  infixexp2      -- only with RequiredTypeArguments
+      (NEW) | infixexp mult '->'  infixexp2      -- only with RequiredTypeArguments
+      (NEW) | infixexp      '->.' infixexp2      -- only with RequiredTypeArguments
+      (NEW) | infixexp      '=>'  infixexp2      -- only with RequiredTypeArguments
+      (NEW) | 'forall' tv_bndrs '.'  infixexp2   -- only with RequiredTypeArguments
+      (NEW) | 'forall' tv_bndrs '->' infixexp2   -- only with RequiredTypeArguments
+
+     infixpat2 ::=
+            | infixpat
+      (NEW) | infixpat      '->'  infixpat2      -- only with RequiredTypeArguments and /without/ ViewPatterns (conflict described below)
+      (MOV) | infixexp      '->'  infixpat2      -- only with ViewPatterns (takes precedence over RequiredTypeArguments, conflict described below)
+      (NEW) | infixpat mult '->'  infixpat2      -- only with RequiredTypeArguments
+      (NEW) | infixpat      '->.' infixpat2      -- only with RequiredTypeArguments
+      (NEW) | infixpat      '=>'  infixpat2      -- only with RequiredTypeArguments
+      (NEW) | 'forall' tv_bndrs '.'  infixpat2   -- only with RequiredTypeArguments
+      (NEW) | 'forall' tv_bndrs '->' infixpat2   -- only with RequiredTypeArguments
+
+     -- infixexp and infixpat are unchanged
+
+   Note that the constituents of terms-in-types use the term syntax.
+   For example::
+
+                   proposed grammar:                    as opposed to:
+         ┌──────────────────────────────────────┬───────────────────────────────────┐
+         │  infixexp2 ::=                       │  infixexp2 ::=                    │
+         │    | infixexp '->' infixexp2         │    | btype '->' ctype             │
+         │    | 'forall' tv_bndrs '.' infixexp2 │    | 'forall' tv_bndrs '.' ctype  │
+         │    | ...                             │    | ...                          │
+         └──────────────────────────────────────┴───────────────────────────────────┘
+
+   The use of term syntax on the LHS of ``e1 -> e2`` and ``e1 => e2`` is a
+   necessity to avoid parsing conflicts. The use of term syntax on the RHS is
+   done for consistency with the LHS.
+
+3. Make ``forall`` a keyword at the term level (in expressions and patterns).
+   Not guarded by any extension (same motivation as `#193 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0193-forall-keyword.rst>`_).
    This implies ``forall`` is no longer a valid identifier.
 
    For three releases before this change takes place, include a new warning
@@ -625,8 +747,36 @@ Syntax
    This change applies to ``∀`` (the ``UnicodeSyntax`` rendition of ``forall``)
    as well.
 
-4. When ``ViewPatterns`` are enabled, interpret ``f (a -> b) = ...``
-   as a view pattern, otherwise as ``f ((->) a b) = ...``.
+4. Adding ``p1 -> p2`` to the syntax of patterns (see the BNF of "types-in-terms"
+   above) is incompatible with ``ViewPatterns``.
+
+   * When both ``RequiredTypeArguments`` and ``ViewPatterns`` are enabled,
+     the conflict is resolved in favor of ``ViewPatterns``. The programmer can
+     write ``type (t1 -> t2)`` or ``(->) t1 t2`` instead.
+
+   * When only ``ViewPatterns`` is enabled,
+     the conflict is resolved in favor of ``ViewPatterns``.
+
+   * When only ``RequiredTypeArguments`` is enabled, the conflict is not
+     resolved either way. It is reported to the user in an error message.
+     This can be reconsidered if an alternative syntax for view patterns is
+     implemented in GHC.
+
+   To make the grammar of Haskell more regular and to simplify the
+   implementation of "types-in-terms", change the precedence of view patterns
+   relative to pattern signatures as follows::
+
+        f (e -> p :: t)   = ...     -- user-written function LHS
+        f (e -> (p :: t)) = ...     -- old parse
+        f ((e -> p) :: t) = ...     -- new parse
+
+   The new parse is consistent with kind signatures, e.g. ``Int -> Bool :: Type``
+   is parsed as ``(Int -> Bool) :: Type``, not ``Int -> (Bool :: Type)``.
+
+   For three releases before this change takes place, include a new warning
+   ``-Wview-pattern-signatures`` in ``-Wdefault`` to warn on affected code.
+   The warning text will suggest to parenthesize the RHS of the view pattern.
+   See "Effect and Interactions" for the impact analysis.
 
 5. ``case ... of x -> y -> z`` is an error. We require parentheses to
    disambiguate:
@@ -702,16 +852,20 @@ Type checking
 8. Generalize the ``ITVDQ`` rule introduced earlier
    by using ``t2t``::
 
-     rho = t2t(e)
-     G |- sigma[a := rho];         pis  ~>  Theta; phis; rho_r
-     ---------------------------------------------------------- ITVDQ-T2T
-     G |- (forall a -> sigma);  e, pis  ~>  Theta; phis; rho_r
+     sigma_a = t2t(e)
+     G |- sigma_b[a := sigma_a];         pis  ~>  Theta; phis; rho_r
+     --------------------------------------------------------------- ITVDQ-T2T
+     G |- (forall a -> sigma_b);      e, pis  ~>  Theta; phis; rho_r
 
-   ``t2t`` transforms term arguments into type arguments, see "T2T-Mapping"
-   below for an informal definition.
+   ``t2t`` transforms term arguments into type arguments, see the "T2T-Mapping"
+   section for an informal definition of ``t2t``.
 
-   In other words, given ``f :: forall a -> t``, the ``x`` in ``f x`` is
-   parsed and renamed as a term, but then mapped to a type.
+   That is, given ``f :: forall a -> t``, the argument ``e`` in ``f e``
+   is parsed and renamed as a term, but then mapped to a type.
+
+   In the same way, generalize the type checking rule for patterns to invoke
+   ``t2t`` to transform a pattern to a type when the function or constructor has
+   a visible forall in its type.
 
 9.  Any uses of terms in types are ill-typed:
     ::
@@ -733,114 +887,130 @@ Type checking
     The ``x`` identifier is bound in the term namespace, but stands for an
     erased, ``forall``-bound type variable.
 
-    Just as with patterns that use the ``type`` herald explicitly, we permit
-    only variables and wildcards in such positions::
+    A similar principle applies to subpatterns in a constructor pattern that
+    correspond to ``forall a ->`` in the type of the data constructor::
 
-      f :: forall a -> ...
-      f x   = ...               -- OK
-      f _   = ...               -- OK
-      f Int = ...               -- illegal to match on a type
+       data Ex where { MkEx :: forall a -> Show a => a -> Ex }
 
-    We could, but we do not relax this requirement even when the type is statically known::
+       f :: Ex -> String
+       f (MkEx a x) = show (x :: a)
+       --     ^^^
+       --     the `a` corresponds to `forall a ->` in the type of `MkEx`
 
-      data T a where
-        Typed :: forall a -> a -> T a
-
-      g :: T Int -> ...
-      g (Typed Int x) = ...   -- Reasonable, but no.
-
-    This is a conservative decision that can be revised in a later proposal.
-
-Namespaces vs Semantics
-~~~~~~~~~~~~~~~~~~~~~~~
-
-11. With the proposed changes, the namespace of an identifier is no longer tied
-    to whether it stands for a type variable or a term variable.
-
-    Before this proposal, all term variables (retained, values, runtime) used
-    names from the term namespace, and all type variables (erased, types,
-    compile-time) used names from the type namespace. This is no longer the
-    case.
+    In general, we permit term patterns in positions where type patterns are
+    expected by applying the T2T transformation, see "T2T-Mapping" below.
 
 T2T-Mapping
 ~~~~~~~~~~~
 
-T2T (term-to-type) is a mapping from expressions to types that operates on a
-resolved syntax tree and is invoked by the ``T2T`` typing rule.
+T2T (term-to-type) is a mapping from terms (expressions or patterns) to types
+that operates on a resolved syntax tree and is invoked by the ``T2T`` typing
+rule.
 
-The T2T mapping is partial: it succeeds on expressions that are within the
+The T2T mapping is partial: it succeeds on expressions and patterns that are within the
 Static Subset (introduced in `#378 Design for Dependent Types
 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0378-dependent-type-design.rst>`_),
 and fails on expressions outside of this subset.
 
-* Embedded types ``type t`` are mapped to ``t`` directly, without modification.
+Common T2T Clauses (Expressions and Patterns)
+  * Embedded types ``type t`` are mapped to ``t`` directly, without modification.
 
-* Variables and constructors (regardless of their namespace) are mapped
-  directly, without modification.
+  * Variables and constructors (regardless of their namespace) are mapped
+    directly, without modification.
 
-  * In the type checking environment, the variable must stand for a type variable,
-    or else it treated as a fresh skolem constant.
+    * The use of a data constructor requires ``DataKinds``.
 
-  * In the type checking environment, the constructor must stand for a type
-    constructor, or else require ``DataKinds``.
+    * The use of a variable (as opposed to binding) also imposes the following
+      side conditions
 
-  * In the type checking environment, there should be no variable of the same
-    name but from a different namespace, or else raise an ambiguity error (does
-    not apply to constructors).
+      * In the type checking environment, there should be no variable of the same
+        name but from a different namespace, or else raise an ambiguity error (does
+        not apply to constructors).
 
-* The types-in-terms (such as ``a -> b``, ``a => b``, ``forall a. b``) are
-  mapped to types directly, without modification aside from recursively
-  processing subterms.
+      * In a temporary deviation from `#378 Design for Dependent Types <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0378-dependent-type-design.rst#term-variables-in-types>`_,
+        require that the variable stands for a type; terms are not promoted.
+        Lifting this restriction is left for a future proposal, as it does not
+        seem useful without a retained quantifier like ``foreach`` (see the
+        referenced section of ``#378`` for an explanation with an example).
 
-* Function application ``e₀ e₁`` is mapped to type-level function
-  application ``t₀ t₁``, where ``t₀ = t2t(e₀)``, ``t₁ = t2t(e₁)``.
+  * The types-in-terms (such as ``a -> b``, ``a => b``, ``forall a. b``) are
+    mapped to types directly, without modification aside from recursively
+    processing subterms.
 
-* With ``DataKinds``, a numeric literal ``42`` is mapped to a promoted numeric
-  literal.
+  * With ``DataKinds``, a numeric literal ``42`` is mapped to a promoted numeric
+    literal.
 
-* With ``DataKinds``, a string literal ``"Hello"`` is mapped to a promoted
-  string literal ``"Hello"``.
+  * With ``DataKinds``, a string literal ``"Hello"`` is mapped to a promoted
+    string literal ``"Hello"``.
 
-* With ``DataKinds``, a character literal ``'x'`` is mapped to a promoted
-  character literal ``'x'``.
+  * With ``DataKinds``, a character literal ``'x'`` is mapped to a promoted
+    character literal ``'x'``.
 
-* A fractional numeric literal ``3.14`` cannot be mapped at the
-  moment, as we do not have promoted fractional numeric literals.
+  * A fractional numeric literal ``3.14`` cannot be mapped at the
+    moment, as we do not have promoted fractional numeric literals.
 
-* An unboxed numeric literal ``1337#`` cannot be mapped at the moment,
-  as we do not have promoted unboxed types.
+  * An unboxed numeric literal ``1337#`` cannot be mapped at the moment,
+    as we do not have promoted unboxed types.
 
-* With ``DataKinds``, a tuple ``(e₀, e₁, ...)ₑ`` is mapped to a promoted tuple
-  ``(t₀, t₁, ...)ₑ``, where ``t₀ = t2t(e₀)``, ``t₁ = t2t(e₁)``.
+  * With ``DataKinds``, a tuple ``(e₀, e₁, ...)ₑ`` is mapped to a promoted tuple
+    ``(t₀, t₁, ...)ₑ``, where ``t₀ = t2t(e₀)``, ``t₁ = t2t(e₁)``.
 
-* An unboxed tuple ``(# a, b #)`` cannot be mapped at the moment, as we do not
-  have promoted unboxed types.
+  * An unboxed tuple ``(# a, b #)`` cannot be mapped at the moment, as we do not
+    have promoted unboxed types.
 
-* With ``DataKinds``, a list literal ``[e₀, e₁, ...]`` is mapped to a promoted
-  list ``[t₀, t₁, ...]``, where ``t₀ = t2t(e₀)``, ``t₁ = t2t(e₁)``.
+  * With ``DataKinds``, a list literal ``[e₀, e₁, ...]`` is mapped to a promoted
+    list ``[t₀, t₁, ...]``, where ``t₀ = t2t(e₀)``, ``t₁ = t2t(e₁)``.
 
-* With ``TypeApplications``, type application ``e₀ @t₁`` is mapped to
-  type-level type application ``t₀ @t₁``, where ``t₀ = t2t(e₀)``.
+  * With ``KindSignatures``, a type signature ``e₀ :: t₁`` is mapped to a kind
+    signature ``t₀ :: t₁``, where ``t₀ = t2t(e₀)``.
 
-* With ``TypeOperators``, infix application ``e₀ op e₁`` is mapped to
-  type-level infix application ``e₀ tyop e₁``, where ``t₀ = t2t(e₀)``, ``t₁ =
-  t2t(e₁)``, ``tyop = t2t(op)``.
+T2T in Expressions
+  * Function application ``e₀ e₁`` is mapped to type-level function
+    application ``t₀ t₁``, where ``t₀ = t2t(e₀)``, ``t₁ = t2t(e₁)``.
 
-* With ``KindSignatures``, a type signature ``e₀ :: t₁`` is mapped to a kind
-  signature ``t₀ :: t₁``, where ``t₀ = t2t(e₀)``.
+  * With ``TypeApplications``, type application ``e₀ @t₁`` is mapped to
+    type-level type application ``t₀ @t₁``, where ``t₀ = t2t(e₀)``.
 
-* Lambda functions ``\x -> b`` are not mapped and their use is an
-  error, as we do not have type-level lambdas at the moment.
+  * With ``TypeOperators``, infix application ``e₀ op e₁`` is mapped to
+    type-level infix application ``e₀ tyop e₁``, where ``t₀ = t2t(e₀)``,
+    ``t₁ = t2t(e₁)``, ``tyop = t2t(op)``.
 
-* Case-expressions ``case x of ...`` are not mapped and their use is
-  an error, as we do not have type-level case-expressions.
+  * Lambda functions ``\x -> b`` are not mapped and their use is an
+    error, as we do not have type-level lambdas at the moment.
 
-* If-expressions ``if c then a else b`` are not mapped and their use
-  is an error, as we do not have type-level if-expressions.
+  * Case-expressions ``case x of ...`` are not mapped and their use is
+    an error, as we do not have type-level case-expressions.
 
-* In the same spirit, other syntactic constructs are mapped when
-  there's a direct type-level equivalent, and their use is an error
-  otherwise.
+  * If-expressions ``if c then a else b`` are not mapped and their use
+    is an error, as we do not have type-level if-expressions.
+
+  * In the same spirit, other syntactic constructs are mapped when
+    there's a direct type-level equivalent, and their use is an error
+    otherwise.
+
+T2T in Patterns
+  * Wildcard patterns ``_`` are mapped to wildcard type patterns.
+
+  * Constructor patterns ``Con @t₀ @t₁ p₂ p₃`` are mapped to nested
+    applications and type applications ``Con @t₀ @t₁ t₂ t₃``, where
+    ``t₂ = t2t(p₂)``, ``t₃ = t2t(p₃)``.
+    ``DataKinds`` is required if ``Con`` is a data constructor.
+
+  * As-patterns ``x@p`` are not mapped and their use is
+    an error, as we do not have type-level as-patterns.
+
+  * Lazy patterns ``~p`` are not mapped and their use is
+    an error, as we do not have type-level lazy patterns.
+
+  * Bang patterns ``!p`` are not mapped and their use is
+    an error, as we do not have type-level bang patterns.
+
+  * View patterns ``e -> p`` are not mappend and their use is
+    an error, as we do not have type-level view patterns.
+
+  * In the same spirit, other syntactic constructs are mapped when
+    there's a direct type-level equivalent, and their use is an error
+    otherwise.
 
 In accordance with the **Lexical Scoping Principle** of `#378 Design for Dependent Types
 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0378-dependent-type-design.rst>`_,
@@ -898,6 +1068,29 @@ Part II: Examples
      -- Usage
      str = symbolValVis "Hello, World"
 
+5. A type pattern in a constructor pattern:
+   ::
+
+     data T a b where
+       MkT :: forall a. forall b -> (a,b) -> T a b
+       --               ^^^^^^^^^^^^
+       --               visible forall in a data constructor
+
+     f :: T a b -> (b, a)
+     f (MkT @a b c) = (snd c :: b, fst c :: a)
+     --        ^
+     --        the corresponding type pattern
+
+6. A type pattern in a constructor pattern that requires unification:
+   ::
+
+       data U a where { MkU :: forall a -> U a }
+
+       f :: U (Maybe Int) -> Int
+       f (MkU (Maybe a)) = 42 :: a
+
+   The type pattern ``Maybe a`` is unified with ``Maybe Int`` in the
+   signature. As a result, ``a`` stands for ``Int`` in ``42 :: a``.
 
 Compile-time color literals
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1144,6 +1337,69 @@ Effect and Interactions
   proposal is a step towards dependent types, but it does not go all the way.
   Accepting the program above is left as future work.
 
+* Before this proposal, all term variables (retained, values, runtime) used
+  names from the term namespace, and all type variables (erased, types,
+  compile-time) used names from the type namespace.
+
+  With the changes proposed, the namespace of a variable is no longer a reliable
+  indicator of the level (term level or type level) of the entity that the
+  variable stands for. Consider::
+
+    f :: forall a -> String
+    f = ...
+
+    g :: forall a -> Show a => a -> String
+    g t x = show @t (x :: t) ++ f t
+
+  Now let us compare ``x`` and ``t``
+
+  * The name ``x`` is bound in the term namespace. It is a true term variable:
+    it is used as a value argument to ``show``; it exists at the term level.
+  * The name ``t`` is also bound in the term namespace. However, ``t`` denotes
+    a type variable: it is used in the type application ``show @t``, in the type
+    annotation ``x :: t``, and as a required type argument in ``f t``; it exists
+    at the type level.
+
+* Even in the absence of punning, term syntax and type syntax differ in a few
+  subtle ways
+
+  1. In term syntax with ``TemplateHaskell`` enabled, the ``'`` symbol signifies
+     name quotation; in type syntax with ``DataKinds`` enabled, ``'`` selects
+     the term namespace.
+
+  2. In term syntax, ``*`` is always an infix operator; in type syntax with
+     ``StarIsType`` enabled, ``*`` is built-in notation for ``Data.Kind.Type``.
+
+     This discrepancy can be resolved by disabling ``StarIsType``, which is
+     slated for deprecation by the accepted
+     GHC Proposal `#143 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0143-remove-star-kind.rst>`_.
+
+  3. Term syntax allows binding local operators, but type syntax with
+     ``TypeOperators`` does not::
+
+       -- Term syntax
+       f (:#) = ...   -- usage of constructor (:#)
+       f (#)  = ...   -- binding a local variable (#)
+
+       -- Type syntax
+       f (type (:#)) = ...   -- usage of type constructor (:#)
+       f (type (#))  = ...   -- usage of type constructor (#)
+
+     To be consistent with terms, ``type (#)`` would have to be a binding of a
+     local type variable named ``(#)``.
+
+  Accounting for these discrepancies is a non-goal for the T2T transformation
+
+* The impact of the change associated with ``-Wview-pattern-signatures`` is
+  minimal. We patched GHC 9.6 to parse ``e -> p :: t`` with the new precedence
+  and compiled 3318 packages (`full list <https://gist.githubusercontent.com/int-index/d687ddc01cf589b73f032ce6950ab035/raw/4d86a929edf649d8086157ef86bd74fba767c2cf/view-pattern-signatures>`_) using the patched compiler.
+
+  Only 2 out of 3318 packages (0.06%) were affected: ``shake-0.19.7`` (2 lines
+  of code affected) and ``arithmoi-0.13.0.0`` (1 line of code affected), with
+  the total of 3 lines of code affected in the analyzed data set.
+
+  In every instance, the fix was to add parentheses.
+
 Costs and Drawbacks
 -------------------
 
@@ -1243,6 +1499,28 @@ Alternatives
 
    Instead, we opted to raise the ambiguity error during T2T.
 
+8. We could permit visible ``forall`` in Haskell98-style data declarations,
+   where invisible ``forall`` is already allowed to bind existential variables.
+
+   However, GHC does not support syntactically nested foralls in such
+   declarations. Compare:
+
+   * ``data Flat = forall a b. MkFlat a b``
+   * ``data Nested = forall a. forall b. MkNested a b``
+
+   At the time of writing this proposal, ``Flat`` is a valid declaration
+   whereas ``Nested`` results in a parse error.
+
+   This means that the following declaration would be rejected even if we
+   allowed visible forall::
+
+      data MixedVis = forall a. forall b -> MkMixedVis a b
+
+   A similar limitation in GADTs is addressed by GHC Proposal `#402 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0402-gadt-syntax.rst>`_
+   (accepted, not implemented). In principle, nothing precludes us from
+   extending the syntax of existential quantification in Haskell98-style data
+   declarations in a similar manner, but nothing compels us to do so either.
+
 Unresolved Questions
 --------------------
 
@@ -1252,4 +1530,6 @@ Implementation Plan
 -------------------
 
 I (Vladislav Zavialov) or a close collaborator will implement this change.
-There's currently a prototype by Daniel Rogozin in the works.
+See GHC tickets `#22326 <https://gitlab.haskell.org/ghc/ghc/-/issues/22326>`_
+and `#23717 <https://gitlab.haskell.org/ghc/ghc/-/issues/23717>`_ for an
+implementation plan with a subtask breakdown.

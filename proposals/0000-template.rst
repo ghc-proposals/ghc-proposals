@@ -56,6 +56,9 @@ may include,
 * how the proposed change interacts with existing language or compiler
   features, in case that is otherwise ambiguous
 
+Think about how your proposed design accords with our `language design principles <../principles.rst#2Language-design-principles>`_,
+and articulate that alignment explicitly wherever possible.
+
 Strive for *precision*. The ideal specification is described as a
 modification of the `Haskell 2010 report
 <https://www.haskell.org/definition/haskell2010.pdf>`_. Where that is
@@ -73,6 +76,44 @@ The specification can, and almost always should, be illustrated with
 give a couple of examples and regard that as the specification! The
 examples should illustrate and elucidate a clearly-articulated
 specification that covers the general case.
+
+Proposed Library Change Specification
+-------------------------------------
+
+Specify the changes to libraries in the GHC repository, especially `base` and
+others under the purview of the
+`Core Libraries Committee <https://github.com/haskell/core-libraries-committee>`_.
+
+Generally speaking, if your proposal adds new function or data types, the place
+to do so is in the ``ghc-experimental`` package, whose API is under the control of
+the GHC Steering Committee.
+After your proposal is implemented, stable, and widely used, you (or anyone
+else) can subsequently propose to move those types into ``base`` via a CLC
+proposal.
+
+Sometimes, however, your proposal necessarily changes something in ``base``,
+whose API is curated by the CLC.
+In that case, assuming your proposal is accepted, at the point when it is
+implemented (by you or anyone else), CLC approval will be needed for these
+changes, via a CLC proposal made by the implementor.
+By signalling those changes now, at the proposal stage, the CLC will be alerted
+and have an opportunity to offer feedback, and agreement in principle.
+
+See `GHC base libraries <https://github.com/Ericson2314/tech-proposals/blob/ghc-base-libraries/proposals/accepted/051-ghc-base-libraries.rst?rgh-link-date=2023-07-09T17%3A01%3A15Z>`_
+for some useful context.
+
+Therefore, in this section:
+
+* If your proposal makes any changes to the API of ``base`` (including its
+  exports, types, semantics, and performance), please specify these changes
+  in this section.
+
+* If your proposal makes any change to the API of ``ghc-experimental``, please
+  also specify these changes.
+
+If you propose to change both, use subsections, so that the changes are clearly
+distinguished.
+Similarly, if any other libraries are affected, please lay it all out here.
 
 Examples
 --------
@@ -101,6 +142,9 @@ drawbacks that cannot be resolved.
 
 Backward Compatibility
 ----------------------
+How well does your proposal meet the stability principles described in our
+`GHC stability principles <../principles.rst#3GHC-stability-principles>`_ document?
+
 Will your proposed change cause any existing programs to change behaviour or
 stop working? Assess the expected impact on existing code on the following scale:
 
