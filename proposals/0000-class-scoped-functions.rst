@@ -56,41 +56,53 @@ Let's say we have::
       -- Main.hs:
       module Main where
             -- (B) case
-            import Bar (Bar(foo)) -- explicit
-            import Bar (Bar(..))  -- implicit
+            import Bar (Bar(foo)) -- explicit detailed import
+            import Bar (Bar(..))  -- implicit detailed import
 
             -- (A) case
+            import Bar  -- implicit full import
             instance Bar T where
                   foo = somefunc
 
+            myFunc :: T -> ....
+            myFunc = someDefinition using foo
 
-And we decided to rename ``foo`` into ``bar``. Is it possible? ::
+
+And we decided to rename ``foo`` into ``bar`` (or we decided to write completly alternative class-functions). Is it possible? ::
 
       class Bar a where
-            bar :: a -> a
+            bar :: a -> a -> a
 
       foo :: Bar a => a -> a
-      foo = bar
+      foo = someTransform bar
 
-But what to do with all instances (A) and imports (B)? These changes fully broke backward compatibility.
+But what to do with all instances (A) and detailed imports (B)? These changes fully broke backward compatibility.
 
 
 Proposed Change Specification
 -----------------------------
 
+We propose, that renaming class methods could be done in 2 Stages. 
+
+First Stage: we transform deprecated function into Class scoped functions (CSFs). This allows to reuse old code and old libraries with old, but already deprecated, definitions. And same time this allows to write code in a new way.
+
+Second Stage: we get rid of CSFs, when the old code is no longer used anywhere.
+
+
 Syntax
 ~~~~~~
 
-We add a keyword, which is important in class declaration only.
+We could add a keyword (or use already existed one), which is important in class declaration only.
 
-It denotes a class scoped function, so it could be named ``function`` (PHP/JS/Lua-like), ``func`` (Go-like), 
+It denotes a class scoped function, so it could be named ``let`` (it's already a keyword), ``function`` (PHP/JS/Lua-like), ``func`` (Go-like), 
 ``fun`` (OCaml/F#/SML-like), ``fn`` (Rust-like), ``defun`` (Lisp-like), ``define`` (Scheme-like), ``def`` (Python/Ruby-like),
 ``lambda`` (Lisp/Python-like),  ``sub`` (Perl-like) ::
 
     class Bar a where
 
-        function foo
-        
+        let foo
+
+        {-# DEPRECATED #-}
         foo :: a -> a
         foo = bar
 
@@ -99,14 +111,17 @@ It denotes a class scoped function, so it could be named ``function`` (PHP/JS/Lu
 
         {-# MINIMAL foo | bar #-}
 
+    -- this "foo" is not deprecated
     foo :: Bar a => a -> a
     foo = bar
 
     -- Main.hs:
-    import Bar (Bar(foo)) -- explicit
-    import Bar (Bar(..))  -- implicit
+    -- (B) case
+    import Bar (Bar(foo)) -- explicit detailed import
+    import Bar (Bar(..))  -- implicit detailed import
 
     -- (A) case
+    import Bar  -- implicit full import
     instance Bar T where
         foo = somefunc
 
@@ -119,13 +134,15 @@ Class scoped functions (CSF for (A) case) have simple rules:
 * CSFs can only be defined in classes and instances
 * CSFs are only in scope in class and instance definitions
 * CSFs always shadow outside functions with the same name
+* CSFs is best suits together with ``{-# DEPRECATED #-}``
 
 Now we can rewrite the ``Monoid`` class as follows::
 
     class Semigroup a => Monoid a where
 
-        function mappend
+        let mappend
         
+        {-# DEPRECATED #-}
         mappend :: a -> a -> a
         mappend = (<>)
 
@@ -137,16 +154,14 @@ Now we can rewrite the ``Monoid`` class as follows::
 
         {-# MINIMAL mempty | mconcat #-}
 
+    -- this "mappend" is not deprecated
     mappend :: Monoid a => a -> a -> a
     mappend = (<>)
 
 
 Unfortunately, these changes require changes for detailed import ((B) case).
 
-So we need to have the implicit extension "``ImportFromClassFunction``" for omitting these changes in import and we 
-need to explicit switch it off by a "``NoImportFromClassFunction``" language pragma. 
-
-Alternatively we could control specific imports with "``{-# NOIMPORTFN Mod #-}``" / "``{-# IMPORTFN Mod #-}``" pragma.
+So we need to have additional explicit extension "``NoImportClassScopedFunction``" for disable import functions with names equal to Class Scoped Function names, and otherwise it is enabled. 
 
 
 Effect and Interactions
@@ -162,7 +177,7 @@ We expect the implementation and maintenance costs for this feature to be minima
 Backward Compatibility
 ----------------------
 
-This proposal is backward compatibility driven, so we expected it is fully backward compatibile.
+This proposal is backward compatibility driven, so we expected it is fully backward compatibile. And more: this proposal is fully future compatibile.
 
 Alternatives
 ------------
