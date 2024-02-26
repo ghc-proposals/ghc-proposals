@@ -138,7 +138,7 @@ We expect this proposal could also affect ``HasField`` class ::
     hasField = fromJust . hasMaybeField
 	
     -- define just "hasField" makes "hasMaybeField" unsafe
-    {#- MINIMAL hasMaybeField | hasField -#}
+    {-# MINIMAL hasMaybeField | hasField #-}
 	
   getMaybeField :: forall x r a . HasField x r a => r -> Maybe a
   getMaybeField = fmap snd . hasMaybeField @x
