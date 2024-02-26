@@ -63,16 +63,24 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
 
    Viewing a set of definitions as a graph where each binding form a vertex, and each reference in the binding's body to another binding forms a directed edge, the strongly connected component of a vertex *B* is the largest possible set of vertices including *B* such there is a path from any vertex to any other vertex.
 
-3. **Indirectly Unused Bindings:** A binding *B* is **indirectly unused** if it is directly unused, or referenced only in the body of an indirectly unused binding within the scope *B* is defined in, and the relevant warning flag is enabled.
+3. **Indirectly Unused Bindings:** A binding *B* is **indirectly unused** if it is directly unused, or *B* is referenced only in the body of a (directly or indirectly) unused binding *C*, *and* *C* is in scope at the point where *B*'s definition appears, and the relevant warning flag is enabled.
 
-   Limiting the second part of the definition to *B*'s scope let's us avoid generating a lot of unhelpful warnings in cases where the top-level binding which local bindings are defined in is unused:
+   For example, suppose ``foo1`` and ``foo2`` appear nowhere else.
 
    ::
 
-     foo = b
-       where b = bar
+     bar1 = True
+     foo1 = bar1
 
-   Even if ``foo`` is unused, this will not throw a warning for ``b``, since ``foo`` is not defined within the scope ``b`` is defined in.
+     foo2 = (bar2, foo1)
+       where bar2 = True
+
+   In this example
+
+   - ``foo2`` is directly unused
+   - ``foo1`` is indirectly unused, because it only occurs in the body of the unused ``foo2``, *and* ``foo1`` is in scope at the point of ``foo2``'s definition.
+   - Similarly, ``bar1`` is indirectly unused.
+   - But ``bar2`` is *not* indirectly unused, because, while it occurs in the body of the unused ``foo2``, ``bar2`` is not in scope at ``foo2``'s definition site.
 
 4. **Recursive and Mutual Recursive Bindings**:
 
@@ -132,7 +140,7 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
 
   In this example,
 
-  - ``quux`` is not unused (it is used in the right-hand side of ``bar``, which is not defined within the scope of ``quux``'s definition), while ``wux`` and ``bar`` are directly unused.
+  - ``quux`` is not unused (it is used in the right-hand side of ``bar``, and ``quux`` is not in scope at ``bar``'s definition site), while ``wux`` and ``bar`` are directly unused.
   - The binding ``wombat`` is indirectly unused; it's warning will mention ``wux`` (the innermost unused binding in which ``wombat`` is mentioned).
   - The binding for ``foo`` is also indirectly unused, but its warning will mention ``bar`` (not ``quux``) since ``bar`` is the innermost unused binding enclosing the refernce to ``foo``.
 
