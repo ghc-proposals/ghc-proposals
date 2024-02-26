@@ -126,12 +126,36 @@ If data type is written using GADTs, this extension create function for each fie
 Effect and Interactions
 -----------------------
 
+We expect this proposal could also affect ``HasField`` class ::
+
+  class HasField (x :: k) r a | x r -> a where
+    
+    -- new function
+    hasMaybeField :: r -> Maybe (a -> r, a)
+    hasMaybeField = Just . hasField
+	
+    hasField :: r -> (a -> r, a)
+    hasField = fromJust . hasMaybeField
+	
+    -- define just "hasField" makes "hasMaybeField" unsafe
+    {#- MINIMAL hasMaybeField | hasField -#}
+	
+  getMaybeField :: forall x r a . HasField x r a => r -> Maybe a
+  getMaybeField = fmap snd . hasMaybeField @x
+
+  setMaybeField :: forall x r a . HasField x r a => r -> a -> r
+  setMaybeField r a = case hasMaybeField @x r of
+		Nothing     -> r    -- do not update if wrong field-selector
+		Just (f, _) -> f a
+
+  getField :: forall x r a . HasField x r a => r -> a
+  getField = snd . hasField @x
+
+  setField :: forall x r a . HasField x r a => r -> a -> r
+  setField = fst . hasField @x
+
+
 We expect this proposal affects ``OverloadedRecordDot`` extension for maybe-selectors.
-
-We expect this proposal affects ``DisambiguateRecordFields`` extension for reading only maybe-selectors.
-
-We expect this proposal could also affect ``HasField`` class.
-
 
 Costs and Drawbacks
 -------------------
