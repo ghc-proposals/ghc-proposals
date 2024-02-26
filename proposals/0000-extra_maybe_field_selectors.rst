@@ -126,7 +126,7 @@ If data type is written using GADTs, this extension create function for each fie
 Effect and Interactions
 -----------------------
 
-We expect this proposal could also affect ``HasField`` class ::
+We expect this proposal could also affect ``HasField`` class fro `158 Record SetField <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0158-record-set-field.rst>`_  ::
 
   class HasField (x :: k) r a | x r -> a where
     
@@ -157,6 +157,48 @@ We expect this proposal could also affect ``HasField`` class ::
   setField :: forall x r a . HasField x r a => r -> a -> r
   setField = fst . hasField @x
 
+UPDATE for approved `583 HasField Redesign <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0583-hasfield-redesign.rst>`_ ::
+
+  type HasField :: forall {k} {r_rep} {a_rep} . k -> TYPE r_rep -> TYPE a_rep -> Constraint
+  class HasField x r a | x r -> a where
+    -- | Selector function to extract the field @x@ from the record @r@.
+    getField :: r -> a
+    getField = fromFust . getMaybeField
+
+    getMaybeField :: r -> Maybe a
+    getMaybeField = Just. getField
+
+    -- defining just "getField" makes "getMaybeField" same unsafe as "getField"
+    {-# MINIMAL getMaybeField | getField #-}
+
+
+
+  type SetField :: forall {k} {r_rep} {a_rep} . k -> TYPE r_rep -> TYPE a_rep -> Constraint
+  class SetField x r a | x r -> a where
+    -- | Change the value stored in the field @x@ of the record @r@.
+    modifyField :: (a -> a) -> r -> r
+    default modifyField :: (r_rep ~ LiftedRep, a_rep ~ LiftedRep, HasField x r a) => (a -> a) -> r -> r
+    modifyField f r = setField @x (f (getField @x r)) r
+
+    modifyMaybeField :: (a -> a) -> r -> Maybe r
+    default modifyMaybeField :: (r_rep ~ LiftedRep, a_rep ~ LiftedRep, HasField x r a) => (a -> a) -> r -> Maybe r
+    modifyMaybeField f r = (\fn -> setMaybeField @x fn r) <$> (f <$> (getMaybeField @x r))
+
+    -- | Update function to set the field @x@ in the record @r@.
+    setField :: a -> r -> r
+    -- setField = fromJust . setMaybeField
+    default setField :: a_rep ~ LiftedRep => a -> r -> r
+    setField v = modifyField @x (\ _ -> v)
+
+    setMaybeField :: a -> r -> Maybe r
+    setMaybeField = Just . setField
+
+    -- Haskell DO NOT suport right now several "default" strategies 
+    -- like "MINIMAL modifyField | setField | modifyMaybeField | setMaybeField"
+    -- so now we ignore "MINIMAL setMaybeField | setField | modifyField" 
+    -- and now we ignore "MINIMAL setMaybeField | setField" 
+    -- and use instead as was:
+    {-# MINIMAL modifyField | setField  #-}
 
 We expect this proposal affects ``OverloadedRecordDot`` and ``OverloadedRecordUpdate`` extensions for maybe-selectors.
 
