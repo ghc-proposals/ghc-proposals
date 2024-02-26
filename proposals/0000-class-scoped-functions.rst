@@ -87,9 +87,9 @@ Proposed Change Specification
 
 We propose, that renaming class methods could be done in 2 Stages. 
 
-First Stage: we transform deprecated function into Class scoped functions (CSFs). This allows to reuse old code and old libraries with old, but already deprecated, definitions. And same time this allows to write code in a new way.
+**First Stage**: we transform deprecated function into Class scoped functions (CSFs). This allows to reuse old code and old libraries with old, but already deprecated, definitions. And same time this allows to write code in a new way.
 
-Second Stage: we get rid of CSFs, when the old code is no longer used anywhere.
+**Second Stage**: we get rid of CSFs, when the old code is no longer used anywhere.
 
 
 Syntax
