@@ -264,6 +264,18 @@ With this proposal:
   UnusedRecursion.hs:11:1: warning: [-Wunused-top-binds]
       ‘b3’ is defined but used only in the following unused bindings: ‘b1’, ‘b2’
 
+Example illustrating relevant warnings flags:
+
+::
+
+  {-# OPTIONS_GHC -Wunused-local-binds -Windirectly-unused-binds #-}
+  foo = bar
+    where
+      bar = 4
+
+Currently, this produces no warnings.
+
+Looking at this, it might appear that ``bar`` is indirectly unused, and will thus produce a warning under this proposal. However, this is not the case: ``foo`` does not qualify as directly unused, since its relevant warning flag ``-Wunused-top-binds`` is not active, and so ``bar`` also does not qualify as indirectly unused. Thus, there will still not be any warnings produced by the code under this proposal.
 
 
 Effect and Interactions
