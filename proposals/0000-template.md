@@ -1,6 +1,6 @@
 ---
 author: David Binder
-date-accepted: ""
+date-accepted: "2024-26-02"
 ticket-url: ""
 implemented: ""
 ---
@@ -118,10 +118,7 @@ of a failure mode which perplexes users and prevents better integration in tools
 
 ## Costs and Drawbacks
 
-Minimal, there will be less code in the RTS, so less maintenance. People relying
-on this feature do have to use an alternative workflow and sum up the coverage of
-multiple tix files by hand. This is already possible using the functionality of the
-`hpc combine` command.
+People relying on the aggregation of multiple runs will have to explicitly use the `--read-tix-file=yes` RTS option to get the old behaviour. It is also possible to sum up multiple tix files by hand, using the `hpc combine` command.
 
 
 ## Backward Compatibility
@@ -131,7 +128,24 @@ It will only affect users of `-fhpc` which rely on the described functionality,
 namely that the coverage collected in the `.tix` file is accumulated over multiple
 program runs. It is very hard to be sure, but my guess is that very few people are currently
 using `-fhpc` in this way. They will only notice the change of behaviour in that
-their `.tix` files contain less ticks than they expected.
+their `.tix` files contain less ticks than they expected. The deprecation strategy outlined in the next
+section will warn users that this behaviour will change.
+
+## Deprecation Strategy
+
+The old behaviour will be changed over two consecutive releases:
+
+- In the first release, GHC continues with the current behaviour, but
+  if it finds an old file (of any kind, even in the wrong format) it emits
+  a warning (before attempting to read it) saying
+
+  I am reading in the existing tix file, and will add hpc info from this run
+  to the existing data in that file. GHC 9.12 will cease looking for an
+  existing tix file. If you positively want to add hpc info to the current
+  tix file, use `--read-tix-file=yes`
+
+- In the next release, it stops reading the file
+
 
 ## Alternatives
 
