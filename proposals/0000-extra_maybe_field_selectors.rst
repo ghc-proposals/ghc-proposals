@@ -156,7 +156,7 @@ We expect this proposal could also affect ``HasField`` class ::
   setField = fst . hasField @x
 
 
-We expect this proposal affects ``OverloadedRecordDot`` and``OverloadedRecordUpdate`` extensions for maybe-selectors.
+We expect this proposal affects ``OverloadedRecordDot`` and ``OverloadedRecordUpdate`` extensions for maybe-selectors.
 
 Costs and Drawbacks
 -------------------
