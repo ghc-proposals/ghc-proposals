@@ -136,6 +136,9 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
 Examples
 --------
 
+General Example
+###############
+
 ::
 
   module Foo () where
@@ -225,7 +228,8 @@ With this proposal, these warnings would be produced instead, assuming ``-Windir
       Defined but not used: ‘far’
 
 
-Recursive and Mutually Recursive Bindings:
+Recursive and Mutually Recursive Bindings
+#########################################
 
 Take this as example:
 
@@ -264,7 +268,8 @@ With this proposal:
   UnusedRecursion.hs:11:1: warning: [-Wunused-top-binds]
       ‘b3’ is defined but used only in the following unused bindings: ‘b1’, ‘b2’
 
-Example illustrating relevant warnings flags:
+Example illustrating relevant warnings flags
+############################################
 
 ::
 
