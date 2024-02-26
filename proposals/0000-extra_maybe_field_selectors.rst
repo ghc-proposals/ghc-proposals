@@ -145,9 +145,11 @@ We expect this proposal could also affect ``HasField`` class ::
 
   setMaybeField :: forall x r a . HasField x r a => r -> a -> Maybe r
   setMaybeField r a = fmap fst (hasMaybeField @x r) <*> (pure a)
-
+  
   setMaybeFieldIgnore :: forall x r a . HasField x r a => r -> a -> r
-  setMaybeFieldIgnore r a = fromJust $ (setMaybeField @x r a) <|> (Just r)
+  setMaybeFieldIgnore r a = case setMaybeField @x r a of 
+     | Just rn -> rn
+     | Nothing -> r 
 
   getField :: forall x r a . HasField x r a => r -> a
   getField = snd . hasField @x
