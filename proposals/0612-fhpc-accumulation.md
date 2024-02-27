@@ -1,11 +1,11 @@
 ---
 author: David Binder
-date-accepted: "2024-26-02"
-ticket-url: ""
+date-accepted: "2024-02-26"
+ticket-url: "https://gitlab.haskell.org/ghc/ghc/-/issues/23955"
 implemented: ""
 ---
 
-This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/612).
+This proposal was [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/612).
 
 # Change the semantics of -fhpc
 
