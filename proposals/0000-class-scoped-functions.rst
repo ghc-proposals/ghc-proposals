@@ -97,9 +97,11 @@ Syntax
 
 We could add a keyword (or use already existed one), which is important in class declaration only.
 
-It denotes a class scoped function, so it could be named ``let`` (it's already a keyword), ``function`` (PHP/JS/Lua-like), ``func`` (Go-like), 
-``fun`` (OCaml/F#/SML-like), ``fn`` (Rust-like), ``defun`` (Lisp-like), ``define`` (Scheme-like), ``def`` (Python/Ruby-like),
-``lambda`` (Lisp/Python-like),  ``sub`` (Perl-like) ::
+It denotes a class scoped function, so it could be named ``let`` (it's already a keyword in Haskell) or ``inner`` or ``hidden`` or ``private``(by meaning), 
+``function`` (PHP/JS/Lua-like), ``func`` (Go-like), ``fun`` (OCaml/F#/SML-like), ``fn`` (Rust-like), ``defun`` (Lisp-like), ``define`` (Scheme-like), 
+``def`` (Python/Ruby-like), ``lambda`` (Lisp/Python-like),  ``sub`` (Perl-like) 
+
+In all examples here a keyword ``let`` is used. ::
 
     class Bar a where
 
