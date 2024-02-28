@@ -98,11 +98,11 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
      bar2 (Just v2) v3 = v3
        where c = v2
 
-    In this example
+   In this example
 
-    - ``v1`` is directly unused
-    - ``v2`` is indirectly unused
-    - ``v3`` is *not* indirectly unused, because, while it only occurs in the unused ``bar2``, ``v3`` is not in scope at the at ``bar2``'s definition site.
+   - ``v1`` is directly unused
+   - ``v2`` is indirectly unused
+   - ``v3`` is *not* indirectly unused, because, while it only occurs in the unused ``bar2``, ``v3`` is not in scope at the at ``bar2``'s definition site.
 
 5. An **imported identifier**, assuming ``-Wunused-imports`` is enabled,
 
