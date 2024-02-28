@@ -10,7 +10,7 @@ Class Scoped Functions
 .. sectnum::
 .. contents::
 
-GHC has a lack of support for renaming class methods if the class is already public.
+GHC has a lack of support for refactoring of renaming class methods if the class is already public.
 This proposal gives a way how to do this painlessly.
 
 Motivation
@@ -19,9 +19,9 @@ Motivation
 Background
 ~~~~~~~~~~
 
-GHC has a lack of support for renaming class methods if the class is already public.
+GHC has a lack of support for refactoring of renaming class methods if the class is already public.
 
-Here is a real example of the ``Monoid a`` class in ``base``::
+Here it is a real example of the ``Monoid a`` class in ``base``, where method `mappend` is impossible to extract from the class: ::
 
   class Semigroup a => Monoid a where
 
@@ -71,7 +71,7 @@ Let's say we have::
             myFunc = someDefinition using foo
 
 
-And we decided to rename ``foo`` into ``bar`` (or we decided to write completly alternative class-functions). Is it possible? ::
+And we decided to rename ``foo`` into ``bar`` (or we decided to write completely alternative class-functions). Is it possible? ::
 
       class Bar a where
             bar :: a -> a -> a
@@ -85,11 +85,11 @@ But what to do with all instances (A) and detailed imports (B)? These changes fu
 Proposed Change Specification
 -----------------------------
 
-We propose, that renaming class methods could be done in 2 Stages. 
+We propose, that refactoring of renaming class methods could be done in 2 Stages. 
 
-**First Stage**: we transform deprecated function into Class scoped functions (CSFs). This allows to reuse old code and old libraries with old, but already deprecated, definitions. And same time this allows to write code in a new way.
+**First Stage**: we transform deprecated function into Class scoped functions (CSFs). This allows to reuse old code and old libraries with old, but already deprecated, definitions. And same time this allows to write code in a new way. To make sure, that in the new code is written differently, we deprecate by pragma to write old way.
 
-**Second Stage**: we get rid of CSFs, when the old code is no longer used anywhere.
+**Second Stage**: in some distant future, when the old code is no longer used anywhere, we get rid of CSFs.
 
 
 Syntax
@@ -167,6 +167,108 @@ Unfortunately, these changes require changes for detailed import ((B) case).
 So we need to have additional explicit extension "``NoImportClassScopedFunction``" for disable import functions with names equal to Class Scoped Function names, and otherwise it is enabled. 
 
 
+Examples
+--------
+
+We could use Class Scoped Functions for different refactoring strategies.
+
+Renaming
+~~~~~~~~
+
+Example of renaming a class-method ::
+
+  class Foo a where
+
+     let foo_old
+
+     {-# DEPRECATED #-}
+     foo_old :: a -> a
+     foo_old = foo_new
+
+     foo_new :: a -> a
+     foo_new = foo_old
+
+   -- this outside of class function is not deprecated
+   foo_old :: Foo a => a -> a
+   foo_old = foo_new
+
+Swap the order of arguments
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Example of swaping the order of arguments in a class-method ::
+
+  class Bar a where
+     type Collect a
+
+     let elem_old
+
+     {-# DEPRECATED #-}
+     elem_old :: a -> Collect a -> Bool
+     elem_old = flip elem_new
+
+     elem_new :: Collect a -> a -> Bool
+     elem_new = flip elem_old
+
+  -- this outside of class function is not deprecated
+  elem_old :: Bar a => a -> Collect a -> Bool
+  elem_old = flip elem_new
+
+Change amount of arguments
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Example of changing amount of arguments in a class-method ::
+
+  class Bar a where
+     type Collect a
+
+     let nextN_old
+
+     {-# DEPRECATED #-}
+     nextN_old :: Collect a -> Int -> (Collect a, Maybe a)
+     nextN_old c m = go (c, Nothing) m
+         where
+         go r n = case n of
+           | n <= 0    => r
+           | otherwise => go (next_new $ fst r) (n - 1)
+
+     next_new :: Collect a -> (Collect a, Maybe a)
+     next_new c = nextN_old c 1
+
+  -- this outside of class function is not deprecated
+  nextN_old :: Collect a -> Int -> (Collect a, Maybe a)
+  nextN_old c m = go (c, Nothing) m
+      where
+        go r n = case n of
+           | n <= 0    => r
+           | otherwise => go (next_new $ fst r) (n - 1)
+
+Removing a method
+~~~~~~~~~~~~~~~~~
+
+This example of removing `mappend` of `Monoid a`. Or a fresh example with discussion to remain or not `second` in `Bifunctor a` ::
+
+  class (forall a. Functor (p a)) => Bifunctor p where
+      -- {-# MINIMAL bimap | first, second #-}
+      {-# MINIMAL bimap | first #-}
+
+      bimap :: (a -> b) -> (c -> d) -> p a c -> p b d
+      bimap f g = first f . second g
+
+      first :: (a -> b) -> p a c -> p b c
+      first f = bimap f id
+
+      let second
+
+      {-# DEPRECATED #-}
+      second :: (b -> c) -> p a b -> p a c
+      -- second = bimap id
+      second = fmap
+
+  -- this outside of class function is not deprecated
+  second :: forall a b. Functor (p a) => Bifunctor p => (b -> c) -> p a b -> p a c
+  second = bimap id
+
+
 Effect and Interactions
 -----------------------
 
@@ -180,7 +282,7 @@ We expect the implementation and maintenance costs for this feature to be minima
 Backward Compatibility
 ----------------------
 
-This proposal is backward compatibility driven, so we expected it is fully backward compatibile. And more: this proposal is fully future compatibile.
+This proposal is backward compatibility driven, so we expected it is fully backward compatible. And more: this proposal is fully future compatible.
 
 Alternatives
 ------------
