@@ -247,7 +247,7 @@ Example of changing amount of arguments in a class-method ::
 Removing a method
 ~~~~~~~~~~~~~~~~~
 
-This example of removing `mappend` of `Monoid a`. Or a fresh example with discussion to remain or not `second` in `Bifunctor a` ::
+This example of removing ``mappend`` of ``Monoid a``. Or a fresh example with discussion to remain or not ``second`` in ``Bifunctor a`` ::
 
   class (forall a. Functor (p a)) => Bifunctor p where
       -- {-# MINIMAL bimap | first, second #-}
@@ -261,12 +261,11 @@ This example of removing `mappend` of `Monoid a`. Or a fresh example with discus
 
       let second
 
-      {-# DEPRECATED #-}
       second :: (b -> c) -> p a b -> p a c
       -- second = bimap id
       second = fmap
 
-  -- this outside of class function is not deprecated
+  -- this outside "second" is defined differently then inner one
   second :: forall a b. Functor (p a) => Bifunctor p => (b -> c) -> p a b -> p a c
   second = bimap id
 
