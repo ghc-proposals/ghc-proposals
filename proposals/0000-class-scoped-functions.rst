@@ -10,7 +10,7 @@ Class Scoped Functions
 .. sectnum::
 .. contents::
 
-GHC has a lack of support for refactoring of renaming class methods if the class is already public.
+GHC has a lack of support for backward compatible refactoring of renaming class methods if the class is already public.
 This proposal gives a way how to do this painlessly.
 
 Motivation
@@ -19,9 +19,9 @@ Motivation
 Background
 ~~~~~~~~~~
 
-GHC has a lack of support for refactoring of renaming class methods if the class is already public.
+GHC has a lack of support for backward compatible refactoring of renaming class methods if the class is already public.
 
-Here it is a real example of the ``Monoid a`` class in ``base``, where method `mappend` is impossible to extract from the class: ::
+Here it is a real example of the ``Monoid a`` class in the ``base``, where method ``mappend`` is impossible to extract from the class without breaking backward compatibility of the rest code: ::
 
   class Semigroup a => Monoid a where
 
@@ -41,13 +41,13 @@ Here it is a real example of the ``Monoid a`` class in ``base``, where method `m
       
       {-# MINIMAL mempty | mconcat #-}
 
+
 Flexibility on change of class-functions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Once a class becomes public, renaming or even removing methods becomes practically impossible 
-without breaking backward compatibility.
+Once a class becomes public, renaming or even removing methods becomes practically impossible without breaking backward compatibility.
 
-Let's say we have::
+Let's say we have ::
 
       -- Bar.hs:
       module Bar where
@@ -71,7 +71,7 @@ Let's say we have::
             myFunc = someDefinition using foo
 
 
-And we decided to rename ``foo`` into ``bar`` (or we decided to write completely alternative class-functions). Is it possible? ::
+And we decided to rename ``foo`` into ``bar`` (or we decided to write completely alternative class-functions). Is it possible do not break backward compatibility? ::
 
       class Bar a where
             bar :: a -> a -> a
@@ -85,7 +85,7 @@ But what to do with all instances (A) and detailed imports (B)? These changes fu
 Proposed Change Specification
 -----------------------------
 
-We propose, that refactoring of renaming class methods could be done in 2 Stages. 
+We propose, that backward compatible refactoring of renaming class methods could be done in 2 Stages. 
 
 **First Stage**: we transform deprecated function into Class scoped functions (CSFs). This allows to reuse old code and old libraries with old, but already deprecated, definitions. And same time this allows to write code in a new way. To make sure, that in the new code is written differently, we deprecate by pragma to write old way.
 
@@ -139,7 +139,7 @@ Class scoped functions (CSF for (A) case) have simple rules:
 * CSFs can only be defined in classes and instances
 * CSFs are only in scope in class and instance definitions
 * CSFs always shadow outside functions with the same name
-* CSFs is best suits together with ``{-# DEPRECATED #-}``
+* CSFs is best suits together with ``{-# DEPRECATED #-}``, but this is not a mandatory
 
 Now we can rewrite the ``Monoid`` class as follows::
 
@@ -164,7 +164,7 @@ Now we can rewrite the ``Monoid`` class as follows::
     mappend = (<>)
 
 
-Unfortunately, these changes require changes for detailed import ((B) case).
+Unfortunately, these changes require also changes for detailed import ((B) case) for backward compatibility.
 
 So we need to have additional explicit extension "``NoImportClassScopedFunction``" for disable import functions with names equal to Class Scoped Function names, and otherwise it is enabled. 
 
@@ -172,12 +172,12 @@ So we need to have additional explicit extension "``NoImportClassScopedFunction`
 Examples
 --------
 
-We could use Class Scoped Functions for different refactoring strategies.
+We could use Class Scoped Functions for different backward compatible refactoring strategies.
 
 Renaming
 ~~~~~~~~
 
-Example of renaming a class-method ::
+Example of backward compatible renaming a class-method ::
 
   class Foo a where
 
@@ -197,7 +197,7 @@ Example of renaming a class-method ::
 Swap the order of arguments
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Example of swaping the order of arguments in a class-method ::
+Example of backward compatible swapping the order of arguments in a class-method ::
 
   class Bar a where
      type Collect a
@@ -218,7 +218,7 @@ Example of swaping the order of arguments in a class-method ::
 Change amount of arguments
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Example of changing amount of arguments in a class-method ::
+Example of backward compatible changing amount of arguments in a class-method ::
 
   class Bar a where
      type Collect a
@@ -247,7 +247,9 @@ Example of changing amount of arguments in a class-method ::
 Removing a method
 ~~~~~~~~~~~~~~~~~
 
-This example of removing ``mappend`` of ``Monoid a``. Or a fresh example with discussion to remain or not ``second`` in ``Bifunctor a`` ::
+It is an example here of backward compatible removing ``mappend`` of ``Monoid a``.
+
+and here is a fresh example with discussion to remain or not ``second`` in ``Bifunctor a`` and remain backward compatible ::
 
   class (forall a. Functor (p a)) => Bifunctor p where
       -- {-# MINIMAL bimap | first, second #-}
