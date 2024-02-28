@@ -53,8 +53,10 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
    - The relevant warning flag for type variables bound by ``forall`` is ``-Wunused-foralls``
    - The relevant warning flag for modules and names from modules that are being imported is ``-Wunused-imports``
    - The relevant warning flag for type variables bound in type patterns is ``-Wunused-type-patterns``
+
+   The proposal changes some of the warnings produced by each of these flags, except for ``-Wunused-type-patterns``, which is listed here for completeness.
   
-   Note: Related warning flags that are not affected by this proposal since they are not about binding names are
+   Note: Related warning flags that are not affected by this proposal since they are not about binding or introducing names are
 
    - ``-Wunused-pattern-binds``
    - ``-Wunused-packages``
@@ -64,7 +66,7 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
 
    Viewing a set of definitions as a graph where each binding form a vertex, and each reference in the binding's body to another binding forms a directed edge, the strongly connected component of a vertex *B* is the largest possible set of vertices including *B* such there is a path from any vertex to any other vertex.
 
-3. **Indirectly Unused Bindings:** A binding *B* is **indirectly unused** if it is directly unused, or *B* is referenced only in the body of a (directly or indirectly) unused binding *C*, *and* *C* is in scope at the point where *B*'s definition appears, and the relevant warning flag is enabled.
+3. **Indirectly Unused Bindings:** A binding *B* is **indirectly unused** if it is directly unused, or *B* is referenced only in the body of a (directly or indirectly) unused binding *C*, *and* *C* is in scope at the point where *B*'s definition appears, and the relevant warning flag is enabled. A **binding** *B* includes value bindings, but also (at the top level) type and class declarations.
 
    For example, suppose ``foo1`` and ``foo2`` appear nowhere else.
 
@@ -83,7 +85,42 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
    - Similarly, ``bar1`` is indirectly unused.
    - But ``bar2`` is *not* indirectly unused, because, while it occurs in the body of the unused ``foo2``, ``bar2`` is not in scope at ``foo2``'s definition site.
 
-4. **Import and ``forall`` Bindings:** The proposal also extends to warnings about indirectly unused imports and ``forall`` binds. Both are considered to be unused if they are used only in definitions or type declarations of unused bindings, with the same direct vs. indirect distinction.
+4. A **variable** *V* **bound by a pattern match**, assuming ``-Wunused-matches`` is enabled,
+
+   - is directly unused if it does not appear in the alternative the pattern match belongs to
+   - is indirectly unused if it referenced only in the body of a (directly or indirectly) unused bindings *C*, *and* *V* is in scope at the point where *C*'s definition appears.
+
+   For example, suppose ``bar1`` and ``bar2`` appear nowhere else.
+
+   ::
+
+     bar1 (Just v1) = undefined
+     bar2 (Just v2) v3 = v3
+       where c = v2
+
+    In this example
+
+    - ``v1`` is directly unused
+    - ``v2`` is indirectly unused
+    - ``v3`` is *not* indirectly unused, because, while it only occurs in the unused ``bar2``, ``v3`` is not in scope at the at ``bar2``'s definition site.
+
+5. An **imported identifier**, assuming ``-Wunused-imports`` is enabled,
+
+   - is directly unused if it is not mentioned anywhere in the module
+   - is indirectly unused if it is referenced only in (directly or indirectly) unused bindings
+
+6. A **forall-bound type variable**, assuming ``-Wunused-foralls`` is enabled,
+
+   - is directly unused if it does not appear in the body of the type
+   - is indirectly unused if it only appears in the kind signature of other ``forall``-bound type variables in the body of the type
+
+   For example:
+
+   ::
+
+     far :: forall a (b :: a) c . c
+
+    Here, ``b`` is directly unused, but ``a`` is indirectly unused.
 
 **Warning References and Messages:**
 
@@ -158,7 +195,11 @@ General Example
   far :: forall a (b :: a) c . c
   far = far
 
-Currently, without this proposal, the file results in the following warnings, assuming ``-Wunused-imports``, ``-Wunused-top-binds``, ``-Wunused-local-binds``, and ``-Wunused-foralls`` are enabled:
+  bar1 (Just v1) = undefined
+  bar2 (Just v2) v3 = v3
+    where c = v2
+
+Currently, without this proposal, the file results in the following warnings, assuming ``-Wunused-imports``, ``-Wunused-top-binds``, ``-Wunused-local-binds``, ``-Wunused-matches``, and ``-Wunused-foralls`` are enabled:
 
 ::
 
@@ -189,6 +230,18 @@ Currently, without this proposal, the file results in the following warnings, as
 
   Foo.hs:15:1: warning: [-Wunused-top-binds]
       Defined but not used: ‘far’
+
+  Foo.hs:19:1: warning: [-Wunused-top-binds]
+      Defined but not used: `bar1'
+
+  Foo.hs:19:12: warning: [-Wunused-matches]
+      Defined but not used: `v1'
+
+  Foo.hs:20:1: warning: [-Wunused-top-binds]
+      Defined but not used: `bar2'
+
+  Foo.hs:21:9: warning: [-Wunused-local-binds]
+      Defined but not used: `c'
 
 With this proposal, these warnings would be produced instead, assuming ``-Windirectly-unused-binds`` is enabled:
 
@@ -221,12 +274,27 @@ With this proposal, these warnings would be produced instead, assuming ``-Windir
       Quantified type variable ‘a’ is used only in the following unused variable: ‘(b :: a)’
       In the type signature for ‘far’
 
-  Foo.hs:13:17: warning: [-Wunused-foralls, -Windirectly-unused-binds]
+  Foo.hs:13:17: warning: [-Wunused-foralls]
       Unused quantified type variable ‘(b :: a)’
       In the type signature for ‘far’
 
   Foo.hs:14:1: warning: [-Wunused-top-binds]
       Defined but not used: ‘far’
+
+  Foo.hs:19:1: warning: [-Wunused-top-binds]
+      Defined but not used: ‘bar1’
+
+  Foo.hs:19:12: warning: [-Wunused-matches]
+      Defined but not used: ‘v1’
+
+  Foo.hs:19:12: warning: [-Wunused-matches, -Windirectly-unused-binds]
+      ‘v1’ is defined but used only in the following unused bindings: ‘c’
+
+  Foo.hs:20:1: warning: [-Wunused-top-binds]
+      Defined but not used: ‘bar2’
+
+  Foo.hs:21:9: warning: [-Wunused-local-binds]
+      Defined but not used: ‘c’
 
 
 Recursive and Mutually Recursive Bindings
