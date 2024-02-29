@@ -165,7 +165,9 @@ This proposal is fully backward compatible.
 Alternatives
 ------------
 
-A partial alternative is `Partial Field Behavior #535 <https://github.com/ghc-proposals/ghc-proposals/pull/535>`_
+1) Alternative naming. Maybe instead of ``'maybe`` should be used another "suffix", like ``#maybe``.
+
+2) A partial alternative is `Partial Field Behavior #535 <https://github.com/ghc-proposals/ghc-proposals/pull/535>`_
 
 
 Unresolved Questions
