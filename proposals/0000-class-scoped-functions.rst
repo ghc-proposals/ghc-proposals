@@ -101,14 +101,12 @@ It denotes a class scoped function, so it could be named ``let`` (it's already a
 ``function`` (PHP/JS/Lua-like), ``func`` (Go-like), ``fun`` (OCaml/F#/SML-like), ``fn`` (Rust-like), ``defun`` (Lisp-like), ``define`` (Scheme-like), 
 ``def`` (Python/Ruby-like), ``lambda`` (Lisp/Python-like),  ``sub`` (Perl-like) 
 
-In all examples here a keyword ``let`` is used. ::
+In all examples here a keyword ``let`` is used to mark function as Class scoped function. It looks like ``let`` without ``in`` inside a do-notaion ::
 
     class Bar a where
 
-        let foo
-
         {-# DEPRECATED #-}
-        foo :: a -> a
+        let foo :: a -> a
         foo = bar
 
         bar :: a -> a
@@ -136,8 +134,8 @@ Semantics
 
 Class scoped functions (CSF for (A) case) have simple rules:
 
-* CSFs can only be defined in classes and instances
-* CSFs are only in scope in class and instance definitions
+* CSFs can be marked as CSF's by a keyword ( ``let`` ) in class definition only
+* CSF visibility/scope is inside ``where`` clause of classes and instances where they could be defined or used
 * CSFs always shadow outside functions with the same name
 * CSFs is best suits together with ``{-# DEPRECATED #-}``, but this is not a mandatory
 
@@ -145,10 +143,8 @@ Now we can rewrite the ``Monoid`` class as follows::
 
     class Semigroup a => Monoid a where
 
-        let mappend
-        
         {-# DEPRECATED #-}
-        mappend :: a -> a -> a
+        let mappend :: a -> a -> a
         mappend = (<>)
 
         mempty :: a
@@ -181,10 +177,8 @@ Example of backward compatible renaming a class-method ::
 
   class Foo a where
 
-     let foo_old
-
      {-# DEPRECATED #-}
-     foo_old :: a -> a
+     let foo_old :: a -> a
      foo_old = foo_new
 
      foo_new :: a -> a
@@ -202,10 +196,8 @@ Example of backward compatible swapping the order of arguments in a class-method
   class Bar a where
      type Collect a
 
-     let elem_old
-
      {-# DEPRECATED #-}
-     elem_old :: a -> Collect a -> Bool
+     let elem_old :: a -> Collect a -> Bool
      elem_old = flip elem_new
 
      elem_new :: Collect a -> a -> Bool
@@ -223,10 +215,8 @@ Example of backward compatible changing amount of arguments in a class-method ::
   class Bar a where
      type Collect a
 
-     let nextN_old
-
      {-# DEPRECATED #-}
-     nextN_old :: Collect a -> Int -> (Collect a, Maybe a)
+     let nextN_old :: Collect a -> Int -> (Collect a, Maybe a)
      nextN_old c m = go (c, Nothing) m
          where
          go r n = case n of
@@ -261,9 +251,7 @@ and here is a fresh example with discussion to remain or not ``second`` in ``Bif
       first :: (a -> b) -> p a c -> p b c
       first f = bimap f id
 
-      let second
-
-      second :: (b -> c) -> p a b -> p a c
+      let second :: (b -> c) -> p a b -> p a c
       -- second = bimap id
       second = fmap
 
