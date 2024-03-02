@@ -275,7 +275,9 @@ and here is a fresh example with discussion to remain or not ``second`` in ``Bif
 Effect and Interactions
 -----------------------
 
-Any Effect and Interactions are unknown.
+If CSF is deprecated by ``{-# DEPRECATED #-}`` , this means it is deprecated to be used in custom (non-auto) instances only.
+
+Any other Effect and Interactions are unknown.
 
 Costs and Drawbacks
 -------------------
