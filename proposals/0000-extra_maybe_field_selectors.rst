@@ -120,9 +120,7 @@ If data type is written using GADTs, this extension create function for each fie
 Effect and Interactions
 -----------------------
 
-We expect this proposal could also affect ``HasField`` class.  we add similar classes `HasMaybeField`/`SetMaybeField`  ::
-
- create additional  classes `HasMaybeField`/`SetMaybeField` 
+We expect this proposal could also affect ``HasField`` class.  We add similar classes `HasMaybeField`/`SetMaybeField`  ::
 
   class HasMaybeField x r a | x r -> a where
     getMaybeField :: r -> Maybe a
@@ -138,15 +136,13 @@ We expect this proposal could also affect ``HasField`` class.  we add similar cl
 
     {-# MINIMAL modifyMaybeField | setMaybeField #-}
 
+
 And we instead of writting ``r { user = blah } :: r`` write ``r { user'maybe = blah } :: Maybe r`` and for updating several fields we desugars with Maybe-Monad ::
 
   r { user'maybe = blah, message'maybe = bar }
 
-  -- desugars (this is not optimal desugaring)
-  do
-    r1 <- r  { user'maybe = blah }
-    r2 <- r1 { message'maybe = bar }
-    return r2
+  -- desugars
+  r  { user'maybe = blah } >>= \r1 -> r1 { message'maybe = bar }
 
 We expect this proposal affects ``OverloadedRecordDot`` and ``OverloadedRecordUpdate`` extensions for maybe-selectors.
 
