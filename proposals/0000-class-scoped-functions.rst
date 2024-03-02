@@ -52,23 +52,25 @@ Let's say we have ::
       -- Bar.hs:
       module Bar where
         
-            class Bar a where
-                  foo :: a -> a
+          class Bar a where
+               foo :: a -> a
 
 
       -- Main.hs:
       module Main where
-            -- (B) case
-            import Bar (Bar(foo)) -- explicit detailed import
-            import Bar (Bar(..))  -- implicit detailed import
+          -- import (B) case
+          import Bar (Bar(foo)) -- explicit detailed import
+          import Bar (Bar(..))  -- implicit detailed import
 
-            -- (A) case
-            import Bar  -- implicit full import
-            instance Bar T where
-                  foo = somefunc
+          -- import (A) case
+          import Bar  -- implicit full import
 
-            myFunc :: T -> ....
-            myFunc = someDefinition using foo
+
+          instance Bar T where
+               foo = somefunc
+
+          myFunc :: T -> ....
+          myFunc = someDefinition using foo
 
 
 And we decided to rename ``foo`` into ``bar`` (or we decided to write completely alternative class-functions). Is it possible do not break backward compatibility? ::
@@ -87,9 +89,9 @@ Proposed Change Specification
 
 We propose, that backward compatible refactoring of renaming class methods could be done in 2 Stages. 
 
-**First Stage**: we transform deprecated function into Class scoped functions (CSFs). This allows to reuse old code and old libraries with old, but already deprecated, definitions. And same time this allows to write code in a new way. To make sure, that in the new code is written differently, we deprecate by pragma to write old way.
+- **First Stage**: we transform deprecated function into Class scoped functions (CSFs). This allows to reuse old code and old libraries with old, but already deprecated, definitions. And same time this allows to write code in a new way. To make sure, that in the new code is written differently, we deprecate by pragma to write old way.
 
-**Second Stage**: in some distant future, when the old code is no longer used anywhere, we get rid of CSFs.
+- **Second Stage**: in some distant future, when the old code is no longer used anywhere, we get rid of CSFs.
 
 
 Syntax
@@ -119,12 +121,10 @@ In all examples here a keyword ``let`` is used to mark function as Class scoped 
     foo = bar
 
     -- Main.hs:
-    -- (B) case
-    import Bar (Bar(foo)) -- explicit detailed import
-    import Bar (Bar(..))  -- implicit detailed import
-
-    -- (A) case
+    -- import (A) case
     import Bar  -- implicit full import
+
+
     instance Bar T where
         foo = somefunc
 
@@ -159,8 +159,20 @@ Now we can rewrite the ``Monoid`` class as follows::
     mappend :: Monoid a => a -> a -> a
     mappend = (<>)
 
+And this is ehough for full import (case (A)).
 
-Unfortunately, these changes require also changes for detailed import ((B) case) for backward compatibility.
+Imports
+~~~~~~~~~
+
+Unfortunately, these changes require also changes for detailed import ((B) case) for backward compatibility. ::
+
+      module Main where
+         -- import (B) case
+         import Bar (Bar(foo)) -- explicit detailed import
+         import Bar (Bar(..))  -- implicit detailed import
+
+         myFunc :: T -> ....
+         myFunc = someDefinition using foo
 
 So we need to have additional explicit extension "``NoImportClassScopedFunction``" for disable import functions with names equal to Class Scoped Function names, and otherwise it is enabled. 
 
