@@ -53,7 +53,7 @@ instead. Otherwise, the resulting program will behave as if ``main >> exitWith E
 had been written, but the compiler will emit a warning.
 
 Proposed Library Change Specification
--------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Add a new module to ``ghc-experimental``:
 
