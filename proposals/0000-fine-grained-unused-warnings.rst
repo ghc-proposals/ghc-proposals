@@ -62,11 +62,11 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
    - ``-Wunused-packages``
    - ``-Wunused-do-bind``
 
-2. **Directly Unused Bindings:** A binding *B* is **directly unused** if it is referenced only in *B*'s own strongly-connected component, and the relevant warning flag is enabled.
+2. **Directly Unused Bindings:** A binding *B* is **directly unused** if it is referenced only in *B*'s own strongly-connected component, and the relevant warning flag is enabled. A **binding** *B* includes value bindings, but also (at the top level) type and class declarations.
 
    Viewing a set of definitions as a graph where each binding form a vertex, and each reference in the binding's body to another binding forms a directed edge, the strongly connected component of a vertex *B* is the largest possible set of vertices including *B* such there is a path from any vertex to any other vertex.
 
-3. **Indirectly Unused Bindings:** A binding *B* is **indirectly unused** if it is directly unused, or *B* is referenced only in the body of a (directly or indirectly) unused binding *C*, *and* *C* is in scope at the point where *B*'s definition appears, and the relevant warning flag is enabled. A **binding** *B* includes value bindings, but also (at the top level) type and class declarations.
+3. **Indirectly Unused Bindings:** A binding *B* is **indirectly unused** if it is directly unused, or *B* is referenced only in the body of a (directly or indirectly) unused binding *C*, *and* *C* is in scope at the point where *B*'s definition appears, and the relevant warning flag is enabled.
 
    For example, suppose ``foo1`` and ``foo2`` appear nowhere else.
 
@@ -100,6 +100,7 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
 
    In this example
 
+   - ``c`` is directly unused
    - ``v1`` is directly unused
    - ``v2`` is indirectly unused
    - ``v3`` is *not* indirectly unused, because, while it only occurs in the unused ``bar2``, ``v3`` is not in scope at the at ``bar2``'s definition site.
@@ -112,7 +113,7 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
 6. A **forall-bound type variable**, assuming ``-Wunused-foralls`` is enabled,
 
    - is directly unused if it does not appear in the body of the type
-   - is indirectly unused if it only appears in the kind signature of other ``forall``-bound type variables in the body of the type
+   - is indirectly unused if it only appears in the kind signature of other (directly or indirectly) unused ``forall``-bound type variables in the body of the type
 
    For example:
 
