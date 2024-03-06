@@ -335,7 +335,7 @@ Proposed Change Specification
 
    #. An occurrence of ``(# x #)`` is a synonym for ``GHC.Types.MkSolo# x`` in both term- and type-syntax.
       (It is not valid in types at the time of writing, as GHC is unable to promote unboxed tuples, but this concern
-       is separate from syntax.)
+      is separate from syntax.)
 
    #. A use of ``(# ... | ... | ... #)``, where each of the ``...`` is filled in, (among other arities) is now disallowed.
 
