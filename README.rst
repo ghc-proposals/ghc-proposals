@@ -14,7 +14,7 @@ GHC.
 * `≡ List of rejected proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Rejected%22>`_
 * `≡ List of proposals pending implementation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Accepted%22+-label%3A%22Implemented%22>`_
 * `≡ List of implemented proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`_
-* `≡ List of all proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+-label%3Anon-proposal>`_
+* `≡ List of all proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+-label%3ANon-proposal>`_
 
 Table of Contents
 =================
@@ -98,11 +98,11 @@ This section outlines what stages a proposal may go through. The stage is identi
    `≡ List of proposals being revised <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`_ •
    `≡ List of rejected proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%Rejected%22>`_
 
-7. Label: `Dormant <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Dormant>`_.  If a proposal sees no activity for along time, it is marked as “dormant”,
+7. Label: `Dormant <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Dormant%22>`_.  If a proposal sees no activity for along time, it is marked as “dormant”,
    and eventually closed.
 
    `What is a dormant proposal? <#what-is-a-dormant-proposal>`_ •
-   `≡ List of dormant proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22dormant%22>`_
+   `≡ List of dormant proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Dormant%22>`_
 
 
 8. Label: `Implemented <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`_.   Once a proposal is accepted, it still has to be implemented.  The author
@@ -224,9 +224,9 @@ In order to keep better track of actively discussed proposals, proposals that
 see no activity for an extended period of time (a month or two) might be marked
 as “``dormant``”. At any time the proposer, or someone else can revive the
 proposal by picking up the discussion (and possibly asking `the secretary
-<#who-is-the-committee>`_ to remove the ``dormant`` tag).
+<#who-is-the-committee>`_ to remove the ``Dormant`` tag).
 
-You can see the `list of dormant proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22dormant%22>`_.
+You can see the `list of dormant proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Dormant%22>`_.
 
 Who is the committee?
 --------------------
@@ -313,7 +313,7 @@ is a polite ping/enquiry.
    * the authors withdraw their proposal,
    * the authors indicate that they will revise the proposal to address the shepherds
      point. The shepherd will label the pull request as
-     `Needs Revision <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A"Needs+revision">`_.
+     `Needs Revision <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`_.
    * the authors and the shepherd fully understand each other’s differing
      positions, even if they disagree on the conclusion.
 
@@ -388,7 +388,7 @@ is a polite ping/enquiry.
 
    *  **If we say no:**
       The pull request will be closed and labeled
-      `Rejected <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3Arejected>`_.
+      `Rejected <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3ARejected>`_.
 
       If the proposer wants to revise and try again, the new proposal should
       explicitly address the rejection comments.
