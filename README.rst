@@ -235,21 +235,19 @@ You can reach the committee by email at ghc-steering-committee@haskell.org. This
 
 The current members, including their GitHub handle, when they joined first, when their term last renewed and their role, are listed at (sorted when the current term started):
 
-============= ======================  ====================================================  =======  =======  =========
-|simonmar|    Simon Marlow            `@simonmar <https://github.com/simonmar>`_            2017/02  2021/02  co-chair
-|simonpj|     Simon Peyton-Jones      `@simonpj <https://github.com/simonpj>`_              2017/02  2021/02  co-chair
-|nomeata|     Joachim Breitner        `@nomeata <https://github.com/nomeata>`_              2017/02  2021/03
-|goldfirere|  Richard Eisenberg       `@goldfirere <https://github.com/goldfirere>`_        2017/02  2021/03
-|int-index|   Vladislav Zavialov      `@int-index <https://github.com/int-index/>`_         2021/03
-|gridaphobe|  Eric Seidel             `@gridaphobe <https://github.com/gridaphobe>`_        2018/09  2022/03
-|cdornan|     Chris Dornan            `@cdornan <https://github.com/cdornan>`_              2022/03
-|aspiwack|    Arnaud Spiwack          `@aspiwack <https://github.com/aspiwack/>`_           2019/07  2022/10
-☺             Adam Gundry             `@adamgundry <https://github.com/adamgundry/>`_       2022/10           secretary
-|angerman|    Moritz Angermann        `@angerman <https://github.com/angerman/>`_           2023/02
-============= ======================  ====================================================  =======  =======  =========
+============= =========================  ====================================================  =======  =======  =========
+|simonmar|    Simon Marlow               `@simonmar <https://github.com/simonmar>`_            2017/02  2021/02  co-chair
+|simonpj|     Simon Peyton-Jones         `@simonpj <https://github.com/simonpj>`_              2017/02  2021/02  co-chair
+|gridaphobe|  Eric Seidel                `@gridaphobe <https://github.com/gridaphobe>`_        2018/09  2022/03
+|cdornan|     Chris Dornan               `@cdornan <https://github.com/cdornan>`_              2022/03
+|aspiwack|    Arnaud Spiwack             `@aspiwack <https://github.com/aspiwack/>`_           2019/07  2022/10
+☺             Adam Gundry                `@adamgundry <https://github.com/adamgundry/>`_       2022/10           secretary
+|angerman|    Moritz Angermann           `@angerman <https://github.com/angerman/>`_           2023/02
+|maralorn|    Malte Ott                  `@maralorn <https://github.com/maralorn/>`_           2024/03
+|Tritlo|      Matthías Páll Gissurarson  `@Tritlo <https://github.com/Tritlo>`_                2024/03
+============= =========================  ====================================================  =======  =======  =========
 
 .. |aspiwack| image:: https://github.com/aspiwack.png?size=24
-.. |i-am-tom| image:: https://github.com/i-am-tom.png?size=24
 .. |simonmar| image:: https://github.com/simonmar.png?size=24
 .. |simonpj| image:: https://github.com/simonpj.png?size=24
 .. |nomeata| image:: https://github.com/nomeata.png?size=24
@@ -258,6 +256,8 @@ The current members, including their GitHub handle, when they joined first, when
 .. |gridaphobe| image:: https://github.com/gridaphobe.png?size=24
 .. |cdornan| image:: https://github.com/cdornan.png?size=24
 .. |angerman| image:: https://github.com/angerman.png?size=24
+.. |maralorn| image:: https://github.com/maralorn.png?size=24
+.. |Tritlo| image:: https://github.com/Tritlo.png?size=24
 
 The committee members have committed to adhere to the `Haskell committee guidelines for respectful communication <GRC.rst>`_ and are subject to the
 `committee bylaws <https://github.com/ghc-proposals/ghc-proposals/blob/master/committee.rst>`_.
@@ -277,6 +277,9 @@ Alejandro Serrano       `@serras <https://github.com/serras/>`_               20
 Vitaly Bragilevsky      `@bravit <https://github.com/bravit>`_                2018/09 - 2022/02
 Baldur Blöndal          `@icelandjack <https://github.com/icelandjack>`_      2022/03 - 2022/09
 Tom Harding             `@i-am-tom <https://github.com/i-am-tom/>`_           2020/01 - 2023/02
+Joachim Breitner        `@nomeata <https://github.com/nomeata>`_              2017/02 - 2024/03
+Richard Eisenberg       `@goldfirere <https://github.com/goldfirere>`_        2017/02 - 2024/03
+Vladislav Zavialov      `@int-index <https://github.com/int-index/>`_         2021/03 - 2024/03
 ======================  ====================================================  =================
 
 
