@@ -7,7 +7,7 @@ Invisible binders in type declarations
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/425>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/425>`_ and `amended by #641 <https://github.com/ghc-proposals/ghc-proposals/pull/641>`_.
 .. contents::
 
 We propose to allow invisible type variable binders (i.e. ``@k``) in type
@@ -415,21 +415,29 @@ Proposed Change Specification: Declarations
 Syntax
 ~~~~~~
 
-Relax the syntactic check of ``data``, ``newtype``, ``type``, ``class``,
-``type family``, and ``data family`` declarations to allow ``@k``-binders in
-their headers::
+Generalize the grammar of type variable binders in ``data``, ``newtype``,
+``type``, ``class``, ``type family``, and ``data family`` declarations to allow
+``@k``-binders, wildcards, and combinations thereof::
 
+  -- Old grammar (for reference):
   tv_bndr ::=
            | tyvar                         -- variable
-           | '(' tyvar '::' kind ')'       -- variable with kind annotation
-    (NEW)  | '@' tyvar                     -- invisible variable
-    (NEW)  | '@' '(' tyvar '::' kind ')'   -- invisible variable with kind annotation
-    (NEW)  | '@' '_'                       -- wildcard (to skip an invisible quantifier)
+           | '(' tyvar '::' kind ')'       -- variable with a kind annotation
+
+  -- New grammar:
+  tv_bndr   ::=
+             |     a_tv_bndr               -- binder for a visible argument
+             | '@' a_tv_bndr               -- binder for an invisible argument
+  a_tv_bndr ::=
+             | tyvar                       -- variable
+             | '_'                         -- wildcard
+             | '(' tyvar '::' kind ')'     -- variable with a kind annotation
+             | '(' '_'   '::' kind ')'     -- wildcard with a kind annotation
 
 The occurrences of ``@`` must be *prefix*, as defined by
 `#229 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0229-whitespace-bang-patterns.rst>`_.
 
-Guarded behind a new flag, ``-XTypeAbstractions``.
+New forms of binders are guarded behind a new flag, ``-XTypeAbstractions``.
 
 Scope
 ~~~~~
@@ -753,6 +761,23 @@ Alternatives
 
   Some thoughts on the topic can be found in GitHub comment `326/634791269
   <https://github.com/ghc-proposals/ghc-proposals/pull/326#issuecomment-634791269>`_.
+
+* The grammar of binders could be further generalized to allow nested
+  parentheses and nested kind annotations::
+
+    tv_bndr   ::=
+               |     a_tv_bndr             -- binder for a visible argument
+               | '@' a_tv_bndr             -- binder for an invisible argument
+    a_tv_bndr ::=
+               | tyvar                     -- variable
+               | '_'                       -- wildcard
+               | '(' p_tv_bndr ')'         -- parenthesized binder
+    p_tv_bndr ::=
+               | a_tv_bndr                 -- plain binder
+               | a_tv_bndr '::' kind       -- binder with a kind annotation
+
+  The committee decided against this option to avoid the introduction of
+  another recursive data type to the AST.
 
 Unresolved Questions
 --------------------
