@@ -52,6 +52,9 @@ then the resulting program will behave as if that had been written for ``main``
 instead. Otherwise, the resulting program will behave as if ``main >> exitWith ExitSuccess``
 had been written, but the compiler will emit a warning.
 
+For the purposes of this feature, the ``ExitStatus`` instances defined in ``GHC.IO.Exit`` will
+be available even if that module is not imported into ``Main`` or something it imports.
+
 Proposed Library Change Specification
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
