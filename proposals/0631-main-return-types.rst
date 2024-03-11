@@ -216,6 +216,30 @@ normal ``IO`` completion. It might have been a reasonable
 choice when Haskell was new, but as it would break almost
 every program out there today it's not worth the churn.
 
+Warn/error on ambiguous main
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If ``main`` is ``IO ()``, ``IO Void``, or ``forall a. IO a``, the current behavior is
+the reasonable choice if ``main`` does complete. Thus, we could add a warning (which
+might later be elevated to an error) if ``main`` does not match one of these types.
+
+This could also be the first step of implementation toward the proposal or some of the
+other alternatives.
+
+The proposal is preferable to this alternative for `separation of mechanism and policy <https://en.wikipedia.org/wiki/Separation_of_mechanism_and_policy>`_
+considerations: If GHC is *going* to call ``exitWith`` by default, better to do it in a way
+that leaves the particular semantics up to the end user.
+
+Require an extension
+^^^^^^^^^^^^^^^^^^^^
+
+The operation of the ``ExitStatus`` typeclass could be gated behind a new GHC extension, and
+the class made mandatory when it is on. This would eliminate the technical backwards
+incompatibility.
+
+The proposal is preferable to this alternative because the backwards incompatibility probably
+literally never occurs and if it does is almost definitely desirable, as discussed `above <#backward-compatibility>`_.
+
 Implementation Plan
 -------------------
 I'd (@shlevy) be willing to implement this if accepted.
