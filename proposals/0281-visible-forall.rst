@@ -326,14 +326,12 @@ Part I: Proposed Change Specification
    grammar (as in the `Haskell 2010 Report <https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#x17-18000010.5>`_) as follows::
 
         exp ::=
-          | 'type' ktype
+          | 'type' atype
           | ...
 
         pat ::=
-          | 'type' ktype
+          | 'type' atype
           | ...
-
-   Though it is not included in the Report, ``ktype`` above refers to a non-terminal in `GHC's grammar <https://gitlab.haskell.org/ghc/ghc/-/blob/e40feab039bcf687cdaefa7a3f7c862d10b9b517/compiler/GHC/Parser.y>`_. This non-terminal includes kind annotations and ``forall``-types.
 
    The ``type`` keyword at the top-level is interpreted as it always has been; it
    does not start an expression (as would be used in a Template Haskell declaration
