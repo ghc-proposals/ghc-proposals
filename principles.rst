@@ -53,6 +53,7 @@ Language design principles
 
 .. _`#281`: proposals/0281-visible-forall.rst
 .. _`#378`: proposals/0378-dependent-type-design.rst
+.. _`#425`: proposals/0425-decl-invis-binders.rst
 .. _`#448`: proposals/0448-type-variable-scoping.rst
 
 Syntax
@@ -166,6 +167,71 @@ there is an absence of punning.
 Name resolution and scoping
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+Explicit Binding Principle (EBP)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. _`Explicit Binding Principle`:
+
+**Principle**:
+Through the right combination of extensions,
+every implicit form of variable binding must have an explicit equivalent that,
+regardless of the context,
+is unambiguously a binding site.
+
+Examples:
+
+#. Problem::
+
+     -- Assume no `a` in scope
+
+     id :: a -> a  -- The variable `a` has no explicit binding site.
+
+   Solution::
+
+     -- Assume no `a` in scope
+
+     id :: forall a. a -> a  -- The `a` in `forall a.` is an explicit binding site.
+
+   This is provided by ``-XExplicitForAll``, which predates the GHC proposal process.
+
+#. Problem::
+
+     -- Assume no `a` in scope
+
+     data Foo (a :: k)
+
+   Solution::
+
+     data Foo @k (a :: k)
+
+   This is provided by ``-XTypeAbstractions`` from `#425`_.
+
+#. Problem::
+
+     -- Assume no `b` in scope
+
+     f :: (Bool, Bool) -> Bool
+     f (x :: (b, b)) = ...   -- The variable `b` has no implicit binding site.
+
+   We could declare one or both of the ``b`` occurrences above a binding site,
+   as was the historical interpretation of this, but that doesn't help as this
+   syntax isn't unambiguously a binding site regardless of context (i.e.
+   regardless of whether there is a ``b`` already in scope).
+
+*Motivation:*
+The `Explicit Binding Principle`_ allows programmers to control exactly how variables come into scope.
+It ensures all short-hands can be explained in terms of an explicit, unambiguous equivalent that is easier to understand at the cost of being more verbose:
+
+- Positive-position signatures' free vars cause  implicit ``forall ... .``
+
+- Negative position free vars cause different sorts of binding:
+
+  - Signatures on term patterns (pattern signatures) cause implicit ``let type ... = _ in``
+
+  - Signatures on type variables (kind signatures) cause implicit ``@...``
+
+From `#425`_, `#448`_.
+
 Lexical Scoping Principle (LSP)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -174,10 +240,17 @@ Lexical Scoping Principle (LSP)
 **Principle**:
 
 a. For every appearance of an identifier,
-it is possible to determine whether that appearance is a *binding site* or an *occurrence* without examining the context.
+   it is possible to determine whether that appearance is a mere *occurrence*,
+   and thus must be bound elsewhere for the program to be valid,
+   or the variable is a *binding site* (or causes an implicit binding, which is close enough),
+   without examining the context.
 
 b. For every *occurrence* of an identifier,
-it is possible to uniquely identify its *binding site*, without involving the type system.
+   it is possible to uniquely identify its *binding site*, without involving the type system.
+
+This builds upon the `Explicit Binding Principle`_:
+whereas that former principle ensures that explicit alternatives to implicit binding constructs *exist at all*,
+this latter principle makes those explicit alternatives *compulsory*, because we must not have implicit binding in order to uphold this principle.
 
 The `Lexical Scoping Principle`_ is almost true today, with the following nuances:
 
@@ -188,12 +261,17 @@ The `Lexical Scoping Principle`_ is almost true today, with the following nuance
 3. In a pattern signature,
    if we have ``f (x :: Maybe a)``,
    the ``a`` is an occurrence if ``a`` is already in scope,
-   and it is a binding site otherwise.
+   and is implicitly bound otherwise.
 
-4. In a type signature, any out-of-scope variable is implicitly bound.
-   This is not technically a violation of this principle
-   (the seemingly-unbound identifier in the type signature is always an occurrence),
-   but it's worth noting here.
+4. In a type signature,
+   if we have ``f :: a -> a``,
+   the ``a`` is an occurrence if ``a`` is already in scope,
+   and is implicitly bound otherwise.
+
+#. In a kind signature,
+   if we have ``data Foo (a :: k)``,
+   the ``k`` is an occurrence if ``k`` is already in scope,
+   and is implicitly bound otherwise.
 
 *Motivation:*
 These principles mean that we can understand the binding structure of a program without relying on type inference,
@@ -204,31 +282,11 @@ This last point becomes even more poignant if we consider the possibility of mix
 \(a) from `#448`_;
 \(b) from `#378`_.
 
-Explicit Binding Principle (EBP)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. _`Explicit Binding Principle`:
-
-**Principle**:
-Through the right combination of extensions and/or warning flags,
-it is possible for a Haskell programmer to ensure that all identifiers in a program have an explicit binding site.
-
-Examples::
-
-   id :: a -> a    -- the variable `a` has no explicit binding site, but we can write `forall a.` to provide one
-
-   f :: (Bool, Bool) -> Bool
-   f (x :: (b, b)) = ...   -- the variable `b` is bound to `Bool` by this
-                           -- pattern signature. But either the first b is a binding
-                           -- site, in violation of the Lexical Scoping Principle (a),
-                           -- or there is no explicit binding site, in violation of
-                           -- the Explicit Binding Principle.
-
-*Motivation:*
-The `Explicit Binding Principle`_ allows programmers to control exactly how variables come into scope.
-It also prevents the possibility of typos that accidentally introduce new variables.
-
-From `#448`_.
+Here is one more recent historical historical example:
+Prior to `#425`_, if we had ``type T1 = 'Nothing :: Maybe a``,
+the ``a`` was an occurence if ``a`` is already in scope,
+and was implicity bound otherwise.
+But since `#425`_ it is never implicitly bound.
 
 Contiguous Scoping Principle (CSP)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
