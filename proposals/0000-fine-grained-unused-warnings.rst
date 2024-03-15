@@ -391,5 +391,5 @@ Alternatives
 Implementation Plan
 -------------------
 
-`Jade <https://gitlab.haskell.org/Jade>`_ has `expressed interest <https://gitlab.haskell.org/ghc/ghc/-/issues/20190#note_505317>`_ in implementing this proposal.
+`@Jade <https://gitlab.haskell.org/Jade>`_ has `expressed interest <https://gitlab.haskell.org/ghc/ghc/-/issues/20190#note_505317>`_ in implementing this proposal.
 As a fallback, I would be able to find time to implement it.
