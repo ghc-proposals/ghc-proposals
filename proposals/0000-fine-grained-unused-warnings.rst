@@ -154,7 +154,7 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
       warning: [-Wunused-top-binds, -Windirectly-unused-binds]
           ‘bar' is defined but used only in the following unused bindings: ‘foo’, ‘quux’
 
-- The warning for an unused binding B will reference the innermost (directly or indirectly) unused binding(s) whose right-hand sides mention B. For example, suppose ``bar`` is
+- If the warning for an unused binding B would reference multiple nested bindings it will only reference the innermost (directly or indirectly) unused binding(s) of those. For example, suppose ``bar`` is
 
   ::
 
