@@ -121,7 +121,7 @@ The proposed change aims to distinguish between genuinely (or directly) unused b
 
      far :: forall a (b :: a) c . c
 
-    Here, ``b`` is directly unused, but ``a`` is indirectly unused.
+   Here, ``b`` is directly unused, but ``a`` is indirectly unused.
 
 **Warning References and Messages:**
 
