@@ -4,7 +4,7 @@ Extend ``-Wall`` with ``incomplete-uni-patterns`` and ``incomplete-record-update
 .. author:: tomjaguarpaw
 .. date-accepted:: 2018-02-07
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/15656
-.. implemented::
+.. implemented:: 9.2.1
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/71>`_.
 .. contents::

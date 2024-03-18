@@ -76,18 +76,111 @@ Proposed Change Specification
 
    Associated types may not be given standalone kind signatures. (See "Costs and Drawbacks" for discussion.)
 
-   Unlike type signatures, the type variables brought into scope in a type-level kind
-   signature do *not* scope over the type definition.
-
    Standalone kind signatures are enabled with the extension ``-XStandaloneKindSignatures``.
 
-2. Introduce a new extension ``-XCUSKs``, on by default, that detects CUSKs as they
+2. With ``-XExtendedForAllScope``, type variables ``tvs`` bound in the
+   outermost ``forall tvs.`` in a standalone kind signature also scope over the
+   type declaration, as if bound by ``@``-binders: ::
+
+     type T1 :: forall k. k -> Type
+     data T1    a = MkT (Proxy (a :: k))   -- equivalent to...
+
+     type T2 :: forall k. k -> Type
+     data T2 @k a = MkT (Proxy (a :: k))
+     --      ^^
+     --      implicit @-binder arising from the use of ExtendedForAllScope
+
+   We say that ``-XExtendedForAllScope`` inserts *implicit ``@``-binders* at
+   the beginning of the type declaration header.
+
+   * **Aliasing**. If there are explicit, user-written ``@``-binders at the
+     beginning of a type declaration header (i.e. where implicit ``@``-binders
+     would have been inserted), aliasing takes place.
+
+     Given a sequence of explicit binders ``[@j1, @j2, ...]`` and a sequence of
+     implicit binders ``[@k1, @k2, ...]``, we do **not** concatenate them to
+     produce ``[@j1, @j2, ..., @k1, @k2, ...]``. Rather, we overlay (or zip)
+     them, producing pairs ``[(@j1, @k1), (@j2, @k2), ...]``, and then each
+     pair acts as a single binder, where one name is an alias for another::
+
+       type T3 :: forall k1 k2. k1 -> k2 -> Type
+       data T3 @j1 @j2 a = ...  -- `k1` is an alias for `j1`, and `k2` for `j2`
+       --      ^^^ ^^^
+       --      user-written @-binders
+
+     When there are too few explicit ``@``-binders, only the overlapping prefix
+     is aliased, while the remaining variables are bound by implicit
+     ``@``-binders::
+
+       type Mixed :: forall k1 k2 k3 k4. k1 -> k2 -> k3 -> k4 -> Type
+       data Mixed @j1 @j2 a = ...
+          -- `k1` is in scope as an alias for `j1`
+          -- `k2` is in scope as an alias for `j2`
+          -- `k3` is in scope via an implicit @-binder
+          -- `k4` is in scope via an implicit @-binder
+
+   * **The Arity Restriction**. Per GHC Proposal `#425
+     <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0425-decl-invis-binders.rst>`_,
+     the arity of a non-generative type constructor (type synonym or type
+     family) is influenced by the number of ``@``-binders: ::
+
+       type T4 :: forall k. k -> Type
+       type T4    = ...   -- arity = 0
+
+       type T5 :: forall k. k -> Type
+       type T5 @_ = ...   -- arity = 1
+
+     This is not the case for implicit ``@``-binders arising from
+     ``ExtendedForAllScope``. Insertion of implicit ``@``-binders stops as to
+     not affect the arity of the type constructor. Names of type variables that
+     are brought into scope by ``ExtendedForAllScope`` but fall outside the
+     arity of the type constructor are "unusable"::
+
+       type T6 :: forall k. k -> Type
+       type T6    = Const k       -- error: the `k` is in scope but not usable (arity = 0)
+
+       type T7 :: forall k. k -> Type
+       type T7 @_ = Const k       -- OK (arity = 1)
+
+     An "unusable" type variable name does not stand for any actual type
+     variable, as the corresponding ``forall`` is not skolemized.
+     An attempt to use such a variable name results in an error.
+
+   * **The Order Restriction**. Type variable names are also "unusable" in
+     positions that precede the corresponding implicit ``@``-binder::
+
+       type T8 :: forall a b. blah
+       data T8 @(a :: b) _ = ...
+       --            ^^^
+       --            error: the `b` is in scope but not usable
+
+     The use of ``b`` in ``@(a :: b)`` is illegal because the implicit
+     ``@``-binder for ``b`` is inserted at a later position::
+
+       type T9 :: forall a b. blah
+       data T9 @(a :: b) @b _ = ...
+       --                ^^
+       --                implicit @-binder arising from the use of ExtendedForAllScope
+
+  * **GADTs and type families**. Just like explicit ``@``-binders, implicit
+    ``@``-binders arising from ``ExtendedForAllScope`` do not scope over GADT
+    constructor declarations or type family instances::
+
+      type G :: forall k. k -> Type
+      data G (a :: k) where     -- the `k` is in scope here (type declaration header)
+        MkG :: ...              -- the `k` is /not/ in scope here (GADT constructor signature)
+
+      type F :: forall k. k -> k
+      type family F (a :: k) where    -- the `k` is in scope here (type declaration header)
+        F ... = ...                   -- the `k` is /not/ in scope here (type family instance)
+
+3. Introduce a new extension ``-XCUSKs``, on by default, that detects CUSKs as they
    currently exist. A CUSK will be treated identically to a standalone kind signature.
 
    When ``-XNoCUSKs`` is specified, only a standalone kind signature enables
    polymorphic recursion.
 
-3. Plan to turn ``-XCUSKs`` off by default in GHC 8.8 and to remove it sometime thereafter.
+4. Plan to turn ``-XCUSKs`` off by default in GHC 8.8 and to remove it sometime thereafter.
 
 Effect and Interactions
 -----------------------
@@ -153,7 +246,7 @@ If we had standalone kind signatures for associated types, would they look
 The (IN) variant is syntactically ambiguous::
 
  class C a where
-   type T :: a   -- TLKS?
+   type T :: a   -- standalone kind signature?
    type T :: a   -- declaration header?
 
 The (OUT) variant does not suffer from this issue, but it might not be the

@@ -329,3 +329,4 @@ Data based on 13951 hackage packages, 1348 survey responses and 11 committee vot
 .. _UnliftedNewtypes: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/primitives.html#extension-UnliftedNewtypes
 .. _Unsafe: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/safe_haskell.html#extension-Unsafe
 .. _ViewPatterns: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/view_patterns.html#extension-ViewPatterns
+

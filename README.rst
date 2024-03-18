@@ -14,7 +14,11 @@ GHC.
 * `≡ List of rejected proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Rejected%22>`_
 * `≡ List of proposals pending implementation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Accepted%22+-label%3A%22Implemented%22>`_
 * `≡ List of implemented proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`_
-* `≡ List of all proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+-label%3Anon-proposal>`_
+* `≡ List of all proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+-label%3ANon-proposal>`_
+
+Table of Contents
+=================
+.. contents:: :local:
 
 What is a proposal?
 -------------------
@@ -42,8 +46,8 @@ Should the GHC maintainers deem a change significant or controversial enough to
 warrant that, they may, at their discretion, involve the committee and ask the
 contributor to write a formal proposal.
 
-Proposals may contain amendments to our principles_, which serve as a guideline
-for future proposals and for the general evolution of GHC.
+Proposals are evaluated against our principles_, which cover both language *design*
+and language *stability*
 
 .. _principles: principles.rst
 
@@ -94,11 +98,11 @@ This section outlines what stages a proposal may go through. The stage is identi
    `≡ List of proposals being revised <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`_ •
    `≡ List of rejected proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%Rejected%22>`_
 
-7. Label: `Dormant <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Dormant>`_.  If a proposal sees no activity for along time, it is marked as “dormant”,
+7. Label: `Dormant <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Dormant%22>`_.  If a proposal sees no activity for along time, it is marked as “dormant”,
    and eventually closed.
 
    `What is a dormant proposal? <#what-is-a-dormant-proposal>`_ •
-   `≡ List of dormant proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22dormant%22>`_
+   `≡ List of dormant proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Dormant%22>`_
 
 
 8. Label: `Implemented <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`_.   Once a proposal is accepted, it still has to be implemented.  The author
@@ -206,11 +210,11 @@ When the discussion has ebbed down and the author thinks the proposal is ready, 
 2. Add a comment to the pull request, briefly summarizing the major points raised
    during the discussion period and stating your belief that the proposal is
    ready for review. In this comment, tag the committee secretary (currently
-   ``@nomeata``).
+   `@adamgundry <https://github.com/adamgundry/>`_).
 
 `The secretary <#who-is-the-committee>`_ will then label the pull request with
 ``Pending shepherd recommendation`` and start the `committee process
-<#committee-process>`_.  (If this does not happen within a day or two, please
+<#committee-process>`_.  (If this does not happen within a few days, please
 ping the secretary or the committee.)
 
 What is a dormant proposal?
@@ -220,31 +224,30 @@ In order to keep better track of actively discussed proposals, proposals that
 see no activity for an extended period of time (a month or two) might be marked
 as “``dormant``”. At any time the proposer, or someone else can revive the
 proposal by picking up the discussion (and possibly asking `the secretary
-<#who-is-the-committee>`_ to remove the ``dormant`` tag).
+<#who-is-the-committee>`_ to remove the ``Dormant`` tag).
 
-You can see the `list of dormant proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22dormant%22>`_.
+You can see the `list of dormant proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Dormant%22>`_.
 
 Who is the committee?
 --------------------
-You can reach the committee by email at ghc-steering-committee@haskell.org.
+You can reach the committee by email at ghc-steering-committee@haskell.org. This is a mailing list with
+`public archives <https://mail.haskell.org/cgi-bin/mailman/listinfo/ghc-steering-committee>`_.
 
-The current members, including their GitHub handle, when they joined first, when their term last renewed and their role, are listed at (sorted when the current term started):
+The current members, including their GitHub handle, when they joined first, when their term last renewed, when their term expires and their role, are:
 
-============= ======================  ====================================================  =======  =======  =========
-|simonmar|    Simon Marlow            `@simonmar <https://github.com/simonmar>`_            2017/02  2021/02  co-chair
-|simonpj|     Simon Peyton-Jones      `@simonpj <https://github.com/simonpj>`_              2017/02  2021/02  co-chair
-|nomeata|     Joachim Breitner        `@nomeata <https://github.com/nomeata>`_              2017/02  2021/03  secretary
-|goldfirere|  Richard Eisenberg       `@goldfirere <https://github.com/goldfirere>`_        2017/02  2021/03
-|int-index|   Vladislav Zavialov      `@int-index <https://github.com/int-index/>`_         2021/03
-|gridaphobe|  Eric Seidel             `@gridaphobe <https://github.com/gridaphobe>`_        2018/09  2022/03
-|cdornan|     Chris Dornan            `@cdornan <https://github.com/cdornan>`_              2022/03
-|aspiwack|    Arnaud Spiwack          `@aspiwack <https://github.com/aspiwack/>`_           2019/07  2022/10
-☺             Adam Gundry             `@adamgundry <https://github.com/adamgundry/>`_       2022/10
-|angerman|    Moritz Angermann        `@angerman <https://github.com/angerman/>`_           2023/02
-============= ======================  ====================================================  =======  =======  =========
+============= =========================  ====================================================  =======  =======  =======  =========
+|simonmar|    Simon Marlow               `@simonmar <https://github.com/simonmar>`_            2017/02  2024/02  2027/02  co-chair
+|simonpj|     Simon Peyton-Jones         `@simonpj <https://github.com/simonpj>`_              2017/02  2024/02  2027/02  co-chair
+|gridaphobe|  Eric Seidel                `@gridaphobe <https://github.com/gridaphobe>`_        2018/09  2022/03  2025/03
+|cdornan|     Chris Dornan               `@cdornan <https://github.com/cdornan>`_              2022/03           2025/03
+|aspiwack|    Arnaud Spiwack             `@aspiwack <https://github.com/aspiwack/>`_           2019/07  2022/10  2025/10
+☺             Adam Gundry                `@adamgundry <https://github.com/adamgundry/>`_       2022/10           2025/10  secretary
+|angerman|    Moritz Angermann           `@angerman <https://github.com/angerman/>`_           2023/02           2026/02
+|maralorn|    Malte Ott                  `@maralorn <https://github.com/maralorn/>`_           2024/03           2027/03
+|Tritlo|      Matthías Páll Gissurarson  `@Tritlo <https://github.com/Tritlo>`_                2024/03           2027/03
+============= =========================  ====================================================  =======  =======  =======  =========
 
 .. |aspiwack| image:: https://github.com/aspiwack.png?size=24
-.. |i-am-tom| image:: https://github.com/i-am-tom.png?size=24
 .. |simonmar| image:: https://github.com/simonmar.png?size=24
 .. |simonpj| image:: https://github.com/simonpj.png?size=24
 .. |nomeata| image:: https://github.com/nomeata.png?size=24
@@ -253,6 +256,8 @@ The current members, including their GitHub handle, when they joined first, when
 .. |gridaphobe| image:: https://github.com/gridaphobe.png?size=24
 .. |cdornan| image:: https://github.com/cdornan.png?size=24
 .. |angerman| image:: https://github.com/angerman.png?size=24
+.. |maralorn| image:: https://github.com/maralorn.png?size=24
+.. |Tritlo| image:: https://github.com/Tritlo.png?size=24
 
 The committee members have committed to adhere to the `Haskell committee guidelines for respectful communication <GRC.rst>`_ and are subject to the
 `committee bylaws <https://github.com/ghc-proposals/ghc-proposals/blob/master/committee.rst>`_.
@@ -272,6 +277,9 @@ Alejandro Serrano       `@serras <https://github.com/serras/>`_               20
 Vitaly Bragilevsky      `@bravit <https://github.com/bravit>`_                2018/09 - 2022/02
 Baldur Blöndal          `@icelandjack <https://github.com/icelandjack>`_      2022/03 - 2022/09
 Tom Harding             `@i-am-tom <https://github.com/i-am-tom/>`_           2020/01 - 2023/02
+Joachim Breitner        `@nomeata <https://github.com/nomeata>`_              2017/02 - 2024/03
+Richard Eisenberg       `@goldfirere <https://github.com/goldfirere>`_        2017/02 - 2024/03
+Vladislav Zavialov      `@int-index <https://github.com/int-index/>`_         2021/03 - 2024/03
 ======================  ====================================================  =================
 
 
@@ -308,7 +316,7 @@ is a polite ping/enquiry.
    * the authors withdraw their proposal,
    * the authors indicate that they will revise the proposal to address the shepherds
      point. The shepherd will label the pull request as
-     `Needs Revision <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A"Needs+revision">`_.
+     `Needs Revision <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`_.
    * the authors and the shepherd fully understand each other’s differing
      positions, even if they disagree on the conclusion.
 
@@ -383,7 +391,7 @@ is a polite ping/enquiry.
 
    *  **If we say no:**
       The pull request will be closed and labeled
-      `Rejected <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3Arejected>`_.
+      `Rejected <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3ARejected>`_.
 
       If the proposer wants to revise and try again, the new proposal should
       explicitly address the rejection comments.
@@ -413,6 +421,8 @@ is a polite ping/enquiry.
 Review criteria
 ---------------
 Here are some characteristics that a good proposal should have.
+
+* *It should follow our design principles*.  These principles_ cover both the language *design* and its *stability* over time.
 
 * *It should be self-standing*.  Some proposals accumulate a long and interesting discussion
   thread, but in ten years' time all that will be gone (except for the most assiduous readers).
@@ -546,5 +556,5 @@ Questions?
 ----------
 
 Feel free to contact any of the members of the `GHC Steering Committee
-<#who-is-the-committee>`_ with questions. `Email <https://wiki.haskell.org/Mailing_lists>`_
+<#who-is-the-committee>`_ with questions. `Email <https://mail.haskell.org/cgi-bin/mailman/listinfo/ghc-steering-committee>`_
 and IRC (``#ghc`` on ``irc.freenode.net``) are both good ways of accomplishing this.

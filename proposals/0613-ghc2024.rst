@@ -1,0 +1,420 @@
+GHC2024
+=======
+
+.. author:: Joachim Breitner
+.. date-accepted:: 2024-01-09
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/24320
+.. implemented::
+.. highlight:: haskell
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/613>`_.
+.. sectnum::
+.. contents::
+
+
+Motivation
+----------
+
+The `GHC20xx process proposal <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0372-ghc-extensions.rst#motivation>`_ motivates why we feel the need for ``GHC20xx`` language editions in general.
+
+The first edition, ``GHC2021``, is now three years old, and I propose we define
+``GHC2024`` now, even if turns out to be a modest change, to keep the process alive.
+
+Proposed Change Specification
+-----------------------------
+
+The ``GHC2024`` language extensions set comprises of all language extensions
+that ``GHC2021`` comprises (`official list <https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/control.html#extension-GHC2021>`_), plus the following
+
+* `DataKinds`_
+* `DerivingStrategies`_
+* `DisambiguateRecordFields`_
+* `ExplicitNamespaces`_
+* `GADTs`_ (and the implied `MonoLocalBinds`_)
+* `LambdaCase`_
+* `RoleAnnotations`_
+
+Tally
+-----
+
+The committee held a vote among nominated extensions with the following result. As per the GHC20xx process, quorum was ⅔, so 7 votes.
+
+============================= ========= ==  ==  ===  ==  ==  ==  ==  ==  ==  ==
+                    Extension     Votes VZ  AS  SPJ  SM  AG  RE  ES  MA  CD  JB
+============================= ========= ==  ==  ===  ==  ==  ==  ==  ==  ==  ==
+        `DerivingStrategies`_   **10**  ✓    ✓  ✓    ✓   ✓   ✓   ✓   ✓   ✓   ✓
+  `DisambiguateRecordFields`_   **10**  ✓    ✓  ✓    ✓   ✓   ✓   ✓   ✓   ✓   ✓
+ `GADTs`_ + `MonoLocalBinds`_   **10**  ✓    ✓  ✓    ✓   ✓   ✓   ✓   ✓   ✓   ✓
+                `LambdaCase`_   **10**  ✓    ✓  ✓    ✓   ✓   ✓   ✓   ✓   ✓   ✓
+        `ExplicitNamespaces`_    **9**       ✓  ✓    ✓   ✓   ✓   ✓   ✓   ✓   ✓
+           `RoleAnnotations`_    **8**       ✓  ✓    ✓   ✓   ✓   ✓       ✓   ✓
+                 `DataKinds`_    **8**       ✓  ✓    ✓   ✓   ✓   ✓       ✓   ✓
+              `TypeFamilies`_        6       ✓  ✓    ✓       ✓   ✓           ✓
+         `DefaultSignatures`_        4       ✓       ✓       ✓   ✓
+                  `TypeData`_        4          ✓            ✓   ✓           ✓
+            `BlockArguments`_        4  ✓                    ✓   ✓           ✓
+        `ImpredicativeTypes`_        1       ✓  ✗        ✗   ✗               ✗
+============================= ========= ==  ==  ===  ==  ==  ==  ==  ==  ==  ==
+
+NB: `ImpredicativeTypes`_ was accidentally missing on the original ballot, and
+some committee members may have forgotten to vote. But with explicit votes against from
+AG, SPJ, RE, JB it could not have made quorum.
+
+The voting committee members are
+
+=== ======================
+SM  Simon Marlow
+SPJ Simon Peyton-Jones
+JB  Joachim Breitner
+RE  Richard Eisenberg
+VZ  Vladislav Zavialov
+ES  Eric Seidel
+CD  Chris Dornan
+AS  Arnaud Spiwack
+AG  Adam Gundry
+MA  Moritz Angermann
+=== ======================
+
+
+Why GHC2024 in the first place
+------------------------------
+There were concerns that defining ``GHC2024`` is too soon, given that
+``GHC2021`` has hardly reached the target audience, and that this introduces
+instability.
+
+I believe that neither are good reasons to not define ``GHC2024``:
+
+* There is an inherent latency between defining language editions and them reaching the users. It reaches users who do not have to worry about supporting older GHC first, and thus library authors later. This is somewhat unavoidable, but not per se a reason to reduce the frequency.
+
+* Relatively frequent language editions do not introduce undue instability: Users who pin the language edition in their `.cabal` file or so are not affected by the existence of a new one. Neither are users who pin their GHC version. Only those users who upgrade their version of GHC _and_ ask for the latest edition may now have access to new features.
+
+As `Arnaud explained on the mailing list <https://mail.haskell.org/pipermail/ghc-steering-committee/2022-November/002949.html>`_, Rust (generally not perceived as a language with a perception of low stability) has a very similar model with their “language editions”.
+
+Furthermore, a regular, not too slow cadence makes the whole process more
+predictable, which I expect *improves* the perception of stability, in the
+sense of delivering a stable flow of changes.
+
+
+Why add DataKinds and TypeData?
+-------------------------------
+
+We're considering ``GADTs`` and ``TypeFamilies`` for adoption. Both of
+them greatly benefit from ``DataKinds`` and ``TypeData`` (so do
+phantom types in plain Haskell 2010 for that matter). They let us
+inject more types at the type level. On the other hand if we reject ``GADTs`` and
+``TypeFamilies`` from ``GHC2024``, then we ``DataKinds`` and
+``TypeData`` may not pull their weight.
+
+That being said, `it's been suggested
+<https://github.com/ghc-proposals/ghc-proposals/pull/613#issuecomment-1761015976>`_
+that having ``DataKinds`` on yields better error messages when
+mistakenly using a data constructor in types:
+
+::
+
+  foo :: Just Int
+  foo = Just 0
+
+With ``DataKinds`` the error message is::
+
+  <interactive>:2:19: error: [GHC-83865]
+      • Expected a type, but ‘Just Int’ has kind ‘Maybe (*)’
+      • In the type signature: foo :: Int -> Just Int
+
+With ``NoDataKinds``::
+
+  <interactive>:4:19: error: [GHC-76037]
+      Not in scope: type constructor or class ‘Just’
+      Suggested fix:
+        Perhaps you intended to use DataKinds
+        to refer to the data constructor of that name?
+
+Both ``DataKinds`` and ``TypeData`` are used the same way at the
+type-level, the former lets us reuse types that we are using in
+computations at the type level, whereas the latter lets us define type
+purely for type level computations.
+
+*Counterarguments*: ``TypeData`` is still rather new, being only
+released in GHC 9.6. It's probably too early to consider that we have
+sufficient feedback on its merits. Nevertheless, it's innocuous enough
+to deserve a vote.
+
+*Backward compatibility*: Enabling `DataKinds`_ or `TypeData`_ does
+not affect existing ``GHC2021`` code.
+
+Why add DefaultSignatures?
+------------------------------
+
+There is no strong argument for inclusion of
+`DefaultSignatures`_. But nor is there for rejecting
+it. ``DefaultTypeSignatures`` seems quite stable and there hasn't been
+any pushback against the feature. It's a situational, but useful
+extension that we don't really have expectations to change.
+
+*Counterarguments*: `It's been pointed out
+<https://github.com/ghc-proposals/ghc-proposals/pull/613#issuecomment-1759419147>`_
+that the most common use of default type signatures is with generic
+deriving and ``DeriveAnyClass`` (which is not considered for inclusion
+in ``GHC2024`` because it's seen as too error prone). An alternative,
+for this use-case would be to use deriving-via with the
+``Generically`` type class. But there are other uses, and
+`Deriving-via doesn't always work
+<https://github.com/ghc-proposals/ghc-proposals/pull/613#issuecomment-1760024807>`_.
+
+*Backward compatibility*: Enabling `DefaultSignatures`_ does not
+affect existing ``GHC2021`` code.
+
+Why add DerivingStrategies?
+---------------------------
+
+Since `GeneralisedNewtypeDeriving`_ is part of ``GHC2021``, it would make sense
+to allow users to be explicit about when it is being used using
+`DerivingStrategies`_.  For example: ::
+
+  newtype T = MkT String
+    deriving stock Eq
+    deriving newtype Show
+
+Some users prefer this style, and there is little downside to being explicit
+about the deriving strategy in use.  Note that ``GHC2021`` does not include
+``DerivingVia`` or ``DeriveAnyClass``, so these strategies will still need the
+corresponding extension to be enabled explicitly.
+
+*Backward compatibility*: Enabling `DerivingStrategies`_ does not affect
+existing ``GHC2021`` code.
+
+
+Why add DisambiguateRecordFields?
+---------------------------------
+
+Suppose there are two record fields from different data types in scope, and they
+have the same name.  When the field is used in record construction or pattern
+matching, it is easy to resolve which datatype is meant using the name of the
+data constructor, but ``Haskell2010`` and ``GHC2021`` do not do so.  For
+example, the following is rejected: ::
+
+  module M where
+    data S = MkS { x :: Int }
+
+  module N where
+    data T = MkT { x :: Int }
+
+  module P where
+    import M
+    import N
+
+    t = MkS { x = 3 }  -- ambiguous name resolution error for "x"
+
+For a long time, GHC has supported the `DisambiguateRecordFields`_ extension,
+which makes use of the constructor name to allow this program to be accepted.
+This is a small quality-of-life improvement for users, who may otherwise see
+this error and not immediately understand why GHC does not make the "obvious"
+choice.
+
+This is a simple extension, affecting name resolution only, without involving
+any type-directed disambiguation.  It does not allow the definition of clashing
+field names in a single module, but makes it easier to avoid unnecessary errors
+when importing two modules that happen to use the same field name in different
+records.
+
+*Backward compatibility*: Enabling `DisambiguateRecordFields`_ does not affect
+existing ``GHC2021`` code.
+
+
+Why add ExplicitNamespaces?
+---------------------------
+
+As discussed in `issue #551
+<https://github.com/ghc-proposals/ghc-proposals/issues/551>`_, ``GHC2021``
+includes `TypeOperators`_, but does not include `ExplicitNamespaces`_. This was
+a very strange (and probably inadvertent) decision, given that the flag
+``-XTypeOperators`` enables both the `TypeOperators`_ and the
+`ExplicitNamespaces`_ language extension.
+
+It seems to be a bad idea to retroactive *change* ``GHC2021`` to fix this (we
+do care about stability after all), but we should certainly fix this in the
+upcoming edition.
+
+And – at least if one accepts that regular releases of ``GHC20xx`` are a Good
+Thing™, adding `ExplicitNamespaces`_ alone should be sufficient to cut a new
+release.
+
+A counter-argument to `ExplicitNamespaces`_ is that it has seen changes
+recently, e.g. in `#281 <https://github.com/ghc-proposals/ghc-proposals/pull/281>`_ and
+`#581 <https://github.com/ghc-proposals/ghc-proposals/pull/581>`_.
+Thus it may not yet be as stable as we want for ``GHC20xx``. To keep GHC20xx
+stable we could amend #281 to ask for a new extension name for syntax added there.
+
+*Backward compatibility*: Enabling `ExplicitNamespaces`_ does not affect
+existing ``GHC2021`` code.
+
+
+Why add GADTs and MonoLocalBinds?
+---------------------------------
+
+``GHC2021`` includes both `GADTSyntax`_ and `ExistentialQuantification`_, but
+does not include `GADTs`_ or `MonoLocalBinds`_.  Moreover, the combination of
+``GADTSyntax`` and ``ExistentialQuantification`` is enough to define GADTs and
+pattern match on them (see `GHC issue #21102
+<https://gitlab.haskell.org/ghc/ghc/-/issues/21102>`_ for detailed discussion).
+
+GHC 9.4 and later permits pattern-matching on an imported GADT regardless of
+which extensions are enabled, but doing so will emit a warning from
+``-Wgadt-mono-local-binds`` if ``MonoLocalBinds`` is disabled.  This is
+consistent with the principle that extensions are required at definition sites
+but not use sites.  (GHC 9.2 and previous versions required ``GADTs`` or
+``TypeFamilies`` to be enabled in order to pattern match on a GADT.)
+
+Enabling ``MonoLocalBinds`` is considered necessary for robust type inference
+when pattern matching on GADTs (see section 4.2 of `OutsideIn(X): Modular type
+inference with local assumptions
+<https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/jfp-outsidein.pdf>`_).
+Moreover, writing type signatures for polymorphic local bindings generally makes
+it easier to understand the code.  However, the type signature requirement makes
+it more difficult to factor out repeated code into a ``where`` clause (e.g. see
+`GHC issue #19396 <https://gitlab.haskell.org/ghc/ghc/-/issues/19396>`_), and
+this can surprise users and cause backwards incompatibility.
+
+Since ``ExistentialQuantification`` allows defining types with contexts that
+include equality constraints, there is not really a principled distinction
+between ``ExistentialQuantification`` and ``GADTs``.  (While there is a
+syntactic distinction between GADT syntax and "traditional" datatype syntax,
+both forms are capable of expressing simple ADTs, existentially quantified
+types, and GADTs.)
+
+Possible ways to resolve this infelicity include:
+
+* Add ``GADTs`` and ``MonoLocalBinds`` to ``GHC2024``.  This makes it clear
+  that GADTs/existentials are a core part of the language, and makes the type
+  inference compromises necessary to accommodate them.  Migration advice for
+  ``GHC2024`` should make clear that type signatures may need to be added for
+  local bindings (or ``NoMonoLocalBinds`` specified explicitly).  Given that
+  ``MonoLocalBinds`` is a simpler design which can safely be extended with
+  ``GADTs``, it makes sense to have it be part of the base language; users can
+  then opt-in explicitly to ``NoMonoLocalBinds`` as an extension if required.
+
+* Add ``GADTs`` but not ``MonoLocalBinds``.  This is mostly consistent with
+  ``GHC2021``, but means that type inference for local bindings may not be
+  predictable when using GADTs.  Moreover, including an extension but not the
+  extensions it implies is itself confusing (as with
+  ``TypeOperators``/``ExplicitNamespaces`` in ``GHC2021``).
+
+* Remove ``ExistentialQuantification`` from ``GHC2024``.  This means
+  existentials/GADTs are clearly treated as an extension, albeit an extension
+  that makes type inference "worse". Users will need to understand the impact
+  of ``MonoLocalBinds`` only if they import a GADT or define one after enabling
+  ``GADTs`` explicitly. Migration advice for ``GHC2024`` should make clear that
+  users may need to enable ``GADTs`` explicitly (and possibly give type
+  signatures for local bindings or specify ``NoMonoLocalBinds``).
+
+*Backward compatibility*: Enabling ``GADTs`` alone does not break existing ``GHC2021`` code
+(because it is equivalent to the current situation),
+but enabling ``MonoLocalBinds`` does.
+
+
+Why add ImpredicativeTypes?
+---------------------------
+
+The current design seems to work well for many use-cases and is
+unlikely to change. It's been around since GHC 9.2. Besides, some form
+of impredicativity seems to be intuitively expected by many
+programmers. The time seems ripe.
+
+Why add LambdaCase?
+-------------------
+
+The latest `State of Haskell 2021 Survey results
+<https://taylor.fausak.me/2022/11/18/haskell-survey-results/>`_ list
+`LambdaCase`_ as the top answer to “Which extension would you want to be on by
+default”. It also missed ``GHC2021`` by just two votes. There is a whole style
+of writing Haskell that makes extensive use of ``\case``. And (unlike the runner up in the survey, `OverloadedStrings`_), it only enables *new* syntax, i.e. it does not change existing code.
+
+A counter-agument to adding `LambdaCase` is that just extended the meaning of
+`LambdaCase`_ with ``\cases`` in `#302
+<https://github.com/ghc-proposals/ghc-proposals/pull/302>`_, and if one only
+wants to add extensions to ``GHC20xx`` that have been proven to be stable, then
+this one probably isn’t yet.
+
+*Backward compatibility*: Enabling `LambdaCase`_ does not affect
+existing ``GHC2021`` code, with the exception of lambda-bound variable names
+``cases`` (GHC already forbids the ``\case`` even without ``-XLambdaCase``).
+
+
+Why add RoleAnnotations?
+------------------------
+
+Roles are an essential part of modern GHC Haskell.
+Role annotations are required for correctly writing types with internal invariants like ``Set`` or "fast" implementations like ``data Fin (n :: Nat) = UnsafeFin Int``.
+
+As `GeneralisedNewtypeDeriving`_ is in the ``GHC2021`` language set, so should be `RoleAnnotations`_. They are different sides of the same feature: without correct role annotations GND cannot be used safely.
+
+At the moment, using ``GHC2021`` together with `Safe`_ causes a warning, because Safe Haskell regards `GeneralisedNewtypeDeriving`_ as unsafe (see `#19605 <https://gitlab.haskell.org/ghc/ghc/-/issues/19605>`_ for discussion of this issue). A plausible way to resolve this would be to regard `GeneralisedNewtypeDeriving`_ as safe, but that assumes library authors are aware of the need for correct role annotations and insert them as needed.
+
+*Backward compatibility*: Enabling `RoleAnnotations`_ does not affect
+existing ``GHC2021`` code.
+
+
+Why add TypeFamilies?
+---------------------
+
+Type families are one of the most used features of GHC. The reason for
+not including `TypeFamilies`_ in ``GHC2021`` was that type families
+don't work so well without `MonoLocalBinds`_, and it was considered at
+the time that ``MonoLocalBinds`` was too steep a change.
+
+But if we add ``MonoLocalBinds`` to ``GHC2024``, there is no
+obstacle to make this very popular feature.
+
+*Counterarguments*: `A reason not to include
+<https://github.com/ghc-proposals/ghc-proposals/pull/613#issuecomment-1759556663>`
+that the semantics of type families (in particular the strictness of
+its evaluation) is unsatisfactory and would like it to change before
+they become a default. But there are two possibility: either the
+semantic change is backward compatible, in which case including
+``TypeFamilies`` in ``GHC2024`` won't cause any issue; or the semantic
+change isn't backward compatible, in which case the massive popularity
+of type families makes it impossible to incorporate the change in the
+``TypeFamilies`` extension, and ``GHC2024`` is safe.
+
+*Backward compatibility*: Assuming that ``MonoLocalBinds`` is enabled,
+enabling ``TypeFamilies`` doesn't affect existing ``GHC2021`` code
+further.
+
+Why add BlockArguments?
+-----------------------
+
+`BlockArguments`_ denoises common idioms, e.g. `when` for `forM` in do blocks, by not requiring
+parentheses or `$`. The resulting non-verbose syntax is arguably very Haskelly, and some
+people working with languages that have this already (Agda, PureScript, Lean) report beeing happy about it.
+
+*Backward compatibility*: No incompatibilities (accoridng to the original proposal).
+
+Alternatives
+------------
+We could not do ``GHC2024`` and wait yet another year, or more, because we shy away from
+making what may look like a stability-threatening change.
+In my view that is worse: The fixes and improvements suggested above would reach our users later, we would not establish a regular and predictable pattern, and in the worst case never dare to make a new release, which would make the ``GHC20xx`` idea fall into a similar pattern than the ``Haskell20xx`` report process, which at the moment is stalled.
+
+Implementation Plan
+-------------------
+
+(None yet)
+
+.. _DerivingStrategies: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/deriving_strategies.html#extension-DerivingStrategies
+.. _DisambiguateRecordFields: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/disambiguate_record_fields.html#extension-DisambiguateRecordFields
+.. _ExplicitNamespaces: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/explicit_namespaces.html#extension-ExplicitNamespaces
+.. _ExistentialQuantification: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/existential_quantification.html#extension-ExistentialQuantification
+.. _GADTs: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/gadt.html#extension-GADTs
+.. _GADTSyntax: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/gadt_syntax.html#extension-GADTSyntax
+.. _TypeOperators: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/type_operators.html#extension-TypeOperators
+.. _OverloadedStrings: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/overloaded_strings.html#extension-OverloadedStrings
+.. _LambdaCase: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/lambda_case.html#extension-LambdaCase
+.. _MonoLocalBinds: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/let_generalisation.html#extension-MonoLocalBinds
+.. _RoleAnnotations: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/roles.html#extension-RoleAnnotations
+.. _Safe: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/safe_haskell.html#extension-Safe
+.. _GeneralisedNewtypeDeriving: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/roles.html#extension-GeneralisedNewtypeDeriving
+.. _TypeFamilies: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/type_families.html#extension-TypeFamilies
+.. _DataKinds: https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/data_kinds.html?highlight=datakinds#extension-DataKinds
+.. _TypeData: https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/type_data.html#extension-TypeData
+.. _DefaultSignatures: https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/default_signatures.html#extension-DefaultSignatures
+.. _BlockArguments: https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/block_arguments.html#extension-BlockArguments
+.. _ImpredicativeTypes: https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/impredicative_types.html#extension-ImpredicativeTypes

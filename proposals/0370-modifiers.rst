@@ -74,7 +74,8 @@ Proposed Change Specification
 
      fielddecl ::= vars {modifier} '::' (type | '!' atype)
 
-7. With ``-XModifiers``, introduce modifier syntax on top-level declarations as follows::
+7. With ``-XModifiers``, introduce modifier syntax on top-level declarations as
+   follows::
 
      topdecl ::= {modifier} [ ';' ] 'type' simpletype '=' type
              |   {modifier} [ ';' ] 'data' [context '=>'] simpletype ['=' constrs] [deriving]
@@ -92,14 +93,27 @@ Proposed Change Specification
    declarations) and may have modifiers of their own. The semicolon makes
    clear that the modifier is meant to affect the entire declaration.
 
-8. Reserve the use of ``%`` in a prefix occurrence to be used only for modifiers;
+8. With ``-XModifiers``, introduce modifier syntax on data constructor
+   declarations as follows::
+
+     -- H98-style constructor
+     constr ::= {modifier} con ['!'] atype1 ... ['!'] atypek
+              | {modifier} (btype | '!' atype) conop (btype | '!' atype)
+              | {modifier} con '{' fielddecl1 ',' ... ',' fielddecln '}'
+
+     -- GADT-style constructor
+     gadt_constrs ::= {modifier} con_list '::' sigtype
+
+   Modifiers in ``gadt_constrs`` apply to each constructor in ``con_list``.
+
+9. Reserve the use of ``%`` in a prefix occurrence to be used only for modifiers;
    though this proposal does not do so, we can imagine extending the modifier syntax
    to apply to further syntactic situations (e.g. term-level operators, declarations,
    import lists, etc.).
 
-9. Modifiers are parsed, renamed, and type-checked as *types*.
+10. Modifiers are parsed, renamed, and type-checked as *types*.
 
-10. The type of a modifier is determined only by synthesis, never by checking.
+11. The type of a modifier is determined only by synthesis, never by checking.
     That is, in the bidirectional type-checking scheme used by GHC, we find the
     type of the modifier by running the synthesis judgment. Effectively, this
     means that if we consider a modifier to be some head (constructor or
@@ -108,19 +122,19 @@ Proposed Change Specification
     have a known type if declared with a type signature. Alternatively, the
     modifier may have a top-level type signature.
 
-11. A modifier of type ``Multiplicity`` changes the multiplicity of the following arrow,
+12. A modifier of type ``Multiplicity`` changes the multiplicity of the following arrow,
     or following pattern-bound variable of a lambda,
     or preceding record field.
     Multiple modifiers of type ``Multiplicity`` on the same arrow are not allowed.
     Any other use of a modifier is an error.
 
-12. ``-XLinearTypes`` implies ``-XModifiers``.
+13. ``-XLinearTypes`` implies ``-XModifiers``.
 
-13. Future modifiers will be put *before* the element they modify. Alternatively,
+14. Future modifiers will be put *before* the element they modify. Alternatively,
     a modifier can be put directly before a syntactic closer or separator, such
     as ``;`` or ``where`` or ``)``.
 
-14. Modifiers with an unknown meaning produce a warning, controlled by
+15. Modifiers with an unknown meaning produce a warning, controlled by
     ``-Wunknown-modifiers``. They are otherwise ignored. (However, in order to
     know that a modifier is unknown, it still must be parsed, renamed, and type-checked.)
 
