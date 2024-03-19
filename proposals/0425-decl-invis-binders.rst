@@ -415,21 +415,31 @@ Proposed Change Specification: Declarations
 Syntax
 ~~~~~~
 
-Relax the syntactic check of ``data``, ``newtype``, ``type``, ``class``,
-``type family``, and ``data family`` declarations to allow ``@k``-binders in
-their headers::
+Generalize the grammar of type variable binders in ``data``, ``newtype``,
+``type``, ``class``, ``type family``, and ``data family`` declarations to allow
+``@k``-binders, wildcards, nested parentheses and nested kind annotations::
 
+  -- Old grammar (for reference):
   tv_bndr ::=
            | tyvar                         -- variable
            | '(' tyvar '::' kind ')'       -- variable with kind annotation
-    (NEW)  | '@' tyvar                     -- invisible variable
-    (NEW)  | '@' '(' tyvar '::' kind ')'   -- invisible variable with kind annotation
-    (NEW)  | '@' '_'                       -- wildcard (to skip an invisible quantifier)
+
+  -- New grammar:
+  tv_bndr   ::=
+             |     a_tv_bndr             -- binder for a visible argument
+             | '@' a_tv_bndr             -- binder for an invisible argument
+  a_tv_bndr ::=
+             | tyvar                     -- variable
+             | '_'                       -- wildcard
+             | '(' p_tv_bndr ')'         -- parenthesized binder
+  p_tv_bndr ::=
+             | a_tv_bndr                 -- plain binder
+             | a_tv_bndr '::' kind       -- binder with a kind annotation
 
 The occurrences of ``@`` must be *prefix*, as defined by
 `#229 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0229-whitespace-bang-patterns.rst>`_.
 
-Guarded behind a new flag, ``-XTypeAbstractions``.
+New forms of binders are guarded behind a new flag, ``-XTypeAbstractions``.
 
 Scope
 ~~~~~
