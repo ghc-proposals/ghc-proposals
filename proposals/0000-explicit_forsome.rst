@@ -27,9 +27,9 @@ Alternative is "Modern Scoped Type Variables" `#448`_ (rendered `#448rd`_ ) and 
 
 It is *de facto* **Implicit Forsome**.
 
-This Proposal suggest to add the simple **SameRanked Existential** as **Explicit Forsome**, which follows one pf Haskell principle: the Explicit Variable Principle.
+This Proposal suggest to add the simple **SameRanked Existential** as **Explicit Forsome**, which follows one of Haskell principles: the Explicit Variable Principle.
 
-- **SameRankedRanked Existential** rule: Any N-Ranked *type* (or *type_variable* ) is ALSO N-Ranked ``forsome`` *type_variable* 
+- **SameRanked Existential** rule: Any N-Ranked *type* (or *type_variable* ) is ALSO N-Ranked ``forsome`` *type_variable* 
 ::
 
   --SameRanked Existentials:
@@ -58,7 +58,7 @@ This Proposal suggest to add the simple **SameRanked Existential** as **Explicit
 
 if ∀a: f a then ∀a: ∃b, b ∈ a : f b
 
-But since SameRankedRanked Existential Quantifier ``forsome`` cannot use same symbol "∃", we use a different one: "Ə"
+But since SameRanked Existential Quantifier ``forsome`` cannot use same symbol "∃", we use a different one: "Ə"
 
 if ∀a: f a then ∀a: Əb, b ∈ a : f b
 
@@ -99,12 +99,12 @@ Introduce a new extension -XExplicitForsome.
 
 #. With ``-XExplicitForsome``, introduce a new type for forsome existentials.
 
-Even ``ScopedTypeVariables`` extension is an alternative to ``ExplicitForsome`` extension, they both could coesist in same file.
+Even ``ScopedTypeVariables`` extension is an alternative to ``ExplicitForsome`` extension, they both could coesist together in same file.
 
 Syntax
 ~~~~~~
 
-Syntax of ``exists`` quantifier has 3 forms.
+Syntax of ``forsome`` quantifier has 3 forms.
 
 1. The **Full form** is 
 ::
@@ -137,7 +137,7 @@ Where ``| ... <- ...`` is a binding part.
   forsome a1 | a1 <- tb1.
 
 
-Main difference between bindings from ``forsome`` and ``exists`` quantifiers is that ``exists`` binds type variable only, but ``forsome`` could binds even types.
+Main difference between bindings from ``forsome`` and ``exists`` (aka ``foralive`` ) quantifiers is that ``exists`` binds type variable only, but ``forsome`` could binds even types.
 
 Grammar
 ~~~~~~~
@@ -149,11 +149,11 @@ Grammar
               | context '=>' ctype
               | ...
 
-        -- + exists
-		quantifiers_telescope → exists_telescope forsome_telescope forall_telescope forsome_telescope -- NEW!
+        -- + exists/foralive
+        quantifiers_telescope → exists_telescope forsome_telescope forall_telescope forsome_telescope -- NEW!
 		
-		-- - exists
-		quantifiers_telescope → forall_telescope forsome_telescope -- NEW!
+        -- - exists/foralive
+        quantifiers_telescope → forall_telescope forsome_telescope -- NEW!
 
         -- just for comparison
         forall_telescope → 'forall' tv_bndrs '.'
@@ -240,7 +240,7 @@ Effect and Interactions
 UnicodeSyntax
 ~~~~~~~~~~~~~
 
-``Ə`` (Latin Capital Letter Schwa, U+018F) is added to ``UnicodeSyntax`` as synonym for ``forsome`` keyword.
+The ``Ə`` (Ə, Latin Capital Letter Schwa, U+018F) is added to ``UnicodeSyntax`` as synonym for ``forsome`` keyword.
 
 Why Ə (Latin Capital Letter Schwa, U+018F)? Historically Schwa Letter is rarely used. Small letter "ə" is used as the schwa sound in International Phonetic Alphabet (IPA).
 
@@ -254,7 +254,7 @@ Why Ə (Latin Capital Letter Schwa, U+018F)? Historically Schwa Letter is rarely
 
 
 Visible ForAll and UnErased ForAll
-~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. There is no limitations for forsome quantifier for catch retained type variables or visible type variables.
 
@@ -266,7 +266,7 @@ Visible ForAll and UnErased ForAll
 Costs and Drawbacks
 -------------------
 
-We expect the implementation and maintenance costs of ``DownRankedExistential`` is minor and has minimum difficulty.
+We expect the implementation and maintenance costs of ``ExplicitForsome`` is minor and has minimum difficulty.
 
 
 Backward Compatibility
