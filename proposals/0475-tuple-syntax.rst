@@ -6,7 +6,7 @@ Non-punning list and tuple syntax
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/21294
 .. implemented::
 .. highlight:: haskell
-.. header::  This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/475>`_ and an amendment at `this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/603>`_.
+.. header::  This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/475>`_, an amendment at `this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/603>`_, and a further amendment at `this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/638>`_.
 .. contents::
 .. sectnum::
 
@@ -142,7 +142,7 @@ Proposed Change Specification
      data Unit# = (# #)
 
      type Solo# :: TYPE rep -> TYPE (TupleRep [rep])
-     data Solo# a = (# a #)
+     data Solo# a = MkSolo# a
 
      type Tuple0# = Unit#
      type Tuple1# = Solo#
@@ -275,6 +275,8 @@ Proposed Change Specification
 
    #. With ``-XUnboxedTuples``, an occurrence of ``(# ty #)`` in type-syntax is a synonym for ``GHC.Types.Solo# ty``.
 
+   #. With ``-XUnboxedTuples``, an occurrence of ``(# x #)`` in term-syntax is a synonym for ``GHC.Types.MkSolo# x``.
+
    #. With ``-XUnboxedTuples``, an occurrence of ``(#,,...,,#)`` where there are *n* commas (for *n* ≧ 1) in type-syntax
       is a synonym for ``GHC.Types.Tuple<n+1>#``.
 
@@ -330,6 +332,10 @@ Proposed Change Specification
       (among other arities) are now unambiguous. They always refer to data constructors,
       never types or type constructors. (Note that ``(...) =>`` is special syntax, not an occurrence of any of the types
       listed above. See `below <#constraints-special-syntax>`_.)
+
+   #. An occurrence of ``(# x #)`` is a synonym for ``GHC.Types.MkSolo# x`` in both term- and type-syntax.
+      (It is not valid in types at the time of writing, as GHC is unable to promote unboxed tuples, but this concern
+      is separate from syntax.)
 
    #. A use of ``(# ... | ... | ... #)``, where each of the ``...`` is filled in, (among other arities) is now disallowed.
 
@@ -462,6 +468,12 @@ Effect and Interactions
    For unboxed tuples (``Tuple#``), this non-uniformity is not as happy. For example, ``Tuple# (Int, Bool)``
    means either ``Tuple2# Int Bool`` (with ``-XNoListTuplePuns``) or ``Solo# (Tuple2 Int Bool)`` (with
    ``-XListTuplePuns``). Furthermore, ``Tuple# (Int#, Double#)`` would not kind-check with ``-XListTuplePuns``. So we avoid these problems by simply erroring in the 1-element case.
+
+#. The name of the data constructor for unboxed 1-tuples is ``MkSolo#`` rather
+   than ``(# #)`` to distinguish it from the data constructor for 0-tuples.
+   The ambiguity only arises when the name is used unapplied.
+   When applied to an argument, ``MkSolo# a`` can be written by the user as ``(# a #)``,
+   and should be pretty-printed as ``(# a #)`` by GHC.
 
 Costs and Drawbacks
 -------------------
