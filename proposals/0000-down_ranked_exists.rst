@@ -25,7 +25,7 @@ Motivation
 
 Richly typed programming invariably uses its share of existential types, and this proposal makes it vastly easier to work with existentials.
 
-Alternative Proposal is "First-class existential types" `#473`_ and was added as ``ExistentialQuantification`` extension.
+Alternative Proposal is "First-class existential types" `#473`_ .
 
 It suggests to add *de facto* **UpRanked Existential**
 
@@ -392,16 +392,16 @@ We expect the implementation and maintenance costs of ``DownRankedExistential`` 
 **Drawbacks**: using same keyword ``exists`` for both UpRanked and DownRanked quantifiers is **incompatible** and **inconsistent**.
 
 
-Modifying ``ExistentialQuantification`` extension
+Modifying `#473`_ Proposal
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Since ``ExistentialQuantification`` extension exists, but it is not approved by `#473`_ proposal we suggest to modify it.
+Proposal `#473`_ requires to use same quantifier ``exists`` and we suggest to modify it.
 
-This proposal suggest to change ``exists`` keyword for ``ExistentialQuantification`` extension into ``forany`` (or other).
+This proposal suggest to change ``exists`` keyword for `#473`_ (if it will be approved) into ``forany`` (or other).
 
 And change "∃" Unicode symbol into "∋" (or other)!
 
-This proposal also suggest to rename ``ExistentialQuantification`` extension into ``UpRankedExistential`` or ``ForanyQuantification`` (or other).
+This proposal also suggest to rename proposed in `#473`_ (if it will be approved) ``ExistentialTypes`` extension into ``UpRankedExistential`` or ``ForanyQuantification`` (or other).
 
 
 Temporary solutions and Testing
@@ -413,13 +413,13 @@ But as **temporary** solutions and *testing* this proposal DownRanked Existentia
 Backward Compatibility
 ----------------------
 
-This proposal is backward compatible, except unmodified ``ExistentialQuantification`` extension.
+This proposal is backward compatible.
 
 
 Alternatives
 ------------
 
-Main alternative is "First-class existential types" `#473`_ (``ExistentialQuantification`` extension)
+Main alternative is "First-class existential types" `#473`_ 
 
 
 Unresolved Questions
