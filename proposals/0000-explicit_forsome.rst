@@ -78,7 +78,7 @@ Roles
        ys :: forsome a. [a]    -- NEW!
        ys = reverse xs
 
-2. Local type synonym quantifier 
+2. Local type synonym quantifier (with "ExtendedForsome")
 ::
 
   i42 :: Int
@@ -86,6 +86,8 @@ Roles
 
   i42 :: forsome a <- Int. a  -- NEW!
   i42 = 42
+
+If supporting this (2) role is complicated, this proposal could be splitted into 2 "ExplicitForsome" and "ExtendedForsome"
 
 
 Extension
@@ -106,7 +108,7 @@ Syntax
 
 Syntax of ``forsome`` quantifier has 3 forms.
 
-1. The **Full form** is 
+1. The **Full form** (with "ExtendedForsome") is 
 ::
 
   forsome a1 a2 a3 | a1 <- tb1, a2 <- tb2, a3 <- tb3.
@@ -118,17 +120,17 @@ Where ``| ... <- ...`` is a binding part.
 
   forsome a1 a2 a3. 
 
-  -- desugars into
+  -- desugars (with "ExtendedForsome") into
   forsome a1 a2 a3 | a1 <- a1, a2 <- a2, a3 <- a3.
 
 
-  -- partial same-name
+  -- partial (with "ExtendedForsome") same-name
   forsome a1 a2 a3 | a1 <- tb1.
 
   -- desugars into
   forsome a1 a2 a3 | a1 <- tb1, a2 <- a2, a3 <- a3.
 
-3. Sugared **One-variable form**. If ``forsome`` has just one variable we could write binding shortly. 
+3. Sugared **One-variable form** (with "ExtendedForsome"). If ``forsome`` has just one variable we could write binding shortly. 
 ::
 
   forsome a1 <- tb1.
@@ -137,7 +139,7 @@ Where ``| ... <- ...`` is a binding part.
   forsome a1 | a1 <- tb1.
 
 
-Main difference between bindings from ``forsome`` and ``exists`` (aka ``foralive`` ) quantifiers is that ``exists`` binds type variable only, but ``forsome`` could binds even types.
+Main difference between bindings from ``forsome`` and ``exists`` (aka ``foralive`` ) quantifiers is that ``exists`` binds type variable only, but ``forsome`` could binds even types (with "ExtendedForsome").
 
 Grammar
 ~~~~~~~
@@ -161,10 +163,16 @@ Grammar
                          | {- empty -}
 
         -- NEW!
-        forsome_telescope → 'forsome' tv_bind_1fs '.'
-                          | 'forsome' tv_bndrs_ex '.'
+        forsome_telescope → 'forsome' tv_bind_1fs '.' -- (with "ExtendedForsome")
+                          | 'forsome' tv_bndrs_fs '.'
                           | {- empty -}
 
+        -- - (with "ExtendedForsome")
+        tv_bndrs_fs → tv_bndr tv_bndrs
+                    | {- empty -}
+
+
+        -- + (with "ExtendedForsome")
         tv_bndrs_fs → tv_bndr tv_bndrs tv_bind_fs
                     | {- empty -}
 
@@ -175,7 +183,6 @@ Grammar
                         | {- empty -}
   
         tv_bind_1fs → tv_bndr '<-' ctype
-
 
 
 Examples
@@ -218,7 +225,7 @@ Almost every example from  "Modern Scoped Type Variables" `#448`_ (rendered `#44
 Local type synonym quantifier
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Sometimes is handy to replace some long type with ``forsome`` type variable  
+Sometimes is handy to replace some long type with ``forsome`` type variable  (with "ExtendedForsome")
 ::
 
   data IIRState = 
@@ -242,9 +249,9 @@ UnicodeSyntax
 
 The ``Ə`` (Ə, Latin Capital Letter Schwa, U+018F) is added to ``UnicodeSyntax`` as synonym for ``forsome`` keyword.
 
-Why Ə (Latin Capital Letter Schwa, U+018F)? Historically Schwa Letter is rarely used. Small letter "ə" is used as the schwa sound in International Phonetic Alphabet (IPA).
+Why Ə (Latin Capital Letter Schwa, U+018F)?  
 
-1. Reason of using: In nowadays Symbol Ə has rare and limited use, so it is free to use here
+1. Reason of using: Historically Schwa Letter is rarely used. ( *Small* letter "ə" is used as the schwa sound in International Phonetic Alphabet (IPA).) In nowadays Symbol Ə has rare and limited use, so it is free to use here
 
 2. Reason of representation: Symbol Ə a bit similar to ∃ Symbol which reflects meaning of existential
 
