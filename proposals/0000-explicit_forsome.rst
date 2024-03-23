@@ -1,5 +1,5 @@
 Explicit ForSome
-==========================
+================
 
 .. author:: Viktor WW
 .. date-accepted::
@@ -10,55 +10,44 @@ Explicit ForSome
 .. sectnum::
 .. contents::
 
-This proposal introduces same-ranked existentials into GHC
-
-
 .. _`#448`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0448-type-variable-scoping.rst
 .. _`#448rd`: https://ghc-proposals.readthedocs.io/en/latest/proposals/0448-type-variable-scoping.html
 
-
+This proposal introduces same-ranked existentials into GHC
 
 Motivation
 ----------
 
-Richly typed programming invariably uses its share of existential types, and this proposal makes it vastly easier to work with existentials.
+To write some trivial functions ``ScopedTypeVariables`` extension is needed, which add implicit rules how to read type signatures!
 
-Alternative is "Modern Scoped Type Variables" `#448`_ (rendered `#448rd`_ ) and it was added into ``ScopedTypeVariables`` extension.
+And this is a bit unhandy to use in such language which have a huge system of types.
+
+This Proposal suggest to add the simple **SameRanked Existential** as **Explicit Forsome** Quantifier, which follows one of Haskell principles: the Explicit Variable Principle.
+
+Alternative is "Modern Scoped Type Variables" `#448`_ (rendered `#448rd`_ ) which was added into ``ScopedTypeVariables`` extension.
 
 It is *de facto* **Implicit Forsome**.
 
-This Proposal suggest to add the simple **SameRanked Existential** as **Explicit Forsome**, which follows one of Haskell principles: the Explicit Variable Principle.
+Rule
+~~~~
 
 - **SameRanked Existential** rule: Any N-Ranked *type* (or *type_variable* ) is ALSO N-Ranked ``forsome`` *type_variable* 
 ::
 
   --SameRanked Existentials:
-  id1 :: forall a. a -> a
-  id1 x = x
-
-  -- same as (1-variable sugaring version)
-  id1 :: forall a. forsome b <- a. a -> b
-
-  -- same as (full version)
-  id1 :: forall a. forsome b | b <- a. a -> b
-  
-  
-  --(same-name sugaring version)
   f1 :: forall a. [a] -> [a]
   f1 (x:xs) = xs ++ [ x :: forsome a. a ]
 
-
-  i42 :: Int
-  i42 = 42
-
-  -- same as (1-variable sugaring version)
-  i42 :: forsome a <- Int. a
-  i42 = 42
+  f :: forall a. [a] -> [a]
+  f xs = ys ++ ys
+     where
+       ys :: forsome a. [a]
+       ys = reverse xs
 
 
 if ∀a: f a then ∀a: ∃b, b ∈ a : f b
 
-But since SameRanked Existential Quantifier ``forsome`` cannot use same symbol "∃", we use a different one: "Ə"
+But since SameRanked Existential Quantifier ``forsome`` cannot use same symbol "∃" (which could be used by NotSameRanked Existential Quantifier ``exists`` ), we use a different one: "Ə" (Latin Capital Letter Schwa)
 
 if ∀a: f a then ∀a: Əb, b ∈ a : f b
 
@@ -66,10 +55,12 @@ if ∀a: f a then ∀a: Əb, b ∈ a : f b
 Proposed Change Specification
 -----------------------------
 
+SameRanked Existential Quantifier ``forsome`` could play 2 roles.
+
 Roles
 ~~~~~
 
-2. Local scope quantifier 
+1. Local scope quantifier 
 ::
 
   f :: forall a. [a] -> [a]
@@ -78,16 +69,19 @@ Roles
        ys :: forsome a. [a]    -- NEW!
        ys = reverse xs
 
+By using ``forsome a`` we ask do not create a new type variable ``forall a``, but use already existed scoped version of type variable ``a``.
+
 2. Local type synonym quantifier (with "ExtendedForsome")
 ::
 
   i42 :: Int
   i42 = 42
 
-  i42 :: forsome a <- Int. a  -- NEW!
+  i42 :: forsome a <- Int. a 
   i42 = 42
 
-If supporting this (2) role is complicated, this proposal could be splitted into 2 "ExplicitForsome" and "ExtendedForsome"
+
+The support of this (2) role is discussed in Proposal "ExtendedForsome"! This proposal fully ignore this role for ``forsome`` quantifier.
 
 
 Extension
@@ -95,51 +89,22 @@ Extension
 
 Introduce a new extension -XExplicitForsome.
 
-1. Introduce a new extension ``-XExplicitForsome``.
+With ``-XExplicitForsome``, ``forsome`` is a keyword in both types and terms.
 
-#. With ``-XExplicitForsome``, ``forsome`` is a keyword in both types and terms.
+Even ``ScopedTypeVariables`` extension is an alternative to ``ExplicitForsome`` extension, they both could coexist together in same file.
 
-#. With ``-XExplicitForsome``, introduce a new type for forsome existentials.
-
-Even ``ScopedTypeVariables`` extension is an alternative to ``ExplicitForsome`` extension, they both could coesist together in same file.
 
 Syntax
 ~~~~~~
 
-Syntax of ``forsome`` quantifier has 3 forms.
+Syntax of ``forsome`` quantifier has 1 simple form.
 
-1. The **Full form** (with "ExtendedForsome") is 
-::
-
-  forsome a1 a2 a3 | a1 <- tb1, a2 <- tb2, a3 <- tb3.
-
-Where ``| ... <- ...`` is a binding part.
-
-2. Sugared **Same-name form**. If for some ``N`` we have same names ``aN == tbN`` then we could omit to write this specific binding of type variable. 
 ::
 
   forsome a1 a2 a3. 
 
-  -- desugars (with "ExtendedForsome") into
-  forsome a1 a2 a3 | a1 <- a1, a2 <- a2, a3 <- a3.
+It says that type variables ``a1, a2, a3`` are locally scoped ones, not a new ones. 
 
-
-  -- partial (with "ExtendedForsome") same-name
-  forsome a1 a2 a3 | a1 <- tb1.
-
-  -- desugars into
-  forsome a1 a2 a3 | a1 <- tb1, a2 <- a2, a3 <- a3.
-
-3. Sugared **One-variable form** (with "ExtendedForsome"). If ``forsome`` has just one variable we could write binding shortly. 
-::
-
-  forsome a1 <- tb1.
-
-  -- desugars into
-  forsome a1 | a1 <- tb1.
-
-
-Main difference between bindings from ``forsome`` and ``exists`` (aka ``foralive`` ) quantifiers is that ``exists`` binds type variable only, but ``forsome`` could binds even types (with "ExtendedForsome").
 
 Grammar
 ~~~~~~~
@@ -167,29 +132,12 @@ Grammar
                           | 'forsome' tv_bndrs_fs '.'
                           | {- empty -}
 
-        -- - (with "ExtendedForsome")
         tv_bndrs_fs → tv_bndr tv_bndrs
                     | {- empty -}
 
 
-        -- + (with "ExtendedForsome")
-        tv_bndrs_fs → tv_bndr tv_bndrs tv_bind_fs
-                    | {- empty -}
-
-        tv_bind_fs → '|' tv_bind tv_bind_fs_next
-                   | {- empty -}
-
-        tv_bind_fs_next → ',' tv_bind_1fs tv_bind_fs_next
-                        | {- empty -}
-  
-        tv_bind_1fs → tv_bndr '<-' ctype
-
-
 Examples
 --------
-
-Local scope quantifier
-~~~~~~~~~~~~~~~~~~~~~~
 
 Almost every example from  "Modern Scoped Type Variables" `#448`_ (rendered `#448rd`_ ) could be used with ``forsome``
 ::
@@ -221,24 +169,6 @@ Almost every example from  "Modern Scoped Type Variables" `#448`_ (rendered `#44
 		  
   instance C b => C [b] where
     op xs = reverse (head (xs :: forsome b. [[b]]))
-
-Local type synonym quantifier
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Sometimes is handy to replace some long type with ``forsome`` type variable  (with "ExtendedForsome")
-::
-
-  data IIRState = 
-    forsome uf | uf <- {-# UNPACK #-} Float. 
-    MkIIRState
-    { x0 :: uf
-    , x1 :: uf
-    , x2 :: uf
-    , y0 :: uf
-    , y1 :: uf
-    , y2 :: uf
-    }
-    deriving (Show)	
 
 
 Effect and Interactions
@@ -298,4 +228,3 @@ Implementation Plan
 -------------------
 
 It is unclear.
-
