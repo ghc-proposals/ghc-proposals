@@ -110,7 +110,7 @@ The syntactic extension to exports would be enabled by the same ``{-# LANGUAGE N
 semantics of imports would be enabled by default with no ``LANGUAGE`` extension required.
 
 `WARNING` pragma on export
---------------------------
+++++++++++++++++++++++++++
 
 As with regular export items, the user can attach a ``WARNING`` pragma to an export of a default: ::
 
