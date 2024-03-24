@@ -109,6 +109,18 @@ declarations.
 The syntactic extension to exports would be enabled by the same ``{-# LANGUAGE NamedDefaults #-}`` pragma. The new
 semantics of imports would be enabled by default with no ``LANGUAGE`` extension required.
 
+`WARNING` pragma on export
+--------------------------
+
+As with regular export items, the user can attach a ``WARNING`` pragma to an export of a default: ::
+
+  {-# LANGUAGE NamedDefaults #-}
+  module M ({-# WARNING "This default is deprecated, use explicit type applications" #-} default MyClass)
+
+The warning would triggered only if an importer actually uses the default to disambiguate a type. In other words, the
+pragma would replace a generic compiler warning about type defaults, enabled by ``-Wtype-defaults``, with a specific
+warning enabled by ``-Wdeprecations``.
+
 Subsumption
 ~~~~~~~~~~~
 
