@@ -46,11 +46,11 @@ Rule
        ys = reverse xs
 
 
-if ∀a: f a then ∀a: ∃b, b ∈ a : f b
+*if* ∀a: f a *then* ∀a: ∃b, b ∈ a : f b
 
 But since SameRanked Existential Quantifier ``forsome`` cannot use same symbol "∃" (which could be used by NotSameRanked Existential Quantifier ``exists`` ), we use a different one: "Ə" (Latin Capital Letter Schwa)
 
-if ∀a: f a then ∀a: Əb, b ∈ a : f b
+*if* ∀a: f a *then* ∀a: Əb, b ∈ a : f b
 
 
 Proposed Change Specification
