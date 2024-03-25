@@ -33,10 +33,14 @@ Rule
 
   -- same as 
   id1 :: forall a. forsome b <- a. a -> b
-  
-  
+
+
   f1 :: forall a. [a] -> [a]
   f1 (x:xs) = xs ++ [ x :: forsome a. a ]
+
+  -- same as 
+  f1 :: forall a. [a] -> [a]
+  f1 (x:xs) = xs ++ [ x :: forsome b <- a. b ]
 
 
   i42 :: Int
@@ -92,7 +96,7 @@ This Proposal extends ``ExplicitForsome`` extension.
 Syntax
 ~~~~~~
 
-We extend syntax for ``forsome`` quantifier from simple form to full form. And we add 2 additional sugaring forms. Such, that simple one form become a sugared version of full form. 
+We extend syntax for ``forsome`` quantifier from simple form to full form. And we add 1 additional sugaring form. Such, that simple one form become a sugared version of full form. 
 
 All valid old code with ``forsome`` quantifier remains valid.
 
@@ -102,7 +106,7 @@ All valid old code with ``forsome`` quantifier remains valid.
   forsome a1 <- tb1, a2 <- tb2, a3 <- tb3.
   
   -- a bit similar to
-  let a1 = tb1 in let a2 = tn2 in let a3 = tb3 in ...
+  let a1 = tb1 in let a2 = tb2 in let a3 = tb3 in ...
 
 Where `` <- ...`` is a binding part of quantifier.
 
@@ -175,6 +179,7 @@ Or make the opposite
        ys = reverse xs
 
   id1 :: forall a. forsome b <- a. a -> b
+  id1 @a x = x
   
   id2 :: forall a. forsome b <- a. b -> b
   id2 @b x = x
