@@ -129,12 +129,8 @@ Grammar
                          | {- empty -}
 
         -- NEW!
-        forsome_telescope → 'forsome' tv_bind_1fs '.' -- (with "ExtendedForsome")
-                          | 'forsome' tv_bndrs_fs '.'
+        forsome_telescope → 'forsome' tv_bndrs '.'
                           | {- empty -}
-
-        tv_bndrs_fs → tv_bndr tv_bndrs
-                    | {- empty -}
 
 
 Examples
