@@ -1,5 +1,6 @@
+=======================
 DownRanked Existentials
-==========================
+=======================
 
 .. author:: Viktor WW
 .. date-accepted::
@@ -128,14 +129,14 @@ Introduce a new extension -XDownRankedExistential.
 Syntax
 ~~~~~~
 
-Syntax of ``exists`` quantifier has 3 forms.
+Syntax of ``exists`` quantifier has 2 forms.
 
 1. The **Full form** is 
 ::
 
-  exists a1 a2 a3 | a1 <- b1, a2 <- b2, a3 <- b3.
+  exists a1 <- b1, a2 <- b2, a3 <- b3.
 
-Where ``| ... <- ...`` is a binding part.
+Where `` <- ...`` is a binding part.
 
 2. Sugared **Same-name form**. If for some ``N`` we have same names ``aN == bN`` then we could omit to write this specific binding of type variable. 
 ::
@@ -143,22 +144,22 @@ Where ``| ... <- ...`` is a binding part.
   exists a1 a2 a3. 
 
   -- desugars into
-  exists a1 a2 a3 | a1 <- a1, a2 <- a2, a3 <- a3.
+  exists a1 <- a1, a2 <- a2, a3 <- a3.
 
 
   -- partial same-name
-  exists a1 a2 a3 | a1 <- b1.
+  exists a1 <- b1, a2 a3.
 
   -- desugars into
-  exists a1 a2 a3 | a1 <- b1, a2 <- a2, a3 <- a3.
+  exists a1 <- b1, a2 <- a2, a3 <- a3.
 
-3. Sugared **One-variable form**. If ``exists`` has just one variable we could write binding shortly. 
-::
 
   exists a1 <- b1.
 
   -- desugars into
   exists a1 | a1 <- b1.
+
+
 
 Grammar
 ~~~~~~~
@@ -178,20 +179,15 @@ Grammar
                          | {- empty -}
 
         -- NEW!
-        exists_telescope → 'exists' tv_bind '.'
-                         | 'exists' tv_bndrs_ex '.'
+        exists_telescope → 'exists' tv_bndrs_ex '.'
                          | {- empty -}
 
-        tv_bndrs_ex → tv_bndr tv_bndrs tv_bind_ex
+        tv_unbnd_ex → tv_bndr tv_unbnd_ex
+                    | tv_bndr '<-' tv_bndr tv_bind_nxt_ex
                     | {- empty -}
-
-        tv_bind_ex → '|' tv_bind tv_bind_ex_next
-                   | {- empty -}
-
-        tv_bind_ex_next → ',' tv_bind tv_bind_ex_next
-                        | {- empty -}
-  
-        tv_bind → tv_bndr '<-' tv_bndr
+					
+        tv_bind_nxt_ex → ',' tv_unbnd_ex
+                       | {- empty -}
 
 2. The grammar is modified for ``data`` declaration too.
 
