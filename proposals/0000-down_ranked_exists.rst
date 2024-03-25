@@ -134,6 +134,8 @@ Syntax of ``exists`` quantifier has 2 forms.
 1. The **Full form** is 
 ::
 
+  exists a1 <- b1.
+
   exists a1 <- b1, a2 <- b2, a3 <- b3.
 
 Where `` <- ...`` is a binding part.
@@ -152,13 +154,6 @@ Where `` <- ...`` is a binding part.
 
   -- desugars into
   exists a1 <- b1, a2 <- a2, a3 <- a3.
-
-
-  exists a1 <- b1.
-
-  -- desugars into
-  exists a1 | a1 <- b1.
-
 
 
 Grammar
