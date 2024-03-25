@@ -13,15 +13,16 @@ Explicit ForSome
 
 .. _`#448`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0448-type-variable-scoping.rst
 .. _`#448rd`: https://ghc-proposals.readthedocs.io/en/latest/proposals/0448-type-variable-scoping.html
+.. _`#646`: https://github.com/ghc-proposals/ghc-proposals/pull/646
 
 This proposal introduces same-ranked existentials into GHC
 
 Motivation
 ----------
 
-To write some trivial functions ``ScopedTypeVariables`` extension is needed, which add implicit rules how to read type signatures!
+To write some trivial functions ``ScopedTypeVariables`` extension is needed, which adds implicit rules how to read type signatures!
 
-And this is a bit unhandy to use in such language which have a huge system of types.
+And this is a bit unhandy to use in language which has a huge system of types.
 
 This Proposal suggest to add the simple **SameRanked Existential** as **Explicit Forsome** Quantifier, which follows one of Haskell principles: the Explicit Variable Principle.
 
@@ -82,7 +83,7 @@ By using ``forsome a`` we ask do not create a new type variable ``forall a``, bu
   i42 = 42
 
 
-The support of this (2) role is discussed in Proposal "ExtendedForsome"! This proposal fully ignore this role for ``forsome`` quantifier.
+The support of this (2) role is discussed in Proposal "ExtendedForsome" `#646`_ ! This proposal fully ignore this role for ``forsome`` quantifier.
 
 
 Extension
@@ -174,9 +175,9 @@ Effect and Interactions
 UnicodeSyntax
 ~~~~~~~~~~~~~
 
-The ``Ə`` (Ə, Latin Capital Letter Schwa, U+018F) is added to ``UnicodeSyntax`` as synonym for ``forsome`` keyword.
+The ``Ə`` (Ə, Latin Capital Letter Schwa, U+018F) and maybe ``ə`` (ə, Latin Small Letter Schwa, U+0259) are added to ``UnicodeSyntax`` as synonym for ``forsome`` keyword.
 
-Why Ə (Latin Capital Letter Schwa, U+018F)?  
+Why "Ə"?  
 
 1. Reason of using: Historically Schwa Letter is rarely used. ( *Small* letter "ə" is used as the schwa sound in International Phonetic Alphabet (IPA).) In nowadays Symbol Ə has rare and limited use, so it is free to use here
 
