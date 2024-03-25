@@ -42,12 +42,12 @@ Rule
   i42 :: Int
   i42 = 42
 
-  -- same as (1-variable sugaring version)
+  -- same as
   i42 :: forsome a <- Int. a
   i42 = 42
 
 
-if ∀a: f a then ∀a: Əb, b ∈ a : f b
+*if* ∀a: f a *then* ∀a: Əb, b ∈ a : f b
 
 
 Proposed Change Specification
@@ -80,7 +80,7 @@ The support of this (1) role is discussed in Proposal "Explicit ForSome"!
 
 It is similar to expression `:: let ... in` at type level. ForSome quantifier do not create a new type variable ( ``forall a.`` ), but add local type synonym in signature.
 
-It is not a powerful feature, but it fully cover all ``forall`` roles  and possibilities
+It is not a powerful feature, but it fully cover all ``forsome`` roles  and possibilities
 
 
 Extension
@@ -119,8 +119,7 @@ Where `` <- ...`` is a binding part of quantifier.
   forsome a1 <- tb1, a2 a3.
 
   -- desugars into
-  forsome a1 a2 a3 | a1 <- tb1, a2 <- a2, a3 <- a3.
-
+  forsome a1 <- tb1, a2 <- a2, a3 <- a3.
 
 
 Main difference between bindings from ``forsome`` and ``exists`` (aka ``foralive`` ) quantifiers is that ``exists`` binds type variable only, but ``forsome`` could binds even types.
