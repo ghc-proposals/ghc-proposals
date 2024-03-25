@@ -168,6 +168,12 @@ Or simplify some long type signature
 Or make the opposite
 ::
 
+  f :: forall a. [a] -> [a]
+  f xs = ys ++ ys
+     where
+       ys :: forsome b <- a. [b]   -- NEW!
+       ys = reverse xs
+
   id1 :: forall a. forsome b <- a. a -> b
   
   id2 :: forall a. forsome b <- a. b -> b
