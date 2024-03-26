@@ -34,6 +34,7 @@ Rule
 ~~~~
 
 - **SameRanked Existential** rule: Any N-Ranked *type* (or *type_variable* ) is ALSO N-Ranked ``forsome`` *type_variable* 
+
 ::
 
   --SameRanked Existentials:
@@ -111,19 +112,19 @@ It says that type variables ``a1, a2, a3`` are locally scoped ones, not a new on
 Grammar
 ~~~~~~~
 
-1. The grammar is modified as follows (baseline: GHC's parser)::
+The grammar is modified as follows (baseline: GHC's parser)::
 
         ctype → quantifiers_telescope ctype   -- NEW!
               -- forall_telescope ctype       -- REMOVE!
               | context '=>' ctype
               | ...
 
-        -- + exists/foralive
-        quantifiers_telescope → exists_telescope forsome_telescope forall_telescope forsome_telescope -- NEW!
-		
-        -- - exists/foralive
+        -- --- exists/foralive
         quantifiers_telescope → forall_telescope forsome_telescope -- NEW!
 
+        -- +++ exists/foralive
+        quantifiers_telescope → exists_telescope forsome_telescope forall_telescope forsome_telescope -- NEW!
+		
         -- just for comparison
         forall_telescope → 'forall' tv_bndrs '.'
                          | 'forall' tv_bndrs '->'
@@ -175,6 +176,9 @@ Effect and Interactions
 UnicodeSyntax
 ~~~~~~~~~~~~~
 
+Ə letter
+^^^^^^^^
+
 The ``Ə`` (Ə, Latin Capital Letter Schwa, U+018F) and maybe ``ə`` (ə, Latin Small Letter Schwa, U+0259) are added to ``UnicodeSyntax`` as synonym for ``forsome`` keyword.
 
 Why "Ə"?  
@@ -186,6 +190,34 @@ Why "Ə"?
 3. Reason of supporting: Ə(U+018F) was added in 1.1 (June 1993) Unicode Version, same version were were added ∀(For All, U+2200) and ∃(There Exists, U+2203)
 
 5. Reason of clearness: Symbol Ə is clear and easy distinguishable from numbers and Latin letters (and from many non-Latin too)
+
+Why not "Ə"?
+
+1. Ə(U+018F) is a "normal" Latin latter
+
+2. While ∀ and ∃ matches the height, but Ə in many fonts do not match with ∀ and ∃
+
+∋ symbol
+^^^^^^^^
+
+Alternative to ``Ə`` (Ə, U+018F) is ``∋`` (∋, [Capital] Contains as Member, U+220B)
+
+Why "∋"?
+
+1. ∋(U+220B) is a "normal" symbol in Mathematical Operators section of Unicode, like ∀ and ∃.
+
+2. Reason of supporting: ∋(U+220B) was added in 1.1 (June 1993) Unicode Version, same version were were added ∀(For All, U+2200) and ∃(There Exists, U+2203)
+
+3. Reason of clearness: Symbol ∋ is clear and easy distinguishable from numbers and Latin letters (and from many non-Latin too)
+
+Why not "∋"?
+
+1. ∋ has name "Contains as Member" and it has meaning "such that"
+
+Other alternatives
+^^^^^^^^^^^^^^^^^^
+
+Other alternatives could have completely different visual style, for example ``❡`` (❡, Curved Stem Paragraph Sign Ornament, U+2761), which matches the height with both ∀ and ∃.
 
 
 Visible ForAll and UnErased ForAll
