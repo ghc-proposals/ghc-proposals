@@ -24,14 +24,19 @@ To write some trivial functions ``ScopedTypeVariables`` extension is needed, whi
 
 And this is a bit unhandy to use in language which has a huge system of types.
 
-This Proposal suggest to add the simple **SameRanked Existential** as **Explicit Forsome** Quantifier, which follows one of Haskell principles: the Explicit Variable Principle.
+This Proposal suggest to add the simple **SameRanked Existential** as **Explicit Forsome** Quantifier.
 
+Explicitness is preferential in Haskell over implicitness. And this Proposal propose how to write ``forsome`` quantifier explicitly!
+
+Just like ``ExplicitForAll`` allow explicitly say exactly what this specific type variable is forall quantified, this Proposal allow explicitly say exactly what this specific type variable is forsome quantified!
+ 
 Alternative is "Modern Scoped Type Variables" `#448`_ (rendered `#448rd`_ ) which was added into ``ScopedTypeVariables`` extension.
 
-It is *de facto* **Implicit Forsome**.
+``ScopedTypeVariables`` is *de facto* **Implicit Forsome** : Implicit rules to add a forsome quantifier to type variables if they are not explicitly quantified.
 
-Rule
-~~~~
+
+Rule (aka math-like proof)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - **SameRanked Existential** rule: Any N-Ranked *type* (or *type_variable* ) is ALSO N-Ranked ``forsome`` *type_variable* 
 
@@ -48,11 +53,15 @@ Rule
        ys = reverse xs
 
 
+**Math-like Proof:**
+
 *if* ∀a: f a *then* ∀a: ∃b, b ∈ a : f b
 
 But since SameRanked Existential Quantifier ``forsome`` cannot use same symbol "∃" (which could be used by NotSameRanked Existential Quantifier ``exists`` ), we use a different one: "Ə" (Latin Capital Letter Schwa)
 
 *if* ∀a: f a *then* ∀a: Əb, b ∈ a : f b
+
+This means that every *type variables* in Haskell isalready *de facto* either ``forall a.`` or ``forsome a.`` This Proposal suggests to make this *de jure*. This is an unification and generalization of declaring type variables.
 
 
 Proposed Change Specification
