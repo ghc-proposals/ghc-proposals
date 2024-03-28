@@ -16,9 +16,6 @@ GHC.
 * `≡ List of implemented proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`_
 * `≡ List of all proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+-label%3ANon-proposal>`_
 
-Table of Contents
-=================
-.. contents:: :local:
 
 What is a proposal?
 -------------------
@@ -58,33 +55,33 @@ This section outlines what stages a proposal may go through. The stage is identi
 
 1. (No label.) The author drafts a proposal.
 
-   `What is a proposal? <#what-is-a-proposal>`_
+   `What is a proposal? <#what-is-a-proposal>`__
 
 2. (No label.) The author submits the proposal to the wider Haskell community for discussion, as a pull request against this repository.
 
-   `How to submit a proposal <#how-to-start-a-new-proposal>`_
+   `How to submit a proposal <#how-to-start-a-new-proposal>`__
 
 3. (No label.)  The wider community discusses the proposal in the commit section of the pull
    request, while the author refines the proposal. This phase lasts as long as necessary.
 
-   `Discussion goals <#discussion-goals>`_ •
-   `How to comment on a proposal <#how-to-comment-on-a-proposal>`_ •
-   `≡ List of proposals under discussion <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+no%3Alabel>`_
+   `Discussion goals <#discussion-goals>`__
+   `How to comment on a proposal <#how-to-comment-on-a-proposal>`__
+   `≡ List of proposals under discussion <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+no%3Alabel>`__
 
 4. Label: `Pending shepherd recommendation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+shepherd+recommendation%22>`_.  Eventually *the proposal author* brings the proposal before the committee for review.
 
-   `How to bring a proposal before the committee <#how-to-bring-a-proposal-before-the-committee>`_ •
-   `Who is the committee? <#who-is-the-committee>`_   •
+   `How to bring a proposal before the committee <#how-to-bring-a-proposal-before-the-committee>`__
+   `Who is the committee? <#who-is-the-committee>`__
    `≡ List of proposals waiting for shepherd <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+shepherd+recommendation%22>`_
 
-5. Label: `Pending committee review <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+committee+review%22>`_.  One committee member steps up as a shepherd, and generates consensus within the committee within four or five weeks.
+5. Label: `Pending committee review <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+committee+review%22>`__.  One committee member steps up as a shepherd, and generates consensus within the committee within four or five weeks.
 
-   `Committee process <#committee-process>`_ •
-   `Review criteria <#review-criteria>`_ •
-   `≡ List of proposals under review <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+committee+review%22>`_
+   `Committee process <#committee-process>`__
+   `Review criteria <#review-criteria>`__
+   `≡ List of proposals under review <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+committee+review%22>`__
 
 6. Eventually, the committee rejects a proposal (label: Rejected), or passes it back to the
-   author for review (label: `Needs revision <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`_), or accepts it (label: `Accepted <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Accepted%22>`_).
+   author for review (label: `Needs revision <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`__), or accepts it (label: `Accepted <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Accepted%22>`__).
 
    Acceptance of the proposal implies that the implementation will be accepted
    into GHC provided it is well-engineered, well-documented, conforms to the
@@ -94,24 +91,24 @@ This section outlines what stages a proposal may go through. The stage is identi
    features, or unexpected breaking changes not covered by the backwards
    compatibility assessment.  In this case the proposal should be revised.
 
-   `≡ List of accepted proposals <https://github.com/ghc-proposals/ghc-proposals/tree/master/proposals>`_ •
-   `≡ List of proposals being revised <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`_ •
-   `≡ List of rejected proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%Rejected%22>`_
+   `≡ List of accepted proposals <https://github.com/ghc-proposals/ghc-proposals/tree/master/proposals>`__
+   `≡ List of proposals being revised <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`__
+   `≡ List of rejected proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%Rejected%22>`__
 
-7. Label: `Dormant <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Dormant%22>`_.  If a proposal sees no activity for along time, it is marked as “dormant”,
+7. Label: `Dormant <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Dormant%22>`__.  If a proposal sees no activity for along time, it is marked as “dormant”,
    and eventually closed.
 
-   `What is a dormant proposal? <#what-is-a-dormant-proposal>`_ •
-   `≡ List of dormant proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Dormant%22>`_
+   `What is a dormant proposal? <#what-is-a-dormant-proposal>`__
+   `≡ List of dormant proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Dormant%22>`__
 
 
-8. Label: `Implemented <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`_.   Once a proposal is accepted, it still has to be implemented.  The author
+8. Label: `Implemented <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`__.   Once a proposal is accepted, it still has to be implemented.  The author
    may do that, or someone else. We mark the proposal as “implemented” once it
    hits GHC’s ``master`` branch (and we are happy to be nudged to do so by
    email, GitHub issue, or a comment on the relevant pull request).
 
-   `≡ List of proposals pending implementation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Accepted%22+-label%3A%22Implemented%22>`_ •
-   `≡ List of implemented proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`_
+   `≡ List of proposals pending implementation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Accepted%22+-label%3A%22Implemented%22>`__
+   `≡ List of implemented proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`__
 
 Do not hesitate to `contact <#questions>`_ us if you have questions.
 
@@ -122,7 +119,7 @@ Proposals are written in either `ReStructuredText <http://www.sphinx-doc.org/en/
 
 Proposals should follow the structure given in the `ReStructuredText template <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.rst>`_, or the `Markdown template <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.md>`_.  (The two are identical except for format.)
 
-See the section `Review criteria <#review-criteria>`_ below for more information about what makes a strong proposal, and how it will be reviewed.
+See the section `Review criteria <#review-criteria>`__ below for more information about what makes a strong proposal, and how it will be reviewed.
 
 To start a proposal, create a pull request that adds your proposal as ``proposals/0000-proposal-name.rst`` or ``proposals/0000-proposal-name.md``. Use the corresponding ``proposals/0000-template`` file as a template.
 
@@ -210,15 +207,15 @@ When the discussion has ebbed down and the author thinks the proposal is ready, 
 2. Add a comment to the pull request, briefly summarizing the major points raised
    during the discussion period and stating your belief that the proposal is
    ready for review. In this comment, tag the committee secretary (currently
-   `@adamgundry <https://github.com/adamgundry/>`_).
+   `@adamgundry <https://github.com/adamgundry/>`__).
 
-`The secretary <#who-is-the-committee>`_ will then label the pull request with
+`The secretary <#who-is-the-committee>`__ will then label the pull request with
 ``Pending shepherd recommendation`` and start the `committee process
-<#committee-process>`_.  (If this does not happen within a few days, please
+<#committee-process>`__.  (If this does not happen within a few days, please
 ping the secretary or the committee.)
 
 What is a dormant proposal?
---------------------------
+---------------------------
 
 In order to keep better track of actively discussed proposals, proposals that
 see no activity for an extended period of time (a month or two) might be marked
@@ -229,24 +226,26 @@ proposal by picking up the discussion (and possibly asking `the secretary
 You can see the `list of dormant proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Dormant%22>`_.
 
 Who is the committee?
---------------------
+---------------------
 You can reach the committee by email at ghc-steering-committee@haskell.org. This is a mailing list with
 `public archives <https://mail.haskell.org/cgi-bin/mailman/listinfo/ghc-steering-committee>`_.
 
 The current members, including their GitHub handle, when they joined first, when their term last renewed, when their term expires and their role, are:
 
-============= =========================  ====================================================  =======  =======  =======  =========
-|simonmar|    Simon Marlow               `@simonmar <https://github.com/simonmar>`_            2017/02  2024/02  2027/02  co-chair
-|simonpj|     Simon Peyton-Jones         `@simonpj <https://github.com/simonpj>`_              2017/02  2024/02  2027/02  co-chair
-|gridaphobe|  Eric Seidel                `@gridaphobe <https://github.com/gridaphobe>`_        2018/09  2022/03  2025/03
-|cdornan|     Chris Dornan               `@cdornan <https://github.com/cdornan>`_              2022/03           2025/03
-|aspiwack|    Arnaud Spiwack             `@aspiwack <https://github.com/aspiwack/>`_           2019/07  2022/10  2025/10
-☺             Adam Gundry                `@adamgundry <https://github.com/adamgundry/>`_       2022/10           2025/10  secretary
-|angerman|    Moritz Angermann           `@angerman <https://github.com/angerman/>`_           2023/02           2026/02
-|maralorn|    Malte Ott                  `@maralorn <https://github.com/maralorn/>`_           2024/03           2027/03
-|Tritlo|      Matthías Páll Gissurarson  `@Tritlo <https://github.com/Tritlo>`_                2024/03           2027/03
-============= =========================  ====================================================  =======  =======  =======  =========
+=============  =========================  ====================================================  =======  =======  =======  =========
+|simonmar|     Simon Marlow               `@simonmar <https://github.com/simonmar>`_            2017/02  2024/02  2027/02  co-chair
+|simonpj|      Simon Peyton-Jones         `@simonpj <https://github.com/simonpj>`_              2017/02  2024/02  2027/02  co-chair
+|gridaphobe|   Eric Seidel                `@gridaphobe <https://github.com/gridaphobe>`_        2018/09  2022/03  2025/03  member
+|cdornan|      Chris Dornan               `@cdornan <https://github.com/cdornan>`_              2022/03  -        2025/03  member
+|aspiwack|     Arnaud Spiwack             `@aspiwack <https://github.com/aspiwack/>`_           2019/07  2022/10  2025/10  member
+|adamgundry|   Adam Gundry                `@adamgundry <https://github.com/adamgundry/>`_       2022/10  -        2025/10  secretary
+|angerman|     Moritz Angermann           `@angerman <https://github.com/angerman/>`_           2023/02  -        2026/02  member
+|maralorn|     Malte Ott                  `@maralorn <https://github.com/maralorn/>`_           2024/03  -        2027/03  member
+|Tritlo|       Matthías Páll Gissurarson  `@Tritlo <https://github.com/Tritlo>`_                2024/03  -        2027/03  member
+=============  =========================  ====================================================  =======  =======  =======  =========
 
+
+.. |adamgundry| image:: https://github.com/adamgundry.png?size=24
 .. |aspiwack| image:: https://github.com/aspiwack.png?size=24
 .. |simonmar| image:: https://github.com/simonmar.png?size=24
 .. |simonpj| image:: https://github.com/simonpj.png?size=24
