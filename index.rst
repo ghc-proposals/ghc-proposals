@@ -3,17 +3,19 @@ All accepted GHC Proposals
 
 .. toctree::
    :maxdepth: 1
-   :caption: Contents:
    :glob:
+   :titlesonly:
 
    README.rst
-   GRC.rst
+   principles.rst
    proposals/*
+   committee.rst
+   acceptance.rst
+   GRC.rst
 
 
 Indices and tables
 ==================
 
 * :ref:`genindex`
-* :ref:`modindex`
 * :ref:`search`
