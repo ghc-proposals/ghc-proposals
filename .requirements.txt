@@ -1,0 +1,2 @@
+sphinx==7.2.6
+myst_parser
