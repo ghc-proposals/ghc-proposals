@@ -34,6 +34,8 @@ Alternative is "Modern Scoped Type Variables" `#448`_ (rendered `#448rd`_ ) whic
 
 ``ScopedTypeVariables`` is *de facto* **Implicit Forsome** : Implicit rules to add a forsome quantifier to type variables if they are not explicitly quantified.
 
+Also Alternative is ``PartialTypeSignatures`` extension, with opposite philosophy: compiler infer type not for holes, but for forsome quantified type variables.
+
 
 Rule (aka math-like proof)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -55,19 +57,25 @@ Rule (aka math-like proof)
 
 **Math-like Proof:**
 
-*if* ∀a: f a *then* ∀a: ∃b, b ∈ a : f b
+*if* ∀a: f a *then* ∀a: ∃₌₁b, b ∈ a : f b
 
 But since SameRanked Existential Quantifier ``forsome`` cannot use same symbol "∃" (which could be used by NotSameRanked Existential Quantifier ``exists`` ), we use a different one: "Ə" (Latin Capital Letter Schwa)
 
 *if* ∀a: f a *then* ∀a: Əb, b ∈ a : f b
 
-This means that every *type variables* in Haskell isalready *de facto* either ``forall a.`` or ``forsome a.`` This Proposal suggests to make this *de jure*. This is an unification and generalization of declaring type variables.
+This Proposal suggest to call this quantifier ``fosome``, but also good alternative names are ``forone`` and ``forunique``. It represents uniqueness quantification.
+
+This means that every *type variables* in Haskell is already *de facto* either ``forall a.`` or ``forsome a.`` This Proposal suggests to make this *de jure*. This is an unification and generalization of declaring type variables.
+
+It is also an unification in differentiating forall quantified and forsome quantified type variables. And a unification in explicitness to write quantification! 
+
+And this is also a generalization of inferred type variables, not just holes.
 
 
 Proposed Change Specification
 -----------------------------
 
-SameRanked Existential Quantifier ``forsome`` could play 2 roles.
+SameRanked Existential Quantifier ``forsome`` could play 3 roles.
 
 Roles
 ~~~~~
@@ -83,7 +91,18 @@ Roles
 
 By using ``forsome a`` we ask do not create a new type variable ``forall a``, but use already existed scoped version of type variable ``a``.
 
-2. Local type synonym quantifier (with "ExtendedForsome")
+2. Locally inferred type
+::
+
+  f :: forall a. [a] -> [a]
+  f xs = ys ++ ys
+     where
+       ys :: forsome b. [b]    -- NEW!
+       ys = reverse xs
+
+In this example, forsome quantified type variable is ab inferred type play, just like holes from ``PartialTypeSignatures`` extension.
+
+3. Local type synonym quantifier (with "ExtendedForsome")
 ::
 
   i42 :: Int
@@ -105,6 +124,7 @@ With ``-XExplicitForsome``, ``forsome`` is a keyword in both types and terms.
 
 Even ``ScopedTypeVariables`` extension is an alternative to ``ExplicitForsome`` extension, they both could coexist together in same file.
 
+Even ``PartialTypeSignatures`` extension is an alternative to ``ExplicitForsome`` extension, they both could coexist together in same file.
 
 Syntax
 ~~~~~~
