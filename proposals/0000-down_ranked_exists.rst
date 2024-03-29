@@ -54,16 +54,15 @@ This Proposal suggest to add the opposite: **DownRanked Existential**
   cmpg2 :: forall a. a -> a ->(forall b. b -> b -> (b, Bool)) -> (a, Bool)
   cmpg2 x y f = f x y
 
-  -- same as (same-name sugaring version)
+  -- same as
   cmpg2 :: forall a. exists b. a -> a ->(forall b. b -> b -> (b, Bool)) -> (b, Bool)
 
-  -- same as (1-variable sugaring version)
-  cmpg2 :: forall a. exists c <- b. a -> a ->(forall b. b -> b -> (b, Bool)) -> (c, Bool)
 
-  -- same as (full version)
-  cmpg2 :: forall a. exists c | c <- b. a -> a ->(forall b. b -> b -> (b, Bool)) -> (c, Bool)
+The Main rule: *if* ∀a: f a *then* ∃b: ∀a, a ≡ b : f b
 
-If ∀a: f a *then* ∃b: ∀a, a ≡ b : f b
+Second rule: *if* ∃a: f a *then* ∃b: ∃a, a ≡ b : f b
+
+This is the core idea of this Dependent existential type from Higher-Ranked (Exactly N+1 Ranked) ``forall`` / ``exists`` type variables with `a ≡ b` equality condition.
 
 *Note: using same keyword "exists" for both UpRanked and DownRanked Existential Quantifiers is incompatible and inconsistent idea*
 
@@ -77,7 +76,7 @@ Roles
 1. Direct-catch a Data-quantifier 
 ::
 
-  -- hidden existential type
+  -- hidden conventional existential GHC type
   data Box = forall a. MkBox a
 
   -- open existential type
@@ -101,12 +100,19 @@ Roles
   toEx :: forall a. a -> exists b. Ex
   toEx = MkEx                 -- NEW!
 
-4. Direct Non-data catch and extract 
+4. Absorption different types into one inner type
+::
+
+  fromEither :: forall a b. Either a b -> exists c. Ex
+  fromEither (Left  x) = MkEx x
+  fromEither (Right y) = MkEx y
+
+5. Direct Non-data catch and extract 
 ::
 
   upd :: forall a. exists b. a ->(forall b. b -> b) -> b
 
-5. Existential Boundaries are the same as a escaper type variable boundaries 
+6. Existential Boundaries are the same as a escaper type variable boundaries 
 ::
 
   data Doc = forall a. Show a => MkDoc a
@@ -121,7 +127,7 @@ Introduce a new extension -XDownRankedExistential.
 
 1. Introduce a new extension ``-XDownRankedExistential``.
 
-#. With ``-XDownRankedExistential``, ``exists`` is a keyword in both types and terms.
+#. With ``-XDownRankedExistential``, ``exists`` is a keyword in both types and terms or at least pseudo-keyword.
 
 #. With ``-XDownRankedExistential``, introduce a new type for existentials.
 
@@ -129,31 +135,12 @@ Introduce a new extension -XDownRankedExistential.
 Syntax
 ~~~~~~
 
-Syntax of ``exists`` quantifier has 2 forms.
-
-1. The **Full form** is 
-::
-
-  exists a1 <- b1.
-
-  exists a1 <- b1, a2 <- b2, a3 <- b3.
-
-Where `` <- ...`` is a binding part.
-
-2. Sugared **Same-name form**. If for some ``N`` we have same names ``aN == bN`` then we could omit to write this specific binding of type variable. 
+Syntax of ``exists`` quantifier has 1 simple form.
 ::
 
   exists a1 a2 a3. 
 
-  -- desugars into
-  exists a1 <- a1, a2 <- a2, a3 <- a3.
-
-
-  -- partial same-name
-  exists a1 <- b1, a2 a3.
-
-  -- desugars into
-  exists a1 <- b1, a2 <- a2, a3 <- a3.
+It says that type variables a1, a2, a3 are from N+1 Ranked ``forall`` / ``exists`` , not a new ones.
 
 
 Grammar
@@ -174,15 +161,9 @@ Grammar
                          | {- empty -}
 
         -- NEW!
-        exists_telescope → 'exists' tv_bndrs_ex '.'
+        exists_telescope → 'exists' tv_bndrs '.'
                          | {- empty -}
 
-        tv_unbnd_ex → tv_bndr tv_unbnd_ex
-                    | tv_bndr '<-' tv_bndr tv_bind_nxt_ex
-                    | {- empty -}
-					
-        tv_bind_nxt_ex → ',' tv_unbnd_ex
-                       | {- empty -}
 
 2. The grammar is modified for ``data`` declaration too.
 
@@ -205,7 +186,7 @@ We could use boxing/unboxing existential types for Vectors ::
 
   data exists n. VecE a = forall n. MkVecE (Vec n a)
 
-  vec2E :: forall a n. Vec n a -> exists m. VecE a
+  vec2E :: forall a n. Vec n a -> exists n. VecE a
   vec2E = MkVecE
 
   vecEFrom :: forall a. exists m. VecE a -> Vec m a
@@ -280,7 +261,7 @@ Visible ForAll was added by `#81`_ and `#281`_ (rendered `#281rd`_ ).
 
 1. Even there no requirement to forbid to use existential quantifier for catch visible type variable (in arrow forall ``forall a ->`` ), since type variable is already reachable in all (N-m)-Ranked levels it is useless to catch it by existential quantifier.
 
-#. Even there no requirement to forbid to use visible existential quantifier (in arrow exists ``exists a ->`` ) it makes no sense to have it.
+2. Even there no requirement to forbid to use visible existential quantifier (in arrow exists ``exists a ->`` ) it makes no sense to have it.
 
 
 UnErased ForAll
@@ -322,6 +303,47 @@ Type Families
 
 Type Families require same catching rules for existential as GADTs.
 
+
+Costs and Drawbacks
+-------------------
+
+We expect the implementation and maintenance costs of ``DownRankedExistential`` has medium difficulty.
+
+**Drawbacks**: using same keyword ``exists`` for both UpRanked and DownRanked quantifiers is **incompatible** and **inconsistent**.
+
+
+Modifying `#473`_ Proposal
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Proposal `#473`_ requires to use same quantifier ``exists`` and we suggest to modify it.
+
+This proposal suggest to change ``exists`` keyword for `#473`_ (if it will be approved) into ``forany`` (or other).
+
+And change "∃" Unicode symbol into "∋" (or other)!
+
+This proposal also suggest to rename proposed in `#473`_ (if it will be approved) ``ExistentialTypes`` extension into ``UpRankedExistential`` or ``ForanyQuantification`` (or other).
+
+
+Temporary solutions and Testing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+But as **temporary** solutions and *testing* this proposal DownRanked Existentials could use ``foralive`` keyword for ForAlive quantifier and "∋" Unicode symbol. 
+
+
+Backward Compatibility
+----------------------
+
+This proposal is backward compatible.
+
+
+Alternatives
+------------
+
+Main alternative is "First-class existential types" `#473`_ 
+
+
+Unresolved Questions
+--------------------
 
 Equality constraints
 ~~~~~~~~~~~~~~~~~~~~
@@ -373,50 +395,6 @@ But not every equality constraints we could write. And not all of them we could 
   filter p (x :> xs)
     | p x       = vec2E $ x :> $ vecEFrom $ filter p xs
     | otherwise = filter p xs  
-
-
-Costs and Drawbacks
--------------------
-
-We expect the implementation and maintenance costs of ``DownRankedExistential`` has medium difficulty.
-
-**Drawbacks**: using same keyword ``exists`` for both UpRanked and DownRanked quantifiers is **incompatible** and **inconsistent**.
-
-
-Modifying `#473`_ Proposal
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Proposal `#473`_ requires to use same quantifier ``exists`` and we suggest to modify it.
-
-This proposal suggest to change ``exists`` keyword for `#473`_ (if it will be approved) into ``forany`` (or other).
-
-And change "∃" Unicode symbol into "∋" (or other)!
-
-This proposal also suggest to rename proposed in `#473`_ (if it will be approved) ``ExistentialTypes`` extension into ``UpRankedExistential`` or ``ForanyQuantification`` (or other).
-
-
-Temporary solutions and Testing
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-But as **temporary** solutions and *testing* this proposal DownRanked Existentials could use ``foralive`` keyword for ForAlive quantifier and "∋" Unicode symbol. 
-
-
-Backward Compatibility
-----------------------
-
-This proposal is backward compatible.
-
-
-Alternatives
-------------
-
-Main alternative is "First-class existential types" `#473`_ 
-
-
-Unresolved Questions
---------------------
-
-None at this time.
 
 
 Implementation Plan
