@@ -27,30 +27,44 @@ The authors of this proposal believe that a clear lifecycle for these programmin
 Language extensions will be classified into the following categories
  * `Stable` extensions are considered to be finished and are not expected to undergo regular changes. These features can be used without worry of unexpected changes, and they are not known to contain serious design or implementation deficiencies. Any breaking change to a stable extension will be announced well in advance of the change being made, with a migration path provided if possible. For an extension to be classified as `Stable` it must be considered `Stable` when used in combination of all possible, non-mutually exclusive, extensions that are already `Stable`. This ensures any extension that is `Stable` will be have the same use without worry when combined with any other extension in the set, while allowing for mutually exclusive extensions to be added. Ideally, no breaking change will be made to a `Stable` extension, with incompatible changes resulting instead in a new, related extension, that is possibly mutually exclusive with the existing one, to enable smooth migration. Some extensions in this category might be `MultiWayIf`, `MonoLocalBinds`, and `ViewPatterns`.
 
- * `Experimental` extensions are undergoing active development, or have consequences that make it impossible in practice to avoid breaking changes. The syntax and semantics that are enabled by the extension are likely to change regularly. It is expected that most new language extensions will begin as experimental, while the developers and the community gain experience with their use. Despite being open to breaking change, an `Experimental` extension must be `Deprecated` prior to removal. Some extensions in this category might be `RequiredTypeArguments`, `RebindableSyntax`, and `Arrows`.
+ * `Experimental` extensions are undergoing active development, or have consequences that make it impossible in practice to avoid breaking changes. The syntax and semantics that are enabled by the extension are likely to change regularly.
+   * It is expected that most new language extensions will begin as experimental, while the developers and the community gain experience with their use.
+   * Despite being open to breaking change, an `Experimental` extension must be `Deprecated` prior to removal.
+   * Some extensions in this category might be `RequiredTypeArguments`, `RebindableSyntax`, and `Arrows`.
 
- * `Deprecated` extensions are considered to be design or implementation dead ends, and should not be used in new code. Deprecating an extension means that GHC intends to remove support for it in a future release (though this decision may be revised in the light of user feedback). When an extension is deprecated, the user's guide and the compiler warning _must_ include a statement about the longevity of the extension, though this need not necessarily commit to a concrete time for removal. Additionally, the user's guide and the warning should direct users to information about migrating away from the deprecated extension. Any extension will be deprecated prior to removal. Some extensions in this category might be `OverlappingInstances`, `Rank2Types`, `RecordPuns`, and `TypeInType`.
+ * `Deprecated` extensions are considered to be design or implementation dead ends, and should not be used in new code. Deprecating an extension means that GHC intends to remove support for it in a future release (though this decision may be revised in the light of user feedback).
+   * When an extension is deprecated, the user's guide and the compiler warning _must_ include a statement about the longevity of the extension, though this need not necessarily commit to a concrete time for removal. Additionally, the user's guide and the warning should direct users to information about migrating away from the deprecated extension.
+	 * Any extension will be deprecated prior to removal.
+	 * Some extensions in this category might be `OverlappingInstances`, `Rank2Types`, `RecordPuns`, and `TypeInType`.
 
  * `Legacy` extensions are explicitly not recommended for new code, much like `Deprecated`, however, they are expected to be supported indefinitely. This may be to maintain an older language set, maintain a bridge to a newer feature, or otherwise keep backward compatibility. Extensions that are `Legacy` may have some conflict with `Stable` extensions and explicitly do not need to be considered for an extension to be `Stable`. Some extensions in this category might be `CUSKs`, `DeepSubsumption`,  and `NPlusKPatterns`.
 
 Above we list expected categorizations of several extensions based on statements in the user's guide. We do not attempt to prescribe any particular categorizations as part of this proposal and simply provide a small number of expectations from the perspective of someone reading the existing documentation.
 
-The above places some restrictions on the transitions included in the extension lifecycle. The following transitions are also expected to be included:
+The following transitions are included:
  * `Experimental` -> `Stable`
  * `Experimental` -> `Deprecated`
  * `Experimental` -> `Legacy`
  * `Stable` -> `Legacy`
  * `Legacy` -> `Deprecated`
+ * `Deprecated` -> (no longer exists)
+
+These transitions are explicitly excluded:
+ * `Stable` -> (no longer exists)
+ * `Experimental` -> (no longer exists)
+ * `Legacy` -> (no longer exists)
+
+These are all excluded to require a deprecation cycle prior to removal of any extension.
 
 However, it also seems plausible that new knowledge might from time to time cause a stable extension to once again be considered experimental, e.g. in the face of soundness bugs or subtle interactions with other features. We explicitly allow for more transitions to allow for unforeseen circumstances. Restrictions are places on removal only. With this we aim to balance predictibility and flexibility. The consideration of both is important as extension classifications are first and foremost a communications channel between language designers, compiler developers, and users.
 
-For existing, or future, language sets such as `GHC2021` or `Haskell98`, it is expected that none of the contained extensions would be `Experimental`. However, this proposal does not seek to impose any particular policy on the inclusion of extensions into language sets - the developers and the steering committee are always in the best position to make a decision about a concrete extension and extension set.
+For existing, or future, language editions such as `GHC2021` or `Haskell98`, it is expected that none of the contained extensions would be `Experimental`. However, this proposal does not seek to impose any particular policy on the inclusion of extensions into language sets - the developers and the steering committee are always in the best position to make a decision about a concrete extension and extension set.
 
 Moving an extension through the lifecycle will require a GHC proposal. This will give users a chance to provide their input, it will help catch unexpected interactions (such as an `Stable` extension implying an `Experimental` one, and thus potentially allowing breakage at any  moment), and it provides a way for language implementers and users to clarify their mutual expectations.
 
 ### 2.2. Documentation
 
-The user's guide for each extension documents where it is in the extension lifecycle. We expect this to be next to the "Since" and "Implied by" fields in extension documentation. Additionally, the user's guide should provide a history of the extension's sojourn through the various states, and the GHC versions in which it went from being experimental to stable, or from stable to deprecated.
+The user's guide for each extension documents where it is in the extension lifecycle. We expect this to be next to the "Since" and "Implied by" fields in extension documentation. Additionally, the user's guide should provide a history of the extension's sojourn through the various states, and the GHC versions in which it transitioned, for example from being experimental to stable, or from stable to deprecated.
 
 ## 3. Effect and Interactions
 
@@ -97,14 +111,18 @@ It would be possible to further classify extensions along two more dimensions:
 
 This is clearly something that's desirable for users to know. However, this information is orthogonal to the stability, so we believe that mechanisms to communicate these aspects should be designed in a separate proposal.
 
-## 6. Unresolved Questions
+### 6. Related Work
+
+There are several other proposals and discussions that are related. There is a general [discussion thread](https://github.com/ghc-proposals/ghc-proposals/discussions/635) around features that are stable or not. Also a much more broadly sweeping [proposal](https://github.com/ghc-proposals/ghc-proposals/pull/636) includes a notion of stability. This proposal is now aiming to be very targeted in effort to make progress.
+
+## 7. Unresolved Questions
 
 
-## 7. Implementation Plan
+## 8. Implementation Plan
 
 The Haskell Foundation will either recruit volunteers or pay for the technical work of implementing this proposal. The classifications of individual language extensions will be left to a future proposal, and those discussions can proceed while implementation is ongoing, should this proposal be accepted.
 
 
-## 8. Endorsements
+## 9. Endorsements
 
 A number of endorsements from industry users were provided for the prior version of this proposal in its [discussion thread](https://github.com/ghc-proposals/ghc-proposals/pull/601).
