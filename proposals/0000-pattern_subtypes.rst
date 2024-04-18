@@ -73,7 +73,25 @@ So, our goal is to have subtypes for Sum-Types to have both advantages from fiel
   -- our goal is to have subtypes
   red :: Color of "RGB" -> Int
 
-And we could create absolutely safe and clear functions
+In brief, patterns (including ones from ``PatternSynonyms`` ) "fix" the "property" on Left Side of sub-definition / guard / case , but not on Right Side.
+
+This Proposal is a way how to "fix" the "property" on Left Side, which could be also used at Right Side of sub-definition / guard / case.
+::
+
+  -- Wrong, but OK now: 
+  -- red :: Color -> Int
+  --
+  -- Wrong and ERROR in future: 
+  -- red :: Color of "HSL" -> Int
+  -- Err: Expected type `Color of "RGB"`, but found `Color of "HSL"`
+  redMaybe :: Color -> Maybe Int
+  redMaybe c@(HSL {..}) = Just $ red c
+  redMaybe _            = Nothing
+
+If ``red :: Color -> Int`` , nothing prevent us to write ``redMaybe`` function, even after we check the "property" (Constructor) on the Left Side of sub-definition.
+But if ``red :: Color of "RGB" -> Int`` we could control subtype on Right Side and compiler could find an Error.
+
+And we could create absolutely safe and clear functions with subytpes
 ::
 
   redMaybe :: Color -> Maybe Int
@@ -85,11 +103,10 @@ And we could create absolutely safe and clear functions
   redUpdate _   c            = Left c
 
 
-This Proposal suggests to add Sub-Types (for Sum-Types and Multi-Constructor Types), which are known during pattern-matching.
-
-
 Proposed Change Specification
 -----------------------------
+
+This Proposal suggests to add Sub-Types (for Sum-Types and Multi-Constructor Types), which are known during pattern-matching.
 
 Technically Pattern-Matching SubTypes are Depended types, which are known during pattern-matching. But this dependency is weak and easy un-subtypeble.
 
