@@ -1,6 +1,6 @@
-================
-Pattern SubTypes
-================
+=========================
+Pattern-Matching SubTypes
+=========================
 
 .. author:: Viktor WW
 .. date-accepted::
@@ -11,7 +11,7 @@ Pattern SubTypes
 .. sectnum::
 .. contents::
 
-This proposal introduces Pattern SubTypes into GHC
+This proposal introduces Pattern-Matching SubTypes into GHC
 
 .. _`#639`: https://github.com/ghc-proposals/ghc-proposals/pull/639
 
@@ -91,18 +91,18 @@ This Proposal suggests to add Sub-Types (for Sum-Types and Multi-Constructor Typ
 Proposed Change Specification
 -----------------------------
 
-Technically Pattern SubTypes are Depended types, which are known during pattern-matching. But this dependency is weak and easy un-subtypeble.
+Technically Pattern-Matching SubTypes are Depended types, which are known during pattern-matching. But this dependency is weak and easy un-subtypeble.
 
 Extension
 ~~~~~~~~~
 
-Introduce a new extension -XPatternSubTypes.
+Introduce a new extension -XPatternMatchingSubTypes.
 
-1. Introduce a new extension ``-XPatternSubTypes``.
+1. Introduce a new extension ``-XPatternMatchingSubTypes``.
 
-#. With ``-XPatternSubTypes``, ``subtype`` is a keyword for import / export / declaration.
+#. With ``-XPatternMatchingSubTypes``, ``subtype`` is a keyword for import / export / declaration.
 
-#. With ``-XPatternSubTypes``, ``of`` is a also keyword for subtypes.
+#. With ``-XPatternMatchingSubTypes``, ``of`` is a also keyword for subtypes.
 
 Syntax
 ~~~~~~
@@ -136,9 +136,9 @@ Examples
   module Example (pattern Zero hiding subtype) where 
   
     import Data.Maybe( pattern Just hiding subtype
-	                 , pattern Nothing
-					 , type Either hiding subtype) 
-			   hiding (subtype Nothing)
+                     , pattern Nothing
+                     , type Either hiding subtype) 
+               hiding (subtype Nothing)
 
 Grammar
 ~~~~~~~
@@ -146,51 +146,51 @@ Grammar
 1. The grammar is modified as follows (baseline: GHC's parser)::
 
     -- NEW!
-	stype :=
-	      type 'of' subtype
-		| type 
+    stype :=
+          type 'of' subtype
+        | type 
 
     -- NEW!
     subtype :=
-	      type subtype
-		| type 
+          type subtype
+        | type 
 
 2. The grammar for declaration ::
 
     -- NEW!
-	subtype_synonym_sig :=
+    subtype_synonym_sig :=
         'subtype' con_list '::' sigtype
 
 
 3. The grammar for import / export ::
 
     -- was
-	import :=
-	      qcname_ext export_subspec
-		| 'module' modid
-		| 'pattern' qcon
-		| 'subtype' qcon  -- NEW!
+    import :=
+          qcname_ext export_subspec
+        | 'module' modid
+        | 'pattern' qcon
+        | 'subtype' qcon  -- NEW!
 
     -- was
-	export :=
-	      maybe_warning_pragma qcname_ext export_subspec
-		| maybe_warning_pragma 'module' modid
-		| maybe_warning_pragma 'pattern' qcon
-		| maybe_warning_pragma 'subtype' qcon  -- NEW!
+    export :=
+          maybe_warning_pragma qcname_ext export_subspec
+        | maybe_warning_pragma 'module' modid
+        | maybe_warning_pragma 'pattern' qcon
+        | maybe_warning_pragma 'subtype' qcon  -- NEW!
 
 4. The grammar for nameless hiding subtypes inside import / export ::
 
     -- was
-	qcname_ext_w_wildcard :=
-		  qcname_ext 'hiding' 'subtype'  -- NEW!
-	    | qcname_ext
-		| '..'
+    qcname_ext_w_wildcard :=
+          qcname_ext 'hiding' 'subtype'  -- NEW!
+        | qcname_ext
+        | '..'
 
 
 Rules
 ~~~~~
 
-Pattern SubTypes are additional none, one or finite several subtypes, which is definitely known during pattern-matching.
+Pattern-Matching SubTypes are additional none, one or finite several subtypes, which is definitely known during pattern-matching.
 
 - *Symbol rule*: all subtypes elements have kind ``Symbol`` : ``SomeType a1 a2 a3 of (b1 :: Symbol) (b2 :: Symbol) (b3 :: Symbol)``
 
@@ -265,7 +265,7 @@ Sum-Records
 
   data Color = RGB { red :: Int, green :: Int, blue :: Int } 
              | HSL { hue :: Int, saturation :: Int, lightness :: Int }
-			 
+
   subtype RGB :: Int -> Int -> Int -> Color of "RGB"
   subtype HSL :: Int -> Int -> Int -> Color of "HSL"
 
