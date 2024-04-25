@@ -47,7 +47,7 @@ Unfortunately, working with High-Ranked Types is complicated in Haskell and it's
 
 This Proposal suggest to add the opposite: **DownRanked Existential**  
 
-- **DownRanked Existential** rule: Any N-Ranked (``forall`` or ``exists``) *type_variable* is ALSO (N-1)-Ranked ``exists`` *type_variable* 
+- **DownRanked Existential** rule: Any N-Ranked ``forall`` (or ``exists``) *type_variable* is ALSO (N-1)-Ranked ``exists`` *type_variable* 
 ::
 
   --DownRanked Existentials:
@@ -80,7 +80,7 @@ Roles
   data Box = forall a. MkBox a
 
   -- open existential type
-  data exists a. Ex = forall a. MkEx a  -- NEW!
+  data exists a. Ex = forall a. MkEx { unEx :: a }  -- NEW!
 
 2. Extractor from Data-quantifier 
 ::
@@ -91,14 +91,18 @@ Roles
   fromEx :: exists a. Ex -> a
   fromEx (MkEx x) = x         -- OK! NEW!
 
+  fromEx2 :: exists a. Ex -> a
+  fromEx2 = unEx              -- OK! NEW!
+
+
 3. Indirect Data-existential 
 ::
 
   toBox :: forall a. a -> Box
   toBox = MkBox
 
-  toEx :: forall a. a -> exists b. Ex
-  toEx = MkEx                 -- NEW!
+  toEx :: forall a. a -> exists a. Ex
+  toEx = MkEx
 
 4. Absorption different types into one inner type
 ::
@@ -153,7 +157,7 @@ Grammar
               | context '=>' ctype
               | ...
 
-        quantifiers_telescope → exists_telescope forall_telescope -- NEW!
+        quantifiers_telescope → forall_telescope exists_telescope -- NEW!
 
         -- just for comparison
         forall_telescope → 'forall' tv_bndrs '.'
@@ -184,7 +188,7 @@ We could use boxing/unboxing existential types for Vectors ::
     (:>) :: a -> Vec n a -> Vec (Succ n) a
   infixr 5 :>
 
-  data exists n. VecE a = forall n. MkVecE (Vec n a)
+  data exists n. VecE a = forall n. MkVecE { unVecE :: Vec n a }
 
   vec2E :: forall a n. Vec n a -> exists n. VecE a
   vec2E = MkVecE
@@ -193,14 +197,43 @@ We could use boxing/unboxing existential types for Vectors ::
   vecEFrom (MkVecE x) = x
 
   fromList :: forall a. [a] -> exists n. VecE a
-  fromList []     = vec2E VNil                
-  fromList (x:xs) = vec2E $ x :> vecEFrom $ fromList xs
+  fromList []     = MkVecE VNil                
+  fromList (x:xs) = MkVecE $ x :> unVecE $ fromList xs
 
   filter :: forall a n. (a -> Bool) -> Vec n a -> exists m. VecE a
-  filter p VNil = vec2E VNil
+  filter p VNil = MkVecE VNil
   filter p (x :> xs)
-    | p x       = vec2E $ x :> $ vecEFrom $ filter p xs
+    | p x       = MkVecE $ x :> $ unVecE $ filter p xs
     | otherwise = filter p xs  
+
+
+Phantom-existentials
+~~~~~~~~~~~~~~~~~~~~
+
+Phantom-existentials data ::
+
+  -- Phantom-existential Type
+  data exists a. UnitE = MkUnit
+
+Partly Phantom-existential ::
+
+  -- Partly Phantom-existential Type
+  data exists a. MaybyE = forall a. JustE a | NothingE
+
+Hidden-existentials
+~~~~~~~~~~~~~~~~~~~
+
+Hidden-existentials are existentials, which we could not catch directly ::
+
+  -- hidden conventional existential GHC type
+  data Box = forall a. MkBox a
+  
+  -- Partly Phantom-existential / Partly Hidden-existentials
+  data exists a. ExLeftEither = forall a. MkExLeft a | forall b. MkExRight b
+
+  -- Partly Phantom-existential Type / Partly Hidden-existentials
+  data exists a. ListE = forall a. Con a (exists b. ListE) | Nil
+
 
 Poly-existentials
 ~~~~~~~~~~~~~~~~~
@@ -210,19 +243,12 @@ Poly-existentials data ::
   -- Sum-Type existential
   data exists a b. ExEither = forall a. MkExLeft a | forall b. MkExRight b
 
-  -- Partly existential
-  data exists a. ExLeftEither = forall a. MkExLeft a | forall b. MkExRight b
-
-
-  -- Phantom-existential Type
-  data exists a. L = forall a. Con a (exists b. L) | Nil
-
   -- Head, next-to-Head existential
   -- we catch `b` twice and not from `forall`, but from `exists`
-  data exists a b. L = exists b. forall a. Con a (exists b c. L) | Nil
+  data exists a b. L2 = forall a. exists b. Con a (exists b c. L2) | Nil
 
   -- Head-next-next existential
-  data exists a b c. L = exists b c. forall a. Con a (exists b c d. L) | Nil  
+  data exists a b c. L3 = forall a. exists b c. Con a (exists b c d. L3) | Nil  
 
 Poly-existentials could have an ambiguity existential-errors :: 
 
@@ -236,7 +262,7 @@ Non-data existential is a bit tricky ::
 
   mk :: Bool -> exists a. (forall a. (a, a -> Int))
   -- or more specific with Equality Constrains
-  mk :: Bool -> exists a. a ~ Int | Bool => (forall a. a ~ Int | Bool => (a, a -> Int))
+  -- mk :: Bool -> exists a. a ~ Int | Bool => (forall a. a ~ Int | Bool => (a, a -> Int))
   mk True  = (5, id)
   mk False = (False, \ b -> if b then 1 else 0)
 
@@ -289,13 +315,17 @@ GADTs require
 Example ::
 
   data Foo b where
-    MkFoo :: forall a. a -> (a -> Bool) -> exists a. Foo Bool -- Ok
-    MkBar :: forall b. b -> (b -> Bool) -> exists b. Foo Bool -- Error!
-    MkBar :: forall b. b -> (b -> Bool) -> exists a. Foo Bool -- Ok
-    MkBaz :: Bool -> Foo Bool -- Error!
+    MkFoo :: forall a. a -> (a -> Bool)   -> exists a. Foo Bool -- Ok
+  
+    --MkBar :: forall b. b -> (b -> Bool) -> exists b. Foo Bool -- Error! "Foo Bool" is already "exists a."
+    MkBar :: forall b. b -> (b -> Bool)   -> exists a. Foo Bool -- Ok
+  
+    MkYaz :: forall c. c                  -> exists c. Foo Char -- Ok! "Foo Char" is not "Foo Bool" nor "Foo Int"
+  
+    --MkBaz :: Bool         -> Foo Bool -- Error! "Foo Bool" is already "exists a."
     MkBaz :: Bool -> exists a. Foo Bool -- Ok!
-    MkYan :: Int -> Foo Int   -- Ok
-    MkYaz :: forall c. c -> exists c. Foo Char -- Ok
+  
+    MkYan :: Int            -> Foo Int  -- Ok! "Foo Int" is neither "Foo Bool" nor "Foo Char"
 
 
 Type Families
@@ -312,10 +342,10 @@ We expect the implementation and maintenance costs of ``DownRankedExistential`` 
 **Drawbacks**: using same keyword ``exists`` for both UpRanked and DownRanked quantifiers is **incompatible** and **inconsistent**.
 
 
-Modifying `#473`_ Proposal
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Modifying `#473`_ Proposal if both Proposal are Accepted
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Proposal `#473`_ requires to use same quantifier ``exists`` and we suggest to modify it.
+Proposal `#473`_ requires to use same quantifier ``exists`` and we suggest to modify it, if both #473 and this Proposals are Accepted.
 
 This proposal suggest to change ``exists`` keyword for `#473`_ (if it will be approved) into ``forany`` (or other).
 
@@ -325,7 +355,7 @@ This proposal also suggest to rename proposed in `#473`_ (if it will be approved
 
 
 Temporary solutions and Testing
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
++++++++++++++++++++++++++++++++
 
 But as **temporary** solutions and *testing* this proposal DownRanked Existentials could use ``foralive`` keyword for ForAlive quantifier and "∋" Unicode symbol. 
 
