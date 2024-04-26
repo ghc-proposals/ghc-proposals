@@ -2,11 +2,11 @@ Fix quantification order for (a `op` b) and (a %m -> b)
 =======================================================
 
 .. author:: Vladislav Zavialov
-.. date-accepted::
+.. date-accepted:: 2024-04-17
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/23764
 .. implemented:: 9.12
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/640>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/640>`_.
 .. sectnum::
 .. contents::
 
