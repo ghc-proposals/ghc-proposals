@@ -4,7 +4,7 @@ Fix quantification order for (a `op` b) and (a %m -> b)
 .. author:: Vladislav Zavialov
 .. date-accepted::
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/23764
-.. implemented::
+.. implemented:: 9.12
 .. highlight:: haskell
 .. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/640>`_.
 .. sectnum::
