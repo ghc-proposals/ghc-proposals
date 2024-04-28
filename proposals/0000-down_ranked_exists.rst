@@ -24,11 +24,16 @@ This proposal introduces down-ranked existentials into GHC
 Motivation
 ----------
 
-Richly typed programming invariably uses its share of existential types, and this proposal makes it vastly easier to work with existentials.
+Richly typed programming invariably uses its share of existential types, and this proposal makes it vastly easier to work with existentials. 
+
+Currently, every existential must be encoded using its own datatype, which is laborious. Furthermore, packing and unpacking these datatypes must be done by hand, which is cluttersome.
+
+UpRanked Existentials
+~~~~~~~~~~~~~~~~~~~~~
 
 Alternative Proposal is "First-class existential types" `#473`_ .
 
-It suggests to add *de facto* **UpRanked Existential**
+#473 suggests to add *de facto* **UpRanked Existential**
 
 - **UpRanked Existential** rule: Any N-Ranked ``forall`` *type_variable* is INSTEAD (N+1)-Ranked ``exists`` *type_variable* 
 ::
@@ -45,7 +50,10 @@ It suggests to add *de facto* **UpRanked Existential**
 
 Unfortunately, working with High-Ranked Types is complicated in Haskell and it's Core.
 
-This Proposal suggest to add the opposite: **DownRanked Existential**  
+DownRanked Existentials
+~~~~~~~~~~~~~~~~~~~~~~~
+
+This Proposal suggest to add the opposite (of #473) : **DownRanked Existential**
 
 - **DownRanked Existential** rule: Any N-Ranked ``forall`` (or ``exists``) *type_variable* is ALSO (N-1)-Ranked ``exists`` *type_variable* 
 ::
@@ -70,10 +78,12 @@ This is the core idea of this Dependent existential type from Higher-Ranked (Exa
 Proposed Change Specification
 -----------------------------
 
+Main and second rules give us unique proprieties of DownRanked existentials.
+
 Roles
 ~~~~~
 
-1. Direct-catch a Data-quantifier 
+1. Boxing type variable into a Data declaration 
 ::
 
   -- hidden conventional existential GHC type
@@ -82,7 +92,9 @@ Roles
   -- open existential type
   data exists a. Ex = forall a. MkEx { unEx :: a }  -- NEW!
 
-2. Extractor from Data-quantifier 
+Main and second rules say that in open existential type we capture on N-Rank **same** *type variable* which escaped from (N+1 Ranked) ``forall`` (or ``exists`` )
+
+2. Extractor / unboxing / escaping from Data-constructor 
 ::
 
   fromBox :: Box -> ???
@@ -94,8 +106,9 @@ Roles
   fromEx2 :: exists a. Ex -> a
   fromEx2 = unEx              -- OK! NEW!
 
+Main and second rules guarantee us that unboxing give us same type as boxing or it is bottom type (for phantom or partly phantom existentials)
 
-3. Indirect Data-existential 
+3. Direct capture type variable by Data-constructor
 ::
 
   toBox :: forall a. a -> Box
@@ -104,19 +117,16 @@ Roles
   toEx :: forall a. a -> exists a. Ex
   toEx = MkEx
 
-4. Absorption different types into one inner type
+4. Absorption (indirect capture) different types into one inner type
 ::
 
   fromEither :: forall a b. Either a b -> exists c. Ex
   fromEither (Left  x) = MkEx x
   fromEither (Right y) = MkEx y
 
-5. Direct Non-data catch and extract 
-::
+Absorption happens when we do not care what we absorb.
 
-  upd :: forall a. exists b. a ->(forall b. b -> b) -> b
-
-6. Existential Boundaries are the same as a escaper type variable boundaries 
+5. Existential Boundaries are the same as a escaper type variable boundaries 
 ::
 
   data Doc = forall a. Show a => MkDoc a
@@ -124,16 +134,18 @@ Roles
   data exists a. Show a => DocE = forall a. Show a => MkDocE a  -- NEW!
 
 
+6. Direct Non-data capture of type variable and extracting (maybe as future possibility)
+::
+
+  upd :: forall a. exists b. a -> (forall b. b -> b) -> b
+
+
 Extension
 ~~~~~~~~~
 
-Introduce a new extension -XDownRankedExistential.
+Introduce a new extension ``-XDownRankedExistential``.
 
-1. Introduce a new extension ``-XDownRankedExistential``.
-
-#. With ``-XDownRankedExistential``, ``exists`` is a keyword in both types and terms or at least pseudo-keyword.
-
-#. With ``-XDownRankedExistential``, introduce a new type for existentials.
+With ``-XDownRankedExistential``, ``exists`` is a keyword in both types and terms or at least pseudo-keyword.
 
 
 Syntax
@@ -220,6 +232,8 @@ Partly Phantom-existential ::
   -- Partly Phantom-existential Type
   data exists a. MaybyE = forall a. JustE a | NothingE
 
+Even we could create phantom existentials, the use of them is unclear.
+
 Hidden-existentials
 ~~~~~~~~~~~~~~~~~~~
 
@@ -270,6 +284,8 @@ Non-data existential is a bit tricky ::
   
   example = let x = mk True in (snd x) (fst x)         -- Ok
 
+Non-data existentials is an optional for implementation or we could remain it as future possibility.
+
 
 Effect and Interactions
 -----------------------
@@ -285,9 +301,9 @@ Visible ForAll
 
 Visible ForAll was added by `#81`_ and `#281`_ (rendered `#281rd`_ ).
 
-1. Even there no requirement to forbid to use existential quantifier for catch visible type variable (in arrow forall ``forall a ->`` ), since type variable is already reachable in all (N-m)-Ranked levels it is useless to catch it by existential quantifier.
+1. It is useless to catch visible type variable (in arrow forall ``forall a ->`` ) by existential quantifier, even there is no requirement to forbid this, since type variable is already reachable in all (N-m)-Ranked levels.
 
-2. Even there no requirement to forbid to use visible existential quantifier (in arrow exists ``exists a ->`` ) it makes no sense to have it.
+2. It makes no sense to have visible existential quantifier (in arrow exists ``exists a ->`` ), even there is no requirement to forbid it.
 
 
 UnErased ForAll
@@ -299,13 +315,14 @@ It is called Retained ForEach ``foreach a.`` and ``foreach a ->``
 
 1. There is no limitations for existential quantifier for catch retained type variables.
 
-2. Even there no requirement to forbid to use retained existential quantifier (aka ``forany a.`` ) it makes no sense to have it.
+2. It makes unclear if it has sense to have retained existential quantifier (aka ``forany a.`` ).
 
 
 GADTs
 ~~~~~
 
 GADTs require 
+
 - to catch existential type variable on same Rank as quantifier! 
 
 - "sub-type" must consist same amount of existential variables!
@@ -318,9 +335,10 @@ Example ::
     MkFoo :: forall a. a -> (a -> Bool)   -> exists a. Foo Bool -- Ok
   
     --MkBar :: forall b. b -> (b -> Bool) -> exists b. Foo Bool -- Error! "Foo Bool" is already "exists a."
+	--MkBar :: forall a. a -> (a -> Bool) -> exists a. Foo Bool -- Error! same type variable name as in MkFoo
     MkBar :: forall b. b -> (b -> Bool)   -> exists a. Foo Bool -- Ok
   
-    MkYaz :: forall c. c                  -> exists c. Foo Char -- Ok! "Foo Char" is not "Foo Bool" nor "Foo Int"
+    MkYaz :: forall c. c                  -> exists c. Foo Char -- Ok! "Foo Char" is not "Foo Bool"
   
     --MkBaz :: Bool         -> Foo Bool -- Error! "Foo Bool" is already "exists a."
     MkBaz :: Bool -> exists a. Foo Bool -- Ok!
@@ -370,6 +388,11 @@ Alternatives
 ------------
 
 Main alternative is "First-class existential types" `#473`_ 
+
+Alternative names
+~~~~~~~~~~~~~~~~~
+
+Alternative name of `exists` quantifier is ``forsome`` , ``forunique`` , ``forany`` , ``foralive`` ...
 
 
 Unresolved Questions
