@@ -28,52 +28,6 @@ Richly typed programming invariably uses its share of existential types, and thi
 
 Currently, every existential must be encoded using its own datatype, which is laborious. Furthermore, packing and unpacking these datatypes must be done by hand, which is cluttersome.
 
-UpRanked Existentials
-~~~~~~~~~~~~~~~~~~~~~
-
-Alternative Proposal is "First-class existential types" `#473`_ .
-
-#473 suggests to add *de facto* **UpRanked Existential**
-
-- **UpRanked Existential** rule: Any N-Ranked ``forall`` *type_variable* is INSTEAD (N+1)-Ranked ``exists`` *type_variable* 
-::
-
-  --UpRanked Existentials:
-  cmpg :: forall a. a -> a ->(forall b. b -> b -> Bool) -> Bool
-  cmpg x y f = f x y
-
-  -- same as
-  cmpg :: forall a. a -> a ->((exists b. b -> b) -> Bool) -> Bool
-
-  -- same as
-  cmpg :: (exists a. a -> a ->((exists b. b -> b) -> Bool)) -> Bool
-
-Unfortunately, working with High-Ranked Types is complicated in Haskell and it's Core.
-
-DownRanked Existentials
-~~~~~~~~~~~~~~~~~~~~~~~
-
-This Proposal suggest to add the opposite (of #473) : **DownRanked Existential**
-
-- **DownRanked Existential** rule: Any N-Ranked ``forall`` (or ``exists``) *type_variable* is ALSO (N-1)-Ranked ``exists`` *type_variable* 
-::
-
-  --DownRanked Existentials:
-  cmpg2 :: forall a. a -> a ->(forall b. b -> b -> (b, Bool)) -> (a, Bool)
-  cmpg2 x y f = f x y
-
-  -- same as
-  cmpg2 :: forall a. exists b. a -> a ->(forall b. b -> b -> (b, Bool)) -> (b, Bool)
-
-
-The Main rule: *if* ∀a: f a *then* ∃b: ∀a, a ≡ b : f b
-
-Second rule: *if* ∃a: f a *then* ∃b: ∃a, a ≡ b : f b
-
-This is the core idea of this Dependent existential type from Higher-Ranked (Exactly N+1 Ranked) ``forall`` / ``exists`` type variables with `a ≡ b` equality condition.
-
-*Note: using same keyword "exists" for both UpRanked and DownRanked Existential Quantifiers is incompatible and inconsistent idea*
-
 Unboxible Existentials
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -105,6 +59,53 @@ Our goal is to change ``Box`` type to be unboxible, but preserve "absorption rul
   fromBox (MkBox x) = x
 
 And we can do this with DownRanked Existentials.
+
+
+DownRanked Existentials
+~~~~~~~~~~~~~~~~~~~~~~~
+
+This Proposal suggest to add the opposite (of #473) : **DownRanked Existential**
+
+- **DownRanked Existential** rule: Any N-Ranked ``forall`` (or ``exists``) *type_variable* is ALSO (N-1)-Ranked ``exists`` *type_variable* 
+::
+
+  --DownRanked Existentials:
+  cmpg2 :: forall a. a -> a ->(forall b. b -> b -> (b, Bool)) -> (a, Bool)
+  cmpg2 x y f = f x y
+
+  -- same as
+  cmpg2 :: forall a. exists b. a -> a ->(forall b. b -> b -> (b, Bool)) -> (b, Bool)
+
+
+The Main rule: *if* ∀a: f a *then* ∃b: ∀a, a ≡ b : f b
+
+Second rule: *if* ∃a: f a *then* ∃b: ∃a, a ≡ b : f b
+
+This is the core idea of this Dependent existential type from Higher-Ranked (Exactly N+1 Ranked) ``forall`` / ``exists`` type variables with `a ≡ b` equality condition.
+
+UpRanked Existentials
+~~~~~~~~~~~~~~~~~~~~~
+
+Alternative Proposal is "First-class existential types" `#473`_ .
+
+#473 suggests to add *de facto* **UpRanked Existential**
+
+- **UpRanked Existential** rule: Any N-Ranked ``forall`` *type_variable* is INSTEAD (N+1)-Ranked ``exists`` *type_variable* 
+::
+
+  --UpRanked Existentials:
+  cmpg :: forall a. a -> a ->(forall b. b -> b -> Bool) -> Bool
+  cmpg x y f = f x y
+
+  -- same as
+  cmpg :: forall a. a -> a ->((exists b. b -> b) -> Bool) -> Bool
+
+  -- same as
+  cmpg :: (exists a. a -> a ->((exists b. b -> b) -> Bool)) -> Bool
+
+Unfortunately, working with High-Ranked Types is complicated in Haskell and it's Core.
+
+*Note: using same keyword "exists" for both UpRanked and DownRanked Existential Quantifiers is incompatible and inconsistent idea*
 
 
 Proposed Change Specification
