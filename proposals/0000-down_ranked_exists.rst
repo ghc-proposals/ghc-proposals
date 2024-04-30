@@ -74,6 +74,38 @@ This is the core idea of this Dependent existential type from Higher-Ranked (Exa
 
 *Note: using same keyword "exists" for both UpRanked and DownRanked Existential Quantifiers is incompatible and inconsistent idea*
 
+Unboxible Existentials
+~~~~~~~~~~~~~~~~~~~~~~
+
+We already could create existential types with ``ExistentialQuantification`` extension::
+
+  data Box = forall a. MkBox a
+  
+Let we have value of ``Either a b`` type and we wish to unbox it. ::
+
+  fromEither :: forall a b. Either a b -> ???
+  fromEither (Left x)  = x
+  fromEither (Right y) = y
+
+We have several ways to do this, but we choose to "absorb" types with existential ``Box`` type ::
+
+  fromEither :: forall a b. Either a b -> Box
+  fromEither (Left x)  = MkBox x
+  fromEither (Right y) = MkBox y
+  
+Our goal is to change ``Box`` type to be unboxible, but preserve "absorption rule". ::
+
+  data exists a. Box a = forall a. MkBox a
+
+  fromEither :: forall a b. Either a b -> exists c. Box c
+  fromEither (Left x)  = MkBox x
+  fromEither (Right y) = MkBox y
+
+  fromBox :: exists a. Box a -> a
+  fromBox (MkBox x) = x
+
+And we can do this with DownRanked Existentials.
+
 
 Proposed Change Specification
 -----------------------------
@@ -90,9 +122,11 @@ Roles
   data Box = forall a. MkBox a
 
   -- open existential type
-  data exists a. Ex = forall a. MkEx { unEx :: a }  -- NEW!
+  data exists a. Ex a = forall a. MkEx { unEx :: a }  -- NEW!
 
 Main and second rules say that in open existential type we capture on N-Rank **same** *type variable* which escaped from (N+1 Ranked) ``forall`` (or ``exists`` )
+
+So, left ``exists a`` is a capture (aka "visible") of a right ``forall a`` in definition of ``exists a. Ex a`` data.
 
 2. Extractor / unboxing / escaping from Data-constructor 
 ::
@@ -100,13 +134,17 @@ Main and second rules say that in open existential type we capture on N-Rank **s
   fromBox :: Box -> ???
   fromBox (MkBox x) = x       -- Error!
 
-  fromEx :: exists a. Ex -> a
+  fromEx :: exists a. Ex a -> a
   fromEx (MkEx x) = x         -- OK! NEW!
 
-  fromEx2 :: exists a. Ex -> a
+  fromEx2 :: exists a. Ex a -> a
   fromEx2 = unEx              -- OK! NEW!
 
-Main and second rules guarantee us that unboxing give us same type as boxing or it is bottom type (for phantom or partly phantom existentials)
+Main and second rules guarantee us that unboxing give us same type as boxing or it is ⊥ bottom type (for phantom or partly phantom existentials)
+
+Any type ``@t`` ∈ ``forall a. a`` (including ``@t1`` , ``@t2`` , ``@t3`` ... ) and we expect, that also escaped ``exists b. b`` ∈ ``forall a. a`` .
+
+But exists only one type ``@tm`` ∈ ``exists b. b`` .
 
 3. Direct capture type variable by Data-constructor
 ::
@@ -114,24 +152,24 @@ Main and second rules guarantee us that unboxing give us same type as boxing or 
   toBox :: forall a. a -> Box
   toBox = MkBox
 
-  toEx :: forall a. a -> exists a. Ex
+  toEx :: forall a. a -> exists a. Ex a
   toEx = MkEx
 
 4. Absorption (indirect capture) different types into one inner type
 ::
 
-  fromEither :: forall a b. Either a b -> exists c. Ex
+  fromEither :: forall a b. Either a b -> exists c. Ex c
   fromEither (Left  x) = MkEx x
   fromEither (Right y) = MkEx y
 
-Absorption happens when we do not care what we absorb.
+Absorption happens when we do not care what we absorb follow ``RankNTypes`` rules.
 
 5. Existential Boundaries are the same as a escaper type variable boundaries 
 ::
 
   data Doc = forall a. Show a => MkDoc a
   
-  data exists a. Show a => DocE = forall a. Show a => MkDocE a  -- NEW!
+  data exists a. Show a => DocE a = forall a. Show a => MkDocE a  -- NEW!
 
 
 6. Direct Non-data capture of type variable and extracting (maybe as future possibility)
@@ -147,6 +185,7 @@ Introduce a new extension ``-XDownRankedExistential``.
 
 With ``-XDownRankedExistential``, ``exists`` is a keyword in both types and terms or at least pseudo-keyword.
 
+``-XDownRankedExistential`` implies ``ExistentialQuantification`` and ``RankNTypes`` extensions.
 
 Syntax
 ~~~~~~
@@ -200,23 +239,23 @@ We could use boxing/unboxing existential types for Vectors ::
     (:>) :: a -> Vec n a -> Vec (Succ n) a
   infixr 5 :>
 
-  data exists n. VecE a = forall n. MkVecE { unVecE :: Vec n a }
+  data exists n. VecE n a = forall n. MkVecE { unVecE :: Vec n a }
 
-  vec2E :: forall a n. Vec n a -> exists n. VecE a
+  vec2E :: forall a n. Vec n a -> exists n. VecE n a
   vec2E = MkVecE
 
-  vecEFrom :: forall a. exists m. VecE a -> Vec m a
+  vecEFrom :: forall a. exists m. VecE m a -> Vec m a
   vecEFrom (MkVecE x) = x
 
-  fromList :: forall a. [a] -> exists n. VecE a
+  fromList :: forall a. [a] -> exists n. VecE n a
   fromList []     = MkVecE VNil                
   fromList (x:xs) = MkVecE $ x :> unVecE $ fromList xs
 
-  filter :: forall a n. (a -> Bool) -> Vec n a -> exists m. VecE a
+  filter :: forall a n. (a -> Bool) -> Vec n a -> exists m. VecE m a
   filter p VNil = MkVecE VNil
   filter p (x :> xs)
     | p x       = MkVecE $ x :> $ unVecE $ filter p xs
-    | otherwise = filter p xs  
+    | otherwise = filter p xs
 
 
 Phantom-existentials
@@ -225,12 +264,12 @@ Phantom-existentials
 Phantom-existentials data ::
 
   -- Phantom-existential Type
-  data exists a. UnitE = MkUnit
+  data exists a. UnitE a = MkUnit
 
 Partly Phantom-existential ::
 
   -- Partly Phantom-existential Type
-  data exists a. MaybyE = forall a. JustE a | NothingE
+  data exists a. MaybyE a = forall a. JustE a | NothingE
 
 Even we could create phantom existentials, the use of them is unclear.
 
@@ -243,10 +282,10 @@ Hidden-existentials are existentials, which we could not catch directly ::
   data Box = forall a. MkBox a
   
   -- Partly Phantom-existential / Partly Hidden-existentials
-  data exists a. ExLeftEither = forall a. MkExLeft a | forall b. MkExRight b
+  data exists a. ExLeftEither a = forall a. MkExLeft a | forall b. MkExRight b
 
   -- Partly Phantom-existential Type / Partly Hidden-existentials
-  data exists a. ListE = forall a. Con a (exists b. ListE) | Nil
+  data exists a. ListE = forall a. exists b. Con a (ListE b) | Nil
 
 
 Poly-existentials
@@ -255,19 +294,19 @@ Poly-existentials
 Poly-existentials data ::
 
   -- Sum-Type existential
-  data exists a b. ExEither = forall a. MkExLeft a | forall b. MkExRight b
+  data exists a b. ExEither a b = forall a. MkExLeft a | forall b. MkExRight b
 
   -- Head, next-to-Head existential
   -- we catch `b` twice and not from `forall`, but from `exists`
-  data exists a b. L2 = forall a. exists b. Con a (exists b c. L2) | Nil
+  data exists a b. L2 a b = forall a. exists b c. Con a (L2 b c) | Nil
 
   -- Head-next-next existential
-  data exists a b c. L3 = forall a. exists b c. Con a (exists b c d. L3) | Nil  
+  data exists a b c. L3 a b c = forall a. exists b c d. Con a (L3 b c d) | Nil  
 
 Poly-existentials could have an ambiguity existential-errors :: 
 
   -- ERROR! Which `a` we catch? From MkExBAD1 or MkExBAD2 ?
-  data exists a. ExBAD = forall a. MkExBAD1 a | forall a. ExBAD2 a
+  data exists a. ExBAD a = forall a. MkExBAD1 a | forall a. ExBAD2 a
 
 Non-data existential
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -315,36 +354,24 @@ It is called Retained ForEach ``foreach a.`` and ``foreach a ->``
 
 1. There is no limitations for existential quantifier for catch retained type variables.
 
-2. It makes unclear if it has sense to have retained existential quantifier (aka ``forany a.`` ).
+2. It makes unclear if it has sense to have retained existential quantifier (aka ``forany a.`` ). But we expect, that ``exists`` preserve "erasing"/"unerasing" property of type variable.
 
 
 GADTs
 ~~~~~
 
-GADTs require 
-
-- to catch existential type variable on same Rank as quantifier! 
-
-- "sub-type" must consist same amount of existential variables!
-
-- "sub-type" each of existential variables catch no more then one quantifier !
+GADTs require "sub-type" each of existential variables catch no more then one quantifier !
 
 Example ::
 
-  data Foo b where
-    MkFoo :: forall a. a -> (a -> Bool)   -> exists a. Foo Bool -- Ok
+  data Foo b e where
+    MkFoo :: forall a. a -> (a -> Bool)   -> exists a. Foo Bool a -- Ok
   
-    --MkBar :: forall b. b -> (b -> Bool) -> exists b. Foo Bool -- Error! "Foo Bool" is already "exists a."
-	--MkBar :: forall a. a -> (a -> Bool) -> exists a. Foo Bool -- Error! same type variable name as in MkFoo
-    MkBar :: forall b. b -> (b -> Bool)   -> exists a. Foo Bool -- Ok
-  
-    MkYaz :: forall c. c                  -> exists c. Foo Char -- Ok! "Foo Char" is not "Foo Bool"
-  
-    --MkBaz :: Bool         -> Foo Bool -- Error! "Foo Bool" is already "exists a."
-    MkBaz :: Bool -> exists a. Foo Bool -- Ok!
-  
-    MkYan :: Int            -> Foo Int  -- Ok! "Foo Int" is neither "Foo Bool" nor "Foo Char"
-
+    --MkBar :: forall b. b -> (b -> Bool) -> exists b. Foo Bool b -- Error! "Foo Bool a" is already "exists a."
+    --MkBar :: forall a. a -> (a -> Bool) -> exists a. Foo Bool a -- Error! same type variable name as in MkFoo
+    MkBar :: forall b. b -> (b -> Bool)   -> exists a. Foo Bool a -- Ok
+    
+    MkBaz :: Int                          -> exists a. Foo Bool a -- Ok
 
 Type Families
 ~~~~~~~~~~~~~
@@ -403,25 +430,25 @@ Equality constraints
 
 Existential types could use equality constraints ::
 
-  --vec2E :: forall a n. Vec n a -> exists m. VecE a
-  vec2E :: forall a n. Vec n a -> exists m. m ~ n => VecE a
+  --vec2E :: forall a n. Vec n a -> exists m. VecE m a
+  vec2E :: forall a n. Vec n a -> exists m. m ~ n => VecE m a
   vec2E = MkVecE
 
 But some existential types also require in many cases "polymorphic types" equality constraints ::
 
-  data exists a. Ex = forall a. MkEx a
+  data exists a. Ex a = forall a. MkEx a
 
-  fromEither :: forall a b. Either a b -> exists c. Ex
+  fromEither :: forall a b. Either a b -> exists c. Ex c
   fromEither (Left  x) = MkEx x
   fromEither (Right y) = MkEx y
   
-  fromEither :: forall a b. Either a b -> exists c. c ~ ??? => Ex -- How to write it ?
+  fromEither :: forall a b. Either a b -> exists c. c ~ ??? => Ex c -- How to write it ?
   
 What us to do if we wish to add a "probabilistic" type? "Polymorphic types" consists none, one or more ``|`` (or alternatively ``\/`` ) ::
 
-  fromEither :: forall a b. Either a b -> exists c. c ~ a |  b => Ex
+  fromEither :: forall a b. Either a b -> exists c. c <~ a |  b => Ex c
   
-  fromEitherInt :: forall a. Either a Int -> exists c. c ~ Int | a => Ex
+  fromEitherInt :: forall a. Either a Int -> exists c. c <~ Int | a => Ex c
   fromEitherInt = fromEither
 
 Polymorphic types follow next 2 rules for type equality:
@@ -430,20 +457,20 @@ Polymorphic types follow next 2 rules for type equality:
 
 - Commutativity rule: ``a | b ~ b | a``
 
-- Transitivity rule: ``c ~ a | b, a ~ c, b ~ c``
+- Transitivity rule: ``c ~ a | b, a <~ c, b <~ c``
 
 But not every equality constraints we could write. And not all of them we could check ::
 
-  --fromList :: forall a. [a] -> exists n. n ~ Nat => VecE a
+  --fromList :: forall a. [a] -> exists n. n ~ Nat => VecE n a
   fromList :: forall a. [a] -> 
-              exists n. n ~ Zero | ???? => VecE a   -- How to write it ?
+              exists n. n <~ Zero | ???? => VecE n a    -- How to write it ?
   fromList []     = vec2E VNil                
   fromList (x:xs) = vec2E $ x :> vecEFrom $ fromList xs
 
-  --filter :: forall a n. (a -> Bool) -> Vec n a -> exists m. VecE a
+  --filter :: forall a n. (a -> Bool) -> Vec n a -> exists m. VecE m a
   filter :: forall a n. (a -> Bool) -> 
             Vec n a -> 
-            exists m. Succ m ~ n | Succ n => VecE a   -- How to check it ?
+            exists m. Succ m <~ n | Succ n => VecE m a  -- How to check it ?
   filter p VNil = vec2E VNil
   filter p (x :> xs)
     | p x       = vec2E $ x :> $ vecEFrom $ filter p xs
