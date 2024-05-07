@@ -51,7 +51,7 @@ By default safe/interruptible ffi calls will be unprofiled and unsafe ffi calls 
 This matches current behaviour of GHC.
 
 Setting profiling behaviour when declaring an FFI import:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When importing functions ghc will permit two new keywords: ``profiled`` and ``unprofiled``.
 These can appear after or in place of the safety specification.
@@ -78,7 +78,7 @@ However I think this would be more cumbersome and less explicit. Which makes def
 behaviour as part of the import the better choice in my opinion.
 
 Setting profiling behaviour on a per-module basis:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * ``-funprofiled-safe-ffi`` will mark safe ffi/interruptible calls as unprofiled.
 * ``-fprofiled-safe-ffi`` will mark safe ffi/interruptible calls as profiled.
@@ -105,7 +105,7 @@ To give a few examples ::
       c_sleep :: CUInt -> IO CUInt
 
 Setting profiling behaviour of safe ffi calls globally at runtime:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A new runtime flag ``-ps`` which will treat all safe FFI calls as ``profiled`` independent
 of how they have been compiled. This is intended as an escape hatch
@@ -125,6 +125,7 @@ Examples
 --------
 
 ::
+
     {-# LANGUAGE ForeignFunctionInterface #-}
 
     import Foreign.C
@@ -147,7 +148,8 @@ In the above program we will spend 4 seconds doing "work" via an ffi call and ab
 in haskell code. Currently when trying to profile code like this we get a profile that reports 100% of the time
 spent under ``haskell_work`` and a runtime of merely ~0.5 seconds. Despite the real runtime being over 4 seconds.
 
-::
+.. code-block:: text
+
     ...
     total time  =        0.54 secs   (535 ticks @ 1000 us, 1 processor)
     ...
@@ -159,7 +161,8 @@ spent under ``haskell_work`` and a runtime of merely ~0.5 seconds. Despite the r
 
 But if I use my WIP branch of GHC for the same program I get something far closer to reality:
 
-::
+.. code-block:: text
+
     COST CENTRE  MODULE SRC               %time %alloc
 
     c_ffi        Main   Main.hs:8:32-49    93.4    0.0
