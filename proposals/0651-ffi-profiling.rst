@@ -56,12 +56,16 @@ Setting profiling behaviour when declaring an FFI import:
 When importing functions ghc will permit two new keywords: ``profiled`` and ``unprofiled``.
 These can appear after or in place of the safety specification.
 
-Precisely we extend ffi declarations from::
+Precisely we extend ffi declarations from:
+
+.. code:: ebnf
 
     ...
     fdecl	→	import callconv [safety] impent var :: ftype
 
-to this::
+to this
+
+.. code:: ebnf
 
     ...
     fdecl	→	import callconv [safety] [profiling] impent var :: ftype
