@@ -7,7 +7,7 @@ Profiling support for safe FFI imports.
 .. implemented:: Leave blank. This will be filled in with the first GHC version which
                  implements the described feature.
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_.
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/651>`_.
             **After creating the pull request, edit this file again, update the
             number in the link, and delete this bold sentence.**
 .. sectnum::
@@ -56,7 +56,7 @@ Setting profiling behaviour when declaring an FFI import:
 When importing functions ghc will permit two new keywords: ``profiled`` and ``unprofiled``.
 These can appear after or in place of the safety specification.
 
-Precisely we extend ffi declarations from: ::
+Precisely we extend ffi declarations from::
 
     ...
     fdecl	→	import callconv [safety] impent var :: ftype
@@ -68,14 +68,22 @@ to this::
     profiling → profiled
               | unprofiled
 
+In theory one could do without these changes by splitting profiled/non-profiled imports into
+different modules and changing their behaviour via the the flags described below.
+However I think this would be more cumbersome and less explicit. Which makes defining the profiling
+behaviour as part of the import the better choice in my opinion.
+
 Setting profiling behaviour on a per-module basis:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* `-funprofiled-safe-ffi` will mark safe ffi/interruptible calls as unprofiled.
-* `-fprofiled-safe-ffi` will mark safe ffi/interruptible calls as profiled.
+* ``-funprofiled-safe-ffi`` will mark safe ffi/interruptible calls as unprofiled.
+* ``-fprofiled-safe-ffi`` will mark safe ffi/interruptible calls as profiled.
 
 Calls will be marked as profiled/unprofiled independent of the their import declaration if
 these flags are used. They don't affect unsafe ffi calls at all.
+
+These flags eliminate the need to annotate all ffi imports manually when trying to find out where time is
+spent, as they can be enabled on a per package/module basis or even for a full build.
 
 To give a few examples ::
 
@@ -91,9 +99,6 @@ To give a few examples ::
     -- This import will be treated as unprofiled under `funprofiled-safe-ffi`
     foreign import ccall safe profiled "sleep"
       c_sleep :: CUInt -> IO CUInt
-
-These flags eliminate the need to annotate all ffi imports manually when trying to find out where time is
-spent, as they can be enabled on a per package/module basis or even for a full build.
 
 Setting profiling behaviour of safe ffi calls globally at runtime:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -136,8 +141,9 @@ Examples
 
 In the above program we will spend 4 seconds doing "work" via an ffi call and about .5 seconds doing work
 in haskell code. Currently when trying to profile code like this we get a profile that reports 100% of the time
-spent under `haskell_work` and a runtime of merely ~0.5 seconds. Despite the real runtime being over 4 seconds.
+spent under ``haskell_work`` and a runtime of merely ~0.5 seconds. Despite the real runtime being over 4 seconds.
 
+::
     ...
     total time  =        0.54 secs   (535 ticks @ 1000 us, 1 processor)
     ...
@@ -149,6 +155,7 @@ spent under `haskell_work` and a runtime of merely ~0.5 seconds. Despite the rea
 
 But if I use my WIP branch of GHC for the same program I get something far closer to reality:
 
+::
     COST CENTRE  MODULE SRC               %time %alloc
 
     c_ffi        Main   Main.hs:8:32-49    93.4    0.0
