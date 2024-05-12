@@ -61,8 +61,8 @@ instantiate ``b``? ::
 
 Normally this would be done by changing the declaration of ``f`` in such a way
 that ``forall b.`` would become the outermost quantifier in the type of ``f``.
-However, Haskell lacks the syntax to that in a class method declaration, where
-quantification over class variables is done entirely by the compiler.
+However, Haskell lacks the syntax to do that in a class method declaration,
+where quantification over class variables is done entirely by the compiler.
 
 That is, we cannot specify that we'd prefer  ``forall b a c.`` instead of
 ``forall a b c.`` in the type of ``f``. There are two workarounds:
