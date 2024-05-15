@@ -232,17 +232,20 @@ You can reach the committee by email at ghc-steering-committee@haskell.org. This
 
 The current members, including their GitHub handle, when they joined first, when their term last renewed, when their term expires and their role, are:
 
-=============  =========================  ====================================================  =======  =======  =======  =========
-|simonmar|     Simon Marlow               `@simonmar <https://github.com/simonmar>`_            2017/02  2024/02  2027/02  co-chair
-|simonpj|      Simon Peyton-Jones         `@simonpj <https://github.com/simonpj>`_              2017/02  2024/02  2027/02  co-chair
-|gridaphobe|   Eric Seidel                `@gridaphobe <https://github.com/gridaphobe>`_        2018/09  2022/03  2025/03  member
-|cdornan|      Chris Dornan               `@cdornan <https://github.com/cdornan>`_              2022/03  -        2025/03  member
-|aspiwack|     Arnaud Spiwack             `@aspiwack <https://github.com/aspiwack/>`_           2019/07  2022/10  2025/10  member
-|adamgundry|   Adam Gundry                `@adamgundry <https://github.com/adamgundry/>`_       2022/10  -        2025/10  secretary
-|angerman|     Moritz Angermann           `@angerman <https://github.com/angerman/>`_           2023/02  -        2026/02  member
-|maralorn|     Malte Ott                  `@maralorn <https://github.com/maralorn/>`_           2024/03  -        2027/03  member
-|Tritlo|       Matthías Páll Gissurarson  `@Tritlo <https://github.com/Tritlo>`_                2024/03  -        2027/03  member
-=============  =========================  ====================================================  =======  =======  =======  =========
+===============  =========================  =====================================================  =======  =======  =======  =========
+|simonmar|       Simon Marlow               `@simonmar <https://github.com/simonmar>`_             2017/02  2024/02  2027/02  co-chair
+|simonpj|        Simon Peyton-Jones         `@simonpj <https://github.com/simonpj>`_               2017/02  2024/02  2027/02  co-chair
+|gridaphobe|     Eric Seidel                `@gridaphobe <https://github.com/gridaphobe>`_         2018/09  2022/03  2025/03  member
+|cdornan|        Chris Dornan               `@cdornan <https://github.com/cdornan>`_               2022/03  -        2025/03  member
+|aspiwack|       Arnaud Spiwack             `@aspiwack <https://github.com/aspiwack/>`_            2019/07  2022/10  2025/10  member
+|adamgundry|     Adam Gundry                `@adamgundry <https://github.com/adamgundry/>`_        2022/10  -        2025/10  secretary
+|angerman|       Moritz Angermann           `@angerman <https://github.com/angerman/>`_            2023/02  -        2026/02  member
+|maralorn|       Malte Ott                  `@maralorn <https://github.com/maralorn/>`_            2024/03  -        2027/03  member
+|Tritlo|         Matthías Páll Gissurarson  `@Tritlo <https://github.com/Tritlo>`_                 2024/03  -        2027/03  member
+|erikd|          Erik de Castro Lopo        `@erikd  <https://github.com/erikd>`_                  2024/05  -        2027/05  member
+|JakobBruenker|  Jakob Brünker              `@JakobBruenker <https://github.com/JakobBruenker>`_   2024/05  -        2027/05  member
+|sgraf812|       Sebastian Graf             `@sgraf812 <https://github.com/sgraf812>`_             2024/05  -        2027/05  member
+===============  =========================  =====================================================  =======  =======  =======  =========
 
 
 .. |adamgundry| image:: https://github.com/adamgundry.png?size=24
@@ -257,6 +260,9 @@ The current members, including their GitHub handle, when they joined first, when
 .. |angerman| image:: https://github.com/angerman.png?size=24
 .. |maralorn| image:: https://github.com/maralorn.png?size=24
 .. |Tritlo| image:: https://github.com/Tritlo.png?size=24
+.. |erikd| image:: https://github.com/erikd.png?size=24
+.. |JakobBruenker| image:: https://github.com/JakobBruenker.png?size=24
+.. |sgraf812| image:: https://github.com/sgraf812.png?size=24
 
 The committee members have committed to adhere to the `Haskell committee guidelines for respectful communication <GRC.rst>`_ and are subject to the
 `committee bylaws <https://github.com/ghc-proposals/ghc-proposals/blob/master/committee.rst>`_.
