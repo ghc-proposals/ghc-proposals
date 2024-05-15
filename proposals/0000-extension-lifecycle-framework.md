@@ -52,17 +52,17 @@ The following transitions are included:
  * `Deprecated` -> (does not exist)
 
 These transitions are explicitly excluded:
- * (does not exist) -> `Deprecated`
- * (does not exist) -> `Legacy`
  * `Stable` -> (does not exist)
- * `Experimental` -> (does not exist)
  * `Legacy` -> (does not exist)
 
-This is a small restriction, such that an extension should not begin as either `Deprecated` or `Legacy`, and require a deprecation cycle prior to removal of any extension.
+This is a small restriction, such that `Stable` or `Legacy` extensions require a deprecation cycle prior to removal.
 
 The following transitions are possible but left at the discretion of implementors as to be included or not:
 
+ * (does not exist) -> `Deprecated`
+ * (does not exist) -> `Legacy`
  * (does not exist) -> `Stable`
+ * `Experimental` -> (does not exist)
  * `Stable` -> `Experimental`
  * `Legacy` -> `Experimental`
  * `Legacy` -> `Stable`
