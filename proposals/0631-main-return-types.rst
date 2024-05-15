@@ -1,4 +1,4 @@
-Set program exit code by main return type
+Meaningful main return types
 =========================================
 
 .. author:: Shea Levy
@@ -10,9 +10,10 @@ Set program exit code by main return type
 .. sectnum::
 .. contents::
 
-To reduce surprise and match common programming language behavior,
-this proposal would allow programs to signal their exit code
-based on the return value from ``main``.
+To reduce surprise in light of common programming language behavior,
+this proposal constrains the type of ``main`` to cases where the
+program exit code logically corresponds to the value yielded
+by ``main``.
 
 Motivation
 ----------
@@ -22,93 +23,77 @@ allow a ``main`` which yields values of any type, but surprisingly it does not
 do anything with the result: any successful execution will result in a successful
 program exit, even if ``main`` yields ``1`` or ``ExitFailure 1``.
 
-Before this proposal, the following program would exit with code ``0`` even
-when there are no results:
-
-::
-
- main :: IO ExitCode
- main = do
-   results <- doSomeWork
-   case results of
-     [] -> pure (ExitFailure 1)
-     _ -> print results >> pure ExitSuccess
-
-With this proposal in place, the program would exit with code ``1`` in that
-case.
-
-This proposal follows `Rust <https://doc.rust-lang.org/std/process/trait.Termination.html>`_
-in using a typeclass for return types which can signal exit codes.
+This proposal changes GHC to warn when a misleading ``main`` type is used, and
+an extension to enable ``main :: IO ExitCode`` to behave as one would expect.
 
 This is a minor quality of life improvement, but one that I've seen hit
 newcomers now and then and matches reasonable expectations of program
 behavior.
 
 Proposed Change Specification
------------------------------
+------------------------------
 
-If, for a given program, ``(main >>= exitWith . GHC.IO.Exit.toExitCode) :: IO ()`` type-checks,
-then the resulting program will behave as if that had been written for ``main``
-instead. Otherwise, the resulting program will behave as if ``main >> exitWith ExitSuccess``
-had been written, but the compiler will emit a warning.
+When ``-XNoMeaningfulMainReturn`` (the default), GHC emits ``Wambiguous-main-return`` (on by default)
+if ``main`` has a type that doesn't unify with ``IO ()`` or ``IO Void``.
 
-For the purposes of this feature, the ``ExitStatus`` instances defined in ``GHC.IO.Exit`` will
-be available even if that module is not imported into ``Main`` or something it imports.
+When ``-XMeaningfulMainReturn``, GHC emits an error if ``main`` has a type that doesn't unify with
+``IO ()``, ``IO Void``, or ``IO ExitCode``. If ``main``'s type unifies with ``IO ExitCode``, the
+resulting program behaves as if its entrypoint were ``realMain = main >>= exitWith``.
 
-Proposed Library Change Specification
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Add a new module to ``ghc-experimental``:
-
-::
-
- module GHC.IO.Exit where
-
- import GHC.IO.Exception (ExitCode (..))
- import Data.Void (Void, absurd)
-
- class ExitStatus e where
-   toExitCode :: e -> ExitCode
-
- instance ExitStatus ExitCode where
-   toExitCode = id
-
- instance ExitStatus () where
-   toExitCode = const ExitSuccess
-
- instance ExitStatus Void where
-   toExitCode = absurd
-
-Eventually, ``ExitStatus`` and its instances should move into ``base``,
-probably in ``System.Exit``.
+``-XMeaningfulMainReturn`` will become the default in the next GHC language edition.
 
 Examples
 --------
 
 ::
+   {-# LANGUAGE NoMeaningfulMainReturn #-}
 
- data ExitReason
-   = AllsWell
-   | NoResults
+   main :: IO ()
+   main = pure ()
 
- instance ExitStatus ExitReason where
-   toExitCode AllsWell = ExitSuccess
-   toExitCode NoResults = ExitFailure 1
+This is accepted as it is now.
 
- main = do
-   results <- doSomeWork
-   case results of
-     [] -> pure NoResults
-     _ -> print results >> pure AllsWell
+::
+   {-# LANGUAGE NoMeaningfulMainReturn #-}
 
-With this proposal in place, the program would exit with code ``1`` if
-``doSomeWork`` doesn't yield results.
+   main = main
+
+This unifies with ``IO ()``, so it is accepted without warning.
+
+::
+   {-# LANGUAGE NoMeaningfulMainReturn #-}
+
+   main :: IO Int
+   main = pure 1
+
+Warning emitted, program exit code is ``0``, not ``1``
+
+::
+   {-# LANGUAGE MeaningfulMainReturn #-}
+
+   main :: IO Int
+   main = pure 1
+
+Compile error, ``Int`` is potentially ambiguous.
+
+::
+   {-# LANGUAGE MeaningfulMainReturn #-}
+
+   main :: IO Void
+   main = pure undefined
+
+Successful compilation, program exit code is ``0``
+
+::
+   {-# LANGUAGE MeaningfulMainReturn #-}
+
+   main :: IO ExitCode
+   main = pure $ ExitFailure 1
+
+Successful compilation, program exit code is ``1``
 
 Effect and Interactions
 -----------------------
-This change will allow users to write ``main`` programs which yield an
-``ExitCode`` and have that code respected.
-
 No known interactions.
 
 Costs and Drawbacks
@@ -120,18 +105,12 @@ learning the language.
 
 Backward Compatibility
 ----------------------
-Technically, this will cause a change in behavior in extremely rare cases
-(this is level ``1`` on the breakage scale): If a program currently has
-``main :: IO ExitCode`` and some branch currently yields ``ExitFailure n``,
-the program will currently exit with ``0`` on that branch. After this proposal,
-it will exit with ``n``. But the latter is almost certainly the desired behavior for
-writing code like that, and I'd be surprised if it exists in any real program.
-
-Because this behavior change, if it ever actually matters, is likely in the direction
-of *improving* the program behavior, it's not clear that there are any real costs
-to this "breakage". Still, we could add a warning to the ``ExitStatus ExitCode``
-instance and encourage users to use a custom type, or see the alternatives
-for `an option <#no-exitcode-instance>`_ with no backwards incompatibility.
+This will be backwards-incompatible in the next language edition in the
+(likely quite rare) case of an unusual ``main`` type (resulting in a new
+compilation failure) or in the (almost certainly non-existent) case of
+``main :: IO ExitCode`` (resulting in the exit code actually matching the
+yielded value). In that latter case, this is almost certainly the desired
+behavior anyway.
 
 Alternatives
 ------------
@@ -144,57 +123,14 @@ caught early in testing, this change will make learning Haskell a bit
 easier and arguably makes for ``main`` functions which better match
 the Haskell ethos of well-typed structured interfaces.
 
-If we did stick to the status quo, users could perhaps
-have ``mainWithExitStatus :: ExitStatus e => IO e -> IO ()``
-and always define ``main = mainWithExitStatus $ do { ... }``.
-
-Do it just for ExitCode
-^^^^^^^^^^^^^^^^^^^^^^^
-
-Rather than a typeclass, we could just give ``ExitCode``
-special treatment: If ``main`` is typed as ``IO ExitCode``, then the
-program behaves as if ``main >>= exitWith`` had been written for
-``main`` instead.
-
-Using the typeclass allows using domain-specific types
-to exit codes as in `the example <#Examples>`_, letting the user
-give semantic meaning to the exit status in the typical Haskell
-way.
-
-No ExitCode instance
-^^^^^^^^^^^^^^^^^^^^
-
-To preserve full backwards compatibility and encourage custom domain-specific
-types, we could avoid having a ``ExitStatus ExitCode`` instance, or have one
-which is ``const ExitSuccess`` with a warning emitted if it's ever used. Having
-an ``ExitCode`` instance reduces surprise and reduces overhead for simple
-programs.
-
-Add Int instance
+Have a typeclass
 ^^^^^^^^^^^^^^^^
 
-Some users may expect ``main :: IO Int`` to work, and we could add a
-``ExitStatus Int`` instance to satisfy that. But this is more likely
-to cause behavior changes in real programs, and perpetuates a practice of
-semantically loose types.
+Rather than just enabling ``()``, ``Void``, and ``ExitCode``, we could
+instead define a typeclass which enables custom data types to meaningfully
+signal exit codes (like Rust's `Termination trait <https://doc.rust-lang.org/std/process/trait.Termination.html>`_).
 
-::
-
- instance ExitStatus Int where
-   toExitCode 0 = ExitSuccess
-   toExitCode n = ExitFailure n
-
-Require an ExitStatus instance
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Instead of falling back to ``main >> exitWith ExitSuccess`` when there is no ``ExitStatus``
-instance, we could have compilation simply fail in this case. This would be backwards
-incompatible (in particular, breaking any ``main :: forall a. IO a``, which may be
-used to indicate a ``main`` which does not return), but would ensure explicitness and
-probably not impact very many programs.
-
-This is omitted mainly because it can be done as a follow-up without centrally impacting
-the value of this proposal, after the warning has been in place for some time.
+If desired, this can be added later.
 
 Restrict main to IO ()
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -218,30 +154,6 @@ and indicate that program exit is something different than
 normal ``IO`` completion. It might have been a reasonable
 choice when Haskell was new, but as it would break almost
 every program out there today it's not worth the churn.
-
-Warn/error on ambiguous main
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-If ``main`` is ``IO ()``, ``IO Void``, or ``forall a. IO a``, the current behavior is
-the reasonable choice if ``main`` does complete. Thus, we could add a warning (which
-might later be elevated to an error) if ``main`` does not match one of these types.
-
-This could also be the first step of implementation toward the proposal or some of the
-other alternatives.
-
-The proposal is preferable to this alternative for `separation of mechanism and policy <https://en.wikipedia.org/wiki/Separation_of_mechanism_and_policy>`_
-considerations: If GHC is *going* to call ``exitWith`` by default, better to do it in a way
-that leaves the particular semantics up to the end user.
-
-Require an extension
-^^^^^^^^^^^^^^^^^^^^
-
-The operation of the ``ExitStatus`` typeclass could be gated behind a new GHC extension, and
-the class made mandatory when it is on. This would eliminate the technical backwards
-incompatibility.
-
-The proposal is preferable to this alternative because the backwards incompatibility probably
-literally never occurs and if it does is almost definitely desirable, as discussed `above <#backward-compatibility>`_.
 
 Implementation Plan
 -------------------
