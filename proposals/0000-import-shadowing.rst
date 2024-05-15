@@ -66,6 +66,13 @@ care about the names that are defined "more nearby".
 
 Proposed Change Specification
 -----------------------------
+Occurrences of an identifier in the code of a module and in its export
+list are looked up in an environment containing all the global
+definitions in that module. If that lookup fails, then the identifier
+is looked up in an environment containing all the definitions imported
+by import statements (including the implicit import of the
+``Prelude``, if any).
+
 In Haskell 2010, all imported names and all top-level definitions in
 the current module together make up a single unified top-level
 scope. With this proposed alternative policy, there are two top-level
