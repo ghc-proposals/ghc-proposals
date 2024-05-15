@@ -220,25 +220,27 @@ to just
 
 The above example is taken directly from `the "Import" page of the
 Haskell Wiki <https://wiki.haskell.org/Import>`_.
-   
+
 Effect and Interactions
 -----------------------
-Beside intra-module references, the other place where top-level
-bindings can be used is export specifications. It feels natural to
-resolve exports in the same scope used for the module. For example, if
-we have something like
+* Beside intra-module references, the other place where top-level
+  bindings can be used is export specifications. It feels natural to
+  resolve exports in the same scope used for the module. For example, if
+  we have something like
 
-::
+  ::
 
- module A (foo) where
+   module A (foo) where
 
- import B -- This exports "foo"
+   import B -- This exports "foo"
 
- foo = ...
+   foo = ...
 
-then the ``foo`` exported by ``A`` should be the one defined in
-``A``'s top-level.
+  then the ``foo`` exported by ``A`` should be the one defined in
+  ``A``'s top-level.
 
+* Top-level bindings that shadow imported names should be regarding as
+  shadowing bindings for the purposes of ``-Wname-shadowing``.
 
 Costs and Drawbacks
 -------------------
