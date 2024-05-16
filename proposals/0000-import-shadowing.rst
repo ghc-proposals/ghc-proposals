@@ -239,6 +239,24 @@ Effect and Interactions
   then the ``foo`` exported by ``A`` should be the one defined in
   ``A``'s top-level.
 
+* When modules are reexported wholesale, shadowing doesn't come into
+  play and the original module's contents are exported:
+
+  ::
+
+   module A (module B) where
+
+   import B -- this exports "foo"
+
+   foo = ...
+
+  Here, it is ``B.foo`` that is (re-)exported by ``A``, not ``A.foo``.
+
+  If both ``module B`` and ``foo`` are exported, then that is the same
+  category of error as without this extension exporting ``module B``
+  and ``module C`` with conflicting names, and should be reported the
+  same way.
+   
 * Top-level bindings that shadow imported names should be regarding as
   shadowing bindings for the purposes of ``-Wname-shadowing``.
 
