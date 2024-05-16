@@ -62,7 +62,25 @@ import list of ``Control.Exception``.
 We believe this is an improvement to the status quo because it is a
 natural extension of the idea behind the shadowing policy of local
 binders: that shadowing expresses the intention by the user to only
-care about the names that are defined "more nearby".
+care about the names that are defined "more nearby". A cursory search
+on `Stack Overflow <https://stackoverflow.com/>`_ finds lots of
+Haskell users who implicitly expected imports to be shadowed by
+top-level definitions:
+
+* https://stackoverflow.com/q/73788349/477476
+* https://stackoverflow.com/q/7761238/477476
+* https://stackoverflow.com/q/56047335/477476
+* https://stackoverflow.com/q/40964909/477476
+* https://stackoverflow.com/q/40314142/477476
+* https://stackoverflow.com/q/67246392/477476
+
+A second-order effect of the proposed extension is that it can lead to
+preemptive forward compatibility. Adding a new export to ``Prelude``
+can lead to breakage just by virtue of existing code defining and
+using top-level definitions with the same name. With
+``ImportShadowing``, the existing intra-module references keep their
+meaning and there is no migration needed to accomodate the new
+``Prelude`` names.
 
 Proposed Change Specification
 -----------------------------
@@ -310,14 +328,6 @@ previously unaccepted programs accepted by the scope checker.
 So this is a "-1"-impact change: it doesn't break existing code, and
 "un-breaks" existing broken code.
 
-A second-order effect of this is that using this extension can lead to
-preemptive forward compatibility. Adding a new export to ``Prelude``
-can lead to breakage just by virtue of existing code defining and
-using top-level definitions with the same name. With
-``ImportShadowing``, the existing intra-module references keep their
-meaning and there is no migration needed to accomodate the new
-``Prelude`` names.
-
 Alternatives
 ------------
 There are two alternative ways of referring to names defined at the
@@ -344,18 +354,7 @@ For other Haskell compilers, the implementation plan depends on their
 current name resolution infrastructure.
 
 Endorsements
--------------
-A cursory search on `Stack Overflow <https://stackoverflow.com/>`_
-finds lots of Haskell users who implicitly expected imports to be
-shadowed by top-level definitions:
-
-* https://stackoverflow.com/q/73788349/477476
-* https://stackoverflow.com/q/7761238/477476
-* https://stackoverflow.com/q/56047335/477476
-* https://stackoverflow.com/q/40964909/477476
-* https://stackoverflow.com/q/40314142/477476
-* https://stackoverflow.com/q/67246392/477476
-
-As mentioned in the Drawbacks section, we also have positive
+------------
+As mentioned in the Drawbacks section, we have positive
 experience in a setting where ``ImportShadowing`` is always on in a
 large Haskell code base with lots of developers over a long time.
