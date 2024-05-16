@@ -21,11 +21,11 @@ living in a scope that is "outside" the top-level one.
 
 Motivation
 ----------
-Currently, there is no way in Haskell to shadow an imported name. The
-only workaround is to avoid importing said name at all. For example,
-if we want to use some ``Control.Exception`` functions while also
-defining our own ``catch``, we have to import the former with an explicit
-hiding of ``catch``:
+Currently, there is no way in Haskell to shadow an imported name in
+the top-level scope. The only workaround is to avoid importing said
+name at all. For example, if we want to use some ``Control.Exception``
+functions while also defining our own ``catch``, we have to import the
+former with an explicit hiding of ``catch``:
 
 ::
 
