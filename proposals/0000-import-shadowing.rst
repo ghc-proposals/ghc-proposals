@@ -66,13 +66,36 @@ care about the names that are defined "more nearby".
 
 Proposed Change Specification
 -----------------------------
-Occurrences of an identifier in the code of a module and in its export
-list are looked up in an environment containing all the global
-definitions in that module. If that lookup fails, then the identifier
-is looked up in an environment containing all the definitions imported
-by import statements (including the implicit import of the
-``Prelude``, if any).
+Consider an occurrence of an unqualified name ``x``, not bound locally
+(by ``let``, lambda, a ``case`` alternative, etc). There are two
+possible sources of resolving it:
 
+(A) If there is a top-level binding of ``x`` then the occurrence is
+    resolved to that binding.
+
+(B) If the import declarations bring into scope a unique entity with
+    unqualified name ``x``, the occurrence is resolved to that entity.
+
+Consider an occurrence of a qualified name ``M.x``:
+
+(A) If the module is called ``M`` and there is a top-level binding of
+    ``x``, the occurrence is resolved to that binding
+
+(B) If the import declarations bring into scope a unique entity with
+    qualified name ``M.x``, the occurrence is resolved to that
+    entity.
+
+In both cases, Haskell 2010 regards cases (A) and (B) on equal
+footing: if exactly one of the two cases can be used to resolve the
+name, that case is used; if both cases can be used, then the
+occurrence is ambiguous and reported as such.
+
+This proposal instead tries (A) and (B) in order, i.e. if the (A) case
+resolves the occurrence, then that is used, and the (B) case is only
+checked otherwise.
+
+Alternative perspective: desugaring into ``let`` bindings
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 In Haskell 2010, all imported names and all top-level definitions in
 the current module together make up a single unified top-level
 scope. With this proposed alternative policy, there are two top-level
