@@ -330,8 +330,11 @@ So this is a "-1"-impact change: it doesn't break existing code, and
 
 Alternatives
 ------------
-There are two alternative ways of referring to names defined at the
-current module's top level:
+
+Status quo
+~~~~~~~~~~
+Before this proposal, there are two alternative ways of referring to
+names defined at the current module's top level:
 
 * The imported names we want to shadow can be hidden from the import
   itself, using the ``import SomeModule hiding (someName)`` syntax
@@ -339,6 +342,45 @@ current module's top level:
 * The current module's name can be used to qualify names,
   i.e. ``CurrentModule.someName`` instead of just ``someName``.
 
+Ordered imports
+~~~~~~~~~~~~~~~
+Other languages like OCaml or Agda have a linear top-level scope. The
+Haskell equivalent of this would be that later ``import`` statements
+and top-level bindings shadow earlier ones. By way of example,
+supposing ``foo`` is exported by all of ``A``, ``B``, and ``C``:
+
+::
+   
+ module Mod where
+
+ import A
+ import B
+
+ -- Here, "foo" resolves to "B.foo"
+
+ foo = ...
+
+ -- Here, "foo" resolves to "Mod.foo"
+ 
+ import C
+
+ -- Here, "foo" resolves to "C.foo"
+
+This would be a complete departure from Haskell's usual permutation
+invariance of definitions. It is this proposal author's opinion that
+this would be too large a change to be up to the addition of a mere
+``LANGUAGE`` pragma.
+
+A full proposal for this would also need to answer hairy questions
+like:
+
+* If ``Mod`` exports ``foo``, which ``foo`` does that resolve to?
+
+* Can I import ``A`` again to make its ``foo`` shadow ``C.foo``?
+
+* Is it allowed to re-bind ``foo`` in ``Mod`` if there are
+  ``import`` statements between it and the previous binding of ``foo``?  
+ 
 Unresolved Questions
 --------------------
 **TODO: add later, from Proposal comments**
