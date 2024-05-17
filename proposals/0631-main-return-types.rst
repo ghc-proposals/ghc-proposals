@@ -40,12 +40,26 @@ When ``-XMeaningfulMainReturn``, GHC emits an error if ``main`` has a type that 
 ``IO ()``, ``IO Void``, or ``IO ExitCode``. If ``main``'s type unifies with ``IO ExitCode``, the
 resulting program behaves as if its entrypoint were ``realMain = main >>= exitWith``.
 
-``-XMeaningfulMainReturn`` will become the default in the next GHC language edition.
+``-XMeaningfulMainReturn`` is intended to become the default in the next GHC language edition.
 
 Examples
 --------
+Before this proposal, the following program would exit with code ``0`` even
+when there are no results:
 
 ::
+
+ main :: IO ExitCode
+ main = do
+   results <- doSomeWork
+   case results of
+     [] -> pure (ExitFailure 1)
+     _ -> print results >> pure ExitSuccess
+
+With this proposal in place, the following examples would behave as indicated:
+
+::
+
    {-# LANGUAGE NoMeaningfulMainReturn #-}
 
    main :: IO ()
@@ -54,6 +68,7 @@ Examples
 This is accepted as it is now.
 
 ::
+
    {-# LANGUAGE NoMeaningfulMainReturn #-}
 
    main = main
@@ -61,6 +76,7 @@ This is accepted as it is now.
 This unifies with ``IO ()``, so it is accepted without warning.
 
 ::
+
    {-# LANGUAGE NoMeaningfulMainReturn #-}
 
    main :: IO Int
@@ -69,6 +85,7 @@ This unifies with ``IO ()``, so it is accepted without warning.
 Warning emitted, program exit code is ``0``, not ``1``
 
 ::
+
    {-# LANGUAGE MeaningfulMainReturn #-}
 
    main :: IO Int
@@ -77,6 +94,7 @@ Warning emitted, program exit code is ``0``, not ``1``
 Compile error, ``Int`` is potentially ambiguous.
 
 ::
+
    {-# LANGUAGE MeaningfulMainReturn #-}
 
    main :: IO Void
@@ -85,6 +103,7 @@ Compile error, ``Int`` is potentially ambiguous.
 Successful compilation, program exit code is ``0``
 
 ::
+
    {-# LANGUAGE MeaningfulMainReturn #-}
 
    main :: IO ExitCode
@@ -105,12 +124,10 @@ learning the language.
 
 Backward Compatibility
 ----------------------
-This will be backwards-incompatible in the next language edition in the
-(likely quite rare) case of an unusual ``main`` type (resulting in a new
-compilation failure) or in the (almost certainly non-existent) case of
-``main :: IO ExitCode`` (resulting in the exit code actually matching the
-yielded value). In that latter case, this is almost certainly the desired
-behavior anyway.
+This proposal is fully backwards compatible. Turning on the extension may
+lead to currently-compiling programs being rejected, and theoretically
+would change the meaning of any program with ``main :: IO ExitCode``
+(though it seems very unlikely that any real world programs do this today).
 
 Alternatives
 ------------
