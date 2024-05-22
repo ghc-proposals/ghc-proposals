@@ -2,11 +2,11 @@ Meaningful main return types
 =========================================
 
 .. author:: Shea Levy
-.. date-accepted::
-.. ticket-url::
+.. date-accepted:: 2024-05-21
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/24848
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/631>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/631>`_.
 .. sectnum::
 .. contents::
 
