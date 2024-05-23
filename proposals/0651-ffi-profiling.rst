@@ -113,6 +113,37 @@ without changing their source or recompiling.
 A new runtime flag ``-pu`` which will treat all safe FFI calls as unprofiled independent
 of how they have been compiled.
 
+Avoiding confusion from the use of different measures of time:
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When profiling we can measure two different notions of time (CPU Time, Wall Time)
+as well as time spent in different categories:
+
+* Time spent in the runtime system.
+* Time spent executing haskell code.
+* Time spent executing unsafe ffi calls.
+* Time spent executing safe ffi calls.
+
+Implementations might combine some of these into one somewhat intuitive overall
+notion of time. But implementations should make it easy for both users and tools
+to access not just overall time but also how much different categories contributed
+to runtime and what notion of runtime (CPU/Wall time) was used to measure each category.
+
+For example a profile may report a total runtime of 10s and a breakdown by
+category for GHC could look like this::
+
+    TOTAL TIME:         10s
+
+    RTS:                3s Wall
+        + GC            2s Wall
+        + MISC          1s Wall
+
+    MUT:                5s
+        + unsafe FFI    1s Wall
+        + haskell code  4s CPU
+
+    SAFE FFI:           2s Wall
+
 Proposed Library Change Specification
 -------------------------------------
 
