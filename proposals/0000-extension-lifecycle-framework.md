@@ -141,7 +141,7 @@ There are several other proposals and discussions that are related. There is a g
 
 ## 8. Implementation Plan
 
-The classifications of individual language extensions will be left to a future proposal, and those discussions can proceed while implementation is ongoing, should this proposal be accepted. Thus there is nothing concrete to implement as part of this proposal.
+The classifications of individual language extensions will be left to a future proposal. Thus, there is nothing concrete to implement as part of this proposal.
 
 
 ## 9. Endorsements
