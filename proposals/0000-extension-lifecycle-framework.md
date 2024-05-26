@@ -9,7 +9,7 @@ This proposal is [discussed at this pull request](https://github.com/ghc-proposa
 
 # Extension Lifecycle Framework
 
-We propose a categorization scheme for Haskell language extensions. This scheme is simple, in that there are few categories that are described in terms of the user-relevant aspects.  The purpose of this proposal is not to classify all extensions - rather, we seek to establish a basis upon which to carry out that work subsequently. Example classifications are provided to illustrate the proposed framework, and acceptance of this proposal should not count as acceptance these examples.
+We propose a categorization scheme for Haskell language extensions. This scheme is simple, in that there are few categories that are described in terms of the user-relevant aspects.  The purpose of this proposal is not to classify all extensions - rather, we seek to establish a basis upon which to carry out that work subsequently. Example classifications are provided to illustrate the proposed framework, and acceptance of this proposal should not count as acceptance of these examples.
 
 ## 1. Motivation
 
@@ -23,9 +23,12 @@ The authors of this proposal believe that a clear lifecycle for these programmin
 
 ## 2. Proposed Change Specification
 
-### 2.1. Categories and Lifecycle
+### 2.1. Categories
 Language extensions will be classified into the following categories
- * `Stable` extensions are considered to be finished and are not expected to undergo regular changes. These features can be used without worry of unexpected changes, and they are not known to contain serious design or implementation deficiencies. Any breaking change to a stable extension will be announced well in advance of the change being made, with a migration path provided if possible. For an extension to be classified as `Stable` it must be considered `Stable` when used in combination of all possible, non-mutually exclusive, extensions that are already `Stable`. This ensures any extension that is `Stable` will be have the same stability properties when combined with any other extension in the set, while allowing for mutually exclusive extensions to be added. Ideally, no breaking change will be made to a `Stable` extension, with incompatible changes resulting instead in a new, related extension, that is possibly mutually exclusive with the existing one, to enable smooth migration. Some extensions in this category might be `MultiWayIf`, `MonoLocalBinds`, and `ViewPatterns`.
+ * `Stable` extensions are considered to be finished and are not expected to undergo regular changes. These features can be used without worry of unexpected changes, and they are not known to contain serious design or implementation deficiencies. Any breaking change to a stable extension will be announced well in advance of the change being made, with a migration path provided if possible.
+   For an extension to be classified as `Stable` it must be considered `Stable` when used in combination of all possible, non-mutually exclusive, extensions that are already `Stable`. This ensures any extension that is `Stable` will be have the same stability properties when combined with any other extension in the set, while allowing for mutually exclusive extensions to be added.
+   Ideally, no breaking change will be made to a `Stable` extension, with incompatible changes resulting instead in a new, related extension, that is possibly mutually exclusive with the existing one, to enable smooth migration.
+   Some extensions in this category might be `MultiWayIf`, `MonoLocalBinds`, and `ViewPatterns`.
 
  * `Experimental` extensions are undergoing active development, or have consequences that make it impossible in practice to avoid breaking changes. The syntax and semantics that are enabled by the extension are likely to change regularly.
    * It is expected that most new language extensions will begin as experimental, while the developers and the community gain experience with their use.
@@ -39,7 +42,9 @@ Language extensions will be classified into the following categories
 
  * `Legacy` extensions are explicitly not recommended for new code, much like `Deprecated`, however, they are expected to be supported indefinitely. This may be to maintain an older language edition, maintain a bridge to a newer feature, or otherwise keep backward compatibility. Extensions that are `Legacy` may have some conflict with `Stable` extensions and explicitly do not need to be considered for an extension to be `Stable`. Some extensions in this category might be `CUSKs`, `DeepSubsumption`,  and `NPlusKPatterns`.
 
-Above we list expected categorizations of several extensions based on statements in the user's guide. We do not attempt to prescribe any particular categorizations as part of this proposal and simply provide a small number of expectations from the perspective of someone reading the existing documentation.
+Above we list expected categorizations of several specific extensions based on statements in the user's guide. We do not attempt to prescribe any particular categorizations as part of this proposal and simply provide a small number of expectations from the perspective of someone reading the existing documentation.
+
+### 2.2. Lifecycle: how an extension's category may change over time
 
 The following transitions are included:
  * (does not exist) -> `Experimental`
@@ -54,15 +59,15 @@ The following transitions are included:
 These transitions are explicitly excluded:
  * `Stable` -> (does not exist)
  * `Legacy` -> (does not exist)
+ * `Experimental` -> (does not exist)
 
 This is a small restriction, such that `Stable` or `Legacy` extensions require a deprecation cycle prior to removal.
 
-The following transitions are possible but left at the discretion of implementors as to be included or not:
+The following transitions are possible but left at the discretion of implementors as to be used or not:
 
  * (does not exist) -> `Deprecated`
  * (does not exist) -> `Legacy`
  * (does not exist) -> `Stable`
- * `Experimental` -> (does not exist)
  * `Stable` -> `Experimental`
  * `Legacy` -> `Experimental`
  * `Legacy` -> `Stable`
@@ -70,15 +75,15 @@ The following transitions are possible but left at the discretion of implementor
  * `Deprecated` -> `Stable`
  * `Deprecated` -> `Legacy`
 
-However, it also seems plausible that new knowledge might from time to time cause a stable extension to once again be considered experimental, e.g. in the face of soundness bugs or subtle interactions with other features. We explicitly allow for more transitions to allow for unforeseen circumstances. Restrictions are places on removal only. With this we aim to balance predictibility and flexibility. The consideration of both is important as extension classifications are first and foremost a communications channel between language designers, compiler developers, and users.
+These transitions left to the discretion of the implementors are to allow for unforeseen circumstances. Also, restrictions are placed on removal only. With this combination we aim to balance predictibility and flexibility. The consideration of both is important as any classifications are first and foremost a communications channel between language designers, compiler developers, and users.
 
 For existing, or future, language editions such as `GHC2021` or `Haskell98`, it is expected that none of the contained extensions would be `Experimental`. However, this proposal does not seek to impose any particular policy on the inclusion of extensions into language editions - the developers and the steering committee are always in the best position to make a decision about a concrete extension and extension set.
 
 Moving an extension through the lifecycle will require a GHC proposal. This will give users a chance to provide their input, it will help catch unexpected interactions (such as an `Stable` extension implying an `Experimental` one, and thus potentially allowing breakage at any  moment), and it provides a way for language implementers and users to clarify their mutual expectations.
 
-### 2.2. Documentation
+### 2.3. Documentation
 
-The user's guide for each extension documents where it is in the extension lifecycle. We expect this to be next to the "Since" and "Implied by" fields in extension documentation. Additionally, the user's guide should provide a history of the extension's sojourn through the various states, and the GHC versions in which it transitioned, for example from being experimental to stable, or from stable to deprecated.
+The user's guide for each extension should state what category the extension belongs to. We expect this to be next to the "Since" and "Implied by" fields in extension documentation. Additionally, the user's guide should provide a history of the extension's sojourn through the various states, and the GHC versions in which it transitioned, for example from being experimental to stable, or from stable to deprecated.
 
 ## 3. Effect and Interactions
 
@@ -94,22 +99,19 @@ Development and ongoing costs are expected to exist primarily in the form of add
 
 ## 5. Alternatives
 
-### 5.1. Include Another Categorization
-Another categorization has been discussed at length to provide additional gradient for stability. An additional categorization could allow to further refine the notion of stability. Similarly,  we could categorize in many different ways. However, adding any additional categories is left as a possible enhancement for the future, should a need or desire arise..
+### 5.1. Adding Compiler Warnings
 
-### 5.2. Adding Compiler Warnings
+One alternative design is to add warnings to the compiler, instead of communicating about the status of extensions only in the User's Guide. We consider this to be likely to provide value, because users typically do not return to sections of the User's Guide that cover features that they already understand. The migration of an extension into a warning set provides a reason for them to consult the documentation. Previous revisions of this proposal included some description of warnings for use of different categories. However, the potential featureset is now left as future work to be covered in other proposals.
 
-One alternative design is to add warnings to the compiler, instead of communicating about the status of extensions only in the User's Guide. We consider this to be likely to provide value, because users typically do not return to sections of the User's Guide that cover features that they already understand. The migration of an extension into a warning set provides a reason for them to consult the documentation. This is left as future work to be covered in other extensions.
-
-### 5.3. Implement Warnings and Categorizations Elsewhere
+### 5.2. Implement Warnings and Categorizations Elsewhere
 
 Warnings could additionally be implemented with a canonical configuration for a tool such as `hlint` or `stan`. Warnings from GHC itself have a number of advantages, however. First off, the categorization of extensions is maintained in one place, so teams don't need to construct and then maintain their own set. It's much easier to have a minor local deviation from an established standard than it is to create one. Secondly, compiler updates that change the status of an extension will trigger warnings without someone needing to remember to modify the configuration of an external linter, and projects that support a range of GHC versions will get the appropriate warnings for each version they run in CI without any extra configuration. And, perhaps most importantly, defaults matter most for less-experienced users. How would a new team know that they should install an extra linter and configure it this way? How would they decide between competing linter configurations? It seems valuable to provide them with something that basically reflects the consensus of the experts that comes by default.
 
-### 5.4. Use Only Deprecations
+### 5.3. Use Only Deprecations
 
 Another alternative consists of not having an explicit lifecycle for extensions, but only adding deprecation warnings. This has the advantage of being a lighter-weight process that requires less from the developers of language extensions. Also, because any model necessarily neglects certain details, an implicit discussion of an extension's status provides space for more nuance. However, we believe that a simpler model that captures the world well enough is able to provide the vast majority of the information that's relevant to make decisions without incurring nearly as much of a cost in time and training as a fully-detailed and nuanced view (which can still be available in the documentation).
 
-### 5.5. Lazily Add the `Deprecated` Set
+### 5.4. Lazily Add the `Deprecated` Set
 
 It has been extremely rare that GHC actually removes an extension. This has been loudly signaled to the authors as a negative experience. It would be possible to refrain from adding the `Deprecated` category until it actually becomes needed. However, having this category (even if unused) serves important purposes:
 
@@ -134,7 +136,7 @@ There are several other proposals and discussions that are related. There is a g
 
 ## 8. Implementation Plan
 
-The Haskell Foundation will either recruit volunteers or pay for the technical work of implementing this proposal. The classifications of individual language extensions will be left to a future proposal, and those discussions can proceed while implementation is ongoing, should this proposal be accepted.
+The classifications of individual language extensions will be left to a future proposal, and those discussions can proceed while implementation is ongoing, should this proposal be accepted. Thus there is nothing concrete to implement as part of this proposal.
 
 
 ## 9. Endorsements
