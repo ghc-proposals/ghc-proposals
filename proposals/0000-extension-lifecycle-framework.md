@@ -26,8 +26,11 @@ The authors of this proposal believe that a clear lifecycle for these programmin
 ### 2.1. Categories
 Language extensions will be classified into the following categories
  * `Stable` extensions are considered to be finished and are not expected to undergo regular changes. These features can be used without worry of unexpected changes, and they are not known to contain serious design or implementation deficiencies. Any breaking change to a stable extension will be announced well in advance of the change being made, with a migration path provided if possible.
+
    For an extension to be classified as `Stable` it must be considered `Stable` when used in combination of all possible, non-mutually exclusive, extensions that are already `Stable`. This ensures any extension that is `Stable` will be have the same stability properties when combined with any other extension in the set, while allowing for mutually exclusive extensions to be added.
+
    Ideally, no breaking change will be made to a `Stable` extension, with incompatible changes resulting instead in a new, related extension, that is possibly mutually exclusive with the existing one, to enable smooth migration.
+
    Some extensions in this category might be `MultiWayIf`, `MonoLocalBinds`, and `ViewPatterns`.
 
  * `Experimental` extensions are undergoing active development, or have consequences that make it impossible in practice to avoid breaking changes. The syntax and semantics that are enabled by the extension are likely to change regularly.
