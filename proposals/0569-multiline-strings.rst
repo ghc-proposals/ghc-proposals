@@ -119,6 +119,8 @@ A working prototype is available at `brandonchinn178/string-syntax <https://gith
 
    #. If the first character of the string is a newline, remove it
 
+   #. If the last character of the string is a newline, remove it
+
 #. After parsing, it becomes indistinguishable to the equivalent single-quoted string (modulo annotations for exact-printing)
 
 Common whitespace prefix calculation
@@ -207,6 +209,10 @@ Step 2vi - Since the first character is a newline character, we remove it and ar
 
   "..abc\\n\\n..def\\n\\nghi\\n....\\njkl\\n"
 
+Step 2vii - Since the last character is a newline character, we remove it and are left with the final result::
+
+  "..abc\\n\\n..def\\n\\nghi\\n....\\njkl"
+
 Step 3 - This gets treated as a normal string from now on, with the escaped ``\\n`` characters interpreted as usual.
 
 Ignore leading characters
@@ -255,7 +261,7 @@ String gaps are collapsed first and not included in the whitespace calculation
       """
 
   -- equivalent to
-  s' = "a b c d e\nf g\n"
+  s' = "a b c d e\nf g"
 
 Mixing tabs and spaces
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -272,7 +278,7 @@ In the following example, each line has 16 leading spaces after expanding tabs.
   ⇥"""
 
   -- equivalent to
-  s' = "a\nb\nc\n"
+  s' = "a\nb\nc"
 
 Leading newline
 ~~~~~~~~~~~~~~~
@@ -290,27 +296,24 @@ The specification strips exactly one leading newline, which is the behavior of l
     """
 
   -- equivalent to
-  s' = "\na\nb\nc\n"
+  s' = "\na\nb\nc"
 
 Trailing newline
 ~~~~~~~~~~~~~~~~
 
-As mentioned in the example in *Section 3.1 General Walkthrough*, trailing newlines are naturally included without any explicit rules. As a bonus, it does the same thing that ``unlines`` does. To avoid a trailing newline, put the closing ``"""`` immediately after the last line, or use a string gap:
+Similarly to a single leading newline being removed, a single trailing newline will also be removed. To keep the trailing newline, add a blank line after the last line:
 
 ::
 
-  x =
+  s =
     """
     a
     b
-    c"""
 
-  x2 =
     """
-    a
-    b
-    c\
-    \"""
+
+  -- equivalent to
+  s' = "a\nb\n"
 
 Indent every line
 ~~~~~~~~~~~~~~~~~
@@ -434,6 +437,7 @@ With multiline strings:
       Aeson.Null -> pure PrintStyleInherit
       Aeson.String "" -> pure PrintStyleInherit
       _ -> PrintStyleOverride <$> Aeson.parseJSON v
+
     """
 
   adtParsePrinterOptType =
@@ -441,6 +445,7 @@ With multiline strings:
     \\s -> case s of
       "" -> pure PrintStyleInherit
       _ -> PrintStyleOverride <$> parsePrinterOptType s
+
     """
 
 While the double backslash is still required, I think the overall style is much better (could be resolved in a later proposal adding raw strings).
@@ -529,6 +534,7 @@ With multiline strings:
               [ "unknown value: " <> show s
               , "Valid values are: %s"
               ]
+
     """
     fieldTypeName
     fieldTypeName
