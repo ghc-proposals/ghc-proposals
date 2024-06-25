@@ -52,7 +52,30 @@ But this doesn’t
 ::
 
   bad = foo (undefined :: Word)
-  
+  -- Error: Couldn't match type ‘'False’ with ‘'True’.
+
+
+Alternative Type-inequality operator
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Another example (credit to @s-and-witch) with ``AllowAmbiguousTypes``
+::
+
+  type a /~ b = (a == b) ~ False
+
+  typesNotEqual :: (a /~ b) => ()
+  typesNotEqual = ()
+
+
+The argument can be any types that don’t match. So this type-checks
+::
+
+  bar = typesNotEqual @Bool @Int
+
+But this doesn’t
+::
+
+  bad = typesNotEqual @Bool @Bool
   -- Error: Couldn't match type ‘'False’ with ‘'True’.
 
 
