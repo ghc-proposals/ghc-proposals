@@ -1,6 +1,6 @@
-============
-Not Equality
-============
+=================
+Not Type Equality
+=================
 
 .. author:: Viktor WW
 .. date-accepted::
@@ -19,7 +19,7 @@ This proposal introduces Not-Equality into GHC
 Motivation
 ----------
 
-Not Equality is flexible tool for Equality constraints. It could help to avoid in many cases Overlapping instances.
+Not Type Equality is flexible tool for Equality constraints. It could help to avoid in many cases Overlapping instances.
 
 It is already possible to emulate such behavior.
 
@@ -94,7 +94,7 @@ We could easy reduce overlapping in many cases
   instance C Int  b where ..  -- (A)
   instance C a Bool where ..  -- (B) Error: Overlapped
 
-  -- With Equality Not-Constraints, NEW!
+  -- With Not-Equality, NEW!
   -- OR
   instance forall b. b /~ Bool => C Int  b where ..  -- (A)
   instance                        C a Bool where ..  -- (B) including C Int Bool
