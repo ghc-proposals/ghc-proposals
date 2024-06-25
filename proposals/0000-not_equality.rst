@@ -80,6 +80,26 @@ We propose additional constraint not-"operators" ``(/~)`` , ``(/~~)`` , ``(/~#)`
   a /~~ b  ===  not. a ~~ b
   a /~# b  ===  not. a ~# b
 
+Partly Theta overlapping checking
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+"Guess-free" means that the constraint solver doesn't make guesses about what instance should be picked in the given context. 
+
+This abstract rule manifests itself in a concrete way: during constraint solving, GHC looks at instance head only.
+::
+
+     --                        instance head
+     --                      |----------------|
+  instance (C a b, D f g) => H Int b c d a Bool ...
+     --    |-----------|
+     --    theta/instance context
+
+
+"Guess-free" must become more complicated:
+
+1. All instances, which contains not-equality in Theta we mark internally as "consists inequality" instance.
+
+2. If instance head fits the guess and it is marked as "consists inequality", then we additionally check inequality part of Theta.
 
 Examples
 --------
