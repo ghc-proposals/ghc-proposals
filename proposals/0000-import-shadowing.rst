@@ -84,6 +84,14 @@ meaning and there is no migration needed to accomodate the new
 
 Proposed Change Specification
 -----------------------------
+
+When ``ImportShadowing`` is enabled, the following changes take place:
+
+.. _spec-body:
+
+Resolution of references in module body
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Consider an occurrence of an unqualified name ``x``, not bound locally
 (by ``let``, lambda, a ``case`` alternative, etc). There are two
 possible sources of resolving it:
@@ -108,12 +116,14 @@ footing: if exactly one of the two cases can be used to resolve the
 name, that case is used; if both cases can be used, then the
 occurrence is ambiguous and reported as such.
 
-This proposal instead tries (A) and (B) in order, i.e. if the (A) case
-resolves the occurrence, then that is used, and the (B) case is only
-checked otherwise.
+Instead, we propose that when ``ImportShadowing`` is enabled,
+(A) and (B) are tried in order, i.e. if the (A) case resolves the
+occurrence, then that is used, and the (B) case is only checked
+otherwise.
 
 Alternative perspective: desugaring into ``let`` bindings
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 In Haskell 2010, all imported names and all top-level definitions in
 the current module together make up a single unified top-level
 scope. With this proposed alternative policy, there are two top-level
@@ -129,28 +139,28 @@ nested ``let``-block, e.g. for the following program:
 
  module Mod (fun1, fun2) where
 
- import A hiding (overridden)
- import qualified B
+ import M1 hiding (overridden)
+ import qualified M2
 
- overridden = ... importedFromA ...
+ overridden = ... importedFromM1 ...
  fun1 = ... overridden ...
- fun2 = ... B.importedFromB ... fun1 ...
+ fun2 = ... M2.importedFromM2 ... fun1 ...
 
 we can write out its explicit scoping as:
 
 ::
 
  let
-   -- imports from A
-   importedFromA = ...
+   -- imports from M1
+   importedFromM1 = ...
 
-   -- imports from B
-   B.importedFromB = ...
+   -- imports from M2
+   B.importedFromM2 = ...
 
    -- defined in Mod
-   overridden = ... importedFromA ...
+   overridden = ... importedFromM1 ...
    fun1 = ... overridden ...
-   fun2 = ... B.importedFromB ... fun1 ...
+   fun2 = ... M2.importedFromM2 ... fun1 ...
  in
    -- exports of Mod
    (fun1, fun2)
@@ -161,18 +171,18 @@ turned on can be modeled as a two nested ``let`` blocks:
 ::
 
  let
-   -- imported from A
-   importedFromA = ...
+   -- imported from M1
+   importedFromM1 = ...
 
-   -- imports from B
-   B.importedFromB = ...
+   -- imports from M2
+   B.importedFromM2 = ...
 
  in
    -- defined in Mod
    let
-     overridden = ... importedFromA ...
+     overridden = ... importedFromM1 ...
      fun1 = ... overridden ...
-     fun2 = ... B.importedFromB ... fun1 ...
+     fun2 = ... M2.importedFromM2 ... fun1 ...
    in
      -- exports of Mod
      (fun1, fun2)
@@ -180,18 +190,18 @@ turned on can be modeled as a two nested ``let`` blocks:
 Of course, in this example, there is no observable difference between
 the two desugarings, since our module ``Mod`` was already well-scoped
 with the Haskell 2010 shadowing rules. However, if we change the
-program slightly by importing all of ``A`` wholesale:
+program slightly by importing all of ``M1`` wholesale:
 
 ::
 
  module Mod (fun1, fun2) where
 
- import A
- import qualified B
+ import M1
+ import qualified M2
 
- overridden = ... importedFromA ...
+ overridden = ... importedFromM1 ...
  fun1 = ... overridden ...
- fun2 = ... B.importedFromB ... fun1 ...
+ fun2 = ... M2.importedFromM2 ... fun1 ...
 
 then the desugaring using Haskell 2010 semantics leads to the
 following invalid program (note the two bindings of ``overridden`` in
@@ -200,17 +210,17 @@ the same ``let``):
 ::
 
  let
-   -- imports from A
-   importedFromA = ...
+   -- imports from M1
+   importedFromM1 = ...
    overriden = ...
 
-   -- imports from B
-   B.importedFromB = ...
+   -- imports from M2
+   M2.importedFromM2 = ...
 
    -- defined in Mod
    overridden = ... importedFromA ...
    fun1 = ... overridden ...
-   fun2 = ... B.importedFromB ... fun1 ...
+   fun2 = ... M2.importedFromM2 ... fun1 ...
  in
    -- exports of Mod
    (fun1, fun2)
@@ -220,23 +230,79 @@ Whereas the ``ImportShadowing`` version is valid:
 ::
 
  let
-   -- imported from A
-   importedFromA = ...
+   -- imported from M1
+   importedFromM1 = ...
    overridden = ...
 
-   -- imports from B
-   B.importedFromB = ...
+   -- imports from M2
+   M2.importedFromM2 = ...
 
  in
    -- defined in Mod
    let
-     overridden = ... importedFromA ... -- This shadows the imported "overridden"!
+     overridden = ... importedFromM1 ... -- This shadows the imported "overridden"!
      fun1 = ... overridden ...
-     fun2 = ... B.importedFromB ... fun1 ...
+     fun2 = ... M2.importedFromM2 ... fun1 ...
    in
      -- exports of Mod
      (fun1, fun2)
 
+Export lists
+~~~~~~~~~~~~
+
+References in a module's export specification are resolved in the same
+scope as that used for references in the module body, as per
+:ref:`spec-body`. For example if we have something like
+
+::
+
+ module A (foo) where
+
+ import M -- This exports "foo"
+
+ foo = ...
+
+then the ``foo`` exported by ``A`` should be the one defined in
+``A``'s top-level.
+
+When modules are reexported wholesale, shadowing doesn't come into
+play, and so we keep the behaviour without this extension: the form
+``module M`` names the set of all entities that are in scope with both
+an unqualified name ``e`` and a qualified name ``M.e``. Example:
+
+::
+
+ module A (module M) where
+
+ import M -- this exports "foo"
+
+ foo = ...
+
+Here, it is ``M.foo`` that is (re-)exported by ``A``, not ``A.foo``.
+
+If both ``module M`` and ``foo`` are exported, then that is a
+conflicting export error, and should be reported the same way as
+conflicts between exporting ``module M1`` and ``module M2`` without
+this extension. Example:
+
+::
+
+ module A (foo, module M) where
+
+ import M -- this exports "foo"
+
+ foo = ...
+
+This should report a conflict between the export items ``foo``
+(resolving to ``A.foo``) and ``M.foo``.
+
+Warnings
+~~~~~~~~
+
+Top-level bindings that shadow imported names should be regarding as
+shadowing bindings for the purposes of ``-Wname-shadowing``.
+
+     
 Examples
 --------
 This extension shines especially when shadowing names defined in the
@@ -261,45 +327,6 @@ to just
 
 The above example is taken directly from `the "Import" page of the
 Haskell Wiki <https://wiki.haskell.org/Import>`_.
-
-Effect and Interactions
------------------------
-* Beside intra-module references, the other place where top-level
-  bindings can be used is export specifications. It feels natural to
-  resolve exports in the same scope used for the module. For example, if
-  we have something like
-
-  ::
-
-   module A (foo) where
-
-   import B -- This exports "foo"
-
-   foo = ...
-
-  then the ``foo`` exported by ``A`` should be the one defined in
-  ``A``'s top-level.
-
-* When modules are reexported wholesale, shadowing doesn't come into
-  play and the original module's contents are exported:
-
-  ::
-
-   module A (module B) where
-
-   import B -- this exports "foo"
-
-   foo = ...
-
-  Here, it is ``B.foo`` that is (re-)exported by ``A``, not ``A.foo``.
-
-  If both ``module B`` and ``foo`` are exported, then that is the same
-  category of error as without this extension exporting ``module B``
-  and ``module C`` with conflicting names, and should be reported the
-  same way.
-   
-* Top-level bindings that shadow imported names should be regarding as
-  shadowing bindings for the purposes of ``-Wname-shadowing``.
 
 Costs and Drawbacks
 -------------------
@@ -383,7 +410,9 @@ like:
  
 Unresolved Questions
 --------------------
-**TODO: add later, from Proposal comments**
+
+_None came up in the proposal discussion_
+
 
 Implementation Plan
 -------------------
