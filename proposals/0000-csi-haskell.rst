@@ -254,7 +254,7 @@ Unresolved Questions
    trace. However, this requires GHCi itself, and is harder to use during
    testing.
 2. Choosing a good default trace size is still unresolved.
-   `Research <https://mpg.is/papers/gissurarson2023csi.pdf>` indicates
+   `Research <https://mpg.is/papers/gissurarson2023csi.pdf>`_ indicates
    that a default of 500 is sufficient for most cases in the ``nofib-buggy``
    dataset, though this is very dependent on the structure of the
    program itself. The ``:trace`` command uses a default of ``50`` for.
@@ -267,9 +267,9 @@ Implementation Plan
 -------------------
 
 I will implement the proposal, based on the work already done for the
-`CSI: Haskell paper <https://mpg.is/papers/gissurarson2023csi.pdf>`.
+`CSI: Haskell paper <https://mpg.is/papers/gissurarson2023csi.pdf>`_.
 
 The current implementation can be found at
-`this commit <https://github.com/Tritlo/ghc/commit/62fa1edbe81d8942ce922d586d50c3f1f79ffca4>`,
+`this commit <https://github.com/Tritlo/ghc/commit/62fa1edbe81d8942ce922d586d50c3f1f79ffca4>`_,
 though it will need to be updated for the latest version of GHC.
 
