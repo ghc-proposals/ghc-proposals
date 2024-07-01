@@ -40,8 +40,8 @@ message to report on evaluation that occurred right before the error.
 For some common errors, an evaluation trace is more useful for locating
 faulty expression rather than a stack trace, such as
 division-by-zero when the zero is from a variable,
-calling :code:`head` on an empty list,
-providing an out-of-bounds index for :code:`(!)` on a list,
+calling ``head`` on an empty list,
+providing an out-of-bounds index for ``(!)`` on a list,
 and non-exhaustive pattern matches in general.
 
 
@@ -70,7 +70,7 @@ evaluation.
 Examples
 --------
 
-Consider the following module, saved as `Divs.hs`::
+Consider the following module, saved as ``Divs.hs``::
 
     module Main where
     divs :: Int -> [Int]
@@ -86,11 +86,11 @@ Consider the following module, saved as `Divs.hs`::
     main :: IO ()
     main = print (smallestDiv 13)
 
-The bug here is that it :code:`divs` should include the number itself in the list,
-i.e. the base case of go should be :code:`go i | i == n = [i]`.
+The bug here is that it ``divs`` should include the number itself in the list,
+i.e. the base case of go should be ``go i | i == n = [i]``.
 
 
-When compiled with :code:`-prof` and :code:`-prof-auto`, this prints the following error
+When compiled with ``-prof`` and ``-prof-auto``, this prints the following error
 message::
 
   divs: Prelude.head: empty list
@@ -108,12 +108,12 @@ message::
     Main.main (Divs.hs:13:8-29)
     Main.CAF (<entire-module>)
 
-It correctly points out that the error was caused by :code:`head` encountering
-an empty list. However, the bug is not caused by the use of :code:`head`, but
+It correctly points out that the error was caused by ``head`` encountering
+an empty list. However, the bug is not caused by the use of ``head``, but
 rather an off-by-one error causing it to generate an empty list instead
 
-With the proposed change, when the :code:`-fhpc` and the new
-:code:`-hpc-trace` flag is present an *evaluation trace* of
+With the proposed change, when the ``-fhpc`` and the new
+``-hpc-trace`` flag is present an *evaluation trace* of
 *recently evaluated locations* is printed as well::
 
   divs: Prelude.head: empty list
@@ -152,7 +152,7 @@ Showing where the empty list in question originates.
 Proposed Change Specification
 -----------------------------
 
-We propose introducing the :code:`-fhpc-trace` and the optional :code:`-fhpc-trace-length`
+We propose introducing the ``-fhpc-trace`` and the optional ``-fhpc-trace-length``
 flags, and extending the HPC instrumentation to collect a trace of recently
 evaluated locations when these flags are present.
 
@@ -225,17 +225,17 @@ There are a few design decisions that are up to debate.
    potentially massive memory use as well as a higher maintenance burden.
 3. Keep track of the trace, but do not extend the default error message
    even if the flag is present. The trace can then be recovered by specialist
-   tools using the :code:`hpc` library.
+   tools using the ``hpc`` library.
 4. Adding a `errorWithEvaluationTrace` function to `base` that
    displays the evaluation trace as well when the flag is enabled.
-   Functions like :code:`head` and :code:`(!)` and other non-total functions in base would
+   Functions like ``head`` and ``(!)`` and other non-total functions in base would
    be changed to use this new function.
-5. Instead of extending the current :code:`.tix` files, we would introduce a
+5. Instead of extending the current ``.tix`` files, we would introduce a
    new file to track the trace. This would limit impact on tools that
-   read :code:`.tix` files directly, however, since the two are closely linked
-   (and the locations refer to the same indexes in the :code:`.mix` files), this
+   read ``.tix`` files directly, however, since the two are closely linked
+   (and the locations refer to the same indexes in the ``.mix`` files), this
    would incur additional maintenance costs.
-6. Targeting the eventlog instead of the :code:`.tix` format.
+6. Targeting the eventlog instead of the ``.tix`` format.
    GHC already has eventlog capabilities that log things such as scheduling
    events, garbage collection statistics, profiling information and
    *user defined tracing events*. However, this runs into the problem
@@ -249,15 +249,15 @@ There are a few design decisions that are up to debate.
 Unresolved Questions
 --------------------
 
-1. Comparison to the :code:`:trace` command.
-   GHCi already has a :code:`:trace` command that can also provide an evaluation
+1. Comparison to the ``:trace`` command.
+   GHCi already has a ``:trace`` command that can also provide an evaluation
    trace. However, this requires GHCi itself, and is harder to use during
    testing.
 2. Choosing a good default trace size is still unresolved.
-   [Research](https://mpg.is/papers/gissurarson2023csi.pdf) indicates
-   that a default of 500 is sufficient for most cases in the :code:`nofib-buggy`
+   `Research https://mpg.is/papers/gissurarson2023csi.pdf` indicates
+   that a default of 500 is sufficient for most cases in the ``nofib-buggy``
    dataset, though this is very dependent on the structure of the
-   program itself. The :code:`:trace` command uses a default of :code:`50` for.
+   program itself. The ``:trace`` command uses a default of ``50`` for.
 2. Interaction with parallel Haskell is poorly understood.
    We could possibly add thread ids and timestamps to the trace,
    though this would incur additional overhead.
@@ -267,7 +267,7 @@ Implementation Plan
 -------------------
 
 I will implement the proposal, based on the work already done for the
-[CSI: Haskell paper](https://mpg.is/papers/gissurarson2023csi.pdf).
+`CSI: Haskell paper https://mpg.is/papers/gissurarson2023csi.pdf`.
 
 The current implementation can be found at
 https://github.com/Tritlo/ghc/commit/62fa1edbe81d8942ce922d586d50c3f1f79ffca4,
