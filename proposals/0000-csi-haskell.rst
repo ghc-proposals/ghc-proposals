@@ -194,6 +194,7 @@ While the non-exhaustive-patternmatch reports a different location, the latest e
 We expect this to be true for most non-exhaustive patterns (that do not overlap with their stack-trace). 
 
 Example Sorting (Nofib Buggy) & Other Divide-By-Zero
+----------------------------------------------------
 
 The `Sorting` example from Nofib Buggy has a trivial fault that divides by zero in L144-147:: 
 
@@ -422,7 +423,7 @@ Unresolved Questions
    that a default of 500 is sufficient for most cases in the ``nofib-buggy``
    dataset, though this is very dependent on the structure of the
    program itself. The ``:trace`` command uses a default of ``50`` for.
-2. Interaction with parallel Haskell is poorly understood.
+3. Interaction with parallel Haskell is poorly understood.
    We could possibly add thread ids and timestamps to the trace,
    though this would incur additional overhead.
 
