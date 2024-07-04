@@ -67,7 +67,7 @@ and more experienced programmers to better understand the order of
 evaluation.
 
 
-Examples
+Example Divs
 --------
 
 Consider the following module, saved as ``Divs.hs``::
@@ -148,6 +148,170 @@ With the proposed change, when the ``-fhpc`` and the new
 
 Showing where the empty list in question originates.
 
+Example PrimeTest (Nofib-Buggy)
+-------------------------------
+The program `PrimeTest` checks the *Mersenne Prime 2^608-1* to be a prime number (and should return True). 
+
+Amongst the 4 `.lhs`-files, the bug is in `Prime.lhs` and consist of a faulty function from L72 to L77:: 
+
+    findKQ :: Integer -> (Integer, Integer)
+    findKQ n = f (0, (n-1))
+         -- BUG: The following line contains a bug
+    	where f (k,q) = if r == 0 then f (k, d) else (k, q)
+         -- CORRECT -- then f (k+1, d) else (k, q)
+    		where (d, r) = q `divMod` 2
+
+The issue consists of a non-exhaustive pattern match happens at a different location, `singleTestX` which uses `multiTest` which in turn uses the faulty `findKQ`. Not counting internal functions, the reported location and function are *two jumps* away from the actual fault.  
+
+The evaluation trace (length 50) shows the following::
+
+    Main: Prime.lhs:92:12-82: Non-exhaustive patterns in t : ts
+    Recently evaluated locations:
+      ./Prime.lhs:73:17-73:17  0
+      ./Prime.lhs:75:48-75:48  k
+      ./Prime.lhs:75:60-75:60  k
+      ./Prime.lhs:92:47-92:47  k
+      ./Prime.lhs:92:34-92:48  (fromInteger k)
+      ./Prime.lhs:92:29-92:82  take (fromInteger k) (ite...
+      ./Prime.lhs:91:6-91:6    t
+     Previous expressions:
+      ./Prime.lhs:75:59-75:64  ... = (k, q)
+      ./Prime.lhs:75:33-75:38  ...else r == 0
+      ./Prime.lhs:75:20-77:56  Prime:findKQ>f
+      ./Prime.lhs:75:45-75:52  ... = f (k, d)
+      ./Prime.lhs:75:33-75:38  ...then r == 0
+      ./IntLib.lhs:23:3-23:24  IntLib:readInteger
+      Main.lhs:76:12-76:36     Main:doLine>n
+      Main.lhs:74:3-78:30      Main:doLine
+      Main.lhs:69:26-69:68     ... = doLine l (\state -> doInp...
+      Main.lhs:68:3-69:68      Main:doInput
+      Main.lhs:62:3-62:29      Main:process
+      Main.lhs:56:3-56:68      Main:main
+     There were 147 evaluations in total but only 92 were recorded.
+     Re-run again with a bigger trace length for better coverage.
+
+While the non-exhaustive-patternmatch reports a different location, the latest evaluations are at the exact position of the introduced fault. 
+We expect this to be true for most non-exhaustive patterns (that do not overlap with their stack-trace). 
+
+Example Sorting (Nofib Buggy) & Other Divide-By-Zero
+
+The `Sorting` example from Nofib Buggy has a trivial fault that divides by zero in L144-147:: 
+
+    div2 :: Int -> Int
+    -- BUG:The following line contains a bug
+    div2 k = k `div` (2-2)
+    -- CORRECT -- div2 k = k `div` 2
+
+
+The resulting output (length 25) shows:: 
+
+    Main: divide by zero
+    Recently evaluated locations:
+      ./Sort.hs:146:25-146:25  2
+      ./Sort.hs:146:23-146:23  2
+      ./Sort.hs:146:22-146:26  (2-2)
+      ./Sort.hs:146:14-146:26  k `div` (2-2)
+     Previous expressions:
+      ./Sort.hs:146:5-146:26  Sort:heapSort>div2
+      Main.hs:14:36-14:43     ... =
+      Main.hs:13:5-22:57      Main:mangle>sort
+    
+     There were 668 evaluations in total but only 50 were recorded.
+     Re-run again with a bigger trace length for better coverage.
+
+
+Admittedly, the fault is a bit trivial. 
+But: There are *real* divide-by-zeros out there and the evaluation trace provides a clear point to look at and do an easy fix. 
+
+Example Parafins (Nofib Buggy)
+----------------------------------
+
+The parrafins example from Nofib-Buggy calculates `paraffins` based on an input list. I do not fully understand the domain, but paraffins express a concept in chemistry based on how atoms/molecules can connect, which follows a clear mathematical model. 
+
+The fault is in the `Main.hs` from L47 to L51:: 
+
+    three_partitions :: Int -> [(Int,Int,Int)]
+    three_partitions m =
+    -- BUG: The following line contains a bug:
+      [ (i,j,k) | i <- [0..(div m 3)], j <- [i..(div (m-i) 2)], k <- [i - (i+j)]]
+    -- CORRECT --   [ (i,j,k) | i <- [0..(div m 3)], j <- [i..(div (m-i) 2)], k <- [m - (i+j)]]
+
+
+The issue can be summarized as using a wrong variable, resulting in (wrong) triples. Especially, it can *count out* , depending on the input, resulting in an error such as `Main: Ix{Int}.index: Index (-1) out of range ((0,3))`.  
+
+When using the extended evaluation trace, a 50 entries log results in:: 
+
+    Main: Ix{Int}.index: Index (-1) out of range ((0,3))
+    Recently evaluated locations:
+      Main.hs:69:56-69:56  k
+      Main.hs:69:47-69:54  radicals
+      Main.hs:69:47-69:56  ... = radicals!k
+     Previous expressions:
+      Main.hs:69:21-69:26  ...else (j==k)
+      Main.hs:54:21-54:44  ... = (r:rs) : (remainders rs)
+      Main.hs:68:59-68:68  ... = radicals!j
+      Main.hs:68:33-68:38  ...else (i==j)
+      Main.hs:53:1-54:44   Main:remainders
+    
+    There were 579 evaluations in total but only 50 were recorded.
+    Re-run again with a bigger trace length for better coverage.
+
+Which does *not* cover the fault. 
+
+A higher trace length, namely 500, contains the faulty position:: 
+
+    Main: Ix{Int}.index: Index (-1) out of range ((0,3))
+    
+    Recently evaluated locations:
+      Main.hs:69:56-69:56  k
+      Main.hs:69:47-69:54  radicals
+      Main.hs:69:47-69:56  ... = radicals!k
+     Previous expressions:
+      Main.hs:69:21-69:26  ...else (j==k)
+      Main.hs:54:21-54:44  ... = (r:rs) : (remainders rs)
+      Main.hs:68:59-68:68  ... = radicals!j
+      Main.hs:68:33-68:38  ...else (i==j)
+      Main.hs:53:1-54:44   Main:remainders
+      Main.hs:54:21-54:44  ... = (r:rs) : (remainders rs)
+      repeats (2 times in window):
+        Main.hs:53:1-54:44   Main:remainders
+        Main.hs:53:17-53:18  ... = []
+      Main.hs:53:1-54:44   Main:remainders
+      repeats (2 times in window):
+        Main.hs:69:33-69:40  ... = (rj:rjs)
+        Main.hs:69:21-69:26  ...then (j==k)
+        Main.hs:54:21-54:44  ... = (r:rs) : (remainders rs)
+        Main.hs:68:45-68:52  ... = (ri:ris)
+        Main.hs:68:33-68:38  ...then (i==j)
+        Main.hs:53:1-54:44   Main:remainders
+        Main.hs:54:21-54:44  ... = (r:rs) : (remainders rs)
+        Main.hs:53:1-54:44   Main:remainders
+        Main.hs:48:1-50:77   Main:three_partitions
+        Main.hs:64:1-69:58   Main:rads_of_size_n
+        repeats (2 times in window):
+          Main.hs:53:17-53:18  ... = []
+          Main.hs:53:1-54:44   Main:remainders
+      Main.hs:69:33-69:40  ... = (rj:rjs)
+      Main.hs:69:21-69:26  ...then (j==k)
+      Main.hs:54:21-54:44  ... = (r:rs) : (remainders rs)
+      Main.hs:68:45-68:52  ... = (ri:ris)
+      Main.hs:68:33-68:38  ...then (i==j)
+      Main.hs:53:1-54:44   Main:remainders
+      Main.hs:54:21-54:44  ... = (r:rs) : (remainders rs)
+      Main.hs:53:1-54:44   Main:remainders
+      Main.hs:48:1-50:77   Main:three_partitions
+      Main.hs:64:1-69:58   Main:rads_of_size_n
+    
+     There were 579 evaluations in total but only 500 were recorded.
+     Re-run again with a bigger trace length for better coverage.
+
+This is not optimal, but a step towards the right direction; 
+The original error message (`Main: Ix{Int}.index: Index (-1) out of range ((0,3))`) has little to no information to act on, while the trace is able to re-construct the program flow. 
+
+The high length is necessary as the program spawns a lot of chunks, and the current evaluation-trace only reports on *matched* evaluations that have their start and end within the observed window. 
+The location of the fault in `Previous expressions: ` is also due to the evaluation of `three_partitions` being fully evaluated and (despite the faulty output) being correctly executed. The issue is not with the call, but with the value.  
+
+Thus we argue, that this type of issue can only be covered in a evaluation trace. There is no issue with the call-stack, there is only an issue with faulty data. 
 
 Proposed Change Specification
 -----------------------------
