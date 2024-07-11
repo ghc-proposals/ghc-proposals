@@ -13,9 +13,9 @@ They are normally written in uncurried form: `(cls, cls1) => ..`:
 
 ```haskell
 instance
-  ( Simplify NoMeta rep            simp
-  , Simplify NoMeta         rep1            simp1 )
- => Simplify NoMeta  (rep :+: rep1) (simp :+: simp1) where
+  ( Simplify NoMeta  rep            simp
+  , Simplify NoMeta          rep1            simp1 )
+ => Simplify NoMeta (rep :+: rep1) (simp :+: simp1) where
 ```
 
 This proposes writing them in instance declarations and class without tuple syntax; in curried form: `cls => cls1 => ..`. 
