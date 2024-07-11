@@ -9,6 +9,7 @@ This proposal is [discussed at this pull request](https://github.com/ghc-proposa
 # Curried class contexts
 
 Everything in Haskell is curried by standard practice, except strangely, constraints.
+
 They are normally written in uncurried form: `(cls, cls1) => ..`:
 
 ```haskell
@@ -17,8 +18,10 @@ instance
   , Simplify NoMeta          rep1            simp1 )
  => Simplify NoMeta (rep :+: rep1) (simp :+: simp1) where
 ```
+This proposal allows writing the following in curried form; without tuple syntax: `cls => cls1 => ..`.
 
-This proposes writing them in instance declarations and class without tuple syntax; in curried form: `cls => cls1 => ..`. 
+1. Contexts in instance declarations
+2. Superclasses in class declarations
 
 ```haskell
 instance
