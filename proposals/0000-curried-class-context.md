@@ -4,7 +4,7 @@ date-accepted: ""
 ticket-url: https://gitlab.haskell.org/ghc/ghc/-/issues/20778
 implemented: ""
 ---
-This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/666>).
+This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/666).
 
 # Curried class contexts
 
