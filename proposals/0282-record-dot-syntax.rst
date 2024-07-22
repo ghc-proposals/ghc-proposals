@@ -212,7 +212,7 @@ Symbol Occurence
 
 [Field]
 :raw-html:`<br />`
-     *field*   →   *varid*
+     *field*   →   *varid* | *reservedid*
 
 .. _section-1:
 
