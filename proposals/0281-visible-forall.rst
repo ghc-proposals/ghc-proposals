@@ -826,10 +826,10 @@ Implicit quantification
        where
          g :: a -> a         -- No implicit quantification!
 
-   In other words, we quantify only over *free* variables.
+   In other words, we quantify only over *out-of-scope* variables.
 
    With the proposed changes to name resolution, variables that were previously
-   free are not free anymore::
+   out of scope are now in scope::
 
        a = 42
        f :: a -> a           -- No implicit quantification!
@@ -1243,8 +1243,28 @@ Corner Cases
              g :: forall b. b -> x
              g _ = y
 
-   This is similar to the situation with ``ScopedTypeVariables``, where we also
-   cannot assume that all lowercase variables in a signature are free.
+   We can observe a similar phenomenon with ``ScopedTypeVariables`` or
+   ``TypeAbstractions``::
+
+     {-# LANGUAGE ScopedTypeVariables #-}
+     f1 :: forall a. a -> a
+     f1 y = g1 True
+       where
+         g1 :: b -> a       -- `a` is in scope from `forall a.`
+         g1 _ = y
+
+     {-# LANGUAGE TypeAbstractions #-}
+     f2 :: forall a. a -> a
+     f2 @a y = g2 True
+       where
+         g2 :: b -> a       -- `a` is in scope from `@a`
+         g2 _ = y
+
+   In ``g1`` and ``g2``, we don't expect ``a`` to be implicitly quantified
+   because it is already in scope. Only *out-of-scope* variables are implicitly
+   quantified (e.g. ``b``). By default, only the type namespace is considered
+   when checking for in-scope type variables; with ``RequiredTypeArguments``,
+   the check is namespace-agnostic.
 
 Effect and Interactions
 -----------------------
