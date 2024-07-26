@@ -112,6 +112,7 @@ A working prototype is available at `brandonchinn178/string-syntax <https://gith
 
       * See the "Common whitespace prefix calculation" section below for the specification of the calculation
       * If a line only contains whitespace, remove all of the whitespace
+      * Don't remove common whitespace immediately after the delimiter, see the example in *Section 3.2 Ignore leading characters*
 
    #. Join the string back with ``\n`` delimiters
 
@@ -246,6 +247,18 @@ This implies that normal strings could also be written using ``"""``
   s = """hello world"""
   s' = "hello world"
 
+Because characters immediately after the ``"""`` delimiter should be included verbatim, common whitespace will NOT be removed.
+
+::
+
+  s =
+    """    hello
+    world
+    """
+
+  -- equivalent to
+  s' = "    hello\nworld"
+
 String gaps
 ~~~~~~~~~~~
 
@@ -298,6 +311,29 @@ The specification strips exactly one leading newline, which is the behavior of l
   -- equivalent to
   s' = "\na\nb\nc"
 
+The leading newline is removed in step (vi); it has to be done at the end and not the beginning, because any characters on the same line as the opening delimiter should be included verbatim, and removing the leading newline early would treat the first line differently, without more logic.
+
+::
+
+  s1 =
+    """    a
+    b
+    c
+    """
+
+  s2 =
+    """
+    a
+    b
+    c
+    """
+
+  -- In the current proposal, these are equivalent to
+  -- the below. If leading newline were removed at the
+  -- beginning, both would result in s1'.
+  s1' = "    a\nb\nc"
+  s2' = "a\nb\nc"
+
 Trailing newline
 ~~~~~~~~~~~~~~~~
 
@@ -314,6 +350,8 @@ Similarly to a single leading newline being removed, a single trailing newline w
 
   -- equivalent to
   s' = "a\nb\n"
+
+The trailing newline is removed in step (vii); it has to be done at the end and not the beginning, because the closing delimiter is probably indented at the same level, so the newline character isn't the last character until after stripping whitespace. Removing the trailing newline at the beginning would require pulling up some of the whitespace stripping logic as well.
 
 Indent every line
 ~~~~~~~~~~~~~~~~~
