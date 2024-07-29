@@ -87,8 +87,6 @@ Proposed Change Specification
 
 When ``ImportShadowing`` is enabled, the following changes take place:
 
-.. _spec-body:
-
 Resolution of references in module body
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -252,7 +250,8 @@ Export lists
 
 References in a module's export specification are resolved in the same
 scope as that used for references in the module body, as per
-:ref:`spec-body`. For example if we have something like
+`Resolution of references in module body`_. For example if we have
+something like
 
 ::
 
