@@ -351,6 +351,83 @@ Similarly to a single leading newline being removed, a single trailing newline w
   -- equivalent to
   s' = "a\nb\n"
 
+In addition to being symmetric with stripping a single leading newline, stripping a single trailing newline has the benefit of composing better + behaving better with ``putStrLn``.
+
+::
+
+  s1 =
+    """
+    line 1
+    line 2
+    """
+
+  s2 = "line 3"
+
+  s3 =
+    """
+    line 4
+    line 5
+    """
+
+  putStrLn $ unlines [s1, s2, s3]
+
+  {-
+  Without stripping trailing newline:
+     "line 1\n"
+  ++ "line 2\n"
+  ++ "\n"
+  ++ "line 3\n"
+  ++ "line 4\n"
+  ++ "line 5\n"
+  ++ "\n"
+
+  With stripping trailing newline:
+     "line 1\n"
+  ++ "line 2\n"
+  ++ "line 3\n"
+  ++ "line 4\n"
+  ++ "line 5\n"
+  -}
+
+This is even more beneficial if we ever add string interpolation as well (See the "Out of scope" section for more details).
+
+::
+
+  s1 =
+    """
+    line 1
+    line 2
+    """
+
+  s2 =
+    """
+    line 3
+    line 4
+    """
+
+  putStrLn
+    s"""
+    ${s1}
+    ${s2}
+    """
+
+  {-
+  Without stripping trailing newline:
+     "line 1\n"
+  ++ "line 2\n"
+  ++ "\n"
+  ++ "line 3\n"
+  ++ "line 4\n"
+  ++ "\n"
+  ++ "\n"
+
+  With stripping trailing newline:
+     "line 1\n"
+  ++ "line 2\n"
+  ++ "line 3\n"
+  ++ "line 4\n"
+  -}
+
 The trailing newline is removed in step (vii); it has to be done at the end and not the beginning, because the closing delimiter is probably indented at the same level, so the newline character isn't the last character until after stripping whitespace. Removing the trailing newline at the beginning would require pulling up some of the whitespace stripping logic as well.
 
 Indent every line
