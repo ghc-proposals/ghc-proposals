@@ -5,7 +5,7 @@ Add more fixed size primitive types, like ``Int8#/Word8#``
 .. author:: Michal Terepeta
 .. date-accepted:: 2018-03-01
 .. ticket-url:: https://phabricator.haskell.org/D5006, https://phabricator.haskell.org/D5258
-.. implemented:: GHC-8.10
+.. implemented:: 8.10
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/74>`_.
 .. contents::

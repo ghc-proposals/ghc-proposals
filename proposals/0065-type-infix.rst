@@ -4,7 +4,7 @@ Require namespacing fixity declarations for type names and ``WARNING``/``DEPRECA
 .. author:: Ryan Scott
 .. date-accepted:: 2017-11-03
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/14032
-.. implemented:: None yet
+.. implemented:: 9.10
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull requst <https://github.com/ghc-proposals/ghc-proposals/pull/65>`_.
 .. contents::
