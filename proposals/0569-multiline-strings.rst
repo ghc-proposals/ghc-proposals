@@ -3,10 +3,11 @@ Multiline strings
 
 .. author:: Brandon Chinn
 .. date-accepted:: 2024-01-27
+.. date-amended:: 2024-08-04
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/24390
 .. implemented:: 
 .. highlight:: haskell
-.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/569>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/569>`_ and `amended at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/637>`_.
 .. sectnum::
 .. contents::
 
