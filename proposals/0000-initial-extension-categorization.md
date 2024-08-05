@@ -1,0 +1,224 @@
+---
+author: Trevis Elser
+date-accepted: ""
+ticket-url: ""
+implemented: ""
+---
+
+This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/601).
+
+# Extension Categorization
+
+We propose to concretely categorize a subset of the Haskell language extensions as defined by a previously accepted [proposal](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0601-extension-lifecycle-framework.md).
+
+We propose a categorization scheme for Haskell language extensions. This scheme is simple, in that there are few categories that are described in terms of the user-relevant aspects.  The purpose of this proposal is not to classify all extensions - rather, we seek to establish a basis upon which to carry out that work subsequently. Example classifications are provided to illustrate the proposed framework, and acceptance of this proposal should not count as acceptance of these examples.
+
+## 1. Motivation
+
+With the acceptance of [proposal 601]((https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0601-extension-lifecycle-framework.md)), extensions must be categorized. Here we propose to categorize a selection of the currently supported extensions. The purpose for a selection is simple, there are simply too many to host in a single discussion. With that, we intend to focus on those extensions with the most broad support so that significant progress can be made towards the categorization effort quickly while leaving more in-depth conversations for a later time.
+
+## 2. Proposed Change Specification
+
+The entirity of the changes proposed are categorization of extensions. We provide the categorization of several extensions and where applicable the categorization of the negation of the extension.
+
+### 2.1 Extensions Not Impacting Stability Categorization
+
+First we provide a set of extensions where the categorization is `Stable` for both the extension itself and the inversion. It is expected that these extensions are among the easiest to document because of the lack of differentiation between the on and off states
+
+The following table contains the language extension, the proposed categorization for the extension being turned on, and the proposed categorization for the extension being turned off.
+
+| Extension                  | Categorization | Negative Categorization |
+|----------------------------|----------------|-------------------------|
+| BangPatterns               | Stable         | Stable                  |
+| BinaryLiterals             | Stable         | Stable                  |
+| BlockArguments             | Stable         | Stable                  |
+| CApiFFI                    | Stable         | Stable                  |
+| ConstrainedClassMethods    | Stable         | Stable                  |
+| ConstraintKinds            | Stable         | Stable                  |
+| CPP                        | Stable         | Stable                  |
+| DataKinds                  | Stable         | Stable                  |
+| DefaultSignatures          | Stable         | Stable                  |
+| DeriveAnyClass             | Stable         | Stable                  |
+| DeriveDataTypeable         | Stable         | Stable                  |
+| DeriveFoldable             | Stable         | Stable                  |
+| DeriveFunctor              | Stable         | Stable                  |
+| DeriveGeneric              | Stable         | Stable                  |
+| DeriveLift                 | Stable         | Stable                  |
+| DeriveTraversable          | Stable         | Stable                  |
+| DerivingStrategies         | Stable         | Stable                  |
+| DerivingVia                | Stable         | Stable                  |
+| DisambiguateRecordFields   | Stable         | Stable                  |
+| EmptyCase                  | Stable         | Stable                  |
+| EmptyDataDecls             | Stable         | Stable                  |
+| EmptyDataDeriving          | Stable         | Stable                  |
+| ExistentialQuantification  | Stable         | Stable                  |
+| ExplicitForAll             | Stable         | Stable                  |
+| ExtendedDefaultRules       | Stable         | Stable                  |
+| FlexibleContexts           | Stable         | Stable                  |
+| FlexibleInstances          | Stable         | Stable                  |
+| ForeignFunctionInterface   | Stable         | Stable                  |
+| GADTs                      | Stable         | Stable                  |
+| GADTSyntax                 | Stable         | Stable                  |
+| GeneralizedNewtypeDeriving | Stable         | Stable                  |
+| HexFloatLiterals           | Stable         | Stable                  |
+| ImplicitParams             | Stable         | Stable                  |
+| ImplicitPrelude            | Stable         | Stable                  |
+| ImportQualifiedPost        | Stable         | Stable                  |
+| InstanceSigs               | Stable         | Stable                  |
+| InterruptibleFFI           | Stable         | Stable                  |
+| KindSignatures             | Stable         | Stable                  |
+| LambdaCase                 | Stable         | Stable                  |
+| LiberalTypeSynonyms        | Stable         | Stable                  |
+| MagicHash                  | Stable         | Stable                  |
+| MonadComprehensions        | Stable         | Stable                  |
+| MonoLocalBinds             | Stable         | Stable                  |
+| MonomorphismRestriction    | Stable         | Stable                  |
+| MultiParamTypeClasses      | Stable         | Stable                  |
+| MultiWayIf                 | Stable         | Stable                  |
+| NamedFieldPuns             | Stable         | Stable                  |
+| NamedWildCards             | Stable         | Stable                  |
+| NumDecimals                | Stable         | Stable                  |
+| NumericUnderscores         | Stable         | Stable                  |
+| OverloadedLabels           | Stable         | Stable                  |
+| OverloadedLists            | Stable         | Stable                  |
+| OverloadedRecordDot        | Stable         | Stable                  |
+| OverloadedStrings          | Stable         | Stable                  |
+| PackageImports             | Stable         | Stable                  |
+| ParallelListComp           | Stable         | Stable                  |
+| PatternGuards              | Stable         | Stable                  |
+| PatternSynonyms            | Stable         | Stable                  |
+| PolyKinds                  | Stable         | Stable                  |
+| PostfixOperators           | Stable         | Stable                  |
+| QualifiedDo                | Stable         | Stable                  |
+| RankNTypes                 | Stable         | Stable                  |
+| RecordWildcards            | Stable         | Stable                  |
+| RecursiveDo                | Stable         | Stable                  |
+| RoleAnnotations            | Stable         | Stable                  |
+| StandaloneDeriving         | Stable         | Stable                  |
+| StandaloneKindSignatures   | Stable         | Stable                  |
+| StrictData                 | Stable         | Stable                  |
+| TraditionalRecordSyntax    | Stable         | Stable                  |
+| TransformListComp          | Stable         | Stable                  |
+| TupleSections              | Stable         | Stable                  |
+| TypeApplications           | Stable         | Stable                  |
+| TypeFamilies               | Stable         | Stable                  |
+| TypeFamilyDependencies     | Stable         | Stable                  |
+| TypeOperators              | Stable         | Stable                  |
+| TypeSynonymInstances       | Stable         | Stable                  |
+| UnboxedSums                | Stable         | Stable                  |
+| UnboxedTuples              | Stable         | Stable                  |
+| UnicodeSyntax              | Stable         | Stable                  |
+| UnliftedDatatypes          | Stable         | Stable                  |
+| UnliftedFFITypes           | Stable         | Stable                  |
+| UnliftedNewtypes           | Stable         | Stable                  |
+| ViewPatterns               | Stable         | Stable                  |
+
+## 2.2 Extensions Impacting Stablity Categorization
+
+Here we list extensions where the categorization is different based on if the extension is enabled or not. This separation is specifically to make reading the tables of extensions easier. We have further divided this section into `Legacy` and `Experimental` extensions.
+
+### 2.2.1 Legacy Extensions
+
+The following are all extensions that are to be categorized as `Legacy` when enabled, and for the `No` version are categorized as `Stable`. As a reminder, the [categorizations](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0601-extension-lifecycle-framework.md#21-categories) state that `Legacy` extensions are not recommended for new code but are expected to be supported indefinitely.
+
+The following table contains the language extension, the proposed categorization for the extension being turned on, and the proposed categorization for the extension being turned off.
+
+| Extension                | Categorization | Negative Categorization |
+|--------------------------|----------------|-------------------------|
+| CUSKs                    | Legacy         | Stable                  |
+| DatatypeContexts         | Legacy         | Stable                  |
+| DeepSubsumption          | Legacy         | Stable                  |
+| NondecreasingIndentation | Legacy         | Stable                  |
+| NPlusKPatterns           | Legacy         | Stable                  |
+| StarIsType               | Legacy         | Stable                  |
+
+### 2.2.2 Experimental Extensions
+
+The following are extensions that are to be categorized as `Experimental` when enabled, and for the `No` or negative version are categorized as `Stable`. As a reminder, the [categorizations](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0601-extension-lifecycle-framework.md#21-categories) state that `Experimental` extensions "are undergoing active development, or have consequences that make it impossible in practice to avoid breaking changes".
+
+The following table contains the language extension, the proposed categorization for the extension being turned on, and the proposed categorization for the extension being turned off.
+
+| Extension              | Categorization | Negative Categorization |
+|------------------------|----------------|-------------------------|
+| ApplicativeDo          | Experimental   | Stable                  |
+| Arrows                 | Experimental   | Stable                  |
+| GHCForeignImportPrim   | Experimental   | Stable                  |
+| ExtendedLiterals       | Experimental   | Stable                  |
+| ImpredicativeTypes     | Experimental   | Stable                  |
+| JavaScriptFFI          | Experimental   | Stable                  |
+| LinearTypes            | Experimental   | Stable                  |
+| OverloadedRecordUpdate | Experimental   | Stable                  |
+| RequiredTypeArguments  | Experimental   | Stable                  |
+
+### 2.2.3 Deprecated Extensions
+
+The following are extensions that are to be categorized as `Deprecated` when enabled, and for the `No` version are categorized as `Stable`.
+
+| Extension                         | Categorization | Negative Categorization |
+|-----------------------------------|----------------|-------------------------|
+| AlternativeLayoutRule             | Deprecated     | Stable                  |
+| AlternativeLayoutRuleTransitional | Deprecated     | Stable                  |
+| DoRec                             | Deprecated     | Stable                  |
+| NullaryTypeClasses                | Deprecated     | Stable                  |
+| OverlappingInstances              | Deprecated     | Stable                  |
+| ParallelArrays                    | Deprecated     | Stable                  |
+| PolymorphicComponents             | Deprecated     | Stable                  |
+| Rank2Types                        | Deprecated     | Stable                  |
+| RecordPuns                        | Deprecated     | Stable                  |
+| TypeInType                        | Deprecated     | Stable                  |
+
+## 2.3 Uncategorized Extensions
+
+The following are the extensions that are uncategorized as of this proposal. They are left uncategorized to allow progress overall on categorization by reducing the amount of discussion on any one proposal. They will be categorized with further discussion in some following proposal(s).
+
+| Extension               |
+|-------------------------|
+| AllowAmbiguousTypes     |
+| AutoDeriveTypeable      |
+| DoAndIfThenElse         |
+| DuplicateRecordFields   |
+| FieldSelectors          |
+| FunctionalDependencies  |
+| IncoherentInstances     |
+| LexicalNegation         |
+| ListTuplePuns           |
+| NegativeLiterals        |
+| PartialTypeSignatures   |
+| PatternSignatures       |
+| QuantifiedConstraints   |
+| QuasiQuotes             |
+| RebindableSyntax        |
+| RelaxedLayout           |
+| RelaxedPolyRec          |
+| Safe                    |
+| ScopedTypeVariables     |
+| StaticPointers          |
+| Strict                  |
+| TemplateHaskell         |
+| TemplateHaskellQuotes   |
+| Trustworthy             |
+| TypeAbstractions        |
+| TypeData                |
+| UndecidableInstances    |
+| UndecidableSuperClasses |
+| Unsafe                  |
+
+## 3. Effect and Interactions
+
+The only expected user-facing impact of this proposal is increased documentation and visibility for users. On it's own, this proposal does not impact availability of any feature. Categorization of any particular extension could result in additional consideration per the policy set forth [previously]((https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0601-extension-lifecycle-framework.md)).
+
+## 4. Costs and Drawbacks
+
+The immediate cost of this proposal is in documenting each extension with it's categorization. There are potential costs if the categorizations of `Stable` are too aggressive. First, undesirable behavior could be "locked-in" for support. Second, if a `Stable` extension is changed there could be user confusion. Lastly, if a `Stable` extension needs to be re-categorized shortly after this proposal that is additional churn and discussion for the GHC Steering Committee.
+
+## 5. Related Work
+
+As previously mentioned this builds on a previously accepted [proposal](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0601-extension-lifecycle-framework.md). Further the categorizations here have been influenced heavily by a [discussion thread](https://github.com/ghc-proposals/ghc-proposals/discussions/635) and [another proposal](https://github.com/ghc-proposals/ghc-proposals/pull/636).
+
+## 6. Unresolved Questions
+
+There are still a large number of extensions left to categorize. These are left out solely to limit the scope of discussion.
+
+## 7. Implementation Plan
+
+The author(s) volunteer to ammend the GHC User's Guide to add the categorization documentation to each extension.
