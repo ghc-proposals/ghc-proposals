@@ -21,6 +21,8 @@ With the acceptance of [proposal 601]((https://github.com/ghc-proposals/ghc-prop
 
 The entirity of the changes proposed are categorization of extensions. We provide the categorization of several extensions and where applicable the categorization of the negation of the extension.
 
+In the tables below we include for each extension the categorization and the "negative categorization" which is for the `No` prefixed version. This is important because while most extensions are themselves the item to be concerned with, there are cases such as `FieldSelectors` where the negative form, `NoFieldSelectors` is the "new" thing added by having the extension.
+
 ### 2.1 Extensions Not Impacting Stability Categorization
 
 First we provide a set of extensions where the categorization is `Stable` for both the extension itself and the inversion. It is expected that these extensions are among the easiest to document because of the lack of differentiation between the on and off states
@@ -211,14 +213,22 @@ The only expected user-facing impact of this proposal is increased documentation
 
 The immediate cost of this proposal is in documenting each extension with it's categorization. There are potential costs if the categorizations of `Stable` are too aggressive. First, undesirable behavior could be "locked-in" for support. Second, if a `Stable` extension is changed there could be user confusion. Lastly, if a `Stable` extension needs to be re-categorized shortly after this proposal that is additional churn and discussion for the GHC Steering Committee.
 
-## 5. Related Work
+## 5. Backward Compatibility
+
+Since there is no impact to feature availability from this proposal, it is completely backward compatible.
+
+## 6. Related Work
 
 As previously mentioned this builds on a previously accepted [proposal](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0601-extension-lifecycle-framework.md). Further the categorizations here have been influenced heavily by a [discussion thread](https://github.com/ghc-proposals/ghc-proposals/discussions/635) and [another proposal](https://github.com/ghc-proposals/ghc-proposals/pull/636).
 
-## 6. Unresolved Questions
+## 7. Alternatives
 
-There are still a large number of extensions left to categorize. These are left out solely to limit the scope of discussion.
+Much of this proposal works within the constraints of the previously accepted [proposal](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0601-extension-lifecycle-framework.md). That said, any of the chosen categorizations could be picked differently and be an alternative.
 
-## 7. Implementation Plan
+## 7. Unresolved Questions
+
+There are still a number of extensions left to categorize. These are left out solely to limit the scope of discussion.
+
+## 8. Implementation Plan
 
 The author(s) volunteer to ammend the GHC User's Guide to add the categorization documentation to each extension.
