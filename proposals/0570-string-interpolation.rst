@@ -96,33 +96,56 @@ If Haskell had native string interpolation, it would have the benefit and safety
 Proposed Change Specification
 -----------------------------
 
-Grammar
-~~~~~~~
+This proposal introduces a new ``-XStringInterpolation`` extension that enables the following changes.
 
-Add a new ``-XStringInterpolation`` extension, which, when enabled, adds a new expression to `Chapter 3 of the Haskell 2010 Report <https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-220003>`_ after do-expressions in the ``exp`` rule:
+Lexical Structure
+~~~~~~~~~~~~~~~~~
 
-.. code-block:: abnf
-
-  exp → ...
-      | case exp of { alts }                    (case expression)
-      | do { stmts }                            (do expression)
-      | s"   interpolatedString "               (interpolated strings)
-      | s""" interpolatedStringMultiline """    (interpolated multiline strings)
-      | fexp
-
-Note that no space is allowed between the ``s`` and ``"``.
-
-The ``interpolatedString`` and ``interpolatedMultilineString`` rules are new rules defined as follows:
+Add ``interpolatedString`` and ``interpolatedStringMultiline`` to ``lexeme`` (not ``literal``, because they're not literals):
 
 .. code-block:: abnf
 
-  interpolatedString               → {graphic⟨\ | "   | ${⟩ | space | escape | gap} [ ${ exp } interpolatedString ]
-  interpolatedStringMultiline      → {{whitechar} interpolatedStringMultilineLine}
-  interpolatedStringMultilineLine  → {graphic⟨\ | """ | ${⟩ | space | escape | gap} [ ${ exp } interpolatedStringMultilineLine ]
+  lexeme  → qvarid | qconid | qvarsym | qconsym
+          | literal | special | reservedop | reservedid
+          | interpolatedString
+          | interpolatedStringMultiline
 
-Note: We will always require interpolation to be of the form ``${foo}``, unlike other languages where ``$foo`` is allowed for single-variable interpolation. This simplifies the syntax and avoids the need for escaping bare ``$``. Interpolation may be avoided by escaping the dollar sign; e.g. ``s"\${foo}"`` is equivalent to ``"${foo}"``.
+  interpolatedString → 's"' {graphic⟨'\' | '"' | '${'⟩ | space | escape | gap | '${' any⟨'}' | '"'⟩ '}'} '"'
+  interpolatedStringMultiline → 's"""' {{whitechar} interpolatedStringMultilineLine} '"""'
+  interpolatedStringMultilineLine → {graphic⟨'\' | '"""' | '${'⟩ | space | escape | gap | '${' ANY⟨'}' | '"'⟩ '}'}
 
-The following expressions are lex errors, according to the above grammar:
+Also add ``$`` to ``charesc``:
+
+.. code-block:: abnf
+
+  charesc → a | b | f | n | r | t | v | \ | " | ' | & | $
+
+With ``$`` added to ``charesc``, interpolation can be avoided by escaping the dollar sign; e.g. ``s"\${foo}" == "${foo}"``.
+
+The following expressions are lex errors:
+
+* ``s"a ${"hello"} c"``
+
+  * This would lex the string ``s"a ${"``, then fail expecting a closing ``}``
+
+* ``s"a ${s"hello"} c"``
+
+  * This would lex the string ``s"a ${s"``, then fail expecting a closing ``}``
+
+Parser
+~~~~~~
+
+When an interpolated string is lexed, we'll iteratively split on ``${`` and ``}`` pairs (ignoring escaped ``\${``) and re-lex the inner expressions to construct
+
+::
+
+  HsInterpolatedString FastString [(LHsExpr p, FastString)]
+
+which contains the prefix of the interpolated string up to the first interpolated expression, then a list containing pairs of an interpolated expression and the subsequent string.
+
+Interpolated multiline strings will desugar to an interpolated single-line string in the lexer, the same `as usual <https://github.com/brandonchinn178/ghc-proposals/blob/master/proposals/0569-multiline-strings.rst>`_. So the parser will also get a ``HsInterpolatedString`` here (with the appropriate metadata in the extension field).
+
+The following expressions are parse errors:
 
 * ``s"a ${} b"``
 
@@ -140,6 +163,18 @@ The following expressions are lex errors, according to the above grammar:
 
   * The second ``{`` is not a valid character to start an expression
 
+* ``s"a ${'}'} b"``
+
+  * This would try to lex the expression ``'``
+
+* ``s"foo ${x {- inline comment -} } bar"``
+
+  * This would try to lex the expression ``x {- inline comment -``
+
+* ``s"foo ${User{id = 123}} bar"``
+
+  * This would try to lex the expression ``User{id = 123``
+
 See the "Semantics" and "Examples" sections to see examples of valid interpolated strings.
 
 Machinery
@@ -151,7 +186,6 @@ An interpolated string expression desugars to calls to ``fromBuilder``, ``toBuil
 
   -- | Laws:
   --     * fromBuilder . toBuilder === id
-  --     * toBuilder . fromBuilder === id
   class Monoid (Builder s) => Buildable s where
     type Builder s = r | r -> s
     toBuilder :: s -> Builder s
@@ -174,6 +208,8 @@ Instances for ``String`` will be defined as well:
 
   instance Interpolate String String where
     interpolate = toBuilder
+  instance Interpolate Char String where
+    interpolate = interpolate . (:[])
   instance {-# OVERLAPPABLE #-} Show a => Interpolate a String where
     interpolate = StringBuilder . Endo . shows
 
@@ -200,7 +236,24 @@ With the machinery defined above, the following interpolated string desugars to 
 
 The string literals there will be handled by ``-XOverloadedStrings`` as usual, if enabled.
 
-Interpolated multiline strings should desugar into a single-line string `as usual <https://github.com/brandonchinn178/ghc-proposals/blob/master/proposals/0569-multiline-strings.rst>`_ first, before interpolating expressions.
+Template Haskell
+~~~~~~~~~~~~~~~~
+
+Template Haskell will add a new constructor:
+
+::
+
+  InterpolatedStringE String [(Exp, String)]
+
+Which mimics the ``HsInterpolatedString`` constructor.
+
+Examples
+--------
+
+Examples were tested with `this gist <https://gist.github.com/brandonchinn178/4d35ed189d7018ca34535ac85442790b>`_ (after desugaring the string interpolation).
+
+Multiline strings
+~~~~~~~~~~~~~~~~~
 
 ::
 
@@ -220,11 +273,6 @@ Interpolated multiline strings should desugar into a single-line string `as usua
   -- resolve interpolation
   let str2 = "hello world\nworld hello\nhello world"
 
-Examples
---------
-
-Examples were tested with `this gist <https://gist.github.com/brandonchinn178/4d35ed189d7018ca34535ac85442790b>`_ (after desugaring the string interpolation).
-
 Edge cases
 ~~~~~~~~~~
 
@@ -234,15 +282,29 @@ The following interpolated string expressions are also valid:
 
   let x = "hello"
 
-  -- nested string interpolation
-  s"a ${x ++ s" world ${x}"} b" == "a hello world hello b"
-
   -- seemingly duplicated closing bracket is valid, as the first one closes the expression
   -- and the second is a character in the string literal
   s"${x}} world" == "hello} world"
 
   -- inline type annotation
   s"a ${1 :: Int} b" == "a 1 b"
+
+  -- multiline expressions: while ugly and should be avoided, valid syntax
+  s"""
+   foo ${drop
+    1
+    x} world
+   """ == "foo ello world"
+
+  -- braces as characters
+  s"foo ${'{'} bar" == "foo { bar"
+
+  -- comments
+  s"foo ${x -- comment} bar" == "foo hello bar"
+
+  -- OverloadedRecordDot
+  let user = User{name = "Alice"}
+  s"foo ${user.name} bar" == "foo Alice bar"
 
 Text
 ~~~~
@@ -261,6 +323,8 @@ These instances will be provided in ``Data.Text``. This adds a dependency on ``g
   instance {-# OVERLAPPABLE #-} Show a => Interpolate a Text where
     interpolate = interpolate . show
 
+  instance Interpolate Char Text where
+    interpolate = interpolate . Text.singleton
   instance Interpolate String Text where
     interpolate = interpolate . Text.pack
   instance Interpolate Text String where
@@ -432,6 +496,42 @@ And be able to use it in interpolated strings:
   let n = BigDecimal 123456 3
   s"123456 / 10^3 = ${n}" == "123456 / 10^3 = 123.456"
 
+Format specifiers
+~~~~~~~~~~~~~~~~~
+
+Python is famous for being able to specify format specifiers when interpolating values:
+
+.. code-block:: python
+
+  x = 1.2
+  f"{x:.3f}" == "1.200"
+
+This kind of thing would be possible with this proposal (although not provided out of the box):
+
+::
+
+  data Precision a = Prec Int a
+  instance Interpolate (Precision Int) String where
+    interpolate = interpolateInt
+  instance Interpolate (Precision Integer) String where
+    interpolate = interpolateInt
+  instance Interpolate (Precision Double) String where
+    interpolate = interpolateRealFloat
+  instance Interpolate (Precision Float) String where
+    interpolate = interpolateRealFloat
+
+  interpolateInt :: (Interpolate String s, Integral a) => Precision a -> Builder s
+  interpolateInt (Prec scale n) = interpolate $ show (toInteger n) <> ('.' : replicate scale '0')
+
+  interpolateRealFloat :: (Interpolate String s, RealFloat a) => Precision a -> Builder s
+  interpolateRealFloat (Prec scale n) =
+    let (digits, e) = floatToDigits 10 n
+        (int, frac) = splitAt e digits
+     in interpolate . concat $ map show int <> ["."] <> (map show . take scale) (frac <> repeat 0)
+
+  let x = 1.2 :: Double
+  s"${Prec 3 x}" == "1.200"
+
 Effect and Interactions
 -----------------------
 
@@ -462,14 +562,38 @@ Alternatives
 
 * Status quo (discussed in the "Motivation" section)
 
+* Allow ``$foo`` in addition to ``${foo}``
+
+  * This would complicate the syntax, and would also require interpolated string to escape bare ``$``.
+
 * Different delimiter
 
   * Could use ``f"`` like Python, with ``f`` for format. ``s`` for "String" seems a bit ad-hoc, but it does "look better" for some reason. ``s`` is also a bit better if the user forgets to enable ``-XStringInterpolation`` because ``f`` is a not-uncommon name for functions and ``f"asdf"``, being parsed as ``f "asdf"``, would work more often than ``s"asdf"`` would.
   * Could reuse QuasiQuote syntax, e.g. ``[s|`` or ``[fmt|``, except it would be special and NOT use Template Haskell.
 
+* No delimiter, always interpolate
+
+  * Would require any use of ``${...}`` to be escaped.
+  * No other language does this; even Bash has single quoted strings to avoid escaping
+
 * Different interpolation delimiter, e.g. ``#{foo}``
 
   * Most languages use ``$``, and I see no reason to deviate
+
+* Only allow interpolating string-like values
+
+  * This is what ``neat-interpolation`` does
+  * This would add a ton of noise to string interpolation, so no one would use the feature
+  * This wouldn't support injection-free SqlQuery, as you need to know which SqlValue to use
+  * This wouldn't support escaping HTML by default, while allowing explicitly marking certain strings as safe raw HTML
+
+* Reuse ``PrintfArg``
+
+  * Would only allow converting to strings, see "Only allow interpolating string-like values"
+
+* Only allow interpolating to string (which can ultimately be lifted to any IsString)
+
+  * Simplifies the machinery, but makes the feature much less flexible and extendable
 
 Unresolved Questions
 --------------------
