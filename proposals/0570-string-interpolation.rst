@@ -135,11 +135,15 @@ The following expressions are lex errors:
 Parser
 ~~~~~~
 
+TODO: use sgraf's new design to avoid re-lexing + allow nested strings/braces
+
 When an interpolated string is lexed, we'll iteratively split on ``${`` and ``}`` pairs (ignoring escaped ``\${``) and re-lex the inner expressions to construct
 
 ::
 
-  HsInterpolatedString FastString [(LHsExpr p, FastString)]
+  data HsExpr p
+    = ...
+    | HsInterpolatedString [Either FastString (LHsExpr p)]
 
 which contains the prefix of the interpolated string up to the first interpolated expression, then a list containing pairs of an interpolated expression and the subsequent string.
 
@@ -180,6 +184,17 @@ See the "Semantics" and "Examples" sections to see examples of valid interpolate
 Machinery
 ~~~~~~~~~
 
+The machinery should satisfy the following requirements:
+
+* Allows constructing any type, not just String or String-like types
+
+  * See the "SqlQuery" or "HTML" examples
+
+* Allows interpolating any type, not just String
+
+  * Interpolate Showable things with show by default
+  * Allow overriding interpolation for specific types
+
 An interpolated string expression desugars to calls to ``fromBuilder``, ``toBuilder``, and ``interpolate``, which are defined as:
 
 ::
@@ -217,7 +232,7 @@ This design allows interpolating anything, even user-defined types, into a ``Str
 
 These definitions would initially be implemented in ``ghc-experimental`` under ``Data.String.Interpolate``. After the API has stablized, these would eventually live in ``GHC.Exts`` alongside ``IsString``.
 
-Semantics
+Expansion
 ~~~~~~~~~
 
 With the machinery defined above, the following interpolated string desugars to the below expression:
@@ -236,6 +251,14 @@ With the machinery defined above, the following interpolated string desugars to 
 
 The string literals there will be handled by ``-XOverloadedStrings`` as usual, if enabled.
 
+Static Semantics
+~~~~~~~~~~~~~~~~
+
+Unsolved ``Interpolate a s`` constraints will default ``s`` to the default ``IsString`` type. That is,
+
+#. If ``OverloadedStrings`` + ``ExtendedDefaultRules`` are enabled, and an ``IsString`` default is specified with ``default (...)``, use that
+#. Otherwise, ``s`` defaults to ``String``
+
 Template Haskell
 ~~~~~~~~~~~~~~~~
 
@@ -243,7 +266,9 @@ Template Haskell will add a new constructor:
 
 ::
 
-  InterpolatedStringE String [(Exp, String)]
+  data Exp
+    = ...
+    | InterpolatedStringE [Either Exp String]
 
 Which mimics the ``HsInterpolatedString`` constructor.
 
@@ -302,16 +327,24 @@ The following interpolated string expressions are also valid:
   -- comments
   s"foo ${x -- comment} bar" == "foo hello bar"
 
-  -- OverloadedRecordDot
+  -- if -XOverloadedRecordDot is enabled
   let user = User{name = "Alice"}
   s"foo ${user.name} bar" == "foo Alice bar"
 
 Effect and Interactions
 -----------------------
 
-When ``-XOverloadedStrings`` is enabled, string interpolation can be used for any ``Buildable`` type. Otherwise, it will only ever build Strings.
+An existing program containing ``s"..."`` will break when ``-XStringInterpolation`` is enabled. While there's precedent for this (Template Haskell splices make ``$(...)`` different from ``$ (...)``), this is the first instance where whitespace matters for an alphanumeric identifier. But this is not a big deal:
+
+#. It's unlikely for someone to be naming a function as ``s`` in the first place
+#. Easily mitigatable: just add a space, which improves readability anyway
+#. Prefixing string literals like ``s"..."`` is common in other languages: Python, Scala, Javascript/Typescript, etc. so it shouldn't be a big hurdle for newcomers
+
+When ``-XOverloadedStrings`` is enabled, string interpolation can be used for any type with both ``Buildable`` and ``IsString`` instances. Otherwise, it will only ever build Strings.
 
 Interpolation is also supported with ``-XMultilineStrings``, as described in "Proposed Change Specification".
+
+``Buildable`` *could* subsume ``IsString``, so that OverloadedStrings instead desugars string literals to ``fromBuilder (toBuilder s)``. However, it's a better user experience to allow toggling these independently. It's reasonable for someone to want to write interpolated strings, but monomorphize it to String and not require specifying the result type.
 
 Costs and Drawbacks
 -------------------
@@ -325,11 +358,7 @@ The major drawback of this approach is the typeclass instances problem:
 
 This is worse than ``IsString`` or ``Show`` due to the multi-param ``Interpolate`` type class. This makes ``Interpolate`` much more susceptible to orphan instances.
 
-One minor drawback is that whitespace is now important with this syntax, with ``s"foo"`` semantically different from ``s "foo"``. While there's precedent for this (Template Haskell splices make ``$(...)`` different from ``$ (...)``), this is the first instance where whitespace matters for an alphanumeric identifier. But IMO this isn't that big of a deal:
-
-#. It's unlikely for someone to be naming a function as ``s`` in the first place
-#. Prefixing string literals like ``s"..."`` is common in other languages: Python, Scala, Javascript/Typescript, etc.
-#. Easily mitigatable: just add a space, which improves readability anyway
+One minor drawback is the whitespace sensitivity of ``s"``, as discussed in "Effect and Interactions".
 
 Alternatives
 ------------
@@ -354,12 +383,14 @@ Alternatives
 
   * Most languages use ``$``, and I see no reason to deviate
 
-* Only allow interpolating string-like values
+* Don't implicitly convert values when interpolating
 
+  * ``s"a ${x}"`` would instead translate to ``fromBuilder (toBuilder "a " <> toBuilder x)``
+  * Pro: no more ``Interpolate`` class
+  * Pro: more explicit, e.g. the way you have to explicitly convert before calling ``+``
+  * Pro: less likely to encounter type inference issues
+  * Con: adds more noise to interpolate
   * This is what ``neat-interpolation`` does
-  * This would add a ton of noise to string interpolation, so no one would use the feature
-  * This wouldn't support injection-free SqlQuery, as you need to know which SqlValue to use
-  * This wouldn't support escaping HTML by default, while allowing explicitly marking certain strings as safe raw HTML
 
 * Reuse ``PrintfArg``
 
@@ -368,6 +399,12 @@ Alternatives
 * Only allow interpolating to string (which can ultimately be lifted to any IsString)
 
   * Simplifies the machinery, but makes the feature much less flexible and extendable
+
+* Desugar to a function
+
+  * like ``printf``: ``s"a %s b %s" foo bar => (\x0 x1 -> "a " <> interpolate x0 <> " b " <> interpolate x1) foo bar``
+  * or like ``formatting``: ``s"a {text} b {int}" foo bar => (\x0 x1 -> "a " <> text x0 <> " b " <> int x1) foo bar``
+  * This defeats the purpose of string interpolation making it easy to see the exact location a variable gets injected. If you're interpolating a lot of values into a large string (e.g. with multiline strings), it's extremely difficult to match up which expression to which interpolation position.
 
 Unresolved Questions
 --------------------
@@ -386,7 +423,7 @@ Appendix
 Text
 ~~~~
 
-These instances will be provided in ``Data.Text``. This adds a dependency on ``ghc-experimental``, but IMO it should be fine, since ``ghc-experimental`` is a boot library. If the ``text`` maintainers are not okay with that, we could also hide it behind a Cabal flag.
+The following instances could be implemented to add support for ``Data.Text`` with the string interpolation feature.
 
 ::
 
@@ -583,28 +620,24 @@ Python is famous for being able to specify format specifiers when interpolating 
   x = 1.2
   f"{x:.3f}" == "1.200"
 
-This kind of thing would be possible with this proposal (although not provided out of the box):
+This would be provided by libraries, and the design and implementation of those libraries is not specified here. But from a user perspective, here's one possible way such a library could be used:
 
 ::
 
-  data Precision a = Prec Int a
-  instance Interpolate (Precision Int) String where
-    interpolate = interpolateInt
-  instance Interpolate (Precision Integer) String where
-    interpolate = interpolateInt
-  instance Interpolate (Precision Double) String where
-    interpolate = interpolateRealFloat
-  instance Interpolate (Precision Float) String where
-    interpolate = interpolateRealFloat
+  let today = fromGregorian 2024 08 12 :: Day
+   in s"Today's date is ${Fmt "%a, %d %b %Y" today}."
 
-  interpolateInt :: (Interpolate String s, Integral a) => Precision a -> Builder s
-  interpolateInt (Prec scale n) = interpolate $ show (toInteger n) <> ('.' : replicate scale '0')
+  let earned = -13.2 :: Float
+      total = 127.978 :: Float
+   in s"""
+        Points earned: ${Fmt "+8.2" earned}
+        Current total: ${Fmt "+8.2" total}
+      """
+Where these would return the strings:
 
-  interpolateRealFloat :: (Interpolate String s, RealFloat a) => Precision a -> Builder s
-  interpolateRealFloat (Prec scale n) =
-    let (digits, e) = floatToDigits 10 n
-        (int, frac) = splitAt e digits
-     in interpolate . concat $ map show int <> ["."] <> (map show . take scale) (frac <> repeat 0)
+::
 
-  let x = 1.2 :: Double
-  s"${Prec 3 x}" == "1.200"
+  Today's date is Mon, 12 Aug 2024.
+
+  Points earned:   -13.20
+  Current total:  +127.98
