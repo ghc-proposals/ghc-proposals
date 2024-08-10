@@ -306,6 +306,83 @@ The following interpolated string expressions are also valid:
   let user = User{name = "Alice"}
   s"foo ${user.name} bar" == "foo Alice bar"
 
+Effect and Interactions
+-----------------------
+
+When ``-XOverloadedStrings`` is enabled, string interpolation can be used for any ``Buildable`` type. Otherwise, it will only ever build Strings.
+
+Interpolation is also supported with ``-XMultilineStrings``, as described in "Proposed Change Specification".
+
+Costs and Drawbacks
+-------------------
+
+Development should be low-effort, maintenance should be low-effort. Learnability for novice users will go up, since novice users probably expect string interpolation to be available, and might be frustrated at the lack of support currently.
+
+The major drawback of this approach is the typeclass instances problem:
+
+#. A new interpolator type (e.g. ``SqlQuery``) needs to define ``Builder`` and ``Interpolate`` for all known interpolatable types
+#. A new interpolatable type (e.g. ``BigDecimal``) needs to define ``Interpolate`` for all known interpolator types
+
+This is worse than ``IsString`` or ``Show`` due to the multi-param ``Interpolate`` type class. This makes ``Interpolate`` much more susceptible to orphan instances.
+
+One minor drawback is that whitespace is now important with this syntax, with ``s"foo"`` semantically different from ``s "foo"``. While there's precedent for this (Template Haskell splices make ``$(...)`` different from ``$ (...)``), this is the first instance where whitespace matters for an alphanumeric identifier. But IMO this isn't that big of a deal:
+
+#. It's unlikely for someone to be naming a function as ``s`` in the first place
+#. Prefixing string literals like ``s"..."`` is common in other languages: Python, Scala, Javascript/Typescript, etc.
+#. Easily mitigatable: just add a space, which improves readability anyway
+
+Alternatives
+------------
+
+* Status quo (discussed in the "Motivation" section)
+
+* Allow ``$foo`` in addition to ``${foo}``
+
+  * This would complicate the syntax, and would also require interpolated string to escape bare ``$``.
+
+* Different delimiter
+
+  * Could use ``f"`` like Python, with ``f`` for format. ``s`` for "String" seems a bit ad-hoc, but it does "look better" for some reason. ``s`` is also a bit better if the user forgets to enable ``-XStringInterpolation`` because ``f`` is a not-uncommon name for functions and ``f"asdf"``, being parsed as ``f "asdf"``, would work more often than ``s"asdf"`` would.
+  * Could reuse QuasiQuote syntax, e.g. ``[s|`` or ``[fmt|``, except it would be special and NOT use Template Haskell.
+
+* No delimiter, always interpolate
+
+  * Would require any use of ``${...}`` to be escaped.
+  * No other language does this; even Bash has single quoted strings to avoid escaping
+
+* Different interpolation delimiter, e.g. ``#{foo}``
+
+  * Most languages use ``$``, and I see no reason to deviate
+
+* Only allow interpolating string-like values
+
+  * This is what ``neat-interpolation`` does
+  * This would add a ton of noise to string interpolation, so no one would use the feature
+  * This wouldn't support injection-free SqlQuery, as you need to know which SqlValue to use
+  * This wouldn't support escaping HTML by default, while allowing explicitly marking certain strings as safe raw HTML
+
+* Reuse ``PrintfArg``
+
+  * Would only allow converting to strings, see "Only allow interpolating string-like values"
+
+* Only allow interpolating to string (which can ultimately be lifted to any IsString)
+
+  * Simplifies the machinery, but makes the feature much less flexible and extendable
+
+Unresolved Questions
+--------------------
+
+Implementation Plan
+-------------------
+
+I can implement
+
+Endorsements
+------------
+
+Appendix
+--------
+
 Text
 ~~~~
 
@@ -531,77 +608,3 @@ This kind of thing would be possible with this proposal (although not provided o
 
   let x = 1.2 :: Double
   s"${Prec 3 x}" == "1.200"
-
-Effect and Interactions
------------------------
-
-When ``-XOverloadedStrings`` is enabled, string interpolation can be used for any ``Buildable`` type. Otherwise, it will only ever build Strings.
-
-Interpolation is also supported with ``-XMultilineStrings``, as described in "Proposed Change Specification".
-
-Costs and Drawbacks
--------------------
-
-Development should be low-effort, maintenance should be low-effort. Learnability for novice users will go up, since novice users probably expect string interpolation to be available, and might be frustrated at the lack of support currently.
-
-The major drawback of this approach is the typeclass instances problem:
-
-#. A new interpolator type (e.g. ``SqlQuery``) needs to define ``Builder`` and ``Interpolate`` for all known interpolatable types
-#. A new interpolatable type (e.g. ``BigDecimal``) needs to define ``Interpolate`` for all known interpolator types
-
-This is worse than ``IsString`` or ``Show`` due to the multi-param ``Interpolate`` type class. This makes ``Interpolate`` much more susceptible to orphan instances.
-
-One minor drawback is that whitespace is now important with this syntax, with ``s"foo"`` semantically different from ``s "foo"``. While there's precedent for this (Template Haskell splices make ``$(...)`` different from ``$ (...)``), this is the first instance where whitespace matters for an alphanumeric identifier. But IMO this isn't that big of a deal:
-
-#. It's unlikely for someone to be naming a function as ``s`` in the first place
-#. Prefixing string literals like ``s"..."`` is common in other languages: Python, Scala, Javascript/Typescript, etc.
-#. Easily mitigatable: just add a space, which improves readability anyway
-
-Alternatives
-------------
-
-* Status quo (discussed in the "Motivation" section)
-
-* Allow ``$foo`` in addition to ``${foo}``
-
-  * This would complicate the syntax, and would also require interpolated string to escape bare ``$``.
-
-* Different delimiter
-
-  * Could use ``f"`` like Python, with ``f`` for format. ``s`` for "String" seems a bit ad-hoc, but it does "look better" for some reason. ``s`` is also a bit better if the user forgets to enable ``-XStringInterpolation`` because ``f`` is a not-uncommon name for functions and ``f"asdf"``, being parsed as ``f "asdf"``, would work more often than ``s"asdf"`` would.
-  * Could reuse QuasiQuote syntax, e.g. ``[s|`` or ``[fmt|``, except it would be special and NOT use Template Haskell.
-
-* No delimiter, always interpolate
-
-  * Would require any use of ``${...}`` to be escaped.
-  * No other language does this; even Bash has single quoted strings to avoid escaping
-
-* Different interpolation delimiter, e.g. ``#{foo}``
-
-  * Most languages use ``$``, and I see no reason to deviate
-
-* Only allow interpolating string-like values
-
-  * This is what ``neat-interpolation`` does
-  * This would add a ton of noise to string interpolation, so no one would use the feature
-  * This wouldn't support injection-free SqlQuery, as you need to know which SqlValue to use
-  * This wouldn't support escaping HTML by default, while allowing explicitly marking certain strings as safe raw HTML
-
-* Reuse ``PrintfArg``
-
-  * Would only allow converting to strings, see "Only allow interpolating string-like values"
-
-* Only allow interpolating to string (which can ultimately be lifted to any IsString)
-
-  * Simplifies the machinery, but makes the feature much less flexible and extendable
-
-Unresolved Questions
---------------------
-
-Implementation Plan
--------------------
-
-I can implement
-
-Endorsements
-------------
