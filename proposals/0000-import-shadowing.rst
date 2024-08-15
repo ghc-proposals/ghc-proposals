@@ -111,10 +111,12 @@ Consider an occurrence of a qualified name ``M.x``:
     qualified name ``M.x``, the occurrence is resolved to that
     entity.
 
-In both cases, Haskell 2010 regards cases (A) and (B) on equal
-footing: if exactly one of the two cases can be used to resolve the
-name, that case is used; if both cases can be used, then the
-occurrence is ambiguous and reported as such.
+In both cases, Haskell 2010 regards cases (A) and (B) on equal footing
+`as per Section 5.5.2
+<https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1090005.5.2>`_:
+if exactly one of the two cases can be used to resolve the name, that
+case is used; if both cases can be used, then the occurrence is
+ambiguous and reported as such.
 
 Instead, we propose that when ``ImportShadowing`` is enabled,
 (A) and (B) are tried in order, i.e. if the (A) case resolves the
