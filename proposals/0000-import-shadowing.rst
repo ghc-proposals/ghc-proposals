@@ -85,6 +85,8 @@ meaning and there is no migration needed to accomodate the new
 Proposed Change Specification
 -----------------------------
 
+A new language extension ``ImportShadowing`` is added.
+
 When ``ImportShadowing`` is enabled, the following changes take place:
 
 Resolution of references in module body
