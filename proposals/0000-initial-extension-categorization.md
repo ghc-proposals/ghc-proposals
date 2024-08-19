@@ -134,6 +134,10 @@ The following are extensions that are to be categorized as `Deprecated` for both
 | RecordPuns                        | Deprecated     | Deprecated              |
 | TypeInType                        | Deprecated     | Deprecated              |
 
+In particular it is the flag that is `Deprecated` in both cases for the extensions. The negation of all of these extensions are behaviors as if the positive flag had not been specified, and that behavior is not changed. So while for each extension, the `No*` flag is deprecated, we do not change the behavior of not specifying the positive flag.
+
+As a concrete example, the flag `NoRank2Types` is deprecated, but the behavior from the lack of `Rank2Types` is not changed.
+
 ### 2.2 Extensions Impacting Stablity Categorization
 
 Here we list extensions where the categorization is different based on if the extension is enabled or not. This separation is specifically to make reading the tables of extensions easier. We have further divided this section into `Legacy` and `Experimental` extensions.
@@ -167,6 +171,7 @@ The following table contains the language extension, the proposed categorization
 | LinearTypes            | Experimental   | Stable                  |
 | OverloadedRecordUpdate | Experimental   | Stable                  |
 | RequiredTypeArguments  | Experimental   | Stable                  |
+| TypeAbstractions       | Experimental   | Stable                  |
 
 ### 2.3 Uncategorized Extensions
 
@@ -203,7 +208,6 @@ The following are the extensions that are uncategorized as of this proposal. The
 | TemplateHaskell         |
 | TemplateHaskellQuotes   |
 | Trustworthy             |
-| TypeAbstractions        |
 | TypeData                |
 | UndecidableInstances    |
 | UndecidableSuperClasses |
