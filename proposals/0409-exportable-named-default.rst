@@ -3,8 +3,8 @@ Generalized, named, and exportable ``default`` declarations
 
 .. author:: Mario Blažević
 .. date-accepted:: 2021-09-30
-.. ticket-url:: 
-.. implemented:: 
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/24305
+.. implemented:: 9.12
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/409>`_.
 .. sectnum::
