@@ -4,7 +4,7 @@ Decorate exceptions with backtrace information
 .. authors:: Ben Gamari; David Eichmann; Sven Tennie
 .. date-accepted:: 2023-05-25
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/18159
-.. implemented::
+.. implemented:: 9.10
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/330>`_.
 .. sectnum::

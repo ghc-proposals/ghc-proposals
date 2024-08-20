@@ -3,8 +3,8 @@ Unify ``Nat`` and ``Natural``
 
 .. author:: Richard Eisenberg, inspired by Rinat Striungis
 .. date-accepted:: 2020-10-12
-.. ticket-url::
-.. implemented::
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/10776
+.. implemented:: 9.2
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/364>`_.
 .. contents::

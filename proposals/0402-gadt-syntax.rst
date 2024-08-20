@@ -3,7 +3,7 @@ Stable GADT constructor syntax
 
 .. author:: Vladislav Zavialov
 .. date-accepted:: 2021-04-21
-.. ticket-url::
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/18389
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/402>`_.

@@ -2,8 +2,8 @@ Fine-Grained Unused Warnings
 ============================
 
 .. author:: Jakob Brünker
-.. date-accepted::
-.. ticket-url::
+.. date-accepted:: 2024-04-19
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/20190
 .. implemented::
 .. highlight:: haskell
 .. sectnum::
