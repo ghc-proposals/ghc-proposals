@@ -3,7 +3,7 @@ DuplicateRecordFields without ambiguous field access
 
 .. author:: Adam Gundry
 .. date-accepted:: 2020-11-16
-.. ticket-url::
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/19461
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/366>`_.

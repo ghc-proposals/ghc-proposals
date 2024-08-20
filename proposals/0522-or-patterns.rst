@@ -3,8 +3,8 @@ Or Patterns
 
 .. author:: David Knothe, Ömer Sinan Ağacan, Sebastian Graf
 .. date-accepted:: 2022-11-29
-.. ticket-url::
-.. implemented::
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/22596
+.. implemented:: 9.12
 .. highlight:: haskell
 .. header:: The old proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/522>`_. This amendment proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/609>`_.
 .. sectnum::

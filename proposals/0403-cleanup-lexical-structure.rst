@@ -3,8 +3,8 @@ Cleanup lexical structure of numbers and identifiers
 
 .. author:: Oleg Grenrus
 .. date-accepted:: 2021-03-17
-.. ticket-url::
-.. implemented::
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/18158
+.. implemented:: 9.4
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/403>`_.
 .. contents::
