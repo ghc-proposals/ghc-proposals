@@ -1,8 +1,8 @@
 ---
 author: Vladislav Zavialov
 date-accepted: "2021-05-10"
-ticket-url: ""
-implemented: ""
+ticket-url: https://gitlab.haskell.org/ghc/ghc/-/issues/18862
+implemented: 9.4
 ---
 
 This proposal was [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/371) and [amended by this one](https://github.com/ghc-proposals/ghc-proposals/pull/460).
