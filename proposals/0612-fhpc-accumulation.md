@@ -2,7 +2,7 @@
 author: David Binder
 date-accepted: "2024-02-26"
 ticket-url: "https://gitlab.haskell.org/ghc/ghc/-/issues/23955"
-implemented: ""
+implemented: "9.12"
 ---
 
 This proposal was [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/612).
