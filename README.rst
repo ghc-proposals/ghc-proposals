@@ -549,11 +549,17 @@ How to build the proposals?
 
 The proposals can be rendered by running::
 
-   nix-shell shell.nix --run "make html"
+   nix-shell shell.nix --run "./build.sh"
 
 This will then create a directory ``_build`` which will contain an ``index.html``
 file and the other rendered proposals. This is useful when developing a proposal
 to ensure that your file is syntax correct.
+
+To build without Nix, run::
+
+   ./build.sh
+
+To view the docs at http://127.0.0.1:8000 and rebuild on changes, add ``--autobuild``.
 
 
 Questions?
