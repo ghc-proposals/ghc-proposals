@@ -11,7 +11,7 @@ Class Scoped Functions
 .. sectnum::
 .. contents::
 
-GHC has a lack of support for backward compatible refactoring of class methods if the class is already public.
+GHC has a lack of support for backward compatible refactoring of class methods if the class is already public (in libraries).
 
 This proposal gives an intermediate way how to do this painlessly.
 
@@ -56,23 +56,27 @@ Once a class becomes public, renaming or even removing methods becomes practical
 
 Let's say we have ::
 
-    -- Bar.hs:
-    module Bar where
-        
-        class Bar a where
-            foo :: a -> a
+    -- Bar.hs (library1):
+    class Bar a where
+        foo :: a -> a
 
+    -- ----------------------------------
+    -- LibT1Bar.hs (library2):
+     import Bar
 
+     instance Bar T1 where
+        foo = somefunc
+
+    -- ----------------------------------
     -- Main.hs:
-    module Main where
+    import Bar
+    import LibT1Bar
 
-        import Bar  -- implicit full import
+    instance Bar T2 where
+        foo = somefunc
 
-        instance Bar T where
-            foo = somefunc
-
-        myFunc :: T -> ....
-        myFunc = someDefinition using foo
+    myFunc :: T -> ....
+    myFunc = someDefinition using foo
 
 
 And we decided to rename ``foo`` into ``bar`` (or we decided to write completely alternative class-functions). 
@@ -99,12 +103,14 @@ We propose, that backward compatible refactoring of class methods could be done 
 - **Second Stage**: in some distant future, when the old code is no longer used anywhere, we get rid of CSFs.
 
 
+Main benefit - is a possibility to declare instances old way and new way same time. This allows to reuse old libraries and same time write more effective new way instances.
+
 Syntax
 ~~~~~~
 
 In all examples here a keyword ``let`` is used to mark function as Class scoped function. 
 
-It looks like ``let`` without ``in`` inside a do-notation 
+It looks like ``let`` block without ``in`` inside ``do`` notation 
 ::
 
     -- Bar.hs:
@@ -112,7 +118,7 @@ It looks like ``let`` without ``in`` inside a do-notation
 
         {-# DEPRECATED #-}
         let foo :: a -> a
-        foo = bar
+            foo = bar
 
         bar :: a -> a
         bar = foo
@@ -123,13 +129,22 @@ It looks like ``let`` without ``in`` inside a do-notation
     foo :: Bar a => a -> a
     foo = bar
 
+    -- --------------------------------------------
+    -- LibT1Bar.hs:
+    import Bar
 
+    -- instance using old way with redeclaration "foo" method
+    instance Bar T1 where 
+        foo = somefunc1
+
+    -- --------------------------------------------
     -- Main.hs:
-    import Bar  -- implicit full import
+    import Bar
+    import LibT1Bar
 
-    instance Bar T where
-        foo = somefunc
-
+    -- instance using new way with redeclaration "bar" method
+    instance Bar T2 where 
+        bar = somefunc2
 
 Semantics
 ~~~~~~~~~
@@ -147,7 +162,7 @@ Now we can rewrite the ``Monoid`` class as follows::
 
         {-# DEPRECATED #-}
         let mappend :: a -> a -> a
-        mappend = (<>)
+            mappend = (<>)
 
         mempty :: a
         mempty = mconcat []
@@ -191,8 +206,8 @@ With this Proposal it is possible to have both ::
       first f = bimap f id
 
       let second :: (b -> c) -> p a b -> p a c
-      -- second = bimap id
-      second = fmap
+          -- second = bimap id
+          second = fmap
 
   -- this outside "second" is defined differently then inner one
   second :: forall a b. Functor (p a) => Bifunctor p => (b -> c) -> p a b -> p a c
@@ -207,7 +222,7 @@ Example of backward compatible renaming a class-method ::
 
      {-# DEPRECATED #-}
      let foo_old :: a -> a
-     foo_old = foo_new
+         foo_old = foo_new
 
      foo_new :: a -> a
      foo_new = foo_old
@@ -226,7 +241,7 @@ Example of backward compatible swapping the order of arguments in a class-method
 
      {-# DEPRECATED #-}
      let elem_old :: a -> Collect a -> Bool
-     elem_old = flip elem_new
+         elem_old = flip elem_new
 
      elem_new :: Collect a -> a -> Bool
      elem_new = flip elem_old
@@ -245,11 +260,11 @@ Example of backward compatible changing amount of arguments in a class-method ::
 
      {-# DEPRECATED #-}
      let nextN_old :: Collect a -> Int -> (Collect a, Maybe a)
-     nextN_old c m = go (c, Nothing) m
-       where
-         go r n = case n of
-           | n <= 0    => r
-           | otherwise => go (next_new $ fst r) (n - 1)
+         nextN_old c m = go (c, Nothing) m
+           where
+             go r n = case n of
+               | n <= 0    => r
+               | otherwise => go (next_new $ fst r) (n - 1)
 
      next_new :: Collect a -> (Collect a, Maybe a)
      next_new c = nextN_old c 1
@@ -273,7 +288,7 @@ Any other Effect and Interactions are unknown.
 Costs and Drawbacks
 -------------------
 
-We expect the implementation and maintenance costs for this feature to be minimal.
+We expect the implementation and maintenance costs for this feature to be intermediate.
 
 Backward Compatibility
 ----------------------
