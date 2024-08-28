@@ -136,7 +136,7 @@ by the ``semaphore-compat`` Haskell library.
 There are two kinds of participants in the GHC Jobserver protocol:
 
 - The *jobserver* instantiates a new semaphore with a certain number of
-  available tokens. This semaphore is is identified by a string.
+  available tokens. This semaphore is identified by a string.
 
   Each time the jobserver wants to spawn a new jobclient subprocess, it **must**
   first acquire a single token from the semaphore, before spawning the subprocess.
@@ -268,18 +268,20 @@ the system Win32 library, and on POSIX platforms this was the POSIX semaphore
 implementation provided by the system C library (libc, typically either the GNU
 C library or musl libc).
 
-This is sufficient if both the jobserver and the jobclient are indeed linked
+This is sufficient if both the jobserver and the jobclient are linked
 against the same system C library, as is usually the case when the system
 C library is dynamically linked against the unique implementation provided
 by the platform. 
 
 However, on Linux systems, it has become common practice to ship system
 independent statically linked executables using the musl libc implmentation.
-This becomes problematic when using jobservers and jobclients linking against
-different C semaphore implementations, for example GHC dynamically linked
-against the system glibc and ``cabal-install`` statically linked against a
-musl libc. This has manifested in bug reports against ``cabal-install`` ([20]_)
-and GHC ([21]_).
+This becomes problematic when using jobservers and jobclients that are linking
+against different C semaphore implementations, for example GHC dynamically
+linked against the system glibc and ``cabal-install`` statically linked against
+a musl libc. Each libc implementation has its own independent semaphore implementation
+based on shared memory datastructures, and these are not compatible with each
+other. This has manifested in bug reports against ``cabal-install``
+([20]_) and GHC ([21]_).
 
 To support this method of distribution it becomes necessary to avoid using
 shared memory datastructures provided by the system C library to implement
