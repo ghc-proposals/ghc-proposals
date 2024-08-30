@@ -137,9 +137,9 @@ Since this proposal will break existing code using ``DuplicateRecordFields``, we
 
 1. Introduce a new warning ``-Wambiguous-fields``, enabled by default.  This will make the compiler emit a warning for every ambiguous field selector/update occurrence it resolves under the rules described above.  The warning should explain that support for such occurrences will be removed in a future GHC release.
 
-2. In a subsequent GHC release, remove support for ambiguous field selector/update occurrences entirely and remove the warning.  This step should not be taken until ``RecordDotSyntax`` or another generally-accepted mechanism for disambiguation is available, to provide users with a clear alternative.
+2. In a subsequent GHC release, remove support for ambiguous field selector/update occurrences entirely and remove the warning.  This step should not be taken until ``OverloadedRecordDot``/``OverloadedRecordUpdate`` or another generally-accepted mechanism for disambiguation is available, to provide users with a clear alternative.
 
-This transition period will give time for users of ``DuplicateRecordFields`` to adapt their code (using ``RecordDotSyntax`` or otherwise), or raise concerns about the proposed changes and request a stay of execution.  Our expectation is that step 2 will be taken in the GHC release immediately following step 1, but this can be changed if feedback from users indicates that the removal of the feature is causing substantial pain.
+This transition period will give time for users of ``DuplicateRecordFields`` to adapt their code (using ``OverloadedRecordDot`` and ``OverloadedRecordUpdate`` or otherwise), or raise concerns about the proposed changes and request a stay of execution.  Our expectation is that step 2 will be taken in the GHC release immediately following step 1, but this can be changed if feedback from users indicates that the removal of the feature is causing substantial pain.
 
 The warning produced by ``-Wambiguous-fields`` should mention the specific selector and type that were determined by the disambiguation rules, rather than just complaining about the ambiguity.  This should make it easier for affected users to adapt their code.
 
@@ -167,9 +167,9 @@ Code that is broken by this proposal because it relies on ambiguous field occurr
 
    The new version of the code is completely backwards-compatible, and its meaning is clear. The downsides are that this approach cannot be used within a single module, barring enhancements to the module system, and it requires boilerplate imports.
 
-2. Use ``RecordDotSyntax`` when it is available::
+2. Use ``OverloadedRecordDot`` and ``OverloadedRecordUpdate`` (when the latter is available)::
 
-    {-# LANGUAGE DuplicateRecordFields, RecordDotSyntax #-}
+    {-# LANGUAGE DuplicateRecordFields, OverloadedRecordDot, OverloadedRecordUpdate #-}
     module M2 where
       data Person = MkPerson { name :: String, pets :: [Pet] }
       data Pet    = MkPet    { name :: Int }
@@ -180,7 +180,9 @@ Code that is broken by this proposal because it relies on ambiguous field occurr
       setPersonName :: String -> Person -> Person
       setPersonName n p = p { name = n }
 
-   This works within a single module. However it requires a new as-yet-unreleased extension, and will not work for fields with higher-rank or unboxed types.
+   This works within a single module. However it will not work for fields with higher-rank or unboxed types.
+   Moreover, while ``OverloadedRecordDot`` has been fully implemented, ``OverloadedRecordUpdate`` is
+   not properly supported and highly experimental.
 
 3. Use explicit pattern-matching and record construction, possibly in combination with ``NamedFieldPuns`` or ``RecordWildCards``::
 
@@ -205,7 +207,7 @@ The new rules simplify the design and implementation of ``DuplicateRecordFields`
 
 Under this proposal enabling ``DuplicateRecordFields`` for a module remains conservative, because any program that was accepted by the compiler without using the special selector disambiguation rules will still be accepted.  However, existing programs already using ``DuplicateRecordFields`` may cease to be accepted.
 
-The ``RecordDotSyntax`` extension (`proposal 282 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0282-record-dot-syntax.rst>`_), and the ``HasField`` magic type class (`proposal 23 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0023-overloaded-record-fields.rst>`_), provide alternative mechanisms for field selection and update.  These do not apply in some rare circumstances (in particular, where fields have higher-rank or unboxed types), but in those cases users can use import hiding to limit the fields in scope and hence remove the ambiguity, or can write pattern-matching definitions instead of using record selectors.
+The ``OverloadedRecordDot`` and ``OverloadedRecordUpdate`` extensions (`proposal 282 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0282-record-dot-syntax.rst>`_), and the ``HasField`` magic type class (`proposal 23 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0023-overloaded-record-fields.rst>`_), provide alternative mechanisms for field selection and update.  These do not apply in some rare circumstances (in particular, where fields have higher-rank or unboxed types), but in those cases users can use import hiding to limit the fields in scope and hence remove the ambiguity, or can write pattern-matching definitions instead of using record selectors.
 
 The ``NoFieldSelectors`` extension (`proposal 160 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0160-no-toplevel-field-selectors.rst>`_) changes datatypes so that they do not bring field selectors into scope at all.  The current proposal complements ``NoFieldSelectors``, as it will make use of selectors under ``DuplicateRecordFields`` slightly less convenient.  However, ``NoFieldSelectors`` affects definition sites, while the current proposal affects use sites, so until ``NoFieldSelectors`` is universally adopted, the current proposal is relevant for addressing the question of how ambiguous field selector occurrences should be resolved.
 
@@ -223,7 +225,7 @@ The development cost of this change is relatively low (the new warning should be
 
 Alternatives
 ------------
-Keeping the status quo is entirely feasible, even though the current design is not completely satisfactory.  This would allow us to wait until ``NoFieldSelectors`` and ``RecordDotSyntax`` have been tested in practice, before starting changes to ``DuplicateRecordFields``.
+Keeping the status quo is entirely feasible, even though the current design is not completely satisfactory.  This would allow us to wait until ``NoFieldSelectors``, ``OverloadedRecordDot`` and ``OverloadedRecordUpdate`` have been tested in practice, before starting changes to ``DuplicateRecordFields``.
 
 We could take the opposite approach, and increase the use of type inference to resolve ambiguous field occurrences, as requested by some users.  However, it is not clear how to do this in anything other than an essentially ad hoc manner, so the extension is likely to become even more complex to specify and implement.
 
@@ -237,4 +239,4 @@ None.
 
 Implementation Plan
 -------------------
-If accepted, Adam Gundry will implement.  A `draft implementation of the warning <https://gitlab.haskell.org/ghc/ghc/-/commit/abf0fb3138bd05a94fe69fb887cf308e51d3a7d4>`_ exists already.  The implementation of the warning does not depend on the implementation of any other proposals, although the proposed transition period depends on the implementation of ``RecordDotSyntax``.
+If accepted, Adam Gundry will implement.  A `draft implementation of the warning <https://gitlab.haskell.org/ghc/ghc/-/commit/abf0fb3138bd05a94fe69fb887cf308e51d3a7d4>`_ exists already.  The implementation of the warning does not depend on the implementation of any other proposals, although the proposed transition period depends on the implementation of ``OverloadedRecordUpdate``.
