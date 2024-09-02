@@ -85,6 +85,8 @@ Inferred forall-binders have two properties:
 
   Now the order of the k1/k2 foralls clearly matters.  But GHC, not the user, has chosen that order, and there is no simple algorithm for specifying what order it should choose.
 
+  That is why the current design does not allow the ``\ @{k} ->`` as a type abstraction.
+
 Thus we have the unsatisfactory situation that in a call to ``f2`` there is no convenient way
 to bring the ``k`` binder into scope in the argument.  That is very unfortunate: all the examples in GHC Proposal 425 could be reframed using inferred variables (which the user is allowed to write; e.g. see the type of ``f2``).
 
@@ -132,6 +134,9 @@ and ``f3``, and the kind of ``T``, there is absolutely no doubt what order
 any inferred forall's come in: they are explicilty specified by the
 user.  There is nothing "inferred" about them!
 
+This has come up before.  `GHC ticket #22648 <https://gitlab.haskell.org/ghc/ghc/-/issues/22648>`_
+shows that the order of inferred variables is actually observable.   The ticket says "Interestingly enough, the type variables ``{a}`` and ``{b}`` are "inferred" only de jure; in the actual program, they are very much specified by an explicit forall. In other words, their order is determined by the source code, not by implementation details of the compiler."
+
 
 Proposed change specification
 =================================
@@ -141,8 +146,8 @@ by having *four* (instaed of three) forms for forall-binders:
 
 * ``Required``, written ``forall a -> type``, exactly as Required forall-binders today.
 * ``Specified``, written ``forall a. type``, exactly as Specified forall-binders today.
-* ``Infrerred``, written ``forall {{k}. type``, exactly as Inferred forall-binders today.
-* ``Quiet``, written ``forall [k}. type``, is new in this proposal.
+* ``Infrerred``, written ``forall {{k}}. type``, exactly as Inferred forall-binders today.
+* ``Quiet``, written ``forall {k}. type``, is new in this proposal.
 
 A Quiet variable is very like a Specified one (fully under user control) but differs in exactly one way: it is omitted in type applications. More precisely:
 
@@ -176,15 +181,56 @@ what ``-XTypeAbstractions`` does.  Old programs witll continue to
 compile.
 
 
-Effects and interactions
+Discusion, effects and interactions
 ==========================
 
 There is something distressingly ad-hoc about this proposal.  But
 
-* It fits into a framework we already have, by by adding one more to our current
-  list of Required, Specified, and Inferred vaiables.
-* Perhaps a nicer story in type applications would be to have named type arguments, but that would be a much bigger chaage.
+* It fits into a framework we already have, by adding one more to our current
+  list of Required, Specified, and Inferred variables. This list is *already* ad-hoc. It would
+  be much simpler to just have Required foralls and nothing else -- but then all type arguments
+  would be compulsory, and no one would want to use the language.  It's all about using
+  perhaps-ad-hoc mechanisms to make programming convenient.  This proposal just fills out a
+  missing cornder of the design space.
 
+* Perhaps a nicer story in type applications would be to have named type arguments, but that would be a much bigger change.
+
+#22648 Order of inferred variables is observable
+---------------------------------------------------
+
+The proposal solves at least the first (term-level part of `GHC ticket #22648 <https://gitlab.haskell.org/ghc/ghc/-/issues/22648>`_.  The example there is ::
+
+  const_inf1 :: () -> forall {a} {b}. a -> b -> a
+  const_inf2 :: () -> forall {b} {a}. a -> b -> a
+
+  const_inf1 _ x _ = x
+  const_inf2 _ x _ = x
+
+  const_spec :: () -> forall a b. a -> b -> a
+  const_spec = const_inf1
+
+If you replace ``const_inf1`` by ``const_inf2`` in the RHS of ``cons_spec``, the program
+is rejected. The order of the inferred variables is observable.
+
+Under this proposal, the above signatures use Quiet foralls, and there is no claim that their
+order is irrelevant -- indeed it's a *goal* that their order is observable.  On the other hand
+the user cannot write Inferred forall-binders (whose order is irrelevant); only GHC can.
+
+The type-level part of the ticket is a bit better, but not solved ::
+
+  data D a b
+    -- GHC might infer
+    --     D :: forall {{k1}} {{k2}}. k1 -> k2 -> Type
+    -- or
+    --     D :: forall {{k2}} {{k1}}. k1 -> k2 -> Type
+
+  type family F :: forall k1 k2. k1 -> k2 -> Type
+  type instance F = D
+
+(Here we are using the new notation for Inferred variables.   The trouble here is that
+the instance for ``F`` might be accepted with one GHC-chosen ordering, but rejected
+with the other.  A solution to this part might to make ``forall {{k}}. ty`` un-equal
+to ``forall k. ty``.   See `GHC Proposal #558 <https://github.com/ghc-proposals/ghc-proposals/issues/558>`_ and `this GHC commit <https://gitlab.haskell.org/ghc/ghc/-/commit/cf86f3ece835ecb389d73760c1d757622c084f0f>`_.
 
 Backward Compatibility
 ----------------------
@@ -202,5 +248,6 @@ Unresolved Questions
 
 Implementation Plan
 -------------------
-The proposal is easy to implement.
+
+The proposers believe that the proposal could be implemented in a day's work.
 
