@@ -162,6 +162,13 @@ The changes compared to today are:
     * You *may* give a Quiet type argument e.g. ``g3 @{Int}``
     * You *must not* give an Inferred type argument.
 
+    So if ``f :: forall {k}. forall (a::k). Proxy a -> Int`` we could call it in any of the following ways ::
+
+      f Proxy
+      f @Int Proxy
+      f @{Type} @Int Proxy
+      f @{Type} Proxy
+
 * Users cannot write Inferred foralls.  GHC infers them (see ``h`` above), but the user cannot write them.
 
 * The suface syntax of user-written types is unchanged; however the syntax ``forall {k}. t`` now denotes a Quiet forall rather than an Inferred one.
