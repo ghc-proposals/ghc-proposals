@@ -101,7 +101,6 @@ You might wonder if we could use a pattern signature, thus ::
 
 thereby bringing both ``a`` and ``k`` into scope. But
 
-* The says that using a pattern signature is unnsatisfactory here.
 * Pattern signatures contradict both the `Explicit Variable Principle <https://github.com/ghc-proposals/ghc-proposals/blob/master/principles.rst#212explicit-variable-principle-evp>`_  and the `Explicit Binding Principle <https://github.com/ghc-proposals/ghc-proposals/blob/master/principles.rst#222explicit-binding-principle-ebp>`_.
 * Using a pattern signature to bring a variable into scope is very indirect, because we have to write out the (perhaps complicated) kind of `a` do so.
 * It might be impossible to use a pattern signature if ``k`` was mentioned only in the result type, rather than in the kind of another forall-bound varaiable.
