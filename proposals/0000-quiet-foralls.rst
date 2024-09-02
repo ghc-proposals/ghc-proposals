@@ -97,7 +97,7 @@ Side note
 ----------
 You might wonder if we could use a pattern signature, thus ::
 
-  f2 (\ @(a :: k) -> blah)``
+  f2 (\ @(a :: k) -> blah)
 
 thereby bringing both ``a`` and ``k`` into scope. But
 
