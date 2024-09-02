@@ -157,12 +157,13 @@ The changes compared to today are:
     as a Specified or Required one.
 
   * In an application, you can provide a Quiet type argument (with ``-XTypeApplications``), using curly braces e.g. ``g3 @{Int}``.  So:
+
     * You *must* give a Required type argument e.g. ``g1 Int``
     * You *may* give a Specified type argument e.g. ``g2 @Int``
     * You *may* give a Quiet type argument e.g. ``g3 @{Int}``
     * You *must not* give an Inferred type argument.
 
-    So if ``f :: forall {k}. forall (a::k). Proxy a -> Int`` we could call it in any of the following ways ::
+  For example, if ``f :: forall {k}. forall (a::k). Proxy a -> Int`` we could call it in any of the following ways ::
 
       f Proxy
       f @Int Proxy
@@ -171,7 +172,7 @@ The changes compared to today are:
 
 * Users cannot write Inferred foralls.  GHC infers them (see ``h`` above), but the user cannot write them.
 
-* The suface syntax of user-written types is unchanged; however the syntax ``forall {k}. t`` now denotes a Quiet forall rather than an Inferred one.
+* The suface syntax of user-written types is unchanged. But the syntax ``forall {k}. t`` now denotes a Quiet forall rather than an Inferred one.
 
 
 Syntax changes
