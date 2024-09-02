@@ -143,10 +143,10 @@ Proposed change specification
 We propose to separate the two aspects of inferred foralls described above,
 by having *four* (instaed of three) forms for forall-binders:
 
-* ``Required``, written ``forall a -> type``, exactly as Required forall-binders today.
-* ``Specified``, written ``forall a. type``, exactly as Specified forall-binders today.
-* ``Inferred``, written ``forall {{k}}. type``, like Inferred forall-binders today, except that the user cannot write them.
-* ``Quiet``, written ``forall {k}. type``, is new in this proposal.
+* ``Required``.  User-accessible,  written ``forall a -> type``. Can be bound and applied visibly, with no ``@`` decorations.
+* ``Specified``.  User-accessible, written ``forall a. type``.  Can be bound and applied with an ``@`` decoration.
+* ``Quiet``. User-accessible, written ``forall {k}. type``.  Can be bound and applied with an ``@{}`` decoration.
+* ``Inferred``. Not user-accessible, printed ``forall {{k}}. type``.  Cannot be bound or applied.
 
 The changes compared to today are:
 
@@ -170,9 +170,13 @@ The changes compared to today are:
       f @{Type} @Int Proxy
       f @{Type} Proxy
 
-* Users cannot write Inferred foralls.  GHC infers them (see ``h`` above), but the user cannot write them.
+* **Users cannot write Inferred foralls**.  GHC infers them (see function ``h`` above), but the user cannot write them.
 
-* The suface syntax of user-written types is unchanged. But the syntax ``forall {k}. t`` now denotes a Quiet forall rather than an Inferred one.
+* Inferred foralls should be avoided in error messages, as they are today.  The ``forall {{k}}. t`` syntax is to allow us to talk about them, and to allow GHC to print them when absolutely necessary.  (For example during compiler debugging.)
+
+* The suface syntax of user-written types is unchanged. However, the syntax ``forall {k}. t`` now denotes a Quiet forall, rather than (in GHC today) an Inferred one.
+
+* There are no changes at all to Required and Specified foralls.
 
 
 Syntax changes
