@@ -145,32 +145,40 @@ by having *four* (instaed of three) forms for forall-binders:
 
 * ``Required``, written ``forall a -> type``, exactly as Required forall-binders today.
 * ``Specified``, written ``forall a. type``, exactly as Specified forall-binders today.
-* ``Infrerred``, written ``forall {{k}}. type``, exactly as Inferred forall-binders today.
+* ``Inferred``, written ``forall {{k}}. type``, like Inferred forall-binders today, except that the user cannot write them.
 * ``Quiet``, written ``forall {k}. type``, is new in this proposal.
 
-A Quiet variable is very like a Specified one (fully under user control) but differs in exactly one way: it is omitted in type applications. More precisely:
+The changes compared to today are:
 
-* You can have a type lambda for Required, Specified, or Quiet type variables.
+* We add Quiet foralls.  A Quiet forall is very like a Specified one (it is fully under user control):
 
-  * For Quiet foralls, the type lambda has curly braces ``@{k}``.
+  * You can have a type lambda for a Quiet type variable, as well for a Required or Specified one.  (But, as now, not for an Inferred one.) For Quiet foralls, the type lambda has curly braces ``@{k}``.
+  * Similarly in a type or class declaration, you can bind a Quiet variable, as well
+    as a Specified or Required one.
 
-* Similarly in a type or class declaration, you can bind a Quiet variable, as well
-  as a Specified or Required one.
+  * In an application, you can provide a Quiet type argument (with ``-XTypeApplications``), using curly braces e.g. ``g3 @{Int}``.  So:
+    * You *must* give a Required type argument e.g. ``g1 Int``
+    * You *may* give a Specified type argument e.g. ``g2 @Int``
+    * You *may* give a Quiet type argument e.g. ``g3 @{Int}``
+    * You *must not* give an Inferred type argument.
 
-* In an application,
+* Users cannot write Inferred foralls.  GHC infers them (see ``h`` above), but the user cannot write them.
 
-  * You must give a Required type arugment e.g. ``g1 Int``
-  * You may give a Specified type argument (with ``-XTypeApplications``). e.g ``g2 @Int``
-  * You may not give a Quiet of Inferred type argument.
-
-* Users cannot write Inferred foralls.  GHC infers them (see ``h`` above), but the user cannot write them.  So the suface yyntax of types is unchanged.
+* The suface syntax of user-written types is unchanged; however the syntax ``forall {k}. t`` now denotes a Quiet forall rather than an Inferred one.
 
 
 Syntax changes
 ----------------
 
-Type-lambdas, and data type declarations, can have curly braces.  (Vlad can you help us
-make that precise?.)
+* Type-lambdas, and data type declarations, can have curly braces, thus
+
+  * ``\ @{k} -> e``
+  * ``data T @{k} a = ...``
+
+* Type applications can have curly braces, e.g. ``f @{type}``.
+
+(Vlad can you help us make that precise?.)
+
 
 Extension flags and back-compat
 ---------------------------------
