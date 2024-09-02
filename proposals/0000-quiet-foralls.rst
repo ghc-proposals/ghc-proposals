@@ -191,7 +191,7 @@ There is something distressingly ad-hoc about this proposal.  But
   be much simpler to just have Required foralls and nothing else -- but then all type arguments
   would be compulsory, and no one would want to use the language.  It's all about using
   perhaps-ad-hoc mechanisms to make programming convenient.  This proposal just fills out a
-  missing cornder of the design space.
+  missing corner of the design space.
 
 * Perhaps a nicer story in type applications would be to have named type arguments, but that would be a much bigger change.
 
