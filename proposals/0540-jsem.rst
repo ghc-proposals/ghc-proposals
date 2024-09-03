@@ -186,7 +186,7 @@ The interface supports the following operations:
 
 1. The jobserver must be able to create and destroy semaphores and initialise them with a
   given number of tokens
-2. Clients must be able to connect to the semaphore with identifier (string) provided by the server
+2. Clients must be able to connect to the semaphore with an identifier (a string) provided by the server
 3. Both the server and the client must be able to acquire and release tokens
 
 ``semaphore-compat`` is free to implement the semaphore interface in any way it chooses,
@@ -283,11 +283,10 @@ based on shared memory datastructures, and these are not compatible with each
 other. This has manifested in bug reports against ``cabal-install``
 ([20]_) and GHC ([21]_).
 
-To support this method of distribution it becomes necessary to avoid using
-shared memory datastructures provided by the system C library to implement
-semaphores, and instead rely on some mechanism which is robust against mixing
-of jobservers and jobclients compiled against different system C library
-implementations. 
+To support this method of distribution, we must avoid using shared memory datastructures
+provided by the system C library to implement semaphores, and instead rely on some
+mechanism which is robust against mixing of jobservers and jobclients compiled against
+different system C library implementations. 
 
 Updated ``semaphore-compat`` implementation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -314,8 +313,8 @@ system semaphores and is susceptible to the restrictions regarding system C libr
 usage by jobservers and jobclients.
 
 Since the underlying semaphore implementation is being fundamentally changed, the
-future version of ``semaphore-compat``, presumably shipped with a future version
-of GHC and ``cabal-install`` would be incompatible with existing jobservers and
+future version of ``semaphore-compat`` – presumably shipped with a future version
+of GHC and ``cabal-install`` – would be incompatible with existing jobservers and
 jobclients linking against ``semaphore-compat-1.0.0``.
 
 For instance, this means
@@ -326,7 +325,7 @@ For instance, this means
   in the new version of ``semaphore-compat`` (linked to by the future version of
   GHC) to detect such a scenario and output an informative error message.
 
-- Similarly future versions of ``cabal-install`` would be unable to use
+- Similarly, future versions of ``cabal-install`` would be unable to use
   the semaphore mechanism with existing versions of GHC such as 9.8.{1,2} and
   9.10.1. However, this could be detected by ``cabal-install`` and the feature
   automatically disabled, much like it currently is if attempted to be enabled
