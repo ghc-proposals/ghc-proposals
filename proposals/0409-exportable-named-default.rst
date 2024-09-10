@@ -103,8 +103,8 @@ no way to exclude any of them. This is the default option for this proposal, but
 
 A module can export its ``default`` only by specifying them explicitly in its export list using the above syntax
 extension. In particular, module with no explicit export list (as in ``module M where {...}``) does *not* export any
-``default`` declarations, and neither does the re-export of a whole imported module (as in ``module M (module N)
-where{...}``.
+``default`` declarations, and neither does the re-export of a whole module (as in ``module M (module N) where{...}``,
+regardless of whether *N* and *M* are the same or different modules).
 
 The syntactic extension to exports would be enabled by the same ``{-# LANGUAGE NamedDefaults #-}`` pragma. The new
 semantics of imports would be enabled by default with no ``LANGUAGE`` extension required.
