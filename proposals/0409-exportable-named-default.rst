@@ -6,7 +6,7 @@ Generalized, named, and exportable ``default`` declarations
 .. ticket-url:: 
 .. implemented:: 
 .. highlight:: haskell
-.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/409>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/409>`_ and `amended by this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/672>`_.
 .. sectnum::
 .. contents::
 
