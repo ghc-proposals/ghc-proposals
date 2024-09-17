@@ -6,7 +6,7 @@ The GHC20XX process
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/372>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/372>`_ and `amended by this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/632>`_.
 .. contents::
 
 This proposal sets up a process to introduce new language versions ``GHC20XX``,
@@ -66,9 +66,9 @@ in places where ``Haskell98`` or ``Haskell2010`` is valid (e.g. via Cabal’s
 ``default-language`` field).
 
 When ``ghc`` is used without an explicit language choice, a default choice is
-determined by GHC. This applies in particular to uses of ``ghci``.  This may or
-may not be the most recent ``GHC20XX`` edition, because changes to the default
-can lead to backwards incompatibilities.
+determined by GHC. This applies in particular to uses of ``ghci``. Typically,
+the next major release of GHC after an accepted proposal for ``GHC20XX`` will
+change the default language edition to ``GHC20XX``.
 
 
 Criteria
@@ -186,6 +186,102 @@ months after the first release of a version of GHC that supports a GHC20xx
 set, we evaluate the outcome, the process, and the perceived need of a next
 release. At that time we will refine the processes, if needed, and set a
 cadence.
+
+
+Breaking changes
+^^^^^^^^^^^^^^^^
+
+Switching from one language edition to another may involve breaking changes.  A
+key point of the language editions mechanism is that these costs are incurred
+when the user decides to switch edition, rather than when the compiler is
+upgraded.
+
+For convenient one-off use and to encourage users to use the most up to date
+language edition, it is desirable that ``ghc`` and ``ghci`` provide the latest
+language edition by default, and do not nag users excessively. This is in
+tension with stability, as for users who compile long-lived programs using
+``ghc`` directly, a change in the default language edition may cause backwards
+incompatibility.  Such users should be strongly encouraged to use explicit
+``LANGUAGE`` pragmas to specify the language edition they are using.
+
+Cabal packages specify a ``default-language`` (or fall back on ``Haskell98``)
+and hence will be unaffected by a change in the default language edition used by
+``ghc``.
+
+Thus, to balance these concerns:
+
+* GHC will identify a "default language edition" that is enabled by default in
+  both ``ghc`` and ``ghci``. Normally, the next major release of GHC after an
+  accepted proposal for ``GHC20xx`` will both add support for ``GHC20xx`` and
+  change the default language edition to ``GHC20xx``. (This may not always be
+  the case, for example, GHC 9.10 added support for ``GHC2024``, but the default
+  language edition remained ``GHC2021``.)
+
+* Changes to the default language edition will be accompanied by appropriate
+  mentions in the release notes and migration guide.
+
+* The initial GHCi prompt will be changed to display the active language
+  edition.
+
+* GHC will not automatically emit a warning whenever a language edition has not
+  been explicitly specified, because doing so would be overly noisy. However, if
+  a language edition has not been explicitly specified, and compilation fails
+  with one or more errors, GHC will emit an additional warning recommending that
+  a language edition should be chosen, as the error may have resulted from an
+  old module not specifying a language edition.
+
+For example, the GHCi prompt could look like this:
+
+::
+
+  $ ghci
+  GHCi, version 9.14.1: https://www.haskell.org/ghc/  :? for help
+  Using default language edition: GHC2024
+  ghci>
+
+::
+
+  $ ghci -XGHC2021
+  GHCi, version 9.14.1: https://www.haskell.org/ghc/  :? for help
+  Using language edition: GHC2021
+  ghci>
+
+::
+
+  $ cabal repl
+  GHCi, version 9.14.1: https://www.haskell.org/ghc/  :? for help
+  Using language edition: Haskell98
+  ghci>
+
+For example, the following module will give rise to an error message and a
+warning as shown when the default language is ``GHC2024``:
+
+::
+
+  module MonoLocal where
+
+  foo p = (bar True, bar ())
+    where
+      bar x = if p then x else x
+
+::
+
+  MonoLocal.hs:1:1: warning: [GHC-12345] [-Wmissing-language-edition]
+      • No explicit language edition specified, defaulting to GHC2024.
+      • Use a {-# LANGUAGE GHC2024 #-} pragma or -XGHC2024 option
+        to set the language edition explicitly.
+      • If you recently changed compiler version and are seeing new errors,
+        you may want to fix an older language edition, as different GHC
+        versions may use different defaults.
+
+  MonoLocal.hs:3:24: error: [GHC-83865]
+      • Couldn't match expected type ‘Bool’ with actual type ‘()’
+      • In the first argument of ‘bar’, namely ‘()’
+        In the expression: bar ()
+        In the expression: (bar True, bar ())
+    |
+  3 | foo p = (bar True, bar ())
+
 
 Costs and Drawbacks
 -------------------
