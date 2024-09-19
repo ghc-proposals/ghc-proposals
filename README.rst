@@ -21,10 +21,9 @@ What is a proposal?
 -------------------
 
 A GHC Proposal is a document describing a proposed change to the compiler, the
-GHC/Haskell language, or the libraries in the ``GHC.*`` module namespace. These
-include,
+specification of the language it accepts, or the surrounding ecosystem. These include:
 
-* A syntactic change to GHC/Haskell (e.g. the various ``ShortImports``
+* A change to the syntax or semantics of the GHC/Haskell language (e.g. the various ``ShortImports``
   `proposals <https://gitlab.haskell.org/ghc/ghc/issues/10478>`_, ``do``
   `expressions <https://gitlab.haskell.org/ghc/ghc/issues/10843>`_ without ``$``)
 
@@ -37,10 +36,21 @@ include,
   `type-indexed <https://gitlab.haskell.org/ghc/ghc/wikis/typeable>`_
   ``Typeable`` representations)
 
-Changes to the GHC API or the plugin API are not automatically within the scope
-of the committee, and can be contributed following the usual GHC workflow.
-Should the GHC maintainers deem a change significant or controversial enough to
-warrant that, they may, at their discretion, involve the committee and ask the
+Changes that are not necessarily within the scope of the committee include:
+
+* changes to declarations in ``base``, which should be addressed to the
+  `Core Libraries Committee <https://github.com/haskell/core-libraries-committee>`_;
+
+* changes to other core libraries, which should be addressed to the relevant
+  library maintainers;
+
+* changes to the GHC API, the plugin API, or compiler internals, which can be
+  contributed following the usual GHC MR review workflow;
+
+* bug fixes and other minor changes that do not warrant additional overheads.
+
+Should the GHC maintainers deem a change significant or controversial enough,
+they may, at their discretion, involve the GHC Steering Committee and ask the
 contributor to write a formal proposal.
 
 Proposals are evaluated against our principles_, which cover both language *design*
