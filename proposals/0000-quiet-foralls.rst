@@ -141,7 +141,7 @@ Proposed change specification
 =================================
 
 We propose to separate the two aspects of inferred foralls described above,
-by having *four* (instaed of three) forms for forall-binders:
+by having *four* (instead of three) forms for forall-binders:
 
 * ``Required``.  User-accessible,  written ``forall a -> type``. Can be bound and applied visibly, with no ``@`` decorations.
 * ``Specified``.  User-accessible, written ``forall a. type``.  Can be bound and applied with an ``@`` decoration.
