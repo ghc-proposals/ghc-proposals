@@ -32,7 +32,7 @@ we can write the following call ::
 
 Here the type-lambda ``\ @b ->`` binds the type variable ``b`` in the body of the lambda,
 just as the term-lambda ``\(x::b) ->`` binds ``x`` in the body.  Proposal 425 makes a good
-case for the usefulness of this feature.  Note in particular tha the scoped
+case for the usefulness of this feature.  Note in particular that the scoped
 variables arising from type signatures (using ``-XExtendedForAllScope``) are irrelevant here.
 
 Now supppose that the functions's type was ::
