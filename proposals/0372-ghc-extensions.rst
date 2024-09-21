@@ -63,9 +63,10 @@ effect of implying other language extensions), but also as a language versions
 in places where ``Haskell98`` or ``Haskell2010`` is valid (e.g. via Cabal’s
 ``default-language`` field).
 
-When ``ghc`` is used without an explicit language choice, the latest
-``GHC20xx`` known to GHC is used. This applies in particular to uses of
-``ghci``.
+When ``ghc`` is used without an explicit language choice, a default choice is
+determined by GHC. This applies in particular to uses of ``ghci``.  This may or
+may not be the most recent ``GHC20XX`` edition, because changes to the default
+can lead to backwards incompatibilities.
 
 
 Criteria
