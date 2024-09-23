@@ -283,10 +283,10 @@ based on shared memory datastructures, and these are not compatible with each
 other. This has manifested in bug reports against ``cabal-install``
 ([20]_) and GHC ([21]_).
 
-To support this method of distribution, we must avoid using shared memory datastructures
-provided by the system C library to implement semaphores, and instead rely on some
-mechanism which is robust against mixing of jobservers and jobclients compiled against
-different system C library implementations. 
+To support this method of distribution, we can not use the mechanism provided
+by the system C library to implement semaphores, and instead rely on some other
+mechanism which is robust against mixing of jobservers and jobclients compiled
+against different system C library implementations.
 
 Updated ``semaphore-compat`` implementation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -330,6 +330,26 @@ For instance, this means
   9.10.1. However, this could be detected by ``cabal-install`` and the feature
   automatically disabled, much like it currently is if attempted to be enabled
   for versions of GHC that don't support ``-jsem`` such as 9.6.
+
+Backwards and forwards compatibility for the abstract semaphores provided by ``semaphore-compat``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+As the previous section illustrates, breaking changes to the communication
+protocol used to implement these semaphores are painful and lead to the breakage
+of existing compilers and build tools.
+
+As such, we must strive to avoid such breaking changes as much as possible.
+In the (hopefully rare) case when such a change cannot be avoided, the change
+must meet a high bar of justification.
+
+Concretely, the communication protocol used in each major version series
+of ``semaphore-compat`` must be compatible with other versions of the
+library belonging to the same major version series. For instance, a
+``semaphore-compat-2.0.0`` must be compatible with ``semaphore-compat-2.9.9``, but
+may not be compatible with ``semaphore-compat-3.0.0``.
+
+Breaking changes to the protocol require a major version bump and need to be
+justified to and accepted by the GHC Proposals Committee.
 
 Examples
 --------
