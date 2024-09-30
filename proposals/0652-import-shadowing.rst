@@ -265,29 +265,31 @@ something like
 then the ``foo`` exported by ``A`` should be the one defined in
 ``A``'s top-level.
 
-When modules are reexported wholesale, shadowing doesn't come into
-play, and so we keep the behaviour without this extension: the form
-``module M`` names the set of all entities that are in scope with both
-an unqualified name ``e`` and a qualified name ``M.e``. Example:
+When modules are reexported wholesale,
+`Section 5.2.5 of the Haskell 2010 report
+<https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1000005.2>`_
+prescribes that only entities which are in scope from ``M``
+unqualified are reexported. Example:
 
 ::
 
  module A (module M) where
 
- import M -- this exports "foo"
+ import M -- this exports "foo" and "bar"
 
  foo = ...
 
-Here, it is ``M.foo`` that is (re-)exported by ``A``, not ``A.foo``.
+Here, ``foo`` shadows ``M.foo``, so ``M.foo`` is not in scope
+unqalified. Thus, only ``M.bar`` is reexported.
 
-If both ``module M`` and ``foo`` are exported, then that is a
+If both ``M.foo`` and ``foo`` are exported, then that is a
 conflicting export error, and should be reported the same way as
 conflicts between exporting ``module M1`` and ``module M2`` without
 this extension. Example:
 
 ::
 
- module A (foo, module M) where
+ module A (foo, M.foo) where
 
  import M -- this exports "foo"
 
