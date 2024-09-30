@@ -265,27 +265,35 @@ something like
 then the ``foo`` exported by ``A`` should be the one defined in
 ``A``'s top-level.
 
-When modules are reexported wholesale,
-`Section 5.2.5 of the Haskell 2010 report
+In an export list, `Paragraph 5 of Section 5.2 of the Haskell 2010 report
 <https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1000005.2>`_
-prescribes that only entities which are in scope from ``M``
-unqualified are reexported. Example:
+specifies that the form ``module M`` names the set of all entities
+that are in scope with both an unqualified name ``e`` and a qualified
+name ``M.e``.  So in this example, *without ``ImportShadowing``*:
 
 ::
 
  module A (module M) where
 
- import M -- this exports "foo" and "bar"
+ import M (foo, wombat)
+ import N (foo)
 
- foo = ...
+ foo = True
 
-Here, ``foo`` shadows ``M.foo``, so ``M.foo`` is not in scope
-unqalified. Thus, only ``M.bar`` is reexported.
+the ``module M`` exports ``M.foo`` because that entity is in scope
+both as ``M.foo`` and with unqualified name ``foo``.  The fact that
+``N.foo`` and ``A.foo`` are *also* in scope with unqualified name
+``foo`` does not matter.
 
-If both ``M.foo`` and ``foo`` are exported, then that is a
-conflicting export error, and should be reported the same way as
-conflicts between exporting ``module M1`` and ``module M2`` without
-this extension. Example:
+With ``ImportShadowing``, however, the local definition of ``A.foo``
+*completely hides* the unqualified imports of ``M.foo`` and ``N.foo``;
+so now ``M.foo`` is no longer in scope with unqualified name ``foo``;
+so the ``module M`` export list exports only ``M.wombat``.
+
+If both ``M.foo`` and ``foo`` are exported, then that is a conflicting
+export error, and should be reported the same way as conflicts between
+exporting ``module M1`` and ``module M2`` without this
+extension. Example:
 
 ::
 
