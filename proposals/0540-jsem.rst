@@ -136,7 +136,8 @@ by the ``semaphore-compat`` Haskell library.
 There are two kinds of participants in the GHC Jobserver protocol:
 
 - The *jobserver* instantiates a new semaphore with a certain number of
-  available tokens. This semaphore is identified by a string.
+  available tokens. This semaphore is identified by a string, called its
+  **semaphore identifier**
 
   Each time the jobserver wants to spawn a new jobclient subprocess, it **must**
   first acquire a single token from the semaphore, before spawning the subprocess.
@@ -168,9 +169,21 @@ There are two kinds of participants in the GHC Jobserver protocol:
   Each jobclient **must** release exactly as many tokens as it has acquired from
   the semaphore (this does not include the implicit token).
 
-All communication between the jobserver and the jobclient happens through the
-semaphore. This ensures modularity of the protocol: jobclients don't need to
-know anything about the jobserver that has spawned them.
+The **semaphore identifier** must begin a a prefix ``v<N>-`` where the ``<N>``
+specifies the ``semaphore-compat`` major version that this semaphore was created
+using. For instance, a semaphore created with ``semaphore-compat-2.0.0`` could
+be called ``v2-some-semaphore12345``.
+
+*Jobclients* that are instantiated with an incompatible semaphore (as detected
+by looking at the version of the identifier) must continue the build without
+requesting any additional tokens, using only the implicit token they inherited
+from their parent process.
+
+All communication between the jobserver and the jobclient happens through
+the ``semaphore-compat`` library. This ensures modularity of the protocol:
+jobclients don't need to know anything about the jobserver that has spawned them
+beyond the version of the ``semaphore-compat`` library they are using.
+
 
 Implementation of the protocol
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -186,7 +199,9 @@ The interface supports the following operations:
 
 1. The jobserver must be able to create and destroy semaphores and initialise them with a
   given number of tokens
+
 2. Clients must be able to connect to the semaphore with an identifier (a string) provided by the server
+
 3. Both the server and the client must be able to acquire and release tokens
 
 ``semaphore-compat`` is free to implement the semaphore interface in any way it chooses,
@@ -258,8 +273,8 @@ with the semaphore: instead of systematically releasing a token to the semaphore
 once a job is done, we can instead re-use this token if we have other pending
 jobs. This prioritises the compilation of a single unit.
 
-Abstract Semaphore Interface
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Backwards Compatibility
+~~~~~~~~~~~~~~~~~~~~~~~
 
 An earlier, accepted version of this proposal (implemented in GHC 9.8 and GHC
 9.10) specified system semaphores as the concrete implementation mechanism of
@@ -289,7 +304,7 @@ mechanism which is robust against mixing of jobservers and jobclients compiled
 against different system C library implementations.
 
 Updated ``semaphore-compat`` implementation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 While this proposal doesn't specify the exact mechanism ``semaphore-compat``
 must use to provide a semaphore implementation, the plan is for Windows
@@ -304,7 +319,7 @@ on this platform, and Windows also provides no direct substitute for Unix
 sockets as proposed to be used by ``semaphore-compat`` on POSIX systems.
 
 Backwards compatibility concerns with the updated semaphore implementation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Currently, GHC 9.8.{1,2} and GHC 9.10.1 provide jobclient implementations based
 on ``semaphore-compat-1.0.0``, which ``cabal-install-3.12.1.0`` also uses to provide
@@ -332,7 +347,7 @@ For instance, this means
   for versions of GHC that don't support ``-jsem`` such as 9.6.
 
 Backwards and forwards compatibility for the abstract semaphores provided by ``semaphore-compat``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 As the previous section illustrates, breaking changes to the communication
 protocol used to implement these semaphores are painful and lead to the breakage
@@ -350,6 +365,17 @@ may not be compatible with ``semaphore-compat-3.0.0``.
 
 Breaking changes to the protocol require a major version bump and need to be
 justified to and accepted by the GHC Proposals Committee.
+
+To allow breaking changes to the protocol to be detected we require that,
+starting with ``semaphore-compat-2.0.0``, the **semaphore identifier** must
+begin a a prefix ``v<N>-`` where the ``<N>`` specifies the ``semaphore-compat``
+major version that this semaphore was created using. For instance,
+a semaphore created with ``semaphore-compat-2.0.0`` could be called
+``v2-some-semaphore12345``.
+
+This naming scheme for the identifier will allow breaking changes to the protocol
+to be detected.
+
 
 Examples
 --------
