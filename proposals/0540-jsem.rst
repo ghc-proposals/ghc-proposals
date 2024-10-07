@@ -366,16 +366,6 @@ may not be compatible with ``semaphore-compat-3.0.0``.
 Breaking changes to the protocol require a major version bump and need to be
 justified to and accepted by the GHC Proposals Committee.
 
-To allow breaking changes to the protocol to be detected we require that,
-starting with ``semaphore-compat-2.0.0``, the **semaphore identifier** must
-begin a a prefix ``v<N>-`` where the ``<N>`` specifies the ``semaphore-compat``
-major version that this semaphore was created using. For instance,
-a semaphore created with ``semaphore-compat-2.0.0`` could be called
-``v2-some-semaphore12345``.
-
-This naming scheme for the identifier will allow breaking changes to the protocol
-to be detected.
-
 
 Examples
 --------
