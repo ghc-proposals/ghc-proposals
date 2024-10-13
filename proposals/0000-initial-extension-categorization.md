@@ -85,7 +85,6 @@ The following table contains the language extension, the proposed categorization
 | NumericUnderscores         | Stable         | Stable                  |
 | OverloadedLabels           | Stable         | Stable                  |
 | OverloadedLists            | Stable         | Stable                  |
-| OverloadedStrings          | Stable         | Stable                  |
 | ParallelListComp           | Stable         | Stable                  |
 | PatternGuards              | Stable         | Stable                  |
 | PatternSynonyms            | Stable         | Stable                  |
@@ -107,7 +106,6 @@ The following table contains the language extension, the proposed categorization
 | UnboxedTuples              | Stable         | Stable                  |
 | UnicodeSyntax              | Stable         | Stable                  |
 | UnliftedNewtypes           | Stable         | Stable                  |
-| ViewPatterns               | Stable         | Stable                  |
 
 #### 2.1.2 Deprecated Extensions
 
@@ -185,6 +183,7 @@ The following are the extensions that are uncategorized as of this proposal. The
 | MonoLocalBinds          |
 | NegativeLiterals        |
 | OverloadedRecordDot     |
+| OverloadedStrings       |
 | PackageImports          |
 | PartialTypeSignatures   |
 | PatternSignatures       |
@@ -211,6 +210,7 @@ The following are the extensions that are uncategorized as of this proposal. The
 | UnliftedDatatypes       |
 | UnliftedFFITypes        |
 | Unsafe                  |
+| ViewPatterns            |
 
 ## 3. Effect and Interactions
 
