@@ -85,7 +85,6 @@ The following table contains the language extension, the proposed categorization
 | NumericUnderscores         | Stable         | Stable                  |
 | OverloadedLabels           | Stable         | Stable                  |
 | OverloadedLists            | Stable         | Stable                  |
-| OverloadedRecordDot        | Stable         | Stable                  |
 | OverloadedStrings          | Stable         | Stable                  |
 | ParallelListComp           | Stable         | Stable                  |
 | PatternGuards              | Stable         | Stable                  |
@@ -101,21 +100,14 @@ The following table contains the language extension, the proposed categorization
 | StandaloneKindSignatures   | Stable         | Stable                  |
 | StrictData                 | Stable         | Stable                  |
 | TraditionalRecordSyntax    | Stable         | Stable                  |
-| TransformListComp          | Stable         | Stable                  |
-| TupleSections              | Stable         | Stable                  |
 | TypeApplications           | Stable         | Stable                  |
-| TypeFamilies               | Stable         | Stable                  |
-| TypeFamilyDependencies     | Stable         | Stable                  |
 | TypeOperators              | Stable         | Stable                  |
 | TypeSynonymInstances       | Stable         | Stable                  |
 | UnboxedSums                | Stable         | Stable                  |
 | UnboxedTuples              | Stable         | Stable                  |
 | UnicodeSyntax              | Stable         | Stable                  |
-| UnliftedDatatypes          | Stable         | Stable                  |
-| UnliftedFFITypes           | Stable         | Stable                  |
 | UnliftedNewtypes           | Stable         | Stable                  |
 | ViewPatterns               | Stable         | Stable                  |
-
 
 #### 2.1.2 Deprecated Extensions
 
@@ -192,6 +184,7 @@ The following are the extensions that are uncategorized as of this proposal. The
 | ListTuplePuns           |
 | MonoLocalBinds          |
 | NegativeLiterals        |
+| OverloadedRecordDot     |
 | PackageImports          |
 | PartialTypeSignatures   |
 | PatternSignatures       |
@@ -207,10 +200,16 @@ The following are the extensions that are uncategorized as of this proposal. The
 | Strict                  |
 | TemplateHaskell         |
 | TemplateHaskellQuotes   |
+| TransformListComp       |
 | Trustworthy             |
+| TupleSections           |
 | TypeData                |
+| TypeFamilies            |
+| TypeFamilyDependencies  |
 | UndecidableInstances    |
 | UndecidableSuperClasses |
+| UnliftedDatatypes       |
+| UnliftedFFITypes        |
 | Unsafe                  |
 
 ## 3. Effect and Interactions
