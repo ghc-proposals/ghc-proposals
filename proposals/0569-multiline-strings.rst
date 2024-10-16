@@ -98,7 +98,7 @@ A working prototype is available at `brandonchinn178/string-syntax <https://gith
       * See `Section 2.6 <https://www.haskell.org/onlinereport/haskell2010/haskellch2.html#x7-200002.6>`_ of the Haskell 2010 Report
       * See the example in *Section 3.3 String gaps*
 
-   #. Split the string by newlines
+   #. Split the string by lexical ``newline`` characters (as defined in the `Haskell report <https://www.haskell.org/onlinereport/haskell2010/haskellch2.html#x7-160002.2>`_)
 
    #. Convert leading tabs into spaces
 
@@ -117,7 +117,7 @@ A working prototype is available at `brandonchinn178/string-syntax <https://gith
 
    #. Join the string back with ``\n`` delimiters
 
-      * Use ``\n`` regardless of the line terminators being used in the file. This matches the behavior of ``unlines``.
+      * Use ``\n`` regardless of the lexical ``newline``s present in the file. This matches the behavior of ``unlines``.
 
    #. If the first character of the string is a newline, remove it
 
