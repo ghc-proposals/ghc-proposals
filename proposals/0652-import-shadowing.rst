@@ -307,9 +307,11 @@ proposal. For example consider
 ::
  
  module A( module M, module N, foo ) where
-    import M( foo, wombat )
-    import N( wombat )
-   foo = True
+
+ import M( foo, wombat )
+ import N( wombat )
+
+ foo = True
 
 Without ``ImportShadowing`` the export list would attempt to export
 ``M.foo`` and ``A.foo``; and would report a conflict. It also attempts
