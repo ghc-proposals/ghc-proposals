@@ -213,6 +213,8 @@ Symbol Occurence
 [Field]
 :raw-html:`<br />`
      *field*   →   *varid* | *reservedid*
+     
+(We include *reservedid* so that ``foo.type`` is allowed. This does not affect what identifiers are allowed as record fields, where *reservedid*s such as ``type`` are not allowed.) 
 
 .. _section-1:
 
