@@ -54,37 +54,40 @@ Proposed Change Specification
    the Haskell 2010 Report for all BNF syntax, and recall that we use braces
    to denote "zero or more")::
 
-     type     ::= btype [ {modifier} -> type ]
-     prefix%  ::= '%'    -- only in prefix position
-     modifier ::= prefix% atype
+     type          ::= btype [ {modifier} -> type ]
+     prefix%       ::= '%'    -- only in prefix position
+     modifier      ::= prefix% atype
+     modifiers     ::= {modifier}
+     declModifiers ::= [ modifier [ ';' ] [ declModifiers ] ]
 
 3. With ``-XModifiers``, introduce modifier syntax on types as follows::
 
-     btype    ::= {modifier} atype | btype atype
+     btype    ::= modifiers atype | btype atype
 
 4. With ``-XModifiers``, introduce modifier syntax on the term level as follows::
 
-     fexp     ::= {modifier} aexp | fexp aexp
+     fexp     ::= modifiers aexp | fexp aexp
 
 5. With ``-XModifiers``, introduce modifier syntax in patterns as follows::
 
-     lpat     ::= {modifier} lpat | ...
+     lpat     ::= modifiers lpat | ...
 
 6. With ``-XModifiers``, introduce modifier syntax on record field declarations as follows::
 
-     fielddecl ::= vars {modifier} '::' (type | '!' atype)
+     fielddecl ::= vars modifiers '::' (type | '!' atype)
 
 7. With ``-XModifiers``, introduce modifier syntax on top-level declarations as
    follows::
 
-     topdecl ::= {modifier} [ ';' ] 'type' simpletype '=' type
-             |   {modifier} [ ';' ] 'data' [context '=>'] simpletype ['=' constrs] [deriving]
-             |   {modifier} [ ';' ] 'newtype' [context '=>'] simpletype = newconstr [deriving]
-             |   {modifier} [ ';' ] 'class' [scontext '=>'] tycls tyvar ['where' cdecls]
-             |   {modifier} [ ';' ] 'instance' [scontext '=>'] qtycls inst ['where' idecls]
-             |   {modifier} [ ';' ] 'default' '(' type1 ',' ... ',' typen ')'
-             |   {modifier} [ ';' ] 'foreign' fdecl
-             |   {modifier} ';' decl
+     topdecl ::= declModifiers 'type' simpletype '=' type
+             |   declModifiers 'data' [context '=>'] simpletype ['=' constrs] [deriving]
+             |   declModifiers 'newtype' [context '=>'] simpletype = newconstr [deriving]
+             |   declModifiers 'type' 'data' ...
+             |   declModifiers 'class' [scontext '=>'] tycls tyvar ['where' cdecls]
+             |   declModifiers 'instance' [scontext '=>'] qtycls inst ['where' idecls]
+             |   declModifiers 'default' '(' type1 ',' ... ',' typen ')'
+             |   declModifiers 'foreign' fdecl
+             |   declModifiers ';' decl
 
    Recall that the Haskell 2010 Report uses brackets to denote an optional bit
    of syntax. The optional semicolons allow modifiers to appear on a line
@@ -97,12 +100,12 @@ Proposed Change Specification
    declarations as follows::
 
      -- H98-style constructor
-     constr ::= {modifier} con ['!'] atype1 ... ['!'] atypek
-              | {modifier} (btype | '!' atype) conop (btype | '!' atype)
-              | {modifier} con '{' fielddecl1 ',' ... ',' fielddecln '}'
+     constr ::= modifiers con ['!'] atype1 ... ['!'] atypek
+              | modifiers (btype | '!' atype) conop (btype | '!' atype)
+              | modifiers con '{' fielddecl1 ',' ... ',' fielddecln '}'
 
      -- GADT-style constructor
-     gadt_constrs ::= {modifier} con_list '::' sigtype
+     gadt_constrs ::= modifiers con_list '::' sigtype
 
    Modifiers in ``gadt_constrs`` apply to each constructor in ``con_list``.
 
@@ -113,7 +116,8 @@ Proposed Change Specification
 
 10. Modifiers are parsed, renamed, and type-checked as *types*.
 
-11. The type of a modifier is determined only by synthesis, never by checking.
+11. With ``-XModifiers``, the type of a modifier is determined only by
+    synthesis, not by checking.
     That is, in the bidirectional type-checking scheme used by GHC, we find the
     type of the modifier by running the synthesis judgment. Effectively, this
     means that if we consider a modifier to be some head (constructor or
@@ -122,38 +126,135 @@ Proposed Change Specification
     have a known type if declared with a type signature. Alternatively, the
     modifier may have a top-level type signature.
 
-12. A modifier of type ``Multiplicity`` changes the multiplicity of the following arrow,
-    or following pattern-bound variable of a lambda,
-    or preceding record field.
-    Multiple modifiers of type ``Multiplicity`` on the same arrow are not allowed.
-    Any other use of a modifier is an error.
-
-13. ``-XLinearTypes`` implies ``-XModifiers``.
-
-14. Future modifiers will be put *before* the element they modify. Alternatively,
+12. Future modifiers will be put *before* the element they modify. Alternatively,
     a modifier can be put directly before a syntactic closer or separator, such
     as ``;`` or ``where`` or ``)``.
 
-15. Modifiers with an unknown meaning produce a warning, controlled by
-    ``-Wunknown-modifiers``. They are otherwise ignored. (However, in order to
-    know that a modifier is unknown, it still must be parsed, renamed, and type-checked.)
+13. Modifiers of unknown kind produce an error.
+
+14. Modifiers of known kind but with an unknown meaning produce a warning,
+    controlled by ``-Wunknown-modifiers``. They are otherwise ignored. (However,
+    in order to know that a modifier is unknown, it still must be parsed,
+    renamed, and type-checked.)
+
+LinearTypes
+-----------
+With ``-XLinearTypes``:
+
+* A modifier of type ``Multiplicity`` changes the multiplicity of the following
+  arrow, or following pattern-bound variable of a lambda, or following let or
+  where binding, or preceding record field. Multiple modifiers of type
+  ``Multiplicity`` on the same arrow are not allowed. Any other use of a
+  modifier still has no meaning.
+
+* The ``%1`` modifier is handled as a special case. It's renamed (and so
+  typechecked) the same as ``%One``, even if it appears somewhere that linear
+  modifiers aren't expected. If a user does want the modifier ``1 :: Nat``, they
+  can write it as ``%01``. (Requires ``-XDataKinds``.)
+
+* The linear arrow ``a ⊸ b`` has the same meaning as ```a %1 -> b``. Other
+  modifiers are accepted: ``a %Matchable ⊸ b`` has the same meaning as
+  ``a %Matchable %1 -> b``.
+
+With ``-XNoLinearTypes``, the ``%1`` modifier is not special. It refers to the
+type ``1 :: Nat`` and requires ``-XDataKinds``.
+
+``-XLinearTypes`` implies ``-XModifiers``. But the latter can be explicitly
+disabled with ``-XLinearTypes -XNoModifiers``. This introduces backwards
+compatible behavior:
+
+* Only ``Multiplicity`` modifiers are permitted, and only in the places they're
+  recognized. Any use of a modifier is an error.
+
+* The kind of a modifier is determined by checking for ``Multiplicity``, not
+  through synthesis. So ``Int %m -> Bool`` is forbidden with ``-XLinearTypes
+  -XModifiers``, because ``m`` has unknown kind. But it's permitted with
+  ``-XLinearTypes -XNoModifiers``, equivalently to ``Int %(m :: Multiplicity) ->
+  Bool``.
+
+This behavior may be deprecated in future.
+
+Renaming and typechecking
+-------------------------
+Initially, the only recognized modifiers will be the multiplicity modfifiers of
+linear types. These take effect during typechecking. Other modifiers are
+expected to take effect during renaming, such as the ``NoFieldSelectors``
+modifier of `proposal 512`_.
+
+.. _`proposal 512`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0512-nofieldselectors-per-datatype.md
+
+This poses a problem. The following is accepted::
+
+  type family F a where
+    F 1 = Many
+    F 2 = NoFieldSelectors
+
+  f :: () %(F 1) -> ()
+
+Ideally, the following would be accepted as well::
+
+  %(F 2) data G = G { g :: () }
+
+But type family resolution happens in the typechecker.
+
+Define an **RN modifier** as one that takes effect during renaming. This is
+context-dependent: ``%NoFieldSelectors`` will be an RN modifier before a
+``data`` declaration, but not before an arrow.
+
+One possible solution is to simply forbid such things for RN modifiers. If the
+type can't be resolved during renaming, it has no effect during renaming. During
+typechecking, if it gets resolved to something that would have had effect during
+renaming, we throw an error.
+
+This isn't ideal because it's not obvious to users which modifiers are RN
+modifiers.
+
+A more complicated solution involves invoking the typechecker during renaming.
+To do this we need a "stage restriction": a modifier obeys the stage restriction
+if every identifier and every type family instance in the modifier is imported,
+not defined in the current module.
+
+When renaming a modifier, if it violates the stage restriction, it takes no
+effect during renaming. We then typecheck the modifier, during typechecking. If
+it resolves to an RN modifier, we throw an error.
+
+If it doesn't violate the stage restriction, then we can typecheck it during
+renaming. If it resolves to an RN modifier, it takes effect. Subsequently, we
+typecheck it again during typechecking. We throw an error if either
+
+* It resolved to an RN modifier during renaming, and resolves to a different
+  modifier during typechecking.
+
+* It didn't resolve to an RN modifier during renaming, but does during
+  typechecking.
+
+It might resolve to a different modifier if there are overlapping instances
+defined in this module.
+
+This solution would probably not be implemented in the initial release of
+modifiers.
 
 Examples
 --------
 Here are some examples that will be accepted or rejected with this proposal::
 
-  f1 :: Int %1 -> Bool    -- unaffected, actually: that "%1" is one lexeme, and
-                          -- is not a modifier. See more on this below.
+  f1 :: Int %1 -> Bool    -- accepted: %1 is a special case, see below.
   f2 :: Int %Many -> Bool -- accepted: Many :: Multiplicity
-  f3 :: Int %m -> Bool    -- rejected: the kind of m is undeclared
-  f4 :: Int %(m :: Multiplicity) -> Bool   -- accepted with a type signature
-  f5 :: Int %One %Many -> Bool   -- rejected (although it will parse)
-  f6 :: Int %Many %Many -> Bool  -- rejected
-  f7 :: Int %(m :: Multiplicity) -> Int %m -> Int
-    -- rejected: the second use of '%m' has an unknown type
+  f3 :: Int %() -> Bool   -- accepted: () :: ()
+  f4 :: Int %m -> Bool    -- rejected: the kind of m is undeclared
+  f5 :: Int %(m :: Multiplicity) -> Bool   -- accepted with a type signature
+  f6 :: Int %One %Many -> Bool
+    -- rejected (although it will parse) with -XLinearTypes; accepted otherwise
+  f7 :: Int %Many %Many -> Bool
+    -- rejected with -XLinearTypes; accepted otherwise
+  f8 :: Int %(m :: Multiplicity) -> Int %m -> Int
+    -- rejected: the second use of '%m' has an unknown king
 
   map :: forall (m :: Multiplicity). (a %m -> b) -> [a] %m -> [b]
     -- accepted: m has a known type
+
+With ``-XLinearTypes -XNoModifiers``, ``f4`` and ``f8`` are accepted, and ``f3``
+is rejected.
 
 The syntax (and semantics) for modifiers on patterns and record fields is exactly
 as described in the `linear types proposal`_.
@@ -167,8 +268,7 @@ Further examples:
 
 * Terms: Same as the example above.
 
-* Lambda expressions: ``\ x %Many -> ...`` or ``\ x %One -> ...``. This would be parsed but rejected, because
-  the new syntax applies only for lambda that bind a single, top-level variable: ``\ x y %One -> ...``.
+* Lambda expressions: ``\ %Many x -> ...``, ``\ %One x %Many y -> ...``.
 
 * Field declaration: ``data T = MkT { field %Many :: Int }``.
 
@@ -184,12 +284,14 @@ Effect and Interactions
   The author of `#242`_, Csongor Kiss, was involved in the conceptualization of
   this proposal.
 
+* Proposals `#390`_ and `#512`_ also anticipate using modifier syntax.
+
+.. _`#390`: https://github.com/ghc-proposals/ghc-proposals/pull/390
+.. _`#512`: https://github.com/ghc-proposals/ghc-proposals/pull/512
+
 * Future modifiers will also seamlessly work with existing ones, where order
   is not expected to matter (though that would be up to other proposals to
   spell out).
-
-* The ``%1`` will remain a single lexeme and does not participate with this
-  proposal. We may want more exceptions to the general scheme in the future.
 
 * The key action of this proposal is to carve out a new syntax space, anchored
   by a prefix occurrence of ``%``. Ideally, there would be few exceptions to
@@ -292,8 +394,12 @@ Unresolved Questions
   to consider this idea separate from the quite considerable complexity of `#242`_,
   and so I have made it a separate proposal.
 
+.. _`#242`: https://github.com/ghc-proposals/ghc-proposals/pull/242
+
 * This proposal floats the idea of ``%oneShot`` and ``%inline``, but these
   might fit better as pragmas than modifiers. In any case, they are not
   proposed concretely here and would be subject to a future proposal.
 
-.. _`#242`: https://github.com/ghc-proposals/ghc-proposals/pull/242
+* How does this interact with Template Haskell?
+
+* What warning groups imply ``-Wunknown-modifiers``?
