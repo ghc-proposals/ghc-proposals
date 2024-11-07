@@ -176,7 +176,7 @@ This behavior may be deprecated in future.
 
 Renaming and typechecking
 -------------------------
-Initially, the only recognized modifiers will be the multiplicity modfifiers of
+Initially, the only recognized modifiers will be the multiplicity modifiers of
 linear types. These take effect during typechecking. Other modifiers are
 expected to take effect during renaming, such as the ``NoFieldSelectors``
 modifier of `proposal 512`_.
