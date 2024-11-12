@@ -54,7 +54,7 @@ Proposed Change Specification
    the Haskell 2010 Report for all BNF syntax, and recall that we use braces
    to denote "zero or more")::
 
-     type          ::= btype [ {modifier} -> type ]
+     type          ::= btype [ modifiers -> type ]
      prefix%       ::= '%'    -- only in prefix position
      modifier      ::= prefix% atype
      modifiers     ::= {modifier}
