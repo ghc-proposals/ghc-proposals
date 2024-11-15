@@ -117,7 +117,7 @@ A working prototype is available at `brandonchinn178/string-syntax <https://gith
 
    #. Join the string back with ``\n`` delimiters
 
-      * Use ``\n`` regardless of the lexical ``newline``s present in the file. This matches the behavior of ``unlines``.
+      * Use ``\n`` regardless of the lexical ``newline``\ s present in the file. This matches the behavior of ``unlines``.
 
    #. If the first character of the string is a newline, remove it
 
