@@ -168,10 +168,10 @@ Proposed Change Specification
       they're recognized. Any use of a modifier is an error.
 
     * The kind of a modifier is determined by checking for ``Multiplicity``, not
-      through synthesis. So ``Int %m -> Bool`` is forbidden with ``-XLinearTypes
-      -XModifiers``, because ``m`` has unknown kind. But it's permitted with
-      ``-XLinearTypes -XNoModifiers``, equivalently to ``Int %(m ::
-      Multiplicity) -> Bool``.
+      through synthesis. So ``Int %m -> Bool`` is forbidden with
+      ``-XLinearTypes -XModifiers``, because ``m`` has unknown kind. But it's
+      permitted with ``-XLinearTypes -XNoModifiers``, equivalently to
+      ``Int %(m :: Multiplicity) -> Bool``.
 
     This may be deprecated in future.
 
