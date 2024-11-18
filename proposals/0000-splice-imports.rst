@@ -13,7 +13,7 @@ Explicit Level Imports
 
 Template Haskell allows *staged metaprogramming*: writing Haskell code that is
 executed during the compilation stage, rather than merely compiled so that it
-can executed at the later runtime stage. In practice, most programs can be
+can be executed at the later runtime stage. In practice, most programs can be
 divided into small portions that are executed at compile-time (e.g. the
 definition of ``makeLenses``), and the majority of the code that is not.
 However, there are currently no clear boundaries between stages, so the compiler
@@ -94,8 +94,8 @@ By being very precise at levels modules are needed at, there are many advantages
    cases.
 3. IDEs such as Haskell Language Server face similar problems, where they are interested only in the result of type-checking modules, but when ``TemplateHaskell`` is enabled a large
    number of modules have to be cautiously compiled to bytecode.
-4. By using splice imports we can separate the dependencies into those needed only at compile-time and
-   those needed only at runtime. We can then link against only those modules needed at runtime.
+4. By using splice imports we can separate the dependencies during dependency analysis into those needed only at compile-time and
+   those needed only at runtime. Compile-time dependencies need to be compiled to object code before the current module, but need not be linked against. Runtime dependencies need to be type-checked before the current module, but their object code only needs to be available at link time.
 5. Currently, when cross-compiling modules that use ``TemplateHaskell``, all
    imported modules must be compiled for both host and target.
    By distinguishing imported modules not used at runtime,
@@ -297,7 +297,7 @@ For example, the following program is accepted::
 It is not possible for a locally-bound variable to be used earlier than the
 stage at which it is bound (e.g. GHC will report a stage error for the
 expression ``[| \ x -> $x |]``). Similarly, it is not possible for a global
-definition to be used in a splice in the same module as ts definition.
+definition to be used in a splice in the same module as its definition.
 
 
 Proposed Change Specification
@@ -735,9 +735,9 @@ using type-safe staged programming for program optimisation.  (Its typical use
 cases are rather different from untyped TH, since in particular it does not
 support declaration splices.)
 
-The same level checks are implemented for typed brackets as untyped brackets
+The same level checks are implemented for typed brackets as untyped brackets.
 In particular, when using TTH and explicit level imports, you can introduce
-stage errors which you can't fix. Currently the follow program is accepted::
+stage errors which you can't fix. Currently the following program is accepted::
 
   foo :: Show a => Code Q (a -> String)
   foo = [|| show ||]
@@ -1021,7 +1021,7 @@ Other alternatives
 * Since ``ExplicitLevelImports`` is essentially useless when
   ``TemplateHaskell`` is disabled, we could have ``ExplicitLevelImports`` imply
   ``TemplateHaskell``.  There is at least one case where this would be harmful:
-  users may which to enable ``ExplicitLevelImports`` globally for their
+  users may wish to enable ``ExplicitLevelImports`` globally for their
   project, but only carefully enable ``TemplateHaskell`` for a small number of
   modules.
 
