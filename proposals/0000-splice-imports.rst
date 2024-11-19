@@ -243,7 +243,7 @@ level:
 
   The following is level-incorrect as ``x`` is bound at level 0 but used at level
   1. It is fixed by serialisation-based persistence, which transforms the program
-  into one where ``x`` is used at level 0 by inserting a call to ``lift``::
+  into one where ``x`` is used at level 0 by the compiler automatically inserting a call to ``lift``::
 
     tardy x = [| x |]
     =>
@@ -254,13 +254,10 @@ level:
 
 For example, the following program is accepted::
 
-    module M1 where
-      suc :: Int -> Int
-      suc = (+ 1)
-
     {-# LANGUAGE TemplateHaskell #-}
     module M2 where
-      import M1 (suc)
+      suc :: Int -> Int
+      suc = (+1)
 
       one :: Q Exp
       one = [| \x -> suc x |]
@@ -275,7 +272,7 @@ For example, the following program is accepted::
       two = $(another_one 1)
 
 * *Path-based persistence* explains why the occurrence of ``suc`` in examples
-  ``one`` and ``another_one`` is accepted (since it is imported at level 0 but
+  ``one`` and ``another_one`` is accepted (since it is defined at level 0 but
   used at level 1), and why ``another_one`` can be used in a top-level splice
   (since it is imported at level 0 but used at level -1)
 
@@ -337,7 +334,7 @@ but will be rejected under ``NoImplicitStagePersistence``::
 
 Under ``NoImplicitStagePersistence`` it is an error to use ``DeriveLift`` on a
 type unless all its definition is imported at both level 0 and level 1.
-This is discussed in more detail in the :ref:`Lift Instances <lift_instances>` section.
+This is discussed in more detail in a later section.
 
 
 
@@ -378,7 +375,7 @@ so it overrides the implied ``NoImplicitStagePersistence``). This allows
 still allows cross-stage persistence (and thus the compiler must still be
 pessimistically assume all modules are needed at all stages). This combination
 is supported to allow gradual migration of code bases following the change, and
-for corner cases such as code generation, where the programmer may wish to use
+for corner cases such as programmatic code generation, where the programmer may wish to use
 the syntax of ``splice`` and ``quote`` imports without obliging the whole module
 to be level-correct.
 
@@ -424,7 +421,8 @@ the splice.  Thus the only disambiguation that will pass the type-checker is::
 
 We choose to reject this disambiguation to keep the design simple and prevent
 any confusion about what is in scope. This position is conservative, and can be
-relaxed in the future if more flexibility appears worthwhile.
+relaxed in the future if more flexibility appears worthwhile. This choice
+follows the `Lexical Scoping Principle <https://github.com/ghc-proposals/ghc-proposals/blob/8ad4daecc849f435af49767864b8e61b174bf252/principles.rst#221lexical-scoping-principle-lsp>`_.
 
 A positive consequence of the current design is that if a program is accepted
 with ``ExplicitLevelImports``, it will be accepted after erasing all
@@ -459,6 +457,9 @@ correct level.  This will be enforced by the type-checker under
 * After instance resolution has selected an instance, it is checked which levels
   the instance is available at and an error is raised if the instance is not available
   at the correct level.
+
+* Instances defined in the current modules are at level 0, just like top-level
+  variable definitions in a module.
 
 This design for instances mirrors the situation for name resolution. As with
 ambiguous names, it would in principle be possible for the type-checker to make
@@ -617,6 +618,7 @@ its contents will be needed to execute the program at runtime (``z = foo 25``,
 so evaluating ``z`` at runtime requires ``foo`` to be available).
 
 
+
 Module Stages
 #############
 
@@ -644,6 +646,7 @@ scenarios. By far the most common case is two stages.  However, the
 specification is expressed in terms of level offsets rather than stages in order
 to keep the language design abstract rather than overfitting to a particular
 arrangement of stages.
+
 
 
 Module stage offsetting example
@@ -700,6 +703,49 @@ The levels of all modules in the transitive closure of a ``splice``-imported
 module are offset by -1. Conversely, ``quote`` imports offset the levels by +1,
 thereby making all the levels align correctly.
 
+Implicit Stage Persistence
+##########################
+
+Modules using implicit stage persistence place a set of strong requirements on itself and
+transitive dependencies. Consider this example where module ``B`` uses ``ImplicitStagePersistence``::
+
+  module A where { a = 1 :: Int }
+
+  {-# LANGUAGE ExplicitLevelImports #-}
+  {-# LANGUAGE ImplicitStagePersistence #-}
+  module B where
+  import A
+
+  foo = a
+
+  bar = [| foo |]
+
+  {-# LANGUAGE ExplicitLevelImports #-}
+  module C where
+  import splice B
+  c :: Int
+  c = $(bar)
+
+Consider compiling ``C @ R``, when ``bar`` from ``B`` is executed, then
+it will produce a program ``B.foo``. Therefore we will also need ``B @ R``.
+
+How could we determine from the module header that we would require ``B @ R``?
+
+* ``C @ R`` splice imports ``B``, therefore only directly places a requirement on ``C @ C``
+* However, ``C`` enables ``ImplicitStagePersistence``, and therefore is able to persist
+  top-level definitions and definitions from its level 0 imports. Therefore we
+  determine we also require ``C @ R``.
+
+
+In this example you can observe that the ability to move a variable between
+levels using cross-stage persistence places a strong set of requirements on the
+stages that modules are required at. The introduction of the ``ImplicitStagePersistence``
+extension is wholly motivated by the desire to control these requirements in an explicit
+fashion.
+
+
+Effect and Interactions
+-----------------------
 
 Case Study: ``pandoc``
 ######################
@@ -722,10 +768,6 @@ It can also be easily observed from looking at the imports that
 * Only a few external packages are involved in compile-time evaluation.
 
 This information can be used by the driver in order to simplify the compilation pipeline.
-
-
-Effect and Interactions
------------------------
 
 Typed Template Haskell
 ######################
@@ -1009,6 +1051,17 @@ Syntactic alternatives
   Another alternative suggested was ``import for splice``, which restores the
   grammatical nature of the import.
 
+Implicit Splice/Quote Prelude imports
+#####################################
+
+In the proposal ``Prelude`` must be imported explicitly at non-zero levels.
+
+Another possible design would be to automatically import ``Prelude`` at all
+levels rather than just level 0.
+
+For us, it is undesirable to automatically add these additional imports and
+hence dependencies on certain stages unless they were actually used.
+
 
 Other alternatives
 ##################
@@ -1023,7 +1076,9 @@ Other alternatives
   ``TemplateHaskell``.  There is at least one case where this would be harmful:
   users may wish to enable ``ExplicitLevelImports`` globally for their
   project, but only carefully enable ``TemplateHaskell`` for a small number of
-  modules.
+  modules. ``TemplateHaskell`` has the effect of enabling code generation for
+  a modules dependencies, so it is normally advisable to be explicit about which
+  modules use the feature.
 
 * ``NoImplicitStagePersistence`` is a "negative" extension, in that it requires
   a user to opt in but removes a feature from the language, much like
