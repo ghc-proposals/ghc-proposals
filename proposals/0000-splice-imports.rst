@@ -731,9 +731,9 @@ it will produce a program ``B.foo``. Therefore we will also need ``B @ R``.
 
 How could we determine from the module header that we would require ``B @ R``?
 
-* ``C @ R`` splice imports ``B``, therefore only directly places a requirement on ``C @ C``
-* However, ``C`` enables ``ImplicitStagePersistence``, and therefore is able to persist
-  top-level definitions and definitions from its level 0 imports. Therefore we
+* ``C @ R`` splice imports ``B``, therefore only directly places a requirement on ``B @ C``
+* However, ``B`` enables ``ImplicitStagePersistence``, and therefore is able to persist
+  top-level definitions and definitions defined in ``B`` itself and all its level 0 or level 1 imports. Therefore we
   determine we also require ``C @ R``.
 
 
