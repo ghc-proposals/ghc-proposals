@@ -1,13 +1,11 @@
 ---
 author: Thomas Bagrel
 date-accepted: ""
-ticket-url: ""
+ticket-url: "https://github.com/ghc-proposals/ghc-proposals/pull/683"
 implemented: ""
 ---
 
-This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/0>).
-**After creating the pull request, edit this file again, update the number in
-the link, and delete this bold sentence.**
+This proposal is [discussed at pull request #683](https://github.com/ghc-proposals/ghc-proposals/pull/683).
 
 # Primitives for zero-copy compact regions
 
