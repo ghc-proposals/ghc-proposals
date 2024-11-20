@@ -648,7 +648,10 @@ With this API we can write functions such as
 There is still a little bit of noise there, what with the defining of
 GADTs (while ``/\`` can be defined once and for all, types like
 ``NewMArray`` must be defined for most every type because we lack
-type-level lambdas), and the constructors in the let-bindings.
+type-level lambdas), and the constructors in the let-bindings. Plus
+this is cheating a tad: let bindings, even strict lets, don't
+currently expose constraints. We leave the consideration of whether
+it's worth fixing lets to expose constraints for a later time.
 
 With existential types, this would look something like this (the
 existential types proposal defines, not coincidentally, a ``/\`` with
@@ -1091,11 +1094,15 @@ N/A
 Implementation Plan
 -------------------
 
-The initial prototype implementation, by Csongor Kiss, is available `here
+The initial prototype implementation, by Csongor Kiss, is available
+`here
 <https://archive.softwareheritage.org/browse/revision/f6fc5ba23770b42d1d6020e177787757b16a9ea0/?origin_url=https://github.com/kcsongor/ghc&snapshot=aa61d803eaec9eb4425e3eb8ed2b0fbbd60633cc>`_. The
 implementation of this proposal will build upon this foundation and
-will be carried out by Arnaud Spiwack and Thomas Bagrel. The current
-work in progress can be found `here <https://github.com/tweag/ghc/tree/linear-constraints>`_.
+will be carried out by Arnaud Spiwack. Rebasing the prototype has
+proved quite difficult, so the current plan is a reimplementation,
+using the prototype as a reference. The work in progress can
+be followed `here
+<https://github.com/tweag/ghc/tree/linear-constraints>`_.
 
 Endorsements
 -------------
