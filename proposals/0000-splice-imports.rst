@@ -171,8 +171,10 @@ Definitions
   well-staged (i.e. that the compiler can execute compile-time stages before
   runtime stages).
 
-  Within a module, every declaration and every (sub-)expression exists at an integer level.  The top-level declarations in the module are at level 0.  The level is increased by 1 when
-  inside a quote and decreased by 1 inside a splice. In short:
+  Within a module, every declaration and every (sub-)expression exists at an
+  integer level.  The top-level declarations in the module are at level 0.  The
+  level is increased by 1 when inside a quote and decreased by 1 inside a
+  splice. In short:
 
   * ``$(e)`` is at level ``n`` iff ``e`` is at level ``n-1``
   * ``[| e |]`` is at level ``n`` iff ``e`` is at level ``n+1``
