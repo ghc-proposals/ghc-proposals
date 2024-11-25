@@ -662,7 +662,7 @@ This will be easily possible to change once the level discipline is enforced.
 
 
 Module stage offsetting example
-##############################
+###############################
 
 The interaction between stages and level offsetting can be understood more clearly through an example.
 Module ``A`` splices ``foo`` from module ``B`` which both quotes ``bar`` from module ``C`` and uses ``baz`` from ``D``::
@@ -715,11 +715,11 @@ The levels of all modules in the transitive closure of a ``splice``-imported
 module are offset by -1. Conversely, ``quote`` imports offset the levels by +1,
 thereby making all the levels align correctly.
 
-Implicit Stage Persistence
-##########################
+Implicit Stage Persistence and Stages
+#####################################
 
 Modules using implicit stage persistence place a set of strong requirements on itself and
-transitive dependencies. Consider this example where module ``B`` uses ``ImplicitStagePersistence``::
+immediate dependencies. Consider this example where module ``B`` uses ``ImplicitStagePersistence``::
 
   module A where { a = 1 :: Int }
 
@@ -757,6 +757,36 @@ at all stages. The introduction of the ``ImplicitStagePersistence``
 extension is wholly motivated by the desire to control these requirements in an explicit
 fashion.
 
+ImplicitStagePersistence, Stages and TemplateHaskellQuotes
+##########################################################
+
+A more refined specification is possible if you observe that ``TemplateHaskellQuotes``
+can only persist identifiers forwards. Therefore if you have ``ImplicitStagePersistence``
+in a module where ``TemplateHaskellQuotes`` is enabled then you place a requirement
+that you need the module and immediate dependencies at current and future stages
+but not previous stages.
+
+Consider this example, under the revised rule:
+
+  {-# LANGUAGE TemplateHaskellQuotes, ImplicitStagePersistence #-}
+  module M1 where
+    data T = MkT Int
+    instance Lift T where
+      lift (MkT n) = [| MkT $(lift n) |]
+  {-# LANGUAGE ExplicitSpliceImports #-}
+  module M2 where
+    import M1
+    foo = MkT
+
+If we require ``M2 @ R``:
+
+* We require ``M1 @ R`` due to the ``import M1`` declaration.
+* ``M2 @ R`` enables ``ImplicitStagePersitence`` and ``TemplateHaskellQuotes``
+  so therefore places a requirement on compiling ``M2 @ R``.
+
+If ``TemplateHaskell`` was enabled, we would also require ``M2 @ C`` because
+``TemplateHaskell`` allows you to write a -1 context, and hence persist identifiers
+to negative as well as positive levels.
 
 
 Effect and Interactions
@@ -961,6 +991,8 @@ implementation and experience with the feature.
 Alternatives
 ------------
 
+
+
 Multiple levels within a single module
 ######################################
 
@@ -1049,6 +1081,9 @@ to using ``ExplicitLevelImports``.
 
 Syntactic alternatives
 ######################
+
+* The splice/quote modifier could be placed after the module name, like qualified
+  imports.
 
 * Using a pragma rather than a syntactic modifier would fit in better with
   how ``SOURCE`` imports work and make writing backwards compatible code easier::
