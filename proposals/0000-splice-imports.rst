@@ -647,6 +647,18 @@ specification is expressed in terms of level offsets rather than stages in order
 to keep the language design abstract rather than overfitting to a particular
 arrangement of stages.
 
+The compiler can then choose appropiately how modules needed at ``C`` are compiled
+and how modules needed at ``R`` are compiled.
+
+For example:
+
+* In ``-fno-code`` mode, ``C`` modules may be compiled in dynamic way, but ``R`` modules
+  are not compiled at all.
+* When using a profiled GHC. ``C`` modules must be compiled in profiled way but ``R`` modules
+  will be compiled in static way.
+
+Further level structure as needed by cross-compilation settings may require more stages.
+This will be easily possible to change once the level discipline is enforced.
 
 
 Module stage offsetting example
@@ -739,9 +751,12 @@ How could we determine from the module header that we would require ``B @ R``?
 
 In this example you can observe that the ability to move a variable between
 levels using cross-stage persistence places a strong set of requirements on the
-stages that modules are required at. The introduction of the ``ImplicitStagePersistence``
+stages that modules are required at. Implicit stage pesistence makes imported
+identifiers available at all levels, as a consequence, they must also be available
+at all stages. The introduction of the ``ImplicitStagePersistence``
 extension is wholly motivated by the desire to control these requirements in an explicit
 fashion.
+
 
 
 Effect and Interactions
