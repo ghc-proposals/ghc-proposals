@@ -3,7 +3,7 @@
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/TODO>`_.
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/682>`_.
 .. contents::
 .. sectnum::
 
@@ -768,7 +768,7 @@ in a module where ``TemplateHaskellQuotes`` is enabled then you place a requirem
 that you need the module and immediate dependencies at current and future stages
 but not previous stages.
 
-Consider this example, under the revised rule:
+Consider this example, under the revised rule::
 
   {-# LANGUAGE TemplateHaskellQuotes, ImplicitStagePersistence #-}
   module M1 where
