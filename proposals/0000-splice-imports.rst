@@ -1082,17 +1082,22 @@ to using ``ExplicitLevelImports``.
 Syntactic alternatives
 ######################
 
-* The splice/quote modifier could be placed after the module name, like qualified
-  imports.
+There are several proposals for the syntax of explicit level imports:
+
+* The splice/quote modifier could be placed after the module name, e.g. ``import
+  M splice``, like qualified imports under ``ImportQualifiedPost`` (see
+  `proposal #190 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0190-module-qualified-syntax.rst>`_).
+  This could be the only option, or it could be an optional alternative to
+  ``import splice M``. Putting the keywords after the module name would make it
+  easier to align and sort import lists.
 
 * Using a pragma rather than a syntactic modifier would fit in better with
   how ``SOURCE`` imports work and make writing backwards compatible code easier::
 
     import {-# SPLICE #-} B
 
-* There are several proposals for the syntax of splice imports. Some have objected
-  that the ``import splice`` suggestion is ungrammatical, unlike ``import qualified`` or
-  ``import hiding``.
+* Some have objected that the ``import splice`` suggestion is ungrammatical,
+  unlike ``import qualified`` or ``import hiding``.
 
   One possible alternative is ``$(import Foo)`` to represent a splice import, but this
   syntax clashes with the existing syntax for declaration splices and significantly
@@ -1100,6 +1105,23 @@ Syntactic alternatives
 
   Another alternative suggested was ``import for splice``, which restores the
   grammatical nature of the import.
+
+* The keywords ``splice`` and ``quote`` are different lengths, which interferes
+  with alignment.  Alternatively ``quote`` could be replaced with ``quoted``,
+  which is the same length as ``splice``.
+
+* The syntax does not provide a way to explicitly import at level 0; this is
+  indicated by the absence of a keyword. We could add a keyword for this, e.g.
+  ``default`` or ``target`` (although neither of these are ideal). It would also
+  be possible for a single import to refer to multiple levels simultaneously,
+  e.g. ``import M default, splice`` or
+  ``import Prelude qualified splice as SP (id, ($)), quote as QP (const), default (..)``.
+
+* Modifier syntax (see `proposal #370
+  <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0370-modifiers.rst>`_)
+  could be used, although it would seem inconsistent with the existing syntax
+  that mainly uses keywords (except for `{-# SOURCE #-}` imports).
+
 
 Implicit Splice/Quote Prelude imports
 #####################################
@@ -1147,6 +1169,10 @@ Other alternatives
 
 Unresolved Questions
 --------------------
+
+The committee needs to make a decision about the preferred syntax (see
+discussion of the alternatives above), in particular whether the keywords should
+come before or after the module name.
 
 
 Implementation Plan
