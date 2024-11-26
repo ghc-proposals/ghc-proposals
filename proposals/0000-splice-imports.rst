@@ -26,8 +26,8 @@ This has a variety of negative consequences. In particular:
   unnecessary (re)compilation.  This is particularly relevant for interactive
   use of the compiler within an IDE (e.g. via Haskell Language Server).
 
-* Cross-compilation is made more difficult by the need to compile code for a
-  platform even though it will never be executed on that platform.
+* Cross-compilation needs to compile and execute code on the target platform
+  during the build process, as there is no way to execute splices on the host.
 
 *Levels* are the mechanism which the typechecker uses to ensure that staged evaluation
 is possible. Certain program contexts require identifiers to be at specific levels.
@@ -74,8 +74,8 @@ The result is that identifiers can be used at precisely the level they are
 bound, and no other levels.
 By being very precise at levels modules are needed at, there are many advantages:
 
-1. Currently, if a module enables ``TemplateHaskell``, then all imported modules
-   are compiled to object code before name resolution takes place. This ensures that any top level splices that may be encountered are able to be fully evaluated.
+1. Currently, if a module enables ``TemplateHaskell``, then code generation for all imported modules must be performed
+   before name resolution can take place. This ensures that any top level splices that may be encountered are able to be fully evaluated.
    This is a pessimisation because most of the imported identifiers, which we have taken such pains to ensure we can run, will not
    actually be used in a top-level splice.
    Proposals to increase build parallelism (such as `#14095 <https://gitlab.haskell.org/ghc/ghc/-/issues/14095>`_) are far less effective
@@ -97,15 +97,13 @@ By being very precise at levels modules are needed at, there are many advantages
 4. By using splice imports we can separate the dependencies during dependency analysis into those needed only at compile-time and
    those needed only at runtime. Compile-time dependencies need to be compiled to object code before the current module, but need not be linked against. Runtime dependencies need to be type-checked before the current module, but their object code only needs to be available at link time.
 5. Currently, when cross-compiling modules that use ``TemplateHaskell``, all
-   imported modules must be compiled for both host and target.
-   By distinguishing imported modules not used at runtime,
-   we can avoid the need to compile them for the target.
-   Similarly, by distinguishing imported modules not used at
-   compile-time, we can avoid the need to compile them for the host.
-   It can be very hard or impossible to make some packages available on
-   some cross-compilation target platforms, so this change would significantly
-   improve the applicability of ``TemplateHaskell`` in these scenarios.
-
+   splices are executed on the target even though compilation takes place on a
+   separate host. This is a source of significant complexity. This proposal
+   takes a step towards a future in which it will be possible to properly
+   distinguish dependencies that need to be compiled for and executed on the
+   host from those compiled for the target. (However, making this distinction in
+   GHC and Cabal is likely to require significant further work, which is out of
+   scope of the present proposal.)
 
 
 Example
