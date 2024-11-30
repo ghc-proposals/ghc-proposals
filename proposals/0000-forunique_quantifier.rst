@@ -68,7 +68,7 @@ This Proposal suggest to call this quantifier ``forunique``, but there are also 
 Proposed Change Specification
 -----------------------------
 
-Forunique Quantifier "grab" type variables external to this signature
+Forunique Quantifier "grab" type variables external to this signature in one-to-one corresponded order
 ::
 
   f :: forall a b. [a] -> [b] -> [(a, b)]
@@ -83,15 +83,15 @@ By using ``forunique a`` we ask do not create a new type variable ``forall a``, 
 
 2. Forunique type variable "grabs" type variables external to this signature only
 
-3. Forunique type variables are always written to one-to-one corresponded order to ``forall`` order
+3. Forunique type variables are always written to one-to-one corresponded order to ``forall`` order (regardless if it is written explicitly or implicitly)
 
-4. Forunique type variables could have own names (regardless from depended ``forall`` type variables)
+4. Forunique type variables could have own names (regardless from depended ``forall`` type variable names)
 
 5. If Forunique type variable is unused in this signature it could be wildcarded
 
 6. If Forunique type variable is unused in this signature it could be omitted iff it is placed after all used type variables
 
-7. For nested dependencies ``forunique`` we use comma to separate ``forall`` type variables from nearest to farthest variables
+7. For nested dependencies (inside several ``where`` and ``let`` definitions) ``forunique`` uses comma to separate ``forall`` type variables from nearest to farthest variables
 
 8. Two different Forunique type variables in same signature cannot "grab" the same external type variable
 
