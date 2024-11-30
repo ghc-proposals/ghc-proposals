@@ -72,9 +72,9 @@ Forunique Quantifier "grab" type variables external to this signature
 ::
 
   f :: forall a b. [a] -> [b] -> [(a, b)]
-  f xs ys  = zip (xs :: forunique a. [a]) yys
+  f xs ys  = zip (xs :: forunique aa. [aa]) yys
      where
-       yys :: forunique _ b. [b]
+       yys :: forunique _ bb. [bb]
        yys = reverse ys
 
 By using ``forunique a`` we ask do not create a new type variable ``forall a``, but use already existed external type variable ``a``.
@@ -83,19 +83,21 @@ By using ``forunique a`` we ask do not create a new type variable ``forall a``, 
 
 2. Forunique type variable "grabs" type variables external to this signature only
 
-3. Forunique type variables are always written to one-to-one corresponded order to ``forall`` order. 
+3. Forunique type variables are always written to one-to-one corresponded order to ``forall`` order
 
-4. If Forunique type variable is unused in this signature it could be wildcarded
+4. Forunique type variables could have own names (regardless from depended ``forall`` type variables)
 
-5. If Forunique type variable is unused in this signature it could be omitted iff it is placed after all used type variables.
+5. If Forunique type variable is unused in this signature it could be wildcarded
 
-6. For nested dependencies ``forunique`` we use comma to separate ``forall`` type variables from nearest to farthest variables
+6. If Forunique type variable is unused in this signature it could be omitted iff it is placed after all used type variables
 
-7. Two different Forunique type variables in same signature cannot "grab" the same external type variable
+7. For nested dependencies ``forunique`` we use comma to separate ``forall`` type variables from nearest to farthest variables
 
-8. In one signature Forunique type variables cannot have same names as Forall type variables is the same signature.
+8. Two different Forunique type variables in same signature cannot "grab" the same external type variable
 
-9. All or nothing rule to be backward compatible with ``ScopedTypeVariables`` extension
+9. In one signature Forunique type variables cannot have same names as Forall type variables is the same signature
+
+10. All or nothing rule to be backward compatible with ``ScopedTypeVariables`` extension
 
 
 Extension
