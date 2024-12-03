@@ -421,7 +421,7 @@ following API:
 
   %Dupable class Linearly
 
-  linearly :: (Linearly => Ur a) %1 -> Ur a
+  linearly :: (Linearly %1 => Ur a) %1 -> Ur a
   newLinearlyDict :: Linear.IO (Dict Linearly)
 
   data Dict c where
