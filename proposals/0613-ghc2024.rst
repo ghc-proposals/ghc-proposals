@@ -6,7 +6,7 @@ GHC2024
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/24320
 .. implemented:: 9.10
 .. highlight:: haskell
-.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/613>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/613>`_ and `amended by this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/632>`_.
 .. sectnum::
 .. contents::
 
@@ -32,6 +32,101 @@ that ``GHC2021`` comprises (`official list <https://downloads.haskell.org/ghc/la
 * `GADTs`_ (and the implied `MonoLocalBinds`_)
 * `LambdaCase`_
 * `RoleAnnotations`_
+
+Introduction of ``GHC2024``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The `GHC20xx process proposal
+<https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0372-ghc-extensions.rst#proposed-change-specification>`_
+previously specified that
+
+    When ``ghc`` is used without an explicit language choice, the latest
+    ``GHC20xx`` known to GHC is used. This applies in particular to uses of
+    ``ghci``.
+
+However, switching from ``GHC2021`` to ``GHC2024`` may break existing programs,
+primarily because of ``MonoLocalBinds``.  Cabal packages will specify a
+``default-language`` (or fall back on ``Haskell98``) and hence will be
+unaffected. But some users compile programs using ``ghc`` directly, so a change
+in the default language edition used by ``ghc`` may cause backwards
+incompatibility for those users. Such users should be strongly encouraged to use
+explicit ``LANGUAGE`` pragmas to specify the language edition they are using.
+
+For convenient one-off use and to encourage users to use the most up to date
+language edition, it is desirable that ``ghci`` in particular provides the
+latest language edition by default, and does not nag users excessively. This is
+in tension with stability.
+
+Thus, to balance these concerns:
+
+* GHC will identify a "default language edition" that is enabled by default in
+  both ``ghc`` and ``ghci``. Typically this will be the most recent ``GHC20xx``
+  edition, but this is not stricly required. (In particular, GHC 9.10 added
+  support for ``GHC2024``, but the default language edition remained
+  ``GHC2021``.)
+
+* The next major release of GHC after this proposal is accepted will change the
+  default language edition to ``GHC2024``, accompanied by appropriate mentions
+  in the release notes and migration guide.
+
+* The initial GHCi prompt will be changed to display the active language
+  edition.
+
+* GHC will not directly emit a warning when a language edition has not been
+  explicitly specified, because doing so would be overly noisy. However, if a
+  language edition has not been explicitly specified, then any error message
+  emitted by GHC will be accompanied by a note recommending that a language
+  edition should be chosen, as the error may have resulted from an old module
+  not specifying a language edition.
+
+For example, the GHCi prompt could look like this:
+
+::
+
+  $ ghci
+  GHCi, version 9.12.1: https://www.haskell.org/ghc/  :? for help
+  Using default language edition: GHC2024
+  ghci>
+
+::
+
+  $ ghci -XGHC2021
+  GHCi, version 9.12.1: https://www.haskell.org/ghc/  :? for help
+  Using language edition: GHC2021
+  ghci>
+
+::
+
+  $ cabal repl
+  GHCi, version 9.12.1: https://www.haskell.org/ghc/  :? for help
+  Using language edition: Haskell98
+  ghci>
+
+For example, the following module will give rise to an error message under
+GHC2024:
+
+::
+
+  module MonoLocal where
+
+  foo p = (bar True, bar ())
+    where
+      bar x = if p then x else x
+
+::
+
+  MonoLocal.hs:3:24: error: [GHC-83865]
+      • Couldn't match expected type ‘Bool’ with actual type ‘()’
+      • In the first argument of ‘bar’, namely ‘()’
+        In the expression: bar ()
+        In the expression: (bar True, bar ())
+      • NB: no explicit language edition specified, defaulting to GHC2024.
+        Use a LANGUAGE pragma or -X... option to set the language edition,
+        as different GHC versions may use different defaults.
+    |
+  3 | foo p = (bar True, bar ())
+    |                        ^^
+
 
 Tally
 -----
