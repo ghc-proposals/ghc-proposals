@@ -80,14 +80,14 @@ This section outlines what stages a proposal may go through. The stage is identi
    * `How to comment on a proposal <#how-to-comment-on-a-proposal>`__
    * `≡ List of proposals under discussion <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+no%3Alabel>`__
  
-   At some point the proposal author brings the proposal before the committee for review, which moves the proposal to the *Pending shepherd recommentation* state.
+   At some point the proposal author brings the proposal before the committee for review, which moves the proposal to the *Pending shepherd recommendation* state.
 
    * `How to bring a proposal before the committee <#how-to-bring-a-proposal-before-the-committee>`__
    * `Who is the committee? <#who-is-the-committee>`__
 
 4. **Label**: `Pending shepherd recommendation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+shepherd+recommendation%22>`_.  **Responsibility for next action:** committee secretary.  **Timescale**: a few days.
 
-   The committee secretary appoints a committee member as shepherd, which moves the proposal to the *Pending committtee review* state.
+   The committee secretary appoints a committee member as shepherd, which moves the proposal to the *Pending committee review* state.
 
    * `≡ List of proposals waiting for shepherd <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+shepherd+recommendation%22>`_
 
