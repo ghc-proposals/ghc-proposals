@@ -93,7 +93,7 @@ This section outlines what stages a proposal may go through. The stage is identi
 
 5. **Label**: `Pending committee review <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+committee+review%22>`__.  **Responsibility for next action**: shepherd.  **Timescale**: four or five weeks.
 
-   THe shepherd actively guides the committee towards a consensus.
+   The shepherd actively guides the committee towards a consensus.
 
    * `Committee process <#committee-process-for-responding-to-a-proposal>`__
    * `Review criteria <#review-criteria>`__
