@@ -91,7 +91,7 @@ This section outlines what stages a proposal may go through. The stage is identi
 
    * `≡ List of proposals waiting for shepherd <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+shepherd+recommendation%22>`_
 
-5. **Label**: `Pending committee review <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+committee+review%22>`__.  **Next action**: shepherd.  **Timescale**: four or five weeks.
+5. **Label**: `Pending committee review <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+committee+review%22>`__.  **Responsibility for next action**: shepherd.  **Timescale**: four or five weeks.
 
    THe shepherd actively guides the committee towards a consensus.
 
@@ -122,17 +122,16 @@ This section outlines what stages a proposal may go through. The stage is identi
 7. **Label**: `Dormant <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Dormant%22>`__.  If a proposal sees no activity for along time, it is marked as “dormant”,
    and eventually closed.
 
-   `What is a dormant proposal? <#what-is-a-dormant-proposal>`__
-   `≡ List of dormant proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Dormant%22>`__
-
+   * `What is a dormant proposal? <#what-is-a-dormant-proposal>`__
+   * `≡ List of dormant proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Dormant%22>`__
 
 8. **Label**: `Implemented <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`__.   Once a proposal is accepted, it still has to be implemented.  The author
    may do that, or someone else. We mark the proposal as “implemented” once it
    hits GHC’s ``master`` branch (and we are happy to be nudged to do so by
    email, GitHub issue, or a comment on the relevant pull request).
 
-   `≡ List of proposals pending implementation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Accepted%22+-label%3A%22Implemented%22>`__
-   `≡ List of implemented proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`__
+   * `≡ List of proposals pending implementation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Accepted%22+-label%3A%22Implemented%22>`__
+   * `≡ List of implemented proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`__
 
 Do not hesitate to `contact <#questions>`_ us if you have questions.
 
