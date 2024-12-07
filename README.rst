@@ -80,18 +80,27 @@ This section outlines what stages a proposal may go through. The stage is identi
    * `How to comment on a proposal <#how-to-comment-on-a-proposal>`__
    * `≡ List of proposals under discussion <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+no%3Alabel>`__
  
-   At some point the proposal author brings the proposal before the committee for review, which moves the proposal to the *Pending shepherd recommendation* state.
+   At some point the proposal author brings the proposal before the committee for review, which will prompt the committee secretary to appoint a shepherd for the proposal.
 
    * `How to bring a proposal before the committee <#how-to-bring-a-proposal-before-the-committee>`__
    * `Who is the committee? <#who-is-the-committee>`__
 
-4. **Label**: `Pending shepherd recommendation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+shepherd+recommendation%22>`_.  **Responsibility for next action:** committee secretary.  **Timescale**: a few days.
+4. (No label.)  **Responsibility for next action:** committee secretary.  **Timescale**: a few days.
 
-   The committee secretary appoints a committee member as shepherd, which moves the proposal to the *Pending committee review* state.
+   The committee secretary appoints a committee member as shepherd, which moves the proposal to the *Pending shepherd recommendation* state.
 
+5. **Label**: `Pending shepherd recommendation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+shepherd+recommendation%22>`_.  **Responsibility for next action:** shepherd.  **Timescale**: two weeks.
+
+   The shepherd reviews the proposal, and may request changes that they would like to see before they submit their recommendation to accept or reject the proposal to the committee.
+
+   During this period, the shepherd may change the label to "Needs revision".  This does not imply that the shepherd is opposed to the proposal, but is merely meant to indicate that there are outstanding comments the author of the proposal needs to address before the shepherd can continue.
+
+   Within two weeks, the shepherd should submit their recommendation to accept or reject the proposal to the committee. This moves the proposal to the *Pending committee review* state.
+
+   * `Committee process <#committee-process-for-responding-to-a-proposal>`__
    * `≡ List of proposals waiting for shepherd <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+shepherd+recommendation%22>`_
 
-5. **Label**: `Pending committee review <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+committee+review%22>`__.  **Responsibility for next action**: shepherd.  **Timescale**: four or five weeks.
+6. **Label**: `Pending committee review <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+committee+review%22>`__.  **Responsibility for next action**: shepherd.  **Timescale**: four or five weeks.
 
    The shepherd actively guides the committee towards a consensus.
 
