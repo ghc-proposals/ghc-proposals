@@ -599,4 +599,4 @@ Questions?
 
 Feel free to contact any of the members of the `GHC Steering Committee
 <#who-is-the-committee>`_ with questions. `Email <https://mail.haskell.org/cgi-bin/mailman/listinfo/ghc-steering-committee>`_
-and IRC (``#ghc`` on ``irc.freenode.net``) are both good ways of accomplishing this.
+and Matrix (`#ghc:matrix.org <https://matrix.to/#/#ghc:matrix.org>`_) are both good ways of accomplishing this.
