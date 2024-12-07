@@ -290,14 +290,15 @@ This proposal adds two new syntactical constructs:
 
   ::
 
-    \ (%'One x) :: A -> x
+    \ (%'One x) -> x
 
-  is the identity function at type ``A ⊸ A``. A binder can be
-  annotated with a multiplicity without a type like this
+  is the identity function, and
 
   ::
 
-    \ %'One x -> x
+    \ (%'One x :: A) -> x
+
+  is the identity function at type ``A ⊸ A``.
 
   This modifies the syntax entry for lambda expressions
   as follows
@@ -307,8 +308,7 @@ This proposal adds two new syntactical constructs:
     lpat -> [PREFIX_PERCENT btype] lpat
 
   where the ``btype`` after the ``%`` must be of kind ``Multiplicity``
-  (see below). The ``lpat`` must be a bare variable, or an error
-  occurs.
+  (see below).
 
 - Record fields can be labeled with a multiplicity. This modifies
   the syntax for record fields as follows::

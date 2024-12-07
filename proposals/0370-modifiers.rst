@@ -275,12 +275,13 @@ Further examples:
 
 * Terms: Same as the example above.
 
-* Lambda expressions: ``\ %Many x -> ...``, ``\ %One x %Many y -> ...``.
+* Lambda expressions: ``\ (%Many x) -> ...``,
+  ``\ (%One x :: Int) (%Many y) -> ...``.
 
 * Field declaration: ``data T = MkT { field %Many :: Int }``.
 
 * Class declaration: ``%Mod class C a where ...``. Other declaration forms are similar. This proposal
-  does not introduce any valid modifiers for types, but `#390 <https://github.com/ghc-proposals/ghc-proposals/pull/390>`_ does.
+  does not introduce any valid modifiers for classes, but `#390 <https://github.com/ghc-proposals/ghc-proposals/pull/390>`_ does.
 
 Effect and Interactions
 -----------------------
