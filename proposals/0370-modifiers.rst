@@ -413,3 +413,12 @@ Unresolved Questions
 * How does this interact with Template Haskell?
 
 * What warning groups imply ``-Wunknown-modifiers``?
+
+* What scope are modifiers looked up in? For example::
+
+    %a data F a
+    %G data G
+
+  If these are accepted, they'd be meaningless under the current proposal. But
+  should they be rejected, or accepted with an unknow-modifiers warning, or
+  what?
