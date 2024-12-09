@@ -87,7 +87,7 @@ rejected for violating linearity. We may amend the type scheme of
 By providing an additional linear constraint, the resource usage
 guarantees are satisfied and the program type checks.
 
-The theoretical basisof this proposal, as well as further examples,
+The theoretical basis of this proposal, as well as further examples,
 can be found in the `Linearly Qualified Types paper <paper_>`_ by
 Spiwack et al.
 
@@ -146,8 +146,8 @@ elaborated in `this blog post <blog_freeze_>`_.
 Creating linear values
 ^^^^^^^^^^^^^^^^^^^^^^
 
-A well documented difficulty, when writing API for mutable data as
-above, is to guarantee that, say, an array is unique, it isn't
+A well documented difficulty, when writing APIs for mutable data as
+above, is that in order to guarantee that, say, an array is unique, it isn't
 sufficient that ``read`` and ``write`` be linear functions. If I
 create an array with
 
@@ -303,7 +303,7 @@ The reason for this is that there is no clear semantics to make use of
 a linear equality constraint ``a ~ b`` as part of the unification
 algorithm (it's not that reasoning about linear equality is
 meaningless, but a unification or congruence conversion for linear
-equality isn't obvious to come up with, if someone has we're not
+equality isn't obvious to come up with, if someone has, we're not
 aware). Nor does it feel like a true limitation as there is no example
 where a linear equality would be useful. It's really not worth the
 bother of trying to find a solution.
@@ -465,7 +465,7 @@ Effect and Interactions
 The changes described in the above section equip GHC with a *linearly*
 qualified type system, allowing us to write programs with linear
 capabilities which are inferred to be correct implicitly. Primarily,
-we can now write programs like the one given , which no longer require
+we can now write programs like the one given above, which no longer require
 the manual threading of a linear resource to ensure that the resource
 is used in a linear way - all the programmer has to do is ensure the
 linear constraints are satisfied within the program.
@@ -545,7 +545,7 @@ Wanted with Other Multiplicities
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Givens, by virtue of the syntax, are always either linear or
-unrestricted. However, wanted can, in principle, have different
+unrestricted. However, wanteds can, in principle, have different
 multiplicities.
 
 Let
@@ -624,7 +624,7 @@ GADTs. This was our simple mutable array API:
   new :: Linearly %1 => Int -> NewMArray a
 
   data NewMArray a where
-    NewMArray :: (Read n, Write n) %1 => MArray a n -> NewMArray a n
+    NewMArray :: (Read n, Write n) %1 => MArray a n -> NewMArray a
 
 With this API we can write functions such as
 
@@ -715,7 +715,7 @@ be rather modest. In order to solve linear constraints, two changes
 need to be made to the constraints:
 
 - The multiplicity of constraints has to be tracked
-- Wanted constraints can not only paired with a multiplicative
+- Wanted constraints can not only be paired with a multiplicative
   conjunction (when collecting constraints from both members of an
   application), but also with an additive conjunction (when collecting
   constraints from alternatives in a case- or if-expression).
@@ -728,14 +728,14 @@ constraints, currently a bag of constraints, to be a bag of bags of
 constraints (read as an additive conjunction of multiplicative
 conjunctions).
 
-The constraint solver must count the linear given that it uses. This
+The constraint solver must count the linear givens that it uses. This
 will add an extra state field in the solver to communicate that some
-given are not available anymore because they've been used to solve a
+givens are not available anymore because they've been used to solve a
 constraint before. Because we keep the algorithm guess free, this
 extra state doesn't force us to backtrack and make different choices.
 
 There may be changes to the desugarer. In particular, for classes
-``C`` `with superclasses to be supported as linear constraint, we'd
+``C`` with superclasses to be supported as linear constraint, we'd
 need the superclass dictionary to be held in an unrestricted field of
 the dictionary of ``C``. But dictionaries are actually generated late
 and we don't check linearity past the output of the desugarer. So this
@@ -744,7 +744,7 @@ execute).
 
 Dupable classes are a bit more work, mostly the solver needs to figure
 out where to insert duplications of the dictionary when it's used
-several time. Following the proof of the paper_ would make us add a
+several times. Following the proof of the paper_ would make us add a
 duplication at every application node, which is clearly
 impractical. So some care is required here, the solution is not
 immediately obvious.
@@ -753,7 +753,7 @@ immediately obvious.
 Backward Compatibility
 ----------------------
 
-This proposal doesn't affect the compilation of existing program (with
+This proposal doesn't affect the compilation of existing programs (with
 or without ``-XLinearTypes``).
 
 
@@ -805,7 +805,7 @@ imply ``-XLinearTypes``).
 We preferred modifying the existing extension, since this is a very
 small change to require its own extension, linear constraints are
 very strongly thematically related to linear types, the
-``-XLinearTypes`` extension is still evolving anyway, and the chance
+``-XLinearTypes`` extension is still evolving anyway, and the change
 is fully backward compatible.
 
 Unrestricted modifier for constraints
@@ -854,7 +854,7 @@ Linear instance contexts
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 This proposal doesn't specify a way for instance contexts to be
-linear. The motivation is that there hasn't been examples of instances
+linear. The motivation is that there haven't been examples of instances
 with linear context, so we doubt it's worth the implementation
 cost. There's a relatively clear semantic that we can give to linear
 instance contexts:
@@ -880,16 +880,16 @@ Additive product in quantified constraints
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 As described, in the constraint solver, there are actually two kinds
-of products: the multiplicative product, which aggregate constraint
-uses of applications, and the additive product, which aggregate
+of products: the multiplicative product, which aggregates constraint
+uses of applications, and the additive product, which aggregates
 constraint uses of case alternatives.
 
-The additive product is only ever applied on wanted, so it's largely
+The additive product is only ever applied on wanteds, so it's largely
 invisible to the programmer. However, the logic fragment from
 `Efficient resource management for linear logic proof search`_, whose
 constraint solving algorithm we use, has support for additive products
 in givens (just like without ``-XQuantifiedConstraint``, constraint
-implication can only be found in wanted, but the are allowed in givens
+implication can only be found in wanteds, but they are allowed in givens
 when the extension is turned on).
 
 So it would be natural that when ``-XLinearTypes`` and
@@ -907,7 +907,7 @@ More method in linearly consumed type class
 
 We could loosen the requirement that type classes have exactly one
 method for them to be used linearly. Instead we could require the
-class to have a single _linear_ method, and that all the other method
+class to have a single *linear* method, and that all the other methods
 be unrestricted. In which case using the one linear method counts as
 consuming the type class once.
 
@@ -1051,7 +1051,7 @@ creating the class.
   %Dupable class Foo where
     consm %Consume = … -- Required to be of type T -> ()
     dupl %Dup2 = … -- Required to be of type T -> (T, T)
-    foo : T
+    foo :: T
 
 But this sort of static method doesn't exist in GHC, this sounds like
 a rather large departure from the status quo.
