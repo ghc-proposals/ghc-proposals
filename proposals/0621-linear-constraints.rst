@@ -11,6 +11,7 @@ Linear Constraints
 .. contents::
 
 .. _paper: https://arxiv.org/abs/2103.06127
+.. _talk: https://www.youtube.com/watch?v=c8VZp-3eQU0
 .. _`Existential Types proposal`: https://github.com/ghc-proposals/ghc-proposals/pull/473
 .. _blog_freeze: https://www.tweag.io/blog/2023-01-26-linear-constraints-freeze/
 .. _blog_scopes: https://www.tweag.io/blog/2023-03-23-linear-constraints-linearly/
@@ -89,7 +90,8 @@ guarantees are satisfied and the program type checks.
 
 The theoretical basis of this proposal, as well as further examples,
 can be found in the `Linearly Qualified Types paper <paper_>`_ by
-Spiwack et al.
+Spiwack et al. You may also want to watch the introductory
+`talk at ICFP 2022 <talk_>`_ [17min].
 
 Motivation
 ----------
@@ -140,8 +142,8 @@ automatically by the compiler. This is what this proposal lets us do:
 get pretty close to the latter style, without having to introduce a
 monad.
 
-A more complex example involving freezing nested mutable structure is
-elaborated in `this blog post <blog_freeze_>`_.
+A more interesting, though more complex, example involving freezing
+nested mutable structure is elaborated in `this blog post <blog_freeze_>`_.
 
 Creating linear values
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -173,7 +175,9 @@ continuations aren't very composable as argued in `this blog post
 <blog_scopes_>`_. See also the long discussion at
 `tweag/linear-base#130
 <https://github.com/tweag/linear-base/issues/130>`_. This proposal
-will let us define ``new`` in direct style.
+will let us define ``new`` in direct style. Direct-style new requires
+a little more than the simple linear constraint outlined so far,
+namely *dupable classes*.
 
 Proposed Change Specification
 -----------------------------
@@ -337,17 +341,19 @@ Classes annotated with ``%Dupable`` must:
 - Have a single method
 - The method must be of type ``LinearityToken``
 
-Such a dupable type class can be used multiple times even if they are
-linear. *E.g.*::
+Such a dupable type class can be used multiple times (including 0
+times) even if they are linear. *E.g.*::
 
   class Foo where
     foo' :: LinearityToken
 
   foo :: Foo %1 => Int -> Int
-  foo = case foo' of { (# #) -> \x -> x }
 
   dupes :: Foo %1 => (Int -> Int, Int -> Int)
   dupes = (foo, foo)
+
+  consumes :: Foo %1 => Bool
+  consumes = True
 
 But, crucially, not passed to an unrestricted function::
 
@@ -457,6 +463,10 @@ prevents the problems described in the *Motivation* section.
     … -- modify the array as suited
     Ur $ sum arr1 + sum arr2
 
+Note how we introduce ``Linearly`` *once* with ``linearly``, but use
+``Linearly`` twice (once per occurrence of ``new``), this uses the
+fact that ``Linearly`` is dupable.
+
 See also Sections 3.2 and 4 of the paper_.
 
 Effect and Interactions
@@ -487,12 +497,32 @@ Consider
 
    class Eq a => Ord a where ...
 
-In terms of the constraint solver, this introduces an axiom ``Ord a =>
-Eq a``. This proposal doesn't change this axiom. It means that a
-linear given ``Ord a`` cannot be used to derive an instance of ``Eq
-a``.
+In terms of the constraint solver, this introduces an axiom ``Ord a => Eq a``.
+This proposal doesn't change this axiom (that is the axiom
+keeps using the unrestricted implication). It means that a linear
+given ``Ord a`` cannot be used to derive an instance of ``Eq a``.
 
-To see why, consider ``Ord a`` with one single method ``compare``,
+To see why, consider
+
+::
+
+   class Eq a => Ord a where
+     compare :: a -> a -> Ordering
+
+   -- This isn't globally consistent, for simplicity
+   withOneOrd :: Eq a => (a -> a -> Ordering) %1 -> (Ord a %1 => r) -> r
+
+If the superclass axiom was ``Ord a %1 => Eq a``, then we could write
+
+::
+
+   bad :: (Int -> Int -> Ordering) %1 -> True
+   bad f = withOneOrd f (if 0 == 1 then True else False)
+
+Notice how this doesn't use ``f`` at all, despite the guarantee that
+``f`` be linear, which is unsound [#super-class-with]_.
+
+.``Ord a`` with one single method ``compare``,
 what would happen if I used an axiom ``Ord a %1 => Eq a``? we would
 never be able to call the ``compare`` function, in direct violation
 with the semantics of linearity. This is simply unsound.
@@ -505,8 +535,8 @@ below), this corner-case is hardly worth the bother.
 Before we put the final nail in this coffin, let's briefly address
 that the fact that the arrow in ``class Eq a => Ord a`` is the wrong
 way around, suggests that the ``Eq`` is somewhat unrestricted here,
-and maybe the intuitive axiom would be something like ``Ord a %1 => Ur
-(Eq a)``. Such an axiom would break Lemma 5.5 of the paper_. Not only
+and maybe the intuitive axiom would be something like ``Ord a %1 => Ur (Eq a)``.
+Such an axiom would break Lemma 5.5 of the paper_. Not only
 is it outside of the fragment of linear logic that we know how to
 solve, but it breaks the proof of soundness (so the resulting type
 inference would presumably be unsound, although we don't know that, we
@@ -518,13 +548,14 @@ breaks constraint solving anyway. To be precise, it breaks
 overlaps with the instance axioms. In traditional Haskell, the way
 this overlap is addressed is by using the superclass axiom in reverse:
 instead of changing a wanted of type ``Eq a`` into a wanted of type
-``Ord a``, givens of type ``Ord a`` let us add a given of type ``Eq
-a``. But if the given is linear, that would hardly do: we'd have both
+``Ord a``, givens of type ``Ord a`` let us add a given of type ``Eq a``.
+But if the given is linear, that would hardly do: we'd have both
 the original ``Ord a`` and the derived ``Eq a``, consuming both counts
 as consuming the original ``Ord a`` twice, not once!
 
-Final final nail: axioms of the form ``Traversable t %1 => (Functor
-t, Foldable t)`` aren't in the fragment that we know how to solve.
+Final final nail: axioms of the form
+``Traversable t %1 => (Functor t, Foldable t)``
+aren't in the fragment that we know how to solve.
 
 Instance contexts
 ^^^^^^^^^^^^^^^^^
@@ -585,6 +616,7 @@ Then in
 we have wanted ``C`` whose multiplicity is a unification variable, the
 value of which will be determined by the context. What do we do? There
 are two cases:
+
 - There's an unrestricted given with head ``C`` *and no such linear given*, then
   the unrestricted given can solve the wanted.
 - There is a linear given with head ``C``: we don't solve ``C`` until
@@ -601,7 +633,7 @@ management for linear logic proof search`_, where such higher-order
 givens are handled. The extension is unproblematic, it would
 presumably be more effort to prevent it than to support it.
 
-Therefore, when ``-XLinearTypes`` and ``-XLinearConstraints`` are both
+Therefore, when ``-XLinearTypes`` is
 on, contexts can contain implications of the form ``C %1 => D``.
 
 Existential types proposal
@@ -902,13 +934,14 @@ But this is a little bothersome, we'd have to settle on syntax too. So
 before dedicating work to this sort of thing, we'd rather that a real
 need has arisen.
 
-More method in linearly consumed type class
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+More methods in linearly consumed type class
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 We could loosen the requirement that type classes have exactly one
 method for them to be used linearly. Instead we could require the
 class to have a single *linear* method, and that all the other methods
-be unrestricted. In which case using the one linear method counts as
+be unrestricted (see *Additive dictionaries* below for even less
+restrictions). In which case using the one linear method counts as
 consuming the type class once.
 
 We'd need a way to specify unrestricted methods, we could use the same
@@ -937,6 +970,46 @@ convinced that this particular ``0`` is a desirable feature for Linear
 Haskell, but there's little telling what kind of havoc it would wreak
 on multiplicity inference in its current state. So we'd rather keep
 this extension for a later time.
+
+Additive dictionaries
+^^^^^^^^^^^^^^^^^^^^^
+
+We could go even further the *More methods in linearly consumed type
+class* and interpret type class dictionaries as being additive
+products.
+
+To recapitulate, linear logic has two products: the multiplicative
+product ($\otimes$) and the additive product ($\&$). In Linear
+Haskell, all the algebraic datatypes are interpreted as being (sums
+of) multiplicative products, additive product can be encoded.
+
+In this proposal we've been assuming that type-class dictionaries have
+multiplicative-product types. This is because today, in GHC
+(specifically in Core), dictionaries have ordinary algebraic types.
+
+But they don't have to. We could make a special type for dictionaries
+which would be interpreted as additive (it doesn't really make a
+difference at toplevel, so both interpretation are compatible with
+current Haskell). In this case, calling any method of any type class
+would be linear, which is much more theoretically satisfying.
+
+We aren't proposing this because
+
+- This is a much bigger change. For one thing it affects Core, where
+  dictionaries are materialised. Core doesn't check linearity after
+  optimisation (because it's too hard) but it does check linearity of
+  the desugarer's output.
+- Even type class were additive products, it's unclear we could use
+  multiple-method type classes linearly. To have a linear instance, we
+  need to build an instance which depends on a linear variable. The
+  only way to do that is with type class reflection. There is no
+  reflection mechanism today for type classes with more than one
+  method (see, *e.g.*, `withDict
+  <https://hackage.haskell.org/package/ghc-prim-0.13.0/docs/GHC-Magic-Dict.html#t:WithDict>`_). This
+  would have to be designed, and it's quite the can of worm.
+
+This proposal is, anyway, forward compatible with this
+alternatives. So we're proposing to avoid this complication.
 
 Dupable classes
 ^^^^^^^^^^^^^^^
@@ -984,12 +1057,15 @@ An somewhat middle-ground option is to expose
   consumeLinearityToken :: LinearityToken -> ()
   dup2LinearityToken :: LinearityToken -> (LinearityToken, LinearityToken)
 
-Just linearly
+Just Linearly
 ~~~~~~~~~~~~~
 
 The most useful dupable type class in the proximate future (in fact
-the only known example yet), is ``Linearly``. So another option, to
-avoid introducing any ad hoc syntax is to simply expose the (abstract)
+the only known example yet; a dupable ``Read`` capability for mutable
+data structures could be another example, with the idea that it'd be
+use akin to Rust's immutable borrowing, but it's far from certain that
+it'd work as intended), is ``Linearly``. So another option, to avoid
+introducing any ad hoc syntax is to simply expose the (abstract)
 ``Linearly`` constraint from the ``GHC.Constraint.Linear`` module *and
 nothing else*. So that ``GHC.Constraint.Linear`` would be
 
@@ -1016,6 +1092,17 @@ That being said having just the linearly type class is forward
 compatible with pretty much any further plan, since the ``Linearly``
 type class is abstract and can be later implemented in terms of a more
 general feature.
+
+Linearly in GHC's library
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Even if ``Linearly`` isn't primitive, considering that it's so useful,
+and so prototypical of the use of dupable constraints, it may be worth
+exporting ``Linearly`` from ``GHC.Constraint.Linear`` in addition to
+the primitives.
+
+We're trying to be minimal in what we add to GHC, and would rather
+define ``Linearly`` in the linear-base library.
 
 Magic methods (1)
 ~~~~~~~~~~~~~~~~~
@@ -1106,3 +1193,15 @@ be followed `here
 
 Endorsements
 -------------
+
+.. rubric:: Footnotes
+
+.. [#super-class-with] This proposal interprets type class
+                       dictionaries as multiplicative products, if we
+                       went with the *Additive dictionaries*
+                       alternative, it would be possible to have
+                       linear super-class axioms but ``withOneOrd``
+                       would have to consume its argument both in the
+                       ``compare`` method and the ``Eq a`` dictionary,
+                       rather than only the ``compare`` method as in
+                       the example.
