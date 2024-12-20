@@ -207,8 +207,24 @@ Definitions
   as the level of the definition site.
 
 **top-level splice**
-  A splice that does not have any enclosing quotes/splices (i.e. whose body is at a negative level), a
-  declaration splice or a quasiquoter.
+  A splice whose body is at a negative level (i.e. not surrounded by any quotations), or a quasiquoter.
+  A top-level splice marks in a program where compile-time evaluation will occur.
+  For example::
+
+    -- A splice in an expression context, not surrounded by any quotes. Therefore
+    -- baz is at level -1 and this is a top-level splice.
+    foo = $(baz)
+
+    -- A top-level declaration splice, when evaluated will insert declarations at
+    -- this point.
+    $(makeLenses ''A)
+
+    -- A quasi-quoter, looks like a quote, but is actually syntactic sugar for a
+    -- top-level splice.
+    qq = [quasi| my-quasi-quoter]
+    ====>
+    qq = $(quoteExp quasi "my-quasi-quoter")
+
 
 
 Background: Cross Stage Persistence
@@ -334,7 +350,7 @@ but will be rejected under ``NoImplicitStagePersistence``::
 
 Under ``NoImplicitStagePersistence`` it is an error to use ``DeriveLift`` on a
 type unless all its definition is imported at both level 0 and level 1.
-This is discussed in more detail in a later section.
+This is discussed in more detail in the "Implicit lifting and deriving ``Lift`` instances" section.
 
 
 
@@ -434,7 +450,9 @@ Exports
 #######
 
 Under ``NoImplicitStagePersistence``, modules may export bindings only if they
-are available at level 0.
+are available at level 0. All top-level bindings are introduced at level 0,
+types, data constructors, functions and so on as well as modules imported at level 0.
+These things can therefore be exported from a module.
 
 For example, the following is rejected::
 
@@ -600,7 +618,7 @@ Quote imports
 #############
 
 A "quote" import is prefixed with ``quote``.  In this example, identifiers from
-``A`` can be used **only** in quotes, while identifiers from ``A`` **cannot** be
+``A`` can be used **only** in quotes, while identifiers from ``B`` **cannot** be
 used in quotes or splices::
 
   {-# LANGUAGE ExplicitLevelImports #-}
@@ -624,6 +642,10 @@ Module Stages
 
 Modules are compiled at a specific stage. Levels within a module are interpreted
 as offsets to the specific stage at which the module is being compiled.
+Stages are an application of the proposal which a levelled language makes possible,
+but a levelled langauge does imply a specific stage structure which we leave
+to future work.
+
 
 For example, suppose we have just two stages, so a module is either compiled for
 compile time (*C*) or runtime (*R*), with *C* before *R*. Then:
@@ -659,6 +681,13 @@ For example:
 
 Further level structure as needed by cross-compilation settings may require more stages.
 This will be easily possible to change once the level discipline is enforced.
+
+At the moment, GHC has a basic notion of stages, for example when using ``-fno-code``, only
+modules which are dependencies of modules which enable ``TemplateHaskell`` are compiled but
+the concept is not very precise yet.
+
+Cabal and the rest of the ecosystem does not yet understand stages. This is left
+to future work and will be necessary for Cabal to support cross-compilation properly.
 
 
 Module stage offsetting example
@@ -1133,6 +1162,25 @@ levels rather than just level 0.
 
 For us, it is undesirable to automatically add these additional imports and
 hence dependencies on certain stages unless they were actually used.
+
+An implicit ``Prelude`` import will require the package which provides
+``Prelude`` to be compiled for all stages, whether it is used or not. This may
+cause a programmer a problem if there are subtlties about compiling their Prelude
+for a particular stage.
+
+In this case, we would then also need a design about how to turn off the specific
+imports. Writing ``import quote Prelude ()`` is not sufficient, because the module
+will still depend on ``Prelude`` at a particular stage. The programmer would
+have to enable ``NoImplicitPrelude`` in their library to turn off all ``Prelude``
+imports, before manually adding them back. They would have to enable this in all
+modules as well, lest a sneaky implicit import suddently adds back a ``Prelude``
+dependency at an undesired stage.
+
+Therefore it seems more in spirit with the proposal to make programmers depend
+explicitly on a prelude at different levels if they want to do so.
+
+
+
 
 
 Other alternatives
