@@ -245,23 +245,35 @@ Examples
 --------
 Here are some examples that will be accepted or rejected with this proposal::
 
-  f1 :: Int %1 -> Bool    -- accepted: %1 is a special case, see below.
-  f2 :: Int %Many -> Bool -- accepted: Many :: Multiplicity
-  f3 :: Int %() -> Bool   -- accepted: () :: ()
-  f4 :: Int %m -> Bool    -- rejected: the kind of m is undeclared
-  f5 :: Int %(m :: Multiplicity) -> Bool   -- accepted with a type signature
+  f1 :: Int %1 -> Bool        -- accepted: %1 is a special case, see below.
+  f2 :: Int %Many -> Bool     -- accepted: Many :: Multiplicity
+  f3 :: Int %() -> Bool       -- accepted: () :: Type
+  f4 :: Int %m -> Bool        -- rejected: the kind of m is undeclared
+  f5 :: Int %(m :: Multiplicity) -> Bool  -- accepted with a type signature
   f6 :: Int %One %Many -> Bool
     -- rejected (although it will parse) with -XLinearTypes; accepted otherwise
   f7 :: Int %Many %Many -> Bool
     -- rejected with -XLinearTypes; accepted otherwise
   f8 :: Int %(m :: Multiplicity) -> Int %m -> Int
     -- rejected: the second use of '%m' has an unknown king
+  f9 :: Int %Maybe -> Bool    -- accepted: Maybe :: Type -> Type
+  f10 :: Int %Nothing -> Bool -- rejected: the kind of Nothing is unknown
 
   map :: forall (m :: Multiplicity). (a %m -> b) -> [a] %m -> [b]
     -- accepted: m has a known type
 
-With ``-XLinearTypes -XNoModifiers``, ``f4`` and ``f8`` are accepted, and ``f3``
-is rejected.
+  -- these are all accepted:
+  data D = %() Int :* Bool   -- the constructor declaration is modified
+  data D = %() (:*) Int Bool -- the same
+  data D = (%() Int) :* Bool -- the type of the first argument is modified
+
+  x :: %Maybe Int -- x is of type (Int, modified with type Maybe)
+  x :: %(%Maybe Maybe) Int
+    -- x is of type (Int, modified with type (Maybe, modified with type Maybe))
+
+With ``-XLinearTypes -XNoModifiers``, ``f4`` and ``f8`` are accepted, and
+``f3``, ``f9``, ``f10``, and all the modifiers not attached to arrows are
+rejected.
 
 The syntax (and semantics) for modifiers on patterns and record fields is exactly
 as described in the `linear types proposal`_.
