@@ -165,7 +165,7 @@ Proposed Change Specification
     introduced:
 
     * Only ``Multiplicity`` modifiers are permitted, and only in the places
-      they're recognized. Any use of a modifier is an error.
+      they're recognized. Any other use of a modifier is an error.
 
     * The kind of a modifier is determined by checking for ``Multiplicity``, not
       through synthesis. So ``Int %m -> Bool`` is forbidden with
