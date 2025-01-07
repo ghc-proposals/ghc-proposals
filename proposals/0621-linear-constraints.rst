@@ -11,6 +11,7 @@ Linear Constraints
 .. contents::
 
 .. _paper: https://arxiv.org/abs/2103.06127
+.. _linear_haskell_paper: https://arxiv.org/abs/1710.09756
 .. _talk: https://www.youtube.com/watch?v=c8VZp-3eQU0
 .. _`Existential Types proposal`: https://github.com/ghc-proposals/ghc-proposals/pull/473
 .. _blog_freeze: https://www.tweag.io/blog/2023-01-26-linear-constraints-freeze/
@@ -144,6 +145,71 @@ monad.
 
 A more interesting, though more complex, example involving freezing
 nested mutable structure is elaborated in `this blog post <blog_freeze_>`_.
+
+Typestate
+^^^^^^^^^
+
+In the `Linear Haskell paper <linear_haskell_paper_>`_, an API is
+proposed for sockets to handle typestate (that is, reflecting in the
+types that sockets change state over time). Assuming a linear IO
+monad, it looks like this:
+
+::
+
+   socket :: IO (Socket Unbound)
+   bind :: Socket Unbound %1 -> SocketAddress -> IO (Socket Bound)
+   listen :: Socket Bound %1 -> IO (Socket Listening)
+   ...
+
+With it you can write programs such as:
+
+::
+
+  do
+    s1 <- socket -- s1 :: Socket Unbound
+    s2 <- bind s1 (SocketAddressInet6 S.inet6Any 8080 0 0) -- s2 :: Socket Bound
+    s3 <- listen s2 -- s3 :: Socket Listening
+    ...
+
+The idea is that each call consumes its argument, so ``s1`` isn't
+available when ``s2`` is, and we effectively track the typestate of
+the socket.
+
+But this isn't very idiomatic, as we have to return this new socket
+every time (since the “do” notation supports shadowing, we could name
+all of them ``s``, this would alleviate the burden a little). With
+linear constraint, this can become
+
+::
+
+   data NewSocket where
+     NewSocket :: Unbound s %1 => Socket s -> NewSocket
+
+   socket :: IO NewSocket
+   bind :: Unbound s %1 => Socket s -> SocketAddress -> IO (Bound s /\ ())
+   listen :: Bound s %1 => Socket s -> IO (Listening /\ ())
+   ...
+
+   do
+     NewSocket s <- socket -- Unbound s
+     Box () <- bind s (SocketAddressInet6 S.inet6Any 8080 0 0) -- Bound s
+     Box () <- listen s -- Listening s
+     ...
+
+This modifies the program much less. The source of the ``s`` variable
+is more explicit. And with a little bit of ``QualifiedDo`` (or
+``RebindableSyntax``) work, we can modify the program even less from
+the idiomatic form (it would be even better with primitive existential
+type, see the corresponding section below).
+
+::
+
+   Typestate.do
+     NewSocket s <- socket
+     bind s
+     listen s
+     ...
+
 
 Creating linear values
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -755,7 +821,7 @@ In an earlier version of the proposal, threading with linear
 constraint was done using let bindings in the examples. Like
 
 ::
-   
+
   read2AndDiscard ::  (Read n, Write n) %1 => MArray a n -> (Ur a, Ur a)
   read2AndDiscard arr =
       let !(Box x)  = read arr 0
