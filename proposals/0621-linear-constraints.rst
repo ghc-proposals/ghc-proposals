@@ -18,6 +18,7 @@ Linear Constraints
 .. _blog_scopes: https://www.tweag.io/blog/2023-03-23-linear-constraints-linearly/
 .. _`Efficient resource management for linear logic proof search`: https://www.sciencedirect.com/science/article/pii/S0304397599001735?via%3Dihub
 .. _`Linear Types proposal`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0111-linear-types.rst
+.. _mezzo_lang: http://protz.github.io/mezzo/
 
 Since the introduction of linear types in GHC 9.0.1, programmers have
 been able to write programs with safe manual memory management much
@@ -579,7 +580,7 @@ a way to create arrays::
   new :: Linearly %1 => Int -> NewMArray a
 
   data NewMArray a where
-    NewMArray :: (Read n, Write n) %1 => MArray a n -> NewMArray a n
+    NewMArray :: (Read n, Write n) %1 => MArray a n -> NewMArray a
 
 Because there is no unrestricted evidence of ``Linearly``, the
 linearity of the ``Linearly`` constraint will contaminate the returned
@@ -603,6 +604,89 @@ Note how we introduce ``Linearly`` *once* with ``linearly``, but use
 fact that ``Linearly`` is dupable.
 
 See also Sections 3.2 and 4 of the paper_.
+
+Borrowing
+^^^^^^^^^
+
+Borrowing consists in zooming in on a part of a mutable data
+structure. Our example will be taking a subarray:
+
+::
+
+   subarrayMeh :: (Read n, Write n) %1 => Int -> Int -> MArray a n -> NewMArray a
+
+The problem with the type of ``subarrayMeh``, however, is that it
+loses the right to write to the original array forever. This isn't
+borrowing, this is theft.
+
+But we can't keep the capabilities on the original array either:
+
+::
+
+   subarrayBad :: (Read n, Write n) %1 => Int -> Int -> MArray a n -> (Read n, Write n) /\ NewMArray a
+
+Soundness or our mutable arrays depend on the absence of sharing. But
+we very much intend ``arr`` and ``arr' = subarray 42 57 arr`` to share
+mutable cells. So while ``arr'`` can be written to (or read from), we need to “pause”
+the ability to write to (or read from!) ``arr``. One way to achieve
+this is with quantified (linear) constraints
+
+::
+
+   data NewBorrowedArray n a where
+     NewBorrowedArray
+     :: (Read n', Write n', Write n, (Read n', Write n') %1 => Read n)
+     %1 => MArray a n' -> NewBorrowedArray n a
+
+   subarray :: (Read n, Write n) %1 => Int -> Int -> MArray a n -> NewBorrowedArray
+
+The way this works is that as soon as you read or write from ``arr``,
+you'll consume the ``Read n'`` and ``Write n'`` with the quantified
+constraint, and it will render ``arr'`` unreadable.
+
+This treatment of borrowing is inspired the `Mezzo programming
+language <mezzo_lang_>`_. Though borrowing is more well-known these
+days through the lens of Rust where borrowing is traditionally seen as
+being bound to a scope (though in truth, non-lexical lifetimes makes
+is no longer true). The scope-style is less primitive than the
+quantified constraint style:
+
+::
+
+   subarrayScoped
+     :: (Read n, Write n) %1 => Int -> Int -> MArray a n
+     -> (forall n'. (Read n', Write n') %1 => (Read n', Write n') /\ r)
+     %1 -> (Read n, Write n) /\ r
+   subarrayScoped from len arr scope = DataFlow.do
+     NewBorrowedArray arr' <- subArray from len arr
+     Box r <- scope arr'
+     Box r
+
+Note that everything done with (linear or not) constraints can be done
+by explicit argument passing. But this is a good example where the
+minutia of the arguments would be quite painful to manage, while it's
+mostly invisible with linear constraints.
+
+PS: This relies on the fact that ``Write n`` is useless without ``Read n``.
+A more satisfactory implementation would suspend both ``Read n`` and
+``Write n``. However, with linear constraints ``C1 %1 => (A, B)``
+isn't equivalent to ``(C1 %1 => A, C1 %1 => B)`` so we'd need to write
+something like
+
+::
+
+   data NewBorrowedArray n a where
+     NewBorrowedArray
+     :: (Read n', Write n', (Read n', Write n') %1 => (Read n, Write n))
+     %1 => MArray a n' -> NewBorrowedArray n a
+
+This isn't permitted in GHC, and it probably shouldn't be, as it isn't
+clear how to solve constraints when we are allowed such givens.
+
+So it does seem that to implement borrowing in this fashion we need
+some kind of “root” constraint which is necessary for all the
+operations. So that we can suspend this constraint and this constraint
+only to prevent all operations on ``arr``.
 
 Effect and Interactions
 -----------------------
