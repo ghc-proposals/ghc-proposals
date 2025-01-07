@@ -514,6 +514,46 @@ We just need to define the following module
 
 We'll write the rest of the examples in this style.
 
+For monadic code, the normal do notation for linear monads already
+does the right thing.
+
+More “do” notation
+^^^^^^^^^^^^^^^^^^
+
+An option, with the “do” notation, is to go even further and handle
+``Box`` in the notation. This could look like
+
+::
+
+   module QualifiedDataFow where
+
+   (>>=) :: c /\ a %1 -> (c %1 => a -> b) %1 -> b
+   (Box a) >>= b = b a
+
+   (>>) :: c /\ ()  %1 -> (c %1 => b) %1 -> b
+   (Box ()) >> b = b
+
+   module QualifiedMonad where
+
+   (>>=) :: Monad m => m (c /\ a) %1 -> (c %1 => a -> m b) %1 -> m b
+   -- Using the do notation for linear monads
+   ma >>= k = Linear.do { Box a <- ma; k a }
+
+   (>>) :: m (c /\ ()) %1 -> (c %1 => m b) %1 -> m b
+   mu >> mb = Linear.do { Box () <- mu; mb }
+
+We'd have to change the APIs to always return a ``c /\ a`` even if
+``c=()``. E.g.
+
+::
+
+   free :: (Read n, Write n) %1 => MArray a n -> () /\ ()
+
+The code samples in this proposal use explicit ``Box``-s for clarity,
+but it isn't meant to be prescriptive, we'll need more experience to
+decide which style is best (it's worth pointing out that the
+difference vanishes under the existential types proposal, see below).
+
 The Linearly constraint
 ^^^^^^^^^^^^^^^^^^^^^^^
 
