@@ -255,7 +255,7 @@ Here are some examples that will be accepted or rejected with this proposal::
   f7 :: Int %Many %Many -> Bool
     -- rejected with -XLinearTypes; accepted otherwise
   f8 :: Int %(m :: Multiplicity) -> Int %m -> Int
-    -- rejected: the second use of '%m' has an unknown king
+    -- rejected: the second use of '%m' has an unknown kind
   f9 :: Int %Maybe -> Bool  -- accepted: Maybe :: Type -> Type
   f10 :: Int %Nothing -> Bool
     -- rejected: `Nothing :: Maybe a` has polymorphic kind
