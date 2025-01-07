@@ -1081,8 +1081,8 @@ when the extension is turned on).
 So it would be natural that when ``-XLinearTypes`` and
 ``-XQuantifiedConstraint`` are both on, we'd allow additive product on
 given constraints. This presumably would be a rather mild extension
-(though some care would be required to make sure that the resulting
-algorithm remains guess-free).
+(though some (possibly a lot of!) care would be required to make sure
+that the resulting algorithm remains guess-free).
 
 But this is a little bothersome, we'd have to settle on syntax too. So
 before dedicating work to this sort of thing, we'd rather that a real
