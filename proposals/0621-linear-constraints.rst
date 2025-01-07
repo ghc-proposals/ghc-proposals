@@ -974,7 +974,7 @@ this extension for a later time.
 Additive dictionaries
 ^^^^^^^^^^^^^^^^^^^^^
 
-We could go even further the *More methods in linearly consumed type
+We could go even further than *More methods in linearly consumed type
 class* and interpret type class dictionaries as being additive
 products.
 
@@ -999,7 +999,7 @@ We aren't proposing this because
   dictionaries are materialised. Core doesn't check linearity after
   optimisation (because it's too hard) but it does check linearity of
   the desugarer's output.
-- Even type class were additive products, it's unclear we could use
+- Even if type classes were additive products, it's unclear we could use
   multiple-method type classes linearly. To have a linear instance, we
   need to build an instance which depends on a linear variable. The
   only way to do that is with type class reflection. There is no
@@ -1009,7 +1009,7 @@ We aren't proposing this because
   would have to be designed, and it's quite the can of worm.
 
 This proposal is, anyway, forward compatible with this
-alternatives. So we're proposing to avoid this complication.
+alternative. So we're proposing to avoid this complication.
 
 Dupable classes
 ^^^^^^^^^^^^^^^
