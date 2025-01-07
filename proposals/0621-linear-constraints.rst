@@ -373,15 +373,16 @@ We refer back now to the first example from the motivation section,
 which showed how writing a function which reads the first two elements
 of an array became a tedious exercise of threading our linear resource
 through the function. Using linear constraints, however, such a
-function can be written as:
+function can be written as (this notation is very explicit, but it can be
+improved see the *“Do” notation* and *Strict lets* sections below):
 
 ::
 
    read2AndDiscard ::  (Read n, Write n) %1 => MArray a n -> (Ur a, Ur a)
    read2AndDiscard arr =
-        let !(Box x)  = read arr 0
-            !(Box y)  = read arr 1
-            !()       = free arr
+        read arr 0 & \cases (Box x) ->
+        read arr 1 & \cases (Box y) ->
+        free arr & \cases () ->
         in (x, y)
 
 The main way in which this differs from our previous function is that
@@ -416,6 +417,36 @@ unique ownership via the linear constraints.
 
 For a more in-depth example along these lines, refer to section 4 of
 the paper_.
+
+“Do” notation
+^^^^^^^^^^^^^
+
+Using ``QualifiedDo`` (or ``RebindableSyntax``) we can turn the series
+of ``\cases`` into something a little bit more visually appealing. The
+``read2AndDiscard`` example can be recast as
+
+::
+
+   read2AndDiscard ::  (Read n, Write n) %1 => MArray a n -> (Ur a, Ur a)
+   read2AndDiscard arr = DataFlow.do
+        (Box x) <- read arr 0
+        (Box y) <- read arr 1
+        free arr
+        (x, y)
+
+We just need to define the following module
+
+::
+
+   module DataFlow where
+
+   (>>=) :: a %1 -> (a %1 -> b) %1 -> b
+   a >>= b = b a
+
+   (>>) :: () %1 -> b %1 -> b
+   () >> b = b
+
+We'll write the rest of the examples in this style.
 
 The Linearly constraint
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -455,11 +486,9 @@ prevents the problems described in the *Motivation* section.
 
 ::
 
-  linearly $
-    let
-      !(NewMArray arr1) = new
-      !(NewMArray arr2) = new
-    in
+  linearly $ DataFlow.do
+    (NewMArray arr1) <- new
+    (NewMArray arr2) <- new
     … -- modify the array as suited
     Ur $ sum arr1 + sum arr2
 
@@ -631,6 +660,21 @@ presumably be more effort to prevent it than to support it.
 Therefore, when ``-XLinearTypes`` is
 on, contexts can contain implications of the form ``C %1 => D``.
 
+Implicit parameters
+^^^^^^^^^^^^^^^^^^^
+
+Referencing an implicit parameter is linear in the implicit
+parameters. This means that linear implicit parameters can effectively
+be used in programs
+
+::
+
+   foo :: (?x :: A) %1 => A
+   foo x = ?x
+
+Note that, because implicit parameters are currently implemented as
+single-method type classes, this comes for free in the implementation.
+
 Existential types proposal
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -658,27 +702,22 @@ With this API we can write functions such as
 ::
 
   read2AndDiscard ::  (Read n, Write n) %1 => MArray a n -> (Ur a, Ur a)
-  read2AndDiscard arr =
-       let !(Box x)  = read arr 0
-           !(Box y)  = read arr 1
-           !()       = free arr
+  read2AndDiscard arr = DataFlow.do
+       (Box x) <- read arr 0
+       (Box y) <- read arr 1
+       free arr
        in (x, y)
 
-  linearly $
-    let
-      !(NewMArray arr1) = new
-      !(NewMArray arr2) = new
-    in
+  linearly $ DataFlow.do
+    (NewMArray arr1) <- new
+    (NewMArray arr2) <- new
     … -- modify the array as suited
     Ur $ sum arr1 + sum arr2
 
 There is still a little bit of noise there, what with the defining of
 GADTs (while ``/\`` can be defined once and for all, types like
 ``NewMArray`` must be defined for most every type because we lack
-type-level lambdas), and the constructors in the let-bindings. Plus
-this is cheating a tad: let bindings, even strict lets, don't
-currently expose constraints. We leave the consideration of whether
-it's worth fixing lets to expose constraints for a later time.
+type-level lambdas), and the constructors in the let-bindings.
 
 With existential types, this would look something like this (the
 existential types proposal defines, not coincidentally, a ``/\`` with
@@ -692,17 +731,15 @@ the same role as that above):
   new :: Linearly %1 => Int -> exists n. (Read n, Write n) /\ MArray a n
 
   read2AndDiscard ::  (Read n, Write n) %1 => MArray a n -> (Ur a, Ur a)
-  read2AndDiscard arr =
-       let !x  = read arr 0
-           !y  = read arr 1
-           !() = free arr
-       in (x, y)
+  read2AndDiscard arr = DataFlow.do
+       x  <- read arr 0
+       y  <- read arr 1
+       free arr
+       (x, y)
 
-  linearly $
-    let
-      !arr1 = new
-      !arr2 = new
-    in
+  linearly $ DataFlow.do
+    arr1 <- new
+    arr2 <- new
     … -- modify the array as suited
     Ur $ sum arr1 + sum arr2
 
@@ -711,28 +748,44 @@ types proposal needs to modify Core, it's quite a bit more involved
 that this one. And linear constraints are already pulling a lot of
 weight without existential types.
 
-There is a little big of a wrinkle though: lazy pattern matching is
-not recognised as linear. While there doesn't appear to be any
-pattern-matching in the programs above, the desugaring of ``c/\a`` is
-actually a pair, and using the constraint requires a
-pattern-matching. Therefore, we propose that constraints stored in an
-``x :: c/\a`` are not available until they are bound by a strict
-pattern. Hence all the ``!`` in the examples above.
+Strict lets
+^^^^^^^^^^^
 
-Implicit parameters
-^^^^^^^^^^^^^^^^^^^
+In an earlier version of the proposal, threading with linear
+constraint was done using let bindings in the examples. Like
 
-Referencing an implicit parameter is linear in the implicit
-parameters. This means that linear implicit parameters can effectively
-be used in programs
+::
+   
+  read2AndDiscard ::  (Read n, Write n) %1 => MArray a n -> (Ur a, Ur a)
+  read2AndDiscard arr =
+      let !(Box x)  = read arr 0
+          !(Box y)  = read arr 1
+          !()       = free arr
+       in (x, y)
+
+This was before the authors realised that strict let-bound gadt
+patterns didn't actually expose their constraints to their body (so
+this example wouldn't typecheck without further changes to GHC).
+
+Let bindings being more flexible than the do notation, it may be
+worth, in the future, addressing this limitation.
+
+For the benefit of the reader, the discussion in the pull
+request didn't turn up any design decision which led to strict let
+patterns not exposing constraints. We can speculate that it's simply
+because, for expendiency, or by oversight, a strict let pattern was
+given the exact same typing rule as a lazy let pattern. Lazy patterns
+cannot expose their constraints, it would be unsound. Consider
 
 ::
 
-   foo :: (?x :: A) %1 => A
-   foo x = ?x
+  data T a where { MkT :: Int -> T Int }
+  f :: T a -> Int -> a
+  f ~(MkT i) y = y
 
-Note that, because implicit parameters are currently implemented as
-single-method type classes, this comes for free in the implementation.
+  veryBad :: Bool
+  veryBad = f @Bool undefined 42 -- 42 is a boolean
+
 
 Costs and Drawbacks
 -------------------
