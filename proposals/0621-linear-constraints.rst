@@ -1155,6 +1155,43 @@ but it's irrelevant for the solver).
 A monad as a source of uniqueness
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+An existing way of using the duplication of a comonoid implicitly is
+with a (linear) reader monad.
+
+::
+
+   newtype Reader e a = Reader (e %1 -> a)
+   instance (Dupable e) => Monad (Reader e)
+
+Could that replace the dupable constraint. Notably for the main
+use-case which is to create new linear values.
+
+::
+
+   instance Dupable LinearityToken
+   linearly :: Reader LinearityToken (Ur a) %1 -> Ur a
+   new :: Int -> Reader LinearityToken (MArray a)
+
+   linearly $ do
+     arr1 <- new 42
+     arr2 <- new 57
+     ...
+
+The short answer is “it doesn't”. This can be done today, and it's not
+how people design APIs. Some APIs use linearity tokens like this to
+create linear values. When passing comonoid around, in practice, it
+seems that people prefer duplicating the elements manually, linear
+base lets you get as many copies as you want in one line so it's
+decently convenient:
+
+::
+
+   let !(a1, …, an) = elim (,…,) (dup a0)
+
+Using a reader monad in this fashion is useful when your code is
+already monadic. But if it is, you probably don't need this whole
+linearity token business to begin with.
+
 Multiplicity polymorphism
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
