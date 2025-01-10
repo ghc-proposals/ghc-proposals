@@ -667,11 +667,18 @@ by explicit argument passing. But this is a good example where the
 minutia of the arguments would be quite painful to manage, while it's
 mostly invisible with linear constraints.
 
-PS: This relies on the fact that ``Write n`` is useless without ``Read n``.
-A more satisfactory implementation would suspend both ``Read n`` and
-``Write n``. However, with linear constraints ``C1 %1 => (A, B)``
-isn't equivalent to ``(C1 %1 => A, C1 %1 => B)`` so we'd need to write
-something like
+Also note how borrowing is a sort of linear lens
+``cap n %1 -> (cap n' * (cap n' %1 -> cap n))`. This isn't a
+coincidence. A `recent paper
+<https://hal.science/hal-04360462/document>`_ explores this connection
+between borrowing and lenses. We don't know if this can be exploited
+for API design.
+
+PS: This example relies on the fact that ``Write n`` is useless
+without ``Read n``.  A more satisfactory implementation would suspend
+both ``Read n`` and ``Write n``. However, with linear constraints
+``C1 %1 => (A, B)`` isn't equivalent to ``(C1 %1 => A, C1 %1 => B)``
+so we'd need to write something like
 
 ::
 
