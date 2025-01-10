@@ -594,8 +594,8 @@ prevents the problems described in the *Motivation* section.
 ::
 
   linearly $ DataFlow.do
-    (NewMArray arr1) <- new
-    (NewMArray arr2) <- new
+    (NewMArray arr1) <- new 42
+    (NewMArray arr2) <- new 57
     … -- modify the array as suited
     Ur $ sum arr1 + sum arr2
 
@@ -906,8 +906,8 @@ With this API we can write functions such as
        in (x, y)
 
   linearly $ DataFlow.do
-    (NewMArray arr1) <- new
-    (NewMArray arr2) <- new
+    (NewMArray arr1) <- new 42
+    (NewMArray arr2) <- new 57
     … -- modify the array as suited
     Ur $ sum arr1 + sum arr2
 
