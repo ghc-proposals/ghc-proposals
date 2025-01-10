@@ -1047,6 +1047,60 @@ considerably cheaper, since it doesn't require changing GHC.
 Monads instead of uniqueness
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+Simon Peyton Jones asks
+
+    You have
+
+    ::
+
+        read2AndDiscard arr =
+             let !(Box x)  = read arr 0
+                 !(Box y)  = read arr 1
+                 !()       = free arr
+             in (x, y)
+
+    where the capability returned by each read is (somehow) fed into the next. Is this really better than the monadic version?
+
+    ::
+
+        do { x <- read arr 0
+           ; y <- read arr 1
+           ; free arr }
+
+The answer is: it depends. The ``ST`` monad allows for
+sharing/aliasing of mutable resources. Linear types' unique/unaliased
+arrays is much simpler for reasoning, but cannot have sharing. This is
+crucial for some algorithm and, though it comes with all the
+difficulties we know, if you're writing such an algorithm, you don't
+really have a choice but to ditch linear types and use the ``ST``
+monad.
+
+One consequence, which was a starting point of the `Linear Types
+proposal`_ is that freezing a mutable array is unsafe with ``ST`` and
+safe with linear types. With linear constraints, we can even
+(conveniently) safely freeze nested mutable arrays (`see this blog
+post <blog_freeze_>`_).
+
+Furthermore, if you do actually want to do some manual memory
+management, like we in this example, forgetting ``free`` in ``ST``
+causes a hard-to-track memory leak. With linear types, it creates a
+type error.
+
+But, probably, the real motivation for using linear arrays rather than
+``ST`` arrays is seen in the types. Compare
+
+::
+
+   read2AndDiscard :: (Read n, Write n) %1 => MArray n a -> (a, a)
+   read2AndDiscard :: MArray r a -> ST r (a, a)
+
+Plainly, and unsurprisingly, one has a monad, the other doesn't. It is
+our claim (but it's presumably not a controversial claim at all) that
+code without monad composes better than code with monads. The
+counterargument, of course, is that the linear type ecosystem is still
+limited, and you may have to play a biggest novelty budget for linear
+types than for monads. Which, hopefully, won't deter us from trying.
+
 Typestate and indexed monad
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
