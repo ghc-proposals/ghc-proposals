@@ -179,7 +179,7 @@ the socket.
 But this isn't very idiomatic, as we have to return this new socket
 every time (since the “do” notation supports shadowing, we could name
 all of them ``s``, this would alleviate the burden a little). With
-linear constraint, this can become
+linear constraints, this can become
 
 ::
 
@@ -441,7 +441,7 @@ which showed how writing a function which reads the first two elements
 of an array became a tedious exercise of threading our linear resource
 through the function. Using linear constraints, however, such a
 function can be written as (this notation is very explicit, but it can be
-improved see the *“Do” notation* and *Strict lets* sections below):
+improved, see the *“Do” notation* and *Strict lets* sections below):
 
 ::
 
@@ -450,7 +450,7 @@ improved see the *“Do” notation* and *Strict lets* sections below):
         read arr 0 & \cases (Box x) ->
         read arr 1 & \cases (Box y) ->
         free arr & \cases () ->
-        in (x, y)
+        (x, y)
 
 The main way in which this differs from our previous function is that
 our array is no longer a linear resource - it is
@@ -668,7 +668,7 @@ minutia of the arguments would be quite painful to manage, while it's
 mostly invisible with linear constraints.
 
 Also note how borrowing is a sort of linear lens
-``cap n %1 -> (cap n' * (cap n' %1 -> cap n))`. This isn't a
+``cap n %1 -> (cap n' * (cap n' %1 -> cap n))``. This isn't a
 coincidence. A `recent paper
 <https://hal.science/hal-04360462/document>`_ explores this connection
 between borrowing and lenses. We don't know if this can be exploited
@@ -1098,7 +1098,7 @@ Plainly, and unsurprisingly, one has a monad, the other doesn't. It is
 our claim (but it's presumably not a controversial claim at all) that
 code without monad composes better than code with monads. The
 counterargument, of course, is that the linear type ecosystem is still
-limited, and you may have to play a biggest novelty budget for linear
+limited, and you may have to pay a bigger novelty budget for linear
 types than for monads. Which, hopefully, won't deter us from trying.
 
 Typestate and indexed monad
@@ -1163,7 +1163,7 @@ with a (linear) reader monad.
    newtype Reader e a = Reader (e %1 -> a)
    instance (Dupable e) => Monad (Reader e)
 
-Could that replace the dupable constraint. Notably for the main
+Could that replace the dupable constraint? Notably for the main
 use-case which is to create new linear values.
 
 ::
