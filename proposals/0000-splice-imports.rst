@@ -204,6 +204,10 @@ Definitions
       ) in bar
     )
 
+  Note that GHC uses level 1 for top-level definitions, so all numbers internal to
+  ghc are offset by +1. We use 0 for the top-level here as it is more consistent with
+  literature on multi-stage languages.
+
 **cross-stage persistence**
   See `Background: Cross Stage Persistence`_.
 
@@ -244,15 +248,15 @@ If an identifier is used at a level different from the level at which it is
 bound, there are two different mechanisms that are used to attempt to fix its
 level:
 
-* **Path-based persistence**: this allows global definitions at level ``m`` to be
-  made available at a different level ``n`` in two cases:
+* **Path-based persistence**: this allows global definitions at level ``deflvl`` to be
+  made available at a different level ``uselvl`` in two cases:
 
-  - If ``n > m``, intuitively because all global definitions will still exist in
+  - If ``uselvl > deflvl``, intuitively because all global definitions will still exist in
     the defining module even if references to them are spliced at a future
     stage. For example, this allows a module to define a top-level identifier
     and refer to it in a quote in the same module.
 
-  - If ``n < m`` and the definition was *imported* rather than being defined in
+  - If ``uselvl < deflvl`` and the definition was *imported* rather than being defined in
     the current module, intuitively because the dependency order on modules
     ensures the definition must have been compiled already. For example, this
     allows an imported identifier to be used in a splice.
@@ -379,15 +383,18 @@ For example, the following is accepted under ``ExplicitLevelImports``::
 
   foo = baz [| bar |] $(qux)
 
+Since ``Foo`` provides definitions at 3 different levels, it is imported three
+times. Once with a quote qualifier, once normally and once with the splice qualifier.
+
 ``ExplicitLevelImports`` implies ``NoImplicitStagePersistence``.  Thus users
 typically need only enable ``ExplicitLevelImports`` (and ``TemplateHaskell``).
 
 
-When a module uses ``TemplateHaskell`` with ``NoImplicitStagePersistence``,
-the module dependencies no longer need
-to be pessimistically compiled and loaded at compile time. Instead, the modules
-that are needed at compile-time versus runtime are determined by the explicit
-``splice`` and ``quote`` imports relative to the module being compiled.
+When ``ExplicitLevelImports`` is enabled, a build system can inspect the module headers
+and determine precisely which modules will be needed to be executed for compile-time
+and runtime. Only modules analysed to be needed at compile time are needed to be
+executed during compilation, and only runtime modules are needed to be linked into
+the final executable.
 
 It is permitted to enable both ``ExplicitLevelImports`` and
 ``ImplicitStagePersistence`` (provided the latter appears later than the former,
@@ -399,6 +406,8 @@ is supported to allow gradual migration of code bases following the change, and
 for corner cases such as programmatic code generation, where the programmer may wish to use
 the syntax of ``splice`` and ``quote`` imports without obliging the whole module
 to be level-correct.
+
+
 
 
 Syntax for imports
@@ -578,11 +587,6 @@ Thus:
 2. When cross-compiling, ``A`` needs to be built only for the host and ``B``
    only for the target.
 
-If the same module is needed to be used at different levels
-then two import declarations can be used::
-
-  import C
-  import splice C
 
 Splice imports example: ``printf``
 ##################################
@@ -686,6 +690,13 @@ For example:
 
 Further level structure as needed by cross-compilation settings may require more stages.
 This will be easily possible to change once the level discipline is enforced.
+
+The order than modules are compiled depends on normal import dependencies. Before
+you can compile a module, you must compile all modules you depend on for the appropiate
+stages. For example, you may compile some modules for compile-time and some for runtime.
+The idea of a stage relates to when the compiled code is run. Modules compiled for
+compile-time will all be executed and run before any runtime modules are evaluated.
+
 
 At the moment, GHC has a basic notion of stages, for example when using ``-fno-code``, only
 modules which are dependencies of modules which enable ``TemplateHaskell`` are compiled but
