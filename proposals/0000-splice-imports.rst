@@ -55,7 +55,7 @@ This proposal draws on ideas discussed previously in
 
 
 Motivation
-----------
+==========
 
 Level-correct programs are necessary when using staged programming so
 that the program can be cleanly separated into compile-time and runtime
@@ -314,7 +314,7 @@ definition to be used in a splice in the same module as its definition.
 
 
 Proposed Change Specification
------------------------------
+=============================
 
 This proposal adds two language extensions:
 
@@ -546,7 +546,7 @@ This is necessary for a clean separation between stages, because instances may e
 
 
 Examples
---------
+========
 
 Splice imports
 ##############
@@ -819,7 +819,7 @@ to negative as well as positive levels.
 
 
 Effect and Interactions
------------------------
+=======================
 
 Case Study: ``pandoc``
 ######################
@@ -973,7 +973,7 @@ Here ``id`` is available at level -1 thanks to ``import splice Prelude``, and
 
 
 Costs and Drawbacks
--------------------
+===================
 
 * The user has to be aware of the significance of using splice imports.
 
@@ -1006,7 +1006,7 @@ Costs and Drawbacks
 
 
 Backward Compatibility
-----------------------
+======================
 
 Since ``ImplicitStagePersistence`` is enabled by default, this proposal is
 backwards compatible.  Existing programs will continue to work unchanged, though
@@ -1018,7 +1018,7 @@ implementation and experience with the feature.
 
 
 Alternatives
-------------
+============
 
 
 
@@ -1216,7 +1216,7 @@ Other alternatives
 
 
 Unresolved Questions
---------------------
+====================
 
 The committee needs to make a decision about the preferred syntax (see
 discussion of the alternatives above), in particular whether the keywords should
@@ -1224,13 +1224,13 @@ come before or after the module name.
 
 
 Implementation Plan
--------------------
+===================
 
 Matthew has implemented a `prototype <https://gitlab.haskell.org/ghc/ghc/-/tree/wip/splice-imports-2024?ref_type=heads>`_.
 
 
 Acknowledgements
-----------------
+================
 
 Work on this proposal and its implementation was carried out by `Well-Typed
 <https://well-typed.com/>`_ thanks to funding from `Mercury
