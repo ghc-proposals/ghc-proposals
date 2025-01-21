@@ -8,6 +8,11 @@
 .. sectnum::
 
 
+The contents of this proposal forms the basis of
+
+>  Pickering, M., Mesquita, R. and Gundry, A., Explicit Level Imports. Trends in Functional Programming 2025.
+
+
 Explicit Level Imports
 ======================
 
