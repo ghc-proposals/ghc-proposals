@@ -325,76 +325,43 @@ definition to be used in a splice in the same module as its definition.
 Proposed Change Specification
 =============================
 
-This proposal adds two language extensions:
+The precise changes
+###################
 
-* ``NoImplicitStagePersistence`` allows the programmer to ensure their programs are level-correct,
-  and get performance benefits as a result.
-* ``ExplicitLevelImports`` allows for explicit level control via imports.
+This proposal adds two language extensions, ``ExplicitLevelImports``, which is
+off by default in all existing language editions, and
+``ImplicitStagePersistence``, which is, in contrast, enabled by default in all
+existing language editions. They have the following effects:
 
-ImplicitStagePersistence
-########################
+* ``NoImplicitStagePersistence`` disables
+  **path-based cross-stage persistence** (see Section 2.3) altogether.
+  However **serialisation-based cross-stage persistence** is entirely unaffected.
 
-The ``ImplicitStagePersistence`` extension is introduced to control the existing
-path-based cross stage persistence behaviour.
-This can now be disabled to force programmers to
-control levels specifically with staged imports.
+  That is, use of a binding at a
+  level other than the level at which it was defined or imported will result in a
+  type error.  In particular, bindings imported using traditional ``import``
+  statements may not be used inside of top-level splices, nor within quotes.
 
-When the language extension ``ImplicitStagePersistence`` is disabled for a
-module (e.g. using ``-XNoImplicitStagePersistence``), path-based cross-stage
-persistence will be disallowed by the compiler.  That is, use of a binding at a
-level other than the level at which it was defined or imported will result in a
-type error.  In particular, bindings imported using traditional ``import``
-statements may not be used inside of top-level splices, nor within quotes.
+  ``ImplicitStagePersistence`` is the default because it preserves the existing
+  behaviour of allowing path-based cross-stage persistence.
 
-For example, the following is accepted under the default ``ImplicitStagePersistence``,
-but will be rejected under ``NoImplicitStagePersistence``::
+* ``ExplicitLevelImports`` adds **two new import modifiers**, ``splice`` and
+  ``quote``, to the import syntax, which control the level at which identifiers
+  from the module are brought into scope:
+    - ``import splice M(f)`` imports ``f`` at level ``-1``.
+    - ``import M(f)`` imports ``f`` at level ``0``.
+    - ``import quote M(f)`` imports ``f`` at level ``1``.
 
-   import B (foo)  -- foo :: Q Exp
-   data C = MkC
+  When ``ExplicitLevelImports`` is enabled, a build system can inspect the module headers
+  and determine precisely which modules will be needed to be executed for compile-time
+  and runtime. Only modules analysed to be needed at compile time are needed to be
+  executed during compilation, and only runtime modules are needed to be linked into
+  the final executable.
 
-   quoteC = [| MkC |]  -- Error: MkC defined at level 0 but used at level 1
-   spliceC = $( foo )  -- Error: foo imported at level 0 but used at level -1
-
-``ImplicitStagePersistence`` is enabled by default in all existing language editions.
-
-Under ``NoImplicitStagePersistence`` it is an error to use ``DeriveLift`` on a
-type unless all its definition is imported at both level 0 and level 1.
-This is discussed in more detail in the "Implicit lifting and deriving ``Lift`` instances" section.
-
-
-
-ExplicitLevelImports
-####################
-
-The ``ExplicitLevelImports`` extension introduces two new import modifiers to
-the import syntax, ``splice`` and ``quote``, which control the level at which
-identifiers from the module are brought into scope:
-
-* A ``splice`` import of ``A`` will import all bindings of ``A`` to be used *only* at
-  level -1.
-* A ``quote`` import of ``B`` will import all bindings of ``B`` to be used
-  *only* at level 1.
-
-For example, the following is accepted under ``ExplicitLevelImports``::
-
-  import quote Foo (bar) -- bar is introduced at level 1
-  import Foo (baz) -- baz is introduced at level 0
-  import splice Foo (qux) -- qux is introduced at level -1
-
-  foo = baz [| bar |] $(qux)
-
-Since ``Foo`` provides definitions at 3 different levels, it is imported three
-times. Once with a quote qualifier, once normally and once with the splice qualifier.
+(Side note: in GHC today, with permissive path-based persistence, import entities are made available at all levels)
 
 ``ExplicitLevelImports`` implies ``NoImplicitStagePersistence``.  Thus users
 typically need only enable ``ExplicitLevelImports`` (and ``TemplateHaskell``).
-
-
-When ``ExplicitLevelImports`` is enabled, a build system can inspect the module headers
-and determine precisely which modules will be needed to be executed for compile-time
-and runtime. Only modules analysed to be needed at compile time are needed to be
-executed during compilation, and only runtime modules are needed to be linked into
-the final executable.
 
 It is permitted to enable both ``ExplicitLevelImports`` and
 ``ImplicitStagePersistence`` (provided the latter appears later than the former,
@@ -407,8 +374,102 @@ for corner cases such as programmatic code generation, where the programmer may 
 the syntax of ``splice`` and ``quote`` imports without obliging the whole module
 to be level-correct.
 
+Example
+-------
 
+For example, the following is accepted under the default
+``ImplicitStagePersistence``, but will be rejected under
+``ExplicitLevelImports`` (which implies ``NoImplicitStagePersistence``)::
 
+    import B (foo, bar)  -- foo :: Q Exp, bar :: Int
+
+    quoteC = [| bar |]  -- Error: bar imported at level 0 but used at level 1
+    spliceC = $( foo )  -- Error: foo imported at level 0 but used at level -1
+
+However these errors can be fixed by using import modifiers::
+
+    import splice B (foo)  -- foo :: Q Exp
+    import quote  B (bar)  -- bar :: Int
+    data C = MkC
+
+    quoteC = [| bar |]  -- OK: bar is imported at level 1, and used at level 1
+    spliceC = $( foo )  -- OK: foo imported at level -1 and used at level -1
+
+For definitions in the same module, GHC has the following behaviour::
+
+    baz = 3 :: Int
+    foo = [| 3+4 |] :: Q Exp
+
+    quoteC = [| baz |]  -- OK: implicit lifting makes baz appear at level 0
+    spliceC = $( foo )  -- Error: foo defined at level 0, and used at level -1
+
+Definitions like ``foo``, invoked in a splice, must be put in an imported module,
+which can be compiled in advance to executable code, so the splice ``$(foo)``
+can be run.
+
+With ``ExplicitLevelImports``, ``spliceC`` become illegal; instead, ``foo``
+must be put in another module and splice-imported as above. On the other hand,
+due to the implicit lifting, ``quoteC`` is elaborated to ``[| $(lift baz) |]``,
+which correctly places ``baz`` used at level 0. 
+
+Consequences and payoff
+#######################
+
+Using ``ExplicitLevelImports`` makes programming a little less convenient:
+sometimes definitions must be put in another module; and imports must be
+annotated with ``splice`` or ``quote``.  The payoff concerns performance, as we now
+describe.
+
+Recall (Section 2.2) that a module ``M`` may be compiled at stage ``R`` (for runtime)
+or ``C`` (for compile time), or both.  A consequence of ``ExplicitLevelImports`` is
+that we can decide which modules are needed at stage ``R`` and which at stage ``C``,
+**based only on their import declarations**, as follows:
+
+- The main module is compiled for ``R``.
+- A normal import does not shift the stage at which the dependent module is required.
+- If a module ``M`` splice-imports module ``A``, then compiling ``M`` at stage ``R`` or at stage ``C`` requires compiling module ``A`` at stage ``C``.
+- If a module ``N`` quote-imports module ``B``, then compiling ``N`` at stage ``R`` or stage ``C`` requires compiling module ``B`` at stage ``R``.
+
+Being able to classify each module into stage ``R`` or stage ``C`` (or both) is
+extremely useful: **indeed it is the main payoff of this proposal**.
+Specifically:
+
+- **Binary sizes decrease**.  A module compiled at stage ``R`` must be linked into the
+  final executable; but modules compiled only at stage ``C`` need not. Only Binary
+  sizes decrease, because modules used only at compile time (i.e.
+  splice-imported) need not be linked into the executable.
+
+  Hence binary sizes decrease because modules needed only at stage C are not included.
+
+- **Compile times decrease with `-fno-code`**.  GHC's ``-fno-code`` flag tells GHC to
+  stop compiling after type-checking the module and producing an interface
+  file.  It is used for Haddock, for HLS, and other tools. However with
+  ``TemplateHaskell`` GHC must conservatively produce executable code for all
+  modules anyhow, in case the module is called by a splice
+
+  With ``ExplicitLevelImports`` and ``-fno-code``, only modules needed at stage
+  C (usually a tiny fraction) need be compiled to executable code.
+
+- **Compile-time parallelism increases**.  Even without ``-fno-code`` compile-time
+  parallelism can increase with ``ExplicitLevelImports`` because we can start
+  compiling a module as soon as
+
+    - all its imports have been typechecked
+    - all its splice-imported imports (typically very few) have been compiled to executable code
+
+  This can substantially increase compile time parallelism because the lengthy code-generation phase of most modules moves entirely off the critical path.
+
+- **Fewer modules are linked when splicing**.  When GHC invokes a TH splice, it
+  dynamically links the TH code into GHC's executable.  In GHC today that step
+  conservatively links all the (by-now-compiled-to-executable-code) modules
+  below the current module, which is wasteful because very few of them will be
+  needed.  With ExplicitLevelImports, only the modules needed at stage ``C``
+  (usually a tiny fraction) need be linked at compile time.
+
+Moreover, under ``NoImplicitStagePersistence`` it is an error to use DeriveLift on a type
+unless all its definition is imported at both level 0 and level 1. This is
+discussed in more detail in the "Implicit lifting and deriving Lift instances"
+section.
 
 Syntax for imports
 ##################
