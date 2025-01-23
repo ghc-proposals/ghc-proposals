@@ -335,12 +335,11 @@ existing language editions. They have the following effects:
 
 * ``NoImplicitStagePersistence`` disables
   **path-based cross-stage persistence** (see Section 2.3) altogether.
-  However **serialisation-based cross-stage persistence** is entirely unaffected.
-
   That is, use of a binding at a
   level other than the level at which it was defined or imported will result in a
   type error.  In particular, bindings imported using traditional ``import``
   statements may not be used inside of top-level splices, nor within quotes.
+  However **serialisation-based cross-stage persistence** is entirely unaffected.
 
   ``ImplicitStagePersistence`` is the default because it preserves the existing
   behaviour of allowing path-based cross-stage persistence.
@@ -348,9 +347,10 @@ existing language editions. They have the following effects:
 * ``ExplicitLevelImports`` adds **two new import modifiers**, ``splice`` and
   ``quote``, to the import syntax, which control the level at which identifiers
   from the module are brought into scope:
-    - ``import splice M(f)`` imports ``f`` at level ``-1``.
-    - ``import M(f)`` imports ``f`` at level ``0``.
-    - ``import quote M(f)`` imports ``f`` at level ``1``.
+
+  - ``import splice M(f)`` imports ``f`` at level ``-1``.
+  - ``import M(f)`` imports ``f`` at level ``0``.
+  - ``import quote M(f)`` imports ``f`` at level ``1``.
 
   When ``ExplicitLevelImports`` is enabled, a build system can inspect the module headers
   and determine precisely which modules will be needed to be executed for compile-time
@@ -454,8 +454,8 @@ Specifically:
   parallelism can increase with ``ExplicitLevelImports`` because we can start
   compiling a module as soon as
 
-    - all its imports have been typechecked
-    - all its splice-imported imports (typically very few) have been compiled to executable code
+  - all its imports have been typechecked
+  - all its splice-imported imports (typically very few) have been compiled to executable code
 
   This can substantially increase compile time parallelism because the lengthy code-generation phase of most modules moves entirely off the critical path.
 
