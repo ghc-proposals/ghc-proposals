@@ -325,24 +325,20 @@ one method, the one method is linear in the class constraint
   -- We have
   h :: Bar a %1 => H a
 
-Typing inference
-^^^^^^^^^^^^^^^^
+Type inference
+^^^^^^^^^^^^^^
 
-In a way, there's no need to worry about type inference: if a function
-``C %1 -> T``, with well-placed dictionaries, would be rejected, then
-``C %1 => T`` will be rejected as well. So understanding linear types
-is sufficient for the most part.
+*⚠️Important note: this specification is different than that of the
+paper. It's both better and easier to implement in GHC. In particular,
+it doesn't have to worry about a hypothesis being both linear and
+non-linear anymore. It doesn't do, in particular, any state-passing.*
 
-But when there is an accepted assignment of type ``C %1 -> T``, it
-doesn't follow that the function of type ``C %1 => T`` will be
-accepted. Because GHC's typechecker doesn't make guesses.
+When solving a wanted constraint, the solver only considers the most
+recently introduced given among the matching given, regardless of its
+multiplicity. If this choice breaks the linearity discipline, then the
+program is rejected.
 
-The one new rule introduced by this proposal is that when I want a
-linear constraint ``C`` and I've been given both a linear and an
-unrestricted ``C``, then this is considered ambiguous and raises a
-type error. See Section 6.3 of the paper_ for more details.
-
-To see why, consider this example
+Consider for instance:
 
 ::
 
@@ -350,17 +346,61 @@ To see why, consider this example
   giveC :: (C => Int) -> Int
   useC :: C %1 => Int
 
-  bad :: C %1 => (Int, Int)
-  bad = (giveC useC, useC)
+  succeeds :: C %1 => (Int, Int)
+  succeeds = (giveC useC, useC)
 
-  bad' :: C %1 => (Int, Int)
-  bad' = (giveC useC, 0)
+  fails :: C %1 => (Int, Int)
+  fails = (giveC useC, 0)
 
-In ``bad``, if the leftmost ``useC`` uses the linear ``C`` from the
-function signature, then ``bad`` would be rejected, it must used the
-unrestricted ``C`` from ``giveC``. But in ``bad'`` it must use the
-linear ``C`` instead. So this would force the leftmost ``useC`` to
-make a guess. Instead we reject both ``bad`` and ``bad'``.
+Here ``succeeeds`` succeeds, because ``useC`` uses the inner
+constraint both times: the unrestricted ``C`` on the left, and the
+linear ``C`` on the right. But ``fails`` fails because ``useC`` uses
+the inner, unrestricted constraint, leaving the linear constraint
+unused (which breaks the linearity discipline). Despite the fact that
+``fails`` has a solution (namely the call to ``useC`` could skip over
+the unrestricted ``C`` and use the outer, linear ``C`` constraint
+instead).
+
+Here's a slightly more elaborate example with a mutable array and
+``Read``/ ``Write`` capabilities:
+
+::
+
+   f :: (Read n, Write n) %1 => MArray n -> ()
+   f arr =
+     let
+       fr :: (Read n, Write n) %1 => ()
+       fr = free arr
+     in
+     fr
+
+Here ``f`` succeeds, because the call to ``free arr`` uses the
+capabilities that ``fr`` abstracts over (as is probably the
+programmers intentions, despite the fact that ``fr`` capture ``arr``
+as a free variable), then the call to ``fr`` can use the outer
+capabilities.
+
+On the other hand:
+
+::
+
+   g :: (Read n, Write n) => MArray n -> ()
+   g arr =
+     let
+       dfr :: (Read n, Write n) %1 => ()
+       dfr = do
+         free arr
+         free arr
+     in
+     dfr
+
+typechecking ``g`` fails in ``dfr``, because both instances of
+``free`` refer to to the inner capabilities, which, since they are
+linear, can't be used twice. There's a way to type ``dfr`` where the
+second call to ``free``, say, refers to the outer ``(Read n, Write
+n)``, then ``g`` would fail with some message like “cannot solve
+``Read n`` arising from a call to ``dfr``”, which would be very
+surprising.
 
 Equality constraints
 ~~~~~~~~~~~~~~~~~~~~
