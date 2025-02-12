@@ -289,13 +289,52 @@ return type, the ``MArray`` cannot escape the continuation's scope),
 which we can use to guarantee uniqueness.
 
 This is a little clumsy to program with. But more importantly, these
-continuations aren't very composable as argued in `this blog post
-<blog_scopes_>`_. See also the long discussion at
+continuations aren't very composable as argued in details in `this
+blog post <blog_scopes_>`_ (See also the long discussion at
 `tweag/linear-base#130
-<https://github.com/tweag/linear-base/issues/130>`_. This proposal
+<https://github.com/tweag/linear-base/issues/130>`_).
+
+The blog posts considers this example
+
+::
+
+   newMArray 57 $ \arr ->
+      ... -- some initialisation/computation involving arr
+      let !(Ur (arr_summed, s)) = newMArray 2 $ \prefix ->
+        let !(arr1, Ur a0) = read arr 0 in
+        let !(arr2, Ur a1) = read arr1 1 in
+        let prefix1 = write prefix (0, a0) in
+        let prefix2 = write prefix1 (1, a1) in
+        let !(Ur s) = sum prefix2 in
+        Ur (arr2, s) -- Uh Oh!
+      in
+      ... -- more computation involving arr_summed
+
+Here we want ``arr2`` (which is really ``arr``)  to escape the scope
+of the inner ``newMArray``. It can't because only unrestricted data is
+allowed to escape the scope.
+
+This proposal
 will let us define ``new`` in direct style. Direct-style new requires
 a little more than the simple linear constraint outlined so far,
-namely *dupable classes*, specified in the eponymous section below.
+namely *dupable classes*, specified in the eponymous section
+below. This lets us define the above function with a single scope
+
+::
+
+   linearly $
+      let arr = newMArray 57 in
+      ... -- some initialisation/computation involving arr
+      let prefix = newMArray 2 in
+      let !(arr1, Ur a0) = read arr 0 in
+      let !(arr2, Ur a1) = read arr1 1 in
+      let prefix1 = write prefix (0, a0) in
+      let prefix2 = write prefix1 (1, a1) in
+      let !(Ur s) = sum prefix2 in
+      in
+      ... -- more computation involving arr2
+
+No more nested scope!
 
 Proposed Change Specification
 -----------------------------
