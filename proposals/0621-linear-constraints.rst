@@ -144,8 +144,59 @@ automatically by the compiler. This is what this proposal lets us do:
 get pretty close to the latter style, without having to introduce a
 monad.
 
+Recursive freeze
+^^^^^^^^^^^^^^^^
+
 A more interesting, though more complex, example involving freezing
-nested mutable structure is elaborated in `this blog post <blog_freeze_>`_.
+nested mutable structure is elaborated in `this blog post
+<blog_freeze_>`_.
+
+Let me summarise the blog post briefly. When freezing an array (that
+is transitioning from a mutable array to an immutable array). The
+traditional solution involves changing the arrays type
+
+::
+
+   unsafeFreeze :: MArray s a -> ST s (Array a)
+
+The ``ST`` version is unsafe, because it cannot guarantee that the
+array won't be mutated after being frozen.
+
+With linear types, freezing is safe
+
+::
+
+   freeze :: MArray a %1 -> Ur (Array a)
+
+(note: that the array is read-only manifests in ``ST`` by making it
+capable of exiting the ``runST`` scope, and in linear types by making
+it shareable)
+
+In both case, this is an O(1) function which simply changes the type
+of the array, but consider the coercion. But what if we want to freeze
+an ``MArray (MArray a)``. There we can't simply call
+
+::
+
+   freeze :: MArray (MArray a) %1 -> Ur (Array (MArray a))
+
+The inner arrays aren't frozen. It'd be very bad! We could freeze the
+inner array recursively, but this would take and O(n) traversal
+instead of what was before a noop.
+
+Instead we need a solution where freeze doesn't change the name of the
+array. The `blog post <blog_freeze_>`_ achieves this by using linear
+constraints to define capabilities. The capability-based freeze
+function looks like
+
+::
+
+   freeze :: RW n %1 => Array a n -> Ur (RO n) /\ ()
+
+The linear-constraint-backed permission ``RW n`` (read-write) is
+turned into an unrestricted ``RO n`` (read-only) permission. The
+permission spans on nested arrays too.
+
 
 Typestate
 ^^^^^^^^^
