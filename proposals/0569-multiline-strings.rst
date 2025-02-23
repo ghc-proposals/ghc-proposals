@@ -93,11 +93,6 @@ A working prototype is available at `brandonchinn178/string-syntax <https://gith
 
 #. Post-process the string in the following steps:
 
-   #. Collapse string gaps
-
-      * See `Section 2.6 <https://www.haskell.org/onlinereport/haskell2010/haskellch2.html#x7-200002.6>`_ of the Haskell 2010 Report
-      * See the example in *Section 3.3 String gaps*
-
    #. Split the string by lexical ``newline`` characters (as defined in the `Haskell report <https://www.haskell.org/onlinereport/haskell2010/haskellch2.html#x7-160002.2>`_)
 
    #. Convert leading tabs into spaces
@@ -124,6 +119,10 @@ A working prototype is available at `brandonchinn178/string-syntax <https://gith
    #. If the last character of the string is a newline, remove it
 
 #. After parsing, it becomes indistinguishable to the equivalent single-quoted string (modulo annotations for exact-printing)
+
+As usual, string gaps are ignored in the string; but are considered non-whitespace for the common whitespace prefix calculation. In other words, any non-whitespace character in the literal source code is considered for the whitespace prefix calculation, regardless if it's semantically ignored like ``\&`` or string gaps.
+
+Like normal strings, escape codes should only lex up to a string gap and no further, e.g. ``"""\65\  \0"""`` should be equivalent to ``"A0"``. See `Section 2.6 <https://www.haskell.org/onlinereport/haskell2010/haskellch2.html#x7-200002.6>`_ of the Haskell 2010 Report, and the example in *Section 3.3 String gaps*.
 
 Common whitespace prefix calculation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -263,7 +262,7 @@ Because characters immediately after the ``"""`` delimiter should be included ve
 String gaps
 ~~~~~~~~~~~
 
-String gaps are collapsed first and not included in the whitespace calculation
+String gaps are collapsed before the whitespace calculation
 
 ::
 
@@ -276,6 +275,20 @@ String gaps are collapsed first and not included in the whitespace calculation
 
   -- equivalent to
   s' = "a b c d e\nf g"
+
+But a string gap starting at the beginning of a line is included in the whitespace calculation.
+
+::
+
+  s =
+      """
+        a b
+      \   \  c d e
+        f g
+      """
+
+  -- equivalent to
+  s' = "  a b\n  c d e\n  f g"
 
 Mixing tabs and spaces
 ~~~~~~~~~~~~~~~~~~~~~~
