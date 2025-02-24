@@ -477,16 +477,40 @@ Syntax for imports
 Under ``ExplicitLevelImports``, the syntax for imports becomes::
 
   importdecl :: { LImportDecl GhcPs }
-     : 'import' maybe_src maybe_safe optsplice optqualified maybe_pkg modid optqualified maybeas maybeimpspec
+     : 'import' maybe_src maybe_safe optlevel optqualified maybe_pkg modid optlevel optqualified maybeas maybeimpspec
 
-  optsplice :: { LImportStage }
-     : 'splice' { SpliceStage }
-     | 'quote'  { QuoteStage  }
-     |          { NormalStage }
+  optlevel :: { LImportLevel }
+     : 'splice' { SpliceLevel }
+     | 'quote'  { QuoteLevel  }
+     |          { NormalLevel }
 
 
-The ``splice`` or ``quote`` keyword appears before the ``qualified`` keyword but after ``SOURCE``
-and ``SAFE`` pragmas.
+The ``splice`` or ``quote`` keyword appears before either possible position for
+the ``qualified`` keyword, but after any ``SOURCE`` pragma or the ``safe``
+keyword.  It is an error to specify ``splice`` or ``quote`` more than once in
+the same import.
+
+For example, the following are accepted, and do not require ``ImportQualifiedPost``::
+
+  import splice A
+  import qualified A splice
+  import quote qualified B as QB
+  import C splice
+  import qualified C splice as SC
+
+The following are accepted provided ``ImportQualifiedPost`` is also enabled::
+
+  import quote B qualified as QB
+  import D quote qualified as QD
+
+The following are rejected::
+
+  import splice quote A
+  import splice A splice
+  import splice A quote
+  import A quote quote
+  import qualified splice A
+  import A qualified splice
 
 
 Name resolution and ambiguous variables
@@ -1190,12 +1214,12 @@ Syntactic alternatives
 
 There are several proposals for the syntax of explicit level imports:
 
-* The splice/quote modifier could be placed after the module name, e.g. ``import
-  M splice``, like qualified imports under ``ImportQualifiedPost`` (see
-  `proposal #190 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0190-module-qualified-syntax.rst>`_).
-  This could be the only option, or it could be an optional alternative to
-  ``import splice M``. Putting the keywords after the module name would make it
-  easier to align and sort import lists.
+* The current iteration of this proposal allows the splice/quote keyword to be
+  placed before or after the module name, like qualified imports under
+  ``ImportQualifiedPost`` (see `proposal #190
+  <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0190-module-qualified-syntax.rst>`_).
+  This allows users to choose their preferred position for the keywords.  We
+  could be more restrictive here, but would need to agree on a single position.
 
 * Using a pragma rather than a syntactic modifier would fit in better with
   how ``SOURCE`` imports work and make writing backwards compatible code easier::
@@ -1295,9 +1319,7 @@ Other alternatives
 Unresolved Questions
 ====================
 
-The committee needs to make a decision about the preferred syntax (see
-discussion of the alternatives above), in particular whether the keywords should
-come before or after the module name.
+None.
 
 
 Implementation Plan
