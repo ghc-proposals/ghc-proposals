@@ -48,14 +48,15 @@ To summarise the proposal to date:
   that aren't just making them equivalent to ``pure`` and ``(*>)`` respectively.
   This is ``-Wnoncanonical-monad-instances``
 * In ~2020 this warning was enabled by default in 9.2.1
-* The next phases of the proposal have not been moved forward until very
-  recently.
-  * Phase 2 requires that the previous warning is now an error and that 
-    ``return`` and ``(>>)`` are top level bindings, but also that canonical
-    definitions are ignored
-  * Phase 3 would then start warning about canonical ``return`` and ``(>>)``
-    definitions
-  * Phase 4 would remove support for any sort of override, making that an error
+
+The next phases of the proposal have not been moved forward until very recently.
+
+* Phase 2 requires that the previous warning is now an error and that 
+  ``return`` and ``(>>)`` are top level bindings, but also that canonical
+  definitions are ignored
+* Phase 3 would then start warning about canonical ``return`` and ``(>>)``
+  definitions
+* Phase 4 would remove support for any sort of override, making that an error
 
 A lawful method is simply a method that follows the laws of the typeclass.
 A canonical method is one that is always definitionally the same, and has no 
@@ -66,6 +67,7 @@ that can be defined in ``Monad``.
 
 This proposal would adjust the next phases to reduce the number of changes
 neccessary in GHC as follows:
+
 * Phase 2 makes ``-Wnoncanonical-monad-instances`` a compiler error by default,
   and adds a ``-Wredundant-canonical-monad-method`` warning that makes 
   canonical method definitions (like ``return = pure``) warn
