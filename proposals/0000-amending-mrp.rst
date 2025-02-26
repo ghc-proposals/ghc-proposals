@@ -213,8 +213,10 @@ Unresolved Questions
 See `Proposed Library Change Specification` on the question of the eventual
 definition of ``(>>)``.
 
-As suggested by Teo on the discourse thread, we could put the breaking changes
-behind an on-by-default extension. However, I believe this is the incorrect
+As suggested by Teo on the Discourse thread, we could put the breaking changes
+behind a language extension. This language extension would be added to the next GHCXXXX language edition. New code would therefore be disallowed from giving definitions of these methods, while old code would continue to compile. This comes with the disadvantage that we would have to keep the methods in the typeclass.
+
+However, I believe this is the incorrect
 move as we then have an increasingly complex combination of states to support,
 instead of cleaning up historical warts.
 
