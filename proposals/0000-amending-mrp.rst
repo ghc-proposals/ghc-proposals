@@ -9,9 +9,7 @@ Amending Monad of No Return Proposal
 .. implemented:: Leave blank. This will be filled in with the first GHC version which
                  implements the described feature.
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_.
-            **After creating the pull request, edit this file again, update the
-            number in the link, and delete this bold sentence.**
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/687>`_.
 .. sectnum::
 .. contents::
 
@@ -213,7 +211,7 @@ written.
 Unresolved Questions
 --------------------
 See `Proposed Library Change Specification` on the question of the eventual
-definition of ``(>>)```.
+definition of ``(>>)``.
 
 As suggested by Teo on the discourse thread, we could put the breaking changes
 behind an on-by-default extension. However, I believe this is the incorrect
