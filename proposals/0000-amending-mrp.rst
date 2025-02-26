@@ -16,7 +16,7 @@ Amending Monad of No Return Proposal
 .. contents::
 
 The proposed migration strategy for the proposal `Monad of No Return 
-<https://gitlab.haskell.org/ghc/ghc/-/wikis/proposal/monad-of-no-return>` 
+<https://gitlab.haskell.org/ghc/ghc/-/wikis/proposal/monad-of-no-return>`_ 
 uneccessarily splits warning and error phases, and requires the movement of 
 methods before it is neccessary.
 
@@ -27,13 +27,13 @@ good to move to the next stages of this long term proposal. To that end, we
 should streamline the next steps so that they can be completed quickly, while
 still respecting people's breakage requirements.
 
-Recent discussion has taken place `on the discourse <https://discourse.haskell.org/t/monad-of-no-return-next-steps/11443/>`.
-Other links of interest include the `current proposal <https://gitlab.haskell.org/ghc/ghc/-/wikis/proposal/monad-of-no-return>`,
-the `original proposal <https://mail.haskell.org/pipermail/libraries/2015-September/026121.html>`,
-rhendric's `current implementation <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/3174>`
-of the amended phase 2 (see below) and associated `issue <https://gitlab.haskell.org/ghc/ghc/-/issues/25783>`.
-There is also the enablement of the warnings by default on `gitlab <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/3174>`
-and its `own proposal <https://github.com/ghc-proposals/ghc-proposals/pull/314>`.
+Recent discussion has taken place `on the discourse <https://discourse.haskell.org/t/monad-of-no-return-next-steps/11443/>`_.
+Other links of interest include the `current proposal <https://gitlab.haskell.org/ghc/ghc/-/wikis/proposal/monad-of-no-return>`_,
+the `original proposal <https://mail.haskell.org/pipermail/libraries/2015-September/026121.html>`_,
+rhendric's `current implementation <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/3174>`_
+of the amended phase 2 (see below) and associated `issue <https://gitlab.haskell.org/ghc/ghc/-/issues/25783>`_.
+There is also the enablement of the warnings by default on `gitlab <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/3174>`_
+and its `own proposal <https://github.com/ghc-proposals/ghc-proposals/pull/314>`_.
 
 
 Proposed Change Specification
@@ -186,7 +186,7 @@ making.
 Costs and Drawbacks
 -------------------
 rhendric has already made a MR to perform phase 2 of the amended proposal, which
-can be found `here <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/13999>`.
+can be found `here <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/13999>`_.
 As such the only code cost would be for stage 3 of the amended proposal.
 
 Old tutorials may become more incorrect as they will no longer be able to define
