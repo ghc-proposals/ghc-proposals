@@ -140,7 +140,7 @@ Eventual warnings and errors (expected):
       Noncanonical ‘return’ definition detected
       in the instance declaration for ‘Monad Id’.
       ‘return’ will eventually be removed in favour of ‘pure’
-      Remove definition for ‘return’ (recommended) or define as ‘return = pure’
+      Remove definition for ‘return’
       See also: https://gitlab.haskell.org/ghc/ghc/-/wikis/proposal/monad-of-no-return
     |
   7 |     return = MkId
@@ -150,7 +150,7 @@ Eventual warnings and errors (expected):
       Noncanonical ‘(>>)’ definition detected
       in the instance declaration for ‘Monad Id’.
       ‘(>>)’ will eventually be removed in favour of ‘(*>)’
-      Remove definition for ‘(>>)’ (recommended) or define as ‘(>>) = (*>)’
+      Remove definition for ‘(>>)’
       See also: https://gitlab.haskell.org/ghc/ghc/-/wikis/proposal/monad-of-no-return
     |
   8 |     (>>) _ b = b
