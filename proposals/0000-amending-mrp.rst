@@ -69,8 +69,10 @@ neccessary in GHC as follows:
 * Phase 2 makes ``-Wnoncanonical-monad-instances`` a compiler error by default,
   and adds a ``-Wredundant-canonical-monad-method`` warning that makes 
   canonical method definitions (like ``return = pure``) warn
-* Phase 3 would then move ``return`` and ``(>>)`` to the top level, and make the
-  new warning a compiler error as well
+* Phase 3 would then move ``return`` and ``(>>)`` to the top level, and remove
+  the original and new warnings (after removing these methods from ``Monad`` the
+  compiler will emit an error like for any other extraneous typeclass instance
+  method definition)
 
 This reduces the number of steps neccessary, and means that we wouldn't need
 some special casing about ignoring canonical definitions while we have a top
