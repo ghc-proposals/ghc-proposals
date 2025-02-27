@@ -78,7 +78,9 @@ level one.
 
 In addition to the phase changes above, it would be good to accelerate the
 Semigroup-Monoid proposal under a similar schedule, which I will do in a 
-separate proposal.
+separate proposal. To that end, I ask that we complete steps for both at the 
+same time (both get warnings and errors, both get methods moved, etc), since the
+breakage and change requirements in GHC will be very similar.
 
 Proposed Library Change Specification
 -------------------------------------
