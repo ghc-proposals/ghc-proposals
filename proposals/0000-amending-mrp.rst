@@ -16,7 +16,9 @@ Amending Monad of No Return Proposal
 The proposed migration strategy for the proposal `Monad of No Return 
 <https://gitlab.haskell.org/ghc/ghc/-/wikis/proposal/monad-of-no-return>`_ 
 uneccessarily splits warning and error phases, and requires the movement of 
-methods before it is neccessary.
+methods before it is neccessary. Recent discussion has also revealed a flaw in
+the original design with regards to the performance of the default 
+implementation of ``(*>)``.
 
 Motivation
 ----------
@@ -24,6 +26,10 @@ The Monad of No Return proposal has stagnated for many years, and it would be
 good to move to the next stages of this long term proposal. To that end, we
 should streamline the next steps so that they can be completed quickly, while
 still respecting people's breakage requirements.
+
+While it would be good to move forwards, it has also been brought to light that
+the default implementation of ``(*>)`` has a space leak, and replacing ``(>>)``
+with ``(*>)`` with thought could result in many performance implications.
 
 Recent discussion has taken place `on the discourse <https://discourse.haskell.org/t/monad-of-no-return-next-steps/11443/>`_.
 Other links of interest include the `current proposal <https://gitlab.haskell.org/ghc/ghc/-/wikis/proposal/monad-of-no-return>`_,
@@ -67,31 +73,40 @@ This proposal would adjust the next phases to reduce the number of changes
 neccessary in GHC as follows:
 
 * Phase 2 makes ``-Wnoncanonical-monad-instances`` a compiler error by default,
-  and adds a ``-Wredundant-canonical-monad-method`` warning that makes 
-  canonical method definitions (like ``return = pure``) warn
+  and adds a ``-Wredundant-canonical-monad-method`` warning that makes canonical
+  method definitions (only ``return = pure``) warn
 * Phase 3 would then move ``return`` and ``(>>)`` to the top level, and remove
   the original and new warnings (after removing these methods from ``Monad`` the
   compiler will emit an error like for any other extraneous typeclass instance
   method definition)
+  * Phase 3 shouldn't be  (fully) implemented until research is done as to what 
+    we want the eventual definition of ``(>>)`` to be
 
 This reduces the number of steps neccessary, and means that we wouldn't need
 some special casing about ignoring canonical definitions while we have a top
 level one.
 
+Another adjustment to the plan is to adjust the warnings and errors about
+``(>>)`` to encourage a performant definition of ``(*>)`` instead of blindly
+replacing its definition. We wish to do this because the default
+implementation of ``(*>)`` (that of ``(*>) a b = (id <$ a) <*> b``) leaks space,
+and thus any and every ``Monad`` that currently uses the more space efficient
+``(>>)`` would start leaking space and degrading program performance.
+
 In addition to the phase changes above, it would be good to accelerate the
-Semigroup-Monoid proposal under a similar schedule, which I will do in a 
-separate proposal. To that end, I ask that we complete steps for both at the 
-same time (both get warnings and errors, both get methods moved, etc), since the
-breakage and change requirements in GHC will be very similar.
+Semigroup-Monoid proposal under a similar schedule.
+To that end, I ask that we complete steps for both at the same time (both get 
+warnings and errors, both get methods moved, etc), since the breakage and change
+requirements in GHC will be very similar.
 
 Proposed Library Change Specification
 -------------------------------------
 
 One library change that is not outlined fully in the original proposal
-is that currently the default implementation of ``(>>)`` uses ``Monad``'s ``(>>=)``
-internally, but when we move it to the top level users will no longer be able
-to overwrite it. We should be specific that we intend to define ``(>>)`` as
-``(*>)``, or that we don't intend that.
+is that currently the default implementation of ``(>>)`` uses ``Monad``'s
+``(>>=)`` internally, but when we move it to the top level users will no longer
+be able to overwrite it. We should be specific that we intend to leave ``(>>)``
+as it is for now, or to use ``(*>)`` if that has good performance at that point.
 
 Examples
 --------
@@ -150,7 +165,7 @@ Eventual warnings and errors (expected):
       Noncanonical ‘(>>)’ definition detected
       in the instance declaration for ‘Monad Id’.
       ‘(>>)’ will eventually be removed in favour of ‘(*>)’
-      Remove definition for ‘(>>)’
+      Remove definition for ‘(>>)’, and implement ‘(*>)’ with an efficient definition.
       See also: https://gitlab.haskell.org/ghc/ghc/-/wikis/proposal/monad-of-no-return
     |
   8 |     (>>) _ b = b
@@ -170,7 +185,7 @@ Eventual warnings and errors (expected):
       ‘(>>)’ definition detected
       in the instance declaration for ‘Monad Id’.
       ‘(>>)’ will eventually be removed in favour of ‘(*>)’
-      Remove definition for ‘(>>)’
+      Remove definition for ‘(>>)’, and implement ‘(*>)’ with an efficient definition.
       See also: https://gitlab.haskell.org/ghc/ghc/-/wikis/proposal/monad-of-no-return
     |
   13|     (>>) = (*>)
@@ -180,6 +195,8 @@ Effect and Interactions
 -----------------------
 Speeding up the phases of the proposal means that we will eventually be rid of
 the warnings and errors we are building up in service to this proposal.
+Encouraging users to implement ``(*>)`` efficiently will also mean that more
+programs are likely to be performant.
 
 The alternative is that we warn against a change that we are not intending on 
 making.
@@ -218,12 +235,15 @@ See `Proposed Library Change Specification` on the question of the eventual
 definition of ``(>>)``.
 
 As suggested by Teo on the Discourse thread, we could put the breaking changes
-behind a language extension. This language extension would be added to the next GHCXXXX language edition. New code would therefore be disallowed from giving definitions of these methods, while old code would continue to compile. This comes with the disadvantage that we would have to keep the methods in the typeclass.
+behind a language extension. This language extension would be added to the next 
+GHCXXXX language edition. New code would therefore be disallowed from giving
+definitions of these methods, while old code would continue to compile. This
+comes with the disadvantage that we would have to keep the methods in the
+typeclass.
 
-However, I believe this is the incorrect
-move as we then have an increasingly complex combination of states to support,
-instead of cleaning up historical warts.
-
+However, I believe this is the incorrect move as we then have an increasingly
+complex combination of states to support, instead of cleaning up historical 
+warts.
 
 Implementation Plan
 -------------------
