@@ -27,9 +27,9 @@ good to move to the next stages of this long term proposal. To that end, we
 should streamline the next steps so that they can be completed quickly, while
 still respecting people's breakage requirements.
 
-While it would be good to move forwards, it has also been brought to light that
-the default implementation of ``(*>)`` has a space leak, and replacing ``(>>)``
-with ``(*>)`` with thought could result in many performance implications.
+It has also been brought to light that the default implementation of ``(*>)``
+has a space leak, and replacing ``(>>)`` with ``(*>)`` without thought could 
+result in performance implications for many programs.
 
 Recent discussion has taken place `on the discourse <https://discourse.haskell.org/t/monad-of-no-return-next-steps/11443/>`_.
 Other links of interest include the `current proposal <https://gitlab.haskell.org/ghc/ghc/-/wikis/proposal/monad-of-no-return>`_,
