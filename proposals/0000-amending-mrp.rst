@@ -79,6 +79,7 @@ neccessary in GHC as follows:
   the original and new warnings (after removing these methods from ``Monad`` the
   compiler will emit an error like for any other extraneous typeclass instance
   method definition)
+
   * Phase 3 shouldn't be  (fully) implemented until research is done as to what 
     we want the eventual definition of ``(>>)`` to be
 
