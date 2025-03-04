@@ -62,12 +62,11 @@ The next phases of the proposal have not been moved forward until very recently.
   definitions
 * Phase 4 would remove support for any sort of override, making that an error
 
-A lawful method is simply a method that follows the laws of the typeclass.
-A canonical method is one that is always definitionally the same, and has no 
-greater power. For example, ``return`` and ``pure`` must always be equivalent, 
-and there is no reason that they should not be defined in terms of each other. 
-The proposal seeks to eliminate the presence of the excess canonical methods
-that can be defined in ``Monad``.
+The term ‘canonical definition’ here means a definition of ``return`` or ``(>>)``
+that is literally an alias for the corresponding ``Applicative`` method:
+``return = pure``, or ``(>>) = (*>)``. (Any lawful definition of these methods is
+denotationally equivalent—but not necessarily operationally equivalent!—to the
+corresponding superclass method; ‘canonical’ is a strictly stronger requirement.)
 
 This proposal would adjust the next phases to reduce the number of changes
 neccessary in GHC as follows:
