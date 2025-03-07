@@ -1,9 +1,9 @@
 .. author:: Matthew Pickering, Rodrigo Mesquita, Adam Gundry
-.. date-accepted::
-.. ticket-url::
+.. date-accepted:: 2025-03-06
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/25828
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/682>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/682>`_.
 .. contents::
 .. sectnum::
 
