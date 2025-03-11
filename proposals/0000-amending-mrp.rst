@@ -16,8 +16,8 @@ Amending Monad of No Return Proposal
 The proposed migration strategy for the proposal `Monad of No Return 
 <https://gitlab.haskell.org/ghc/ghc/-/wikis/proposal/monad-of-no-return>`_ 
 uneccessarily splits warning and error phases, and requires the movement of 
-methods before it is neccessary. Recent discussion has also revealed a flaw in
-the original design with regards to the performance of the default 
+methods before it is neccessary. Recent discussion has also revealed a possible
+flaw in the original design with regards to the performance of the default 
 implementation of ``(*>)``.
 
 Motivation
@@ -28,8 +28,8 @@ should streamline the next steps so that they can be completed quickly, while
 still respecting people's breakage requirements.
 
 It has also been brought to light that the default implementation of ``(*>)``
-has a space leak, and replacing ``(>>)`` with ``(*>)`` without thought could 
-result in performance implications for many programs.
+may have a space leak, and replacing ``(>>)`` with ``(*>)`` could result in
+performance implications for some programs.
 
 Recent discussion has taken place `on the discourse <https://discourse.haskell.org/t/monad-of-no-return-next-steps/11443/>`_.
 Other links of interest include the `current proposal <https://gitlab.haskell.org/ghc/ghc/-/wikis/proposal/monad-of-no-return>`_,
@@ -73,14 +73,11 @@ neccessary in GHC as follows:
 
 * Phase 2 makes ``-Wnoncanonical-monad-instances`` a compiler error by default,
   and adds a ``-Wredundant-canonical-monad-method`` warning that makes canonical
-  method definitions (only ``return = pure``) warn
+  method definitions warn
 * Phase 3 would then move ``return`` and ``(>>)`` to the top level, and remove
   the original and new warnings (after removing these methods from ``Monad`` the
   compiler will emit an error like for any other extraneous typeclass instance
   method definition)
-
-  * Phase 3 shouldn't be  (fully) implemented until research is done as to what 
-    we want the eventual definition of ``(>>)`` to be
 
 This reduces the number of steps neccessary, and means that we wouldn't need
 some special casing about ignoring canonical definitions while we have a top
@@ -105,8 +102,8 @@ Proposed Library Change Specification
 One library change that is not outlined fully in the original proposal
 is that currently the default implementation of ``(>>)`` uses ``Monad``'s
 ``(>>=)`` internally, but when we move it to the top level users will no longer
-be able to overwrite it. We should be specific that we intend to leave ``(>>)``
-as it is for now, or to use ``(*>)`` if that has good performance at that point.
+be able to overwrite it. We should change the default definition of ``(>>)`` to
+``(*>)``, as well as encourage it to inline to reduce concerns on performance.
 
 Examples
 --------
@@ -173,7 +170,7 @@ Eventual warnings and errors (expected):
 
   example.hs:12:5: error: [-Wredundant-canonical-monad-instances]
       ‘return’ definition detected
-      in the instance declaration for ‘Monad Id’.
+      in the instance declaration for ‘Monad Id2’.
       ‘return’ will eventually be removed in favour of ‘pure’
       Remove definition for ‘return’
       See also: https://gitlab.haskell.org/ghc/ghc/-/wikis/proposal/monad-of-no-return
@@ -183,7 +180,7 @@ Eventual warnings and errors (expected):
 
   example.hs:13:5: error: [-Wredundant_canonical-monad-instances]
       ‘(>>)’ definition detected
-      in the instance declaration for ‘Monad Id’.
+      in the instance declaration for ‘Monad Id2’.
       ‘(>>)’ will eventually be removed in favour of ‘(*>)’
       Remove definition for ‘(>>)’, and implement ‘(*>)’ with an efficient definition.
       See also: https://gitlab.haskell.org/ghc/ghc/-/wikis/proposal/monad-of-no-return
@@ -206,7 +203,7 @@ Costs and Drawbacks
 -------------------
 rhendric has already made a MR to perform phase 2 of the amended proposal, which
 can be found `here <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/13999>`_.
-As such the only code cost would be for stage 3 of the amended proposal.
+It may require further adjustments after discussion of this proposal.
 
 Old tutorials may become more incorrect as they will no longer be able to define
 ``Monad`` fully.
@@ -247,8 +244,8 @@ warts.
 
 Implementation Plan
 -------------------
-rhendric has already done the work for the amended phase 2 of this proposal. I'm
-happy to continue urging this forward for now.
+rhendric has already done much of the work for the amended phase 2 of this 
+proposal. I'm happy to continue urging the proposal forward for now.
 
 Endorsements
 -------------
