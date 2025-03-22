@@ -665,8 +665,8 @@ Unresolved Questions
 None
 
 
-Implementation Plan
--------------------
+Acknowledgements
+----------------
 
 The implementation of this project will be carried out by `Serokell OÜ <https://serokell.io>`_,
 funded through the NGI0 Core Fund, a fund established by NLnet with financial
