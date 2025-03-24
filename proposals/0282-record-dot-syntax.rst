@@ -6,7 +6,7 @@ Record Dot Syntax
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/18599
 .. implemented:: 9.2
 .. highlight:: haskell
-.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/282>`_ and  `amended by this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/405>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/282>`_ and  `amended by this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/405>`_ and `this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/668>`_.
 .. contents::
 
 
@@ -112,8 +112,8 @@ Expression              Equivalent
 ``e{lbl₁.lbl₂ = val}``  ``e{lbl₁ = (e.lbl₁){lbl₂ = val}}``
 ``e.lbl₁{lbl₂ = val}``  ``(e.lbl₁){lbl₂ = val}``
 ``e{lbl₁ = val₁}.val₂`` ``(e{lbl₁ = val₁}).val₂``
-``e{lbl₁}``             ``e{lbl₁ = lbl₁}`` [Note: requires ``NamedFieldUpdates``]
-``e{lbl₁.lbl₂}``        ``e{lbl₁.lbl₂ = lbl₂}`` [Note: requires ``NamedFieldUpdates``]
+``e{lbl₁}``             ``e{lbl₁ = lbl₁}`` [Note: requires ``NamedFieldPuns``]
+``e{lbl₁.lbl₂}``        ``e{lbl₁.lbl₂ = lbl₂}`` [Note: requires ``NamedFieldPuns``]
 ======================= ==================================
 
 - **Updating nested fields.** ``e{lbl = val}`` is the syntax of a standard H98 record update. It’s the nested form introduced by this proposal that is new : ``e{lbl1.lbl2 = val}``. However, in the event ``OverloadedRecordUpdate`` is in effect, note that ``e{lbl = val}`` desugars to ``setField @"lbl" e val``].
@@ -195,8 +195,7 @@ not enabled.
 2.3.2 Parsing
 ^^^^^^^^^^^^^
 
-The Haskell grammar is extended with the following productions. We use
-these notations:
+We use these notations:
 
 ====== ===========
 Symbol Occurence
@@ -205,54 +204,117 @@ Symbol Occurence
 *.ᵀ*   tight-infix
 ====== ===========
 
-2.3.2.1
+The relevant part of the lexical syntax (defined in `chapter 2 of the Haskell
+2010 report
+<https://www.haskell.org/onlinereport/haskell2010/haskellch2.html>`_) and the
+grammar of Haskell expressions (defined in `chapter 3 of the Haskell 2010 report
+<https://www.haskell.org/onlinereport/haskell2010/haskellch3.html>`_) is as
+follows:
 
 .. role:: raw-html(raw)
     :format: html
 
-[Field]
+[Variable]
 :raw-html:`<br />`
-     *field*   →   *varid*
-
-.. _section-1:
-
-2.3.2.2
-
-
-[Field to update]
+     *varid*   →    (*small* {*small* | *large* | *digit* | ``'``})_⟨*reservedid*⟩
 :raw-html:`<br />`
-     *fieldToUpdate*   →   *fieldToUpdate* *.ᵀ* *field*   |   *field*
-
-.. _section-2:
-
-2.3.2.3
-
-
-[Field selectors]
+     *qvar*   →    *qvarid* | ``(`` *qvarsym* ``)``
 :raw-html:`<br />`
-     *aexp*   →   *( projection )*
+     *qvarid*   →    [*modid* ``.``] *varid*
+
+[Function application expression]
 :raw-html:`<br />`
-     *projection*   →   *.ᴾ* *field*   |   *projection* *.ᵀ* *field*
+     *fexp*   →    [*fexp*] *aexp*
 
-.. _section-3:
+[Field binding]
+:raw-html:`<br />`
+     *fbind*   →    *qvar* ``=`` *exp*
 
-2.3.2.4
+[Expression]
+:raw-html:`<br />`
+     *aexp*   →    *qvar* (variable)
+:raw-html:`<br />`
+     *aexp*   →    *gcon* (general constructor)
+:raw-html:`<br />`
+     *aexp*   →    *literal*
+:raw-html:`<br />`
+     *aexp*   →    ``(`` *exp* ``)``    (parenthesized expression)
+:raw-html:`<br />`
+     *aexp*   →    ``(`` *exp* ₁ ``,`` … ``,`` *exp* ₖ ``)`` 	    (tuple, k ≥ 2)
+:raw-html:`<br />`
+     *aexp*   →    ``[`` *exp* ₁ ``,`` … ``,`` *exp* ₖ ``]`` 	    (list, k ≥ 1)
+:raw-html:`<br />`
+     *aexp*   →    ``[`` *exp* ₁ [``,`` *exp* ₂] ``..`` [*exp* ₃] ``]`` 	    (arithmetic sequence)
+:raw-html:`<br />`
+     *aexp*   →    ``[`` *exp* ``|`` *qual* ₁ ``,`` … ``,`` *qual* ₙ ``]`` 	    (list comprehension, n ≥ 1)
+:raw-html:`<br />`
+     *aexp*   →    ``(`` *infixexp* *qop* ``)`` 	    (left section)
+:raw-html:`<br />`
+     *aexp*   →    ``(`` *qop* _⟨``-``⟩ *infixexp* ``)`` 	    (right section)
+:raw-html:`<br />`
+     *aexp*   →    *qcon* ``{`` *fbind* ₁ ``,`` … ``,`` *fbind* ₙ ``}`` 	    (labeled construction, n ≥ 0)
+:raw-html:`<br />`
+     *aexp*   →    *aexp* _⟨*qcon*⟩ ``{`` *fbind* ₁ ``,`` … ``,`` *fbind* ₙ ``}`` 	    (labeled update, n  ≥  1)
 
+
+For reference, the existing ``OverloadedLabels`` extension adds the following
+productions:
+
+[Overloaded label]
+:raw-html:`<br />`
+     *aexp*   →   ``#`` {*small* | *large* | *digit* | ``'``}
+:raw-html:`<br />`
+     *aexp*   →   ``#`` *string*
+
+
+Under this proposal, the ``OverloadedRecordDot`` extension adds the following
+productions:
 
 [Field selection]
 :raw-html:`<br />`
+     *field*   →   *small* {*small* | *large* | *digit* | ``'`` }
+:raw-html:`<br />`
      *fexp*   →   *fexp* *.ᵀ* *field*
 
-.. _section-4:
+[Field selector]
+:raw-html:`<br />`
+     *projection*   →   *.ᴾ* *field*   |   *projection* *.ᵀ* *field*
+:raw-html:`<br />`
+     *aexp*   →   ``(`` *projection* ``)``
 
-2.3.2.5
 
+Under this proposal, the ``OverloadedRecordUpdate`` extension adds the following
+productions:
 
 [Field update]
 :raw-html:`<br />`
-     *fbind*   →    *field* *.ᵀ* *fieldToUpdate* *=* *exp*
+     *fieldToUpdate*   →   *fieldToUpdate* *.ᵀ* *field*   |   *field*
 :raw-html:`<br />`
-     *fbind*   →   *field* *.ᵀ* *fieldToUpdate*
+     *fbind*   →    *fieldToUpdate* ``=`` *exp*
+:raw-html:`<br />`
+     *fbind*   →   *fieldToUpdate*
+
+The new *field* nonterminal is equivalent to *varid | reservedid*.  This
+nonterminal is used in the new expression syntax for overloaded field selection,
+so expressions such as ``e.type`` are accepted, even though ``type`` would
+normally be a reserved keyword.
+
+Record updates are permitted to be nested under this proposal
+(e.g. ``e { foo.bar = baz }``, or ``e { foo.bar }`` with punning), and field
+names of updates may be reserved keywords (e.g. ``e { type = x }`` or
+``e { type }`` are allowed).
+
+This proposal changes only the accepted expressions for selection and update. It
+does not affect record data constructor declarations, record construction or
+pattern matching.  (While the changes to *fbind* allow more record constructions
+to parse, a construction such as ``C { type = e }}`` or ``C { foo.bar = e }``
+will continue to be rejected during name resolution.)
+
+Thus reserved keywords such as ``type`` cannot be defined as field names of
+normal record data constructors, but they are permitted in selection and update
+syntax. This is useful because the user may define a custom ``HasField``
+instance that makes a virtual field ``type`` available.
+
 
 3. Examples
 -----------
@@ -300,6 +362,50 @@ and yet more (as tests) are available in the examples directory of `this
 repository <https://github.com/ndmitchell/record-dot-preprocessor>`__.
 Those tests include infix applications, polymorphic data types,
 interoperation with other extensions and more.
+
+
+Reserved keywords and other special field names
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The inclusion of *reservedid* in *field* means that the following is accepted:
+
+.. code:: haskell
+
+   data Foo = Foo { fooType :: FooType }
+
+   instance HasField "type" Foo FooType where
+     getField = fooType
+
+   instance SetField "type" Foo FooType where
+     setField t foo = foo { fooType = t }
+
+   e :: Foo -> FooType
+   e foo = foo.type            -- Translates to getField @"type" foo
+
+   f :: FooType -> Foo -> Foo
+   f t foo = foo { type = t }  -- Translates to setField @"type" t foo
+
+However the following continue to be rejected:
+
+.. code:: haskell
+
+   data Foo = Foo { type :: FooType }  -- Error: record datatype field cannot be reserved word
+
+   x foo = foo.TYPE     -- Error: field must start with a lowercase letter
+
+   y foo = foo."type"  -- Error: field cannot be double-quoted
+
+The latter two are slightly inconsistent with ``OverloadedLabels``, which
+permits ``#TYPE`` and ``#"type"`` as labels.
+
+Since ``_`` is a *reservedid*, the following expressions are accepted:
+
+.. code:: haskell
+
+    e._          -- Translates to getField @"_" e
+    (._)         -- Translates to getField @"_"
+    e { _ = x }  -- Translates to setField @"_" x e
+
 
 4. Effect and Interactions
 --------------------------
@@ -531,6 +637,22 @@ NB: the difference between (2) and (3) is tiny: only whether we have ``Overloade
 We think ``RecordDotSyntax`` will enable these extensions plus some
 extension that allows multiple field names, e.g. ``NoFieldSelectors``.
 Which final extension that is has not yet been determined.
+
+
+7.9 Why permit field names that are reserved identifiers?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Haskell does not permit reserved identifiers such as ``type``, ``case``, etc. to
+be used as record field names in record declarations.  This remains the case
+under this proposal.
+
+However, the proposal allows such identifiers to be used in the new syntactic
+forms such as overloaded record selection, for example ``e.type`` is accepted.
+This is primarily intended for users who define their own ``HasField``
+instances. Such "virtual fields"  do not necessarily correspond to Haskell
+variable names and hence there seems to be no good reason to restrict them to
+the *varid* syntax.
+
 
 8. Unresolved issues
 --------------------
