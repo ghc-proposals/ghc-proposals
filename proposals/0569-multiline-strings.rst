@@ -120,9 +120,7 @@ A working prototype is available at `brandonchinn178/string-syntax <https://gith
 
 #. After parsing, it becomes indistinguishable to the equivalent single-quoted string (modulo annotations for exact-printing)
 
-As usual, string gaps are ignored in the string; but are considered non-whitespace for the common whitespace prefix calculation. In other words, any non-whitespace character in the literal source code is considered for the whitespace prefix calculation, regardless if it's semantically ignored like ``\&`` or string gaps.
-
-Like normal strings, escape codes should only lex up to a string gap and no further, e.g. ``"""\65\  \0"""`` should be equivalent to ``"A0"``. See `Section 2.6 <https://www.haskell.org/onlinereport/haskell2010/haskellch2.html#x7-200002.6>`_ of the Haskell 2010 Report, and the example in *Section 3.3 String gaps*.
+In normal strings, string gaps are effectively equivalent to replacing with ``\&``. They're not simply removed, e.g. ``"\65\   \0"`` results in ``"A0"``. This behavior is preserved in multiline strings; see the examples in *Section 3.3 String gaps* for more details.
 
 Common whitespace prefix calculation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -280,6 +278,7 @@ But a string gap starting at the beginning of a line is included in the whitespa
 
 ::
 
+  -- Imagine \& is substituted for the string gap
   s =
       """
         a b
