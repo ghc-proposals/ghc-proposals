@@ -72,8 +72,7 @@ import qualified A splice
 import quote qualified B as QB
 import C splice
 import qualified C splice as SC
-The following are accepted provided ImportQualifiedPost is also enabled:
-
+-- The following are accepted provided ImportQualifiedPost is also enabled:
 import quote B qualified as QB
 import D quote qualified as QD
 ```
