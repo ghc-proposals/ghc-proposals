@@ -49,10 +49,10 @@ We propose to essentially simplify the `importdecl` to be
 
 ```
 importdecl :: { LImportDecl GhcPs }
-   : 'import' (maybe_src | maybe_safe | optlevel | optqualified | maybe_pkg | modid | maybeas | maybeimpspec)π
+   : 'import' π(maybe_src | maybe_safe | optlevel | optqualified | maybe_pkg | modid | maybeas | maybeimpspec)
 ```
 
-where `(A|B|C)π` is a notation for *any permutation of A, B and C*.
+where `π(A|B|C)` is a notation for *any permutation of A, B and C*.
 
 The rule could be expanded into a tree (or more precisely a forest) of ordinary rules,
 or parsed as `(A|B|C)*` with a side-condition that each sub-production can occur only once.
@@ -139,7 +139,7 @@ One suggested altenative is to relax import syntax even further, allowing `impor
 
 ```
 importdecl :: { LImportDecl GhcPs }
-   : ('import' | maybe_src | maybe_safe | optlevel | optqualified | maybe_pkg | modid | maybeas | maybeimpspec)π
+   : π('import' | maybe_src | maybe_safe | optlevel | optqualified | maybe_pkg | modid | maybeas | maybeimpspec)
 ```
 
 This would allow import statements like
