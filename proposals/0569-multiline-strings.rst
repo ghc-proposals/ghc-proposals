@@ -274,7 +274,7 @@ String gaps are collapsed before the whitespace calculation
   -- equivalent to
   s' = "a b c d e\nf g"
 
-But a string gap starting at the beginning of a line is included in the whitespace calculation.
+But a string gap starting at the beginning of a line counts as non-whitespace in the whitespace calculation.
 
 ::
 
