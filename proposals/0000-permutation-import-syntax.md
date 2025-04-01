@@ -135,7 +135,20 @@ This proposal doesn't change behaviour of any existing programs.
 
 ## Alternatives
 
-TBW
+One suggested altenative is to relax import syntax even further, allowing `import` to be permuted as well:
+
+```
+importdecl :: { LImportDecl GhcPs }
+   : ('import' | maybe_src | maybe_safe | optlevel | optqualified | maybe_pkg | modid | maybeas | maybeimpspec)π
+```
+
+This would allow import statements like
+
+```hs
+qualified import A
+```
+
+At first this looks like potentially stealing syntax, but as long as `import` is a true keyword and occurs only in `importdecl` rule, the `importdecl` grammar rule doesn't overlap with any other rule, so there are no ambiguity. It may be greater engineering challenge to implement though.
 
 ## Unresolved Questions
 
