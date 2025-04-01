@@ -10,14 +10,14 @@ This proposal is [discussed at this pull request](https://github.com/ghc-proposa
 # Permutation import syntax
 
 This proposal adds a new extension `-XPermutationImportSyntax` greatly
-relaxing the import syntax, and therefore extends `-XQualifiedImports`.
+relaxing the import syntax, and therefore extends `-XImportQualifiedPost`.
 
 
 ## Motivation
 
 Syntax is a topic which people hardly ever agree upon.
 People have various taste, and arguments to have syntactic structure
-way or another are often sound. The `-XQualifiedImports` extension
+way or another are often sound. The `-XImportQualifiedPost` extension
 added some freedom in import syntax, we can have
 
 ```hs
@@ -116,11 +116,11 @@ We can mention that
 import Foo {-# SOURCE #-} (foo, bar)
 ```
 
-would be spiritually like `-XQualifiedImports`, but currently isn't allowed by any extension.
+would be spiritually like `-XImportQualifiedPost`, but currently isn't allowed by any extension.
 
 ## Effect and Interactions
 
-This extension supersets `-XQualifiedImports`.
+This extension supersets `-XImportQualifiedPost`.
 
 ## Costs and Drawbacks
 
