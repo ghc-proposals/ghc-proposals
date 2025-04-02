@@ -30,7 +30,11 @@ However, the import syntax was recently extended by [explicit level imports](htt
 and it's very possible it will be extended again in some other way.
 In discussion of [explicit level imports](https://github.com/ghc-proposals/ghc-proposals/pull/682) is a fair bit of syntax bikeshedding.
 
-We propose to essentially allow any permutation of import statement parts to be a valid import statement.
+We propose to essentially allow any permutation of import statement parts to be a valid import statement, for example
+
+```hs
+import Foo as F qualified
+```
 
 ## Proposed Change Specification
 
