@@ -38,7 +38,7 @@ import Foo as F qualified
 
 ## Proposed Change Specification
 
-The [explicit level imports](https://github.com/ghc-proposals/ghc-proposals/pull/682) is at the moment the latest proposal
+The [explicit level imports](https://github.com/ghc-proposals/ghc-proposals/pull/682) is at the moment the latest accepted proposal
 amending the import syntax. The import statement rule looks like
 
 ```
@@ -59,7 +59,7 @@ importdecl :: { LImportDecl GhcPs }
 where `π(A|B|C)` is a notation for *any permutation of A, B and C*.
 
 The rule could be expanded into a tree (or more precisely a forest) of ordinary rules,
-or parsed as `(A|B|C)*` with a side-condition that each sub-production can occur only once.
+or parsed as `(A|B|C)*` with a side-condition that each sub-production can (should) occur only once.
 This is however an implementation detail. It might be possible to extend `happy` to allow
 permutation rules directly.
 
