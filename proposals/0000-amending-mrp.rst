@@ -232,6 +232,17 @@ Alternatives
 Instead of amending the MRP proposal, we could try to do the proposal as 
 written.
 
+One choice we may need to make is what the definition of ``(>>)`` should be.
+The original proposal implied that it should be the same as
+``(*>)``, but this may not be the best definition. The current default
+implementation of ``(>>)`` is ``\a b -> a >>= const b``. This uses ``Monad``
+and is theoretically more efficient than ``(*>)`` in some cases. I believe that
+using this definition is not the correct move, as it conflicts with what the
+current recommendation is for ``(>>)``, which is to use ``(*>)``. If users are
+worried about performance in their own ``Monad``s, they can define 
+``(*>) = \a b -> a >>= const b``, and/or suggest this as a change to upstream
+packages.
+
 Unresolved Questions
 --------------------
 See `Proposed Library Change Specification` on the question of the eventual
