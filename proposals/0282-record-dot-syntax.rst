@@ -83,17 +83,21 @@ If ``OverloadedRecordDot`` is on:
 If ``OverloadedRecordDot`` is not on, these expressions are parsed as
 uses of the function ``(.)``.
 
-If ``OverloadedRecordUpdate`` is on:
-
-- The expression ``e{lbl = val}`` means ``setField @"lbl" val``;
-- Update expressions with qualified labels like ``r{M.x = val}`` are disallowed.
+If ``OverloadedRecordUpdate`` is on, the expression ``e{lbl = val}``
+means ``setField @"lbl" val``.
 
 If ``OverloadedRecordUpdate`` is not on, ``e{lbl = val}`` means just
 what it does in Haskell98.
 
-If ``OverloadedRecordDot`` and ``OverloadedRecordUpdate`` are both on
-the expression ``e{lbl₁.lbl₂ = val}`` means ``e{lbl₁ = (e.lbl₁){lbl2 =
-val}}`` otherwise the expression ``e{lbl₁.lbl₂ = val}`` is illegal.
+If ``OverloadedRecordDot`` and ``OverloadedRecordUpdate`` are both on:
+
+- The expression ``e{lbl₁.lbl₂ = val}`` means ``e{lbl₁ = (e.lbl₁){lbl₂ = val}}``;
+- The expression ``e{M.lbl = val}`` means ``setField @"M" (setField @"lbl" val (getField @"M" e)) e``;
+
+otherwise the expression ``e{lbl₁.lbl₂ = val}`` is illegal, while
+the expression ``e{M.lbl = val}`` refers to the qualified name ``M.lbl``, i.e.
+the ``lbl`` field exported by the module ``M``.
+
 
 2.1.1 Syntax
 ^^^^^^^^^^^^
@@ -107,8 +111,11 @@ Expression              Equivalent
 ``(.lbl)``              ``(\e -> e.lbl)``
 ``(.lbl₁.lbl₂)``        ``(\e -> e.lbl₁.lbl₂)``
 ``e.lbl``               ``getField @"lbl" e``
+``e.Lbl``               ``getField @"Lbl" e``
+``e."lbl₁ lbl₂"``       ``getField @"lbl₁ lbl₂"``
 ``e.lbl₁.lbl₂``         ``(e.lbl₁).lbl₂``
 ``e{lbl = val}``        ``setField @"lbl" e val``
+``e{"x.y" = val}``      ``setField @"x.y" e val``
 ``e{lbl₁.lbl₂ = val}``  ``e{lbl₁ = (e.lbl₁){lbl₂ = val}}``
 ``e.lbl₁{lbl₂ = val}``  ``(e.lbl₁){lbl₂ = val}``
 ``e{lbl₁ = val₁}.val₂`` ``(e{lbl₁ = val₁}).val₂``
@@ -147,11 +154,16 @@ Expression     Interpretation
 2.1.3 Fields whose names are operator symbols
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-We propose that dot notation isn’t available for fields whose names are
-operator symbols (for example, ``+``, ``.+.`` and so on).
+Where a field name is an operator symbol, the field name can be written in double quotes, for example: ::
 
-[Note : For fields whose names are operator symbols, one can still
-write ``getField`` expressions (e.g. ``getField @".+." r``)].
+    data T = MkT { (+++) :: Int }
+
+    t = MkT { (+++) = 1 }  -- Traditional record syntax
+
+    x = t."+++"            -- With OverloadedRecordDot
+
+    y = t { "+++" = 2 }    -- With OverloadedRecordUpdate
+
 
 2.2 Definitions
 ~~~~~~~~~~~~~~~
@@ -258,21 +270,22 @@ follows:
 
 
 For reference, the existing ``OverloadedLabels`` extension adds the following
-productions:
+productions (see `proposal #170 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0170-unrestricted-overloadedlabels.rst>`_):
 
 [Overloaded label]
 :raw-html:`<br />`
-     *aexp*   →   ``#`` {*small* | *large* | *digit* | ``'``}
+     *labelChar*   →   *small* | *large* | *digit* | ``'``
 :raw-html:`<br />`
-     *aexp*   →   ``#`` *string*
-
+     *label*   →   ``#`` (*string* | *labelChar* {*labelChar*})
+:raw-html:`<br />`
+     *aexp*   →   *label*
 
 Under this proposal, the ``OverloadedRecordDot`` extension adds the following
 productions:
 
 [Field selection]
 :raw-html:`<br />`
-     *field*   →   *small* {*small* | *large* | *digit* | ``'`` }
+     *field*   →   (*string* | *labelChar* {*labelChar*})
 :raw-html:`<br />`
      *fexp*   →   *fexp* *.ᵀ* *field*
 
@@ -294,10 +307,13 @@ productions:
 :raw-html:`<br />`
      *fbind*   →   *fieldToUpdate*
 
-The new *field* nonterminal is equivalent to *varid | reservedid*.  This
-nonterminal is used in the new expression syntax for overloaded field selection,
-so expressions such as ``e.type`` are accepted, even though ``type`` would
-normally be a reserved keyword.
+The *field* nonterminal includes *varid*, *reservedid*, *conid* and *string*.
+This nonterminal is used in the new expression syntax for overloaded field
+selection and update, so expressions such as the following are accepted:
+
+- ``e.type``, even though ``type`` would normally be a reserved keyword;
+- ``.Lbl``, even though ``Lbl`` starts with an uppercase character so it cannot be a traditional field name;
+- ``e { "_ some string! " = v }``, even though traditional field names cannot be arbitrary strings.
 
 Record updates are permitted to be nested under this proposal
 (e.g. ``e { foo.bar = baz }``, or ``e { foo.bar }`` with punning), and field
@@ -367,7 +383,7 @@ interoperation with other extensions and more.
 Reserved keywords and other special field names
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The inclusion of *reservedid* in *field* means that the following is accepted:
+The very general definition of *field* means that the following is accepted:
 
 .. code:: haskell
 
@@ -385,26 +401,33 @@ The inclusion of *reservedid* in *field* means that the following is accepted:
    f :: FooType -> Foo -> Foo
    f t foo = foo { type = t }  -- Translates to setField @"type" t foo
 
-However the following continue to be rejected:
+   x = (.TYPE)                 -- Translates to getField @"TYPE"
 
-.. code:: haskell
+   y foo = foo."type"          -- Translates to getField @"type" foo
 
-   data Foo = Foo { type :: FooType }  -- Error: record datatype field cannot be reserved word
+The latter two are consistent with ``OverloadedLabels``, which permits ``#TYPE``
+and ``#"type"`` as labels.
 
-   x foo = foo.TYPE     -- Error: field must start with a lowercase letter
-
-   y foo = foo."type"  -- Error: field cannot be double-quoted
-
-The latter two are slightly inconsistent with ``OverloadedLabels``, which
-permits ``#TYPE`` and ``#"type"`` as labels.
-
-Since ``_`` is a *reservedid*, the following expressions are accepted:
+Since ``_`` matches the *field* syntax, the following expressions are accepted:
 
 .. code:: haskell
 
     e._          -- Translates to getField @"_" e
     (._)         -- Translates to getField @"_"
     e { _ = x }  -- Translates to setField @"_" x e
+    #_           -- Translates to fromLabel @"_"
+
+The following continue to be rejected:
+
+.. code:: haskell
+
+   data Foo = Foo { type :: FooType }  -- Error: record datatype field cannot be reserved word
+
+   x = Foo { TYPE = 0 }                -- Error: record construction field cannot start with capital letter
+
+   y (Foo { "type" = v }) = v          -- Error: record pattern match field cannot be string
+
+   z = foo { type }                    -- Error: field punning cannot be used with non-variable identifiers
 
 
 4. Effect and Interactions
@@ -639,19 +662,40 @@ extension that allows multiple field names, e.g. ``NoFieldSelectors``.
 Which final extension that is has not yet been determined.
 
 
-7.9 Why permit field names that are reserved identifiers?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+7.9 Why permit field names that are not valid in record declarations?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Haskell does not permit reserved identifiers such as ``type``, ``case``, etc. to
-be used as record field names in record declarations.  This remains the case
-under this proposal.
+Haskell requires record field names in record declarations, construction and
+pattern-matching to begin with a lowercase letter and not be a reserved
+identifier such as ``type``.  This remains the case under this proposal.
 
-However, the proposal allows such identifiers to be used in the new syntactic
+However, the proposal allows other identifiers to be used in the new syntactic
 forms such as overloaded record selection, for example ``e.type`` is accepted.
 This is primarily intended for users who define their own ``HasField``
 instances. Such "virtual fields"  do not necessarily correspond to Haskell
 variable names and hence there seems to be no good reason to restrict them to
-the *varid* syntax.
+the *varid* syntax. For example, a library may define a datatype with a field
+``foo_type`` and use Template Haskell to generate a ``HasField`` instance
+without the ``foo_`` prefix; it would be inconvenient if this failed for
+``foo_type`` and ``foo_Type`` but worked for ``foo_bar``.
+
+Moreover, the design here is consistent with unrestricted overloaded labels (see
+`proposal #170 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0170-unrestricted-overloadedlabels.rst>`_).
+
+An alternative choice would be to generalise the syntax of record field names in
+traditional record declarations so they could be (at least) reserved
+identifiers, and (perhaps) uppercase identifiers or strings.  However this
+causes difficulties:
+
+- It does not naturally fit under the ``OverloadedRecordDot`` or
+  ``OverloadedRecordUpdate`` extensions, so would need a new extension, which
+  is not really desired by anyone except for consistency reasons.
+
+- Such fields could not be used with traditional record selection (since that
+  requires the record selector function to be called as a function) and would
+  interact badly with punning (which brings the field into scope as a
+  variable). Thus the result would not actually be more consistent, it would
+  merely move the inconsistency around.
 
 
 8. Unresolved issues
