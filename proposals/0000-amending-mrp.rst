@@ -71,8 +71,8 @@ corresponding superclass method; ‘canonical’ is a strictly stronger requirem
 This proposal would adjust the next phases to reduce the number of changes
 neccessary in GHC as follows:
 
-* Phase 2 makes ``-Wnoncanonical-monad-instances`` a compiler error by default,
-  and adds a ``-Wredundant-canonical-monad-method`` warning that makes canonical
+* Phase 2 makes ``-Wnoncanonical-monad-instances`` a compiler error,
+  and adds a ``-Wredundant-canonical-methods`` warning that makes canonical
   method definitions warn
 * Phase 3 would then move ``return`` and ``(>>)`` to the top level, and remove
   the original and new warnings (after removing these methods from ``Monad`` the
