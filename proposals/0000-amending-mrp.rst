@@ -83,6 +83,10 @@ This reduces the number of steps neccessary, and means that we wouldn't need
 some special casing about ignoring canonical definitions while we have a top
 level one.
 
+As part of these changes, we should change how instances are derived so that
+the instance methods ``return`` and ``(>>)`` are not derived, meaning that their
+default definitions will be used.
+
 Another adjustment to the plan is to adjust the warnings and errors about
 ``(>>)`` to encourage a performant definition of ``(*>)`` instead of blindly
 replacing its definition. We wish to do this because the default
@@ -95,6 +99,8 @@ Semigroup-Monoid proposal under a similar schedule.
 To that end, I ask that we complete steps for both at the same time (both get 
 warnings and errors, both get methods moved, etc), since the breakage and change
 requirements in GHC will be very similar.
+To be more specific: ``mappend`` will also be an error to define as anything 
+other than ``(<>)``, and it will be a warning to define ``mappend`` as ``(<>)``.
 
 Proposed Library Change Specification
 -------------------------------------
