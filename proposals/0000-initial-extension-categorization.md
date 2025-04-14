@@ -7,7 +7,7 @@ implemented: ""
 
 This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/669).
 
-# Extension Categorization
+# Initial Categorization of Language Extensions
 
 We propose to concretely categorize a subset of the Haskell language extensions as defined by a previously accepted [proposal](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0601-extension-lifecycle-framework.md).
 
