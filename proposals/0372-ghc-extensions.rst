@@ -191,24 +191,18 @@ cadence.
 Breaking changes
 ^^^^^^^^^^^^^^^^
 
-Switching from one language edition to another may involve breaking changes.  A
-key point of the language editions mechanism is that these costs are incurred
-when the user decides to switch edition, rather than when the compiler is
-upgraded.
+Two concerns are in tension:
 
-For convenient one-off use and to encourage users to use the most up to date
-language edition, it is desirable that ``ghc`` and ``ghci`` provide the latest
-language edition by default, and do not nag users excessively. This is in
-tension with stability, as for users who compile long-lived programs using
-``ghc`` directly, a change in the default language edition may cause backwards
-incompatibility.  Such users should be strongly encouraged to use explicit
-``LANGUAGE`` pragmas to specify the language edition they are using.
+* For convenient one-off use, and to encourage users to use the most up to date
+  language edition, it is desirable that ``ghc`` and ``ghci`` provide the latest
+  language edition by default, and do not nag users excessively.
 
-Cabal packages specify a ``default-language`` (or fall back on ``Haskell98``)
-and hence will be unaffected by a change in the default language edition used by
-``ghc``.
+* Silently switching from one language edition to another may involve breaking
+  changes. A key point of the language editions mechanism is that these costs
+  are incurred when the user decides to switch edition, rather than when the
+  compiler is upgraded.
 
-Thus, to balance these concerns:
+To balance these concerns:
 
 * GHC will identify a "default language edition" that is enabled by default in
   both ``ghc`` and ``ghci``. Normally, the next major release of GHC after an
@@ -217,18 +211,32 @@ Thus, to balance these concerns:
   the case, for example, GHC 9.10 added support for ``GHC2024``, but the default
   language edition remained ``GHC2021``.)
 
-* Changes to the default language edition will be accompanied by appropriate
-  mentions in the release notes and migration guide.
+  * Changes to the default language edition will be accompanied by appropriate
+    mentions in the release notes and migration guide.
 
-* The initial GHCi prompt will be changed to display the active language
-  edition.
+  * The initial GHCi prompt will be changed to display the active language
+    edition.
 
-* GHC will not automatically emit a warning whenever a language edition has not
-  been explicitly specified, because doing so would be overly noisy. However, if
-  a language edition has not been explicitly specified, and compilation fails
-  with one or more errors, GHC will emit an additional warning recommending that
-  a language edition should be chosen, as the error may have resulted from an
-  old module not specifying a language edition.
+  * GHC will not automatically emit a warning whenever a language edition has not
+    been explicitly specified, because doing so would be overly noisy. However, if
+    a language edition has not been explicitly specified, and compilation fails
+    with one or more errors, GHC will emit an additional warning recommending that
+    a language edition should be chosen, as the error may have resulted from an
+    old module not specifying a language edition.
+
+* Users are strongly encouraged to insulate themselves from changes to the
+  default language edition by:
+
+  * Using Cabal's ``default-language`` specifier to fix the language edition for a package, or
+  * Using a ``LANGUAGE GHC20xx`` pragma in the source files themselves.
+
+Cabal encourages packages to specify a ``default-language``, but does not
+require it in all cases, and in its absence may pick its own default (currently
+this is ``Haskell98`` or ``Haskell2010``, see `Cabal issue #9668
+<https://github.com/haskell/cabal/issues/9668>`_). Thus changes to GHC's default
+language edition are primarily of concern to users running ``ghc[i]`` directly,
+rather than using Cabal.
+
 
 For example, the GHCi prompt could look like this:
 
