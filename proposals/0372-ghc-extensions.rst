@@ -7,6 +7,7 @@ The GHC20XX process
 .. implemented::
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/372>`_ and `amended by this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/632>`_.
+.. sectnum::
 .. contents::
 
 This proposal sets up a process to introduce new language versions ``GHC20XX``,
