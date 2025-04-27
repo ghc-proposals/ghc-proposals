@@ -30,6 +30,7 @@ Each of these packages can be versioned independently and can more easily be mad
 We do not propose to remove from ``template-haskell`` these parts of the interface, rather a version of ``template-haskell`` will re-export the interfaces from the more refined packages.
 
 Concretely, we propose introducing the following two libraries:
+
 * ``template-haskell-lift``, exposes the ``Lift`` typeclass and compatibility functions. Users who make use of the ``DerivingLift`` language extension only need to depend on this package in order to derive instances of ``Lift`` or manually give instances using ``TemplateHaskellQuotes``.
 * ``template-haskell-quasiquote`` exposes the ``Quasiquoter`` datatype, which allows libraries to expose their own custom quasiquoters.
 
@@ -67,14 +68,14 @@ Justifying our strategy
 ^^^^^^^^^^^^^^^^^^^^^^^
 Our strategy is informed by the classes of usages of ``template-haskell`` found in the ecosystem. We can divide users as follows:
 
-* (A) Quote-and-splice clients: These users use only splices, quotes, ``DeriveLift`` or quasiquotes. These users might not even need to import the ``template-haskell`` library.
-* (B) Syntax-construction clients. These users construct Template Haskell syntax trees either directly through its constructors, or indirectly through the smart-constructors exported by ``Language.Haskell.TH.Lib``.
-* (C) Reification clients. These users, notably various forms of deriving, use reification to interrogate the program. Reification currently returns Template Haskell ASTs.
-* (D) Syntax-analysis clients. Some clients pattern match on Template Haskell syntax tree datatypes.
+* (\A) Quote-and-splice clients: These users use only splices, quotes, ``DeriveLift`` or quasiquotes. These users might not even need to import the ``template-haskell`` library.
+* (\B) Syntax-construction clients. These users construct Template Haskell syntax trees either directly through its constructors, or indirectly through the smart-constructors exported by ``Language.Haskell.TH.Lib``.
+* (\C) Reification clients. These users, notably various forms of deriving, use reification to interrogate the program. Reification currently returns Template Haskell ASTs.
+* (\D) Syntax-analysis clients. Some clients pattern match on Template Haskell syntax tree datatypes.
 
 These diverse usages of the library lead to diverse levels of breakage when a new major version of ``template-haskell`` comes out. We can rank them from (A) with the least breakage to (D) with the most.
 For instance, the ``uuid`` library, which just depends on ``template-haskell`` in order to provide a derived ``Lift`` instance (a type (A) client), in all likelyhood would only need to bump its upper-bound on the library.
-On the other-hand ``th-desugar``, which pattern matches on the entire syntax tree (a type (D) client), would have to make code changes on most releases of the library.
+On the other hand ``th-desugar``, which pattern matches on the entire syntax tree (a type (D) client), would have to make code changes on most releases of the library.
 
 Type (A) users are already using interfaces which are quite stable. Yet, they have to update their upper bounds whenever they want to be compatible with a new major version of GHC.
 The first concrete step in our strategy is to publish package that provide these stable APIs. We will return to the benefits of this in the next section.
@@ -83,7 +84,7 @@ The first concrete step in our strategy is to publish package that provide these
 In the future, we aim to continue this strategy, by identifying stable interfaces for these classes of users which aren't tightly coupled to the Template Haskell AST.
 The smart-constructors from the ``Language.Haskell.TH.Lib`` module are a good starting point for type (B) clients. Another idea is to use smart-constructors based on the Haskell2010 AST (See: `GHC#20828 <https://gitlab.haskell.org/ghc/ghc/-/issues/20828>`_).
 For type (C) clients, we can build on the existing `th-abstraction` library, and perhaps expose a refined AST that doesn't need to be as expressive as the surface language.
-Type (D) clients on the otherhand are likely to be difficult to accommodate, since they are inherently tightly coupled to the Template Haskell syntax trees.
+Type (D) clients on the other hand are likely to be difficult to accommodate, since they are inherently tightly coupled to the Template Haskell syntax trees.
 
 Our strategy of splitting out stable subsets of the API has the advantage that it allows users to opt-in to more stability.
 ``template-haskell`` is used very widely in the ecosystem. This makes it important that any attempt to improve its stability doesn't force a change to all users.
@@ -98,7 +99,7 @@ Benefits of splitting out ``template-haskell-lift`` and ``template-haskell-quasi
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Publishing ``template-haskell-lift`` and ``template-haskell-quasiquote`` will be beneficial both for GHC and the ecosystem.
 
-The biggest benefit is that library authors who are just deriving or using ``Lift`` instances or just exposing ``Quasiquoter``s no longer need to depend on the entirety of ``template-haskell``.
+The biggest benefit is that library authors who are just deriving or using ``Lift`` instances or just exposing ``Quasiquoter``\s no longer need to depend on the entirety of ``template-haskell``.
 This can help avoid the sorts of dependency bounds propagation problems identified in the `GHC.X.Hackage proposal <https://github.com/bgamari/tech-proposals/blob/ghc-x-hackage/proposals/001-ghc-x-hackage.md>`_.
 
 There is a more subtle benefit for the ``template-haskell`` package. Currently the wide usage of ``Lift`` instances greatly limits the possible dependencies of ``template-haskell``.
