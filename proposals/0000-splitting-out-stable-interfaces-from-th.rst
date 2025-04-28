@@ -38,7 +38,8 @@ Motivation
 ----------
 This proposal aims to reduce the maintenance burden for packages that depend on ``template-haskell``.
 First, we sketch the relationship between GHC's internal AST and ``template-haskell``, and how this leads to frequent breaking changes.
-Second, we show how our general strategy improves this situation. Third, we show the benefits of publishing packages for the specific parts of the interface we describe.
+Second, we show how our general strategy improves this situation.
+Third, we show the benefits of publishing packages for the specific parts of the interface we describe.
 
 .. _why TH unstable:
 Why ``template-haskell`` is unstable
@@ -123,6 +124,7 @@ We propose to publish two new libraries: ``template-haskell-lift`` and ``templat
 These will be shipped with GHC.
 They will also be buildable from Hackage.
 They will be buildable with at a *minimum* the last 3 versions of GHC.
+The current version of the libraries are compatible with GHC 8.10 and later.
 
 Their interfaces will be as follows:
 
@@ -155,7 +157,7 @@ The idea to use this less verbose namespace for the new stable interfaces is tha
 
 Effect and Interactions
 -----------------------
-This works towards removing the special case for ``template-haskell`` in (GR1), but on its own it doesn't achieve it.
+This works towards removing the special case for ``template-haskell`` in (GR1) from `Principles for GHC <../principles.rst>`_, but on its own it doesn't achieve it.
 There should be no interactions with other proposals.
 
 
@@ -163,25 +165,34 @@ Costs and Drawbacks
 -------------------
 This proposal requires the GHC team to maintain two packages for the conceivable future.
 This should be a relatively small cost as we expect these packages to be relatively stable.
-Teo Camarasu is happy to take on any maintainance work necessary for these packages for the conceivable future,
+Teo Camarasu is happy to take on any maintainance work necessary for these packages for the forseeable future,
 but someone else would have to take over if they are no longer able to.
 
 
 Backward Compatibility
 ----------------------
-As this proposal deals exclusively with creating new packages, there are no backwards compatibilty worries.
+As this proposal deals exclusively with creating new packages, there are no backwards compatibility worries.
 
 
 Alternatives
 ------------
-The design space for improving ``template-haskell`` stability is vast.
-TODO: finish off this section
+The majority of the breaking changes to ``template-haskell`` comes from changes to the TH AST.
+An alternative approach would be to simplify move the TH AST into a new package, and keep ``template-haskell``
+as the remaining interface.
+
+The main issue with this alternative is that it would force a change on basically all users but type (A).
+This would be a large and wide ranging breaking change.
+
+Another issue is that the ``Lift`` interface has changed much more frequently in the past than the ``Quasiquoter`` interface.
+If either of these changed in the future, then every user would have to update their upper bounds. ]
+Whereas with the split packages, you only need to update your bounds if the interface you actually depend on has changed.
+
 
 Unresolved Questions
 --------------------
 
-- Should the modules live in the ``TemplateHaskell.`` or the ``Language.Haskell.TH.`` namespace?
-- Should these packages live in the GHC repo, in another repository on Gitlab, or on GitHub?
+- Should the modules live in the ```TemplateHaskell.`` or the ``Language.Haskell.TH.`` namespace?
+- Should these packages live in the GHC repository, in another repository on the GHC Gitlab, or on GitHub?
 
 Implementation Plan
 -------------------
