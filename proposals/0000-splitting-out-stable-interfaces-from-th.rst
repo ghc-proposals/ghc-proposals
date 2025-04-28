@@ -165,7 +165,7 @@ Costs and Drawbacks
 -------------------
 This proposal requires the GHC team to maintain two packages for the conceivable future.
 This should be a relatively small cost as we expect these packages to be relatively stable.
-Teo Camarasu is happy to take on any maintainance work necessary for these packages for the forseeable future,
+Teo Camarasu is happy to take on any maintenance work necessary for these packages for the foreseeable future,
 but someone else would have to take over if they are no longer able to.
 
 
