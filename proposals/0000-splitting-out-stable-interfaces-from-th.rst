@@ -157,7 +157,7 @@ The idea to use this less verbose namespace for the new stable interfaces is tha
 
 Effect and Interactions
 -----------------------
-This works towards removing the special case for ``template-haskell`` in (GR1) from `Principles for GHC <../principles.rst>`_, but on its own it doesn't achieve it.
+This works towards removing the special case for ``template-haskell`` in `(GR1) <https://github.com/ghc-proposals/ghc-proposals/blob/master/principles.rst#33stability-gr1>`_ from `Principles for GHC <../principles.rst>`_, but on its own it doesn't achieve it.
 There should be no interactions with other proposals.
 
 
