@@ -269,23 +269,14 @@ follows:
      *aexp*   →    *aexp* _⟨*qcon*⟩ ``{`` *fbind* ₁ ``,`` … ``,`` *fbind* ₙ ``}`` 	    (labeled update, n  ≥  1)
 
 
-For reference, the existing ``OverloadedLabels`` extension adds the following
-productions (see `proposal #170 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0170-unrestricted-overloadedlabels.rst>`_):
-
-[Overloaded label]
-:raw-html:`<br />`
-     *labelChar*   →   *small* | *large* | *digit* | ``'``
-:raw-html:`<br />`
-     *label*   →   ``#`` (*string* | *labelChar* {*labelChar*})
-:raw-html:`<br />`
-     *aexp*   →   *label*
-
 Under this proposal, the ``OverloadedRecordDot`` extension adds the following
 productions:
 
 [Field selection]
 :raw-html:`<br />`
-     *field*   →   (*string* | *labelChar* {*labelChar*})
+     *fieldChar*   →   *small* | *large* | *digit* | ``'``
+:raw-html:`<br />`
+     *field*   →   (*string* | *fieldChar* {*fieldChar*})
 :raw-html:`<br />`
      *fexp*   →   *fexp* *.ᵀ* *field*
 
@@ -295,19 +286,30 @@ productions:
 :raw-html:`<br />`
      *aexp*   →   ``(`` *projection* ``)``
 
+The grammar for the existing ``OverloadedLabels`` extension
+(see `proposal #170 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0170-unrestricted-overloadedlabels.rst>`_)
+can then be restated (without change to the accepted language) as:
+
+[Overloaded label]
+:raw-html:`<br />`
+     *label*   →   ``#`` *field*
+:raw-html:`<br />`
+     *aexp*   →   *label*
 
 Under this proposal, the ``OverloadedRecordUpdate`` extension adds the following
-productions:
+productions (replacing the existing *aexp* production for record updates):
 
 [Field update]
 :raw-html:`<br />`
      *fieldToUpdate*   →   *fieldToUpdate* *.ᵀ* *field*   |   *field*
 :raw-html:`<br />`
-     *fbind*   →    *fieldToUpdate* ``=`` *exp*
+     *fbindUpdate*   →    *fieldToUpdate* ``=`` *exp*   |   *fieldToUpdate*
 :raw-html:`<br />`
-     *fbind*   →   *fieldToUpdate*
+     *aexp*   →    *aexp* _⟨*qcon*⟩ ``{`` *fbindUpdate* ₁ ``,`` … ``,`` *fbindUpdate* ₙ ``}`` 	    (labeled update, n  ≥  1)
 
-The *field* nonterminal includes *varid*, *reservedid*, *conid* and *string*.
+
+The *field* nonterminal overlaps with *varid*, *reservedid*, *conid* and *string*.
+No ambiguity arises thereby because *field* occurs only in very specific syntactic places.
 This nonterminal is used in the new expression syntax for overloaded field
 selection and update, so expressions such as the following are accepted:
 
@@ -315,16 +317,9 @@ selection and update, so expressions such as the following are accepted:
 - ``.Lbl``, even though ``Lbl`` starts with an uppercase character so it cannot be a traditional field name;
 - ``e { "_ some string! " = v }``, even though traditional field names cannot be arbitrary strings.
 
-Record updates are permitted to be nested under this proposal
-(e.g. ``e { foo.bar = baz }``, or ``e { foo.bar }`` with punning), and field
-names of updates may be reserved keywords (e.g. ``e { type = x }`` or
-``e { type }`` are allowed).
-
 This proposal changes only the accepted expressions for selection and update. It
 does not affect record data constructor declarations, record construction or
-pattern matching.  (While the changes to *fbind* allow more record constructions
-to parse, a construction such as ``C { type = e }}`` or ``C { foo.bar = e }``
-will continue to be rejected during name resolution.)
+pattern matching.
 
 Thus reserved keywords such as ``type`` cannot be defined as field names of
 normal record data constructors, but they are permitted in selection and update
