@@ -77,26 +77,26 @@ This change adds new language extensions ``OverloadedRecordDot`` and
 
 If ``OverloadedRecordDot`` is on:
 
-- The expression ``.lbl`` means ``getField @"lbl"``;
-- The expression ``e.lbl`` means ``getField @"lbl" e``.
+- The expression ``.fld`` means ``getField @"fld"``;
+- The expression ``e.fld`` means ``getField @"fld" e``.
 
 If ``OverloadedRecordDot`` is not on, these expressions are parsed as
 uses of the function ``(.)``.
 
-If ``OverloadedRecordUpdate`` is on, the expression ``e{lbl = val}``
-means ``setField @"lbl" val``.
+If ``OverloadedRecordUpdate`` is on, the expression ``e{fld = val}``
+means ``setField @"fld" val``.
 
-If ``OverloadedRecordUpdate`` is not on, ``e{lbl = val}`` means just
+If ``OverloadedRecordUpdate`` is not on, ``e{fld = val}`` means just
 what it does in Haskell98.
 
 If ``OverloadedRecordDot`` and ``OverloadedRecordUpdate`` are both on:
 
-- The expression ``e{lbl₁.lbl₂ = val}`` means ``e{lbl₁ = (e.lbl₁){lbl₂ = val}}``;
-- The expression ``e{M.lbl = val}`` means ``setField @"M" (setField @"lbl" val (getField @"M" e)) e``;
+- The expression ``e{fld₁.fld₂ = val}`` means ``e{fld₁ = (e.fld₁){fld₂ = val}}``;
+- The expression ``e{M.fld = val}`` means ``setField @"M" (setField @"fld" val (getField @"M" e)) e``;
 
-otherwise the expression ``e{lbl₁.lbl₂ = val}`` is illegal, while
-the expression ``e{M.lbl = val}`` refers to the qualified name ``M.lbl``, i.e.
-the ``lbl`` field exported by the module ``M``.
+otherwise the expression ``e{fld₁.fld₂ = val}`` is illegal, while
+the expression ``e{M.fld = val}`` refers to the qualified name ``M.fld``, i.e.
+the ``fld`` field exported by the module ``M``.
 
 
 2.1.1 Syntax
@@ -108,22 +108,22 @@ In the event the language extensions ``OverloadedRecordDot`` and
 ======================= ==================================
 Expression              Equivalent
 ======================= ==================================
-``(.lbl)``              ``(\e -> e.lbl)``
-``(.lbl₁.lbl₂)``        ``(\e -> e.lbl₁.lbl₂)``
-``e.lbl``               ``getField @"lbl" e``
-``e.Lbl``               ``getField @"Lbl" e``
-``e."lbl₁ lbl₂"``       ``getField @"lbl₁ lbl₂"``
-``e.lbl₁.lbl₂``         ``(e.lbl₁).lbl₂``
-``e{lbl = val}``        ``setField @"lbl" e val``
+``(.fld)``              ``(\e -> e.fld)``
+``(.fld₁.fld₂)``        ``(\e -> e.fld₁.fld₂)``
+``e.fld``               ``getField @"fld" e``
+``e.fld``               ``getField @"fld" e``
+``e."fld₁ fld₂"``       ``getField @"fld₁ fld₂"``
+``e.fld₁.fld₂``         ``(e.fld₁).fld₂``
+``e{fld = val}``        ``setField @"fld" e val``
 ``e{"x.y" = val}``      ``setField @"x.y" e val``
-``e{lbl₁.lbl₂ = val}``  ``e{lbl₁ = (e.lbl₁){lbl₂ = val}}``
-``e.lbl₁{lbl₂ = val}``  ``(e.lbl₁){lbl₂ = val}``
-``e{lbl₁ = val₁}.val₂`` ``(e{lbl₁ = val₁}).val₂``
-``e{lbl₁}``             ``e{lbl₁ = lbl₁}`` [Note: requires ``NamedFieldPuns``]
-``e{lbl₁.lbl₂}``        ``e{lbl₁.lbl₂ = lbl₂}`` [Note: requires ``NamedFieldPuns``]
+``e{fld₁.fld₂ = val}``  ``e{fld₁ = (e.fld₁){fld₂ = val}}``
+``e.fld₁{fld₂ = val}``  ``(e.fld₁){fld₂ = val}``
+``e{fld₁ = val₁}.val₂`` ``(e{fld₁ = val₁}).val₂``
+``e{fld₁}``             ``e{fld₁ = fld₁}`` [Note: requires ``NamedFieldPuns``]
+``e{fld₁.fld₂}``        ``e{fld₁.fld₂ = fld₂}`` [Note: requires ``NamedFieldPuns``]
 ======================= ==================================
 
-- **Updating nested fields.** ``e{lbl = val}`` is the syntax of a standard H98 record update. It’s the nested form introduced by this proposal that is new : ``e{lbl1.lbl2 = val}``. However, in the event ``OverloadedRecordUpdate`` is in effect, note that ``e{lbl = val}`` desugars to ``setField @"lbl" e val``].
+- **Updating nested fields.** ``e{fld = val}`` is the syntax of a standard H98 record update. It’s the nested form introduced by this proposal that is new : ``e{fld1.fld2 = val}``. However, in the event ``OverloadedRecordUpdate`` is in effect, note that ``e{fld = val}`` desugars to ``setField @"fld" e val``].
 - **Punning.** With ``NamedFieldPuns``, the form ``e { x, y }`` means ``e { x=x, y=y }``. With ``OverloadedRecordUpdate`` this behaviour is extended to nested updates: ``e { a.b.c, x.y }`` means ``e { a.b.c=c, x.y=y }``. Note the variable that is referred to implicitly (here ``c`` and ``y``) is the last chunk of the field to update. So ``c`` is the last chunk of ``a.b.c``, and ``y`` is the last chunk of ``x.y``.
 
 2.1.2 Precedence
@@ -314,7 +314,7 @@ This nonterminal is used in the new expression syntax for overloaded field
 selection and update, so expressions such as the following are accepted:
 
 - ``e.type``, even though ``type`` would normally be a reserved keyword;
-- ``.Lbl``, even though ``Lbl`` starts with an uppercase character so it cannot be a traditional field name;
+- ``.fld``, even though ``fld`` starts with an uppercase character so it cannot be a traditional field name;
 - ``e { "_ some string! " = v }``, even though traditional field names cannot be arbitrary strings.
 
 This proposal changes only the accepted expressions for selection and update. It
@@ -599,7 +599,7 @@ leave this feature out.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 There are no update sections. Should ``({a=})``, ``({a=b})`` or
-``(.lbl=)`` be an update section? While nice, we leave this feature out.
+``(.fld=)`` be an update section? While nice, we leave this feature out.
 
 7.4 Should pattern matching be extended?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
