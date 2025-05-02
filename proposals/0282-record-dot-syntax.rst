@@ -69,103 +69,11 @@ For the specification we focus on the changes to the parsing rules, and
 the desugaring, with the belief the type checking and renamer changes
 required are an unambiguous consequences of those.
 
-2.1 Language extensions
-~~~~~~~~~~~~~~~~~~~~~~~
+The prototype implements the parsing scheme presented here. More
+information about the prototype is available in `this
+section <#91-prototype>`__.
 
-This change adds new language extensions ``OverloadedRecordDot`` and
-``OverloadedRecordUpdate``.
-
-If ``OverloadedRecordDot`` is on:
-
-- The expression ``.fld`` means ``getField @"fld"``;
-- The expression ``e.fld`` means ``getField @"fld" e``.
-
-If ``OverloadedRecordDot`` is not on, these expressions are parsed as
-uses of the function ``(.)``.
-
-If ``OverloadedRecordUpdate`` is on, the expression ``e{fld = val}``
-means ``setField @"fld" val``.
-
-If ``OverloadedRecordUpdate`` is not on, ``e{fld = val}`` means just
-what it does in Haskell98.
-
-If ``OverloadedRecordDot`` and ``OverloadedRecordUpdate`` are both on:
-
-- The expression ``e{fld₁.fld₂ = val}`` means ``e{fld₁ = (e.fld₁){fld₂ = val}}``;
-- The expression ``e{M.fld = val}`` means ``setField @"M" (setField @"fld" val (getField @"M" e)) e``;
-
-otherwise the expression ``e{fld₁.fld₂ = val}`` is illegal, while
-the expression ``e{M.fld = val}`` refers to the qualified name ``M.fld``, i.e.
-the ``fld`` field exported by the module ``M``.
-
-
-2.1.1 Syntax
-^^^^^^^^^^^^
-
-In the event the language extensions ``OverloadedRecordDot`` and
-``OverloadedRecordUpdate`` are enabled:
-
-======================= ==================================
-Expression              Equivalent
-======================= ==================================
-``(.fld)``              ``(\e -> e.fld)``
-``(.fld₁.fld₂)``        ``(\e -> e.fld₁.fld₂)``
-``e.fld``               ``getField @"fld" e``
-``e.fld``               ``getField @"fld" e``
-``e."fld₁ fld₂"``       ``getField @"fld₁ fld₂"``
-``e.fld₁.fld₂``         ``(e.fld₁).fld₂``
-``e{fld = val}``        ``setField @"fld" e val``
-``e{"x.y" = val}``      ``setField @"x.y" e val``
-``e{fld₁.fld₂ = val}``  ``e{fld₁ = (e.fld₁){fld₂ = val}}``
-``e.fld₁{fld₂ = val}``  ``(e.fld₁){fld₂ = val}``
-``e{fld₁ = val₁}.val₂`` ``(e{fld₁ = val₁}).val₂``
-``e{fld₁}``             ``e{fld₁ = fld₁}`` [Note: requires ``NamedFieldPuns``]
-``e{fld₁.fld₂}``        ``e{fld₁.fld₂ = fld₂}`` [Note: requires ``NamedFieldPuns``]
-======================= ==================================
-
-- **Updating nested fields.** ``e{fld = val}`` is the syntax of a standard H98 record update. It’s the nested form introduced by this proposal that is new : ``e{fld1.fld2 = val}``. However, in the event ``OverloadedRecordUpdate`` is in effect, note that ``e{fld = val}`` desugars to ``setField @"fld" e val``].
-- **Punning.** With ``NamedFieldPuns``, the form ``e { x, y }`` means ``e { x=x, y=y }``. With ``OverloadedRecordUpdate`` this behaviour is extended to nested updates: ``e { a.b.c, x.y }`` means ``e { a.b.c=c, x.y=y }``. Note the variable that is referred to implicitly (here ``c`` and ``y``) is the last chunk of the field to update. So ``c`` is the last chunk of ``a.b.c``, and ``y`` is the last chunk of ``x.y``.
-
-2.1.2 Precedence
-^^^^^^^^^^^^^^^^
-
-``M.N.x`` looks ambiguous. It could mean:
-
-- ``(M.N).x`` that is, select the ``x`` field from the (presumably nullary) data constructor ``M.N``, or
-- The qualifed name ``M.N.x``, meaning the ``x`` imported from ``M.N``.
-
-The ambiguity is resolved in favor of ``M.N.x`` as a qualified name.
-If the other interpretation is desired you can still write ``(M.N).x``
-
-We propose that ``.`` “bind more tightly” than function application
-thus, ``f r.a.b`` parses as ``f (r.a.b)``.
-
-============== ===================
-Expression     Interpretation
-============== ===================
-``f r.x``      means ``f (r.x)``
-``f r .x``     is illegal
-``f (g r).x``  ``f ((g r).x)``
-``f (g r) .x`` is illegal
-``f M.n.x``    means ``f (M.n.x)`` (that is, ``f (getField @"x" M.n)``)
-``f M.N.x``    means ``f (M.N.x)`` (``M.N.x`` is a qualified name, not a record field selection)
-============== ===================
-
-2.1.3 Fields whose names are operator symbols
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Where a field name is an operator symbol, the field name can be written in double quotes, for example: ::
-
-    data T = MkT { (+++) :: Int }
-
-    t = MkT { (+++) = 1 }  -- Traditional record syntax
-
-    x = t."+++"            -- With OverloadedRecordDot
-
-    y = t { "+++" = 2 }    -- With OverloadedRecordUpdate
-
-
-2.2 Definitions
+2.1 Definitions
 ~~~~~~~~~~~~~~~
 
 For what follows, we use these informal definitions:
@@ -175,15 +83,49 @@ For what follows, we use these informal definitions:
 * A **field update** is an expression like ``r{a = 12}`` or ``r{a.b = "foo"}``;
 * A **punned field update** is an expression like ``r{a}`` or ``r{a.b}`` (here it is understood that ``b`` is a variable bound in the environment of the expression and only valid syntax if the ``NamedFieldPuns`` language extension is in effect).
 
-2.3 Lexing and Parsing
-~~~~~~~~~~~~~~~~~~~~~~
+2.2 Language extensions
+~~~~~~~~~~~~~~~~~~~~~~~
 
-The prototype implements the parsing scheme presented here. More
-information about the prototype is available in `this
-section <#91-prototype>`__.
+This proposal adds new language extensions ``OverloadedRecordDot`` and
+``OverloadedRecordUpdate``.
 
-2.3.1 Lexer
-^^^^^^^^^^^
+- If ``OverloadedRecordDot`` is on:
+
+  - The field selection ``e.fld`` means ``getField @"fld" e``;
+  - The nested field selection ``e.fld₁.fld₂`` means ``(e.fld₁).fld₂``;
+  - The field selector ``.fld`` means ``getField @"fld"``;
+  - The nested field selector ``(.fld₁.fld₂)`` means  ``(\e -> e.fld₁.fld₂)``.
+
+  Otherwise, these expressions are parsed as uses of the function ``(.)``.
+
+- If ``OverloadedRecordUpdate`` is on, the field update ``e{fld = val}``
+  means ``setField @"fld" val``.
+
+  Otherwise, ``e{fld = val}`` means just what it does in Haskell98.
+
+- If ``OverloadedRecordDot`` and ``OverloadedRecordUpdate`` are both on:
+
+  - The field update ``e{fld₁.fld₂ = val}`` means ``e{fld₁ = (e.fld₁){fld₂ = val}}``;
+  - The field update ``e{M.fld = val}`` means ``setField @"M" (setField @"fld" val (getField @"M" e)) e``.
+
+  Otherwise, the field update ``e{fld₁.fld₂ = val}`` is illegal, while
+  the field update ``e{M.fld = val}`` refers to the qualified name ``M.fld``, i.e.
+  the ``fld`` field exported by the module ``M``.
+
+- **Updating nested fields.** ``e{fld = val}`` is the syntax of a standard H98
+  record update. It’s the nested form introduced by this proposal that is new :
+  ``e{fld1.fld2 = val}``. However, in the event ``OverloadedRecordUpdate`` is in
+  effect, note that ``e{fld = val}`` desugars to ``setField @"fld" e val``].
+
+- **Punning.** With ``NamedFieldPuns``, the form ``e { x, y }`` means ``e { x=x, y=y }``.
+  With ``OverloadedRecordUpdate`` this behaviour is extended to nested
+  updates: ``e { a.b.c, x.y }`` means ``e { a.b.c=c, x.y=y }``. Note the
+  variable that is referred to implicitly (here ``c`` and ``y``) is the last
+  chunk of the field to update. So ``c`` is the last chunk of ``a.b.c``, and
+  ``y`` is the last chunk of ``x.y``.
+
+2.3 Lexing
+~~~~~~~~~~
 
 A new token case ``ITproj Bool`` is introduced. When the
 ``OverloadedRecordDot`` extension is enabled occurences of operator
@@ -204,8 +146,8 @@ loose infix ``ITdot``        function composition ``f . g``
 No ``ITproj`` tokens will ever be issued if ``OverloadedRecordDot`` is
 not enabled.
 
-2.3.2 Parsing
-^^^^^^^^^^^^^
+2.4 Parsing
+~~~~~~~~~~~
 
 We use these notations:
 
@@ -268,7 +210,6 @@ follows:
 :raw-html:`<br />`
      *aexp*   →    *aexp* _⟨*qcon*⟩ ``{`` *fbind* ₁ ``,`` … ``,`` *fbind* ₙ ``}`` 	    (labeled update, n  ≥  1)
 
-
 Under this proposal, the ``OverloadedRecordDot`` extension adds the following
 productions:
 
@@ -326,9 +267,63 @@ normal record data constructors, but they are permitted in selection and update
 syntax. This is useful because the user may define a custom ``HasField``
 instance that makes a virtual field ``type`` available.
 
+2.5 Precedence
+~~~~~~~~~~~~~~
+
+``M.N.x`` looks ambiguous. It could mean:
+
+- ``(M.N).x`` that is, select the ``x`` field from the (presumably nullary) data constructor ``M.N``, or
+- The qualifed name ``M.N.x``, meaning the ``x`` imported from ``M.N``.
+
+The ambiguity is resolved in favor of ``M.N.x`` as a qualified name.
+If the other interpretation is desired you can still write ``(M.N).x``
+
+We propose that ``.`` “bind more tightly” than function application
+thus, ``f r.a.b`` parses as ``f (r.a.b)``.
+
+============== ===================
+Expression     Interpretation
+============== ===================
+``f r.x``      means ``f (r.x)``
+``f r .x``     is illegal
+``f (g r).x``  ``f ((g r).x)``
+``f (g r) .x`` is illegal
+``f M.n.x``    means ``f (M.n.x)`` (that is, ``f (getField @"x" M.n)``)
+``f M.N.x``    means ``f (M.N.x)`` (``M.N.x`` is a qualified name, not a record field selection)
+============== ===================
+
 
 3. Examples
 -----------
+
+3.1 Summary
+~~~~~~~~~~~
+
+In the event the language extensions ``OverloadedRecordDot`` and
+``OverloadedRecordUpdate`` are enabled,
+here is how these rules work out in particular cases:
+
+======================= ==================================
+Expression              Equivalent
+======================= ==================================
+``(.fld)``              ``(\e -> e.fld)``
+``(.fld₁.fld₂)``        ``(\e -> e.fld₁.fld₂)``
+``e.fld``               ``getField @"fld" e``
+``e.fld``               ``getField @"fld" e``
+``e."fld₁ fld₂"``       ``getField @"fld₁ fld₂"``
+``e.fld₁.fld₂``         ``(e.fld₁).fld₂``
+``e{fld = val}``        ``setField @"fld" e val``
+``e{"x.y" = val}``      ``setField @"x.y" e val``
+``e{fld₁.fld₂ = val}``  ``e{fld₁ = (e.fld₁){fld₂ = val}}``
+``e.fld₁{fld₂ = val}``  ``(e.fld₁){fld₂ = val}``
+``e{fld₁ = val₁}.val₂`` ``(e{fld₁ = val₁}).val₂``
+``e{fld₁}``             ``e{fld₁ = fld₁}`` [Note: requires ``NamedFieldPuns``]
+``e{fld₁.fld₂}``        ``e{fld₁.fld₂ = fld₂}`` [Note: requires ``NamedFieldPuns``]
+======================= ==================================
+
+
+3.2 Extended example
+~~~~~~~~~~~~~~~~~~~~
 
 This is a record type with functions describing a study ``Class`` (*Oh!
 Pascal, 2nd ed. Cooper & Clancy, 1985*).
@@ -375,8 +370,8 @@ Those tests include infix applications, polymorphic data types,
 interoperation with other extensions and more.
 
 
-Reserved keywords and other special field names
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+3.3 Reserved keywords and other special field names
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The very general definition of *field* means that the following is accepted:
 
@@ -423,6 +418,20 @@ The following continue to be rejected:
    y (Foo { "type" = v }) = v          -- Error: record pattern match field cannot be string
 
    z = foo { type }                    -- Error: field punning cannot be used with non-variable identifiers
+
+
+3.4 Fields whose names are operator symbols
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Where a field name is an operator symbol, the field name can be written in double quotes, for example: ::
+
+    data T = MkT { (+++) :: Int }
+
+    t = MkT { (+++) = 1 }  -- Traditional record syntax
+
+    x = t."+++"            -- With OverloadedRecordDot
+
+    y = t { "+++" = 2 }    -- With OverloadedRecordUpdate
 
 
 4. Effect and Interactions
@@ -633,14 +642,17 @@ Things we could have done instead:
 - **Pro**: flexibility for people who want type-changing update, but would still like dot-notation. Breaking back on type-changing update, like ``OverloadedRecordUpdate`` does, has proved to be controversial, and we don’t want it to hold back the integration of this proposal in GHC.
 - **Pro**: orthogonal things are controlled by separate flags.
 - **Con**: each has to be documented separately: two flags with one paragraph each, instead of one flag with two paragraphs. (The implementation cost is zero: it's only a question of which flag to test.)
+
 2. Add a single extension (``OverloadedRecordFields``, say) to do what ``OverloadedRecordDot`` and ``OverloadedRecordUpdate`` do in this proposal.
 
 - **Pro**: only one extension.
 - **Con**: some users might want dot-notation, but not want to give up type-changing update.
+
 3. Make this modification a no-op, doing nothing. Instead adopt precisely the previous proposal. Use ``RecordDotSyntax`` as the extension, covering both record dot and update.  However, we should then be prepared to change what ``RecordDotSyntax`` means later.  In particular, it is very likely that we’ll want ``RecordDotSyntax`` to imply ``NoFieldSelectors``.
 
 - **Pro**: only one extension
 - **Con**:  changing the meaning of an extension will break programs.
+
 4. Use ``RecordDotSyntax``, just as in the original proposal, but add ``NoFieldSelectors`` immediately
 
 - **Con**: it’s too early to standardize this, we’re not really sure that it’s what we want (e.g. we may want ``DuplicatRecordFields`` instead).
