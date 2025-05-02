@@ -22,7 +22,7 @@ main() {
 
 	if [[ -z "${IN_NIX_SHELL}" ]] && [[ ! -d "${venv}" ]]; then
 		python3 -m venv "${venv}"
-		"${venv}/bin/pip" install sphinx sphinx-autobuild
+		"${venv}/bin/pip" install -r .requirements.txt sphinx-autobuild
 	fi
 
 	if [[ "${autobuild}" == 1 ]]; then
