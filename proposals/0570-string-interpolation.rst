@@ -59,7 +59,7 @@ Most non-trivial projects build strings at some point: printing out logs, render
   -- quasiquoters, e.g. `string-interpolate` using `haskell-src-exts`
   error [i|Expected: #{x + y}, got: #{result}|]
 
-But each of these leave things to be desired:
+But each of these options leave much to be desired:
 
 * Manual interpolation (e.g. ``<>``, ``show``, ``unwords``, etc.) is annoying, especially for strings with a lot of interpolation. It's hard to see the overall structure of the string, especially when building up a ``Text``:
   ::
@@ -96,23 +96,91 @@ If Haskell had native string interpolation, it would have the benefit and safety
 Proposed Change Specification
 -----------------------------
 
-This proposal introduces a new ``-XStringInterpolation`` extension that enables the following changes.
+This proposal introduces two new extensions: ``-XStringInterpolation`` and ``-XQualifiedLiterals``.
+
+High-level Overview
+~~~~~~~~~~~~~~~~~~~
+
+``-XStringInterpolation`` enables the following syntax:
+
+::
+
+  s"a ${x + 1} b"
+
+  -- Desugars to:
+  mconcat
+    [ fromString "a "
+    , interpolate (x + 1)
+    , fromString " b"
+    ]
+
+Where ``interpolate`` will be initially exported from ``Data.String.Interpolate.Experimental`` in ``ghc-experimental``:
+
+::
+
+  class Interpolate a s where
+    interpolate :: a -> s
+
+``-XQualifiedLiterals`` enables the following syntax for strings:
+
+::
+
+  Text."hello world"
+
+  -- Desugars to:
+  Text.fromString "hello world"
+
+  SQL."select * from users where name = ${Text.toUpper name} and age = ${age}"
+
+  -- Desugars to:
+  SQL.fromParts
+    [ SQL.fromString "select * from users where name = "
+    , SQL.interpolate (Text.toUpper name)
+    , SQL.fromString " and age = "
+    , SQL.interpolate age
+    ]
+
+This extends the machinery introduced by `QualifiedDo <https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/qualified_do.html>`_ to ``-XOverloadedStrings``. This proposal only enables ``QualifiedLiterals`` for strings, but can be extended to numeric literals in the future. A future proposal could also enable TH-syntax like ``$Foo."a ${x}"``, which could desugar to ``$(Foo.fromParts [Foo.fromString "a ", Foo.interpolate [| x |]])``, but we'll defer on that for now.
+
+While these are two separate behaviors that could be two separate proposals, we bundle them in one proposal because the community survey shows a desire for extensibility/generality of some kind (see *Section 10.1 Community Survey*).
 
 Lexical Structure
 ~~~~~~~~~~~~~~~~~
 
-Add ``interpolatedString`` and ``interpolatedStringMultiline`` to ``lexeme`` (not ``literal``, because they're not literals):
+Update `Section 10.2 <https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#x17-17700010.2>`_ of the Haskell 2010 report as follows.
+
+Add ``istring*`` patterns to ``lexeme`` (not ``literal``, because they're not literals):
 
 .. code-block:: abnf
 
   lexeme  → qvarid | qconid | qvarsym | qconsym
           | literal | special | reservedop | reservedid
-          | interpolatedString
-          | interpolatedStringMultiline
+          | istringBegin
+          | istringRaw
+          | istringExprOpen
+          | istringExprClose
+          | istringEnd
+          | istringMultilineBegin
+          | istringMultilineRawStartLine
+          | istringMultilineRawMidLine
+          | istringMultilineEnd
+          | istringQualifiedBegin
+          | istringQualifiedMultilineBegin
 
-  interpolatedString → 's"' {graphic⟨'\' | '"' | '${'⟩ | space | escape | gap | '${' any⟨'}' | '"'⟩ '}'} '"'
-  interpolatedStringMultiline → 's"""' {{whitechar} interpolatedStringMultilineLine} '"""'
-  interpolatedStringMultilineLine → {graphic⟨'\' | '"""' | '${'⟩ | space | escape | gap | '${' ANY⟨'}' | '"'⟩ '}'}
+  ; TODO: is it possible to say these are only valid lexemes in interpolated string contexts?
+  istringBegin → 's"'
+  istringRaw → {graphic⟨'\' | '"' | '${'⟩ | space | escape | gap}
+  istringExprOpen → '${'
+  istringExprClose → '}'
+  istringEnd → '"'
+
+  istringMultilineBegin → 's"""'
+  istringMultilineRawStartLine → {whitechar} istringMultilineRawMidLine
+  istringMultilineRawMidLine → {graphic⟨'\' | '"""' | '${'⟩ | space | escape | gap}
+  istringMultilineEnd → '"""'
+
+  istringQualifiedBegin → modid '."'
+  istringQualifiedMultilineBegin → modid '."""'
 
 Also add ``$`` to ``charesc``:
 
@@ -122,115 +190,61 @@ Also add ``$`` to ``charesc``:
 
 With ``$`` added to ``charesc``, interpolation can be avoided by escaping the dollar sign; e.g. ``s"\${foo}" == "${foo}"``.
 
-The following expressions are lex errors:
+Context-Free Syntax
+~~~~~~~~~~~~~~~~~~~
 
-* ``s"a ${"hello"} c"``
+Update `Section 10.5 <https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#x17-18000010.5>`_ of the Haskell 2010 report as follows.
 
-  * This would lex the string ``s"a ${"``, then fail expecting a closing ``}``
+.. code-block:: abnf
 
-* ``s"a ${s"hello"} c"``
-
-  * This would lex the string ``s"a ${s"``, then fail expecting a closing ``}``
-
-Parser
-~~~~~~
-
-TODO: use sgraf's new design to avoid re-lexing + allow nested strings/braces
-
-When an interpolated string is lexed, we'll iteratively split on ``${`` and ``}`` pairs (ignoring escaped ``\${``) and re-lex the inner expressions to construct
-
-::
-
-  data HsExpr p
-    = ...
-    | HsInterpolatedString [Either FastString (LHsExpr p)]
-
-which contains the prefix of the interpolated string up to the first interpolated expression, then a list containing pairs of an interpolated expression and the subsequent string.
-
-Interpolated multiline strings will desugar to an interpolated single-line string in the lexer, the same `as usual <https://github.com/brandonchinn178/ghc-proposals/blob/master/proposals/0569-multiline-strings.rst>`_. So the parser will also get a ``HsInterpolatedString`` here (with the appropriate metadata in the extension field).
-
-The following expressions are parse errors:
-
-* ``s"a ${} b"``
-
-  * Expression is missing
-
-* ``s"a ${=} b"``
-
-  * Not an expression
-
-* ``s"a ${let x =} b"``
-
-  * Incomplete expression
-
-* ``s"a ${{b} c"``
-
-  * The second ``{`` is not a valid character to start an expression
-
-* ``s"a ${'}'} b"``
-
-  * This would try to lex the expression ``'``
-
-* ``s"foo ${x {- inline comment -} } bar"``
-
-  * This would try to lex the expression ``x {- inline comment -``
-
-* ``s"foo ${User{id = 123}} bar"``
-
-  * This would try to lex the expression ``User{id = 123``
-
-See the "Semantics" and "Examples" sections to see examples of valid interpolated strings.
+  aexp → qvar
+       | ...
+       | (istringBegin | istringQualifiedBegin)
+          {istringRaw | istringExprOpen exp istringExprClose}
+          istringEnd
+       | (istringMultilineBegin | istringQualifiedMultilineBegin)
+          {istringMultilineRawStartLine | istringExprOpen exp istringExprClose istringMultilineRawMidLine}
+          istringMultilineEnd
 
 Machinery
 ~~~~~~~~~
 
-The machinery should satisfy the following requirements:
-
-* Allows constructing any type, not just String or String-like types
-
-  * See the "SqlQuery" or "HTML" examples
-
-* Allows interpolating any type, not just String
-
-  * Interpolate Showable things with show by default
-  * Allow overriding interpolation for specific types
-
-An interpolated string expression desugars to calls to ``fromBuilder``, ``toBuilder``, and ``interpolate``, which are defined as:
+The following definition will be exported from ``Data.String.Interpolate.Experimental``
 
 ::
 
   -- | Laws:
-  --     * fromBuilder . toBuilder === id
-  class Monoid (Builder s) => Buildable s where
-    type Builder s = r | r -> s
-    toBuilder :: s -> Builder s
-    fromBuilder :: Builder s -> s
+  --     * `Interpolate s s` should implement `interpolate = id`
+  class Interpolate a s where
+    interpolate :: a -> s
 
-  class Buildable s => Interpolate a s where
-    interpolate :: a -> Builder s
+This design came out of the community survey (See *Section 10.1 Community Survey*), and aimed to satisfy the following requirements:
 
-Instances for ``String`` will be defined as well:
+* Allow constructing any type, not just String or String-like types
+
+  * See the "SqlQuery" or "HTML" examples
+
+* Allow interpolating any type, not just String
+
+* Avoid re-using Show to interpolate
+
+Instances for ``String`` will be provided as well, for example:
 
 ::
 
-  newtype StringBuilder = StringBuilder (Endo String)
-    deriving newtype (Semigroup, Monoid)
-
-  instance Buildable String where
-    type Builder String = StringBuilder
-    toBuilder s = StringBuilder (Endo (s ++))
-    fromBuilder (StringBuilder (Endo f)) = f []
-
   instance Interpolate String String where
-    interpolate = toBuilder
+    interpolate = id
   instance Interpolate Char String where
-    interpolate = interpolate . (:[])
-  instance {-# OVERLAPPABLE #-} Show a => Interpolate a String where
-    interpolate = StringBuilder . Endo . shows
+    interpolate = (:[])
 
-This design allows interpolating anything, even user-defined types, into a ``String`` with ``Show``, but can be overridden for specific types. See the "Examples" section for more details.
+  instance Interpolate Int String where
+    interpolate = show
+  instance Interpolate Double String where
+    interpolate = show
+  instance Interpolate Bool String where
+    interpolate = show
 
-These definitions would initially be implemented in ``ghc-experimental`` under ``Data.String.Interpolate``. After the API has stablized, these would eventually live in ``GHC.Exts`` alongside ``IsString``.
+These definitions would initially be implemented in ``ghc-experimental`` under ``Data.String.Interpolate.Experimental``. After the API has stablized, these would eventually live in ``GHC.Exts`` alongside ``IsString``.
 
 Expansion
 ~~~~~~~~~
@@ -243,11 +257,15 @@ With the machinery defined above, the following interpolated string desugars to 
   s"foo ${f a b} bar ${g x} baz ${name}"
 
   -- desugared
-  fromBuilder $
-    toBuilder "foo "
-    <> interpolate (f a b) <> toBuilder " bar "
-    <> interpolate (g x)   <> toBuilder " baz "
-    <> interpolate name    <> toBuilder ""
+  mconcat
+    [ "foo "
+    , interpolate (f a b)
+    , " bar "
+    , interpolate (g x)
+    , " baz "
+    , interpolate name
+    , ""
+    ]
 
 The string literals there will be handled by ``-XOverloadedStrings`` as usual, if enabled.
 
@@ -262,20 +280,70 @@ Unsolved ``Interpolate a s`` constraints will default ``s`` to the default ``IsS
 Template Haskell
 ~~~~~~~~~~~~~~~~
 
-Template Haskell will add a new constructor:
+Template Haskell will add the following definitions:
 
 ::
 
   data Exp
     = ...
-    | InterpolatedStringE [Either Exp String]
+    | InterStringE (Maybe ModName) [InterStringPart]
 
-Which mimics the ``HsInterpolatedString`` constructor.
+  data InterStringPart
+    = InterStringRaw String
+    | InterStringExp Exp
+
+Won't use ``Either`` as it doesn't seem like ``Either`` is used in any other TH types.
 
 Examples
 --------
 
-Examples were tested with `this gist <https://gist.github.com/brandonchinn178/4d35ed189d7018ca34535ac85442790b>`_ (after desugaring the string interpolation).
+Parsing
+~~~~~~~
+
+.. list-table:: **Valid expressions**
+    :align: left
+
+    * - ``s"a ${x} b"``
+      - Simple expressions
+    * - ``s"a ${x + 1} b"``
+      - Complex expressions
+    * - ``s"a ${'{'} ${'}'} b"``
+      - Expressions containing braces (char)
+    * - ``s"a ${User{a = 1}} b"``
+      - Expressions containing braces (record)
+    * - ``s"a ${s"c ${x} d"} b"``
+      - Nested interpolation
+    * - ``s"a ${1 :: Int}"``
+      - Inline type annotation
+    * - ``s"a ${x {- a -}} b"``
+      - Inline comment
+    * - ``s"Name: ${user.name}"``
+      - OverloadedRecordDot
+
+.. list-table:: **Invalid expressions**
+    :align: left
+
+    * - ``s"a ${} b"``
+      - Expression is missing
+    * - ``s"a ${=} b"``
+      - Not a valid expression
+    * - ``s"a ${let x =} b"``
+      - Incomplete expression
+    * - ``s"a ${{b} c"``
+      - The second ``{`` is not a valid character to start an expression
+    * - ``s"a ${b -- asdf} c"``
+      - The rest of the string is commented out
+    * - ::
+
+          s"""
+          a
+          ${drop
+              1
+              xs}
+          b
+          """
+
+      - Multiline expressions not allowed
 
 Multiline strings
 ~~~~~~~~~~~~~~~~~
@@ -298,39 +366,6 @@ Multiline strings
   -- resolve interpolation
   let str2 = "hello world\nworld hello\nhello world"
 
-Edge cases
-~~~~~~~~~~
-
-The following interpolated string expressions are also valid:
-
-::
-
-  let x = "hello"
-
-  -- seemingly duplicated closing bracket is valid, as the first one closes the expression
-  -- and the second is a character in the string literal
-  s"${x}} world" == "hello} world"
-
-  -- inline type annotation
-  s"a ${1 :: Int} b" == "a 1 b"
-
-  -- multiline expressions: while ugly and should be avoided, valid syntax
-  s"""
-   foo ${drop
-    1
-    x} world
-   """ == "foo ello world"
-
-  -- braces as characters
-  s"foo ${'{'} bar" == "foo { bar"
-
-  -- comments
-  s"foo ${x -- comment} bar" == "foo hello bar"
-
-  -- if -XOverloadedRecordDot is enabled
-  let user = User{name = "Alice"}
-  s"foo ${user.name} bar" == "foo Alice bar"
-
 Effect and Interactions
 -----------------------
 
@@ -340,20 +375,20 @@ An existing program containing ``s"..."`` will break when ``-XStringInterpolatio
 #. Easily mitigatable: just add a space, which improves readability anyway
 #. Prefixing string literals like ``s"..."`` is common in other languages: Python, Scala, Javascript/Typescript, etc. so it shouldn't be a big hurdle for newcomers
 
-When ``-XOverloadedStrings`` is enabled, string interpolation can be used for any type with both ``Buildable`` and ``IsString`` instances. Otherwise, it will only ever build Strings.
+When ``-XOverloadedStrings`` is enabled, string interpolation can be used for any type with an ``IsString`` instance. Otherwise, it will only ever build Strings.
 
 Interpolation is also supported with ``-XMultilineStrings``, as described in "Proposed Change Specification".
 
-``Buildable`` *could* subsume ``IsString``, so that OverloadedStrings instead desugars string literals to ``fromBuilder (toBuilder s)``. However, it's a better user experience to allow toggling these independently. It's reasonable for someone to want to write interpolated strings, but monomorphize it to String and not require specifying the result type.
+QualifiedLiteral syntax is invalid syntax today, so it does not have any interactions with existing functionality.
 
 Costs and Drawbacks
 -------------------
 
-Development should be low-effort, maintenance should be low-effort. Learnability for novice users will go up, since novice users probably expect string interpolation to be available, and might be frustrated at the lack of support currently.
+Development and maintenance is of moderate effort. Learnability for novice users will go up, since novice users probably expect string interpolation to be available, and might be frustrated at the lack of support currently.
 
 The major drawback of this approach is the typeclass instances problem:
 
-#. A new interpolator type (e.g. ``SqlQuery``) needs to define ``Builder`` and ``Interpolate`` for all known interpolatable types
+#. A new interpolator type (e.g. ``SqlQuery``) needs to define ``Interpolate`` for all known interpolatable types
 #. A new interpolatable type (e.g. ``BigDecimal``) needs to define ``Interpolate`` for all known interpolator types
 
 This is worse than ``IsString`` or ``Show`` due to the multi-param ``Interpolate`` type class. This makes ``Interpolate`` much more susceptible to orphan instances.
@@ -391,6 +426,7 @@ Alternatives
   * Pro: less likely to encounter type inference issues
   * Con: adds more noise to interpolate
   * This is what ``neat-interpolation`` does
+  * See *Section 10.1 Community Survey*
 
 * Reuse ``PrintfArg``
 
@@ -399,6 +435,7 @@ Alternatives
 * Only allow interpolating to string (which can ultimately be lifted to any IsString)
 
   * Simplifies the machinery, but makes the feature much less flexible and extendable
+  * See *Section 10.1 Community Survey*
 
 * Desugar to a function
 
@@ -406,19 +443,38 @@ Alternatives
   * or like ``formatting``: ``s"a {text} b {int}" foo bar => (\x0 x1 -> "a " <> text x0 <> " b " <> int x1) foo bar``
   * This defeats the purpose of string interpolation making it easy to see the exact location a variable gets injected. If you're interpolating a lot of values into a large string (e.g. with multiline strings), it's extremely difficult to match up which expression to which interpolation position.
 
+* Allow custom delimiters, which could be defined with Template Haskell or some other approach
+
+  * See *Section 10.1 Community Survey*
+
+* Allow passing a String representation of the interpolated expression to ``interpolate``, e.g. to support something like ``Dbg."foo | ${x + 1}"`` returning ``"foo | x + 1 = 11"``
+
+  * I don't think this has any uses outside of debugging; if it's just that one use-case, quasiquotation should be sufficient
+  * https://github.com/brandonchinn178/ghc-string-interpolation-prototypes/issues/8
+
+* Do something like `Python's new t-string feature <https://peps.python.org/pep-0750/>`_
+
+  * This doesn't translate easily to Haskell, since the point of t-string is to return a list of strings and a list of "anything" that was interpolated
+  * The ``QualifiedLiterals`` part of the proposal should be able to handle any functionality here
+
 Unresolved Questions
 --------------------
 
 Implementation Plan
 -------------------
 
-I can implement
+I have a prototype started `here <https://gitlab.haskell.org/ghc/ghc/-/compare/master...wip%2Finterpolated-strings>`_
 
 Endorsements
 ------------
 
 Appendix
 --------
+
+Community Survey
+~~~~~~~~~~~~~~~~
+
+I sent out multiple community surveys, the last one being open 2025-04-21 to 2025-04-30. Raw data and analysis can be found here: https://github.com/brandonchinn178/ghc-string-interpolation-prototypes/tree/main/results
 
 Text
 ~~~~
@@ -427,26 +483,52 @@ The following instances could be implemented to add support for ``Data.Text`` wi
 
 ::
 
-  instance Buildable Text where
-    type Builder Text = Text.Builder
-    toBuilder = Text.Builder.fromText
-    fromBuilder = Text.Lazy.toStrict . Text.Builder.toLazyText
-
   instance Interpolate Text Text where
-    interpolate = toBuilder
-  instance {-# OVERLAPPABLE #-} Show a => Interpolate a Text where
-    interpolate = interpolate . show
+    interpolate = id
 
   instance Interpolate Char Text where
-    interpolate = interpolate . Text.singleton
+    interpolate = T.singleton
   instance Interpolate String Text where
-    interpolate = interpolate . Text.pack
+    interpolate = T.pack
   instance Interpolate Text String where
-    interpolate = interpolate . Text.unpack
+    interpolate = T.unpack
+
+  instance {-# OVERLAPPABLE #-} Interpolate a String => Interpolate a Text where
+    interpolate = T.pack . interpolate
 
 This is fairly similar to String, with one addition: we also need to define ``Interpolate`` for interpolating between String and Text. Text would probably also be the one to implement interpolation with ByteString, as Text depends on ByteString, not vice versa.
 
 Similar instances can also be implemented for lazy Text.
+
+``text`` could also define a module for use with ``QualifiedLiterals``:
+
+::
+
+  module Data.Text.Interpolate where
+
+  import Data.Text qualified as T
+  import Data.String.Interpolate.Experimental qualified as S
+
+  fromParts = mconcat
+  fromString = T.pack
+  interpolate = S.interpolate
+
+With both of these definitions, users could do
+
+::
+
+  {-# LANGUAGE OverloadedStrings #-}
+  {-# LANGUAGE QualifiedLiterals #-}
+  {-# LANGUAGE StringInterpolation #-}
+
+  import Data.Text.Interpolate qualified as T
+
+  main = do
+    -- no longer ambiguous, shorter than `T.pack "Alice"`
+    let name = T."Alice"
+    let age = 10
+
+    print $ T.toUpper s"Name: ${name}, Age: ${age}"
 
 Custom interpolator: SqlQuery
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -462,7 +544,7 @@ Imagine a library implements a ``SqlQuery`` type like:
     deriving (Show, Eq)
 
   instance IsString SqlQuery where
-    fromString s = SqlQuery{sqlText = Text.pack s, sqlValues = []}
+    fromString s = SqlQuery{sqlText = T.pack s, sqlValues = []}
   instance Semigroup SqlQuery where
     q1 <> q2 =
       SqlQuery
@@ -481,26 +563,23 @@ Imagine a library implements a ``SqlQuery`` type like:
     | SqlInt Int
     deriving (Show)
 
+  class ToSqlValue a where
+    toSqlValue :: a -> SqlValue
+  instance ToSqlValue String where
+    toSqlValue = SqlText . T.pack
+  instance ToSqlValue Text where
+    toSqlValue = SqlText
+  instance ToSqlValue Int where
+    toSqlValue = SqlInt
+
 That library could define the following instances:
 
 ::
 
-  newtype SqlQueryBuilder = SqlQueryBuilder (Endo SqlQuery)
-    deriving newtype (Semigroup, Monoid)
-
-  instance Buildable SqlQuery where
-    type Builder SqlQuery = SqlQueryBuilder
-    toBuilder q = SqlQueryBuilder (Endo (q <>))
-    fromBuilder (SqlQueryBuilder (Endo f)) = f mempty
-
   instance Interpolate SqlQuery SqlQuery where
-    interpolate = toBuilder
-  instance Interpolate Text SqlQuery where
-    interpolate s = toBuilder SqlQuery{sqlText = "?", sqlValues = [SqlText s]}
-  instance Interpolate String SqlQuery where
-    interpolate = interpolate . Text.pack
-  instance Interpolate Int SqlQuery where
-    interpolate x = toBuilder SqlQuery{sqlText = "?", sqlValues = [SqlInt x]}
+    interpolate = id
+  instance ToSqlValue a => Interpolate a SqlQuery where
+    interpolate a = SqlQuery{sqlText = "?", sqlValues = [toSqlValue a]}
 
 And gain access to safe string interpolation without SQL injection:
 
@@ -534,6 +613,35 @@ And gain access to safe string interpolation without SQL injection:
         , sqlValues = [SqlText "A%"]
         }
 
+Alternatively, for more power or flexibility, the library could define a module for use with ``QualifiedLiterals``, for example, to allow failure states:
+
+::
+
+  module Data.SQL.Interpolate where
+
+  import Data.String qualified as S
+  import Data.String.Interpolate.Experimental qualified as S
+
+  fromParts :: [SqlQuery] -> Either ParseError CompiledSqlQuery
+  fromParts parts = do
+    let SqlQuery{..} = mconcat parts
+    compileQuery sqlText sqlValues
+
+  fromString = S.fromString
+  interpolate = S.interpolate
+
+::
+
+  import Data.SQL.Interpolate qualified as SQL
+
+  main = do
+    let name = "Alice"
+    query <-
+      either (fail . show) pure $
+        SQL."SELECT * FROM users WHERE name = ${name}"
+
+    print query
+
 Custom interpolator: HTML
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -549,26 +657,21 @@ Imagine a library implements a new ``Html`` type like:
 
   newtype RawHtml = RawHtml {unRawHtml :: Text}
 
+  raw :: Text -> RawHtml
+  raw = RawHtml
+
 That library could define the following instances:
 
 ::
 
-  newtype HtmlBuilder = HtmlBuilder (Endo Html)
-    deriving newtype (Semigroup, Monoid)
-
-  instance Buildable Html where
-    type Builder Html = HtmlBuilder
-    toBuilder s = HtmlBuilder (Endo (s <>))
-    fromBuilder (HtmlBuilder (Endo f)) = f mempty
-
   instance Interpolate String Html where
     interpolate = interpolate . Text.pack
   instance Interpolate Text Html where
-    interpolate = toBuilder . Html . escapeHtml
+    interpolate = Html . escapeHtml
   instance Interpolate RawHtml Html where
-    interpolate = toBuilder . Html . unRawHtml
-  instance {-# OVERLAPPABLE #-} Show a => Interpolate a Html where
-    interpolate = interpolate . show
+    interpolate = Html . unRawHtml
+  instance {-# OVERLAPPABLE #-} Interpolate a String => Interpolate a Html where
+    interpolate = interpolate . interpolate
 
 And gain access to safe string interpolation with HTML escaping by default:
 
@@ -577,7 +680,7 @@ And gain access to safe string interpolation with HTML escaping by default:
   let title = "Why is 1 > 0?" :: Text
   let body = "<p>Hello world</p>" :: Text
 
-  s"<h1>${title}</h1>${RawHtml body}"
+  s"<h1>${title}</h1>${raw body}"
     == Html "<h1>Why is 1 &gt; 0?</h1><p>Hello world</p>"
 
 Custom interpolatable type: BigDecimal
@@ -594,14 +697,12 @@ Imagine a library implements a new ``BigDecimal`` type:
     let (int, frac) = splitAt scale (show digits)
      in int <> "." <> frac
 
-That library could define the following instances:
+That library could define:
 
 ::
 
   instance Interpolate BigDecimal String where
     interpolate = interpolate . renderBigDecimal
-  instance Interpolate BigDecimal Text where
-    interpolate = interpolate . Text.pack . renderBigDecimal
 
 And be able to use it in interpolated strings:
 
@@ -609,6 +710,8 @@ And be able to use it in interpolated strings:
 
   let n = BigDecimal 123456 3
   s"123456 / 10^3 = ${n}" == "123456 / 10^3 = 123.456"
+
+If the ``Interpolate a String => Interpolate a Text`` instance is implemented as described in *Section 10.2 Custom interpolator: Text*, ``BigDecimal`` can interpolate into ``Text`` for free.
 
 Format specifiers
 ~~~~~~~~~~~~~~~~~
@@ -624,15 +727,21 @@ This would be provided by libraries, and the design and implementation of those 
 
 ::
 
+  {-
+  class Formattable a where
+    fmt :: String -> a -> String
+  -}
+
   let today = fromGregorian 2024 08 12 :: Day
-   in s"Today's date is ${Fmt "%a, %d %b %Y" today}."
+   in s"Today's date is ${fmt "%a, %d %b %Y" today}."
 
   let earned = -13.2 :: Float
       total = 127.978 :: Float
    in s"""
-        Points earned: ${Fmt "+8.2" earned}
-        Current total: ${Fmt "+8.2" total}
+        Points earned: ${fmt "+8.2" earned}
+        Current total: ${fmt "+8.2" total}
       """
+
 Where these would return the strings:
 
 ::
