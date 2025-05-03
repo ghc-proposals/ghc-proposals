@@ -559,6 +559,12 @@ on it. Moreover it can be fixed by simply removing the bogus ``type``
 namespace specifier. Thus we do not expect significant breakage from this
 change.
 
+To estimate the actual impact, we modified GHC 9.10.1 to reject invalid uses of
+the ``type`` namespace specifier in import lists and compiled 3182 packages
+(`full list <https://gist.githubusercontent.com/int-index/189e4f5147a7b64ee847c9ace5e4ed24/raw/1beb733ca2c1ea5d55abbb66671e1f0b2e987012/enforce-children-import-namespaces>`_)
+using the patched compiler. There have been no build failures, confirming our
+hypothesis that the breakage is observed only in artificial examples.
+
 Existing code that uses the ``pattern`` keyword (with ``PatternSynonyms``) in
 import/export lists and uses ``-Wcompat`` (or eventually ``-Wall``) will
 receive a warning from ``-Wpattern-namespace-specifier`` until it migrates to
