@@ -270,6 +270,12 @@ instance that makes a virtual field ``type`` available.
 2.5 Precedence
 ~~~~~~~~~~~~~~
 
+``M.x`` is parsed as a qualified name ``x`` in the module ``M``, not a selection
+of the field ``x`` from the nullary data constructor ``M``.  If the latter
+interpretation is desired for some reason, the user can write ``M."x"``.
+Similarly, ``M.do`` is parsed as a use of ``QualifiedDo`` from module ``M``
+rather than selection of the field ``do``.
+
 ``M.N.x`` looks ambiguous. It could mean:
 
 - ``(M.N).x`` that is, select the ``x`` field from the (presumably nullary) data constructor ``M.N``, or
