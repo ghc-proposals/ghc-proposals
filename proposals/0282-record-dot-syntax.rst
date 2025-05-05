@@ -89,40 +89,41 @@ For what follows, we use these informal definitions:
 This proposal adds new language extensions ``OverloadedRecordDot`` and
 ``OverloadedRecordUpdate``.
 
-- If ``OverloadedRecordDot`` is on:
+- **Field selection.** If ``OverloadedRecordDot`` is on:
 
   - The field selection ``e.fld`` means ``getField @"fld" e``;
   - The nested field selection ``e.fld₁.fld₂`` means ``(e.fld₁).fld₂``;
   - The field selector ``.fld`` means ``getField @"fld"``;
   - The nested field selector ``(.fld₁.fld₂)`` means  ``(\e -> e.fld₁.fld₂)``.
 
-  Otherwise, these expressions are parsed as uses of the function ``(.)``.
+  If ``OverloadedRecordDot`` is not on, these expressions are parsed as uses of the function ``(.)``.
 
-- If ``OverloadedRecordUpdate`` is on, the field update ``e{fld = val}``
-  means ``setField @"fld" val``.
+- **Field update.** If ``OverloadedRecordUpdate`` is on, the field update
+  ``e{fld = val}`` means ``setField @"fld" val``.
 
-  Otherwise, ``e{fld = val}`` means just what it does in Haskell98.
+  If ``OverloadedRecordUpdate`` is not on, ``e{fld = val}`` means just what it does in Haskell98.
 
-- If ``OverloadedRecordDot`` and ``OverloadedRecordUpdate`` are both on:
+- **Nested field update.** If ``OverloadedRecordDot`` and ``OverloadedRecordUpdate`` are both on,
+  the field update ``e{fld₁.fld₂ = val}`` means ``e{fld₁ = (e.fld₁){fld₂ = val}}``.
 
-  - The field update ``e{fld₁.fld₂ = val}`` means ``e{fld₁ = (e.fld₁){fld₂ = val}}``;
-  - The field update ``e{M.fld = val}`` means ``setField @"M" (setField @"fld" val (getField @"M" e)) e``.
+  If ``OverloadedRecordUpdate`` is on but ``OverloadedRecordDot`` is not, the
+  field update ``e{fld₁.fld₂ = val}`` is illegal.  In particular, an update
+  expression with a module-qualified field, such as ``e{M.x = val}``, is
+  illegal.
 
-  Otherwise, the field update ``e{fld₁.fld₂ = val}`` is illegal, while
-  the field update ``e{M.fld = val}`` refers to the qualified name ``M.fld``, i.e.
-  the ``fld`` field exported by the module ``M``.
-
-- **Updating nested fields.** ``e{fld = val}`` is the syntax of a standard H98
-  record update. It’s the nested form introduced by this proposal that is new :
-  ``e{fld1.fld2 = val}``. However, in the event ``OverloadedRecordUpdate`` is in
-  effect, note that ``e{fld = val}`` desugars to ``setField @"fld" e val``].
+  If ``OverloadedRecordUpdate`` is not on, the field update ``e{fld₁.fld₂ = val}``
+  is illegal unless ``fld₁`` is a module qualifier ``M``, in which case the
+  field update ``e{M.fld = val}`` refers to the qualified name ``M.fld``,
+  i.e. the ``fld`` field exported by the module ``M``.
 
 - **Punning.** With ``NamedFieldPuns``, the form ``e { x, y }`` means ``e { x=x, y=y }``.
   With ``OverloadedRecordUpdate`` this behaviour is extended to nested
   updates: ``e { a.b.c, x.y }`` means ``e { a.b.c=c, x.y=y }``. Note the
   variable that is referred to implicitly (here ``c`` and ``y``) is the last
   chunk of the field to update. So ``c`` is the last chunk of ``a.b.c``, and
-  ``y`` is the last chunk of ``x.y``.
+  ``y`` is the last chunk of ``x.y``.  It is an error to write a punned update
+  where the last chunk is not a valid variable name, e.g. ``e { type }`` and
+  ``e { Uppercase }`` are invalid.
 
 2.3 Lexing
 ~~~~~~~~~~
