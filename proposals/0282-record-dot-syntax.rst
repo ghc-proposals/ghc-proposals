@@ -98,23 +98,18 @@ This proposal adds new language extensions ``OverloadedRecordDot`` and
 
   If ``OverloadedRecordDot`` is not on, these expressions are parsed as uses of the function ``(.)``.
 
-- **Field update.** If ``OverloadedRecordUpdate`` is on, the field update
-  ``e{fld = val}`` means ``setField @"fld" val``.
+- **Haskell98 field updates.** If ``OverloadedRecordUpdate`` is not on, then the
+  field update ``e{fld = val}`` means just what it does in Haskell98, regardless of
+  ``OverloadedRecordDot``.  Moreover, as Haskell98 specifies, the nested field update
+  ``e{fld₁.fld₂ = val}`` is illegal unless ``fld₁`` is a module qualifier ``M``, in
+  which case the field update ``e{M.fld = val}`` refers to the qualified name
+  ``M.fld``, i.e. the ``fld`` field exported by the module ``M``.
 
-  If ``OverloadedRecordUpdate`` is not on, ``e{fld = val}`` means just what it does in Haskell98.
+- **Overloaded field updates.** If ``OverloadedRecordUpdate`` is on:
 
-- **Nested field update.** If ``OverloadedRecordDot`` and ``OverloadedRecordUpdate`` are both on,
-  the field update ``e{fld₁.fld₂ = val}`` means ``e{fld₁ = (e.fld₁){fld₂ = val}}``.
-
-  If ``OverloadedRecordUpdate`` is on but ``OverloadedRecordDot`` is not, the
-  field update ``e{fld₁.fld₂ = val}`` is illegal.  In particular, an update
-  expression with a module-qualified field, such as ``e{M.x = val}``, is
-  illegal.
-
-  If ``OverloadedRecordUpdate`` is not on, the field update ``e{fld₁.fld₂ = val}``
-  is illegal unless ``fld₁`` is a module qualifier ``M``, in which case the
-  field update ``e{M.fld = val}`` refers to the qualified name ``M.fld``,
-  i.e. the ``fld`` field exported by the module ``M``.
+  - The field update ``e{fld = val}`` means ``setField @"fld" val``.
+  - If ``OverloadedRecordDot`` is also on, the nested field update ``e{fld₁.fld₂ = val}`` means ``e{fld₁ = (e.fld₁){fld₂ = val}}``.
+  - If ``OverloadedRecordDot`` is not on, the nested field update ``e{fld₁.fld₂ = val}`` is illegal, including the form ``e{ M.fld = val}``.
 
 - **Punning.** With ``NamedFieldPuns``, the form ``e { x, y }`` means ``e { x=x, y=y }``.
   With ``OverloadedRecordUpdate`` this behaviour is extended to nested
