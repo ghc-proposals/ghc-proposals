@@ -196,7 +196,7 @@ Unresolved Questions
 
 Implementation Plan
 -------------------
-Teo Camarasu has implemented a `MR <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/13569>`_
+Teo Camarasu has implemented an `MR <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/13569>`_
 and is happy to take on the work of finishing it and submitting patches to boot libraries.
 
 Endorsements
