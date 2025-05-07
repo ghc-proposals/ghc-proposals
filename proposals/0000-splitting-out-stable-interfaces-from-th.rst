@@ -16,6 +16,7 @@ Splitting out stable interfaces from ``template-haskell``
 
 The ``template-haskell`` library exposes the user facing interfaces to Template Haskell (TH), GHC's metaprogramming facility.
 It is tightly coupled to GHC's internals.
+It is bundled with GHC, we call this being a `boot library`.
 Each release of GHC ships with a new major version of ``template-haskell``, which is the only version that is supported by that compiler.
 
 ``template-haskell`` is used very widely in the ecosystem, including by many dependencies of the compiler itself.
@@ -57,7 +58,7 @@ This puts pressure on the Template Haskell syntax trees to be able to express th
 Whenever a new syntactic construct is added to GHC, we also want to introduce a corresponding change to the Template Haskell syntax tree types.
 As we expect GHC's internal AST to regularly evolve with each major version of GHC, it is likely that each new major release of GHC will force a new major release of the ``template-haskell`` library.
 
-.. Note::
+.. note::
    In ``template-haskell-2.18``, a new field was added to the ``ConP`` constructor of ``Pat`` to express the possibility of a list of type applications as part of a constructor pattern.
    End-users then had to update their code to account for this change. ``yesod`` uses ``ConP`` in some code for generating typeclass instances.
    The code had to be changed to pass an extra ``[]`` argument. See: `the PR to yesod <https://github.com/yesodweb/yesod/pull/1754/files#diff-b0e5dbc5d4ca2998772f987cc5f27c5fc761b34549bdecc93892bbe142d89d26R30>`_.
@@ -103,6 +104,51 @@ Publishing ``template-haskell-lift`` and ``template-haskell-quasiquote`` will be
 The biggest benefit is that library authors who are just deriving or using ``Lift`` instances or just exposing ``Quasiquoter``\s no longer need to depend on the entirety of ``template-haskell``.
 This can help avoid the sorts of dependency bounds propagation problems identified in the `GHC.X.Hackage proposal <https://github.com/bgamari/tech-proposals/blob/ghc-x-hackage/proposals/001-ghc-x-hackage.md>`_.
 
+.. _independence:
+Upgrading libraries independently of GHC
+''''''''''''''''''''''''''''''''''''''''
+When a new major version of GHC is released, the Haskell ecosystem has to respond to a variety of breaking changes.
+This potentially includes changes to the compiler itself, but also changes to the libraries that are bundled with GHC.
+A new major version of the compiler often ships new major versions of bundled libraries.
+
+In turn, when maintainers release new versions of their packages to deal with the changes from the new version of GHC, they may choose to only release them via a new major versions.
+Their dependencies then have to respond to these changes.
+This leads to a situation where the ecosystem accommodates to the new changes in waves. It can take a long time for changes to fully apply to the entire ecosystem.
+
+It is helpful for maintainers of ecosystem packages to be able to deal with new major versions of boot libraries independently of GHC upgrades.
+Ideally the ecosystem would already be compatible with a new version of a boot library before it is bundled with a new version of GHC.
+It also make upgrades safer for maintainers, since if a bug is introduced, then they can pinpoint it to either a change in the compiler or in a library.
+
+Currently each version of ``template-haskell`` is tightly coupled to a specific version of GHC.
+For instance, GHC-9.12.1 ships with ``template-haskell-2.23``. It is not possible to compile ``template-haskell-2.23`` with an earlier version of a compiler.
+So, a maintainer cannot upgrade to ``template-haskell-2.23`` without upgrading to GHC-9.12.
+
+Historically, this was a strong technical reason for this. ``template-haskell`` used to include wired-in identifiers referred to by GHC.
+As of GHC-9.12, these have been `moved <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/12479>`_ to ``ghc-internal``.
+
+It should be possible to use, for instance ``CPP``, to make ``template-haskell`` compatible with multiple versions of GHC. But the large interface exposed by this package makes it difficult.
+
+On the other hand, the small interfaces exposed by ``template-haskell-lift`` and ``template-haskell-quasiquote`` are easy to make compatible with multiple versions of GHC.
+They rarely change and if they don't change between two versions of GHC, then we can accommodate both for free.
+If they do change, then it's likely that we can use ``CPP`` to expose to shim over GHC internals and expose a consistent interface.
+
+.. note::
+   For instance, `Overloaded Quotations proposal <./0246-overloaded-bracket.rst>`_ changed the type of the ``lift`` method of ``Lift`` from ``lift :: a -> Q a`` to ``lift :: Qoute m => a -> m a``.
+
+   Suppose ``template-haskell-lift`` existed at the time and ``template-haskell-lift-0.1`` corresponded to the old interface and ``template-haskell-lift-0.2`` corresponded to the new interface.
+   Further suppose that GHC-9.0 ships with ``template-haskell-lift-0.1`` and GHC-9.2 ships with and implements the interface of ``template-haskell-lift-0.2``.
+
+   Our argument in this section is that it is convenient to make the following possible:
+
+   * ``template-haskell-lift-0.1`` can be compiled with GHC-9.2
+   * ``template-haskell-lift-0.2`` can be compiled with GHC-9.0
+
+   This allows an end-user to upgrade from GHC-9.0 to GHC-9.2 without having to change their version of ``template-haskell-lift``, and allows a package to support both versions of the compiler without introducing ``CPP``.
+   And it allows a user to upgrade from ``template-haskell-lift-0.1`` to ``template-haskell-lift-0.2`` without upgrading their compiler.
+
+
+Depending on boot libraries from ```template-haskell``
+''''''''''''''''''''''''''''''''''''''''
 There is a more subtle benefit for the ``template-haskell`` package. Currently the wide usage of ``Lift`` instances greatly limits the possible dependencies of ``template-haskell``.
 For instance, ``template-haskell`` cannot depend on ``containers`` or ``filepath``, since these libraries depend on ``template-haskell``.
 But if these packages switch to depending on our new packages, then ``template-haskell`` could depend on them.
@@ -121,10 +167,13 @@ Proposed Library Change Specification
 -------------------------------------
 
 We propose to publish two new libraries: ``template-haskell-lift`` and ``template-haskell-quasiquote``.
-These will be shipped with GHC.
-They will also be buildable from Hackage.
-They will be buildable with at a *minimum* the last 3 versions of GHC.
-The current version of the libraries are compatible with GHC 8.10 and later.
+These will be shipped with GHC. So, they would be boot libraries, but wouldn't include any wired-in identifiers.
+In other words, they would behave as ``bytestring`` or ``containers``, not like ``ghc-internal``.
+
+They will also be published to and buildable from Hackage.
+They can be built with the version of GHC they are bundled with, but should additionally be buildable with the previous and next version of GHC also.
+Concretely if ``template-haskell-0.1`` is shipped with GHC-9.14, then it should also be buildable with GHC-9.12 and GHC-9.16.
+This is merely a minimum and we wish to have as broad a support range as feasible, eg, the current version of the libraries are compatible with GHC-8.10 up to GHC-9.12 (the present release).
 
 Their interfaces will be as follows:
 
@@ -154,6 +203,8 @@ Their interfaces will be as follows:
 
 Note that these modules are in the ``TemplateHaskell.`` namespace rather than the ``Language.Haskell.TH.`` namespace.
 The idea to use this less verbose namespace for the new stable interfaces is thanks to Adam Gundry.
+
+These packages only depend on ``ghc-internal`` and ``base``. Crucially they do not depend on ``template-haskell``.
 
 Effect and Interactions
 -----------------------
