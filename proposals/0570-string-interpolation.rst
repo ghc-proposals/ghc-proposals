@@ -133,14 +133,18 @@ Where ``interpolate`` will be initially exported from ``Data.String.Interpolate.
   SQL."select * from users where name = ${Text.toUpper name} and age = ${age}"
 
   -- Desugars to:
-  SQL.fromParts
-    [ SQL.fromString "select * from users where name = "
-    , SQL.interpolate (Text.toUpper name)
-    , SQL.fromString " and age = "
-    , SQL.interpolate age
-    ]
+  SQL.interpolateFinish $
+    SQL.interpolateRaw "select * from users where name = "
+      `SQL.interpolateAppend`
+    SQL.interpolate (Text.toUpper name)
+      `SQL.interpolateAppend`
+    SQL.interpolateRaw " and age = "
+      `SQL.interpolateAppend`
+    SQL.interpolate age
+      `SQL.interpolateAppend`
+    SQL.interpolateEmpty
 
-This extends the machinery introduced by `QualifiedDo <https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/qualified_do.html>`_ to ``-XOverloadedStrings``. This proposal only enables ``QualifiedLiterals`` for strings, but can be extended to numeric literals in the future. A future proposal could also enable TH-syntax like ``$Foo."a ${x}"``, which could desugar to ``$(Foo.fromParts [Foo.fromString "a ", Foo.interpolate [| x |]])``, but we'll defer on that for now.
+This extends the machinery introduced by `QualifiedDo <https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/qualified_do.html>`_ to ``-XOverloadedStrings``. This proposal only enables ``QualifiedLiterals`` for strings, but can be extended to other literals like numbers or lists in the future. A future proposal could also enable TH-syntax like ``$Foo."${x}"``, which could desugar to the equivalent of ``$(Foo.interpolateFinish $ Foo.interpolate [| x |])``, but we'll defer on that for now.
 
 While these are two separate behaviors that could be two separate proposals, we bundle them in one proposal because the community survey shows a desire for extensibility/generality of some kind (see *Section 10.1 Community Survey*).
 
@@ -509,9 +513,12 @@ Similar instances can also be implemented for lazy Text.
   import Data.Text qualified as T
   import Data.String.Interpolate.Experimental qualified as S
 
-  fromParts = mconcat
-  fromString = T.pack
+  interpolateRaw = T.pack
   interpolate = S.interpolate
+
+  interpolateAppend = mappend
+  interpolateEmpty = mempty
+  interpolateFinish = id
 
 With both of these definitions, users could do
 
@@ -622,13 +629,14 @@ Alternatively, for more power or flexibility, the library could define a module 
   import Data.String qualified as S
   import Data.String.Interpolate.Experimental qualified as S
 
-  fromParts :: [SqlQuery] -> Either ParseError CompiledSqlQuery
-  fromParts parts = do
-    let SqlQuery{..} = mconcat parts
-    compileQuery sqlText sqlValues
-
-  fromString = S.fromString
+  interpolateRaw = S.fromString
   interpolate = S.interpolate
+
+  interpolateAppend = mappend
+  interpolateEmpty = mempty
+
+  interpolateFinish :: SqlQuery -> Either ParseError CompiledSqlQuery
+  interpolateFinish SqlQuery{..} = compileQuery sqlText sqlValues
 
 ::
 
