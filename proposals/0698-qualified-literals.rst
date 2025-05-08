@@ -42,11 +42,11 @@ High-level Overview
     * - ``Foo.1``
       - ``Foo.fromNatural 1``
     * - ``Foo.(1)``
-      - ``Foo.fromNatural (1)``
+      - ``Foo.fromNatural 1``
     * - ``Foo.(-1)``
       - ``Foo.fromNegativeInteger (-1)``
     * - ``Foo.(1.2)``
-      - ``Foo.fromRational (1.2)``
+      - ``Foo.fromRational 1.2``
     * - ``Foo."asdf"``
       - ``Foo.fromString "asdf"``
     * - ``Foo."""asdf"""``
@@ -62,17 +62,17 @@ And the following syntaxes for patterns
     * - **New pattern syntax**
       - **Desugared ViewPattern**
     * - ``Foo.1``
-      - ``(Foo.toNatural -> 1)``
+      - ``(Foo.matchNatural 1 -> True)``
     * - ``Foo.(1)``
-      - ``(Foo.toNatural -> (1))``
+      - ``(Foo.matchNatural 1 -> True)``
     * - ``Foo.(-1)``
-      - ``(Foo.toNegativeInteger -> (-1))``
+      - ``(Foo.matchNegativeInteger (-1) -> True)``
     * - ``Foo.(1.2)``
-      - ``(Foo.toRational -> (1.2))``
+      - ``(Foo.matchRational 1.2 -> True)``
     * - ``Foo."asdf"``
-      - ``(Foo.toString -> "asdf")``
+      - ``(Foo.matchString "asdf" -> True)``
     * - ``Foo."""asdf"""``
-      - ``(Foo.toString -> "asdf")``
+      - ``(Foo.matchString "asdf" -> True)``
     * - ``Foo.[x, y]``
       - ``(Foo.listUncons -> Just (x, Foo.listUncons -> Just (y, Foo.listUncons -> Nothing)))``
     * - ``Foo.(x : _)``
@@ -123,15 +123,15 @@ Proposed Library Change Specification
 Template Haskell
 ~~~~~~~~~~~~~~~~
 
-The following constructors will be updated to the following definitions:
+We'll add the following constructors, to maintain backwards compatibility:
 
 ::
 
-  ListE (Maybe ModuleName) [Exp]
+  QualListE ModuleName [Exp]
 
-  StringL (Maybe ModuleName) String
-  IntegerL (Maybe ModuleName) Integer
-  RationalL (Maybe ModuleName) Rational
+  QualStringL ModuleName String
+  QualIntegerL ModuleName Integer
+  QualRationalL ModuleName Rational
 
 Examples
 --------
@@ -179,14 +179,14 @@ Scientific
 
 ::
 
-  newtype BigNumber = BigNumber Scientific
+  newtype BigDecimal = BigDecimal Scientific
 
-  unsafeAdd :: BigNumber -> BigNumber -> BigNumber
+  unsafeAdd :: BigDecimal -> BigDecimal -> BigDecimal
   unsafeAdd = coerce (+)
 
-Writing tests for functions using ``BigNumber`` is arduous, since repeating ``BigNumber 123`` is verbose. You could write a helper function ``big = BigNumber``, but this is unsafe if accidentally called on a non-literal, as ``Scientific`` throws a runtime error if converting from a repeating decimal.
+If you want to write ``BigDecimal`` literals (e.g. for tests), you have to use either the ``BigDecimal`` constructor or write a ``big = BigDecimal`` helper, but that's unsafe if accidentally called on a non-literal, as ``Scientific`` throws a runtime error if converting from a repeating decimal.
 
-With QualifiedLiterals, you could write ``Big.123``, which guarantees that ``Big.fromRational`` is only called on literals (e.g. you could configure hlint to ban calling ``Big.fromRational`` directly and only be used via QualifiedLiterals).
+With QualifiedLiterals, you could write ``Big.123``, which guarantees that ``Big.fromRational`` is only called on literals (e.g. you could configure hlint to ban calling ``BigDecimal.fromRational`` directly and only be used via QualifiedLiterals).
 
 Positive-only literals
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -329,6 +329,8 @@ Interactions with other extensions
 
 * `Allow arbitrary identifiers as fields in OverloadedRecordDot <https://github.com/ghc-proposals/ghc-proposals/pull/668>`_ has similar syntax to the proposed qualified string literal, but as ``Foo.bar`` is parsed as a qualified identifier even with OverloadedRecordDot, it makes sense that ``Foo."bar"`` is also parsed as a qualified literal.
 
+* `Allow native string interpolation syntax <https://github.com/ghc-proposals/ghc-proposals/pull/570>`_ proposes adding string interpolation syntax with ``s"..."``. If both proposals are accepted, you could have qualified string interpolations with ``Foo.s"..."``. See the other proposal for more details.
+
 
 Costs and Drawbacks
 -------------------
@@ -336,6 +338,8 @@ Costs and Drawbacks
 Development and maintenance should be low effort, as the core implementation is in the renamer step, and typechecking would proceed as normal.
 
 The syntax is approachable for novice users and shouldn't be an extra barrier to understand.
+
+``COMPLETE`` is not possible in this proposal, since it's not possible to mark completeness with ``ViewPatterns``. A future proposal with TH (e.g. ``$Foo.123``) could generate patterns that would be recognized as complete, but that's out of scope of this proposal.
 
 Backward Compatibility
 ----------------------
