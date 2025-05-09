@@ -52,7 +52,7 @@ High-level Overview
     * - ``Foo."""asdf"""``
       - ``Foo.fromString "asdf"``
     * - ``Foo.[x, y]``
-      - ``Foo.fromList (x `Foo.listCons` (y `Foo.listCons` Foo.listNil))``
+      - ``Foo.buildList (\cons nil -> x `cons` (y `cons` nil))``
 
 And the following syntaxes for patterns
 
@@ -155,9 +155,8 @@ With ``QualifiedLiterals``, ``vector`` could define:
 
   module Data.Vector.Qualified where
 
-  fromList = V.fromList
-  listCons = (:)
-  listNil = []
+  buildList :: ((a -> [a] -> [a]) -> [a] -> [a]) -> Vector a
+  buildList f = V.fromList (GHC.List.build f)
 
   listUncons = V.uncons
 
@@ -262,14 +261,12 @@ With QualifiedLiterals, converting list literals are no longer confined to the l
 
   module Data.HList.Qualified where
 
-  fromList :: HList f xs -> HList f xs
-  fromList = id
-
-  listCons :: f x -> HList f xs -> HList f (x ': xs)
-  listCons = HCons
-
-  listNil :: HList f '[]
-  listNil = HNil
+  buildList ::
+    ( (forall a as. f a -> HList f as -> HList f (a ': as))
+      -> HList f '[]
+      -> HList f xs
+    ) -> HList f xs
+  buildList f = f HCons HNil
 
   class Uncons a where
     type UnconsRet a
