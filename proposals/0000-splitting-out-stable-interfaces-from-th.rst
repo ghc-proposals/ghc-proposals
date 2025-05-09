@@ -58,10 +58,9 @@ This puts pressure on the Template Haskell syntax trees to be able to express th
 Whenever a new syntactic construct is added to GHC, we also want to introduce a corresponding change to the Template Haskell syntax tree types.
 As we expect GHC's internal AST to regularly evolve with each major version of GHC, it is likely that each new major release of GHC will force a new major release of the ``template-haskell`` library.
 
-.. note::
-   In ``template-haskell-2.18``, a new field was added to the ``ConP`` constructor of ``Pat`` to express the possibility of a list of type applications as part of a constructor pattern.
-   End-users then had to update their code to account for this change. ``yesod`` uses ``ConP`` in some code for generating typeclass instances.
-   The code had to be changed to pass an extra ``[]`` argument. See: `the PR to yesod <https://github.com/yesodweb/yesod/pull/1754/files#diff-b0e5dbc5d4ca2998772f987cc5f27c5fc761b34549bdecc93892bbe142d89d26R30>`_.
+In ``template-haskell-2.18``, a new field was added to the ``ConP`` constructor of ``Pat`` to express the possibility of a list of type applications as part of a constructor pattern.
+End-users then had to update their code to account for this change. ``yesod`` uses ``ConP`` in some code for generating typeclass instances.
+The code had to be changed to pass an extra ``[]`` argument. See: `the PR to yesod <https://github.com/yesodweb/yesod/pull/1754/files#diff-b0e5dbc5d4ca2998772f987cc5f27c5fc761b34549bdecc93892bbe142d89d26R30>`_.
 
 When upgrading GHC, users are often also forced to upgrade to the new GHC bundled ``template-haskell`` library.
 
@@ -132,19 +131,18 @@ On the other hand, the small interfaces exposed by ``template-haskell-lift`` and
 They rarely change and if they don't change between two versions of GHC, then we can accommodate both for free.
 If they do change, then it's likely that we can use ``CPP`` to expose to shim over GHC internals and expose a consistent interface.
 
-.. note::
-   For instance, `Overloaded Quotations proposal <./0246-overloaded-bracket.rst>`_ changed the type of the ``lift`` method of ``Lift`` from ``lift :: a -> Q a`` to ``lift :: Qoute m => a -> m a``.
+For instance, `Overloaded Quotations proposal <./0246-overloaded-bracket.rst>`_ changed the type of the ``lift`` method of ``Lift`` from ``lift :: a -> Q a`` to ``lift :: Qoute m => a -> m a``.
 
-   Suppose ``template-haskell-lift`` existed at the time and ``template-haskell-lift-0.1`` corresponded to the old interface and ``template-haskell-lift-0.2`` corresponded to the new interface.
-   Further suppose that GHC-9.0 ships with ``template-haskell-lift-0.1`` and GHC-9.2 ships with and implements the interface of ``template-haskell-lift-0.2``.
+Suppose ``template-haskell-lift`` existed at the time and ``template-haskell-lift-0.1`` corresponded to the old interface and ``template-haskell-lift-0.2`` corresponded to the new interface.
+Further suppose that GHC-9.0 ships with ``template-haskell-lift-0.1`` and GHC-9.2 ships with and implements the interface of ``template-haskell-lift-0.2``.
 
-   Our argument in this section is that it is convenient to make the following possible:
+Our argument in this section is that it is convenient to make the following possible:
 
-   * ``template-haskell-lift-0.1`` can be compiled with GHC-9.2
-   * ``template-haskell-lift-0.2`` can be compiled with GHC-9.0
+* ``template-haskell-lift-0.1`` can be compiled with GHC-9.2
+* ``template-haskell-lift-0.2`` can be compiled with GHC-9.0
 
-   This allows an end-user to upgrade from GHC-9.0 to GHC-9.2 without having to change their version of ``template-haskell-lift``, and allows a package to support both versions of the compiler without introducing ``CPP``.
-   And it allows a user to upgrade from ``template-haskell-lift-0.1`` to ``template-haskell-lift-0.2`` without upgrading their compiler.
+This allows an end-user to upgrade from GHC-9.0 to GHC-9.2 without having to change their version of ``template-haskell-lift``, and allows a package to support both versions of the compiler without introducing ``CPP``.
+And it allows a user to upgrade from ``template-haskell-lift-0.1`` to ``template-haskell-lift-0.2`` without upgrading their compiler.
 
 
 Depending on boot libraries from ```template-haskell``
