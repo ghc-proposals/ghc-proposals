@@ -181,11 +181,14 @@ These will be shipped with GHC. So, they would be boot libraries, but wouldn't i
 In other words, they would behave as ``bytestring`` or ``containers``, not like ``ghc-internal``.
 
 They will also be published to and buildable from Hackage.
-They can be built with the version of GHC they are bundled with, but should additionally be buildable with the previous and next version of GHC also.
-Concretely if ``template-haskell-0.1`` is shipped with GHC-9.14, then it should also be buildable with GHC-9.12 and GHC-9.16.
-This is merely a minimum and we wish to have as broad a support range as feasible, eg, the current version of the libraries are compatible with GHC-8.10 up to GHC-9.12 (the present release).
+They can be built with the version of GHC they are bundled with, but should additionally be buildable with the previous and next version of GHC.
+Concretely if ``template-haskell-0.1`` is shipped with GHC-9.14, then there should be minor releases (``template-haskell-0.1.*``) that can be built with GHC-9.12 and GHC-9.16.
+We wish to have as broad a support range as feasible, eg, the current version of the libraries are compatible with GHC-8.10 up to GHC-9.12 (the present release).
+We acknowledge that this might not always be possible, and that these interfaces might need to change in the future in ways that cannot be shimmed over.
 
-Their interfaces will be as follows:
+These packages only depend on ``ghc-internal`` and ``base``. Crucially they do not depend on ``template-haskell``.
+
+Their initial interfaces will be as follows:
 
 ``template-haskell-lift``::
 
@@ -213,8 +216,6 @@ Their interfaces will be as follows:
 
 Note that these modules are in the ``TemplateHaskell.`` namespace rather than the ``Language.Haskell.TH.`` namespace.
 The idea to use this less verbose namespace for the new stable interfaces is thanks to Adam Gundry.
-
-These packages only depend on ``ghc-internal`` and ``base``. Crucially they do not depend on ``template-haskell``.
 
 Effect and Interactions
 -----------------------
