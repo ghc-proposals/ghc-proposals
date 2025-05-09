@@ -240,9 +240,6 @@ Whereas with the split packages, you only need to update your bounds if the inte
 Unresolved Questions
 --------------------
 
-- Should the modules live in the ```TemplateHaskell.`` or the ``Language.Haskell.TH.`` namespace?
-- Should these packages live in the GHC repository, in another repository on the GHC Gitlab, or on GitHub?
-
 Implementation Plan
 -------------------
 Teo Camarasu has implemented an `MR <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/13569>`_
