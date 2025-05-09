@@ -110,28 +110,29 @@ When a new major version of GHC is released, the Haskell ecosystem has to respon
 This potentially includes changes to the compiler itself, but also changes to the libraries that are bundled with GHC.
 A new major version of the compiler often ships new major versions of bundled libraries.
 
-In turn, when maintainers release new versions of their packages to deal with the changes from the new version of GHC, they may choose to only release them via a new major versions.
+In turn, when maintainers release new versions of their packages to deal with the changes from the new version of GHC, they may choose to cut a new major version.
 Their dependencies then have to respond to these changes.
-This leads to a situation where the ecosystem accommodates to the new changes in waves. It can take a long time for changes to fully apply to the entire ecosystem.
+This leads to a situation where the ecosystem accommodates the new changes in waves. It can take a long time for changes to fully apply to the entire ecosystem.
 
-It is helpful for maintainers of ecosystem packages to be able to deal with new major versions of boot libraries independently of GHC upgrades.
+It is helpful for maintainers of packages in the ecosystem to be able to deal with new major versions of boot libraries independently of GHC upgrades.
 Ideally the ecosystem would already be compatible with a new version of a boot library before it is bundled with a new version of GHC.
-It also make upgrades safer for maintainers, since if a bug is introduced, then they can pinpoint it to either a change in the compiler or in a library.
+It also make upgrades safer for maintainers, since if a bug is introduced, then they can pinpoint it either to a change in the compiler or in a library.
 
 Currently each version of ``template-haskell`` is tightly coupled to a specific version of GHC.
 For instance, GHC-9.12.1 ships with ``template-haskell-2.23``. It is not possible to compile ``template-haskell-2.23`` with an earlier version of a compiler.
-So, a maintainer cannot upgrade to ``template-haskell-2.23`` without upgrading to GHC-9.12.
+So, a maintainer cannot upgrade to ``template-haskell-2.23`` without upgrading to GHC-9.12. And vice versa.
 
-Historically, this was a strong technical reason for this. ``template-haskell`` used to include wired-in identifiers referred to by GHC.
+Historically, there was a strong technical reason for this. ``template-haskell`` used to include wired-in identifiers referred to by GHC.
 As of GHC-9.12, these have been `moved <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/12479>`_ to ``ghc-internal``.
 
 It should be possible to use, for instance ``CPP``, to make ``template-haskell`` compatible with multiple versions of GHC. But the large interface exposed by this package makes it difficult.
 
-On the other hand, the small interfaces exposed by ``template-haskell-lift`` and ``template-haskell-quasiquote`` are easy to make compatible with multiple versions of GHC.
-They rarely change and if they don't change between two versions of GHC, then we can accommodate both for free.
-If they do change, then it's likely that we can use ``CPP`` to expose to shim over GHC internals and expose a consistent interface.
+On the other hand, the small interfaces exposed by ``template-haskell-lift`` and ``template-haskell-quasiquote`` are easier to make compatible with multiple versions of GHC.
+They rarely change and if they don't change between two versions of GHC, then we can accommodate both versions for free.
+If they do change, then it's likely that we can use ``CPP`` to expose a shim over GHC internals giving a consistent interface.
 
 For instance, `Overloaded Quotations proposal <./0246-overloaded-bracket.rst>`_ changed the type of the ``lift`` method of ``Lift`` from ``lift :: a -> Q a`` to ``lift :: Qoute m => a -> m a``.
+``Quote`` is a new typeclass, which only exposes a ``newName :: Quote m => String -> m a`` from ``Q``.
 
 Suppose ``template-haskell-lift`` existed at the time and ``template-haskell-lift-0.1`` corresponded to the old interface and ``template-haskell-lift-0.2`` corresponded to the new interface.
 Further suppose that GHC-9.0 ships with ``template-haskell-lift-0.1`` and GHC-9.2 ships with and implements the interface of ``template-haskell-lift-0.2``.
@@ -143,6 +144,17 @@ Our argument in this section is that it is convenient to make the following poss
 
 This allows an end-user to upgrade from GHC-9.0 to GHC-9.2 without having to change their version of ``template-haskell-lift``, and allows a package to support both versions of the compiler without introducing ``CPP``.
 And it allows a user to upgrade from ``template-haskell-lift-0.1`` to ``template-haskell-lift-0.2`` without upgrading their compiler.
+
+In this case, it would not have been possible to support both of these directions.
+While we could have compiled ``template-haskell-lift-0.2`` with older versions of the compiler by exporting ``type Quote m = (m ~ Q)``, we could not do a similar step in the other direction.
+A user could have used another method of ``Q`` such as ``runIO`` when giving an instance of the older version of ``Lift``, which is not available for a ``Quote`` monad, and thus unacceptable in the newer version of ``Lift``.
+
+Yet, only having one of these directions is already helpful. ``template-haskell-lift-0.2`` support both GHC-9.0 and GHC-9.2 allows a user of the library to support both versions of the compiler without relying on ``CPP`` to paper over changes in the ``Lift`` interface.
+
+In this section, we have argued that it is helpful to be able to upgrade boot libraries such as ``template-haskell`` independently of GHC.
+This allows reducing the time taken for a boot library major version bump to spread through the ecosystem, and it allows end-users to support a broad range of GHC versions without having to rely on ``CPP``.
+This is much more achievable for the smaller ``template-haskell-lift`` and ``template-haskell-quasiquote`` libraries than it would be for ``template-haskell``.
+But as we have seen, total independence isn't always possible even for these quite small interfaces. Sometimes changes to tightly coupled definitions are difficult to make both backwards and forwards compatible, but we still benefit from just one direction.
 
 
 Depending on boot libraries from ```template-haskell``
