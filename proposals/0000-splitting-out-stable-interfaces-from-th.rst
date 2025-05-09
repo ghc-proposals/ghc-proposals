@@ -233,7 +233,7 @@ The main issue with this alternative is that it would force a change on basicall
 This would be a large and wide ranging breaking change.
 
 Another issue is that the ``Lift`` interface has changed much more frequently in the past than the ``Quasiquoter`` interface.
-If either of these changed in the future, then every user would have to update their upper bounds. ]
+If either of these changed in the future, then every user would have to update their upper bounds.
 Whereas with the split packages, you only need to update your bounds if the interface you actually depend on has changed.
 
 
