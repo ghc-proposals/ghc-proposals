@@ -74,9 +74,11 @@ And the following syntaxes for patterns
     * - ``Foo."""asdf"""``
       - ``(Foo.matchString "asdf" -> True)``
     * - ``Foo.[x, y]``
-      - ``(Foo.listUncons -> Just (x, Foo.listUncons -> Just (y, Foo.listUncons -> Nothing)))``
+      - ``Foo.ListCons x (Foo.ListCons y Foo.ListNil)``
     * - ``Foo.(x : _)``
-      - ``(Foo.listUncons -> Just (x, _))``
+      - ``Foo.ListCons x _``
+    * - ``Foo.(_ : x)``
+      - ``Foo.ListCons _ x``
 
 As long as the desugared expressions/patterns type check, users are free to define these functions however they want.
 
@@ -158,7 +160,9 @@ With ``QualifiedLiterals``, ``vector`` could define:
   buildList :: ((a -> [a] -> [a]) -> [a] -> [a]) -> Vector a
   buildList f = V.fromList (GHC.List.build f)
 
-  listUncons = V.uncons
+  pattern ListCons a b <- (V.uncons -> Just (a, b))
+  pattern ListNil <- (V.uncons -> Nothing)
+  {-# COMPLETE ListCons, ListNil #-}
 
 And the user could do:
 
@@ -268,17 +272,13 @@ With QualifiedLiterals, converting list literals are no longer confined to the l
     ) -> HList f xs
   buildList f = f HCons HNil
 
-  class Uncons a where
-    type UnconsRet a
-    listUncons :: a -> Maybe (UnconsRet a)
+  pattern ListCons :: () => xs ~ (x0 ': xs0) => f x0 -> HList f xs0 -> HList f xs
+  pattern ListCons a b = HCons a b
 
-  instance Uncons (HList f '[]) where
-    type UnconsRet (HList f '[]) = Void
-    listUncons _ = Nothing
+  pattern ListNil :: () => xs ~ '[] => HList f xs
+  pattern ListNil = HNil
 
-  instance Uncons (HList f (x ': xs)) where
-    type UnconsRet (HList f (x ': xs)) = (f x, HList f xs)
-    listUncons (HCons x xs) = Just (x, xs)
+  {-# COMPLETE ListCons, ListNil #-}
 
 Users could then do
 
