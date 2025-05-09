@@ -238,6 +238,9 @@ As this proposal deals exclusively with creating new packages, there are no back
 
 Alternatives
 ------------
+
+Remove the Template Haskell ASTs from ``template-haskell``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The majority of the breaking changes to ``template-haskell`` comes from changes to the TH AST.
 An alternative approach would be to simplify move the TH AST into a new package, and keep ``template-haskell``
 as the remaining interface.
@@ -248,6 +251,37 @@ This would be a large and wide ranging breaking change.
 Another issue is that the ``Lift`` interface has changed much more frequently in the past than the ``Quasiquoter`` interface.
 If either of these changed in the future, then every user would have to update their upper bounds.
 Whereas with the split packages, you only need to update your bounds if the interface you actually depend on has changed.
+
+Just one stable package
+^^^^^^^^^^^^^^^^^^^^^^^
+This proposal splits out two interfaces from ``template-haskell`` into two packages.
+An alternative would be to split them into one new package, perhaps called ``template-haskell-stable``.
+
+This would be simpler as it would lead to fewer packages.
+Yet, it would reduce the benefits from this proposal, especially if we choose to continue with this strategy of splitting out interfaces from ``template-haskell`` in the future.
+
+`PVP <https://pvp.haskell.org/>`_ dictates that if any interface in a package changes in a breaking way, then the entire package needs to bump its major version.
+The most unstable interface in a package determines the package's overall stability.
+The more interfaces a package contains, the greater the risk of a frequent breaking changes.
+If we choose to continue splitting interfaces out of the ``template-haskell`` package, this risk will grow further if we choose to put them into ``template-haskell-stable``.
+Eventually ``template-haskell-stable`` might no longer be stable at all.
+
+This risk would be diminished if the majority of users used both the ``Lift`` and ``QuasiQuoter`` interfaces. In that case, users would need to update their bounds if either package had a major release,
+so it would be equivalent to updating the bounds for ``template-haskell-stable``. But, this is not the case. The vast majority of the packages that depend on this interface only use ``Lift``.
+Some use only ``QuasiQuoter``, and others use both.
+
+We also be sceptical of a ``template-haskell-stable`` package because stability is not an essential property of an interface.
+We can look back on the *past* stability of these interfaces, but we cannot know their *future* stability.
+Part of the motivation of this proposal is to make it easier to accommodate future changes to these interfaces.
+Our aim here isn't to split these interfaces out in order to fix them in stone, but to make it easier for end-users to cope with future changes,
+and to eliminate unnecessary work when the subset of the interface they depend on hasn't actually changed.
+
+Rather we should be looking at how interfaces are related. We should look at relations of tight coupling.
+If two interfaces are tightly coupled, it makes sense to group them into one package as changes to one will force changes to the other.
+
+These two interfaces are related in being parts of the overall Template Haskell feature set, but are otherwise conceptually independent.
+They could evolve independently. We could imagine the interface of ``Lift`` changing without impacting ``QuasiQuoter`` and vice versa.
+
 
 
 Unresolved Questions
