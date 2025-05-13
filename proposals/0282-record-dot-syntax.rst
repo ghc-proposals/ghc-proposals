@@ -2,7 +2,7 @@ Record Dot Syntax
 =================
 
 .. author:: Neil Mitchell and Shayne Fletcher
-.. date-accepted:: 2020-05-03, amended 2021-03-09
+.. date-accepted:: 2020-05-03, amended 2021-03-09 and 2025-05-13
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/18599
 .. implemented:: 9.2
 .. highlight:: haskell
