@@ -2,11 +2,11 @@ GHC2024
 =======
 
 .. author:: Joachim Breitner
-.. date-accepted:: 2024-01-09
+.. date-accepted:: 2024-01-09, amended 2025-05-13
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/24320
 .. implemented:: 9.10
 .. highlight:: haskell
-.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/613>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/613>`_ and `amended by this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/632>`_.
 .. sectnum::
 .. contents::
 
@@ -397,7 +397,11 @@ In my view that is worse: The fixes and improvements suggested above would reach
 Implementation Plan
 -------------------
 
-(None yet)
+Support for ``GHC2024`` was added in GHC 9.10. However, switching from
+``GHC2021`` to ``GHC2024`` may break existing programs, primarily because of
+``MonoLocalBinds``, and because of stability concerns the default language
+edition was not changed until after GHC 9.12.
+
 
 .. _DerivingStrategies: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/deriving_strategies.html#extension-DerivingStrategies
 .. _DisambiguateRecordFields: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/disambiguate_record_fields.html#extension-DisambiguateRecordFields
