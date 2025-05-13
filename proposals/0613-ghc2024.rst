@@ -2,7 +2,7 @@ GHC2024
 =======
 
 .. author:: Joachim Breitner
-.. date-accepted:: 2024-01-09
+.. date-accepted:: 2024-01-09, amended 2025-05-13
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/24320
 .. implemented::
 .. highlight:: haskell
