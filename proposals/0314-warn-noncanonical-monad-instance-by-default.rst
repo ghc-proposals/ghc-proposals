@@ -4,7 +4,7 @@ Enable ``-Wnoncanonical-monad-instances`` and ``-Wnoncanonical-monoid-instances`
 .. author:: Fumiaki Kinoshita
 .. date-accepted:: 2020-04-26
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/merge_requests/3174
-.. implemented:: GHC-9.2
+.. implemented:: 9.2
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/314>`_.
 .. contents::

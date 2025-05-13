@@ -3,10 +3,10 @@ Generalized, named, and exportable ``default`` declarations
 
 .. author:: Mario Blažević
 .. date-accepted:: 2021-09-30
-.. ticket-url:: 
-.. implemented:: 
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/24305
+.. implemented:: 9.12
 .. highlight:: haskell
-.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/409>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/409>`_ and `amended by this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/672>`_.
 .. sectnum::
 .. contents::
 
@@ -101,10 +101,10 @@ When exporting a ``default Num`` declaration, the class ``Num`` has to be explic
 An ``import`` of a module always imports all the ``default`` declarations listed in the module's export list. There is
 no way to exclude any of them. This is the default option for this proposal, but there are `alternatives`_.
 
-A module can export its ``default`` declarations either by having no explicit export list (as in ``module M where
-{...}``) or by specifying them explicitly in its export list using the above syntax extension. In particular,
-re-export of a whole imported module (as in ``module M (module N) where{...}`` does *not* export any ``default``
-declarations.
+A module can export its ``default`` only by specifying them explicitly in its export list using the above syntax
+extension. In particular, module with no explicit export list (as in ``module M where {...}``) does *not* export any
+``default`` declarations, and neither does the re-export of a whole module (as in ``module M (module N) where{...}``,
+regardless of whether *N* and *M* are the same or different modules).
 
 The syntactic extension to exports would be enabled by the same ``{-# LANGUAGE NamedDefaults #-}`` pragma. The new
 semantics of imports would be enabled by default with no ``LANGUAGE`` extension required.

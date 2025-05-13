@@ -3,8 +3,8 @@ Higher Order Patterns in Rewrite Rules
 
 .. author:: Jaro Reinders
 .. date-accepted:: 2023-01-23
-.. ticket-url::
-.. implemented::
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/22465
+.. implemented:: 9.8
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/555>`_.
 .. sectnum::
@@ -156,16 +156,16 @@ The change proposed here makes matching more powerful by introducing the notion 
 	- ``x``, ``y``, ``z`` must be term variables (not type applications).
 
 * 	**Matching of higher order patterns (HOP-matching)**.
-        A higher order pattern ``f x y z`` (in the template) matches *any target expression* ``e`` provided:
+ 	A higher order pattern ``f x y z`` (in the template) matches *any target expression* ``e`` provided:
 
-	- The target has the same type as the template
-	- No local binder is free in ``e``, other than ``x``, ``y``, ``z``.
+	1. The target has the same type as the template.
+	2. No local binder is free in ``e``, other than ``x``, ``y``, ``z``.
+	3. ``e`` is not of the form ``(e' z)``, where ``z`` is not free in ``e'``.
 
-	If these two condition hold, the higher order pattern ``f x y z`` matches the target expression ``e``, yielding the substitution ``[f :-> \x y z. e]``.
+	If these conditions hold, the higher order pattern ``f x y z`` matches the target expression ``e``, yielding the substitution ``[f :-> \x y z. e]``.
 	Notice that this substitution is type preserving, and the RHS of the substitution has no free local binders.
 
-*       **Ambiguity breaking**.  When matching template ``(etmpl x)`` against target ``(etarget x)``, do *not* use HOP-matching even if ``(etmpl x)`` is a HOP; instead simply match ``etmpl`` (which is also a HOP) against ``etarget``.  See the next subsection for the justification for this refinement.
-
+	See the next subsection for the justification of the third requirement for matching.
 
 Uniqueness of matching and backward compatibility
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -189,7 +189,7 @@ We can see that:
 * Under this proposal since ``(f z x)`` is a higher-order pattern, HOP-matching ``(f z x)`` against the target ``(wim r p)`` will succeed, binding ``[f :-> \r p -> wim r p]``, thus rewriting the target to ``map (\r p -> wim r p)``.
 
 You might worry that the two results are not quite the same, because eta-reduction is not sound in Haskell.
-That is the reason for the "ambiguity breaking" bullet in the specification.
+That is the reason for the third requirement for matching in the specification.
 With this refinement, in all cases where the existing matching mechanism succeeds, the new mechanism will give the same results because it will simply use the old existing mechanism.
 
 As a more complicated example, consider this rule and target:
@@ -213,7 +213,7 @@ Now, we can:
 2. Or use the existing decompose-application rule, and then match ``(f x)`` against ``(h (p+1))`` and ``y`` against ``q``.
    Now the match of ``(f x)`` against ``(h (p+1))`` can only succeed by using HOP-matching yielding ``[f :-> \x. h (x+1)]``.
 
-The refined rule picks (2), which yields success with as few lambdas as possible in the match.
+The third requirement for matching means we pick option (2), which yields the same results as the current syntactic matching mechanism.
 
 
 Related work

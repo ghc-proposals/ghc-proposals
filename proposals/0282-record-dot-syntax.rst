@@ -2,11 +2,11 @@ Record Dot Syntax
 =================
 
 .. author:: Neil Mitchell and Shayne Fletcher
-.. date-accepted:: 2020-05-03, amended 2021-03-09
+.. date-accepted:: 2020-05-03, amended 2021-03-09 and 2025-05-13
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/18599
 .. implemented:: 9.2
 .. highlight:: haskell
-.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/282>`_ and  `amended by this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/405>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/282>`_ and  `amended by this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/405>`_ and `this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/668>`_.
 .. contents::
 
 
@@ -69,58 +69,208 @@ For the specification we focus on the changes to the parsing rules, and
 the desugaring, with the belief the type checking and renamer changes
 required are an unambiguous consequences of those.
 
-2.1 Language extensions
+The prototype implements the parsing scheme presented here. More
+information about the prototype is available in `this
+section <#91-prototype>`__.
+
+2.1 Definitions
+~~~~~~~~~~~~~~~
+
+For what follows, we use these informal definitions:
+
+* A **field selector** is an expression like ``.a`` or ``.a.b``;
+* A **field selection** is an expression like ``r.a`` or ``(f x).a.b``;
+* A **field update** is an expression like ``r{a = 12}`` or ``r{a.b = "foo"}``;
+* A **punned field update** is an expression like ``r{a}`` or ``r{a.b}`` (here it is understood that ``b`` is a variable bound in the environment of the expression and only valid syntax if the ``NamedFieldPuns`` language extension is in effect).
+
+2.2 Language extensions
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-This change adds new language extensions ``OverloadedRecordDot`` and
+This proposal adds new language extensions ``OverloadedRecordDot`` and
 ``OverloadedRecordUpdate``.
 
-If ``OverloadedRecordDot`` is on:
+- **Field selection.** If ``OverloadedRecordDot`` is on:
 
-- The expression ``.lbl`` means ``getField @"lbl"``;
-- The expression ``e.lbl`` means ``getField @"lbl" e``.
+  - The field selection ``e.fld`` means ``getField @"fld" e``;
+  - The nested field selection ``e.fld₁.fld₂`` means ``(e.fld₁).fld₂``;
+  - The field selector ``.fld`` means ``getField @"fld"``;
+  - The nested field selector ``(.fld₁.fld₂)`` means  ``(\e -> e.fld₁.fld₂)``.
 
-If ``OverloadedRecordDot`` is not on, these expressions are parsed as
-uses of the function ``(.)``.
+  If ``OverloadedRecordDot`` is not on, these expressions are parsed as uses of the function ``(.)``.
 
-If ``OverloadedRecordUpdate`` is on:
+- **Haskell98 field updates.** If ``OverloadedRecordUpdate`` is not on, then the
+  field update ``e{fld = val}`` means just what it does in Haskell98, regardless of
+  ``OverloadedRecordDot``.  Moreover, as Haskell98 specifies, the nested field update
+  ``e{fld₁.fld₂ = val}`` is illegal unless ``fld₁`` is a module qualifier ``M``, in
+  which case the field update ``e{M.fld = val}`` refers to the qualified name
+  ``M.fld``, i.e. the ``fld`` field exported by the module ``M``.
 
-- The expression ``e{lbl = val}`` means ``setField @"lbl" val``;
-- Update expressions with qualified labels like ``r{M.x = val}`` are disallowed.
+- **Overloaded field updates.** If ``OverloadedRecordUpdate`` is on:
 
-If ``OverloadedRecordUpdate`` is not on, ``e{lbl = val}`` means just
-what it does in Haskell98.
+  - The field update ``e{fld = val}`` means ``setField @"fld" val``.
+  - If ``OverloadedRecordDot`` is also on, the nested field update ``e{fld₁.fld₂ = val}`` means ``e{fld₁ = (e.fld₁){fld₂ = val}}``.
+  - If ``OverloadedRecordDot`` is not on, the nested field update ``e{fld₁.fld₂ = val}`` is illegal, including the form ``e{ M.fld = val}``.
 
-If ``OverloadedRecordDot`` and ``OverloadedRecordUpdate`` are both on
-the expression ``e{lbl₁.lbl₂ = val}`` means ``e{lbl₁ = (e.lbl₁){lbl2 =
-val}}`` otherwise the expression ``e{lbl₁.lbl₂ = val}`` is illegal.
+- **Punning.** With ``NamedFieldPuns``, the form ``e { x, y }`` means ``e { x=x, y=y }``.
+  With ``OverloadedRecordUpdate`` this behaviour is extended to nested
+  updates: ``e { a.b.c, x.y }`` means ``e { a.b.c=c, x.y=y }``. Note the
+  variable that is referred to implicitly (here ``c`` and ``y``) is the last
+  chunk of the field to update. So ``c`` is the last chunk of ``a.b.c``, and
+  ``y`` is the last chunk of ``x.y``.  It is an error to write a punned update
+  where the last chunk is not a valid variable name, e.g. ``e { type }`` and
+  ``e { Uppercase }`` are invalid.
 
-2.1.1 Syntax
-^^^^^^^^^^^^
+2.3 Lexing
+~~~~~~~~~~
 
-In the event the language extensions ``OverloadedRecordDot`` and
-``OverloadedRecordUpdate`` are enabled:
+A new token case ``ITproj Bool`` is introduced. When the
+``OverloadedRecordDot`` extension is enabled occurences of operator
+``.`` not as part of a qualified name are classified using the
+whitespace sensitive operator mechanism from `this (accepted) GHC
+proposal <https://github.com/ghc-proposals/ghc-proposals/pull/229>`__.
+The rules are:
 
-======================= ==================================
-Expression              Equivalent
-======================= ==================================
-``(.lbl)``              ``(\e -> e.lbl)``
-``(.lbl₁.lbl₂)``        ``(\e -> e.lbl₁.lbl₂)``
-``e.lbl``               ``getField @"lbl" e``
-``e.lbl₁.lbl₂``         ``(e.lbl₁).lbl₂``
-``e{lbl = val}``        ``setField @"lbl" e val``
-``e{lbl₁.lbl₂ = val}``  ``e{lbl₁ = (e.lbl₁){lbl₂ = val}}``
-``e.lbl₁{lbl₂ = val}``  ``(e.lbl₁){lbl₂ = val}``
-``e{lbl₁ = val₁}.val₂`` ``(e{lbl₁ = val₁}).val₂``
-``e{lbl₁}``             ``e{lbl₁ = lbl₁}`` [Note: requires ``NamedFieldUpdates``]
-``e{lbl₁.lbl₂}``        ``e{lbl₁.lbl₂ = lbl₂}`` [Note: requires ``NamedFieldUpdates``]
-======================= ==================================
+=========== ================ ==================== =========
+Occurence   Token            Means                Example
+=========== ================ ==================== =========
+prefix      ``ITproj True``  field selector       ``.x``
+tight infix ``ITproj False`` field selection      ``r.x``
+suffix      ``ITdot``        function composition ``f. g``
+loose infix ``ITdot``        function composition ``f . g``
+=========== ================ ==================== =========
 
-- **Updating nested fields.** ``e{lbl = val}`` is the syntax of a standard H98 record update. It’s the nested form introduced by this proposal that is new : ``e{lbl1.lbl2 = val}``. However, in the event ``OverloadedRecordUpdate`` is in effect, note that ``e{lbl = val}`` desugars to ``setField @"lbl" e val``].
-- **Punning.** With ``NamedFieldPuns``, the form ``e { x, y }`` means ``e { x=x, y=y }``. With ``OverloadedRecordUpdate`` this behaviour is extended to nested updates: ``e { a.b.c, x.y }`` means ``e { a.b.c=c, x.y=y }``. Note the variable that is referred to implicitly (here ``c`` and ``y``) is the last chunk of the field to update. So ``c`` is the last chunk of ``a.b.c``, and ``y`` is the last chunk of ``x.y``.
+No ``ITproj`` tokens will ever be issued if ``OverloadedRecordDot`` is
+not enabled.
 
-2.1.2 Precedence
-^^^^^^^^^^^^^^^^
+2.4 Parsing
+~~~~~~~~~~~
+
+We use these notations:
+
+====== ===========
+Symbol Occurence
+====== ===========
+*.ᴾ*   prefix
+*.ᵀ*   tight-infix
+====== ===========
+
+The relevant part of the lexical syntax (defined in `chapter 2 of the Haskell
+2010 report
+<https://www.haskell.org/onlinereport/haskell2010/haskellch2.html>`_) and the
+grammar of Haskell expressions (defined in `chapter 3 of the Haskell 2010 report
+<https://www.haskell.org/onlinereport/haskell2010/haskellch3.html>`_) is as
+follows:
+
+.. role:: raw-html(raw)
+    :format: html
+
+[Variable]
+:raw-html:`<br />`
+     *varid*   →    (*small* {*small* | *large* | *digit* | ``'``})_⟨*reservedid*⟩
+:raw-html:`<br />`
+     *qvar*   →    *qvarid* | ``(`` *qvarsym* ``)``
+:raw-html:`<br />`
+     *qvarid*   →    [*modid* ``.``] *varid*
+
+[Function application expression]
+:raw-html:`<br />`
+     *fexp*   →    [*fexp*] *aexp*
+
+[Field binding]
+:raw-html:`<br />`
+     *fbind*   →    *qvar* ``=`` *exp*
+
+[Expression]
+:raw-html:`<br />`
+     *aexp*   →    *qvar* (variable)
+:raw-html:`<br />`
+     *aexp*   →    *gcon* (general constructor)
+:raw-html:`<br />`
+     *aexp*   →    *literal*
+:raw-html:`<br />`
+     *aexp*   →    ``(`` *exp* ``)``    (parenthesized expression)
+:raw-html:`<br />`
+     *aexp*   →    ``(`` *exp* ₁ ``,`` … ``,`` *exp* ₖ ``)`` 	    (tuple, k ≥ 2)
+:raw-html:`<br />`
+     *aexp*   →    ``[`` *exp* ₁ ``,`` … ``,`` *exp* ₖ ``]`` 	    (list, k ≥ 1)
+:raw-html:`<br />`
+     *aexp*   →    ``[`` *exp* ₁ [``,`` *exp* ₂] ``..`` [*exp* ₃] ``]`` 	    (arithmetic sequence)
+:raw-html:`<br />`
+     *aexp*   →    ``[`` *exp* ``|`` *qual* ₁ ``,`` … ``,`` *qual* ₙ ``]`` 	    (list comprehension, n ≥ 1)
+:raw-html:`<br />`
+     *aexp*   →    ``(`` *infixexp* *qop* ``)`` 	    (left section)
+:raw-html:`<br />`
+     *aexp*   →    ``(`` *qop* _⟨``-``⟩ *infixexp* ``)`` 	    (right section)
+:raw-html:`<br />`
+     *aexp*   →    *qcon* ``{`` *fbind* ₁ ``,`` … ``,`` *fbind* ₙ ``}`` 	    (labeled construction, n ≥ 0)
+:raw-html:`<br />`
+     *aexp*   →    *aexp* _⟨*qcon*⟩ ``{`` *fbind* ₁ ``,`` … ``,`` *fbind* ₙ ``}`` 	    (labeled update, n  ≥  1)
+
+Under this proposal, the ``OverloadedRecordDot`` extension adds the following
+productions:
+
+[Field selection]
+:raw-html:`<br />`
+     *fieldChar*   →   *small* | *large* | *digit* | ``'``
+:raw-html:`<br />`
+     *field*   →   (*string* | *fieldChar* {*fieldChar*})
+:raw-html:`<br />`
+     *fexp*   →   *fexp* *.ᵀ* *field*
+
+[Field selector]
+:raw-html:`<br />`
+     *projection*   →   *.ᴾ* *field*   |   *projection* *.ᵀ* *field*
+:raw-html:`<br />`
+     *aexp*   →   ``(`` *projection* ``)``
+
+The grammar for the existing ``OverloadedLabels`` extension
+(see `proposal #170 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0170-unrestricted-overloadedlabels.rst>`_)
+can then be restated (without change to the accepted language) as:
+
+[Overloaded label]
+:raw-html:`<br />`
+     *label*   →   ``#`` *field*
+:raw-html:`<br />`
+     *aexp*   →   *label*
+
+Under this proposal, the ``OverloadedRecordUpdate`` extension adds the following
+productions (replacing the existing *aexp* production for record updates):
+
+[Field update]
+:raw-html:`<br />`
+     *fieldToUpdate*   →   *fieldToUpdate* *.ᵀ* *field*   |   *field*
+:raw-html:`<br />`
+     *fbindUpdate*   →    *fieldToUpdate* ``=`` *exp*   |   *fieldToUpdate*
+:raw-html:`<br />`
+     *aexp*   →    *aexp* _⟨*qcon*⟩ ``{`` *fbindUpdate* ₁ ``,`` … ``,`` *fbindUpdate* ₙ ``}`` 	    (labeled update, n  ≥  1)
+
+
+The *field* nonterminal overlaps with *varid*, *reservedid*, *conid* and *string*.
+No ambiguity arises thereby because *field* occurs only in very specific syntactic places.
+This nonterminal is used in the new expression syntax for overloaded field
+selection and update, so expressions such as the following are accepted:
+
+- ``e.type``, even though ``type`` would normally be a reserved keyword;
+- ``.fld``, even though ``fld`` starts with an uppercase character so it cannot be a traditional field name;
+- ``e { "_ some string! " = v }``, even though traditional field names cannot be arbitrary strings.
+
+This proposal changes only the accepted expressions for selection and update. It
+does not affect record data constructor declarations, record construction or
+pattern matching.
+
+Thus reserved keywords such as ``type`` cannot be defined as field names of
+normal record data constructors, but they are permitted in selection and update
+syntax. This is useful because the user may define a custom ``HasField``
+instance that makes a virtual field ``type`` available.
+
+2.5 Precedence
+~~~~~~~~~~~~~~
+
+``M.x`` is parsed as a qualified name ``x`` in the module ``M``, not a selection
+of the field ``x`` from the nullary data constructor ``M``.  If the latter
+interpretation is desired for some reason, the user can write ``M."x"``.
+Similarly, ``M.do`` is parsed as a use of ``QualifiedDo`` from module ``M``
+rather than selection of the field ``do``.
 
 ``M.N.x`` looks ambiguous. It could mean:
 
@@ -144,118 +294,38 @@ Expression     Interpretation
 ``f M.N.x``    means ``f (M.N.x)`` (``M.N.x`` is a qualified name, not a record field selection)
 ============== ===================
 
-2.1.3 Fields whose names are operator symbols
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-We propose that dot notation isn’t available for fields whose names are
-operator symbols (for example, ``+``, ``.+.`` and so on).
-
-[Note : For fields whose names are operator symbols, one can still
-write ``getField`` expressions (e.g. ``getField @".+." r``)].
-
-2.2 Definitions
-~~~~~~~~~~~~~~~
-
-For what follows, we use these informal definitions:
-
-* A **field selector** is an expression like ``.a`` or ``.a.b``;
-* A **field selection** is an expression like ``r.a`` or ``(f x).a.b``;
-* A **field update** is an expression like ``r{a = 12}`` or ``r{a.b = "foo"}``;
-* A **punned field update** is an expression like ``r{a}`` or ``r{a.b}`` (here it is understood that ``b`` is a variable bound in the environment of the expression and only valid syntax if the ``NamedFieldPuns`` language extension is in effect).
-
-2.3 Lexing and Parsing
-~~~~~~~~~~~~~~~~~~~~~~
-
-The prototype implements the parsing scheme presented here. More
-information about the prototype is available in `this
-section <#91-prototype>`__.
-
-2.3.1 Lexer
-^^^^^^^^^^^
-
-A new token case ``ITproj Bool`` is introduced. When the
-``OverloadedRecordDot`` extension is enabled occurences of operator
-``.`` not as part of a qualified name are classified using the
-whitespace sensitive operator mechanism from `this (accepted) GHC
-proposal <https://github.com/ghc-proposals/ghc-proposals/pull/229>`__.
-The rules are:
-
-=========== ================ ==================== =========
-Occurence   Token            Means                Example
-=========== ================ ==================== =========
-prefix      ``ITproj True``  field selector       ``.x``
-tight infix ``ITproj False`` field selection      ``r.x``
-suffix      ``ITdot``        function composition ``f. g``
-loose infix ``ITdot``        function composition ``f . g``
-=========== ================ ==================== =========
-
-No ``ITproj`` tokens will ever be issued if ``OverloadedRecordDot`` is
-not enabled.
-
-2.3.2 Parsing
-^^^^^^^^^^^^^
-
-The Haskell grammar is extended with the following productions. We use
-these notations:
-
-====== ===========
-Symbol Occurence
-====== ===========
-*.ᴾ*   prefix
-*.ᵀ*   tight-infix
-====== ===========
-
-2.3.2.1
-
-.. role:: raw-html(raw)
-    :format: html
-
-[Field]
-:raw-html:`<br />`
-     *field*   →   *varid*
-
-.. _section-1:
-
-2.3.2.2
-
-
-[Field to update]
-:raw-html:`<br />`
-     *fieldToUpdate*   →   *fieldToUpdate* *.ᵀ* *field*   |   *field*
-
-.. _section-2:
-
-2.3.2.3
-
-
-[Field selectors]
-:raw-html:`<br />`
-     *aexp*   →   *( projection )*
-:raw-html:`<br />`
-     *projection*   →   *.ᴾ* *field*   |   *projection* *.ᵀ* *field*
-
-.. _section-3:
-
-2.3.2.4
-
-
-[Field selection]
-:raw-html:`<br />`
-     *fexp*   →   *fexp* *.ᵀ* *field*
-
-.. _section-4:
-
-2.3.2.5
-
-
-[Field update]
-:raw-html:`<br />`
-     *fbind*   →    *field* *.ᵀ* *fieldToUpdate* *=* *exp*
-:raw-html:`<br />`
-     *fbind*   →   *field* *.ᵀ* *fieldToUpdate*
 
 3. Examples
 -----------
+
+3.1 Summary
+~~~~~~~~~~~
+
+In the event the language extensions ``OverloadedRecordDot`` and
+``OverloadedRecordUpdate`` are enabled,
+here is how these rules work out in particular cases:
+
+======================= ==================================
+Expression              Equivalent
+======================= ==================================
+``(.fld)``              ``(\e -> e.fld)``
+``(.fld₁.fld₂)``        ``(\e -> e.fld₁.fld₂)``
+``e.fld``               ``getField @"fld" e``
+``e.fld``               ``getField @"fld" e``
+``e."fld₁ fld₂"``       ``getField @"fld₁ fld₂"``
+``e.fld₁.fld₂``         ``(e.fld₁).fld₂``
+``e{fld = val}``        ``setField @"fld" e val``
+``e{"x.y" = val}``      ``setField @"x.y" e val``
+``e{fld₁.fld₂ = val}``  ``e{fld₁ = (e.fld₁){fld₂ = val}}``
+``e.fld₁{fld₂ = val}``  ``(e.fld₁){fld₂ = val}``
+``e{fld₁ = val₁}.val₂`` ``(e{fld₁ = val₁}).val₂``
+``e{fld₁}``             ``e{fld₁ = fld₁}`` [Note: requires ``NamedFieldPuns``]
+``e{fld₁.fld₂}``        ``e{fld₁.fld₂ = fld₂}`` [Note: requires ``NamedFieldPuns``]
+======================= ==================================
+
+
+3.2 Extended example
+~~~~~~~~~~~~~~~~~~~~
 
 This is a record type with functions describing a study ``Class`` (*Oh!
 Pascal, 2nd ed. Cooper & Clancy, 1985*).
@@ -300,6 +370,71 @@ and yet more (as tests) are available in the examples directory of `this
 repository <https://github.com/ndmitchell/record-dot-preprocessor>`__.
 Those tests include infix applications, polymorphic data types,
 interoperation with other extensions and more.
+
+
+3.3 Reserved keywords and other special field names
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The very general definition of *field* means that the following is accepted:
+
+.. code:: haskell
+
+   data Foo = Foo { fooType :: FooType }
+
+   instance HasField "type" Foo FooType where
+     getField = fooType
+
+   instance SetField "type" Foo FooType where
+     setField t foo = foo { fooType = t }
+
+   e :: Foo -> FooType
+   e foo = foo.type            -- Translates to getField @"type" foo
+
+   f :: FooType -> Foo -> Foo
+   f t foo = foo { type = t }  -- Translates to setField @"type" t foo
+
+   x = (.TYPE)                 -- Translates to getField @"TYPE"
+
+   y foo = foo."type"          -- Translates to getField @"type" foo
+
+The latter two are consistent with ``OverloadedLabels``, which permits ``#TYPE``
+and ``#"type"`` as labels.
+
+Since ``_`` matches the *field* syntax, the following expressions are accepted:
+
+.. code:: haskell
+
+    e._          -- Translates to getField @"_" e
+    (._)         -- Translates to getField @"_"
+    e { _ = x }  -- Translates to setField @"_" x e
+    #_           -- Translates to fromLabel @"_"
+
+The following continue to be rejected:
+
+.. code:: haskell
+
+   data Foo = Foo { type :: FooType }  -- Error: record datatype field cannot be reserved word
+
+   x = Foo { TYPE = 0 }                -- Error: record construction field cannot start with capital letter
+
+   y (Foo { "type" = v }) = v          -- Error: record pattern match field cannot be string
+
+   z = foo { type }                    -- Error: field punning cannot be used with non-variable identifiers
+
+
+3.4 Fields whose names are operator symbols
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Where a field name is an operator symbol, the field name can be written in double quotes, for example: ::
+
+    data T = MkT { (+++) :: Int }
+
+    t = MkT { (+++) = 1 }  -- Traditional record syntax
+
+    x = t."+++"            -- With OverloadedRecordDot
+
+    y = t { "+++" = 2 }    -- With OverloadedRecordUpdate
+
 
 4. Effect and Interactions
 --------------------------
@@ -475,7 +610,7 @@ leave this feature out.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 There are no update sections. Should ``({a=})``, ``({a=b})`` or
-``(.lbl=)`` be an update section? While nice, we leave this feature out.
+``(.fld=)`` be an update section? While nice, we leave this feature out.
 
 7.4 Should pattern matching be extended?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -509,14 +644,17 @@ Things we could have done instead:
 - **Pro**: flexibility for people who want type-changing update, but would still like dot-notation. Breaking back on type-changing update, like ``OverloadedRecordUpdate`` does, has proved to be controversial, and we don’t want it to hold back the integration of this proposal in GHC.
 - **Pro**: orthogonal things are controlled by separate flags.
 - **Con**: each has to be documented separately: two flags with one paragraph each, instead of one flag with two paragraphs. (The implementation cost is zero: it's only a question of which flag to test.)
+
 2. Add a single extension (``OverloadedRecordFields``, say) to do what ``OverloadedRecordDot`` and ``OverloadedRecordUpdate`` do in this proposal.
 
 - **Pro**: only one extension.
 - **Con**: some users might want dot-notation, but not want to give up type-changing update.
+
 3. Make this modification a no-op, doing nothing. Instead adopt precisely the previous proposal. Use ``RecordDotSyntax`` as the extension, covering both record dot and update.  However, we should then be prepared to change what ``RecordDotSyntax`` means later.  In particular, it is very likely that we’ll want ``RecordDotSyntax`` to imply ``NoFieldSelectors``.
 
 - **Pro**: only one extension
 - **Con**:  changing the meaning of an extension will break programs.
+
 4. Use ``RecordDotSyntax``, just as in the original proposal, but add ``NoFieldSelectors`` immediately
 
 - **Con**: it’s too early to standardize this, we’re not really sure that it’s what we want (e.g. we may want ``DuplicatRecordFields`` instead).
@@ -531,6 +669,43 @@ NB: the difference between (2) and (3) is tiny: only whether we have ``Overloade
 We think ``RecordDotSyntax`` will enable these extensions plus some
 extension that allows multiple field names, e.g. ``NoFieldSelectors``.
 Which final extension that is has not yet been determined.
+
+
+7.9 Why permit field names that are not valid in record declarations?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Haskell requires record field names in record declarations, construction and
+pattern-matching to begin with a lowercase letter and not be a reserved
+identifier such as ``type``.  This remains the case under this proposal.
+
+However, the proposal allows other identifiers to be used in the new syntactic
+forms such as overloaded record selection, for example ``e.type`` is accepted.
+This is primarily intended for users who define their own ``HasField``
+instances. Such "virtual fields"  do not necessarily correspond to Haskell
+variable names and hence there seems to be no good reason to restrict them to
+the *varid* syntax. For example, a library may define a datatype with a field
+``foo_type`` and use Template Haskell to generate a ``HasField`` instance
+without the ``foo_`` prefix; it would be inconvenient if this failed for
+``foo_type`` and ``foo_Type`` but worked for ``foo_bar``.
+
+Moreover, the design here is consistent with unrestricted overloaded labels (see
+`proposal #170 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0170-unrestricted-overloadedlabels.rst>`_).
+
+An alternative choice would be to generalise the syntax of record field names in
+traditional record declarations so they could be (at least) reserved
+identifiers, and (perhaps) uppercase identifiers or strings.  However this
+causes difficulties:
+
+- It does not naturally fit under the ``OverloadedRecordDot`` or
+  ``OverloadedRecordUpdate`` extensions, so would need a new extension, which
+  is not really desired by anyone except for consistency reasons.
+
+- Such fields could not be used with traditional record selection (since that
+  requires the record selector function to be called as a function) and would
+  interact badly with punning (which brings the field into scope as a
+  variable). Thus the result would not actually be more consistent, it would
+  merely move the inconsistency around.
+
 
 8. Unresolved issues
 --------------------

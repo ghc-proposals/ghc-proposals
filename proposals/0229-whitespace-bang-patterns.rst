@@ -3,8 +3,8 @@ Whitespace-sensitive operator parsing (~, !, @, $, $$, -)
 
 .. date-accepted:: 2019-08-24
 .. author:: Vladislav Zavialov
-.. ticket-url::
-.. implemented:: 9.0, but missing the warnings proposed here
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/merge_requests/1664
+.. implemented:: 9.0, with the warnings later added in 9.2
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/229>`_.
 .. contents::

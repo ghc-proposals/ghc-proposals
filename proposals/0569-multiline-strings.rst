@@ -3,10 +3,11 @@ Multiline strings
 
 .. author:: Brandon Chinn
 .. date-accepted:: 2024-01-27
+.. date-amended:: 2024-08-04
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/24390
-.. implemented:: 
+.. implemented:: 9.12
 .. highlight:: haskell
-.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/569>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/569>`_ and `amended at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/637>`_.
 .. sectnum::
 .. contents::
 
@@ -92,12 +93,7 @@ A working prototype is available at `brandonchinn178/string-syntax <https://gith
 
 #. Post-process the string in the following steps:
 
-   #. Collapse string gaps
-
-      * See `Section 2.6 <https://www.haskell.org/onlinereport/haskell2010/haskellch2.html#x7-200002.6>`_ of the Haskell 2010 Report
-      * See the example in *Section 3.3 String gaps*
-
-   #. Split the string by newlines
+   #. Split the string by lexical ``newline`` characters (as defined in the `Haskell report <https://www.haskell.org/onlinereport/haskell2010/haskellch2.html#x7-160002.2>`_)
 
    #. Convert leading tabs into spaces
 
@@ -112,14 +108,19 @@ A working prototype is available at `brandonchinn178/string-syntax <https://gith
 
       * See the "Common whitespace prefix calculation" section below for the specification of the calculation
       * If a line only contains whitespace, remove all of the whitespace
+      * Don't remove common whitespace immediately after the delimiter, see the example in *Section 3.2 Ignore leading characters*
 
    #. Join the string back with ``\n`` delimiters
 
-      * Use ``\n`` regardless of the line terminators being used in the file. This matches the behavior of ``unlines``.
+      * Use ``\n`` regardless of the lexical ``newline``\ s present in the file. This matches the behavior of ``unlines``.
 
    #. If the first character of the string is a newline, remove it
 
+   #. If the last character of the string is a newline, remove it
+
 #. After parsing, it becomes indistinguishable to the equivalent single-quoted string (modulo annotations for exact-printing)
+
+In normal strings, string gaps are effectively equivalent to replacing with ``\&``. They're not simply removed, e.g. ``"\65\   \0"`` results in ``"A0"``. This behavior is preserved in multiline strings; see the examples in *Section 3.3 String gaps* for more details.
 
 Common whitespace prefix calculation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -207,6 +208,10 @@ Step 2vi - Since the first character is a newline character, we remove it and ar
 
   "..abc\\n\\n..def\\n\\nghi\\n....\\njkl\\n"
 
+Step 2vii - Since the last character is a newline character, we remove it and are left with the final result::
+
+  "..abc\\n\\n..def\\n\\nghi\\n....\\njkl"
+
 Step 3 - This gets treated as a normal string from now on, with the escaped ``\\n`` characters interpreted as usual.
 
 Ignore leading characters
@@ -240,10 +245,22 @@ This implies that normal strings could also be written using ``"""``
   s = """hello world"""
   s' = "hello world"
 
+Because characters immediately after the ``"""`` delimiter should be included verbatim, common whitespace will NOT be removed.
+
+::
+
+  s =
+    """    hello
+    world
+    """
+
+  -- equivalent to
+  s' = "    hello\nworld"
+
 String gaps
 ~~~~~~~~~~~
 
-String gaps are collapsed first and not included in the whitespace calculation
+String gaps are collapsed before the whitespace calculation
 
 ::
 
@@ -255,7 +272,22 @@ String gaps are collapsed first and not included in the whitespace calculation
       """
 
   -- equivalent to
-  s' = "a b c d e\nf g\n"
+  s' = "a b c d e\nf g"
+
+But a string gap starting at the beginning of a line counts as non-whitespace in the whitespace calculation.
+
+::
+
+  -- Imagine \& is substituted for the string gap
+  s =
+      """
+        a b
+      \   \  c d e
+        f g
+      """
+
+  -- equivalent to
+  s' = "  a b\n  c d e\n  f g"
 
 Mixing tabs and spaces
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -272,7 +304,7 @@ In the following example, each line has 16 leading spaces after expanding tabs.
   ⇥"""
 
   -- equivalent to
-  s' = "a\nb\nc\n"
+  s' = "a\nb\nc"
 
 Leading newline
 ~~~~~~~~~~~~~~~
@@ -290,27 +322,126 @@ The specification strips exactly one leading newline, which is the behavior of l
     """
 
   -- equivalent to
-  s' = "\na\nb\nc\n"
+  s' = "\na\nb\nc"
+
+The leading newline is removed in step (vi); it has to be done at the end and not the beginning, because any characters on the same line as the opening delimiter should be included verbatim, and removing the leading newline early would treat the first line differently, without more logic.
+
+::
+
+  s1 =
+    """    a
+    b
+    c
+    """
+
+  s2 =
+    """
+    a
+    b
+    c
+    """
+
+  -- In the current proposal, these are equivalent to
+  -- the below. If leading newline were removed at the
+  -- beginning, both would result in s1'.
+  s1' = "    a\nb\nc"
+  s2' = "a\nb\nc"
 
 Trailing newline
 ~~~~~~~~~~~~~~~~
 
-As mentioned in the example in *Section 3.1 General Walkthrough*, trailing newlines are naturally included without any explicit rules. As a bonus, it does the same thing that ``unlines`` does. To avoid a trailing newline, put the closing ``"""`` immediately after the last line, or use a string gap:
+Similarly to a single leading newline being removed, a single trailing newline will also be removed. To keep the trailing newline, add a blank line after the last line:
 
 ::
 
-  x =
+  s =
     """
     a
     b
-    c"""
 
-  x2 =
     """
-    a
-    b
-    c\
-    \"""
+
+  -- equivalent to
+  s' = "a\nb\n"
+
+In addition to being symmetric with stripping a single leading newline, stripping a single trailing newline has the benefit of composing better + behaving better with ``putStrLn``.
+
+::
+
+  s1 =
+    """
+    line 1
+    line 2
+    """
+
+  s2 = "line 3"
+
+  s3 =
+    """
+    line 4
+    line 5
+    """
+
+  putStrLn $ unlines [s1, s2, s3]
+
+  {-
+  Without stripping trailing newline:
+     "line 1\n"
+  ++ "line 2\n"
+  ++ "\n"
+  ++ "line 3\n"
+  ++ "line 4\n"
+  ++ "line 5\n"
+  ++ "\n"
+
+  With stripping trailing newline:
+     "line 1\n"
+  ++ "line 2\n"
+  ++ "line 3\n"
+  ++ "line 4\n"
+  ++ "line 5\n"
+  -}
+
+This is even more beneficial if we ever add string interpolation as well (See the "Out of scope" section for more details).
+
+::
+
+  s1 =
+    """
+    line 1
+    line 2
+    """
+
+  s2 =
+    """
+    line 3
+    line 4
+    """
+
+  putStrLn
+    s"""
+    ${s1}
+    ${s2}
+    """
+
+  {-
+  Without stripping trailing newline:
+     "line 1\n"
+  ++ "line 2\n"
+  ++ "\n"
+  ++ "line 3\n"
+  ++ "line 4\n"
+  ++ "\n"
+  ++ "\n"
+
+  With stripping trailing newline:
+     "line 1\n"
+  ++ "line 2\n"
+  ++ "line 3\n"
+  ++ "line 4\n"
+  -}
+
+The trailing newline is removed in step (vii); it has to be done at the end and not the beginning, because the closing delimiter is probably indented at the same level, so the newline character isn't the last character until after stripping whitespace. Removing the trailing newline at the beginning would require pulling up some of the whitespace stripping logic as well.
 
 Indent every line
 ~~~~~~~~~~~~~~~~~
@@ -434,6 +565,7 @@ With multiline strings:
       Aeson.Null -> pure PrintStyleInherit
       Aeson.String "" -> pure PrintStyleInherit
       _ -> PrintStyleOverride <$> Aeson.parseJSON v
+
     """
 
   adtParsePrinterOptType =
@@ -441,6 +573,7 @@ With multiline strings:
     \\s -> case s of
       "" -> pure PrintStyleInherit
       _ -> PrintStyleOverride <$> parsePrinterOptType s
+
     """
 
 While the double backslash is still required, I think the overall style is much better (could be resolved in a later proposal adding raw strings).
@@ -529,6 +662,7 @@ With multiline strings:
               [ "unknown value: " <> show s
               , "Valid values are: %s"
               ]
+
     """
     fieldTypeName
     fieldTypeName

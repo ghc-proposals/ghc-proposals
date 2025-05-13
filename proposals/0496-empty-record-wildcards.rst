@@ -3,8 +3,8 @@ Allow record wildcards for empty records
 
 .. author:: John Ericson (@Ericson2314)
 .. date-accepted:: 2022-07-03
-.. ticket-url::
-.. implemented::
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/22161
+.. implemented:: 9.8
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/496>`_.
 .. contents::

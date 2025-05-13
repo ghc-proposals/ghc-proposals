@@ -80,7 +80,7 @@ specification that covers the general case.
 Proposed Library Change Specification
 -------------------------------------
 
-Specify the changes to libraries in the GHC repository, especially `base` and
+Specify the changes to libraries in the GHC repository, especially ``base`` and
 others under the purview of the
 `Core Libraries Committee <https://github.com/haskell/core-libraries-committee>`_.
 

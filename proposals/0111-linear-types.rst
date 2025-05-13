@@ -6,12 +6,12 @@ Linear Types
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/15981
 .. implemented:: 9.0 (technology preview)
 .. highlight:: haskell
-.. header:: This proposal was `discussed at pull request #111<https://github.com/ghc-proposals/ghc-proposals/pull/111>`_, `amended by pull request #356<https://github.com/ghc-proposals/ghc-proposals/pull/356>`_ and `pull request #392<https://github.com/ghc-proposals/ghc-proposals/pull/392>`_.
+.. header:: This proposal was `discussed at pull request #111 <https://github.com/ghc-proposals/ghc-proposals/pull/111>`_, `amended by pull request #356 <https://github.com/ghc-proposals/ghc-proposals/pull/356>`_ and `pull request #392 <https://github.com/ghc-proposals/ghc-proposals/pull/392>`_.
 .. sectnum::
 .. contents::
 
 This proposal previously underwent a round of review `at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/91>`_.
-   
+
 This proposal introduces a notion of *linear function* to GHC. Linear
 functions are regular functions that guarantee that they will use
 their argument exactly once. Whether a function ``f`` is linear or not
@@ -2821,10 +2821,12 @@ Implementation Plan
   prototype implementation hosted `here
   <https://github.com/tweag/ghc/tree/linear-types>`_. It currently
   implements:
+
   - Monomorphic multiplicities (no multiplicity variables yet)
   - Interactions with most of Haskell98
   - Core's linter
+
 - @aspiwack will implement and release a library exporting standard
   functions and types for linearly typed programs.
-  - A first iteration is hosted `here
-    <https://github.com/tweag/linear-base/>`_.
+
+  - A first iteration is hosted `here <https://github.com/tweag/linear-base/>`_.

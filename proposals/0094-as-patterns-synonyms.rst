@@ -3,9 +3,7 @@ As patterns in pattern synonyms
 
 .. author:: Simon Peyton Jones
 .. date-accepted:: 2018-03-18
-.. ticket-url:: Leave blank. This will eventually be filled with the
-                ticket URL which will track the progress of the
-                implementation of the feature.
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/9793
 .. implemented:: 8.6
 .. highlight:: haskell
 .. header :: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/94>`_ and implemented in commit `411a97e2 <https://github.com/ghc/ghc/commit/411a97e2c0083529b4259d0cad8f453bae110dee>`_.
