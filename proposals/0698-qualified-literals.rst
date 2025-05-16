@@ -62,23 +62,23 @@ And the following syntaxes for patterns
     * - **New pattern syntax**
       - **Desugared ViewPattern**
     * - ``Foo.1``
-      - ``(Foo.matchNatural 1 -> True)``
+      - ``Foo.FromNatural 1``
     * - ``Foo.(1)``
-      - ``(Foo.matchNatural 1 -> True)``
+      - ``Foo.FromNatural 1``
     * - ``Foo.(-1)``
-      - ``(Foo.matchNegativeInteger (-1) -> True)``
+      - ``Foo.FromNegativeInteger (-1)``
     * - ``Foo.(1.2)``
-      - ``(Foo.matchRational 1.2 -> True)``
+      - ``Foo.FromRational 1.2``
     * - ``Foo."asdf"``
-      - ``(Foo.matchString "asdf" -> True)``
+      - ``Foo.FromString "asdf"``
     * - ``Foo."""asdf"""``
-      - ``(Foo.matchString "asdf" -> True)``
+      - ``Foo.FromString "asdf"``
     * - ``Foo.[x, y]``
-      - ``Foo.ListCons x (Foo.ListCons y Foo.ListNil)``
+      - ``Foo.FromListCons x (Foo.FromListCons y Foo.FromListNil)``
     * - ``Foo.(x : _)``
-      - ``Foo.ListCons x _``
+      - ``Foo.FromListCons x _``
     * - ``Foo.(_ : x)``
-      - ``Foo.ListCons _ x``
+      - ``Foo.FromListCons _ x``
 
 As long as the desugared expressions/patterns type check, users are free to define these functions however they want.
 
@@ -160,9 +160,9 @@ With ``QualifiedLiterals``, ``vector`` could define:
   buildList :: ((a -> [a] -> [a]) -> [a] -> [a]) -> Vector a
   buildList f = V.fromList (GHC.List.build f)
 
-  pattern ListCons a b <- (V.uncons -> Just (a, b))
-  pattern ListNil <- (V.uncons -> Nothing)
-  {-# COMPLETE ListCons, ListNil #-}
+  pattern FromListCons a b <- (V.uncons -> Just (a, b))
+  pattern FromListNil <- (V.uncons -> Nothing)
+  {-# COMPLETE FromListCons, FromListNil #-}
 
 And the user could do:
 
@@ -272,13 +272,13 @@ With QualifiedLiterals, converting list literals are no longer confined to the l
     ) -> HList f xs
   buildList f = f HCons HNil
 
-  pattern ListCons :: () => xs ~ (x0 ': xs0) => f x0 -> HList f xs0 -> HList f xs
-  pattern ListCons a b = HCons a b
+  pattern FromListCons :: () => xs ~ (x0 ': xs0) => f x0 -> HList f xs0 -> HList f xs
+  pattern FromListCons a b = HCons a b
 
-  pattern ListNil :: () => xs ~ '[] => HList f xs
-  pattern ListNil = HNil
+  pattern FromListNil :: () => xs ~ '[] => HList f xs
+  pattern FromListNil = HNil
 
-  {-# COMPLETE ListCons, ListNil #-}
+  {-# COMPLETE FromListCons, FromListNil #-}
 
 Users could then do
 
