@@ -18,7 +18,7 @@ This proposal proposes extending ``-XQualifiedDo`` to literals, to enable more e
 Motivation
 ----------
 
-``OverloadedStrings`` and ``OverloadedLists`` are useful for writing normal string/list syntax that get desugared to non-built-in types. However, they do this via typeclasses, which inherits issues like type inference ambiguity. It's possible these issues are one reason why these extensions, despite being in GHC for a long time, are not defaults in GHC202X language editions. Furthermore, they could provide even more flexibility; one note in the original ``OverloadedLists`` `design <https://gitlab.haskell.org/ghc/ghc/-/wikis/overloaded-lists>`_ mentions the inability to support heterogeneous lists.
+``OverloadedStrings`` and ``OverloadedLists`` are useful for writing normal string/list syntax that get desugared to non-built-in types. However, they do this via typeclasses, which inherits issues like type inference ambiguity. The extensions are also enabled globally, so if you turn it on, all string literals become overloaded, even if you only want specific locations to be overloaded. It's possible these issues are one reason why these extensions, despite being in GHC for a long time, are not defaults in GHC202X language editions. Furthermore, they could provide even more flexibility; one note in the original ``OverloadedLists`` `design <https://gitlab.haskell.org/ghc/ghc/-/wikis/overloaded-lists>`_ mentions the inability to support heterogeneous lists.
 
 These extensions allow extensibility of string and list literals, but there's currently no option to allow extending other literals, like numeric literals. Because the ``fromInteger`` function is a part of ``Num``, there's no way to overload numeric literals without providing a specification for all the ``Num`` operations. Even if we broke out ``fromInteger`` into a separate class, we still inherit the same typeclass issues as overloaded strings/lists.
 
@@ -32,26 +32,34 @@ Proposed Change Specification
 High-level Overview
 ~~~~~~~~~~~~~~~~~~~
 
-``-XQualifiedLiterals`` enables the following syntaxes for expressions
+The following syntaxes are enabled with the specified extensions:
 
 .. list-table::
     :align: left
 
-    * - **New expression syntax**
+    * - **Extension**
+      - **New expression syntax**
       - **Desugared expression syntax**
-    * - ``Foo.1``
+    * - ``-XQualifiedNumbers``
+      - ``Foo.1``
       - ``Foo.fromNatural 1``
-    * - ``Foo.(1)``
+    * - ``-XQualifiedNumbers``
+      - ``Foo.(1)``
       - ``Foo.fromNatural 1``
-    * - ``Foo.(-1)``
+    * - ``-XQualifiedNumbers``
+      - ``Foo.(-1)``
       - ``Foo.fromNegativeInteger (-1)``
-    * - ``Foo.(1.2)``
+    * - ``-XQualifiedNumbers``
+      - ``Foo.(1.2)``
       - ``Foo.fromRational 1.2``
-    * - ``Foo."asdf"``
+    * - ``-XQualifiedStrings``
+      - ``Foo."asdf"``
       - ``Foo.fromString "asdf"``
-    * - ``Foo."""asdf"""``
+    * - ``-XQualifiedStrings``
+      - ``Foo."""asdf"""``
       - ``Foo.fromString "asdf"``
-    * - ``Foo.[x, y]``
+    * - ``-XQualifiedLists``
+      - ``Foo.[x, y]``
       - ``Foo.buildList (\cons nil -> x `cons` (y `cons` nil))``
 
 And the following syntaxes for patterns
@@ -59,25 +67,35 @@ And the following syntaxes for patterns
 .. list-table::
     :align: left
 
-    * - **New pattern syntax**
+    * - **Extension**
+      - **New pattern syntax**
       - **Desugared ViewPattern**
-    * - ``Foo.1``
+    * - ``-XQualifiedNumbers``
+      - ``Foo.1``
       - ``Foo.FromNatural 1``
-    * - ``Foo.(1)``
+    * - ``-XQualifiedNumbers``
+      - ``Foo.(1)``
       - ``Foo.FromNatural 1``
-    * - ``Foo.(-1)``
+    * - ``-XQualifiedNumbers``
+      - ``Foo.(-1)``
       - ``Foo.FromNegativeInteger (-1)``
-    * - ``Foo.(1.2)``
+    * - ``-XQualifiedNumbers``
+      - ``Foo.(1.2)``
       - ``Foo.FromRational 1.2``
-    * - ``Foo."asdf"``
+    * - ``-XQualifiedStrings``
+      - ``Foo."asdf"``
       - ``Foo.FromString "asdf"``
-    * - ``Foo."""asdf"""``
+    * - ``-XQualifiedStrings``
+      - ``Foo."""asdf"""``
       - ``Foo.FromString "asdf"``
-    * - ``Foo.[x, y]``
+    * - ``-XQualifiedLists``
+      - ``Foo.[x, y]``
       - ``Foo.FromListCons x (Foo.FromListCons y Foo.FromListNil)``
-    * - ``Foo.(x : _)``
+    * - ``-XQualifiedLists``
+      - ``Foo.(x : _)``
       - ``Foo.FromListCons x _``
-    * - ``Foo.(_ : x)``
+    * - ``-XQualifiedLists``
+      - ``Foo.(_ : x)``
       - ``Foo.FromListCons _ x``
 
 As long as the desugared expressions/patterns type check, users are free to define these functions however they want.
@@ -151,7 +169,7 @@ Currently, if you want to pattern match on vector, you have to use ``OverloadedL
     -- with ViewPatterns
     User{tags = (V.toList -> ["a", tag2])} -> _
 
-With ``QualifiedLiterals``, ``vector`` could define:
+With ``QualifiedLists``, ``vector`` could define:
 
 ::
 
@@ -189,7 +207,7 @@ Scientific
 
 If you want to write ``BigDecimal`` literals (e.g. for tests), you have to use either the ``BigDecimal`` constructor or write a ``big = BigDecimal`` helper, but that's unsafe if accidentally called on a non-literal, as ``Scientific`` throws a runtime error if converting from a repeating decimal.
 
-With QualifiedLiterals, you could write ``Big.123``, which guarantees that ``Big.fromRational`` is only called on literals (e.g. you could configure hlint to ban calling ``BigDecimal.fromRational`` directly and only be used via QualifiedLiterals).
+With ``QualifiedNumbers``, you could write ``Big.123``, which guarantees that ``Big.fromRational`` is only called on literals (e.g. you could configure hlint to ban calling ``BigDecimal.fromRational`` directly and only be used via ``QualifiedNumbers``).
 
 Positive-only literals
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -212,7 +230,7 @@ However, this check is hardcoded in the compiler for specific types, e.g. ``Natu
 
   UserId (-1) -- works
 
-With QualifiedLiterals, you could just define ``fromNatural`` and not define ``fromNegativeInteger``:
+With ``QualifiedNumbers``, you could just define ``fromNatural`` and not define ``fromNegativeInteger``:
 
 ::
 
@@ -225,7 +243,7 @@ ByteString
 
 It's a `known issue <https://github.com/haskell/bytestring/issues/140>`_ that ByteString has surprising ``IsString`` behavior, due to ambiguity in how to handle Unicode characters.
 
-With QualifiedLiterals, ``bytestring`` could define the following modules:
+With ``QualifiedStrings``, ``bytestring`` could define the following modules:
 
 ::
 
@@ -259,7 +277,7 @@ Users would then be forced to decide what behavior they want (and can switch bet
 Heterogeneous Lists
 ~~~~~~~~~~~~~~~~~~~
 
-With QualifiedLiterals, converting list literals are no longer confined to the list type, enabling list literal syntax for heterogenous lists (aka ``HList``):
+With ``QualifiedLists``, converting list literals are no longer confined to the list type, enabling list literal syntax for heterogenous lists (aka ``HList``):
 
 ::
 
@@ -297,7 +315,7 @@ Users could then do
 Effect and Interactions
 -----------------------
 
-With QualifiedLiterals, there's no more typeclass ambiguity; e.g. the ``text`` library could provide a module like:
+With ``QualifiedStrings``, there's no more typeclass ambiguity; e.g. the ``text`` library could provide a module like:
 
 ::
 
