@@ -89,14 +89,11 @@ And the following syntaxes for patterns
       - ``Foo."""asdf"""``
       - ``Foo.FromString "asdf"``
     * - ``-XQualifiedLists``
-      - ``Foo.[x, y]``
-      - ``Foo.FromListCons x (Foo.FromListCons y Foo.FromListNil)``
+      - ``Foo.[x, _, y]``
+      - ``Foo.FromListCons x (Foo.FromListCons _ (Foo.FromListCons y Foo.FromListNil))``
     * - ``-XQualifiedLists``
-      - ``Foo.(x : _)``
-      - ``Foo.FromListCons x _``
-    * - ``-XQualifiedLists``
-      - ``Foo.(_ : x)``
-      - ``Foo.FromListCons _ x``
+      - ``Foo.(x : xs)``
+      - ``Foo.FromListCons x xs``
 
 As long as the desugared expressions/patterns type check, users are free to define these functions however they want.
 
