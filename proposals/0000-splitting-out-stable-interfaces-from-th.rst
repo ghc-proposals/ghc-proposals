@@ -104,6 +104,7 @@ The biggest benefit is that library authors who are just deriving or using ``Lif
 This can help avoid the sorts of dependency bounds propagation problems identified in the `GHC.X.Hackage proposal <https://github.com/bgamari/tech-proposals/blob/ghc-x-hackage/proposals/001-ghc-x-hackage.md>`_.
 
 .. _independence:
+
 Upgrading libraries independently of GHC
 ''''''''''''''''''''''''''''''''''''''''
 When a new major version of GHC is released, the Haskell ecosystem has to respond to a variety of breaking changes.
@@ -282,7 +283,45 @@ If two interfaces are tightly coupled, it makes sense to group them into one pac
 These two interfaces are related in being parts of the overall Template Haskell feature set, but are otherwise conceptually independent.
 They could evolve independently. We could imagine the interface of ``Lift`` changing without impacting ``QuasiQuoter`` and vice versa.
 
+Including ``DeriveLift`` as part of the interface of ``template-haskell-lift``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+The ``Lift`` interface is often used in conjunction with the ``DeriveLift`` language extension.
+This allows users to automatically derive ``Lift`` instances for many but not all datatypes, eg, ``GADT``\s are currently not supported.
+
+A library maintainer using this interface and extension understandably wants to give their users strong guarantees that a new release of GHC won't break their library.
+Currently they can enforce this by placing strict upper bounds on the versions of the ``base`` and ``template-haskell`` packages. These act as proxies for supported GHC versions.
+Each new version of GHC in practice comes with a new major version of both of these packages.
+Therefore, a strict upper-bound guarantees that end-users don't accidentally build the library against a version of GHC untested by the maintainer.
+When the maintainer is satisfied that the new version of GHC doesn't break the library, they can release a Hackage revision with updated bounds.
+
+The direction of travel in this proposal and efforts to make both ``base`` and ``template-haskell`` decoupled from GHC versions, make this strategy more difficult to implement.
+If a maintainer replaces a dependency on ``template-haskell`` by one on ``template-haskell-lift`` and ``base`` becomes reinstallable,
+then they can no longer depend on a new version of GHC forcing an upgrade of one of these packages.
+So, their library might be built by an end-user with a version of GHC the maintainer hasn't yet tested.
+
+We could argue that the maintainer doesn't have a reason to be worried since GHC comes with strong `stability principles <../principles.rst>`_. Yet, these also have exceptions.
+
+Consider the following scenario:
+1. GHC-9.14 adds support to ``DeriveLift`` for ``GADT``\s.
+2. The maintainer adds ``DeriveLift`` instances for their ``GADT``\s.
+3. The GHC maintainers realize that there is a fundamental issue with this new feature and that it must be reverted in GHC-9.16.
+4. Now the maintainers code is broken by the release of GHC-9.16
+
+A way to defend against this would be to count changes to ``DeriveLift`` as part of the interface ``template-haskell-lift``.
+Then whenever the class of datatypes supported by ``DeriveLift`` changed, we would make a new major version of ``template-haskell-lift``.
+
+While we hold these to be valid concerns, we do not think expanding the interface of ``template-haskell-lift`` is the way to resolve them.
+This suggestion goes against our aim of decoupling ``template-haskell-lift`` from GHC.
+It is possible to shim over changes to the ``Lift`` interface in ``ghc-internal`` as we've outlined in :ref:`independence`.
+But it is not possible to shim over features implemented in the compiler.
+If the implementation of ``DeriveLift`` changed then we would be forced to have a sequence of versions of ``template-haskell-lift`` without either backwards- or forwards-compatibility.
+This would greatly limit the benefits of this proposal.
+
+We feel that it is reasonable that a library maintainer should be able to explicitly define which versions of GHC they support, but that this can be done orthogonally to this proposal.
+In fact, tackling this independently might lead to a more general solution.
+For instance, we could have a ``ghc-version`` package, which exports nothing but carries the version of GHC. We would have to allow it to be exempted from unused package warnings, but this seems doable.
+We could also explore a versioning scheme for language extensions and allow users to express bounds on them in ``.cabal`` files.
 
 Unresolved Questions
 --------------------
