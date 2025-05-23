@@ -99,6 +99,8 @@ Notes:
 
 * Parentheses are required for negative integers and rationals, to avoid ambiguity, both in the lexer and for human readers. Parentheses are optional for positive integers.
 
+* Normally, ``Foo.10e6`` will desugar to ``Foo.fromRational 10e6``. If ``NumDecimals`` is enabled, ``Foo.10e6`` will desugar to the first of ``fromNatural``/``fromInteger``/``fromRational``.
+
 * Multiline strings are desugared to single line strings first, then desugared as a qualified string literal.
 
 * Some literals are not supported yet (Chars, unboxed literals) due to lack of use-cases, but could be extended in the future.
