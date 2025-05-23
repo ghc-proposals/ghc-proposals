@@ -32,7 +32,7 @@ Proposed Change Specification
 High-level Overview
 ~~~~~~~~~~~~~~~~~~~
 
-The following syntaxes are enabled with the specified extensions:
+The tables below demonstrate the new syntaxes enabled with the new extensions. When multiple desugarings are available, the first identifier that exists in the module is used.
 
 .. list-table::
     :align: left
@@ -42,13 +42,13 @@ The following syntaxes are enabled with the specified extensions:
       - **Desugared expression syntax**
     * - ``-XQualifiedNumbers``
       - ``Foo.1``
-      - ``Foo.fromNatural 1``
+      - ``Foo.fromNatural 1`` or ``Foo.fromInteger 1`` or ``Foo.fromRational 1``
     * - ``-XQualifiedNumbers``
       - ``Foo.(1)``
-      - ``Foo.fromNatural 1``
+      - ``Foo.fromNatural 1`` or ``Foo.fromInteger 1`` or ``Foo.fromRational 1``
     * - ``-XQualifiedNumbers``
       - ``Foo.(-1)``
-      - ``Foo.fromNegativeInteger (-1)``
+      - ``Foo.fromInteger (-1)`` or ``Foo.fromRational (-1)``
     * - ``-XQualifiedNumbers``
       - ``Foo.(1.2)``
       - ``Foo.fromRational 1.2``
@@ -62,8 +62,6 @@ The following syntaxes are enabled with the specified extensions:
       - ``Foo.[x, y]``
       - ``Foo.buildList (\cons nil -> x `cons` (y `cons` nil))``
 
-And the following syntaxes for patterns
-
 .. list-table::
     :align: left
 
@@ -72,13 +70,13 @@ And the following syntaxes for patterns
       - **Desugared ViewPattern**
     * - ``-XQualifiedNumbers``
       - ``Foo.1``
-      - ``Foo.FromNatural 1``
+      - ``Foo.FromNatural 1`` or ``Foo.FromInteger 1`` or ``Foo.FromRational 1``
     * - ``-XQualifiedNumbers``
       - ``Foo.(1)``
-      - ``Foo.FromNatural 1``
+      - ``Foo.FromNatural 1`` or ``Foo.FromInteger 1`` or ``Foo.FromRational 1``
     * - ``-XQualifiedNumbers``
       - ``Foo.(-1)``
-      - ``Foo.FromNegativeInteger (-1)``
+      - ``Foo.FromInteger (-1)`` or ``Foo.FromRational (-1)``
     * - ``-XQualifiedNumbers``
       - ``Foo.(1.2)``
       - ``Foo.FromRational 1.2``
@@ -227,13 +225,13 @@ However, this check is hardcoded in the compiler for specific types, e.g. ``Natu
 
   UserId (-1) -- works
 
-With ``QualifiedNumbers``, you could just define ``fromNatural`` and not define ``fromNegativeInteger``:
+With ``QualifiedNumbers``, you could just define ``fromNatural`` and not define ``fromInteger``:
 
 ::
 
   UserId.123 -- works
 
-  UserId.(-1) -- error: UserId.fromNegativeInteger not defined
+  UserId.(-1) -- error: UserId.fromInteger not defined
 
 ByteString
 ~~~~~~~~~~
