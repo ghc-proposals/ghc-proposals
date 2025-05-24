@@ -70,7 +70,13 @@ This is a breaking change.
 
 The ``runQ :: Quasi m => Q a -> m a`` function would be moved from the top-level and become
 a method of ``Quasi``. This is a breaking change.
+
 Note that ``runQ/Quasi`` is to ``Q`` as ``liftIO/MonadIO`` is to ``IO``.
+
+If a user gives a definition of ``runQ`` then all other methods except for ``qRecover`` can be implemented by lifting the method from the ``Q`` instance.
+Therefore we would also make all methods of ``Quasi`` except for ``runQ`` and ``qRecover`` optional.
+This means that libraries that implement ``Quasi`` instances would likely not have to make any changes if a new method is added.
+
 
 The rest of the changes are internal to GHC and ``ghc-internal``.
 
