@@ -150,6 +150,7 @@ We would make the following changes in ``GHC.Internal.TH.Syntax``::
     MetaHandlers
     { mReify :: Name -> IO Info
     , mNewName :: String -> IO Name
+    , mRecover :: forall a. IO a -> IO a -> IO a
     ... and so on
     }
 
@@ -165,17 +166,17 @@ We would make the following changes in ``Language.Haskell.TH.Syntax``::
   qRun     :: Q a -> m a -- New method
   qRecover :: m a -> m a -> m a
   qNewName :: String -> m Name
-  qNewName nm = qRun $ \handlers -> mNewName nm -- we add default methods
+  qNewName nm = qRun $ \handlers -> mNewName handlers nm -- we add default methods
   qReport  :: Bool -> String -> m ()
-  qReport severity msg = qRun $ \handlers -> mReport severity msg -- we add default methods
+  qReport severity msg = qRun $ \handlers -> mReport handlers severity msg -- we add default methods
   qReify   :: Name -> m Info
-  qReify nm = qRun $ \handlers -> mReify nm -- we add default methods
+  qReify nm = qRun $ \handlers -> mReify handlers nm -- we add default methods
   ... and so on
   {-# MINIMAL qRun qRecover #-}
 
   instance Quasi Q where
     qRun = id
-    qRecover r k = catch k (const $ r)
+    qRecover (Q r) (Q k) = Q $ \handlers -> mRecover handlers r k
     -- all other methods are just the default
 
   runQ :: Quasi m => Q a -> m a
@@ -183,11 +184,7 @@ We would make the following changes in ``Language.Haskell.TH.Syntax``::
 
 We would also alter the code for running splices in ``GHC.Tc.Gen.Splice`` and would construct a value of type ``MetaHandlers``.
 
-An important note is that currently the error throwing and recovery logic (``qReport`` and ``qRecover``) for ``Q`` make use of the fact that
-``Q`` is lifted into a ``TcM`` value (GHC's type checking monad), and use utilities from that.
-
-TODO: figure out exactly what to do here.
-
+Note that we can't provide a default method for ``qRecover`` as the monad appears in negative position.
 
 Endorsements
 -------------
