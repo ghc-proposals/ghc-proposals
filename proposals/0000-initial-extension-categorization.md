@@ -7,11 +7,9 @@ implemented: ""
 
 This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/669).
 
-# Initial Categorization of Language Extensions
+# Categorization of Language Extensions
 
-We propose to concretely categorize a subset of the Haskell language extensions as defined by a previously accepted [proposal](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0601-extension-lifecycle-framework.md).
-
-We propose a categorization scheme for Haskell language extensions. This scheme is simple, in that there are few categories that are described in terms of the user-relevant aspects.  The purpose of this proposal is not to classify all extensions - rather, we seek to establish a basis upon which to carry out that work subsequently. Example classifications are provided to illustrate the proposed framework, and acceptance of this proposal should not count as acceptance of these examples.
+We concretely categorize a subset of the Haskell language extensions as defined by a previously accepted [proposal](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0601-extension-lifecycle-framework.md).
 
 ## 1. Motivation
 
