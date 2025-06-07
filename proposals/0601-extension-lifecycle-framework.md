@@ -42,6 +42,7 @@ Language extensions will be classified into the following categories
    * When an extension is deprecated, the user's guide and the compiler warning _must_ include a statement about the longevity of the extension, though this need not necessarily commit to a concrete time for removal. Additionally, the user's guide and the warning should direct users to information about migrating away from the deprecated extension.
    * Any extension will be deprecated prior to removal.
    * Some extensions in this category might be `OverlappingInstances`, `Rank2Types`, `RecordPuns`, and `TypeInType`.
+   * `Deprecated` extensions must be warned about with `-Wdeprecated-flags`
 
  * `Legacy` extensions are explicitly not recommended for new code, much like `Deprecated`, however, they are expected to be supported indefinitely. This may be to maintain an older language edition, maintain a bridge to a newer feature, or otherwise keep backward compatibility.
    * Extensions that are `Legacy` may have some conflict with `Stable` extensions and explicitly do not need to be considered for an extension to be `Stable`.
@@ -85,6 +86,14 @@ These transitions left to the discretion of the implementors are to allow for un
 For existing, or future, language editions such as `GHC2021` or `Haskell98`, it is expected that none of the contained extensions would be `Experimental`. However, this proposal does not seek to impose any particular policy on the inclusion of extensions into language editions - the developers and the steering committee are always in the best position to make a decision about a concrete extension and extension set.
 
 Moving an extension through the lifecycle will require a GHC proposal. This will give users a chance to provide their input, it will help catch unexpected interactions (such as an `Stable` extension implying an `Experimental` one, and thus potentially allowing breakage at any  moment), and it provides a way for language implementers and users to clarify their mutual expectations.
+
+### 2.3 Extension Negation and Classification
+
+Language extensions can be either enabled or not. Extensions are frequently set to be not enabled by prepending with `No` or, less commonly removing the `No` prefix. Now for handling both polarities of extensions one of the following must be true:
+
+ * one polarity of an extension is `Experimental`, `Stable` or `Legacy` and the other is `Stable`
+ * both polarities are `Deprecated`
+
 
 ### 2.3. Documentation
 
