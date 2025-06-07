@@ -17,7 +17,7 @@ With the acceptance of [proposal 601](https://github.com/ghc-proposals/ghc-propo
 
 ## 2. Proposed Change Specification
 
-The entirity of the changes proposed are categorization of extensions. We provide the categorization of several extensions and where applicable the categorization of the negation of the extension.
+The changes proposed are categorization of extensions, along with associated additions to `-Wdeprecated-flags`. We provide the categorization of several extensions and where applicable the categorization of the negation of the extension.
 
 In the tables below we include for each extension the categorization and the "negative categorization" which is for the `No` prefixed version. This is important because while most extensions are themselves the item to be concerned with, there are cases such as `FieldSelectors` where the negative form, `NoFieldSelectors` is the "new" thing added by having the extension.
 
