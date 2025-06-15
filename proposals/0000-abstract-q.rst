@@ -13,7 +13,7 @@ Abstract Q
 .. sectnum::
 .. contents::
 
-Template Haskell is GHC's metaprogramming facility. It allows users to write Haskell programs that can manipulate on Haskell syntax trees.
+Template Haskell is GHC's metaprogramming facility. It allows users to write Haskell programs can manipulate Haskell syntax trees.
 These programs are run at compile-time, and their results are spliced into the syntax tree.
 They can be effectful and run ``IO`` actions or introspect into the compiler state in limited ways.
 These effects are exposed to users through the ``Quote`` and ``Quasi`` typeclasses and the ``Q`` monad.
@@ -40,12 +40,12 @@ Suppose I wanted to add new effect that could be used in Template Haskell splice
 ``reifyCore :: Name -> Q Core``, which given the ``Name`` of a term would produce the Core representation of it.
 
 I would currently implement this by adding this as a method to ``Quasi`` and adding an implementation in GHC.
-This forces a breaking change on ``template-haskell``, since it re-exports ``Quasi``.
+This forces a breaking change of ``template-haskell``, since it re-exports ``Quasi``.
 
 We cannot hide this method for the sake of compatibility, since end users depend on the ability to write custom instances of ``Quasi`` for their own monads
 (eg, `th-orphans <https://hackage.haskell.org/package/th-orphans-0.13.16/docs/Language-Haskell-TH-Instances.html>` provides instances for certain monad transformers).
 
-We would run into the same issue if we wanted to remove a method from ``Quasi``  or change its type.
+We would run into the same issue if we wanted to remove a method from ``Quasi``  or change a method's type.
 The change in GHC would have to be reflected in the exposed interface of ``template-haskell``, forcing end-users to upgrade to a new major release if they want to use the new version of GHC.
 
 By separating out the internal interface, we can avoid this tight coupling.
@@ -53,10 +53,10 @@ By separating out the internal interface, we can avoid this tight coupling.
 Old versions of ``template-haskell`` would still be compatible with the new version of GHC, as they can simply ignore the new field.
 A new version of ``template-haskell`` can add the corresponding method to ``Quasi`` and use the field from ``MetaHandlers`` to implement it.
 
-``Q`` is wired-in to GHC. This fixes a single definition for each version of GHC. Since it is implemented in terms of ``Quasi``, it is also fixed.
-By breaking this tight coupling, we allow ``template-haskell``\'s interface to be compatible with a greater range of GHC versions and to evolve independently of it.
+``Q`` is wired-in to GHC. This fixes a single definition of it for each version of GHC. Since it is implemented in terms of ``Quasi``, it is also fixed.
+By breaking this tight coupling, we allow ``template-haskell``\'s interface to potentially be compatible with a greater range of GHC versions and to evolve independently of it.
 
-Our new definition of ``Q`` is also easier to optimise for the compiler, since it uses a known ``Monad``. Though this is a minor benefit, since the runtime performance of splices is rarely an issue.
+Our new definition of ``Q`` is also easier to optimise for the compiler, since it uses a known ``Monad``. Though this is a minor benefit, since the runtime performance of splices is rarely an issue. It also has potential to interface well with the ``bluefin``/``effectful`` family of effects libraries, which are implemented in terms of ``IO``, and could not express Template Haskell effects previously.
 
 Proposed Change Specification
 -----------------------------
@@ -68,12 +68,12 @@ Proposed Library Change Specification
 
 This proposal requires making changes to the interface of ``template-haskell``.
 In this section we will purely focus on the changes to the interface.
-We will return to the implementation details in `Implementation plan <LINK!>`_
+We will return to the implementation details in `Implementation plan <#7implementation-plan>`_
 
 The interface of ``Language.Haskell.TH.Syntax`` (and ``Language.Haskell.TH``) will change from::
 
- -- Note: these is defined in ghc-internalGHC.Internal.TH.Syntax
- -- and only re-exported from template-haskell. They are wired-in defintions of GHC.
+ -- Note: these is defined in ghc-internal:GHC.Internal.TH.Syntax
+ -- and only re-exported from template-haskell. These are wired-in definitions of GHC.
 
  newtype Q a = Q { unQ :: forall m. Quasi m => m a }
 
@@ -86,8 +86,9 @@ The interface of ``Language.Haskell.TH.Syntax`` (and ``Language.Haskell.TH``) wi
 
 to::
 
- -- Note: Q is defined in ghc-internalGHC.Internal.TH.Syntax
+ -- Note: Q is defined in ghc-internal:GHC.Internal.TH.Syntax
  -- and only re-exported from template-haskell.
+ -- It is wired-in.
  newtype Q a -- Q is abstract or opaque
 
  -- Note: Quasi is now defined in template-haskell. It is no longer wired-in.
@@ -182,9 +183,9 @@ We would make the following changes in ``Language.Haskell.TH.Syntax``::
   runQ :: Quasi m => Q a -> m a
   runQ = qRun
 
-We would also alter the code for running splices in ``GHC.Tc.Gen.Splice`` and would construct a value of type ``MetaHandlers``.
+We would alter the code for running splices in ``GHC.Tc.Gen.Splice`` and would construct a value of type ``MetaHandlers`` using the existing implementations.
 
-Note that we can't provide a default method for ``qRecover`` as the monad appears in negative position.
+When defining ``Quasi Q``, note that we can't provide a default method for ``qRecover`` as the monad appears in negative position.
 
 Endorsements
 -------------
