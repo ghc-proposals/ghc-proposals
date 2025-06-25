@@ -42,16 +42,16 @@ The tables below demonstrate the new syntaxes enabled with the new extensions. W
       - **Desugared expression syntax**
     * - ``-XQualifiedNumbers``
       - ``Foo.1``
-      - ``Foo.fromNatural 1`` or ``Foo.fromInteger 1`` or ``Foo.fromRational 1``
+      - ``Foo.fromNumeric (1 :: Natural)``
     * - ``-XQualifiedNumbers``
       - ``Foo.(1)``
-      - ``Foo.fromNatural 1`` or ``Foo.fromInteger 1`` or ``Foo.fromRational 1``
+      - ``Foo.fromNumeric (1 :: Natural)``
     * - ``-XQualifiedNumbers``
       - ``Foo.(-1)``
-      - ``Foo.fromInteger (-1)`` or ``Foo.fromRational (-1)``
+      - ``Foo.fromNumeric (-1 :: Integer)``
     * - ``-XQualifiedNumbers``
       - ``Foo.(1.2)``
-      - ``Foo.fromRational 1.2``
+      - ``Foo.fromNumeric (1.2 :: Rational)``
     * - ``-XQualifiedStrings``
       - ``Foo."asdf"``
       - ``Foo.fromString "asdf"``
@@ -70,16 +70,16 @@ The tables below demonstrate the new syntaxes enabled with the new extensions. W
       - **Desugared ViewPattern**
     * - ``-XQualifiedNumbers``
       - ``Foo.1``
-      - ``Foo.FromNatural 1`` or ``Foo.FromInteger 1`` or ``Foo.FromRational 1``
+      - ``Foo.FromNumeric (1 :: Natural)``
     * - ``-XQualifiedNumbers``
       - ``Foo.(1)``
-      - ``Foo.FromNatural 1`` or ``Foo.FromInteger 1`` or ``Foo.FromRational 1``
+      - ``Foo.FromNumeric (1 :: Natural)``
     * - ``-XQualifiedNumbers``
       - ``Foo.(-1)``
-      - ``Foo.FromInteger (-1)`` or ``Foo.FromRational (-1)``
+      - ``Foo.FromNumeric (-1 :: Integer)``
     * - ``-XQualifiedNumbers``
       - ``Foo.(1.2)``
-      - ``Foo.FromRational 1.2``
+      - ``Foo.FromNumeric (1.2 :: Rational)``
     * - ``-XQualifiedStrings``
       - ``Foo."asdf"``
       - ``Foo.FromString "asdf"``
@@ -99,13 +99,15 @@ Notes:
 
 * Parentheses are required for negative integers and rationals, to avoid ambiguity, both in the lexer and for human readers. Parentheses are optional for positive integers.
 
-* Normally, ``Foo.10e6`` will desugar to ``Foo.fromRational 10e6``. If ``NumDecimals`` is enabled, ``Foo.10e6`` will desugar to the first of ``fromNatural``/``fromInteger``/``fromRational``.
+* ``Foo.10e6`` will desugar to ``Foo.fromNumeric (10e6 :: Natural)`` if ``NumDecimals`` is enabled, or ``Foo.fromNumeric (10e6 :: Rational)`` otherwise.
 
 * Multiline strings are desugared to single line strings first, then desugared as a qualified string literal.
 
 * Some literals are not supported yet (Chars, unboxed literals) due to lack of use-cases, but could be extended in the future.
 
-* Future work could be done to allow compile time logic, e.g. ``$Foo.1`` => ``$(Foo.fromInteger [|1|])``, but that is out of scope of this proposal.
+* Future work could be done to allow compile time logic, e.g. ``$Foo.1`` => ``$(Foo.fromNumeric [|1|])``, but that is out of scope of this proposal.
+
+* Future work could be done to allow list comprehensions, e.g. ``Foo.[x * 10 | x <- [1..10]]`` => ``[1..10] `Foo.listCompBind` \x -> Foo.listCompReturn (x * 10)``, but that is out of scope of this proposal.
 
 Parser
 ~~~~~~
@@ -147,6 +149,7 @@ We'll add the following constructors, to maintain backwards compatibility:
   QualListE ModuleName [Exp]
 
   QualStringL ModuleName String
+  QualNaturalL ModuleName Natural
   QualIntegerL ModuleName Integer
   QualRationalL ModuleName Rational
 
@@ -204,7 +207,13 @@ Scientific
 
 If you want to write ``BigDecimal`` literals (e.g. for tests), you have to use either the ``BigDecimal`` constructor or write a ``big = BigDecimal`` helper, but that's unsafe if accidentally called on a non-literal, as ``Scientific`` throws a runtime error if converting from a repeating decimal.
 
-With ``QualifiedNumbers``, you could write ``Big.123``, which guarantees that ``Big.fromRational`` is only called on literals (e.g. you could configure hlint to ban calling ``BigDecimal.fromRational`` directly and only be used via ``QualifiedNumbers``).
+With ``QualifiedNumbers``, you could write ``Big.123``, which guarantees that ``Big.fromNumeric`` is only called on literals (e.g. you could configure hlint to ban calling ``BigDecimal.fromNumeric`` directly and only be used via ``QualifiedNumbers``).
+
+::
+
+  -- only called on literals, can be used with any numeric literal: naturals, integers, rationals
+  fromNumeric :: Real a => a -> BigDecimal
+  fromNumeric = BigDecimal . realToFrac
 
 Positive-only literals
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -227,13 +236,17 @@ However, this check is hardcoded in the compiler for specific types, e.g. ``Natu
 
   UserId (-1) -- works
 
-With ``QualifiedNumbers``, you could just define ``fromNatural`` and not define ``fromInteger``:
+With ``QualifiedNumbers``, you could define ``fromNumeric`` only for ``Natural`` and not ``Integer``:
 
 ::
 
+  -- In UserId module
+  fromNumeric :: Natural -> UserId
+  fromNumeric = UserId
+
   UserId.123 -- works
 
-  UserId.(-1) -- error: UserId.fromInteger not defined
+  UserId.(-1) -- error: (-1) has type Integer, expected Natural
 
 ByteString
 ~~~~~~~~~~
@@ -350,8 +363,6 @@ Costs and Drawbacks
 Development and maintenance should be low effort, as the core implementation is in the renamer step, and typechecking would proceed as normal.
 
 The syntax is approachable for novice users and shouldn't be an extra barrier to understand.
-
-``COMPLETE`` is not possible in this proposal, since it's not possible to mark completeness with ``ViewPatterns``. A future proposal with TH (e.g. ``$Foo.123``) could generate patterns that would be recognized as complete, but that's out of scope of this proposal.
 
 Backward Compatibility
 ----------------------
