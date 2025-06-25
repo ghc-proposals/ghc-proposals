@@ -15,12 +15,11 @@ Splitting out stable interfaces from ``template-haskell``
 
 
 The ``template-haskell`` library exposes the user facing interfaces to Template Haskell (TH), GHC's metaprogramming facility.
-It is tightly coupled to GHC's internals.
-It is one of the libraries that come bundled with GHC. We call this being a `boot library`.
-Each release of GHC ships with a new major version of ``template-haskell``, which is the only version that is supported by that compiler.
 
-``template-haskell`` is used very widely in the ecosystem, including by many dependencies of the compiler itself.
-When a new version of GHC is released, a large number of packages have to raise their upper bounds on ``template-haskell``.
+Since template-haskell re-exports a diverse set of symbols from GHC's internals,
+in practice every GHC release comes with a new major version of the template-haskell package.
+Since template-haskell is used very widely in the ecosystem,
+a large number of packages have to raise their upper bounds on template-haskell in response to a GHC release.
 This is a large amount of work that is needlessly coupled to the release of GHC.
 
 This proposal aims to avoid this cycle of breaking changes to the ecosystem.
