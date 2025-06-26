@@ -60,7 +60,6 @@ The following table contains the language extension, the proposed categorization
 | FlexibleContexts           | Stable         | Stable                  |
 | FlexibleInstances          | Stable         | Stable                  |
 | ForeignFunctionInterface   | Stable         | Stable                  |
-| GADTs                      | Stable         | Stable                  |
 | GADTSyntax                 | Stable         | Stable                  |
 | GeneralizedNewtypeDeriving | Stable         | Stable                  |
 | HexFloatLiterals           | Stable         | Stable                  |
@@ -82,7 +81,6 @@ The following table contains the language extension, the proposed categorization
 | NumDecimals                | Stable         | Stable                  |
 | NumericUnderscores         | Stable         | Stable                  |
 | OverloadedLabels           | Stable         | Stable                  |
-| OverloadedLists            | Stable         | Stable                  |
 | ParallelListComp           | Stable         | Stable                  |
 | PatternGuards              | Stable         | Stable                  |
 | PatternSynonyms            | Stable         | Stable                  |
@@ -175,11 +173,13 @@ The following are the extensions that are uncategorized as of this proposal. The
 | DuplicateRecordFields   |
 | FieldSelectors          |
 | FunctionalDependencies  |
+| GADTs                   |
 | IncoherentInstances     |
 | LexicalNegation         |
 | ListTuplePuns           |
 | MonoLocalBinds          |
 | NegativeLiterals        |
+| OverloadedLists         |
 | OverloadedRecordDot     |
 | OverloadedStrings       |
 | PackageImports          |
