@@ -171,6 +171,7 @@ The following are the extensions that are uncategorized as of this proposal. The
 | AutoDeriveTypeable      |
 | DoAndIfThenElse         |
 | DuplicateRecordFields   |
+| ExplicitNamespaces      |
 | FieldSelectors          |
 | FunctionalDependencies  |
 | GADTs                   |
