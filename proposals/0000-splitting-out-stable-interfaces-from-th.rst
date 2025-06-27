@@ -32,7 +32,7 @@ We do not propose to remove from ``template-haskell`` these parts of the interfa
 Concretely, we propose introducing the following two libraries:
 
 * ``template-haskell-lift``, exposes the ``Lift`` typeclass and compatibility functions. Users who make use of the ``DerivingLift`` language extension only need to depend on this package in order to derive instances of ``Lift`` or manually give instances using ``TemplateHaskellQuotes``.
-* ``template-haskell-quasiquote`` exposes the ``Quasiquoter`` datatype, which allows libraries to expose their own custom quasiquoters.
+* ``template-haskell-quasiquoter`` exposes the ``Quasiquoter`` datatype, which allows libraries to expose their own custom quasiquoters.
 
 Motivation
 ----------
@@ -95,9 +95,9 @@ This is an important property for any stable package as it allows a user to upgr
 We plan to implement this by create compatibility shims using ``CPP`` or ``PatternSynonyms``.
 
 .. _advantages:
-Benefits of splitting out ``template-haskell-lift`` and ``template-haskell-quasiquote``
+Benefits of splitting out ``template-haskell-lift`` and ``template-haskell-quasiquoter``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Publishing ``template-haskell-lift`` and ``template-haskell-quasiquote`` will be beneficial both for GHC and the ecosystem.
+Publishing ``template-haskell-lift`` and ``template-haskell-quasiquoter`` will be beneficial both for GHC and the ecosystem.
 
 The biggest benefit is that library authors who are just deriving or using ``Lift`` instances or just exposing ``Quasiquoter``\s no longer need to depend on the entirety of ``template-haskell``.
 This can help avoid the sorts of dependency bounds propagation problems identified in the `GHC.X.Hackage proposal <https://github.com/bgamari/tech-proposals/blob/ghc-x-hackage/proposals/001-ghc-x-hackage.md>`_.
@@ -127,7 +127,7 @@ As of GHC-9.12, these have been `moved <https://gitlab.haskell.org/ghc/ghc/-/mer
 
 It should be possible to use, for instance ``CPP``, to make ``template-haskell`` compatible with multiple versions of GHC. But the large interface exposed by this package makes it difficult.
 
-On the other hand, the small interfaces exposed by ``template-haskell-lift`` and ``template-haskell-quasiquote`` are easier to make compatible with multiple versions of GHC.
+On the other hand, the small interfaces exposed by ``template-haskell-lift`` and ``template-haskell-quasiquoter`` are easier to make compatible with multiple versions of GHC.
 They rarely change and if they don't change between two versions of GHC, then we can accommodate both versions for free.
 If they do change, then it's likely that we can use ``CPP`` to expose a shim over GHC internals giving a consistent interface.
 
@@ -153,18 +153,18 @@ Yet, only having one of these directions is already helpful. ``template-haskell-
 
 In this section, we have argued that it is helpful to be able to upgrade boot libraries such as ``template-haskell`` independently of GHC.
 This allows reducing the time taken for a boot library major version bump to spread through the ecosystem, and it allows end-users to support a broad range of GHC versions without having to rely on ``CPP``.
-This is much more achievable for the smaller ``template-haskell-lift`` and ``template-haskell-quasiquote`` libraries than it would be for ``template-haskell``.
+This is much more achievable for the smaller ``template-haskell-lift`` and ``template-haskell-quasiquoter`` libraries than it would be for ``template-haskell``.
 But as we have seen, total independence isn't always possible even for these quite small interfaces. Sometimes changes to tightly coupled definitions are difficult to make both backwards and forwards compatible, but we still benefit from just one direction.
 
 
-Depending on boot libraries from ```template-haskell``
+Depending on boot libraries from ``template-haskell``
 ''''''''''''''''''''''''''''''''''''''''
 There is a more subtle benefit for the ``template-haskell`` package. Currently the wide usage of ``Lift`` instances greatly limits the possible dependencies of ``template-haskell``.
 For instance, ``template-haskell`` cannot depend on ``containers`` or ``filepath``, since these libraries depend on ``template-haskell``.
 But if these packages switch to depending on our new packages, then ``template-haskell`` could depend on them.
 Currently ``template-haskell`` must vendor a small portion of ``filepath`` and ``containers``, and that would no longer be necessary.
 
-Many boot packages depend on ``template-haskell``, but all of them only depend on it for the parts of the interface exposed by ``template-haskell-lift`` and ``template-haskell-quasiquote``.
+Many boot packages depend on ``template-haskell``, but all of them only depend on it for the parts of the interface exposed by ``template-haskell-lift`` and ``template-haskell-quasiquoter``.
 If we can convince their maintainers to depend on these packages instead, then GHC would no longer (transitively) depend on ``template-haskell``.
 This makes it possible for packages to depend on the ``ghc`` library at the same time as a version of ``template-haskell`` different to the one bundled with that GHC.
 
@@ -176,7 +176,7 @@ No changes to the language or the compiler are required for this proposal.
 Proposed Library Change Specification
 -------------------------------------
 
-We propose to publish two new libraries: ``template-haskell-lift`` and ``template-haskell-quasiquote``.
+We propose to publish two new libraries: ``template-haskell-lift`` and ``template-haskell-quasiquoter``.
 These will be shipped with GHC. So, they would be boot libraries, but wouldn't include any wired-in identifiers.
 In other words, they would behave as ``bytestring`` or ``containers``, not like ``ghc-internal``.
 
@@ -203,9 +203,9 @@ Their initial interfaces will be as follows:
     , liftIntCompat -- a utility for lifting an `Int` without causing issues when used with `OverloadedSyntax`
     )
 
-``template-haskell-quasiquote``::
+``template-haskell-quasiquoter``::
 
-   module TemplateHaskell.Quasiquoter
+   module TemplateHaskell.QuasiQuoter
     ( Q
     , Exp
     , Pat
@@ -302,6 +302,7 @@ So, their library might be built by an end-user with a version of GHC the mainta
 We could argue that the maintainer doesn't have a reason to be worried since GHC comes with strong `stability principles <../principles.rst>`_. Yet, these also have exceptions.
 
 Consider the following scenario:
+
 1. GHC-9.14 adds support to ``DeriveLift`` for ``GADT``\s.
 2. The maintainer adds ``DeriveLift`` instances for their ``GADT``\s.
 3. The GHC maintainers realize that there is a fundamental issue with this new feature and that it must be reverted in GHC-9.16.
@@ -312,14 +313,14 @@ Then whenever the class of datatypes supported by ``DeriveLift`` changed, we wou
 
 While we hold these to be valid concerns, we do not think expanding the interface of ``template-haskell-lift`` is the way to resolve them.
 This suggestion goes against our aim of decoupling ``template-haskell-lift`` from GHC.
-It is possible to shim over changes to the ``Lift`` interface in ``ghc-internal`` as we've outlined in :ref:`independence`.
+It is possible to shim over changes to the ``Lift`` interface in ``ghc-internal`` as we've outlined in `section 1.3.1 <#131upgrading-libraries-independently-of-ghc>`_.
 But it is not possible to shim over features implemented in the compiler.
 If the implementation of ``DeriveLift`` changed then we would be forced to have a sequence of versions of ``template-haskell-lift`` without either backwards- or forwards-compatibility.
 This would greatly limit the benefits of this proposal.
 
 We feel that it is reasonable that a library maintainer should be able to explicitly define which versions of GHC they support, but that this can be done orthogonally to this proposal.
 In fact, tackling this independently might lead to a more general solution.
-For instance, we could have a ``ghc-version`` package, which exports nothing but carries the version of GHC. We would have to allow it to be exempted from unused package warnings, but this seems doable.
+For instance, we could use ``ghc-experimental`` or create a new ``ghc-version`` package, which exports nothing but carries the version of GHC. We would have to allow it to be exempted from unused package warnings, but this seems doable.
 We could also explore a versioning scheme for language extensions and allow users to express bounds on them in ``.cabal`` files.
 
 Unresolved Questions
