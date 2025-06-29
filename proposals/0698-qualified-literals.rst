@@ -67,25 +67,25 @@ The tables below demonstrate the new syntaxes enabled with the new extensions. W
 
     * - **Extension**
       - **New pattern syntax**
-      - **Desugared ViewPattern**
+      - **Desugared pattern syntax**
     * - ``-XQualifiedNumbers``
       - ``Foo.1``
-      - ``Foo.FromNumeric (1 :: Natural)``
+      - ``((== Foo.fromNumeric (1 :: Natural)) -> True)``
     * - ``-XQualifiedNumbers``
       - ``Foo.(1)``
-      - ``Foo.FromNumeric (1 :: Natural)``
+      - ``((== Foo.fromNumeric (1 :: Natural)) -> True)``
     * - ``-XQualifiedNumbers``
       - ``Foo.(-1)``
-      - ``Foo.FromNumeric (-1 :: Integer)``
+      - ``((== Foo.fromNumeric (-1 :: Integer)) -> True)``
     * - ``-XQualifiedNumbers``
       - ``Foo.(1.2)``
-      - ``Foo.FromNumeric (1.2 :: Rational)``
+      - ``((== Foo.fromNumeric (1.2 :: Rational)) -> True)``
     * - ``-XQualifiedStrings``
       - ``Foo."asdf"``
-      - ``Foo.FromString "asdf"``
+      - ``((== Foo.fromString "asdf") -> True)``
     * - ``-XQualifiedStrings``
       - ``Foo."""asdf"""``
-      - ``Foo.FromString "asdf"``
+      - ``((== Foo.fromString "asdf") -> True)``
     * - ``-XQualifiedLists``
       - ``Foo.[x, _, y]``
       - ``Foo.FromListCons x (Foo.FromListCons _ (Foo.FromListCons y Foo.FromListNil))``
@@ -373,6 +373,18 @@ Furthermore, turning on the extension will generally not break existing code, as
 
 Alternatives
 ------------
+
+* Use PatternSynonyms for all the patterns, not just lists
+
+  * This makes defining the corresponding pattern for ``fromNumeric :: Real a => a -> Foo`` difficult
+
+* Use ViewPatterns for lists
+
+  * This prevents marking list patterns as COMPLETE
+
+* Avoid explicitly annotating type of numeric literals
+
+  * In the scenario where you only want to allow natural numbers, you could implement ``fromNumeric`` to take in a ``Natural``, but you'd still be relying on GHC to warn that ``-1`` is an overflowed literal.
 
 Unresolved Questions
 --------------------
