@@ -270,7 +270,7 @@ This risk would be diminished if the majority of users used both the ``Lift`` an
 so it would be equivalent to updating the bounds for ``template-haskell-stable``. But, this is not the case. The vast majority of the packages that depend on this interface only use ``Lift``.
 Some use only ``QuasiQuoter``, and others use both.
 
-We also be sceptical of a ``template-haskell-stable`` package because stability is not an essential property of an interface.
+We should also be sceptical of a ``template-haskell-stable`` package because stability is not an essential property of an interface.
 We can look back on the *past* stability of these interfaces, but we cannot know their *future* stability.
 Part of the motivation of this proposal is to make it easier to accommodate future changes to these interfaces.
 Our aim here isn't to split these interfaces out in order to fix them in stone, but to make it easier for end-users to cope with future changes,
