@@ -1,22 +1,22 @@
-Notes on reStructuredText - delete this section before submitting
-==================================================================
+.. Notes on reStructuredText - delete this section before submitting
+.. ==================================================================
 
-The proposals are submitted in reStructuredText format.  To get inline code, enclose text in double backticks, ``like this``.  To get block code, use a double colon and indent by at least one space
+.. The proposals are submitted in reStructuredText format.  To get inline code, enclose text in double backticks, ``like this``.  To get block code, use a double colon and indent by at least one space
 
-::
+.. ::
 
- like this
- and
+..  like this
+..  and
 
- this too
+..  this too
 
-To get hyperlinks, use backticks, angle brackets, and an underscore `like this <http://www.haskell.org/>`_.
+.. To get hyperlinks, use backticks, angle brackets, and an underscore `like this <http://www.haskell.org/>`_.
 
 
-Proposal title
+Shared Class Methods
 ==============
 
-.. author:: Your name
+.. author:: Benjamin
 .. date-accepted:: Leave blank. This will be filled in when the proposal is accepted.
 .. ticket-url:: Leave blank. This will eventually be filled with the
                 ticket URL which will track the progress of the
@@ -30,16 +30,98 @@ Proposal title
 .. sectnum::
 .. contents::
 
-Here you should write a short abstract motivating and briefly summarizing the proposed change.
+.. Here you should write a short abstract motivating and briefly summarizing the proposed change.
+
+Extending or splitting typeclasses in Haskell is fraught with neccessary changing
+of boilerplate. Further, writing heierachies of typeclasses in the first place
+can require a lot of unneeded boilerplate. This proposal would introduce a new
+extension (which would eventually be turned on in a future edition) that allows
+methods from superclasses to be defined in their subclasses, resulting in less
+breakage from splitting typeclasses and also less boilerplate when writing classes.
 
 
 Motivation
 ----------
-Give a strong reason for why the community needs this change. Describe the use
-case as clearly as possible and give an example. Explain how the status quo is
-insufficient or not ideal.
+There are two main motivating examples, one that demonstrates future application
+and another that can be realised now.
 
-A good Motivation section is often driven by examples and real-world scenarios.
+Future
+^^^^^^
+We have the existing typeclass ``Alternative``, defined as follows for ``Maybe``
+(with Alternative):
+::
+  class Applicative f => Alternative f where
+    empty :: f a
+    (<|>) :: f a -> f a -> f a
+
+    some :: f a -> f [a]
+    many :: f a -> f [a]
+
+  instance Alternative Maybe where
+    empty = Nothing
+    Nothing <|> r = r
+    l       <|> _ = l
+
+If we were to split ``Alternative`` into a non-empty ``Alt`` (as proposed
+`here <https://github.com/haskell/core-libraries-committee/issues/272>`_), we
+could change ``Alternative`` to the following:
+::
+  class Applicative f => Alt f where
+    (<|>) :: f a -> f a -> f a
+
+    some :: f a -> f [a]
+    many :: f a -> f [a]
+
+  class Alt f => Alternative f where
+    empty :: f a
+
+  instance Alternative Maybe where
+    empty = Nothing
+    Nothing <|> r = r
+    l       <|> _ = l
+
+Note that the superclass's method ``<|>`` was defined in a subclass, meaning that
+despite there being a change in how the classes were defined, the implementations
+can be defined as expected. This lets us be greatly forward compatible with our
+classes and instances.
+
+Present
+^^^^^^^
+
+We can reduce on the amount of boilerplate needed to define different classes.
+
+Here is a simple example before and after for some arbitrary ``Monad`` transformer
+``MT``, for which we have ``pureM :: Monad m => a -> MT m a`` and ``bindM :: Monad m => MT m a -> (a -> MT m b) -> MT m b`` predefined.
+
+Before:
+::
+  instance Monad m => Functor (MT m) where
+    fmap = liftM
+
+  instance Monad m => Applicative (MT m) where
+    pure = pureM
+    (<*>) = ap
+
+  instance Monad m => Monad (MT m) where
+    (>>=) = bindM
+
+And after:
+::
+  instance Monad m => Monad (MT m) where
+    fmap = liftM
+    pure = pureM
+    (<*>) = ap
+    (>>=) = bindM
+
+This style can greatly reduce code-reading overhead, because instead of three
+different, possibly disparate instance definitions, there is one that contains
+all the methods for the parent classes.
+
+.. Give a strong reason for why the community needs this change. Describe the use
+.. case as clearly as possible and give an example. Explain how the status quo is
+.. insufficient or not ideal.
+
+.. A good Motivation section is often driven by examples and real-world scenarios.
 
 
 Proposed Change Specification
@@ -148,13 +230,13 @@ How well does your proposal meet the stability principles described in our
 Will your proposed change cause any existing programs to change behaviour or
 stop working? Assess the expected impact on existing code on the following scale:
 
-0. No breakage
-1. Breakage only in extremely rare cases (e.g. for specifically-constructed
+1. No breakage
+2. Breakage only in extremely rare cases (e.g. for specifically-constructed
    examples, but probably no packages published in the Hackage package repository)
-2. Breakage in rare cases (e.g. a few Hackage packages may break, but probably
+3. Breakage in rare cases (e.g. a few Hackage packages may break, but probably
    no packages included in recent Stackage package sets)
-3. Breakage in uncommon cases (e.g. a few Stackage packages may break)
-4. Breakage in common cases
+4. Breakage in uncommon cases (e.g. a few Stackage packages may break)
+5. Breakage in common cases
 
 (For the purposes of this assessment, GHC emitting new warnings is not
 considered to be a breaking change, i.e. packages are assumed not to use
