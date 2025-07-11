@@ -192,7 +192,7 @@ Their initial interfaces will be as follows:
 
 ``template-haskell-lift``::
 
-   module TemplateHaskell.Lift
+   module Language.Haskell.TH.Lift
     ( Q
     , Code
     , Quote
@@ -205,7 +205,7 @@ Their initial interfaces will be as follows:
 
 ``template-haskell-quasiquoter``::
 
-   module TemplateHaskell.QuasiQuoter
+   module Language.Haskell.TH.QuasiQuoter
     ( Q
     , Exp
     , Pat
@@ -213,9 +213,6 @@ Their initial interfaces will be as follows:
     , Dec
     , QuasiQuoter (QuasiQuoter, quoteExp, quotePat, quoteType, quoteDec)
     )
-
-Note that these modules are in the ``TemplateHaskell.`` namespace rather than the ``Language.Haskell.TH.`` namespace.
-The idea to use this less verbose namespace for the new stable interfaces is thanks to Adam Gundry.
 
 Effect and Interactions
 -----------------------
