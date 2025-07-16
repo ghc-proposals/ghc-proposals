@@ -560,6 +560,35 @@ For example, the following is rejected::
   module M (oops) where  -- Error: oops imported at level -1 but used at level 0
     import splice N ( oops )
 
+A binding imported at multiple levels can be exported if available at level 0::
+
+  module M (oops) where -- Accepted: oops is available at level 0.
+    import splice N ( oops )
+    import N ( oops )
+
+Implicitly exported identifiers are also level checked::
+
+  {-# LANGUAGE ExplicitLevelImports #-}
+
+  module M (T(..)) where  -- Error: oops imported at level -1 but used at level 0
+    import splice N ( T(t) ) -- Selector `t`, also imported to splice level
+    import N (T) -- Only T, not the children imported into level 0.
+
+A module export only exports bindings from that module which are at level 0::
+
+  {-# LANGUAGE ExplicitLevelImports #-}
+
+  module M (module N) where  -- Only `ok` is exported, since `oops` is imported at -1
+    import splice N ( oops )
+    import N ( ok )
+
+A module export which doesn't export any bindings issues a warning::
+
+  {-# LANGUAGE ExplicitLevelImports #-}
+
+  module M (module N) where  -- Warning: module N doesn't export any identifiers
+    import splice N ( oops )
+
 
 Class instance resolution
 #########################
