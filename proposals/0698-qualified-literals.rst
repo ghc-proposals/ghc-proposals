@@ -24,90 +24,131 @@ These extensions allow extensibility of string and list literals, but there's cu
 
 The initial motivation for this came from `String interpolation <https://github.com/ghc-proposals/ghc-proposals/pull/570>`_, where this syntax could provide a mechanism similar to Javascript's `tagged template literals <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals#tagged_templates>`_. But it applies more generally to other literals as well.
 
-Semi-related to https://github.com/ghc-proposals/ghc-proposals/issues/438
+Semi-related to https://github.com/ghc-proposals/ghc-proposals/issues/438.
 
 Proposed Change Specification
 -----------------------------
 
-High-level Overview
-~~~~~~~~~~~~~~~~~~~
+Introduce ``-XQualifiedNumbers``, ``-XQualifiedStrings``, and ``-XQualifiedLists`` that desugar literals syntax to function calls in a similar way to ``-XQualifiedDo`` (`docs <https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/qualified_do.html>`_, `proposal <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0216-qualified-do.rst>`_).
 
-The tables below demonstrate the new syntaxes enabled with the new extensions. When multiple desugarings are available, the first identifier that exists in the module is used.
+General comments:
 
-.. list-table::
-    :align: left
+* As long as the desugared expressions/patterns type check, users are free to define these functions however they want.
 
-    * - **Extension**
-      - **New expression syntax**
-      - **Desugared expression syntax**
-    * - ``-XQualifiedNumbers``
-      - ``Foo.1``
-      - ``Foo.fromNumeric (1 :: Natural)``
-    * - ``-XQualifiedNumbers``
-      - ``Foo.(1)``
-      - ``Foo.fromNumeric (1 :: Natural)``
-    * - ``-XQualifiedNumbers``
-      - ``Foo.(-1)``
-      - ``Foo.fromNumeric (-1 :: Integer)``
-    * - ``-XQualifiedNumbers``
-      - ``Foo.(1.2)``
-      - ``Foo.fromNumeric (1.2 :: Rational)``
-    * - ``-XQualifiedStrings``
-      - ``Foo."asdf"``
-      - ``Foo.fromString "asdf"``
-    * - ``-XQualifiedStrings``
-      - ``Foo."""asdf"""``
-      - ``Foo.fromString "asdf"``
-    * - ``-XQualifiedLists``
-      - ``Foo.[x, y]``
-      - ``Foo.buildList (\cons nil -> x `cons` (y `cons` nil))``
-
-.. list-table::
-    :align: left
-
-    * - **Extension**
-      - **New pattern syntax**
-      - **Desugared pattern syntax**
-    * - ``-XQualifiedNumbers``
-      - ``Foo.1``
-      - ``((== Foo.fromNumeric (1 :: Natural)) -> True)``
-    * - ``-XQualifiedNumbers``
-      - ``Foo.(1)``
-      - ``((== Foo.fromNumeric (1 :: Natural)) -> True)``
-    * - ``-XQualifiedNumbers``
-      - ``Foo.(-1)``
-      - ``((== Foo.fromNumeric (-1 :: Integer)) -> True)``
-    * - ``-XQualifiedNumbers``
-      - ``Foo.(1.2)``
-      - ``((== Foo.fromNumeric (1.2 :: Rational)) -> True)``
-    * - ``-XQualifiedStrings``
-      - ``Foo."asdf"``
-      - ``((== Foo.fromString "asdf") -> True)``
-    * - ``-XQualifiedStrings``
-      - ``Foo."""asdf"""``
-      - ``((== Foo.fromString "asdf") -> True)``
-    * - ``-XQualifiedLists``
-      - ``Foo.[x, _, y]``
-      - ``Foo.FromListCons x (Foo.FromListCons _ (Foo.FromListCons y Foo.FromListNil))``
-    * - ``-XQualifiedLists``
-      - ``Foo.(x : xs)``
-      - ``Foo.FromListCons x xs``
-
-As long as the desugared expressions/patterns type check, users are free to define these functions however they want.
-
-Notes:
-
-* Parentheses are required for negative integers and rationals, to avoid ambiguity, both in the lexer and for human readers. Parentheses are optional for positive integers.
-
-* ``Foo.10e6`` will desugar to ``Foo.fromNumeric (10e6 :: Natural)`` if ``NumDecimals`` is enabled, or ``Foo.fromNumeric (10e6 :: Rational)`` otherwise.
-
-* Multiline strings are desugared to single line strings first, then desugared as a qualified string literal.
+* No whitespace is allowed between the ``.`` and the module name / literal.
 
 * Some literals are not supported yet (Chars, unboxed literals) due to lack of use-cases, but could be extended in the future.
 
 * Future work could be done to allow compile time logic, e.g. ``$Foo.1`` => ``$(Foo.fromNumeric [|1|])``, but that is out of scope of this proposal.
 
-* Future work could be done to allow list comprehensions, e.g. ``Foo.[x * 10 | x <- [1..10]]`` => ``[1..10] `Foo.listCompBind` \x -> Foo.listCompReturn (x * 10)``, but that is out of scope of this proposal.
+QualifiedNumbers
+~~~~~~~~~~~~~~~~
+
+With ``-XQualifiedNumbers``, we gain the following syntaxes:
+
+.. list-table::
+    :align: left
+
+    * - **New expression syntax**
+      - **Desugared expression syntax**
+    * - ``Foo.1``
+      - ``Foo.fromNumeric (1 :: Natural)``
+    * - ``Foo.(1)``
+      - ``Foo.fromNumeric (1 :: Natural)``
+    * - ``Foo.(-1)``
+      - ``Foo.fromNumeric (-1 :: Integer)``
+    * - ``Foo.(1.2)``
+      - ``Foo.fromNumeric (1.2 :: Rational)``
+
+.. list-table::
+    :align: left
+
+    * - **New pattern syntax**
+      - **Desugared pattern syntax**
+    * - ``Foo.1``
+      - ``((== Foo.fromNumeric (1 :: Natural)) -> True)``
+    * - ``Foo.(1)``
+      - ``((== Foo.fromNumeric (1 :: Natural)) -> True)``
+    * - ``Foo.(-1)``
+      - ``((== Foo.fromNumeric (-1 :: Integer)) -> True)``
+    * - ``Foo.(1.2)``
+      - ``((== Foo.fromNumeric (1.2 :: Rational)) -> True)``
+
+We use one ``fromNumeric`` function to simplify implementation for any numeric types. Use-cases requiring different implementations for different types may use a type class with instances for ``Natural``, ``Integer``, and/or ``Rational``. See *Section 4.3 Multiple numeric types* for examples.
+
+We distinguish between ``Natural`` and ``Integer`` so that use-cases that want non-negative guarantees can do so. See *Section 4.4 Positive-only literal* for an example.
+
+Parentheses are required for negative integers and rationals, to avoid ambiguity, both in the lexer and for human readers. Parentheses are optional for positive integers.
+
+``Foo.10e6`` will desugar to ``Foo.fromNumeric (10e6 :: Natural)`` if ``NumDecimals`` is enabled, or ``Foo.fromNumeric (10e6 :: Rational)`` otherwise.
+
+QualifiedStrings
+~~~~~~~~~~~~~~~~
+
+With ``-XQualifiedStrings``, we gain the following syntaxes:
+
+.. list-table::
+    :align: left
+
+    * - **New expression syntax**
+      - **Desugared expression syntax**
+    * - ``Foo."asdf"``
+      - ``Foo.fromString "asdf"``
+    * - ``Foo."""asdf"""``
+      - ``Foo.fromString "asdf"``
+
+.. list-table::
+    :align: left
+
+    * - **New pattern syntax**
+      - **Desugared pattern syntax**
+    * - ``Foo."asdf"``
+      - ``((== Foo.fromString "asdf") -> True)``
+    * - ``Foo."""asdf"""``
+      - ``((== Foo.fromString "asdf") -> True)``
+
+Multiline strings are desugared to single line strings first, then desugared as a qualified string literal. See `Multiline Strings <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0569-multiline-strings.rst>`_ for more information.
+
+QualifiedLists
+~~~~~~~~~~~~~~
+
+With ``-XQualifiedLists``, we gain the following syntaxes:
+
+.. list-table::
+    :align: left
+
+    * - **New expression syntax**
+      - **Desugared expression syntax**
+    * - ``Foo.[]``
+      - ``Foo.buildList (\cons nil -> nil)``
+    * - ``Foo.[x, y]``
+      - ``Foo.buildList (\cons nil -> x `cons` (y `cons` nil))``
+    * - ``Foo.[x ..]``
+      - ``Foo.buildList (Foo.enumFrom x)``
+    * - ``Foo.[x, y ..]``
+      - ``Foo.buildList (Foo.enumFromThen x y)``
+    * - ``Foo.[x .. y]``
+      - ``Foo.buildList (Foo.enumFromTo x y)``
+    * - ``Foo.[x, y .. z]``
+      - ``Foo.buildList (Foo.enumFromThenTo x y z)``
+
+.. list-table::
+    :align: left
+
+    * - **New pattern syntax**
+      - **Desugared pattern syntax**
+    * - ``Foo.[x, _, y]``
+      - ``Foo.FromListCons x (Foo.FromListCons _ (Foo.FromListCons y Foo.FromListNil))``
+    * - ``x Foo.: y``
+      - ``Foo.FromListCons x y``
+
+One might wonder why this doesn't align more closely with the interface of ``-XOverloadedLists``, e.g. ``Foo.fromListN 3 [x, y, z]``. The reason is to avoid the intermediate list, which would need to typecheck as a list. Similar reason for defining new ``enumFrom`` functions instead of reusing Prelude's. See *Section 4.6 Heterogeneous Lists* for a use-case.
+
+We also decide to do ``Foo.buildList`` instead of something like ``Foo.fromList (x `Foo.cons` Foo.nil)`` so that there's one definition to jump to (e.g. with IDE integrations) instead of three.
+
+To use as patterns, the implementor should define ``FromListCons`` and ``FromListNil`` pattern synonyms, typically with the ``COMPLETE`` pragma specified. We choose to do this instead of ``toList -> [x, _, z]`` because that would also disallow heterogeneous lists.
+
+Future work could be done to allow list comprehensions, e.g. ``Foo.[x * 10 | x <- [1..10]]`` => ``[1..10] `Foo.listCompBind` \x -> Foo.listCompReturn (x * 10)``, but that is out of scope of this proposal.
 
 Parser
 ~~~~~~
@@ -215,6 +256,44 @@ With ``QualifiedNumbers``, you could write ``Big.123``, which guarantees that ``
   fromNumeric :: Real a => a -> BigDecimal
   fromNumeric = BigDecimal . realToFrac
 
+Multiple numeric types
+~~~~~~~~~~~~~~~~~~~~~~
+
+Here's an example of an implementation that's generic to all three numeric types:
+
+::
+
+  module StringInc (fromNumeric) where
+
+  fromNumeric :: (Num a, Show a) => a -> String
+  fromNumeric x = "StringInc (" ++ show (x + 1) ++ ")"
+
+* ``StringInc.10`` => ``"StringInc (11)"``
+* ``StringInc.(-10)`` => ``"StringInc (-9)"``
+* ``StringInc.(10.5)`` => ``"StringInc (23 % 2)"``
+
+Here's an example of an implementation that's different for each numeric type:
+
+::
+
+  module MyMod (fromNumeric) where
+
+  class Impl a where
+    fromNumeric :: a -> String
+
+  instance Impl Natural where
+    fromNumeric n = "NAT:" ++ show n
+
+  instance Impl Integer where
+    fromNumeric n = "NEGATIVE:" ++ show n
+
+  instance Impl Rational where
+    fromNumeric n = "FLOAT:" ++ show (realToFrac n :: Double)
+
+* ``MyMod.10`` => ``"NAT:10"``
+* ``MyMod.(-10)`` => ``"NEGATIVE:-10"``
+* ``MyMod.(10.5)`` => ``"FLOAT:10.5"``
+
 Positive-only literals
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -247,6 +326,8 @@ With ``QualifiedNumbers``, you could define ``fromNumeric`` only for ``Natural``
   UserId.123 -- works
 
   UserId.(-1) -- error: (-1) has type Integer, expected Natural
+
+See https://github.com/ghc-proposals/ghc-proposals/issues/438 for more details.
 
 ByteString
 ~~~~~~~~~~
@@ -320,7 +401,7 @@ Users could then do
   case hlist of
     HList.[Just True, _, Nothing] -> _
     HList.[_, Just 1, Nothing] -> _
-    HList.(Just _ : _) -> _
+    Just _ HList.: _ -> _
 
 Effect and Interactions
 -----------------------

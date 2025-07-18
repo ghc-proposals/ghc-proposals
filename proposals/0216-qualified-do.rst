@@ -52,7 +52,7 @@ When ``-XQualifiedDo`` is activated, the syntax of the ``do`` notation is change
 
   <lexp> ⟶ [modid.]do
 
-where ``modid`` stands for some module name.
+where ``modid`` stands for some module name. There is no whitespace allowed between the ``.`` and the module name / ``do`` keyword.
 
 The additional module name is called the qualifier of the do-expression.
 
