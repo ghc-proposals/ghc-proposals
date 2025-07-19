@@ -18,13 +18,76 @@ This proposal proposes extending ``-XQualifiedDo`` to literals, to enable more e
 Motivation
 ----------
 
-``OverloadedStrings`` and ``OverloadedLists`` are useful for writing normal string/list syntax that get desugared to non-built-in types. However, they do this via typeclasses, which inherits issues like type inference ambiguity. The extensions are also enabled globally, so if you turn it on, all string literals become overloaded, even if you only want specific locations to be overloaded. It's possible these issues are one reason why these extensions, despite being in GHC for a long time, are not defaults in GHC202X language editions. Furthermore, they could provide even more flexibility; one note in the original ``OverloadedLists`` `design <https://gitlab.haskell.org/ghc/ghc/-/wikis/overloaded-lists>`_ mentions the inability to support heterogeneous lists.
+Problems with Type Class-driven overloading
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-These extensions allow extensibility of string and list literals, but there's currently no option to allow extending other literals, like numeric literals. Because the ``fromInteger`` function is a part of ``Num``, there's no way to overload numeric literals without providing a specification for all the ``Num`` operations. Even if we broke out ``fromInteger`` into a separate class, we still inherit the same typeclass issues as overloaded strings/lists.
+Haskell98 numeric literals, ``OverloadedLists``, and ``OverloadedStrings`` all work by desugaring to a type-class-overloaded function. That leads to certain general shortcomings:
 
-The initial motivation for this came from `String interpolation <https://github.com/ghc-proposals/ghc-proposals/pull/570>`_, where this syntax could provide a mechanism similar to Javascript's `tagged template literals <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals#tagged_templates>`_. But it applies more generally to other literals as well.
+* They are module-wide settings
 
-Semi-related to https://github.com/ghc-proposals/ghc-proposals/issues/438.
+  * Anecdotally, people would rather avoid ``OverloadedLists`` and ``OverloadedStrings`` than deal with overloaded lists/strings in the entire module.
+
+  * It's possible that this is one reason these extensions aren't defaults in GHC202X language editions, despite being in GHC for a long time.
+
+* Type inference ambiguity.
+
+  * Consider the following code:
+
+    ::
+
+      output :: IsString s => s -> IO ()
+
+      main = do
+        output "hello"
+        output "world"
+
+        -- output $ T.replace " " "_" input
+
+    This originally works with no extensions, due to the string literals being typed to concrete ``String``. But say the developer wants to add a call to ``T.replace`` and use ``Text`` literals; adding ``OverloadedStrings`` would cause ambiguity to the existing locations because they are now no longer concretely ``String``.
+
+    This is less of an issue with numeric literals due to defaulting, but that still causes compilation errors with ``-Wall -Werror``.
+
+This proposal would allow using a module qualifier to say precisely which function to desugar to, rather than using type classes, in a similar manner as ``-XQualifiedDo``. This would allow writing the previous code as
+
+::
+
+  {-# LANGUAGE QualifiedStrings #-}
+
+  main = do
+    output "hello"
+    output "world"
+
+    output $ T.replace T." " T."_" input
+
+The existing locations would continue working as ``String``, while the new line would unambiguously desugar to ``T.pack " "``.
+
+Inability to distinguish natural numbers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In Haskell98, ``13`` desugars to ``fromInteger 13`` and ``2.7`` desugars to ``fromRational 2.7``. If a type ``T`` does not wish to support rationals, one could simply fail to provide an instance for ``Fractional T``, then ``fromRational 2.7 :: T`` will be statically rejected. But if ``T`` does not want to support negative integers, there is no way to reject it statically.
+
+This proposal would desugar natural numbers separately from negative integers so that implementations that wish to distinguish between the two (e.g. support only natural numbers) may do so.
+
+Related: https://github.com/ghc-proposals/ghc-proposals/issues/438.
+
+Inability to use heterogeneous lists
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+With ``-XOverloadedLists`` we can never write the literal ``[4, "foo", True]``, becuase that desugars to ``fromList [4, "foo", True]`` which is ill-typed regardless of ``fromList``. That is annoyingly restrictive, because with heterogeneous lists, it's perfectly fine to write
+
+::
+
+  4 `HCons` "foo" `HCons` True `HCons` HNil :: HList [Int, String, Bool]
+
+and it would be convenient to use list literals instead. This was even explicitly listed as a restriction in the original ``OverloadedLists`` `design <https://gitlab.haskell.org/ghc/ghc/-/wikis/overloaded-lists>`_.
+
+This proposal would desugar list literals to a build-like form instead, so that ``M.[4, "foo", True]`` desugars to
+
+::
+
+  M.buildList (\cons nil -> 4 `cons` ("foo" `cons` (True `cons` nil)))
+
+For a suitable ``M.buildList``, this is enough to support heterogenous list literals: see *Section 4.6 Heterogeneous Lists*.
 
 Proposed Change Specification
 -----------------------------
@@ -403,6 +466,30 @@ Users could then do
     HList.[_, Just 1, Nothing] -> _
     Just _ HList.: _ -> _
 
+ByteArray
+~~~~~~~~~
+
+Example of a ``ByteArray`` implementation, which requires knowing the length of the list in advance.
+
+::
+
+  type Builder s = (Int -> MutableByteArray s -> ST s (), Int)
+
+  buildList ::
+    forall a. Prim a =>
+    ( forall s.
+      (a -> Builder s -> Builder s)
+      -> Builder s
+      -> Builder s
+    ) -> ByteArray
+  buildList f = let (go, n) = f cons nil in createByteArray (n * sizeOfType @a) (go 0)
+    where
+      nil :: Builder s
+      nil = (\_ _ -> pure (), 0)
+
+      cons :: Prim a => a -> Builder s -> Builder s
+      cons x (go, n) = (\i arr -> writeByteArray arr i x >> go (i + 1) arr, n + 1)
+
 Effect and Interactions
 -----------------------
 
@@ -435,8 +522,7 @@ Interactions with other extensions
 
 * `Allow arbitrary identifiers as fields in OverloadedRecordDot <https://github.com/ghc-proposals/ghc-proposals/pull/668>`_ has similar syntax to the proposed qualified string literal, but as ``Foo.bar`` is parsed as a qualified identifier even with OverloadedRecordDot, it makes sense that ``Foo."bar"`` is also parsed as a qualified literal.
 
-* `Allow native string interpolation syntax <https://github.com/ghc-proposals/ghc-proposals/pull/570>`_ proposes adding string interpolation syntax with ``s"..."``. If both proposals are accepted, you could have qualified string interpolations with ``Foo.s"..."``. See the other proposal for more details.
-
+* `Allow native string interpolation syntax <https://github.com/ghc-proposals/ghc-proposals/pull/570>`_ proposes adding string interpolation syntax with ``s"..."``. If both proposals are accepted, this syntax could provide a mechanism similar to Javascript's `tagged template literals <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals#tagged_templates>`_. See the other proposal for more details.
 
 Costs and Drawbacks
 -------------------
@@ -465,7 +551,7 @@ Alternatives
 
 * Avoid explicitly annotating type of numeric literals
 
-  * In the scenario where you only want to allow natural numbers, you could implement ``fromNumeric`` to take in a ``Natural``, but you'd still be relying on GHC to warn that ``-1`` is an overflowed literal.
+  * In the scenario where you only want to allow natural numbers, you could implement ``fromNumeric`` to take in a ``Natural``, but you'd still be relying on compiler support to warn that ``-1`` is an overflowed literal.
 
 Unresolved Questions
 --------------------
