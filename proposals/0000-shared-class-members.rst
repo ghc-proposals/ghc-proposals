@@ -13,7 +13,7 @@
 .. To get hyperlinks, use backticks, angle brackets, and an underscore `like this <http://www.haskell.org/>`_.
 
 
-Shared Class Methods
+Shared Class Members
 ====================
 
 .. author:: Benjamin
@@ -36,7 +36,7 @@ Extending or splitting typeclasses in Haskell is fraught with necessary changing
 of boilerplate. Further, writing hierarchies of typeclasses in the first place
 can require a lot of unneeded boilerplate. This proposal would introduce a new
 extension (which would eventually be turned on in a future edition) that allows
-methods from superclasses to be defined in their subclasses, resulting in less
+members from superclasses to be defined in their subclasses, resulting in less
 breakage from splitting typeclasses and also less boilerplate when writing classes.
 
 
@@ -68,27 +68,31 @@ to work well in all cases.
 Proposed Change Specification
 -----------------------------
 
-We add an extension ``SharedClassMethods`` which enables the following behaviour.
+We add an extension ``SharedClassMembers`` which enables the following behaviour.
 By default this extension should be enabled, or brought into a future language
 edition.
 
+As with `intrinsic typeclasses <https://gitlab.haskell.org/ghc/ghc/-/wikis/intrinsic-superclasses>`_
+we will use the terminology "members" instead of "methods" so we can talk about
+associated types and associated data as well.
+
 When an instance for a class ``C`` is declared for type ``D``, with superclass
-``SA``, the methods of ``SA`` can be defined in the instance declaration for ``C``
-as long as there are no other definitions for those methods for type ``D``. This
+``SA``, the members of ``SA`` can be defined in the instance declaration for ``C``
+as long as there are no other definitions for those members for type ``D``. This
 applies even for superclasses of superclasses, but only for superclasses of the
-class itself, not additional class constraints of the instance. All methods for
+class itself, not additional class constraints of the instance. All members for
 the superclass need to be defined in the same module (and likely the same stage).
 
-Additionally, the methods of ``S`` can be declared in multiple different instance
-blocks, whether that is child classes or blocks of ``S``. All methods of the class
+Additionally, the members of ``S`` can be declared in multiple different instance
+blocks, whether that is child classes or blocks of ``S``. All members of the class
 must have the same constraints on them, and be defined for exactly the same type.
-Each method of that class must also be declared exactly once. There should at most
+Each member of that class must also be declared exactly once. There should at most
 one instance declaration of the superclass.
 
-Within an instance declaration, a given named method can only be named once. If
-a superclass shares method names with the current class, you cannot declare the
-superclass's shared method names in the same instance declaration. The current
-class's methods will always take priority.
+Within an instance declaration, a given named member can only be named once. If
+a superclass shares member names with the current class, you cannot declare the
+superclass's shared member names in the same instance declaration. The current
+class's members will always take priority.
 
 General example
 ^^^^^^^^^^^^^^^
@@ -130,18 +134,18 @@ Interactions with existing extensions
 """""""""""""""""""""""""
 
 If the superclass is defined on exactly one of the parameters, then the superclass's
-methods can be defined for that parameter. Otherwise we fail out.
+members can be defined for that parameter. Otherwise we fail out.
 
 ``UndecidableSuperClasses``
 """""""""""""""""""""""""""
 
-If a class is recursive, you will not be able to define methods for a parent
+If a class is recursive, you will not be able to define members for a parent
 typeclass because the names will conflict, so in this case you'd get an error
-saying that the same method has been declared multiple times.
+saying that the same member has been declared multiple times.
 
-If a superclass has different methods, then you'll be able to declare that
-superclass's methods; if that superclass has the current class as a parent, you
-won't be able to declare the superclass's parent class's methods in the current
+If a superclass has different members, then you'll be able to declare that
+superclass's members; if that superclass has the current class as a parent, you
+won't be able to declare the superclass's parent class's members in the current
 instance.
 
 ``DefaultSignatures``
@@ -153,14 +157,14 @@ Superclass methods will not be "defaultable" from a child class's definition.
 ``FlexibleInstances``
 """""""""""""""""""""
 
-The type that the superclass methods are declared on must be the same in all cases,
+The type that the superclass members are declared on must be the same in all cases,
 so additional type options don't present issues.
 
 ``UndecidableInstances``
 """"""""""""""""""""""""
 
 Additional constraints on instances do not add additional superclasses which can
-have methods defined for them.
+have members defined for them.
 
 Other extensions
 """"""""""""""""
@@ -297,7 +301,7 @@ And after:
 
 This style can greatly reduce code-reading overhead, because instead of three
 different, possibly disparate instance definitions, there is one that contains
-all the methods for the parent classes.
+all the members for the parent classes.
 
 Effect and Interactions
 -----------------------
@@ -318,13 +322,13 @@ to now compile.
 Costs and Drawbacks
 -------------------
 This extension can complicate instance definitions, and may make it unclear where
-a method originates from; in the above example with the ``Monad`` hierarchy,
+a member originates from; in the above example with the ``Monad`` hierarchy,
 ``fmap`` could be a member of ``Monad``, ``Applicative`` or ``Functor``, which
 could be confusing to a novice.
 
-Further, allowing users to define different methods
-of a class scatted across a module seems like it could result in bad practices,
-but I find it unlikely that many would choose to do this.
+Further, allowing users to define different members of a class scattered across a
+module seems like it could result in bad practices, but I find it unlikely that
+developers would choose to do this.
 
 .. Give an estimate on development and maintenance costs. List how this affects
 .. learnability of the language for novice users. Define and list any remaining
@@ -368,12 +372,14 @@ None currently.
 Implementation Plan
 -------------------
 No implementer has been selected yet.
+
 .. (Optional) If accepted who will implement the change? Which other resources
 .. and prerequisites are required for implementation?
 
 Endorsements
 -------------
 None.
+
 .. (Optional) This section provides an opportunity for any third parties to express their
 .. support for the proposal, and to say why they would like to see it adopted.
 .. It is not mandatory for have any endorsements at all, but the more substantial
