@@ -14,7 +14,7 @@
 
 
 Shared Class Methods
-==============
+====================
 
 .. author:: Benjamin
 .. date-accepted:: Leave blank. This will be filled in when the proposal is accepted.
@@ -32,8 +32,8 @@ Shared Class Methods
 
 .. Here you should write a short abstract motivating and briefly summarizing the proposed change.
 
-Extending or splitting typeclasses in Haskell is fraught with neccessary changing
-of boilerplate. Further, writing heierachies of typeclasses in the first place
+Extending or splitting typeclasses in Haskell is fraught with necessary changing
+of boilerplate. Further, writing hierarchies of typeclasses in the first place
 can require a lot of unneeded boilerplate. This proposal would introduce a new
 extension (which would eventually be turned on in a future edition) that allows
 methods from superclasses to be defined in their subclasses, resulting in less
@@ -42,13 +42,191 @@ breakage from splitting typeclasses and also less boilerplate when writing class
 
 Motivation
 ----------
+Defining typeclass hierarchies can require a lot of repeated boilerplate, and if
+those hierarchies are changed in future instances and implementations can break,
+even if the changes are well intentioned or choreographed well in advance.
+
+This proposal is also half of a pair I am presenting. The extension presented here
+would allow more versatility in typeclass instances, which may be necessary for
+my eventual proposal for `intrinsic typeclasses <https://gitlab.haskell.org/ghc/ghc/-/wikis/intrinsic-superclasses>`_
+to work well in all cases.
+
+.. This proposal is best examined via its `Examples <#Examples>`_.
+
+.. The core issues to be solved are forwards compatibility with changes to typeclass
+.. hierarchies as well as more flexible class declarations. This proposal would allow
+.. reduction in boilerplate as well as further fearlessness in changes to the core
+.. language.
+
+.. Give a strong reason for why the community needs this change. Describe the use
+.. case as clearly as possible and give an example. Explain how the status quo is
+.. insufficient or not ideal.
+
+.. A good Motivation section is often driven by examples and real-world scenarios.
+
+
+Proposed Change Specification
+-----------------------------
+
+We add an extension ``SharedClassMethods`` which enables the following behaviour.
+By default this extension should be enabled, or brought into a future language
+edition.
+
+When an instance for a class ``C`` is declared for type ``D``, with superclass
+``SA``, the methods of ``SA`` can be defined in the instance declaration for ``C``
+as long as there are no other definitions for those methods for type ``D``. This
+applies even for superclasses of superclasses, but only for superclasses of the
+class itself, not additional class constraints of the instance. All methods for
+the superclass need to be defined in the same module (and likely the same stage).
+
+Additionally, the methods of ``S`` can be declared in multiple different instance
+blocks, whether that is child classes or blocks of ``S``. All methods of the class
+must have the same constraints on them, and be defined for exactly the same type.
+Each method of that class must also be declared exactly once. There should at most
+one instance declaration of the superclass.
+
+Within an instance declaration, a given named method can only be named once. If
+a superclass shares method names with the current class, you cannot declare the
+superclass's shared method names in the same instance declaration. The current
+class's methods will always take priority.
+
+General example
+^^^^^^^^^^^^^^^
+
+With classes like this:
+::
+  class SS t where
+    ss1 :: t -> Int
+
+  class SS t => SA t where
+    sa1 :: t -> Int
+    sa2 :: t -> Int
+
+  class AC t where
+    ac1 :: t -> Int
+
+  class SA t => C t where
+    c1 :: t -> Int
+
+You could define an instance for ``C`` with a type ``data D = D`` like the
+following:
+::
+  instance AC D => C D where
+    c1 = ac1
+    ss1 = c1
+    sa1 = c1
+    sa2 = c1
+
+  instance AC D where
+    ac1 = const 0
+
+Note that ``AC`` cannot be defined for D in the same declaration as ``C D`` because
+``AC`` is not a superclass of ``C``.
+
+Interactions with existing extensions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``MultiParamTypeClasses``
+"""""""""""""""""""""""""
+
+If the superclass is defined on exactly one of the parameters, then the superclass's
+methods can be defined for that parameter. Otherwise we fail out.
+
+``UndecidableSuperClasses``
+"""""""""""""""""""""""""""
+
+If a class is recursive, you will not be able to define methods for a parent
+typeclass because the names will conflict, so in this case you'd get an error
+saying that the same method has been declared multiple times.
+
+If a superclass has different methods, then you'll be able to declare that
+superclass's methods; if that superclass has the current class as a parent, you
+won't be able to declare the superclass's parent class's methods in the current
+instance.
+
+``DefaultSignatures``
+"""""""""""""""""""""
+
+This proposal only affects instance implementations, not typeclass definitions.
+Superclass methods will not be "defaultable" from a child class's definition.
+
+``FlexibleInstances``
+"""""""""""""""""""""
+
+The type that the superclass methods are declared on must be the same in all cases,
+so additional type options don't present issues
+
+``UndecidableInstances``
+""""""""""""""""""""""""
+
+Additional constraints on instances do not add additional superclasses which can
+have methods defined for them.
+
+Other extensions
+""""""""""""""""
+
+- ``ConstrainedClassMethods``
+  - defined methods have the same restrictions no matter where defined
+- ``FunctionalDependencies``
+  - defined on class definition not instance definition
+- ``TypeSynonymInstances``
+  - expand the type as expected
+- ``NullaryTypeClasses``, ``OverlappingInstances``, ``IncoherentInstances``
+  - extensions deprecated
+
+.. Specify the change in precise, comprehensive yet concise language. Avoid words
+.. like "should" or "could". Strive for a complete definition. Your specification
+.. may include,
+
+.. * BNF grammar and semantics of any new syntactic constructs
+..   (Use the `Haskell 2010 Report <https://www.haskell.org/onlinereport/haskell2010/>`_ or GHC's ``alex``\- or ``happy``\-formatted files
+..   for the `lexer <https://gitlab.haskell.org/ghc/ghc/-/blob/master/compiler/GHC/Parser/Lexer.x>`_ or `parser <https://gitlab.haskell.org/ghc/ghc/-/blob/master/compiler/GHC/Parser.y>`_
+..   for a good starting point.)
+.. * the types and semantics of any new library interfaces
+.. * how the proposed change interacts with existing language or compiler
+..   features, in case that is otherwise ambiguous
+
+.. Think about how your proposed design accords with our `language design principles <../principles.rst#2Language-design-principles>`_,
+.. and articulate that alignment explicitly wherever possible.
+
+.. Strive for *precision*. The ideal specification is described as a
+.. modification of the `Haskell 2010 report
+.. <https://www.haskell.org/definition/haskell2010.pdf>`_. Where that is
+.. not possible (e.g. because the specification relates to a feature that
+.. is not in the Haskell 2010 report), try to adhere its style and level
+.. of detail. Think about corner cases. Write down general rules and
+.. invariants.
+
+.. Note, however, that this section should focus on a precise
+.. *specification*; it need not (and should not) devote space to
+.. *implementation* details -- the "Implementation Plan" section can be used for that.
+
+.. The specification can, and almost always should, be illustrated with
+.. *examples* that illustrate corner cases. But it is not sufficient to
+.. give a couple of examples and regard that as the specification! The
+.. examples should illustrate and elucidate a clearly-articulated
+.. specification that covers the general case.
+
+Proposed Library Change Specification
+-------------------------------------
+
+No changes to existing libraries.
+
+Examples
+--------
+.. This section illustrates the specification through the use of examples of the
+.. language change proposed. It is best to exemplify each point made in the
+.. specification, though perhaps one example can cover several points. Contrived
+.. examples are OK here. If the Motivation section describes something that is
+.. hard to do without this proposal, this is a good place to show how easy that
+.. thing is to do with the proposal.
+
 There are two main motivating examples, one that demonstrates future application
 and another that can be realised now.
 
 Future
 ^^^^^^
-We have the existing typeclass ``Alternative``, defined as follows for ``Maybe``
-(with Alternative):
+We have the existing typeclass ``Alternative``, defined as follows for ``Maybe``:
 ::
   class Applicative f => Alternative f where
     empty :: f a
@@ -85,13 +263,17 @@ despite there being a change in how the classes were defined, the implementation
 can be defined as expected. This lets us be greatly forward compatible with our
 classes and instances.
 
+Note that I am not suggesting that the above is a change we wish to do, just that
+it's an example where the current proposal would be useful in reducing breakage.
+
 Present
 ^^^^^^^
 
 We can reduce on the amount of boilerplate needed to define different classes.
 
 Here is a simple example before and after for some arbitrary ``Monad`` transformer
-``MT``, for which we have ``pureM :: Monad m => a -> MT m a`` and ``bindM :: Monad m => MT m a -> (a -> MT m b) -> MT m b`` predefined.
+``MT``, for which we have ``pureM :: Monad m => a -> MT m a`` and
+``bindM :: Monad m => MT m a -> (a -> MT m b) -> MT m b`` predefined.
 
 Before:
 ::
@@ -117,176 +299,84 @@ This style can greatly reduce code-reading overhead, because instead of three
 different, possibly disparate instance definitions, there is one that contains
 all the methods for the parent classes.
 
-.. Give a strong reason for why the community needs this change. Describe the use
-.. case as clearly as possible and give an example. Explain how the status quo is
-.. insufficient or not ideal.
-
-.. A good Motivation section is often driven by examples and real-world scenarios.
-
-
-Proposed Change Specification
------------------------------
-Specify the change in precise, comprehensive yet concise language. Avoid words
-like "should" or "could". Strive for a complete definition. Your specification
-may include,
-
-* BNF grammar and semantics of any new syntactic constructs
-  (Use the `Haskell 2010 Report <https://www.haskell.org/onlinereport/haskell2010/>`_ or GHC's ``alex``\- or ``happy``\-formatted files
-  for the `lexer <https://gitlab.haskell.org/ghc/ghc/-/blob/master/compiler/GHC/Parser/Lexer.x>`_ or `parser <https://gitlab.haskell.org/ghc/ghc/-/blob/master/compiler/GHC/Parser.y>`_
-  for a good starting point.)
-* the types and semantics of any new library interfaces
-* how the proposed change interacts with existing language or compiler
-  features, in case that is otherwise ambiguous
-
-Think about how your proposed design accords with our `language design principles <../principles.rst#2Language-design-principles>`_,
-and articulate that alignment explicitly wherever possible.
-
-Strive for *precision*. The ideal specification is described as a
-modification of the `Haskell 2010 report
-<https://www.haskell.org/definition/haskell2010.pdf>`_. Where that is
-not possible (e.g. because the specification relates to a feature that
-is not in the Haskell 2010 report), try to adhere its style and level
-of detail. Think about corner cases. Write down general rules and
-invariants.
-
-Note, however, that this section should focus on a precise
-*specification*; it need not (and should not) devote space to
-*implementation* details -- the "Implementation Plan" section can be used for that.
-
-The specification can, and almost always should, be illustrated with
-*examples* that illustrate corner cases. But it is not sufficient to
-give a couple of examples and regard that as the specification! The
-examples should illustrate and elucidate a clearly-articulated
-specification that covers the general case.
-
-Proposed Library Change Specification
--------------------------------------
-
-Specify the changes to libraries in the GHC repository, especially ``base`` and
-others under the purview of the
-`Core Libraries Committee <https://github.com/haskell/core-libraries-committee>`_.
-
-Generally speaking, if your proposal adds new function or data types, the place
-to do so is in the ``ghc-experimental`` package, whose API is under the control of
-the GHC Steering Committee.
-After your proposal is implemented, stable, and widely used, you (or anyone
-else) can subsequently propose to move those types into ``base`` via a CLC
-proposal.
-
-Sometimes, however, your proposal necessarily changes something in ``base``,
-whose API is curated by the CLC.
-In that case, assuming your proposal is accepted, at the point when it is
-implemented (by you or anyone else), CLC approval will be needed for these
-changes, via a CLC proposal made by the implementor.
-By signalling those changes now, at the proposal stage, the CLC will be alerted
-and have an opportunity to offer feedback, and agreement in principle.
-
-See `GHC base libraries <https://github.com/Ericson2314/tech-proposals/blob/ghc-base-libraries/proposals/accepted/051-ghc-base-libraries.rst?rgh-link-date=2023-07-09T17%3A01%3A15Z>`_
-for some useful context.
-
-Therefore, in this section:
-
-* If your proposal makes any changes to the API of ``base`` (including its
-  exports, types, semantics, and performance), please specify these changes
-  in this section.
-
-* If your proposal makes any change to the API of ``ghc-experimental``, please
-  also specify these changes.
-
-If you propose to change both, use subsections, so that the changes are clearly
-distinguished.
-Similarly, if any other libraries are affected, please lay it all out here.
-
-Examples
---------
-This section illustrates the specification through the use of examples of the
-language change proposed. It is best to exemplify each point made in the
-specification, though perhaps one example can cover several points. Contrived
-examples are OK here. If the Motivation section describes something that is
-hard to do without this proposal, this is a good place to show how easy that
-thing is to do with the proposal.
-
 Effect and Interactions
 -----------------------
-Your proposed change addresses the issues raised in the motivation. Explain how.
+Reducing on boilerplate of typeclass definitions is an obvious outcome of this
+proposal.
 
-Also, discuss possibly contentious interactions with existing language or compiler
-features. Complete this section with potential interactions raised
-during the PR discussion.
+The forwards-compatibility feature can be realised only if this extension is
+enabled by default when typeclass splitting occurs. This extension won't be able
+to make compiling code fail, but can allow code broken by a dependency change
+to now compile.
 
+.. Your proposed change addresses the issues raised in the motivation. Explain how.
+
+.. Also, discuss possibly contentious interactions with existing language or compiler
+.. features. Complete this section with potential interactions raised
+.. during the PR discussion.
 
 Costs and Drawbacks
 -------------------
-Give an estimate on development and maintenance costs. List how this affects
-learnability of the language for novice users. Define and list any remaining
-drawbacks that cannot be resolved.
+This extension will complicate instance definitions, and may make it unclear where
+a method originates from; in the above example with the ``Monad`` hierarchy,
+``fmap`` could be a member of ``Monad``, ``Applicative`` or ``Functor``, which
+could be confusing to a novice.
+
+Further, allowing users to define different methods
+of a class scatted across a module seems like it could result in bad practices,
+but I find it unlikely that many would choose to do this.
+
+.. Give an estimate on development and maintenance costs. List how this affects
+.. learnability of the language for novice users. Define and list any remaining
+.. drawbacks that cannot be resolved.
 
 
 Backward Compatibility
 ----------------------
-How well does your proposal meet the stability principles described in our
-`GHC stability principles <../principles.rst#3GHC-stability-principles>`_ document?
-
-Will your proposed change cause any existing programs to change behaviour or
-stop working? Assess the expected impact on existing code on the following scale:
-
-1. No breakage
-2. Breakage only in extremely rare cases (e.g. for specifically-constructed
-   examples, but probably no packages published in the Hackage package repository)
-3. Breakage in rare cases (e.g. a few Hackage packages may break, but probably
-   no packages included in recent Stackage package sets)
-4. Breakage in uncommon cases (e.g. a few Stackage packages may break)
-5. Breakage in common cases
-
-(For the purposes of this assessment, GHC emitting new warnings is not
-considered to be a breaking change, i.e. packages are assumed not to use
-``-Werror``.  Changing a warning into an error is considered a breaking change.)
-
-Explain why the benefits of the change outweigh the costs of breakage.
-Describe the migration path. Consider specifying a compatibility warning for one
-or more compiler releases before the change is fully implemented. Give examples
-of error messages that will be reported for previously-working code; do they
-make it easy for users to understand what needs to change and why?
-
-When the proposal is implemented, the implementers and/or GHC maintainers should
-test that the actual backwards compatibility impact of the implementation is no
-greater than the expected impact. If not, the proposal should be revised and the
-steering committee approve the change.
+This has no breaking changes as it is a new feature.
 
 
 Alternatives
 ------------
-List alternative designs to your proposed change. Both existing
-workarounds, or alternative choices for the changes. Explain
-the reasons for choosing the proposed change over these alternative:
-*e.g.* they can be cheaper but insufficient, or better but too
-expensive. Or something else.
+We could choose not to implement this change, and accept that changing typeclass
+hierarchies should be a breaking change, and that the boilerplate necessary for
+writing instances is necessary or useful.
 
-The PR discussion often raises other potential designs, and they should be
-added to this section. Similarly, if the proposed change
-specification changes significantly, the old one should be listed in
-this section.
+.. List alternative designs to your proposed change. Both existing
+.. workarounds, or alternative choices for the changes. Explain
+.. the reasons for choosing the proposed change over these alternative:
+.. *e.g.* they can be cheaper but insufficient, or better but too
+.. expensive. Or something else.
+
+.. The PR discussion often raises other potential designs, and they should be
+.. added to this section. Similarly, if the proposed change
+.. specification changes significantly, the old one should be listed in
+.. this section.
 
 Unresolved Questions
 --------------------
-Explicitly list any remaining issues that remain in the conceptual design and
-specification. Be upfront and trust that the community will help. Please do
-not list *implementation* issues.
+None currently.
 
-Hopefully this section will be empty by the time the proposal is brought to
-the steering committee.
+.. Explicitly list any remaining issues that remain in the conceptual design and
+.. specification. Be upfront and trust that the community will help. Please do
+.. not list *implementation* issues.
+
+.. Hopefully this section will be empty by the time the proposal is brought to
+.. the steering committee.
 
 
 Implementation Plan
 -------------------
-(Optional) If accepted who will implement the change? Which other resources
-and prerequisites are required for implementation?
+No implementer has been selected yet.
+.. (Optional) If accepted who will implement the change? Which other resources
+.. and prerequisites are required for implementation?
 
 Endorsements
 -------------
-(Optional) This section provides an opportunity for any third parties to express their
-support for the proposal, and to say why they would like to see it adopted.
-It is not mandatory for have any endorsements at all, but the more substantial
-the proposal is, the more desirable it is to offer evidence that there is
-significant demand from the community.  This section is one way to provide
-such evidence.
+None.
+.. (Optional) This section provides an opportunity for any third parties to express their
+.. support for the proposal, and to say why they would like to see it adopted.
+.. It is not mandatory for have any endorsements at all, but the more substantial
+.. the proposal is, the more desirable it is to offer evidence that there is
+.. significant demand from the community.  This section is one way to provide
+.. such evidence.
