@@ -1,2 +1,5 @@
 _build
 _venv
+
+.vscode/*
+
