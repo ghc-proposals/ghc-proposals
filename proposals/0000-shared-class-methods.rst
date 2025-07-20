@@ -120,7 +120,7 @@ following:
   instance AC D where
     ac1 = const 0
 
-Note that ``AC`` cannot be defined for D in the same declaration as ``C D`` because
+Note that ``AC`` cannot be defined for ``D`` in the same declaration as ``C D`` because
 ``AC`` is not a superclass of ``C``.
 
 Interactions with existing extensions
@@ -154,7 +154,7 @@ Superclass methods will not be "defaultable" from a child class's definition.
 """""""""""""""""""""
 
 The type that the superclass methods are declared on must be the same in all cases,
-so additional type options don't present issues
+so additional type options don't present issues.
 
 ``UndecidableInstances``
 """"""""""""""""""""""""
@@ -317,7 +317,7 @@ to now compile.
 
 Costs and Drawbacks
 -------------------
-This extension will complicate instance definitions, and may make it unclear where
+This extension can complicate instance definitions, and may make it unclear where
 a method originates from; in the above example with the ``Monad`` hierarchy,
 ``fmap`` could be a member of ``Monad``, ``Applicative`` or ``Functor``, which
 could be confusing to a novice.
