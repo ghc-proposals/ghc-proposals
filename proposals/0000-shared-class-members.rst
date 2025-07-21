@@ -348,6 +348,16 @@ We could choose not to implement this change, and accept that changing typeclass
 hierarchies should be a breaking change, and that the boilerplate necessary for
 writing instances is necessary or useful.
 
+There is design space for this proposal to implement a pragma on the typeclass or
+members to allow them to be defined in subclasses, or for the extension to be
+enabled where the typeclass definition is and not the instance definition. I 
+would recommend against this so that the only places where there will be changes
+to operation are instance definitions; this is only meant to be changing instance
+definitions, after all. It should not be up to typeclass authors to decide how
+end users define instances for their own types. Further, it feels odd to me to
+annotate members of a typeclass and have to propagate that out to all instance
+definitions.
+
 .. List alternative designs to your proposed change. Both existing
 .. workarounds, or alternative choices for the changes. Explain
 .. the reasons for choosing the proposed change over these alternative:
