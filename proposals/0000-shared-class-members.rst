@@ -35,7 +35,7 @@ Shared Class Members
 Extending or splitting typeclasses in Haskell is fraught with necessary changing
 of boilerplate. Further, writing hierarchies of typeclasses in the first place
 can require a lot of unneeded boilerplate. This proposal would introduce a new
-extension (which would eventually be turned on in a future edition) that allows
+extension (which should eventually be turned on in a future edition) that allows
 members from superclasses to be defined in their subclasses, resulting in less
 breakage from splitting typeclasses and also less boilerplate when writing classes.
 
@@ -70,34 +70,36 @@ Proposed Change Specification
 
 We add an extension ``SharedClassMembers`` which enables the following behaviour.
 By default this extension should be enabled, or brought into a future language
-edition.
+edition, so that the full utility can be realised. The extension stands
+on it own without that in consideration.
 
 As with `intrinsic typeclasses <https://gitlab.haskell.org/ghc/ghc/-/wikis/intrinsic-superclasses>`_
 we will use the terminology "members" instead of "methods" so we can talk about
 associated types and associated data as well.
 
-When an instance for a class ``C`` is declared for type ``D``, with superclass
+When an instance for a typeclass ``C`` is declared for type ``D``, with superclass
 ``SA``, the members of ``SA`` can be defined in the instance declaration for ``C``
 as long as there are no other definitions for those members for type ``D``. This
 applies even for superclasses of superclasses, but only for superclasses of the
-class itself, not additional class constraints of the instance. All members for
-the superclass need to be defined in the same module (and likely the same stage).
+typeclass itself, not additional typeclass constraints of the instance. All 
+members for the superclass need to be defined in the same module (and likely the
+same stage).
 
 Additionally, the members of ``S`` can be declared in multiple different instance
-blocks, whether that is child classes or blocks of ``S``. All members of the class
-must have the same constraints on them, and be defined for exactly the same type.
-Each member of that class must also be declared exactly once. There should at most
-one instance declaration of the superclass.
+blocks, whether that is child typeclasses or blocks of ``S``. All members of the
+typeclass must have the same constraints on them, and be defined for exactly the
+same type. Each member of that typeclass must also be declared exactly once.
+There should at most one instance declaration of the superclass.
 
 Within an instance declaration, a given named member can only be named once. If
-a superclass shares member names with the current class, you cannot declare the
-superclass's shared member names in the same instance declaration. The current
-class's members will always take priority.
+a superclass shares member names with the current typeclass, you cannot declare
+the superclass's shared member names in the same instance declaration. The current
+typeclass's members will always take priority.
 
 General example
 ^^^^^^^^^^^^^^^
 
-With classes like this:
+With typeclasses like this:
 ::
   class SS t where
     ss1 :: t -> Int
@@ -139,20 +141,20 @@ members can be defined for that parameter. Otherwise we fail out.
 ``UndecidableSuperClasses``
 """""""""""""""""""""""""""
 
-If a class is recursive, you will not be able to define members for a parent
+If a typeclass is recursive, you will not be able to define members for a parent
 typeclass because the names will conflict, so in this case you'd get an error
 saying that the same member has been declared multiple times.
 
 If a superclass has different members, then you'll be able to declare that
-superclass's members; if that superclass has the current class as a parent, you
-won't be able to declare the superclass's parent class's members in the current
+superclass's members; if that superclass has the current typeclass as a parent, you
+won't be able to declare the superclass's parent-typeclass's members in the current
 instance.
 
 ``DefaultSignatures``
 """""""""""""""""""""
 
 This proposal only affects instance implementations, not typeclass definitions.
-Superclass methods will not be "defaultable" from a child class's definition.
+Superclass methods will not be "defaultable" from a child typeclass's definition.
 
 ``FlexibleInstances``
 """""""""""""""""""""
@@ -263,9 +265,9 @@ could change ``Alternative`` to the following:
     l       <|> _ = l
 
 Note that the superclass's method ``<|>`` was defined in a subclass, meaning that
-despite there being a change in how the classes were defined, the implementations
+despite there being a change in how the typeclasses were defined, the implementations
 can be defined as expected. This lets us be greatly forward compatible with our
-classes and instances.
+typeclasses and instances.
 
 Note that I am not suggesting that the above is a change we wish to do, just that
 it's an example where the current proposal would be useful in reducing breakage.
@@ -273,7 +275,7 @@ it's an example where the current proposal would be useful in reducing breakage.
 Present
 ^^^^^^^
 
-We can reduce on the amount of boilerplate needed to define different classes.
+We can reduce on the amount of boilerplate needed to define different typeclasses.
 
 Here is a simple example before and after for some arbitrary ``Monad`` transformer
 ``MT``, for which we have ``pureM :: Monad m => a -> MT m a`` and
@@ -301,7 +303,7 @@ And after:
 
 This style can greatly reduce code-reading overhead, because instead of three
 different, possibly disparate instance definitions, there is one that contains
-all the members for the parent classes.
+all the members for the parent typeclasses.
 
 Effect and Interactions
 -----------------------
@@ -326,9 +328,9 @@ a member originates from; in the above example with the ``Monad`` hierarchy,
 ``fmap`` could be a member of ``Monad``, ``Applicative`` or ``Functor``, which
 could be confusing to a novice.
 
-Further, allowing users to define different members of a class scattered across a
-module seems like it could result in bad practices, but I find it unlikely that
-developers would choose to do this.
+Further, allowing users to define different members of a typeclass scattered
+across a module seems like it could result in bad practices, but I find it
+unlikely that developers would choose to do this.
 
 .. Give an estimate on development and maintenance costs. List how this affects
 .. learnability of the language for novice users. Define and list any remaining
