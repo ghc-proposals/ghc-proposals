@@ -122,7 +122,7 @@ Currently each version of ``template-haskell`` is tightly coupled to a specific 
 For instance, GHC-9.12.1 ships with ``template-haskell-2.23``. It is not possible to compile ``template-haskell-2.23`` with an earlier version of a compiler.
 So, a maintainer cannot upgrade to ``template-haskell-2.23`` without upgrading to GHC-9.12. And vice versa.
 
-Historically, there was a strong technical reason for this. ``template-haskell`` used to include wired-in identifiers referred to by GHC.
+Historically, there was a strong technical reason for this. ``template-haskell`` used to define wired-in identifiers referred to by GHC.
 As of GHC-9.12, these have been `moved <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/12479>`_ to ``ghc-internal``.
 
 It should be possible to use, for instance ``CPP``, to make ``template-haskell`` compatible with multiple versions of GHC. But the large interface exposed by this package makes it difficult.
@@ -177,7 +177,7 @@ Proposed Library Change Specification
 -------------------------------------
 
 We propose to publish two new libraries: ``template-haskell-lift`` and ``template-haskell-quasiquoter``.
-These will be shipped with GHC. So, they would be boot libraries, but wouldn't include any wired-in identifiers.
+These will be shipped with GHC. So, they would be boot libraries, but wouldn't define any wired-in identifiers.
 In other words, they would behave as ``bytestring`` or ``containers``, not like ``ghc-internal``.
 
 They will also be published to and buildable from Hackage.
@@ -260,8 +260,7 @@ They have evolved independently of each other in the past, and they are likely t
 The majority of the users of ``Lift`` do not depend on ``QuasiQuoter``, and they would suffer from unnecessary version bumps if the two interfaces were packaged together.
 The `PVP <https://pvp.haskell.org/>`_ dictates that if any interface in a package changes in a breaking way, then the entire package needs to bump its major version.
 
-By keeping them apart, users can benefit from their independently versioned.
-A user could pick and choose which versions they depend on from each package.
+Independently versioning these packages allows a user to pick and choose the version of each package.
 This allows us to minimise the breakage from backwards- and/or forwards-compatible changes.
 
 We also be sceptical of a ``template-haskell-stable`` package because stability is not an essential property of an interface.
@@ -276,7 +275,7 @@ If two interfaces are tightly coupled, it makes sense to group them into one pac
 These two interfaces are related in being parts of the overall Template Haskell feature set, but are otherwise conceptually independent.
 They could evolve independently. We could imagine the interface of ``Lift`` changing without impacting ``QuasiQuoter`` and vice versa.
 
-In light of the complexities surrounding ``Lift`` in the `Explicit Level Imports <./0682-explicit-level-imports.rts>` proposal,
+In light of the complexities surrounding ``Lift`` in the `Explicit Level Imports <./0682-explicit-level-imports.rst>`_ proposal,
 having a distinct ``template-haskell-lift`` package also helps document that a package is depending on this interface.
 
 Including ``DeriveLift`` as part of the interface of ``template-haskell-lift``
