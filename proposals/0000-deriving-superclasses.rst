@@ -24,7 +24,7 @@ Deriving Superclasses
 .. implemented:: Leave blank. This will be filled in with the first GHC version which
                  implements the described feature.
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_.
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/708>`_.
             **After creating the pull request, edit this file again, update the
             number in the link, and delete this bold sentence.**
 .. sectnum::
@@ -48,7 +48,8 @@ hierarchy even if you would want the ability to define different parts at differ
 times.
 
 This proposal is also half of a pair I am presenting. The extension presented here
-works better when considered with `Shared Class Methods <https://github.com/ghc-proposals/ghc-proposals/pull/707>`_. This proposal is loosely based off of `intrinsic typeclasses <https://gitlab.haskell.org/ghc/ghc/-/wikis/intrinsic-superclasses>`_.
+works better when considered with `Shared Class Methods <https://github.com/ghc-proposals/ghc-proposals/pull/707>`_.
+This proposal is loosely based off of `intrinsic typeclasses <https://gitlab.haskell.org/ghc/ghc/-/wikis/intrinsic-superclasses>`_.
 
 .. Give a strong reason for why the community needs this change. Describe the use
 .. case as clearly as possible and give an example. Explain how the status quo is
@@ -65,7 +66,12 @@ definition. These implementations will only be the end implementation of the met
 if there is not an explicit implementation of that method elsewhere. ``C``'s
 definition can also include an implementation of ``SS``'s methods, and if there
 is not an explicit definition of ``SS``'s methods then these ``C``'s implementations
-will override any default that ``S`` or ``SS`` provides.
+will override any default that ``S`` or ``SS`` provides. To further outline:
+a subclass can declare a default implementation for any of its superclass's
+methods, as well as any of that superclass's methods and so on. If this subclass
+declares a default implementation and a superclass also declares a default
+implementation for a mutual superclass's method, the subclass's default will be
+the one derived.
 
 Subclasses will be able to provide only partial default implementations of
 superclasses. This will use the mechanisms outlined in `Shared Class Methods <https://github.com/ghc-proposals/ghc-proposals/pull/707>`_
@@ -75,6 +81,12 @@ If a method name is shared between superclasses, then a default cannot be
 declared for a method of that name. If the current typeclass and a superclass
 share a method name, then the current typeclass's method will be the only one
 that can be referred to.
+
+If two subclasses both provide a default for the same superclass (like how
+``Traversable`` and ``Applicative``/``Monad`` can for ``Functor``'s ``fmap``),
+neither class is a superclass of the other, and both instances are declared for
+a given data type, an error will be emitted saying that the method cannot be
+derived, and ask that the user implement the method themselves.
 
 General example
 ^^^^^^^^^^^^^^^
