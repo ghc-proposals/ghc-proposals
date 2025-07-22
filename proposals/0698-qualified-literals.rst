@@ -61,14 +61,19 @@ This proposal would allow using a module qualifier to say precisely which functi
 
 The existing locations would continue working as ``String``, while the new line would unambiguously desugar to ``T.pack " "``.
 
+No granular typeclass for numeric literals
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``fromInteger`` and ``fromRational`` are part of ``Num`` and ``Fractional``, so there's no way to use numeric literal syntax for custom types that shouldn't implement operators like ``+``.
+
+Related: https://github.com/ghc-proposals/ghc-proposals/issues/438
+
 Inability to distinguish natural numbers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In Haskell98, ``13`` desugars to ``fromInteger 13`` and ``2.7`` desugars to ``fromRational 2.7``. If a type ``T`` does not wish to support rationals, one could simply fail to provide an instance for ``Fractional T``, then ``fromRational 2.7 :: T`` will be statically rejected. But if ``T`` does not want to support negative integers, there is no way to reject it statically.
 
 This proposal would desugar natural numbers separately from negative integers so that implementations that wish to distinguish between the two (e.g. support only natural numbers) may do so.
-
-Related: https://github.com/ghc-proposals/ghc-proposals/issues/438.
 
 Inability to use heterogeneous lists
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -137,7 +142,7 @@ With ``-XQualifiedNumbers``, we gain the following syntaxes:
     * - ``Foo.(1.2)``
       - ``((== Foo.fromRational 1.2) -> True)``
 
-We distinguish between ``Natural`` and ``Integer`` so that use-cases that want non-negative guarantees can do so. See *Section 4.3 Positive-only literal* for an example.
+We distinguish between ``Natural`` and negative ``Integer`` so that use-cases that want non-negative guarantees can do so. If we only had one ``fromInteger``, you could type it as ``fromInteger :: Natural -> ...``, but it would be relying on the hardcoded ``-Woverflowed-literals`` compiler check.
 
 Parentheses are required for negative integers and rationals, to avoid ambiguity, both in the lexer and for human readers. Parentheses are optional for positive integers.
 
@@ -322,41 +327,6 @@ With ``QualifiedNumbers``, you could write ``Big.123``, which guarantees that ``
 
   fromRational :: Rational -> BigDecimal
   fromRational = BigDecimal . realToFrac
-
-Positive-only literals
-~~~~~~~~~~~~~~~~~~~~~~
-
-The following currently fails to compile with ``-Werror`` enabled:
-
-::
-
-  >>> (-1) :: Natural
-
-  error: [GHC-97441] [-Woverflowed-literals, Werror=overflowed-literals]
-    Literal -1 is negative but Natural only supports positive numbers
-
-However, this check is hardcoded in the compiler for specific types, e.g. ``Natural``, ``Int*``, and ``Word*``. There's no way to enforce this at compile time for custom types, e.g.
-
-::
-
-  -- Invariant: positive
-  newtype UserId = UserId Integer
-
-  UserId (-1) -- works
-
-With ``QualifiedNumbers``, you could define ``fromNatural`` and not ``fromNegativeInt``:
-
-::
-
-  -- In UserId module
-  fromNatural :: Natural -> UserId
-  fromNatural = UserId
-
-  UserId.123 -- works
-
-  UserId.(-1) -- error: fromNegativeInt is not in scope
-
-See https://github.com/ghc-proposals/ghc-proposals/issues/438 for more details.
 
 ByteString
 ~~~~~~~~~~
