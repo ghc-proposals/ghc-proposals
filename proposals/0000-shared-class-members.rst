@@ -24,7 +24,7 @@ Shared Class Members
 .. implemented:: Leave blank. This will be filled in with the first GHC version which
                  implements the described feature.
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_.
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/707>`_.
             **After creating the pull request, edit this file again, update the
             number in the link, and delete this bold sentence.**
 .. sectnum::
@@ -48,7 +48,7 @@ even if the changes are well intentioned or choreographed well in advance.
 
 This proposal is also half of a pair I am presenting. The extension presented here
 would allow more versatility in typeclass instances, which may be necessary for
-my eventual proposal for `intrinsic typeclasses <https://gitlab.haskell.org/ghc/ghc/-/wikis/intrinsic-superclasses>`_
+my eventual proposal for `deriving superclasses <https://github.com/ghc-proposals/ghc-proposals/pull/708>`_
 to work well in all cases.
 
 .. This proposal is best examined via its `Examples <#Examples>`_.
@@ -88,7 +88,8 @@ same stage).
 Additionally, the members of ``S`` can be declared in multiple different instance
 blocks, whether that is child typeclasses or blocks of ``S``. All members of the
 typeclass must have the same constraints on them, and be defined for exactly the
-same type. Each member of that typeclass must also be declared exactly once.
+same type, as well as have the same ``OVERLAPPING``/``OVERLAPPABLE``/etc. pragmas
+attached. Each member of that typeclass must also be declared exactly once.
 There should at most one instance declaration of the superclass.
 
 Within an instance declaration, a given named member can only be named once. If
