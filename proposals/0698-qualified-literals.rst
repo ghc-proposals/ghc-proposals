@@ -102,7 +102,7 @@ General comments:
 
 * Some literals are not supported yet (Chars, unboxed literals) due to lack of use-cases, but could be extended in the future.
 
-* Future work could be done to allow compile time logic, e.g. ``$Foo.1`` => ``$(Foo.fromNumeric [|1|])``, but that is out of scope of this proposal.
+* Future work could be done to allow compile time logic, e.g. ``$Foo.1`` => ``$(Foo.fromNatural [|1|])``, but that is out of scope of this proposal.
 
 QualifiedNumbers
 ~~~~~~~~~~~~~~~~
@@ -115,13 +115,13 @@ With ``-XQualifiedNumbers``, we gain the following syntaxes:
     * - **New expression syntax**
       - **Desugared expression syntax**
     * - ``Foo.1``
-      - ``Foo.fromNumeric (1 :: Natural)``
+      - ``Foo.fromNatural 1``
     * - ``Foo.(1)``
-      - ``Foo.fromNumeric (1 :: Natural)``
+      - ``Foo.fromNatural 1``
     * - ``Foo.(-1)``
-      - ``Foo.fromNumeric (-1 :: Integer)``
+      - ``Foo.fromNegativeInt (-1)``
     * - ``Foo.(1.2)``
-      - ``Foo.fromNumeric (1.2 :: Rational)``
+      - ``Foo.fromRational 1.2``
 
 .. list-table::
     :align: left
@@ -129,21 +129,19 @@ With ``-XQualifiedNumbers``, we gain the following syntaxes:
     * - **New pattern syntax**
       - **Desugared pattern syntax**
     * - ``Foo.1``
-      - ``((== Foo.fromNumeric (1 :: Natural)) -> True)``
+      - ``((== Foo.fromNatural 1) -> True)``
     * - ``Foo.(1)``
-      - ``((== Foo.fromNumeric (1 :: Natural)) -> True)``
+      - ``((== Foo.fromNatural 1) -> True)``
     * - ``Foo.(-1)``
-      - ``((== Foo.fromNumeric (-1 :: Integer)) -> True)``
+      - ``((== Foo.fromNegativeInt (-1)) -> True)``
     * - ``Foo.(1.2)``
-      - ``((== Foo.fromNumeric (1.2 :: Rational)) -> True)``
+      - ``((== Foo.fromRational 1.2) -> True)``
 
-We use one ``fromNumeric`` function to simplify implementation for any numeric types. Use-cases requiring different implementations for different types may use a type class with instances for ``Natural``, ``Integer``, and/or ``Rational``. See *Section 4.3 Multiple numeric types* for examples.
-
-We distinguish between ``Natural`` and ``Integer`` so that use-cases that want non-negative guarantees can do so. See *Section 4.4 Positive-only literal* for an example.
+We distinguish between ``Natural`` and ``Integer`` so that use-cases that want non-negative guarantees can do so. See *Section 4.3 Positive-only literal* for an example.
 
 Parentheses are required for negative integers and rationals, to avoid ambiguity, both in the lexer and for human readers. Parentheses are optional for positive integers.
 
-``Foo.10e6`` will desugar to ``Foo.fromNumeric (10e6 :: Natural)`` if ``NumDecimals`` is enabled, or ``Foo.fromNumeric (10e6 :: Rational)`` otherwise.
+``Foo.10e6`` will desugar to ``Foo.fromNatural 10e6`` if ``NumDecimals`` is enabled, or ``Foo.fromRational 10e6`` otherwise.
 
 QualifiedStrings
 ~~~~~~~~~~~~~~~~
@@ -311,51 +309,19 @@ Scientific
 
 If you want to write ``BigDecimal`` literals (e.g. for tests), you have to use either the ``BigDecimal`` constructor or write a ``big = BigDecimal`` helper, but that's unsafe if accidentally called on a non-literal, as ``Scientific`` throws a runtime error if converting from a repeating decimal.
 
-With ``QualifiedNumbers``, you could write ``Big.123``, which guarantees that ``Big.fromNumeric`` is only called on literals (e.g. you could configure hlint to ban calling ``BigDecimal.fromNumeric`` directly and only be used via ``QualifiedNumbers``).
+With ``QualifiedNumbers``, you could write ``Big.123``, which guarantees that ``Big.fromNatural`` is only called on literals (e.g. you could configure hlint to ban calling ``BigDecimal.fromNatural`` directly and only be used via ``QualifiedNumbers``).
 
 ::
 
-  -- only called on literals, can be used with any numeric literal: naturals, integers, rationals
-  fromNumeric :: Real a => a -> BigDecimal
-  fromNumeric = BigDecimal . realToFrac
+  -- only called on literals
+  fromNatural :: Natural -> BigDecimal
+  fromNatural = BigDecimal . realToFrac
 
-Multiple numeric types
-~~~~~~~~~~~~~~~~~~~~~~
+  fromNegativeInt :: Integer -> BigDecimal
+  fromNegativeInt = BigDecimal . realToFrac
 
-Here's an example of an implementation that's generic to all three numeric types:
-
-::
-
-  module StringInc (fromNumeric) where
-
-  fromNumeric :: (Num a, Show a) => a -> String
-  fromNumeric x = "StringInc (" ++ show (x + 1) ++ ")"
-
-* ``StringInc.10`` => ``"StringInc (11)"``
-* ``StringInc.(-10)`` => ``"StringInc (-9)"``
-* ``StringInc.(10.5)`` => ``"StringInc (23 % 2)"``
-
-Here's an example of an implementation that's different for each numeric type:
-
-::
-
-  module MyMod (fromNumeric) where
-
-  class Impl a where
-    fromNumeric :: a -> String
-
-  instance Impl Natural where
-    fromNumeric n = "NAT:" ++ show n
-
-  instance Impl Integer where
-    fromNumeric n = "NEGATIVE:" ++ show n
-
-  instance Impl Rational where
-    fromNumeric n = "FLOAT:" ++ show (realToFrac n :: Double)
-
-* ``MyMod.10`` => ``"NAT:10"``
-* ``MyMod.(-10)`` => ``"NEGATIVE:-10"``
-* ``MyMod.(10.5)`` => ``"FLOAT:10.5"``
+  fromRational :: Rational -> BigDecimal
+  fromRational = BigDecimal . realToFrac
 
 Positive-only literals
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -378,17 +344,17 @@ However, this check is hardcoded in the compiler for specific types, e.g. ``Natu
 
   UserId (-1) -- works
 
-With ``QualifiedNumbers``, you could define ``fromNumeric`` only for ``Natural`` and not ``Integer``:
+With ``QualifiedNumbers``, you could define ``fromNatural`` and not ``fromNegativeInt``:
 
 ::
 
   -- In UserId module
-  fromNumeric :: Natural -> UserId
-  fromNumeric = UserId
+  fromNatural :: Natural -> UserId
+  fromNatural = UserId
 
   UserId.123 -- works
 
-  UserId.(-1) -- error: (-1) has type Integer, expected Natural
+  UserId.(-1) -- error: fromNegativeInt is not in scope
 
 See https://github.com/ghc-proposals/ghc-proposals/issues/438 for more details.
 
@@ -543,15 +509,15 @@ Alternatives
 
 * Use PatternSynonyms for all the patterns, not just lists
 
-  * This makes defining the corresponding pattern for ``fromNumeric :: Real a => a -> Foo`` difficult
+  * The View pattern more closely matches `Section 3.17.2 <https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-60015x7>`_ in the 2010 Report
 
 * Use ViewPatterns for lists
 
   * This prevents marking list patterns as COMPLETE
 
-* Avoid explicitly annotating type of numeric literals
+* Don't split up ``fromNatural`` and ``fromNegativeInt``; just have one ``fromInteger`` function that can be defined as only taking in ``Natural``.
 
-  * In the scenario where you only want to allow natural numbers, you could implement ``fromNumeric`` to take in a ``Natural``, but you'd still be relying on compiler support to warn that ``-1`` is an overflowed literal.
+  * You'd still be relying on compiler support to warn that ``-1`` is an overflowed literal.
 
 Unresolved Questions
 --------------------
