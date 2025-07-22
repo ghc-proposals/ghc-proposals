@@ -97,6 +97,16 @@ a superclass shares member names with the current typeclass, you cannot declare
 the superclass's shared member names in the same instance declaration. The current
 typeclass's members will always take priority.
 
+To summarise, there are three parts here:
+
+1. the types in the instance head
+  - members are grouped by the type in the instance head(s)
+2. contexts and pragmas
+  - all members must have the same contexts and instance pragmas
+3. members themselves
+  - for a given superclass and instance head type there must be at most one member
+    for each member of that superclass
+
 General example
 ^^^^^^^^^^^^^^^
 
