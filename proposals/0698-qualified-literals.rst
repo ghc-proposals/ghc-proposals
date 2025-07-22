@@ -253,12 +253,16 @@ We'll add the following constructors, to maintain backwards compatibility:
 
 ::
 
-  QualListE ModuleName [Exp]
+  data Exp
+    = ...
+    | QualListE ModuleName [Exp]
 
-  QualStringL ModuleName String
-  QualNaturalL ModuleName Natural
-  QualIntegerL ModuleName Integer
-  QualRationalL ModuleName Rational
+  data Lit
+    = ...
+    | QualStringL ModuleName String
+    | QualNaturalL ModuleName Natural
+    | QualIntegerL ModuleName Integer
+    | QualRationalL ModuleName Rational
 
 Examples
 --------
