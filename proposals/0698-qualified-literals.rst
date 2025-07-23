@@ -90,7 +90,7 @@ This proposal would desugar list literals to a build-like form instead, so that 
 
 ::
 
-  M.buildList (\cons nil -> 4 `cons` ("foo" `cons` (True `cons` nil)))
+  M.buildList 3 (\cons nil -> 4 `cons` ("foo" `cons` (True `cons` nil)))
 
 For a suitable ``M.buildList``, this is enough to support heterogenous list literals: see *Section 4.6 Heterogeneous Lists*.
 
@@ -186,17 +186,17 @@ With ``-XQualifiedLists``, we gain the following syntaxes:
     * - **New expression syntax**
       - **Desugared expression syntax**
     * - ``Foo.[]``
-      - ``Foo.buildList (\cons nil -> nil)``
+      - ``Foo.buildList 0 (\cons nil -> nil)``
     * - ``Foo.[x, y]``
-      - ``Foo.buildList (\cons nil -> x `cons` (y `cons` nil))``
+      - ``Foo.buildList 2 (\cons nil -> x `cons` (y `cons` nil))``
     * - ``Foo.[x ..]``
-      - ``Foo.buildList (Foo.enumFrom x)``
+      - ``Foo.buildListEnum (Foo.enumFrom x)``
     * - ``Foo.[x, y ..]``
-      - ``Foo.buildList (Foo.enumFromThen x y)``
+      - ``Foo.buildListEnum (Foo.enumFromThen x y)``
     * - ``Foo.[x .. y]``
-      - ``Foo.buildList (Foo.enumFromTo x y)``
+      - ``Foo.buildListEnum (Foo.enumFromTo x y)``
     * - ``Foo.[x, y .. z]``
-      - ``Foo.buildList (Foo.enumFromThenTo x y z)``
+      - ``Foo.buildListEnum (Foo.enumFromThenTo x y z)``
 
 .. list-table::
     :align: left
@@ -208,7 +208,7 @@ With ``-XQualifiedLists``, we gain the following syntaxes:
     * - ``x Foo.: y``
       - ``Foo.FromListCons x y``
 
-One might wonder why this doesn't align more closely with the interface of ``-XOverloadedLists``, e.g. ``Foo.fromListN 3 [x, y, z]``. The reason is to avoid the intermediate list, which would need to typecheck as a list. Similar reason for defining new ``enumFrom`` functions instead of reusing Prelude's. See *Section 4.6 Heterogeneous Lists* for a use-case.
+One might wonder why this doesn't align more closely with the interface of ``-XOverloadedLists``, e.g. ``Foo.fromList [x, y, z]``. The reason is to avoid the intermediate list, which would need to typecheck as a list. Similar reason for defining new ``enumFrom`` functions instead of reusing Prelude's. See *Section 4.6 Heterogeneous Lists* for a use-case.
 
 We also decide to do ``Foo.buildList`` instead of something like ``Foo.fromList (x `Foo.cons` Foo.nil)`` so that there's one definition to jump to (e.g. with IDE integrations) instead of three.
 
@@ -286,8 +286,8 @@ With ``QualifiedLists``, ``vector`` could define:
 
   module Data.Vector.Qualified where
 
-  buildList :: ((a -> [a] -> [a]) -> [a] -> [a]) -> Vector a
-  buildList f = V.fromList (GHC.List.build f)
+  buildList :: Integer -> ((a -> [a] -> [a]) -> [a] -> [a]) -> Vector a
+  buildList n f = V.fromListN n (GHC.List.build f)
 
   pattern FromListCons a b <- (V.uncons -> Just (a, b))
   pattern FromListNil <- (V.uncons -> Nothing)
@@ -378,11 +378,13 @@ With ``QualifiedLists``, converting list literals are no longer confined to the 
   module Data.HList.Qualified where
 
   buildList ::
+    Integer ->
     ( (forall a as. f a -> HList f as -> HList f (a ': as))
       -> HList f '[]
       -> HList f xs
-    ) -> HList f xs
-  buildList f = f HCons HNil
+    ) ->
+    HList f xs
+  buildList _ f = f HCons HNil
 
   pattern FromListCons :: () => xs ~ (x0 ': xs0) => f x0 -> HList f xs0 -> HList f xs
   pattern FromListCons a b = HCons a b
@@ -413,22 +415,27 @@ Example of a ``ByteArray`` implementation, which requires knowing the length of 
 
 ::
 
-  type Builder s = (Int -> MutableByteArray s -> ST s (), Int)
+  type Builder s = Int -> MutableByteArray s -> ST s ()
 
   buildList ::
     forall a. Prim a =>
+    Integer ->
     ( forall s.
       (a -> Builder s -> Builder s)
       -> Builder s
       -> Builder s
-    ) -> ByteArray
-  buildList f = let (go, n) = f cons nil in createByteArray (n * sizeOfType @a) (go 0)
+    ) ->
+    ByteArray
+  buildList n f = createByteArray (n * sizeOfType @a) $ f cons nil
     where
       nil :: Builder s
-      nil = (\_ _ -> pure (), 0)
+      nil = \_ _ -> pure ()
 
       cons :: Prim a => a -> Builder s -> Builder s
-      cons x (go, n) = (\i arr -> writeByteArray arr i x >> go (i + 1) arr, n + 1)
+      cons x next = \i arr -> writeByteArray arr i x >> next (i + 1) arr
+
+  -- [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf0, 0x3f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x40]
+  print ByteArray.[1, 2]
 
 Effect and Interactions
 -----------------------
