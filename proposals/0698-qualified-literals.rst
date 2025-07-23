@@ -173,7 +173,7 @@ With ``-XQualifiedStrings``, we gain the following syntaxes:
     * - ``Foo."""asdf"""``
       - ``((== Foo.fromString "asdf") -> True)``
 
-Multiline strings are desugared to single line strings first, then desugared as a qualified string literal. See `Multiline Strings <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0569-multiline-strings.rst>`_ for more information.
+Qualified multiline strings are only allowed if ``-XMultilineStrings`` is enabled. Qualified multiline strings are desugared to single line strings first, then desugared as a qualified string literal. See `Multiline Strings <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0569-multiline-strings.rst>`_ for more information.
 
 QualifiedLists
 ~~~~~~~~~~~~~~
@@ -465,7 +465,7 @@ The equivalent code with ``OverloadedStrings`` would have failed to compile with
 Interactions with other extensions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* Multiline strings are supported, as mentioned in the specification
+* Qualified multiline strings are allowed when ``-XMultilineStrings`` is enabled, as mentioned in the specification
 
 * `Allow arbitrary identifiers as fields in OverloadedRecordDot <https://github.com/ghc-proposals/ghc-proposals/pull/668>`_ has similar syntax to the proposed qualified string literal, but as ``Foo.bar`` is parsed as a qualified identifier even with OverloadedRecordDot, it makes sense that ``Foo."bar"`` is also parsed as a qualified literal.
 
