@@ -582,7 +582,7 @@ A module export only exports bindings from that module which are at level 0::
     import splice N ( oops )
     import N ( ok )
 
-A module export which doesn't export any bindings issues a warning::
+A module export which doesn't export any bindings issues a warning under ``-Wdodgy-exports``::
 
   {-# LANGUAGE ExplicitLevelImports #-}
 
