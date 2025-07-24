@@ -60,7 +60,7 @@ Syntax for local quantifiers has a simple form.
 
 ::
 
-  forscoped   (tyvar_i )+.
+  forscoped   (tyvar_i )+
 
 ForScoped quantifier is utilized by Haskell-renamer, so no changes require for Core-Language.
 
