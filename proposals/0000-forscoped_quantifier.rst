@@ -60,7 +60,7 @@ Syntax for local quantifiers has a simple form.
 
 ::
 
-  forscoped   (tyvar_i )+
+  forscoped (tyvar_i )+
 
 ForScoped quantifier is utilized by Haskell-renamer, so no changes require for Core-Language.
 
@@ -122,18 +122,18 @@ Examples uses ForScoped Quantifier
   -- Example 10
   f :: forall a b c. [a] -> [b] -> c -> ....
   f xs ys z = .....
-     where
-       zzs :: forscoped c. [c]
-       zzs = [z, z, z] 
-       yys :: forscoped b. [b]
-       yys = reverse ys
-	   x2 :: forall d. d -> ....
-	   x2 t = ...
-	      where
-		    x3 :: forscoped a. a
-			x3 = head xs
-			xt :: forscoped d a. (d, a)
-			xt = (t, x3)
+    where
+      zzs :: forscoped c. [c]
+      zzs = [z, z, z] 
+      yys :: forscoped b. [b]
+      yys = reverse ys
+      x2 :: forall d. d -> ....
+      x2 t = ...
+        where
+	  x3 :: forscoped a. a
+	  x3 = head xs
+	  xt :: forscoped d a. (d, a)
+	  xt = (t, x3)
   
  
 Effect and Interactions
