@@ -35,7 +35,7 @@ ForScoped Quantifier "grab" local scope type variables only
   f :: forall a b. [a] -> [b] -> [(a, b)]
   f xs ys  = zip (xs :: forscoped a. [a]) yys
      where
-       yys :: forscoped b. [bb]
+       yys :: forscoped b. [b]
        yys = reverse ys
 
 
