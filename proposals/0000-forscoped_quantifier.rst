@@ -21,7 +21,7 @@ Motivation
 
 With GHC's powerful type-level programming features, we need powerful abilities to explicitly bring local type variables into scope. 
 
-To write some signatures ``ScopedTypeVariables`` extension is needed, but it is still has ambiguity for each unquantified type variable - is it local scoped or forall type variable.
+To write some signatures ``ScopedTypeVariables`` extension is needed, but it is still has ambiguity for each unquantified type variable - is it local scoped or universal type variable.
 
 This proposal Introduce ``forscope`` quantifier, which explicitly require local scope only or error otherwise.
 
@@ -39,7 +39,7 @@ ForScoped Quantifier "grab" local scope type variables only
        yys = reverse ys
 
 
-``ScopedTypeVariables`` extension for all non-quantifiered type variables try to find local scope. If local scope is not found,``forall`` quantifier is used.
+``ScopedTypeVariables`` extension for all non-quantifiered type variables try to find local scope. If local scope is not found, universally ``forall`` quantifier is used.
 
 But for ``forscoped`` type variable ``ScopedTypeVariables`` extension must check for local scope only. If local scope is not found error must occur.
 
