@@ -289,7 +289,7 @@ Examples
 --------
 Using the ``Monad`` example in `Proposed Library Change Specification <#Proposed Library Change Specification>`_
 we could define a new ``Monad`` ``M`` with merely the following (if we also use
-the aforementioned shared class methods proposal):
+the aforementioned shared class members proposal):
 ::
   data Id a = MkId a
 
@@ -394,6 +394,7 @@ faithfully.
 Unresolved Questions
 --------------------
 None currently.
+
 .. Explicitly list any remaining issues that remain in the conceptual design and
 .. specification. Be upfront and trust that the community will help. Please do
 .. not list *implementation* issues.
