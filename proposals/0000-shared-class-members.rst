@@ -73,7 +73,7 @@ By default this extension should be enabled, or brought into a future language
 edition, so that the full utility can be realised. The extension stands
 on it own without that in consideration.
 
-As with `intrinsic typeclasses <https://gitlab.haskell.org/ghc/ghc/-/wikis/intrinsic-superclasses>`_
+As with `intrinsic superclasses <https://gitlab.haskell.org/ghc/ghc/-/wikis/intrinsic-superclasses>`_
 we will use the terminology "members" instead of "methods" so we can talk about
 associated types and associated data as well.
 
