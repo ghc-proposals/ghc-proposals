@@ -21,15 +21,15 @@ Motivation
 
 With GHC's powerful type-level programming features, we need powerful abilities to explicitly bring local type variables into scope. 
 
-To write some signatures ``ScopedTypeVariables`` extension is needed, but it is still has ambiguity for each unquantified type variable - is it local scoped or universal type variable.
+To write some signatures for ``ScopedTypeVariables`` extension is needed (or ``TypeAbstractions`` in some cases). But it still has ambiguity for each unquantified type variable - it could be either a local scoped type variable or a universal quantified type variable.
 
-This proposal Introduce ``forscope`` quantifier, which explicitly require local scope only or error otherwise.
+This proposal introduces ``forscope`` quantifier, which explicitly requires local scope only or throws an error otherwise.
 
 
 Proposed Change Specification
 -----------------------------
 
-ForScoped Quantifier "grab" local scope type variables only
+ForScoped Quantifier "grabs" local scope type variables only
 ::
 
   f :: forall a b. [a] -> [b] -> [(a, b)]
@@ -41,28 +41,28 @@ ForScoped Quantifier "grab" local scope type variables only
 
 ``ScopedTypeVariables`` extension for all non-quantifiered type variables try to find local scope. If local scope is not found, universally ``forall`` quantifier is used.
 
-But for ``forscoped`` type variable ``ScopedTypeVariables`` extension must check for local scope only. If local scope is not found error must occur.
+But for ``forscoped`` type variable ``ScopedTypeVariables`` extension must check for local scope only. If the local scope is not found, the error must occur.
 
-This make this quantifier more specific and less ambiguous which allows to catch more errors early.
+This makes this quantifier more specific and less ambiguous, which allows for catching more errors early.
 
 
 Extension
 ~~~~~~~~~~~~
 
-We introduce a new extension ``-XForScopedQuantifier`` which also implies ``ScopedTypeVariables`` extension.
+We introduce a new extension ``-XForScopedQuantifier`` which also implies ``ScopedTypeVariables`` and ``TypeAbstractions`` extensions.
 
-With ``-XForScopedQuantifier``, ``forscoped`` becomes keyword in types.
+The ``forscoped`` becomes keyword in types with ``-XForScopedQuantifier`` extesion.
 
 Syntax
 ~~~~~~
 
-Syntax for local quantifiers has a simple form.
+The syntax for local quantifiers has a simple form.
 
 ::
 
   forscoped (tyvar_i )+
 
-ForScoped quantifier is utilized by Haskell-renamer, so no changes require for Core-Language.
+ForScoped quantifier is utilized by Haskell-renamer, so no changes are required for Core-Language.
 
 
 Examples
@@ -145,13 +145,13 @@ None.
 Costs and Drawbacks
 -------------------
 
-We expect the implementation and maintenance costs is minimum difficulty.
+We expect the implementation and maintenance costs has minimum difficulty.
 
 
 Alternatives
 ------------
 
-Alternative is to use more ambiguous absent of quantifier to type variable.
+An alternative is to use a more ambiguous absence of a quantifier to type's variable..
 
 
 Backward Compatibility
