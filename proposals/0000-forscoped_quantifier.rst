@@ -43,7 +43,7 @@ ForScoped Quantifier "grabs" local scope type variables only
 
 But for ``forscoped`` type variable ``ScopedTypeVariables`` extension must check for local scope only. If the local scope is not found, the error must occur.
 
-This makes this quantifier more specific and less ambiguous, which allows for catching more errors early.
+Using this quantifier with type variables makes signatures more specific and less ambiguous, which allows for catching more errors early.
 
 
 Extension
