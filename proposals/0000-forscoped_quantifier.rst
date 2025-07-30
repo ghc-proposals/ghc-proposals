@@ -139,8 +139,26 @@ Examples uses ForScoped Quantifier
 Effect and Interactions
 -----------------------
 
-None.
+UnicodeSyntax
+~~~~~~~~~~~~~
 
+We wish to preserve ``∃`` (There Exists, U+2203) symbol for universal existential quantifier, so it is proposed to add 2 symbols ``∃?`` (``∃`` + ``?``) to represent ``forscoped`` quantifier.
+::
+
+  -- Example 1
+  foo :: ∀ b. Maybe b -> ()
+  foo @a (_ :: ∃? a. Maybe a) = ()
+
+  -- Example 2
+  f1 :: ∀ a. [a] -> [a]
+  f1 (x:xs) = xs ++ [ x :: ∃? a. a ]
+
+  -- Example 3
+  f2 :: ∀ a. [a] -> [a]
+  f2 xs = ys ++ ys
+     where
+       ys :: ∃? a. [a]
+       ys = reverse xs
 
 Costs and Drawbacks
 -------------------
