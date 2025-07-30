@@ -64,7 +64,7 @@ Just like ``ExplicitForall`` extension allow explicitly say exactly what this sp
  
 Main alternative is "Modern Scoped Type Variables" `#448`_ which was added into ``ScopedTypeVariables`` extension and ``TypeAbstractions`` extension.
 
-``ScopedTypeVariables`` is *de facto* **Implicit Forunique** : Implicit rules to add a local scope (or universal) quantifier to type variables if they are not explicitly quantified.
+``ScopedTypeVariables`` is *de facto* **Implicit Local Quantifiers** : Implicit rules to add a local scope (or universal) quantifier to type variables if they are not explicitly quantified.
 
 Also Alternative is ``PartialTypeSignatures`` extension, with opposite philosophy: compiler infer type not for holes.
 
