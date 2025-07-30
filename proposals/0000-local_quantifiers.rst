@@ -14,24 +14,55 @@ Local Quantifiers
 .. _`#448`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0448-type-variable-scoping.rst
 
 
-This proposal introduces local quantifier into GHC, which grab local type variables
+This proposal introduces local quantifiers into GHC, which grabs local type variables.
 
 Motivation
 ----------
 
-With GHC's powerful type-level programming features, we need powerful abilities to explicitly bring local type variables into scope. 
+With GHC's powerful type-level programming features, we need powerful abilities to explicitly bring local type variables into the scope. 
 
-To write some trivial functions ``ScopedTypeVariables`` extension is needed, which adds implicit rules how to read type signatures!
+To write some trivial functions ``ScopedTypeVariables`` extension is needed (or ``TypeAbstractions``), which adds implicit rules for how to read type signatures!
 
-And this is a bit unhandy to use implicit only rules in language which has a huge system of types.
+And this is a bit unhandy to use implicit-only rules in a language that has a huge system of types.
 
-This Proposal suggest to add the simple **ForThis Quantifier**, **ForThat Quantifier**, **ForSame Quantifier** and **ForUsed Quantifier**, **ForInner Quantifier**, **ForNested Quantifier** which allows to write explicitly type signatures, which depends from internal or external type variables.
+Right now there are three kinds of scoped:
 
-Explicitness is preferential in Haskell over implicitness. And this Proposal propose how to write local quantifiers explicitly!
+* The scope local to each type signature
+::
 
-Just like ``ExplicitForall`` extension allow explicitly say exactly what this specific type variable is ``forall`` quantified, this Proposal allow to switch on ``ExplicitScoped`` extension explicitly say exactly what this specific type variable is local quantified!
+  id :: forall a. a -> a -- 'a' is introduced and used only within this type signature
+
+* The lexical scope around a type signature (modified by ``TypeAbstractions``)
+::
+
+  {-# LANGUAGE TypeAbstractions #-}
+  const :: forall a. a -> b -> a
+  const @a x = res where
+    res :: a -- uses 'a' from the lexical scope
+    res = x
+
+* The magical scope introduced by ``ScopedTypeVariables``
+::
+
+  {-# LANGUAGE ScopedTypeVariables #-}
+  const :: forall a. a -> b -> a
+  const x = res where
+    res :: a -- uses 'a' from parent signature
+    res = x
+
+Notice how the signature res :: ``a`` in 1 & 2 does not itself say where ``a`` comes from.
+
+This is confusing because traditionally Haskell has made it optional to write forall in a signature, so it is unclear if ``res :: a`` means ``res :: forall a. a`` or the other thing (and it's not even possible to express what that the other meaning is currently!).
+
+This proposal says such uses of a should explicitly say they use '``a``' from somewhere else (excactly whichwhere) in the program.
+
+This Proposal suggests to add the **ForThis Quantifier**, **ForThat Quantifier**, **ForSame Quantifier** and **ForUsed Quantifier**, **ForInner Quantifier**, **ForNested Quantifier** which allow to write explicitly type signatures, which depends from internal or external type variables.
+
+Explicitness is preferential in Haskell over implicitness. And this Proposal propose how to write local quantifiers explicitly! It does not aim to allow writing more programs, just to allow being more explicit about where type variables come from.
+
+Just like ``ExplicitForall`` extension allow explicitly say exactly what this specific type variable is ``forall`` quantified, this Proposal allow to switch on ``LocalQuantifiers`` extension explicitly say exactly what this specific type variable is local quantified!
  
-Main alternative is "Modern Scoped Type Variables" `#448`_ which was added into ``ScopedTypeVariables`` extension.
+Main alternative is "Modern Scoped Type Variables" `#448`_ which was added into ``ScopedTypeVariables`` extension and ``TypeAbstractions`` extension.
 
 ``ScopedTypeVariables`` is *de facto* **Implicit Forunique** : Implicit rules to add a local scope (or universal) quantifier to type variables if they are not explicitly quantified.
 
@@ -411,8 +442,49 @@ Examples uses ForSame Quantifier
 Effect and Interactions
 -----------------------
 
+UnicodeSyntax
+~~~~~~~~~~~~~~
+
+We wish to preserve ``∃`` (There Exists, U+2203) symbol for universal existential quantifier, so it is proposed to add 2 symbols (``∃`` + ``<something>``) to represent local quantifiers.
+
+1. ``∃†`` could represent ``forthis`` quantifier (There Exists, U+2203) + (Dagger, U+2020).
+
+2. ``∃§`` could represent ``forthat`` quantifier (There Exists, U+2203) + (Section Sign, U+00A7).
+
+3. ``∃∝`` could represent ``forsame`` quantifier (There Exists, U+2203) + (Proportional To, U+221D).
+
+4. ``∃∴`` could represent ``forused`` quantifier (There Exists, U+2203) + (Therefore, U+2234).
+
+5. ``∃☈`` could represent ``forinner`` quantifier (There Exists, U+2203) + (Thunderstorm, U+2608).
+
+6. ``∃∂`` could represent ``fornested`` quantifier (There Exists, U+2203) + (Partial Differential, U+2202).
+
+Examples
+::
+
+  id :: ∀ a. a -> a
+  id @t x = x :: ∃† t. t
+
+  f1 :: ∀ a b. [a] -> [b] -> [(a, b)]
+  f1 @aa @bb xs ys  = zip (xs :: ∃† aa. [aa]) yys
+     where
+       yys :: ∃∴ _ b. [b]
+       yys = reverse ys
+
+  f2 :: Maybe Int -> Int
+  f2 Nothing   = (4 :: ∃☈ a. a)
+  f2 (Just _)  = (5 :: ∃☈ a. a)
+
+  class D a where
+    m :: ∃§ a. a -> a
+
+  instance Num a => D [a] where
+    m :: ∃§ a. [a] -> [a]
+    m x = map (*2) x
+
+
 ScopedTypeVariables
-~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
 
 ``ScopedTypeVariables`` extension ignores local quantified variables.
 
@@ -422,7 +494,7 @@ But we could reuse part of searching algorithms from ``ScopedTypeVariables`` alg
 Costs and Drawbacks
 -------------------
 
-We expect the implementation and maintenance costs of ``ForuniqueQuantifier`` is medium difficulty.
+We expect the implementation and maintenance costs of ``LocalQuantifiers`` has medium difficulty.
 
 
 Alternatives
