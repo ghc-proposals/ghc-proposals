@@ -61,7 +61,41 @@ and language *stability*
 The life cycle of a proposal
 -----------------------------------
 
-This section outlines what stages a proposal may go through. The stage is identified by a GitHub label, which is identified in the following list.
+This section outlines what stages a proposal may go through. 
+
+Table of stages
+~~~~~~~~~~~~~~~~~
+
+In brief all stages of the Reviewing process are shown in the table.
+
++-----------------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
+| Stage                             | Max duration   | Responsibility                   | Action                   | New stage                        |
+|                                   |                | for next action                  |                          |                                  |
++===================================+================+==================================+==========================+==================================+
+| Proposal creating                 | Indefinite     | Author                           | Pull request             | Community discussion             |
++-----------------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
+| Community discussion              | Indefinite     | Author                           | Submit to committee      | Awaiting shepherd                |
++-----------------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
+| Awaiting shepherd                 | 1 week         | Committee secretary              | Assign shepherd          | Awaiting shepherd recommendation |
++-----------------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
+| Awaiting shepherd recommendation  | 2 weeks        | Shepherd                         | Make recommendation      | Committee discussion             |
+|                                   |                |                                  +--------------------------+----------------------------------+
+|                                   |                |                                  | Send back for revision   | Community discussion             |
++-----------------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
+| Committee discussion              | 4 weeks        | Shepherd                         | Accept                   | Accepted                         |
+|                                   |                |                                  +--------------------------+----------------------------------+
+|                                   |                |                                  | Reject                   | Rejected                         |
+|                                   |                |                                  +--------------------------+----------------------------------+
+|                                   |                |                                  | Send back for revision   | Community discussion             |
++-----------------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
+| Accepted                          | Indefinite     | Anyone (including the author)    | Implement the proposal   | Implemented                      |
+|                                   |                | willing to implement it          |                          |                                  |
++-----------------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
+
+Detailed list of stages
+~~~~~~~~~~~~~~~~~~~~~~~
+
+The stage is identified by a GitHub label, which is identified in the following list.
 
 1. (No label.) The author drafts a proposal.
 
