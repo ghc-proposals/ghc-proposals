@@ -74,7 +74,9 @@ In brief all stages of the Reviewing process are shown in the table.
 +===================================+================+==================================+==========================+==================================+
 | Proposal creating                 | Indefinite     | Author                           | Pull request             | Community discussion             |
 +-----------------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
-| Community discussion              | Indefinite     | Author                           | Submit to committee      | Awaiting shepherd                |
+| Community discussion              | Indefinite     | Author                           | Close request            | Withdrawal                       |
+|                                   |                |                                  +--------------------------+----------------------------------+
+|                                   |                |                                  | Submit to committee      | Awaiting shepherd                |
 +-----------------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
 | Awaiting shepherd                 | 1 week         | Committee secretary              | Assign shepherd          | Awaiting shepherd recommendation |
 +-----------------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
