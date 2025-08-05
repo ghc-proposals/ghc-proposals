@@ -84,7 +84,7 @@ In brief all stages of the Reviewing process are shown in the table.
 |                                   |                |                                  +--------------------------+----------------------------------+
 |                                   |                |                                  | Send back for revision   | Community discussion             |
 +-----------------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
-| Committee discussion              | 4 weeks        | Shepherd                         | Accept                   | Accepted                         |
+| Committee discussion              | 4-5 weeks      | Shepherd                         | Accept                   | Accepted                         |
 |                                   |                |                                  +--------------------------+----------------------------------+
 |                                   |                |                                  | Reject                   | Rejected                         |
 |                                   |                |                                  +--------------------------+----------------------------------+
