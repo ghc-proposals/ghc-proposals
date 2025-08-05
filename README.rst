@@ -90,7 +90,11 @@ In brief all stages of the Reviewing process are shown in the table.
 |                                   |                |                                  +--------------------------+----------------------------------+
 |                                   |                |                                  | Send back for revision   | Community discussion             |
 +-----------------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
-| Accepted                          | Indefinite     | Anyone (including the author)    | Implement the proposal   | Implemented                      |
+| Accepted                          | 1-3 weeks      | Author                           | Do final corrections     | Merged                           |
+|                                   |                +----------------------------------+--------------------------+                                  |
+|                                   |                | Shepherd                         | Merge                    |                                  |
++-----------------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
+| Accepted / Merged                 | Indefinite     | Anyone (including the author)    | Implement the proposal   | Implemented                      |
 |                                   |                | willing to implement it          |                          |                                  |
 +-----------------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
 
@@ -170,19 +174,30 @@ The stage is identified by a GitHub label, which is identified in the following 
    * `≡ List of proposals being revised <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`__
    * `≡ List of rejected proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%Rejected%22>`__
 
-8. **Label**: `Dormant <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Dormant%22>`__.  If a proposal sees no activity for along time, it is marked as “dormant”,
-   and eventually closed.
+8. **Label**: `Pending committee review <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+committee+review%22>`__.  
+   **Responsibility for next action:** shepherd and author.  **Timescale**: two weeks. 
+  
+   If the committee accepts the proposal with minor corrections, the author and shepherd work together to make any final edits.
 
-   * `What is a dormant proposal? <#what-is-a-dormant-proposal>`__
-   * `≡ List of dormant proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Dormant%22>`__
+9. **Label**: `Accepted <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Accepted%22>`__.  
+   **Responsibility for next action:** shepherd and committee secretary.  **Timescale**: one week. 
 
-9. **Label**: `Implemented <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`__.   Once a proposal is accepted, it still has to be implemented.  The author
-   may do that, or someone else. We mark the proposal as “implemented” once it
-   hits GHC’s ``master`` branch (and we are happy to be nudged to do so by
-   email, GitHub issue, or a comment on the relevant pull request).
+   If the committee fully accepts the proposal, the committee secretary and/or shepherd marks the proposal as “accepted” and merges the Proposal.
+   Any later changes must be submitted as a separate amendment proposal.
 
-   * `≡ List of proposals pending implementation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Accepted%22+-label%3A%22Implemented%22>`__
-   * `≡ List of implemented proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`__
+10. **Label**: `Implemented <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`__.   Once a proposal is accepted, it still has to be implemented.  The author
+    may do that, or someone else. We mark the proposal as “implemented” once it
+    hits GHC’s ``master`` branch (and we are happy to be nudged to do so by
+    email, GitHub issue, or a comment on the relevant pull request).
+
+    * `≡ List of proposals pending implementation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Accepted%22+-label%3A%22Implemented%22>`__
+    * `≡ List of implemented proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`__
+
+11. **Label**: `Dormant <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Dormant%22>`__.  If a proposal sees no activity for along time, it is marked as “dormant”,
+    and eventually closed.
+
+    * `What is a dormant proposal? <#what-is-a-dormant-proposal>`__
+    * `≡ List of dormant proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Dormant%22>`__
 
 Do not hesitate to `contact <#questions>`_ us if you have questions.
 
