@@ -13,7 +13,7 @@ Qualified Literals
 .. sectnum::
 .. contents::
 
-This proposal proposes extending ``-XQualifiedDo`` to literals, to enable more ergonomic and more powerful syntax than ``OverloadedStrings`` or ``OverloadedLists``.
+This proposal proposes extending ``-XQualifiedDo`` to literals, to enable more ergonomic and more powerful syntax than ``OverloadedStrings`` or ``OverloadedLists``. Another way to view this proposal would be extending ``-XRebindableSyntax`` to literals, but only within a local scope.
 
 Motivation
 ----------
@@ -78,19 +78,19 @@ This proposal would desugar natural numbers separately from negative integers so
 Inability to use heterogeneous lists
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-With ``-XOverloadedLists`` we can never write the literal ``[4, "foo", True]``, becuase that desugars to ``fromList [4, "foo", True]`` which is ill-typed regardless of ``fromList``. That is annoyingly restrictive, because with heterogeneous lists, it's perfectly fine to write
+With ``-XOverloadedLists`` we can never write the literal ``[4, "hello", True]``, becuase that desugars to ``fromList [4, "hello", True]`` which is ill-typed regardless of ``fromList``. That is annoyingly restrictive, because with heterogeneous lists, it's perfectly fine to write
 
 ::
 
-  4 `HCons` "foo" `HCons` True `HCons` HNil :: HList [Int, String, Bool]
+  4 `HCons` "hello" `HCons` True `HCons` HNil :: HList [Int, String, Bool]
 
 and it would be convenient to use list literals instead. This was even explicitly listed as a restriction in the original ``OverloadedLists`` `design <https://gitlab.haskell.org/ghc/ghc/-/wikis/overloaded-lists>`_.
 
-This proposal would desugar list literals to a build-like form instead, so that ``M.[4, "foo", True]`` desugars to
+This proposal would desugar list literals to a build-like form instead, so that ``M.[4, "hello", True]`` desugars to
 
 ::
 
-  M.buildList 3 (\cons nil -> 4 `cons` ("foo" `cons` (True `cons` nil)))
+  M.buildList 3 (\cons nil -> 4 `cons` ("hello" `cons` (True `cons` nil)))
 
 For a suitable ``M.buildList``, this is enough to support heterogenous list literals: see *Section 4.6 Heterogeneous Lists*.
 
@@ -107,10 +107,24 @@ General comments:
 
 * Some literals are not supported yet (Chars, unboxed literals) due to lack of use-cases, but could be extended in the future.
 
-* Future work could be done to allow compile time logic, e.g. ``$Foo.1`` => ``$(Foo.fromNatural [|1|])``, but that is out of scope of this proposal.
+* Future work could be done to allow compile time logic, e.g. ``$M.1`` => ``$(M.fromNumeric [|1|])``, but that is out of scope of this proposal.
 
 QualifiedNumbers
 ~~~~~~~~~~~~~~~~
+
+Currently, numeric literals have the following desugaring:
+
+.. list-table::
+    :align: left
+
+    * - **Expression**
+      - **Desugared expression syntax**
+    * - ``1``
+      - ``Prelude.fromInteger 1``
+    * - ``-1``
+      - ``Prelude.fromInteger (-1)``
+    * - ``1.5``
+      - ``Prelude.fromRational 1.5``
 
 With ``-XQualifiedNumbers``, we gain the following syntaxes:
 
@@ -119,37 +133,70 @@ With ``-XQualifiedNumbers``, we gain the following syntaxes:
 
     * - **New expression syntax**
       - **Desugared expression syntax**
-    * - ``Foo.1``
-      - ``Foo.fromNatural 1``
-    * - ``Foo.(1)``
-      - ``Foo.fromNatural 1``
-    * - ``Foo.(-1)``
-      - ``Foo.fromNegativeInt (-1)``
-    * - ``Foo.(1.2)``
-      - ``Foo.fromRational 1.2``
+    * - ``M.1``
+      - ``M.fromNumeric (1 :: Natural)``
+    * - ``M.(1)``
+      - ``M.fromNumeric (1 :: Natural)``
+    * - ``M.(-1)``
+      - ``M.fromNumeric (-1 :: Integer)``
+    * - ``M.(1.2)``
+      - ``M.fromNumeric (1.2 :: Rational)``
 
 .. list-table::
     :align: left
 
     * - **New pattern syntax**
       - **Desugared pattern syntax**
-    * - ``Foo.1``
-      - ``((== Foo.fromNatural 1) -> True)``
-    * - ``Foo.(1)``
-      - ``((== Foo.fromNatural 1) -> True)``
-    * - ``Foo.(-1)``
-      - ``((== Foo.fromNegativeInt (-1)) -> True)``
-    * - ``Foo.(1.2)``
-      - ``((== Foo.fromRational 1.2) -> True)``
+    * - ``M.1``
+      - ``((== M.fromNumeric (1 :: Natural)) -> True)``
+    * - ``M.(1)``
+      - ``((== M.fromNumeric (1 :: Natural)) -> True)``
+    * - ``M.(-1)``
+      - ``((== M.fromNumeric (-1 :: Integer)) -> True)``
+    * - ``M.(1.2)``
+      - ``((== M.fromNumeric (1.2 :: Rational)) -> True)``
 
-We distinguish between ``Natural`` and negative ``Integer`` so that use-cases that want non-negative guarantees can do so. If we only had one ``fromInteger``, you could type it as ``fromInteger :: Natural -> ...``, but it would be relying on the hardcoded ``-Woverflowed-literals`` compiler check.
+There were three options for this feature:
+
+#. Mirror Prelude and translate to simply ``M.fromInteger 1`` or ``M.fromRational 1.5``
+
+   * Pro: 1:1 correspondence with standard Haskell98 semantics
+   * Con: If you want non-negative guarantees, you could type ``M.fromInteger`` with ``Natural``, but you'd be relying on GHC's hardcoded ``-Woverflowed-literals`` check.
+
+#. Add a bit more expressiveness by breaking out Natural, i.e. ``M.fromNatural`` + ``M.fromNegativeInt`` + ``M.fromRational``
+
+   * Pro: Explicit non-negative guarantee
+   * Con: Supporting all integers requires implementing two functions. This isn't great, as the common case is supporting all integers; supporting only non-negative is probably only a fraction of the use cases.
+
+#. Use a single possibly-polymorphic ``M.fromNumeric`` definition that should work for any of: ``Natural``, ``Integer``, ``Rational``.
+
+   * The vast majority of cases would/should implement ``fromNumeric`` with ``Natural``, ``Integral a => a``, or ``Real a => a``.
+   * If distinguishing between the three cases is absolutely necessary, the user may still do so with normal typeclass techniques.
+   * Pro: Optional non-negative guarantee
+   * Pro: Majority of use cases would only define one ``fromNumeric`` definition using existing typeclasses
+   * Con: Rather divorced from standard Haskell98 semantics
 
 Parentheses are required for negative integers and rationals, to avoid ambiguity, both in the lexer and for human readers. Parentheses are optional for positive integers.
 
-``Foo.10e6`` will desugar to ``Foo.fromNatural 10e6`` if ``NumDecimals`` is enabled, or ``Foo.fromRational 10e6`` otherwise.
+``M.10e6`` will desugar to ``M.fromNumeric (10e6 :: Natural)`` if ``NumDecimals`` is enabled, or ``M.fromNumeric (10e6 :: Rational)`` otherwise.
 
 QualifiedStrings
 ~~~~~~~~~~~~~~~~
+
+Currently, string literals have the following desugaring:
+
+.. list-table::
+    :align: left
+
+    * - **Expression**
+      - **Enabled extensions**
+      - **Desugared expression syntax**
+    * - ``"hello"``
+      -
+      - ``"hello"``
+    * - ``"hello"``
+      - ``-XOverloadedStrings``
+      - ``GHC.Exts.fromString "hello"``
 
 With ``-XQualifiedStrings``, we gain the following syntaxes:
 
@@ -158,25 +205,40 @@ With ``-XQualifiedStrings``, we gain the following syntaxes:
 
     * - **New expression syntax**
       - **Desugared expression syntax**
-    * - ``Foo."asdf"``
-      - ``Foo.fromString "asdf"``
-    * - ``Foo."""asdf"""``
-      - ``Foo.fromString "asdf"``
+    * - ``M."asdf"``
+      - ``M.fromString "asdf"``
+    * - ``M."""asdf"""``
+      - ``M.fromString "asdf"``
 
 .. list-table::
     :align: left
 
     * - **New pattern syntax**
       - **Desugared pattern syntax**
-    * - ``Foo."asdf"``
-      - ``((== Foo.fromString "asdf") -> True)``
-    * - ``Foo."""asdf"""``
-      - ``((== Foo.fromString "asdf") -> True)``
+    * - ``M."asdf"``
+      - ``((== M.fromString "asdf") -> True)``
+    * - ``M."""asdf"""``
+      - ``((== M.fromString "asdf") -> True)``
 
 Qualified multiline strings are only allowed if ``-XMultilineStrings`` is enabled. Qualified multiline strings are desugared to single line strings first, then desugared as a qualified string literal. See `Multiline Strings <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0569-multiline-strings.rst>`_ for more information.
 
 QualifiedLists
 ~~~~~~~~~~~~~~
+
+Currently, list literals have the following desugaring:
+
+.. list-table::
+    :align: left
+
+    * - **Expression**
+      - **Enabled extensions**
+      - **Desugared expression syntax**
+    * - ``[x, y]``
+      -
+      - ``x Prelude.: y Prelude.: Prelude.[]``
+    * - ``[x, y]``
+      - ``-XOverloadedLists``
+      - ``GHC.Exts.fromListN 2 (x Prelude.: y Prelude.: Prelude.[])``
 
 With ``-XQualifiedLists``, we gain the following syntaxes:
 
@@ -185,36 +247,36 @@ With ``-XQualifiedLists``, we gain the following syntaxes:
 
     * - **New expression syntax**
       - **Desugared expression syntax**
-    * - ``Foo.[]``
-      - ``Foo.buildList 0 (\cons nil -> nil)``
-    * - ``Foo.[x, y]``
-      - ``Foo.buildList 2 (\cons nil -> x `cons` (y `cons` nil))``
-    * - ``Foo.[x ..]``
-      - ``Foo.buildListEnum (Foo.enumFrom x)``
-    * - ``Foo.[x, y ..]``
-      - ``Foo.buildListEnum (Foo.enumFromThen x y)``
-    * - ``Foo.[x .. y]``
-      - ``Foo.buildListEnum (Foo.enumFromTo x y)``
-    * - ``Foo.[x, y .. z]``
-      - ``Foo.buildListEnum (Foo.enumFromThenTo x y z)``
+    * - ``M.[]``
+      - ``M.buildList 0 (\cons nil -> nil)``
+    * - ``M.[x, y]``
+      - ``M.buildList 2 (\cons nil -> x `cons` (y `cons` nil))``
+    * - ``M.[x ..]``
+      - ``M.buildListEnum (M.enumFrom x)``
+    * - ``M.[x, y ..]``
+      - ``M.buildListEnum (M.enumFromThen x y)``
+    * - ``M.[x .. y]``
+      - ``M.buildListEnum (M.enumFromTo x y)``
+    * - ``M.[x, y .. z]``
+      - ``M.buildListEnum (M.enumFromThenTo x y z)``
 
 .. list-table::
     :align: left
 
     * - **New pattern syntax**
       - **Desugared pattern syntax**
-    * - ``Foo.[x, _, y]``
-      - ``Foo.FromListCons x (Foo.FromListCons _ (Foo.FromListCons y Foo.FromListNil))``
-    * - ``x Foo.: y``
-      - ``Foo.FromListCons x y``
+    * - ``M.[x, _, y]``
+      - ``M.FromListCons x (M.FromListCons _ (M.FromListCons y M.FromListNil))``
+    * - ``x M.: y``
+      - ``M.FromListCons x y``
 
-One might wonder why this doesn't align more closely with the interface of ``-XOverloadedLists``, e.g. ``Foo.fromList [x, y, z]``. The reason is to avoid the intermediate list, which would need to typecheck as a list. Similar reason for defining new ``enumFrom`` functions instead of reusing Prelude's. See *Section 4.6 Heterogeneous Lists* for a use-case.
+Note that while we could have mirrored ``-XOverloadedLists`` and just done ``M.fromListN 2 [x, y]``, we intentionally decide to use this more general API. This gives us more expressive power, since we no longer need to typecheck an intermediate list. Similar reason for defining new ``enumFrom`` functions instead of reusing Prelude's. See *Section 4.6 Heterogeneous Lists* for a use-case.
 
-We also decide to do ``Foo.buildList`` instead of something like ``Foo.fromList (x `Foo.cons` Foo.nil)`` so that there's one definition to jump to (e.g. with IDE integrations) instead of three.
+We also decide to do ``M.buildList`` instead of something like ``M.fromList (x `M.cons` M.nil)`` so that there's one definition to jump to (e.g. with IDE integrations) instead of three.
 
 To use as patterns, the implementor should define ``FromListCons`` and ``FromListNil`` pattern synonyms, typically with the ``COMPLETE`` pragma specified. We choose to do this instead of ``toList -> [x, _, z]`` because that would also disallow heterogeneous lists.
 
-Future work could be done to allow list comprehensions, e.g. ``Foo.[x * 10 | x <- [1..10]]`` => ``[1..10] `Foo.listCompBind` \x -> Foo.listCompReturn (x * 10)``, but that is out of scope of this proposal.
+Future work could be done to allow list comprehensions, e.g. ``M.[x * 10 | x <- [1..10]]`` => ``[1..10] `M.listCompBind` \x -> M.listCompReturn (x * 10)``, but that is out of scope of this proposal.
 
 Parser
 ~~~~~~
@@ -318,19 +380,13 @@ Scientific
 
 If you want to write ``BigDecimal`` literals (e.g. for tests), you have to use either the ``BigDecimal`` constructor or write a ``big = BigDecimal`` helper, but that's unsafe if accidentally called on a non-literal, as ``Scientific`` throws a runtime error if converting from a repeating decimal.
 
-With ``QualifiedNumbers``, you could write ``Big.123``, which guarantees that ``Big.fromNatural`` is only called on literals (e.g. you could configure hlint to ban calling ``BigDecimal.fromNatural`` directly and only be used via ``QualifiedNumbers``).
+With ``QualifiedNumbers``, you could write ``Big.123``, which guarantees that ``Big.fromNumeric`` is only called on literals (e.g. you could configure hlint to ban calling ``BigDecimal.fromNumeric`` directly and only be used via ``QualifiedNumbers``).
 
 ::
 
   -- only called on literals
-  fromNatural :: Natural -> BigDecimal
-  fromNatural = BigDecimal . realToFrac
-
-  fromNegativeInt :: Integer -> BigDecimal
-  fromNegativeInt = BigDecimal . realToFrac
-
-  fromRational :: Rational -> BigDecimal
-  fromRational = BigDecimal . realToFrac
+  fromNumeric :: Real a => a -> BigDecimal
+  fromNumeric = BigDecimal . realToFrac
 
 ByteString
 ~~~~~~~~~~
@@ -467,7 +523,7 @@ Interactions with other extensions
 
 * Qualified multiline strings are allowed when ``-XMultilineStrings`` is enabled, as mentioned in the specification
 
-* `Allow arbitrary identifiers as fields in OverloadedRecordDot <https://github.com/ghc-proposals/ghc-proposals/pull/668>`_ has similar syntax to the proposed qualified string literal, but as ``Foo.bar`` is parsed as a qualified identifier even with OverloadedRecordDot, it makes sense that ``Foo."bar"`` is also parsed as a qualified literal.
+* `Allow arbitrary identifiers as fields in OverloadedRecordDot <https://github.com/ghc-proposals/ghc-proposals/pull/668>`_ has similar syntax to the proposed qualified string literal, but as ``M.bar`` is parsed as a qualified identifier even with OverloadedRecordDot, it makes sense that ``M."bar"`` is also parsed as a qualified literal.
 
 * `Allow native string interpolation syntax <https://github.com/ghc-proposals/ghc-proposals/pull/570>`_ proposes adding string interpolation syntax with ``s"..."``. If both proposals are accepted, this syntax could provide a mechanism similar to Javascript's `tagged template literals <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals#tagged_templates>`_. See the other proposal for more details.
 
@@ -496,9 +552,14 @@ Alternatives
 
   * This prevents marking list patterns as COMPLETE
 
-* Don't split up ``fromNatural`` and ``fromNegativeInt``; just have one ``fromInteger`` function that can be defined as only taking in ``Natural``.
+* Use separate ``M.fromInteger`` and ``M.fromRational`` instead of a single polymorphic ``M.fromNumeric``
 
-  * You'd still be relying on compiler support to warn that ``-1`` is an overflowed literal.
+  * See the discussion in *Section 2.1 QualifiedNumbers*
+
+* Use separate ``M.fromListN`` instead of ``M.buildList``
+
+  * Disallows heterogeneous lists
+  * See the discussion in *Section 2.3 QualifiedLists*
 
 Unresolved Questions
 --------------------
