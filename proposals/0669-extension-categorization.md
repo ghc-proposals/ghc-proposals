@@ -1,11 +1,11 @@
 ---
 author: Trevis Elser
-date-accepted: ""
+date-accepted: "2025-08-07"
 ticket-url: ""
 implemented: ""
 ---
 
-This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/669).
+This proposal was [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/669).
 
 # Categorization of Language Extensions
 
