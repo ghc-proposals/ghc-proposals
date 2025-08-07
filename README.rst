@@ -72,7 +72,7 @@ In brief all stages of the Reviewing process are shown in the table.
 | Stage                             | Max duration   | Responsibility                   | Action                   | New stage                        |
 |                                   |                | for next action                  |                          |                                  |
 +===================================+================+==================================+==========================+==================================+
-| Proposal creating                 | Indefinite     | Author                           | Pull request             | Community discussion             |
+| Proposal creation                 | Indefinite     | Author                           | Pull request             | Community discussion             |
 +-----------------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
 | Community discussion              | Indefinite     | Author                           | Close request            | Withdrawal                       |
 |                                   |                |                                  +--------------------------+----------------------------------+
@@ -80,7 +80,7 @@ In brief all stages of the Reviewing process are shown in the table.
 +-----------------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
 | Awaiting shepherd                 | 1 week         | Committee secretary              | Assign shepherd          | Awaiting shepherd recommendation |
 +-----------------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
-| Awaiting shepherd recommendation  | 2 weeks        | Shepherd                         | Make recommendation      | Committee discussion             |
+| Pending shepherd recommendation   | 2 weeks        | Shepherd                         | Make recommendation      | Committee discussion             |
 |                                   |                |                                  +--------------------------+----------------------------------+
 |                                   |                |                                  | Send back for revision   | Community discussion             |
 +-----------------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
@@ -94,8 +94,7 @@ In brief all stages of the Reviewing process are shown in the table.
 |                                   |                +----------------------------------+--------------------------+                                  |
 |                                   |                | Shepherd                         | Merge                    |                                  |
 +-----------------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
-| Accepted / Merged                 | Indefinite     | Anyone (including the author)    | Implement the proposal   | Implemented                      |
-|                                   |                | willing to implement it          |                          |                                  |
+| Accepted / Merged                 | Indefinite     | Unspecified                      | Implement the proposal   | Implemented                      |
 +-----------------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
 
 Detailed list of stages
@@ -182,11 +181,13 @@ The stage is identified by a GitHub label, which is identified in the following 
 9. **Label**: `Accepted <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Accepted%22>`__.  
    **Responsibility for next action:** shepherd and committee secretary.  **Timescale**: one week. 
 
-   If the committee fully accepts the proposal, the committee secretary and/or shepherd marks the proposal as “accepted” and merges the Proposal.
+   If the committee fully accepts the proposal, the committee secretary and/or shepherd marks the proposal as “accepted”, merges the PR and (if necessary) creates a tracking ticket on the GHC issue tracker.
    Any later changes must be submitted as a separate amendment proposal.
 
 10. **Label**: `Implemented <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`__.   Once a proposal is accepted, it still has to be implemented.  The author
-    may do that, or someone else. We mark the proposal as “implemented” once it
+    may do that, or ask someone else to do so. GHC is a volunteer-driven project, so there is unfortunately no guarantee that accepted proposals will be implemented promptly.
+    
+    We mark the proposal as “implemented” once it
     hits GHC’s ``master`` branch (and we are happy to be nudged to do so by
     email, GitHub issue, or a comment on the relevant pull request).
 
