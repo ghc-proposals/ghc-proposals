@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 main() {
 	usage='Usage: ./build.sh [--autobuild] [-M MODE] [arg ...]'
@@ -19,6 +19,11 @@ main() {
 	srcdir=${PWD}
 	venv="${srcdir}/_venv"
 	builddir="${srcdir}/_build"
+  if [[ -z "${IN_NIX_SHELL}" ]]; then
+    exedir="${venv}/bin/"
+  else
+    exedir=""
+  fi
 
 	if [[ -z "${IN_NIX_SHELL}" ]] && [[ ! -d "${venv}" ]]; then
 		python3 -m venv "${venv}"
@@ -26,9 +31,9 @@ main() {
 	fi
 
 	if [[ "${autobuild}" == 1 ]]; then
-		exec "${venv}/bin/sphinx-autobuild" "${srcdir}" "${builddir}/html" "${args[@]}"
+		exec "${exedir}sphinx-autobuild" "${srcdir}" "${builddir}/html" "${args[@]}"
 	else
-		exec "${venv}/bin/sphinx-build" -M "${mode}" "${srcdir}" "${builddir}" "${args[@]}"
+		exec "${exedir}sphinx-build" -M "${mode}" "${srcdir}" "${builddir}" "${args[@]}"
 	fi
 }
 
