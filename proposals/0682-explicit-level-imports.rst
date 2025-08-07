@@ -410,7 +410,7 @@ can be run.
 With ``ExplicitLevelImports``, ``spliceC`` become illegal; instead, ``foo``
 must be put in another module and splice-imported as above. On the other hand,
 due to the implicit lifting, ``quoteC`` is elaborated to ``[| $(lift baz) |]``,
-which correctly places ``baz`` used at level 0. 
+which correctly places ``baz`` used at level 0.
 
 Consequences and payoff
 #######################
@@ -548,6 +548,8 @@ with ``ExplicitLevelImports``, it will be accepted after erasing all
 Exports
 #######
 
+This section amends the `exports section <https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1000005.2>`_ of the Haskell Report to account for levels.
+
 Under ``NoImplicitStagePersistence``, modules may export bindings only if they
 are available at level 0. All top-level bindings are introduced at level 0,
 types, data constructors, functions and so on as well as modules imported at level 0.
@@ -558,6 +560,35 @@ For example, the following is rejected::
   {-# LANGUAGE ExplicitLevelImports #-}
 
   module M (oops) where  -- Error: oops imported at level -1 but used at level 0
+    import splice N ( oops )
+
+A binding imported at multiple levels can be exported if available at level 0::
+
+  module M (oops) where -- Accepted: oops is available at level 0.
+    import splice N ( oops )
+    import N ( oops )
+
+The export item ``T(..)`` exports the subset of ``{T}`` union ``{the methods/constructors/fields of T}`` that are available at level 0. This set may be empty::
+
+  {-# LANGUAGE ExplicitLevelImports #-}
+
+  module M (T(..)) where  -- Warning with -Wdodgy-exports: wildcard export doesn't export any identifiers
+    import splice N ( T(t) ) -- Selector `t`, also imported to splice level
+    import N (T) -- Only T, not the children imported into level 0.
+
+The export item ``module M`` exports the set of all entities that are in scope with both an unqualified name ``e`` and a qualified name ``M.e``, and are available at level 0. This set may be empty::
+
+  {-# LANGUAGE ExplicitLevelImports #-}
+
+  module M (module N) where  -- Only `ok` is exported, since `oops` is imported at -1
+    import splice N ( oops )
+    import N ( ok )
+
+An implicit export which doesn't export any bindings issues a warning under ``-Wdodgy-exports``::
+
+  {-# LANGUAGE ExplicitLevelImports #-}
+
+  module M (module N) where  -- Warning: module N doesn't export any identifiers
     import splice N ( oops )
 
 
