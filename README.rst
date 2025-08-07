@@ -139,6 +139,8 @@ The stage is identified by a GitHub label, which is identified in the following 
 
    The committee secretary appoints a committee member as shepherd, which moves the proposal to the *Pending shepherd recommendation* state.
 
+   Also committee secretary send link of the Proposal to whole committee not for decision, but for early initial overview.
+
 5. **Label**: `Pending shepherd recommendation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+shepherd+recommendation%22>`_.  **Responsibility for next action:** shepherd.  **Timescale**: two weeks.
 
    The shepherd reviews the proposal, and may request changes that they would like to see before they submit their recommendation to accept or reject the proposal to the committee.
