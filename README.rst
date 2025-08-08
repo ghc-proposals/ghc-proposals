@@ -104,11 +104,13 @@ The stage is identified by a GitHub label, which is identified in the following 
 
 1. (No label.) The author drafts a proposal.
 
-   `What is a proposal? <#what-is-a-proposal>`__
+   * `What is a proposal? <#what-is-a-proposal>`__
+   * `How to start a new proposal <#how-to-start-a-new-proposal>`__
+   * `How to amend an accepted proposal <#how-to-amend-an-accepted-proposal>`__
 
    The author submits the proposal to the wider Haskell community for discussion, as a pull request against this repository.
 
-   `How to submit a proposal <#how-to-start-a-new-proposal>`__
+   * `How to submit a proposal <#how-to-start-a-new-proposal>`__
 
 2. (No label.)  **Responsibility for next action:** author.
 
@@ -203,6 +205,7 @@ The stage is identified by a GitHub label, which is identified in the following 
    merges the PR and (if necessary) creates a tracking ticket on the GHC issue tracker.
 
    * `How to Accept a Proposal <https://github.com/ghc-proposals/ghc-proposals/blob/master/acceptance.rst>`__
+   * `How to build the proposals <#how-to-build-the-proposals>`__
 
    Any later changes must be submitted as a separate amendment proposal.
 
