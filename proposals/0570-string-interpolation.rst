@@ -120,8 +120,8 @@ The string literals are affected by ``-XOverloadedStrings`` as usual, if enabled
 
   interpolateString f = f interpolate id mappend mempty
 
-  class Interpolate a s where
-    interpolate :: a -> s
+  class Interpolate a where
+    interpolate :: a -> String
 
 When ``-XQualifiedStrings`` is enabled, you may qualify string interpolation as well:
 
@@ -219,44 +219,32 @@ The following code will live in ``ghc-experimental`` under ``Data.String.Interpo
 
   interpolateString ::
     (IsString s, Monoid s) =>
-    ( (forall a. Interpolate a s => a -> s)
+    ( (forall a. Interpolate a => a -> s)
       -> (s -> s)
       -> (s -> s -> s)
       -> s
       -> s
     )
     -> s
-  interpolateString f = f interpolate id mappend mempty
+  interpolateString f = fromString $ f (fromString . interpolate) id mappend mempty
 
-  -- | Laws:
-  --     * `Interpolate s s` should implement `interpolate = id`
-  class Interpolate a s where
-    interpolate :: a -> s
+  class Interpolate a where
+    interpolate :: a -> String
 
-This design came out of the community survey (See *Section 10.1 Community Survey*), and aimed to satisfy the following requirements:
-
-* Allow constructing any type, not just String or String-like types
-
-  * See the "SqlQuery" or "HTML" examples
-
-* Allow interpolating any type, not just String
-
-* Avoid re-using Show to interpolate
-
-Instances for ``String`` will be provided as well, for example:
+Instances will be provided as well, for example:
 
 ::
 
-  instance Interpolate String String where
+  instance Interpolate String where
     interpolate = id
-  instance Interpolate Char String where
+  instance Interpolate Char where
     interpolate = (:[])
 
-  instance Interpolate Int String where
+  instance Interpolate Int where
     interpolate = show
-  instance Interpolate Double String where
+  instance Interpolate Double where
     interpolate = show
-  instance Interpolate Bool String where
+  instance Interpolate Bool where
     interpolate = show
 
 Expansion
@@ -280,14 +268,6 @@ With the machinery defined above, the following interpolated string desugars to 
     `append` empty
 
 The string literals there will be handled by ``-XOverloadedStrings`` as usual, if enabled, although it's recommended to use ``-XQualifiedStrings`` instead, for more granular overloading.
-
-Static Semantics
-~~~~~~~~~~~~~~~~
-
-Unsolved ``Interpolate a s`` constraints will default ``s`` to the default ``IsString`` type. That is,
-
-#. If ``OverloadedStrings`` + ``ExtendedDefaultRules`` are enabled, and an ``IsString`` default is specified with ``default (...)``, use that
-#. Otherwise, ``s`` defaults to ``String``
 
 Template Haskell
 ~~~~~~~~~~~~~~~~
@@ -398,13 +378,6 @@ Costs and Drawbacks
 
 Development and maintenance is of moderate effort. Learnability for novice users will go up, since novice users probably expect string interpolation to be available, and might be frustrated at the lack of support currently.
 
-The major drawback of this approach is the typeclass instances problem:
-
-#. A new interpolator type (e.g. ``SqlQuery``) needs to define ``Interpolate`` for all known interpolatable types
-#. A new interpolatable type (e.g. ``BigDecimal``) needs to define ``Interpolate`` for all known interpolator types
-
-This is worse than ``IsString`` or ``Show`` due to the multi-param ``Interpolate`` type class. This makes ``Interpolate`` much more susceptible to orphan instances.
-
 One minor drawback is the whitespace sensitivity of ``s"``, as discussed in "Effect and Interactions".
 
 Alternatives
@@ -444,10 +417,11 @@ Alternatives
 
   * Would only allow converting to strings, see "Only allow interpolating string-like values"
 
-* Only allow interpolating to string (which can ultimately be lifted to any IsString)
+* Define ``Interpolate`` as a multi param type class, instead of only going to ``String``.
 
-  * Simplifies the machinery, but makes the feature much less flexible and extendable
-  * See *Section 10.1 Community Survey*
+  * More complex
+  * Introduces n^2 instances problem
+  * ``-XQualifiedStrings`` is available for any more advanced use cases
 
 * Desugar to a function
 
@@ -491,39 +465,17 @@ I sent out multiple community surveys, the last one being open 2025-04-21 to 202
 Text
 ~~~~
 
-The following instances could be implemented to add support for ``Data.Text`` with the string interpolation feature.
-
-::
-
-  instance Interpolate Text Text where
-    interpolate = id
-
-  instance Interpolate Char Text where
-    interpolate = T.singleton
-  instance Interpolate String Text where
-    interpolate = T.pack
-  instance Interpolate Text String where
-    interpolate = T.unpack
-
-  instance {-# OVERLAPPABLE #-} Interpolate a String => Interpolate a Text where
-    interpolate = T.pack . interpolate
-
-This is fairly similar to String, with one addition: we also need to define ``Interpolate`` for interpolating between String and Text. Text would probably also be the one to implement interpolation with ByteString, as Text depends on ByteString, not vice versa.
-
-Similar instances can also be implemented for lazy Text.
-
-``text`` could also define a module for use with ``QualifiedStrings``:
+``text`` would not need any specific work, since it already supports ``IsString``. But it would be highly recommended for ``text`` to define a module for use with ``QualifiedStrings``:
 
 ::
 
   module Data.Text.Interpolate where
 
-  import Data.Text qualified as T
   import Data.String.Interpolate.Experimental qualified as S
 
   interpolateString = S.interpolateString
 
-With both of these definitions, users could do
+With this support, users can write the following:
 
 ::
 
@@ -582,48 +534,7 @@ Imagine a library implements a ``SqlQuery`` type like:
   instance ToSqlValue Int where
     toSqlValue = SqlInt
 
-That library could define the following instances:
-
-::
-
-  instance Interpolate SqlQuery SqlQuery where
-    interpolate = id
-  instance ToSqlValue a => Interpolate a SqlQuery where
-    interpolate a = SqlQuery{sqlText = "?", sqlValues = [toSqlValue a]}
-
-And gain access to safe string interpolation without SQL injection:
-
-::
-
-  let age = 10 :: Int
-  let name = "Robert'); DROP TABLE Students;--" :: String
-
-  s"SELECT * FROM tab WHERE age = ${age} AND name ILIKE ${name}"
-    == SqlQuery
-        { sqlText = "SELECT * FROM tab WHERE age = ? AND name ILIKE ?"
-        , sqlValues = [SqlInt 10,SqlText "Robert'); DROP TABLE Students;--"]
-        }
-
-  let
-    -- e.g. from user input
-    isAdult = True
-    nameFilter = SqlText "A%"
-
-    -- build where clause
-    whereClauses =
-      concat
-        [ ["age > 18" | isAdult]
-        , [s"name ILIKE ${nameFilter}"]
-        ]
-    conjoin cs = mconcat $ intersperse " AND " (cs :: [SqlQuery])
-
-  s"SELECT * FROM tab WHERE ${conjoin whereClauses}"
-    == SqlQuery
-        { sqlText = "SELECT * FROM tab WHERE age > 18 AND name ILIKE ?"
-        , sqlValues = [SqlText "A%"]
-        }
-
-Alternatively, for more power or flexibility, the library could define a module for use with ``QualifiedStrings``, for example, to allow failure states:
+The library would also define a module for use with ``QualifiedStrings``:
 
 ::
 
@@ -639,11 +550,68 @@ Alternatively, for more power or flexibility, the library could define a module 
       -> SqlQuery
       -> SqlQuery
     )
-    -> Either ParseError CompiledSqlQuery
-  interpolateString f = compileQuery $ f convert raw mappend mempty
+    -> SqlQuery
+  interpolateString f = f convert raw mappend mempty
     where
-      convert = S.interpolate
+      convert = interpolate
       raw = S.fromString
+
+  class Interpolate a where
+    interpolate :: a -> SqlQuery
+  instance Interpolate SqlQuery where
+    interpolate = id
+  instance {-# OVERLAPPABLE #-} ToSqlValue a => Interpolate a where
+    interpolate a = SqlQuery{sqlText = "?", sqlValues = [toSqlValue a]}
+
+And gain access to safe string interpolation without SQL injection:
+
+::
+
+  let age = 10 :: Int
+  let name = "Robert'); DROP TABLE Students;--" :: String
+
+  SQL.s"SELECT * FROM tab WHERE age = ${age} AND name ILIKE ${name}"
+    == SqlQuery
+        { sqlText = "SELECT * FROM tab WHERE age = ? AND name ILIKE ?"
+        , sqlValues = [SqlInt 10,SqlText "Robert'); DROP TABLE Students;--"]
+        }
+
+  let
+    -- e.g. from user input
+    isAdult = True
+    nameFilter = SqlText "A%"
+
+    -- build where clause
+    whereClauses =
+      concat
+        [ ["age > 18" | isAdult]
+        , [SQL.s"name ILIKE ${nameFilter}"]
+        ]
+    conjoin cs = mconcat $ intersperse " AND " (cs :: [SqlQuery])
+
+  SQL.s"SELECT * FROM tab WHERE ${conjoin whereClauses}"
+    == SqlQuery
+        { sqlText = "SELECT * FROM tab WHERE age > 18 AND name ILIKE ?"
+        , sqlValues = [SqlText "A%"]
+        }
+
+The library could also define an implementation to support failure states:
+
+::
+
+  module Data.SQL.Compile.Interpolate where
+
+  import Data.SQL.Interpolate qualified as SQL
+
+  interpolateString ::
+    ( (forall a. ToSqlValue a => a -> SqlQuery)
+      -> (String -> SqlQuery)
+      -> (SqlQuery -> SqlQuery -> SqlQuery)
+      -> SqlQuery
+      -> SqlQuery
+    )
+    -> Either ParseError CompiledSqlQuery
+  interpolateString = compileQuery . SQL.interpolateString
 
 ::
 
@@ -675,18 +643,32 @@ Imagine a library implements a new ``Html`` type like:
   raw :: Text -> RawHtml
   raw = RawHtml
 
-That library could define the following instances:
+That library could define the module:
 
 ::
 
-  instance Interpolate String Html where
-    interpolate = interpolate . Text.pack
-  instance Interpolate Text Html where
+  module Data.HTML.Interpolate where
+
+  import Data.String.Interpolate.Experimental qualified as S
+
+  interpolateString ::
+    ( (forall a. Interpolate a => a -> Html)
+      -> (String -> Html)
+      -> (Html -> Html -> Html)
+      -> Html
+      -> Html
+    )
+    -> Html
+  interpolateString f = f interpolate raw mappend mempty
+
+  instance Interpolate String where
+    interpolate = interpolate . T.pack
+  instance Interpolate Text where
     interpolate = Html . escapeHtml
-  instance Interpolate RawHtml Html where
+  instance Interpolate RawHtml where
     interpolate = Html . unRawHtml
-  instance {-# OVERLAPPABLE #-} Interpolate a String => Interpolate a Html where
-    interpolate = interpolate . interpolate
+  instance {-# OVERLAPPABLE #-} S.Interpolate a => Interpolate a where
+    interpolate = interpolate . S.interpolate
 
 And gain access to safe string interpolation with HTML escaping by default:
 
@@ -695,7 +677,7 @@ And gain access to safe string interpolation with HTML escaping by default:
   let title = "Why is 1 > 0?" :: Text
   let body = "<p>Hello world</p>" :: Text
 
-  s"<h1>${title}</h1>${raw body}"
+  Html.s"<h1>${title}</h1>${raw body}"
     == Html "<h1>Why is 1 &gt; 0?</h1><p>Hello world</p>"
 
 Custom interpolatable type: BigDecimal
@@ -716,8 +698,8 @@ That library could define:
 
 ::
 
-  instance Interpolate BigDecimal String where
-    interpolate = interpolate . renderBigDecimal
+  instance Interpolate BigDecimal where
+    interpolate = renderBigDecimal
 
 And be able to use it in interpolated strings:
 
@@ -726,7 +708,7 @@ And be able to use it in interpolated strings:
   let n = BigDecimal 123456 3
   s"123456 / 10^3 = ${n}" == "123456 / 10^3 = 123.456"
 
-If the ``Interpolate a String => Interpolate a Text`` instance is implemented as described in *Section 10.2 Custom interpolator: Text*, ``BigDecimal`` can interpolate into ``Text`` for free.
+If ``text`` is implemented as described in *Section 10.2 Custom interpolator: Text*, ``BigDecimal`` can interpolate into ``Text`` for free.
 
 Format specifiers
 ~~~~~~~~~~~~~~~~~
