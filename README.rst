@@ -78,7 +78,7 @@ In brief all stages of the Reviewing process are shown in the table.
 |                                   |                |                                  +--------------------------+----------------------------------+
 |                                   |                |                                  | Submit to committee      | Awaiting shepherd                |
 +-----------------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
-| Awaiting shepherd                 | 1 week         | Committee secretary              | Assign shepherd          | Awaiting shepherd recommendation |
+| Awaiting shepherd                 | 1 week         | Committee secretary              | Assign shepherd          | Pending shepherd recommendation  |
 +-----------------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
 | Pending shepherd recommendation   | 2 weeks        | Shepherd                         | Make recommendation      | Committee discussion             |
 |                                   |                |                                  +--------------------------+----------------------------------+
