@@ -96,7 +96,7 @@ If Haskell had native string interpolation, it would have the benefit and safety
 Proposed Change Specification
 -----------------------------
 
-This proposal introduces two new extensions: ``-XStringInterpolation`` and ``-XQualifiedLiterals``.
+This proposal introduces the ``-XStringInterpolation`` extension, with support for ``-XOverloadedStrings`` and ``-XQualifiedStrings`` (`proposal <https://github.com/ghc-proposals/ghc-proposals/pull/698>`_).
 
 High-level Overview
 ~~~~~~~~~~~~~~~~~~~
@@ -108,45 +108,45 @@ High-level Overview
   s"a ${x + 1} b"
 
   -- Desugars to:
-  mconcat
-    [ fromString "a "
-    , interpolate (x + 1)
-    , fromString " b"
-    ]
+  Data.String.Interpolate.Experimental.interpolateString $ \convert raw append empty ->
+             raw "a "
+    `append` convert (x + 1)
+    `append` raw " b"
+    `append` empty
 
-Where ``interpolate`` will be initially exported from ``Data.String.Interpolate.Experimental`` in ``ghc-experimental``:
+The string literals are affected by ``-XOverloadedStrings`` as usual, if enabled. ``Data.String.Interpolate.Experimental`` will be initially provided by ``ghc-experimental``, containing the following:
 
 ::
+
+  interpolateString f = f interpolate id mappend mempty
 
   class Interpolate a s where
     interpolate :: a -> s
 
-``-XQualifiedLiterals`` enables the following syntax for strings:
+When ``-XQualifiedStrings`` is enabled, you may qualify string interpolation as well:
 
 ::
 
-  Text."hello world"
+  Text.s"hello world"
 
   -- Desugars to:
-  Text.fromString "hello world"
+  Text.interpolateString $ \_ _ _ _ -> "hello world"
 
-  SQL."select * from users where name = ${Text.toUpper name} and age = ${age}"
+  SQL.s"select * from users where name = ${Text.toUpper name} and age = ${age}"
 
   -- Desugars to:
-  SQL.interpolateFinish $
-    SQL.interpolateRaw "select * from users where name = "
-      `SQL.interpolateAppend`
-    SQL.interpolate (Text.toUpper name)
-      `SQL.interpolateAppend`
-    SQL.interpolateRaw " and age = "
-      `SQL.interpolateAppend`
-    SQL.interpolate age
-      `SQL.interpolateAppend`
-    SQL.interpolateEmpty
+  SQL.interpolateString $ \convert raw append empty ->
+             raw "select * from users where name = "
+    `append` convert (Text.toUpper name)
+    `append` raw " and age = "
+    `append` convert age
+    `append` empty
 
-This extends the machinery introduced by `QualifiedDo <https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/qualified_do.html>`_ to ``-XOverloadedStrings``. This proposal only enables ``QualifiedLiterals`` for strings, but can be extended to other literals like numbers or lists in the future. A future proposal could also enable TH-syntax like ``$Foo."${x}"``, which could desugar to the equivalent of ``$(Foo.interpolateFinish $ Foo.interpolate [| x |])``, but we'll defer on that for now.
+It is highly recommended that any type with an ``IsString`` instance provide the below definition for use with ``-XQualifiedStrings``. This allows using locally-scoped string interpolation for non-String types without enabling it globally with ``-XOverloadedStrings``.
 
-While these are two separate behaviors that could be two separate proposals, we bundle them in one proposal because the community survey shows a desire for extensibility/generality of some kind (see *Section 10.1 Community Survey*).
+::
+
+  interpolateString = Data.String.Interpolate.Experimental.interpolateString
 
 Lexical Structure
 ~~~~~~~~~~~~~~~~~
@@ -213,9 +213,20 @@ Update `Section 10.5 <https://www.haskell.org/onlinereport/haskell2010/haskellch
 Machinery
 ~~~~~~~~~
 
-The following definition will be exported from ``Data.String.Interpolate.Experimental``
+The following code will live in ``ghc-experimental`` under ``Data.String.Interpolate.Experimental``. After the API has stablized, these would eventually live in ``GHC.Exts`` alongside ``IsString``.
 
 ::
+
+  interpolateString ::
+    (IsString s, Monoid s) =>
+    ( (forall a. Interpolate a s => a -> s)
+      -> (s -> s)
+      -> (s -> s -> s)
+      -> s
+      -> s
+    )
+    -> s
+  interpolateString f = f interpolate id mappend mempty
 
   -- | Laws:
   --     * `Interpolate s s` should implement `interpolate = id`
@@ -248,8 +259,6 @@ Instances for ``String`` will be provided as well, for example:
   instance Interpolate Bool String where
     interpolate = show
 
-These definitions would initially be implemented in ``ghc-experimental`` under ``Data.String.Interpolate.Experimental``. After the API has stablized, these would eventually live in ``GHC.Exts`` alongside ``IsString``.
-
 Expansion
 ~~~~~~~~~
 
@@ -261,17 +270,16 @@ With the machinery defined above, the following interpolated string desugars to 
   s"foo ${f a b} bar ${g x} baz ${name}"
 
   -- desugared
-  mconcat
-    [ "foo "
-    , interpolate (f a b)
-    , " bar "
-    , interpolate (g x)
-    , " baz "
-    , interpolate name
-    , ""
-    ]
+  Data.String.Interpolate.Experimental.interpolateString $ \convert raw append empty ->
+             raw "foo "
+    `append` convert (f a b)
+    `append` raw " bar "
+    `append` convert (g x)
+    `append` raw " baz "
+    `append` convert name
+    `append` empty
 
-The string literals there will be handled by ``-XOverloadedStrings`` as usual, if enabled.
+The string literals there will be handled by ``-XOverloadedStrings`` as usual, if enabled, although it's recommended to use ``-XQualifiedStrings`` instead, for more granular overloading.
 
 Static Semantics
 ~~~~~~~~~~~~~~~~
@@ -381,9 +389,9 @@ An existing program containing ``s"..."`` will break when ``-XStringInterpolatio
 
 When ``-XOverloadedStrings`` is enabled, string interpolation can be used for any type with an ``IsString`` instance. Otherwise, it will only ever build Strings.
 
-Interpolation is also supported with ``-XMultilineStrings``, as described in "Proposed Change Specification".
+When ``-XQualifiedStrings`` is enabled, ``M.s"..."`` syntax is enabled, as described above. ``M`` should define ``interpolateString`` with concrete ``String`` inputs, so that the string literals concretize when ``-XOverloadedStrings`` is enabled as well.
 
-QualifiedLiteral syntax is invalid syntax today, so it does not have any interactions with existing functionality.
+Interpolation is also supported with ``-XMultilineStrings``, as described in "Proposed Change Specification".
 
 Costs and Drawbacks
 -------------------
@@ -459,7 +467,7 @@ Alternatives
 * Do something like `Python's new t-string feature <https://peps.python.org/pep-0750/>`_
 
   * This doesn't translate easily to Haskell, since the point of t-string is to return a list of strings and a list of "anything" that was interpolated
-  * The ``QualifiedLiterals`` part of the proposal should be able to handle any functionality here
+  * The ``QualifiedStrings`` part of the proposal should be able to handle any functionality here
 
 Unresolved Questions
 --------------------
@@ -504,7 +512,7 @@ This is fairly similar to String, with one addition: we also need to define ``In
 
 Similar instances can also be implemented for lazy Text.
 
-``text`` could also define a module for use with ``QualifiedLiterals``:
+``text`` could also define a module for use with ``QualifiedStrings``:
 
 ::
 
@@ -513,29 +521,24 @@ Similar instances can also be implemented for lazy Text.
   import Data.Text qualified as T
   import Data.String.Interpolate.Experimental qualified as S
 
-  interpolateRaw = T.pack
-  interpolate = S.interpolate
-
-  interpolateAppend = mappend
-  interpolateEmpty = mempty
-  interpolateFinish = id
+  interpolateString = S.interpolateString
 
 With both of these definitions, users could do
 
 ::
 
   {-# LANGUAGE OverloadedStrings #-}
-  {-# LANGUAGE QualifiedLiterals #-}
+  {-# LANGUAGE QualifiedStrings #-}
   {-# LANGUAGE StringInterpolation #-}
 
   import Data.Text.Interpolate qualified as T
 
   main = do
-    -- no longer ambiguous, shorter than `T.pack "Alice"`
-    let name = T."Alice"
+    let name = "Alice"
     let age = 10
 
     print $ T.toUpper s"Name: ${name}, Age: ${age}"
+    print $ T.toUpper T.s"Name: ${name}, Age: ${age}"
 
 Custom interpolator: SqlQuery
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -620,7 +623,7 @@ And gain access to safe string interpolation without SQL injection:
         , sqlValues = [SqlText "A%"]
         }
 
-Alternatively, for more power or flexibility, the library could define a module for use with ``QualifiedLiterals``, for example, to allow failure states:
+Alternatively, for more power or flexibility, the library could define a module for use with ``QualifiedStrings``, for example, to allow failure states:
 
 ::
 
@@ -629,14 +632,18 @@ Alternatively, for more power or flexibility, the library could define a module 
   import Data.String qualified as S
   import Data.String.Interpolate.Experimental qualified as S
 
-  interpolateRaw = S.fromString
-  interpolate = S.interpolate
-
-  interpolateAppend = mappend
-  interpolateEmpty = mempty
-
-  interpolateFinish :: SqlQuery -> Either ParseError CompiledSqlQuery
-  interpolateFinish SqlQuery{..} = compileQuery sqlText sqlValues
+  interpolateString ::
+    ( (forall a. ToSqlValue a => a -> SqlQuery)
+      -> (String -> SqlQuery)
+      -> (SqlQuery -> SqlQuery -> SqlQuery)
+      -> SqlQuery
+      -> SqlQuery
+    )
+    -> Either ParseError CompiledSqlQuery
+  interpolateString f = compileQuery $ f convert raw mappend mempty
+    where
+      convert = S.interpolate
+      raw = S.fromString
 
 ::
 
@@ -646,7 +653,7 @@ Alternatively, for more power or flexibility, the library could define a module 
     let name = "Alice"
     query <-
       either (fail . show) pure $
-        SQL."SELECT * FROM users WHERE name = ${name}"
+        SQL.s"SELECT * FROM users WHERE name = ${name}"
 
     print query
 
