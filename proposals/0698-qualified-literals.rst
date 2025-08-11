@@ -220,6 +220,8 @@ With ``-XQualifiedStrings``, we gain the following syntaxes:
     * - ``M."""asdf"""``
       - ``((== M.fromString "asdf") -> True)``
 
+It is highly recommended that all types with ``IsString`` instances defined provide a ``.Interpolate`` module defining ``fromString = Data.String.fromString``, to enable locally-scoped overloading over ``-XOverloadedStrings``.
+
 Qualified multiline strings are only allowed if ``-XMultilineStrings`` is enabled. Qualified multiline strings are desugared to single line strings first, then desugared as a qualified string literal. See `Multiline Strings <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0569-multiline-strings.rst>`_ for more information.
 
 QualifiedLists
@@ -279,6 +281,21 @@ With ``-XQualifiedLists``, we gain the following syntaxes:
     | EnumFromThen a a
     | EnumFromTo a a
     | EnumFromThenTo a a a
+
+It is highly recommended that all types with ``IsList`` instances defined provide a ``.Interpolate`` module with the below definitions, to enable locally-scoped overloading over ``-XOverloadedLists``.
+
+::
+
+  import GHC.Exts qualified as L
+  import Prelude qualified
+
+  buildList f = L.fromListN (f (:) [])
+  buildListEnum e =
+    case e of
+      EnumFrom x -> L.fromList (Prelude.enumFrom x)
+      EnumFromThen x y -> L.fromList (Prelude.enumFromThen x y)
+      EnumFromTo x y -> L.fromList (Prelude.enumFromTo x y)
+      EnumFromThenTo x y z -> L.fromList (Prelude.enumFromThenTo x y z)
 
 Note that while we could have mirrored ``-XOverloadedLists`` and just done ``M.fromListN 2 [x, y]``, we intentionally decide to use this more general API. This gives us more expressive power, since we no longer need to typecheck an intermediate list. Similar reason for defining ``buildListEnum`` instead of reusing Prelude's ``enumFrom`` functions. See *Section 4.6 Heterogeneous Lists* for a use-case.
 
