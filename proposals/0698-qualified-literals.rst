@@ -252,13 +252,13 @@ With ``-XQualifiedLists``, we gain the following syntaxes:
     * - ``M.[x, y]``
       - ``M.buildList 2 (\cons nil -> x `cons` (y `cons` nil))``
     * - ``M.[x ..]``
-      - ``M.buildListEnum (M.enumFrom x)``
+      - ``M.buildListEnum (Data.List.Qualified.Experimental.EnumFrom x)``
     * - ``M.[x, y ..]``
-      - ``M.buildListEnum (M.enumFromThen x y)``
+      - ``M.buildListEnum (Data.List.Qualified.Experimental.EnumFromThen x y)``
     * - ``M.[x .. y]``
-      - ``M.buildListEnum (M.enumFromTo x y)``
+      - ``M.buildListEnum (Data.List.Qualified.Experimental.EnumFromTo x y)``
     * - ``M.[x, y .. z]``
-      - ``M.buildListEnum (M.enumFromThenTo x y z)``
+      - ``M.buildListEnum (Data.List.Qualified.Experimental.EnumFromThenTo x y z)``
 
 .. list-table::
     :align: left
@@ -270,7 +270,17 @@ With ``-XQualifiedLists``, we gain the following syntaxes:
     * - ``x M.: y``
       - ``M.FromListCons x y``
 
-Note that while we could have mirrored ``-XOverloadedLists`` and just done ``M.fromListN 2 [x, y]``, we intentionally decide to use this more general API. This gives us more expressive power, since we no longer need to typecheck an intermediate list. Similar reason for defining new ``enumFrom`` functions instead of reusing Prelude's. See *Section 4.6 Heterogeneous Lists* for a use-case.
+``Data.List.Qualified.Experimental`` will initially live in ``ghc-experimental``, eventually merged into ``GHC.Exts``.
+
+::
+
+  data EnumFrom a
+    = EnumFrom a
+    | EnumFromThen a a
+    | EnumFromTo a a
+    | EnumFromThenTo a a a
+
+Note that while we could have mirrored ``-XOverloadedLists`` and just done ``M.fromListN 2 [x, y]``, we intentionally decide to use this more general API. This gives us more expressive power, since we no longer need to typecheck an intermediate list. Similar reason for defining ``buildListEnum`` instead of reusing Prelude's ``enumFrom`` functions. See *Section 4.6 Heterogeneous Lists* for a use-case.
 
 We also decide to do ``M.buildList`` instead of something like ``M.fromList (x `M.cons` M.nil)`` so that there's one definition to jump to (e.g. with IDE integrations) instead of three.
 
