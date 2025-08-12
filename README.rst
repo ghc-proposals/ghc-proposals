@@ -256,7 +256,7 @@ Some proposals amend an existing proposal. Such an amendment :
 
 Often, this happens
 after a proposal is accepted, but before or while it is implemented.
-In these cases, a PR that _changes_ the accepted proposal can be opened. It goes through
+In these cases, a PR that *changes* the accepted proposal can be opened. It goes through
 the same process as an original proposal.
 
 Discussion goals
