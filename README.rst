@@ -234,8 +234,8 @@ Proposals are written in `ReStructuredText <http://www.sphinx-doc.org/en/stable/
 Using `Markdown <https://github.github.com/gfm/>`_ instead is also allowed. But while the early proposal process itself has no preference for formatting, 
 keep in mind that the `GHC Users Guide <http://downloads.haskell.org/~ghc/latest/docs/html/users_guide/editing-guide.html>`_ uses ReStructuredText exclusively. 
 Thus, proposals written in ReStructuredText can be included in the official GHC documentation, but proposals written in Markdown cannot. 
-If the proposal written in Markdown is approved by "Shepherd recommendation", Shepherd will ask the author to convert the Proposal into ReStructuredText format before the whole Committee starts to discuss. 
-That's why the ReStructuredText format has a clear preference for the Committee to accept the proposal.
+If the proposal written in Markdown is approved by "Shepherd recommendation", **Shepherd will ask the author to convert the Proposal into ReStructuredText format** before the whole Committee starts to discuss. 
+That's why the ReStructuredText format has a clear preference for the Committee in a final stages of proposal process.
 
 Proposals should follow the structure given in the `ReStructuredText template <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.rst>`_ (or the `Markdown template <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.md>`_ for MD format).
 
