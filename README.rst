@@ -111,6 +111,7 @@ The stage is identified by a GitHub label, which is identified in the following 
    * `What is a proposal? <#what-is-a-proposal>`__
    * `How to start a new proposal <#how-to-start-a-new-proposal>`__
    * `How to amend an accepted proposal <#how-to-amend-an-accepted-proposal>`__
+   * `Language design principles <principles.rst#2language-design-principles>`__
 
    The author submits the proposal to the wider Haskell community for discussion, as a pull request against this repository.
 
@@ -208,7 +209,7 @@ The stage is identified by a GitHub label, which is identified in the following 
    If the committee fully accepts the proposal, the committee secretary and/or shepherd marks the proposal as “accepted”, 
    merges the PR and (if necessary) creates a tracking ticket on the GHC issue tracker.
 
-   * `How to Accept a Proposal <https://github.com/ghc-proposals/ghc-proposals/blob/master/acceptance.rst>`__
+   * `How to Accept a Proposal <acceptance.rst>`__
    * `How to build the proposals <#how-to-build-the-proposals>`__
 
    Any later changes must be submitted as a separate amendment proposal.
