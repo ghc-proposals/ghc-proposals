@@ -1,7 +1,7 @@
 Function Protection Pragma
 ==========================
 
-.. author:: Oleksandr Zhabenko, with assistance from Claude (Anthropic AI)
+.. author:: Oleksandr Zhabenko, with assistance from Claude (Anthropic AI) and later GPT-5 (OpenAI)
 .. date-accepted:: 
 .. ticket-url:: 
 .. implemented:: 
