@@ -77,6 +77,8 @@ In brief all stages of the Reviewing process are shown in the table.
 | Community discussion              | Indefinite     | Author                           | Close request            | Withdrawal                       |
 |                                   |                |                                  +--------------------------+----------------------------------+
 |                                   |                |                                  | Submit to committee      | Awaiting shepherd                |
+|                                   |                |                                  +--------------------------+----------------------------------+
+|                                   |                |                                  | Resubmit to committee    | Pending shepherd recommendation  |
 +-----------------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
 | Awaiting shepherd                 | 1 week         | Committee secretary              | Assign shepherd          | Pending shepherd recommendation  |
 +-----------------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
@@ -90,9 +92,11 @@ In brief all stages of the Reviewing process are shown in the table.
 |                                   |                |                                  +--------------------------+----------------------------------+
 |                                   |                |                                  | Send back for revision   | Community discussion             |
 +-----------------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
-| Accepted                          | 1-3 weeks      | Author                           | Do final corrections     | Merged                           |
+| Accepted                          | 1-3 weeks      | Author &                         | Do final corrections     | Merged                           |
+|                                   |                | Shepherd                         |                          |                                  |
 |                                   |                +----------------------------------+--------------------------+                                  |
-|                                   |                | Shepherd                         | Merge                    |                                  |
+|                                   |                | Shepherd &                       | Merge                    |                                  |
+|                                   |                | Committee secretary              |                          |                                  |
 +-----------------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
 | Accepted / Merged                 | Indefinite     | Unspecified                      | Implement the proposal   | Implemented                      |
 +-----------------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
