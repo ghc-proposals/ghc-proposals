@@ -95,7 +95,7 @@ In brief all stages of the Reviewing process are shown in the table.
 | Accepted                          | 1-3 weeks      | Author &                         | Do final corrections     | Merged                           |
 |                                   |                | Shepherd                         |                          |                                  |
 |                                   |                +----------------------------------+--------------------------+                                  |
-|                                   |                | Shepherd &                       | Merge                    |                                  |
+|                                   |                | Shepherd /                       | Merge                    |                                  |
 |                                   |                | Committee secretary              |                          |                                  |
 +-----------------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
 | Accepted / Merged                 | Indefinite     | Unspecified                      | Implement the proposal   | Implemented                      |
