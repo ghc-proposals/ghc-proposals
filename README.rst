@@ -231,13 +231,13 @@ How to start a new proposal
 
 Proposals are written in `ReStructuredText <http://www.sphinx-doc.org/en/stable/rest.html>`_ . 
 
-Using `Markdown <https://github.github.com/gfm/>`_ instead is also allowed. But while the proposal process itself has no preference for formatting, 
+Using `Markdown <https://github.github.com/gfm/>`_ instead is also allowed. But while the early proposal process itself has no preference for formatting, 
 keep in mind that the `GHC Users Guide <http://downloads.haskell.org/~ghc/latest/docs/html/users_guide/editing-guide.html>`_ uses ReStructuredText exclusively. 
-Accepted proposals written in ReStructuredText thus have the slight benefit that they can be more easily included in the official GHC documentation. 
-In the other case, if the proposal is accepted, someone must volunteer (maybe the author themselves) to convert the Proposal into ReStructuredText format. 
+Thus, proposals written in ReStructuredText can be included in the official GHC documentation, but proposals written in Markdown cannot. 
+If the proposal written in Markdown is approved by "Shepherd recommendation", Shepherd will ask the author to convert the Proposal into ReStructuredText format before the whole Committee starts to discuss. 
 That's why the ReStructuredText format has a clear preference for the Committee to accept the proposal.
 
-Proposals should follow the structure given in the `ReStructuredText template <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.rst>`_, or the `Markdown template <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.md>`_.  (The two are identical except for format.)
+Proposals should follow the structure given in the `ReStructuredText template <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.rst>`_ (or the `Markdown template <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.md>`_ for MD format).
 
 See the section `Review criteria <#review-criteria>`__ below for more information about what makes a strong proposal, and how it will be reviewed.
 
