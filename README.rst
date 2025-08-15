@@ -159,14 +159,7 @@ The stage is identified by a GitHub label, which is identified in the following 
    * `Committee process <#committee-process-for-responding-to-a-proposal>`__
    * `≡ List of proposals waiting for shepherd <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+shepherd+recommendation%22>`_
 
-6. **Label**: `Dormant <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Dormant%22>`__.  **Responsibility for next action**: committee secretary. 
-
-   If a proposal sees no activity for a long time while the Shepherd or Committee waits too long for an author response, it is marked as “dormant” and eventually closed.
-
-   * `What is a dormant proposal? <#what-is-a-dormant-proposal>`__
-   * `≡ List of dormant proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Dormant%22>`__
-
-7. **Label**: `Pending committee review <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+committee+review%22>`__.  **Responsibility for next action**: shepherd.  **Timescale**: four or five weeks.
+6. **Label**: `Pending committee review <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+committee+review%22>`__.  **Responsibility for next action**: shepherd.  **Timescale**: four or five weeks.
 
    The shepherd actively guides the committee towards a consensus.
 
@@ -198,12 +191,12 @@ The stage is identified by a GitHub label, which is identified in the following 
    * `≡ List of proposals being revised <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`__
    * `≡ List of rejected proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%Rejected%22>`__
 
-8. **Label**: (No special label, but Accepted).
+7. **Label**: `Accepted with PR still open<https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aopen%20label%3AAccepted>`__.
    **Responsibility for next action:** shepherd and author.  **Timescale**: two weeks. 
   
    If the committee accepts the proposal with minor corrections, the author and shepherd work together to make any final edits.
 
-9. **Label**: `Accepted <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Accepted%22>`__ + Merged.  
+8. **Label**: `Accepted <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aclosed%20label%3AAccepted>`__ + Merged.  
    **Responsibility for next action:** shepherd and committee secretary.  **Timescale**: one week. 
 
    If the committee fully accepts the proposal, the committee secretary and/or shepherd marks the proposal as “accepted”, 
@@ -214,7 +207,7 @@ The stage is identified by a GitHub label, which is identified in the following 
 
    Any later changes must be submitted as a separate amendment proposal.
 
-10. **Label**: `Implemented <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`__.   Once a proposal is accepted, it still has to be implemented.  The author
+9. **Label**: `Implemented <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`__.   Once a proposal is accepted, it still has to be implemented.  The author
     may do that, or ask someone else to do so. GHC is a volunteer-driven project, so there is unfortunately no guarantee that accepted proposals will be implemented promptly.
     
     We mark the proposal as “implemented” once it
@@ -329,17 +322,6 @@ When the discussion has ebbed down and the author thinks the proposal is ready, 
 ``Pending shepherd recommendation`` and start the `committee process
 <#committee-process>`__.  (If this does not happen within a few days, please
 ping the secretary or the committee.)
-
-What is a dormant proposal?
----------------------------
-
-In order to keep better track of actively discussed proposals, proposals that
-see no activity for an extended period of time (a month or two) might be marked
-as “``dormant``”. At any time the proposer, or someone else can revive the
-proposal by picking up the discussion (and possibly asking `the secretary
-<#who-is-the-committee>`_ to remove the ``Dormant`` tag).
-
-You can see the `list of dormant proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Dormant%22>`_.
 
 Who is the committee?
 ---------------------
@@ -536,6 +518,12 @@ is a polite ping/enquiry.
       Committee members should see the `acceptance page <https://github.com/ghc-proposals/ghc-proposals/blob/master/acceptance.rst>`_ for a checklist
       to be applied to accepted proposals and the steps necessary in
       order to mark a proposal as accepted.
+
+What is a dormant proposal?
+---------------------------
+
+Label `Dormant <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Dormant%22>`__ is outdated mark. 
+No longer in use. Label had similar meaning to "Needs revision" mark.
 
 Review criteria
 ---------------
