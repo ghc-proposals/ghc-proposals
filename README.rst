@@ -231,6 +231,8 @@ How to start a new proposal
 
 Proposals are written in `ReStructuredText <http://www.sphinx-doc.org/en/stable/rest.html>`_ . 
 
+The reason for using this format only is that `GHC Users Guide <http://downloads.haskell.org/~ghc/latest/docs/html/users_guide/editing-guide.html>`_ uses ReStructuredText exclusively. Accepted proposals written in ReStructuredText format can be easily included in the official GHC documentation.
+
 Proposals should follow the structure given in the `ReStructuredText template <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.rst>`_ .
 
 See the section `Review criteria <#review-criteria>`__ below for more information about what makes a strong proposal, and how it will be reviewed.
