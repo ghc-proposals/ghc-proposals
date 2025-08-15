@@ -328,8 +328,13 @@ Who is the committee?
 You can reach the committee by email at ghc-steering-committee@haskell.org. This is a mailing list with
 `public archives <https://mail.haskell.org/cgi-bin/mailman/listinfo/ghc-steering-committee>`_.
 
+The current members
+~~~~~~~~~~~~~~~~~~~~
+
 The current members, including their GitHub handle, when they joined first, when their term last renewed, when their term expires and their role, are:
 
+===============  =========================  =====================================================  =======  =======  =======  =========
+ Avatar           Full name                  GitHub mention                                         Joined  Renewed  Expired  Role
 ===============  =========================  =====================================================  =======  =======  =======  =========
 |simonmar|       Simon Marlow               `@simonmar <https://github.com/simonmar>`_             2017/02  2024/02  2027/02  co-chair
 |simonpj|        Simon Peyton-Jones         `@simonpj <https://github.com/simonpj>`_               2017/02  2024/02  2027/02  co-chair
@@ -361,8 +366,13 @@ The current members, including their GitHub handle, when they joined first, when
 The committee members have committed to adhere to the `Haskell committee guidelines for respectful communication <GRC.rst>`_ and are subject to the
 `committee bylaws <https://github.com/ghc-proposals/ghc-proposals/blob/master/committee.rst>`_.
 
+The former members
+~~~~~~~~~~~~~~~~~~~~
+
 We would also like to thank our former members:
 
+======================  ====================================================  =================
+Full name               GitHub mention                                        Participation
 ======================  ====================================================  =================
 Ryan Newton             `@rrnewton <https://github.com/rrnewton>`_            2017/02 - 2018/09
 Roman Leshchinskiy      `@rleshchinskiy <https://github.com/rleshchinskiy>`_  2017/02 - 2018/11
