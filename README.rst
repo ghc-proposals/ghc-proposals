@@ -235,7 +235,7 @@ Proposals should follow the structure given in the `ReStructuredText template <h
 
 See the section `Review criteria <#review-criteria>`__ below for more information about what makes a strong proposal, and how it will be reviewed.
 
-To start a proposal, create a pull request that adds your proposal as ``proposals/0000-proposal-name.rst`` or ``proposals/0000-proposal-name.md``. Use the corresponding ``proposals/0000-template`` file as a template.
+To start a proposal, create a pull request that adds your proposal as ``proposals/0000-proposal-name.rst``. Use ``proposals/0000-template.rst`` file as a template.
 
 The pull request summary should include a brief description of your
 proposal, along with a link to the rendered view of proposal document
