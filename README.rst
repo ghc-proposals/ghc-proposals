@@ -191,7 +191,7 @@ The stage is identified by a GitHub label, which is identified in the following 
    * `≡ List of proposals being revised <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`__
    * `≡ List of rejected proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%Rejected%22>`__
 
-7. **Label**: `Accepted with PR still open<https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aopen%20label%3AAccepted>`__.
+7. **Label**: `Accepted with PR still open <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aopen%20label%3AAccepted>`__.
    **Responsibility for next action:** shepherd and author.  **Timescale**: two weeks. 
   
    If the committee accepts the proposal with minor corrections, the author and shepherd work together to make any final edits.
@@ -522,8 +522,8 @@ is a polite ping/enquiry.
 What is a dormant proposal?
 ---------------------------
 
-Label `Dormant <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Dormant%22>`__ is outdated mark. 
-No longer in use. Label had similar meaning to "Needs revision" mark.
+Label `Dormant <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Dormant%22>`__ is *outdated* mark. 
+It is no longer in use. Label had similar meaning to "Needs revision" mark.
 
 Review criteria
 ---------------
