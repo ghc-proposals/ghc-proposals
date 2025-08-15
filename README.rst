@@ -154,7 +154,7 @@ The stage is identified by a GitHub label, which is identified in the following 
 
    During this period, the shepherd may change the label to "Needs revision".  This does not imply that the shepherd is opposed to the proposal, but is merely meant to indicate that there are outstanding comments the author of the proposal needs to address before the shepherd can continue. While the Proposal is marked as "Needs revision", the duration of this stage freezes.
 
-   Within two weeks, if the shepherd does not request revisions, then they then they should submit their recommendation to accept or reject the proposal to the committee. This moves the proposal to the *Pending committee review* state.
+   Within two weeks, if the shepherd does not request revisions, then they should submit their recommendation to accept or reject the proposal to the committee. This moves the proposal to the *Pending committee review* state.
 
    * `Committee process <#committee-process-for-responding-to-a-proposal>`__
    * `≡ List of proposals waiting for shepherd <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+shepherd+recommendation%22>`_
