@@ -72,9 +72,9 @@ In brief all stages of the Reviewing process are shown in the table.
 | Stage                             | Max duration   | Responsibility                   | Action                   | New stage                        |
 |                                   |                | for next action                  |                          |                                  |
 +===================================+================+==================================+==========================+==================================+
-| Proposal creation                 | Indefinite     | Author                           | Pull request             | Community discussion             |
+| |proposal-creation|               | Indefinite     | Author                           | Pull request             | Community discussion             |
 +-----------------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
-| Community discussion              | Indefinite     | Author                           | Close request            | Withdrawal                       |
+| |community-discussion|            | Indefinite     | Author                           | Close request            | Withdrawal                       |
 |                                   |                |                                  +--------------------------+----------------------------------+
 |                                   |                |                                  | Submit to committee      | Shepherd appointment             |
 |                                   |                |                                  +--------------------------+----------------------------------+
@@ -82,33 +82,44 @@ In brief all stages of the Reviewing process are shown in the table.
 |                                   |                |                                  |                          |                                  |
 |                                   |                |                                  |                          | Committee discussion             |
 +-----------------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
-| Shepherd appointment              | 1 week         | Secretary                        | Assign shepherd          | Shepherd review                  |
+| |shepherd-appointment|            | 1 week         | Secretary                        | Assign shepherd          | Shepherd review                  |
 +-----------------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
-| Shepherd review                   | 2 weeks        | Shepherd                         | Make recommendation      | Committee discussion             |
+| |shepherd-review|                 | 2 weeks        | Shepherd                         | Make recommendation      | Committee discussion             |
 |                                   |                |                                  +--------------------------+----------------------------------+
 |                                   |                |                                  | Send back for revision   | Community discussion             |
 +-----------------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
-| Committee discussion              | 4-5 weeks      | Shepherd                         | Accept                   | Acception                        |
+| |committee-discussion|            | 4-5 weeks      | Shepherd                         | Accept                   | Acception                        |
 |                                   |                |                                  +--------------------------+----------------------------------+
 |                                   |                |                                  | Reject                   | Rejection                        |
 |                                   |                |                                  +--------------------------+----------------------------------+
 |                                   |                |                                  | Send back for revision   | Community discussion             |
 +-----------------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
-| Acception                         | 2 weeks        | Author &                         | Do final corrections     | Finalization                     |
+| |acception|                       | 2 weeks        | Author &                         | Do final corrections     | Finalization                     |
 |                                   |                | Shepherd                         |                          |                                  |
 +-----------------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
-| Finalization                      | 1 week         | Shepherd /                       | Merge                    | Implemention                     |
+| |finalization|                    | 1 week         | Shepherd /                       | Merge                    | Implemention                     |
 |                                   |                | Secretary                        |                          |                                  |
 +-----------------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
-| Implemention                      | Indefinite     | Unspecified                      | Implement the proposal   | Implemented                      |
+| |implemention|                    | Indefinite     | Unspecified                      | Implement the proposal   | Implemented                      |
 +-----------------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
+
+.. |proposal-creation| replace:: `Proposal creation <#proposal-creation>`__
+.. |community-discussion| replace:: `Community discussion <#community-discussion>`__
+.. |shepherd-appointment| replace:: `Shepherd appointment <#shepherd-appointment>`__
+.. |shepherd-review| replace:: `Shepherd review <#shepherd-review>`__
+.. |committee-discussion| replace:: `Committee discussion <#committee-discussion>`__
+.. |acception| replace:: `Acception <#pr-acception>`__
+.. |finalization| replace:: `Finalization <#pr-finalization>`__
+.. |implemention| replace:: `Implementionn <#pr-implemention>`__
 
 Detailed list of stages
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 The stage is identified by a GitHub label, which is identified in the following list.
 
-1. **Stage:** Proposal creation. 
+.. _proposal-creation:
+
+1. **Stage:** Proposal creation.
    (No label.) 
 
    The author drafts / writes / rewites a proposal.
@@ -121,6 +132,8 @@ The stage is identified by a GitHub label, which is identified in the following 
    The author submits the proposal to the wider Haskell community for discussion when the Proposal is ready enough, as a pull request against this repository.
 
    * `How to submit a proposal <#how-to-start-a-new-proposal>`__
+
+.. _community-discussion:
 
 2. **Stage:** Community discussion. 
    (No label.)  
@@ -158,6 +171,8 @@ The stage is identified by a GitHub label, which is identified in the following 
    If the proposal has a label "Needs revision" and it has this label not too long, then the author could instead Resubmit the proposal directly to its Shepherd. 
    They push the proposal to **Shepherd review** or to **Committee discussion** stage.
 
+.. _shepherd-appointment:
+
 4. **Stage:** Shepherd appointment. 
    (No label.)  
    **Responsibility for next action:** committee secretary.  
@@ -166,6 +181,8 @@ The stage is identified by a GitHub label, which is identified in the following 
    The committee secretary appoints a committee member as shepherd, adds label "Pending shepherd recommendation", which moves the proposal to the **Shepherd review** stage.
 
    Also committee secretary send link of the Proposal to whole committee not for decision, but for early initial overview.
+
+.. _shepherd-review:
 
 5. **Stage:** Shepherd review. 
    **Label**: `Pending shepherd recommendation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+shepherd+recommendation%22>`_.  
@@ -184,6 +201,8 @@ The stage is identified by a GitHub label, which is identified in the following 
 
    * `Committee process <#committee-process-for-responding-to-a-proposal>`__
    * `≡ List of proposals waiting for shepherd recommendation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+shepherd+recommendation%22>`_
+
+.. _committee-discussion:
 
 6. **Stage:** Committee discussion. 
    **Label**: `Pending committee review <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+committee+review%22>`__.  
@@ -221,12 +240,16 @@ The stage is identified by a GitHub label, which is identified in the following 
    * `≡ List of proposals being revised <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`__
    * `≡ List of rejected proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%Rejected%22>`__
 
+.. _pr-acception:
+
 7. **Stage:** Acception. 
    **Label**: `Accepted with PR still open <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aopen%20label%3AAccepted>`__.
    **Responsibility for next action:** shepherd and author.  
    **Timescale**: two weeks. 
   
    If the committee accepts the proposal with minor corrections, the author and shepherd work together to make any final edits.
+
+.. _pr-finalization:
 
 8. **Stage:** Finalization. 
    **Label**: `Accepted <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aclosed%20label%3AAccepted>`__ + Merged.  
@@ -240,6 +263,8 @@ The stage is identified by a GitHub label, which is identified in the following 
    * `How to build the proposals <#how-to-build-the-proposals>`__
 
    Any later changes must be submitted as a separate amendment proposal.
+
+.. _pr-implemention:
 
 9. **Stage:** Implemention. 
    **Label**: `Implemented <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`__.   
