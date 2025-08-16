@@ -122,7 +122,7 @@ The stage is identified by a GitHub label, which is identified in the following 
    The wider community discusses the proposal in the commit section of the pull
    request, while the author refines the proposal. 
 
-   This phase lasts as long as necessary if the author wishes. It could continue even when discussion was gone.
+   This stage lasts as long as necessary if the author wishes. It could continue even when discussion was gone.
 
    The Committee Secretary could remind in comments that it is the author's responsibility to move forward or to remain at this stage. 
    And if the author wishes to initiate the acceptance process, they must explicitly do that.
@@ -144,7 +144,7 @@ The stage is identified by a GitHub label, which is identified in the following 
 
 4. (No label.)  **Responsibility for next action:** committee secretary.  **Timescale**: a few days.
 
-   The committee secretary appoints a committee member as shepherd, which moves the proposal to the *Pending shepherd recommendation* state.
+   The committee secretary appoints a committee member as shepherd, which moves the proposal to the *Pending shepherd recommendation* stage.
 
    Also committee secretary send link of the Proposal to whole committee not for decision, but for early initial overview.
 
@@ -152,9 +152,9 @@ The stage is identified by a GitHub label, which is identified in the following 
 
    The shepherd reviews the proposal, and may request changes that they would like to see before they submit their recommendation to accept or reject the proposal to the committee.
 
-   During this period, the shepherd may change the label to "Needs revision".  This does not imply that the shepherd is opposed to the proposal, but is merely meant to indicate that there are outstanding comments the author of the proposal needs to address before the shepherd can continue. While the Proposal is marked as "Needs revision", the duration of this stage freezes.
+   During this period, the shepherd may change the label to "Needs revision".  This does not imply that the shepherd is opposed to the proposal, but is merely meant to indicate that there are outstanding comments the author of the proposal needs to address before the shepherd can continue. While the Proposal is labeled as "Needs revision", the duration of this stage freezes.
 
-   Within two weeks, if the shepherd does not request revisions, then they should submit their recommendation to accept or reject the proposal to the committee. This moves the proposal to the *Pending committee review* state.
+   Within two weeks, if the shepherd does not request revisions, then they should submit their recommendation to accept or reject the proposal to the committee. This moves the proposal to the *Pending committee review* stage.
 
    * `Committee process <#committee-process-for-responding-to-a-proposal>`__
    * `≡ List of proposals waiting for shepherd <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+shepherd+recommendation%22>`_
@@ -177,7 +177,7 @@ The stage is identified by a GitHub label, which is identified in the following 
    It is usually accompanied with guidance about the revisions that are sought.   
    There may be multiple iterations of revision followed by committee discussion.  
    The goal is to be clear about where the next action lies: with the committee or with the author.
-   While the Proposal is marked as "Needs revision", the duration of this stage freezes.
+   While the Proposal is labeled as "Needs revision", the duration of this stage freezes.
 
    Acceptance of the proposal implies that the implementation will be accepted
    into GHC provided it is well-engineered, well-documented, conforms to the
@@ -199,7 +199,7 @@ The stage is identified by a GitHub label, which is identified in the following 
 8. **Label**: `Accepted <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aclosed%20label%3AAccepted>`__ + Merged.  
    **Responsibility for next action:** shepherd and committee secretary.  **Timescale**: one week. 
 
-   If the committee fully accepts the proposal, the committee secretary and/or shepherd marks the proposal as “accepted”, 
+   If the committee fully accepts the proposal, the committee secretary and/or shepherd labels the proposal as “accepted”, 
    merges the PR and (if necessary) creates a tracking ticket on the GHC issue tracker.
 
    * `How to Accept a Proposal <acceptance.rst>`__
@@ -208,14 +208,14 @@ The stage is identified by a GitHub label, which is identified in the following 
    Any later changes must be submitted as a separate amendment proposal.
 
 9. **Label**: `Implemented <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`__.   Once a proposal is accepted, it still has to be implemented.  The author
-    may do that, or ask someone else to do so. GHC is a volunteer-driven project, so there is unfortunately no guarantee that accepted proposals will be implemented promptly.
+   may do that, or ask someone else to do so. GHC is a volunteer-driven project, so there is unfortunately no guarantee that accepted proposals will be implemented promptly.
     
-    We mark the proposal as “implemented” once it
-    hits GHC’s ``master`` branch (and we are happy to be nudged to do so by
-    email, GitHub issue, or a comment on the relevant pull request).
+   We label the proposal as “implemented” once it
+   hits GHC’s ``master`` branch (and we are happy to be nudged to do so by
+   email, GitHub issue, or a comment on the relevant pull request).
 
-    * `≡ List of proposals pending implementation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Accepted%22+-label%3A%22Implemented%22>`__
-    * `≡ List of implemented proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`__
+   * `≡ List of proposals pending implementation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Accepted%22+-label%3A%22Implemented%22>`__
+   * `≡ List of implemented proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`__
 
 Do not hesitate to `contact <#questions>`_ us if you have questions.
 
@@ -455,7 +455,7 @@ is a polite ping/enquiry.
    the shepherd. If consensus is elusive, then we vote, with the Simons
    retaining veto power.
 
-   This phase should conclude within a month.
+   This stage should conclude within a month.
 
 -  For acceptance, a proposal must have at least *some* enthusiastic support
    from member(s) of the committee. The committee, fallible though its members may be,
@@ -527,13 +527,13 @@ is a polite ping/enquiry.
 
       Committee members should see the `acceptance page <https://github.com/ghc-proposals/ghc-proposals/blob/master/acceptance.rst>`_ for a checklist
       to be applied to accepted proposals and the steps necessary in
-      order to mark a proposal as accepted.
+      order to label a proposal as accepted.
 
 What is a dormant proposal?
 ---------------------------
 
-Label `Dormant <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Dormant%22>`__ is *outdated* mark. 
-It is no longer in use. Label had similar meaning to "Needs revision" mark.
+Label `Dormant <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Dormant%22>`__ is *outdated* label. 
+It is no longer in use. Labeled proposal had similar meaning to proposal with "Needs revision" label.
 
 Review criteria
 ---------------
