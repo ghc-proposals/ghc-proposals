@@ -132,6 +132,7 @@ The stage is identified by a GitHub label, which is identified in the following 
    The author submits the proposal to the wider Haskell community for discussion when the Proposal is ready enough, as a pull request against this repository.
 
    * `How to submit a proposal <#how-to-start-a-new-proposal>`__
+   * `Table of stages`_
 
 .. _community-discussion:
 
@@ -149,6 +150,7 @@ The stage is identified by a GitHub label, which is identified in the following 
 
    * `Discussion goals <#discussion-goals>`__
    * `How to comment on a proposal <#how-to-comment-on-a-proposal>`__
+   * `Table of stages`_
    * `≡ List of proposals under discussion <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+no%3Alabel>`__
 
    If the author understands that the Proposal is either unreadable, fully inconsistent with the Haskell language, or unimplementable, 
@@ -167,6 +169,7 @@ The stage is identified by a GitHub label, which is identified in the following 
 
    * `How to bring a proposal before the committee <#how-to-bring-a-proposal-before-the-committee>`__
    * `Who is the committee? <#who-is-the-committee>`__
+   * `Table of stages`_
 
    If the proposal has a label "Needs revision" and it has this label not too long, then the author could instead Resubmit the proposal directly to its Shepherd. 
    They push the proposal to **Shepherd review** or to **Committee discussion** stage.
@@ -178,7 +181,8 @@ The stage is identified by a GitHub label, which is identified in the following 
    **Responsibility for next action:** committee secretary.  
    **Timescale**: a few days.
 
-   The committee secretary appoints a committee member as shepherd, adds label "Pending shepherd recommendation", which moves the proposal to the **Shepherd review** stage.
+   The committee secretary appoints a committee member as shepherd, adds label "Pending shepherd recommendation", 
+   which moves the proposal to the **Shepherd review** stage (see `Table of stages`_).
 
    Also committee secretary send link of the Proposal to whole committee not for decision, but for early initial overview.
 
@@ -200,6 +204,7 @@ The stage is identified by a GitHub label, which is identified in the following 
    This moves the accepted proposal to the **Committee discussion** stage and shepherd changes the label to "Pending committee review".
 
    * `Committee process <#committee-process-for-responding-to-a-proposal>`__
+   * `Table of stages`_
    * `≡ List of proposals waiting for shepherd recommendation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+shepherd+recommendation%22>`_
 
 .. _committee-discussion:
@@ -236,6 +241,7 @@ The stage is identified by a GitHub label, which is identified in the following 
    features, or unexpected breaking changes not covered by the backwards
    compatibility assessment. In this case the proposal should be revised.
 
+   * `Table of stages`_
    * `≡ List of accepted proposals <https://github.com/ghc-proposals/ghc-proposals/tree/master/proposals>`__
    * `≡ List of proposals being revised <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`__
    * `≡ List of rejected proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%Rejected%22>`__
@@ -247,7 +253,7 @@ The stage is identified by a GitHub label, which is identified in the following 
    **Responsibility for next action:** shepherd and author.  
    **Timescale**: two weeks. 
   
-   If the committee accepts the proposal with minor corrections, the author and shepherd work together to make any final edits.
+   If the committee accepts the proposal with minor corrections, the author and shepherd work together to make any final edits (see `Table of stages`_).
 
 .. _pr-finalization:
 
@@ -261,6 +267,7 @@ The stage is identified by a GitHub label, which is identified in the following 
 
    * `How to Accept a Proposal <acceptance.rst>`__
    * `How to build the proposals <#how-to-build-the-proposals>`__
+   * `Table of stages`_
 
    Any later changes must be submitted as a separate amendment proposal.
 
@@ -277,6 +284,7 @@ The stage is identified by a GitHub label, which is identified in the following 
    hits GHC’s ``master`` branch (and we are happy to be nudged to do so by
    email, GitHub issue, or a comment on the relevant pull request).
 
+   * `Table of stages`_
    * `≡ List of proposals pending implementation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Accepted%22+-label%3A%22Implemented%22>`__
    * `≡ List of implemented proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`__
 
