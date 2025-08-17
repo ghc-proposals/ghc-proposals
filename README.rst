@@ -69,8 +69,8 @@ Table of stages
 In brief all stages of the Reviewing process are shown in the table.
 
 +-----+-----------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
-| №   | Stage                       | Max duration   | Responsibility                   | Action                   | New stage                        |
-|     |                             |                | for next action                  |                          |                                  |
+| №   | Stage [*]_                  | Max duration   | Responsibility                   | Action                   | New stage                        |
+| [*]_|                             |                | for next action                  |                          |                                  |
 +=====+=============================+================+==================================+==========================+==================================+
 | |1| | Proposal creation           | Indefinite     | Author                           | Pull request             | Community discussion             |
 +-----+-----------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
@@ -102,6 +102,9 @@ In brief all stages of the Reviewing process are shown in the table.
 +-----+-----------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
 | |8| | Implemention                | Indefinite     | Unspecified                      | Implement the proposal   | |implemented|                    |
 +-----+-----------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
+
+.. [*] Click the link to see a detailed description.
+.. [*] Click the link to see a list of proposals in this stage.
 
 .. |1| replace:: `1 <#proposal-creation>`__
 .. |2| replace:: `2 <#community-discussion>`__
