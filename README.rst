@@ -173,18 +173,16 @@ The stage is identified by a GitHub label, which is identified in the following 
    The author could do one of the following actions:
 
    A) **Action**: Continue discussion.
-      (No label.)  
 
       This stage lasts as long as necessary if the author wishes. It could continue even when discussion was gone.
 
    B) **Action**: Withdrawal. 
-      (No label.)  
 
       If the author understands that the Proposal is either unreadable, fully inconsistent with the Haskell language, or unimplementable, 
       they may withdraw the Proposal at any time by closing the Pull Request.
 
-   C) **Action**: Submitting to committee. 
-      (No label.)  
+   C) (No label.)
+      **Action**: Submitting to committee.  
 
       *Note: The Reviewing process does NOT start automatically when the discussion ends.*
 
@@ -196,8 +194,8 @@ The stage is identified by a GitHub label, which is identified in the following 
       * `How to bring a proposal before the committee <#how-to-bring-a-proposal-before-the-committee>`__
       * `Who is the committee? <#who-is-the-committee>`__
 
-   D) **Action**: Resubmitting to committee. 
-      **Label**: `Needs revision <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`__.
+   D) **Label**: `Needs revision <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`__.   
+      **Action**: Resubmitting to committee. 
 
       If the proposal has a label "Needs revision" and it has this label not too long, then the author could instead Resubmit the proposal directly to its Shepherd. 
       
