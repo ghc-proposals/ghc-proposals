@@ -170,22 +170,21 @@ The stage is identified by a GitHub label, which is identified in the following 
    The Committee Secretary could remind in comments that it is the author's responsibility to move forward or to remain at this stage. 
    And if the author wishes to initiate the acceptance process, they must explicitly do that.
 
-   A) **Sub-Stage:** Continue discussion.
+   The author could do one of the following actions:
+
+   A) **Action**: Continue discussion.
       (No label.)  
-      **Responsibility for next action:** author.
 
       This stage lasts as long as necessary if the author wishes. It could continue even when discussion was gone.
 
-   B) **Sub-Stage:** Withdrawal. 
+   B) **Action**: Withdrawal. 
       (No label.)  
-      **Responsibility for next action:** author.
 
       If the author understands that the Proposal is either unreadable, fully inconsistent with the Haskell language, or unimplementable, 
       they may withdraw the Proposal at any time by closing the Pull Request.
 
-   C) **Sub-Stage:** Submitting or Resubmitting to committee. 
+   C) **Action**: Submitting to committee. 
       (No label.)  
-      **Responsibility for next action:** author.
 
       *Note: The Reviewing process does NOT start automatically when the discussion ends.*
 
@@ -197,8 +196,12 @@ The stage is identified by a GitHub label, which is identified in the following 
       * `How to bring a proposal before the committee <#how-to-bring-a-proposal-before-the-committee>`__
       * `Who is the committee? <#who-is-the-committee>`__
 
+   D) **Action**: Resubmitting to committee. 
+      **Label**: `Needs revision <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`__.
+
       If the proposal has a label "Needs revision" and it has this label not too long, then the author could instead Resubmit the proposal directly to its Shepherd. 
-      They push the proposal to **Shepherd review** or to **Committee discussion** stage.
+      
+      This push the proposal to **Shepherd review** or to **Committee discussion** stage.
 
 .. _shepherd-appointment:
 
