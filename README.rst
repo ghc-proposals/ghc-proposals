@@ -409,7 +409,13 @@ a line of the diff.
     :align: right
 
     Hover over a line in the source diff view of a pull request and
-    click on the ``+`` to leave an inline comment
+    click on the ``+`` to leave an inline comment.
+
+.. figure:: suggestion_alt.png
+    :alt: Click on the ``±`` button to suggest an alternative.
+    :align: right
+
+    Click on the ``±`` button to suggest an alternative inside the comment.
 
 For the maintenance of general sanity, try to avoid leaving "me too" comments.
 If you would like to register your approval or disapproval of a particular
