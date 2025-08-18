@@ -122,7 +122,7 @@ In brief all stages of the Reviewing process are shown in the table.
 .. |committee-discussion| replace:: `Committee discussion <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+committee+review%22>`__
 .. |for_revision| replace:: `for revision <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`__
 .. |finalisation| replace:: `Finalisation <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aopen%20label%3AAccepted>`__
-.. |rejection| replace:: `Rejection <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%Rejected%22>`__
+.. |rejection| replace:: `Rejection <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3ARejected>`__
 .. |accepted| replace:: `Accepted <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aclosed%20label%3AAccepted>`__
 .. |merge| replace:: `Merge <https://github.com/ghc-proposals/ghc-proposals/tree/master/proposals>`__
 .. |implemented| replace:: `Implemented <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`__
