@@ -202,7 +202,7 @@ The stage is identified by a GitHub label, which is identified in the following 
 
       If the proposal has a label "Needs revision" and it has this label not too long, then the author could instead Resubmit the proposal directly to its Shepherd. 
       
-      This push the proposal to **Shepherd review** or to **Committee discussion** stage.
+      This pushes the proposal either to **Shepherd review** or to **Committee discussion** stage.
 
 .. _shepherd-appointment:
 
