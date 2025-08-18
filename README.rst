@@ -200,10 +200,8 @@ The stage is identified by a GitHub label, which is identified in the following 
    **Responsibility for next action:** committee secretary.  
    **Timescale**: a few days.
 
-   The committee secretary appoints a committee member as shepherd, adds label "Pending shepherd recommendation", 
-   which moves the proposal to the **Shepherd review** stage (see `Table of stages`_).
-
-   Also committee secretary send link of the Proposal to whole committee not for decision, but for early initial overview.
+   The committee secretary notifies the committee and appoints a committee member as shepherd, labeling the pull request as "Pending shepherd recommendation". 
+   This moves the proposal to the **Shepherd review** stage (see `Table of stages`_).
 
 .. _shepherd-review:
 
