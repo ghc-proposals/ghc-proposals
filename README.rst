@@ -1,3 +1,5 @@
+.. sectnum::
+
 GHC Proposals
 =============
 
