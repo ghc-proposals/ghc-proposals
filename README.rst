@@ -90,16 +90,16 @@ In brief all stages of the Reviewing process are shown in the table.
 |     |                             |                |                                  +--------------------------+----------------------------------+
 |     |                             |                |                                  | Send back |for_revision| | Community discussion             |
 +-----+-----------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
-| |5| | |committee-discussion|      | 4-5 weeks      | Shepherd                         | Accept                   | Acception                        |
+| |5| | |committee-discussion|      | 4-5 weeks      | Shepherd                         | Accept                   | Finalisation                     |
 |     |                             |                |                                  +--------------------------+----------------------------------+
 |     |                             |                |                                  | Reject                   | |rejection|                      |
 |     |                             |                |                                  +--------------------------+----------------------------------+
 |     |                             |                |                                  | Send back |for_revision| | Community discussion             |
 +-----+-----------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
-| |6| | |acception|                 | 2 weeks        | Author &                         | Do final corrections     | Finalization                     |
+| |6| | |finalisation|              | 2 weeks        | Author &                         | Do final corrections     | Accepted                         |
 |     |                             |                | Shepherd                         |                          |                                  |
 +-----+-----------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
-| |7| | |finalization|              | 1 week         | Shepherd /                       | |merge|                  | Implemention                     |
+| |7| | |accepted|                  | 1 week         | Shepherd /                       | |merge|                  | Implemention                     |
 |     |                             |                | Secretary                        |                          |                                  |
 +-----+-----------------------------+----------------+----------------------------------+--------------------------+----------------------------------+
 | |8| | Implemention                | Indefinite     | Unspecified                      | Implement the proposal   | |implemented|                    |
@@ -113,17 +113,17 @@ In brief all stages of the Reviewing process are shown in the table.
 .. |3| replace:: `3 <#shepherd-appointment>`__
 .. |4| replace:: `4 <#shepherd-review>`__
 .. |5| replace:: `5 <#committee-discussion>`__
-.. |6| replace:: `6 <#pr-acception>`__
-.. |7| replace:: `7 <#pr-finalization>`__
+.. |6| replace:: `6 <#pr-finalisation>`__
+.. |7| replace:: `7 <#pr-accepted>`__
 .. |8| replace:: `8 <#pr-implemention>`__
 
 .. |community-discussion| replace:: `Community discussion <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+no%3Alabel>`__
 .. |shepherd-review| replace:: `Shepherd review <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+shepherd+recommendation%22>`__
 .. |committee-discussion| replace:: `Committee discussion <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+committee+review%22>`__
 .. |for_revision| replace:: `for revision <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`__
-.. |acception| replace:: `Acception <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aopen%20label%3AAccepted>`__
+.. |finalisation| replace:: `Finalisation <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aopen%20label%3AAccepted>`__
 .. |rejection| replace:: `Rejection <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%Rejected%22>`__
-.. |finalization| replace:: `Finalization <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aclosed%20label%3AAccepted>`__
+.. |accepted| replace:: `Accepted <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aclosed%20label%3AAccepted>`__
 .. |merge| replace:: `Merge <https://github.com/ghc-proposals/ghc-proposals/tree/master/proposals>`__
 .. |implemented| replace:: `Implemented <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`__
 
@@ -243,7 +243,7 @@ The stage is identified by a GitHub label, which is identified in the following 
 
    * Reject the proposal (new label: `Rejected <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Rejected%22>`__)
    * Invite the author to revise the proposal (new label: `Needs revision <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`__)
-   * Accepts the proposal (new label: `Accepted <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Accepted%22>`__). This moves the proposal to **Acception** stage.
+   * Accepts the proposal (new label: `Accepted <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Accepted%22>`__). This moves the proposal to **Finalisation** stage.
 
    Needs-revision is a common outcome (which moves the proposal back to **Community discussion** stage), 
    including for proposals that the committee is enthusiastic about. 
@@ -265,19 +265,19 @@ The stage is identified by a GitHub label, which is identified in the following 
    * `≡ List of proposals being revised <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`__
    * `≡ List of rejected proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%Rejected%22>`__
 
-.. _pr-acception:
+.. _pr-finalisation:
 
-6. **Stage:** Acception. 
-   **Label**: `Accepted with PR still open <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aopen%20label%3AAccepted>`__.
+6. **Stage:** Finalisation. 
+   **Label**: `Accepted <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aopen%20label%3AAccepted>`__  with PR still open.
    **Responsibility for next action:** shepherd and author.  
    **Timescale**: two weeks. 
   
    If the committee accepts the proposal with minor corrections, the author and shepherd work together to make any final edits (see `Table of stages`_).
 
-.. _pr-finalization:
+.. _pr-accepted:
 
-7. **Stage:** Finalization. 
-   **Label**: `Accepted <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aclosed%20label%3AAccepted>`__ + Merged.  
+7. **Stage:** Accepted. 
+   **Label**: `Accepted <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aclosed%20label%3AAccepted>`__ with PR merged and closed.  
    **Responsibility for next action:** shepherd and committee secretary.  
    **Timescale**: one week. 
 
@@ -287,7 +287,7 @@ The stage is identified by a GitHub label, which is identified in the following 
    * `How to Accept a Proposal <acceptance.rst>`__
    * `How to build the proposals <#how-to-build-the-proposals>`__
    * `Table of stages`_
-   * `≡ List of merged proposals <https://github.com/ghc-proposals/ghc-proposals/tree/master/proposals>`__
+   * `≡ List of accepted proposals <https://github.com/ghc-proposals/ghc-proposals/tree/master/proposals>`__
 
    Any later changes must be submitted as a separate amendment proposal.
 
@@ -602,8 +602,10 @@ is a polite ping/enquiry.
       GHC, it will be reverted.
 
    *  **If we say yes:**
-      The pull request will be merged and labeled
+      The pull request will be labeled 
       `Accepted <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3AAccepted>`_.
+      If the committee accepts the proposal with minor corrections, the author and shepherd work together to make any final edits.
+      Then the pull request will be merged.
       Its meta-data will be updated to include the acceptance date.
       A link to the accepted proposal is added to the top of the PR discussion, together with
       the sentence “The proposal has been accepted; the following discussion is mostly of historic interest.”.
