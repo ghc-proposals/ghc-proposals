@@ -70,41 +70,43 @@ Table of stages
 
 In brief all stages of the Reviewing process are shown in the table.
 
-+--------+-----------------------------+---------------------+----------------+------------------------+-----------------------------+------------------------------+
-| | №    | Stage [*]_                  | GitHub              | Max duration   | | Responsibility       | Action                      | New stage                    |
-| | [*]_ |                             | Label               |                | | for next action      |                             |                              |
-|        |                             |                     |                |                        |                             |                              |
-+========+=============================+=====================+================+========================+=============================+==============================+
-| |1|    | Proposal creation           | -                   | Indefinite     | Author                 | Pull request                | Community discussion         |
-+--------+-----------------------------+---------------------+----------------+------------------------+-----------------------------+------------------------------+
-| |2|    | |community-discussion|      | - or                | Indefinite     | Author                 | Close request               | Withdrawal                   |
-|        |                             | | |needs_revision|  |                |                        +-----------------------------+------------------------------+
-|        |                             |                     |                |                        | Submit to committee         | Shepherd appointment         |
-|        |                             |                     |                |                        +-----------------------------+------------------------------+
-|        |                             |                     |                |                        | Resubmit to committee       | Shepherd review /            |
-|        |                             |                     |                |                        |                             |                              |
-|        |                             |                     |                |                        | *(if "Needs revision")*     | Committee discussion         |
-+--------+-----------------------------+---------------------+----------------+------------------------+-----------------------------+------------------------------+
-| |3|    | Shepherd appointment        | -                   | 1 week         | Secretary              | Assign shepherd             | Shepherd review              |
-+--------+-----------------------------+---------------------+----------------+------------------------+-----------------------------+------------------------------+
-| |4|    | |shepherd-review|           | | Pending           | 2 weeks        | Shepherd               | Make recommendation         | Committee discussion         |
-|        |                             | | shepherd          |                |                        +-----------------------------+------------------------------+
-|        |                             | | recommendation    |                |                        | Send back for revision      | Community discussion         |
-+--------+-----------------------------+---------------------+----------------+------------------------+-----------------------------+------------------------------+
-| |5|    | |committee-discussion|      | | Pending           | 4-5 weeks      | Shepherd               | Accept                      | Finalisation                 |
-|        |                             | | committee         |                |                        +-----------------------------+------------------------------+
-|        |                             | | review            |                |                        | Reject                      | |rejection|                  |
-|        |                             |                     |                |                        +-----------------------------+------------------------------+
-|        |                             |                     |                |                        | Send back for revision      | Community discussion         |
-+--------+-----------------------------+---------------------+----------------+------------------------+-----------------------------+------------------------------+
-| |6|    | |finalisation|              | | Pending           | 2 weeks        | | Author &             | Do final corrections        | Accepted                     |
-|        |                             | | finalisation      |                | | Shepherd             |                             |                              |
-+--------+-----------------------------+---------------------+----------------+------------------------+-----------------------------+------------------------------+
-| |7|    | |accepted|                  | Accepted            | 1 week         | | Shepherd /           | |merge|                     | Implemention                 |
-|        |                             |                     |                | | Secretary            |                             |                              |
-+--------+-----------------------------+---------------------+----------------+------------------------+-----------------------------+------------------------------+
-| |8|    | Implemention                | Implemented         | Indefinite     | Unspecified            | Implement the proposal      | |implemented|                |
-+--------+-----------------------------+---------------------+----------------+------------------------+-----------------------------+------------------------------+
++-------------------------------------+---------------------+----------------+------------------------+-----------------------------+------------------------------+
+| № [*]_)  Stage [*]_                 | GitHub              | Max duration   | | Responsibility       | Action                      | New stage                    |
+|                                     | label               |                | | for next action      |                             |                              |
+|                                     |                     |                |                        |                             |                              |
++=====================================+=====================+================+========================+=============================+==============================+
+| |1|)    Proposal creation           | -                   | Indefinite     | Author                 | Pull request                | Community discussion         |
++-------------------------------------+---------------------+----------------+------------------------+-----------------------------+------------------------------+
+| |2|)    |community-discussion|      | - or                | Indefinite     | Author                 | Continue discussion         | Community discussion         |
+|                                     | | |needs_revision|  |                |                        +-----------------------------+------------------------------+
+|                                     |                     |                |                        | Close request               | Withdrawal                   |
+|                                     |                     |                |                        +-----------------------------+------------------------------+
+|                                     |                     |                |                        | Submit to committee         | Shepherd appointment         |
+|                                     |                     |                |                        +-----------------------------+------------------------------+
+|                                     |                     |                |                        | Resubmit to committee       | Shepherd review /            |
+|                                     |                     |                |                        |                             |                              |
+|                                     |                     |                |                        | *(if "Needs revision")*     | Committee discussion         |
++-------------------------------------+---------------------+----------------+------------------------+-----------------------------+------------------------------+
+| |3|)    Shepherd appointment        | -                   | 1 week         | Secretary              | Assign shepherd             | Shepherd review              |
++-------------------------------------+---------------------+----------------+------------------------+-----------------------------+------------------------------+
+| |4|)    |shepherd-review|           | | Pending           | 2 weeks        | Shepherd               | Make recommendation         | Committee discussion         |
+|                                     | | shepherd          |                |                        +-----------------------------+------------------------------+
+|                                     | | recommendation    |                |                        | Send back for revision      | Community discussion         |
++-------------------------------------+---------------------+----------------+------------------------+-----------------------------+------------------------------+
+| |5|)    |committee-discussion|      | | Pending           | 4-5 weeks      | Shepherd               | Accept                      | Finalisation                 |
+|                                     | | committee         |                |                        +-----------------------------+------------------------------+
+|                                     | | review            |                |                        | Reject                      | |rejection|                  |
+|                                     |                     |                |                        +-----------------------------+------------------------------+
+|                                     |                     |                |                        | Send back for revision      | Community discussion         |
++-------------------------------------+---------------------+----------------+------------------------+-----------------------------+------------------------------+
+| |6|)    |finalisation|              | | Pending           | 2 weeks        | | Author &             | Do final corrections        | Accepted                     |
+|                                     | | finalisation      |                | | Shepherd             |                             |                              |
++-------------------------------------+---------------------+----------------+------------------------+-----------------------------+------------------------------+
+| |7|)    |accepted|                  | Accepted            | 1 week         | | Shepherd /           | |merge|                     | Implemention                 |
+|                                     |                     |                | | Secretary            |                             |                              |
++-------------------------------------+---------------------+----------------+------------------------+-----------------------------+------------------------------+
+| |8|)    Implemention                | Implemented         | Indefinite     | Unspecified            | Implement the proposal      | |implemented|                |
++-------------------------------------+---------------------+----------------+------------------------+-----------------------------+------------------------------+
 
 .. [*] Click the link to see a detailed description.
 .. [*] Click the link to see a list of proposals in this stage.
@@ -160,24 +162,28 @@ The stage is identified by a GitHub label, which is identified in the following 
    The wider community discusses the proposal in the commit section of the pull
    request, while the author refines the proposal. 
 
-   This stage lasts as long as necessary if the author wishes. It could continue even when discussion was gone.
-
-   The Committee Secretary could remind in comments that it is the author's responsibility to move forward or to remain at this stage. 
-   And if the author wishes to initiate the acceptance process, they must explicitly do that.
-
    * `Discussion goals <#discussion-goals>`__
    * `How to comment on a proposal <#how-to-comment-on-a-proposal>`__
    * `Table of stages`_
    * `≡ List of proposals under discussion <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+no%3Alabel>`__
 
-   A) **Sub-Stage:** Withdrawal. 
+   The Committee Secretary could remind in comments that it is the author's responsibility to move forward or to remain at this stage. 
+   And if the author wishes to initiate the acceptance process, they must explicitly do that.
+
+   A) **Sub-Stage:** Continue discussion.
+      (No label.)  
+      **Responsibility for next action:** author.
+
+      This stage lasts as long as necessary if the author wishes. It could continue even when discussion was gone.
+
+   B) **Sub-Stage:** Withdrawal. 
       (No label.)  
       **Responsibility for next action:** author.
 
       If the author understands that the Proposal is either unreadable, fully inconsistent with the Haskell language, or unimplementable, 
       they may withdraw the Proposal at any time by closing the Pull Request.
 
-   B) **Sub-Stage:** Submitting or Resubmitting to committee. 
+   C) **Sub-Stage:** Submitting or Resubmitting to committee. 
       (No label.)  
       **Responsibility for next action:** author.
 
