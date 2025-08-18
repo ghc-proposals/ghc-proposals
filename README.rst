@@ -263,7 +263,7 @@ The stage is identified by a GitHub label, which is identified in the following 
    * `Table of stages`_
    * `≡ List of accepted proposals <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aopen%20label%3AAccepted>`__
    * `≡ List of proposals being revised <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`__
-   * `≡ List of rejected proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%Rejected%22>`__
+   * `≡ List of rejected proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3ARejected>`__
 
 .. _pr-finalisation:
 
