@@ -118,7 +118,7 @@ The string literals are affected by ``-XOverloadedStrings`` as usual, if enabled
 
 ::
 
-  interpolateString f = f interpolate id mappend mempty
+  interpolateString f = f (fromString . interpolate) id mappend mempty
 
   class Interpolate a where
     interpolate :: a -> String
@@ -183,9 +183,6 @@ Add ``istring*`` patterns to ``lexeme`` (not ``literal``, because they're not li
   istringMultilineRawMidLine → {graphic⟨'\' | '"""' | '${'⟩ | space | escape | gap}
   istringMultilineEnd → '"""'
 
-  istringQualifiedBegin → modid '."'
-  istringQualifiedMultilineBegin → modid '."""'
-
 Also add ``$`` to ``charesc``:
 
 .. code-block:: abnf
@@ -203,17 +200,25 @@ Update `Section 10.5 <https://www.haskell.org/onlinereport/haskell2010/haskellch
 
   aexp → qvar
        | ...
-       | (istringBegin | istringQualifiedBegin)
-          {istringRaw | istringExprOpen exp istringExprClose}
-          istringEnd
-       | (istringMultilineBegin | istringQualifiedMultilineBegin)
-          {istringMultilineRawStartLine | istringExprOpen exp istringExprClose istringMultilineRawMidLine}
-          istringMultilineEnd
+       | istring
+       | istringMultiline
+       | modid . istring
+       | modid . istringMultiline
+
+  istring →
+    istringBegin
+      {istringRaw | istringExprOpen exp istringExprClose}
+      istringEnd
+
+  istringMultiline →
+    istringMultilineBegin
+      {istringMultilineRawStartLine | istringExprOpen exp istringExprClose istringMultilineRawMidLine}
+      istringMultilineEnd
 
 Machinery
 ~~~~~~~~~
 
-The following code will live in ``ghc-experimental`` under ``Data.String.Interpolate.Experimental``. After the API has stablized, these would eventually live in ``GHC.Exts`` alongside ``IsString``.
+The following code will live in ``ghc-experimental`` under ``Data.String.Interpolate.Experimental``. After the API has stablized, these would eventually live in ``Data.String`` alongside ``IsString``.
 
 ::
 
@@ -226,7 +231,7 @@ The following code will live in ``ghc-experimental`` under ``Data.String.Interpo
       -> s
     )
     -> s
-  interpolateString f = fromString $ f (fromString . interpolate) id mappend mempty
+  interpolateString f = f (fromString . interpolate) id mappend mempty
 
   class Interpolate a where
     interpolate :: a -> String
@@ -278,7 +283,7 @@ Template Haskell will add the following definitions:
 
   data Exp
     = ...
-    | InterStringE (Maybe ModName) [InterStringPart]
+    | InterStringE (Maybe ModuleName) [InterStringPart]
 
   data InterStringPart
     = InterStringRaw String
@@ -325,17 +330,6 @@ Parsing
       - The second ``{`` is not a valid character to start an expression
     * - ``s"a ${b -- asdf} c"``
       - The rest of the string is commented out
-    * - ::
-
-          s"""
-          a
-          ${drop
-              1
-              xs}
-          b
-          """
-
-      - Multiline expressions not allowed
 
 Multiline strings
 ~~~~~~~~~~~~~~~~~
