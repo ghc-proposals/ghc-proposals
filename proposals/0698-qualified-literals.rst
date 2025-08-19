@@ -269,8 +269,6 @@ With ``-XQualifiedLists``, we gain the following syntaxes:
       - **Desugared pattern syntax**
     * - ``M.[x, _, y]``
       - ``M.FromListCons x (M.FromListCons _ (M.FromListCons y M.FromListNil))``
-    * - ``x M.: y``
-      - ``M.FromListCons x y``
 
 ``Data.List.Qualified.Experimental`` will initially live in ``ghc-experimental``, eventually merged into ``GHC.Exts``.
 
@@ -329,7 +327,6 @@ Update `Section 10.5 <https://www.haskell.org/onlinereport/haskell2010/haskellch
        | modid . string
        | modid . multiLineString
        | modid . [ pat_1 , ..., pat_k ]
-       | modid . ( pat_1 : ... : pat_k )
 
 
 Proposed Library Change Specification
