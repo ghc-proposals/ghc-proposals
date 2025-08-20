@@ -121,7 +121,13 @@ The string literals are affected by ``-XOverloadedStrings`` as usual, if enabled
   interpolateString f = f (fromString . interpolate) id mappend mempty
 
   class Interpolate a where
+    {-# MINIMAL interpolate | interpolateS #-}
+
     interpolate :: a -> String
+    interpolate x = interpolateS x ""
+
+    interpolateS :: a -> ShowS
+    interpolateS x s = interpolate x <> s
 
 When ``-XQualifiedStrings`` is enabled, you may qualify string interpolation as well:
 
@@ -234,23 +240,35 @@ The following code will live in ``ghc-experimental`` under ``Data.String.Interpo
   interpolateString f = f (fromString . interpolate) id mappend mempty
 
   class Interpolate a where
+    {-# MINIMAL interpolate | interpolateS #-}
+
     interpolate :: a -> String
+    interpolate x = interpolateS x ""
+
+    interpolateS :: a -> ShowS
+    interpolateS x s = interpolate x <> s
+
+``interpolateS`` is necessary in order to interpolate recursive data structures in linear time, but ``interpolate`` is more straightforward for simple data types.
 
 Instances will be provided as well, for example:
 
 ::
 
   instance Interpolate String where
-    interpolate = id
+    interpolateS = showString
   instance Interpolate Char where
-    interpolate = (:[])
+    interpolateS = showChar
 
   instance Interpolate Int where
-    interpolate = show
+    interpolateS = shows
   instance Interpolate Double where
-    interpolate = show
+    interpolateS = shows
   instance Interpolate Bool where
-    interpolate = show
+    interpolateS = shows
+
+  instance Interpolate a => Interpolate (Maybe a) where
+    interpolateS Nothing = showString "Nothing"
+    interpolateS (Just a) = showString "Just (" . interpolateS a . showChar ')'
 
 Expansion
 ~~~~~~~~~
@@ -456,6 +474,46 @@ Community Survey
 
 I sent out multiple community surveys, the last one being open 2025-04-21 to 2025-04-30. Raw data and analysis can be found here: https://github.com/brandonchinn178/ghc-string-interpolation-prototypes/tree/main/results
 
+Builder
+~~~~~~~
+
+A performance-minded person might want to take advantage of ``interpolateS`` and defer realizing the string until the very end.
+
+::
+
+  module Data.String.Builder.Interpolate where
+
+  import Data.String.Interpolate.Experimental qualified as S
+
+  newtype Builder = Builder (Endo String)
+    deriving newtype (Monoid, Semigroup)
+
+  build :: Builder -> String
+  build (Builder (Endo f)) = f ""
+
+  interpolateString f = f convert raw mappend mempty
+    where
+      convert = Builder . Endo . interpolateS
+      raw = Builder . Endo . showString
+
+With this definition, one can nest interpolated strings with linear performance:
+
+::
+
+  {-# LANGUAGE QualifiedStrings #-}
+  {-# LANGUAGE StringInterpolation #-}
+
+  import Data.String.Builder.Interpolate qualified as B
+
+  main = do
+    let name = "Alice"
+    let age = 10
+
+    let s1 = B.s"Name: ${name}!"
+    let s2 = B.s"Age: ${age}!"
+
+    print $ B.build B.s"${s1} + ${s2}"
+
 Text
 ~~~~
 
@@ -483,7 +541,10 @@ With this support, users can write the following:
     let name = "Alice"
     let age = 10
 
+    -- with overloaded strings
     print $ T.toUpper s"Name: ${name}, Age: ${age}"
+
+    -- with qualified strings
     print $ T.toUpper T.s"Name: ${name}, Age: ${age}"
 
 Custom interpolator: SqlQuery
@@ -655,6 +716,8 @@ That library could define the module:
     -> Html
   interpolateString f = f interpolate raw mappend mempty
 
+  class Interpolate a where
+    interpolate :: a -> Html
   instance Interpolate String where
     interpolate = interpolate . T.pack
   instance Interpolate Text where
