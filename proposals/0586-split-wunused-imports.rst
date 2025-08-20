@@ -44,7 +44,7 @@ do extra work, with questionable benefits.
 This not only a theoretic concern:
 
 -  Additional work was required in the implementation of the `export
-   ``liftA2``
+   "liftA2"
    proposal <https://github.com/haskell/core-libraries-committee/issues/50>`__:
 
    -  effort in ``ghc`` itself to maintain warning-freeness
@@ -58,12 +58,12 @@ This not only a theoretic concern:
    additional work to the ``liftA2`` case above, see
 
    -  the concerns raised in
-      https://www.yesodweb.com/blog/2016/05/are-unused-import-warnings-harmful
+      `Yesodweb blog: Are unused import warnings harmful? <https://www.yesodweb.com/blog/2016/05/are-unused-import-warnings-harmful>`__
    -  the migration guide for ghc 7.10 -
-      https://gitlab.haskell.org/ghc/ghc/-/wikis/migration/7.10#ghc-says-the-import-of-is-redundant
+      `GitLab GHC: Migration 7.10: GHC says "The import of ... is redundant" <https://gitlab.haskell.org/ghc/ghc/-/wikis/migration/7.10#ghc-says-the-import-of-is-redundant>`__
 
 -  This is listed as a “bad part” of Haskell -
-   https://www.snoyman.com/blog/2020/11/haskell-bad-parts-2/
+   `Snoyman blog: Haskell: The Bad Parts, part 2 <https://www.snoyman.com/blog/2020/11/haskell-bad-parts-2/>`__
 
    -  in particular, the article mentions the re-export of ``(<>)`` from
       ``Prelude`` as requiring the exact same ``CPP`` workarounds as
@@ -74,7 +74,7 @@ This not only a theoretic concern:
    a critical counterpoint is introducing new emissions of
    ``-Wunused-imports``
 
--  The `export ``foldl'``
+-  The `export "foldl'"
    proposal <https://github.com/haskell/core-libraries-committee/issues/167>`__
    seems like it would encounter the same implementation issues as the
    export ``liftA2`` proposal, and similar concerns to the sized integer
@@ -321,4 +321,4 @@ One of the proposal authors will implement this.
 Endorsements
 ------------
 
-https://gitlab.haskell.org/ghc/ghc/-/issues/21879
+`GHC issue #21879 <https://gitlab.haskell.org/ghc/ghc/-/issues/21879>`__
