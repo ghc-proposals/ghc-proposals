@@ -1,7 +1,7 @@
-.. sectnum::
-
 GHC Proposals
 =============
+
+.. sectnum::
 
 This repository contains specifications for proposed changes to the
 `Glasgow Haskell Compiler <https://www.haskell.org/ghc>`_.
