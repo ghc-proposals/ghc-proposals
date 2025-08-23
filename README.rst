@@ -167,7 +167,11 @@ The stage is identified by a GitHub label, which is identified in the following 
    * `Discussion goals <#discussion-goals>`__
    * `How to comment on a proposal <#how-to-comment-on-a-proposal>`__
    * `Table of stages`_
-   * `≡ List of proposals under discussion <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+no%3Alabel>`__
+   * `≡ List of new proposals under discussion <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+no%3Alabel>`__
+   * `≡ List of revisioned proposals under discussion <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Needs+revision%22>`__
+
+   If the Proposal is an amendment to an already accepted proposal,
+   the Committee Secretary additionally labels that proposal with the `Amendment <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3AAmendment>`__ label.
 
    The Committee Secretary could remind in comments that it is the author's responsibility to move forward or to remain at this stage. 
    And if the author wishes to initiate the acceptance process, they must explicitly do that.
@@ -182,6 +186,8 @@ The stage is identified by a GitHub label, which is identified in the following 
 
       If the author understands that the Proposal is either unreadable, fully inconsistent with the Haskell language, or unimplementable, 
       they may withdraw the Proposal at any time by closing the Pull Request.
+
+      * `≡ List of withdrawal proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aclosed+is%3Apr+no%3Alabel>`__
 
    C) (No label.)
       **Action**: Submitting to committee.  
@@ -211,7 +217,7 @@ The stage is identified by a GitHub label, which is identified in the following 
    **Responsibility for next action:** committee secretary.  
    **Timescale**: a few days.
 
-   The committee secretary notifies the committee and appoints a committee member as shepherd, labeling the pull request as "Pending shepherd recommendation". 
+   The committee secretary notifies the committee (for initial pre-view) and appoints a committee member as shepherd, labeling the pull request as "Pending shepherd recommendation". 
 
    This moves the proposal to the **Shepherd review** stage (see `Table of stages`_).
 
