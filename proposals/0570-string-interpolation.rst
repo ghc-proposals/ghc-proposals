@@ -118,7 +118,7 @@ The string literals are affected by ``-XOverloadedStrings`` as usual, if enabled
 
 ::
 
-  interpolateString f = f (fromString . interpolate) id mappend mempty
+  interpolateString f = mconcat $ f (fromString . interpolate) id (:) []
 
   class Interpolate a where
     {-# MINIMAL interpolate | interpolateS #-}
@@ -237,7 +237,8 @@ The following code will live in ``ghc-experimental`` under ``Data.String.Interpo
       -> s
     )
     -> s
-  interpolateString f = f (fromString . interpolate) id mappend mempty
+  interpolateString f = mconcat $ f (fromString . interpolate) id (:) []
+  {-# INLINE interpolateString #-}
 
   class Interpolate a where
     {-# MINIMAL interpolate | interpolateS #-}
