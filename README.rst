@@ -75,9 +75,9 @@ In brief all stages of the Reviewing process are shown in the table.
 |                                     | label               |                | | for next action      |                             |                              |
 |                                     |                     |                |                        |                             |                              |
 +=====================================+=====================+================+========================+=============================+==============================+
-| |1|)    Proposal creation           | -                   | Indefinite     | Author                 | Pull request                | Community discussion         |
+| |1|)    Proposal creation           | ‒                   | Indefinite     | Author                 | Pull request                | Community discussion         |
 +-------------------------------------+---------------------+----------------+------------------------+-----------------------------+------------------------------+
-| |2|)    |community-discussion|      | - or                | Indefinite     | Author                 | Continue discussion         | Community discussion         |
+| |2|)    |community-discussion|      | | ‒ or              | Indefinite     | Author                 | Continue discussion         | Community discussion         |
 |                                     | | |needs_revision|  |                |                        +-----------------------------+------------------------------+
 |                                     |                     |                |                        | Close request               | Withdrawal                   |
 |                                     |                     |                |                        +-----------------------------+------------------------------+
@@ -87,7 +87,7 @@ In brief all stages of the Reviewing process are shown in the table.
 |                                     |                     |                |                        |                             |                              |
 |                                     |                     |                |                        | *(if "Needs revision")*     | Committee discussion         |
 +-------------------------------------+---------------------+----------------+------------------------+-----------------------------+------------------------------+
-| |3|)    Shepherd appointment        | -                   | 1 week         | Secretary              | Assign shepherd             | Shepherd review              |
+| |3|)    Shepherd appointment        | ‒                   | 1 week         | Secretary              | Assign shepherd             | Shepherd review              |
 +-------------------------------------+---------------------+----------------+------------------------+-----------------------------+------------------------------+
 | |4|)    |shepherd-review|           | | Pending           | 2 weeks        | Shepherd               | Make recommendation         | Committee discussion         |
 |                                     | | shepherd          |                |                        +-----------------------------+------------------------------+
