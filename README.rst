@@ -182,7 +182,7 @@ The stage is identified by a GitHub label, which is identified in the following 
 
       This stage lasts as long as necessary if the author wishes. It could continue even when discussion was gone.
 
-      Continuing the discussion is a default choice if the author explicitly doesn't take another action.
+      Continuing the discussion is a default and automatic choice if the author does not explicitly take another action.
 
    B) **Action**: Withdrawal. 
 
