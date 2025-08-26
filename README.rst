@@ -77,7 +77,7 @@ In brief all stages of the Reviewing process are shown in the table.
 +=====================================+=====================+================+========================+=============================+==============================+
 | |1|)    Proposal creation           | ‒                   | Indefinite     | Author                 | Pull request                | Community discussion         |
 +-------------------------------------+---------------------+----------------+------------------------+-----------------------------+------------------------------+
-| |2|)    |community-discussion|      | | ‒ or              | Indefinite     | Author                 | Continue discussion         | Community discussion         |
+| |2|)    |community-discussion|      | | ‒ or              | Indefinite     | Author                 | *Continue discussion*       | Community discussion         |
 |                                     | | |needs_revision|  |                |                        +-----------------------------+------------------------------+
 |                                     |                     |                |                        | Close request               | Withdrawal                   |
 |                                     |                     |                |                        +-----------------------------+------------------------------+
@@ -181,6 +181,8 @@ The stage is identified by a GitHub label, which is identified in the following 
    A) **Action**: Continue discussion.
 
       This stage lasts as long as necessary if the author wishes. It could continue even when discussion was gone.
+
+      Continuing the discussion is a default choice if the author explicitly doesn't take another action.
 
    B) **Action**: Withdrawal. 
 
@@ -315,6 +317,8 @@ The stage is identified by a GitHub label, which is identified in the following 
 
    This moves the proposal to the **Implemention** stage.
 
+   At this point, the reviewing and discussing part of the process is technically complete.
+
    Any later changes must be submitted as a separate amendment proposal.
 
 .. _pr-implemention:
@@ -333,6 +337,8 @@ The stage is identified by a GitHub label, which is identified in the following 
    * `Table of stages`_
    * `≡ List of proposals pending implementation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Accepted%22+-label%3A%22Implemented%22>`__
    * `≡ List of implemented proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`__
+
+Once a proposal is implemented, the life cycle of the proposal process is fully completed.
 
 Do not hesitate to `contact <#questions>`_ us if you have questions.
 
