@@ -73,52 +73,52 @@ In brief all stages of the Reviewing process are shown in the table.
 .. [*] Click the link to see a detailed description.
 .. [*] Click the link to see a list of proposals with this label at this stage.
 
-+-------------------------------------+------------------------+----------------+------------------------+-----------------------------+---------------------------------+
-| Stage [*]_                          | GitHub                 | Max duration   | | Responsibility       | Action                      | | New stage /                   |
-|                                     | label [*]_             |                | | for next action      |                             | | Outcome                       |
-|                                     |                        |                |                        |                             |                                 |
-+=====================================+========================+================+========================+=============================+=================================+
-| |st-proposal-creation|              | ‒                      | Indefinite     | Author                 | Pull request                | Community discussion            |
-+-------------------------------------+------------------------+----------------+------------------------+-----------------------------+---------------------------------+
-| |st-community-discussion|           | ‒ (|no-label|)         | Indefinite     | Author                 | Close request               | *Withdrawn*                     |
-|                                     |                        |                |                        +-----------------------------+---------------------------------+
-|                                     |                        |                |                        | Submit to committee         | Shepherd appointment            |
-+-------------------------------------+------------------------+----------------+------------------------+-----------------------------+---------------------------------+
-|                                     | ‒ (|lbl-withdrawn|)    | (PR closed)    |                        |                             |                                 |
-+-------------------------------------+------------------------+----------------+------------------------+-----------------------------+---------------------------------+
-| |st-shepherd-appointment|           | ‒                      | 1 week         | Secretary              | Assign shepherd             | Shepherd review                 |
-+-------------------------------------+------------------------+----------------+------------------------+-----------------------------+---------------------------------+
-| |st-shepherd-review|                | | Pending              | 2 weeks        | Shepherd               | Make recommendation         | Committee discussion            |
-|                                     | | shepherd             |                |                        +-----------------------------+---------------------------------+
-|                                     | | recommendation       |                |                        | Send back for revision      | Needs revision                  |
-|                                     | | (|lbl-shepherd|)     |                |                        |                             |                                 |
-+-------------------------------------+------------------------+----------------+------------------------+-----------------------------+---------------------------------+
-| |st-needs-revision|                 | |lbl-needs-revision|   | Indefinite     | Author                 | Close request               | *Withdrawn*                     |
-|                                     |                        |                |                        +-----------------------------+---------------------------------+
-|                                     |                        |                |                        | Resubmit to committee       | Shepherd review /               |
-|                                     |                        |                |                        |                             |                                 |
-|                                     |                        |                |                        |                             | Committee discussion            |
-+-------------------------------------+------------------------+----------------+------------------------+-----------------------------+---------------------------------+
-| |st-committee-discussion|           | | Pending              | 4-5 weeks      | Shepherd               | Accept                      | Finalisation                    |
-|                                     | | committee            |                |                        +-----------------------------+---------------------------------+
-|                                     | | review               |                |                        | Reject                      | *Rejected*                      |
-|                                     | | (|lbl-committee|)    |                |                        +-----------------------------+---------------------------------+
-|                                     |                        |                |                        | Send back for revision      | Needs revision                  |
-+-------------------------------------+------------------------+----------------+------------------------+-----------------------------+---------------------------------+
-|                                     | |lbl-rejected|         | (PR closed)    |                        |                             |                                 |
-+-------------------------------------+------------------------+----------------+------------------------+-----------------------------+---------------------------------+
-| |st-finalisation|                   | | Pending              | 2 weeks        | | Author &             | Do final corrections        | Accepted                        |
-|                                     | | finalisation         |                | | Shepherd             |                             |                                 |
-|                                     | | (|lbl-finalisation|) |                |                        |                             |                                 |
-+-------------------------------------+------------------------+----------------+------------------------+-----------------------------+---------------------------------+
-| |st-accepted|                       | |lbl-accepted|         | 1 week         | | Shepherd /           | Merge                       | Implemention                    |
-|                                     |                        |                | | Secretary            |                             |                                 |
-+-------------------------------------+------------------------+----------------+------------------------+-----------------------------+---------------------------------+
-| |st-implemention|                   | | |lbl-accepted|       | Indefinite     | Unspecified            | Implement the proposal      | *Implemented*                   |
-|                                     | | (PR closed)          |                |                        |                             |                                 |
-+-------------------------------------+------------------------+----------------+------------------------+-----------------------------+---------------------------------+
-|                                     | |lbl-implemented|      | (PR closed)    |                        |                             |                                 |
-+-------------------------------------+------------------------+----------------+------------------------+-----------------------------+---------------------------------+
++-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
+| Stage [*]_                          | GitHub                      | Max duration   | | Responsibility       | Action                      | | New stage /                   |
+|                                     | label [*]_                  |                | | for next action      |                             | | Outcome                       |
+|                                     |                             |                |                        |                             |                                 |
++=====================================+=============================+================+========================+=============================+=================================+
+| |st-proposal-creation|              | ‒                           | Indefinite     | Author                 | Pull request                | Community discussion            |
++-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
+| |st-community-discussion|           | ‒ (|no-label|)              | Indefinite     | Author                 | Close request               | *Withdrawn*                     |
+|                                     |                             |                |                        +-----------------------------+---------------------------------+
+|                                     |                             |                |                        | Submit to committee         | Shepherd appointment            |
++-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
+|                                     | ‒ (|lbl-withdrawn|)         | (PR closed)    |                        |                             |                                 |
++-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
+| |st-shepherd-appointment|           | ‒                           | 1 week         | Secretary              | Assign shepherd             | Shepherd review                 |
++-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
+| |st-shepherd-review|                | | Pending                   | 2 weeks        | Shepherd               | Make recommendation         | Committee discussion            |
+|                                     | | shepherd                  |                |                        +-----------------------------+---------------------------------+
+|                                     | | recommendation            |                |                        | Send back for revision      | Needs revision                  |
+|                                     | | (|lbl-shepherd|)          |                |                        |                             |                                 |
++-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
+| |st-needs-revision|                 | |lbl-needs-revision|        | Indefinite     | Author                 | Close request               | *Withdrawn*                     |
+|                                     |                             |                |                        +-----------------------------+---------------------------------+
+|                                     |                             |                |                        | Resubmit to committee       | Shepherd review /               |
+|                                     |                             |                |                        |                             |                                 |
+|                                     |                             |                |                        |                             | Committee discussion            |
++-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
+| |st-committee-discussion|           | | Pending                   | 4-5 weeks      | Shepherd               | Accept                      | Finalisation                    |
+|                                     | | committee                 |                |                        +-----------------------------+---------------------------------+
+|                                     | | review                    |                |                        | Reject                      | *Rejected*                      |
+|                                     | | (|lbl-committee|)         |                |                        +-----------------------------+---------------------------------+
+|                                     |                             |                |                        | Send back for revision      | Needs revision                  |
++-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
+|                                     | |lbl-rejected|              | (PR closed)    |                        |                             |                                 |
++-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
+| |st-finalisation|                   | | Pending                   | 2 weeks        | | Author &             | Do final corrections        | Accepted                        |
+|                                     | | finalisation (|lbl-fnl|)  |                | | Shepherd             |                             |                                 |
+|                                     |                             |                |                        |                             |                                 |
++-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
+| |st-accepted|                       | |lbl-accepted|              | 1 week         | | Shepherd /           | Merge                       | Implemention                    |
+|                                     |                             |                | | Secretary            |                             |                                 |
++-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
+| |st-implemention|                   | |lbl-accepted| (PR closed)  | Indefinite     | Unspecified            | Implement the proposal      | *Implemented*                   |
+|                                     |                             |                |                        |                             |                                 |
++-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
+|                                     | |lbl-implemented|           | (PR closed)    |                        |                             |                                 |
++-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
 
 .. |st-proposal-creation| replace:: `Proposal creation <#proposal-creation>`__
 .. |st-community-discussion| replace:: `Community discussion <#community-discussion>`__
@@ -135,7 +135,7 @@ In brief all stages of the Reviewing process are shown in the table.
 .. |lbl-shepherd| replace:: `link <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+shepherd+recommendation%22>`__
 .. |lbl-committee| replace:: `link <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+committee+review%22>`__
 .. |lbl-needs-revision| replace:: `Needs revision <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`__
-.. |lbl-finalisation| replace:: `link <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aopen%20label%3A%22Pending+finalisation%22>`__
+.. |lbl-fnl| replace:: `link <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aopen%20label%3A%22Pending+finalisation%22>`__
 .. |lbl-rejected| replace:: `Rejected <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3ARejected>`__
 .. |lbl-accepted| replace:: `Accepted <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aclosed%20label%3AAccepted>`__
 .. |lbl-implemented| replace:: `Implemented <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`__
