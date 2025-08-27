@@ -74,8 +74,8 @@ In brief all stages of the Reviewing process are shown in the table.
 .. [*] Click the link to see a list of proposals with this label at this stage.
 
 +-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
-| Stage [*]_                          | GitHub                      | Max duration   | | Responsibility       | Action                      | | New stage /                   |
-|                                     | label [*]_                  |                | | for next action      |                             | | Outcome                       |
+| | Stage [*]_ /                      | GitHub                      | Max duration   | | Responsibility       | Action                      | | New stage /                   |
+| | Outcome                           | label [*]_                  |                | | for next action      |                             | | Outcome                       |
 |                                     |                             |                |                        |                             |                                 |
 +=====================================+=============================+================+========================+=============================+=================================+
 | |st-proposal-creation|              | ‒                           | Indefinite     | Author                 | Pull request                | Community discussion            |
@@ -84,7 +84,7 @@ In brief all stages of the Reviewing process are shown in the table.
 |                                     |                             |                |                        +-----------------------------+---------------------------------+
 |                                     |                             |                |                        | Submit to committee         | Shepherd appointment            |
 +-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
-|                                     | ‒ (|lbl-withdrawn|)         | (PR closed)    |                        |                             |                                 |
+| *Withdrawn*                         | ‒ (|lbl-withdrawn|)         | (PR closed)    |                        |                             |                                 |
 +-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
 | |st-shepherd-appointment|           | ‒                           | 1 week         | Secretary              | Assign shepherd             | Shepherd review                 |
 +-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
@@ -105,7 +105,7 @@ In brief all stages of the Reviewing process are shown in the table.
 |                                     | | (|lbl-committee|)         |                |                        +-----------------------------+---------------------------------+
 |                                     |                             |                |                        | Send back for revision      | Needs revision                  |
 +-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
-|                                     | |lbl-rejected|              | (PR closed)    |                        |                             |                                 |
+| *Rejected*                          | |lbl-rejected|              | (PR closed)    |                        |                             |                                 |
 +-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
 | |st-finalisation|                   | | Pending                   | 2 weeks        | | Author &             | Do final corrections        | Accepted                        |
 |                                     | | finalisation (|lbl-fnl|)  |                | | Shepherd             |                             |                                 |
@@ -117,7 +117,7 @@ In brief all stages of the Reviewing process are shown in the table.
 | |st-implemention|                   | |lbl-accepted| (PR closed)  | Indefinite     | Unspecified            | Implement the proposal      | *Implemented*                   |
 |                                     |                             |                |                        |                             |                                 |
 +-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
-|                                     | |lbl-implemented|           | (PR closed)    |                        |                             |                                 |
+| *Implemented*                       | |lbl-implemented|           | (PR closed)    |                        |                             |                                 |
 +-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
 
 .. |st-proposal-creation| replace:: `Proposal creation <#proposal-creation>`__
