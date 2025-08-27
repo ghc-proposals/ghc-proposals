@@ -225,7 +225,7 @@ The stage is identified by a GitHub label, which is identified in the following 
 
    D) **Action**: Abandon proposal.
 
-      If a proposal sees no activity for along time (more than half a year), it might be marked as “Dormant”, and eventually closed.
+      If a proposal sees no activity for along time (more than a year), it might be marked as “Dormant”, and eventually closed.
 
       * `≡ List of dormant proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Dormant%22>`__
 
@@ -296,7 +296,7 @@ The stage is identified by a GitHub label, which is identified in the following 
 
    C) **Action**: Abandon proposal.
 
-      If a proposal sees no activity for along time (more than half a year), it might be marked as “Dormant”, and eventually closed.
+      If a proposal sees no activity for along time (more than a year), it might be marked as “Dormant”, and eventually closed.
 
       * `≡ List of dormant proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Dormant%22>`__
 
