@@ -80,6 +80,8 @@ In brief all stages of the Reviewing process are shown in the table.
 | |st-community-discussion|           | | ‒                    | Indefinite     | Author                 | Close request               | *Withdrawn*                     |
 |                                     | | ( |no-label| )       |                |                        +-----------------------------+---------------------------------+
 |                                     |                        |                |                        | Submit to committee         | |st-shepherd-appointment|       |
+|                                     |                        |                |                        +-----------------------------+---------------------------------+
+|                                     |                        |                |                        | Abandon request             | *Dormant*                       |
 +-------------------------------------+------------------------+----------------+------------------------+-----------------------------+---------------------------------+
 | |st-shepherd-appointment|           | ‒                      | 1 week         | Secretary              | Assign shepherd             | |st-shepherd-review|            |
 +-------------------------------------+------------------------+----------------+------------------------+-----------------------------+---------------------------------+
@@ -92,6 +94,8 @@ In brief all stages of the Reviewing process are shown in the table.
 |                                     |                        |                |                        | Resubmit to committee       | |st-shepherd-review| /          |
 |                                     |                        |                |                        |                             |                                 |
 |                                     |                        |                |                        |                             | |st-committee-discussion|       |
+|                                     |                        |                |                        +-----------------------------+---------------------------------+
+|                                     |                        |                |                        | Abandon request             | *Dormant*                       |
 +-------------------------------------+------------------------+----------------+------------------------+-----------------------------+---------------------------------+
 | |st-committee-discussion|           | | Pending              | 4-5 weeks      | Shepherd               | Accept                      | |st-finalisation|               |
 |                                     | | |lbl-committee|      |                |                        +-----------------------------+---------------------------------+
@@ -109,15 +113,18 @@ In brief all stages of the Reviewing process are shown in the table.
 |                                     | | (PR closed)          |                |                        |                             |                                 |
 +-------------------------------------+------------------------+----------------+------------------------+-----------------------------+---------------------------------+
 
-+-------------------+-----------------------+
-| Outcome           | GitHub label          |
-+===================+=======================+
-| *Implemented*     | |lbl-implemented|     |
-+-------------------+-----------------------+
-| *Rejected*        | |lbl-rejected|        |
-+-------------------+-----------------------+
-| *Withdrawn*       | |lbl-withdrawn|       |
-+-------------------+-----------------------+
++-----------------------+-----------------------+
+| Outcome (PR closed)   | GitHub label          |
++=======================+=======================+
+| *Implemented*         | |lbl-implemented|     |
++-----------------------+-----------------------+
+| *Rejected*            | |lbl-rejected|        |
++-----------------------+-----------------------+
+| *Dormant*             | |lbl-dormant|         |
++-----------------------+-----------------------+
+| *Withdrawn*           | |lbl-withdrawn|       |
++-----------------------+-----------------------+
+
 
 .. [*] Click the link to see a detailed description.
 .. [*] Click the link to see a list of proposals in this stage.
@@ -141,6 +148,7 @@ In brief all stages of the Reviewing process are shown in the table.
 .. |lbl-rejected| replace:: `Rejected <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3ARejected>`__
 .. |lbl-accepted| replace:: `Accepted <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aclosed%20label%3AAccepted>`__
 .. |lbl-implemented| replace:: `Implemented <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`__
+.. |lbl-dormant| replace:: `Dormant <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Dormant%22>`__
 
 
 Detailed list of stages
@@ -215,6 +223,15 @@ The stage is identified by a GitHub label, which is identified in the following 
 
       This moves the proposal to **Shepherd appointment** stage.
 
+   D) **Action**: Abandon proposal.
+
+      If a proposal sees no activity for along time (more than half a year), it might be marked as “Dormant”, and eventually closed.
+
+      * `≡ List of dormant proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Dormant%22>`__
+
+      At any time the proposer, or someone else can revive the proposal by picking up the discussion 
+      (and possibly asking the secretary to remove the "Dormant" tag).
+
 .. _shepherd-appointment:
 
 3. **Stage:** Shepherd appointment. 
@@ -276,6 +293,15 @@ The stage is identified by a GitHub label, which is identified in the following 
       they may withdraw the Proposal at any time by closing the Pull Request.
 
       * `≡ List of withdrawal proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aclosed+is%3Apr+label%3A%22Needs+revision%22>`__
+
+   C) **Action**: Abandon proposal.
+
+      If a proposal sees no activity for along time (more than half a year), it might be marked as “Dormant”, and eventually closed.
+
+      * `≡ List of dormant proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Dormant%22>`__
+
+      At any time the proposer, or someone else can revive the proposal by picking up the discussion 
+      (and possibly asking the secretary to remove the "Dormant" tag).
 
 .. _committee-discussion:
 
@@ -692,12 +718,6 @@ is a polite ping/enquiry.
    Committee members should see the `acceptance page <https://github.com/ghc-proposals/ghc-proposals/blob/master/acceptance.rst>`_ for a checklist
    to be applied to accepted proposals and the steps necessary in
    order to label a proposal as accepted.
-
-What is a dormant proposal?
----------------------------
-
-Label `Dormant <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Dormant%22>`__ is *outdated* label. 
-It is no longer in use. Labeled proposal had similar meaning to proposal with "Needs revision" label.
 
 Review criteria
 ---------------
