@@ -193,7 +193,7 @@ The stage is identified by a GitHub label, which is identified in the following 
 
       Continuing the discussion is a default and automatic choice if the author does not explicitly take another action.
 
-   B) **Action**: Withdrawal. 
+   B) **Action**: Withdrawn. 
 
       If the author understands that the Proposal is either unreadable, fully inconsistent with the Haskell language, or unimplementable, 
       they may withdraw the Proposal at any time by closing the Pull Request.
@@ -271,7 +271,7 @@ The stage is identified by a GitHub label, which is identified in the following 
       
       This pushes the proposal either to **Shepherd review** or to **Committee discussion** stage.
 
-   B) **Action**: Withdrawal. 
+   B) **Action**: Withdrawn. 
 
       If the author understands that the Proposal is either unreadable, fully inconsistent with the Haskell language, or unimplementable, 
       they may withdraw the Proposal at any time by closing the Pull Request.
