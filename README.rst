@@ -111,7 +111,7 @@ In brief all stages of the Reviewing process are shown in the table.
 |                                     | | finalisation (|lbl-fnl|)  |                | | Shepherd             |                             |                                 |
 |                                     |                             |                |                        |                             |                                 |
 +-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
-| |st-accepted|                       | |lbl-accepted|              | 1 week         | | Shepherd /           | Merge                       | Implemention                    |
+| |st-accepted|                       | |lbl-accepted-open|         | 1 week         | | Shepherd /           | Merge                       | Implemention                    |
 |                                     |                             |                | | Secretary            |                             |                                 |
 +-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
 | |st-implemention|                   | |lbl-accepted| (PR closed)  | Indefinite     | Unspecified            | Implement the proposal      | *Implemented*                   |
@@ -137,6 +137,7 @@ In brief all stages of the Reviewing process are shown in the table.
 .. |lbl-needs-revision| replace:: `Needs revision <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`__
 .. |lbl-fnl| replace:: `link <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aopen%20label%3A%22Pending+finalisation%22>`__
 .. |lbl-rejected| replace:: `Rejected <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3ARejected>`__
+.. |lbl-accepted-open| replace:: `Accepted <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aopen%20label%3AAccepted>`__
 .. |lbl-accepted| replace:: `Accepted <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aclosed%20label%3AAccepted>`__
 .. |lbl-implemented| replace:: `Implemented <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`__
 
