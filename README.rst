@@ -198,7 +198,7 @@ The stage is identified by a GitHub label, which is identified in the following 
       If the author understands that the Proposal is either unreadable, fully inconsistent with the Haskell language, or unimplementable, 
       they may withdraw the Proposal at any time by closing the Pull Request.
 
-      * `≡ List of withdrawal proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aclosed+is%3Apr+no%3Alabel>`__
+      * `≡ List of withdrawn proposals after community discussion <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aclosed+is%3Apr+no%3Alabel>`__
 
       If the author abandons their own proposal and the proposal sees no activity for a long time (more than a year), it might be closed by the committee secretary.
       At any time, the proposer could reopen a proposal.
@@ -276,7 +276,7 @@ The stage is identified by a GitHub label, which is identified in the following 
       If the author understands that the Proposal is either unreadable, fully inconsistent with the Haskell language, or unimplementable, 
       they may withdraw the Proposal at any time by closing the Pull Request.
 
-      * `≡ List of withdrawal proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aclosed+is%3Apr+label%3A%22Needs+revision%22>`__
+      * `≡ List of withdrawn proposals after revision <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aclosed+is%3Apr+label%3A%22Needs+revision%22>`__
 
       If the author abandons their own proposal and the proposal sees no activity for a long time (more than a year), it might be closed by the committee secretary.
       At any time, the proposer could reopen a proposal.
