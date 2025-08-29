@@ -75,7 +75,7 @@ In brief all stages of the Reviewing process are shown in the table.
 
 +-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
 | | Stage [*]_ /                      | GitHub                      | Max duration   | | Responsibility       | Action                      | | New stage /                   |
-| | Outcome                           | label [*]_                  |                | | for next action      |                             | | Outcome                       |
+| | |outcome|                         | label [*]_                  |                | | for next action      |                             | | |outcome|                     |
 |                                     |                             |                |                        |                             |                                 |
 +=====================================+=============================+================+========================+=============================+=================================+
 | |st-proposal-creation|              | ‒                           | Indefinite     | Author                 | Pull request                | Community discussion            |
@@ -141,6 +141,7 @@ In brief all stages of the Reviewing process are shown in the table.
 .. |lbl-accepted| replace:: `Accepted <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aclosed%20label%3AAccepted>`__
 .. |lbl-implemented| replace:: `Implemented <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`__
 
+.. |outcome| replace:: *Outcome*
 
 Detailed list of stages
 ~~~~~~~~~~~~~~~~~~~~~~~
