@@ -78,7 +78,7 @@ This proposal would desugar natural numbers separately from negative integers so
 Inability to use heterogeneous lists
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-With ``-XOverloadedLists`` we can never write the literal ``[4, "hello", True]``, becuase that desugars to ``fromList [4, "hello", True]`` which is ill-typed regardless of ``fromList``. That is annoyingly restrictive, because with heterogeneous lists, it's perfectly fine to write
+With ``-XOverloadedLists`` we can never write the literal ``[4, "hello", True]``, because that desugars to ``fromList [4, "hello", True]`` which is ill-typed regardless of ``fromList``. That is annoyingly restrictive, because with heterogeneous lists, it's perfectly fine to write
 
 ::
 
@@ -97,20 +97,12 @@ For a suitable ``M.buildList``, this is enough to support heterogenous list lite
 Proposed Change Specification
 -----------------------------
 
-Introduce ``-XQualifiedNumbers``, ``-XQualifiedStrings``, and ``-XQualifiedLists`` that desugar literals syntax to function calls in a similar way to ``-XQualifiedDo`` (`docs <https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/qualified_do.html>`_, `proposal <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0216-qualified-do.rst>`_).
+Introduce ``-XQualifiedNumerics``, ``-XQualifiedStrings``, and ``-XQualifiedLists`` that desugar literals syntax to function calls in a similar way to ``-XQualifiedDo`` (`docs <https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/qualified_do.html>`_, `proposal <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0216-qualified-do.rst>`_).
 
-General comments:
+As long as the desugared expressions/patterns type check, users are free to define these functions however they want. No whitespace is allowed between the ``.`` and the module name / literal.
 
-* As long as the desugared expressions/patterns type check, users are free to define these functions however they want.
-
-* No whitespace is allowed between the ``.`` and the module name / literal.
-
-* Some literals are not supported yet (Chars, unboxed literals) due to lack of use-cases, but could be extended in the future.
-
-* Future work could be done to allow compile time logic, e.g. ``$M.1`` => ``$(M.fromNumeric [|1|])``, but that is out of scope of this proposal.
-
-QualifiedNumbers
-~~~~~~~~~~~~~~~~
+QualifiedNumerics
+~~~~~~~~~~~~~~~~~
 
 Currently, numeric literals have the following desugaring:
 
@@ -126,7 +118,7 @@ Currently, numeric literals have the following desugaring:
     * - ``1.5``
       - ``Prelude.fromRational 1.5``
 
-With ``-XQualifiedNumbers``, we gain the following syntaxes:
+With ``-XQualifiedNumerics``, we gain the following syntaxes:
 
 .. list-table::
     :align: left
@@ -156,25 +148,7 @@ With ``-XQualifiedNumbers``, we gain the following syntaxes:
     * - ``M.(1.2)``
       - ``((== M.fromNumeric (1.2 :: Rational)) -> True)``
 
-There were three options for this feature:
-
-#. Mirror Prelude and translate to simply ``M.fromInteger 1`` or ``M.fromRational 1.5``
-
-   * Pro: 1:1 correspondence with standard Haskell98 semantics
-   * Con: If you want non-negative guarantees, you could type ``M.fromInteger`` with ``Natural``, but you'd be relying on GHC's hardcoded ``-Woverflowed-literals`` check.
-
-#. Add a bit more expressiveness by breaking out Natural, i.e. ``M.fromNatural`` + ``M.fromNegativeInt`` + ``M.fromRational``
-
-   * Pro: Explicit non-negative guarantee
-   * Con: Supporting all integers requires implementing two functions. This isn't great, as the common case is supporting all integers; supporting only non-negative is probably only a fraction of the use cases.
-
-#. Use a single possibly-polymorphic ``M.fromNumeric`` definition that should work for any of: ``Natural``, ``Integer``, ``Rational``.
-
-   * The vast majority of cases would/should implement ``fromNumeric`` with ``Natural``, ``Integral a => a``, or ``Real a => a``.
-   * If distinguishing between the three cases is absolutely necessary, the user may still do so with normal typeclass techniques.
-   * Pro: Optional non-negative guarantee
-   * Pro: Majority of use cases would only define one ``fromNumeric`` definition using existing typeclasses
-   * Con: Rather divorced from standard Haskell98 semantics
+See *Section 8.1 Alternative QualifiedNumerics API* for a discussion on the chosen API here.
 
 Parentheses are required for negative integers and rationals, to avoid ambiguity, both in the lexer and for human readers. Parentheses are optional for positive integers.
 
@@ -274,20 +248,23 @@ With ``-XQualifiedLists``, we gain the following syntaxes:
 
 ::
 
-  data EnumFrom a
-    = EnumFrom a
-    | EnumFromThen a a
-    | EnumFromTo a a
-    | EnumFromThenTo a a a
+  data EnumFrom from then to
+    = EnumFrom from
+    | EnumFromThen from then
+    | EnumFromTo from to
+    | EnumFromThenTo from then to
 
-It is highly recommended that all types with ``IsList`` instances defined provide a ``.Interpolate`` module with the below definitions, to enable locally-scoped overloading over ``-XOverloadedLists``.
+It is highly recommended that all types with ``IsList`` instances defined provide a ``.Interpolate`` module with the below definitions, to enable locally-scoped overloading over ``-XOverloadedLists``, for example:
 
 ::
 
   import GHC.Exts qualified as L
   import Prelude qualified
 
-  buildList f = L.fromListN (f (:) [])
+  buildList :: ((a -> a -> [a]) -> [a] -> [a]) -> MyList a
+  buildList f = L.fromList (f (:) [])
+
+  buildListEnum :: EnumFrom a a a -> MyList a
   buildListEnum e =
     case e of
       EnumFrom x -> L.fromList (Prelude.enumFrom x)
@@ -300,8 +277,6 @@ Note that while we could have mirrored ``-XOverloadedLists`` and just done ``M.f
 We also decide to do ``M.buildList`` instead of something like ``M.fromList (x `M.cons` M.nil)`` so that there's one definition to jump to (e.g. with IDE integrations) instead of three.
 
 To use as patterns, the implementor should define ``FromListCons`` and ``FromListNil`` pattern synonyms, typically with the ``COMPLETE`` pragma specified. We choose to do this instead of ``toList -> [x, _, z]`` because that would also disallow heterogeneous lists.
-
-Future work could be done to allow list comprehensions, e.g. ``M.[x * 10 | x <- [1..10]]`` => ``[1..10] `M.listCompBind` \x -> M.listCompReturn (x * 10)``, but that is out of scope of this proposal.
 
 Parser
 ~~~~~~
@@ -328,6 +303,29 @@ Update `Section 10.5 <https://www.haskell.org/onlinereport/haskell2010/haskellch
        | modid . multiLineString
        | modid . [ pat_1 , ..., pat_k ]
 
+Module name resolution
+~~~~~~~~~~~~~~~~~~~~~~
+
+Module names are resolved immediately, when parsing a quote. This matches the behavior of resolving modules in normal qualified values in quotes.
+
+::
+
+  module A where
+
+  import OneImpl qualified as M
+
+  -- Immediately resolves to OneImpl."foo"
+  -- Errors if M is not in scope
+  foo = [| M."foo" |]
+
+::
+
+  module B where
+
+  import AnotherImpl qualified as M
+  import A
+
+  bar = $foo
 
 Proposed Library Change Specification
 -------------------------------------
@@ -341,14 +339,14 @@ We'll add the following constructors, to maintain backwards compatibility:
 
   data Exp
     = ...
-    | QualListE ModuleName [Exp]
+    | QualListE ModName [Exp]
 
   data Lit
     = ...
-    | QualStringL ModuleName String
-    | QualNaturalL ModuleName Natural
-    | QualIntegerL ModuleName Integer
-    | QualRationalL ModuleName Rational
+    | QualStringL ModName String
+    | QualNaturalL ModName Natural
+    | QualIntegerL ModName Integer
+    | QualRationalL ModName Rational
 
 Examples
 --------
@@ -404,7 +402,7 @@ Scientific
 
 If you want to write ``BigDecimal`` literals (e.g. for tests), you have to use either the ``BigDecimal`` constructor or write a ``big = BigDecimal`` helper, but that's unsafe if accidentally called on a non-literal, as ``Scientific`` throws a runtime error if converting from a repeating decimal.
 
-With ``QualifiedNumbers``, you could write ``Big.123``, which guarantees that ``Big.fromNumeric`` is only called on literals (e.g. you could configure hlint to ban calling ``BigDecimal.fromNumeric`` directly and only be used via ``QualifiedNumbers``).
+With ``QualifiedNumerics``, you could write ``Big.123``, which guarantees that ``Big.fromNumeric`` is only called on literals (e.g. you could configure hlint to ban calling ``BigDecimal.fromNumeric`` directly and only be used via ``QualifiedNumerics``).
 
 ::
 
@@ -578,12 +576,44 @@ Alternatives
 
 * Use separate ``M.fromInteger`` and ``M.fromRational`` instead of a single polymorphic ``M.fromNumeric``
 
-  * See the discussion in *Section 2.1 QualifiedNumbers*
+  * See the discussion in *Section 2.1 QualifiedNumerics*
 
 * Use separate ``M.fromListN`` instead of ``M.buildList``
 
   * Disallows heterogeneous lists
   * See the discussion in *Section 2.3 QualifiedLists*
+
+Alternative QualifiedNumerics API
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There were three different APIs we could have implemented for ``-XQualifiedNumerics``:
+
+#. Mirror Prelude and translate to simply ``M.fromInteger 1`` or ``M.fromRational 1.5``
+
+   * Pro: 1:1 correspondence with standard Haskell98 semantics
+   * Con: If you want non-negative guarantees, you could type ``M.fromInteger`` with ``Natural``, but you'd be relying on GHC's hardcoded ``-Woverflowed-literals`` check.
+
+#. Add a bit more expressiveness by breaking out Natural, i.e. ``M.fromNatural`` + ``M.fromNegativeInt`` + ``M.fromRational``
+
+   * Pro: Explicit non-negative guarantee
+   * Con: Supporting all integers requires implementing two functions. This isn't great, as the common case is supporting all integers; supporting only non-negative is probably only a fraction of the use cases.
+
+#. Use a single possibly-polymorphic ``M.fromNumeric`` definition that should work for any of: ``Natural``, ``Integer``, ``Rational``.
+
+   * The vast majority of cases would/should implement ``fromNumeric`` with ``Natural``, ``Integral a => a``, or ``Real a => a``.
+   * If distinguishing between the three cases is absolutely necessary, the user may still do so with normal typeclass techniques.
+   * Pro: Optional non-negative guarantee
+   * Pro: Majority of use cases would only define one ``fromNumeric`` definition using existing typeclasses
+   * Con: Rather divorced from standard Haskell98 semantics
+
+Future work
+~~~~~~~~~~~
+
+* Some literals are not supported yet (Chars, unboxed literals) due to lack of use-cases, but could be extended in the future.
+
+* Future work could be done to allow compile time logic, e.g. ``$M.1`` => ``$(M.fromNumeric [|1|])``, but that is out of scope of this proposal.
+
+* Future work could be done to allow list comprehensions, e.g. ``M.[x * 10 | x <- [1..10]]`` => ``[1..10] `M.listCompBind` \x -> M.listCompReturn (x * 10)``, but that is out of scope of this proposal.
 
 Unresolved Questions
 --------------------
