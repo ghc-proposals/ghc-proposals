@@ -19,7 +19,7 @@ Large numeric literals are hard to read.
 This easily causes a bug.
 For example, the following numbers are confusing:
 
-.. code-block:: none
+::
 
     x = 10000000            -- Is this one million or ten million?
     y = 0x3ffffff           -- Is this 4M or 64M?
@@ -28,7 +28,7 @@ For example, the following numbers are confusing:
 Readability can be improved by separating numbers with underscores (``_``).
 This feature improves readability, quality and expressiveness as follows:
 
-.. code-block:: none
+::
 
     x = 10_000_000          -- ten million
     y = 0x3ff_ffff          -- 64M
@@ -46,7 +46,7 @@ New syntax (this proposal)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 When the ``NumericUnderscores`` language extension is enabled, syntax is changed as follows:
 
-.. code-block:: none
+::
 
     -- `numSpacer` is enabled with NumericUnderscores extension
     numSpacer = {_}
@@ -75,7 +75,7 @@ Current syntax
 ~~~~~~~~~~~~~~
 Current specification in `Haskell 2010 Language Report, chapter 2 <https://www.haskell.org/onlinereport/haskell2010/haskellch2.html#x7-190002.5>`_ , `BinaryLiterals <https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html?highlight=binaryliterals#ghc-flag--XBinaryLiterals>`_ , and `HexFloatLiterals <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0004-hexFloats.rst>`_ language extension:
 
-.. code-block:: none
+::
 
     decimal     →  digit{digit}
     octal       →  octit{octit}
@@ -106,10 +106,11 @@ Examples
 --------
 The followings are examples of this proposal:
 
-use case examples
+Use case examples
 ~~~~~~~~~~~~~~~~~
+Use case examples:
 
-.. code-block:: none
+::
 
     -- decimal
     million    = 1_000_000
@@ -141,10 +142,11 @@ use case examples
 
     test8bit x = (0b01_0000_0000 .&. x) /= 0
 
-validity examples
+Validity examples
 ~~~~~~~~~~~~~~~~~
+Validity examples:
 
-.. code-block:: none
+::
 
     x0 = 1_000_000   -- valid
     x1 = 1__000000   -- valid
@@ -188,7 +190,7 @@ Alternatives
 ------------
 For example, these expressions are current alternatives:
 
-.. code-block:: none
+::
 
     x = 10 * 1000 * 1000 :: Int
     y = [0x3ff, 0xffff] :: [Int]
