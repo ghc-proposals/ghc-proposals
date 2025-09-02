@@ -94,7 +94,7 @@ In brief all stages of the Reviewing process are shown in the table.
 |                                     |                             |                |                        | Send back for revision      | Needs revision                  |
 |                                     |                             |                |                        |                             |                                 |
 +-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
-| |st-committee-discussion|           | |lbl-committee|             | 4-5 weeks      | Shepherd               | Accept                      | Finalisation                    |
+| |st-committee-discussion|           | |lbl-committee|             | 4-5 weeks      | Shepherd               | Accept                      | Accepted                        |
 |                                     |                             |                |                        +-----------------------------+---------------------------------+
 |                                     |                             |                |                        | Reject                      | *Rejected*                      |
 |                                     |                             |                |                        +-----------------------------+---------------------------------+
@@ -108,7 +108,7 @@ In brief all stages of the Reviewing process are shown in the table.
 +-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
 | |st-rejected|_                      | |lbl-rejected|              | (PR closed)    | ‒                      | ‒                           | ‒                               |
 +-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
-| |st-finalisation|                   | |lbl-accepted-open|         | 2 weeks        | | Author &             | Do final corrections        | Implemention                    |
+| |st-accepted|                       | |lbl-accepted-open|         | 2 weeks        | | Author &             | Do final corrections        | Implemention                    |
 |                                     |                             |                | | Shepherd             |                             |                                 |
 |                                     |                             |                |                        |                             |                                 |
 |                                     |                             +----------------+------------------------+-----------------------------+                                 |
@@ -133,7 +133,7 @@ In brief all stages of the Reviewing process are shown in the table.
 .. |st-needs-revision| replace:: `Needs revision <#needs-revision>`__
 .. |st-committee-discussion| replace:: `Committee discussion <#committee-discussion>`__
 .. |st-rejected| replace:: *Rejected*
-.. |st-finalisation| replace:: `Finalisation <#finalisation>`__
+.. |st-accepted| replace:: `Accepted <#accepted>`__
 .. |st-implemention| replace:: `Implemention <#implemention>`__
 .. |st-implemented| replace:: *Implemented*
 
@@ -142,7 +142,6 @@ In brief all stages of the Reviewing process are shown in the table.
 .. |lbl-shepherd| replace:: `Pending shepherd recommendation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+shepherd+recommendation%22>`__
 .. |lbl-committee| replace:: `Pending committee review <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+committee+review%22>`__
 .. |lbl-needs-revision| replace:: `Needs revision <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`__
-.. |lbl-finalisation| replace:: `Pending finalisation <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aopen%20label%3A%22Pending+finalisation%22>`__
 .. |lbl-rejected| replace:: `Rejected <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3ARejected>`__
 .. |lbl-accepted-open| replace:: `Accepted <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aopen%20label%3AAccepted>`__
 .. |lbl-accepted| replace:: `Accepted <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aclosed%20label%3AAccepted>`__
@@ -266,7 +265,7 @@ The stage is identified by a GitHub label, which is identified in the following 
    The shepherd actively guides the committee towards a consensus.
    Within four or five weeks the committee should come to a conclusion, which may be:
 
-   * Accept the proposal, perhaps subject to minor corrections (new stage: **Finalisation**).
+   * Accept the proposal, perhaps subject to minor corrections (new stage: **Accepted**).
    * Invite the author to revise the proposal (new stage: **Needs revision**)
    * Reject the proposal (new stage: **Rejected**)
 
@@ -314,9 +313,9 @@ The stage is identified by a GitHub label, which is identified in the following 
 
    * `≡ List of rejected proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3ARejected>`__
 
-.. _finalisation:
+.. _accepted:
 
-9. **Stage:** Finalisation.
+9. **Stage:** Accepted.
    **Label**: `Accepted <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aopen%20label%3AAccepted>`__ with PR open.
    **Responsibility for next action:** shepherd, author and committee secretary
    **Timescale**: two to three weeks.
@@ -329,7 +328,7 @@ The stage is identified by a GitHub label, which is identified in the following 
    This moves the proposal to the **Implemention** stage.
 
    * `How to accept a proposal <acceptance.rst>`__
-   * `≡ List of proposals being finalised <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aopen%20label%3AAccepted>`__
+   * `≡ List of proposals being accepted <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aopen%20label%3AAccepted>`__
 
 .. _implemention:
 
@@ -661,7 +660,7 @@ is a polite ping/enquiry.
 
    *  **If we say yes:**
       The pull request will be labeled
-      `Pending finalisation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Pending+finalisation%22>`_.
+      `Accepted <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Accepted%22>`_.
       If the committee accepts the proposal with minor corrections, the author and shepherd work together to make any final edits.
 
    Then the pull request will be merged and be labeled `Accepted <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3AAccepted>`_.
