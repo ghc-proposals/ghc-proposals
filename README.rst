@@ -72,7 +72,7 @@ Table of stages
 In brief all stages of the Reviewing process are shown in the table.
 
 .. [*] Click the link to see a detailed description.
-.. [*] Click the link to see a list of proposals with this label at this stage.
+.. [*] Click the link to see a list of proposals with this label at this stage / outcome.
 
 +-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
 | | Stage [*]_ /                      | GitHub                      | Max duration   | | Responsibility       | Action                      | | New stage /                   |
@@ -85,14 +85,20 @@ In brief all stages of the Reviewing process are shown in the table.
 |                                     |                             |                |                        +-----------------------------+---------------------------------+
 |                                     |                             |                |                        | Submit to committee         | Shepherd appointment            |
 +-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
-| *Withdrawn*                         | ‒ (|lbl-withdrawn|)         | (PR closed)    | ‒                      | ‒                           | ‒                               |
+| |st-withdrawn|                      | ‒ (|lbl-withdrawn|)         | (PR closed)    | ‒                      | ‒                           | ‒                               |
 +-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
 | |st-shepherd-appointment|           | ‒                           | 1 week         | Secretary              | Assign shepherd             | Shepherd review                 |
 +-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
-| |st-shepherd-review|                | | Pending                   | 2 weeks        | Shepherd               | Make recommendation         | Committee discussion            |
-|                                     | | shepherd                  |                |                        +-----------------------------+---------------------------------+
-|                                     | | recommendation            |                |                        | Send back for revision      | Needs revision                  |
-|                                     | | (|lbl-shepherd|)          |                |                        |                             |                                 |
+| |st-shepherd-review|                | |lbl-shepherd|              | 2 weeks        | Shepherd               | Make recommendation         | Committee discussion            |
+|                                     |                             |                |                        +-----------------------------+---------------------------------+
+|                                     |                             |                |                        | Send back for revision      | Needs revision                  |
+|                                     |                             |                |                        |                             |                                 |
++-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
+| |st-committee-discussion|           | |lbl-committee|             | 4-5 weeks      | Shepherd               | Accept                      | Finalisation                    |
+|                                     |                             |                |                        +-----------------------------+---------------------------------+
+|                                     |                             |                |                        | Reject                      | *Rejected*                      |
+|                                     |                             |                |                        +-----------------------------+---------------------------------+
+|                                     |                             |                |                        | Send back for revision      | Needs revision                  |
 +-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
 | |st-needs-revision|                 | |lbl-needs-revision|        | Indefinite     | Author                 | Close request               | *Withdrawn*                     |
 |                                     |                             |                |                        +-----------------------------+---------------------------------+
@@ -100,43 +106,39 @@ In brief all stages of the Reviewing process are shown in the table.
 |                                     |                             |                |                        |                             |                                 |
 |                                     |                             |                |                        |                             | Committee discussion            |
 +-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
-| |st-committee-discussion|           | | Pending                   | 4-5 weeks      | Shepherd               | Accept                      | Finalisation                    |
-|                                     | | committee                 |                |                        +-----------------------------+---------------------------------+
-|                                     | | review                    |                |                        | Reject                      | *Rejected*                      |
-|                                     | | (|lbl-committee|)         |                |                        +-----------------------------+---------------------------------+
-|                                     |                             |                |                        | Send back for revision      | Needs revision                  |
+| |st-rejected|                       | |lbl-rejected|              | (PR closed)    | ‒                      | ‒                           | ‒                               |
 +-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
-| *Rejected*                          | |lbl-rejected|              | (PR closed)    | ‒                      | ‒                           | ‒                               |
-+-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
-| |st-finalisation|                   | | Pending                   | 2 weeks        | | Author &             | Do final corrections        | Accepted                        |
-|                                     | | finalisation (|lbl-fnl|)  |                | | Shepherd             |                             |                                 |
+| |st-finalisation|                   | |lbl-accepted-open|         | 2 weeks        | | Author &             | Do final corrections        | Implemention                    |
+|                                     |                             |                | | Shepherd             |                             |                                 |
 |                                     |                             |                |                        |                             |                                 |
-+-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
-| |st-accepted|                       | |lbl-accepted-open|         | 1 week         | | Shepherd /           | Merge                       | Implemention                    |
+|                                     |                             +----------------+------------------------+-----------------------------+                                 |
+|                                     |                             | 1 week         | | Shepherd /           | Merge                       |                                 |
 |                                     |                             |                | | Secretary            |                             |                                 |
 +-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
 | |st-implemention|                   | |lbl-accepted| (PR closed)  | Indefinite     | Unspecified            | Implement the proposal      | *Implemented*                   |
 |                                     |                             |                |                        |                             |                                 |
 +-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
-| *Implemented*                       | |lbl-implemented|           | (PR closed)    | ‒                      | ‒                           | ‒                               |
+| |st-implemented|                    | |lbl-implemented|           | (PR closed)    | ‒                      | ‒                           | ‒                               |
 +-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
 
 .. |st-proposal-creation| replace:: `Proposal creation <#proposal-creation>`__
 .. |st-community-discussion| replace:: `Community discussion <#community-discussion>`__
+.. |st-withdrawn| replace:: `Withdrawn <#withdrawn>`__
 .. |st-shepherd-appointment| replace:: `Shepherd appointment <#shepherd-appointment>`__
 .. |st-shepherd-review| replace:: `Shepherd review <#shepherd-review>`__
 .. |st-needs-revision| replace:: `Needs revision <#needs-revision>`__
 .. |st-committee-discussion| replace:: `Committee discussion <#committee-discussion>`__
+.. |st-rejected| replace:: `Rejected <#rejected>`__
 .. |st-finalisation| replace:: `Finalisation <#finalisation>`__
-.. |st-accepted| replace:: `Accepted <#accepted>`__
 .. |st-implemention| replace:: `Implemention <#implemention>`__
+.. |st-implemented| replace:: `Implemented <#implemented>`__
 
 .. |no-label| replace:: `No label <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+no%3Alabel>`__
-.. |lbl-withdrawn| replace:: `Withdrawn <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aclosed+is%3Apr+no%3Alabel>`__
-.. |lbl-shepherd| replace:: `link <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+shepherd+recommendation%22>`__
-.. |lbl-committee| replace:: `link <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+committee+review%22>`__
+.. |lbl-withdrawn| replace:: `Withdrawn <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aclosed+is%3Apr+-is%3Amerged+no%3Alabel>`__
+.. |lbl-shepherd| replace:: `Pending shepherd recommendation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+shepherd+recommendation%22>`__
+.. |lbl-committee| replace:: `Pending committee review <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+committee+review%22>`__
 .. |lbl-needs-revision| replace:: `Needs revision <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`__
-.. |lbl-fnl| replace:: `link <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aopen%20label%3A%22Pending+finalisation%22>`__
+.. |lbl-finalisation| replace:: `Pending finalisation <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aopen%20label%3A%22Pending+finalisation%22>`__
 .. |lbl-rejected| replace:: `Rejected <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3ARejected>`__
 .. |lbl-accepted-open| replace:: `Accepted <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aopen%20label%3AAccepted>`__
 .. |lbl-accepted| replace:: `Accepted <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aclosed%20label%3AAccepted>`__
@@ -198,15 +200,26 @@ The stage is identified by a GitHub label, which is identified in the following 
       If as a result of the discussion the author no longer wishes to champion the proposal,
       they may withdraw the proposal at any time by closing the pull request.
 
-      * `≡ List of withdrawn proposals after community discussion <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aclosed+is%3Apr+no%3Alabel>`__
+      * `≡ List of withdrawn proposals after community discussion <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aclosed+is%3Apr+-is%3Amerged+no%3Alabel>`__
 
       If the author abandons their own proposal and the proposal sees no activity for a long time (more than a year), it might be closed by the committee secretary.
       At any time, the proposer could reopen a proposal.
 
+.. _withdrawn:
+
+3. **Outcome:** Withdrawn.
+   (No label with PR closed.)
+
+   Withdrawn proposals are closed proposals by authors themselves. Possible reasons for closing these prosposals could be either unfinished ideas, 
+   or unimplementable conceptions, or partly inconsistent changes with the Haskell language.
+
+   * `≡ List of withdrawn proposals after community discussion <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aclosed+-is%3Amerged+is%3Apr+no%3Alabel>`__
+   * `≡ List of withdrawn proposals after revision <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aclosed+is%3Apr+-is%3Amerged+label%3A%22Needs+revision%22>`__
+   * `≡ List of all withdrawn proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+is%3Aclosed+-is%3Amerged+-label%3A"Accepted"+-label%3A"Rejected"+-label%3A"Non-proposal">`__
 
 .. _shepherd-appointment:
 
-3. **Stage:** Shepherd appointment.
+4. **Stage:** Shepherd appointment.
    (No label.)
    **Responsibility for next action:** committee secretary.
    **Timescale**: a few days.
@@ -219,7 +232,7 @@ The stage is identified by a GitHub label, which is identified in the following 
 
 .. _shepherd-review:
 
-4. **Stage:** Shepherd review.
+5. **Stage:** Shepherd review.
    **Label**: `Pending shepherd recommendation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+shepherd+recommendation%22>`_.
    **Responsibility for next action:** shepherd.
    **Timescale**: two weeks.
@@ -241,7 +254,7 @@ The stage is identified by a GitHub label, which is identified in the following 
 
 .. _committee-discussion:
 
-5. **Stage:** Committee discussion.
+6. **Stage:** Committee discussion.
    **Label**: `Pending committee review <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+committee+review%22>`__.
    **Responsibility for next action**: shepherd.
    **Timescale**: four or five weeks.
@@ -269,7 +282,7 @@ The stage is identified by a GitHub label, which is identified in the following 
 
 .. _needs-revision:
 
-6. **Stage:** Needs revision.
+7. **Stage:** Needs revision.
    **Label**: `Needs revision <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`__.
    **Responsibility for next action:** author.
 
@@ -280,7 +293,7 @@ The stage is identified by a GitHub label, which is identified in the following 
    The goal is to be clear about where the next action lies: with the committee or with the author.
 
    The author should comment on the pull request when they have addressed the
-   review feedback. This moves the proposal back to the **Shepherd review**
+   review feedback. This moves the proposal back to the **Shepherd review** or to **Committee discussion**
    stage (unless the previous shepherd is no longer on the committee or is
    otherwise unable to review the proposal, in which case it moves back to the
    **Shepherd appointment** stage).
@@ -290,7 +303,7 @@ The stage is identified by a GitHub label, which is identified in the following 
 
 .. _rejected:
 
-7. **Stage:** Rejected.
+8. **Outcome:** Rejected.
    **Label**: `Rejected <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3ARejected>`__.
 
    If the committee rejects the proposal, the shepherd should close the pull request and apply the `Rejected <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Rejected%22>`__  label.
@@ -299,7 +312,7 @@ The stage is identified by a GitHub label, which is identified in the following 
 
 .. _finalisation:
 
-8. **Stage:** Finalisation.
+9. **Stage:** Finalisation.
    **Label**: `Accepted <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aopen%20label%3AAccepted>`__ with PR open.
    **Responsibility for next action:** shepherd, author and committee secretary
    **Timescale**: two to three weeks.
@@ -316,23 +329,25 @@ The stage is identified by a GitHub label, which is identified in the following 
 
 .. _implemention:
 
-9. **Stage:** Implemention.
-   **Label**: `Accepted <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aclosed%20label%3AAccepted>`__ with PR merged.
+10. **Stage:** Implemention.
+    **Label**: `Accepted <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aclosed%20label%3AAccepted+-label%3A%22Implemented%22>`__ with PR merged.
 
-   Once a proposal is accepted, the review and discussion part of the process is technically complete, but it still has to be implemented.
-   The author may do that, or ask someone else to do so. GHC is a volunteer-driven project,
-   so there is unfortunately no guarantee that accepted proposals will be implemented promptly.
+    Once a proposal is accepted, the review and discussion part of the process is technically complete, but it still has to be implemented.
+    The author may do that, or ask someone else to do so. GHC is a volunteer-driven project,
+    so there is unfortunately no guarantee that accepted proposals will be implemented promptly.
 
-   Any later changes must be submitted as a separate amendment proposal.
+    Any later changes must be submitted as a separate amendment proposal.
 
-   We label the proposal as `Implemented <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`__ once it
-   hits GHC’s ``master`` branch (and we are happy to be nudged to do so by
-   email, GitHub issue, or a comment on the relevant pull request).
+    We label the proposal as `Implemented <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`__ once it
+    hits GHC’s ``master`` branch (and we are happy to be nudged to do so by
+    email, GitHub issue, or a comment on the relevant pull request).
 
-   * `≡ Current texts of proposals <https://github.com/ghc-proposals/ghc-proposals/tree/master/proposals>`__
-   * `≡ List of proposals pending implementation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Accepted%22+-label%3A%22Implemented%22>`__
+    * `≡ Current texts of proposals <https://github.com/ghc-proposals/ghc-proposals/tree/master/proposals>`__
+    * `≡ List of proposals pending implementation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Accepted%22+-label%3A%22Implemented%22>`__
 
-10. **Stage:** Implemented.
+.. _implemented:
+
+11. **Outcome:** Implemented.
     **Label**: `Implemented <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`__.
 
     Once a proposal is implemented, the life cycle of the proposal process is fully completed.
@@ -347,7 +362,8 @@ How to start a new proposal
 
 Proposals are written in `ReStructuredText <http://www.sphinx-doc.org/en/stable/rest.html>`_ .
 
-The reason for using this format only is that `GHC Users Guide <http://downloads.haskell.org/~ghc/latest/docs/html/users_guide/editing-guide.html>`_ uses ReStructuredText exclusively. Accepted proposals written in ReStructuredText format can be easily included in the official GHC documentation.
+The reason for using this format only is that `GHC Users Guide <http://downloads.haskell.org/~ghc/latest/docs/html/users_guide/editing-guide.html>`_ 
+uses ReStructuredText exclusively. Accepted proposals written in ReStructuredText format can be easily included in the official GHC documentation.
 
 Proposals should follow the structure given in the `ReStructuredText template <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.rst>`_ .
 
