@@ -14,6 +14,7 @@ GHC.
 * `≡ List of proposals waiting for committee decision <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+committee+review%22>`_
 * `≡ List of accepted proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Accepted%22>`_
 * `≡ List of rejected proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Rejected%22>`_
+* `≡ List of proposals needing revision <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`_
 * `≡ List of proposals pending implementation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Accepted%22+-label%3A%22Implemented%22>`_
 * `≡ List of implemented proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`_
 * `≡ List of all proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+-label%3ANon-proposal>`_
@@ -63,7 +64,7 @@ and language *stability*
 The life cycle of a proposal
 -----------------------------------
 
-This section outlines what stages a proposal may go through. 
+This section outlines what stages a proposal may go through.
 
 Table of stages
 ~~~~~~~~~~~~~~~~~
@@ -151,163 +152,108 @@ The stage is identified by a GitHub label, which is identified in the following 
 .. _proposal-creation:
 
 1. **Stage:** Proposal creation.
-   (No label.) 
+   (No label.)
+   **Responsibility for next action:** author.
 
-   The author drafts / writes / rewites a proposal.
+   The author drafts / writes / rewites a proposal. When they are ready they
+   submit the proposal to the wider Haskell community for discussion, as a pull request against this repository,
+   which moves the proposal to the **Community discussion** stage.
 
    * `What is a proposal? <#what-is-a-proposal>`__
    * `How to start a new proposal <#how-to-start-a-new-proposal>`__
    * `How to amend an accepted proposal <#how-to-amend-an-accepted-proposal>`__
    * `Language design principles <principles.rst#2language-design-principles>`__
 
-   The author submits the proposal to the wider Haskell community for discussion when the Proposal is ready enough, as a pull request against this repository.
-
-   * `How to submit a proposal <#how-to-start-a-new-proposal>`__
-   * `Table of stages`_
-
-   This moves the proposal to **Community discussion** stage.
-
 .. _community-discussion:
 
-2. **Stage:** Community discussion. 
-   (No label.)  
+2. **Stage:** Community discussion.
+   (No label.)
    **Responsibility for next action:** author.
 
-   The wider community discusses the proposal in the commit section of the pull
-   request, while the author refines the proposal. 
+   The wider community discusses the proposal by commenting on the pull
+   request, while the author refines the proposal.
 
    * `Discussion goals <#discussion-goals>`__
    * `How to comment on a proposal <#how-to-comment-on-a-proposal>`__
-   * `Table of stages`_
    * `≡ List of new proposals under discussion <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+no%3Alabel>`__
 
-   If the Proposal is an amendment to an already accepted proposal,
-   the Committee Secretary additionally labels that proposal with the `Amendment <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3AAmendment>`__ label.
+   If the proposal is an amendment to an already accepted proposal,
+   the committee secretary additionally labels that proposal with the `Amendment <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3AAmendment>`__ label.
 
-   The Committee Secretary could remind in comments that it is the author's responsibility to move forward or to remain at this stage. 
-   And if the author wishes to initiate the acceptance process, they must explicitly do that.
+   The author may take one of the following actions:
 
-   The author could do one of the following actions:
+   A) **Action**: Submit to committee.
 
-   A) **Action**: Continue discussion.
+      Once they are satisfied they have addressed everything raised in the discussion, the proposal author should
+      explicitly comment on the proposal, asking the committee secretary to bring the proposal before the committee for review.
+      This moves the proposal to the **Shepherd appointment** stage.
 
-      This stage lasts as long as necessary if the author wishes. It could continue even when discussion was gone.
+      The review process does NOT start automatically when the discussion ends.
+      The Committee Secretary could remind in comments that it is the author's responsibility to move the proposal forward.
 
-      Continuing the discussion is a default and automatic choice if the author does not explicitly take another action.
+      * `How to bring a proposal before the committee <#how-to-bring-a-proposal-before-the-committee>`__
 
-   B) **Action**: Withdrawn. 
+   B) **Action**: Close request.
 
-      If the author understands that the Proposal is either unreadable, fully inconsistent with the Haskell language, or unimplementable, 
-      they may withdraw the Proposal at any time by closing the Pull Request.
+      If as a result of the discussion the author no longer wishes to champion the proposal,
+      they may withdraw the proposal at any time by closing the pull request.
 
       * `≡ List of withdrawn proposals after community discussion <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aclosed+is%3Apr+no%3Alabel>`__
 
       If the author abandons their own proposal and the proposal sees no activity for a long time (more than a year), it might be closed by the committee secretary.
       At any time, the proposer could reopen a proposal.
 
-   C) **Action**: Submitting to committee.  
-
-      *Note: The Reviewing process does NOT start automatically when the discussion ends.*
-
-      At some point, the proposal author wishes to start a review process of the proposal by the committee. 
-
-      Then the author MUST explicitly ask in comments the committee secretary to bring the proposal before the committee for review (and to appoint a shepherd for it).
-
-      * `How to bring a proposal before the committee <#how-to-bring-a-proposal-before-the-committee>`__
-      * `Who is the committee? <#who-is-the-committee>`__
-
-      This moves the proposal to **Shepherd appointment** stage.
 
 .. _shepherd-appointment:
 
-3. **Stage:** Shepherd appointment. 
-   (No label.)  
-   **Responsibility for next action:** committee secretary.  
+3. **Stage:** Shepherd appointment.
+   (No label.)
+   **Responsibility for next action:** committee secretary.
    **Timescale**: a few days.
 
-   The committee secretary notifies the committee (for initial pre-view) and appoints a committee member as shepherd, labeling the pull request as "Pending shepherd recommendation". 
-
-   This moves the proposal to the **Shepherd review** stage (see `Table of stages`_).
+   The committee secretary appoints a committee member as shepherd, labels the
+   pull request as `Pending shepherd recommendation
+   <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+shepherd+recommendation%22>`_,
+   and notifies the committee for initial preview. This moves the proposal to
+   the **Shepherd review** stage.
 
 .. _shepherd-review:
 
-4. **Stage:** Shepherd review. 
-   **Label**: `Pending shepherd recommendation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+shepherd+recommendation%22>`_.  
-   **Responsibility for next action:** shepherd.  
+4. **Stage:** Shepherd review.
+   **Label**: `Pending shepherd recommendation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+shepherd+recommendation%22>`_.
+   **Responsibility for next action:** shepherd.
    **Timescale**: two weeks.
 
-   The shepherd reviews the proposal, and may request changes that they would like to see before they submit their recommendation to accept or reject the proposal to the committee.
+   The shepherd reviews the proposal. Within two weeks, they should either:
 
-   During this period, the shepherd may change the label to "Needs revision" and move the proposal to **Needs revision** stage. 
-   This does not imply that the shepherd is opposed to the proposal, but is merely meant to indicate that 
-   there are outstanding comments the author of the proposal needs to address before the shepherd can continue. 
-   While the Proposal is labeled as "Needs revision", the duration of this stage freezes.
+   * submit their recommendation to accept or reject the proposal to the committee, and
+     change the label to `Pending committee review <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+committee+review%22>`__,
+     moving the proposal to the **Committee discussion** stage; or
 
-   Within two weeks, if the shepherd does not request revisions, then they should submit their recommendation to accept or reject the proposal to the committee. 
+   * provide feedback and request changes by changing the label to `Needs revision <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`__,
+     moving the proposal to the **Needs revision** stage.
+
+   A request for revision does not imply that the shepherd is opposed to the proposal, but is merely meant to indicate that
+   there are outstanding comments the author of the proposal needs to address before the shepherd can continue.
 
    * `Committee process <#committee-process-for-responding-to-a-proposal>`__
-   * `Table of stages`_
    * `≡ List of proposals waiting for shepherd recommendation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+shepherd+recommendation%22>`_
-
-   This moves the accepted proposal to the **Committee discussion** stage and shepherd changes the label to "Pending committee review".
-
-.. _needs-revision:
-
-5. **Stage:** Needs revision. 
-   **Label**: `Needs revision <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`__.
-   **Responsibility for next action:** author.
-
-   The wider community discusses the proposal in the commit section of the pull
-   request, while the author refines the proposal.
-
-   But the author mainly focuses on revising the proposal via the guidance of the Shepherd and the Committee's view.
-
-   * `Table of stages`_
-   * `≡ List of revisioned proposals under discussion <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Needs+revision%22>`__
-
-   The author could do one of the following actions:
-
-   A) **Action**: Resubmitting to committee. 
-
-      If the proposal has a label "Needs revision" not too long, then the author could Resubmit the proposal directly to its Shepherd. 
-      
-      This pushes the proposal either to **Shepherd review** or to **Committee discussion** stage.
-
-   B) **Action**: Withdrawn. 
-
-      If the author understands that the Proposal is either unreadable, fully inconsistent with the Haskell language, or unimplementable, 
-      they may withdraw the Proposal at any time by closing the Pull Request.
-
-      * `≡ List of withdrawn proposals after revision <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aclosed+is%3Apr+label%3A%22Needs+revision%22>`__
-
-      If the author abandons their own proposal and the proposal sees no activity for a long time (more than a year), it might be closed by the committee secretary.
-      At any time, the proposer could reopen a proposal.
 
 .. _committee-discussion:
 
-6. **Stage:** Committee discussion. 
-   **Label**: `Pending committee review <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+committee+review%22>`__.  
-   **Responsibility for next action**: shepherd.  
+5. **Stage:** Committee discussion.
+   **Label**: `Pending committee review <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+committee+review%22>`__.
+   **Responsibility for next action**: shepherd.
    **Timescale**: four or five weeks.
 
    The shepherd actively guides the committee towards a consensus.
+   Within four or five weeks the committee should come to a conclusion, which may be:
 
-   * `Committee process <#committee-process-for-responding-to-a-proposal>`__
-   * `Review criteria <#review-criteria>`__
-   * `≡ List of proposals under review <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+committee+review%22>`__
+   * Accept the proposal, perhaps subject to minor corrections (new stage: **Finalisation**).
+   * Invite the author to revise the proposal (new stage: **Needs revision**)
+   * Reject the proposal (new stage: **Rejected**)
 
-   Within four or five weeks the committee should come to a conclusion, which may be: 
-
-   * Reject the proposal (new label: `Rejected <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Rejected%22>`__)
-   * Invite the author to revise the proposal (new label: `Needs revision <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`__)
-   * Accepts the proposal (new label: `Pending finalisation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Pending+finalisation%22>`__). 
-
-   Needs-revision is a common outcome (which moves the proposal to **Needs revision** stage), 
-   including for proposals that the committee is enthusiastic about. 
-   It is usually accompanied with guidance about the revisions that are sought.   
-   There may be multiple iterations of revision followed by committee discussion.  
-   The goal is to be clear about where the next action lies: with the committee or with the author.
-   While the Proposal is labeled as "Needs revision", the duration of this stage freezes.
+   The shepherd should announce the result in a comment on the pull request, and change the label appropriately.
 
    Acceptance of the proposal implies that the implementation will be accepted
    into GHC provided it is well-engineered, well-documented, conforms to the
@@ -317,73 +263,89 @@ The stage is identified by a GitHub label, which is identified in the following 
    features, or unexpected breaking changes not covered by the backwards
    compatibility assessment. In this case the proposal should be revised.
 
-   * `Table of stages`_
-   * `≡ List of accepted proposals for finalisation <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aopen%20label%3A%22Pending+finalisation%22>`__
-   * `≡ List of proposals being revised <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`__
-   * `≡ List of rejected proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3ARejected>`__
+   * `Committee process <#committee-process-for-responding-to-a-proposal>`__
+   * `Review criteria <#review-criteria>`__
+   * `≡ List of proposals under committee review <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+committee+review%22>`__
 
-   This moves the accepted proposal to the **Finalisation** stage and shepherd changes the label to "Pending finalisation".
+.. _needs-revision:
+
+6. **Stage:** Needs revision.
+   **Label**: `Needs revision <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Needs+revision%22>`__.
+   **Responsibility for next action:** author.
+
+   "Needs revision" is a common result of shepherd or committee review,
+   including for proposals that the committee is enthusiastic about.
+   It should be accompanied with guidance about the revisions that are sought.
+   There may be multiple iterations of revision followed by committee discussion.
+   The goal is to be clear about where the next action lies: with the committee or with the author.
+
+   The author should comment on the pull request when they have addressed the
+   review feedback. This moves the proposal back to the **Shepherd review**
+   stage (unless the previous shepherd is no longer on the committee or is
+   otherwise unable to review the proposal, in which case it moves back to the
+   **Shepherd appointment** stage).
+
+   * `≡ List of open proposals needing revision <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Needs+revision%22>`__
+   * `≡ List of withdrawn proposals after revision <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aclosed+is%3Apr+label%3A%22Needs+revision%22>`__
+
+.. _rejected:
+
+7. **Stage:** Rejected.
+   **Label**: `Rejected <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3ARejected>`__.
+
+   If the committee rejects the proposal, the shepherd should close the pull request and apply the `Rejected <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Rejected%22>`__  label.
+
+   * `≡ List of rejected proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3ARejected>`__
 
 .. _finalisation:
 
-7. **Stage:** Finalisation. 
-   **Label**: `Pending finalisation <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aopen%20label%3A%22Pending+finalisation%22>`__.
-   **Responsibility for next action:** shepherd and author.  
-   **Timescale**: two weeks. 
-  
-   If the committee accepts the proposal with minor corrections, the author and shepherd work together to make any final edits (see `Table of stages`_).
+8. **Stage:** Finalisation.
+   **Label**: `Accepted <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aopen%20label%3AAccepted>`__ with PR open.
+   **Responsibility for next action:** shepherd, author and committee secretary
+   **Timescale**: two to three weeks.
 
-   * `≡ List of proposals under finalisation <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aopen%20label%3A%22Pending+finalisation%22>`__
-
-   Once all corrections and revisions are complete, the proposal moves to the **Accepted** stage.
-
-.. _accepted:
-
-8. **Stage:** Accepted. 
-   **Label**: `Accepted <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aclosed%20label%3AAccepted>`__ with PR merged and closed.  
-   **Responsibility for next action:** shepherd and committee secretary.  
-   **Timescale**: one week. 
-
-   If the committee fully accepts the proposal, the committee secretary and/or shepherd labels the proposal as “accepted”, 
+   If the committee accepts the proposal, the shepherd labels the proposal as `Accepted <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aopen%20label%3AAccepted>`__.
+   The author and shepherd work together to make any final edits.
+   (In particular, if the committee requested any minor corrections, the shepherd should verify that these are addressed.)
+   Once all corrections and revisions are complete, the shepherd or committee secretary
    merges the PR and (if necessary) creates a tracking ticket on the GHC issue tracker.
-
-   * `How to Accept a Proposal <acceptance.rst>`__
-   * `How to build the proposals <#how-to-build-the-proposals>`__
-   * `Table of stages`_
-   * `≡ List of accepted proposals <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aclosed%20label%3AAccepted>`__
-   * `≡ List of merged accepted proposals <https://github.com/ghc-proposals/ghc-proposals/tree/master/proposals>`__
-
    This moves the proposal to the **Implemention** stage.
 
-   At this point, the reviewing and discussing part of the process is technically complete.
-
-   Any later changes must be submitted as a separate amendment proposal.
+   * `How to accept a proposal <acceptance.rst>`__
+   * `≡ List of proposals being finalised <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aopen%20label%3AAccepted>`__
 
 .. _implemention:
 
-9. **Stage:** Implemention. 
-   **Label**: `Implemented <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`__.   
+9. **Stage:** Implemention.
+   **Label**: `Accepted <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aclosed%20label%3AAccepted>`__ with PR merged.
 
-   Once a proposal is accepted, it still has to be implemented.
-   The author may do that, or ask someone else to do so. GHC is a volunteer-driven project, 
+   Once a proposal is accepted, the review and discussion part of the process is technically complete, but it still has to be implemented.
+   The author may do that, or ask someone else to do so. GHC is a volunteer-driven project,
    so there is unfortunately no guarantee that accepted proposals will be implemented promptly.
-    
-   We label the proposal as “implemented” once it
+
+   Any later changes must be submitted as a separate amendment proposal.
+
+   We label the proposal as `Implemented <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`__ once it
    hits GHC’s ``master`` branch (and we are happy to be nudged to do so by
    email, GitHub issue, or a comment on the relevant pull request).
 
-   * `Table of stages`_
+   * `≡ Current texts of proposals <https://github.com/ghc-proposals/ghc-proposals/tree/master/proposals>`__
    * `≡ List of proposals pending implementation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Accepted%22+-label%3A%22Implemented%22>`__
-   * `≡ List of implemented proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`__
 
-Once a proposal is implemented, the life cycle of the proposal process is fully completed.
+10. **Stage:** Implemented.
+    **Label**: `Implemented <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`__.
+
+    Once a proposal is implemented, the life cycle of the proposal process is fully completed.
+
+    * `≡ List of implemented proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`__
+
 
 Do not hesitate to `contact <#questions>`_ us if you have questions.
 
 How to start a new proposal
 ---------------------------
 
-Proposals are written in `ReStructuredText <http://www.sphinx-doc.org/en/stable/rest.html>`_ . 
+Proposals are written in `ReStructuredText <http://www.sphinx-doc.org/en/stable/rest.html>`_ .
 
 The reason for using this format only is that `GHC Users Guide <http://downloads.haskell.org/~ghc/latest/docs/html/users_guide/editing-guide.html>`_ uses ReStructuredText exclusively. Accepted proposals written in ReStructuredText format can be easily included in the official GHC documentation.
 
@@ -678,10 +640,10 @@ is a polite ping/enquiry.
       GHC, it will be reverted.
 
    *  **If we say yes:**
-      The pull request will be labeled 
+      The pull request will be labeled
       `Pending finalisation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Pending+finalisation%22>`_.
       If the committee accepts the proposal with minor corrections, the author and shepherd work together to make any final edits.
-      
+
    Then the pull request will be merged and be labeled `Accepted <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3AAccepted>`_.
    Its meta-data will be updated to include the acceptance date.
    A link to the accepted proposal is added to the top of the PR discussion, together with
@@ -702,7 +664,7 @@ is a polite ping/enquiry.
 What is a dormant proposal?
 ---------------------------
 
-Label `Dormant <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Dormant%22>`__ is *outdated* label. 
+Label `Dormant <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Dormant%22>`__ is *outdated* label.
 It is no longer in use. Labeled proposal had similar meaning to proposal with "Needs revision" label.
 
 Review criteria
