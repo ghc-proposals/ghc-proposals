@@ -102,9 +102,7 @@ In brief all stages of the Reviewing process are shown in the table.
 +-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
 | |st-needs-revision|                 | |lbl-needs-revision|        | Indefinite     | Author                 | Close request               | *Withdrawn*                     |
 |                                     |                             |                |                        +-----------------------------+---------------------------------+
-|                                     |                             |                |                        | Resubmit to committee       | Shepherd review /               |
-|                                     |                             |                |                        |                             |                                 |
-|                                     |                             |                |                        |                             | Committee discussion            |
+|                                     |                             |                |                        | Resubmit to committee       | Shepherd review                 |
 +-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
 | |st-rejected|_                      | |lbl-rejected|              | (PR closed)    | ‒                      | ‒                           | ‒                               |
 +-------------------------------------+-----------------------------+----------------+------------------------+-----------------------------+---------------------------------+
@@ -482,7 +480,7 @@ The current members
 The current members, including their GitHub handle, when they joined first, when their term last renewed, when their term expires and their role, are:
 
 ===============  =========================  =====================================================  =======  =======  =======  =========
-Avatar           Full name                  GitHub mention                                         Joined   Renewed  Expired  Role
+Avatar           Full name                  GitHub handle                                          Joined   Renewed  Expired  Role
 ===============  =========================  =====================================================  =======  =======  =======  =========
 |simonmar|       Simon Marlow               `@simonmar <https://github.com/simonmar>`_             2017/02  2024/02  2027/02  co-chair
 |simonpj|        Simon Peyton-Jones         `@simonpj <https://github.com/simonpj>`_               2017/02  2024/02  2027/02  co-chair
@@ -520,7 +518,7 @@ The former members
 We would also like to thank our former members:
 
 ======================  ====================================================  =================
-Full name               GitHub mention                                        Participation
+Full name               GitHub handle                                         Participation
 ======================  ====================================================  =================
 Ryan Newton             `@rrnewton <https://github.com/rrnewton>`_            2017/02 - 2018/09
 Roman Leshchinskiy      `@rleshchinskiy <https://github.com/rleshchinskiy>`_  2017/02 - 2018/11
