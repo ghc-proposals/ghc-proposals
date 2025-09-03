@@ -203,7 +203,8 @@ The stage is identified by a GitHub label, which is identified in the following 
 
       * `≡ List of withdrawn proposals after community discussion <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aclosed+is%3Apr+-is%3Amerged+no%3Alabel>`__
 
-      If the author abandons their own proposal and the proposal sees no activity for a long time (more than a year), it might be closed by the committee secretary.
+      If the author abandons their own proposal and the proposal sees no activity for a long time (more than a year), 
+      it might be closed by the committee secretary.
       At any time, the proposer could reopen a proposal.
 
 .. _withdrawn:
@@ -211,7 +212,8 @@ The stage is identified by a GitHub label, which is identified in the following 
 3. **Outcome:** Withdrawn.
    (No label with PR closed.)
 
-   Withdrawn proposals are closed proposals by authors themselves. Possible reasons for closing these prosposals could be either unfinished ideas, 
+   Withdrawn proposals are closed proposals by authors themselves. 
+   Possible reasons for closing these prosposals could be either unfinished ideas, 
    or unimplementable conceptions, or partly inconsistent changes with the Haskell language.
 
    * `≡ List of withdrawn proposals after community discussion <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aclosed+-is%3Amerged+is%3Apr+no%3Alabel>`__
@@ -294,7 +296,7 @@ The stage is identified by a GitHub label, which is identified in the following 
    The goal is to be clear about where the next action lies: with the committee or with the author.
 
    The author should comment on the pull request when they have addressed the
-   review feedback. This moves the proposal back to the **Shepherd review** or to **Committee discussion**
+   review feedback. This moves the proposal back to the **Shepherd review**
    stage (unless the previous shepherd is no longer on the committee or is
    otherwise unable to review the proposal, in which case it moves back to the
    **Shepherd appointment** stage).
@@ -307,7 +309,8 @@ The stage is identified by a GitHub label, which is identified in the following 
 8. **Outcome:** Rejected.
    **Label**: `Rejected <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3ARejected>`__.
 
-   If the committee rejects the proposal, the shepherd should close the pull request and apply the `Rejected <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Rejected%22>`__  label.
+   If the committee rejects the proposal, the shepherd should close 
+   the pull request and apply the `Rejected <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Rejected%22>`__  label.
 
    * `≡ List of rejected proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3ARejected>`__
 
@@ -333,15 +336,16 @@ The stage is identified by a GitHub label, which is identified in the following 
 10. **Stage:** Implemention.
     **Label**: `Accepted <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aclosed%20label%3AAccepted+-label%3A%22Implemented%22>`__ with PR merged.
 
-    Once a proposal is accepted, the review and discussion part of the process is technically complete, but it still has to be implemented.
+    Once a proposal is accepted, the review and discussion part of the process is 
+    technically complete, but it still has to be implemented.
     The author may do that, or ask someone else to do so. GHC is a volunteer-driven project,
     so there is unfortunately no guarantee that accepted proposals will be implemented promptly.
 
     Any later changes must be submitted as a separate amendment proposal.
 
-    We label the proposal as `Implemented <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`__ once it
-    hits GHC’s ``master`` branch (and we are happy to be nudged to do so by
-    email, GitHub issue, or a comment on the relevant pull request).
+    We label the proposal as `Implemented <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`__ 
+    once it hits GHC’s ``master`` branch (and we are happy to be nudged to do so by email, 
+    GitHub issue, or a comment on the relevant pull request).
 
     * `≡ Current texts of proposals <https://github.com/ghc-proposals/ghc-proposals/tree/master/proposals>`__
     * `≡ List of proposals pending implementation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Accepted%22+-label%3A%22Implemented%22>`__
@@ -355,7 +359,6 @@ The stage is identified by a GitHub label, which is identified in the following 
 
     * `≡ List of implemented proposals <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Apr+label%3A%22Implemented%22>`__
 
-
 Do not hesitate to `contact <#questions>`_ us if you have questions.
 
 How to start a new proposal
@@ -363,14 +366,19 @@ How to start a new proposal
 
 Proposals are written in `ReStructuredText <http://www.sphinx-doc.org/en/stable/rest.html>`_ .
 
-The reason for using this format only is that `GHC Users Guide <http://downloads.haskell.org/~ghc/latest/docs/html/users_guide/editing-guide.html>`_ 
-uses ReStructuredText exclusively. Accepted proposals written in ReStructuredText format can be easily included in the official GHC documentation.
+The reason for using this format only is that 
+`GHC Users Guide <http://downloads.haskell.org/~ghc/latest/docs/html/users_guide/editing-guide.html>`_ 
+uses ReStructuredText exclusively. Accepted proposals written in ReStructuredText format 
+can be easily included in the official GHC documentation.
 
-Proposals should follow the structure given in the `ReStructuredText template <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.rst>`_ .
+Proposals should follow the structure given in the 
+`ReStructuredText template <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0000-template.rst>`_ .
 
-See the section `Review criteria <#review-criteria>`__ below for more information about what makes a strong proposal, and how it will be reviewed.
+See the section `Review criteria <#review-criteria>`__ below for more information 
+about what makes a strong proposal, and how it will be reviewed.
 
-To start a proposal, create a pull request that adds your proposal as ``proposals/0000-proposal-name.rst``. Use ``proposals/0000-template.rst`` file as a template.
+To start a proposal, create a pull request that adds your proposal as ``proposals/0000-proposal-name.rst``. 
+Use ``proposals/0000-template.rst`` file as a template.
 
 The pull request summary should include a brief description of your
 proposal, along with a link to the rendered view of proposal document
@@ -391,8 +399,10 @@ How to amend an accepted proposal
 
 Some proposals amend an existing proposal. Such an amendment :
 
-* Makes a significant (i.e. not just editorial or typographical) change, and hence warrants approval by the committee
-* Is too small, or too closely tied to the existing proposal, to make sense as a new standalone proposal.
+* Makes a significant (i.e. not just editorial or typographical) change, 
+  and hence warrants approval by the committee
+* Is too small, or too closely tied to the existing proposal, 
+  to make sense as a new standalone proposal.
 
 Often, this happens
 after a proposal is accepted, but before or while it is implemented.
@@ -409,8 +419,10 @@ design are uncovered. We particularly encourage the following types of feedback,
 
 - Completeness: Is the proposal missing a case?
 - Soundness: Is the specification sound or does it include mistakes?
-- Alternatives: Are all reasonable alternatives listed and discussed. Are the pros and cons argued convincingly?
-- Costs: Are the costs for implementation believable? How much would this hinder learning the language?
+- Alternatives: Are all reasonable alternatives listed and discussed. 
+  Are the pros and cons argued convincingly?
+- Costs: Are the costs for implementation believable? 
+  How much would this hinder learning the language?
 - Other questions: Ask critical questions that need to be resolved.
 - Motivation: Is the motivation reasonable?
 
@@ -477,7 +489,8 @@ You can reach the committee by email at ghc-steering-committee@haskell.org. This
 The current members
 ~~~~~~~~~~~~~~~~~~~~
 
-The current members, including their GitHub handle, when they joined first, when their term last renewed, when their term expires and their role, are:
+The current members, including their GitHub handle, when they joined first, 
+when their term last renewed, when their term expires and their role, are:
 
 ===============  =========================  =====================================================  =======  =======  =======  =========
 Avatar           Full name                  GitHub handle                                          Joined   Renewed  Expired  Role
@@ -509,8 +522,9 @@ Avatar           Full name                  GitHub handle                       
 .. |JakobBruenker| image:: https://github.com/JakobBruenker.png?size=24
 .. |sgraf812| image:: https://github.com/sgraf812.png?size=24
 
-The committee members have committed to adhere to the `Haskell committee guidelines for respectful communication <GRC.rst>`_ and are subject to the
-`committee bylaws <https://github.com/ghc-proposals/ghc-proposals/blob/master/committee.rst>`_.
+The committee members have committed to adhere to the 
+`Haskell committee guidelines for respectful communication <GRC.rst>`_ 
+and are subject to the `committee bylaws <https://github.com/ghc-proposals/ghc-proposals/blob/master/committee.rst>`_.
 
 The former members
 ~~~~~~~~~~~~~~~~~~~~
@@ -581,7 +595,8 @@ is a polite ping/enquiry.
 
    * post their recommendation, with a rationale, on the GitHub discussion thread,
    * label the pull request as ``Pending committee review``,
-   * re-title the proposal pull request, appending ``(under review)`` at the end. (This enables easy email filtering.)
+   * re-title the proposal pull request, appending ``(under review)`` at the end. 
+     (This enables easy email filtering.)
    * drop a short mail to the mailing list informing the committee that
      discussion has started.
 
@@ -647,6 +662,7 @@ is a polite ping/enquiry.
    merges or closes it.  In particular
 
    *  **If we say no:**
+
       The pull request will be closed and labeled
       `Rejected <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3ARejected>`_.
 
@@ -657,38 +673,45 @@ is a polite ping/enquiry.
       GHC, it will be reverted.
 
    *  **If we say yes:**
-      The pull request will be labeled
-      `Accepted <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Accepted%22>`_.
-      If the committee accepts the proposal with minor corrections, the author and shepherd work together to make any final edits.
 
-   Then the pull request will be merged and be labeled `Accepted <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3AAccepted>`_.
-   Its meta-data will be updated to include the acceptance date.
-   A link to the accepted proposal is added to the top of the PR discussion, together with
-   the sentence “The proposal has been accepted; the following discussion is mostly of historic interest.”.
+      Committee members should see the `acceptance checklist page <https://github.com/ghc-proposals/ghc-proposals/blob/master/acceptance.rst>`_ 
+      for a detail checklist to be applied to accepted proposals and the steps necessary in
+      order to label a proposal as accepted:
+
+      - The pull request will be labeled
+        `Accepted <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Accepted%22>`_.
+
+      - If the committee accepts the proposal with minor corrections, 
+        the author and shepherd work together to make any final edits.
+
+      - Then the "Accepted" pull request will be merged.
+
+      - Its meta-data will be updated to include the acceptance date.
+
+      - A link to the accepted proposal is added to the top of the PR discussion, together with
+        the sentence “The proposal has been accepted; the following discussion is mostly of historic interest.”.
 
    At this point, the proposal process is technically
    complete. It is outside the purview of the committee to implement,
    oversee implementation, attract implementors, etc.
 
    The proposal authors or other implementors are encouraged to update the
-   proposal with the implementation status (i.e. ticket URL and the
+   accepted proposal with the implementation status (i.e. ticket URL and the
    first version of GHC implementing it.)
-
-   Committee members should see the `acceptance page <https://github.com/ghc-proposals/ghc-proposals/blob/master/acceptance.rst>`_ for a checklist
-   to be applied to accepted proposals and the steps necessary in
-   order to label a proposal as accepted.
 
 What is a dormant proposal?
 ---------------------------
 
-Label `Dormant <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Dormant%22>`__ is *outdated* label.
-It is no longer in use. Labeled proposal had similar meaning to proposal with "Needs revision" label.
+Label `Dormant <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Dormant%22>`__ 
+is *outdated* label. It is no longer in use. 
+Labeled proposal had similar meaning to proposal with "Needs revision" label.
 
 Review criteria
 ---------------
 Here are some characteristics that a good proposal should have.
 
-* *It should follow our design principles*.  These principles_ cover both the language *design* and its *stability* over time.
+* *It should follow our design principles*.  
+  These principles_ cover both the language *design* and its *stability* over time.
 
 * *It should be self-standing*.  Some proposals accumulate a long and interesting discussion
   thread, but in ten years' time all that will be gone (except for the most assiduous readers).
@@ -705,8 +728,10 @@ Here are some characteristics that a good proposal should have.
   machine-checked proof.  There is no such baseline to work from, and
   it would set the bar far too high.  On the other hand, for
   proposals involving syntactic changes, it is very reasonable to ask for
-  a BNF for the changes. (Use the `Haskell 2010 Report <https://www.haskell.org/onlinereport/haskell2010/>`_ or GHC's ``alex``\- or ``happy``\-formatted files
-  for the `lexer <https://gitlab.haskell.org/ghc/ghc/-/blob/master/compiler/GHC/Parser/Lexer.x>`_ or `parser <https://gitlab.haskell.org/ghc/ghc/-/blob/master/compiler/GHC/Parser.y>`_
+  a BNF for the changes. (Use the `Haskell 2010 Report <https://www.haskell.org/onlinereport/haskell2010/>`_ 
+  or GHC's ``alex``\- or ``happy``\-formatted files
+  for the `lexer <https://gitlab.haskell.org/ghc/ghc/-/blob/master/compiler/GHC/Parser/Lexer.x>`_ 
+  or `parser <https://gitlab.haskell.org/ghc/ghc/-/blob/master/compiler/GHC/Parser.y>`_
   for a good starting point.)
 
   Ultimately, the necessary degree of precision is a judgement that the committee
@@ -716,7 +741,8 @@ Here are some characteristics that a good proposal should have.
 
   * For programmers: most proposals make the language just a bit more complicated;
   * For GHC maintainers:  most proposals make the implementation a bit more complicated;
-  * For future proposers:  most proposals consume syntactic design space add/or add new back-compat burdens, both of which make new proposals harder to fit in.
+  * For future proposers:  most proposals consume syntactic design space add/or add new back-compat burdens, 
+    both of which make new proposals harder to fit in.
   * It is much, much harder subsequently to remove an extension than it is to add it.
 
   All these costs constitute a permanent tax on every future programmer, language designer, and GHC maintainer.
@@ -761,10 +787,16 @@ and any other relevant considerations, appropriately.
 
 -  *Does not create a language fork*.  By a "fork" we mean
 
-   * It fails the test "Is this extension something that most people would be happy to enable, even if they don't want to use it?";
-   * And it also fails the test "Do we think there's a reasonable chance this extension will make it into a future language standard?"; that is, the proposal reflects the stylistic preferences of a subset of the Haskell community, rather than a consensus about the direction that (in the committee's judgement) we want to push the whole language.
+   * It fails the test "Is this extension something that most people would be happy to enable, 
+     even if they don't want to use it?";
+   * And it also fails the test "Do we think there's a reasonable chance this extension will make it 
+     into a future language standard?"; that is, the proposal reflects the stylistic 
+     preferences of a subset of the Haskell community, rather than a consensus about the direction 
+     that (in the committee's judgement) we want to push the whole language.
 
-   The idea is that unless we can see a path to a point where everyone has the extension turned on, we're left with different groups of people using incompatible dialects of the language. A similar problem arises with extensions that are mutually incompatible.
+   The idea is that unless we can see a path to a point where everyone has the extension turned on, 
+   we're left with different groups of people using incompatible dialects of the language. 
+   A similar problem arises with extensions that are mutually incompatible.
 
 -  *Fit with the language.* If we just throw things into GHC
    willy-nilly, it will become a large ball of incoherent and
