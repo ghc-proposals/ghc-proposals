@@ -58,7 +58,7 @@ steps:
 5. Merge the PR branch into master, and push.
 
 6. Update the PR description to start
-   with the text "The proposal has been accepted; the following discussion is mostly of historic interest."
+   with the text **"The proposal has been accepted; the following discussion is mostly of historic interest."**
    where the word "proposal" links to the final rendered version, 
    as found on https://github.com/ghc-proposals/ghc-proposals/tree/master/proposals
 
