@@ -176,6 +176,7 @@ The stage is identified by a GitHub label, which is identified in the following 
    request, while the author refines the proposal.
 
    * `Discussion goals <#discussion-goals>`__
+   * `Guidelines for respectful communication <https://github.com/ghc-proposals/ghc-proposals/blob/master/GRC.rst>`__
    * `How to comment on a proposal <#how-to-comment-on-a-proposal>`__
    * `≡ List of new proposals under discussion <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+no%3Alabel>`__
 
@@ -458,6 +459,9 @@ a line of the diff.
     Click on the ``±`` button to suggest an alternative inside the comment.
 
 For the maintenance of general sanity, try to avoid leaving "me too" comments.
+How to comment respectfuly is described in details in
+`Guidelines for respectful communication <https://github.com/ghc-proposals/ghc-proposals/blob/master/GRC.rst>`__
+
 If you would like to register your approval or disapproval of a particular
 comment or proposal, feel free to use GitHub's "Reactions"
 `feature <https://help.github.com/articles/about-discussions-in-issues-and-pull-requests>`_.
@@ -505,7 +509,6 @@ Avatar           Full name                  GitHub handle                       
 |JakobBruenker|  Jakob Brünker              `@JakobBruenker <https://github.com/JakobBruenker>`_   2024/05  -        2027/05  member
 |sgraf812|       Sebastian Graf             `@sgraf812 <https://github.com/sgraf812>`_             2024/05  -        2027/05  member
 ===============  =========================  =====================================================  =======  =======  =======  =========
-
 
 .. |adamgundry| image:: https://github.com/adamgundry.png?size=24
 .. |aspiwack| image:: https://github.com/aspiwack.png?size=24
