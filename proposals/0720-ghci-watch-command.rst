@@ -95,7 +95,7 @@ If we follow with
   > :watch Backend.main
   > :reload
 
-the thread running `Frontend.main` will be killed.
+the thread running ``Frontend.main`` will be killed.
 
 If we then
 
@@ -103,8 +103,8 @@ If we then
 
   > :watch Frontend.main
   > :reload
-the thread running `Backend.main` is killed and a thread for
-`Frontend.main` is spawned again.
+the thread running ``Backend.main`` is killed and a thread for
+``Frontend.main`` is spawned again.
 
 Pure expressions
 ^^^^^^^^^^^^
