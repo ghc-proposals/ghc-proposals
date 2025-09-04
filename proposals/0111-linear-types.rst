@@ -668,9 +668,9 @@ A ``case`` expression has an implicit multiplicity annotation. It is
 often inferred from the type annotation of an equation. The usage of
 ``x`` in ``case_p u of { … }``, where the usage of ``x`` in ``u`` is
 ``q`` is ``p*q`` plus the *join* of the usage of ``x`` in each branch.
-Note that, in usages, ``0 ⩽ 1`` as arguments with multiplicity ``1``
-are consumed exactly once, which doesn't include not being consumed at
-all.
+Note that, in usages, ``0 ≰  1`` (0 neither less-than nor equal to 1) 
+as arguments with multiplicity ``1`` are consumed exactly once, 
+which doesn't include not being consumed at all.
 
 The multiplicity annotation of variables introduced by a pattern depend
 on the constructor and on the implicit annotation of the
@@ -2202,7 +2202,7 @@ follows:
    _ ⩽ ω = True
    x ⩽ y = x == y
 
-Note in particular that ``0 ⩽ 1``.
+Note in particular that ``0 ≰  1`` (0 neither less-than nor equal to 1).
 
 An important point to note, however, is that ``case_0`` is
 meaningless: it makes it possible to create values dependending on a
