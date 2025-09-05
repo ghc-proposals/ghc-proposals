@@ -61,6 +61,7 @@ and language *stability*
 
 .. _principles: principles.rst
 
+
 The life cycle of a proposal
 -----------------------------------
 
@@ -176,7 +177,7 @@ The stage is identified by a GitHub label, which is identified in the following 
    request, while the author refines the proposal.
 
    * `Discussion goals <#discussion-goals>`__
-   * `Guidelines for respectful communication <https://github.com/ghc-proposals/ghc-proposals/blob/master/GRC.rst>`__
+   * `Guidelines for respectful communication <GRC.rst>`__
    * `How to comment on a proposal <#how-to-comment-on-a-proposal>`__
    * `≡ List of new proposals under discussion <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+no%3Alabel>`__
 
@@ -361,6 +362,7 @@ The stage is identified by a GitHub label, which is identified in the following 
 
 Do not hesitate to `contact <#questions>`_ us if you have questions.
 
+
 How to start a new proposal
 ---------------------------
 
@@ -394,6 +396,7 @@ in your branch. For instance,
 
     [Rendered](https://github.com/bgamari/ghc-proposals/blob/typeable/proposals/0000-type-indexed-typeable.rst)
 
+
 How to amend an accepted proposal
 ---------------------------------
 
@@ -408,6 +411,7 @@ Often, this happens
 after a proposal is accepted, but before or while it is implemented.
 In these cases, a PR that *changes* the accepted proposal can be opened. It goes through
 the same process as an original proposal.
+
 
 Discussion goals
 ----------------
@@ -460,11 +464,12 @@ a line of the diff.
 
 For the maintenance of general sanity, try to avoid leaving "me too" comments.
 How to comment respectfuly is described in details in
-`Guidelines for respectful communication <https://github.com/ghc-proposals/ghc-proposals/blob/master/GRC.rst>`__
+`Guidelines for respectful communication <GRC.rst>`__
 
 If you would like to register your approval or disapproval of a particular
 comment or proposal, feel free to use GitHub's "Reactions"
 `feature <https://help.github.com/articles/about-discussions-in-issues-and-pull-requests>`_.
+
 
 How to bring a proposal before the committee
 ---------------------------------------------
@@ -526,7 +531,7 @@ Avatar           Full name                  GitHub handle                       
 
 The committee members have committed to adhere to the 
 `Haskell committee guidelines for respectful communication <GRC.rst>`_ 
-and are subject to the `committee bylaws <https://github.com/ghc-proposals/ghc-proposals/blob/master/committee.rst>`_.
+and are subject to the `committee bylaws <committee.rst>`_.
 
 The former members
 ~~~~~~~~~~~~~~~~~~~~
@@ -676,7 +681,7 @@ is a polite ping/enquiry.
 
    *  **If we say yes:**
 
-      Committee members should see the `acceptance checklist page <https://github.com/ghc-proposals/ghc-proposals/blob/master/acceptance.rst>`_ 
+      Committee members should see the `acceptance checklist page <acceptance.rst>`_ 
       for a detail checklist to be applied to accepted proposals and the steps necessary in
       order to label a proposal as accepted:
 
@@ -701,12 +706,14 @@ is a polite ping/enquiry.
    accepted proposal with the implementation status (i.e. ticket URL and the
    first version of GHC implementing it.)
 
+
 What is a dormant proposal?
 ---------------------------
 
 Label `Dormant <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Dormant%22>`__ 
 is *outdated* label. It is no longer in use. 
 Labeled proposal had similar meaning to proposal with "Needs revision" label.
+
 
 Review criteria
 ---------------
