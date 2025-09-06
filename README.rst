@@ -682,30 +682,20 @@ is a polite ping/enquiry.
 
    *  **If we say yes:**
 
-      Committee members should see the `acceptance checklist page <acceptance.rst>`_
-      for a detail checklist to be applied to accepted proposals and the steps necessary in
-      order to label a proposal as accepted:
+      The pull request will be labeled
+      `Accepted <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Accepted%22>`_,
+      finalised and merged.
 
-      - The pull request will be labeled
-        `Accepted <https://github.com/ghc-proposals/ghc-proposals/pulls?q=label%3A%22Accepted%22>`_.
+      Committee members should see the `acceptance checklist <acceptance.rst>`_
+      for details of the steps necessary to accept a proposal.
 
-      - If the committee accepts the proposal with minor corrections,
-        the author and shepherd work together to make any final edits.
+      At this point, the proposal process is technically
+      complete. It is outside the purview of the committee to implement,
+      oversee implementation, attract implementors, etc.
 
-      - Then the "Accepted" pull request will be merged.
-
-      - Its meta-data will be updated to include the acceptance date.
-
-      - A link to the accepted proposal is added to the top of the PR discussion, together with
-        the sentence “The proposal has been accepted; the following discussion is mostly of historic interest.”.
-
-   At this point, the proposal process is technically
-   complete. It is outside the purview of the committee to implement,
-   oversee implementation, attract implementors, etc.
-
-   The proposal authors or other implementors are encouraged to update the
-   accepted proposal with the implementation status (i.e. ticket URL and the
-   first version of GHC implementing it.)
+      The proposal authors or other implementors are encouraged to update the
+      accepted proposal with the implementation status (i.e. ticket URL and the
+      first version of GHC implementing it.)
 
 
 What is a dormant proposal?
