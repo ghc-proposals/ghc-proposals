@@ -107,14 +107,14 @@ In brief all stages of the Reviewing process are shown in the table.
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
 | |st-rejected|_               | |lbl-rejected|              | (PR closed)    | ‒                    | ‒                         | ‒                       |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
-| |st-accepted|                | |lbl-accepted-open|         | 2 weeks        | | Author &           | Do final corrections      | Implemention            |
+| |st-accepted|                | |lbl-accepted-open|         | 2 weeks        | | Author &           | Do final corrections      | Implementation          |
 |                              |                             |                | | Shepherd           |                           |                         |
 |                              |                             |                |                      |                           |                         |
 |                              |                             +----------------+----------------------+---------------------------+                         |
 |                              |                             | 1 week         | | Shepherd /         | Merge                     |                         |
 |                              |                             |                | | Secretary          |                           |                         |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
-| |st-implemention|            | |lbl-accepted| (PR closed)  | Indefinite     | Unspecified          | Implement the proposal    | *Implemented*           |
+| |st-implementation|          | |lbl-accepted| (PR closed)  | Indefinite     | Unspecified          | Implement the proposal    | *Implemented*           |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
 | |st-implemented|_            | |lbl-implemented|           | (PR closed)    | ‒                    | ‒                         | ‒                       |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
@@ -132,7 +132,7 @@ In brief all stages of the Reviewing process are shown in the table.
 .. |st-committee-discussion| replace:: `Committee discussion <#committee-discussion>`__
 .. |st-rejected| replace:: *Rejected*
 .. |st-accepted| replace:: `Accepted <#accepted>`__
-.. |st-implemention| replace:: `Implemention <#implemention>`__
+.. |st-implementation| replace:: `Implementation <#implementation>`__
 .. |st-implemented| replace:: *Implemented*
 
 .. |no-label| replace:: `No label <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+no%3Alabel>`__
@@ -327,14 +327,14 @@ The stage is identified by a GitHub label, which is identified in the following 
    (In particular, if the committee requested any minor corrections, the shepherd should verify that these are addressed.)
    Once all corrections and revisions are complete, the shepherd or committee secretary
    merges the PR and (if necessary) creates a tracking ticket on the GHC issue tracker.
-   This moves the proposal to the **Implemention** stage.
+   This moves the proposal to the **Implementation** stage.
 
    * `How to accept a proposal <acceptance.rst>`__
    * `≡ List of proposals being accepted <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aopen%20label%3AAccepted>`__
 
-.. _implemention:
+.. _implementation:
 
-10. **Stage:** Implemention.
+10. **Stage:** Implementation.
     **Label**: `Accepted <https://github.com/ghc-proposals/ghc-proposals/issues?q=state%3Aclosed%20label%3AAccepted+-label%3A%22Implemented%22>`__ with PR merged.
 
     Once a proposal is accepted, the review and discussion part of the process is 
