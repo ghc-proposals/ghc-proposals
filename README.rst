@@ -158,7 +158,7 @@ The stage is identified by a GitHub label, which is identified in the following 
    (No label.)
    **Responsibility for next action:** author.
 
-   The author drafts / writes / rewites a proposal. When they are ready they
+   The author drafts / writes / rewrites a proposal. When they are ready they
    submit the proposal to the wider Haskell community for discussion, as a pull request against this repository,
    which moves the proposal to the **Community discussion** stage.
 
@@ -184,7 +184,7 @@ The stage is identified by a GitHub label, which is identified in the following 
    If the proposal is an amendment to an already accepted proposal,
    the committee secretary additionally labels that proposal with the `Amendment <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3AAmendment>`__ label.
 
-   The author may take one of the following actions:
+   Community discussion may continue indefinitely until the author takes one of the following actions:
 
    A) **Action**: Submit to committee.
 
@@ -213,9 +213,10 @@ The stage is identified by a GitHub label, which is identified in the following 
 3. **Outcome:** Withdrawn.
    (No label with PR closed.)
 
-   Withdrawn proposals are closed proposals by authors themselves. 
-   Possible reasons for closing these prosposals could be either unfinished ideas, 
-   or unimplementable conceptions, or partly inconsistent changes with the Haskell language.
+   Withdrawn proposals are those that have been closed by the author themselves,
+   or closed by the secretary because the proposal was dormant for a long time.
+   This may be because the idea was unfinished,
+   unimplementable, or inconsistent with the Haskell language.
 
    * `≡ List of withdrawn proposals after community discussion <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aclosed+-is%3Amerged+is%3Apr+no%3Alabel>`__
    * `≡ List of withdrawn proposals after revision <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aclosed+is%3Apr+-is%3Amerged+label%3A%22Needs+revision%22>`__
@@ -296,7 +297,7 @@ The stage is identified by a GitHub label, which is identified in the following 
    There may be multiple iterations of revision followed by committee discussion.
    The goal is to be clear about where the next action lies: with the committee or with the author.
 
-   The author should comment on the pull request when they have addressed the
+   The author should resubmit to the committee by commenting on the pull request when they have addressed the
    review feedback. This moves the proposal back to the **Shepherd review**
    stage (unless the previous shepherd is no longer on the committee or is
    otherwise unable to review the proposal, in which case it moves back to the
@@ -463,8 +464,8 @@ a line of the diff.
     Click on the ``±`` button to suggest an alternative inside the comment.
 
 For the maintenance of general sanity, try to avoid leaving "me too" comments.
-How to comment respectfuly is described in details in
-`Guidelines for respectful communication <GRC.rst>`__
+How to comment respectfully is described in detail in the
+`Guidelines for respectful communication <GRC.rst>`__.
 
 If you would like to register your approval or disapproval of a particular
 comment or proposal, feel free to use GitHub's "Reactions"
