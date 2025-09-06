@@ -82,9 +82,9 @@ In brief all stages of the Reviewing process are shown in the table.
 +==============================+=============================+================+======================+===========================+=========================+
 | |st-proposal-creation|       | ‒                           | Indefinite     | Author               | Pull request              | Community discussion    |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
-| |st-community-discussion|    | ‒ (|no-label|)              | Indefinite     | Author               | Close request             | *Withdrawn*             |
+| |st-community-discussion|    | ‒ (|no-label|)              | Indefinite     | Author               | Submit to committee       | Shepherd appointment    |
 |                              |                             |                |                      +---------------------------+-------------------------+
-|                              |                             |                |                      | Submit to committee       | Shepherd appointment    |
+|                              |                             |                |                      | Close request             | *Withdrawn*             |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
 | |st-withdrawn|_              | ‒ (|lbl-withdrawn|)         | (PR closed)    | ‒                    | ‒                         | ‒                       |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
@@ -101,9 +101,9 @@ In brief all stages of the Reviewing process are shown in the table.
 |                              |                             |                |                      +---------------------------+-------------------------+
 |                              |                             |                |                      | Send back for revision    | Needs revision          |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
-| |st-needs-revision|          | |lbl-needs-revision|        | Indefinite     | Author               | Close request             | *Withdrawn*             |
+| |st-needs-revision|          | |lbl-needs-revision|        | Indefinite     | Author               | Resubmit to committee     | Shepherd review         |
 |                              |                             |                |                      +---------------------------+-------------------------+
-|                              |                             |                |                      | Resubmit to committee     | Shepherd review         |
+|                              |                             |                |                      | Close request             | *Withdrawn*             |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
 | |st-rejected|_               | |lbl-rejected|              | (PR closed)    | ‒                    | ‒                         | ‒                       |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
