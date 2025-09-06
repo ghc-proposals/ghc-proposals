@@ -38,34 +38,30 @@ steps:
 
 1. Set the PR to have the "Accepted" label.
 
-2. Comment on the PR that the proposal was Accepted.
+2. Comment on the PR that the proposal was accepted, and indicate whether the
+   committee requests any minor corrections.
 
-3. If the committee accepts the proposal with minor corrections, 
-   the author and shepherd work together to make any final edits.
+3. If necessary, work together with the the author to make any final edits.
 
 4. Add a new commit on top of the PR branch that:
 
    a. Changes the filename of the proposal to correspond to the PR number.
 
-   b. Fills meta-data to include the acceptance date.
-
-   c. Fills in these metadata fields as appropriate, including changing "is discussed"
-      to "was discussed".
-
-   d. Updates any metadata fields that may have changed in the template on ``master`` since
+   b. Updates any metadata fields that may have changed in the template on ``master`` since
       the PR branch split off.
+
+   c. Fills in the metadata fields as appropriate, including changing "is discussed"
+      to "was discussed".
 
 5. Merge the PR branch into master, and push.
 
 6. Update the PR description to start
    with the text **"The proposal has been accepted; the following discussion is mostly of historic interest."**
-   where the word "proposal" links to the final rendered version, 
+   where the word "proposal" links to the final rendered version,
    as found on https://github.com/ghc-proposals/ghc-proposals/tree/master/proposals
 
 7. If the PR title has "(under review)", remove it.
-   
-8. Comment on the PR that the reviewing process was complete.
 
-9. Close the PR if GitHub has not detected the merge.
+8. Close the PR if GitHub has not detected the merge.
 
-10. Announce on the committee mailing list.
+9. Announce on the committee mailing list.
