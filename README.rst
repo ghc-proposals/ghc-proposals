@@ -92,7 +92,6 @@ In brief all stages of the Reviewing process are shown in the table.
 | |st-shepherd-review|         | |lbl-shepherd|              | 2 weeks        | Shepherd             | Make recommendation       | Committee discussion    |
 |                              |                             |                |                      +---------------------------+-------------------------+
 |                              |                             |                |                      | Send back for revision    | Needs revision          |
-|                              |                             |                |                      |                           |                         |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
 | |st-committee-discussion|    | |lbl-committee|             | 4-5 weeks      | Shepherd             | Accept                    | Accepted                |
 |                              |                             |                |                      +---------------------------+-------------------------+
@@ -108,7 +107,6 @@ In brief all stages of the Reviewing process are shown in the table.
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
 | |st-accepted|                | |lbl-accepted-open|         | 2 weeks        | | Author &           | Do final corrections      | Implementation          |
 |                              |                             |                | | Shepherd           |                           |                         |
-|                              |                             |                |                      |                           |                         |
 |                              |                             +----------------+----------------------+---------------------------+                         |
 |                              |                             | 1 week         | | Shepherd /         | Merge                     |                         |
 |                              |                             |                | | Secretary          |                           |                         |
