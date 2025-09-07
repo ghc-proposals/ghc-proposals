@@ -209,8 +209,8 @@ the proposal is, the more desirable it is to offer evidence that there is
 significant demand from the community.  This section is one way to provide
 such evidence.
 
-Acknowledgements
-----------------
+Acknowledgments
+---------------
 
 (Optional) This section provides an opportunity to say thanks
 to third parties for their contributions to the proposal.
