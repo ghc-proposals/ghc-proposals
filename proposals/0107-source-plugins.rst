@@ -7,6 +7,7 @@ Source plugins
 .. implemented:: 8.6
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/107>`_.
+.. sectnum::
 .. contents::
 
 This document proposes the extension of the already existing `Plugin support <https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/extending_ghc.html#compiler-plugins>`_ in Haskell with plugins that are able to access and modify the representation of the Haskell syntax tree and its environment. This would allow tool developers to base their tools on GHC plugins.
@@ -136,8 +137,8 @@ Implementation Plan
 The original version of the proposal is already implemented and can be reviewed `here <https://phabricator.haskell.org/D4342>`_.
 
 Notes
-^^^^^
+-----
 
 The proposal is based on `Edsko's version <https://gitlab.haskell.org/ghc/ghc/wikis/frontend-plugins-proposal>`_.
 
-A shorter version of the proposal is available on its `Haskell wiki page <https://gitlab.haskell.org/ghc/ghc/wikis/extended-plugins-proposal>`_.
+A shorter version of the proposal is available on its `GHC wiki page <https://gitlab.haskell.org/ghc/ghc/wikis/extended-plugins-proposal>`_.
