@@ -50,12 +50,19 @@ Currently, numeric literals have the following desugaring:
     :align: left
 
     * - **Expression**
+      - **Enabled extensions**
       - **Desugared expression syntax**
     * - ``1``
+      -
       - ``Prelude.fromInteger 1``
     * - ``-1``
+      -
+      - ``Prelude.negate (Prelude.fromInteger 1)``
+    * - ``-1``
+      - ``-XNegativeLiterals``
       - ``Prelude.fromInteger (-1)``
     * - ``1.5``
+      -
       - ``Prelude.fromRational 1.5``
 
 With ``-XQualifiedNumerics``, we gain the following syntaxes:
@@ -216,17 +223,24 @@ Alternatives
 Alternative QualifiedNumerics API
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-There were three different APIs we could have implemented for ``-XQualifiedNumerics``:
+There were different APIs we could have implemented for ``-XQualifiedNumerics``:
 
-#. Mirror Prelude and translate to simply ``M.fromInteger 1`` or ``M.fromRational 1.5``
+#. Mirror Prelude with ``-XNegativeLiterals`` and translate to ``M.fromInteger 1``, ``M.fromInteger (-1)``, ``M.fromRational 1.5``, ``M.fromRational (-1.5)``
 
    * Pro: 1:1 correspondence with standard Haskell98 semantics
    * Con: If you want non-negative guarantees, you could type ``M.fromInteger`` with ``Natural``, but you'd be relying on GHC's hardcoded ``-Woverflowed-literals`` check.
 
-#. Add a bit more expressiveness by breaking out Natural, i.e. ``M.fromNatural`` + ``M.fromNegativeInt`` + ``M.fromRational``
+#. Mirror Prelude without ``-XNegativeLiterals`` and do ``M.fromInteger 1``, ``M.negate (M.fromInteger 1)``, ``M.fromRational 1.5``, ``M.negate (M.fromRational 1.5)``
+
+   * Pro: 1:1 correspondence with standard Haskell98 semantics
+   * Pro: Non-negative guarantees by just not defining ``negate``
+   * Con: 3 functions to define in the common case of supporting all numbers, 2 functions in the common case of supporting all integers
+
+#. Add a bit more expressiveness by breaking out Natural: ``M.fromNatural 1``, ``M.fromNegativeInt (-1)``, ``M.fromRational 1.5``, ``M.fromRational (-1.5)``
 
    * Pro: Explicit non-negative guarantee
-   * Con: Supporting all integers requires implementing two functions. This isn't great, as the common case is supporting all integers; supporting only non-negative is probably only a fraction of the use cases.
+   * Con: 3 functions to define in the common case of supporting all numbers, 2 functions in the common case of supporting all integers
+   * Con: Asymmetry in separation of positive/negative integers but 1 function for positive/negative rationals
 
 #. Use a single possibly-polymorphic ``M.fromNumeric`` definition that should work for any of: ``Natural``, ``Integer``, ``Rational``.
 
