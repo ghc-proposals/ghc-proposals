@@ -30,9 +30,9 @@ Problems with Type Class-driven overloading
 
 * It is a module-wide setting
 
-  * Anecdotally, people would rather avoid ``OverloadedLists`` than deal with overloaded lists/strings in the entire module.
+  * Anecdotally, people would rather avoid ``OverloadedLists`` than deal with overloaded lists in the entire module.
 
-  * It's possible that this is one reason these extensions aren't defaults in GHC202X language editions, despite being in GHC for a long time.
+  * It's possible that this is one reason this extension isn't a default in GHC202X language editions, despite being in GHC for a long time.
 
 * Type inference ambiguity.
 
@@ -58,7 +58,7 @@ This proposal would allow using a module qualifier to say precisely which functi
   main = do
     output [False, True]
 
-    output $ V.update myVec [(0, True)]
+    output $ V.update myVec V.[(0, True)]
 
 The existing locations would continue working as ``[Bool]``, while the new literal would unambiguously desugar to the equivalent of ``V.fromList [(0, True)]``.
 
@@ -79,7 +79,7 @@ This proposal would desugar list literals to a build-like form instead, so that 
 
   M.buildList 3 (\cons nil -> 4 `cons` ("hello" `cons` (True `cons` nil)))
 
-For a suitable ``M.buildList``, this is enough to support heterogenous list literals: see *Section 4.6 Heterogeneous Lists*.
+For a suitable ``M.buildList``, this is enough to support heterogenous list literals: see *Section 4.2 Heterogeneous Lists*.
 
 Proposed Change Specification
 -----------------------------
@@ -131,7 +131,7 @@ With ``-XQualifiedLists``, we gain the following syntaxes:
     * - ``M.[x, _, y]``
       - ``M.FromListCons x (M.FromListCons _ (M.FromListCons y M.FromListNil))``
 
-``Data.List.Qualified.Experimental`` will initially live in ``ghc-experimental``, eventually merged into ``GHC.Exts``. It will contain:
+``Data.List.Qualified.Experimental`` will initially live in ``ghc-experimental``, eventually merged into ``GHC.Exts`` alongside ``IsList``. It will contain the following definitions:
 
 ::
 
@@ -141,23 +141,28 @@ With ``-XQualifiedLists``, we gain the following syntaxes:
     | EnumFromTo from to
     | EnumFromThenTo from then to
 
-It is highly recommended that all types with ``IsList`` instances defined provide a ``.Interpolate`` module with the below definitions, to enable locally-scoped overloading over ``-XOverloadedLists``, for example:
+  buildList :: IsList l => ((a -> a -> [a]) -> [a] -> [a]) -> l a
+  buildList f = fromList (f (:) [])
+
+  buildListEnum :: IsList l => EnumFrom a a a -> l a
+  buildListEnum e =
+    case e of
+      EnumFrom x -> fromList (enumFrom x)
+      EnumFromThen x y -> fromList (enumFromThen x y)
+      EnumFromTo x y -> fromList (enumFromTo x y)
+      EnumFromThenTo x y z -> fromList (enumFromThenTo x y z)
+
+It is highly recommended that all types with ``IsList`` instances defined provide a module with the below definitions, to enable locally-scoped overloading over ``-XOverloadedLists``, for example:
 
 ::
 
-  import GHC.Exts qualified as L
-  import Prelude qualified
+  import Data.List.Qualified.Experimental qualified as L
 
   buildList :: ((a -> a -> [a]) -> [a] -> [a]) -> MyList a
-  buildList f = L.fromList (f (:) [])
+  buildList = L.buildList
 
   buildListEnum :: EnumFrom a a a -> MyList a
-  buildListEnum e =
-    case e of
-      EnumFrom x -> L.fromList (Prelude.enumFrom x)
-      EnumFromThen x y -> L.fromList (Prelude.enumFromThen x y)
-      EnumFromTo x y -> L.fromList (Prelude.enumFromTo x y)
-      EnumFromThenTo x y z -> L.fromList (Prelude.enumFromThenTo x y z)
+  buildListEnum = L.buildListEnum
 
 Note that while we could have mirrored ``-XOverloadedLists`` and just done ``M.fromListN 2 [x, y]``, we intentionally decide to use this more general API. This gives us more expressive power, since we no longer need to typecheck an intermediate list. Similar reason for defining ``buildListEnum`` instead of reusing Prelude's ``enumFrom`` functions. See *Section 4.2 Heterogeneous Lists* for a use-case.
 
@@ -195,22 +200,13 @@ Module names are resolved immediately, when parsing a quote. This matches the be
   -- Errors if M is not in scope
   foo = [| M.[1, 2] |]
 
-::
-
-  module B where
-
-  import AnotherImpl qualified as M
-  import A
-
-  bar = $foo
-
 Proposed Library Change Specification
 -------------------------------------
 
 Template Haskell
 ~~~~~~~~~~~~~~~~
 
-We'll add the following constructors, to maintain backwards compatibility:
+We'll add the following constructors instead of modifying the existing ``ListE`` constructor, to maintain backwards compatibility:
 
 ::
 
@@ -224,7 +220,7 @@ Examples
 Vector
 ~~~~~~
 
-Currently, if you want to pattern match on vector, you have to use ``OverloadedLists`` (which enables it for list literals in the entire file) or be verbose:
+Currently, if you want to pattern match on ``Vector`` from the `vector package <https://hackage.haskell.org/package/vector>`_, you have to use ``OverloadedLists`` (which enables it for list literals in the entire file) or be verbose:
 
 ::
 
@@ -360,7 +356,7 @@ Backward Compatibility
 
 No breakage, as the new syntax is only enabled with the extension.
 
-Furthermore, turning on the extension will generally not break existing code, as the expression would be parsed as function composition between a data constructor and a literal, which would only typecheck if someone adds an ``IsList`` instance for a function type.
+Furthermore, turning on the extension will generally not break existing code. Any existing code written as ``M.[1, 2]`` would be parsed as function composition between a data constructor and a literal, which would only typecheck if someone adds an ``IsList`` instance for a function type.
 
 Alternatives
 ------------
