@@ -252,6 +252,7 @@ The stage is identified by a GitHub label, which is identified in the following 
    there are outstanding comments the author of the proposal needs to address before the shepherd can continue.
 
    * `Committee process <#committee-process-for-responding-to-a-proposal>`__
+   * `What is the role of the shepherd? <#what-is-the-role-of-the-shepherd>`__
    * `≡ List of proposals waiting for shepherd recommendation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+shepherd+recommendation%22>`_
 
 .. _committee-discussion:
@@ -693,6 +694,26 @@ is a polite ping/enquiry.
       The proposal authors or other implementors are encouraged to update the
       accepted proposal with the implementation status (i.e. ticket URL and the
       first version of GHC implementing it.)
+
+
+What is the role of the shepherd?
+---------------------------------
+
+The shepherd does these things:
+
+- Makes a recommendation to the committee for whether to accept, reject, or send
+  back for revision, within two weeks of being appointed.
+- Actively facilitates the committee discussion, guiding us towards a decision,
+  within the target time frame of 4-5 weeks.
+- Maintains a list of votes on
+  `this spreadsheet <https://docs.google.com/spreadsheets/d/1e6GdwHmAjeDEUhTvP-b18MDkpTfH3SMHhFu5F3nDIWc/edit?gid=0#gid=0>`_.
+- Summarises the committee's thinking for the author's benefit, and works with
+  the author on next steps -- this may often take the form of revisions to the
+  proposal.
+- Reminds members (by name, not just general exhortation) who are silent that
+  they are highly encouraged to contribute.
+- If the discussion does not converge within 4-5 weeks, takes action to consult
+  the chairs or secretary to decide what to do.
 
 
 What is a dormant proposal?
