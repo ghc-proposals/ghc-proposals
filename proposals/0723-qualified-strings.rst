@@ -30,9 +30,9 @@ Problems with Type Class-driven overloading
 
 * It is a module-wide setting
 
-  * Anecdotally, people would rather avoid ``OverloadedStrings`` than deal with overloaded lists/strings in the entire module.
+  * Anecdotally, people would rather avoid ``OverloadedStrings`` than deal with overloaded strings in the entire module.
 
-  * It's possible that this is one reason these extensions aren't defaults in GHC202X language editions, despite being in GHC for a long time.
+  * It's possible that this is one reason this extension isn't a default in GHC202X language editions, despite being in GHC for a long time.
 
 * Type inference ambiguity.
 
@@ -85,6 +85,9 @@ Currently, string literals have the following desugaring:
     * - ``"hello"``
       - ``-XOverloadedStrings``
       - ``GHC.Exts.fromString "hello"``
+    * - ``"""hello"""``
+      - ``-XMultilineStrings``
+      - ``"hello"``
 
 With ``-XQualifiedStrings``, we gain the following syntaxes:
 
@@ -92,23 +95,36 @@ With ``-XQualifiedStrings``, we gain the following syntaxes:
     :align: left
 
     * - **New expression syntax**
+      - **Additional extensions**
       - **Desugared expression syntax**
     * - ``M."asdf"``
+      -
       - ``M.fromString "asdf"``
     * - ``M."""asdf"""``
+      - ``-XMultilineStrings``
       - ``M.fromString "asdf"``
 
 .. list-table::
     :align: left
 
     * - **New pattern syntax**
+      - **Additional extensions**
       - **Desugared pattern syntax**
     * - ``M."asdf"``
+      -
       - ``((== M.fromString "asdf") -> True)``
     * - ``M."""asdf"""``
+      - ``-XMultilineStrings``
       - ``((== M.fromString "asdf") -> True)``
 
-It is highly recommended that all types with ``IsString`` instances defined provide a module defining ``fromString = Data.String.fromString``, to enable locally-scoped overloading over ``-XOverloadedStrings``.
+It is highly recommended that all types with ``IsString`` instances defined provide a module with the below definitions, to enable locally-scoped overloading over ``-XOverloadedStrings``:
+
+::
+
+  import Data.String qualified as S
+
+  fromString :: String -> MyString
+  fromString = S.fromString
 
 Qualified multiline strings are only allowed if ``-XMultilineStrings`` is enabled. Qualified multiline strings are desugared to single line strings first, then desugared as a qualified string literal. See `Multiline Strings <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0569-multiline-strings.rst>`_ for more information.
 
@@ -144,22 +160,13 @@ Module names are resolved immediately, when parsing a quote. This matches the be
   -- Errors if M is not in scope
   foo = [| M."foo" |]
 
-::
-
-  module B where
-
-  import AnotherImpl qualified as M
-  import A
-
-  bar = $foo
-
 Proposed Library Change Specification
 -------------------------------------
 
 Template Haskell
 ~~~~~~~~~~~~~~~~
 
-We'll add the following constructors, to maintain backwards compatibility:
+We'll add the following constructors instead of modifying the existing ``StringL`` constructor, to maintain backwards compatibility:
 
 ::
 
@@ -254,7 +261,7 @@ Backward Compatibility
 
 No breakage, as the new syntax is only enabled with the extension.
 
-Furthermore, turning on the extension will generally not break existing code, as the expression would be parsed as function composition between a data constructor and a literal, which would only typecheck if someone adds an ``IsString`` instance for a function type.
+Furthermore, turning on the extension will generally not break existing code. Any existing code written as ``M."asdf"`` would be parsed as function composition between a data constructor and a literal, which would only typecheck if someone adds an ``IsString`` instance for a function type.
 
 Alternatives
 ------------
