@@ -135,22 +135,13 @@ Module names are resolved immediately, when parsing a quote. This matches the be
   -- Errors if M is not in scope
   foo = [| M.123 |]
 
-::
-
-  module B where
-
-  import AnotherImpl qualified as M
-  import A
-
-  bar = $foo
-
 Proposed Library Change Specification
 -------------------------------------
 
 Template Haskell
 ~~~~~~~~~~~~~~~~
 
-We'll add the following constructors, to maintain backwards compatibility:
+We'll add the following constructors instead of modifying existing constructors (e.g. ``IntegerL``), to maintain backwards compatibility:
 
 ::
 
@@ -207,7 +198,7 @@ Backward Compatibility
 
 No breakage, as the new syntax is only enabled with the extension.
 
-Furthermore, turning on the extension will generally not break existing code, as the expression would be parsed as function composition between a data constructor and a literal, which would only typecheck if someone adds an ``Num`` instance for a function type.
+Furthermore, turning on the extension will generally not break existing code. Any existing code written as ``M.123`` would be parsed as function composition between a data constructor and a literal, which would only typecheck if someone adds an ``Num`` instance for a function type.
 
 Alternatives
 ------------
