@@ -111,7 +111,8 @@ In brief all stages of the Reviewing process are shown in the table.
 |                              |                             | 1 week         | | Shepherd /         | Merge                     |                         |
 |                              |                             |                | | Secretary          |                           |                         |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
-| |st-implementation|          | |lbl-accepted| (PR closed)  | Indefinite     | Unspecified          | Implement the proposal    | *Implemented*           |
+| |st-implementation|          | | |lbl-accepted|            | Indefinite     | Unspecified          | Implement the proposal    | *Implemented*           |
+|                              | | (PR closed)               |                |                      |                           |                         |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
 | |st-implemented|_            | |lbl-implemented|           | (PR closed)    | ‒                    | ‒                         | ‒                       |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
@@ -392,7 +393,8 @@ in your branch. For instance,
     Types](http://research.microsoft.com/en-us/um/people/simonpj/papers/haskell-dynamic/index.htm)
     (Peyton Jones, _et al._ 2016).
 
-    [Rendered](https://github.com/bgamari/ghc-proposals/blob/typeable/proposals/0000-type-indexed-typeable.rst)
+    [Rendered\
+    ](https://github.com/bgamari/ghc-proposals/blob/typeable/proposals/0000-type-indexed-typeable.rst)
 
 
 How to amend an accepted proposal
