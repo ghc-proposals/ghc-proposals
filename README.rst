@@ -85,7 +85,7 @@ In brief all stages of the Reviewing process are shown in the table.
 |                              |                             |                |                      +---------------------------+-------------------------+
 |                              |                             |                |                      | Close request             | *Withdrawn*             |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
-| |st-withdrawn|_              | ‒ (|lbl-withdrawn|)         | (PR closed)    | ‒                    | ‒                         | ‒                       |
+| |st-withdrawn|_              | ‒ (|lbl-withdrawn|)         | ‒              | (PR closed)          | ‒                         | ‒                       |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
 | |st-shepherd-appointment|    | ‒                           | 1 week         | Secretary            | Assign shepherd           | Shepherd review         |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
@@ -103,7 +103,7 @@ In brief all stages of the Reviewing process are shown in the table.
 |                              |                             |                |                      +---------------------------+-------------------------+
 |                              |                             |                |                      | Close request             | *Withdrawn*             |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
-| |st-rejected|_               | |lbl-rejected|              | (PR closed)    | ‒                    | ‒                         | ‒                       |
+| |st-rejected|_               | |lbl-rejected|              | ‒              | (PR closed)          | ‒                         | ‒                       |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
 | |st-accepted|                | |lbl-accepted-open|         | 2 weeks        | | Author &           | Do final corrections      | Implementation          |
 |                              |                             |                | | Shepherd           |                           |                         |
@@ -114,7 +114,7 @@ In brief all stages of the Reviewing process are shown in the table.
 | |st-implementation|          | | |lbl-accepted|            | Indefinite     | Unspecified          | Implement the proposal    | *Implemented*           |
 |                              | | (PR closed)               |                |                      |                           |                         |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
-| |st-implemented|_            | |lbl-implemented|           | (PR closed)    | ‒                    | ‒                         | ‒                       |
+| |st-implemented|_            | |lbl-implemented|           | ‒              | (PR closed)          | ‒                         | ‒                       |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
 
 .. _st-withdrawn: #withdrawn
