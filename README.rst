@@ -85,7 +85,7 @@ In brief all stages of the Reviewing process are shown in the table.
 |                              |                             |                |                      +---------------------------+-------------------------+
 |                              |                             |                |                      | Close request             | *Withdrawn*             |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
-| |st-withdrawn|_              | ‒ (|lbl-withdrawn|)         | (PR closed)    | ‒                    | ‒                         | ‒                       |
+| |st-withdrawn|_              | ‒ (|lbl-withdrawn|)         | ‒              | (PR closed)          | ‒                         | ‒                       |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
 | |st-shepherd-appointment|    | ‒                           | 1 week         | Secretary            | Assign shepherd           | Shepherd review         |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
@@ -103,7 +103,7 @@ In brief all stages of the Reviewing process are shown in the table.
 |                              |                             |                |                      +---------------------------+-------------------------+
 |                              |                             |                |                      | Close request             | *Withdrawn*             |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
-| |st-rejected|_               | |lbl-rejected|              | (PR closed)    | ‒                    | ‒                         | ‒                       |
+| |st-rejected|_               | |lbl-rejected|              | ‒              | (PR closed)          | ‒                         | ‒                       |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
 | |st-accepted|                | |lbl-accepted-open|         | 2 weeks        | | Author &           | Do final corrections      | Implementation          |
 |                              |                             |                | | Shepherd           |                           |                         |
@@ -111,9 +111,10 @@ In brief all stages of the Reviewing process are shown in the table.
 |                              |                             | 1 week         | | Shepherd /         | Merge                     |                         |
 |                              |                             |                | | Secretary          |                           |                         |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
-| |st-implementation|          | |lbl-accepted| (PR closed)  | Indefinite     | Unspecified          | Implement the proposal    | *Implemented*           |
+| |st-implementation|          | | |lbl-accepted|            | Indefinite     | Unspecified          | Implement the proposal    | *Implemented*           |
+|                              | | (PR closed)               |                |                      |                           |                         |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
-| |st-implemented|_            | |lbl-implemented|           | (PR closed)    | ‒                    | ‒                         | ‒                       |
+| |st-implemented|_            | |lbl-implemented|           | ‒              | (PR closed)          | ‒                         | ‒                       |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
 
 .. _st-withdrawn: #withdrawn
@@ -392,7 +393,8 @@ in your branch. For instance,
     Types](http://research.microsoft.com/en-us/um/people/simonpj/papers/haskell-dynamic/index.htm)
     (Peyton Jones, _et al._ 2016).
 
-    [Rendered](https://github.com/bgamari/ghc-proposals/blob/typeable/proposals/0000-type-indexed-typeable.rst)
+    [Rendered\
+    ](https://github.com/bgamari/ghc-proposals/blob/typeable/proposals/0000-type-indexed-typeable.rst)
 
 
 How to amend an accepted proposal
