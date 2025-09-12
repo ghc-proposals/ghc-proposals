@@ -135,22 +135,26 @@ With ``-XQualifiedLists``, we gain the following syntaxes:
 
 ::
 
+  import qualified GHC.Exts as L
+  import qualified GHC.List as L
+
   data EnumFrom from then to
     = EnumFrom from
     | EnumFromThen from then
     | EnumFromTo from to
     | EnumFromThenTo from then to
 
-  buildList :: IsList l => ((a -> a -> [a]) -> [a] -> [a]) -> l a
-  buildList f = fromList (f (:) [])
+  buildList :: (IsList l, Item l ~ a) => Int -> ((a -> [a] -> [a]) -> [a] -> [a]) -> l
+  buildList n f = L.fromListN n (L.build f)
 
-  buildListEnum :: IsList l => EnumFrom a a a -> l a
+  buildListEnum :: (IsList l, Item l ~ a) => EnumFrom a a a -> l
   buildListEnum e =
-    case e of
-      EnumFrom x -> fromList (enumFrom x)
-      EnumFromThen x y -> fromList (enumFromThen x y)
-      EnumFromTo x y -> fromList (enumFromTo x y)
-      EnumFromThenTo x y z -> fromList (enumFromThenTo x y z)
+    L.fromList $
+      case e of
+        EnumFrom x -> enumFrom x
+        EnumFromThen x y -> enumFromThen x y
+        EnumFromTo x y -> enumFromTo x y
+        EnumFromThenTo x y z -> enumFromThenTo x y z
 
 It is highly recommended that all types with ``IsList`` instances defined provide a module with the below definitions, to enable locally-scoped overloading over ``-XOverloadedLists``, for example:
 
@@ -158,7 +162,7 @@ It is highly recommended that all types with ``IsList`` instances defined provid
 
   import Data.List.Qualified.Experimental qualified as L
 
-  buildList :: ((a -> a -> [a]) -> [a] -> [a]) -> MyList a
+  buildList :: Int -> ((a -> [a] -> [a]) -> [a] -> [a]) -> MyList a
   buildList = L.buildList
 
   buildListEnum :: EnumFrom a a a -> MyList a
@@ -236,8 +240,10 @@ With ``QualifiedLists``, ``vector`` could define:
 
   module Data.Vector.Qualified where
 
-  buildList :: Integer -> ((a -> [a] -> [a]) -> [a] -> [a]) -> Vector a
-  buildList n f = V.fromListN n (GHC.List.build f)
+  import Data.List.Qualified.Experimental qualified as L
+
+  buildList :: Int -> ((a -> [a] -> [a]) -> [a] -> [a]) -> Vector a
+  buildList = L.buildList
 
   pattern FromListCons a b <- (V.uncons -> Just (a, b))
   pattern FromListNil <- (V.uncons -> Nothing)
@@ -264,7 +270,7 @@ With ``QualifiedLists``, converting list literals are no longer confined to the 
   module Data.HList.Qualified where
 
   buildList ::
-    Integer ->
+    Int ->
     ( (forall a as. f a -> HList f as -> HList f (a ': as))
       -> HList f '[]
       -> HList f xs
@@ -305,7 +311,7 @@ Example of a ``ByteArray`` implementation, which requires knowing the length of 
 
   buildList ::
     forall a. Prim a =>
-    Integer ->
+    Int ->
     ( forall s.
       (a -> Builder s -> Builder s)
       -> Builder s
