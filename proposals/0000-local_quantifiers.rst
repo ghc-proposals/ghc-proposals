@@ -38,23 +38,23 @@ Right now there are three kinds of scoped:
   {-# LANGUAGE TypeAbstractions #-}
   const :: forall a. a -> b -> a
   const @a x = res where
-    res :: a -- uses 'a' from the lexical scope
+    res :: a -- uses 'a' from the lexical scope '@a'
     res = x
 
-* The magical scope introduced by ``ScopedTypeVariables``
+* The magical / borrowed scope introduced by ``ScopedTypeVariables``
 ::
 
   {-# LANGUAGE ScopedTypeVariables #-}
   const :: forall a. a -> b -> a
   const x = res where
-    res :: a -- uses 'a' from parent signature
+    res :: a -- uses 'a' from parent signature 'const :: forall a.'
     res = x
 
 Notice how the signature res :: ``a`` in 1 & 2 does not itself say where ``a`` comes from.
 
-This is confusing because traditionally Haskell has made it optional to write forall in a signature, so it is unclear if ``res :: a`` means ``res :: forall a. a`` or the other thing (and it's not even possible to express what that the other meaning is currently!).
+This is confusing because traditionally Haskell has made it optional to write "forall" in a signature, so it is unclear if ``res :: a`` means ``res :: forall a. a`` or the other thing (and it's not even possible to express what that the other meaning is currently!).
 
-This proposal says such uses of a should explicitly say they use '``a``' from somewhere else (excactly whichwhere) in the program.
+This proposal says such uses of a should explicitly say they use '``a``' from somewhere else (exactly which-where) in the program.
 
 This Proposal suggests to add the **ForThis Quantifier**, **ForThat Quantifier**, **ForSame Quantifier** and **ForUsed Quantifier**, **ForInner Quantifier**, **ForNested Quantifier** which allow to write explicitly type signatures, which depends from internal or external type variables.
 
@@ -107,11 +107,11 @@ Local Quantifiers "grab" type variables external to this signature
        yys = reverse ys
 
 
-By using ``for{local} a`` we ask do not create a new type variable ``forall a``, but use already existed external type variable ``a``.
+By using ``for{local} a`` quantifier we ask do not create a new type variable ``forall a``, but use already existed external type variable ``a``.
 
-1. ForThis ``forthis`` quantifier pick type variable **by name** lifted from argument **type-term**, not from **type**.
+1. ForThis ``forthis`` quantifier pick type variable **by name** lifted from argument **type-term** (``@tyterm``), not from **type**.
 
-2. ForThat ``forthat`` quantifier pick type variable **by name** from ``class`` and ``instance`` head type variable.
+2. ForThat ``forthat`` quantifier pick type variable **by name** from ``class``, ``instance``, ``data``, ``type`` and ``newtype`` head type variable.
 
 3. ForSame ``forsame`` quantifier pick type variable **by name** from explicit signature declaration.
 
@@ -160,18 +160,13 @@ Syntax for local quantifiers has a simple form.
 
 ::
 
-  forthat   (tyvar_i )+
-  
-  forthis   (, |tyvar_i )* tyvar
-  
-  forsame   (, |tyvar_i )* tyvar     -- DEPRECATED
-
-  forused   (; |, |tyvar_i )* tyvar
-
-  forinner  (; |, |tyvar_i )* tyvar
-  
-  fornested (; |, |tyvar_i )* tyvar
-
+  type ::= ......
+       | 'forthat'   { tyManyVar } tyvar   '.'
+       | 'forthis'   { ',' | tyVar } tyVar '.'
+       | 'forsame'   { ',' | tyVar } tyVar '.'              -- DEPRECATED
+       | 'forused'   { ';' | ',' | tyVar } tyVar '.'
+       | 'forinner'  { ';' | ',' | tyVar } tyVar '.'
+       | 'fornested' { ';' | ',' | tyVar } tyVar '.'
 
 
 Examples
@@ -511,6 +506,9 @@ This proposal is fully backward compatible.
 
 Unresolved Questions
 --------------------
+
+ForNew
+~~~~~~~
 
 It is unclear which local quantifier should be used in next example
 ::
