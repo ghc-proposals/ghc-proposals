@@ -13,7 +13,7 @@ Qualified Lists
 .. sectnum::
 .. contents::
 
-This proposal proposes extending ``-XQualifiedDo`` to literal lists, to enable more ergonomic and more powerful syntax than ``OverloadedLists``. Another way to view this proposal would be extending ``-XRebindableSyntax`` to literal lists, but only within a local scope.
+This proposal proposes replicatiing ``-XQualifiedDo`` for literal lists, to enable more ergonomic and more powerful syntax than ``OverloadedLists``. Another way to view this proposal would be replicatiing ``-XRebindableSyntax`` for literal lists, but only within a local scope.
 
 See also:
 
@@ -84,7 +84,7 @@ For a suitable ``M.buildList``, this is enough to support heterogenous list lite
 Proposed Change Specification
 -----------------------------
 
-Introduce ``-XQualifiedLists`` that desugars literal list syntax to function calls in a similar way to ``-XQualifiedDo`` (`docs <https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/qualified_do.html>`_, `proposal <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0216-qualified-do.rst>`_).
+Introduce ``-XQualifiedLists`` that desugars literal list syntax to function calls in a similar way to ``-XQualifiedDo`` (`docs <https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/qualified_do.html>`_, `proposal <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0216-qualified-do.rst>`_), but with a modified desugaring (unlike the proposed ``-XQualifiedStrings``).
 
 As long as the desugared expressions/patterns type check, users are free to define these functions however they want. No whitespace is allowed between the ``.`` and the module name / literal.
 
@@ -103,7 +103,7 @@ Currently, list literals have the following desugaring:
       - ``-XOverloadedLists``
       - ``GHC.Exts.fromListN 2 (x Prelude.: y Prelude.: Prelude.[])``
 
-With ``-XQualifiedLists``, we gain the following syntaxes:
+With ``-XQualifiedLists``, the desugaring is instead as follows:
 
 .. list-table::
     :align: left
@@ -375,6 +375,18 @@ Alternatives
 
   * Disallows heterogeneous lists
   * See the discussion in *Section 2 Proposed Change Specification*
+
+* Use one type variable in ``EnumFrom`` instead of three
+
+  * Disallows heterogeneous enums, e.g. ``HList.[Finite 1 .. Finite 2]``
+
+* Combine ``buildList`` and ``buildListEnum`` into one function, defunctionalizing the ``buildList`` args as well
+
+  * Would force users to support ``M.[a .. b]`` even if they only care about / want to support ``M.[a, b, c]``
+
+* Have separate ``buildListEnum*`` functions instead of ``EnumFrom``
+
+  * The common case of reusing one's ``OverloadedLists`` definition means writing four functions aliased to ``GHC.Exts.buildListEnum*`` instead of one function aliased to ``GHC.Exts.buildListEnum``
 
 Future work
 ~~~~~~~~~~~
