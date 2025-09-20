@@ -6,7 +6,7 @@ New syntax for Visible ForAll
 .. ticket-url:: 
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/728>`_.
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/729>`_.
 .. sectnum::
 .. contents::
 
