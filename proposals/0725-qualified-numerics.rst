@@ -211,6 +211,11 @@ Alternatives
 
   * See the discussion in *Section 2.1 QualifiedNumerics*
 
+* Allow some fallback logic, e.g. for ``M.1``, use ``M.fromNatural`` if it exists, or ``M.fromInteger`` if it exists, or ``M.fromRational`` otherwise.
+
+  * Haskell generally prefers explicit "this is the function I'm calling" rather than any implicit logic that switches the function being called.
+  * Adding ``fromNatural`` would be a breaking change; currently with PVP, adding a function is not generally considered a breaking change.
+
 Alternative QualifiedNumerics API
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
