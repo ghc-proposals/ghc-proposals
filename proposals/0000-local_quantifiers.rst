@@ -168,6 +168,7 @@ Syntax for local quantifiers has a simple form.
        | 'forinner'  { ';' | ',' | tyVar } tyVar '.'
        | 'fornested' { ';' | ',' | tyVar } tyVar '.'
 
+Every local quantifier is utilized by the Haskell renamer, so no changes are required for the Core Language.
 
 Examples
 --------
