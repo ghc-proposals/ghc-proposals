@@ -97,7 +97,7 @@ Local Quantifiers are just explanation to GHC which external type variable they 
 Proposed Change Specification
 -----------------------------
 
-Local Quantifiers "grab" type variables external to this signature
+Local Quantifiers "grab"(use) already existed type variables external to this signature
 ::
 
   f :: forall a b. [a] -> [b] -> [(a, b)]
@@ -107,19 +107,19 @@ Local Quantifiers "grab" type variables external to this signature
        yys = reverse ys
 
 
-By using ``for{local} a`` quantifier we ask do not create a new type variable ``forall a``, but use already existed external type variable ``a``.
+By using ``for<local> a`` quantifier we ask do not create a new type variable ``forall a``, but use already existed external type variable ``a``.
 
-1. ForThis ``forthis`` quantifier pick type variable **by name** lifted from argument **type-term** (``@tyterm``), not from **type**.
+1. ForThis ``forthis`` quantifier pick type variable **by name** lifted from explicit **type-term** argument (``@tyterm``), not from **type**.
 
 2. ForThat ``forthat`` quantifier pick type variable **by name** from ``class``, ``instance``, ``data``, ``type`` and ``newtype`` head type variable.
 
-3. ForSame ``forsame`` quantifier pick type variable **by name** from explicit signature declaration.
+3. ForSame ``forsame`` quantifier pick type variable **by name** from explicit only signature declaration.
 
-4. ForUsed ``forused`` quantifier pick type variable **by position** from ``forall`` in signature declarations in one-to-one corresponded order.
+4. ForUsed ``forused`` quantifier pick type variable **by position** from ``forall`` in signature declarations (regardless if explicitly written or implicitly infered) in one-to-one corresponded order.
 
-5. ForInner ``forinner`` quantifier pick type variable **by position** from inner ``forall`` from Existential types and GADS-like types in one-to-one corresponded order.
+5. ForInner ``forinner`` quantifier pick type variable **by position** from inner ``forall`` from Existential types and GADS-like types (regardless if explicitly written or implicitly infered) in one-to-one corresponded order.
 
-6. ForNested ``fornested`` quantifier pick type variable **by position** from signature high-ranked ``forall`` argument in one-to-one corresponded order.
+6. ForNested ``fornested`` quantifier pick type variable **by position** from signature high-ranked ``forall`` argument in one-to-one corresponded order (regardless if explicitly written or implicitly infered).
 
 Since ``forthis`` , ``forthat`` , ``forsame`` are quantifier by picking by name, they must use same **name** for type variable as external ones.
 
@@ -133,11 +133,11 @@ Local quantifier's type variable could "grabs" type variables only from nearest 
 
 Local quantifier's which pick type variable *by position*:
 
-1. Could use pure wildcard ``_`` for unused variable. This means use ``for{local} _ _ a.`` instead of ``for{local} unused1 unused2 a.``
+1. Could use pure wildcard ``_`` for unused variable. This means use ``for<local> _ _ a.`` instead of ``for<local> unused1 unused2 a.``
 
-2. Could omit all unused variables "righter" then last used one. This means use ``for{local} a.`` instead of ``for{local} a _ _ _.``
+2. Could omit all unused variables "righter" then last used one. This means use ``for<local> a.`` instead of ``for<local> a _ _ _.``
 
-3. Could omit all variables if all of them are unused from some signature. This means use ``for{local} ,, a.`` instead of ``for{local} _ _ _, _ _, a.``
+3. Could omit all variables if all of them are unused from some signature. This means use ``for<local> ,, a.`` instead of ``for<local> _ _ _, _ _, a.``
 
 4. ``forused`` must use semicolon ``;`` for shifted ``forall`` to omit *term* argument. This means write ``forused _ ; b.`` if signature is ``f :: forall a. a -> forall b. b -> ...``
 
@@ -161,7 +161,7 @@ Syntax for local quantifiers has a simple form.
 ::
 
   type ::= ......
-       | 'forthat'   { tyManyVar } tyvar   '.'
+       | 'forthat'   { tyvar } tyvar '.'
        | 'forthis'   { ',' | tyVar } tyVar '.'
        | 'forsame'   { ',' | tyVar } tyVar '.'              -- DEPRECATED
        | 'forused'   { ';' | ',' | tyVar } tyVar '.'
@@ -477,13 +477,17 @@ Examples
     m :: ∃§ a. [a] -> [a]
     m x = map (*2) x
 
-
 ScopedTypeVariables
 ~~~~~~~~~~~~~~~~~~~
 
 ``ScopedTypeVariables`` extension ignores local quantified variables.
 
 But we could reuse part of searching algorithms from ``ScopedTypeVariables`` algorithms.
+
+Visible ForAll and ForEach
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Since local quantifiers just use already existing type variables, there is no need to be used as visible or as unerased quantifiers.
 
 
 Costs and Drawbacks
@@ -497,6 +501,31 @@ Alternatives
 
 Main alternative is "Modern Scoped Type Variables" `#448`_ (``ScopedTypeVariables`` extension), but also ``TypeAbstractions`` and ``PartialTypeSignatures``.
 
+Alternative keywords
+~~~~~~~~~~~~~~~~~~~~
+
+We could choose differen keywords instead of proposed latin and unicode keywords.
+
+Howevwer, the template ``for<local>`` and ``∃<something>`` are welcomed.
+
+Freedom of choice for ForThat
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There are two ways to add ``forthat`` quantifier:
+
+- to use it in the head of declaration: ::
+
+   data forthat a. Maybe a  where
+        Nothing :: forall a. Maybe a
+        Just    :: forall a. a -> Maybe a
+
+- to use it in the body of declaration: ::
+
+   class forall a. Num a  where
+        (+) :: forthat a. a -> a - > a
+        (*) :: forthat a. a -> a - > a
+
+Second choice looks more "natural".
 
 Backward Compatibility
 ----------------------
