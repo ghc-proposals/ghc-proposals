@@ -23,13 +23,13 @@ With GHC's powerful type-level programming features, we need powerful abilities 
 
 To write some signatures for ``ScopedTypeVariables`` extension is needed (or ``TypeAbstractions`` in some cases). But it still has ambiguity for each unquantified type variable - it could be either a local scoped type variable or a universal quantified type variable.
 
-This proposal introduces ``forscope`` quantifier, which explicitly requires local scope only or throws an error otherwise.
+This proposal introduces ``forscoped`` quantifier, which explicitly requires local scope only or throws an error otherwise.
 
 
 Proposed Change Specification
 -----------------------------
 
-ForScoped Quantifier "grabs" local scope type variables only
+ForScoped Quantifier "grabs" (use) local scope type variables only
 ::
 
   f :: forall a b. [a] -> [b] -> [(a, b)]
@@ -60,7 +60,8 @@ The syntax for local quantifiers has a simple form.
 
 ::
 
-  forscoped (tyvar_i )+
+  type ::= ......
+       | 'forscoped' { tyvar } tyvar '.'
 
 ForScoped quantifier is utilized by Haskell-renamer, so no changes are required for Core-Language.
 
@@ -171,6 +172,12 @@ Alternatives
 
 An alternative is to use a more ambiguous absence of a quantifier to type's variable..
 
+Alternative keywords
+~~~~~~~~~~~~~~~~~~~~
+
+We could choose differen keywords instead of proposed latin ``forscoped`` and unicode ``∃?`` keywords.
+
+For example to have ``forlocal`` or/and ``∃ℒ`` ((There Exists, U+2203, Mathematical Operators) ++ (Script Capital L, U+2112, Letterlike Symbols)).
 
 Backward Compatibility
 ----------------------
