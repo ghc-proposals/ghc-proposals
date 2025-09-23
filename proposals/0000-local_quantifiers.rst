@@ -61,6 +61,8 @@ This Proposal suggests to add the **ForThis Quantifier**, **ForThat Quantifier**
 Explicitness is preferential in Haskell over implicitness. And this Proposal propose how to write local quantifiers explicitly! It does not aim to allow writing more programs, just to allow being more explicit about where type variables come from. Non-quantified type variable means that this variable is somehow-quantified.
 
 Just like ``ExplicitForall`` extension allow explicitly say exactly what this specific type variable is ``forall`` quantified, this Proposal allow to switch on ``LocalQuantifiers`` extension explicitly say exactly what this specific type variable is local quantified!
+
+An additional advantage is that adding such quantifiers makes signatures that have one-to-one correspondences with pure mathematical descriptions in Predicate Logic!
  
 Main alternative is "Modern Scoped Type Variables" `#448`_ which was added into ``ScopedTypeVariables`` extension and ``TypeAbstractions`` extension.
 
