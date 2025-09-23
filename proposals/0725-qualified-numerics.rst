@@ -13,7 +13,7 @@ Qualified Numerics
 .. sectnum::
 .. contents::
 
-This proposal proposes extending ``-XQualifiedDo`` to literal numbers, to enable more ergonomic and typesafe API's. Another way to view this proposal would be extending ``-XRebindableSyntax`` to literal numbers, but only within a local scope.
+This proposal proposes replicating ``-XQualifiedDo`` for literal numbers, to enable more ergonomic and typesafe API's. Another way to view this proposal would be replicating ``-XRebindableSyntax`` for literal numbers, but only within a local scope.
 
 See also:
 
