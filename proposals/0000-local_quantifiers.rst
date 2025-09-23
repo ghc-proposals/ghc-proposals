@@ -91,7 +91,7 @@ All local scoped and parametric non-quantified type variables in Haskell are uni
        ys :: ∃₌₁ b. [b]
        ys = reverse xs
 
-If we use mathematical iduction we could shaw that all "similar" cases could use unique quantifier.
+If we use mathematical iduction we could show that all "similar" cases could use unique quantifier.
 
 Main benefit is that all local quantifiers are utilized by Haskell-renamer, so nothing is required to change in Core-language.
 
