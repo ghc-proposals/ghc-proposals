@@ -58,7 +58,7 @@ This proposal says such uses of a should explicitly say they use '``a``' from so
 
 This Proposal suggests to add the **ForThis Quantifier**, **ForThat Quantifier**, **ForSame Quantifier** and **ForUsed Quantifier**, **ForInner Quantifier**, **ForNested Quantifier** which allow to write explicitly type signatures, which depends from internal or external type variables.
 
-Explicitness is preferential in Haskell over implicitness. And this Proposal propose how to write local quantifiers explicitly! It does not aim to allow writing more programs, just to allow being more explicit about where type variables come from.
+Explicitness is preferential in Haskell over implicitness. And this Proposal propose how to write local quantifiers explicitly! It does not aim to allow writing more programs, just to allow being more explicit about where type variables come from. Non-quantified type variable means that this variable is somehow-quantified.
 
 Just like ``ExplicitForall`` extension allow explicitly say exactly what this specific type variable is ``forall`` quantified, this Proposal allow to switch on ``LocalQuantifiers`` extension explicitly say exactly what this specific type variable is local quantified!
  
@@ -75,6 +75,9 @@ Rule (aka math-like proof)
 De facto Local Quantifiers are a special case of Existential Quantifier, which is known during compile time.
 
 **Math-like Proof:**
+
+All local scoped and parametric non-quantified type variables in Haskell are unique quantified (if not ``forall``-quantified) type variables.
+
 ::
 
   -- pseudo-haskell
@@ -88,6 +91,7 @@ De facto Local Quantifiers are a special case of Existential Quantifier, which i
        ys :: ∃₌₁ b. [b]
        ys = reverse xs
 
+If we use mathematical iduction we could shaw that all "similar" cases could use unique quantifier.
 
 Main benefit is that all local quantifiers are utilized by Haskell-renamer, so nothing is required to change in Core-language.
 
@@ -490,6 +494,10 @@ Visible ForAll and ForEach
 
 Since local quantifiers just use already existing type variables, there is no need to be used as visible or as unerased quantifiers.
 
+NoImplicitForAll
+~~~~~~~~~~~~~~~~
+
+This Proposal do not contradicts ``NoImplicitForAll`` extension.
 
 Costs and Drawbacks
 -------------------
