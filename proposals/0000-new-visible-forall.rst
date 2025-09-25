@@ -16,7 +16,7 @@ This proposal introduces a syntax for visible forall type variables.
 Motivation
 ----------
 
-The Visible ForAll awesome feature was added to GHC as an extension with ... a temporary syntax.
+The Visible ForAll awesome feature was added to GHC as an extension with ... an initial pre-proposal syntax.
 
 However, that syntax looks unappealing, and it feels unappealing; mixing it with other features makes it even less appealing.
 ::
@@ -30,7 +30,7 @@ However, that syntax looks unappealing, and it feels unappealing; mixing it with
   -- syntax with several tyvars
   toTuple :: forall a -> forall b. a -> b -> (a, b) 
 
-And it is better to change the syntax as soon as possible, before the old syntax becomes Legacy.
+And it is better to change the syntax as soon as possible, before the old syntax becomes widespread.
 
 This Proposal suggests adding a new syntax for visible type variables and deprecating the use of the old one.
 ::
@@ -67,7 +67,7 @@ We allow writing ``type a`` in a type signature, which says that this term is a 
 Examples
 --------
 
-Sure, we could omit the ``forall`` keyword sometimes :
+Sure, we could write the signature with implicit ``forall`` :
 ::
 
   idt :: (type a) -> a -> a
