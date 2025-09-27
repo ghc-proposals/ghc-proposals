@@ -40,7 +40,8 @@ And the current syntax forcefully mixes a context with the argument's types:
   --                     mix context with arg type ---↖-------------------------↗ 
 
 
-And it is better to change the syntax as soon as possible, before the old syntax becomes widespread.
+Since the ``RequiredTypeArguments`` extension is an Experimental extension and the syntax is not widespread yet, it is not too late to make some changes to the syntax. 
+It is better to make this syntax more optimal **as soon as possible**, before it gets "locked in" and gives backwards-maintainability headaches.
 
 This Proposal suggests adding a new syntax for visible type variables and deprecating the use of the old one.
 ::
@@ -102,7 +103,7 @@ We could also infer the visibility from the term:
   foo (type a) x = ...
 
 Currently, the ``type`` keyword is required, however, the Roadmap of DT suggests making this keyword optional. 
-If such a situation arises, we could still infer the function signature if we modify an argument slightly::
+If such a situation arises, we could still infer the function signature if we modify an argument slightly:
 ::
 
   -- bar :: (type a) -> a -> ...
