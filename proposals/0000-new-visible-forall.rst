@@ -30,6 +30,16 @@ However, that syntax looks unappealing, and it feels unappealing; mixing it with
   -- syntax with several tyvars
   toTuple :: forall a -> forall b. a -> b -> (a, b) 
 
+Even more, the current syntax suggest to have 2 different (but specialized) universal quantifiers to represent just one "∀" quantifer.
+
+And the current syntax forcefully mixes a context with the argument's types:
+::
+
+  --      ↓------- separate context from arg type
+  baz :: forall a b. (Read a, Show b) => a -> b -> forall c -> Read c => c -> forall d -> Show d => d -> ((a, c), (b, d))
+  --                     mix context with arg type ---↖-------------------------↗ 
+
+
 And it is better to change the syntax as soon as possible, before the old syntax becomes widespread.
 
 This Proposal suggests adding a new syntax for visible type variables and deprecating the use of the old one.
@@ -55,6 +65,17 @@ This Proposal suggests adding a new syntax for visible type variables and deprec
   
   toTuple :: forall a b. (type a) -> a -> b -> (a, b)
 
+  baz :: forall a b c d. (Read a, Read c, Show b, Show d) => a -> b -> (type c) -> c -> (type d) -> d -> ((a, c), (b, d))
+
+This Proposal also reduces the number of universal quantifers from 2 (``forall a.`` and ``forall a ->``) to just one ``forall a.``.
+
+We could even make more interesting type arguments in the future:
+::
+
+  bar :: forall a b c. a -> b -> c -> (type (a, b, c) ) -> (a, b, c)
+  -- usage:  bar 1 2 3 (type (Int, Integer, Float))
+  -- compare bar 1 2 3 ::    (Int, Integer, Float)
+
 
 Proposed Change Specification
 -----------------------------
@@ -79,6 +100,10 @@ We could also infer the visibility from the term:
 
   -- foo :: (type a) -> a -> ...
   foo (type a) x = ...
+
+Currently, the ``type`` keyword is required, however, the Roadmap of DT suggests making this keyword optional. 
+If such a situation arises, we could still infer the function signature if we modify an argument slightly::
+::
 
   -- bar :: (type a) -> a -> ...
   bar (a :: type b) x = ...
