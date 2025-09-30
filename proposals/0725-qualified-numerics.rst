@@ -30,13 +30,6 @@ No granular typeclass for numeric literals
 
 Related: https://github.com/ghc-proposals/ghc-proposals/issues/438
 
-Inability to distinguish natural numbers
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-In Haskell98, ``13`` desugars to ``fromInteger 13`` and ``2.7`` desugars to ``fromRational 2.7``. If a type ``T`` does not wish to support rationals, one could simply fail to provide an instance for ``Fractional T``, then ``fromRational 2.7 :: T`` will be statically rejected. But if ``T`` does not want to support negative integers, there is no way to reject it statically.
-
-This proposal would desugar natural numbers separately from negative integers so that implementations that wish to distinguish between the two (e.g. support only natural numbers) may do so.
-
 Proposed Change Specification
 -----------------------------
 
@@ -73,13 +66,13 @@ With ``-XQualifiedNumerics``, we gain the following syntaxes:
     * - **New expression syntax**
       - **Desugared expression syntax**
     * - ``M.1``
-      - ``M.fromNumeric (1 :: Natural)``
+      - ``M.fromInteger 1``
     * - ``M.(1)``
-      - ``M.fromNumeric (1 :: Natural)``
+      - ``M.fromInteger 1``
     * - ``M.(-1)``
-      - ``M.fromNumeric (-1 :: Integer)``
+      - ``M.fromInteger (-1)``
     * - ``M.(1.2)``
-      - ``M.fromNumeric (1.2 :: Rational)``
+      - ``M.fromRational 1.2``
 
 .. list-table::
     :align: left
@@ -87,19 +80,19 @@ With ``-XQualifiedNumerics``, we gain the following syntaxes:
     * - **New pattern syntax**
       - **Desugared pattern syntax**
     * - ``M.1``
-      - ``((== M.fromNumeric (1 :: Natural)) -> True)``
+      - ``((== M.fromInteger 1) -> True)``
     * - ``M.(1)``
-      - ``((== M.fromNumeric (1 :: Natural)) -> True)``
+      - ``((== M.fromInteger 1) -> True)``
     * - ``M.(-1)``
-      - ``((== M.fromNumeric (-1 :: Integer)) -> True)``
+      - ``((== M.fromInteger (-1)) -> True)``
     * - ``M.(1.2)``
-      - ``((== M.fromNumeric (1.2 :: Rational)) -> True)``
+      - ``((== M.fromRational 1.2) -> True)``
 
 See *Section 8.1 Alternative QualifiedNumerics API* for a discussion on the chosen API here.
 
 Parentheses are required for negative integers and rationals, to avoid ambiguity, both in the lexer and for human readers. Parentheses are optional for positive integers.
 
-``M.10e6`` will desugar to ``M.fromNumeric (10e6 :: Natural)`` if ``NumDecimals`` is enabled, or ``M.fromNumeric (10e6 :: Rational)`` otherwise.
+``M.10e6`` will desugar to ``M.fromInteger 10e6`` if ``NumDecimals`` is enabled, or ``M.fromRational 10e6`` otherwise.
 
 Parser
 ~~~~~~
@@ -147,7 +140,6 @@ We'll add the following constructors instead of modifying existing constructors 
 
   data Lit
     = ...
-    | QualNaturalL ModName Natural
     | QualIntegerL ModName Integer
     | QualRationalL ModName Rational
 
@@ -173,8 +165,8 @@ With ``QualifiedNumerics``, you could write ``Big.123``, which guarantees that `
 ::
 
   -- only called on literals
-  fromNumeric :: Real a => a -> BigDecimal
-  fromNumeric = BigDecimal . realToFrac
+  fromInteger = BigDecimal . fromInteger
+  fromRational = BigDecimal . fromRational
 
 Effect and Interactions
 -----------------------
@@ -207,14 +199,10 @@ Alternatives
 
   * The View pattern more closely matches `Section 3.17.2 <https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-60015x7>`_ in the 2010 Report
 
-* Use separate ``M.fromInteger`` and ``M.fromRational`` instead of a single polymorphic ``M.fromNumeric``
-
-  * See the discussion in *Section 2.1 QualifiedNumerics*
-
-* Allow some fallback logic, e.g. for ``M.1``, use ``M.fromNatural`` if it exists, or ``M.fromInteger`` if it exists, or ``M.fromRational`` otherwise.
+* Allow some fallback logic, e.g. for ``M.1``, use ``M.fromInteger`` if it exists or ``M.fromRational`` otherwise.
 
   * Haskell generally prefers explicit "this is the function I'm calling" rather than any implicit logic that switches the function being called.
-  * Adding ``fromNatural`` would be a breaking change; currently with PVP, adding a function is not generally considered a breaking change.
+  * Adding ``M.fromInteger`` would be a breaking change; currently with PVP, adding a function is not generally considered a breaking change.
 
 Alternative QualifiedNumerics API
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -223,7 +211,7 @@ There were different APIs we could have implemented for ``-XQualifiedNumerics``:
 
 #. Mirror Prelude with ``-XNegativeLiterals`` and translate to ``M.fromInteger 1``, ``M.fromInteger (-1)``, ``M.fromRational 1.5``, ``M.fromRational (-1.5)``
 
-   * Pro: 1:1 correspondence with standard Haskell98 semantics
+   * Pro: 1:1 correspondence with standard Haskell98 semantics + ``-XNegativeLiterals``
    * Con: If you want non-negative guarantees, you could type ``M.fromInteger`` with ``Natural``, but you'd be relying on GHC's hardcoded ``-Woverflowed-literals`` check.
 
 #. Mirror Prelude without ``-XNegativeLiterals`` and do ``M.fromInteger 1``, ``M.negate (M.fromInteger 1)``, ``M.fromRational 1.5``, ``M.negate (M.fromRational 1.5)``
@@ -245,6 +233,13 @@ There were different APIs we could have implemented for ``-XQualifiedNumerics``:
    * Pro: Optional non-negative guarantee
    * Pro: Majority of use cases would only define one ``fromNumeric`` definition using existing typeclasses
    * Con: Rather divorced from standard Haskell98 semantics
+
+Support distinguishing natural numbers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In Haskell98, ``13`` desugars to ``fromInteger 13`` and ``2.7`` desugars to ``fromRational 2.7``. If a type ``T`` does not wish to support rationals, one could simply fail to provide an instance for ``Fractional T``, then ``fromRational 2.7 :: T`` will be statically rejected. But if ``T`` does not want to support negative integers, there is no way to reject it statically.
+
+We'll leave desugaring natural numbers to a future proposal, which can undergo deeper discussion about whether we're okay with a discrepancy between the qualified and unqualified desugaring, or if we want to backport a Natural literal to the unqualified desugaring somehow.
 
 Future work
 ~~~~~~~~~~~
