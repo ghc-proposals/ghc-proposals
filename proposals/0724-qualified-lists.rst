@@ -115,13 +115,13 @@ With ``-XQualifiedLists``, the desugaring is instead as follows:
     * - ``M.[x, y]``
       - ``M.buildList 2 (\cons nil -> x `cons` (y `cons` nil))``
     * - ``M.[x ..]``
-      - ``M.buildListEnum (Data.List.Qualified.Experimental.EnumFrom x)``
+      - ``M.enumFrom x``
     * - ``M.[x, y ..]``
-      - ``M.buildListEnum (Data.List.Qualified.Experimental.EnumFromThen x y)``
+      - ``M.enumFromThen x y``
     * - ``M.[x .. y]``
-      - ``M.buildListEnum (Data.List.Qualified.Experimental.EnumFromTo x y)``
+      - ``M.enumFromTo x y``
     * - ``M.[x, y .. z]``
-      - ``M.buildListEnum (Data.List.Qualified.Experimental.EnumFromThenTo x y z)``
+      - ``M.enumFromThenTo x y z``
 
 .. list-table::
     :align: left
@@ -138,23 +138,20 @@ With ``-XQualifiedLists``, the desugaring is instead as follows:
   import qualified GHC.Exts as L
   import qualified GHC.List as L
 
-  data EnumFrom from then to
-    = EnumFrom from
-    | EnumFromThen from then
-    | EnumFromTo from to
-    | EnumFromThenTo from then to
-
   buildList :: (IsList l, Item l ~ a) => Int -> ((a -> [a] -> [a]) -> [a] -> [a]) -> l
   buildList n f = L.fromListN n (L.build f)
 
-  buildListEnum :: (IsList l, Item l ~ a) => EnumFrom a a a -> l
-  buildListEnum e =
-    L.fromList $
-      case e of
-        EnumFrom x -> enumFrom x
-        EnumFromThen x y -> enumFromThen x y
-        EnumFromTo x y -> enumFromTo x y
-        EnumFromThenTo x y z -> enumFromThenTo x y z
+  enumFrom :: (IsList l, Item l ~ a) => a -> l
+  enumFrom x = L.fromList (Prelude.enumFrom x)
+
+  enumFromThen :: (IsList l, Item l ~ a) => a -> a -> l
+  enumFromThen x y = L.fromList (Prelude.enumFromThen x y)
+
+  enumFromTo :: (IsList l, Item l ~ a) => a -> a -> l
+  enumFromTo x y = L.fromList (Prelude.enumFromTo x y)
+
+  enumFromThenTo :: (IsList l, Item l ~ a) => a -> a -> a -> l
+  enumFromThenTo x y  z= L.fromList (Prelude.enumFromThenTo x y z)
 
 It is highly recommended that all types with ``IsList`` instances defined provide a module with the below definitions, to enable locally-scoped overloading over ``-XOverloadedLists``, for example:
 
@@ -165,10 +162,19 @@ It is highly recommended that all types with ``IsList`` instances defined provid
   buildList :: Int -> ((a -> [a] -> [a]) -> [a] -> [a]) -> MyList a
   buildList = L.buildList
 
-  buildListEnum :: EnumFrom a a a -> MyList a
-  buildListEnum = L.buildListEnum
+  enumFrom :: a -> MyList a
+  enumFrom L.enumFrom
 
-Note that while we could have mirrored ``-XOverloadedLists`` and just done ``M.fromListN 2 [x, y]``, we intentionally decide to use this more general API. This gives us more expressive power, since we no longer need to typecheck an intermediate list. Similar reason for defining ``buildListEnum`` instead of reusing Prelude's ``enumFrom`` functions. See *Section 4.2 Heterogeneous Lists* for a use-case.
+  enumFromThen :: a -> a -> MyList a
+  enumFromThen = L.enumFromThen
+
+  enumFromTo :: a -> a -> MyList a
+  enumFromTo = L.enumFromTo
+
+  enumFromThenTo :: a -> a -> a -> MyList a
+  enumFromThenTo  z= L.enumFromThenTo
+
+Note that while we could have mirrored ``-XOverloadedLists`` and just done ``M.fromListN 2 [x, y]``, we intentionally decide to use this more general API. This gives us more expressive power, since we no longer need to typecheck an intermediate list. Similar reason for defining ``enumFrom*`` functions instead of reusing Prelude's ``enumFrom*`` functions. See *Section 4.2 Heterogeneous Lists* for a use-case.
 
 We also decide to do ``M.buildList`` instead of something like ``M.fromList (x `M.cons` M.nil)`` so that there's one definition to jump to (e.g. with IDE integrations) instead of three.
 
@@ -375,18 +381,6 @@ Alternatives
 
   * Disallows heterogeneous lists
   * See the discussion in *Section 2 Proposed Change Specification*
-
-* Use one type variable in ``EnumFrom`` instead of three
-
-  * Disallows heterogeneous enums, e.g. ``HList.[Finite 1 .. Finite 2]``
-
-* Combine ``buildList`` and ``buildListEnum`` into one function, defunctionalizing the ``buildList`` args as well
-
-  * Would force users to support ``M.[a .. b]`` even if they only care about / want to support ``M.[a, b, c]``
-
-* Have separate ``buildListEnum*`` functions instead of ``EnumFrom``
-
-  * The common case of reusing one's ``OverloadedLists`` definition means writing four functions aliased to ``GHC.Exts.buildListEnum*`` instead of one function aliased to ``GHC.Exts.buildListEnum``
 
 Future work
 ~~~~~~~~~~~
