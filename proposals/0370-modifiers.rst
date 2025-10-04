@@ -45,6 +45,8 @@ a different syntax. Specifically, the term-level operators ``inline`` and
 ``oneShot`` are given types like the identity function, but they are really
 modifiers on the variable that comes afterwards. We might imagine making
 their special status more explicit by writing them ``%inline`` or ``%oneShot``.
+This would require attaching modifiers to expressions, which this proposal does
+not address.
 
 Proposed Change Specification
 -----------------------------
@@ -61,23 +63,27 @@ Proposed Change Specification
      modifiers     ::= {modifier}
      declModifiers ::= [ modifier [ ';' ] [ declModifiers ] ]
 
-3. With ``-XModifiers``, introduce modifier syntax on types as follows::
+   (This is an extension of the syntax accepted with ``-XLinearTypes``, allowing
+   multiple modifiers.)
 
-     btype    ::= modifiers atype | btype atype
-
-4. With ``-XModifiers``, introduce modifier syntax on the term level as follows::
-
-     fexp     ::= modifiers aexp | fexp aexp
-
-5. With ``-XModifiers``, introduce modifier syntax in patterns as follows::
-
-     lpat     ::= modifiers lpat | ...
-
-6. With ``-XModifiers``, introduce modifier syntax on record field declarations as follows::
+3. With ``-XModifiers``, introduce modifier syntax on record field declarations as follows::
 
      fielddecl ::= vars modifiers '::' (type | '!' atype)
 
-7. With ``-XModifiers``, introduce modifier syntax on top-level declarations as
+   (This is an extension of the syntax accepted with ``-XLinearTypes``, allowing
+   multiple modifiers.)
+
+4. With ``-XModifiers``, introduce modifier syntax on pattern bindings as
+   follows::
+
+     decl ::= gendecl
+          |   funlhs '=' ...
+          |   modifiers pat ['::' type] '=' ...
+
+   (This is an extension of the syntax accepted with ``-XLinearTypes``, allowing
+   multiple modifiers.)
+
+5. With ``-XModifiers``, introduce modifier syntax on top-level declarations as
    follows::
 
      topdecl ::= declModifiers 'type' simpletype '=' type
@@ -97,7 +103,7 @@ Proposed Change Specification
    declarations) and may have modifiers of their own. The semicolon makes
    clear that the modifier is meant to affect the entire declaration.
 
-8. With ``-XModifiers``, introduce modifier syntax on data constructor
+6. With ``-XModifiers``, introduce modifier syntax on data constructor
    declarations as follows::
 
      -- H98-style constructor
@@ -110,35 +116,35 @@ Proposed Change Specification
 
    Modifiers in ``gadt_constrs`` apply to each constructor in ``con_list``.
 
-9. Reserve the use of ``%`` in a prefix occurrence to be used only for modifiers;
-   though this proposal does not do so, we can imagine extending the modifier syntax
-   to apply to further syntactic situations (e.g. term-level operators, declarations,
-   import lists, etc.).
+7. Reserve the use of ``%`` in a prefix occurrence to be used only for
+   modifiers; though this proposal does not do so, we can imagine extending the
+   modifier syntax to apply to further syntactic situations (e.g. term-level
+   operators, declarations, import lists, etc.).
 
-10. Modifiers are parsed, renamed, and type-checked as *types*.
+8. Modifiers are parsed, renamed, and type-checked as *types*.
 
-11. With ``-XModifiers``, the type of a modifier is determined only by
-    synthesis, not by checking.
-    That is, in the bidirectional type-checking scheme used by GHC, we find the
-    type of the modifier by running the synthesis judgment. Effectively, this
-    means that if we consider a modifier to be some head (constructor or
-    variable) applied to a sequence of arguments (possibly none), the head must
-    have a known type: constructors always have a known type, and variables
-    have a known type if declared with a type signature. Alternatively, the
-    modifier may have a top-level type signature.
+9. With ``-XModifiers``, the type of a modifier is determined only by
+   synthesis, not by checking.
+   That is, in the bidirectional type-checking scheme used by GHC, we find the
+   type of the modifier by running the synthesis judgment. Effectively, this
+   means that if we consider a modifier to be some head (constructor or
+   variable) applied to a sequence of arguments (possibly none), the head must
+   have a known type: constructors always have a known type, and variables
+   have a known type if declared with a type signature. Alternatively, the
+   modifier may have a top-level type signature.
 
-12. Future modifiers will be put *before* the element they modify. Alternatively,
-    a modifier can be put directly before a syntactic closer or separator, such
-    as ``;`` or ``where`` or ``)``.
+10. Future modifiers will be put *before* the element they modify.
+    Alternatively, a modifier can be put directly before a syntactic closer or
+    separator, such as ``;`` or ``where`` or ``)``.
 
-13. Modifiers of unknown or polymorphic kind produce an error.
+11. Modifiers of unknown or polymorphic kind produce an error.
 
-14. Modifiers of known kind but with an unknown meaning produce a warning,
+12. Modifiers of known kind but with an unknown meaning produce a warning,
     controlled by ``-Wunrecognized-modifiers``. They are otherwise ignored.
     (However, in order to know that a modifier is unrecognized, it still must be
     parsed, renamed, and type-checked.)
 
-15. With ``-XLinearTypes``:
+13. With ``-XLinearTypes``:
 
     * A modifier of type ``Multiplicity`` changes the multiplicity of the
       following arrow, or following pattern-bound variable of a lambda, or
@@ -156,12 +162,12 @@ Proposed Change Specification
       modifiers are accepted: ``a %Matchable ⊸ b`` has the same meaning as ``a
       %Matchable %1 -> b``.
 
-16. With ``-XModifiers -XNoLinearTypes``, the ``%1`` modifier is not special. It
+14. With ``-XModifiers -XNoLinearTypes``, the ``%1`` modifier is not special. It
     refers to the type ``1 :: Nat`` and requires ``-XDataKinds``. The warning
     generated by ``-Wunrecognized-modifiers`` hints that the user probably wants
     to enable ``-XLinearTypes``.
 
-17. With ``-XLinearTypes -XNoModifiers``, backwards compatible behavior is
+15. With ``-XLinearTypes -XNoModifiers``, backwards compatible behavior is
     introduced:
 
     * Only ``Multiplicity`` modifiers are permitted, and only in the places
@@ -175,7 +181,7 @@ Proposed Change Specification
 
     This may be deprecated in future.
 
-18. ``-XLinearTypes`` implies ``-XModifiers``. But the latter can be explicitly
+15. ``-XLinearTypes`` implies ``-XModifiers``. But the latter can be explicitly
     disabled with ``-XLinearTypes -XNoModifiers``.
 
 Renaming and typechecking
@@ -268,25 +274,17 @@ Here are some examples that will be accepted or rejected with this proposal::
   data D = %() (:*) Int Bool -- the same
   data D = (%() Int) :* Bool -- the type of the first argument is modified
 
-  x :: %Maybe Int -- x is of type (Int, modified with type Maybe)
-  x :: %(%Maybe Maybe) Int
-    -- x is of type (Int, modified with type (Maybe, modified with type Maybe))
-
 With ``-XLinearTypes -XNoModifiers``, ``f4`` and ``f8`` are accepted, and
 ``f3``, ``f9``, ``f10``, and all the modifiers not attached to arrows are
 rejected.
 
-The syntax (and semantics) for modifiers on patterns and record fields is exactly
-as described in the `linear types proposal`_.
+The syntax (and semantics) for modifiers on patterns and record fields is
+exactly as described in the `linear types proposal`_, except that multiple
+modifiers are permitted.
 
 .. _`linear types proposal`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0111-linear-types.rst#syntax
 
 Further examples:
-
-* Types: ``%Mod1 T (%Mod2 a) (%Mod3 (S b))``; ``Mod1`` applies to ``T``, ``Mod2`` applies to ``a``, and ``Mod3`` applies to ``S b``.
-  Note that this proposal does not introduce any valid modifiers for types.
-
-* Terms: Same as the example above.
 
 * Lambda expressions: ``\ (%Many x) -> ...``,
   ``\ (%One x :: Int) (%Many y) -> ...``.
