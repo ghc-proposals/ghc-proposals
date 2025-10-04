@@ -196,7 +196,7 @@ there to be two general stories.
 Some modifiers will take effect during type checking, such as multiplicity
 modifiers. Call these **TC modifiers**. Others will take effect during renaming,
 such as the ``NoFieldSelectors`` modifier of `proposal 512`_. Call these **RN
-modifiers**.
+modifiers**. Unrecognized modifiers are neither RN nor TC.
 
 .. _`proposal 512`: https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0512-nofieldselectors-per-datatype.md
 
@@ -238,8 +238,8 @@ typecheck it again during typechecking. We throw a warning or error if either
 * It resolved to an RN modifier during renaming, and resolves to a different
   modifier during typechecking.
 
-* It didn't resolve to an RN modifier during renaming, but does during
-  typechecking.
+* It resolved to a non-RN modifier during renaming, and resolves to an RN
+  modifier during typechecking.
 
 It might resolve to a different modifier if there are overlapping instances
 defined in this module.
