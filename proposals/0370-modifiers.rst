@@ -142,7 +142,8 @@ Proposed Change Specification
 12. Modifiers of known kind but with an unknown meaning produce a warning,
     controlled by ``-Wunrecognized-modifiers``. They are otherwise ignored.
     (However, in order to know that a modifier is unrecognized, it still must be
-    parsed, renamed, and type-checked.)
+    parsed, renamed, and type-checked.) ``-Wunrecognized-modifiers`` is enabled
+    by default.
 
 13. With ``-XLinearTypes``:
 
@@ -423,8 +424,6 @@ Unresolved Questions
   proposed concretely here and would be subject to a future proposal.
 
 * How does this interact with Template Haskell?
-
-* What warning groups imply ``-Wunrecognized-modifiers``?
 
 * What scope are modifiers looked up in? For example::
 
