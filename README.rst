@@ -714,6 +714,9 @@ The shepherd does these things:
   they are highly encouraged to contribute.
 - If the discussion does not converge within 4-5 weeks, takes action to consult
   the chairs or secretary to decide what to do.
+- Helps the author to make final corrections and follows the
+  `acceptance steps <https://github.com/ghc-proposals/ghc-proposals/blob/master/acceptance.rst>`_
+  to merge the PR if the proposal is accepted.
 
 
 What is a dormant proposal?
