@@ -2,14 +2,11 @@ Qualified Strings
 =================
 
 .. author:: Brandon Chinn
-.. date-accepted:: Leave blank. This will be filled in when the proposal is accepted.
-.. ticket-url:: Leave blank. This will eventually be filled with the
-                ticket URL which will track the progress of the
-                implementation of the feature.
-.. implemented:: Leave blank. This will be filled in with the first GHC version which
-                 implements the described feature.
+.. date-accepted:: 2025-10-07
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/26503
+.. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/723>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/723>`_.
 .. sectnum::
 .. contents::
 
@@ -290,13 +287,7 @@ Future work
 
 * Future work could be done to allow compile time logic, e.g. ``$M."hello"`` => ``$(M.fromString [|"hello"|])``, but that is out of scope of this proposal.
 
-Unresolved Questions
---------------------
-
 Implementation Plan
 -------------------
 
 Brandon Chinn will volunteer to implement.
-
-Endorsements
-------------
