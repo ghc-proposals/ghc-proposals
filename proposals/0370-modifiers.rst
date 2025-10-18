@@ -115,15 +115,14 @@ Proposed Change Specification
 
 8. Modifiers are parsed, renamed, and type-checked as *types*.
 
-9. With ``-XModifiers``, the type of a modifier is determined only by
-   synthesis, not by checking.
-   That is, in the bidirectional type-checking scheme used by GHC, we find the
-   type of the modifier by running the synthesis judgment. Effectively, this
-   means that if we consider a modifier to be some head (constructor or
-   variable) applied to a sequence of arguments (possibly none), the head must
-   have a known type: constructors always have a known type, and variables
-   have a known type if declared with a type signature. Alternatively, the
-   modifier may have a top-level type signature.
+9. With ``-XModifiers``, the type of a modifier is determined only by synthesis,
+   not by checking. That is, in the bidirectional type-checking scheme used by
+   GHC, we find the type of the modifier by running the synthesis judgment.
+   Effectively, this means that if we consider a modifier to be some head
+   (constructor or variable) applied to a sequence of arguments (possibly none),
+   the head must have a known type: constructors always have a known type, and
+   variables have a known type if declared with a type signature. Alternatively,
+   the modifier may have a top-level type signature.
 
 10. Future modifiers will be put *before* the element they modify.
     Alternatively, a modifier can be put directly before a syntactic closer or
