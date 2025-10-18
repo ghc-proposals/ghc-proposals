@@ -73,12 +73,9 @@ Proposed Change Specification
    (This is an extension of the syntax accepted with ``-XLinearTypes``, allowing
    multiple modifiers.)
 
-4. With ``-XModifiers``, introduce modifier syntax on pattern bindings as
-   follows::
+4. With ``-XModifiers``, introduce modifier syntax in patterns as follows::
 
-     decl ::= gendecl
-          |   funlhs '=' ...
-          |   modifiers pat ['::' type] '=' ...
+     lpat ::= modifiers lpat | ...
 
    (This is an extension of the syntax accepted with ``-XLinearTypes``, allowing
    multiple modifiers.)
