@@ -54,14 +54,14 @@ Proposed Change Specification
 1. Introduce a new extension ``-XModifiers``.
 
 2. With ``-XModifiers``, introduce modifier syntax on arrows as follows (cf.
-   the Haskell 2010 Report for all BNF syntax, and recall that we use braces
-   to denote "zero or more")::
+   the Haskell 2010 Report for all BNF syntax;  recall that we use braces
+   to denote "zero or more" and brackets to denote optional syntax)::
 
-     type          ::= btype [ modifiers -> type ]
-     prefix%       ::= '%'    -- only in prefix position
-     modifier      ::= prefix% atype
-     modifiers     ::= {modifier}
-     declModifiers ::= [ modifier [ ';' ] [ declModifiers ] ]
+     prefix%   ::= '%' -- only in prefix position
+     modifier  ::= prefix% atype
+     modifiers ::= {modifier}
+
+     type ::= btype [ modifiers -> type ]
 
    (This is an extension of the syntax accepted with ``-XLinearTypes``, allowing
    multiple modifiers.)
@@ -83,6 +83,8 @@ Proposed Change Specification
 5. With ``-XModifiers``, introduce modifier syntax on top-level declarations as
    follows::
 
+     declModifiers ::= [ modifiers ';' [ declModifiers ] ]
+
      topdecl ::= declModifiers 'type' simpletype '=' type
              |   declModifiers 'data' [context '=>'] simpletype ['=' constrs] [deriving]
              |   declModifiers 'newtype' [context '=>'] simpletype = newconstr [deriving]
@@ -91,14 +93,7 @@ Proposed Change Specification
              |   declModifiers 'instance' [scontext '=>'] qtycls inst ['where' idecls]
              |   declModifiers 'default' '(' type1 ',' ... ',' typen ')'
              |   declModifiers 'foreign' fdecl
-             |   declModifiers ';' decl
-
-   Recall that the Haskell 2010 Report uses brackets to denote an optional bit
-   of syntax. The optional semicolons allow modifiers to appear on a line
-   previous from the declaration affected. The semicolon is mandatory on
-   ``decl`` because ``decl``\ s do not start with keywords (except for fixity
-   declarations) and may have modifiers of their own. The semicolon makes
-   clear that the modifier is meant to affect the entire declaration.
+             |   declModifiers decl
 
 6. With ``-XModifiers``, introduce modifier syntax on data constructor
    declarations as follows::
