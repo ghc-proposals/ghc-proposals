@@ -363,8 +363,7 @@ Effect and Interactions
   parse modifiers at the location where they are written. Perhaps a more
   complete design would modify the entire Haskell grammar putting modifiers
   wherever they could potentially make sense (and thus be more future
-  compatible), but this proposal covers only types and terms (and not, say,
-  class declarations).
+  compatible), but this proposal covers only some specific places.
 
 * Because modifiers are treated as types, they will typically begin with
   a capital letter. (Note that a polymorphic multiplicity is a type variable,
