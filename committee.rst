@@ -49,24 +49,10 @@ Committee Roles
 * **Secretary.** The committee has one secretary. The secretary is the first stop for keeping
   our repository up-to-date and running our selection process.
 
-* **Nudger.** The committee has one nudger. The nudger's job is to make sure other
-  committee members are fulfilling their duties by nudging them (often
-  in public) to do so.
-
 The co-chairs and secretary
 positions remain with an individual until they decide to relinquish the
 role, though a majority vote among the committee can strip a member of
 their co-chair/secretary position.
-
-The nudger position rotates among members every six months.
-In the event that the nudger ends up needing nudging (by any other member
-of the committee), the nudger should step down and volunteer to do a better
-job in some future six months; in the event that they still struggle to
-stay on top of their nudging duties, it may be a sign that they are too
-busy for committee work and should step down.
-
-The secretary is in charge of managing who the nudger is, by creating
-a rotation for this position.
 
 Guidelines for Communication
 ----------------------------
