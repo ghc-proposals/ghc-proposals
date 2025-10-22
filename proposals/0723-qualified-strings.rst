@@ -138,22 +138,15 @@ It is highly recommended that all types with ``IsString`` instances include a to
 
 Qualified multiline strings are only allowed if ``-XMultilineStrings`` is enabled. Qualified multiline strings are desugared to single line strings first, then desugared as a qualified string literal. See `Multiline Strings <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0569-multiline-strings.rst>`_ for more information.
 
-Parser
-~~~~~~
+Lexical Structure
+~~~~~~~~~~~~~~~~~
 
-Update `Section 10.5 <https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#x17-18000010.5>`_ of the Haskell 2010 report as follows.
+Update `Section 10.2 <https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#x17-17700010.2>`_ of the Haskell 2010 report as follows.
 
 .. code-block:: abnf
 
-  aexp → qvar
-       | ...
-       | modid . string
-       | modid . multiLineString
-
-  apat → var [ @ apat ]
-       | ...
-       | modid . string
-       | modid . multiLineString
+  string  → astring | modid . astring
+  astring → " {graphic⟨'"' | '\'⟩ | space | escape | gap} "
 
 Module name resolution
 ~~~~~~~~~~~~~~~~~~~~~~
