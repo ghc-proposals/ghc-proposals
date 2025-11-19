@@ -37,7 +37,7 @@ But GHC also allows this::
 fHere `y` is bound nested-ly, but is morally top-level because it in turn has no
 free variables. This flexibility is `described in the user manual <https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/static_pointers.html#using-static-pointers>`_.
 
-However, it turns out that implementing this apparently-simple extra expressiveness
+However, it turns out that this apparently-simple extra expressiveness
 is ridiculously hard to implement, leading to a series of bug reports (e.g. `#26545 <https://gitlab.haskell.org/ghc/ghc/-/issues/26545>`_ `#24464 <https://gitlab.haskell.org/ghc/ghc/-/issues/24464>`_ `#24773 <https://gitlab.haskell.org/ghc/ghc/-/issues/24773>`_).
 
 **Complication 1**.  The expression ``e`` in ``static e``
