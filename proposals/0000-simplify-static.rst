@@ -42,8 +42,16 @@ free variables. This flexibility is `described in the user manual <https://ghc.g
 However, it turns out that implementing this apparently-simple extra expressiveness
 is ridiculously hard to implement, leading to a series of bug reports (e.g. `#26545 <https://gitlab.haskell.org/ghc/ghc/-/issues/26545>`_ `#24464 <https://gitlab.haskell.org/ghc/ghc/-/issues/24464>`_ `#24773 <https://gitlab.haskell.org/ghc/ghc/-/issues/24773>`_).
 
-**Complication 1**.  e might generate constraints.  We don't want to solve those from
-locally-bound Givens, because they'll be out of scope when we promote to top level.
+**Complication 1**.  The expression ``e`` in ``static e``
+might generate constraints.  We don't want to solve those from
+locally-bound Givens, because they'll be out of scope when we promote to top level.  For example::
+
+  f :: (Read a) => a -> StaticPtr a
+  f x = static (read @a "hello")
+
+Here we use the ``Read`` dictionary passed to ``f`` to parse the string. Not allowed!  The body of
+the ``static`` is not just code: it mentions a dynamically bound (albeit invisible) parameter to ``f``.
+
 Solution: wrap the constraints in an implication with ``SkolInfo`` of ``StaticFormSkol``; and
 in the constraint solver zap all Givens when walking inside such an implication. That was
 done in::
@@ -59,19 +67,21 @@ done in::
     a special ic_info field of StaticFormSkol, which tells the constraint
     solver to use an empty set of Givens.
 
-So that complication wasn't at all bad.
+So that complication was unwelcome, but not too bad.
 
 **Complication 2**.  What if we have::
 
   f x = let y = reverse "hello" in
         ...(static (y++y))...
 
-The free vars of the static are just ``{y}``, and ``y`` is morally-top-level. It in turn
+The free variables of the static are just ``{y}``, and ``y`` is "morally-top-level": its right-hand side
 has no free variables.
 Sadly (as it turns out) GHC tries to accept this case.  When looking at the defn of y
 (with no static in sight yet) the typechecker marks it at a "static binding", meaning that
 it too can (and indeed must) be floated to top level.
-So if the desugarer moves the static to the top level, it must move ``y`` too.  And that means it must mark the typechecked binding in some way, so the desugarer can identify it.  Not so hard, but there is quite a bit of new plumbing.
+So if the desugarer moves the static to the top level, it must move ``y`` too.  And that means it must mark the typechecked binding in some way, so the desugarer can identify it.
+
+Not so hard, but there is quite a bit of new plumbing.
 
 **Complication 3.**  But what if ``y``'s RHS generates constraints, which use Givens (or solved
 dictionaries, which are very similar) from its context?  E.g.::
@@ -81,12 +91,14 @@ dictionaries, which are very similar) from its context?  E.g.::
 Now there may be a ``d :: Num Int`` lying around from dealing with ``p``, and ``y`` may use it.
 Oh no! Now that'll be out of scope if we move ``y`` to top level.
 
-Plausible solution: use them same mechanism for static *bindings* as we did for ``static e``
+The same would happens as in Complication 1 if ``y``'s RHS used a dictionary bound by ``f``.
+
+Plausible solution: use them same mechanism for static **bindings** as we did for ``static e``
 **expressions**.  That is, build an implication constraint whose ``SkolInfo`` says "zap Givens".
 This turned out to be considerably harder to implement than it was for Complication 1.
 But I did it.
 
-**Complication 4.**  What if y is not generalised, perhaps because of the Monomorphism
+**Complication 4.**  What if ``y`` is not generalised, perhaps because of the Monomorphism
 Restriction?  E.g.::
 
   f :: Num a => a -> blah
@@ -97,6 +109,15 @@ So it really *cannot* appear in the static. Somehow ``y`` really isn't static af
 despite its lack of free variables.
 
 *We must reject this program*.
+
+But that is far from obvious.  This slightly different program might be fine::
+
+  f :: Num a => a -> blah
+  f x = let y = 3+3 in ((3::Int)+y, static( ..y.. ))
+
+Here we eventually figure out that ``y::Int`` so maybe it is static after all.
+In implementation terms this would be harder still; indeed, I'm not sure how to do it,
+given GHC's current architecture.
 
 **Conclusion**.
 
@@ -119,7 +140,7 @@ Proposed Change Specification
 
 I propose the following change, which returns to the original spec of `static e`:
 
-* In an expression `static e`, the free variables of `e` must be bound at top level.
+* **In an expression `static e`, the free term variables of `e` must all be bound at top level.**
 
 That is the complete specification.
 
@@ -170,8 +191,8 @@ Backward Compatibility
 But there may be some back-compat issues. Perhaps existing libraries rely on using
 nested let-bindings in ``static``.  I asked some key players:
 
-* Laurent Rene de Cotret says "I stand behind your proposal. As you mention, this will bring the behavior in line with the documented one. I'm happy to support Cloud Haskell users in transitioning when the time comes."
-* Mathieu Boespflug says "This sounds reasonable to me. Simple is better. And since the compiler currently allows more programs than advertised, it is arguably fair to stop allowing those programs that the documentation says should not be allowed even without a deprecation cycle."
+* Laurent Rene de Cotret says *"I stand behind your proposal. As you mention, this will bring the behavior in line with the documented one. I'm happy to support Cloud Haskell users in transitioning when the time comes."*
+* Mathieu Boespflug says *"This sounds reasonable to me. Simple is better."
 
 Alternatives
 ------------
@@ -183,18 +204,10 @@ we'll just have un-fixed bugs, and a hard-to-understand implementation, indefini
 
 Unresolved Questions
 --------------------
-Explicitly list any remaining issues that remain in the conceptual design and
-specification. Be upfront and trust that the community will help. Please do
-not list *implementation* issues.
-
-Hopefully this section will be empty by the time the proposal is brought to
-the steering committee.
-
+None
 
 Implementation Plan
 -------------------
-(Optional) I will implement it.  Indeed I have mostly done so.
+I will implement it.  Indeed I have mostly done so.
 
-Endorsements
--------------
 
