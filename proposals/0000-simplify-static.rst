@@ -138,7 +138,11 @@ Proposed Change Specification
 
 I propose the following change, which returns to the original spec of `static e`:
 
-* **In an expression `static e`, the free term variables of `e` must all be bound at top level.**
+* **In an expression ``static e``, the free term variables of `e` must all be bound at top level.**
+
+I propose no change to the existing (but un-stated) restriction:
+
+* **In an expression ``static e`` all typing constraints arising from ``e`` must be soluble using global instance declarations only.**  (This is Complication 1, which is unaffected by this proposal.)
 
 That is the complete specification.
 
