@@ -168,7 +168,31 @@ Here are some examples::
   f4 x = static (let z = "hello" in z ++ z)      -- OK: no free variables
 
 The only real loss is that a top-level binding has a rather large scope.
+
 But you can always put the binding *inside* the ``static`` as ``f4`` shows.
+Of course that is not always possible::
+
+  f5 x = let z = reverse "hello" in
+         map (\v. ...(static z)...)
+
+Here we would not want to push ``z`` under the lambda!  But we could instead move
+the `static` out::
+
+  f5 x = let s = static (let z = reverse "hello" in head z)
+         map (\v. ...s...)
+
+Again the scope of ``z`` is limited.
+
+The only time you can't do one or the other is if ``z`` is used in two
+different ``static`` forms in the same local scope:
+
+  f6 x = let z = reverse "hello" in
+         ...(static (head z))...(static (z++z))...
+
+Now you really would be forced to move the definition of ``z`` to top level.
+But perhaps that is acceptable -- yes it forces ``z``'s  scope to be wider
+than you would really like, but that's not so bad, and it's a bit of a corner
+case anyway.
 
 Effect and Interactions
 -----------------------
