@@ -198,10 +198,21 @@ But perhaps that is acceptable -- yes it forces ``z``'s  scope to be wider
 than you would really like, but that's not so bad, and it's a bit of a corner
 case anyway.
 
+The rules do allow free *type* variables in the body of a ``static``::
+
+  f :: StaticPtr (a -> a)
+  f = static (\x -> x)
+
+The body of the ``static`` has no free *term* variables, and all its typing constraints are top-level-soluble.
+It does have a free *type* variable, namely ``a``, but that is allowed.
+Again, this behaviour is unchanged from the status quo.
+
+
 Effect and Interactions
 -----------------------
 
-I don't think there are any interactions.
+The specification of static forms has some commonality with proposals around Typed Qoutations in Template
+Haskell.  Section 4.1.3 of `Matthew Pickering's thesis <https://research-information.bris.ac.uk/ws/portalfiles/portal/298086479/Final_Copy_2021_03_23_Pickering_M_PhD.pdf>`_ talks about implementing the ``CodeC`` constraint from the paper `Staging with Class <https://www.cl.cam.ac.uk/~jdy22/papers/staging-with-class.pdf>`_. The rules for using evidence in quotations are more complicated that static forms since there is anti-quotation, but the general idea is similar
 
 
 Costs and Drawbacks
@@ -215,10 +226,35 @@ Backward Compatibility
 ----------------------
 
 But there may be some back-compat issues. Perhaps existing libraries rely on using
-nested let-bindings in ``static``.  I asked some key players:
+nested let-bindings in ``static``.
+
+I asked some key players:
 
 * Laurent Rene de Cotret says *"I stand behind your proposal. As you mention, this will bring the behavior in line with the documented one. I'm happy to support Cloud Haskell users in transitioning when the time comes."*
 * Mathieu Boespflug says *"This sounds reasonable to me. Simple is better."
+* Facundo Dominguez says *"The change looks good to me."*
+* Duncan Coutts says *"Sounds good to me in principle. The utility of the extended feature is not worth the effort to resolve all the complications, or the difficulty of explaining the boundaries of what can be accepted (in docs, spec, error messages)."*
+
+As part of the (accepted & implemented) `HF tech proposal for Cabal-hooks <https://github.com/haskellfoundation/tech-proposals/pull/60>`_, the ``Cabal-hooks`` package provides an API for users to extend the build rules of their package. This mechanism uses static pointers quite pervasively, as you can see in `this example from the proposal <https://github.com/haskellfoundation/tech-proposals/blob/main/rfc/060-replacing-cabal-custom-build.md#api-overview>`_ or `this example from the Haddocks for Cabal-hooks <https://hackage-content.haskell.org/package/Cabal-hooks-3.16/docs/Distribution-Simple-SetupHooks.html#g:11>`_.
+
+There are several functions in this API which expect static pointers of dictionaries, say of the form::
+
+  mkCommand :: Typeable a => StaticPtr (Dict (Binary a, Eq a)) -> ...
+
+  -- NB: Dict is defined as follows:
+  data Dict c where { Dict :: c => Dict c }
+
+This means the code users write typically looks like::
+
+  myPreBuildRules :: PreBuildComponentInputs -> RulesM ()
+  myPreBuildRules = ... cmd1 ... cmd2 ...
+    where
+      cmd1 = mkCommand (static Dict) ...
+      cmd2 = mkCommand (static Dict) ...
+
+This code is fine: the body of these `static` calls is just ``Dict`` and has no free variables.
+(As now, the rules require that the typing constraint arising from the use of ``Dict``
+are top-level-soluble.)  In short, no back-compat issues arise here.
 
 Alternatives
 ------------
