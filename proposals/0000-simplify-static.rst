@@ -231,7 +231,7 @@ nested let-bindings in ``static``.
 I asked some key players:
 
 * Laurent Rene de Cotret says *"I stand behind your proposal. As you mention, this will bring the behavior in line with the documented one. I'm happy to support Cloud Haskell users in transitioning when the time comes."*
-* Mathieu Boespflug says *"This sounds reasonable to me. Simple is better."
+* Mathieu Boespflug says *"This sounds reasonable to me. Simple is better."*
 * Facundo Dominguez says *"The change looks good to me."*
 * Duncan Coutts says *"Sounds good to me in principle. The utility of the extended feature is not worth the effort to resolve all the complications, or the difficulty of explaining the boundaries of what can be accepted (in docs, spec, error messages)."*
 
@@ -254,7 +254,7 @@ This means the code users write typically looks like::
 
 This code is fine: the body of these `static` calls is just ``Dict`` and has no free variables.
 (As now, the rules require that the typing constraint arising from the use of ``Dict``
-are top-level-soluble.)  In short, no back-compat issues arise here.
+are top-level-soluble.)  In short, no back-compat issues arise here. (Thanks to @sheaf for summarising.)
 
 Alternatives
 ------------
