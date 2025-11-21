@@ -188,7 +188,7 @@ the `static` out::
 Again the scope of ``z`` is limited.
 
 The only time you can't do one or the other is if ``z`` is used in two
-different ``static`` forms in the same local scope:
+different ``static`` forms in the same local scope::
 
   f6 x = let z = reverse "hello" in
          ...(static (head z))...(static (z++z))...
