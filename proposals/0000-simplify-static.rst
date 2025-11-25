@@ -133,20 +133,49 @@ given GHC's current architecture.
 This proposal simplifies the specification (losing a little bit of expressiveness but
 not much), allowing a much, much simpler implementation.
 
+Background
+------------
+
+In GHC today, an expression ``static e`` is rewritten to ``fromStaticPtr (static e)``, where::
+
+  class IsStatic p where
+    fromStaticPtr :: Typeable a => StaticPtr a -> p a
+
+  instance IsStatic StaticPtr where
+    fromStaticPtr = id
+
+The idea is:
+
+* The type class ``IsStatic`` plays the same role as ``IsList`` for ``-XOverloadedLists`` and ``IsString`` for ``-XOverloadedStrings``:
+  it lets you write a ``static e`` literal and have it lifted into user-specified type.
+
+  For example, it allows the `distributed-static <https://hackage.haskell.org/package/distributed-static-0.3.11>`_ library
+  to declare::
+
+    instance IsStatic Static where
+       fromStaticPtr = staticPtr
+
+  where `staticPtr` is defined in the library.  See `GHC issue #11585 <https://gitlab.haskell.org/ghc/ghc/-/issues/11585>`_.
+
+* The ``Typeable`` constraint requires the type of ``e`` to be ``Typeable``, so that
+  a static pointer can be serialised, accompanied by a type descriptor.  See `GHC issue #19729 <https://gitlab.haskell.org/ghc/ghc/-/issues/19729>`_.
+
+  (Some people would like to avoid the requirement for the ``Typeable`` constraint; but that would be a separate proposal.)
+
+
 Proposed Change Specification
 -----------------------------
 
 I propose the following change, which returns to the original spec of `static e`:
 
-* **In an expression ``static e``, the free term variables of `e` must all be bound at top level.**
+* In an expression ``static e``, the free term variables of ``e`` must all be bound at top level.
 
-I propose no change to the existing (but un-stated) restriction:
+I propose no change to the existing (but un-stated) restrictions:
 
-* **In an expression ``static e`` all typing constraints arising from ``e`` must be soluble using global instance declarations only.**  (This is Complication 1, which is unaffected by this proposal.)
+* In an expression ``static e`` all typing constraints arising from ``e`` must be soluble using global instance declarations only.  (This is Complication 1; it is an existing rule which is unaffected by this proposal.)
+* In an expression ``static e``, where ``e :: ty``, the type ``ty`` must satisfy ``Typeable ty``
 
 That is the complete specification.
-
-
 
 Proposed Library Change Specification
 -------------------------------------
@@ -170,6 +199,10 @@ Here are some examples::
   f3 x = static (z ++ z)      -- OK: z is bound at top level
 
   f4 x = static (let z = "hello" in z ++ z)      -- OK: no free variables
+
+
+Loss of local scope
+~~~~~~~~~~~~~~~~~~~
 
 The only real loss is that a top-level binding has a rather large scope.
 
@@ -197,13 +230,18 @@ But perhaps that is acceptable -- yes it forces ``z``'s  scope to be wider
 than you would really like, but that's not so bad, and it's a bit of a corner
 case anyway.
 
+Free type variables
+~~~~~~~~~~~~~~~~~~~~
+
 The rules do allow free *type* variables in the body of a ``static``::
 
-  f :: StaticPtr (a -> a)
+  f :: Typeable a => StaticPtr (a -> a)
   f = static (\x -> x)
 
 The body of the ``static`` has no free *term* variables, and all its typing constraints are top-level-soluble.
-It does have a free *type* variable, namely ``a``, but that is allowed.
+It does have a free *type* variable, namely ``a``, but that is allowed.  Note that we need that ``Typeable`` constraint
+however.
+
 Again, this behaviour is unchanged from the status quo.
 
 
