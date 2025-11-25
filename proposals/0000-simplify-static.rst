@@ -177,6 +177,16 @@ I propose no change to the existing (but un-stated) restrictions:
 
 That is the complete specification.
 
+I propose that we make this change **without** a deprecation cycle:
+
+* It is hard to fix currently-open bugs with the current specification, as described above.
+  Retaining these bugs for another year while we deprecate ``static`` with free nested variables seems undesirable.
+
+* I konw of no libraries that would be adversely affected.  That's not to say they don't exist, of course.
+
+* Even is a library is affected, the fix is very easy.
+
+
 Proposed Library Change Specification
 -------------------------------------
 
