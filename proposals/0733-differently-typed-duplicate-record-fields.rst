@@ -47,6 +47,8 @@ When ``-XDuplicateRecordFields`` is enabled, allow duplicate record field names 
 * ``HasField`` instances are not generated (like existential fields)
 * Record updates are not supported
 
+Attempts to use a selector function on a field ``foo`` with multiple types within a data type will error with something like: "Cannot use selector function for field 'foo', which has multiple types: Int, Bool". This could be implemented either as a ``TypeError`` constraint or built-in to the compiler. Similar errors will be thrown for ``HasField`` and record updates as well.
+
 Examples
 --------
 
@@ -85,7 +87,9 @@ None
 Costs and Drawbacks
 -------------------
 
-None
+* If a data type has two fields named ``foo`` and only changes the type of one of them, it will no longer throw an error at definition site, but it might start erroring at use-site (e.g. selector function)
+
+* Might cause confusions for beginner who lose selector functions when they "just added another constructor"
 
 Backward Compatibility
 ----------------------
