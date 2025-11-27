@@ -99,9 +99,10 @@ No breakage, only allows previously forbidden programs.
 Alternatives
 ------------
 
+* Add a new extension ``DuplicateRecordFieldMultiType`` to enable this behavior (would imply ``DuplicateRecordFields``)
+
 Future work
 ~~~~~~~~~~~
-
 
 It may be possible to lift some of these restrictions, e.g.
 
