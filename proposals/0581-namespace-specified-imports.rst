@@ -209,8 +209,18 @@ namespace.  It is an error to use a namespace specifier if the identifier is not
 in scope in the given namespace.
 
 Moreover, a namespace specifier may be followed by a ``..`` wildcard instead of
-a single name. This is equivalent to importing or exporting all the available
-names in the corresponding namespace.
+a single name. A wildcard item ``type ..`` or ``data ..`` expands to a set of
+names as follows:
+
+- If the wildcard is a subordinate import/export item: all associated child
+  names (data constructors, field selectors, class methods, associated types),
+  filtered by the namespace specifier.
+
+- If the wildcard is a top-level import item: all names exported by the
+  imported module, filtered by the namespace specifier.
+
+- If the wildcard is a top-level export item: all names defined in the
+  current module, filtered by the namespace specifier.
 
 More precisely, the existing grammar of import/export items accepted by GHC is
 essentially the following (after some minor simplifications): ::
@@ -559,6 +569,12 @@ on it. Moreover it can be fixed by simply removing the bogus ``type``
 namespace specifier. Thus we do not expect significant breakage from this
 change.
 
+To estimate the actual impact, we modified GHC 9.10.1 to reject invalid uses of
+the ``type`` namespace specifier in import lists and compiled 3182 packages
+(`full list <https://gist.githubusercontent.com/int-index/189e4f5147a7b64ee847c9ace5e4ed24/raw/1beb733ca2c1ea5d55abbb66671e1f0b2e987012/enforce-children-import-namespaces>`_)
+using the patched compiler. There have been no build failures, confirming our
+hypothesis that the breakage is observed only in artificial examples.
+
 Existing code that uses the ``pattern`` keyword (with ``PatternSynonyms``) in
 import/export lists and uses ``-Wcompat`` (or eventually ``-Wall``) will
 receive a warning from ``-Wpattern-namespace-specifier`` until it migrates to
@@ -665,7 +681,10 @@ Unresolved Questions
 None
 
 
-Implementation Plan
--------------------
+Acknowledgements
+----------------
 
-Support with the implementation of this proposal would be welcome.
+The implementation of this project will be carried out by `Serokell OÜ <https://serokell.io>`_,
+funded through the NGI0 Core Fund, a fund established by NLnet with financial
+support from the European Commission's Next Generation Internet programme,
+under the aegis of DG Communications Networks, Content and Technology.

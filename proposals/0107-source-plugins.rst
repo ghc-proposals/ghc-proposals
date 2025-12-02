@@ -7,9 +7,10 @@ Source plugins
 .. implemented:: 8.6
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/107>`_.
+.. sectnum::
 .. contents::
 
-This document proposes the extension of the already existing `Plugin support <https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/extending_ghc.html#compiler-plugins>` in Haskell with plugins that are able to access and modify the representation of the Haskell syntax tree and its environment. This would allow tool developers to base their tools on GHC plugins.
+This document proposes the extension of the already existing `Plugin support <https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/extending_ghc.html#compiler-plugins>`_ in Haskell with plugins that are able to access and modify the representation of the Haskell syntax tree and its environment. This would allow tool developers to base their tools on GHC plugins.
 
 
 Motivation
@@ -24,7 +25,8 @@ Take for example, a development tool that analyses the source code to produces a
 ::
 
  analyze :: TypecheckedSource -> IO ()
- analyze tc = -- analysis of the typechecked source code to write out the nodes and links of the call graph
+ analyze tc = -- analysis of the typechecked source code
+              -- to write out the nodes and links of the call graph
 
 However there is the problem of the method of accessing that ``TypecheckedSource``. It should be done in a way that is usable for large complex projects. It would be beneficial not to make assumptions about the build system where the tool will be used. The only restriction that the tool's author should make is that it should be compiled using GHC. If we don't want to change the build system of the project, nor make the tool understand and reproduce the build process to some extent, the tool should be integrated into the normal build process. And the most convenient way to do so is to use compiler flags as a way to integrate the tool into the build process. Plugin use is controlled by compiler flags so it is convenient to extend the already existing Plugin support for tooling.
 
@@ -36,11 +38,12 @@ The Plugin API is extended with the following fields:
 
 ::
 
- parsedResultAction :: [CommandLineOption] -> ModSummary -> HsParsedModule -> Hsc HsParsedModule
+ parsedResultAction    :: [CommandLineOption] -> ModSummary -> HsParsedModule -> Hsc HsParsedModule
  typeCheckResultAction :: [CommandLineOption] -> ModSummary -> TcGblEnv -> Hsc TcGblEnv
- spliceRunAction :: [CommandLineOption] -> LHsExpr GhcTc -> TcM (LHsExpr GhcTc)
- interfaceLoadAction :: forall lcl . [CommandLineOption] -> ModIface -> IfM lcl ModIface
- renamedResultAction :: Maybe([CommandLineOption] -> ModSummary -> RenamedSource -> Hsc ())
+ spliceRunAction       :: [CommandLineOption] -> LHsExpr GhcTc -> TcM (LHsExpr GhcTc)
+ renamedResultAction   :: Maybe([CommandLineOption] -> ModSummary -> RenamedSource -> Hsc ())
+ interfaceLoadAction   :: forall lcl. [CommandLineOption] -> ModIface -> IfM lcl ModIface
+
 
 - ``parsedResultAction`` is called during the compilation when the parser runs successfully. Its third argument is the parsed syntax tree. The result of the function application will be passed to later compilation stages.
 - ``renamedResultAction`` is a read-only optional pass that receives the renamed results if the type checker runs successfully. It is optional, because when not needed, the renamed results are thrown away (for performance). It is read-only, because changing the renamed results have no effect on the compilation since renaming and type checking is done in one pass.
@@ -67,7 +70,7 @@ Using the ``typeCheckResultAction`` it is now easy to implement the example used
 
 The user can use the plugin for any project by altering the compilation flags to use the plugin. An example use case would be:
 
-::
+.. code:: sh
 
  # write GHC_OPTIONS = -fplugin A.Plugin in the appropriate config file
  make
@@ -83,7 +86,7 @@ The proposal does not change the language itself and should only affect users wh
 
 Development and maintenance is cheap. The proposal only requires a few changes in the compiler. In fact I have an implementation for the basic version of this: `https://phabricator.haskell.org/D4342`.
 
-Currently using plugins forces GHC to recompile every module when plugins are used. While this is not solved it limits the usability of the source plugins as well. For more information see the `ticket <https://gitlab.haskell.org/ghc/ghc/issues/7414>` about that issue.
+Currently using plugins forces GHC to recompile every module when plugins are used. While this is not solved it limits the usability of the source plugins as well. For more information see the `ticket 7414 <https://gitlab.haskell.org/ghc/ghc/issues/7414>`_ about that issue.
 
 Giving plugins the possibility to change inner representation of the compiler carries a certain risk of changing the behavior of the compiler in an unexpected way. However since the use of the plugins are requested by the user, it should be evident if a plugin is responsible for the incorrect behavior. This could be mitigated by performing validation after the plugin is executed.
 
@@ -96,13 +99,13 @@ Alternatives
 
 - *Implement tools using the public GHC API.*
 
-  The `GHC API <https://wiki.haskell.org/GHC/As_a_library>` does already provide interface for compiling Haskell modules and accessing their inner representation. Using the API is comfortable for a single Haskell module or a set of modules, but not feasible for large projects with complex build procedure. The reason is that in order to call the API, the tool's developer have to manually analyze the project and decide which Haskell modules belong to the project and how can they be compiled. Although this can be implemented for simple projects using certain libraries as a help, but for a larger project this is not feasible.
+  The `GHC API <https://wiki.haskell.org/GHC/As_a_library>`_ does already provide interface for compiling Haskell modules and accessing their inner representation. Using the API is comfortable for a single Haskell module or a set of modules, but not feasible for large projects with complex build procedure. The reason is that in order to call the API, the tool's developer have to manually analyze the project and decide which Haskell modules belong to the project and how can they be compiled. Although this can be implemented for simple projects using certain libraries as a help, but for a larger project this is not feasible.
 
 - *Use frontend plugins and GHC hooks for accessing this information.*
 
-  `Frontend plugins <https://downloads.haskell.org/~ghc/master/users-guide/extending_ghc.html#frontend-plugins>` add a new programmable major mode to GHC. When the control is passed to the plugin, the plugin's writer receives all the compiler arguments and is able to do whatever is necessary. `GHC Hooks <https://gitlab.haskell.org/ghc/ghc/wikis/ghc/hooks>` are developed for altering how the compiler performs different compilation steps. GHC hooks are primarily meant to help writing different backends for GHC and they are not exposed to the user directly.
+  `Frontend plugins <https://downloads.haskell.org/~ghc/master/users-guide/extending_ghc.html#frontend-plugins>`_ add a new programmable major mode to GHC. When the control is passed to the plugin, the plugin's writer receives all the compiler arguments and is able to do whatever is necessary. `GHC Hooks <https://gitlab.haskell.org/ghc/ghc/wikis/ghc/hooks>`_ are developed for altering how the compiler performs different compilation steps. GHC hooks are primarily meant to help writing different backends for GHC and they are not exposed to the user directly.
 
-  It is important to see that frontend plugins are the most convenient if the developer want to do something else than running the compilation pipeline normally. Frontend plugins are not convenient for running the compiler normally and accessing the inner representations. I have to note that some of the issues can be solved by `creating a wrapper for GHC <http://blog.ezyang.com/2017/02/how-to-integrate-ghc-api-programs-with-cabal/>`.
+  It is important to see that frontend plugins are the most convenient if the developer want to do something else than running the compilation pipeline normally. Frontend plugins are not convenient for running the compiler normally and accessing the inner representations. I have to note that some of the issues can be solved by `creating a wrapper for GHC <http://blog.ezyang.com/2017/02/how-to-integrate-ghc-api-programs-with-cabal/>`_.
 
   It would be possible to define a frontend plugin that install a ``HscFrontendHook`` to access the type checked representation. However this method is insufficient to grant access to parsed and renamed syntax tree as well as splices and interfaces is.
 
@@ -110,32 +113,32 @@ Alternatives
 Unresolved questions
 --------------------
 
- - Enable changing the inner representation of the compiler?
+- Enable changing the inner representation of the compiler?
 
-   This would remove safety risk from changing the representation, but would also eliminate the possibility of designing tools that extend the language with some clever manipulation of the inner representation.
+  This would remove safety risk from changing the representation, but would also eliminate the possibility of designing tools that extend the language with some clever manipulation of the inner representation.
 
-   We could also put in extra checks in case a plugin modifies some of the representation, keeping the benefits of being able to change the representation and keep the soundness of the compiling process.
+  We could also put in extra checks in case a plugin modifies some of the representation, keeping the benefits of being able to change the representation and keep the soundness of the compiling process.
 
- - Implement source plugins separately
+- Implement source plugins separately.
 
-   This may be requested out of design considerations. But since type checking plugins are added to the ``Plugin`` API, we cannot say that plugins are reserved for core-to-core transformations.
+  This may be requested out of design considerations. But since type checking plugins are added to the ``Plugin`` API, we cannot say that plugins are reserved for core-to-core transformations.
 
- - Have another plugin action for compilation errors/warnings?
+- Have another plugin action for compilation errors/warnings?
 
-   This might help writing tools that can automatically correct programmer mistakes. The ability to collect compiler errors could be useful in education as well.
+  This might help writing tools that can automatically correct programmer mistakes. The ability to collect compiler errors could be useful in education as well.
 
- - Is there any additional parts of the inner representation that should be accessed via plugins?
+- Is there any additional parts of the inner representation that should be accessed via plugins?
 
-   I would invite other tool developers to share their ideas if they think some other information should be accessed via the extended plugins.
+  I would invite other tool developers to share their ideas if they think some other information should be accessed via the extended plugins.
 
 Implementation Plan
 -------------------
 
-The original version of the proposal is already implemented and can be reviewed `here <https://phabricator.haskell.org/D4342>`
+The original version of the proposal is already implemented and can be reviewed `here <https://phabricator.haskell.org/D4342>`_.
 
 Notes
 -----
 
-The proposal is based on `Edsko's version <https://gitlab.haskell.org/ghc/ghc/wikis/frontend-plugins-proposal>`
+The proposal is based on `Edsko's version <https://gitlab.haskell.org/ghc/ghc/wikis/frontend-plugins-proposal>`_.
 
-A shorter version of the proposal is available on its `wiki page <https://gitlab.haskell.org/ghc/ghc/wikis/extended-plugins-proposal>`.
+A shorter version of the proposal is available on its `GHC wiki page <https://gitlab.haskell.org/ghc/ghc/wikis/extended-plugins-proposal>`_.

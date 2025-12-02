@@ -33,31 +33,35 @@ Before accepting, the shepherd should check for the following
 Acceptance steps
 ----------------
 
-A committee member accepts a proposal by following this sequence of
+A committee member (shepherd or secretary) accepts a proposal by following this sequence of
 steps:
 
-1. Add a new commit on top of the PR branch that:
+1. Set the PR to have the "Accepted" label.
+
+2. Comment on the PR that the proposal was accepted, and indicate whether the
+   committee requests any minor corrections.
+
+3. If necessary, work together with the the author to make any final edits.
+
+4. Add a new commit on top of the PR branch that:
 
    a. Changes the filename of the proposal to correspond to the PR number.
 
    b. Updates any metadata fields that may have changed in the template on ``master`` since
       the PR branch split off.
 
-   c. Fills in these metadata fields as appropriate, including changing "is discussed"
+   c. Fills in the metadata fields as appropriate, including changing "is discussed"
       to "was discussed".
 
-2. Merge the PR branch into master, and push.
+5. Merge the PR branch into master, and push.
 
-3. Update the PR description to start
-   with the text "The proposal has been accepted; the following discussion is mostly of historic interest."
-   where the word "proposal" links to the final rendered version, as found on https://github.com/ghc-proposals/ghc-proposals/tree/master/proposals
+6. Update the PR description to start
+   with the text **"The proposal has been accepted; the following discussion is mostly of historic interest."**
+   where the word "proposal" links to the final rendered version,
+   as found on https://github.com/ghc-proposals/ghc-proposals/tree/master/proposals
 
-4. If the PR title has "(under review)", remove it.
-   
-5. Set the PR to have the "Accepted" label.
+7. If the PR title has "(under review)", remove it.
 
-6. Comment on the PR that the proposal was accepted.
+8. Close the PR if GitHub has not detected the merge.
 
-7. Close the PR if GitHub has not detected the merge.
-
-8. Announce on the committee mailing list.
+9. Announce on the committee mailing list.

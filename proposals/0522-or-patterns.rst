@@ -137,19 +137,18 @@ Static semantics of Or pattern matching
 Or patterns which bind variables are rejected in the renamer.
 
 
-We give the static semantics in terms of *pattern types*. A pattern type has the form ``Γ, Σ ⊢ pat : τ ⤳ Γ,Σ,Ψ`` where
+We give the static semantics in terms of *pattern types*. A pattern type has the form ``Γ, Σ ⊢ pat : τ ⤳ Γ, Σ, Ψ`` where
 
- - Γ is an in/out param that corresponds to a binding context that is populated with match vars
- - Σ is an in/out param that collects Given constraints. So Σ\ :sub:`in`\  is used to discharge Θ\ :sub:`req`\  and Σ\ :sub:`out`\  contains any Θ\ :sub:`prov`\  unleashed by the match.
- - Ψ collect existential variables
+- Γ is an in/out param that corresponds to a binding context that is populated with match vars
+- Σ is an in/out param that collects Given constraints. So Σ\ :sub:`in`\  is used to discharge Θ\ :sub:`req`\  and Σ\ :sub:`out`\  contains any Θ\ :sub:`prov`\  unleashed by the match.
+- Ψ collect existential variables
 
 Then the typing rule for Or patterns is:
 ::
 
-      Γ0, Σ0 ⊢ pat_i : τ ⤳ Γ0,Σi,Ψi
-    ---------------------------------
-    Γ0, Σ0 ⊢ ( pat_1; ...; pat_n ) : τ ⤳ Γ0,Σ0,∅
-
+      Γ0, Σ0 ⊢ pat_i : τ ⤳ Γ0, Σi, Ψi
+    -----------------------------------------------
+    Γ0, Σ0 ⊢ ( pat_1; ...; pat_n ) : τ ⤳ Γ0, Σ0, ∅
 
 
 Dynamic semantics of Or pattern matching
@@ -423,7 +422,7 @@ Not any at this time.
 Implementation Plan
 -------------------
 
-Or patterns have been fully implemented by `@knothed <https://github.com/knothed>`__ and `@sgraf812 <https://github.com/sgraf812>`__ `here <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/9229>?`__.
+Or patterns have been fully implemented by `@knothed <https://github.com/knothed>`__ and `@sgraf812 <https://github.com/sgraf812>`__ in `MR9229 <https://gitlab.haskell.org/ghc/ghc/-/merge_requests/9229>`__.
 
 .. _8.1:
 
@@ -432,16 +431,22 @@ Concrete Implementation
 
 This section describes concrete changes that have been made to GHC's grammar (that is, to `Parser.y <https://gitlab.haskell.org/ghc/ghc/-/blob/master/compiler/GHC/Parser.y>`_) to implement the changes proposed in section `2.1`_.
 
-We need to amend both the ``aexp2`` and the ``pat`` nonterminals. In particular, ::
+We need to amend both the ``aexp2`` and the ``pat`` nonterminals. In particular, 
+
+.. code:: diff
 
   + aexp2 -> '(' orpats ')'
 
-and ::
+and 
+
+.. code:: diff
 
   - pat -> exp
   + pat -> orpats
 
-where ``orpats`` is a new nonterminal: ::
+where ``orpats`` is a new nonterminal: 
+
+.. code:: diff
 
    + orpats -> exp
    +         | exp ';' orpats
@@ -462,7 +467,9 @@ would be interpreted containing an Or pattern as follows (and thus rejected): ::
 
 To mitigate this, the ``pattern_synonym_decl`` rules should have a pattern nonterminal on the right side which *cannot* produce an unparenthesised or-pattern but only a parenthesised one.
 
-We therefore propose the following additional change to Parser.y: ::
+We therefore propose the following additional change to Parser.y: 
+
+.. code:: diff
 
   - pattern_synonym_decl : 'pattern' pattern_synonym_lhs '=' pat
   -                      | 'pattern' pattern_synonym_lhs '<-' pat

@@ -11,7 +11,7 @@ Linear Types
 .. contents::
 
 This proposal previously underwent a round of review `at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/91>`_.
-   
+
 This proposal introduces a notion of *linear function* to GHC. Linear
 functions are regular functions that guarantee that they will use
 their argument exactly once. Whether a function ``f`` is linear or not
@@ -202,7 +202,7 @@ Proposed Change Specification
 We introduce a new language extension ``-XLinearTypes``. Types with a linearity
 specification are syntactically legal anywhere in a module if and only
 if ``-XLinearTypes`` is turned on. ``-XLinearTypes`` implies
-``-XMonoLocalBinds`` (see `Let bindings and polymorphism`_).
+``-XMonoLocalBinds`` (see `Let bindings and polymorphism <#let-bindings-and-polymorphism>`__).
 
 This proposal only introduces a new type for functions. It does not
 take advantage of these new types to perform new optimisations or
@@ -221,8 +221,7 @@ as follows).
 - Consuming a function exactly once means applying it and consuming
   its result exactly once
 
-The type of linear functions from ``A`` to ``B`` is written ``A %1 ->
-B`` (see Syntax_).
+The type of linear functions from ``A`` to ``B`` is written ``A %1 -> B`` (see Syntax_).
 
 Linearity is a strengthening of the contract of the regular function
 type ``A -> B``, which will be called the type of *unrestricted*
@@ -266,10 +265,9 @@ Syntax
 
 This proposal adds two new syntactical constructs:
 
-- The multiplicity annotated arrow, for polymorphism, is written ``a
-  %p -> b`` (where ``a`` and ``b`` are types and ``p`` is
-  a multiplicity). We add a new production to the grammar for
-  ``type``:
+- The multiplicity annotated arrow, for polymorphism, is written ``a %p -> b`` 
+  (where ``a`` and ``b`` are types and ``p`` is
+  a multiplicity). We add a new production to the grammar for ``type``:
 
   ::
 
@@ -338,7 +336,7 @@ to represent the multiplicities:
 
 A new type constructor is added
 
-  ::
+::
 
     FUN :: Multiplicity -> forall (r1 r2 :: RuntimeRep). TYPE r1 -> TYPE r2
 
@@ -403,8 +401,8 @@ multiplicity polymorphic ``List.map`` function would be printed as
     pmap :: (a %p -> b) -> [a] %p -> [b]
 
 *Note on Core printing*: ``-fprint-explicit-multiplicities`` is used
- to control the printing of arrows in Core (in particular in the
- linter's error messages) in the same way.
+to control the printing of arrows in Core (in particular in the
+linter's error messages) in the same way.
 
 Constructors & pattern-matching
 -------------------------------
@@ -433,8 +431,8 @@ With the GADT syntax, multiplicity of the arrows is honoured:
     Bar2 :: A %1 -> B -> Foo2
 
 means that ``Bar2 :: A %1 -> B -> Foo2``. This means that, with
-``-XLinearTypes`` on, *data types written in GADT syntax with the
-``(->)`` arrow are not the same as if they were defined with
+``-XLinearTypes`` on, *data types written in GADT syntax with the*
+``(->)`` *arrow are not the same as if they were defined with
 Haskell'98 syntax*. This only holds in modules with ``-XLinearTypes``
 turned on, however: see `Without -XLinearTypes`_, for the
 specification changes in modules where ``-XLinearTypes`` is not turned
@@ -491,8 +489,7 @@ when ``C`` is used as a constructor to be of multiplicity ``p`` for a
 fresh ``p``. The non-linear fields are not affected. For instance
 
 * ``Just``, when used as a term, is given the type ``Just :: a %p -> Maybe  a``
-* ``(:)``, when used as a term, is given the type ``(:) :: a %p -> [a]
-  %q -> [a]``
+* ``(:)``, when used as a term, is given the type ``(:) :: a %p -> [a] %q -> [a]``
 * With ``data U a where U :: a -> U a``, when ``U`` is used as a term, it
   is given the type ``U :: a -> U a``
 * With ``data P a b where P :: a %1 -> b -> U a b``, when ``P`` is used
@@ -536,8 +533,8 @@ following (essentially) Haskell98 code
 
    f = Just . Just $ 1
 
-The type checker infers that ``Just . Just`` is of type ``a %p -> Maybe
-(Maybe a)`` for some ``p`` such that ``Category (FUN p)``. However,
+The type checker infers that ``Just . Just`` is of type ``a %p -> Maybe (Maybe a)`` 
+for some ``p`` such that ``Category (FUN p)``. However,
 there is no ``Category`` instance for an arbitrary ``p`` (nor for
 ``p=1`` as would be the inferred type without the generalisation rule
 of the `Linear constructors`_ section). But defaulting to ``p=ω``,
@@ -634,9 +631,9 @@ Every variable in the environment is annotated with its multiplicity,
 which constrains how it can be used. A variable *usage* is said to be
 of multiplicity ``p``, or ``0``, in a term ``u`` if:
 
-- ``p=0`` and ``x`` is not free in ``u``
-- ``p=1`` and ``u = x``
-- ``p=p1+q*p2`` and ``u = u1 u2`` with ``u1 :: a %q -> b`` and the
+- ``p = 0`` and ``x`` is not free in ``u``
+- ``p = 1`` and ``u = x``
+- ``p = p1 + q * p2`` and ``u = u1 u2`` with ``u1 :: a %q -> b`` and the
   usage of ``x`` in ``u1`` is ``p1``, and in ``u2`` is ``p2``
 - ``u = λy. v`` and the usage of ``x`` in ``v`` is ``p``.
 
@@ -671,9 +668,9 @@ A ``case`` expression has an implicit multiplicity annotation. It is
 often inferred from the type annotation of an equation. The usage of
 ``x`` in ``case_p u of { … }``, where the usage of ``x`` in ``u`` is
 ``q`` is ``p*q`` plus the *join* of the usage of ``x`` in each branch.
-Note that, in usages, ``0 ≰ 1`` as arguments with multiplicity ``1``
-are consumed exactly once, which doesn't include not being consumed at
-all.
+Note that, in usages, ``0 ≰  1`` (0 neither less-than nor equal to 1) 
+as arguments with multiplicity ``1`` are consumed exactly once, 
+which doesn't include not being consumed at all.
 
 The multiplicity annotation of variables introduced by a pattern depend
 on the constructor and on the implicit annotation of the
@@ -729,15 +726,32 @@ provided by the signature. If there is no signature, the initial
 multiplicity of each binder is ω instead.
 
 Let us consider a judgement ``Γ ⊢ (b1 : A1 %π1) … (bn : An %πn) → u : B``
+::
 
-- ``Γ ⊢ u : B ⟹ Γ ⊢ → u : B``
-- ``Γ, x : A %π ⊢ (b1 : A1 %π1) … (bn : An %πn) → u : B ⟹ Γ ⊢ (x :
-  A %π) (b1 : A1 %π1) … (bn : An %πn) → u : B``
-- ``Γ ⊢ (p1 : C1 %πρ1) … (pn : Cn %πρn) (b1 : A1 %π1) … → u : B ⟹ Γ ⊢ (c p1 …
-  pn : D %π) (b1 : A1 %π1) … → u : B``, for ``c : C1 :ρ1-> … Cn :ρn->
-  D``, a constructor (notice how ``π`` flows down into the fields of ``c``)
-- ``Γ ⊢ (b1 : A1 %π1) … → u : B ⟹ Γ ⊢ (_ : C %π) (b1 : A1 %π1) … → u :
-  B``, if ``π=ω``
+  Γ ⊢ u : B 
+  ⟹ ------------
+  Γ ⊢ () → u : B
+
+::
+
+  Γ, x : A %π ⊢ (b1 : A1 %π1) … (bn : An %πn) → u : B 
+  ⟹ --------------------------------------------------
+  Γ ⊢ (x : A %π) (b1 : A1 %π1) … (bn : An %πn) → u : B
+
+::
+
+  Γ ⊢ (p1 : C1 %πρ1) … (pn : Cn %πρn) (b1 : A1 %π1) … → u : B 
+  c : C1 :ρ1-> … Cn :ρn-> D  -- a constructor
+  -- notice how `π` flows down into the fields of `c`
+  ⟹ ---------------------------------------------------------
+  Γ ⊢ (c p1 … pn : D %π) (b1 : A1 %π1) … → u : B
+
+::
+
+  Γ ⊢ (b1 : A1 %π1) … → u : B 
+  π = ω
+  ⟹ ------------------------------------
+  Γ ⊢ (_ : C %π) (b1 : A1 %π1) … → u : B
 
 
 Unboxed and unlifted data types
@@ -817,19 +831,21 @@ this field is ω.
   foo {f2=x} = … -- permitted because the context has multiplicity ω,
                  -- hence the resolved multiplicity of f3 is ω.
 
-Projections take an *unrestricted* record as argument: ``f1 :: R ->
-A1`` (because otherwise the other fields would not be consumed). There
-is an exception to this rule: if a record type has a single
-constructor, and all the other fields are unrestricted, then ``f1`` is
-made linear: ``f1 :: R %1 -> A1``. This non-uniformity is justified by
-the standard ``newtype`` idiom:
+Projections take an *unrestricted* record as argument: ``f1 :: R -> A1`` 
+(because otherwise the other fields would not be consumed). 
+There is an exception to this rule: 
+
+- if a record type has a single
+  constructor, and all the other fields are unrestricted, then ``f1`` is
+  made linear: ``f1 :: R %1 -> A1``. This non-uniformity is justified by
+  the standard ``newtype`` idiom:
 
 ::
 
   newtype Foo = Foo { unFoo :: A }
 
-which becomes much less useful in linear code if ``unFoo :: Foo ->
-A``. Our practice of linear Haskell code indicates that this feature,
+which becomes much less useful in linear code if ``unFoo :: Foo -> A``. 
+Our practice of linear Haskell code indicates that this feature,
 while a mere convenience, is desirable (see *e.g.* `here
 <https://github.com/tweag/linear-base/blob/e72d996b5d0600b2d5f2483b95b064d524c83e46/src/System/IO/Resource.hs#L59-L61>`_).
 
@@ -916,7 +932,7 @@ Let and where bindings
 to where bindings.*
 
 Note on terminology: following the Haskell 2010 report, a function
-binding is a binding of the form ``f arg1…argn =`` with at least one
+binding is a binding of the form ``f arg1 … argn =`` with at least one
 argument. The other binding form is called a pattern binding. In particular
 ``let x =`` is a pattern binding (as opposed to how it is in GHC's
 implementation, where ``let x =`` would be a ``FunBind``). This
@@ -1039,6 +1055,7 @@ Without ``-XStrict``::
    let (x, y) = u in …
 
 With ``-XStrict``::
+
    -- good
    let %1 x = u in …
 
@@ -1066,7 +1083,7 @@ Non-variable linear patterns are monomorphic
 .. _`Non-variable linear patterns are monomorphic`
 
 Variables in non-variable multiplicity-annotated let-patterns are bound to
-monomorphic types (see `Let bindings and polymorphism`_ for the
+monomorphic types (see `Let bindings and polymorphism <#let-bindings-and-polymorphism>`__ for the
 reasoning and a discussion). Unannotated non-variable let-patterns are
 inferred to be unrestricted (by default, since ``-XLinearTypes``
 implies ``-XMonoLocalBinds``, only toplevel bindings, which are
@@ -1271,13 +1288,13 @@ In summary:
 Can I throw linear exceptions?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In the type of ``catchL`` above, the type of the handler is ``e -> RIO
-a``. Correspondingly, the type of the exception-throwing primitives are:
+In the type of ``catchL`` above, the type of the handler is ``e -> RIO a``. 
+Correspondingly, the type of the exception-throwing primitives are:
 
 ::
 
   throwRIO :: Exception e => e -> RIO a
-  throw :: Exception e => e -> a
+  throw    :: Exception e => e -> a
 
 That is, exceptions don't have a linear payload.
 
@@ -1295,8 +1312,8 @@ library.
 Rebindable Syntax
 -----------------
 
-There is an unpleasant interaction with ``-XRebindableSyntax``: ``if
-u then t else e`` is interpreted as ``ifThenElse u t e``.
+There is an unpleasant interaction with ``-XRebindableSyntax``: ``if u then t else e`` 
+is interpreted as ``ifThenElse u t e``.
 Unfortunately, these two constructs have different typing rules when
 ``t`` and ``e`` have free linear variables. Therefore well-typed
 linearly typed programs might not type check with
@@ -1399,8 +1416,8 @@ Unresolved pattern forms
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 - It is unknown at this point whether view patterns can be linear
-- It is unknown at this point whether ``@`` pattern of the form ``x@C
-  _ _`` can be considered linear (it is theoretically justified, but
+- It is unknown at this point whether ``@`` pattern of the form ``x@C _ _`` 
+  can be considered linear (it is theoretically justified, but
   it is not clear in practice whether there is a reasonable way to
   implement check linearity of such a pattern).
 - There is no account yet of linear pattern synonyms.
@@ -1546,7 +1563,7 @@ makes more inferred lets linear, which is almost certainly the right default
 (at least it's the least surprising: a binding doesn't change from
 linear to unrestricted because a small change makes it generalisable).
 
-See also https://gitlab.haskell.org/ghc/ghc/-/issues/18461#note_506330 for the
+See also `#18461 note <https://gitlab.haskell.org/ghc/ghc/-/issues/18461#note_506330>`__ for the
 initial discussion on this difficulty.
 
 Costs and Drawbacks
@@ -1610,12 +1627,13 @@ process. They are listed here for the records.
 - ``#p ->``, proposed by @davemenendez, the mnemonic is that ``#`` is
   the number sign. This is the syntax used by this proposal, but with
   ``#`` replaced by ``%`` to avoid a conflict with overloaded labels.
-  - This syntax proposal is accompanied by an alternative notation for
+
+  * This syntax proposal is accompanied by an alternative notation for
     multiplicity with binder: ``\ x :: a %p -> …``; which also allows
-    omitting the type when giving a multiplicity annotation: ``\ x %p
-    -> …``. The syntax for binders would carry over to the syntax of record fields:
+    omitting the type when giving a multiplicity annotation: ``\ x %p -> …``. 
+    The syntax for binders would carry over to the syntax of record fields:
     ``Rec { field :: t %p }``.
-  - This syntax proposal is also accompanied by a new non-GADT syntax
+  * This syntax proposal is also accompanied by a new non-GADT syntax
     to annotate fields of data constructors with a multiplicity:
     ``data Unrestricted a = Unrestricted (a %'Many)``.
 - ``^p ->``, proposed by @mboes. It's the same as the previous
@@ -1623,10 +1641,9 @@ process. They are listed here for the records.
 - ``->{p}``, proposed by @niobium0
 - A meta-proposal is any of the above, but using ``->.`` (or whatever
   the linear arrow ends up being). This was proposed by @monoidal. The
-  reasoning is that, then ``a %p ->. b`` means the same as ``Mult p a
-  ->. b`` (where ``data Mult p a where Mult :: a %p -> Mult p
-  a``). There is more symmetry here than if the notation was ``a %p
-  -> b``.
+  reasoning is that, then ``a %p ->. b`` means the same as ``Mult p a ->. b`` 
+  (where ``data Mult p a where Mult :: a %p -> Mult p a``). 
+  There is more symmetry here than if the notation was ``a %p -> b``.
 
 Here are other suggestions which have been floated, but we don't
 believe are very good:
@@ -1706,7 +1723,7 @@ satisfactorily.
 
 So we could decide to restrict ``p`` to the following grammar:
 
-.. code:: bnf
+::
 
   MULT ::= 'One
          | 'Many
@@ -2068,8 +2085,7 @@ in the following, well-typed, one
   g x = f x
 
 The main motivation for that was backwards compatibility: because
-constructors have been made linear by default, Haskell 98 code, such
-as
+constructors have been made linear by default, Haskell 98 code, such as
 
 ::
 
@@ -2080,13 +2096,12 @@ as
 
   app Just
 
-Display the same kind of mismatch, as ``Just`` is linear: ``Just :: a
-%1 -> Maybe a``. Using η-expansion to resolve this mismatch solves the
-issue.
+Display the same kind of mismatch, as ``Just`` is linear: ``Just :: a %1 -> Maybe a``. 
+Using η-expansion to resolve this mismatch solves the issue.
 
 This was not satisfactory. First because η-expansion is not
-semantics-preserving in Haskell: ``⊥ `seq` ()`` diverges, while ``(\x
--> ⊥ x) `seq` ()`` never does. Furthermore, while GHC already does
+semantics-preserving in Haskell: ``⊥ `seq` ()`` diverges, while ``(\x -> ⊥ x) `seq` ()`` never does. 
+Furthermore, while GHC already does
 some η-expansion, the direction seems to be towards fewer η-expansion
 rather than more, as η-expansion causes problem in the approach to
 impredicative type checking from the `Guarded impredicative
@@ -2187,7 +2202,7 @@ follows:
    _ ⩽ ω = True
    x ⩽ y = x == y
 
-Note in particular that ``0 ≰ 1``.
+Note in particular that ``0 ≰  1`` (0 neither less-than nor equal to 1).
 
 An important point to note, however, is that ``case_0`` is
 meaningless: it makes it possible to create values dependending on a
@@ -2568,10 +2583,10 @@ Here are the changes and interactions which were omitted in the paper:
 - The paper does not have existentially quantified type
   variables. They do not cause any additional difficulty.
 - The paper uses a traditional construction for ``case``, but Core's
-  is a bit more complex: in Core, ``case`` is of the form ``case u as
-  x of { <alternatives> }`` where ``x`` represents the head normal
-  form of ``u``. Moreover one of the alternative can be ``WILDCARD ->
-  <rhs>`` (where ``WILDCARD`` is Core's representation of ``_``). This
+  is a bit more complex: in Core, ``case`` is of the form ``case u as x of { <alternatives> }`` 
+  where ``x`` represents the head normal
+  form of ``u``. Moreover one of the alternative can be ``WILDCARD -> <rhs>`` 
+  (where ``WILDCARD`` is Core's representation of ``_``). This
   is described in the Linear Core document.
 - Join points are a variant of ``let`` but the standard typing rule
   for ``let`` does not suffice to type check them. This is explained
@@ -2744,8 +2759,8 @@ Inference
   but experience shows that it can result in very surprising type
   errors. See Inference_ for more details.
 
-- In Core, case expressions are indexed by a multiplicity: ``case … of
-  x %p {…}`` (and similarly ``let x %p``). In the surface
+- In Core, case expressions are indexed by a multiplicity: ``case … of x %p {…}`` 
+  (and similarly ``let x %p``). In the surface
   language, we can deduce the multiplicity in equations when there is
   a type annotation.
 
@@ -2792,8 +2807,8 @@ It is not clear yet how the following should be handled:
   be unfortunate not to have linear view patterns at all, as views
   matter more in linear types as there are usually no projections.
 - ``@``-patterns: The pattern ``x@(Just _) -> …`` could be seen as
-  linear. After all, it is equivalent to ``Just y -> let x = Just y in
-  …``. This elaborates to a well-typed alternative in Core, but we
+  linear. After all, it is equivalent to ``Just y -> let x = Just y in …``. 
+  This elaborates to a well-typed alternative in Core, but we
   need to come up with a criterion in the surface language.
 - Pattern synonym: linear pattern synonyms have not been studied
   yet. In particular, how they ought to be type checked, when they are
@@ -2821,10 +2836,12 @@ Implementation Plan
   prototype implementation hosted `here
   <https://github.com/tweag/ghc/tree/linear-types>`_. It currently
   implements:
+
   - Monomorphic multiplicities (no multiplicity variables yet)
   - Interactions with most of Haskell98
   - Core's linter
+
 - @aspiwack will implement and release a library exporting standard
   functions and types for linearly typed programs.
-  - A first iteration is hosted `here
-    <https://github.com/tweag/linear-base/>`_.
+
+  - A first iteration is hosted `here <https://github.com/tweag/linear-base/>`_.
