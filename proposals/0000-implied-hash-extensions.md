@@ -7,34 +7,43 @@ implemented: ""
 
 This proposal is [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/691).
 
-# Implied -XMagicHash extensions
+# Introduce a new XLowLevelHaskell meta extension.
 
-When working with unboxed types there is a whole family of commonly used together extensions.
-I argue that -XMagicHash should implie these extensions by default.
+When working with low level code and unboxed types there is a whole family of commonly used extensions.
+While it might not be desirable to have these be on by default it would be good to normalize a set
+of Extensions that can be expected to be available for "low level" code.
+
+I propose we introduce a `XLowLevelHaskell` extension which transitively enables a common extensions
+which are useful for writing relatively low level code for this purpose.
 
 ## Motivation
 
-When writing unboxed code I almost always end up pairing -XMagicHash with some other
+When writing unboxed or low level code I almost always end up pairing -XMagicHash with some other
 common extensions. These being in order of frequency:
 
+* -XMagicHah
 * -XExtendedLiterals
 * -XUnboxedTuples
 * -XUnboxedSums
 * -XUnliftedNewTypes
 * -XUnliftedFFITypes
 
-I believe having some or all of those be implied by -XMagicHash would be a net ergonomic improvement
-to working with unlifted types. As I found myself growing tired of enabling those every time.
+I believe it would be better to have an extension `-XLowLevelHaskell` which enables all those extensions
+for better ergonomics. Beyond this adding another extension I don't see a downside to this.
 
 ## Proposed Change Specification
 
-Enabling `-XMagicHash` will imply the following extensions:
+Enabling `-XLowLevelHaskell` will imply the following extensions:
 
+* -XMagicHah
 * -XExtendedLiterals
 * -XUnboxedTuples
 * -XUnboxedSums
 * -XUnliftedNewTypes
 * -XUnliftedFFITypes
+
+`XLowLevelHaskell` should be considered experimental, and could be expanded to include other
+extensions in the future.
 
 ## Proposed Library Change Specification
 
@@ -45,7 +54,8 @@ None
 After this change a file like this would compile without error:
 
 ```haskell
-{-# LANGUAGE MagicHash #-}
+{-# LANGUAGE LowLevelHaskell #-}
+-- {-# LANGUAGE MagicHash #-}
 -- {-# LANGUAGE UnboxedTuples #-}
 -- {-# LANGUAGE UnliftedNewtypes #-}
 -- {-# LANGUAGE ExtendedLiterals #-}
@@ -72,8 +82,8 @@ resetCounter (CounterRef addr) (W16# expected) = IO $ \s ->
 
 ## Effect and Interactions
 
-With this proposal the need for the additional LANGUAGE specifications goes away.
-Both for compiled code and when working in the interpreter.
+With this proposal the need for a whole zoo of extensions every time one needs to work
+with primops or unboxed types goes away. Both for compiled code and when working in the interpreter.
 
 I am not aware of any contentious interactions with other language or compiler features.
 
@@ -83,31 +93,16 @@ The implementation of this would naturally be fairly minimal.
 
 ## Backward Compatibility
 
-The only drawbacks that come to mind for me is that I believe it is possible to conjure
-up a program which conflicts with the syntax claimed by `ExtendedLiterals`.
-
-However this is unlikely to happen naturally and would need to happen in code already
-using XMagicHash to breack backwards compatible.
-
-So I believe strongly this change would fall under breakage category 1:
-
-1. Breakage only in extremely rare cases (e.g. for specifically-constructed
-   examples, but probably no packages published in the Hackage package repository)
-
-Given how unlikely breakage due to this change would be I do not believe this would
-warrant any special migration strategy.
+`XLowLevelHaskell` being a new extension there would be no issue with
+backwards compatiblitiy. Therefore no migration strategy is required.
 
 ## Alternatives
 
-The implication could be made dependend on the language edition used. That is
-only with eg. GHC2026 -XMagicHash would imply these other language extensions.
-
-However I think this is more likely to cause confusion than to help.
+Leaving typical low level functionality gated behind multiple extensions.
 
 ## Unresolved Questions
 
-I do not see any unresolved question.
-
+None that I'm aware of.
 
 ## Implementation Plan
 
