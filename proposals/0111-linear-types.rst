@@ -6,7 +6,7 @@ Linear Types
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/issues/15981
 .. implemented:: 9.0 (technology preview)
 .. highlight:: haskell
-.. header:: This proposal was `discussed at pull request #111<https://github.com/ghc-proposals/ghc-proposals/pull/111>`_, `amended by pull request #356<https://github.com/ghc-proposals/ghc-proposals/pull/356>`_ and `pull request #392<https://github.com/ghc-proposals/ghc-proposals/pull/392>`_.
+.. header:: This proposal was `discussed at pull request #111<https://github.com/ghc-proposals/ghc-proposals/pull/111>`_, `amended by pull request #356<https://github.com/ghc-proposals/ghc-proposals/pull/356>`_, `pull request #392 <https://github.com/ghc-proposals/ghc-proposals/pull/392>`_, and `pull request #681 <https://github.com/ghc-proposals/ghc-proposals/pull/681>`_.
 .. sectnum::
 .. contents::
 

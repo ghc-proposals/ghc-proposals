@@ -6,7 +6,7 @@ Syntax for Modifiers: a generalization of linear-types syntax
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/22624
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal was `discussed at pull request #370 <https://github.com/ghc-proposals/ghc-proposals/pull/370>`_ and amended by `pull request #392 <https://github.com/ghc-proposals/ghc-proposals/pull/392>`_.
+.. header:: This proposal was `discussed at pull request #370 <https://github.com/ghc-proposals/ghc-proposals/pull/370>`_ and amended by `pull request #392 <https://github.com/ghc-proposals/ghc-proposals/pull/392>`_ and `pull request #681 <https://github.com/ghc-proposals/ghc-proposals/pull/681>`_.
 .. sectnum::
 .. contents::
 
