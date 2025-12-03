@@ -14,7 +14,7 @@ Simplifying static forms
 .. contents::
 
 This proposal simplifies the typing rules for ``static`` forms. The current design
-is too elaborate and the implementation never worke.d
+is too elaborate and the implementation never worked.
 
 
 Motivation
@@ -34,7 +34,7 @@ But GHC also allows this::
 
   f x = let { y = "hello" ++ " Fred" } in static (reverse y)
 
-fHere `y` is bound nested-ly, but is morally top-level because it in turn has no
+Here `y` is bound nested-ly, but is morally top-level because it in turn has no
 free variables. This flexibility is `described in the user manual <https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/static_pointers.html#using-static-pointers>`_.
 
 However, it turns out that this apparently-simple extra expressiveness
@@ -75,7 +75,7 @@ So that complication was unwelcome, but not too bad.
 The free variables of the static are just ``{y}``, and ``y`` is "morally-top-level": its right-hand side
 has no free variables.
 Sadly (as it turns out) GHC tries to accept this case.  When looking at the defn of y
-(with no static in sight yet) the typechecker marks it at a "static binding", meaning that
+(with no static in sight yet) the typechecker marks it as a "static binding", meaning that
 it too can (and indeed must) be floated to top level.
 So if the desugarer moves the static to the top level, it must move ``y`` too.  And that means it must mark the typechecked binding in some way, so the desugarer can identify it.
 
@@ -91,7 +91,7 @@ Oh no! Now that'll be out of scope if we move ``y`` to top level.
 
 The same would happens as in Complication 1 if ``y``'s RHS used a dictionary bound by ``f``.
 
-Plausible solution: use them same mechanism for static **bindings** as we did for ``static e``
+Plausible solution: use the same mechanism for static **bindings** as we did for ``static e``
 **expressions**.  That is, build an implication constraint whose ``SkolInfo`` says "zap Givens".
 This turned out to be considerably harder to implement than it was for Complication 1.
 But I did it.
@@ -254,6 +254,13 @@ however.
 
 Again, this behaviour is unchanged from the status quo.
 
+*Side note*: you might wonder whether GHC could instead generalise the body of the ``static`` form thus::
+
+  f :: StaticPtr (forall a. a -> a)
+  f = static (\x -> x)
+
+That might be possible, but it would at least require ``-XImpredicativeTypes`` and is beyond the scope of this proposal.
+*End of side note*.
 
 Effect and Interactions
 -----------------------
@@ -311,7 +318,7 @@ Impact on Hackage
 
 I used `Hackage search <https://hackage-search.serokell.io/?q=StaticPointer>`_ to search for all
 Hackage packages that mention "StaticPointer".  Therse were 51 such packages.  I looked at almost
-all of them.  I only one (namely ``imprint``) did I find a use of ``static`` which disobeyed
+all of them.  In only one (namely ``imprint``) did I find a use of ``static`` which disobeyed
 the new rule.  The code looked like this::
 
     funImprint :: Imprint 'Z (Int -> String -> String)
