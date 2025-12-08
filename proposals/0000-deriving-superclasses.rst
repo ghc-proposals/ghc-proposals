@@ -47,9 +47,11 @@ subclass. Further, it is useful to be able to concisely define a typeclass
 hierarchy even if you would want the ability to define different parts at different
 times.
 
-This proposal is also half of a pair I am presenting. The extension presented here
-works better when considered with `Shared Class Methods <https://github.com/ghc-proposals/ghc-proposals/pull/707>`_.
 This proposal is loosely based off of `intrinsic typeclasses <https://gitlab.haskell.org/ghc/ghc/-/wikis/intrinsic-superclasses>`_.
+
+With this extension, the issues of ``(>>) = (*>)`` as described in `Monad Canonicity: Removing Method (>>)
+ <https://github.com/haskell/core-libraries-committee/issues/333>`
+ can be somewhat ameliorated, as ``(*>)`` can be derived as ``Control.Monad.thenM``.
 
 .. Give a strong reason for why the community needs this change. Describe the use
 .. case as clearly as possible and give an example. Explain how the status quo is
@@ -74,8 +76,7 @@ implementation for a mutual superclass's method, the subclass's default will be
 the one derived.
 
 Subclasses will be able to provide only partial default implementations of
-superclasses. This will use the mechanisms outlined in `Shared Class Methods <https://github.com/ghc-proposals/ghc-proposals/pull/707>`_
-to have split instance definitions.
+superclasses, as long as the rest of the superclass is also defined in that module.
 
 If a method name is shared between superclasses, then a default cannot be
 declared for a method of that name. If the current typeclass and a superclass
@@ -86,7 +87,7 @@ If two subclasses both provide a default for the same superclass (like how
 ``Traversable`` and ``Applicative``/``Monad`` can for ``Functor``'s ``fmap``),
 neither class is a superclass of the other, and both instances are declared for
 a given data type, an error will be emitted saying that the method cannot be
-derived, and ask that the user implement the method themselves.
+derived due to ambiguity, and ask that the user implement the method themselves.
 
 General example
 ^^^^^^^^^^^^^^^
@@ -288,13 +289,13 @@ for typeclasses which have lawful representations. Here is an example using the
 Examples
 --------
 Using the ``Monad`` example in `Proposed Library Change Specification <#Proposed Library Change Specification>`_
-we could define a new ``Monad`` ``M`` with merely the following (if we also use
-the aforementioned shared class members proposal):
+we could define a new ``Monad`` ``Id`` with merely the following:
 ::
   data Id a = MkId a
 
-  instance Monad Id where
+  instance Applicative Id where
     pure = MkId
+  instance Monad Id where
     (>>=) (MkId a) f = f a
 
 This is a complete implementation for ``Functor``, ``Applicative``, and ``Monad``,
