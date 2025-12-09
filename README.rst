@@ -506,14 +506,16 @@ Avatar           Full name                  GitHub handle                       
 ===============  =========================  =====================================================  =======  =======  =======  =========
 |simonmar|       Simon Marlow               `@simonmar <https://github.com/simonmar>`_             2017/02  2024/02  2027/02  co-chair
 |simonpj|        Simon Peyton-Jones         `@simonpj <https://github.com/simonpj>`_               2017/02  2024/02  2027/02  co-chair
-|aspiwack|       Arnaud Spiwack             `@aspiwack <https://github.com/aspiwack/>`_            2019/07  2022/10  2025/10  member
-|adamgundry|     Adam Gundry                `@adamgundry <https://github.com/adamgundry/>`_        2022/10  -        2025/10  secretary
+|adamgundry|     Adam Gundry                `@adamgundry <https://github.com/adamgundry/>`_        2022/10  2025/12  2028/12  secretary
 |angerman|       Moritz Angermann           `@angerman <https://github.com/angerman/>`_            2023/02  -        2026/02  member
 |maralorn|       Malte Ott                  `@maralorn <https://github.com/maralorn/>`_            2024/03  -        2027/03  member
 |Tritlo|         Matthías Páll Gissurarson  `@Tritlo <https://github.com/Tritlo>`_                 2024/03  -        2027/03  member
 |erikd|          Erik de Castro Lopo        `@erikd  <https://github.com/erikd>`_                  2024/05  -        2027/05  member
 |JakobBruenker|  Jakob Brünker              `@JakobBruenker <https://github.com/JakobBruenker>`_   2024/05  -        2027/05  member
 |sgraf812|       Sebastian Graf             `@sgraf812 <https://github.com/sgraf812>`_             2024/05  -        2027/05  member
+|noughtmare|     Jaro Reinders              `@noughtmare <https://github.com/noughtmare>`_         2025/12  -        2028/12  member
+|doyougnu|       Jeff Young                 `@doyougnu <https://github.com/doyougnu>`_             2025/12  -        2028/12  member
+|alt-romes|      Rodrigo Mesquita           `@alt-romes <https://github.com/alt-romes>`_           2025/12  -        2028/12  member
 ===============  =========================  =====================================================  =======  =======  =======  =========
 
 .. |adamgundry| image:: https://github.com/adamgundry.png?size=24
@@ -529,6 +531,9 @@ Avatar           Full name                  GitHub handle                       
 .. |erikd| image:: https://github.com/erikd.png?size=24
 .. |JakobBruenker| image:: https://github.com/JakobBruenker.png?size=24
 .. |sgraf812| image:: https://github.com/sgraf812.png?size=24
+.. |noughtmare| image:: https://github.com/noughtmare.png?size=24
+.. |doyougnu| image:: https://github.com/doyougnu.png?size=24
+.. |alt-romes| image:: https://github.com/alt-romes.png?size=24
 
 The committee members have committed to adhere to the
 `Haskell committee guidelines for respectful communication <GRC.rst>`_
