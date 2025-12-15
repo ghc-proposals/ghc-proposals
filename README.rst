@@ -483,7 +483,7 @@ When the discussion has ebbed down and the author thinks the proposal is ready, 
 2. Add a comment to the pull request, briefly summarizing the major points raised
    during the discussion period and stating your belief that the proposal is
    ready for review. In this comment, tag the committee secretary (currently
-   `@adamgundry <https://github.com/adamgundry/>`__).
+   `@simonmar <https://github.com/simonmar/>`__).
 
 `The secretary <#who-is-the-committee>`__ will then label the pull request with
 ``Pending shepherd recommendation`` and start the `committee process
@@ -504,9 +504,9 @@ when their term last renewed, when their term expires and their role, are:
 ===============  =========================  =====================================================  =======  =======  =======  =========
 Avatar           Full name                  GitHub handle                                          Joined   Renewed  Expired  Role
 ===============  =========================  =====================================================  =======  =======  =======  =========
-|simonmar|       Simon Marlow               `@simonmar <https://github.com/simonmar>`_             2017/02  2024/02  2027/02  co-chair
+|simonmar|       Simon Marlow               `@simonmar <https://github.com/simonmar>`_             2017/02  2024/02  2027/02  co-chair/secretary
 |simonpj|        Simon Peyton-Jones         `@simonpj <https://github.com/simonpj>`_               2017/02  2024/02  2027/02  co-chair
-|adamgundry|     Adam Gundry                `@adamgundry <https://github.com/adamgundry/>`_        2022/10  2025/12  2028/12  secretary
+|adamgundry|     Adam Gundry                `@adamgundry <https://github.com/adamgundry/>`_        2022/10  2025/12  2028/12  member
 |angerman|       Moritz Angermann           `@angerman <https://github.com/angerman/>`_            2023/02  -        2026/02  member
 |maralorn|       Malte Ott                  `@maralorn <https://github.com/maralorn/>`_            2024/03  -        2027/03  member
 |Tritlo|         Matthías Páll Gissurarson  `@Tritlo <https://github.com/Tritlo>`_                 2024/03  -        2027/03  member
