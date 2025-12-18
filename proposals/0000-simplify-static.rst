@@ -186,7 +186,7 @@ for the following reasons:
 * It is hard to fix currently-open bugs with the current specification, as described above.
   Retaining these bugs for another year while we deprecate ``static`` with free nested variables seems undesirable.
 
-* I know of very fewi libraries that would be adversely affected.  That's not to say they don't exist, of course.
+* I know of very few libraries that would be adversely affected.  That's not to say they don't exist, of course.
   See also the "Backward Compatibility" section below.
 
 * Even if a library is affected, the fix is very easy.
