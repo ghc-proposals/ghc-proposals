@@ -177,14 +177,25 @@ I propose no change to the existing (but un-stated) restrictions:
 
 That is the complete specification.
 
-I propose that we make this change **without** a deprecation cycle, for the following reasons:
+Deprecation cycle
+~~~~~~~~~~~~~~~~~~~
+
+With the support of teh committee, I propose that we make this change with a minimal deprecation cycle,
+for the following reasons:
 
 * It is hard to fix currently-open bugs with the current specification, as described above.
   Retaining these bugs for another year while we deprecate ``static`` with free nested variables seems undesirable.
 
-* I konw of no libraries that would be adversely affected.  That's not to say they don't exist, of course.
+* I know of very fewi libraries that would be adversely affected.  That's not to say they don't exist, of course.
+  See also the "Backward Compatibility" section below.
 
 * Even if a library is affected, the fix is very easy.
+
+Specifically, I propose to:
+
+* Add a deprecation in GHC 9.14.2 which warns about any use of ``static`` that would become illegal under the new proposal.
+
+* Implement the new proposal in GHC 9.16.
 
 
 Proposed Library Change Specification
