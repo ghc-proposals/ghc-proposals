@@ -180,7 +180,7 @@ That is the complete specification.
 Deprecation cycle
 ~~~~~~~~~~~~~~~~~~~
 
-With the support of teh committee, I propose that we make this change with a minimal deprecation cycle,
+With the support of the committee, I propose that we make this change with a minimal deprecation cycle,
 for the following reasons:
 
 * It is hard to fix currently-open bugs with the current specification, as described above.
