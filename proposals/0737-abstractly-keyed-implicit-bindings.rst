@@ -110,46 +110,58 @@ Proposed Change Specification
 
    ::
 
-    class ImplicitParameter (x :: k) a | x -> a
+    -- | A 'Constraint' that 'implicitParameter' @x@ is an implicit parameter of type @a@.
+    --
+    -- 'ImplicitParameter' constraints are propagated according to dynamic scoping rules.
+    -- In other words, GHC always takes the most nested parameter binding from the context
+    -- to find the value. @bindImplict x a (bindImplict x b (implicitParameter x))@
+    -- is equivalent to @b@ (including resulting in a type error if used where
+    -- a term whose type unifies with @a@'s but not @b@'s is expected).
+    --
+    -- To bind an implicit parameter, use 'bindImplicit'.
+    --
+    -- When the @ImplicitParams@ extension is on, @ImplictParameter (MkIdent "foo") t@
+    -- is equivalent to @?foo :: t@.
+    class ImplicitParameter (x :: k) (a :: Type)
 
-    implicitParameter :: forall x -> (ImplicitParameter x a) => a
-
+    -- | Bind implicit parameter @x@ to the provided @a@.
+    --
+    -- When the @ImplicitParams@ extension is on, @bindImplicit (MkIdent "foo") x go@ is
+    -- equivalent to @let ?foo = x in go@.
+    --
+    -- Though 'bindImplicit' is called like a function, it is not really a function call, and at runtime
+    -- does not result in any overhead beyond what would occur when passing variables to an equivalent
+    -- explicitly-parameterized function. 'bindImplicit' must always be called fully applied.
     bindImplicit :: forall x -> a -> ((ImplicitParameter x a) => b) -> b
 
-    data IdentImplicitTag = MkIdentImplicitTag Symbol
+    -- | Access implicit parameter bound to @x@.
+    --
+    -- When the @ImplicitParams@ extension is on, @implicitParameter (MkIdent "foo")@ is
+    -- equivalent to @?foo@.
+    --
+    -- Though 'implicitParameter' is called like a function, it is not really a function call, and at runtime
+    -- does result in any overhead beyond what would occur when referencing a variable passed in explicitly.
+    -- 'implicitParameter' must always be called fully applied.
+    implicitParameter :: forall x -> (ImplicitParameter x a) => a
+
+    -- | The kind of type-level representations of Haskell identifiers.
+    data Ident = MkIdent Symbol
 
     {-# DEPRECATED IP, ip "Use ImplicitParameter and implicitParameter" #-}
-    type IP (x :: Symbol) a = ImplicitParameter (MkIdentImplicitTag x) a
+    type IP (x :: Symbol) a = ImplicitParameter (MkIdent x) a
     ip :: forall x a. (IP x a) => a
-    ip = implicitParameter (MkIdentImplicitTag x)
+    ip = implicitParameter (MkIdent x)
 
 2. Modify the ``ImplicitParams`` specification to specify that:
 
-   1. ``?ident`` in a value context is equivalent to ``implicitParameter (MkIdentImplicitTag "ident")``
-   2. ``?ident :: t`` in a constraint context, including by inference, is equivalent to ``ImplicitParameter (MkIdentImplicitTag "ident") t``
-   3. ``{ let ?ident1 = x; ?ident2 = y } in expr`` in a binding context is equivalent to:
-
-      ::
-
-       bindImplicit (MkIdentImplicitTag "ident1") x (
-         bindImplicit (MkIdentImplicitTag "ident2") y (expr))
-
-Though ``bindImplicit`` is called like a function, it is not really a function call, and at runtime
-must not result in any overhead beyond what would occur when passing variables to an equivalent
-explicitly-parameterized function. ``bindImplicit`` must always be called fully applied.
-
-Though ``implicitParameter`` is called like a function, it is not really a function call, and at runtime
-must not result in any overhead beyond what would occur when referencing a variable passed in explicitly.
-``implicitParameter`` must always be called fully applied.
-
-``bindImplicit`` and ``implicitParameter`` interact according to the existing implicit parameters scoping guarantees. Quoting from the GHC user's manual for ``9.15.20251223``:
-
-  GHC always takes the most nested implicit parameter binding from the context to find the value.
+   1. ``?ident`` in a value context is equivalent to ``implicitParameter (MkIdent "ident")``
+   2. ``?ident :: t`` in a constraint context, including by inference, is equivalent to ``ImplicitParameter (MkIdent "ident") t``
+   3. ``{ let ?ident1 = x; ?ident2 = y } in expr`` in a binding context is equivalent to ``bindImplicit (MkIdent "ident1") x (bindImplicit (MkIdent "ident2") y (expr))``
 
 Proposed Library Change Specification
 -------------------------------------
 
-1. Reexport ``ImplicitParameter``, ``implicitParameter``, ``bindImplicit``, and ``IdentImplicitTag(..)`` from new ``base`` module ``Data.Implicit``
+1. Reexport ``ImplicitParameter``, ``implicitParameter``, ``bindImplicit``, and ``Ident(..)`` from new ``base`` module ``Data.Implicit``
 
 Examples
 --------
@@ -176,9 +188,7 @@ By using ``Data.Implicit`` directly without the ``?ident`` syntax, users can acc
 
 Costs and Drawbacks
 -------------------
-I am uncertain about development costs, though given the way ``IP`` works today I'm hopeful this is not too big of a change internally.
-
-Maintenance should be low to zero compared to solely maintaining ``ImplicitParams`` as it exists today.
+This should be very cheap to implement and maintain, as it is primarily about guaranteeing the continuation of existing implementation details and providing a nicer interface to them.
 
 I don't think this makes things more difficult for novices relative to things like ``HasCallStack`` already permeating the ecosystem. Sensible library interfaces will not expose ``ImplicitParameter`` directly and will instead define their own constraints, or for simple cases use ``?ident :: ty``-style constraints.
 
@@ -195,7 +205,13 @@ Alternatives
 Rely on Implementation Details
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-As discussed in the `Motivation`_, all of the functionality desired is currently possible given the way ``ImplicitParams`` happen to be implemented today. Developers can simply use those interfaces until/unless a change happens.
+As discussed in the `Motivation`_, all of the functionality desired is currently possible given the way ``ImplicitParams`` happen to be implemented today. Developers can simply use those interfaces until/unless a change happens. I have implemented a version of this in the `abstractly-keyed-implicits package <https://hackage.haskell.org/package/abstractly-keyed-implicits>`_. Relative to this proposal, the implementation has the following downsides:
+
+* It may break if future GHC versions change the implementation of implicit parameters
+* It doesn't mandate that ``bindImplicit`` and ``implicitParameter`` be fully applied,
+  nor guarantee that they don't impose additional runtime cost.
+* It uses some auxiliary internal type-level machinery that can't be hidden.
+* It is not inferred as safe Haskell (though it is safe).
 
 Unresolved Questions
 --------------------
@@ -204,7 +220,7 @@ I'm unsure if the specification of ``bindImplicit`` and ``implicitParameter`` as
 
 Implementation Plan
 -------------------
-I'm willing to implement this, though I may need support.
+I'm willing to implement this, though I may need support to enforce the full application constraint.
 
 Acknowledgments
 ---------------
