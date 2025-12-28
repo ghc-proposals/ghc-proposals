@@ -41,6 +41,8 @@ For a motivating example, consider checked exceptions, where each function must 
      go' :: forall e. Exception Bool e -> Eff (e :& es) a
      go' cap = let ?bool = cap in go
 
+ -- No way at all to express that a given computation does /not/ throw implicitly, see other versions
+
  -- ghci> example
  -- True
  example :: Bool
@@ -57,6 +59,8 @@ If we rely on the fact that implicits are implemented in terms of ``GHC.Base.IP`
 
  type Throws ex e = (IP (CheckedExceptionTag ex) (Exception ex e))
 
+ type NoThrow ex = (IP (CheckedExceptionTag ex) (TypeError (Text "can't throw")))
+
  throw' :: forall ex e es a. (Throws ex e, e :> es) => ex -> Eff es a
  throw' = throw (ip @(CheckedExceptionTag ex))
 
@@ -66,6 +70,12 @@ If we rely on the fact that implicits are implemented in terms of ``GHC.Base.IP`
      go' :: forall e. Exception ex e -> Eff (e :& es) a
      go' cap = withDict @(Throws ex e) cap go
 
+ nothrow :: forall ex -> (NoThrow ex => a) -> a
+ nothrow ex go = withAnyIP go
+   where
+     withAnyIP :: (IP (CheckedExceptionTag ex) b => a) -> a
+     withAnyIP go = withDict @(IP (CheckedExceptionTag ex) b) undefined go
+
  -- ghci> example
  -- True
  example :: Bool
@@ -73,6 +83,8 @@ If we rely on the fact that implicits are implemented in terms of ``GHC.Base.IP`
    Right (Right v) -> absurd v
    Right (Left (_ :: Int)) -> False
    Left b -> b
+
+ -- Compile error: try' @Bool (nothrow Bool (throw' True))
 
 With this proposal, this could instead look like:
 
@@ -84,9 +96,12 @@ With this proposal, this could instead look like:
  -- More descriptive name than IP, and pulled from the public API
  type Throws ex e = (ImplicitParameter (MkCheckedExceptionTag ex) (Exception ex e))
 
+ -- No need to manage Type Errors ourselves
+ type NoThrow ex = ImplicitUnbound (MkCheckedExceptionTag ex)
+
  throw' :: forall ex e es a. (Throws ex e, e :> es) => ex -> Eff es a
  -- More descriptive name than ip, pulled from the public API, uses required type arguments, known to compile the same as a variable lookup
- throw' = throw (implicitParameter (MkCheckedExceptionTag ex)) -- required type arguments makes this nicer
+ throw' = throw (implicitParameter (MkCheckedExceptionTag ex))
 
  try' :: forall ex es a. (forall e. (Throws ex e) => Eff (e :& es) a) -> Eff es (Either ex a)
  try' go = try go'
@@ -95,6 +110,10 @@ With this proposal, this could instead look like:
      -- Doesn't rely on WithDict implementation detail, uses required type arguments, known to compile the same as a variable binding
      go' cap = bindImplicit (MkCheckedExceptionTag ex) cap go
 
+ nothrow :: forall ex -> (NoThrow ex => a) -> a
+ -- No undefined, no withDict
+ nothrow ex go = unbindImplicit ex go
+
  -- ghci> example
  -- True
  example :: Bool
@@ -102,6 +121,8 @@ With this proposal, this could instead look like:
    Right (Right v) -> absurd v
    Right (Left (_ :: Int)) -> False
    Left b -> b
+
+ -- Compile error: try' @Bool (nothrow Bool (throw' True))
 
 Proposed Change Specification
 -----------------------------
@@ -120,9 +141,11 @@ Proposed Change Specification
     --
     -- To bind an implicit parameter, use 'bindImplicit'.
     --
+    -- To unbind an implicit parameter, use 'unbindImplicit'.
+    --
     -- When the @ImplicitParams@ extension is on, @ImplictParameter (MkIdent "foo") t@
     -- is equivalent to @?foo :: t@.
-    class ImplicitParameter (x :: k) (a :: Type)
+    type ImplicitParameter (x :: k) (a :: Type) :: Constraint
 
     -- | Bind implicit parameter @x@ to the provided @a@.
     --
@@ -130,7 +153,7 @@ Proposed Change Specification
     -- equivalent to @let ?foo = x in go@.
     --
     -- Though 'bindImplicit' is called like a function, it is not really a function call, and at runtime
-    -- does not result in any overhead beyond what would occur when passing variables to an equivalent
+    -- doesn't result in any overhead beyond what would occur when passing variables to an equivalent
     -- explicitly-parameterized function. 'bindImplicit' must always be called fully applied.
     bindImplicit :: forall x -> a -> ((ImplicitParameter x a) => b) -> b
 
@@ -140,9 +163,27 @@ Proposed Change Specification
     -- equivalent to @?foo@.
     --
     -- Though 'implicitParameter' is called like a function, it is not really a function call, and at runtime
-    -- does result in any overhead beyond what would occur when referencing a variable passed in explicitly.
+    -- doesn't result in any overhead beyond what would occur when referencing a variable passed in explicitly.
     -- 'implicitParameter' must always be called fully applied.
     implicitParameter :: forall x -> (ImplicitParameter x a) => a
+
+    -- | Unbind the implicit parameter @x@.
+    --
+    -- Unbinding follows the same dynamic scoping rules as 'ImplicitParameter'. @bindImplicit x a (unbindImplicit x (implicitParameter x))@
+    -- is a compile-time error while @unbindImplicit x (bindImplicit x a (implicitParameter x))@ is equivalent to @a@.
+    --
+    -- Though 'unbindImplicit' is called like a function, it is not really a function call, and at runtime
+    -- doesn't result in any overhead beyond what would occur when evaluating the body without the unbound
+    -- constraint directly.
+    --
+    -- 'unbindImplicit' must always be called fully applied.
+    unbindImplicit :: forall x -> ((ImplicitUnbound x) => a) -> a
+
+    -- | A 'Constraint' that there is no implicit parameter bound to @x@.
+    --
+    -- To unbind an implicit parameter, use 'unbindImplicit'.
+    type ImplicitUnbound (x :: k) :: Constraint
+    -- Possible implementation: = ImplicitParameter x (TypeError (Text "The implicit parameter " :<>: ShowType x :<>: Text " has been explicitly unbound."))
 
     -- | The kind of type-level representations of Haskell identifiers.
     data Ident = MkIdent Symbol
@@ -161,7 +202,16 @@ Proposed Change Specification
 Proposed Library Change Specification
 -------------------------------------
 
-1. Reexport ``ImplicitParameter``, ``implicitParameter``, ``bindImplicit``, and ``Ident(..)`` from new ``base`` module ``Data.Implicit``
+Add new ``base`` module ``Data.Implicit``:
+
+  ::
+
+     module Data.Implicit
+       ( ImplicitParameter, implicitParameter, bindImplicit
+       , unbindImplicit, ImplicitUnbound
+       , Ident(..)
+       ) where
+     import GHC.Base
 
 Examples
 --------
@@ -183,7 +233,7 @@ except that perhaps some libraries implement interfaces that were previously not
 
 By using ``Data.Implicit`` directly without the ``?ident`` syntax, users can access dynamic scoping functionality without ``ImplicitParams``.
 
-``implicitParameter`` and ``bindImplicit`` use ``RequiredTypeArguments``.
+``implicitParameter``, ``bindImplicit``, and ``unbindImplicit`` use ``RequiredTypeArguments``.
 
 
 Costs and Drawbacks
@@ -215,7 +265,7 @@ As discussed in the `Motivation`_, all of the functionality desired is currently
 
 Unresolved Questions
 --------------------
-I'm unsure if the specification of ``bindImplicit`` and ``implicitParameter`` as not really functions is clear enough, or necessary for the spec.
+I'm unsure if the specification of ``bindImplicit``, ``implicitParameter``, and ``unbindImplicit`` as not really functions is clear enough, or necessary for the spec.
 
 
 Implementation Plan
