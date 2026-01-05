@@ -502,12 +502,11 @@ The current members, including their GitHub handle, when they joined first,
 when their term last renewed, when their term expires and their role, are:
 
 ===============  =========================  =====================================================  =======  =======  =======  =========
-Avatar           Full name                  GitHub handle                                          Joined   Renewed  Expired  Role
+Avatar           Full name                  GitHub handle                                          Joined   Renewed  Expires  Role
 ===============  =========================  =====================================================  =======  =======  =======  =========
 |simonmar|       Simon Marlow               `@simonmar <https://github.com/simonmar>`_             2017/02  2024/02  2027/02  co-chair/secretary
 |simonpj|        Simon Peyton-Jones         `@simonpj <https://github.com/simonpj>`_               2017/02  2024/02  2027/02  co-chair
 |adamgundry|     Adam Gundry                `@adamgundry <https://github.com/adamgundry/>`_        2022/10  2025/12  2028/12  member
-|angerman|       Moritz Angermann           `@angerman <https://github.com/angerman/>`_            2023/02  -        2026/02  member
 |maralorn|       Malte Ott                  `@maralorn <https://github.com/maralorn/>`_            2024/03  -        2027/03  member
 |Tritlo|         Matthías Páll Gissurarson  `@Tritlo <https://github.com/Tritlo>`_                 2024/03  -        2027/03  member
 |erikd|          Erik de Castro Lopo        `@erikd  <https://github.com/erikd>`_                  2024/05  -        2027/05  member
@@ -525,7 +524,6 @@ Avatar           Full name                  GitHub handle                       
 .. |nomeata| image:: https://github.com/nomeata.png?size=24
 .. |goldfirere| image:: https://github.com/goldfirere.png?size=24
 .. |int-index| image:: https://github.com/int-index.png?size=24
-.. |angerman| image:: https://github.com/angerman.png?size=24
 .. |maralorn| image:: https://github.com/maralorn.png?size=24
 .. |Tritlo| image:: https://github.com/Tritlo.png?size=24
 .. |erikd| image:: https://github.com/erikd.png?size=24
@@ -565,6 +563,7 @@ Vladislav Zavialov      `@int-index <https://github.com/int-index/>`_         20
 Chris Dornan            `@cdornan <https://github.com/cdornan>`_              2022/03 - 2024/06
 Eric Seidel             `@gridaphobe <https://github.com/gridaphobe>`_        2018/09 - 2025/05
 Arnaud Spiwack          `@aspiwack <https://github.com/aspiwack/>`_           2019/07 - 2025/10
+Moritz Angermann        `@angerman <https://github.com/angerman/>`_           2023/02 - 2025/12
 ======================  ====================================================  =================
 
 
