@@ -258,43 +258,70 @@ something like
 
  module A (foo) where
 
- import M -- This exports "foo"
+ import M (foo)
 
  foo = ...
 
 then the ``foo`` exported by ``A`` should be the one defined in
 ``A``'s top-level.
 
-When modules are reexported wholesale, shadowing doesn't come into
-play, and so we keep the behaviour without this extension: the form
-``module M`` names the set of all entities that are in scope with both
-an unqualified name ``e`` and a qualified name ``M.e``. Example:
+.. _module-reexports:
+
+Module reexports
+^^^^^^^^^^^^^^^^
+
+In an export list, `Paragraph 5 of Section 5.2 of the Haskell 2010 report
+<https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1000005.2>`_
+specifies that the form ``module M`` names the set of all entities
+that are in scope with both an unqualified name ``e`` and a qualified
+name ``M.e``.  So in this example, *without* ``ImportShadowing``:
 
 ::
 
  module A (module M) where
 
- import M -- this exports "foo"
+ import M (foo, wombat)
+ import N (foo)
 
- foo = ...
+ foo = True
 
-Here, it is ``M.foo`` that is (re-)exported by ``A``, not ``A.foo``.
+the ``module M`` exports ``M.foo`` because that entity is in scope
+both as ``M.foo`` and with unqualified name ``foo``.  The fact that
+``N.foo`` and ``A.foo`` are *also* in scope with unqualified name
+``foo`` does not matter.
 
-If both ``module M`` and ``foo`` are exported, then that is a
-conflicting export error, and should be reported the same way as
-conflicts between exporting ``module M1`` and ``module M2`` without
-this extension. Example:
+With ``ImportShadowing``, however, the local definition of ``A.foo``
+*completely hides* the unqualified imports of ``M.foo`` and ``N.foo``;
+so now ``M.foo`` is no longer in scope with unqualified name ``foo``;
+so the ``module M`` export list exports only ``M.wombat``.
+
+Conflicting exports
+^^^^^^^^^^^^^^^^^^^
+
+`Section 5.2 of the Haskell 2010 report
+<https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1000005.2>`_
+says "The unqualified names of the entities exported by a module must
+all be distinct".  That condition remains unchanged with this
+proposal. For example consider
 
 ::
+ 
+ module A( module M, module N, foo ) where
 
- module A (foo, module M) where
+ import M( foo, wombat )
+ import N( wombat )
 
- import M -- this exports "foo"
+ foo = True
 
- foo = ...
+Without ``ImportShadowing`` the export list would attempt to export
+``M.foo`` and ``A.foo``; and would report a conflict. It also attempts
+to export ``M.wombat`` and ``N.wombat`` and would again report a
+conflict (assuming they are distinct entities).
 
-This should report a conflict between the export items ``foo``
-(resolving to ``A.foo``) and ``M.foo``.
+With ``ImportShadowing`` the ``wombat`` behaviour is unchanged
+(i.e. an export conflict is reported); but the exports ``module M``
+and ``foo`` do not conflict since module ``M`` no longer exports
+``M.foo`` (see :ref:`module-reexports` above).
 
 Warnings
 ~~~~~~~~
