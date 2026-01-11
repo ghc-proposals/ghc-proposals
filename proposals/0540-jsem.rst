@@ -96,7 +96,7 @@ Proposed Change Specification
 
 We want to allow the build tool and individual invocations of GHC to share
 capabilities, by communicating through a semaphore. To do this, we introduce
-the ``-jsem <sem>`` flag, which specifies by name (a string) a system semaphore
+the ``-jsem <sem>`` flag, which specifies by name (a string) a semaphore identifier
 through which GHC invocations can acquire and release capabilities.
 
 All changes are gated behind this ``-jsem`` flag:
@@ -130,26 +130,31 @@ GHC Jobserver Protocol
 This proposal introduces the GHC Jobserver Protocol. This protocol allows
 a server to dynamically invoke many instances of a client process,
 while restricting all of those instances to use no more than <n> capabilities.
-This is achieved by coordination over a system semaphore (either a POSIX
-semaphore [6]_  in the case of Linux and Darwin, or a Win32 semaphore [7]_
-in the case of Windows platforms).
+This is achieved by coordination over a semaphore implementation provided
+by the ``semaphore-compat`` Haskell library.
 
 There are two kinds of participants in the GHC Jobserver protocol:
 
-- The *jobserver* creates a new system semaphore with a certain number of
-  available tokens.
+- The *jobserver* instantiates a new semaphore with a certain number of
+  available tokens. This semaphore is identified by a string, called its
+  **semaphore identifier**
 
   Each time the jobserver wants to spawn a new jobclient subprocess, it **must**
   first acquire a single token from the semaphore, before spawning the subprocess.
   This token **must** be released once the subprocess terminates.
 
-  When spawning the subprocess, the jobserver **should** pass on the name of the
+  When spawning the subprocess, the jobserver **should** pass on the identifier of the
   semaphore tha the jobserver created to the spawned subprocess, in order to
   allow the subprocess to request tokens from the semaphore.
 
   Once work is finished, the jobserver **must** destroy the semaphore it created.
+  At this point, the semaphore identifier is not valid for any operations and
+  attempting to use it will produce an exception.
 
 - A *jobclient* is a subprocess spawned by the jobserver or another jobclient.
+
+  Each jobclient can interact with the semaphore by using a valid semaphore
+  identifier provided to it by a jobserver.
 
   Each jobclient starts with one available token (its *implicit token*,
   which was acquired by the parent which spawned it), and can request more
@@ -158,31 +163,53 @@ There are two kinds of participants in the GHC Jobserver protocol:
   Each time a jobclient wants to spawn a new jobclient subprocess, it **must**
   pass on a single token to the child jobclient. This token can either be the
   jobclient's implicit token, or another token which the jobclient acquired
-  from the semaphore. It **should** also pass on the name of the semaphore, so
+  from the semaphore. It **should** also pass on the identifier of the semaphore, so
   that the child jobclient may acquire additional tokens from the semaphore.
 
   Each jobclient **must** release exactly as many tokens as it has acquired from
   the semaphore (this does not include the implicit token).
 
-All communication between the jobserver and the jobclient happens through the
-semaphore. This ensures modularity of the protocol: jobclients don't need to
-know anything about the jobserver that has spawned them.
+The **semaphore identifier** must begin a a prefix ``v<N>-`` where the ``<N>``
+specifies the ``semaphore-compat`` major version that this semaphore was created
+using. For instance, a semaphore created with ``semaphore-compat-2.0.0`` could
+be called ``v2-some-semaphore12345``.
+
+*Jobclients* that are instantiated with an incompatible semaphore (as detected
+by looking at the version of the identifier) must continue the build without
+requesting any additional tokens, using only the implicit token they inherited
+from their parent process.
+
+All communication between the jobserver and the jobclient happens through
+the ``semaphore-compat`` library. This ensures modularity of the protocol:
+jobclients don't need to know anything about the jobserver that has spawned them
+beyond the version of the ``semaphore-compat`` library they are using.
+
 
 Implementation of the protocol
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The implementation relies on an interface for system semaphores. For this, we
-propose to using the functionality provided by the ``unix`` and ``Win32``
-libraries. In practice, our implementation ships with a compatibility layer
-which provides an abstraction over those two libraries. This handles creation of
-fresh semaphores, acquisition, and release of tokens, including a mechanism for
-interrupting a wait on a semaphore when a token is no longer needed.
+The implementation is built on ``semaphore-compat``, a Haskell library that
+provides an abstract semaphore interface. Tools that wish to use this feature
+must do so by means of this library.
 
 The implementation consists of two separate parts: jobservers and jobclients.
 We want GHC to act as a jobclient and ``cabal``/``stack`` to be jobservers.
 
+The interface supports the following operations:
+
+1. The jobserver must be able to create and destroy semaphores and initialise them with a
+  given number of tokens
+
+2. Clients must be able to connect to the semaphore with an identifier (a string) provided by the server
+
+3. Both the server and the client must be able to acquire and release tokens
+
+``semaphore-compat`` is free to implement the semaphore interface in any way it chooses,
+such as by using a system semaphore implmentation or by any other means which allow it
+to provide the above operations.
+
 The implementation of the jobserver protocol is very straightforward, as it
-mostly consists of switching to using a system semaphore to control the tokens.
+mostly consists of switching to using ``semaphore-compat`` to control the tokens.
 This means that the implementation in ``cabal`` is non-invasive and easy to
 maintain.
 
@@ -245,6 +272,100 @@ having GHC use a local pool of tokens, in order to avoid excessive communication
 with the semaphore: instead of systematically releasing a token to the semaphore
 once a job is done, we can instead re-use this token if we have other pending
 jobs. This prioritises the compilation of a single unit.
+
+Backwards Compatibility
+~~~~~~~~~~~~~~~~~~~~~~~
+
+An earlier, accepted version of this proposal (implemented in GHC 9.8 and GHC
+9.10) specified system semaphores as the concrete implementation mechanism of
+these semaphores. On Windows, this was a semaphore implementation provided by
+the system Win32 library, and on POSIX platforms this was the POSIX semaphore
+implementation provided by the system C library (libc, typically either the GNU
+C library or musl libc).
+
+This is sufficient if both the jobserver and the jobclient are linked
+against the same system C library, as is usually the case when the system
+C library is dynamically linked against the unique implementation provided
+by the platform. 
+
+However, on Linux systems, it has become common practice to ship system
+independent statically linked executables using the musl libc implmentation.
+This becomes problematic when using jobservers and jobclients that are linking
+against different C semaphore implementations, for example GHC dynamically
+linked against the system glibc and ``cabal-install`` statically linked against
+a musl libc. Each libc implementation has its own independent semaphore implementation
+based on shared memory datastructures, and these are not compatible with each
+other. This has manifested in bug reports against ``cabal-install``
+([20]_) and GHC ([21]_).
+
+To support this method of distribution, we can not use the mechanism provided
+by the system C library to implement semaphores, and instead rely on some other
+mechanism which is robust against mixing of jobservers and jobclients compiled
+against different system C library implementations.
+
+Updated ``semaphore-compat`` implementation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+While this proposal doesn't specify the exact mechanism ``semaphore-compat``
+must use to provide a semaphore implementation, the plan is for Windows
+platforms to continue to use the Win32 system semaphore implementation, while
+POSIX platforms will switch to using a semaphore implementation based on
+communication via Unix domain sockets. This avoids the troubles with the shared
+memory datastructures used to implement system semaphore implementations.
+
+We can continue to use the system semaphore implementation on Windows as there
+are no concerns about differing underlying system semaphore implementations
+on this platform, and Windows also provides no direct substitute for Unix
+sockets as proposed to be used by ``semaphore-compat`` on POSIX systems.
+
+Backwards compatibility concerns with the updated semaphore implementation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Currently, GHC 9.8.{1,2} and GHC 9.10.1 provide jobclient implementations based
+on ``semaphore-compat-1.0.0``, which ``cabal-install-3.12.1.0`` also uses to provide
+a jobserver implementation. ``semaphore-compat-1.0.0`` uses the problematic POSIX
+system semaphores and is susceptible to the restrictions regarding system C library
+usage by jobservers and jobclients.
+
+Since the underlying semaphore implementation is being fundamentally changed, the
+future version of ``semaphore-compat`` – presumably shipped with a future version
+of GHC and ``cabal-install`` – would be incompatible with existing jobservers and
+jobclients linking against ``semaphore-compat-1.0.0``.
+
+For instance, this means
+
+- ``cabal-install-3.12.1.0`` would be unable to compile code with the
+  ``--semaphore`` flag enabled for future versions of GHC shipping with the
+  updated ``semaphore-compat`` release. There could be a mechanism
+  in the new version of ``semaphore-compat`` (linked to by the future version of
+  GHC) to detect such a scenario and output an informative error message.
+
+- Similarly, future versions of ``cabal-install`` would be unable to use
+  the semaphore mechanism with existing versions of GHC such as 9.8.{1,2} and
+  9.10.1. However, this could be detected by ``cabal-install`` and the feature
+  automatically disabled, much like it currently is if attempted to be enabled
+  for versions of GHC that don't support ``-jsem`` such as 9.6.
+
+Backwards and forwards compatibility for the abstract semaphores provided by ``semaphore-compat``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+As the previous section illustrates, breaking changes to the communication
+protocol used to implement these semaphores are painful and lead to the breakage
+of existing compilers and build tools.
+
+As such, we must strive to avoid such breaking changes as much as possible.
+In the (hopefully rare) case when such a change cannot be avoided, the change
+must meet a high bar of justification.
+
+Concretely, the communication protocol used in each major version series
+of ``semaphore-compat`` must be compatible with other versions of the
+library belonging to the same major version series. For instance, a
+``semaphore-compat-2.0.0`` must be compatible with ``semaphore-compat-2.9.9``, but
+may not be compatible with ``semaphore-compat-3.0.0``.
+
+Breaking changes to the protocol require a major version bump and need to be
+justified to and accepted by the GHC Proposals Committee.
+
 
 Examples
 --------
@@ -324,7 +445,7 @@ The implementation in GHC is self-contained, and doesn't impact the rest of the
 compiler much. It does however add a new flag (which interacts with ``-j``),
 and a complete implementation requires coordination with jobservers such as
 ``cabal`` and ``stack``. However, these changes are small and non-invasive,
-as it usually only involves switching over to using a system semaphore
+as it usually only involves switching over to using ``semaphore-compat``
 to control the behaviour of ``-j``.
 
   - The GHC jobserver protocol specifies that all communication happens through
@@ -338,15 +459,15 @@ to control the behaviour of ``-j``.
     block the world just because we are indefinitely waiting on the semaphore.
 
   - Different jobserver invocations create distinct semaphores (with different
-    names) through which their respective child jobclients communicate. (In
+    identifiers) through which their respective child jobclients communicate. (In
     practice, the uniqueness is achieved by generating new uniques names that
     don't clash with any existing semaphore names.)
     To enable multiple invocations of e.g. ``cabal`` to cooperate over resources,
     these invocations should themselves be spawned by an overarching jobserver.
     In that case, some jobserver would create a unique semaphore, spawn ``cabal``
-    jobclient processes (to which the semaphore name is passed), and the ``cabal``
+    jobclient processes (to which the semaphore identifier is passed), and the ``cabal``
     processes would in turn spawn GHC jobclient process (to which the semaphore
-    name is passed).
+    identifier is passed).
 
 Alternatives
 ------------
@@ -496,3 +617,7 @@ Footnotes
 .. [18] `https://lwn.net/Articles/864947/ <https://lwn.net/Articles/864947/>`_
 
 .. [19] `https://github.com/haskell/cabal/pull/8557 <https://github.com/haskell/cabal/pull/8557>`_
+
+.. [20] `https://github.com/haskell/cabal/issues/9993`_
+
+.. [21] `https://gitlab.haskell.org/ghc/ghc/-/issues/25087`_
