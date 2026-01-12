@@ -172,7 +172,7 @@ The following table contains the language extension, the proposed categorization
 | Arrows                 | Experimental   | Stable                  |
 | DuplicateRecordFields  | Experimental   | Stable                  |
 | ExtendedLiterals       | Experimental   | Stable                  |
-| FieldSelectors         | Experimental   | Stable                  |
+| FieldSelectors         | Stable         | Experimental            |
 | GHCForeignImportPrim   | Experimental   | Stable                  |
 | ImpredicativeTypes     | Experimental   | Stable                  |
 | JavaScriptFFI          | Experimental   | Stable                  |
