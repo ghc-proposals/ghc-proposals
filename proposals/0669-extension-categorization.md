@@ -61,6 +61,7 @@ The following table contains the language extension, the proposed categorization
 | FlexibleInstances          | Stable         | Stable                  |
 | ForeignFunctionInterface   | Stable         | Stable                  |
 | GADTSyntax                 | Stable         | Stable                  |
+| GADTs                      | Stable         | Stable                  |
 | GeneralizedNewtypeDeriving | Stable         | Stable                  |
 | HexFloatLiterals           | Stable         | Stable                  |
 | ImplicitParams             | Stable         | Stable                  |
@@ -81,6 +82,8 @@ The following table contains the language extension, the proposed categorization
 | NumDecimals                | Stable         | Stable                  |
 | NumericUnderscores         | Stable         | Stable                  |
 | OverloadedLabels           | Stable         | Stable                  |
+| OverloadedRecordDot        | Stable         | Stable                  |
+| OverloadedStrings          | Stable         | Stable                  |
 | ParallelListComp           | Stable         | Stable                  |
 | PatternGuards              | Stable         | Stable                  |
 | PatternSynonyms            | Stable         | Stable                  |
@@ -95,12 +98,16 @@ The following table contains the language extension, the proposed categorization
 | StandaloneKindSignatures   | Stable         | Stable                  |
 | StrictData                 | Stable         | Stable                  |
 | TraditionalRecordSyntax    | Stable         | Stable                  |
+| TupleSections              | Stable         | Stable                  |
 | TypeApplications           | Stable         | Stable                  |
+| TypeData                   | Stable         | Stable                  |
 | TypeOperators              | Stable         | Stable                  |
 | TypeSynonymInstances       | Stable         | Stable                  |
 | UnboxedSums                | Stable         | Stable                  |
 | UnboxedTuples              | Stable         | Stable                  |
 | UnicodeSyntax              | Stable         | Stable                  |
+| UnliftedDatatypes          | Stable         | Stable                  |
+| UnliftedFFITypes           | Stable         | Stable                  |
 | UnliftedNewtypes           | Stable         | Stable                  |
 
 #### 2.1.2 Deprecated Extensions
@@ -111,13 +118,17 @@ The following are extensions that are to be categorized as `Deprecated` for both
 |-----------------------------------|----------------|-------------------------|
 | AlternativeLayoutRule             | Deprecated     | Deprecated              |
 | AlternativeLayoutRuleTransitional | Deprecated     | Deprecated              |
+| AutoDeriveTypeable                | Deprecated     | Deprecated              |
 | DoRec                             | Deprecated     | Deprecated              |
 | NullaryTypeClasses                | Deprecated     | Deprecated              |
 | OverlappingInstances              | Deprecated     | Deprecated              |
+| PackageImports                    | Deprecated     | Deprecated              |
 | ParallelArrays                    | Deprecated     | Deprecated              |
 | PolymorphicComponents             | Deprecated     | Deprecated              |
 | Rank2Types                        | Deprecated     | Deprecated              |
 | RecordPuns                        | Deprecated     | Deprecated              |
+| RelaxedLayout                     | Deprecated     | Deprecated              |
+| RelaxedPolyRec                    | Deprecated     | Deprecated              |
 | TypeInType                        | Deprecated     | Deprecated              |
 
 In particular it is the flag that is `Deprecated` in both cases for the extensions. The negation of all of these extensions are behaviors as if the positive flag had not been specified, and that behavior is not changed. So while for each extension, the `No*` flag is deprecated, we do not change the behavior of not specifying the positive flag.
@@ -130,7 +141,7 @@ Here we list extensions where the categorization is different based on if the ex
 
 #### 2.2.1 Legacy Extensions
 
-The following are all extensions that are to be categorized as `Legacy` when enabled, and for the `No` version are categorized as `Stable`. As a reminder, the [categorizations](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0601-extension-lifecycle-framework.md#21-categories) state that `Legacy` extensions are not recommended for new code but are expected to be supported indefinitely.
+The following are all extensions that are to be categorized as `Legacy`  when enabled with the `Negative` categorized as `Stable` or when enabled to be categorized as `Stable` and the `Negative` categorized as `Legacy`. As a reminder, the [categorizations](https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0601-extension-lifecycle-framework.md#21-categories) state that `Legacy` extensions are not recommended for new code but are expected to be supported indefinitely.
 
 The following table contains the language extension, the proposed categorization for the extension being turned on, and the proposed categorization for the extension being turned off.
 
@@ -139,8 +150,14 @@ The following table contains the language extension, the proposed categorization
 | CUSKs                    | Legacy         | Stable                  |
 | DatatypeContexts         | Legacy         | Stable                  |
 | DeepSubsumption          | Legacy         | Stable                  |
+| DoAndIfThenElse          | Stable         | Legacy                  |
+| IncoherentInstances      | Legacy         | Stable                  |
+| MonoLocalBinds           | Stable         | Legacy                  |
 | NondecreasingIndentation | Legacy         | Stable                  |
 | NPlusKPatterns           | Legacy         | Stable                  |
+| OverloadedLists          | Legacy         | Stable                  |
+| StarIsType               | Legacy         | Stable                  |
+| TransformListComp        | Legacy         | Stable                  |
 
 #### 2.2.2 Experimental Extensions
 
@@ -150,13 +167,25 @@ The following table contains the language extension, the proposed categorization
 
 | Extension              | Categorization | Negative Categorization |
 |------------------------|----------------|-------------------------|
-| GHCForeignImportPrim   | Experimental   | Stable                  |
+| AllowAmbiguousTypes    | Experimental   | Stable                  |
+| ApplicativeDo          | Experimental   | Stable                  |
+| Arrows                 | Experimental   | Stable                  |
+| DuplicateRecordFields  | Experimental   | Stable                  |
 | ExtendedLiterals       | Experimental   | Stable                  |
+| FieldSelectors         | Experimental   | Stable                  |
+| GHCForeignImportPrim   | Experimental   | Stable                  |
 | ImpredicativeTypes     | Experimental   | Stable                  |
 | JavaScriptFFI          | Experimental   | Stable                  |
 | LinearTypes            | Experimental   | Stable                  |
+| ListTuplePuns          | Experimental   | Stable                  |
+| MultilineStrings       | Experimental   | Stable                  |
+| OrPatterns             | Experimental   | Stable                  |
 | OverloadedRecordUpdate | Experimental   | Stable                  |
+| PatternSignatures      | Experimental   | Stable                  |
+| QuantifiedConstraints  | Experimental   | Stable                  |
 | RequiredTypeArguments  | Experimental   | Stable                  |
+| StaticPointers         | Experimental   | Stable                  |
+| Strict                 | Experimental   | Stable                  |
 | TypeAbstractions       | Experimental   | Stable                  |
 
 ### 2.3 Uncategorized Extensions
@@ -165,49 +194,22 @@ The following are the extensions that are uncategorized as of this proposal. The
 
 | Extension               |
 |-------------------------|
-| AllowAmbiguousTypes     |
-| ApplicativeDo           |
-| Arrows                  |
-| AutoDeriveTypeable      |
-| DoAndIfThenElse         |
-| DuplicateRecordFields   |
 | ExplicitNamespaces      |
-| FieldSelectors          |
 | FunctionalDependencies  |
-| GADTs                   |
-| IncoherentInstances     |
 | LexicalNegation         |
-| ListTuplePuns           |
-| MonoLocalBinds          |
 | NegativeLiterals        |
-| OverloadedLists         |
-| OverloadedRecordDot     |
-| OverloadedStrings       |
-| PackageImports          |
 | PartialTypeSignatures   |
-| PatternSignatures       |
-| QuantifiedConstraints   |
 | QuasiQuotes             |
 | RebindableSyntax        |
-| RelaxedLayout           |
-| RelaxedPolyRec          |
 | Safe                    |
 | ScopedTypeVariables     |
-| StarIsType              |
-| StaticPointers          |
-| Strict                  |
 | TemplateHaskell         |
 | TemplateHaskellQuotes   |
-| TransformListComp       |
 | Trustworthy             |
-| TupleSections           |
-| TypeData                |
 | TypeFamilies            |
 | TypeFamilyDependencies  |
 | UndecidableInstances    |
 | UndecidableSuperClasses |
-| UnliftedDatatypes       |
-| UnliftedFFITypes        |
 | Unsafe                  |
 | ViewPatterns            |
 
