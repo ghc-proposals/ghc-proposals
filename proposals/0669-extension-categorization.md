@@ -151,7 +151,6 @@ The following table contains the language extension, the proposed categorization
 | DatatypeContexts         | Legacy         | Stable                  |
 | DeepSubsumption          | Legacy         | Stable                  |
 | DoAndIfThenElse          | Stable         | Legacy                  |
-| IncoherentInstances      | Legacy         | Stable                  |
 | MonoLocalBinds           | Stable         | Legacy                  |
 | NondecreasingIndentation | Legacy         | Stable                  |
 | NPlusKPatterns           | Legacy         | Stable                  |
@@ -175,6 +174,7 @@ The following table contains the language extension, the proposed categorization
 | FieldSelectors         | Stable         | Experimental            |
 | GHCForeignImportPrim   | Experimental   | Stable                  |
 | ImpredicativeTypes     | Experimental   | Stable                  |
+| IncoherentInstances    | Experimental   | Stable                  |
 | JavaScriptFFI          | Experimental   | Stable                  |
 | LinearTypes            | Experimental   | Stable                  |
 | ListTuplePuns          | Experimental   | Stable                  |
