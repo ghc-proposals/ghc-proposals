@@ -512,7 +512,7 @@ The implementation touches the following areas:
    dependency analysis. Uses a generic traversal (``everythingOf``) to find
    all ``HsLocalBindsWithImports`` nodes.
 
-5. **Test suite**: 18 tests covering basic usage, extension interactions,
+5. **Test suite**: Several tests covering basic usage, extension interactions,
    scoping behavior, and error cases.
 
 
