@@ -27,7 +27,7 @@ Currently, we have the following methods for avoiding naming conflicts within a 
 **Naming Conventions:**
 
 The ``lucid`` HTML library suffixes HTML element names with ``_``
-so users avoid conflicts with names exported by ``Prelude``.::
+so users avoid conflicts with names exported by ``Prelude``::
 
     div_
     head_
@@ -35,7 +35,7 @@ so users avoid conflicts with names exported by ``Prelude``.::
     map_
 
 Lenses generated with TemplateHaskell conflict with record field selectors.
-The standard lens generation function, ``makeLenses``, requires users to use a ``_`` prefix when naming field selectors.::
+The standard lens generation function, ``makeLenses``, requires users to use a ``_`` prefix when naming field selectors::
 
     data User = User
       { _name  :: Text
@@ -48,7 +48,7 @@ These arbitrary naming conventions exist solely for namespace disambiguation and
 
 **Hiding:**
 
-The ``clay`` CSS library recommends hiding certain ``Prelude`` names for the same reason.::
+The ``clay`` CSS library recommends hiding certain ``Prelude`` names for the same reason::
 
     import Prelude hiding ((**))
     import Clay
@@ -56,7 +56,7 @@ The ``clay`` CSS library recommends hiding certain ``Prelude`` names for the sam
 **Qualifying:**
 
 Modules from the ``containers`` package such as ``Data.Map`` and ``Data.Set`` share many names.
-If we want to use these names in the same module we must qualify them.::
+If we want to use these names in the same module we must qualify them::
 
   import qualified Data.Map as M
   import qualified Data.Set as S
@@ -68,7 +68,7 @@ If we want to use these names in the same module we must qualify them.::
       _ -> 0
 
 Modules from the ``text`` and ``bytestring`` packages such as ``Data.Text.Lazy`` and ``Data.ByteString`` share many names too.
-If we want to use these names in the same module we must qualify them.::
+If we want to use these names in the same module we must qualify them::
 
   import qualified Data.Text as T
   import qualified Data.ByteString as BS
@@ -80,27 +80,27 @@ If we want to use these names in the same module we must qualify them.::
 
 Several languages support locally scoped imports/module opening.
 
-*OCaml* has supported local module opening since its early versions.::
+*OCaml* has supported local module opening since its early versions::
 
     let list_sum_sq m =
       let open List in
       init m Fun.id |> map (fun i -> i * i) |> fold_left ( + ) 0
 
-*F#* allows ``open`` declarations inside function bodies.::
+*F#* allows ``open`` declarations inside function bodies::
 
     let processData() =
         open System.Collections.Generic
         let dict = Dictionary<string, int>()
         dict
 
-*Rust* allows ``use`` declarations inside function bodies.::
+*Rust* allows ``use`` declarations inside function bodies::
 
     fn process() {
         use std::collections::HashMap;
         let map = HashMap::new();
     }
 
-*Lean 4* supports local ``open``, similar to OCaml.::
+*Lean 4* supports local ``open``, similar to OCaml::
 
     def example : List Nat :=
       open List in
@@ -170,8 +170,8 @@ Principles
 ``ScopedImports`` furthers GHC's adherence to the `Lexical Scoping Principle (LSP) <https://github.com/ghc-proposals/ghc-proposals/blob/master/principles.rst#221lexical-scoping-principle-lsp>`_.
 
 By allowing imports inside of let statements and where clauses,
-it can be made obvious to programmers what imports an expression depends on
-and where names in the expression come from without having to look
+it can be made obvious to programmers what imports an expression depends on.
+Programmers can know where names in the expression come from without having to look
 at the top of the module and keep track of what names are in scope.
 
 Examples
@@ -323,7 +323,7 @@ Motivation:
 
 - **Naming Conventions**: Libraries like ``lucid`` can potentially export ``div``, ``head``,
   ``id`` without underscores. Lenses can coexist with record selectors by importing the lens
-  only where lens operations are needed.::
+  only where lens operations are needed::
 
     {-# LANGUAGE ScopedImports, NoImplicitPrelude, OverloadedStrings #-}
     module LucidExample where
@@ -337,7 +337,7 @@ Motivation:
 
 - **Qualifying**: Functions working with ``Text``, ``ByteString``,
   ``Map``, or ``Set`` can import the operations they need locally and unqualified, avoiding
-  the clutter of qualifying ambiguous names.::
+  the clutter of qualifying ambiguous names::
 
     {-# LANGUAGE ScopedImports, NoImplicitPrelude #-}
     module ContainerExample where
@@ -360,7 +360,7 @@ Motivation:
       where import Data.IntMap (lookup)
 
 - **Hiding**: Instead of hiding conflicting names at the module level, functions can scope
-  both versions. ``Prelude.(**)`` and ``Clay.(**)`` can coexist in the same module.::
+  both versions. ``Prelude.(**)`` and ``Clay.(**)`` can coexist in the same module::
 
     {-# LANGUAGE ScopedImports, NoImplicitPrelude #-}
     module ClayExample where
