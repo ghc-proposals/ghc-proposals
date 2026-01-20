@@ -152,14 +152,14 @@ The ``ScopedImports`` language extension extends the ``decl`` production defined
 
 ::
 
-  decl ->	gendecl
+  decl -> gendecl
         | (funlhs | pat) rhs
 
 **Haskell 2010 + ScopedImports:**
 
 ::
 
-  decl ->	gendecl
+  decl -> gendecl
         | (funlhs | pat) rhs
         | importdecl
 
@@ -247,7 +247,7 @@ for scoped import declarations does 2 things:
   Haskell's global instance semantics are unchanged from Haskell 2010.
 
 - Signals to GHC and other tools that need to know module dependencies,
-  that module B depends on module A.
+  that module B depends on module A without parsing the entire module.
 
 Scoped import declarations support the same syntax
 and semantics as top-level imports except they are scoped
