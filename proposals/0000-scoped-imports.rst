@@ -21,7 +21,7 @@ polluting a module's namespace.
 Motivation
 ----------
 
-There are only so many names, and many of them overlap across different packages and modules.
+Names overlap across different packages and modules.
 Currently, we have the following methods for avoiding naming conflicts within a module.
 
 **Naming Conventions:**
@@ -67,6 +67,8 @@ If we want to use these names in the same module we must qualify them::
       Just n | S.member key set -> n
       _ -> 0
 
+  ...
+
 Modules from the ``text`` and ``bytestring`` packages such as ``Data.Text.Lazy`` and ``Data.ByteString`` share many names too.
 If we want to use these names in the same module we must qualify them::
 
@@ -75,6 +77,8 @@ If we want to use these names in the same module we must qualify them::
 
   process :: T.Text -> BS.ByteString -> Int
   process text bytes = T.length text + BS.length bytes
+
+  ...
 
 **Prior art**
 
@@ -118,32 +122,26 @@ binding groups.
 Syntax
 ~~~~~~
 
-The ``decls`` production, as defined in the `Haskell 2010 Report §4.4.3 <https://www.haskell.org/onlinereport/haskell2010/haskellch4.html#x10-880004.4.3>`_,
-is extended as follows:
+The ``decl`` production, as defined in the `Chapter 4 of the Haskell 2010 Report <https://www.haskell.org/onlinereport/haskell2010/haskellch4.html>`_,
+is extended:
 
 **Haskell 2010:**
 
 ::
 
-  decls  ->  decls ; decl
-          |  decl
+  decl ->	gendecl
+        | (funlhs | pat) rhs
 
 **Haskell 2010 + ScopedImports:**
 
 ::
 
-  decls  ->  decls ; decl
-          |  decls ; importdecl    -- (NEW)
-          |  decl
-          |  importdecl            -- (NEW)
+  decl ->	gendecl
+        | (funlhs | pat) rhs
+        | importdecl
 
-Where ``importdecl`` is the existing import declaration as defined in
+Where ``importdecl`` is an import declaration as defined in
 `§5.3 <https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1010005.3>`_.
-
-This change affects the following constructs which use ``decls``:
-
-- ``let`` expressions: ``let { decls } in exp``
-- ``where`` clauses: ``... where { decls }``
 
 Semantics
 ~~~~~~~~~
@@ -185,7 +183,10 @@ Import in a ``where`` clause:
 ::
 
   {-# LANGUAGE ScopedImports #-}
+
   module TestSum where
+
+  import Data.List ()
 
   testSum :: Int
   testSum = sum [1, 2, 3, 4, 5]  -- 15
@@ -196,7 +197,10 @@ Import in a ``let`` expression:
 ::
 
   {-# LANGUAGE ScopedImports #-}
+
   module TestUpper where
+
+  import Data.Char ()
 
   testUpper :: String
   testUpper = let import Data.Char (toUpper)
@@ -211,7 +215,11 @@ other declarations:
 ::
 
   {-# LANGUAGE ScopedImports #-}
+
   module TestMultiple where
+
+  import Data.Char ()
+  import Data.List ()
 
   testMultiple :: (String, Int)
   testMultiple = result
@@ -229,7 +237,10 @@ Mutually recursive functions can each have their own scoped imports:
 ::
 
   {-# LANGUAGE ScopedImports #-}
+
   module TestMutualRecursion where
+
+  import Data.Char ()
 
   process :: String -> String
   process s = f s
@@ -250,7 +261,10 @@ Qualified imports work as expected:
 ::
 
   {-# LANGUAGE ScopedImports #-}
+
   module TestQualified where
+
+  import Data.List ()
 
   testQualified :: [Int]
   testQualified = L.sort [3, 1, 2]  -- [1, 2, 3]
@@ -264,7 +278,10 @@ Scoped imports in a ``where`` clause are available in guards:
 ::
 
   {-# LANGUAGE ScopedImports #-}
+
   module TestGuards where
+
+  import Data.List ()
 
   isSorted :: Ord a => [a] -> Bool
   isSorted xs
@@ -282,7 +299,10 @@ imports work naturally:
 ::
 
   {-# LANGUAGE ScopedImports #-}
+
   module TestDoBlock where
+
+  import Data.Char ()
 
   example :: IO ()
   example = do
@@ -301,7 +321,11 @@ its own scoped imports.
 ::
 
   {-# LANGUAGE ScopedImports #-}
+
   module TestShowBase where
+
+  import Numeric ()
+  import Data.Char ()
 
   showBase :: Int -> Int -> String
   showBase 2 n = showIntAtBase 2 intToDigit n ""
@@ -325,15 +349,25 @@ Motivation:
   ``id`` without underscores. Lenses can coexist with record selectors by importing the lens
   only where lens operations are needed::
 
-    {-# LANGUAGE ScopedImports, NoImplicitPrelude, OverloadedStrings #-}
+    {-# LANGUAGE ScopedImports, NoImplicitPrelude, OverloadedStrings, BlockArguments #-}
     module LucidExample where
 
     import Lucid (Html)
-    import Prelude (mempty, ($))
+    import Prelude ()
 
     myHtml :: Html ()
-    myHtml = div [id "main"] $ mempty
-      where import Lucid (div, id)
+    myHtml = do
+      let
+        import Lucid (div, id)
+        import Prelude (mempty)
+      div [id "main"] mempty
+      div [id "body"] "Hello World"
+      div [id "footer"] do
+        let
+          import Lucid (a, href, head, map)
+        head [id "footer-header"] "Goodbye"
+        a [href "/links"]
+        map [] "A map"
 
 - **Qualifying**: Functions working with ``Text``, ``ByteString``,
   ``Map``, or ``Set`` can import the operations they need locally and unqualified, avoiding
@@ -479,8 +513,9 @@ functions due to monomorphism restrictions on record fields.
 Unresolved Questions
 --------------------
 
-None at this time.
+How does ScopedImports affect tooling like Haskell Language Server (HLS)?
 
+Will there need to be changes made to these tools to accomodate ScopedImports?
 
 Implementation Plan
 -------------------
