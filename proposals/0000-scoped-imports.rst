@@ -13,16 +13,20 @@ ScopedImports
 .. contents::
 
 This GHC proposal introduces the ``ScopedImports`` language extension.
-``ScopedImports`` allows import declarations to appear within ``let`` expressions and ``where`` clauses.
-Imported names can be scoped to specific expressions, allowing us to declare imports without
-polluting a module's namespace.
+``ScopedImports`` allows import declarations to appear within let expressions,
+let declarations, and where clauses for bringing module names into local scope, while keeping
+module/instance resolution unchanged. Module and instance resolution remain global.
 
+Imported names can be locally scoped to specific expressions, allowing us to declare imports without
+polluting a module's namespace.
 
 Motivation
 ----------
 
-Names overlap across different packages and modules.
-Currently, we have the following methods for avoiding naming conflicts within a module.
+Names overlap across different modules.
+If a module imports the same name from two or more modules, this results in a **naming conflict**.
+
+Currently, we have the following methods for avoiding naming conflicts.
 
 **Naming Conventions:**
 
@@ -35,7 +39,8 @@ so users avoid conflicts with names exported by ``Prelude``::
     map_
 
 Lenses generated with TemplateHaskell conflict with record field selectors.
-The standard lens generation function, ``makeLenses``, requires users to use a ``_`` prefix when naming field selectors::
+The standard lens generation function, ``makeLenses``, requires users to use a ``_``
+prefix when naming field selectors::
 
     data User = User
       { _name  :: Text
@@ -44,19 +49,44 @@ The standard lens generation function, ``makeLenses``, requires users to use a `
 
     makeLenses ''User  -- generates: name, email lenses
 
-These arbitrary naming conventions exist solely for namespace disambiguation and add bloat to our code.
+These arbitrary naming conventions exist solely for avoiding naming conflicts and add bloat to our code.
+It gets worse the more expressions exported by a module have to abide by the naming convention.
+Even short suffix/prefixes like ``_`` add up.
+
+Also, if two or more imported modules share the same naming convention, then the naming convention is moot.
+It is only useful if each module has a unique naming convention.
 
 **Hiding:**
 
-The ``clay`` CSS library recommends hiding certain ``Prelude`` names for the same reason::
+Since the ``clay`` CSS library exports an operator named ``(**)``,
+the library author recommends hiding the ``(**)`` operator defined in the ``Prelude`` module
+to avoid a naming conflict::
 
     import Prelude hiding ((**))
     import Clay
 
+Hiding imports applies to the entire module.
+The ``(**)`` operator from the ``Prelude`` module can't be used in any expression within the module,
+even if those expressions don't depend on the ``Clay`` module at all.
+
 **Qualifying:**
 
 Modules from the ``containers`` package such as ``Data.Map`` and ``Data.Set`` share many names.
-If we want to use these names in the same module we must qualify them::
+Modules can use import qualified to avoid name collisions::
+
+  import qualified Data.Map
+  import qualified Data.Set
+
+  memberCount :: Ord a => a -> Data.Map.Map a Int -> Data.Set.Set a -> Int
+  memberCount key map set =
+    case Data.Map.lookup key map of
+      Just n | Data.Set.member key set -> n
+      _ -> 0
+
+  ...
+
+This workaround suffers from the same issues as naming conventions and adds a lot of bloat to our code for every used import.
+To alleviate some pain, we can use module renaming to shorten the *modid* of the module::
 
   import qualified Data.Map as M
   import qualified Data.Set as S
@@ -69,16 +99,9 @@ If we want to use these names in the same module we must qualify them::
 
   ...
 
-Modules from the ``text`` and ``bytestring`` packages such as ``Data.Text.Lazy`` and ``Data.ByteString`` share many names too.
-If we want to use these names in the same module we must qualify them::
-
-  import qualified Data.Text as T
-  import qualified Data.ByteString as BS
-
-  process :: T.Text -> BS.ByteString -> Int
-  process text bytes = T.length text + BS.length bytes
-
-  ...
+People reading this module may have to scroll up to the top of the module
+to remember what *modid* refers to what module.
+This can be tedious in large modules depending on the person and the tooling they're using.
 
 **Prior art**
 
@@ -116,14 +139,14 @@ Proposed Change Specification
 -----------------------------
 
 This proposal introduces a new language extension, ``ScopedImports``, which
-extends the grammar to allow import declarations within ``let`` and ``where``
-binding groups.
+extends the grammar to allow import declarations within let expressions,
+let declarations, and where clauses.
 
 Syntax
 ~~~~~~
 
-The ``decl`` production, as defined in the `Chapter 4 of the Haskell 2010 Report <https://www.haskell.org/onlinereport/haskell2010/haskellch4.html>`_,
-is extended:
+The ``ScopedImports`` language extension extends the ``decl`` production defined in the
+`Haskell 2010 Report <https://www.haskell.org/onlinereport/haskell2010/haskellch4.html>`_.
 
 **Haskell 2010:**
 
@@ -141,33 +164,105 @@ is extended:
         | importdecl
 
 Where ``importdecl`` is an import declaration as defined in
-`§5.3 <https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1010005.3>`_.
+`Section 5.3 of the Haskell 2010 Report <https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1010005.3>`_.
+
+Since
+
+::
+  
+  decls	-> { decl₁ ; ... ; declₙ } where (n >= 0)
+
+import declarations are allowed in all syntax depending on the extended ``decls`` production rule.
+
+This includes:
+
+- `Let expressions <https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-440003.12>`_
+
+- Where clauses in `case expressions <https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-460003.13>`_, `function bindings, and pattern bindings <https://www.haskell.org/onlinereport/haskell2010/haskellch4.html#x10-830004.4.3>`_
+
+- Let declarations inside of `do expressions <https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-470003.14>`_,
+  `list comprehensions <https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-420003.11>`_,
+  and `guards <https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#dx17-180049>`_
+
+These special import declarations are called *scoped import declarations*.
+The names they may bring in scope are called *scoped imports*.
+
+The ``ScopedImports`` language extension does NOT change where other top-level declarations (``topdecl``) such as
+
+- Class declarations
+
+- Instance declarations
+
+- Extensions to the ``topdecl`` production rule such as pattern synonyms
+
+are allowed.
 
 Semantics
 ~~~~~~~~~
 
-1. **Same semantics as local bindings**: Scoped imports behave like regular
-   bindings in ``let`` and ``where`` clauses.
+Given module A and module B.
 
-2. **Import semantics**: Scoped import declarations support the same syntax
-   and semantics as top-level imports, including:
+If module A is used in a scoped import declaration in module B,
+module B MUST import AT LEAST module A's instances at the top-level.
 
-   - Qualified imports (``import qualified M``)
-   - Import lists (``import M (foo, bar)``)
-   - Hiding lists (``import M hiding (baz)``)
-   - Renaming (``import qualified M as N``)
-   - Package imports (``import "package" M``)
+For example,
+if module A is defined as
 
-3. **Module dependencies**: Modules referenced by scoped imports are treated
-   as dependencies of the enclosing module for the purposes of compilation
-   order and recompilation checking.
+::
+
+  module A where
+
+    foo = 5
+
+and module B is defined as
+
+::
+
+  {-# LANGUAGE ScopedImports #-}
+
+  module B where
+
+    bar = foo where import A
+
+module B will NOT compile. We did not import the instances of A at the top-level of module B.
+
+If module B is instead defined as
+
+::
+
+  {-# LANGUAGE ScopedImports #-}
+
+  module B where
+
+  import A ()
+
+  bar = foo where import A
+
+module B will compile.
+
+Requiring the import of a module's instances at the top-level
+for scoped import declarations does 2 things:
+
+- Brings all instances defined in module A into scope, making it explicit that
+  Haskell's global instance semantics are unchanged from Haskell 2010.
+
+- Signals to GHC and other tools that need to know module dependencies,
+  that module B depends on module A.
+
+Scoped import declarations support the same syntax
+and semantics as top-level imports except they are scoped
+locally to a specific expression, not the entire module.
+This includes hiding, renaming, etc.
+
+All names brought into a local scope via scoped imports have the same semantics as
+names declared locally in a let expression, let declaration, or where clause.
 
 Principles
 ~~~~~~~~~~
 
 ``ScopedImports`` furthers GHC's adherence to the `Lexical Scoping Principle (LSP) <https://github.com/ghc-proposals/ghc-proposals/blob/master/principles.rst#221lexical-scoping-principle-lsp>`_.
 
-By allowing imports inside of let statements and where clauses,
+By scoping imports with let expressions, let declarations, and where clauses,
 it can be made obvious to programmers what imports an expression depends on.
 Programmers can know where names in the expression come from without having to look
 at the top of the module and keep track of what names are in scope.
@@ -178,7 +273,7 @@ Examples
 Basic usage
 ~~~~~~~~~~~
 
-Import in a ``where`` clause:
+Import in a where clause:
 
 ::
 
@@ -192,7 +287,7 @@ Import in a ``where`` clause:
   testSum = sum [1, 2, 3, 4, 5]  -- 15
     where import Data.List (sum)
 
-Import in a ``let`` expression:
+Import in a let expression:
 
 ::
 
@@ -273,7 +368,7 @@ Qualified imports work as expected:
 Guards
 ~~~~~~
 
-Scoped imports in a ``where`` clause are available in guards:
+Scoped imports in a where clause are available in guards:
 
 ::
 
@@ -290,10 +385,27 @@ Scoped imports in a ``where`` clause are available in guards:
     where
       import Data.List (sort)
 
+Let declarations can also appear directly in pattern guards:
+
+::
+
+  {-# LANGUAGE ScopedImports #-}
+
+  module TestLetInGuard where
+
+  import Data.List ()
+  import Data.Char ()
+
+  classify :: String -> String
+  classify s
+    | let import Data.List (null), null s = "empty"
+    | let import Data.Char (isDigit), all isDigit s = "number"
+    | otherwise = "text"
+
 Let in do blocks
 ~~~~~~~~~~~~~~~~
 
-``let`` statements in do blocks desugar to ``let ... in ...``, so scoped
+Let declarations in do blocks desugar to let expressions, so scoped
 imports work naturally:
 
 ::
@@ -315,7 +427,7 @@ Note that the import is only visible to statements *later* in the do block.
 Per-clause imports
 ~~~~~~~~~~~~~~~~~~
 
-Each equation of a function can have its own ``where`` clause, and therefore
+Each equation of a function can have its own where clause, and therefore
 its own scoped imports.
 
 ::
@@ -338,6 +450,81 @@ its own scoped imports.
 
 The binary case needs ``showIntAtBase`` and ``intToDigit``, the hex case
 needs ``showHex``, and the default case needs nothing special.
+
+Interactions with local declarations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Scoped imports bring names into scope that can be used with other local
+declaration forms allowed in let expressions and where clauses.
+
+**Local type signatures:**
+
+Imported types can be used in local type signatures::
+
+  {-# LANGUAGE ScopedImports, ScopedTypeVariables #-}
+
+  module TestLocalTypeSig where
+
+  import Data.Map ()
+
+  example :: Int
+  example = size myMap
+    where
+      import Data.Map (Map, fromList, size)
+      myMap :: Map String Int
+      myMap = fromList [("a", 1), ("b", 2)]
+
+**Local fixity declarations:**
+
+Imported operators can be given local fixity::
+
+  {-# LANGUAGE ScopedImports, NoImplicitPrelude #-}
+
+  module TestLocalFixity where
+
+  import Data.Semigroup ()
+  import Prelude (String)
+
+  example :: String
+  example = "a" <> "b" <> "c"
+    where
+      import Data.Semigroup ((<>))
+      infixr 5 <>
+
+**List comprehensions:**
+
+Scoped imports work in list comprehension let bindings::
+
+  {-# LANGUAGE ScopedImports #-}
+
+  module TestListComp where
+
+  import Data.Char ()
+
+  uppercaseEvens :: String -> String
+  uppercaseEvens str =
+    [ toUpper c
+    | (i, c) <- zip [0..] str
+    , let import Data.Char (toUpper)
+    , even i
+    ]
+
+**Pattern matching with imported constructors:**
+
+Data constructors can be imported locally for pattern matching::
+
+  {-# LANGUAGE ScopedImports #-}
+
+  module TestPatternMatch where
+
+  import Data.List.NonEmpty ()
+
+  safeHead :: [a] -> Maybe a
+  safeHead xs = case nonEmpty xs of
+    Just (y :| _) -> Just y
+    Nothing -> Nothing
+    where
+      import Data.List.NonEmpty (nonEmpty, NonEmpty(..))
 
 Effect and Interactions
 -----------------------
@@ -420,7 +607,10 @@ Scoped qualified imports can provide the module qualification for ``QualifiedDo`
 ::
 
   {-# LANGUAGE ScopedImports, QualifiedDo #-}
+
   module TestQualifiedDo where
+
+  import Control.Monad ()
 
   testQualifiedDo :: Maybe Int
   testQualifiedDo = M.do
@@ -469,19 +659,16 @@ same module can have different do-notation semantics, for example:
 Costs and Drawbacks
 -------------------
 
-**Compilation cost**: When ``ScopedImports`` is enabled, the module graph builder
-(downsweep) must parse the entire module to discover scoped import declarations,
-rather than stopping after top-level imports. This additional parsing only affects
-modules that enable the extension.
+**Learnability**: Minimal impact. Names brought into local scope via scoped import declarations follow
+the same scoping rules as names defined locally.
 
-**Learnability**: Minimal impact. Scoped imports follow the same scoping rules as
-local bindings in ``let`` and ``where`` clauses, which Haskell programmers are
-already familiar with.
+**Maintenance burden**: Implementation of ``ScopedImports`` touches the AST and renamer.
+No new type system features, no changes to Core, and no changes to runtime semantics or global module/instance resolution.
 
-**Maintenance burden**: Implementation of ``ScopedImports`` touches the parser, renamer, and the
-algorithm used in downsweep.
-No new type system features, no changes to Core, and no changes to compile-time or runtime semantics.
-
+**Lexical Complexity**: Scoped import declarations can be abused to defined
+whacky expressions where it becomes difficult to determine what names are in
+the scope of an expression or not.
+Users of the ``ScopedImports`` language extension need to be responsible.
 
 Backward Compatibility
 ----------------------
@@ -489,7 +676,7 @@ Backward Compatibility
 **Level 0: No breakage.**
 
 This is a completely opt-in language extension. Existing programs are unaffected.
-The new syntax (import declarations in ``let``/``where``) is currently a parse
+The new syntax (import declarations in let/where) is currently a parse
 error, so no existing code can be broken by this change.
 
 
@@ -510,28 +697,52 @@ wrapping values in records and using ``DuplicateRecordFields`` to access them.
 This is unwieldy, requires boilerplate, and cannot handle certain polymorphic
 functions due to monomorphism restrictions on record fields.
 
+**LocalModules GHC proposal**: The `LocalModules (#283) <https://github.com/ghc-proposals/ghc-proposals/pull/283>`_
+proposal subsumes the functionality of ``ScopedImports``.
+``LocalModules`` is much more ambitious:
+
+  - **Full module definitions**: LocalModules allows defining entire modules (with data types,
+    classes, instances, type families) inside other modules. ScopedImports only allows
+    importing existing names.
+
+  - **New namespaces**: LocalModules creates new namespaces for grouping related definitions.
+    ScopedImports only controls visibility of names from existing modules.
+
+  - **Qualified re-exports**: LocalModules enables abstracting common import patterns via
+    qualified re-exports. ScopedImports has no effect on exports.
+
+  - **Implementation scope**: LocalModules requires changes to the AST, renamer, and interface
+    file format. ScopedImports requires only AST and renamer changes.
+
+  - **Complexity**: LocalModules is a significant extension to Haskell's module system.
+    ScopedImports is a minimal syntactic convenience.
+
+``ScopedImports`` addresses the most common use case (avoiding name conflicts) with minimal implementation complexity,
+while ``LocalModules`` provides a comprehensive solution to module organization.
+
 Unresolved Questions
 --------------------
 
-How does ScopedImports affect tooling like Haskell Language Server (HLS)?
+How does the ``ScopedImports`` language extension affect tooling like
+Haskell Language Server (HLS)?
 
-Will there need to be changes made to these tools to accomodate ScopedImports?
+Will there need to be changes made to these tools to accomodate scoped import declarations?
 
 Implementation Plan
 -------------------
 
-A working implementation is available at
+A working implementation of this proposal is available at
 `https://gitlab.haskell.org/rgover/ghc <https://gitlab.haskell.org/rgover/ghc>`_
-on the ``scoped-imports`` branch.
+on the ``scoped-imports-v2`` branch.
 
-*The implentation was done by Claude Opus 4.5 (Anthropic) and reviewed by the author of this proposal,
-a Haskell programmer with no prior GHC contributions. The implementation may be incorrect.*
+*The implentation was done by Claude Opus 4.5 (Anthropic) and reviewed by the author of this proposal.
+The implementation may be incorrect.*
 
 The implementation touches the following areas:
 
 1. **Parser** (``GHC/Parser.y``): Extended the grammar to allow ``importdecl``
    within ``decls``. Added productions for ``decls_and_imports`` and updated
-   ``let`` and ``where`` clause handling.
+   let and where clause handling.
 
 2. **AST** (``Language/Haskell/Syntax/Binds.hs``): Added a new constructor
    ``HsLocalBindsWithImports`` to ``HsLocalBindsLR`` that wraps a list of
@@ -542,12 +753,7 @@ The implementation touches the following areas:
    The extension check happens here, producing a clear error message when
    ``ScopedImports`` is not enabled.
 
-4. **Downsweep** (``GHC/Driver/Downsweep.hs``): Added ``extractScopedImports``
-   to traverse the parsed AST and collect scoped import declarations for
-   dependency analysis. Uses a generic traversal (``everythingOf``) to find
-   all ``HsLocalBindsWithImports`` nodes.
-
-5. **Test suite**: Several tests covering basic usage, extension interactions,
+4. **Test suite**: Several tests covering basic usage, extension interactions,
    scoping behavior, and error cases.
 
 
