@@ -474,23 +474,6 @@ Imported types can be used in local type signatures::
       myMap :: Map String Int
       myMap = fromList [("a", 1), ("b", 2)]
 
-**Local fixity declarations:**
-
-Imported operators can be given local fixity::
-
-  {-# LANGUAGE ScopedImports, NoImplicitPrelude #-}
-
-  module TestLocalFixity where
-
-  import Data.Semigroup ()
-  import Prelude (String)
-
-  example :: String
-  example = "a" <> "b" <> "c"
-    where
-      import Data.Semigroup ((<>))
-      infixr 5 <>
-
 **List comprehensions:**
 
 Scoped imports work in list comprehension let bindings::
