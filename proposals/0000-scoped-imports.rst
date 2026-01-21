@@ -24,7 +24,7 @@ Motivation
 ----------
 
 Names overlap across different modules.
-If a module imports the same name from two or more modules, this results in a **naming conflict**.
+If a module imports the same name from 2 or more modules, this results in a **naming conflict**.
 
 Currently, we have the following methods for avoiding naming conflicts.
 
@@ -53,7 +53,7 @@ These arbitrary naming conventions exist solely for avoiding naming conflicts an
 It gets worse the more expressions exported by a module have to abide by the naming convention.
 Even short suffix/prefixes like ``_`` add up.
 
-Also, if two or more imported modules share the same naming convention, then the naming convention is moot.
+Also, if 2 or more imported modules share the same naming convention, then the naming convention is moot.
 It is only useful if each module has a unique naming convention.
 
 **Hiding:**
@@ -133,7 +133,7 @@ Several languages support locally scoped imports/module opening.
       open List in
       map (fun x => x + 1) [1, 2, 3]
 
-All four languages allow imports with lexical scoping, proving that this is a useful feature for programmers.
+All 4 languages allow imports with lexical scoping, proving that this is a useful feature for programmers.
 
 Proposed Change Specification
 -----------------------------
