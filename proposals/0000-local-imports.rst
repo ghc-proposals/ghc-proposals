@@ -20,7 +20,7 @@ Motivation
 ----------
 
 Names overlap across different modules.
-If a module imports the same name from 2 or more modules, this results in a **naming conflict**.
+If a module imports the same name from 2 or more modules, this results in a *naming conflict*.
 
 Currently, we can use the following methods to avoid naming conflicts.
 
@@ -34,7 +34,7 @@ For example, the ``lucid`` HTML library suffixes the names it exports with
   id_
   map_
 
-Another example is lense names generated using Template Haskell.
+Another example is lens names generated using Template Haskell.
 The standard lens generation function, ``makeLenses``,
 requires users to prefix record field labels with ``_`` to avoid
 naming conflicts::
@@ -95,11 +95,7 @@ To alleviate some pain, we can use module renaming to shorten the qualifier::
 
   ...
 
-<TODO>
-People reading this module may have to scroll up to the top of
-the module to remember what *modid* refers to what module.
-This can be tedious in large modules depending on the person and the tooling they're using.
-<TODO>
+This helps, but still isn't ideal.
 
 Naming conflicts are caused by *namespace pollution*. We generally want to minimize
 namespace pollution within our modules, and the ability to *locally scope* names
@@ -110,10 +106,10 @@ Prior art
 
 **Other proposals:**
 
-The `LocalModules <>`_ proposal mentions similar motivations for minimizing
-namespace pollution and naming conflicts.
+The `LocalModules <https://github.com/goldfirere/ghc-proposals/blob/local-modules/proposals/0000-local-modules.rst>`_
+proposal mentions similar motivations for minimizing namespace pollution and naming conflicts.
 
-These motivations, such as
+Some of the motivations listed in that proposal, such as
 
   When a function ``f`` needs a helper ``h``, we can declare ``h`` in a
   ``where`` clause. However, suppose both ``f`` and ``g`` need ``h``. Now,
@@ -135,22 +131,6 @@ These motivations, such as
 
 and
 
-  If a function or group of functions needs to work with a datatype or class
-  locally, there is no way to do this without polluting the namespace of the
-  entire file.
-
-  With this proposal, we can do this easily::
-
-    module (f) where
-      f :: ...
-      f = ...
-
-      data SpecialDataType = ...
-
-      class LocalClass a b c where ...
-
-and
-
   When importing a library qualified, there are often stretches of code which
   work with the imported type, performing many operations on values of that type.
   In these stretches, the qualifications can become noisy. ::
@@ -164,7 +144,7 @@ and
 
   In ``frobbleSets``, there will be many ``Set.`` qualifications.
 
-, can be satisfied with the ``LocalImports``.
+can be satisfied with ``LocalImports``.
 
 **Other programming languages:**
 
@@ -213,12 +193,12 @@ Syntax
 The ``LocalImports`` language extension extends the ``decl`` production defined in the
 `Haskell 2010 Report <https://www.haskell.org/onlinereport/haskell2010/haskellch4.html>`_.
 
-**Haskell 2010:**::
+**Haskell 2010:** ::
 
   decl -> gendecl
         | (funlhs | pat) rhs
 
-**Haskell 2010 + LocalImports:**::
+**Haskell 2010 + LocalImports:** ::
 
   decl -> gendecl
         | (funlhs | pat) rhs
@@ -227,8 +207,8 @@ The ``LocalImports`` language extension extends the ``decl`` production defined 
 Where ``importdecl`` is an import declaration as defined in
 `Section 5.3 of the Haskell 2010 Report <https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1010005.3>`_.
 
-If::
-  
+If ::
+
   decls	-> { decl₁ ; ... ; declₙ } where (n >= 0)
 
 then import declarations are allowed in all syntax depending on the extended ``decls``
@@ -237,23 +217,17 @@ production rule.
 This includes:
 
 - `Let expressions <https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-440003.12>`_
-
 - `Where clauses <https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-460003.13>`_, `function bindings, and pattern bindings <https://www.haskell.org/onlinereport/haskell2010/haskellch4.html#x10-830004.4.3>`_
-
-- Let binding groups inside of `do expressions <https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-470003.14>`_,
-  `list comprehensions <https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-420003.11>`_,
-  and `guards <https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#dx17-180049>`_
+- Let binding groups inside of `do expressions <https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-470003.14>`_, `list comprehensions <https://www.haskell.org/onlinereport/haskell2010/haskellch3.html#x8-420003.11>`_, and `guards <https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#dx17-180049>`_
 
 These special import declarations are called *local import declarations*. The names they may bring
 in scope are called *local imports*.
 
-``LocalImports`` language extension does not change where other top-level declarations
+The ``LocalImports`` language extension does not change where other top-level declarations
 (``topdecl``) such as:
 
 - Class declarations
-
 - Instance declarations
-
 - Extensions to the ``topdecl`` production rule such as pattern synonyms
 
 are allowed.
@@ -261,18 +235,18 @@ are allowed.
 Semantics
 ~~~~~~~~~
 
-When the ``LocalImports`` extension is on, a distinction is made between traditional
-*top-level import declarations* and *local import declarations*.
+When the ``LocalImports`` extension is on, a distinction is made between
+traditional *top-level import declarations* and *local import declarations*.
 
-Local import declarations may appear in let binding groups::
+Local import declarations may appear in let binding groups ::
 
   f = let import M (p) in ...
 
-and where clauses::
+and where clauses ::
 
   g = ... where import M (q)
 
-. The *names* they bring into scope are called *local imports*. These may include
+The *names* they bring into scope are called *local imports*. These may include
 
 - Terms
 - Types
@@ -284,10 +258,17 @@ and where clauses::
 - Classes
 - Class methods
 
+Local imports are scoped and are not available outside of the scope in which they are declared.
+Trying to reference an imported name that's not in scope results in a compile-time error ::
+
+  f = let import M (p) in ...
+
+  g = p -- Can't reference p here! It only exists in the scope of the expression assigned to f
+
 Required top-level import
 #########################
 
-Any module named in local import declarations must be named in a top-level import declaration.
+Any module used in a local import declarations must be used in a top-level import declaration.
 
 For example, ::
 
@@ -302,7 +283,7 @@ For example, ::
 is invalid and will result in a compile-time error.
 
 If we want to use ``N`` in local import declarations,
-we must use it in a top-level import declaration::
+we must use it in a top-level import declaration. ::
 
   {-# LANGUAGE LocalImports #-}
 
@@ -314,12 +295,12 @@ we must use it in a top-level import declaration::
 
   g = ... where import N (q)
 
-. The top-level import declaration may have an empty import list.
+The top-level import declaration may have an empty import list.
 
-A top-level import declaration for local import declarations
-is required for 2 reasons:
+A top-level import declaration is required for local import declarations
+for 2 reasons:
 
-- Makes it explicit that Haskell's instance resolution semantics are unchanged
+- Makes it explicit that Haskell's instance resolution behavior is unchanged
 - Allows GHC and tooling, like Haskell Language Server, to keep track of module dependencies
 
 The only module that doesn't require a top-level import declaration is Prelude,
@@ -328,7 +309,7 @@ since it's imported into every module implicitly.
 If ``NoImplicitPrelude`` is enabled,
 and you want to use ``Prelude`` in a local import declaration,
 then you will need a top-level import declaration for Prelude
-like all other modules::
+like all other modules. ::
 
   {-# LANGUAGE NoImplicitPrelude, LocalImports #-}
 
@@ -346,7 +327,7 @@ Invalid local import declarations
 
 Local import declarations must not be empty and must not import any *record field labels*.
 
-Local import declarations of the form::
+Local import declarations of the form ::
 
   import N ()
 
@@ -354,15 +335,15 @@ are invalid and will result in a compile-time error.
 If we want to import instances only,
 the import declaration must be top-level.
 
-Local import declaration of the form::
+Local import declarations of the form ::
 
   import N (T(l))
 
-and::
+and ::
   
   import N (T(..))
 
-, where ``T`` is a type and ``l`` is a record field label,
+where ``T`` is a type and ``l`` is a record field label,
 are invalid and will result in a compile-time error.
 If an import declaration imports any record field label,
 the import declaration must be top-level.
@@ -375,9 +356,9 @@ label resolution behavior is unchanged when
 Valid local import declarations
 ###############################
 
-As long as an import declaration references a module in the
-global scope of the module its defined, and it doesn't import record field labels
-, it's valid::
+As long as a local import declaration references a
+module used in a top-level import declaration,
+and it doesn't import record field labels, it's valid ::
 
   {-# LANGUAGE LocalImports #-}
 
@@ -386,20 +367,16 @@ global scope of the module its defined, and it doesn't import record field label
   import N ()
 
   a = x where import N -- open import
-
   b = x + y * z where import N (x, y, z) -- explicit import
-
-  c = z where import N hiding (x, y) -- imports everything from N except x, y, and z
-
+  c = z where import N hiding (x, y) -- imports everything from N except x and y
   d = N.y where import qualified N -- qualified import
-
-  e = P.y where import qualified N as P
+  e = P.y where import qualified N as P -- qualifier renaming
 
 Qualifier shadowing
 ###################
 
 GHC raises a ``-Wname-shadowing`` warning when a name in an
-inner scope overlaps with a name in an outer scope::
+inner scope overlaps with a name in an outer scope ::
 
   y = 5
 
@@ -410,11 +387,11 @@ but it is often discouraged, and can even be made an error depending on the
 codebase.
 
 ``LocalImports`` adds a new warning called ``-Wqualifier-shadowing`` that does
-the same thing, but for module qualifiers::
+the same thing, but for module qualifiers ::
 
-  import qualified N
+  import qualified Y
 
-  x = let import qualified X as N in N.y -- The qualifier actually refers to the X module!
+  f = let import qualified X as Y in Y.g -- The qualifier actually refers to the X module, not Y!
 
 Like name shadowing, qualifier shadowing is discouraged, but allowed.
 Users of ``LocalImports`` can configure GHC to raise an error in these cases
@@ -429,55 +406,49 @@ Principles
 making it clearer what an expression depends on.
 
 ``LocalImports`` is also potentially very useful as GHC implements the
-`Syntactic Unification Priniciple <https://github.com/ghc-proposals/ghc-proposals/blob/master/principles.rst#211syntactic-unification-principle-sup>`_.
+`Syntactic Unification Principle <https://github.com/ghc-proposals/ghc-proposals/blob/master/principles.rst#211syntactic-unification-principle-sup>`_.
 
 If type-level let expressions and where clauses are added to GHC in the future,
-this modified `example from the LocalModules proposal <>`_ may be possible.
+this modified `example from the LocalModules proposal <https://github.com/goldfirere/ghc-proposals/blob/local-modules/proposals/0000-local-modules.rst>`_
+may be possible.
 
-Consider a data kind called ``Nat``::
+Consider a data kind called ``Nat`` ::
 
   data Nat = Zero | Succ Nat
 
-, and a GADT that shares constructors with the ``Nat`` data kind
-and uses the ``Nat`` data kind constructors in its own constructor
-type annotations::
+and a GADT called ``Fin`` that shares constructors with the ``Nat`` data kind ::
 
   data Fin :: Nat -> Type where
     Zero :: Fin (Succ n)
     Succ :: Fin n -> Fin (Succ n)
 
-Defining ``Nat`` and ``Fin`` in the same module is not possible, and isn't made possible with
-``LocalImports`` alone.
-
-I could define ``Fin``, if ``Nat`` and ``Fin`` lived in two different modules,
-and I use module qualification. ``Nat`` would look like::
+Note that the ``Nat`` data kind constructors are used in the ``Fin`` constructors' type annotations.
+We can only define ``Fin`` if ``Nat`` is defined in a separate module
+and we use module qualification. ``Nat`` would look like ::
 
   module Nat where
 
   data Nat = Zero | Succ Nat
 
-and ``Fin`` would look like::
+and ``Fin`` would look like ::
 
   module Fin where
 
-  import qualifed Nat
+  import qualified Nat
 
   data Fin :: Nat -> Type where
     Zero :: Fin (Nat.Succ n)
     Succ :: Fin n -> Fin (Nat.Succ n)
 
-Defining ``Fin`` using these names, even in its own module,
-is impossible without using module qualification.
-
-With ``LocalImports`` and type-level let expressions, I could define ``Fin`` as::
+With ``LocalImports`` and type-level where expressions, we can define ``Fin`` as ::
 
   module Fin where
 
   import Nat (Nat)
 
   data Fin :: Nat -> Type where
-    Zero :: let import Nat(Succ) in Fin (Succ n)
-    Succ :: let import Nat(Succ) in Fin n -> Fin (Succ n)
+    Zero :: Fin (Succ n) where import Nat(Succ)
+    Succ :: Fin n -> Fin (Succ n) where import Nat(Succ)
 
 This is a potential application of ``LocalImports``.
 
@@ -909,7 +880,7 @@ the same scoping rules as names defined locally.
 **Maintenance burden**: Implementation of ``LocalImports`` touches the AST and renamer.
 No new type system features, no changes to Core, and no changes to runtime semantics or global module/instance resolution.
 
-**Lexical Complexity**: Local import declarations can be abused to defined
+**Lexical Complexity**: Local import declarations can be abused to define
 whacky expressions where it becomes difficult to determine what names are in
 the scope of an expression or not. Users of the ``LocalImports`` language
 extension need to be responsible.
@@ -970,7 +941,7 @@ Unresolved Questions
 How does the ``LocalImports`` language extension affect tooling like
 Haskell Language Server (HLS)?
 
-Will there need to be changes made to these tools to accomodate scoped import declarations?
+Will there need to be changes made to these tools to accommodate scoped import declarations?
 
 How should ``LocalImports`` work with ``import safe``?
 
@@ -983,7 +954,7 @@ A working implementation of this proposal is available at
 `https://gitlab.haskell.org/rgover/ghc <https://gitlab.haskell.org/rgover/ghc>`_
 on the ``local-imports-9.10`` branch.
 
-*The implentation was done by Claude Opus 4.5 (Anthropic)
+*The implementation was done by Claude Opus 4.5 (Anthropic)
 and reviewed by the author, someone with no experience contributing to GHC.
 The current implementation may be incorrect.*
 
@@ -1006,12 +977,12 @@ The implementation touches the following areas:
    scoping behavior, and error cases.
 
 5. **Other**: Some other parts of GHC were also touched for adding a new warning
-and making sure existing warnings like ``-Wunused-imports`` work with this language
-extension. Specifically ``compiler/GHC/Tc/Utils/Backpack.hs`` and ``compiler/GHC/Tc/Utils/Monad.hs``.
+   and making sure existing warnings like ``-Wunused-imports`` work with this language
+   extension. Specifically ``compiler/GHC/Tc/Utils/Backpack.hs`` and ``compiler/GHC/Tc/Utils/Monad.hs``.
 
 Acknowledgments
 ---------------
 
 The implementation was developed using AI-assisted programming.
 Most of the code was generated by Claude Opus 4.5 (Anthropic) with
-guidance and direction from me.
+guidance and direction from the author.
