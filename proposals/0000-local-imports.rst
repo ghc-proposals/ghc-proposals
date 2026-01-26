@@ -405,7 +405,7 @@ Principles
 ``LocalImports`` allows programmers to scope imports to the exact expression they're used in,
 making it clearer what an expression depends on.
 
-``LocalImports`` is also potentially very useful as GHC implements the
+``LocalImports`` is also potentially useful as GHC implements the
 `Syntactic Unification Principle <https://github.com/ghc-proposals/ghc-proposals/blob/master/principles.rst#211syntactic-unification-principle-sup>`_.
 
 If type-level let expressions and where clauses are added to GHC in the future,
