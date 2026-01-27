@@ -198,6 +198,15 @@ Examples
 
   >>> withParam @U 1 $ withParam @U 2 $ getParam @U -- does not typecheck
 
+Note that the ambiguity check for univocal parameters is performed lazily
+when the parameter is retrieved.
+As long as you don't call ``getParam`` no check occurs.
+
+::
+
+  >>> withParam @U 1 $ withParam @U 2 100
+  100
+
 In the case of polymorphic parameters, the resolution depends on the full
 instantiated type, and not only on the parameter constructor.
 
@@ -207,6 +216,18 @@ instantiated type, and not only on the parameter constructor.
 
   >>> withParam @(PP Int) [1] $ withParam @(PP Bool) [True] $ getParam @(PP Int)
   [1]
+
+The ambiguity check also considers the full type,
+and not the parameter constructor alone.
+
+::
+
+  data param U a = a
+
+  >>> withParam @(U Int) 1 $ withParam @(U Bool) True $ getParam @(U Int)
+  1
+
+  >>> withParam @(U Int) 1 $ withParam @(U Int) 2 $ getParam @(U Int) -- doesn't typecheck
 
 Operational semantics
 ^^^^^^^^^^^^^^^^^^^^^
