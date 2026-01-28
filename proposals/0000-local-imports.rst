@@ -257,6 +257,7 @@ The *names* they bring into scope are called *local imports*. These may include
 - Pattern synonyms
 - Classes
 - Class methods
+- Record field labels
 
 Local imports are scoped and are not available outside of the scope in which they are declared.
 Trying to reference an imported name that's not in scope results in a compile-time error ::
@@ -325,7 +326,7 @@ like all other modules. ::
 Invalid local import declarations
 #################################
 
-Local import declarations must not be empty and must not import any *record field labels*.
+Local import declarations must not be empty.
 
 Local import declarations of the form ::
 
@@ -335,30 +336,15 @@ are invalid and will result in a compile-time error.
 If we want to import instances only,
 the import declaration must be top-level.
 
-Local import declarations of the form ::
-
-  import N (T(l))
-
-and ::
-  
-  import N (T(..))
-
-where ``T`` is a type and ``l`` is a record field label,
-are invalid and will result in a compile-time error.
-If an import declaration imports any record field label,
-the import declaration must be top-level.
-
 These restrictions on local import declarations
-make it explicit to users that instance and record field
-label resolution behavior is unchanged when
-``LocalImports`` is enabled.
+make it explicit to users that instance resolution behavior
+is unchanged when ``LocalImports`` is enabled.
 
 Valid local import declarations
 ###############################
 
 As long as a local import declaration references a
-module used in a top-level import declaration,
-and it doesn't import record field labels, it's valid ::
+module used in a top-level import declaration, it's valid ::
 
   {-# LANGUAGE LocalImports #-}
 
