@@ -176,13 +176,7 @@ Proposed Library Change Specification
 Template Haskell
 ~~~~~~~~~~~~~~~~
 
-We'll add the following constructors instead of modifying the existing ``StringL`` constructor, to maintain backwards compatibility:
-
-::
-
-  data Lit
-    = ...
-    | QualStringL ModName String
+We intentionally avoid adding a "qualified string" constructor to Template Haskell (at least for now), since it's simply syntax sugar that can be represented in Template Haskell as an explicit `appE (varE 'MyMod.fromString) (litE $ stringL "...")`. This is also consistent with MultilineStrings, which doesn't have a TH constructor.
 
 Examples
 --------
