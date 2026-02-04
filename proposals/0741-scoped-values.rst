@@ -1,5 +1,5 @@
-Nominal implicit parameters
-===========================
+Scoped values
+=============
 
 .. author:: Lorenzo Tabacchini
 .. date-accepted::
@@ -10,7 +10,7 @@ Nominal implicit parameters
 .. sectnum::
 .. contents::
 
-This proposal introduces ``NominalImplicitParams``, a new GHC extension
+This proposal introduces ``ScopedValues``, a new GHC extension
 that provides first-class support for dynamic scoping with robust and predictable semantics.
 
 Motivation
@@ -57,7 +57,7 @@ While this simplifies things, it also has two drawbacks:
 There are solutions to this, notably through the usage of type classes (the so-called "MTL style"),
 but they introduce complexity again and suffer from performance issues.
 
-Implicit parameters, on the other hand, are not based on monads, so
+Scoped values, on the other hand, are not based on monads, so
 they compose naturally with any other effect and preserve the distinction
 between IO and pure code.
 Moreover the solution presented in this document has no performance
@@ -69,7 +69,7 @@ Effect systems are very powerful tools but they are also very complex.
 Since one of the goals of this proposal is to facilitate "Simple Haskell",
 we do not consider effect system libraries as viable alternatives.
 
-Nonetheless, ``NominalImplicitParams`` can provide a solid base to implement
+Nonetheless, ``ScopedValues`` can provide a solid base to implement
 a minimalistic yet complete effect system in few lines of code.
 See the "lightweight effect system" appendix for a more detailed description
 of the idea.
@@ -103,24 +103,20 @@ We introduce a new top-level declaration syntax:
 
 ::
 
-  data param [univocal] PARAM_CONSTR ty_vars = PAYLOAD_TYPE
+  data scoped KEY_CONSTRUCTOR ty_vars = VALUE_TYPE
 
-Parameters are nominal. They are type constructors that obey standard Haskell
+Keys are nominal. They are type constructors that obey standard Haskell
 namespacing and visibility rules.
 
-They can have one of two resolution strategies:
-"relaxed" (the default) and "univocal"
-(defined by adding the ``univocal`` flag to the parameter declaration).
+All keys are inhabitants of the special open kind ``ScopeKey``.
 
-All parameters are inhabitants of the special open kind ``Param``.
-
-It is possible to declare polymorphic parameters, that is parameter constructors that
+It is possible to declare polymorphic keys, that is key constructors that
 expect one or more type variables.
-The RHS (the type) can refer to the parameter variables,
-which means that the payload type can depend on the type arguments passed to
-the constructor.
+The RHS (the type) can refer to the key variables,
+which means that the value type can depend on the type arguments passed to
+the key constructor.
 
-The new syntax is only allowed when the ``NominalImplicitParams`` extension
+The new syntax is only allowed when the ``ScopedValues`` extension
 is enabled.
 
 Changes in the grammar
@@ -131,110 +127,120 @@ This proposal adds a new production rule to ``topdecl``:
 
 ::
 
-  data param [univocal] simpletype = type
+  data scoped simpletype = type
 
 Examples
 """"""""
 
 ::
 
-  -- A parameter named `P`, carrying a value of type `Int`,
-  -- with a "relaxed" resolution strategy
-  data param P = Int
+  -- A key named `K`, carrying a value of type `Int`
+  data scoped K = Int
 
 ::
 
-  -- A parameter named `U`, carrying a value of type `Bool`,
-  -- with a "univocal" resolution strategy
-  data param univocal U = Bool
-
-::
-
-  -- A polymorphic parameter
-  data param PP a = [a]
+  -- A polymorphic key
+  data scoped KK a = [a]
 
 The types
 ^^^^^^^^^
-The constraint ``HasParam :: Param -> Constraint`` indicates that a parameter is in scope.
-Crucially, ``HasParam`` is not a type class but is classified as a distinct predicate type.
+The constraint ``Scoped :: ScopeKey -> Constraint`` indicates that a value is in scope
+for the given key.
+Crucially, ``Scoped`` is not a type class but is classified as a distinct predicate type.
 For this reason it cannot have instances: it can only be bound to values locally.
 Moreover it is not allowed as a superclass, as that would break the global coherence
 of type class instances.
 
-The built-in type family ``ParamType :: Param -> Type`` reduces to the type of
-the values carried by a parameter (the payload type).
+The built-in type family ``ValueType :: ScopeKey -> Type`` reduces to the value type
+for the given key.
 
 Introduction
 ^^^^^^^^^^^^
-The function ``withParam`` brings a value into the dynamic scope.
+The function ``withValue`` brings a value into the dynamic scope.
 
 ::
 
-  withParam :: forall p r. ParamType p -> (HasParam p => r) -> r
+  withValue :: forall k r. ValueType k -> (Scoped k => r) -> r
 
 Elimination
 ^^^^^^^^^^^
-The function ``getParam`` retrieves the value from the nearest enclosing scope.
+The function ``value`` retrieves the value from the nearest enclosing scope.
 
 ::
 
-  getParam :: forall p. HasParam p => ParamType p
-
-If the parameter is declared as "univocal", a compilation error is raised
-in case multiple values are in scope for the same parameter.
+  value :: forall k. Scoped k => ValueType k
 
 Examples
 """"""""
 ::
 
-  data param P = Int
+  data scoped K = Int
 
-  >>> withParam @P 1 $ withParam @P 2 $ getParam @P
+  >>> withValue @K 1 $ withValue @K 2 (value @K)
   2
 
-::
-
-  data param univocal U = Int
-
-  >>> withParam @U 1 $ withParam @U 2 $ getParam @U -- does not typecheck
-
-Note that the ambiguity check for univocal parameters is performed lazily
-when the parameter is retrieved.
-As long as you don't call ``getParam`` no check occurs.
+In the case of polymorphic keys, the resolution depends on the full
+instantiated type, and not only on the key constructor.
 
 ::
 
-  >>> withParam @U 1 $ withParam @U 2 100
-  100
+  data scoped T a = a
 
-In the case of polymorphic parameters, the resolution depends on the full
-instantiated type, and not only on the parameter constructor.
-
-::
-
-  data param PP a = [a]
-
-  >>> withParam @(PP Int) [1] $ withParam @(PP Bool) [True] $ getParam @(PP Int)
-  [1]
-
-The ambiguity check also considers the full type,
-and not the parameter constructor alone.
-
-::
-
-  data param U a = a
-
-  >>> withParam @(U Int) 1 $ withParam @(U Bool) True $ getParam @(U Int)
+  >>> withValue @(T Int) 1 $ withValue @(T Bool) True $ value @(T Int)
   1
 
-  >>> withParam @(U Int) 1 $ withParam @(U Int) 2 $ getParam @(U Int) -- doesn't typecheck
+Warnings
+^^^^^^^^
+Two warnings are introduced:
+
+* **Shadowed scoped value**, enabled by default,
+  triggered when a value that is already in scope
+  is reintroduced with ``withValue``.
+* **Redundant scoped value**, enabled through the ``-Wredundant-scoped-values`` flag,
+  triggered when a value is introduced with
+  ``withValue`` but never retrieved via a corresponding ``value``.
+
+The **shadowed scoped value** warning can be disabled selectively for a specific
+key via the ``{-# ALLOW_SHADOWING #-}`` pragma.
+
+Examples
+""""""""
+
+::
+
+  data scoped K = Int
+  data scoped L {-# ALLOW_SHADOWING #-} = Int
+
+  >>> withValue @K 1 $ withValue @K 2 (value @K)
+  -- Shadowed scoped value warning
+  2
+
+  >>> withValue @L 1 $ withValue @L 2 (value @L)
+  -- No warnings
+  2
+
+  >>> withValue @K 1 $ withValue @L 2 $ value @K
+  -- Redundant scoped value warning (L)
+  1
+
+The warnings consider the full type, and not the key constructor alone.
+
+::
+
+  >>> withValue @(T Int) 1 $ withValue @(T Int) 2 $ value @(T Int)
+  -- Shadowed scoped value warning
+  2
+
+  >>> withValue @(T Int) 1 $ withValue @(T Bool) True $ value @(T Int)
+  -- Redundant scoped value warning (T Bool)
+  1
 
 Operational semantics
 ^^^^^^^^^^^^^^^^^^^^^
-The semantics of ``withParam`` and ``getParam`` are defined in terms of
+The semantics of ``withValue`` and ``value`` are defined in terms of
 elaboration to Core (System FC).
 
-Because we want ``HasParam p`` (the constraint) and  ``ParamType p`` (the value) to share
+Because we want ``Scoped k`` (the constraint) and  ``ValueType k`` (the value) to share
 the same runtime representation, we define an axiom that allows
 coercing between the two types without allocating a dictionary wrapper.
 
@@ -243,134 +249,131 @@ and ``e'`` is the System FC term.
 
 The axiom
 """""""""
-``HasParam p`` is representationally equivalent to ``ParamType p``.
+``Scoped k`` is representationally equivalent to ``ValueType k``.
 
 ::
 
-  axHasParam(p) :: HasParam p ~R ParamType p
+  axScoped(k) :: Scoped k ~R ValueType k
 
-Introduction (withParam)
+Introduction (withValue)
 """"""""""""""""""""""""
-The ``withParam`` construct applies the continuation ``k`` to the input value ``v``,
+The ``withValue`` construct applies the continuation ``f`` to the input value ``v``,
 cast into the evidence type.
 
 ::
 
-  Γ ⊢ v : ParamType p ↝ v'
-  Γ ⊢ k : (HasParam p => τ) ↝ k'
+  Γ ⊢ v : ValueType k ↝ v'
+  Γ ⊢ f : (Scoped k => τ) ↝ f'
   ----------------------------------------------------
-  Γ ⊢ withParam @p v k ↝ k' (v' |> sym(axHasParam(p)))
+  Γ ⊢ withValue @k v f ↝ f' (v' |> sym(axScoped(k)))
 
-Elimination (getParam)
+Elimination (value)
 """"""""""""""""""""""
-The ``getParam`` construct locates the evidence ``c``
+The ``value`` construct locates the evidence ``c``
 (the constraint variable bound by the implicit function arrow) and casts it back to the value type.
 
 ::
 
-  c : HasParam p ∈ Γ
+  c : Scoped k ∈ Γ
   ------------------------------------
-  Γ ⊢ getParam @p ↝ c |> axHasParam(p)
+  Γ ⊢ value @k ↝ c |> axScoped(k)
 
 Proposed Library Change Specification
 -------------------------------------
 We propose the introduction of a new module in ``ghc-experimental``,
-named ``GHC.NominalImplicitParams.Experimental``,
+named ``GHC.ScopedValues.Experimental``,
 exporting all the definitions described in the previous section:
 
-* ``HasParam``
-* ``ParamType``
-* ``Param``
-* ``withParam``
-* ``getParam``
+* ``Scoped``
+* ``ValueType``
+* ``ScopeKey``
+* ``withValue``
+* ``value``
 
 Examples
 --------
 
-Relaxed resolution
-^^^^^^^^^^^^^^^^^^
+Simple keys
+^^^^^^^^^^^
+
 ::
 
-  data param P = Int
+  data scoped K = Int
 
-  getP :: HasParam P => Int
-  getP = getParam @P
+  getK :: Scoped K => Int
+  getK = value @K
 
-  >>> withParam @P 1 $ withParam @P 2 getP
-  2
-
-Univocal resolution
-^^^^^^^^^^^^^^^^^^^
-::
-
-  data param U = Int
-
-  getU :: HasParam U => Int
-  getU = getParam @U
-
-  >>> withParam @U 1 getU
+  >>> withValue @K 1 getK
   1
 
-  >>> withParam @U 1 $ withParam @U 2 getU -- doesn't typecheck
+  >>> withValue @K 1 $ withValue @K 2 getK
+  -- Shadowed scoped value warning
+  2
 
-Polymorphic parameter
-^^^^^^^^^^^^^^^^^^^^^
+Polymorphic keys
+^^^^^^^^^^^^^^^^
+
 ::
 
-  data param PP a = [a]
+  data scoped KK a = [a]
 
-  >>> withParam @(PP Int) [1] $
-        withParam @(PP Bool) [True] $
-          getParam @(PP Int)
+  >>> withValue @(KK Int) [1] $
+        withValue @(KK Bool) [True] $
+          value @(KK Int)
+  -- Redundant scoped value warning (KK Bool)
   [1]
 
-  >>> withParam @(PP Int) [1] $
-        withParam @(PP Int) [2] $
-          withParam @(PP Bool) [True] $
-            getParam @(PP Int)
+  >>> withValue @(KK Int) [1] $
+        withValue @(KK Int) [2] $
+          withValue @(KK Bool) [True] $
+            value @(KK Int)
+  -- Shadowed scoped value warning (KK Int)
+  -- Redundant scoped value warning (KK Bool)
   [2]
 
-::
+  data scoped KL (l :: Symbol) = Int
 
-  data param PL (l :: Symbol) = Int
-
-  >>> withParam @(PL "one") 1 $
-        withParam @(PL "two") 2 $
-          getParam @(PL "one") + getParam @(PL "two")
+  >>> withValue @(KL "one") 1 $
+        withValue @(KL "two") 2 $
+          value @(KL "one") + value @(KL "two")
   3
 
 Local capture
 ^^^^^^^^^^^^^
-One important consequence of the chosen operational semantics is that parameters
+One important consequence of the chosen operational semantics is that scoped values
 can be captured locally or not depending on the signature.
 
 ::
 
-  data Param Scope = String
+  data scoped Scope = String
 
   test1 :: String
-  test1 = withParam @Scope "global" $
+  test1 = withValue @Scope "global" $
     let captured :: String -- (this signature can be omitted)
-        captured = getParam @Scope
-     in withParam @Scope "local" captured
+        captured = value @Scope
+     in withValue @Scope "local" captured
 
   >>> test1
+  -- Shadowed scoped value warning
+  -- Redundant scoped value warning
   "global"
 
 ::
 
   test2 :: String
-  test2 = withParam @Scope "global" $
-    let nonCaptured :: HasParam Scope => String
-        nonCaptured = getParam @Scope
-     in withParam @Scope "local" nonCaptured
+  test2 = withValue @Scope "global" $
+    let nonCaptured :: Scoped Scope => String
+        nonCaptured = value @Scope
+     in withValue @Scope "local" nonCaptured
 
   >>> test2
+  -- Shadowed scoped value warning
+  -- Redundant scoped value warning
   "local"
 
-Parameters as interfaces
-^^^^^^^^^^^^^^^^^^^^^^^^
-Implicit parameters can be used to implement abstract interfaces whose
+Scoped values as interfaces
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Scoped values can be used to implement abstract interfaces whose
 behaviour is defined at runtime.
 As an example, we can implement an interface for time functions that
 allows us to replace the real time-reporting behaviour with mocks
@@ -382,9 +385,9 @@ allows us to replace the real time-reporting behaviour with mocks
 
   -- imports...
 
-  data param TimeP = Time
+  data scoped TimeK = Time
 
-  type HasTime = HasParam TimeP
+  type HasTime = Scoped TimeK
 
   data Time = Time
     { _currentTime :: IO UTCTime
@@ -392,13 +395,13 @@ allows us to replace the real time-reporting behaviour with mocks
     }
 
   runTime :: Time -> (HasTime => r) -> r
-  runTime = withParam @TimeP
+  runTime = withValue @TimeK
 
   currentTime :: HasTime => IO UTCTime
-  currentTime = _currentTime (getParam @TimeP)
+  currentTime = _currentTime (value @TimeK)
 
   monotonicTime :: HasTime => IO Double
-  monotonicTime = _monotonicTime (getParam @TimeP)
+  monotonicTime = _monotonicTime (value @TimeK)
 
   defaultTime :: Time
   defaultTime = Time getCurrentTime getMonotonicTime
@@ -424,22 +427,22 @@ Let's consider the alternatives one by one.
 
 ImplicitParams
 ^^^^^^^^^^^^^^
-``NominalImplicitParams`` supersedes ``ImplicitParams`` for most use cases.
+``ScopedValues`` supersedes ``ImplicitParams`` for most use cases.
 It cannot however cover uses of ``ImplicitParams`` that rely on global instances
 of ``IP``.
-The lack of support for default parameter values in this proposal is a deliberate
+The lack of support for default values in this proposal is a deliberate
 choice that makes both the semantics and the implementation simpler.
 
 ReaderT
 ^^^^^^^
 The clear distinction between introduction (``runReaderT``)
-and modification (``local``) is very hard to replicate in an implementation of implicit parameters.
-For this reason, ``NominalImplicitParams`` should not be considered a replacement for ``ReaderT``
+and modification (``local``) is very hard to replicate without a monad.
+For this reason, ``ScopedValues`` should not be considered a replacement for ``ReaderT``
 but rather an alternative with different trade-offs.
 
 WithDict
 ^^^^^^^^
-We believe that ``NominalImplicitParams`` should be preferred to ``withDict``
+We believe that ``ScopedValues`` should be preferred to ``withDict``
 in most cases, as the latter relies on incoherent instance resolution
 and can lead to unexpected behaviour and bugs.
 
@@ -454,9 +457,9 @@ Backward Compatibility
 ----------------------
 The impact on existing code is 0 (no breakage).
 
-* The keywords ``param`` and ``univocal`` are "soft keywords",
-  so they remain valid identifiers in other contexts
-* The ``HasParam`` constraint is a new, distinct form in the solver,
+* The ``scoped`` keyword is a "soft keyword",
+  so it remains a valid identifier in other contexts
+* The ``Scoped`` constraint is a new, distinct form in the solver,
   so it does not overlap with the existing class mechanism.
 
 Alternatives
@@ -467,20 +470,20 @@ Functional dependency
 One minor drawback of the proposed design is the lack of consistency
 with other GHC features.
 
-If we added an additional parameter to ``HasParam``
-and replaced ``ParamType`` with a functional dependency,
+If we added an additional parameter to ``Scoped``
+and replaced ``ValueType`` with a functional dependency,
 the API would be more in line with ``IP`` and ``HasField``:
 
 ::
 
-  withParam :: forall p a r. a -> (HasParam p a => r) -> r
+  withValue :: forall k a r. a -> (Scoped k a => r) -> r
 
-  getParam :: forall p a. HasParam p a => a
+  value :: forall k a. Scoped k a => a
 
-However, given the nominal nature of parameters and the rather
-straightforward resolution of ``ParamType``,
+However, given the nominal nature of scoped values and the rather
+straightforward resolution of ``ValueType``,
 this API change doesn't seem to bring much value.
-A simple Haddock or HLS lookup is enough to find out the type of a parameter
+A simple Haddock or HLS lookup is enough to find out the value type for a key
 if needed.
 
 Library implementation
@@ -491,7 +494,7 @@ by using a combination of type families, ``withDict`` and ``IP``
 
 However such a library would not achieve the same level of robustness
 and ease of use that this proposal advocates for.
-If we want implicit parameters to be a simpler alternative to ``ReaderT``,
+If we want scoped values to be a simpler alternative to ``ReaderT``,
 then they should be usable without much boilerplate nor advanced tricks.
 
 Moreover typechecker plugins have a high maintenance cost, which
@@ -502,25 +505,25 @@ Unresolved Questions
 
 * What is the impact on compilation times?
 * Is there a way to support unlifted types?
-* What about linear parameters?
+* What about linear scoped values?
 
 Implementation Plan
 -------------------
 I have already implemented `a prototype of these ideas
-<https://gitlab.haskell.org/lortabac/ghc/-/tree/nominal-implicit-parameters2?ref_type=heads>`_.
+<https://gitlab.haskell.org/lortabac/ghc/-/tree/scoped-values?ref_type=heads>`_.
 
 I volunteer to implement the definitive version if the proposal is accepted.
 
 Implementation notes
 ^^^^^^^^^^^^^^^^^^^^
 
-* A new ``PredType`` is defined, named ``ParamPred``.
-  All ``HasParam`` constraints are classified as ``ParamPred``.
-* When the solver meets a ``HasParam`` wanted, the matching givens
+* A new ``PredType`` is defined, named ``ScopedPred``.
+  All ``Scoped`` constraints are classified as ``ScopedPred``.
+* When the solver meets a ``Scoped`` wanted, the matching givens
   are sorted by descending ``TcLevel`` and the first one is picked. 
-* ``HasParam`` is defined as a ``newtype`` (to allow for the coercion)
+* ``Scoped`` is defined as a ``newtype`` (to allow for the coercion)
   but has kind ``Constraint``.
-* Two wired-in functions (``withParam#`` and ``getParam#``) are defined.
+* Two wired-in functions (``withValue#`` and ``value#``) are defined.
   During desugaring, these two functions are elaborated according to the
   operational semantics.
 
@@ -541,9 +544,9 @@ While the distinction between IO and pure code is already more than what the ave
 programming language provides, some users may want more granular effect tracking.
 Luckily, we don't need a complex effect system library for this.
 
-The idea is to consider the parameter constructor as the "key" that gives
+The idea is to consider the scope key as the key that gives
 access to IO, and rely on the visibility mechanism
-offered by modules to control which functions have access to the key.
+offered by modules to control which functions have access to it.
 
 The core of the effect system is simply a newtype over IO with a smart constructor:
 
@@ -558,15 +561,15 @@ The core of the effect system is simply a newtype over IO with a smart construct
   deriving (Functor, Applicative, Monad)
 
   -- In order to construct an 'Eff' action,
-  -- you need to provide the parameter constructor
-  eff :: HasParam p => Proxy p -> IO a -> Eff a
+  -- you need to provide the key constructor
+  eff :: Scoped k => Proxy k -> IO a -> Eff a
   eff _ = Eff
 
 Now we can modify the ``TimeEff`` module to use the effect system:
 
 ::
 
-  -- Important: 'TimeP' is hidden!
+  -- Important: 'TimeK' is hidden!
   -- This ensures that only the functions defined in this module
   -- can use the 'eff' smart constructor with ``HasTime``
   module TimeEff (HasTime, Time (..), runTime, currentTime, monotonicTime, defaultTime) where
@@ -574,10 +577,10 @@ Now we can modify the ``TimeEff`` module to use the effect system:
   -- other definitions...
 
   currentTime :: HasTime => Eff UTCTime
-  currentTime = eff (Proxy @TimeP) $ _currentTime (getParam @TimeP)
+  currentTime = eff (Proxy @TimeK) $ _currentTime (value @TimeK)
 
   monotonicTime :: HasTime => Eff Double
-  monotonicTime = eff (Proxy @TimeP) $ _monotonicTime (getParam @TimeP)
+  monotonicTime = eff (Proxy @TimeK) $ _monotonicTime (value @TimeK)
 
 Now arbitrary IO is not allowed anymore:
 
@@ -586,7 +589,7 @@ Now arbitrary IO is not allowed anymore:
   >>> runEff $ runTime defaultTime monotonicTime
   653934.057901417
 
-Of course, it is possible to "cheat" and export a parameter constructor to get
+Of course, it is possible to "cheat" and export a key constructor to get
 unrestricted IO capabilities. However:
 
 * An effect will still show up in the signatures, since
@@ -605,17 +608,17 @@ in the same vein as ``MonadIO``.
 
   -- imports...
 
-  data param univocal IOP = ()
+  data scoped IOK = ()
 
-  type HasIO = HasParam IOP
+  type HasIO = Scoped IOK
 
   -- | Run an 'Eff' action in which arbritrary IO is possible through 'performIO'
   runIO :: (HasIO => Eff r) -> Eff r
-  runIO = withParam @IOP ()
+  runIO = withValue @IOK ()
 
   -- | Perform an arbitrary IO action inside an 'Eff' one (the equivalent of 'liftIO')
   performIO :: HasIO => IO a -> Eff a
-  performIO = eff (Proxy @IOP)
+  performIO = eff (Proxy @IOK)
 
 Now unrestricted IO is possible, but it must happen within a ``runIO`` continuation
 and requires the ``HasIO`` constraint:
