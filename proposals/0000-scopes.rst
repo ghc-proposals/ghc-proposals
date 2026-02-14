@@ -1,28 +1,10 @@
-Notes on reStructuredText - delete this section before submitting
-==================================================================
+Scopes
+======
 
-The proposals are submitted in reStructuredText format.  To get inline code, enclose text in double backticks, ``like this``.  To get block code, use a double colon and indent by at least one space
-
-::
-
- like this
- and
-
- this too
-
-To get hyperlinks, use backticks, angle brackets, and an underscore `like this <http://www.haskell.org/>`_.
-
-
-Proposal title
-==============
-
-.. author:: Your name
-.. date-accepted:: Leave blank. This will be filled in when the proposal is accepted.
-.. ticket-url:: Leave blank. This will eventually be filled with the
-                ticket URL which will track the progress of the
-                implementation of the feature.
-.. implemented:: Leave blank. This will be filled in with the first GHC version which
-                 implements the described feature.
+.. author:: Rashad Gover
+.. date-accepted::
+.. ticket-url::
+.. implemented::
 .. highlight:: haskell
 .. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/0>`_.
             **After creating the pull request, edit this file again, update the
@@ -30,99 +12,465 @@ Proposal title
 .. sectnum::
 .. contents::
 
-Here you should write a short abstract motivating and briefly summarizing the proposed change.
-
+This proposal introduces the `Scopes` language extension to GHC.
 
 Motivation
 ----------
-Give a strong reason for why the community needs this change. Describe the use
-case as clearly as possible and give an example. Explain how the status quo is
-insufficient or not ideal.
 
-A good Motivation section is often driven by examples and real-world scenarios.
+Practical
+~~~~~~~~~
 
+A naming ambiguity is when a name has two different meanings, and the compiler can't decide which one is correct.
+
+Haskellers have used modules, naming conventions, types in the case of record field
+labels, and type classes to avoid naming ambiguities.
+
+The proposed lanuage extension, ``Scopes``, aims to provide named lexical scoping as another
+technique for avoiding naming ambiguities.
+
+.. Give a strong reason for why the community needs this change. Describe the use
+.. case as clearly as possible and give an example. Explain how the status quo is
+.. insufficient or not ideal.
+
+.. A good Motivation section is often driven by examples and real-world scenarios.
+
+Geometrical
+~~~~~~~~~~~
+
+There is limited space in Haskell for choosing names which leads to naming collisions.
+
+Imagine we have a line representing all valid identifiers in Haskell.
+Let's call this dimension *I*.
+A dot on this line represents an identifer used in a given Haskell program.
+A dot that occupies the same spot on the line as another dot is a naming collision.
+
+Now imagine we add another line perpindicular to the first to represent namespaces.
+Where the name is located a long this line represents what namespace it is in.
+Is it a variable, type, constructor, etc.? For example, ``name`` is a variable, but ``Name`` is a constructor or type.
+A valid identifier can exist in any one of the namespaces, so now we have two dimensions: one for the string of symbols that
+is the identifier, and one for the namespace it belongs to.
+Let's call this new dimension *N*. A valid identifier in a given Haskell program has coordinates ``<I, N>``. 
+Just as was the case with the line, a dot occupying the same space on this 2D plane as another dot is a naming collsion.
+
+Now imagine a third line rising outward from the plane, perpindicular to the first two lines, representing
+modules. Let's call this new dimension *M*.
+An identifier can now be represented by what string it is, what namespace it lives in, and what module it is defined in.
+Our program identifiers now exist in 3 dimensions, and have coordinates *<I, N, M>*.
+
+The ``Scopes`` language extension aims to add a 4th dimension, scopes, giving Haskellers
+much more "space" to choose names that don't collide with others. Let's call this 4th dimension *S*.
+Identifiers can now be recognized by their coordinates *<I, N, M, S>*.
+
+Since a module can contain practically infinite scopes and scopes can be nested,
+infinitely many more dimensions to place names are provided by scopes.
+Even within the same module.
+
+Identifiers can be recognized by their coordinates *<I, N, M, S₀, ..., Sₙ>* where n represents the number of scopes.
 
 Proposed Change Specification
 -----------------------------
-Specify the change in precise, comprehensive yet concise language. Avoid words
-like "should" or "could". Strive for a complete definition. Your specification
-may include,
 
-* BNF grammar and semantics of any new syntactic constructs
-  (Use the `Haskell 2010 Report <https://www.haskell.org/onlinereport/haskell2010/>`_ or GHC's ``alex``\- or ``happy``\-formatted files
-  for the `lexer <https://gitlab.haskell.org/ghc/ghc/-/blob/master/compiler/GHC/Parser/Lexer.x>`_ or `parser <https://gitlab.haskell.org/ghc/ghc/-/blob/master/compiler/GHC/Parser.y>`_
-  for a good starting point.)
-* the types and semantics of any new library interfaces
-* how the proposed change interacts with existing language or compiler
-  features, in case that is otherwise ambiguous
+The ``Scopes`` language extension adds the following reserved symbols to Haskell:
 
-Think about how your proposed design accords with our `language design principles <../principles.rst#2Language-design-principles>`_,
-and articulate that alignment explicitly wherever possible.
+- ``scope``
+- ``open``
+- ``/``
 
-Strive for *precision*. The ideal specification is described as a
-modification of the `Haskell 2010 report
-<https://www.haskell.org/definition/haskell2010.pdf>`_. Where that is
-not possible (e.g. because the specification relates to a feature that
-is not in the Haskell 2010 report), try to adhere its style and level
-of detail. Think about corner cases. Write down general rules and
-invariants.
+A new namespace for scope identifiers in import and export list syntax is also introduced.
 
-Note, however, that this section should focus on a precise
-*specification*; it need not (and should not) devote space to
-*implementation* details -- the "Implementation Plan" section can be used for that.
+``scope``
+~~~~~~~~~
 
-The specification can, and almost always should, be illustrated with
-*examples* that illustrate corner cases. But it is not sufficient to
-give a couple of examples and regard that as the specification! The
-examples should illustrate and elucidate a clearly-articulated
-specification that covers the general case.
+The ``scope`` reserved word is used for declaring scopes.
 
-Proposed Library Change Specification
--------------------------------------
+Syntax
+******
 
-Specify the changes to libraries in the GHC repository, especially ``base`` and
-others under the purview of the
-`Core Libraries Committee <https://github.com/haskell/core-libraries-committee>`_.
+Scope declarations are added as an extension to the *topdecls* grammar
+as defined in `Chapter 4 of the Haskell 2010 Report
+<https://www.haskell.org/onlinereport/haskell2010/haskellch4.html>`_::
 
-Generally speaking, if your proposal adds new function or data types, the place
-to do so is in the ``ghc-experimental`` package, whose API is under the control of
-the GHC Steering Committee.
-After your proposal is implemented, stable, and widely used, you (or anyone
-else) can subsequently propose to move those types into ``base`` via a CLC
-proposal.
+  topdecls -> ...
+            | scope scoid [scoexports] where {scodecls}
 
-Sometimes, however, your proposal necessarily changes something in ``base``,
-whose API is curated by the CLC.
-In that case, assuming your proposal is accepted, at the point when it is
-implemented (by you or anyone else), CLC approval will be needed for these
-changes, via a CLC proposal made by the implementor.
-By signalling those changes now, at the proposal stage, the CLC will be alerted
-and have an opportunity to offer feedback, and agreement in principle.
+A *scoid* (scope identifier) is a *conid*, or capitalized identifier, as defined in `Chapter 2.4 of the Haskell 2010 Report
+<https://www.haskell.org/onlinereport/haskell2010/haskellch2.html#x7-180002.4>`_.
 
-See `GHC base libraries <https://github.com/Ericson2314/tech-proposals/blob/ghc-base-libraries/proposals/accepted/051-ghc-base-libraries.rst?rgh-link-date=2023-07-09T17%3A01%3A15Z>`_
-for some useful context.
+The grammar for *scodecls* (scope declarations) is similar to *topdecls*::
 
-Therefore, in this section:
+  scodecls -> scodecl₁; ...; scodeclₙ
+  scodecl  -> type simpletype = type
+            | data [context =>] simpletype [= constrs] [deriving]
+            | newtype [context =>] simpletype = newconstr [deriving]
+            | class [scontext =>] tycls tyvar [where cdecls]
+            | scope scoid [scoexports] where {scodecls}
+            | decl
 
-* If your proposal makes any changes to the API of ``base`` (including its
-  exports, types, semantics, and performance), please specify these changes
-  in this section.
+*scodecls* includes:
 
-* If your proposal makes any change to the API of ``ghc-experimental``, please
-  also specify these changes.
+- type synonym declarations
+- data declarations
+- newtype declarations
+- type class declarations
+- term declarations
+- scope declarations
 
-If you propose to change both, use subsections, so that the changes are clearly
-distinguished.
-Similarly, if any other libraries are affected, please lay it all out here.
+and excludes:
+
+- instance declarations
+
+I'm still thinking whether or not the following *topdecls* are allowed in *scodecls*:
+
+- default declarations
+- foreign declarations
+
+Since *scodecls* includes *scodecls*, scope declarations can be nested within scope
+declarations.
+
+I'm still trying to figure out how to formalize the grammar for *scoexports* (scope exports).
+For now, know that *scoexports* can only refer to *scodecls*.
+Based on the current definition of *scodecls*, this means that *scoexports*
+can reference the following constructs:
+
+- type synonyms
+- data types
+
+  - constructors
+  - record field labels
+- newtypes
+
+  - constructor
+  - record field label
+- type classes
+
+  - type class methods
+- scopes
+
+Semantics
+*********
+
+Declaring a scope creates a named lexical scope::
+
+  {-# LANGUAGE Scopes #-}
+  
+  module M where
+
+  scope S where
+    x :: Int
+    x = 5
+
+The ``x`` identifier is not visible outside of scope ``S``::
+
+  {-# LANGUAGE Scopes #-}
+
+  module M where
+
+  scope S where
+    x :: Int
+    x = 5
+
+  a = x + 1 -- Error: What is x?
+
+Scopes inherit identifiers from their parent lexical scope::
+
+  {-# LANGUAGE Scopes #-}
+
+  module M where
+
+  f :: Int -> Int
+  f x = x * 3
+
+  scope S where
+    x :: Int
+    x = f 5 -- 15. f was inherited from the global scope
+
+Name shadowing applies to scopes::
+
+  {-# LANGUAGE Scopes #-}
+
+  module M where
+
+  a = x + 1 -- Success: 11
+
+  scope S where
+    x :: Int
+    x = 5 -- This is a shadowing warning, but OK.
+
+  x :: Int
+  x = 10
+
+Scopes can be nested::
+
+  {-# LANGUAGE Scopes #-}
+
+  module M where
+
+  scope S where
+    x :: Int
+    x = 5
+    scope T where
+      y :: Int
+      y = 10
+      scope U where
+        z :: Int
+        z = 15
+
+        x = 10
+
+        f :: Int -> Int
+        f a = x + y + z + a
+
+        result :: Int
+        result = f 5 -- 40
+
+Scopes expose all identifiers declared within them by default.
+Scope declarations decide what identifiers a scope exposes by using a *export list*, similar to
+export lists used for modules::
+
+  {-# LANGUAGE Scopes #-}
+
+  module M where
+
+  scope S (x, T) where
+    x :: Int
+    x = 5
+    scope T (y) where
+      y :: Int
+      y = 10
+      scope U (result) where
+        z :: Int
+        z = 15
+
+        x = 10
+
+        f :: Int -> Int
+        f a = x + y + z + a
+
+        result :: Int
+        result = f 5 -- 40
+
+The same export list syntax used for modules is allowed for scopes.
+
+``open``
+~~~~~~~~
+
+Open is used for opening scopes. Opening a scope brings all identifiers exposed by the scope
+into the lexical scope of the open declaration::
+
+  {-# LANGUAGE Scopes #-}
+
+  module M where
+
+  scope S where
+    x :: Int
+    x = 5
+
+  open S
+
+  y :: Int
+  y = x + 2 -- Evaluates to 7
+
+Identifiers inside a scope are completely hidden from the program, unless an open is used to bring
+identifiers that the scope exposes into scope. There's never a situation where a scope is implicitly open.
+To use identifiers inside of a scope, an accompanying open must be present.
+
+There is no equivalent of import lists for open declarations. A scope can either be opened,
+bringing all identifiers the scope exposes in to scope, or not::
+
+  {-# LANGUAGE Scopes #-}
+
+  module M where
+
+  scope S where
+    x :: Int
+    x = 5
+
+  y = x + 2 -- Error! What is x?
+
+open declarations can be at the top-level of the module::
+
+  {-# LANGUAGE Scopes #-}
+  
+  module N where
+
+  import M (scope S)
+
+  open S
+
+  y = x + 2
+
+or within a scope, let statement, or where clause::
+
+  {-# LANGUAGE Scopes #-}
+
+  module N (g) where
+
+  import M (scope S)
+
+  open T
+
+  scope T (g) where
+    g :: Int -> Int
+    g a = let open S in a * x
+
+Open declarations can take multiple items, e.g.::
+
+  {-# LANGUAGE Scopes #-}
+
+  module M where
+
+  import N (scope S)
+
+  h a =
+    let
+      open S
+    in let
+      open T qualified
+    in let
+      open T/U qualified as U
+    in
+      a * x + T/y + U/z
+
+can be::
+
+  {-# LANGUAGE Scopes #-}
+
+  module M where
+
+  import N (scope S)
+
+  h a =
+    let
+      open S
+      open T qualified
+      open T/U qualified as U
+    in
+      a * x + T/y + U/z
+
+or just::
+
+  {-# LANGUAGE Scopes #-}
+
+  module M where
+
+  import N (scope S)
+
+  h :: Int -> Int
+  h a =
+    let
+      open
+        S
+        T qualified
+        T/U qualified as U
+    in
+      a * x + T/y + U/z
+
+Scope Qualification
+*******************
+
+Names within a scope, that the scope exposes, can be brought into scope using open.
+Scopes that are nested within another scope can be accessed with the ``/`` operator::
+
+  {-# LANGUAGE Scopes #-}
+
+  module M where
+
+  scope S where
+    a :: Int
+    a = -5
+    scope T where
+      b :: Int
+      b = 5 + a
+
+  f x =
+    let open S qualified
+    in
+      let open S/T
+      in x + b
+
+or::
+
+  {-# LANGUAGE Scopes #-}
+
+  module N where
+
+  import M (scope S)
+
+  f x = let open S in let open T in x + b
+
+Scoped Declarations
+*******************
+
+The scope keyword can also be used on various top-level declarations directly::
+
+  {-# LANGUAGE Scopes #-}
+  
+  module M where
+
+  scope data User = User { name :: String, age :: Int, salary :: Float }
+
+  scope data Dog = Dog { name :: String, age :: Int }
+
+  scope class Greeter a where
+    name  :: a -> String
+    greet :: String
+
+By applying *scope* to a top-level declaration we create a scope for all identifiers generated by the
+declaration.
+In the case of a data declaration, that will be the type, constructors, and any potential record field labels.
+In the case of a class declaration, the class name and methods will be scoped.
+
+Data declarations can have even finer scoping on the constructors::
+
+  {-# LANGUAGE Scopes #-}
+  
+  module M where
+
+  scope data Entity
+    = scope User { name :: String, age :: Int, salary :: Float }
+    | scope Dog { name :: String, age :: Int }
+
+This allows two different constructors of the same type to share the same record field labels.
+
+Same for GADT constructors::
+
+  {-# LANGUAGE Scopes #-}
+  
+  module M where
+
+  scope data Entity where
+    scope User :: { name :: String, age :: Int, salary :: Float } -> Entity
+    scope Dog :: { name :: String, age :: Int } -> Entity
+
+You cannot place instance delcarations inside of scopes.
+Any instances generated by a scoped declaration, e.g.::
+
+  {-# LANGUAGE Scopes #-}
+  
+  module M where
+
+  scope data User = User { name :: String, age :: Int, salary :: Float }
+    deriving (Eq, Show)
+
+are floated outside of the scope until the module top-level is reached, and generated on the
+qualifed name. So the above example desugars to::
+
+  {-# LANGUAGE Scopes #-}
+  
+  module M where
+
+  instance Eq User/User where
+    ...
+
+  instance Show User/User where
+    ...
+
+  scope User where
+    data User = User { name :: String, age :: Int, salary :: Float }
 
 Examples
 --------
-This section illustrates the specification through the use of examples of the
-language change proposed. It is best to exemplify each point made in the
-specification, though perhaps one example can cover several points. Contrived
-examples are OK here. If the Motivation section describes something that is
-hard to do without this proposal, this is a good place to show how easy that
-thing is to do with the proposal.
+
 
 Effect and Interactions
 -----------------------
