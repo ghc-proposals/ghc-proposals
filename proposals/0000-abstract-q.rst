@@ -144,6 +144,15 @@ While this is a breaking change to ``template-haskell``, this interface breaks r
 
 Despite this, we've tried to maximise backwards compatibility by adding an ``unQ`` pattern synonym to the interface.
 
+The following packages on Hackage will be impacted as they give custom instances of ``Quasi``:
+- ``RepLib``
+- ``aeson-schema``
+- ``large-records``
+- ``geniplate``
+- ``th-test-utils``
+- ``nyan-interpolation-core``
+- ``th-traced``
+
 
 Implementation Plan
 -------------------
