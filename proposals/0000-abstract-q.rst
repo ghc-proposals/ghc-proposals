@@ -13,17 +13,17 @@ Abstract Q
 .. sectnum::
 .. contents::
 
-Template Haskell is GHC's metaprogramming facility. It allows users to write Haskell programs can manipulate Haskell syntax trees.
-These programs are run at compile-time, and their results are spliced into the syntax tree.
-They can be effectful and run ``IO`` actions or introspect into the compiler state in limited ways.
+Template Haskell is GHC's metaprogramming facility.
+It allows users to make use of Haskell programs at compile-time that can manipulate Haskell syntax trees.
+They can be effectful and run ``IO`` actions or introspect into the compiler state in certain limited ways.
 These effects are exposed to users through the ``Quote`` and ``Quasi`` typeclasses and the ``Q`` monad.
 
 These typeclasses are both external interfaces used by users and internal interfaces of GHC.
 This exposes implementation details to users, which makes it difficult or impossible to alter
 the internal interface while keeping the external interface the same.
 
-We propose splitting the existing one interface into two, with clear separation between the internal and external interfaces.
-The internal interface would be part of GHC and versioned with it, while the external would be able to evolve independently and be implemented in terms of the internal interface.
+We propose splitting the existing single interface into two, with a clear separation between the internal and external interfaces.
+The internal interface would be part of GHC and versioned with it. The external would be able to evolve independently and be implemented in terms of the internal interface.
 
 We propose adding a new ``MetaHandlers`` record type of actions as this purely internal interface.
 ``Q`` is to be changed into an abstract newtype over ``MetaHandlers -> IO a``. ``Quasi`` and ``Quote`` are to be implemented in terms of it.
@@ -46,17 +46,19 @@ We cannot hide this method for the sake of compatibility, since end users depend
 (eg, `th-orphans <https://hackage.haskell.org/package/th-orphans-0.13.16/docs/Language-Haskell-TH-Instances.html>` provides instances for certain monad transformers).
 
 We would run into the same issue if we wanted to remove a method from ``Quasi``  or change a method's type.
-The change in GHC would have to be reflected in the exposed interface of ``template-haskell``, forcing end-users to upgrade to a new major release if they want to use the new version of GHC.
+The change in GHC would have to be reflected in the exposed interface of ``template-haskell``, forcing end-users to upgrade to a new major release of ``template-haskell`` if they want to use the new version of GHC.
 
 By separating out the internal interface, we can avoid this tight coupling.
 ``reifyCore`` can be added as a field to ``MetaHandlers``. ``Quasi`` would then live purely in ``template-haskell``.
 Old versions of ``template-haskell`` would still be compatible with the new version of GHC, as they can simply ignore the new field.
-A new version of ``template-haskell`` can add the corresponding method to ``Quasi`` and use the field from ``MetaHandlers`` to implement it.
+A new major version of ``template-haskell`` can add the corresponding method to ``Quasi`` and use the field from ``MetaHandlers`` to implement it.
 
-``Q`` is wired-in to GHC. This fixes a single definition of it for each version of GHC. Since it is implemented in terms of ``Quasi``, it is also fixed.
+The definition of ``Q`` is fixed by GHC. A single definition of it for each version of GHC. Since it is implemented in terms of ``Quasi``, ``Quasi`` is also fixed.
 By breaking this tight coupling, we allow ``template-haskell``\'s interface to potentially be compatible with a greater range of GHC versions and to evolve independently of it.
 
-Our new definition of ``Q`` is also easier to optimise for the compiler, since it uses a known ``Monad``. Though this is a minor benefit, since the runtime performance of splices is rarely an issue. It also has potential to interface well with the ``bluefin``/``effectful`` family of effects libraries, which are implemented in terms of ``IO``, and could not express Template Haskell effects previously.
+Our new definition of ``Q`` is also easier to optimise for the compiler, since it uses a known ``Monad``. Though this is a minor benefit, since the runtime performance of splices is rarely an issue.
+
+It also has potential to interface well with the ``bluefin``/``effectful`` family of effects libraries, which are implemented in terms of ``IO``, and could not express Template Haskell effects previously.
 
 Proposed Change Specification
 -----------------------------
@@ -73,7 +75,7 @@ We will return to the implementation details in `Implementation plan <#7implemen
 The interface of ``Language.Haskell.TH.Syntax`` (and ``Language.Haskell.TH``) will change from::
 
  -- Note: these is defined in ghc-internal:GHC.Internal.TH.Syntax
- -- and only re-exported from template-haskell. These are wired-in definitions of GHC.
+ -- and only re-exported from template-haskell. These are known key definitions for GHC.
 
  newtype Q a = Q { unQ :: forall m. Quasi m => m a }
 
@@ -88,10 +90,10 @@ to::
 
  -- Note: Q is defined in ghc-internal:GHC.Internal.TH.Syntax
  -- and only re-exported from template-haskell.
- -- It is wired-in.
+ -- It is still known key.
  newtype Q a -- Q is abstract or opaque
 
- -- Note: Quasi is now defined in template-haskell. It is no longer wired-in.
+ -- Note: Quasi is now defined in template-haskell. It is no longer known key.
 
  class (MonadIO m, MonadFail m) => Quasi m where
   qRun     :: Q a -> m a -- New method
@@ -135,7 +137,8 @@ The implementation should be relatively simple and if anything it should simplif
 
 Backward Compatibility
 ----------------------
-TODO: impact assessment but it's likely to be minor
+
+While this is a breaking change to ``template-haskell``, this interface breaks regularly anyway. For instance, GHC-10 will include a new method in the ``Quasi`` typeclass, which would have a similar level of breakage. Implementing this change will protect users from future frequent breakages.
 
 
 Implementation Plan
