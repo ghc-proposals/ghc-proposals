@@ -193,7 +193,7 @@ We would make the following changes in ``Language.Haskell.TH.Syntax``::
 
   instance Quasi Q where
     qRun = id
-    qRecover (Q r) (Q k) = Q $ \handlers -> mRecover handlers r k
+    qRecover (Q r) (Q k) = Q $ \handlers -> mRecover handlers (r handlers) (k handlers)
     -- all other methods are just the default
 
   runQ :: Quasi m => Q a -> m a
