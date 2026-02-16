@@ -92,6 +92,8 @@ to::
  -- and only re-exported from template-haskell.
  -- It is still known key.
  newtype Q a -- Q is abstract or opaque
+ -- bundlend pattern synonym for backwards compatibility
+ pattern unQ :: Q a -> forall m. Quasi m => m a
 
  -- Note: Quasi is now defined in template-haskell. It is no longer known key.
 
@@ -139,6 +141,8 @@ Backward Compatibility
 ----------------------
 
 While this is a breaking change to ``template-haskell``, this interface breaks regularly anyway. For instance, GHC-10 will include a new method in the ``Quasi`` typeclass, which would have a similar level of breakage. Implementing this change will protect users from future frequent breakages.
+
+Despite this, we've tried to maximise backwards compatibility by adding an ``unQ`` pattern synonym to the interface.
 
 
 Implementation Plan
