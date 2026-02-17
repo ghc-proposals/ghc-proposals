@@ -599,28 +599,28 @@ unrestricted IO capabilities. However:
   by the rules -- users of such modules will benefit from fine-grained effect tracking
   in the types.
 
-In fact we may even implement an "unrestricted IO" effect intentionally,
+In fact we may even provide an "unrestricted IO" effect intentionally,
 in the same vein as ``MonadIO``.
 
 ::
 
-  module IOEff (HasIO, runIO, performIO) where
+  module Eff (Eff(runEff), eff, HasIO, runEffWithIO, performIO) where
 
-  -- imports...
+  -- Eff definitions...
 
   data scoped IOK = ()
 
   type HasIO = Scoped IOK
 
-  -- | Run an 'Eff' action in which arbritrary IO is possible through 'performIO'
-  runIO :: (HasIO => Eff r) -> Eff r
-  runIO = withValue @IOK ()
+  -- | Start an 'Eff' computation in which arbitrary IO is possible through 'performIO'
+  runEffWithIO :: (HasIO => Eff a) -> IO a
+  runEffWithIO k = withValue @IOK () (runEff k)
 
   -- | Perform an arbitrary IO action inside an 'Eff' one (the equivalent of 'liftIO')
   performIO :: HasIO => IO a -> Eff a
   performIO = eff (Proxy @IOK)
 
-Now unrestricted IO is possible, but it must happen within a ``runIO`` continuation
+Now unrestricted IO is possible, but it must happen within a ``runEffWithIO`` continuation
 and requires the ``HasIO`` constraint:
 
 ::
@@ -628,6 +628,6 @@ and requires the ``HasIO`` constraint:
   launchMissiles :: HasIO => Eff ()
   launchMissiles = performIO $ putStrLn "Missiles launched!"
 
-  >>> runEff $ runIO $ runTime defaultTime (launchMissiles >> getCurrentTime)
+  >>> runEffWithIO $ runTime defaultTime (launchMissiles >> currentTime)
   Missiles launched!
   2026-01-23 13:43:03.09638539 UTC
