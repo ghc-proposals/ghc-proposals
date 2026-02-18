@@ -608,17 +608,21 @@ in the same vein as ``MonadIO``.
 
   -- Eff definitions...
 
-  data scoped IOK = ()
+  data scoped IOK = PerformIO
 
   type HasIO = Scoped IOK
 
-  -- | Start an 'Eff' computation in which arbitrary IO is possible through 'performIO'
+  -- | Start an 'Eff' computation in which arbitrary IO
+  -- is possible through 'performIO'
   runEffWithIO :: (HasIO => Eff a) -> IO a
-  runEffWithIO k = withValue @IOK () (runEff k)
+  runEffWithIO k = withValue @IOK (PerformIO Eff) (runEff k)
 
   -- | Perform an arbitrary IO action inside an 'Eff' one (the equivalent of 'liftIO')
   performIO :: HasIO => IO a -> Eff a
-  performIO = eff (Proxy @IOK)
+  performIO = getPerformIO (value @IOK)
+
+  -- Rank-2 helper
+  newtype PerformIO = PerformIO {getPerformIO :: forall r. IO r -> Eff r}
 
 Now unrestricted IO is possible, but it must happen within a ``runEffWithIO`` continuation
 and requires the ``HasIO`` constraint:
