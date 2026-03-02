@@ -584,9 +584,31 @@ With contexts, we can say::
     htmlHead = head
     ...
 
-Humans often use the same symbol or name to mean different things depending on the *context*.
+Humans often use the same symbol or name to mean different things depending on the context.
 For example, the ``+`` symbol can be used to represent addition of integers or vectors depending
-on the context.
+on the context::
+
+  {-# LANGUAGE Contexts, NoImplicitPrelude #-}
+
+  module M where
+
+  context TwoD where
+    data Vec = Vec (Int, Int)
+
+    (+) :: Vec -> Vec -> Vec
+    (+) (Vec (a, b)) (Vec (c, d)) =
+      let import Prelude in Vec (a + c, b + d)
+
+  context ThreeD where
+    data Vec = Vec (Int, Int, Int)
+
+    (+) :: Vec -> Vec -> Vec
+    (+) (Vec (a, b, c)) (Vec (d, e, f)) =
+      let import Prelude in Vec (a + d, b + e, c + f)
+
+  TwoD ⊢ result = Vec (1, 2) + Vec (3, 4)          -- Vec (4, 6)
+
+  ThreeD ⊢ another = Vec (1, 2, 3) + Vec (4, 5, 6) -- Vec (5, 7, 9)
 
 Effect and Interactions
 -----------------------
