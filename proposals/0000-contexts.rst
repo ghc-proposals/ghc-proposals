@@ -37,9 +37,8 @@ The 2 primary issues with modules, when looking at them as namespaces, are:
 
 This proposal adds a new language construct besides modules called *contexts*
 to give programmers a more lightweight, flexible alternative to modules
-that addresses these issues. The proposal also argues for allowing module
-imports to be declared in local scopes instead of requiring that
-they are imported at the top of a module.
+that addresses these issues. It also allows module import declarations in local
+scopes like let statments and where clauses.
 
 Proposed Change Specification
 -----------------------------
