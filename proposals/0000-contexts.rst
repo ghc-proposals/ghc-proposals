@@ -12,14 +12,13 @@ Contexts
 Motivation
 ----------
 
-When a Haskell programmer creates an abstraction in a module
-and decides to give it an identifier, they want to give it a *good identifier*.
-A good identifier is any identifier that the programmer thinks
-represents the abstraction the best according to their standards.
+When a Haskell programmer creates an abstraction
+and decides to give it an identifier, they want to choose the best
+name or symbol according to their own standards or preferences.
 
-Unfortunately, since modules are the only form of *namespace* in Haskell,
+Unfortunately, since modules are the only way to create new *namespaces* in Haskell,
 the Haskell programmer must consider other factors outside of their
-own standards for choosing an identifier:
+own for choosing an identifier:
 
 1. Is the identifier already used in this module?
 2. Is the identifier already used by an imported module?
@@ -27,11 +26,7 @@ own standards for choosing an identifier:
    depend on this module, or that are likely to be used with
    this module?
 
-Features like module qualification, naming conventions, hiding
-imported identifiers, and language extensions like ``-XDuplicateRecordFields``
-help, but they are patches over the core problems with modules as namespaces.
-
-The 2 primary issues with modules, when looking at them as namespaces, are:
+The 3 primary issues with modules, when looking at them as namespaces, are:
 
 1. Importing a module brings its identifiers into the entire scope
    of the importing module. There is no way to contain the effect
@@ -69,11 +64,10 @@ Contexts
                   | 'newtype' [context =>] simpletype = newconstr [deriving]
                   | 'class' [scontext =>] tycls tyvar ['where' cdecls]
 
-They start off with the ``context`` keyword, followed by all or none of the
-optional *context modifiers*: the ``sealed`` keyword, a *context identifier*,
-and an export list. After the ``context`` keyword and optional context modifiers,
-the ``where`` keyword is used and followed by a block of declarations.
-Here's an example of a context declaration using all modifiers::
+They start off with the ``context`` keyword, followed by optional *context modifiers*:
+the ``sealed`` keyword, a *context identifier*, and an export list. After the ``context``
+keyword and optional context modifiers, the ``where`` keyword is used and followed by a
+block of declarations. Here's an example of a context declaration using all modifiers::
 
   context sealed C (type T, new, add) where
     data T = T { bar :: Int }
@@ -106,8 +100,8 @@ desugars to::
     data T = T { foo :: Int, bar :: Float }
 
 The identifier of the resulting context is the same as the identifier of the
-wrapped declaration. Since context identifiers exist in a different namespace
-than type identifiers, class identifiers, etc., reusing the identifier for
+wrapped declaration. Since context identifiers exist in a separate namespace from
+type identifiers, class identifiers, etc., reusing the identifier for
 the context doesn't cause any ambiguity.
 
 Open Declarations
