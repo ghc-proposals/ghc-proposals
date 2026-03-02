@@ -555,7 +555,38 @@ is the same as this::
 Examples
 --------
 
-TBD
+There's a Haskell package for generating HTML called ``lucid``. It exposes
+functions named after the HTML tag or attribute they represent, but they all have
+an underscore suffix because some of the tag names clash with function names in Prelude.
+One of these is ``head``::
+
+  module M where
+
+  import Lucid
+
+  listHead = head
+
+  htmlHead = head_
+
+  ...
+
+With contexts, we can say::
+
+  {-# LANGUAGE Contexts, NoImplicitPrelude #-}
+  
+  module M where
+
+  Prelude ⊢
+    listHead = head
+    ...
+
+  Lucid ⊢
+    htmlHead = head
+    ...
+
+Humans often use the same symbol or name to mean different things depending on the *context*.
+For example, the ``+`` symbol can be used to represent addition of integers or vectors depending
+on the context.
 
 Effect and Interactions
 -----------------------
