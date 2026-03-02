@@ -26,7 +26,7 @@ own for choosing an identifier:
    depend on this module, or that are likely to be used with
    this module?
 
-The 3 primary issues with modules, when looking at them as namespaces, are:
+The 2 primary issues with modules, when looking at them as namespaces, are:
 
 1. Importing a module brings its identifiers into the entire scope
    of the importing module. There is no way to contain the effect
