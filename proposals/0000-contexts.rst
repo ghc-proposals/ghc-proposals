@@ -30,11 +30,8 @@ own standards for choosing an identifier:
    this module?
 
 Features like module qualification, naming conventions, hiding
-imported indentifiers, and language extensions like ``-XDuplicateRecordFields``
-help, but they are patches over the core issue. Solutions like
-module qualification and naming conventions ultimately
-force programmmers to use the ideal identifier with
-a qualifier or prefix.
+imported identifiers, and language extensions like ``-XDuplicateRecordFields``
+help, but they are patches over the core problems with modules as namespaces.
 
 The 2 primary issues with modules, when looking at them as namespaces, are:
 
@@ -168,7 +165,7 @@ They *inherit* the environment of the scope they're declared in::
     f :: Int -> Int
     f x = x + y + z
 
-Names inside an unsealed context may *shadow* names from the outer scope::
+Identifiers inside an unsealed context may *shadow* identifiers from the outer scope::
 
   {-# LANGUAGE Contexts #-}
 
@@ -207,7 +204,7 @@ Names inside an unsealed context may *shadow* names from the outer scope::
     f x = x + y + z -- Error! y is unknown
 
 Since sealed contexts do not inherit their outer context,
-declarations inside of sealed contexts can not shadow outer ones::
+declarations inside of sealed contexts cannot shadow outer ones::
 
   {-# LANGUAGE Contexts #-}
 
@@ -228,7 +225,7 @@ declarations inside of sealed contexts can not shadow outer ones::
     f :: Int -> Int
     f x = x + y + z
 
-The only way to bring a name into a sealed context is through an explicit open or import declaration::
+The only way to bring an identifier into a sealed context is through an explicit open or import declaration::
 
   {-# LANGUAGE Contexts #-}
 
@@ -244,18 +241,18 @@ The only way to bring a name into a sealed context is through an explicit open o
     open C
     ...
 
-or by declaring a fresh name inside the sealed context.
+or by declaring a fresh identifier inside the sealed context.
 
 In summary, sealing a context is useful if you need a blank slate
 where internal declarations only depend on:
 
-- Names brought in scope via explicit opens and imports
-- Names declared directly in the context
+- Identifiers brought in scope via explicit opens and imports
+- Identifiers declared directly in the context
 
 Identity
 ~~~~~~~~
 
-*Anonymous contexts* cannot be referenced since they don't have a name.
+*Anonymous contexts* cannot be referenced since they don't have a identifier.
 
 This means you cannot export or import an anonymous context::
 
@@ -298,7 +295,7 @@ Instead, anonymous contexts are opened at the point of their declaration::
 
   h x = f x -- f is exposed by the anonymous context
 
-If a context does not have a name, the only logical thing to do is open it where it
+If a context does not have an identifier, the only logical thing to do is open it where it
 is, since it cannot be referenced elsewhere.
 
 Named contexts on the other hand can be exported, imported, and
@@ -324,7 +321,7 @@ where it was declared.
 Transparency
 ~~~~~~~~~~~~
 
-*Fully transparent* contexts expose all names inside of them when opened::
+*Fully transparent* contexts expose all identifiers inside of them when opened::
 
   {-# LANGUAGE Contexts #-}
 
@@ -340,7 +337,7 @@ Transparency
   a = x + y + z
 
 *Partially transparent* contexts have an export list, and only
-expose names listed in the export list::
+expose identifiers listed in the export list::
 
   {-# LANGUAGE Contexts #-}
 
@@ -369,8 +366,8 @@ Export lists can use ``-XExplicitNamespaces``::
     class C where
       m :: Int
 
-Only names that are declared in the context can be added to the context's export list.
-Names brought in via ``open`` or ``import`` cannot be added to the context's export list.
+Only identifiers that are declared in the context can be added to the context's export list.
+Identifiers brought in via ``open`` or ``import`` cannot be added to the context's export list.
 
 The transparency of a context determines what identifiers are exposed when the context
 is opened.
@@ -490,14 +487,14 @@ It's the sealed, anonymous, fully transparent context form::
 We get ``f`` and ``x`` at the top-level of the module, without exposing
 the ``Prelude`` import. This works because this context declaration form
 
-- is sealed, so it doesn't see any names defined outside of it
-  (besides module/context names for importing/opening)
+- is sealed, so it doesn't see any identifiers defined outside of it
+  (besides module/context identifiers for importing/opening)
 - is anonymous, so it's opened in the scope it's declared in
 - is fully transparent, so it exposes all of its internal declarations
 
 To make the syntax more convenient let's introduce the *turnstile*
 operator, ``⊢``. The turnstile operator takes a series of module
-or context names on the LHS, and a series of one or more declarations
+or context identifiers on the LHS, and a series of one or more declarations
 on the RHS::
 
   {-# LANGUAGE Contexts #-}
@@ -519,7 +516,7 @@ The turnstile operator desugars to the context form we defined
 above and has the same properties.
 
 The turnstile operator desugars to an anonymous context,
-but what if the context needs to have a name?
+but what if the context needs to have a identifier?
 We just need to wrap the turnstile with a named context
 declaration::
 
