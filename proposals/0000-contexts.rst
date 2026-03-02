@@ -356,7 +356,7 @@ Export lists can use ``-XExplicitNamespaces``::
 
   module M where
 
-  context S (type T, type R, class C) where
+  context S (type T, type R, class C(..)) where
     type T = T
 
     type R = R { l :: Int }
@@ -376,7 +376,7 @@ Instances
 Instance declarations are allowed inside contexts, but they are
 still associated with the module they are declared in.
 Instance declarations cannot be added to or excluded from the export list
-of a context declaration. They are always exported.
+of a context declaration. They are always exported and always imported (if the module is).
 Instance declarations are the only declarations with this behavior.
 
 The behavior of instances is unaffected by the existence of contexts.
@@ -540,31 +540,6 @@ Desugars to::
       C
       D
       E
-
-Which becomes::
-
-  {-# LANGUAGE Contexts #-}
-
-  module M where
-
-  context S where
-    context sealed where
-      C
-      D
-      E
-
-Finally, we get::
-
-  {-# LANGUAGE Contexts #-}
-
-  module M where
-
-  context S where
-    C
-    D
-    E
-
-We have a context S exposing C, D, E when opened.
 
 The turnstile has another important property. This::
 
