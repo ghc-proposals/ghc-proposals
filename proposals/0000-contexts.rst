@@ -109,7 +109,41 @@ Open Declarations
 The ``topdecls`` and ``decls`` grammars are extended with open declarations.
 Open declarations use the ``open`` keyword followed by a context identifier.
 There is no import list equivalent for open declarations, so they have no control
-over what identifiers a context exposes. Only where they're exposed.
+over what identifiers a context exposes. Only where they're exposed::
+
+  context List where
+    map :: (a -> b) -> [a] -> [b]
+    map f (x : xs) = f x : map f xs
+
+  result = let open List in map (+1) [1, 2, 3]
+
+Open declarations are like module imports, except you can't have import lists
+or hide what the context exposes.
+You can use ``qualified`` and ``as`` in open declarations just like you can with
+module imports (using ``-XImportQualifiedPost`` syntax by default).
+They have the same effect on contexts::
+
+  open A                -- foo or A/foo
+  open A as B           -- foo or B/foo
+  open A qualified      -- Only A/foo
+  open A qualifed as B  -- Only B/foo
+
+Context Qualifier
+~~~~~~~~~~~~~~~~~
+
+Contexts identifiers can be also be used as *context qualifiers* if the
+identifier is in scope::
+
+  context A where
+    context B where
+      context C where
+        foo :: Int -> Int
+        foo x = x * 3
+
+  bar = A/B/C/foo 12
+
+The ``/`` symbol is used as the qualification operator for contexts and is reserved
+when ``-XContexts`` is on.
 
 Import Declarations
 ~~~~~~~~~~~~~~~~~~~
@@ -302,8 +336,26 @@ opened explicitly::
     open T
     ...
 
-In short, naming a context allows it to be opened
-somewhere other than where it was declared.
+Named contexts also you to qualify the names within them using ``/``::
+
+  {-# LANGUAGE Contexts #-}
+
+  module M (context S, bar) where
+
+  import N (context T)
+
+  context S where
+    open T
+    foo :: Int -> Int
+    foo = \x -> x + 1
+    ...
+
+  bar :: Int
+  bar = S/foo 11
+
+In short, naming a context means it can be opened
+somewhere other than where it was declared, and be
+used as a qualifier for any identifier it exports.
 
 Not naming a context ensures that the context and its
 declarations cannot be referenced anywhere else than
@@ -609,6 +661,82 @@ on the context::
   TwoD ⊢ result = Vec (1, 2) + Vec (3, 4)          -- Vec (4, 6)
 
   ThreeD ⊢ another = Vec (1, 2, 3) + Vec (4, 5, 6) -- Vec (5, 7, 9)
+
+We can use context wrapping to disambiguate record fields::
+
+  {-# LANGUAGE Contexts, OverloadedRecordDot #-}
+
+  module M where
+
+  context data Location = Mk
+    { name :: String
+    , lon :: Float
+    , lat :: Float
+    , visited :: [Person/Person]
+    }
+
+  context data Person = Mk
+    { name :: String
+    , age :: Int
+    , home :: Location/Location
+    , visited :: [Location/Location]
+    }
+
+  visited :: Person/Person -> Location/Location -> (Person/Person, Location/Location)
+  visited person location =
+    ( person { Person/visited = location : person.Person/visited }
+    , location { Location/visited = person : location.Location/visited }
+    )
+
+Or::
+
+  {-# LANGUAGE Contexts, OverloadedRecordDot #-}
+
+  module M where
+
+  context data Location = Mk
+    { name :: String
+    , lon :: Float
+    , lat :: Float
+    , visited :: [Person/Person]
+    }
+
+  context data Person = Mk
+    { name :: String
+    , age :: Int
+    , home :: Location/Location
+    , visited :: [Location/Location]
+    }
+
+  visited :: Person/Person -> Location/Location -> (Person/Person, Location/Location)
+  visited person location =
+    ( let open Person in person { visited = location : person.visited }
+    , let open Location in location { visited = person : location.visited }
+    )
+
+These data declarations from the example in the ``LocalModules`` proposal::
+
+  data Nat = Zero | Succ Nat
+
+  data Fin :: Nat -> Type where
+    Zero :: Fin (Succ n)
+    Succ :: Fin n -> Fin (Succ n)
+
+  data Elem :: a -> [a] -> Type where
+    Zero :: Elem x (x : xs)
+    Succ :: Elem x xs -> Elem x (y : xs)
+
+can all be defined in the same module using contexts::
+
+  context data Nat = Zero | Succ Nat
+
+  context data Fin :: Nat/Nat -> Type where
+    Zero :: Fin (Nat/Succ n)
+    Succ :: Fin n -> Fin (Nat/Succ n)
+
+  context data Elem :: a -> [a] where
+    Zero :: Elem x (x : xs)
+    Succ :: Elem x xs -> Elem x (y : xs)
 
 Effect and Interactions
 -----------------------
