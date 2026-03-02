@@ -23,10 +23,9 @@ own for choosing an identifier:
 1. Is the identifier already used in this module?
 2. Is the identifier already used by an imported module?
 3. Is the identifier already used by other modules that
-   depend on this module, or that are likely to be used with
-   this module?
+   may depend on the module or be used with it?
 
-The 2 primary issues with modules, when looking at them as namespaces, are:
+The 2 primary issues with modules as namespaces, are:
 
 1. Importing a module brings its identifiers into the entire scope
    of the importing module. There is no way to contain the effect
