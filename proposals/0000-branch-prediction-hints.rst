@@ -616,7 +616,11 @@ Implementation Plan
 -------------------
 
 
-I have a working prototype that will be publihed to the GHC gitlab instance shortly.
+I have a working prototype published to the GHC gitlab instance:
+
+
+https://gitlab.haskell.org/ghc/ghc/-/merge_requests/15614/diffs
+
 
 The author (Ian Duncan) will implement the change.
 
