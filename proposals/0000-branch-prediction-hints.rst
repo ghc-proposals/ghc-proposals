@@ -13,13 +13,12 @@ Branch Prediction Hints
 .. contents::
 
 This proposal adds branch prediction hints to GHC Haskell, allowing programmers
-to communicate expected control flow to the compiler. Two complementary
-mechanisms are proposed: a ``{-# WEIGHT n #-}`` pragma for case alternatives
-and function clauses, and ``likely``/``unlikely`` functions for boolean
-conditions. These hints propagate through the entire compilation pipeline and
-drive code layout, switch dispatch, register allocation, and LLVM metadata
-emission. A companion set of heuristics infers weights automatically when no
-explicit annotation is given.
+to communicate expected control flow to the compiler. A ``{-# WEIGHT n #-}``
+pragma is added for case alternatives, function clauses, and guards. These
+hints propagate through the entire compilation pipeline and drive code layout,
+switch dispatch, register allocation, and LLVM metadata emission. A companion
+set of heuristics infers weights automatically when no explicit annotation is
+given.
 
 
 Motivation
@@ -66,8 +65,9 @@ Two mechanisms are added, targeting different use cases.
 ``{-# WEIGHT n #-}`` pragma
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-A new pragma is accepted immediately before a case alternative or function
-clause. ``n`` is a non-negative integer literal.
+A new pragma is accepted in three positions: before case alternative patterns,
+after a function name and before its first pattern, and after a guard ``|``
+and before the guard expression. ``n`` is a non-negative integer literal.
 
 **Grammar (case alternatives):**
 
@@ -81,7 +81,18 @@ clause. ``n`` is a non-negative integer literal.
 
 ::
 
-  funlhs_clause → opt_weight funlhs rhs
+  funlhs_clause → funname opt_weight pats rhs
+
+The weight appears between the function name and its first argument pattern.
+This is consistent with pragma placement conventions elsewhere in GHC
+(e.g. ``{-# UNPACK #-}`` before types).
+
+**Grammar (guarded equations):**
+
+::
+
+  gdrh → '|' opt_weight guardquals '=' exp
+  gdpat → '|' opt_weight guardquals '->' exp
 
 **Semantics:**
 
@@ -104,43 +115,32 @@ clause. ``n`` is a non-negative integer literal.
   translates these into case alternative weights when the function is
   compiled to a case expression.
 
-**In Core**, the ``Case`` constructor carries an optional ``BranchWeights``:
+**In Core**, each ``Alt`` carries an optional weight:
 
 ::
 
-  | Case (Expr b) b Type [Alt b] (Maybe BranchWeights)
+  data Alt b = Alt AltCon [b] (Expr b) !(Maybe Word32)
 
-where
+The weight is a ``Maybe Word32`` on each alternative rather than a separate
+list on the ``Case`` constructor. This keeps weights colocated with their
+alternatives and avoids the need to maintain two parallel lists in sync.
 
-::
+``likely`` and ``unlikely`` as library functions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  data BranchWeights = BranchWeights { getBranchWeights :: ![Word32] }
-
-The length of the list must equal the number of alternatives (enforced by
-Core Lint). Weights are in the same order as the alternatives.
-
-``likely`` and ``unlikely`` functions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Two new functions are added to ``GHC.Internal.Magic`` and re-exported from
-``GHC.Exts``:
+``likely`` and ``unlikely`` in the style of C/C++ and Rust are not built-in compiler primitives. They
+can be expressed as ordinary Haskell functions using the ``WEIGHT`` pragma:
 
 ::
 
   likely :: Bool -> Bool
-  unlikely :: Bool -> Bool
+  {-# INLINE likely #-}
+  likely c = case c of
+    {-# WEIGHT 2000 #-} True  -> True
+    {-# WEIGHT 1 #-}    False -> False
 
-**Semantics:**
-
-- Both are the identity function at runtime.
-
-- When the simplifier encounters ``case likely scrut of { ... }`` or
-  ``case unlikely scrut of { ... }`` as the scrutinee of a case expression,
-  it strips the call and attaches ``BranchWeights [2000, 1]`` (for
-  ``likely``, expecting ``True``) or ``BranchWeights [1, 2000]`` (for
-  ``unlikely``, expecting ``False``) to the enclosing case.
-
-- The 2000:1 ratio matches the LLVM convention for ``llvm.expect``.
+With case-of-case, the weights transfer correctly to the call site. Users
+who want these convenience functions can define them locally or in a library.
 
 Heuristic inference
 ~~~~~~~~~~~~~~~~~~~
@@ -179,28 +179,57 @@ Corner cases
 - ``WEIGHT`` pragmas on ``\case`` and ``\cases`` alternatives follow the same
   grammar as ordinary case alternatives.
 
-- Guards on function clauses: the ``WEIGHT`` pragma attaches to the clause as
-  a whole, not to individual guards. When the desugarer compiles guards into
-  nested case expressions, the weight applies to the outermost generated case.
+- Guards: a ``WEIGHT`` pragma on a guard (``| {-# WEIGHT n #-} guard = rhs``)
+  attaches weight ``n`` to the ``True`` alternative of the guard's desugared
+  case expression.
 
 - Nested case expressions: weights apply only to the immediately annotated
   case. Inner case expressions are independent and may carry their own weights.
 
-- ``likely (likely x)`` is equivalent to ``likely x``. When the simplifier
-  strips the outer ``likely`` and attaches weights to the enclosing case,
-  the inner ``likely`` remains as a scrutinee of the inner case and is
-  stripped in turn.
+- **Marginalization across pattern columns.** When a function or ``\cases``
+  expression matches on multiple arguments, the desugarer compiles clauses
+  to nested case expressions (one per pattern column). The same applies to
+  ordinary multi-argument function definitions. When a single outer
+  constructor leads to multiple inner alternatives with different weights,
+  the outer alternative's weight is the sum of the inner clause weights that
+  share that outer constructor. For example::
+
+    f {-# WEIGHT 100 #-}  Nothing  True  = a
+    f {-# WEIGHT 2000 #-} Nothing  False = b
+    f {-# WEIGHT 50 #-}   (Just _) True  = c
+    f {-# WEIGHT 50 #-}   (Just _) False = d
+
+  The outer case on the first argument gets ``Nothing`` with weight
+  ``100 + 2000 = 2100`` and ``Just`` with weight ``50 + 50 = 100``. The
+  inner case under ``Nothing`` gets ``True`` with weight 100 and ``False``
+  with weight 2000.
+
+  This corresponds to marginalization from probability theory. Treating
+  clause weights as unnormalized joint probabilities over the pattern
+  columns, the weight for an outer constructor :math:`c_i` is the marginal:
+
+  .. math::
+
+     w(c_i) = \sum_{j} w(c_i, p_j)
+
+  where :math:`p_j` ranges over the inner patterns paired with :math:`c_i`.
+  For the example above, :math:`w(\mathtt{Nothing}) = w(\mathtt{Nothing},
+  \mathtt{True}) + w(\mathtt{Nothing}, \mathtt{False}) = 100 + 2000 = 2100`.
+  This preserves the relative likelihoods: the compiler first decides which
+  outer constructor is taken (with odds 2100 : 100, i.e. ``Nothing`` is
+  ~21x more likely than ``Just``), then within that constructor decides
+  among the inner alternatives (with odds 100 : 2000 under ``Nothing``).
+
+  The rule generalizes to any number of pattern columns by repeated
+  marginalization, and applies uniformly to multi-argument functions,
+  ``\cases``, and any other source construct that the desugarer compiles to
+  nested cases.
 
 - Interaction with ``INLINE``/``INLINABLE``: when a function with ``WEIGHT``
-  annotations on its clauses is inlined, the desugared ``BranchWeights`` on
-  the resulting case expressions are preserved. Weights are a property of the
-  Core ``Case`` node, not the source function, so inlining does not discard
+  annotations on its clauses is inlined, the desugared per-Alt weights on
+  the resulting case expressions are preserved. Weights are a property of
+  the Core ``Alt``, not the source function, so inlining does not discard
   them.
-
-- If both a ``WEIGHT`` pragma and ``likely``/``unlikely`` apply to the same
-  case expression (e.g. ``case likely scrut of { {-# WEIGHT 50 #-} True -> ...``),
-  the explicit ``WEIGHT`` pragma takes precedence and the ``likely`` call is
-  stripped without effect.
 
 Design principles
 ~~~~~~~~~~~~~~~~~
@@ -208,9 +237,9 @@ Design principles
 This design accords with the GHC `language design principles
 <../principles.rst#2Language-design-principles>`_:
 
-- **Orthogonality:** ``WEIGHT`` and ``likely``/``unlikely`` compose with all
-  existing language features (``\case``, guards, view patterns, pattern
-  synonyms). They do not introduce new evaluation semantics.
+- **Orthogonality:** ``WEIGHT`` composes with all existing language features
+  (``\case``, guards, view patterns, pattern synonyms). It does not
+  introduce new evaluation semantics.
 
 - **Predictability:** Weights affect only code layout and dispatch strategy,
   never program semantics. A program with incorrect weights produces the same
@@ -224,18 +253,9 @@ This design accords with the GHC `language design principles
 Proposed Library Change Specification
 -------------------------------------
 
-``ghc-experimental`` / ``GHC.Exts``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-``likely`` and ``unlikely`` are defined in ``GHC.Internal.Magic`` (alongside
-other compiler-recognized magic functions such as ``inline``, ``lazy``, and
-``noinline``) and re-exported from ``GHC.Exts``. They live in
-``ghc-internal`` rather than ``ghc-experimental`` because they must be
-recognized by the simplifier as built-in magic ids — the same reason
-``inline`` and ``lazy`` are not in ``ghc-experimental``. If the steering
-committee prefers the ``ghc-experimental`` path, the functions can be
-re-exported from there instead, though the underlying definition must remain
-in ``ghc-internal``.
+No new library exports are required. Users who want convenience wrappers can define
+them as ordinary Haskell functions using the ``WEIGHT`` pragma (see the
+``likely``/``unlikely`` section above).
 
 Template Haskell
 ~~~~~~~~~~~~~~~~
@@ -253,22 +273,8 @@ A new function ``matchW`` constructs a ``Match`` with a weight.
 Examples
 --------
 
-Boolean likely/unlikely
-~~~~~~~~~~~~~~~~~~~~~~~
-
-::
-
-  processPacket :: Packet -> IO ()
-  processPacket pkt =
-    if likely (isValid pkt)
-      then handleValid pkt
-      else dropInvalid pkt
-
-The ``True`` branch (``handleValid``) is laid out as the fall-through path.
-The ``False`` branch may be placed in a cold section.
-
-Numeric weights on case alternatives
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Weighted function clauses
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ::
 
@@ -283,12 +289,12 @@ With weights:
 ::
 
   lookup :: Eq k => k -> [(k, v)] -> Maybe v
-  {-# WEIGHT 1 #-}    lookup _key []          = Nothing
-  {-# WEIGHT 2000 #-} lookup  key ((x,y):xys)
+  lookup {-# WEIGHT 1 #-}    _key []          = Nothing
+  lookup {-# WEIGHT 2000 #-} key ((x,y):xys)
     | key == x  = Just y
     | otherwise = lookup key xys
 
-Alternatively, on a case expression directly:
+On a case expression directly:
 
 ::
 
@@ -321,6 +327,20 @@ Cold code with weight 0
 
 The ``Left`` branch is a candidate for cold-code placement
 (``.text.unlikely``). Weight 0 means negligible probability, not dead code.
+
+Weighted guards
+~~~~~~~~~~~~~~~
+
+::
+
+  classify :: Int -> String
+  classify n
+    | {-# WEIGHT 2000 #-} n > 0    = "positive"
+    | {-# WEIGHT 100 #-}  n == 0   = "zero"
+    | {-# WEIGHT 1 #-}    otherwise = "negative"
+
+The guard weight attaches to the ``True`` alternative of the desugared
+guard expression.
 
 Heuristic inference (no annotation)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -381,7 +401,7 @@ assignment. Code layout (2) improves because CFG edge weights derived from
 branch weights guide the block layout algorithm to place hot paths as
 fall-throughs. Switch dispatch and register allocation (3) benefit from
 weight-aware hot-case hoisting, weighted binary search pivots, and
-frequency-based spill selection. Finally, the ``BranchWeights``
+frequency-based spill selection. Finally, the per-Alt weight
 representation in Core provides the prerequisite infrastructure for future
 profile-guided optimization (4), and inline annotations serve as the
 simplest useful first step without precluding file-based profiles later.
@@ -389,7 +409,7 @@ simplest useful first step without precluding file-based profiles later.
 Simplifier
 ~~~~~~~~~~
 
-The simplifier preserves ``BranchWeights`` through case-of-case
+The simplifier preserves per-Alt weights through case-of-case
 transformations. When a case-of-known-constructor eliminates alternatives,
 weights are discarded (only one branch remains). The ``CaseCtxt`` used for
 inlining decisions carries branch weights, preparing for future
@@ -399,9 +419,9 @@ Core optimizations
 ~~~~~~~~~~~~~~~~~~
 
 All existing Core-to-Core passes (float-in, float-out, CSE, demand analysis,
-worker-wrapper, specialization, etc.) thread ``Maybe BranchWeights`` through
-unchanged. This is mechanically achieved because ``Case`` alternatives are
-already manipulated as lists, and the weights travel alongside them.
+worker-wrapper, specialization, etc.) preserve per-Alt weights unchanged.
+This is mechanically achieved because weights are colocated with their
+alternatives and travel alongside them.
 
 Switch lowering
 ~~~~~~~~~~~~~~~
@@ -427,8 +447,7 @@ LLVM backend
 For conditional branches with two-element weights, the LLVM backend emits
 ``!prof !{!"branch_weights", i32 w_true, i32 w_false}`` metadata. LLVM's
 ``BranchProbabilityInfo`` uses this for block placement, if-conversion, and
-other optimizations. When only boolean ``likely``/``unlikely`` is available,
-the existing ``llvm.expect.i1`` intrinsic is used as a fallback.
+other optimizations.
 
 Native code generator
 ~~~~~~~~~~~~~~~~~~~~~
@@ -470,17 +489,19 @@ successors) also qualify. The threshold for splitting is controlled by a flag
 Costs and Drawbacks
 -------------------
 
-- **Compile time:** Adding ``Maybe BranchWeights`` to ``Case`` in Core
+- **Compile time:** Adding ``!(Maybe Word32)`` to each ``Alt`` in Core
   increases allocations by approximately 0.1% at ``-O2`` (measured in the
   original #182 discussion). The heuristic inference in ``CoreToStg`` is a
   single pass over alternatives with negligible cost.
 
-- **Learnability:** The ``likely``/``unlikely`` API is familiar to C/C++
-  programmers. ``{-# WEIGHT n #-}`` is a new pragma but follows the existing
-  pragma syntax conventions. Beginners can ignore both features entirely.
+- **Learnability:** ``{-# WEIGHT n #-}`` is a new pragma but follows the
+  existing pragma syntax conventions. Users who want the familiar C/C++
+  ``likely``/``unlikely`` API can define them as ordinary functions using
+  ``WEIGHT`` pragmas and ``INLINE``. Beginners can ignore the feature
+  entirely.
 
 - **Maintenance burden:** Weights are threaded through Core mechanically.
-  New Core passes must pattern-match on the ``Maybe BranchWeights`` field,
+  New Core passes must pattern-match on the per-Alt ``Maybe Word32`` field,
   but the default behavior (pass through unchanged) is straightforward.
 
 - **Risk of misuse:** Incorrect weights can pessimize code. However, the
@@ -498,8 +519,7 @@ warnings, changes no existing semantics, and deprecates nothing.
 **Breakage level: 0.** No existing programs change behavior.
 
 - The ``{-# WEIGHT n #-}`` pragma is new syntax; existing code cannot contain it.
-- ``likely`` and ``unlikely`` are new exports from ``GHC.Exts``; name
-  collisions are possible but unlikely in practice.
+- No new library exports are added, so there are no name collision concerns.
 - The heuristic inference only affects code layout, not semantics.
 - Template Haskell's ``Match`` gains an optional field with a default of
   ``Nothing``, which is backward-compatible.
@@ -516,7 +536,7 @@ file generated by instrumented execution. This was discussed at length in
 the original proposal #182. The inline approach is complementary: it is
 simpler, works without profiling infrastructure, and handles cases where
 branch likelihood is obvious from code structure (error paths, recursive
-cases). A future PGO implementation would reuse the same ``BranchWeights``
+cases). A future PGO implementation would reuse the same per-Alt weight
 infrastructure and override inline annotations when profile data is
 available.
 
@@ -526,17 +546,17 @@ Ticks
 Branch weights could be represented as a new tick type in Core. This was
 considered and rejected because ticks can be dropped by optimizations that
 don't understand them, which would silently defeat the feature. Storing
-weights directly in ``Case`` ensures they are always preserved.
+weights directly in each ``Alt`` ensures they are always preserved.
 
 Weights in AltCon
 ~~~~~~~~~~~~~~~~~
 
 The original #182 discussion (with feedback from Simon PJ) considered putting
-a ``Freq`` field in ``AltCon``. The current design puts weights in
-``Case`` instead, keeping ``AltCon`` simple and avoiding a change to every
-pattern match on ``DataAlt``/``LitAlt``/``DEFAULT`` in the compiler. The
-``Case``-level representation also naturally handles the "all alternatives
-share one weight vector" invariant.
+a ``Freq`` field in ``AltCon``. The current design adds a
+``!(Maybe Word32)`` to each ``Alt`` tuple instead of modifying ``AltCon``.
+This keeps ``AltCon`` simple and avoids a change to every pattern match on
+``DataAlt``/``LitAlt``/``DEFAULT``. Each alternative is self-contained with
+its own weight, avoiding the need to maintain parallel lists in sync.
 
 Pragma on data constructors
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -567,9 +587,10 @@ The design draws on established practice in other compilers and languages:
 
 - **Zig:** ``@branchHint(.cold)`` builtin.
 
-The ``likely``/``unlikely`` API is deliberately modeled on the C/C++ and Rust
-conventions for familiarity. The ``WEIGHT`` pragma provides finer-grained
-control not available in any of these systems except LLVM's raw metadata.
+The ``WEIGHT`` pragma provides finer-grained control not available in any
+of these systems except LLVM's raw metadata. Users who prefer the familiar
+C/C++/Rust ``likely``/``unlikely`` API can define them as ordinary Haskell
+functions using ``WEIGHT`` and ``INLINE``.
 
 
 Unresolved Questions
