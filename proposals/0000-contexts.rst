@@ -780,8 +780,6 @@ Unresolved Questions
 - How do contexts formally interact with record field labels?
 - Should the turnstile also be allowed at the expression level?
   Would it be useful?
-- Should open declarations support ``qualifed`` and ``as``?
-  If yes, what symbol should be used for context qualification?
 - Does the proposal have any interesting interactions with orphan instances?
 
 Implementation Plan
