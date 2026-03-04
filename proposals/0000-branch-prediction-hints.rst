@@ -113,7 +113,17 @@ This is consistent with pragma placement conventions elsewhere in GHC
 
 - For function clauses, weights attach to each clause. The desugarer
   translates these into case alternative weights when the function is
-  compiled to a case expression.
+  compiled to a case expression. See "Corner cases" below for details on
+  how weights propagate through multi-column matches, wildcards, guards,
+  and other pattern forms.
+
+- When the desugarer detects that weight propagation through multi-column
+  matches causes a clause's effective weight to exceed its stated weight
+  (due to wildcard patterns, guard fallthrough, or similar multi-path
+  reachability), it emits ``-Wincoherent-weights``. This warning is
+  informational — the weights are still used for optimization, but the
+  user may want to rewrite with explicit constructor patterns for precise
+  control.
 
 **In Core**, each ``Alt`` carries an optional weight:
 
@@ -186,44 +196,141 @@ Corner cases
 - Nested case expressions: weights apply only to the immediately annotated
   case. Inner case expressions are independent and may carry their own weights.
 
-- **Marginalization across pattern columns.** When a function or ``\cases``
-  expression matches on multiple arguments, the desugarer compiles clauses
-  to nested case expressions (one per pattern column). The same applies to
-  ordinary multi-argument function definitions. When a single outer
-  constructor leads to multiple inner alternatives with different weights,
-  the outer alternative's weight is the sum of the inner clause weights that
-  share that outer constructor. For example::
+- **Weight propagation through desugaring.** Weights attach to function
+  clauses. The desugarer compiles clauses to nested case expressions (one
+  per pattern column). Each case alternative's weight is the sum of the
+  clause weights whose RHS is reachable through that alternative.
 
-    f {-# WEIGHT 100 #-}  Nothing  True  = a
-    f {-# WEIGHT 2000 #-} Nothing  False = b
-    f {-# WEIGHT 50 #-}   (Just _) True  = c
-    f {-# WEIGHT 50 #-}   (Just _) False = d
-
-  The outer case on the first argument gets ``Nothing`` with weight
-  ``100 + 2000 = 2100`` and ``Just`` with weight ``50 + 50 = 100``. The
-  inner case under ``Nothing`` gets ``True`` with weight 100 and ``False``
-  with weight 2000.
-
-  This corresponds to marginalization from probability theory. Treating
-  clause weights as unnormalized joint probabilities over the pattern
-  columns, the weight for an outer constructor :math:`c_i` is the marginal:
+  When every clause uses explicit constructor patterns (no wildcards), this
+  corresponds to marginalization from probability theory. Treating clause
+  weights as unnormalized joint probabilities over the pattern columns, the
+  weight for an outer constructor :math:`c_i` is the marginal:
 
   .. math::
 
      w(c_i) = \sum_{j} w(c_i, p_j)
 
   where :math:`p_j` ranges over the inner patterns paired with :math:`c_i`.
-  For the example above, :math:`w(\mathtt{Nothing}) = w(\mathtt{Nothing},
-  \mathtt{True}) + w(\mathtt{Nothing}, \mathtt{False}) = 100 + 2000 = 2100`.
-  This preserves the relative likelihoods: the compiler first decides which
-  outer constructor is taken (with odds 2100 : 100, i.e. ``Nothing`` is
-  ~21x more likely than ``Just``), then within that constructor decides
-  among the inner alternatives (with odds 100 : 2000 under ``Nothing``).
+  For example::
+
+    f {-# WEIGHT 100 #-}  Nothing  True  = a
+    f {-# WEIGHT 2000 #-} Nothing  False = b
+    f {-# WEIGHT 50 #-}   (Just _) True  = c
+    f {-# WEIGHT 50 #-}   (Just _) False = d
+
+  The outer case gets ``Nothing`` with weight ``100 + 2000 = 2100`` and
+  ``Just`` with weight ``50 + 50 = 100``. The inner case under ``Nothing``
+  gets ``True`` = 100, ``False`` = 2000. Each branch point has coherent
+  relative weights, and the clause-level ratios are preserved globally.
 
   The rule generalizes to any number of pattern columns by repeated
   marginalization, and applies uniformly to multi-argument functions,
   ``\cases``, and any other source construct that the desugarer compiles to
   nested cases.
+
+- **Wildcard patterns.** For single-column matches, wildcards desugar to
+  ``DEFAULT`` and carry their clause weight directly::
+
+    foo {-# WEIGHT 1 #-}    EQ = ...
+    foo {-# WEIGHT 1001 #-} _  = ...
+
+  becomes ``EQ`` with weight 1, ``DEFAULT`` with weight 1001. No
+  distribution across constructors is needed — ``DEFAULT`` is one
+  alternative representing all non-``EQ`` constructors collectively.
+
+  For multi-column matches, a wildcard clause is reachable from multiple
+  constructor groups. The desugarer generates join points for shared RHSes::
+
+    f {-# WEIGHT 100 #-}  EQ True  = a
+    f {-# WEIGHT 1001 #-} _  False = b
+
+  becomes:
+
+  .. code-block:: haskell
+
+    case x of
+      EQ      -> case y of { True -> a; DEFAULT -> $j }
+      DEFAULT -> $j
+    where $j = b
+
+  Alternative weights by reachable clause RHSes:
+
+  - Outer ``EQ``: reaches clause 1 (100) + clause 2 (1001) = 1101
+  - Outer ``DEFAULT``: reaches clause 2 (1001) = 1001
+  - Inner ``True``: reaches clause 1 (100) = 100
+  - Inner ``DEFAULT``: reaches clause 2 (1001) = 1001
+
+  Each branch point has locally coherent ratios. However, clause 2's
+  weight is counted in multiple constructor groups, so the user's intended
+  clause-level ratio (100:1001) is not preserved globally. This is inherent:
+  two clause weights constrain three distinct execution paths (``EQ``\
+  +\ ``True``, ``EQ``\ +\ ``False``, ``DEFAULT``\ +\ ``False``), which is
+  underdetermined. The downstream consumers of branch weights (block layout,
+  switch dispatch, register allocation) operate per-branch-point and only
+  require local coherence.
+
+  When the compiler detects that wildcard clauses in a multi-column match
+  cause weight inflation (a clause's effective total exceeds its stated
+  weight), it emits ``-Wincoherent-weights``. This warning is informational:
+  the weights are still usable for optimization, but the user may want to
+  rewrite with explicit constructor patterns for precise control.
+
+- **Guard fallthrough.** When a clause's guards are not exhaustive, guard
+  failure falls through to the next clause::
+
+    f {-# WEIGHT 100 #-} x
+      | x > 0 = "positive"
+    f {-# WEIGHT 200 #-} _ = "other"
+
+  Clause 2's join point is reachable both from the outer ``DEFAULT`` and
+  from clause 1's guard failure. This is the same multi-path situation as
+  wildcard patterns — clause 2's effective weight is inflated.
+  ``-Wincoherent-weights`` fires here as well.
+
+- **Redundant / unreachable clauses.** A ``WEIGHT`` pragma on a clause
+  that is unreachable (due to overlapping patterns or irrefutable patterns
+  above it) is silently ignored, and GHC's existing ``-Woverlapping-patterns``
+  warning applies::
+
+    f {-# WEIGHT 100 #-} True  = a
+    f {-# WEIGHT 200 #-} True  = b  -- redundant, weight ignored
+    f {-# WEIGHT 300 #-} False = c
+
+  Similarly, an irrefutable (lazy) pattern ``~pat`` matches without forcing,
+  making subsequent clauses unreachable::
+
+    f {-# WEIGHT 100 #-} ~(Just x) = x
+    f {-# WEIGHT 200 #-} Nothing   = 0  -- unreachable, weight ignored
+
+- **View patterns.** ``f {-# WEIGHT 100 #-} (view -> Just x) = a`` desugars
+  to a case on the view function's result. The weight flows to the ``Just``
+  alternative of that generated case. The matched expression is the view
+  function's return value, not the original argument.
+
+- **Pattern synonyms.** The weight follows the pattern synonym's expansion.
+  If a synonym expands to nested constructors, the weight propagates through
+  the generated nested cases. If a synonym uses a view pattern internally,
+  the view pattern rule above applies.
+
+- **String literal patterns.** A string literal ``"hello"`` desugars to a
+  chain of cons matches (one per character). The clause weight propagates
+  through multiple nested cases. At each level, the matching-character
+  alternative gets the clause's weight and ``DEFAULT`` (character mismatch,
+  reaching a later clause) gets that later clause's weight. Guard
+  fallthrough occurs at each character position, so
+  ``-Wincoherent-weights`` may fire for string patterns in multi-clause
+  functions.
+
+- **Nested constructor patterns** (e.g. ``Just (Left x)``) generate nested
+  cases without wildcards and work cleanly under marginalization — no
+  inflation occurs when every clause uses explicit constructors.
+
+- **Or-patterns** (proposal #522): ``(Left x; Right x)`` matches multiple
+  constructors with one RHS. The weight is the total for the or-pattern.
+  Each constructor alternative in the desugared case receives the full
+  clause weight, since or-patterns desugar similarly to wildcards over a
+  known set of constructors. ``-Wincoherent-weights`` applies if this
+  causes inflation in the presence of other overlapping clauses.
 
 - Interaction with ``INLINE``/``INLINABLE``: when a function with ``WEIGHT``
   annotations on its clauses is inlined, the desugared per-Alt weights on
