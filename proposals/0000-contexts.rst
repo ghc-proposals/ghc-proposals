@@ -335,7 +335,7 @@ opened explicitly::
     open T
     ...
 
-Named contexts also you to qualify the names within them using ``/``::
+Named contexts also you to qualify the names within them by opening the context and using ``/``::
 
   {-# LANGUAGE Contexts #-}
 
@@ -348,6 +348,8 @@ Named contexts also you to qualify the names within them using ``/``::
     foo :: Int -> Int
     foo = \x -> x + 1
     ...
+
+  open S
 
   bar :: Int
   bar = S/foo 11
@@ -671,20 +673,23 @@ We can use context wrapping to disambiguate record fields::
     { name :: String
     , lon :: Float
     , lat :: Float
-    , visited :: [Person/Person]
+    , visited :: [P/Person]
     }
 
   context data Person = Mk
     { name :: String
     , age :: Int
-    , home :: Location/Location
-    , visited :: [Location/Location]
+    , home :: L/Location
+    , visited :: [L/Location]
     }
 
-  visited :: Person/Person -> Location/Location -> (Person/Person, Location/Location)
+  open Person qualified as P
+  open Location qualified as L
+
+  visited :: P/Person -> L/Location -> (P/Person, L/Location)
   visited person location =
-    ( person { Person/visited = location : person.Person/visited }
-    , location { Location/visited = person : location.Location/visited }
+    ( person { P/visited = location : person.P/visited }
+    , location { L/visited = person : location.L/visited }
     )
 
 Or::
@@ -693,21 +698,24 @@ Or::
 
   module M where
 
+  open Location qualified as L
+  open Person qualified as P
+
   context data Location = Mk
     { name :: String
     , lon :: Float
     , lat :: Float
-    , visited :: [Person/Person]
+    , visited :: [P/Person]
     }
 
   context data Person = Mk
     { name :: String
     , age :: Int
-    , home :: Location/Location
-    , visited :: [Location/Location]
+    , home :: L/Location
+    , visited :: [L/Location]
     }
 
-  visited :: Person/Person -> Location/Location -> (Person/Person, Location/Location)
+  visited :: P/Person -> L/Location -> (P/Person, L/Location)
   visited person location =
     ( let open Person in person { visited = location : person.visited }
     , let open Location in location { visited = person : location.visited }
@@ -728,6 +736,8 @@ These data declarations from the example in the ``LocalModules`` proposal::
 can all be defined in the same module using contexts::
 
   context data Nat = Zero | Succ Nat
+
+  open Nat qualified
 
   context data Fin :: Nat/Nat -> Type where
     Zero :: Fin (Nat/Succ n)
