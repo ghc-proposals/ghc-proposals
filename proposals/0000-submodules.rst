@@ -1,5 +1,5 @@
-Contexts
-========
+Submodules
+==========
 
 .. author:: Rashad Gover
 .. date-accepted::
@@ -34,8 +34,8 @@ The 2 primary issues with modules as namespaces, are:
    only for the sake of creating a fresh namespace isn't worth
    it. Creating a new namespace has a higher cost than we would like.
 
-This proposal adds a new language construct besides modules called *contexts*
-to give programmers a more lightweight, flexible alternative to modules
+This proposal adds a new language construct besides regular modules called *submodules*
+to give programmers a more lightweight, flexible alternative
 that addresses these issues. It also allows module import declarations in local
 scopes like let statments and where clauses.
 
@@ -43,31 +43,31 @@ Proposed Change Specification
 -----------------------------
 
 All changes described in this specification only apply to modules that have the
-``-XContexts`` language extension turned on.
+``-XSubmodules`` language extension turned on.
 
 Syntax
 ******
 
-Contexts
-~~~~~~~~
+Submodules
+~~~~~~~~~~
 
-*Context declarations* are added as an extension to the ``topdecls`` production rule::
+*Submodule declarations* are added as an extension to the ``topdecls`` production rule::
 
   topdecls -> ...
-            | 'context' ['sealed'] [contextid] [exports] 'where' {topdecls}
-            | 'context' wrappedtopdecl
+            | 'module' ['sealed'] [modid] [exports] 'where' {topdecls}
+            | 'module' subtopdecl
 
-  wrappedtopdecl -> 'type' simpletype = type
-                  | 'data' [context =>] simpletype [= constrs] [deriving]
-                  | 'newtype' [context =>] simpletype = newconstr [deriving]
-                  | 'class' [scontext =>] tycls tyvar ['where' cdecls]
+  subtopdecl -> 'type' simpletype = type
+              | 'data' [context =>] simpletype [= constrs] [deriving]
+              | 'newtype' [context =>] simpletype = newconstr [deriving]
+              | 'class' [scontext =>] tycls tyvar ['where' cdecls]
 
-They start off with the ``context`` keyword, followed by optional *context modifiers*:
-the ``sealed`` keyword, a *context identifier*, and an export list. After the ``context``
-keyword and optional context modifiers, the ``where`` keyword is used and followed by a
-block of declarations. Here's an example of a context declaration using all modifiers::
+They start off with the ``module`` keyword, followed by optional *modifiers*:
+the ``sealed`` keyword, a *module identifier*, and/or an export list. After the ``module``
+keyword and optional modifiers, the ``where`` keyword is used and followed by a
+block of declarations. Here's an example of a submodule declaration using all modifiers::
 
-  context sealed C (type T, new, add) where
+  module sealed C (type T, new, add) where
     data T = T { bar :: Int }
 
     new :: Int -> T
@@ -76,62 +76,37 @@ block of declarations. Here's an example of a context declaration using all modi
     add :: T -> T -> T
     add (T x) (T y) = T (x + y)
 
-Note that the production rule for context declarations is recursive,
-so contexts can be nested within other contexts::
+Note that the production rule for submodule declarations is recursive,
+so submodules can be nested within other submodules::
 
-  context A where
-    context B where
-      context C where
+  module A where
+    module B where
+      module C where
         foo :: Int -> Int
         foo x = x * 3
 
-Besides the normal context declaration syntax, there's
-syntactic sugar for declaring contexts called *context wrapping*.
-Context wrapping is done by prefixing one of the allowed ``topdecls``
-with the ``context`` keyword. This context wrapping::
+Besides the normal submodule declaration syntax, there's
+syntactic sugar for declaring submodules for type, newtype, data, and class declarations.
+This is done by prefixing one of these declarations
+with the ``module`` keyword. This::
 
-  context data T = T { foo :: Int, bar :: Float }
+  module data T = T { foo :: Int, bar :: Float }
 
 desugars to::
 
-  context T where
+  module T where
     data T = T { foo :: Int, bar :: Float }
 
-The identifier of the resulting context is the same as the identifier of the
-wrapped declaration. Since context identifiers exist in a separate namespace from
+The identifier of the resulting submodule is the same as the identifier of the
+wrapped declaration. Since module identifiers exist in a separate namespace from
 type identifiers, class identifiers, etc., reusing the identifier for
-the context doesn't cause any ambiguity.
+the submodule doesn't cause any ambiguity.
 
-Open Declarations
-~~~~~~~~~~~~~~~~~
+Submodule Qualifier
+~~~~~~~~~~~~~~~~~~~
 
-The ``topdecls`` and ``decls`` grammars are extended with open declarations.
-Open declarations use the ``open`` keyword followed by a context identifier.
-There is no import list equivalent for open declarations, so they have no control
-over what identifiers a context exposes. Only where they're exposed::
-
-  context List where
-    map :: (a -> b) -> [a] -> [b]
-    map f (x : xs) = f x : map f xs
-
-  result = let open List in map (+1) [1, 2, 3]
-
-Open declarations are like module imports, except you can't have import lists
-or hide what the context exposes.
-You can use ``qualified`` and ``as`` in open declarations just like you can with
-module imports (using ``-XImportQualifiedPost`` syntax by default).
-They have the same effect on contexts::
-
-  open A                -- foo or A/foo
-  open A as B           -- foo or B/foo
-  open A qualified      -- Only A/foo
-  open A qualifed as B  -- Only B/foo
-
-Context Qualifier
-~~~~~~~~~~~~~~~~~
-
-Contexts identifiers can be also be used as *context qualifiers* if the
-identifier is in scope::
+Submodules can be also be used for name qualification like normal modules,
+if the submodule's identifier is in scope::
 
   context A where
     context B where
@@ -139,10 +114,12 @@ identifier is in scope::
         foo :: Int -> Int
         foo x = x * 3
 
-  bar = A/B/C/foo 12
+  import A qualified
 
-The ``/`` symbol is used as the qualification operator for contexts and is reserved
-when ``-XContexts`` is on.
+  bar = A.B.C.foo 12
+
+The ``.`` symbol is used as the qualification operator for submodules, just like normal modules,
+when ``-XSubmodules`` is on.
 
 Import Declarations
 ~~~~~~~~~~~~~~~~~~~
@@ -156,52 +133,56 @@ This proposal also extends the rules around import declarations::
 This extension to the declaration production rule allows for import declarations
 inside of let statements and where clauses.
 
-Context Semantics
-*****************
+We also allow import declarations to appear anywhere in the
+top-level of a module, not just at the the very top. This aligns with
+Haskell's general order-independent nature, compared to other programming languages.
 
-Context declarations have 3 orthogonal, binary traits:
+Submodule Semantics
+*******************
 
-1. Environment - *Unsealed* or *Sealed*. What environment does the context have?
-2. Identity - *Anonymous* or *Named*. How are the context's declarations exposed?
-3. Transparency - *Full* or *Partial*. What declarations does the context expose?
+Submodules have 3 orthogonal, binary traits:
 
-There are 2^3 = 8 possible forms of context declaration.
+1. Environment - *Unsealed* or *Sealed*. What environment does the submodule have?
+2. Identity - *Anonymous* or *Named*. How are the submodule's declarations exposed?
+3. Transparency - *Full* or *Partial*. What declarations does the submodule expose?
+
+There are 2^3 = 8 possible forms of submodule.
 
 Environment
 ~~~~~~~~~~~
 
-*Unsealed contexts* have standard lexical scoping behavior.
+*Unsealed submodules* have standard lexical scoping behavior.
 
 They *inherit* the environment of the scope they're declared in::
 
-  {-# LANGUAGE Contexts #-}
+  {-# LANGUAGE Submodules #-}
 
   module M where
   
-  import N (context T)
+  import N (module T)
 
   y :: Int
   y = 32
 
-  context S where
-    open T -- exposes z
+  module S where
+    import T -- exposes z
 
     f :: Int -> Int
     f x = x + y + z
 
-Identifiers inside an unsealed context may *shadow* identifiers from the outer scope::
+Identifiers inside an unsealed submodules *shadow* identifiers from the outer scope::
 
-  {-# LANGUAGE Contexts #-}
+  {-# LANGUAGE Submodules #-}
 
   module M where
 
-  import N (context T)
+  import N (module T)
 
   y :: Int
   y = 32
 
-  context S where
-    open T
+  module S where
+    import T
 
     y :: Int
     y = 10
@@ -209,39 +190,39 @@ Identifiers inside an unsealed context may *shadow* identifiers from the outer s
     f :: Int -> Int
     f x = x + y + z
 
-*Sealed contexts* do not inherit their outer context like unsealed contexts do::
+*Sealed submodules* do not inherit their outer scope like unsealed submodules do::
 
-  {-# LANGUAGE Contexts #-}
+  {-# LANGUAGE Submodules #-}
 
   module M where
   
-  import N (context T)
+  import N (module T)
 
   y :: Int
   y = 32
 
-  context sealed S where
+  module sealed S where
     import Prelude
-    open T -- exposes z
+    import T -- exposes z
 
     f :: Int -> Int
     f x = x + y + z -- Error! y is unknown
 
-Since sealed contexts do not inherit their outer context,
-declarations inside of sealed contexts cannot shadow outer ones::
+Since sealed submodules do not inherit their outer scope,
+declarations inside of sealed submodules cannot shadow outer ones::
 
-  {-# LANGUAGE Contexts #-}
+  {-# LANGUAGE Submodules #-}
 
   module M where
   
-  import N (context T)
+  import N (module T)
 
   y :: Int
   y = 32
 
-  context sealed S where
+  module sealed S where
     import Prelude
-    open T
+    import T
 
     y :: Int -- This doesn't shadow the outer y.
     y = 10
@@ -249,160 +230,153 @@ declarations inside of sealed contexts cannot shadow outer ones::
     f :: Int -> Int
     f x = x + y + z
 
-The only way to bring an identifier into a sealed context is through an explicit open or import declaration::
+The only way to bring an identifier into a sealed submodule is through an explicit import declaration::
 
-  {-# LANGUAGE Contexts #-}
+  {-# LANGUAGE Submodules #-}
 
   module M where
 
-  context C where
+  module C where
     ...
 
-  context sealed S where
-    import O (context A, context B)
-    open A
-    open B
-    open C
+  module sealed S where
+    import O (module A, module B)
+    import A
+    import B
+    import C
     ...
 
-or by declaring a fresh identifier inside the sealed context.
+or by declaring a fresh identifier inside the sealed submodule.
 
-In summary, sealing a context is useful if you need a blank slate
+In summary, sealing a submodule is useful if you need a blank slate
 where internal declarations only depend on:
 
-- Identifiers brought in scope via explicit opens and imports
-- Identifiers declared directly in the context
+- Identifiers brought in scope via explicit imports
+- Identifiers declared directly in the submodule
 
 Identity
 ~~~~~~~~
 
-*Anonymous contexts* cannot be referenced since they don't have a identifier.
+*Anonymous submodules* cannot be referenced since they don't have an identifier.
 
-This means you cannot export or import an anonymous context::
+This means you cannot export or import an anonymous submodule::
 
-  {-# LANGUAGE Contexts #-}
+  {-# LANGUAGE Submodules #-}
 
-  module M where -- I can't export the anon context...What name?
+  module M where -- I can't export the anon submodule...What name?
   
-  import N (context T)
+  import N (module T)
 
-  context (f) where
-    open T
+  module (f) where
+    import T
     f :: ...
     g :: ...
 
-And you cannot explicitly open anonymous contexts::
+And you cannot explicitly import anonymous submodules::
 
-  {-# LANGUAGE Contexts #-}
+  {-# LANGUAGE Submodules #-}
 
   module M where
   
-  import N (context T)
+  import N (module T)
 
-  context (f) where -- I can't use open on this context...What name?
-    open T
+  module (f) where -- I can't use import on this submodule...What name?
+    import T
     f :: ...
     g :: ...
 
-Instead, anonymous contexts are opened at the point of their declaration::
+Instead, anonymous submodules are opened at the point of their declaration::
 
-  {-# LANGUAGE Contexts #-}
+  {-# LANGUAGE Submodules #-}
 
   module M where
   
-  import N (context T)
+  import N (module T)
 
-  context (f) where
-    open T
+  module (f) where
+    import T
     f :: ...
     g :: ...
 
-  h x = f x -- f is exposed by the anonymous context
+  h x = f x -- f is exposed by the anonymous submodule
 
-If a context does not have an identifier, the only logical thing to do is open it where it
-is, since it cannot be referenced elsewhere.
+Named submodules on the other hand can be exported and imported::
 
-Named contexts on the other hand can be exported, imported, and
-opened explicitly::
+  {-# LANGUAGE Submodules #-}
 
-  {-# LANGUAGE Contexts #-}
-
-  module M (context S) where
+  module M (module S) where
   
-  import N (context T)
+  import N (module T)
 
-  context S where
-    open T
+  module S where
+    import T
     ...
 
-Named contexts also you to qualify the names within them by opening the context and using ``/``::
+Named submodules also you to qualify the names within them by opening
+the submodule and using ``.``::
 
-  {-# LANGUAGE Contexts #-}
+  {-# LANGUAGE Submodules #-}
 
-  module M (context S, bar) where
+  module M (module S, bar) where
 
-  import N (context T)
+  import N (module T)
 
-  context S where
-    open T
+  module S where
+    import T
     foo :: Int -> Int
     foo = \x -> x + 1
     ...
 
-  open S
+  import S qualified
 
   bar :: Int
-  bar = S/foo 11
+  bar = S.foo 11
 
-In short, naming a context means it can be opened
+In short, naming a submodule means it can be opened
 somewhere other than where it was declared, and be
 used as a qualifier for any identifier it exports.
-
-Not naming a context ensures that the context and its
-declarations cannot be referenced anywhere else than
-where it was declared.
 
 Transparency
 ~~~~~~~~~~~~
 
-*Fully transparent* contexts expose all identifiers inside of them when opened::
+*Fully transparent* submodules expose all identifiers inside of them when imported::
 
-  {-# LANGUAGE Contexts #-}
+  {-# LANGUAGE Submodules #-}
 
   module M where
 
-  context S where
+  module S where
     x = 5
     y = 10
     z = 20
 
-  open S
+  import S
 
   a = x + y + z
 
-*Partially transparent* contexts have an export list, and only
+*Partially transparent* submodules have an export list, and only
 expose identifiers listed in the export list::
 
-  {-# LANGUAGE Contexts #-}
+  {-# LANGUAGE Submodules #-}
 
   module M where
 
-  context S (x, z) where
+  module S (x, z) where
     x = 5
     y = 10
     z = 20
 
-  open S
+  import S
 
   a = x + y + z -- Error! No y in scope.
 
 Export lists can use ``-XExplicitNamespaces``::
 
-  {-# LANGUAGE Contexts, ExplicitNamespaces #-}
+  {-# LANGUAGE Submodules, ExplicitNamespaces #-}
 
   module M where
 
-  context S (type T, type R, class C(..)) where
+  module S (type T, type R, class C(..)) where
     type T = T
 
     type R = R { l :: Int }
@@ -410,34 +384,31 @@ Export lists can use ``-XExplicitNamespaces``::
     class C where
       m :: Int
 
-Only identifiers that are declared in the context can be added to the context's export list.
-Identifiers brought in via ``open`` or ``import`` cannot be added to the context's export list.
-
-The transparency of a context determines what identifiers are exposed when the context
-is opened.
+Only identifiers that are declared in the submodule can be added to the submodule's export list.
+Identifiers brought in via ``import`` cannot be added to the submodule's export list.
+Submodules do not allow re-exporting.
 
 Instances
 ~~~~~~~~~
 
-Instance declarations are allowed inside contexts, but they are
-still associated with the module they are declared in.
+Instance declarations are allowed inside submodules, but the instances
+are associated with the parent module they are declared in.
 Instance declarations cannot be added to or excluded from the export list
-of a context declaration. They are always exported and always imported (if the module is).
-Instance declarations are the only declarations with this behavior.
+of a submodule. They are always exported and always imported, if the parent module of the submodule is imported.
 
-The behavior of instances is unaffected by the existence of contexts.
+The behavior of instances is unaffected by the existence of submodules.
 The only difference is that instance declarations can now refer to locally scoped
 type and class identifiers. As long as the unique identifiers of the
 class and type referenced by the instance are in scope, the instance can be
-resolved.
+resolved as usual.
 
-Context Algebra
-***************
+Submodule Algebra
+*****************
 
-Context Cube
-~~~~~~~~~~~~
+Submodule Cube
+~~~~~~~~~~~~~~
 
-Let the traits of a context be described by 3-dimensional, binary coordinates (x, y, z), where:
+Let the traits of a submodule be described by 3-dimensional, binary coordinates (x, y, z), where:
 
 +------------------+-----------+---------+
 |                  | 0         | 1       |
@@ -450,31 +421,31 @@ Let the traits of a context be described by 3-dimensional, binary coordinates (x
 +------------------+-----------+---------+
 
 The coordinates (0, 0, 0) are located at the origin of the 3-D space
-and represent the *origin context*, hence the name.
-The origin context has the least "power".
+and represent the *origin submodule*, hence the name.
+The origin submodule has the least "power" of the submodule forms.
 
 The other 7 coordinates in this 3-D space can be derived from (0, 0, 0)
 by moving in 1 unit increments along the x, y, and/or z axes. These coordinates
 are the vertices of the unit cube, each representing a unique
-context declaration form. This unit cube is called *the context cube*.
+submodule form. This unit cube is called *the submodule cube*.
 
-Origin Context
-~~~~~~~~~~~~~~
+Origin Submodule
+~~~~~~~~~~~~~~~~
 
-The *origin context* is the context that is unsealed, anonymous, and has full transparency::
+The *origin submodule* is the submodule that is unsealed, anonymous, and has full transparency::
 
-  {-# LANGUAGE Contexts #-}
+  {-# LANGUAGE Submodules #-}
 
   module M where
 
   y :: Int
   y = 5
 
-  context where
+  module where
     f :: Int -> Int
     f x = x + y
 
-The origin context is:
+The origin submodule is:
 
 - unsealed, so it inherits the environment it was declared in
 - anonymous, so the declarations it exposes are added directly to the environment it was declared in
@@ -490,32 +461,32 @@ Semantically, the example above is equivalent to::
   f :: Int -> Int
   f x = x + y
 
-The origin context is important because all other forms can be
+The origin submodule is important because all other forms can be
 derived from this one.
 
-The origin context does one thing: it allows you to use opens
-and imports inside of it without polluting the outer context.
+The origin submodule does one thing: it allows you to use opens
+and imports inside of it without polluting the scope outside of it.
 
-All context declaration forms contain the effects of opening a context or importing a module.
+All submodule forms contain the effects of importing a module.
 This is their primary power.
 
-Top Context
-~~~~~~~~~~~
+End Submodule
+~~~~~~~~~~~~~
 
-Just as there is a context with the least "power", there is a context with the most.
-This context is represented by the coordinates (1, 1, 1), and is called the *top context*.
+Just as there is a submodule with the least "power", there is a submodule with the most.
+This submodule is represented by the coordinates (1, 1, 1), and is called the *end submodule*.
 
 Turnstile
 *********
 
-Another interesting form is 1 unit along the x-axis from the origin context.
-It's the sealed, anonymous, fully transparent context form::
+Another interesting submodule form exists 1 unit along the x-axis from the origin submodule.
+It's the sealed, anonymous, fully transparent submodule form::
 
-  {-# LANGUAGE Contexts, NoImplicitPrelude #-}
+  {-# LANGUAGE Submodules, NoImplicitPrelude #-}
 
   module M (f, g) where
 
-  context sealed where
+  module sealed where
     import Prelude
 
     x :: String
@@ -529,19 +500,19 @@ It's the sealed, anonymous, fully transparent context form::
   g = \x -> f x <> "!"
 
 We get ``f`` and ``x`` at the top-level of the module, without exposing
-the ``Prelude`` import. This works because this context declaration form
+the ``Prelude`` import. This works because this submodule form
 
 - is sealed, so it doesn't see any identifiers defined outside of it
-  (besides module/context identifiers for importing/opening)
-- is anonymous, so it's opened in the scope it's declared in
+  (besides module identifiers for import declarations)
+- is anonymous, so its declarations belong to its parent scope
 - is fully transparent, so it exposes all of its internal declarations
 
 To make the syntax more convenient let's introduce the *turnstile*
 operator, ``⊢``. The turnstile operator takes a series of module
-or context identifiers on the LHS, and a series of one or more declarations
+identifiers on the LHS, and a series of one or more declarations
 on the RHS::
 
-  {-# LANGUAGE Contexts #-}
+  {-# LANGUAGE Submodules #-}
 
   module M (f, g) where
 
@@ -556,40 +527,39 @@ on the RHS::
 
   g = \x -> f x <> "!"
 
-The turnstile operator desugars to the context form we defined
+The turnstile operator desugars to the submodule form we defined
 above and has the same properties.
 
-The turnstile operator desugars to an anonymous context,
-but what if the context needs to have a identifier?
-We just need to wrap the turnstile with a named context
-declaration::
+The turnstile operator desugars to an anonymous submodule,
+but what if we want the resulting submodule to have an identifier?
+We just need to wrap the turnstile with a named submodule::
 
-  {-# LANGUAGE Contexts #-}
+  {-# LANGUAGE Submodules #-}
 
   module M where
 
-  context S where A, B ⊢
+  module S where A, B ⊢
     C
     D
     E
 
 Desugars to::
 
-  {-# LANGUAGE Contexts #-}
+  {-# LANGUAGE Submodules #-}
 
   module M where
 
-  context S where
-    context sealed where
-      open A
-      open B
+  module S where
+    module sealed where
+      import A
+      import B
       C
       D
       E
 
 The turnstile has another important property. This::
 
-  {-# LANGUAGE Contexts #-}
+  {-# LANGUAGE Submodules #-}
 
   module M where
 
@@ -597,12 +567,12 @@ The turnstile has another important property. This::
 
 is the same as this::
 
-  {-# LANGUAGE Contexts #-}
+  {-# LANGUAGE Submodules #-}
 
   module M where
 
   ⊢
-    open A
+    import A
     decl
 
 Examples
@@ -623,9 +593,9 @@ One of these is ``head``::
 
   ...
 
-With contexts, we can say::
+With submodules, we can say::
 
-  {-# LANGUAGE Contexts, NoImplicitPrelude #-}
+  {-# LANGUAGE Submodules, NoImplicitPrelude #-}
   
   module M where
 
@@ -641,18 +611,18 @@ Humans often use the same symbol or name to mean different things depending on t
 For example, the ``+`` symbol can be used to represent addition of integers or vectors depending
 on the context::
 
-  {-# LANGUAGE Contexts, NoImplicitPrelude #-}
+  {-# LANGUAGE Submodules, NoImplicitPrelude #-}
 
   module M where
 
-  context TwoD where
+  module TwoD where
     data Vec = Vec (Int, Int)
 
     (+) :: Vec -> Vec -> Vec
     (+) (Vec (a, b)) (Vec (c, d)) =
       let import Prelude in Vec (a + c, b + d)
 
-  context ThreeD where
+  module ThreeD where
     data Vec = Vec (Int, Int, Int)
 
     (+) :: Vec -> Vec -> Vec
@@ -663,62 +633,62 @@ on the context::
 
   ThreeD ⊢ another = Vec (1, 2, 3) + Vec (4, 5, 6) -- Vec (5, 7, 9)
 
-We can use context wrapping to disambiguate record fields::
+We can use submodules to disambiguate record fields::
 
-  {-# LANGUAGE Contexts, OverloadedRecordDot #-}
+  {-# LANGUAGE Submodules, OverloadedRecordDot #-}
 
   module M where
 
-  context data Location = Mk
+  module data Location = Mk
     { name :: String
     , lon :: Float
     , lat :: Float
-    , visited :: [P/Person]
+    , visited :: [P.Person]
     }
 
-  context data Person = Mk
+  module data Person = Mk
     { name :: String
     , age :: Int
-    , home :: L/Location
-    , visited :: [L/Location]
+    , home :: L.Location
+    , visited :: [L.Location]
     }
 
-  open Person qualified as P
-  open Location qualified as L
+  import Person qualified as P
+  import Location qualified as L
 
-  visited :: P/Person -> L/Location -> (P/Person, L/Location)
+  visited :: P.Person -> L.Location -> (P.Person, L.Location)
   visited person location =
-    ( person { P/visited = location : person.P/visited }
-    , location { L/visited = person : location.L/visited }
+    ( person { P.visited = location : person.(P.visited) }
+    , location { L.visited = person : location.(L.visited) }
     )
 
 Or::
 
-  {-# LANGUAGE Contexts, OverloadedRecordDot #-}
+  {-# LANGUAGE Submodules, OverloadedRecordDot #-}
 
   module M where
 
-  open Location qualified as L
-  open Person qualified as P
+  import Location qualified as L
+  import Person qualified as P
 
-  context data Location = Mk
+  module data Location = Mk
     { name :: String
     , lon :: Float
     , lat :: Float
-    , visited :: [P/Person]
+    , visited :: [P.Person]
     }
 
-  context data Person = Mk
+  module data Person = Mk
     { name :: String
     , age :: Int
-    , home :: L/Location
-    , visited :: [L/Location]
+    , home :: L.Location
+    , visited :: [L.Location]
     }
 
-  visited :: P/Person -> L/Location -> (P/Person, L/Location)
+  visited :: P.Person -> L.Location -> (P.Person, L.Location)
   visited person location =
-    ( let open Person in person { visited = location : person.visited }
-    , let open Location in location { visited = person : location.visited }
+    ( let import Person in person { visited = location : person.visited }
+    , let import Location in location { visited = person : location.visited }
     )
 
 These data declarations from the example in the ``LocalModules`` proposal::
@@ -735,15 +705,16 @@ These data declarations from the example in the ``LocalModules`` proposal::
 
 can all be defined in the same module using contexts::
 
-  context data Nat = Zero | Succ Nat
+  module data Nat = Zero | Succ Nat
 
-  open Nat qualified
+  module Fin where
+    import Nat qualified
 
-  context data Fin :: Nat/Nat -> Type where
-    Zero :: Fin (Nat/Succ n)
-    Succ :: Fin n -> Fin (Nat/Succ n)
+    data Fin :: Nat.Nat -> Type where
+      Zero :: Fin (Nat.Succ n)
+      Succ :: Fin n -> Fin (Nat.Succ n)
 
-  context data Elem :: a -> [a] where
+  module data Elem :: a -> [a] where
     Zero :: Elem x (x : xs)
     Succ :: Elem x xs -> Elem x (y : xs)
 
@@ -757,7 +728,7 @@ Costs and Drawbacks
 -------------------
 
 - Increased complexity in the Parser and Renamer
-- Contexts can be abused to write code that is harder to understand
+- Submodules can be abused to write code that is harder to understand
 
 Backward Compatibility
 ----------------------
@@ -774,10 +745,10 @@ Alternatives
 Unresolved Questions
 --------------------
 
-- How should Haddock work with contexts?
-- Should foreign declarations be allowed in contexts?
-- Should default declarations be allowed in contexts?
-- How do contexts formally interact with record field labels?
+- How should Haddock work with submodules?
+- Should foreign declarations be allowed in submodules?
+- Should default declarations be allowed in submodules?
+- How do submodules formally interact with record field labels?
 - Should the turnstile also be allowed at the expression level?
   Would it be useful?
 - Does the proposal have any interesting interactions with orphan instances?
