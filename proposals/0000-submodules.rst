@@ -36,7 +36,7 @@ The 2 primary issues with modules as namespaces, are:
 
 This proposal adds a new language construct besides regular modules called *submodules*
 to give programmers a more lightweight, flexible alternative
-that addresses these issues. It also allows module import declarations in local
+that addresses these issues. It also allows import declarations in local
 scopes like let statments and where clauses.
 
 Proposed Change Specification
