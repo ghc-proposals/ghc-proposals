@@ -105,16 +105,15 @@ the submodule doesn't cause any ambiguity.
 Submodule Qualifier
 ~~~~~~~~~~~~~~~~~~~
 
-Submodules can be also be used for name qualification like normal modules,
-if the submodule's identifier is in scope::
+Submodules can be also be used for name qualification if the submodule is imported::
 
-  context A where
-    context B where
-      context C where
+  module A where
+    module B where
+      module C where
         foo :: Int -> Int
         foo x = x * 3
 
-  import A qualified
+  import A
 
   bar = A.B.C.foo 12
 
@@ -134,8 +133,9 @@ This extension to the declaration production rule allows for import declarations
 inside of let statements and where clauses.
 
 We also allow import declarations to appear anywhere in the
-top-level of a module, not just at the the very top. This aligns with
-Haskell's general order-independent nature, compared to other programming languages.
+global scope of a module, not just at the the top of the module.
+This aligns with the semantics of Haskell declarations, which
+are order independent.
 
 Submodule Semantics
 *******************
@@ -333,7 +333,7 @@ the submodule and using ``.``::
   bar = S.foo 11
 
 In short, naming a submodule means it can be opened
-somewhere other than where it was declared, and be
+somewhere other than where it was declared, and can be
 used as a qualifier for any identifier it exports.
 
 Transparency
@@ -721,7 +721,7 @@ can all be defined in the same module using contexts::
 Effect and Interactions
 -----------------------
 
-The context of every declaration can be made much more explicit.
+The context of every declaration can be made more explicit.
 Good synergy with ``-XRebindableSyntax``.
 
 Costs and Drawbacks
