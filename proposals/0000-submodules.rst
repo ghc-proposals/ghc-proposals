@@ -117,9 +117,6 @@ Submodules can be also be used for name qualification if the submodule is import
 
   bar = A.B.C.foo 12
 
-The ``.`` symbol is used as the qualification operator for submodules, just like normal modules,
-when ``-XSubmodules`` is on.
-
 Import Declarations
 ~~~~~~~~~~~~~~~~~~~
 
