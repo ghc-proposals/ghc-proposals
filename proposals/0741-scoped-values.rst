@@ -19,80 +19,66 @@ Dynamic scoping is a convenient mechanism to provide context
 (configuration, credentials, capabilities, interface implementations...)
 to parts of a program that are lexically distant without explicitly threading arguments.
 
-Why not ImplicitParams?
-^^^^^^^^^^^^^^^^^^^^^^^
 GHC already provides an implementation of dynamic scoping through the
 ``ImplicitParams`` extension.
-However ``ImplicitParams`` suffers from various drawbacks:
+However ``ImplicitParams`` suffers from various drawbacks.
 
-* The parameters are plain ``Symbol``'s. There is no way to disambiguate
+Implicit parameters are strings
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Parameters are plain ``Symbol``'s with no namespacing. This means that:
+
+* There is no way to disambiguate
   parameters from different origins that share the same name.
-* Related to the previous point, parameter names cannot be hidden via the module system.
-* The resolution strategy is undefined in case of overlap.
-* Enabling or disabling the monomorphism restriction changes the semantics.
-* The implementation piggybacks on type classes, whose original design assumes global,
-  static resolution.
-  Re-purposing classes for local constraints complicates the implementation and
-  requires ad-hoc logic for the ``IP`` class in various parts of the GHC code base.
+* Parameter names cannot be hidden via the module system.
+  They are always exposed.
 
-Why not ReaderT?
-^^^^^^^^^^^^^^^^
-``ReaderT`` is a popular alternative to implicit parameters.
-It has much more robust semantics but, as a monad, doesn't compose easily
-with other effects. Composition is achieved "artificially" by nesting data types (transformers),
-which is a clever solution but imposes a certain complexity and
-a rigid effect stack.
-The interaction between transformers is also subject to `subtle semantic issues
-<https://github.com/haskell-effectful/effectful/blob/master/transformers.md>`_.
+Consider a database connection library that exports the following definitions:
 
-A common suggestion to avoid this complexity is the pervasive usage of ``ReaderT r IO``
-for all computations that require access to the dynamic context.
-While this simplifies things, it also has two drawbacks:
+::
 
-* It encourages the usage of a single global environment data-type, bundling
-  unrelated pieces of context into a monolithic "God object".
-* More importantly, it enables unrestricted IO everywhere,
-  even in functions that only need the ``Reader`` part of the ``ReaderT r IO``.
+  type DbConfig = (?timeout :: Int, ?otherDbSettings :: ())
 
-There are solutions to this, notably through the usage of type classes (the so-called "MTL style"),
-but they introduce complexity again and suffer from performance issues.
+  dbConnect :: DbConfig => IO ()
 
-Scoped values, on the other hand, are not based on monads, so
-they compose naturally with any other effect and preserve the distinction
-between IO and pure code.
-Moreover the solution presented in this document has no performance
-overhead over plain argument passing.
+An HTTP client library that exports the following definitions:
 
-Why not ${MY_FAVOURITE_EFFECT_SYSTEM}?
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Effect systems are very powerful tools but they are also very complex.
-Since one of the goals of this proposal is to facilitate "Simple Haskell",
-we do not consider effect system libraries as viable alternatives.
+::
 
-Nonetheless, ``ScopedValues`` can provide a solid base to implement
-a minimalistic yet complete effect system in few lines of code.
-See the "lightweight effect system" appendix for a more detailed description
-of the idea.
+  type HttpConfig = (?timeout :: Int, ?otherHttpSettings :: ())
 
-Another idea that is worth exploring is the usage of this extension
-*in combination with* an effect system library such as ``Bluefin``,
-in which effect handlers are ordinary values.
+  httpConnect :: HttpConfig => IO ()
 
-Why not WithDict?
-^^^^^^^^^^^^^^^^^
-GHC supports local overriding of class instances via the magic method ``withDict``.
-While this mechanism can be used to emulate implicit parameters,
-it is not particularly reliable.
+And a function that relies on both of them:
 
-* It allows overriding class instances that are already defined statically
-  (via standard ``instance`` declarations), thus breaking the expectation of global
-  coherence that comes with type classes.
-* The resolution strategy is undefined in case of multiple local instances
-  for the same type.
+::
 
-See `this GHC issue
-<https://gitlab.haskell.org/ghc/ghc/-/issues/25369>`_
-for a description of its limitations.
+  doStuff :: (DbConfig, HttpConfig) => IO ()
+  doStuff = do
+    dbConnect
+    httpConnect
+
+Now it is impossible to disambiguate between the two timeouts.
+We are forced, either knowingly or accidentally, to set both timeouts to the same value.
+
+MonomorphismRestriction
+^^^^^^^^^^^^^^^^^^^^^^^
+Enabling or disabling the monomorphism restriction changes the semantics
+of implicit parameters.
+
+Consider the following example:
+
+::
+
+  foo :: String
+  foo = let ?scope = "global" in
+    let capture = ?scope
+    in let ?scope = "local" in capture
+
+With ``-XMonomorphismRestriction``, ``foo`` returns ``"global"``.
+With ``-XNoMonomorphismRestriction``, ``foo`` returns ``"local"``.
+
+This is not ideal, because toggling the extension for reasons unrelated
+to implicit parameters can silently change the behavior of existing code.
 
 Proposed Change Specification
 -----------------------------
@@ -115,6 +101,9 @@ expect one or more type variables.
 The RHS (the type) can refer to the key variables,
 which means that the value type can depend on the type arguments passed to
 the key constructor.
+
+The RHS must be a monotype.
+Polymorphic value types such as ``data scoped T = forall a. a -> a`` are not allowed.
 
 The new syntax is only allowed when the ``ScopedValues`` extension
 is enabled.
@@ -342,6 +331,7 @@ Local capture
 ^^^^^^^^^^^^^
 One important consequence of the chosen operational semantics is that scoped values
 can be captured locally or not depending on the signature.
+This behavior is not affected by the monomorphism restriction.
 
 ::
 
@@ -418,33 +408,55 @@ User of the ``TimeEff`` module can provide mock implementations of ``Time``:
   >>> runTime mockTime monotonicTime
   42.0
 
+Hidden keys
+^^^^^^^^^^^
+We mentioned earlier that one of the advantages of this proposal is
+the ability to hide keys via the module system.
+The reasons for hiding a key are fundamentally the same
+as for hiding any identifier:
+providing cleaner interfaces, hiding implementation details
+and enforcing invariants.
+
+Let's imagine we are implementing a unification library based on a mutable vector.
+We don't want users to access the unification state directly,
+since it's an implementation detail that is subject to certain invariants.
+If we choose implicit parameters to hold the vector, we would be obliged
+to expose it to the user.
+
+With scoped keys, we would be able to hide it:
+
+::
+
+  module Unification (HasUState, Term(..), runUState, unify) where
+
+  -- imports...
+
+  data Term = ...
+
+  -- UStateK is hidden
+  data scoped UStateK = IOVector Term
+
+  type HasUState = Scoped UStateK
+
+  runUState :: (HasUState => r) -> (r, IOVector Term)
+  runUState = ...
+
+  unify :: HasUState => Term -> Term -> IO Bool
+  unify = ...
+
 Effect and Interactions
 -----------------------
 The solution presented in this proposal does not conflict with any existing
 language feature.
-However it can constitute a replacement for the existing solutions in some cases.
-Let's consider the alternatives one by one.
 
-ImplicitParams
-^^^^^^^^^^^^^^
-``ScopedValues`` supersedes ``ImplicitParams`` for most use cases.
+It can serve as a replacement for most use cases of ``ImplicitParams``.
 It cannot however cover uses of ``ImplicitParams`` that rely on global instances
 of ``IP``.
 The lack of support for default values in this proposal is a deliberate
 choice that makes both the semantics and the implementation simpler.
 
-ReaderT
-^^^^^^^
-The clear distinction between introduction (``runReaderT``)
-and modification (``local``) is very hard to replicate without a monad.
-For this reason, ``ScopedValues`` should not be considered a replacement for ``ReaderT``
-but rather an alternative with different trade-offs.
-
-WithDict
-^^^^^^^^
-We believe that ``ScopedValues`` should be preferred to ``withDict``
-in most cases, as the latter relies on incoherent instance resolution
-and can lead to unexpected behaviour and bugs.
+This proposal is not intended as a replacement for ``ReaderT`` or effect systems,
+which offer different trade-offs.
 
 Costs and Drawbacks
 -------------------
@@ -490,12 +502,16 @@ Library implementation
 ^^^^^^^^^^^^^^^^^^^^^^
 A similar functionality can be implemented entirely at library level,
 by using a combination of type families, ``withDict`` and ``IP``
-(a typechecker plugin is needed for the resolution strategy).
+(a typechecker plugin is needed to implement the warnings).
+The trick is based on the fact that GHC currently accepts an unapplied type family
+or data family as the first argument of ``IP``,
+without requiring a fully solved ``Symbol``.
 
-However such a library would not achieve the same level of robustness
+However such a library would rely on a GHC quirk (or likely a bug).
+It would not achieve the level of robustness
 and ease of use that this proposal advocates for.
-If we want scoped values to be a simpler alternative to ``ReaderT``,
-then they should be usable without much boilerplate nor advanced tricks.
+The aim of this proposal is to provide a simple and reliable solution.
+This trick is neither of the two.
 
 Moreover typechecker plugins have a high maintenance cost, which
 means there is a risk that such a library would go frequently out of sync with the GHC API.
