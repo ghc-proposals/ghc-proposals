@@ -493,7 +493,7 @@ ping the secretary or the committee.)
 Who is the committee?
 ---------------------
 You can reach the committee by email at ghc-steering-committee@haskell.org. This is a mailing list with
-`public archives <https://mail.haskell.org/cgi-bin/mailman/listinfo/ghc-steering-committee>`_.
+`public archives <https://mailman.haskell.org/archives/list/ghc-steering-committee@haskell.org/>`_.
 
 The current members
 ~~~~~~~~~~~~~~~~~~~~
@@ -888,5 +888,5 @@ Questions?
 ----------
 
 Feel free to contact any of the members of the `GHC Steering Committee
-<#who-is-the-committee>`_ with questions. `Email <https://mail.haskell.org/cgi-bin/mailman/listinfo/ghc-steering-committee>`_
+<#who-is-the-committee>`_ with questions. `Email <https://mailman.haskell.org/archives/list/ghc-steering-committee@haskell.org/>`_
 and Matrix (`#ghc:matrix.org <https://matrix.to/#/#ghc:matrix.org>`_) are both good ways of accomplishing this.
