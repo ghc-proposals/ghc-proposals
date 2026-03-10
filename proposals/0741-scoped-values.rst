@@ -420,7 +420,7 @@ and enforcing invariants.
 Consider the example of a fresh integer supply.
 If the key is exposed, a user could shadow the counter and cause collisions.
 With implicit parameters, there is no way to prevent this:
-the parameter `?counter` is a public name that anyone can rebind.
+the parameter ``?counter`` is a public name that anyone can rebind.
 With scoped keys, we can prevent it by hiding the key.
 
 ::
