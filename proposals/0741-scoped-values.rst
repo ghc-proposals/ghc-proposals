@@ -417,32 +417,26 @@ as for hiding any identifier:
 providing cleaner interfaces, hiding implementation details
 and enforcing invariants.
 
-Let's imagine we are implementing a unification library based on a mutable vector.
-We don't want users to access the unification state directly,
-since it's an implementation detail that is subject to certain invariants.
-If we choose implicit parameters to hold the vector, we would be obliged
-to expose it to the user.
-
-With scoped keys, we would be able to hide it:
+Consider the example of a fresh integer supply.
+If the key is exposed, a user could shadow the counter and cause collisions.
+With implicit parameters, there is no way to prevent this:
+the parameter `?counter` is a public name that anyone can rebind.
+With scoped keys, we can prevent it by hiding the key.
 
 ::
 
-  module Unification (HasUState, Term(..), runUState, unify) where
+  module Counter (HasCounter, runCounter, next) where
 
-  -- imports...
+  -- CounterK is not exported
+  data scoped CounterK = IORef Int
 
-  data Term = ...
+  type HasCounter = Scoped CounterK
 
-  -- UStateK is hidden
-  data scoped UStateK = IOVector Term
+  -- Creates a new IORef and runs the computation
+  runCounter :: (HasCounter => IO a) -> IO a
 
-  type HasUState = Scoped UStateK
-
-  runUState :: (HasUState => r) -> (r, IOVector Term)
-  runUState = ...
-
-  unify :: HasUState => Term -> Term -> IO Bool
-  unify = ...
+  -- Atomically increments the counter and returns the value
+  next :: HasCounter => IO Int
 
 Effect and Interactions
 -----------------------
