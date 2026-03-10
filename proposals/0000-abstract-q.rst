@@ -92,7 +92,7 @@ to::
  -- and only re-exported from template-haskell.
  -- It is still known key.
  newtype Q a -- Q is abstract or opaque
- -- bundlend pattern synonym for backwards compatibility
+ -- bundled pattern synonym for backwards compatibility
  pattern unQ :: Q a -> forall m. Quasi m => m a
 
  -- Note: Quasi is now defined in template-haskell. It is no longer known key.
@@ -106,7 +106,7 @@ to::
   ... and so on
   {-# MINIMAL qRun qRecover #-}
 
-``unQ`` and the ``Q`` constructor would no longer be exported from ``template-haskell``.
+The ``Q`` constructor would no longer be exported from ``template-haskell``.
 This is a breaking change.
 
 A new ``qRun :: Quasi m => Q a -> m a`` method would be added to a ``Quasi``, so that the top-level ``runQ`` can still be implemented.
