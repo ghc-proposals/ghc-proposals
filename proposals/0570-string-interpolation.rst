@@ -96,7 +96,7 @@ If Haskell had native string interpolation, it would have the benefit and safety
 Proposed Change Specification
 -----------------------------
 
-This proposal introduces the ``-XStringInterpolation`` extension, with support for ``-XOverloadedStrings`` and ``-XQualifiedStrings`` (`proposal <https://github.com/ghc-proposals/ghc-proposals/pull/698>`_).
+This proposal introduces the ``-XStringInterpolation`` extension, with support for ``-XOverloadedStrings`` and ``-XQualifiedStrings`` (`proposal <https://github.com/ghc-proposals/ghc-proposals/pull/723>`_).
 
 High-level Overview
 ~~~~~~~~~~~~~~~~~~~
@@ -108,16 +108,20 @@ High-level Overview
   s"a ${x + 1} b"
 
   -- Desugars to:
-  Data.String.Interpolate.Experimental.interpolateString $ \convert raw append empty ->
-             raw "a "
-    `append` convert (x + 1)
-    `append` raw " b"
-    `append` empty
+  Data.String.Interpolate.Experimental.interpolateString
+    ( \convert raw append empty ->
+                 raw "a "
+        `append` convert (x + 1)
+        `append` raw " b"
+        `append` empty
+    )
+    :: String
 
-The string literals are affected by ``-XOverloadedStrings`` as usual, if enabled. ``Data.String.Interpolate.Experimental`` will be initially provided by ``ghc-experimental``, containing the following:
+``Data.String.Interpolate.Experimental`` will be initially provided by ``ghc-experimental``, containing the following:
 
 ::
 
+  -- See *Section 2.4* for the type of this definition
   interpolateString f = mconcat $ f (fromString . interpolate) id (:) []
 
   class Interpolate a where
@@ -128,32 +132,6 @@ The string literals are affected by ``-XOverloadedStrings`` as usual, if enabled
 
     interpolateS :: a -> ShowS
     interpolateS x s = interpolate x <> s
-
-When ``-XQualifiedStrings`` is enabled, you may qualify string interpolation as well:
-
-::
-
-  Text.s"hello world"
-
-  -- Desugars to:
-  Text.interpolateString $ \_ raw _ _ -> raw "hello world"
-
-  SQL.s"select * from users where name = ${Text.toUpper name} and age = ${age}"
-
-  -- Desugars to:
-  SQL.interpolateString $ \convert raw append empty ->
-             raw "select * from users where name = "
-    `append` convert (Text.toUpper name)
-    `append` raw " and age = "
-    `append` convert age
-    `append` empty
-
-It is highly recommended that any type with an ``IsString`` instance provide the below definition for use with ``-XQualifiedStrings``. This allows using locally-scoped string interpolation for non-String types without enabling it globally with ``-XOverloadedStrings``.
-
-::
-
-  interpolateString :: String -> MyString
-  interpolateString = Data.String.Interpolate.Experimental.interpolateString
 
 Lexical Structure
 ~~~~~~~~~~~~~~~~~
@@ -175,8 +153,6 @@ Add ``istring*`` patterns to ``lexeme`` (not ``literal``, because they're not li
           | istringMultilineRawStartLine
           | istringMultilineRawMidLine
           | istringMultilineEnd
-          | istringQualifiedBegin
-          | istringQualifiedMultilineBegin
 
   istringBegin → 's"' | modid . 's"'
   istringRaw → {graphic⟨'\' | '"' | '${'⟩ | space | escape | gap}
@@ -196,6 +172,8 @@ Also add ``$`` to ``charesc``:
   charesc → a | b | f | n | r | t | v | \ | " | ' | & | $
 
 With ``$`` added to ``charesc``, interpolation can be avoided by escaping the dollar sign; e.g. ``s"\${foo}" == "${foo}"``.
+
+This grammar enables interpolating expressions with nested braces. Concretely, ``istringExprOpen`` and ``istringExprClose`` are only lexed within the ``istring`` context, using Alex start codes. See *Section 3.1* for examples.
 
 Context-Free Syntax
 ~~~~~~~~~~~~~~~~~~~
@@ -226,15 +204,17 @@ The following code will live in ``ghc-experimental`` under ``Data.String.Interpo
 
 ::
 
-  interpolateString ::
-    (IsString s, Monoid s) =>
-    ( (forall a. Interpolate a => a -> s)
+  type SimpleStringInterpolator s =
+    ( forall ss.
+      (forall a. Interpolate a => a -> s)
       -> (s -> s)
-      -> (s -> s -> s)
-      -> s
-      -> s
+      -> (s -> ss -> ss)
+      -> ss
+      -> ss
     )
     -> s
+
+  interpolateString :: (IsString s, Monoid s) => SimpleStringInterpolator s
   interpolateString f = mconcat $ f (fromString . interpolate) id (:) []
   {-# INLINE interpolateString #-}
 
@@ -280,33 +260,66 @@ With the machinery defined above, the following interpolated string desugars to 
   s"foo ${f a b} bar ${g x} baz ${name}"
 
   -- desugared
-  Data.String.Interpolate.Experimental.interpolateString $ \convert raw append empty ->
-             raw "foo "
-    `append` convert (f a b)
-    `append` raw " bar "
-    `append` convert (g x)
-    `append` raw " baz "
-    `append` convert name
+  Data.String.Interpolate.Experimental.interpolateString
+    ( \convert raw append empty ->
+                 raw "foo "
+        `append` convert (f a b)
+        `append` raw " bar "
+        `append` convert (g x)
+        `append` raw " baz "
+        `append` convert name
+        `append` empty
+    )
+    :: String
+
+Namely:
+
+* An ``istringRaw <str>`` component expands to ``raw "<str>"``
+* An ``istringExprOpen exp istringExprClose`` component expands to ``convert (<exp>)``
+* The right-associated list of ``istring`` components between ``istringBegin`` and ``istringEnd`` expands to the expansion of the components, with ``append`` as "list cons" and ``empty`` as "list nil".
+
+If ``-XOverloadedStrings`` is enabled, the string literals passed to ``raw`` are overloaded and the ``:: String`` annotation is removed. The ``:: String`` annotation is included when ``-XOverloadedStrings`` is disabled; it's redundant in most cases, since ``raw "..."`` would resolve the return type to ``String``, but it's necessary if there are no ``raw`` calls (e.g. ``s"${a}${b}"``).
+
+QualifiedStrings
+~~~~~~~~~~~~~~~~
+
+When ``-XQualifiedStrings`` is enabled, you may qualify string interpolation as well:
+
+::
+
+  Text.s"hello world"
+
+  -- Desugars to:
+  Text.interpolateString $ \_ raw _ _ -> raw "hello world"
+
+  SQL.s"select * from users where name = ${Text.toUpper name} and age = ${age}"
+
+  -- Desugars to:
+  SQL.interpolateString $ \convert raw append empty ->
+             raw "select * from users where name = "
+    `append` convert (Text.toUpper name)
+    `append` raw " and age = "
+    `append` convert age
     `append` empty
 
-The string literals there will be handled by ``-XOverloadedStrings`` as usual, if enabled, although it's recommended to use ``-XQualifiedStrings`` instead, for more granular overloading.
+The desugaring will NOT include a ``:: String`` annotation, whether ``-XOverloadedStrings`` is enabled or not.
+
+It is highly recommended that any type with an ``IsString`` instance provide the below definition for use with ``-XQualifiedStrings``. This allows using locally-scoped string interpolation for non-String types without enabling it globally with ``-XOverloadedStrings``.
+
+::
+
+  interpolateString :: SimpleStringInterpolator MyString
+  interpolateString = Data.String.Interpolate.Experimental.interpolateString
+
+The following laws should hold, if the expression typechecks:
+
+* ``M."str" == M.s"str"``
+* ``Data.String.fromString "str" == M.s"str"``
 
 Template Haskell
 ~~~~~~~~~~~~~~~~
 
-Template Haskell will add the following definitions:
-
-::
-
-  data Exp
-    = ...
-    | InterStringE (Maybe ModuleName) [InterStringPart]
-
-  data InterStringPart
-    = InterStringRaw String
-    | InterStringExp Exp
-
-We won't use ``Either`` as it doesn't seem like ``Either`` is used in any other TH types.
+We are intentionally not adding anything to Template Haskell, as one could just build the expression themselves. String interpolation is still supported in quotes, which will be desugared when translating to TH.
 
 Examples
 --------
@@ -386,14 +399,7 @@ When ``-XQualifiedStrings`` is enabled, ``M.s"..."`` syntax is enabled, as descr
 
     import Data.String.Interpolate.Experimental qualified as S
 
-    interpolateString ::
-        ( (forall a. Interpolate a => a -> MyText)
-            -> (String -> MyText)
-            -> (MyText -> MyText -> MyText)
-            -> MyText
-            -> MyText
-        )
-        -> MyText
+    interpolateString :: S.SimpleStringInterpolator MyText
     interpolateString = S.interpolateString
 
 Interpolation is also supported with ``-XMultilineStrings``, as described in "Proposed Change Specification".
@@ -409,6 +415,69 @@ Alternatives
 ------------
 
 * Status quo (discussed in the "Motivation" section)
+
+* Don't implicitly convert values when interpolating
+
+  * ``s"a ${x}"`` would instead translate to ``fromBuilder (toBuilder "a " <> toBuilder x)``
+  * Pro: no more ``Interpolate`` class
+  * Pro: more explicit, e.g. the way you have to explicitly convert before calling ``+``
+  * Pro: less likely to encounter type inference issues
+  * Con: adds more noise to interpolate
+  * This is what ``neat-interpolation`` does
+  * See *Section 10.1 Community Survey*
+
+* Reuse ``PrintfArg``
+
+  * The bulk of its API deals with format specifiers, which is not applicable to this proposal. ``Interpolate`` is much simpler
+
+* Define ``Interpolate`` as a multi param type class, instead of only going to ``String``.
+
+  * More complex
+  * Introduces n^2 instances problem
+  * ``-XQualifiedStrings`` is available for any more advanced use cases
+
+* Desugar to a function
+
+  * like ``printf``: ``s"a %s b %s" foo bar => (\x0 x1 -> "a " <> interpolate x0 <> " b " <> interpolate x1) foo bar``
+  * or like ``formatting``: ``s"a {text} b {int}" foo bar => (\x0 x1 -> "a " <> text x0 <> " b " <> int x1) foo bar``
+  * This defeats the purpose of string interpolation making it easy to see the exact location a variable gets injected. If you're interpolating a lot of values into a large string (e.g. with multiline strings), it's extremely difficult to match up which expression to which interpolation position.
+
+* Allow passing a String representation of the interpolated expression to ``interpolate``, e.g. to support something like ``Dbg."foo | ${x + 1}"`` returning ``"foo | x + 1 = 11"``
+
+  * I don't think this has any uses outside of debugging; if it's just that one use-case, quasiquotation should be sufficient
+  * https://github.com/brandonchinn178/ghc-string-interpolation-prototypes/issues/8
+
+* Do something like `Python's new t-string feature <https://peps.python.org/pep-0750/>`_
+
+  * This doesn't translate easily to Haskell, since the point of t-string is to return a list of strings and a list of "anything" that was interpolated
+  * The ``QualifiedStrings`` part of the proposal should be able to handle any functionality here
+
+Expansion-related Alternatives
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Hardcode to Monoid's ``mappend`` and ``mempty``
+
+  * Would remove potential use-cases needing type-changing ``append``, e.g. ``a -> [a] -> [a]`` or ``f a -> f as -> f (a ': as)``
+  * Most custom ``interpolateString`` might simply use Monoid, but at least the default ``interpolateString`` does not, in order to use a potentially more efficient ``mconcat`` (e.g. for ``Text``)
+
+* Use ``M.fromString`` instead of ``raw``, to more tightly connect ``StringInterpolation`` with ``QualifiedStrings``
+
+  * While ``QualifiedStrings`` and ``StringInterpolation`` are closely related, and implementions *ought* to implement them consistently, the language feature should not enforce it, in the same way that typeclass laws are not enforced by the language
+  * Even if we hardcoded ``fromString``, one could still devise a custom ``M.interpolateString`` that's inconsistent with ``M.fromString``; e.g. a law-breaking ``Monoid`` instance such that ``x `mappend` mempty /= x``
+
+* Hardcode a wired-in ``Interpolate`` class with ``convert`` (and potentially ``raw``)
+
+  * Eliminates the whole benefit of a rebindable ``interpolateString``; having a blessed ``Interpolate`` class with a ``convert :: something`` function means everyone has to use that ``something`` type. The whole benefit of a rebindable ``interpolateString`` is, just like ``QualifiedDo``, as long as it typechecks, you can make its type whatever you want.
+
+* Replace the callback ``M.interpolateString $ \raw convert append empty -> raw "age: " `append` convert age `append` empty`` with the expression directly, e.g. ``M.fromString "age: " `M.mappend` M.convert age `M.mappend` M.mempty``.
+
+  * This would remove the major benefit of having one function to link to when clicking into an interpolated string, in an IDE / using a language server
+  * This would also remove the ability to add a "finalizer", where perhaps it's more efficient to append in one type, but the final type should be "compiled"/"built" in some fashion
+    * You could add ``M.finalizeInterpolatedString`` at the end, but then that's becoming more complicated than the current approach
+  * See also the other alternatives to hardcode the operations
+
+Delimiter-related Alternatives
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 * Allow ``$foo`` in addition to ``${foo}``
 
@@ -431,45 +500,9 @@ Alternatives
 
   * Most languages use ``$``, and I see no reason to deviate
 
-* Don't implicitly convert values when interpolating
-
-  * ``s"a ${x}"`` would instead translate to ``fromBuilder (toBuilder "a " <> toBuilder x)``
-  * Pro: no more ``Interpolate`` class
-  * Pro: more explicit, e.g. the way you have to explicitly convert before calling ``+``
-  * Pro: less likely to encounter type inference issues
-  * Con: adds more noise to interpolate
-  * This is what ``neat-interpolation`` does
-  * See *Section 10.1 Community Survey*
-
-* Reuse ``PrintfArg``
-
-  * Would only allow converting to strings, see "Only allow interpolating string-like values"
-
-* Define ``Interpolate`` as a multi param type class, instead of only going to ``String``.
-
-  * More complex
-  * Introduces n^2 instances problem
-  * ``-XQualifiedStrings`` is available for any more advanced use cases
-
-* Desugar to a function
-
-  * like ``printf``: ``s"a %s b %s" foo bar => (\x0 x1 -> "a " <> interpolate x0 <> " b " <> interpolate x1) foo bar``
-  * or like ``formatting``: ``s"a {text} b {int}" foo bar => (\x0 x1 -> "a " <> text x0 <> " b " <> int x1) foo bar``
-  * This defeats the purpose of string interpolation making it easy to see the exact location a variable gets injected. If you're interpolating a lot of values into a large string (e.g. with multiline strings), it's extremely difficult to match up which expression to which interpolation position.
-
 * Allow custom delimiters, which could be defined with Template Haskell or some other approach
 
   * See *Section 10.1 Community Survey*
-
-* Allow passing a String representation of the interpolated expression to ``interpolate``, e.g. to support something like ``Dbg."foo | ${x + 1}"`` returning ``"foo | x + 1 = 11"``
-
-  * I don't think this has any uses outside of debugging; if it's just that one use-case, quasiquotation should be sufficient
-  * https://github.com/brandonchinn178/ghc-string-interpolation-prototypes/issues/8
-
-* Do something like `Python's new t-string feature <https://peps.python.org/pep-0750/>`_
-
-  * This doesn't translate easily to Haskell, since the point of t-string is to return a list of strings and a list of "anything" that was interpolated
-  * The ``QualifiedStrings`` part of the proposal should be able to handle any functionality here
 
 Unresolved Questions
 --------------------
