@@ -96,7 +96,7 @@ If Haskell had native string interpolation, it would have the benefit and safety
 Proposed Change Specification
 -----------------------------
 
-This proposal introduces the ``-XStringInterpolation`` extension, with support for ``-XOverloadedStrings`` and ``-XQualifiedStrings`` (`proposal <https://github.com/ghc-proposals/ghc-proposals/pull/698>`_).
+This proposal introduces the ``-XStringInterpolation`` extension, with support for ``-XOverloadedStrings`` and ``-XQualifiedStrings`` (`proposal <https://github.com/ghc-proposals/ghc-proposals/pull/723>`_).
 
 High-level Overview
 ~~~~~~~~~~~~~~~~~~~
@@ -118,6 +118,7 @@ The string literals are affected by ``-XOverloadedStrings`` as usual, if enabled
 
 ::
 
+  -- See *Section 2.4* for the type of this definition
   interpolateString f = mconcat $ f (fromString . interpolate) id (:) []
 
   class Interpolate a where
@@ -152,7 +153,7 @@ It is highly recommended that any type with an ``IsString`` instance provide the
 
 ::
 
-  interpolateString :: String -> MyString
+  interpolateString :: SimpleStringInterpolator MyString
   interpolateString = Data.String.Interpolate.Experimental.interpolateString
 
 Lexical Structure
@@ -197,6 +198,8 @@ Also add ``$`` to ``charesc``:
 
 With ``$`` added to ``charesc``, interpolation can be avoided by escaping the dollar sign; e.g. ``s"\${foo}" == "${foo}"``.
 
+This grammar enables interpolating expressions with nested braces. See *Section 3.1* for examples.
+
 Context-Free Syntax
 ~~~~~~~~~~~~~~~~~~~
 
@@ -226,7 +229,7 @@ The following code will live in ``ghc-experimental`` under ``Data.String.Interpo
 
 ::
 
-  interpolateString ::
+  type SimpleStringInterpolator s =
     (IsString s, Monoid s) =>
     ( (forall a. Interpolate a => a -> s)
       -> (s -> s)
@@ -235,6 +238,8 @@ The following code will live in ``ghc-experimental`` under ``Data.String.Interpo
       -> s
     )
     -> s
+
+  interpolateString :: (IsString s, Monoid s) => SimpleStringInterpolator s
   interpolateString f = mconcat $ f (fromString . interpolate) id (:) []
   {-# INLINE interpolateString #-}
 
@@ -294,19 +299,7 @@ The string literals there will be handled by ``-XOverloadedStrings`` as usual, i
 Template Haskell
 ~~~~~~~~~~~~~~~~
 
-Template Haskell will add the following definitions:
-
-::
-
-  data Exp
-    = ...
-    | InterStringE (Maybe ModuleName) [InterStringPart]
-
-  data InterStringPart
-    = InterStringRaw String
-    | InterStringExp Exp
-
-We won't use ``Either`` as it doesn't seem like ``Either`` is used in any other TH types.
+We are intentionally not adding anything to Template Haskell, as one could just build the expression themselves.
 
 Examples
 --------
