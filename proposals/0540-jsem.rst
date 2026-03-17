@@ -101,9 +101,12 @@ through which GHC invocations can acquire and release capabilities.
 
 All changes are gated behind this ``-jsem`` flag:
 
-- The ``-jsem`` and ``-j`` flags override eachother to determine which mechanism
-  to use to control paralellism.
-- If no semaphore named ``<sem>`` exists, GHC reports an error.
+- The ``-jsem`` and ``-j`` flags override each other to determine which mechanism
+  to use to control parallelism.
+- If the semaphore identified by ``<sem>`` cannot be opened (e.g. it does not
+  exist, or is incompatible), GHC emits a warning (``-Wsemaphore-version-mismatch``)
+  and falls back to compiling sequentially (as if ``-j1`` had been specified).
+  This is safe because each jobclient always has its implicit token.
 
 Change to user manual
 ~~~~~~~~~~~~~~~~~~~~~
@@ -119,7 +122,8 @@ Change to user manual
 
         Perform compilation in parallel when possible, coordinating with other
         processes through the semaphore ⟨sem⟩ (specified as a string).
-        Error if the semaphore doesn't exist.
+        If the semaphore cannot be opened or is incompatible, GHC emits a
+        warning and compiles sequentially.
 
         Use of ``-jsem`` will override use of :ghc-flag:``-j[⟨n⟩]``,
         and vice-versa.
@@ -137,14 +141,14 @@ There are two kinds of participants in the GHC Jobserver protocol:
 
 - The *jobserver* instantiates a new semaphore with a certain number of
   available tokens. This semaphore is identified by a string, called its
-  **semaphore identifier**
+  **semaphore identifier**.
 
   Each time the jobserver wants to spawn a new jobclient subprocess, it **must**
   first acquire a single token from the semaphore, before spawning the subprocess.
   This token **must** be released once the subprocess terminates.
 
   When spawning the subprocess, the jobserver **should** pass on the identifier of the
-  semaphore tha the jobserver created to the spawned subprocess, in order to
+  semaphore that the jobserver created to the spawned subprocess, in order to
   allow the subprocess to request tokens from the semaphore.
 
   Once work is finished, the jobserver **must** destroy the semaphore it created.
@@ -169,55 +173,78 @@ There are two kinds of participants in the GHC Jobserver protocol:
   Each jobclient **must** release exactly as many tokens as it has acquired from
   the semaphore (this does not include the implicit token).
 
-The **semaphore identifier** must begin a a prefix ``v<N>-`` where the ``<N>``
-specifies the ``semaphore-compat`` major version that this semaphore was created
-using. For instance, a semaphore created with ``semaphore-compat-2.0.0`` could
-be called ``v2-some-semaphore12345``.
+The **semaphore identifier** must begin with a prefix ``v<N>-`` where ``<N>``
+is a positive integer specifying the **protocol version** of the semaphore.
+For instance, a semaphore created with ``semaphore-compat-2.x`` uses protocol
+version 2 and could be called ``v2-some-semaphore12345``.
 
-*Jobclients* that are instantiated with an incompatible semaphore (as detected
-by looking at the version of the identifier) must continue the build without
-requesting any additional tokens, using only the implicit token they inherited
-from their parent process.
+Note that the protocol version is distinct from the PVP package version of
+``semaphore-compat``.  All releases within a major version series of
+``semaphore-compat`` (e.g. 2.0.0 through 2.9.9) **must** use the same
+protocol version and be wire-compatible with each other.  A protocol version
+bump (and corresponding major version bump of the library) requires approval
+from the GHC Proposals Committee.
 
-All communication between the jobserver and the jobclient happens through
-the ``semaphore-compat`` library. This ensures modularity of the protocol:
-jobclients don't need to know anything about the jobserver that has spawned them
-beyond the version of the ``semaphore-compat`` library they are using.
+An identifier that lacks the ``v<N>-`` prefix is treated as protocol version 1
+(for backwards compatibility with ``semaphore-compat-1.0.0``, which predates
+the versioning scheme).
 
+Version compatibility is checked as follows:
 
-Implementation of the protocol
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+- On POSIX, only matching protocol versions are compatible, because different
+  versions use fundamentally different mechanisms (e.g. POSIX system semaphores
+  for v1, Unix domain sockets for v2).
+- On Windows, for now, all protocol versions are compatible, because both v1 and
+  v2 use the same Win32 named semaphore API.
 
-The implementation is built on ``semaphore-compat``, a Haskell library that
-provides an abstract semaphore interface. Tools that wish to use this feature
-must do so by means of this library.
+*Jobclients* that receive an incompatible semaphore identifier **must** emit
+a warning and continue the build without requesting any additional tokens,
+using only the implicit token they inherited from their parent process.
+In GHC, this warning is ``-Wsemaphore-version-mismatch`` (diagnostic code
+``[GHC-56206]``).
 
-The implementation consists of two separate parts: jobservers and jobclients.
-We want GHC to act as a jobclient and ``cabal``/``stack`` to be jobservers.
+*Jobservers* **should** check the protocol version supported by the jobclient
+before passing ``-jsem``.  For GHC, the protocol version is available via the
+``Semaphore version`` field in ``ghc --info``; absence of this field indicates
+protocol version 1.  If the versions are incompatible, the jobserver **should**
+fall back to invoking the jobclient without ``-jsem`` and emit a warning.
 
-The interface supports the following operations:
+The ``semaphore-compat`` library
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-1. The jobserver must be able to create and destroy semaphores and initialise them with a
-  given number of tokens
+All communication between jobservers and jobclients happens through
+the ``semaphore-compat`` Haskell library
+(`documentation <https://hackage.haskell.org/package/semaphore-compat/docs/System-Semaphore.html>`_).
+Tools that wish to participate in the GHC Jobserver Protocol **must** use this
+library (or a compatible reimplementation).
 
-2. Clients must be able to connect to the semaphore with an identifier (a string) provided by the server
+The core API is:
 
-3. Both the server and the client must be able to acquire and release tokens
+.. code:: haskell
 
-``semaphore-compat`` is free to implement the semaphore interface in any way it chooses,
-such as by using a system semaphore implmentation or by any other means which allow it
-to provide the above operations.
+  -- Server-side
+  createSemaphore  :: String -> Int -> IO (Either SemaphoreError SemaphoreServer)
+  freshSemaphore   :: String -> Int -> IO (Either SemaphoreError SemaphoreServer)
+  destroySemaphoreServer :: SemaphoreServer -> IO ()
 
-The implementation of the jobserver protocol is very straightforward, as it
-mostly consists of switching to using ``semaphore-compat`` to control the tokens.
-This means that the implementation in ``cabal`` is non-invasive and easy to
-maintain.
+  -- Client-side
+  openSemaphore    :: SemaphoreName -> IO (Either SemaphoreError Semaphore)
+  destroySemaphore :: Semaphore -> IO ()
 
-The implementation of the jobclient protocol is more complex, while still
-remaining very non-invasive, as it can be implemented in a single standalone
-module which contains all the logic for interacting with the semaphore. The only
-other changes required consist of threading through the ``-jsem`` information
-through the driver.
+  -- Token operations (both sides)
+  waitOnSemaphore    :: Semaphore -> IO ()      -- acquire a token (blocks)
+  tryWaitOnSemaphore :: Semaphore -> IO Bool     -- acquire without blocking
+  releaseSemaphore   :: Semaphore -> Int -> IO () -- release N tokens
+
+  -- Version negotiation
+  semaphoreVersion      :: Int
+  versionsAreCompatible :: Int -> Int -> Bool
+  parseSemaphoreName    :: String -> Maybe (Int, String)
+
+``semaphore-compat`` is free to implement the semaphore mechanism in any way it
+chooses, provided all releases within the same major version series are
+wire-compatible.  The current v2 implementation uses Unix domain sockets on
+POSIX and Win32 named semaphores on Windows.
 
 GHC's implementation of the jobclient protocol should have the following
 characteristics:
@@ -255,7 +282,7 @@ D. GHC should rate-limit the release of semaphore tokens (the precise mechanism
       may have adverse effects.
 
    2. It skews the balance in favour of in-unit parallelism (one unit with many
-      capabilities) against compiling many units in parallelm (many units each
+      capabilities) against compiling many units in parallel (many units each
       being compiled using a single capability).
 
       This allows us to prioritise completing a single large unit before
@@ -276,95 +303,52 @@ jobs. This prioritises the compilation of a single unit.
 Backwards Compatibility
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-An earlier, accepted version of this proposal (implemented in GHC 9.8 and GHC
-9.10) specified system semaphores as the concrete implementation mechanism of
-these semaphores. On Windows, this was a semaphore implementation provided by
-the system Win32 library, and on POSIX platforms this was the POSIX semaphore
-implementation provided by the system C library (libc, typically either the GNU
-C library or musl libc).
+**Motivation for protocol v2.**
+The original version of this proposal (GHC 9.8, ``semaphore-compat-1.0.0``)
+used POSIX system semaphores, whose shared memory layout is specific to each
+libc implementation.  When GHC (linked against glibc) and ``cabal-install``
+(statically linked against musl) used different libc implementations, the
+incompatible shared memory layouts caused crashes ([20]_, [21]_).
+This v1-with-mixed-libc case **cannot be fixed retroactively** — both sides
+are already released.  Protocol v2 (``semaphore-compat-2.0.0``) replaces
+POSIX system semaphores with Unix domain sockets, eliminating the libc
+dependency entirely.
 
-This is sufficient if both the jobserver and the jobclient are linked
-against the same system C library, as is usually the case when the system
-C library is dynamically linked against the unique implementation provided
-by the platform. 
+**``ghc --info`` version field.**
+GHC versions that ship ``semaphore-compat-2.x`` **must** include a
+``Semaphore version`` field in their ``ghc --info`` output (e.g.
+``("Semaphore version","2")``).  Older GHC releases (9.8–9.14) lack this
+field; jobservers treat the absence as protocol version 1.
 
-However, on Linux systems, it has become common practice to ship system
-independent statically linked executables using the musl libc implmentation.
-This becomes problematic when using jobservers and jobclients that are linking
-against different C semaphore implementations, for example GHC dynamically
-linked against the system glibc and ``cabal-install`` statically linked against
-a musl libc. Each libc implementation has its own independent semaphore implementation
-based on shared memory datastructures, and these are not compatible with each
-other. This has manifested in bug reports against ``cabal-install``
-([20]_) and GHC ([21]_).
+**Compatibility matrix (POSIX).**
 
-To support this method of distribution, we can not use the mechanism provided
-by the system C library to implement semaphores, and instead rely on some other
-mechanism which is robust against mixing of jobservers and jobclients compiled
-against different system C library implementations.
++---------------------+-----------------------+---------------------------------+
+| GHC ↓ \\ Cabal →   | 3.12–3.16 (v1)        | 3.18+ (v2)                      |
++=====================+=======================+=================================+
+| 9.8–9.14 (v1)       | Works (same libc) /   | Cabal detects v1 GHC, does      |
+|                     | **Broken** (mixed     | not pass ``-jsem``, falls back  |
+|                     | libc, unfixable)      | to ``-jN`` + warning            |
++---------------------+-----------------------+---------------------------------+
+| 10.0.1+ (v2)        | GHC detects v1 name,  | Full v2 support                 |
+|                     | ignores ``-jsem``,    |                                 |
+|                     | compiles sequentially |                                 |
+|                     | + warning             |                                 |
++---------------------+-----------------------+---------------------------------+
 
-Updated ``semaphore-compat`` implementation
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**Compatibility on Windows.**
+On Windows, both v1 and v2 use the same Win32 named semaphore API.
+``semaphore-compat-2.x`` uses the full semaphore identifier (including
+any ``v<N>-`` prefix) as the Win32 object name, which matches the v1
+convention of using the identifier string as-is.  As a result, **all version
+combinations work on Windows without fallback**, including v2 Cabal + v1 GHC
+and v1 Cabal + v2 GHC.
 
-While this proposal doesn't specify the exact mechanism ``semaphore-compat``
-must use to provide a semaphore implementation, the plan is for Windows
-platforms to continue to use the Win32 system semaphore implementation, while
-POSIX platforms will switch to using a semaphore implementation based on
-communication via Unix domain sockets. This avoids the troubles with the shared
-memory datastructures used to implement system semaphore implementations.
-
-We can continue to use the system semaphore implementation on Windows as there
-are no concerns about differing underlying system semaphore implementations
-on this platform, and Windows also provides no direct substitute for Unix
-sockets as proposed to be used by ``semaphore-compat`` on POSIX systems.
-
-Backwards compatibility concerns with the updated semaphore implementation
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Currently, GHC 9.8.{1,2} and GHC 9.10.1 provide jobclient implementations based
-on ``semaphore-compat-1.0.0``, which ``cabal-install-3.12.1.0`` also uses to provide
-a jobserver implementation. ``semaphore-compat-1.0.0`` uses the problematic POSIX
-system semaphores and is susceptible to the restrictions regarding system C library
-usage by jobservers and jobclients.
-
-Since the underlying semaphore implementation is being fundamentally changed, the
-future version of ``semaphore-compat`` – presumably shipped with a future version
-of GHC and ``cabal-install`` – would be incompatible with existing jobservers and
-jobclients linking against ``semaphore-compat-1.0.0``.
-
-For instance, this means
-
-- ``cabal-install-3.12.1.0`` would be unable to compile code with the
-  ``--semaphore`` flag enabled for future versions of GHC shipping with the
-  updated ``semaphore-compat`` release. There could be a mechanism
-  in the new version of ``semaphore-compat`` (linked to by the future version of
-  GHC) to detect such a scenario and output an informative error message.
-
-- Similarly, future versions of ``cabal-install`` would be unable to use
-  the semaphore mechanism with existing versions of GHC such as 9.8.{1,2} and
-  9.10.1. However, this could be detected by ``cabal-install`` and the feature
-  automatically disabled, much like it currently is if attempted to be enabled
-  for versions of GHC that don't support ``-jsem`` such as 9.6.
-
-Backwards and forwards compatibility for the abstract semaphores provided by ``semaphore-compat``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-As the previous section illustrates, breaking changes to the communication
-protocol used to implement these semaphores are painful and lead to the breakage
-of existing compilers and build tools.
-
-As such, we must strive to avoid such breaking changes as much as possible.
-In the (hopefully rare) case when such a change cannot be avoided, the change
-must meet a high bar of justification.
-
-Concretely, the communication protocol used in each major version series
-of ``semaphore-compat`` must be compatible with other versions of the
-library belonging to the same major version series. For instance, a
-``semaphore-compat-2.0.0`` must be compatible with ``semaphore-compat-2.9.9``, but
-may not be compatible with ``semaphore-compat-3.0.0``.
-
-Breaking changes to the protocol require a major version bump and need to be
-justified to and accepted by the GHC Proposals Committee.
+**Graceful degradation.**
+When GHC falls back to sequential compilation (ignoring ``-jsem``), it uses
+only its implicit token — acquired by the jobserver before spawning GHC.
+No additional tokens are acquired from or released to the semaphore, so the
+semaphore invariants are preserved and no tokens are leaked.  The build
+proceeds at reduced parallelism but is always correct.
 
 
 Examples
