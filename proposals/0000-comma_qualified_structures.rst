@@ -26,7 +26,7 @@ In many programming languages, including JavaScript, Python, and Rust, trailing 
 This feature provides several benefits:
 
 1. **Improved Diff Quality**: When adding or removing items in a list, having a trailing comma means only the relevant lines are changed in version control systems, 
-reducing the noise in diffs and making reviews easier.
+   reducing the noise in diffs and making reviews easier.
 
 .. code-block:: diff
 
@@ -80,30 +80,30 @@ Main idea is:
 1. To forbid redundant commas for existing order-matter structures (lists and tuples, list comprehensions, constraint tuples)
 
 2. To create an alternating/qualified syntax for order-matter structures (lists, tuples, and constraint tuples) that has built support
-for trailing and leading commas.
+   for trailing and leading commas.
 
 This proposal introduces the following syntactical changes to Haskell:
 
 1. Add language extension ``CommaQualifiedStructures``
 
 2. **Comma Qualified tuples**: Allow to write ``qualified`` keyword after tuple close bracket `)` in tuples, 
-unboxed-tuples and constraint tuples at terms and types.
-The only difference between qualified and non-qualified lists is:
+   unboxed-tuples and constraint tuples at terms and types.
+
+   The only difference between qualified and non-qualified lists is:
 
    - non-qualified tuples don't allow redundant commas, but allow ``TupletSections`` (or presumably allow for constraint tuples)
    - qualified tuples allow redundant commas, but ignore ``TupletSections``
-
-  ::
+     ::
   
-      myTuple1 :: (Int, String, Char)
-      myTuple1 = (1, "2abc", 'd') qualified
+       myTuple1 :: (Int, String, Char)
+       myTuple1 = (1, "2abc", 'd') qualified
 
-      unlftTuple1 = (# 1#, 'x'#, 3.2## #) qualified
+       unlftTuple1 = (# 1#, 'x'#, 3.2## #) qualified
 
 3. **Comma Qualified solo-tuples**: Allow to write solo-tuples with ``qualified`` keyword ::
 
-      mySoloTuple :: (Int) qualified
-	  mySoloTuple  = (5) qualified
+       mySoloTuple :: (Int) qualified
+       mySoloTuple  = (5) qualified
 
 4. **Comma Qualified lists**: Allow to write ``qualified`` keyword after list close bracket `]` in lists at terms and types.
    The only difference between qualified and non-qualified lists is:
@@ -174,21 +174,21 @@ The formal grammar changes for ``CommaQualifiedStructures``:
 
     atype := gtycon
         |    tyvar
-        |    ( ,? type1 , ... , typek ,? ) qualified    (tuple type, k>=1)     -- new
-        |    ( type1 , ... , typek )    (tuple type, k>=2)
-        |    (# ,? type1 , ... , typek ,? #) qualified    (tuple type, k>=1)   -- new
-        |    (# type1 , ... , typek #)    (tuple type, k>=2)
-        |    '[' [,] type1 , ... , typek [,] ']' qualified    (type, k>=1)     -- new
-        |    '[' type ']'	(list type)
+        |    ( ,? type1 , ... , typek ,? ) qualified    (tuple type, k>=1)    -- new
+        |    ( type1 , ... , typek )                    (tuple type, k>=2)
+        |    (# ,? type1 , ... , typek ,? #) qualified  (tuple type, k>=1)    -- new
+        |    (# type1 , ... , typek #)                  (tuple type, k>=2)
+        |    '[' [,] type1 , ... , typek [,] ']' qualified   (type, k>=1)     -- new
+        |    '[' type ']'	                                 (list type)
         | ......
 
     gtycon := qtycon
         |    () qualified     --(unit type)            -- new
-        |    ()    --(unit type)
+        |    ()               --(unit type)
         |    (##) qualified   --(unlifted unit type)   -- new
-        |    (##)    --(unlifted unit type)
+        |    (##)             --(unlifted unit type)
         |    [] qualified     --(list constructor)     -- new
-        |    []    --(list constructor)
+        |    []               --(list constructor)
         | ......
 
 
@@ -204,12 +204,14 @@ Examples
 
 1. **Trailing Commas**
 
-   ::
+   List with trailing comma::
+
       numbers = [
         1,
         2,
         3,
       ] qualified
+
    This would be equivalent to:
 
    ::
@@ -218,7 +220,8 @@ Examples
       
 2. **Leading Commas**
 
-   ::
+   List with leading comma::
+
       fruits = [
         , "apple"
         , "banana"
@@ -231,7 +234,8 @@ Examples
       
 3. **Combined Leading and Trailing Commas**
 
-   ::
+   List with mix of leading and trailing commas::
+
       mixed = [
         , 1, 2
         , 3, 4, -- 5
@@ -245,7 +249,7 @@ Effect and Interactions
 -----------------------
 
 We choose the **postfix variant** ``[x,y,z] qualified`` over **prefix variant** ``qualified [x,y,z]`` to avoid injections 
-for ``Bang Patterns``, ``As Pattern``, ``StrictPattern``,  ``Irrefutable Patterns``, ``Specified(Qualified) Literals`` ::
+for ``BangPatterns``, ``AsPattern``, ``StrictPattern``,  ``Irrefutable Patterns``, ``Specified(Qualified)Literals`` ::
 
     -- Bang Patterns
     let !(,p,q,) qualified = e in body
@@ -269,7 +273,7 @@ Tuple Section
 ~~~~~~~~~~~~~~~~~~
 
 Both ``TupleSection`` extension and presumable/conceivable ``ListSection`` extension
-are fully consistent and compatible with ``CommaQualifiedStructures``
+are fully consistent and compatible with ``CommaQualifiedStructures``.
 
 
 Costs and Drawbacks
@@ -283,6 +287,7 @@ Backward Compatibility
 
 This change is backward compatible with existing Haskell code,
 as it introduces new syntactical permissiveness without altering the existing valid syntax.
+
 All current Haskell programs will remain valid and unchanged in their behavior.
 
 Alternatives
