@@ -25,11 +25,21 @@ the internal interface while keeping the external interface the same.
 We propose splitting the existing single interface into two, with a clear separation between the internal and external interfaces.
 The internal interface would be part of GHC and versioned with it. The external would be able to evolve independently and be implemented in terms of the internal interface.
 
-We propose adding a new ``MetaHandlers`` record type of actions as this purely internal interface.
+This will be implemented by adding a new ``MetaHandlers`` record type of actions as this purely internal interface.
 ``Q`` is to be changed into an abstract newtype over ``MetaHandlers -> IO a``. ``Quasi`` and ``Quote`` are to be implemented in terms of it.
 
 The existing interface of ``template-haskell`` exposes a top-level ``runQ :: Quasi m => Q a -> m a`` function.
 This would no longer be possible to implement with the new definition of ``Q``. So, we also propose adding a corresponding method to ``Quasi``.
+
+In order to hide the implementation details, we propose hiding the ``Q`` (value) constructor and adding a backwards compatible ``unQ`` pattern synonym.
+
+As such, the change from this proposal is very small. We alter the interface of ``Language.Haskell.TH.Syntax``:
+
+* remove ``Q`` constructor
+* add new ``qRunQ :: Quasi m => Q a -> m a`` method to the ``Quasi`` typeclass.
+
+The rest of this proposal is about the detailed explanation for why we want to do that and how the implementation details for these choices.
+
 
 Motivation
 ----------
