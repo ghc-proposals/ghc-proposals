@@ -43,7 +43,7 @@ I would currently implement this by adding this as a method to ``Quasi`` and add
 This forces a breaking change of ``template-haskell``, since it re-exports ``Quasi``.
 
 We cannot hide this method for the sake of compatibility, since end users depend on the ability to write custom instances of ``Quasi`` for their own monads
-(eg, `th-orphans <https://hackage.haskell.org/package/th-orphans-0.13.16/docs/Language-Haskell-TH-Instances.html>` provides instances for certain monad transformers).
+(eg, `th-orphans <https://hackage.haskell.org/package/th-orphans-0.13.16/docs/Language-Haskell-TH-Instances.html>`_ provides instances for certain monad transformers).
 
 We would run into the same issue if we wanted to remove a method from ``Quasi``  or change a method's type.
 The change in GHC would have to be reflected in the exposed interface of ``template-haskell``, forcing end-users to upgrade to a new major release of ``template-haskell`` if they want to use the new version of GHC.
@@ -145,13 +145,14 @@ While this is a breaking change to ``template-haskell``, this interface breaks r
 Despite this, we've tried to maximise backwards compatibility by adding an ``unQ`` pattern synonym to the interface.
 
 The following packages on Hackage will be impacted as they give custom instances of ``Quasi``:
-- ``RepLib``
-- ``aeson-schema``
-- ``large-records``
-- ``geniplate``
-- ``th-test-utils``
-- ``nyan-interpolation-core``
-- ``th-traced``
+
+* ``RepLib``
+* ``aeson-schema``
+* ``large-records``
+* ``geniplate``
+* ``th-test-utils``
+* ``nyan-interpolation-core``
+* ``th-traced``
 
 
 Implementation Plan
