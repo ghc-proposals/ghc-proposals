@@ -98,25 +98,25 @@ to::
  -- Note: Quasi is now defined in template-haskell. It is no longer known key.
 
  class (MonadIO m, MonadFail m) => Quasi m where
-  qRun     :: Q a -> m a -- New method
+  qRunQ     :: Q a -> m a -- New method
   qNewName :: String -> m Name
   qRecover :: m a -> m a -> m a
   qReport  :: Bool -> String -> m ()
   qReify   :: Name -> m Info
   ... and so on
-  {-# MINIMAL qRun qRecover #-}
+  {-# MINIMAL qRunQ qRecover #-}
 
 ``unQ`` and the ``Q`` constructor would no longer be exported from ``template-haskell``.
 This is a breaking change.
 
-A new ``qRun :: Quasi m => Q a -> m a`` method would be added to a ``Quasi``, so that the top-level ``runQ`` can still be implemented.
+A new ``qRunQ :: Quasi m => Q a -> m a`` method would be added to a ``Quasi``, so that the top-level ``runQ`` can still be implemented.
 This is a breaking change.
 
 If a user gives a definition of ``runQ`` then all other methods except for ``qRecover`` can be implemented by lifting the method from the ``Q`` instance.
-Therefore we would also make all methods of ``Quasi`` except for ``qRun`` and ``qRecover`` optional.
+Therefore we would also make all methods of ``Quasi`` except for ``qRunQ`` and ``qRecover`` optional.
 This means that libraries that implement ``Quasi`` instances would likely not have to make any changes if a new method is added.
 
-``qRecover`` cannot be implemented in terms of ``qRun`` as it includes a mention of the monad in negative position.
+``qRecover`` cannot be implemented in terms of ``qRunQ`` as it includes a mention of the monad in negative position.
 
 The rest of the changes are internal to GHC and ``ghc-internal``.
 
@@ -180,24 +180,24 @@ We would make the following changes in ``GHC.Internal.TH.Syntax``::
 We would make the following changes in ``Language.Haskell.TH.Syntax``::
 
  class (MonadIO m, MonadFail m) => Quasi m where
-  qRun     :: Q a -> m a -- New method
+  qRunQ     :: Q a -> m a -- New method
   qRecover :: m a -> m a -> m a
   qNewName :: String -> m Name
-  qNewName nm = qRun $ \handlers -> mNewName handlers nm -- we add default methods
+  qNewName nm = qRunQ $ \handlers -> mNewName handlers nm -- we add default methods
   qReport  :: Bool -> String -> m ()
-  qReport severity msg = qRun $ \handlers -> mReport handlers severity msg -- we add default methods
+  qReport severity msg = qRunQ $ \handlers -> mReport handlers severity msg -- we add default methods
   qReify   :: Name -> m Info
-  qReify nm = qRun $ \handlers -> mReify handlers nm -- we add default methods
+  qReify nm = qRunQ $ \handlers -> mReify handlers nm -- we add default methods
   ... and so on
-  {-# MINIMAL qRun qRecover #-}
+  {-# MINIMAL qRunQ qRecover #-}
 
   instance Quasi Q where
-    qRun = id
+    qRunQ = id
     qRecover (Q r) (Q k) = Q $ \handlers -> mRecover handlers (r handlers) (k handlers)
     -- all other methods are just the default
 
   runQ :: Quasi m => Q a -> m a
-  runQ = qRun
+  runQ = qRunQ
 
 We would alter the code for running splices in ``GHC.Tc.Gen.Splice`` and would construct a value of type ``MetaHandlers`` using the existing implementations.
 
