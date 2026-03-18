@@ -86,7 +86,7 @@ This proposal does not cover order-matter structures (including lists, tuples, c
 
 This proposal introduces the following syntactical changes to Haskell:
 
-1. Add language extension ``RedundantCommas``
+1. **New extension**: Add language extension ``UnOrderedRedundantCommas``
 
 2. **UnOrdered Trailing Commas**: Allow a comma after the last element in place-unordered clauses:
 
