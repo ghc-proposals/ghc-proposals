@@ -92,7 +92,7 @@ to::
  -- and only re-exported from template-haskell.
  -- It is still known key.
  newtype Q a -- Q is abstract or opaque
- -- bundlend pattern synonym for backwards compatibility
+ -- bundled pattern synonym for backwards compatibility
  pattern unQ :: Q a -> forall m. Quasi m => m a
 
  -- Note: Quasi is now defined in template-haskell. It is no longer known key.
@@ -159,21 +159,22 @@ Implementation Plan
 -------------------
 Teo Camarasu will implement this.
 
-This section is mostly here to clarify the internal changes required to implement the changes to the interface.
+This section is purely here to clarify the internal changes required to implement the changes to the interface.
+The exact details of GHC's internals are out of scope of the proposal.
 
-We would make the following changes in ``GHC.Internal.TH.Syntax``::
+We would make the following changes in ``GHC.Internal.TH.Monad``::
 
   -- we create a new type
-  data MetaHandlers =
+  data MetaHandlers m =
     MetaHandlers
-    { mReify :: Name -> IO Info
-    , mNewName :: String -> IO Name
-    , mRecover :: forall a. IO a -> IO a -> IO a
+    { mReify :: Name -> m Info
+    , mNewName :: String -> m Name
+    , mRecover :: forall a. Q a -> Q a -> m a
     ... and so on
     }
 
   -- we change the definition of Q
-  newtype Q a = Q { unQ :: MetaHandlers -> IO a }
+  newtype Q a = Q { unQ :: forall m. (forall x. m x -> IO x) -> MetaHandlers m -> IO a }
 
   -- we move Quasi Language.Haskell.TH.Syntax
   -- so the code is deleted from here
@@ -184,25 +185,44 @@ We would make the following changes in ``Language.Haskell.TH.Syntax``::
   qRunQ     :: Q a -> m a -- New method
   qRecover :: m a -> m a -> m a
   qNewName :: String -> m Name
-  qNewName nm = qRunQ $ \handlers -> mNewName handlers nm -- we add default methods
+  qNewName nm = qRunQ $ \handlers -> runInIO $ mNewName handlers nm -- we add default methods
   qReport  :: Bool -> String -> m ()
-  qReport severity msg = qRunQ $ \handlers -> mReport handlers severity msg -- we add default methods
+  qReport severity msg = qRunQ $ \runInIO handlers -> runInIO $ mReport handlers severity msg -- we add default methods
   qReify   :: Name -> m Info
-  qReify nm = qRunQ $ \handlers -> mReify handlers nm -- we add default methods
+  qReify nm = qRunQ $ \runInIO handlers -> runInIO $ mReify handlers nm -- we add default methods
   ... and so on
   {-# MINIMAL qRunQ qRecover #-}
 
   instance Quasi Q where
     qRunQ = id
-    qRecover (Q r) (Q k) = Q $ \handlers -> mRecover handlers (r handlers) (k handlers)
+    qRecover r k = Q $ \runInIO handlers -> runInIO $ mRecover handlers r k 
     -- all other methods are just the default
 
   runQ :: Quasi m => Q a -> m a
   runQ = qRunQ
 
-We would alter the code for running splices in ``GHC.Tc.Gen.Splice`` and would construct a value of type ``MetaHandlers`` using the existing implementations.
+Note that ``qRecover`` is a special case. It cannot use the default method like the other methods as we get a value of ``Q`` in a negative position.
 
-When defining ``Quasi Q``, note that we can't provide a default method for ``qRecover`` as the monad appears in negative position.
+The new type of ``Q`` might seem somewhat complex, but a good way to think about it is that it is a computation running in ``IO`` along with a all the ``Quasi`` methods that run in ``env -> IO _`` and also a value of ``env``. The type is abstract since we don't want to make any assumptions about the monads defined in ``lib:ghc`` in ``ghc-internal``.
 
-Endorsements
--------------
+We would alter the code for running splices in ``GHC.Tc.Gen.Splice`` and would construct a value of type ``MetaHandlers TcM`` using the existing implementations.
+To do so we would defined something like this::
+
+  -- this replaces: runQuasi :: Quasi m => m a -> TcM a
+  runQinTcM :: Q a -> TcM a
+  runQInTcM (Q m) = IOEnv $ \env -> 
+    let
+      runInIO :: forall x. TcM x -> IO x
+      runInIO (IOEnv n) = n env
+    in m runInIO metaHandlersTcM
+
+  metaHandlersTcM :: MetaHandlers TcM
+  metaHandlersTcM = MetaHandlers
+    { mFail = \str -> fail str
+    , mRecover = \r k -> tryTcDiscardingErrs (runQinTcM r) (runQinTcM k)
+    ...
+    }
+
+You might have noticed above that ``mRecover`` has type ``Q a -> Q a -> m a`` rather than ``m a -> m a -> m a``. This is because we have access to ``Q a -> TcM a`` when defining ``MetaHandlers TcM``, but we do not have access to ``TcM a -> Q a`` when defining the ``qRecover`` instance for ``Quasi`` in ``template-haskell``, since we are not allowed to depend on ``lib:ghc`` there.
+
+We also have to modify the definition of the external interpreter, which simply proxies messages to the compiler. 
