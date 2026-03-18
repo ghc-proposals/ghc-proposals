@@ -31,7 +31,7 @@ This will be implemented by adding a new ``MetaHandlers`` record type of actions
 The existing interface of ``template-haskell`` exposes a top-level ``runQ :: Quasi m => Q a -> m a`` function.
 This would no longer be possible to implement with the new definition of ``Q``. So, we also propose adding a corresponding method to ``Quasi``.
 
-In order to hide the implementation details, we propose hiding the ``Q`` (value) constructor and adding a backwards compatible ``unQ`` pattern synonym.
+In order to hide the implementation details, we propose hiding the ``Q`` (value) constructor and adding a backwards compatible ``unQ`` function.
 
 As such, the change from this proposal is very small. We alter the interface of ``Language.Haskell.TH.Syntax``:
 
@@ -102,8 +102,8 @@ to::
  -- and only re-exported from template-haskell.
  -- It is still known key.
  newtype Q a -- Q is abstract or opaque
- -- bundled pattern synonym for backwards compatibility
- pattern unQ :: Q a -> forall m. Quasi m => m a
+ -- backwards compatibility function to shim over the removed record selector
+ unQ :: Q a -> forall m. Quasi m => m a
 
  -- Note: Quasi is now defined in template-haskell. It is no longer known key.
 
@@ -152,7 +152,7 @@ Backward Compatibility
 
 While this is a breaking change to ``template-haskell``, this interface breaks regularly anyway. For instance, GHC-10 will include a new method in the ``Quasi`` typeclass, which would have a similar level of breakage. Implementing this change will protect users from future frequent breakages.
 
-Despite this, we've tried to maximise backwards compatibility by adding an ``unQ`` pattern synonym to the interface.
+Despite this, we've tried to maximise backwards compatibility by adding an ``unQ`` function to the interface.
 
 The following packages on Hackage will be impacted as they give custom instances of ``Quasi``:
 
