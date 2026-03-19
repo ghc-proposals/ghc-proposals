@@ -183,7 +183,7 @@ Note that the protocol version is distinct from the PVP package version of
 ``semaphore-compat`` (e.g. 2.0.0 through 2.9.9) **must** use the same
 protocol version and be wire-compatible with each other.  A protocol version
 bump (and corresponding major version bump of the library) requires approval
-from the GHC Proposals Committee.
+from the GHC Steering Committee.
 
 An identifier that lacks the ``v<N>-`` prefix is treated as protocol version 1
 (for backwards compatibility with ``semaphore-compat-1.0.0``, which predates
