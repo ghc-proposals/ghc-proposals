@@ -175,16 +175,16 @@ The exact details of GHC's internals are out of scope of the proposal.
 We would make the following changes in ``GHC.Internal.TH.Monad``::
 
   -- we create a new type
-  data MetaHandlers m =
+  data MetaHandlers =
     MetaHandlers
-    { mReify :: Name -> m Info
-    , mNewName :: String -> m Name
-    , mRecover :: forall a. Q a -> Q a -> m a
+    { mReify :: Name -> IO Info
+    , mNewName :: String -> IO Name
+    , mRecover :: forall a. Q a -> Q a -> IO a
     ... and so on
     }
 
   -- we change the definition of Q
-  newtype Q a = Q { unQ :: forall m. (forall x. m x -> IO x) -> MetaHandlers m -> IO a }
+  newtype Q a = Q { unQ :: MetaHandlers -> IO a }
 
   -- we move Quasi Language.Haskell.TH.Syntax
   -- so the code is deleted from here
@@ -215,7 +215,7 @@ Note that ``qRecover`` is a special case. It cannot use the default method like 
 
 The new type of ``Q`` might seem somewhat complex, but a good way to think about it is that it is a computation running in ``IO`` along with a all the ``Quasi`` methods that run in ``env -> IO _`` and also a value of ``env``. The type is abstract since we don't want to make any assumptions about the monads defined in ``lib:ghc`` in ``ghc-internal``.
 
-We would alter the code for running splices in ``GHC.Tc.Gen.Splice`` and would construct a value of type ``MetaHandlers TcM`` using the existing implementations.
+We would alter the code for running splices in ``GHC.Tc.Gen.Splice`` and would construct a value of type ``MetaHandlers`` using the existing implementations.
 To do so we would defined something like this::
 
   -- this replaces: runQuasi :: Quasi m => m a -> TcM a
@@ -226,13 +226,13 @@ To do so we would defined something like this::
       runInIO (IOEnv n) = n env
     in m runInIO metaHandlersTcM
 
-  metaHandlersTcM :: MetaHandlers TcM
-  metaHandlersTcM = MetaHandlers
-    { mFail = \str -> fail str
-    , mRecover = \r k -> tryTcDiscardingErrs (runQinTcM r) (runQinTcM k)
+  metaHandlersTcM :: (forall a. TcM a -> IO a) -> MetaHandlers
+  metaHandlersTcM runInIO = MetaHandlers
+    { mFail = \str -> runInIO $ fail str
+    , mRecover = \r k -> runInIO $ tryTcDiscardingErrs (runQinTcM r) (runQinTcM k)
     ...
     }
 
-You might have noticed above that ``mRecover`` has type ``Q a -> Q a -> m a`` rather than ``m a -> m a -> m a``. This is because we have access to ``Q a -> TcM a`` when defining ``MetaHandlers TcM``, but we do not have access to ``TcM a -> Q a`` when defining the ``qRecover`` instance for ``Quasi`` in ``template-haskell``, since we are not allowed to depend on ``lib:ghc`` there.
+You might have noticed above that ``mRecover`` has type ``Q a -> Q a -> IO a`` rather than ``IO a -> IO a -> IO a``. This is because we have access to ``Q a -> TcM a`` when defining ``MetaHandlers TcM``, but we do not have access to ``TcM a -> Q a`` when defining the ``qRecover`` instance for ``Quasi`` in ``template-haskell``, since we are not allowed to depend on ``lib:ghc`` there.
 
 We also have to modify the definition of the external interpreter, which simply proxies messages to the compiler. 
