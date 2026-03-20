@@ -32,7 +32,7 @@ programmers to express branch likelihood, leading to several problems:
    to influence tag allocation and case dispatch order. For example,
    ``containers`` `reorders constructors
    <https://github.com/haskell/containers/blob/533c3c8d7d6df060d04468b8847de65ce04368c4/containers/src/Data/Set/Internal.hs#L116>`_
-   for performance. This is fragile — the optimal ordering depends on
+   for performance. This is fragile -- the optimal ordering depends on
    GHC internals that change between releases.
 
 2. **Suboptimal code layout.** Without likelihood information, the native code
@@ -71,15 +71,15 @@ and before the guard expression. ``n`` is a non-negative integer literal.
 
 ::
 
-  alt → opt_weight pat '->' exp
-  opt_weight → '{-# WEIGHT' INTEGER '#-}'
-             | ε
+  alt -> opt_weight pat '->' exp
+  opt_weight -> '{-# WEIGHT' INTEGER '#-}'
+             | {- empty -}
 
 **Grammar (function clauses):**
 
 ::
 
-  funlhs_clause → funname opt_weight pats rhs
+  funlhs_clause -> funname opt_weight pats rhs
 
 The weight appears between the function name and its first argument pattern.
 This is consistent with pragma placement conventions elsewhere in GHC
@@ -89,8 +89,8 @@ This is consistent with pragma placement conventions elsewhere in GHC
 
 ::
 
-  gdrh → '|' opt_weight guardquals '=' exp
-  gdpat → '|' opt_weight guardquals '->' exp
+  gdrh -> '|' opt_weight guardquals '=' exp
+  gdpat -> '|' opt_weight guardquals '->' exp
 
 **Semantics:**
 
@@ -101,11 +101,18 @@ This is consistent with pragma placement conventions elsewhere in GHC
 - A weight of 0 means "negligible probability, but not impossible." This is
   a candidate for cold-code placement.
 
-- If any alternative in a case expression has a ``WEIGHT`` pragma, all
-  alternatives without an explicit weight receive a default weight equal to
-  the midpoint of the lowest and highest specified weights. For example,
-  if two alternatives have weights 1 and 2000, unannotated alternatives
-  receive ``(1 + 2000) / 2 = 1000`` (integer division, rounding down).
+- If any alternative in a case expression (or any clause in a function
+  definition, or any guard in a guard group) has a ``WEIGHT`` pragma, **all**
+  alternatives/clauses/guards should have one. Partial annotation triggers
+  ``-Wincomplete-branch-weights`` (enabled by default). Weights are
+  relative -- a weight only has meaning in relation to the other weights in
+  the same case, so partial annotation is inherently ambiguous.
+
+  When partial annotation is detected, **all weights are dropped** and the
+  case expression proceeds as if no alternative had a ``WEIGHT`` pragma.
+  This means heuristic inference at ``CoreToStg`` may still apply (e.g.
+  bottoming-alternative or recursive-call heuristics), but the explicit
+  annotations are discarded. Annotate all branches to retain your weights.
 
 - Weights are stored as ``Word32``.
 
@@ -119,7 +126,7 @@ This is consistent with pragma placement conventions elsewhere in GHC
   matches causes a clause's effective weight to exceed its stated weight
   (due to wildcard patterns, guard fallthrough, or similar multi-path
   reachability), it emits ``-Wincoherent-weights``. This warning is
-  informational — the weights are still used for optimization, but the
+  informational -- the weights are still used for optimization, but the
   user may want to rewrite with explicit constructor patterns for precise
   control.
 
@@ -233,7 +240,7 @@ Corner cases
     foo {-# WEIGHT 1001 #-} _  = ...
 
   becomes ``EQ`` with weight 1, ``DEFAULT`` with weight 1001. No
-  distribution across constructors is needed — ``DEFAULT`` is one
+  distribution across constructors is needed -- ``DEFAULT`` is one
   alternative representing all non-``EQ`` constructors collectively.
 
   For multi-column matches, a wildcard clause is reachable from multiple
@@ -282,7 +289,7 @@ Corner cases
 
   Clause 2's join point is reachable both from the outer ``DEFAULT`` and
   from clause 1's guard failure. This is the same multi-path situation as
-  wildcard patterns — clause 2's effective weight is inflated.
+  wildcard patterns -- clause 2's effective weight is inflated.
   ``-Wincoherent-weights`` fires here as well.
 
 - **Redundant / unreachable clauses.** A ``WEIGHT`` pragma on a clause
@@ -320,7 +327,7 @@ Corner cases
   functions.
 
 - **Nested constructor patterns** (e.g. ``Just (Left x)``) generate nested
-  cases without wildcards and work cleanly under marginalization — no
+  cases without wildcards and work cleanly under marginalization -- no
   inflation occurs when every clause uses explicit constructors.
 
 - **Or-patterns** (proposal #522): ``(Left x; Right x)`` matches multiple
@@ -514,19 +521,137 @@ simplest useful first step without precluding file-based profiles later.
 Simplifier
 ~~~~~~~~~~
 
-The simplifier preserves per-Alt weights through case-of-case
-transformations. When a case-of-known-constructor eliminates alternatives,
-weights are discarded (only one branch remains). The ``CaseCtxt`` used for
-inlining decisions carries branch weights, preparing for future
-weight-aware inlining heuristics.
+Weights are relative within a single case expression. Several Simplifier
+transformations restructure case expressions, and each must handle weights
+correctly. The rules are:
+
+**Case-of-known-constructor.** When the scrutinee is a known constructor,
+only one alternative survives and the case is eliminated. Weights are
+discarded (irrelevant with a single branch).
+
+**Case-of-case.** The transformation::
+
+  case (case s of
+    {-# WEIGHT a #-} A -> e1
+    {-# WEIGHT b #-} B -> e2)
+  of
+    {-# WEIGHT p #-} True  -> r1
+    {-# WEIGHT q #-} False -> r2
+
+  =>
+
+  case s of
+    {-# WEIGHT a #-} A -> case e1 of
+                            {-# WEIGHT p #-} True  -> r1
+                            {-# WEIGHT q #-} False -> r2
+    {-# WEIGHT b #-} B -> case e2 of
+                            {-# WEIGHT p #-} True  -> r1
+                            {-# WEIGHT q #-} False -> r2
+
+The new outer case keeps the original inner weights (``a``, ``b``). Each
+duplicated inner case keeps the original outer weights (``p``, ``q``). This
+is correct under an independence assumption: the ``True``/``False``
+likelihood is independent of which outer branch was taken. When subsequent
+simplification collapses an inner case (e.g. ``e1`` is known to be
+``True``), the inner weights are discarded and the outer weights alone
+determine the branch likelihood.
+
+**Dead branch elimination (flow sensitivity).** When an inner case on ``x``
+appears inside a branch that already matched ``x`` against constructor
+``A``, the inner case's ``A`` alternative is dead and is dropped. The
+remaining alternatives' weights are left unchanged::
+
+  case x of
+    {-# WEIGHT 10 #-}  A -> blah
+    {-# WEIGHT 290 #-} _ -> ...
+        case x of                     -- A is impossible here
+          {-# WEIGHT 10 #-}  A -> r1  -- dropped
+          {-# WEIGHT 20 #-}  B -> r2  -- kept, weight 20
+          {-# WEIGHT 10 #-}  C -> r3  -- kept, weight 10
+
+No rescaling is needed. The inner case originally encoded
+``P(A) : P(B) : P(C) = 10 : 20 : 10``. Dropping ``A`` is conditioning on
+``x /= A``. The conditional probability of ``B`` given ``x /= A`` is:
+
+.. math::
+
+   P(B \mid x \neq A) = \frac{w_B}{w_B + w_C} = \frac{20}{20 + 10} = \frac{2}{3}
+
+This is exactly the ratio the remaining weights ``[20, 10]`` produce.
+In general, removing a branch from a set of relative weights is equivalent
+to conditioning: the surviving weights already encode the correct
+conditional probabilities because ``P(X_i \mid X \neq X_j) \propto w_i``
+for all ``i \neq j``. No weight in the surviving set changes -- only the
+normalization constant (the total) shrinks, which is implicit since weights
+are relative.
+
+**Case merging.** When two nested cases on the same scrutinee are merged
+into a single case, the weight spaces must be reconciled. The outer case
+and inner case use independent relative scales::
+
+  case x of
+    {-# WEIGHT 10 #-}  A -> rhs1
+    {-# WEIGHT 290 #-} _ -> case x of
+                               {-# WEIGHT 200 #-} B -> rhs2
+                               {-# WEIGHT 100 #-} C -> rhs3
+
+Merges to::
+
+  case x of
+    {-# WEIGHT 3000 #-}  A -> rhs1   -- 10 * (200+100)
+    {-# WEIGHT 58000 #-} B -> rhs2   -- 290 * 200
+    {-# WEIGHT 29000 #-} C -> rhs3   -- 290 * 100
+
+The rescaling formula is: for each outer explicit alternative with weight
+``w_i``, the merged weight is ``w_i * S`` where ``S`` is the sum of inner
+weights. For each inner alternative with weight ``u_j``, the merged weight
+is ``w_default * u_j``. After rescaling, all merged weights are divided by
+their GCD to keep values small (e.g. ``[3000, 58000, 29000]`` -> GCD 1000
+-> ``[3, 58, 29]``). This preserves the joint probabilities exactly:
+``P(A) = 3/90 ~= 3.3%``, ``P(B) ~= 64.4%``, ``P(C) ~= 32.2%``, and
+``P(B|not A) = 2/3``, ``P(C|not A) = 1/3``.
+
+When partially-annotated cases are merged (i.e. some alternatives have
+``Nothing`` weights because the desugarer dropped them due to
+``-Wincomplete-branch-weights``), no rescaling is performed and the
+merge proceeds without weights. Annotate all branches to retain weights
+through case merging.
+
+If case merging is disabled (``-fno-case-merge``), no rescaling occurs
+and each case expression retains its own independent weight space. This
+is always correct -- the CFG block layout handles multiple branch points
+independently.
+
+**``CaseCtxt`` for inlining.** The ``CaseCtxt`` used for inlining decisions
+carries branch weights, preparing for future weight-aware inlining
+heuristics.
+
+**RULES.** ``{-# WEIGHT #-}`` pragmas may appear inside ``{-# RULES #-}``
+bodies. The rule RHS is a full expression in the grammar, and the parser
+correctly matches each ``{-# ... #-}`` pair independently. Weights in a
+rule's RHS are desugared to ``Just w`` on the resulting Core ``Alt``\s,
+so rule authors can specify branch likelihood for rewritten code::
+
+  {-# RULES
+  "mapFB/id" forall c. mapFB c (\x -> x) = case c of
+    {-# WEIGHT 2000 #-} k -> k
+  #-}
+
+Rewrite rules that do not include ``WEIGHT`` pragmas produce alternatives
+with ``Nothing`` weights, which are eligible for heuristic inference at
+``CoreToStg``. When a rule fires, the target expression's weights are
+replaced entirely by the rule RHS's weights (or lack thereof) -- there is
+no merging of weights between the matched expression and the template.
 
 Core optimizations
 ~~~~~~~~~~~~~~~~~~
 
-All existing Core-to-Core passes (float-in, float-out, CSE, demand analysis,
-worker-wrapper, specialization, etc.) preserve per-Alt weights unchanged.
-This is mechanically achieved because weights are colocated with their
-alternatives and travel alongside them.
+All other Core-to-Core passes (float-in, float-out, CSE, demand analysis,
+worker-wrapper, specialization, etc.) preserve per-Alt weights unchanged
+because weights are colocated with their alternatives. Passes that create new case
+expressions (e.g. worker-wrapper) produce alternatives with ``Nothing``
+weights, which are later eligible for heuristic inference at
+``CoreToStg``.
 
 Switch lowering
 ~~~~~~~~~~~~~~~
@@ -618,12 +743,14 @@ Backward Compatibility
 ----------------------
 
 This proposal meets the `GHC stability principles
-<../principles.rst#3GHC-stability-principles>`_ fully: it introduces no new
-warnings, changes no existing semantics, and deprecates nothing.
+<../principles.rst#3GHC-stability-principles>`_ fully: it changes no
+existing semantics and deprecates nothing.
 
 **Breakage level: 0.** No existing programs change behavior.
 
 - The ``{-# WEIGHT n #-}`` pragma is new syntax; existing code cannot contain it.
+- ``-Wincomplete-branch-weights`` is new and only fires on new syntax, so
+  it cannot trigger on existing code.
 - No new library exports are added, so there are no name collision concerns.
 - The heuristic inference only affects code layout, not semantics.
 - Template Haskell's ``Match`` gains an optional field with a default of
@@ -679,7 +806,7 @@ Prior art in other languages
 The design draws on established practice in other compilers and languages:
 
 - **GHC Proposal #182** (``https://github.com/ghc-proposals/ghc-proposals/pull/182``): "Add control
-  flow hint pragmas" by Andreas Klebinger, open 2018–2025, closed dormant.
+  flow hint pragmas" by Andreas Klebinger, open 2018-2025, closed dormant.
   The current proposal revives it (with a degree of different decisions, as I wasn't aware of it until writing this proposal myself).
 
 - **GCC/Clang:** ``__builtin_expect(expr, val)`` and
