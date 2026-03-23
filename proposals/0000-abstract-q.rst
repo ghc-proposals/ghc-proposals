@@ -80,7 +80,7 @@ Other instances of Quasi
 ^^^^^^^^^^^^^^^^^^^^^^^^
 As we have exposed this ``Quasi`` typeclass, end users are free to give their own instances of it.
 For instance, the `th-orphans <https://hackage.haskell.org/package/th-orphans-0.13.16/docs/Language-Haskell-TH-Instances.html>`_ provides instances for certain monad transformers.
-Such instances are never used when running splices in the compiler, but they are useful in similar ways to how it is useful to place ``IO`` in monad transsformer stacks and use ``MonadIO`` to lift ``IO`` operations into that.
+Such instances are never used when running splices in the compiler, but they are useful in similar ways to how it is useful to place ``IO`` in monad transformer stacks and use ``MonadIO`` to lift ``IO`` operations into that.
 In practice, ``Quasi`` often functions equivalently to ``MonadIO`` for ``Q``.
 
 Concrete monad
@@ -268,3 +268,19 @@ To do so we would defined something like this::
 You might have noticed above that ``mRecover`` has type ``Q a -> Q a -> IO a`` rather than ``IO a -> IO a -> IO a``. This is because we have access to ``Q a -> TcM a`` when defining ``MetaHandlers TcM``, but we do not have access to ``TcM a -> Q a`` when defining the ``qRecover`` instance for ``Quasi`` in ``template-haskell``, since we are not allowed to depend on ``lib:ghc`` there.
 
 We also have to modify the definition of the external interpreter, which simply proxies messages to the compiler. 
+
+How the implementation satisfies the motivation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This new definition of ``Q`` achieves the goals we have set in
+`Motivation <#motivation>`_.
+
+If I wish to add a new method ``reifyCore :: Name -> Q Core`` that can be run in TemplateHaskell splices, then I need only make a change to the compiler. I add a new method to ``MetaHandlers`` in ``ghc-internal``, say ``mReifyCore :: Name -> IO Core`` and give a definition in the compiler. I can then release the compiler without requiring any change to ``template-haskell``. So ``GHC-2`` can be released which is compatible with ``template-haskell-0.1`` (re-using the version numbers from earlier). Then I can independently release ``template-haskell-0.2`` with the new method. Since these definitions are entirely internal to the compiler, I can also backport my patch without worrying about breaking previous versions of ``template-haskell``, so we could make the next minor release in the previous line, ``GHC-1.1`` compatible with the new major version of ``template-haskell``, ``template-haskell-0.2``.
+
+The same sorts of techniques can be used for removing methods from the interface of ``Q`` in ``template-haskell`` or for modifying methods (equivalent to adding and then removing methods).
+
+Our definition still allows end-users to give their own instances of ``Quasi`` and in fact greatly reduces the boilerplate involved as they only need to define ``qRunQ`` and ``qRecover``, the other methods can be derived from these two. They can also stilll run ``Q`` in ``IO`` by using ``runQ``.
+
+Our definition of ``Q`` is now given in terms of a concrete monad, which opens up opportunities for easier optimization. And our choice of a reader over ``IO`` allows us to nicely fit in to the ``bluefin`` / ``effectful`` ecosystem.
+
+
