@@ -2,73 +2,93 @@ Abstract Q
 ==============
 
 .. author:: Teo Camarasu
-.. date-accepted:: Leave blank. This will be filled in when the proposal is accepted.
-.. ticket-url:: Leave blank. This will eventually be filled with the
-                ticket URL which will track the progress of the
-                implementation of the feature.
-.. implemented:: Leave blank. This will be filled in with the first GHC version which
-                 implements the described feature.
+.. date-accepted::
+.. ticket-url::
+.. implemented::
 .. highlight:: haskell
 .. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/700>`_.
 .. sectnum::
 .. contents::
 
 Template Haskell is GHC's metaprogramming facility.
-It allows users to make use of Haskell programs at compile-time that can manipulate Haskell syntax trees.
-They can be effectful and run ``IO`` actions or introspect into the compiler state in certain limited ways.
-These effects are exposed to users through the ``Quote`` and ``Quasi`` typeclasses and the ``Q`` monad.
+It allows users to make use of Haskell programs at compile-time to manipulate Haskell syntax trees.
+These programs are written in the ``Q`` monad, which is analogous to the familiar ``IO`` monad of everyday Haskell programs.
 
-These typeclasses are both external interfaces used by users and internal interfaces of GHC.
-This exposes implementation details to users, which makes it difficult or impossible to alter
-the internal interface while keeping the external interface the same.
+They can be effectful and, for instance, run ``IO`` actions (via ``liftIO :: IO a -> Q a``) or introspect into the compiler state in certain limited ways.
+For instance, we can reify certain information about a name (``reify :: Name -> Q Info``), or store some state between different splice invocations in the same module ``putQ :: Typeable a => a -> Q ()``.
 
-We propose splitting the existing single interface into two, with a clear separation between the internal and external interfaces.
-The internal interface would be part of GHC and versioned with it. The external would be able to evolve independently and be implemented in terms of the internal interface.
+The list of primitive methods exposed from ``Q`` is defined by the ``Quasi m`` typeclass. This typeclass is exposed to users via ``template-haskell`` but is also used inside the compiler to define how computations in ``Q`` should be run.
 
-This will be implemented by adding a new ``MetaHandlers`` record type of actions as this purely internal interface.
-``Q`` is to be changed into an abstract newtype over ``MetaHandlers -> IO a``. ``Quasi`` and ``Quote`` are to be implemented in terms of it.
+Any change to the interface of ``Q`` / ``Quasi`` is a breaking change, which requires a new major release of ``template-haskell``,
+and this change cannot be made forwards or backwards compatible.
 
-The existing interface of ``template-haskell`` exposes a top-level ``runQ :: Quasi m => Q a -> m a`` function.
-This would no longer be possible to implement with the new definition of ``Q``. So, we also propose adding a corresponding method to ``Quasi``.
+The aim of this proposal is to allow modifying this interface in a forwards and backwards compatible way and to only require a minor release of ``template-haskell`` when such a change is made.
 
-In order to hide the implementation details, we propose hiding the ``Q`` (value) constructor and adding a backwards compatible ``unQ`` function.
+This will allow us to give greater stability guarantees for the very widely used ``template-haskell`` library, which has 13936 transitive reverse dependencies. Thus reducing the amount of upper bound updating required when a new version of GHC comes out is very valuable. Being able to change these interfaces more easily also opens the door to cleaning up historical issues in a non-breaking way.
 
-As such, the change from this proposal is very small. We alter the interface of ``Language.Haskell.TH.Syntax``:
+Our strategy is to hide the definition of the ``Q`` monad. At present, it is defined in terms of the ``Quasi`` typeclass, which is part of the public interface. We replace this implementation. We continue to export ``Quasi`` in order to preserve backwards compatibility, but it will no longer be a load bearing part of the interface.
 
-* remove ``Q`` constructor
+While this does lead to a breaking change to the interface, we try to keep the damage to a minimum.
+
+In short, we propose to:
+
+* no longer export ``Q`` constructor
 * add new ``qRunQ :: Quasi m => Q a -> m a`` method to the ``Quasi`` typeclass.
-
-The rest of this proposal is about the detailed explanation for why we want to do that and how the implementation details for these choices.
 
 
 Motivation
 ----------
 
-Let's motivate this change with an example.
+The definition of Q and Quasi 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Suppose I wanted to add new effect that could be used in Template Haskell splices:
-``reifyCore :: Name -> Q Core``, which given the ``Name`` of a term would produce the Core representation of it.
+The ``Q`` typeclass is defined as::
 
-I would currently implement this by adding this as a method to ``Quasi`` and adding an implementation in GHC.
-This forces a breaking change of ``template-haskell``, since it re-exports ``Quasi``.
+  newtype Q a = Q {unQ :: forall m. Quasi m => m a}
 
-We cannot hide this method for the sake of compatibility, since end users depend on the ability to write custom instances of ``Quasi`` for their own monads
-(eg, `th-orphans <https://hackage.haskell.org/package/th-orphans-0.13.16/docs/Language-Haskell-TH-Instances.html>`_ provides instances for certain monad transformers).
+This tells us that a value of ``Q a`` consists of a ``Quasi`` dictionary for some type ``m`` and a value of ``m a``.
+When constructing a value of ``Q a``, we do not know which concrete monad that computation will be executed in, but we do know that monad will be an instance of ``Quasi``.
+Thus we can only rely on ``Quasi`` and derived operations when constructing our value.
 
-We would run into the same issue if we wanted to remove a method from ``Quasi``  or change a method's type.
-The change in GHC would have to be reflected in the exposed interface of ``template-haskell``, forcing end-users to upgrade to a new major release of ``template-haskell`` if they want to use the new version of GHC.
+This roundabout definition exists to solve a problem. Users of ``template-haskell`` do not wish to depend on the ``ghc`` library, but that is where the definitions of the methods of ``Quasi``, which are run when splices are executed, can be found. This definition allows us the invert this dependency. Rather than ``template-haskell`` depending on ``ghc``, ``ghc`` actually depends on the location where ``Quasi`` and ``Q`` are defined, ``ghc-internal``.
 
-By separating out the internal interface, we can avoid this tight coupling.
-``reifyCore`` can be added as a field to ``MetaHandlers``. ``Quasi`` would then live purely in ``template-haskell``.
-Old versions of ``template-haskell`` would still be compatible with the new version of GHC, as they can simply ignore the new field.
-A new major version of ``template-haskell`` can add the corresponding method to ``Quasi`` and use the field from ``MetaHandlers`` to implement it.
+To allow running splices. GHC provides a ``Quasi`` instance for the typechecking monad, ``TcM``, and then uses ``unQ`` specialized to ``Q a -> Quasi TcM => TcMa``. 
 
-The definition of ``Q`` is fixed by GHC. A single definition of it for each version of GHC. Since it is implemented in terms of ``Quasi``, ``Quasi`` is also fixed.
-By breaking this tight coupling, we allow ``template-haskell``\'s interface to potentially be compatible with a greater range of GHC versions and to evolve independently of it.
+Both ``Quasi`` and ``Q`` are defined in ``ghc-internal`` and then used by ``ghc`` and also re-exported by ``template-haskell``.
 
-Our new definition of ``Q`` is also easier to optimise for the compiler, since it uses a known ``Monad``. Though this is a minor benefit, since the runtime performance of splices is rarely an issue.
 
-It also has potential to interface well with the ``bluefin``/``effectful`` family of effects libraries, which are implemented in terms of ``IO``, and could not express Template Haskell effects previously.
+Adding a new method to splices
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Let's say we want to add ``reifyCore :: Name -> Q Core`` to the set of methods accessible from TemplateHaskell splices.
+We would modify the definition of ``Quasi`` in ``ghc-internal`` by adding a new ``qReifyCore :: Name -> m Core`` method.
+We would give a definition of that method for ``TcM`` in the compiler (and for the external interpreter).
+Finally, we would create a utility function ``reifyCore nm = Q $ qReifyCore nm`` in ``template-haskell`` to lift this into ``Q``.
+
+As we've added a new method to a typeclass exposed from ``template-haskell`` we need to release a new major version as per the `PVP <https://pvp.haskell.org/>`_.
+Suppose that the previous version of GHC was ``GHC-1`` and that it ships with ``template-haskell-0.1.0``.
+Then ``GHC-2`` will need to ship with ``template-haskell-0.2.0``.
+
+Note that ``Quasi`` lives in ``ghc-internal``, so it must be versioned with GHC.
+This means that ``template-haskell-0.1`` cannot be made compatible with ``GHC-2`` and 
+``template-haskell-0.2`` cannot be made compatible with ``GHC-1``.
+
+Any user of ``template-haskell`` is then forced to update their upper bound on ``template-haskell`` if they wish to upgrade to ``GHC-2``, and this must be done atomically.
+They could not update ``template-haskell`` first and ``GHC`` second or vice versa.
+
+Other instances of Quasi
+^^^^^^^^^^^^^^^^^^^^^^^^
+As we have exposed this ``Quasi`` typeclass, end users are free to give their own instances of it.
+For instance, the `th-orphans <https://hackage.haskell.org/package/th-orphans-0.13.16/docs/Language-Haskell-TH-Instances.html>`_ provides instances for certain monad transformers.
+Such instances are never used when running splices in the compiler, but they are useful in similar ways to how it is useful to place ``IO`` in monad transsformer stacks and use ``MonadIO`` to lift ``IO`` operations into that.
+In practice, ``Quasi`` often functions equivalently to ``MonadIO`` for ``Q``.
+
+Concrete monad
+^^^^^^^^^^^^^^
+
+The use of an abstract ``Monad`` in the definition of ``Q`` means that the optimizer cannot inline the ``>>=``, which can be important for the performance of longer splices. Although for most users this is extremely unlikely to be an issue. Our design uses a concrete ``Monad`` to alleviate this.
+
+Our design also allows better interfacing with the  ``bluefin``/``effectful`` family of effects libraries, which are implemented in terms of ``IO``, and could not express Template Haskell effects previously.
 
 Proposed Change Specification
 -----------------------------
@@ -116,17 +136,22 @@ to::
   ... and so on
   {-# MINIMAL qRunQ qRecover #-}
 
-``unQ`` and the ``Q`` constructor would no longer be exported from ``template-haskell``.
+The ``Q`` constructor would no longer be exported from ``template-haskell``.
 This is a breaking change.
 
 A new ``qRunQ :: Quasi m => Q a -> m a`` method would be added to a ``Quasi``, so that the top-level ``runQ`` can still be implemented.
 This is a breaking change.
+
+Adding the ``qRunQ`` method is crucial to ensure that users can still give meaningful instances of ``Quasi`` even if it is no longer tightly coupled to the implementation of ``Q``.
+``qRunQ`` is analgous to ``liftIO`` but we have chosen to avoid the term, since a ``runQ`` function with the correct type already existed in the ``template-haskell`` interface, and out of a worry that ``liftQ :: Quasi m => Q a -> m a`` could be confused with ``lift :: Lift a => a -> Q Exp``.
 
 If a user gives a definition of ``runQ`` then all other methods except for ``qRecover`` can be implemented by lifting the method from the ``Q`` instance.
 Therefore we would also make all methods of ``Quasi`` except for ``qRunQ`` and ``qRecover`` optional.
 This means that libraries that implement ``Quasi`` instances would likely not have to make any changes if a new method is added.
 
 ``qRecover`` cannot be implemented in terms of ``qRunQ`` as it includes a mention of the monad in negative position.
+
+As ``Quasi`` is no longer part of the implementation of ``Q``, it technically could be removed from the interface of ``template-haskell``, but we have chosen to retain it for backwards compatibility and because it is useful for user's to use analogously to ``MonadIO``.
 
 The rest of the changes are internal to GHC and ``ghc-internal``.
 
@@ -172,6 +197,11 @@ Teo Camarasu will implement this.
 This section is purely here to clarify the internal changes required to implement the changes to the interface.
 The exact details of GHC's internals are out of scope of the proposal.
 
+Our implementation basically duplicates the ``Quasi`` typeclass as a record of handlers.
+We choose to go with a record rather than a typeclass purely for the sake of simplicity.
+
+As we always run ``Q`` computations in monads which are themselves reader monads on top of ``IO``, we can use ``IO`` as our concrete monad.
+
 We would make the following changes in ``GHC.Internal.TH.Monad``::
 
   -- we create a new type
@@ -205,15 +235,17 @@ We would make the following changes in ``Language.Haskell.TH.Syntax``::
 
   instance Quasi Q where
     qRunQ = id
-    qRecover r k = Q $ \runInIO handlers -> runInIO $ mRecover handlers r k 
+    qRecover r k = Q $ \handlers -> mRecover handlers r k 
     -- all other methods are just the default
 
   runQ :: Quasi m => Q a -> m a
   runQ = qRunQ
 
-Note that ``qRecover`` is a special case. It cannot use the default method like the other methods as we get a value of ``Q`` in a negative position.
+  -- backwards compatibility for removed unQ field selector
+  unQ :: Quasi m => Q a -> m a
+  unQ = runQ
 
-The new type of ``Q`` might seem somewhat complex, but a good way to think about it is that it is a computation running in ``IO`` along with a all the ``Quasi`` methods that run in ``env -> IO _`` and also a value of ``env``. The type is abstract since we don't want to make any assumptions about the monads defined in ``lib:ghc`` in ``ghc-internal``.
+Note that ``qRecover`` is a special case. It cannot use the default method like the other methods as we get a value of ``Q`` in a negative position. This is only relevant for user defined instances of ``Quasi``.
 
 We would alter the code for running splices in ``GHC.Tc.Gen.Splice`` and would construct a value of type ``MetaHandlers`` using the existing implementations.
 To do so we would defined something like this::
