@@ -12,9 +12,10 @@ Lazy Field Annotations
 
 This proposal introduces ``-XLazyFieldAnnotations``. The extension enables the
 existing prefix ``~`` field annotation syntax in data and GADT constructor
-fields, independently of ``-XStrictData``. It allows users and source
-generators to write laziness explicitly without also changing the default
-strictness of unannotated fields.
+fields. ``-XStrictData`` would imply ``-XLazyFieldAnnotations``, while
+continuing to control the default strictness of unannotated fields. This allows
+users and source generators to write laziness explicitly without also changing
+that default.
 
 See discussion in `GHC issue #24455 <https://gitlab.haskell.org/ghc/ghc/-/issues/24455>`_.
 
@@ -71,14 +72,21 @@ Proposed Change Specification
 A new language extension ``LazyFieldAnnotations`` is added. The extension is
 disabled by default.
 
-When ``LazyFieldAnnotations`` is enabled, prefix ``~`` is accepted as a lazy
-field annotation in every constructor-field position where prefix ``!`` is
-accepted today.
+``StrictData`` implies ``LazyFieldAnnotations``. Therefore ``Strict`` also
+implies ``LazyFieldAnnotations`` transitively.
+
+As with other implied extensions, ``NoLazyFieldAnnotations`` can override this
+implication when it appears later in the extension list, whether in a
+``LANGUAGE`` pragma or on the command line.
+
+Prefix ``~`` is accepted as a lazy field annotation in every constructor-field
+position where prefix ``!`` is accepted today if and only if
+``LazyFieldAnnotations`` is enabled.
 
 More precisely, this proposal reuses the existing syntax and semantics of lazy
-field annotations under ``StrictData``. The only language change is to the
-extension guard: a prefix ``~`` in a constructor field is accepted when either
-``StrictData`` or ``LazyFieldAnnotations`` is enabled.
+field annotations under ``StrictData``. The syntax is controlled solely by
+``LazyFieldAnnotations``; ``StrictData`` only affects the default meaning of
+unannotated fields, while implying ``LazyFieldAnnotations``.
 
 Syntax
 ~~~~~~
@@ -109,28 +117,28 @@ Today that proposal specifies the side condition:
 
 This proposal changes that side condition to:
 
-  In ``strictness_sigil``, the ``~`` is guarded behind ``-XStrictData`` or
+  In ``strictness_sigil``, the ``~`` is guarded behind
   ``-XLazyFieldAnnotations``.
 
 The corresponding Haskell-98 constructor-field syntax is changed in the same
 way: wherever a field strictness annotation is currently permitted, a prefix
-``~`` is accepted when either of those two extensions is enabled.
+``~`` is accepted when ``LazyFieldAnnotations`` is enabled.
 
 Semantics
 ~~~~~~~~~
 
-``LazyFieldAnnotations`` does not change the default strictness of any
-unannotated field.
+``LazyFieldAnnotations`` controls whether explicit ``~`` syntax is accepted.
+It does not change the default strictness of any unannotated field.
 
 * With ``LazyFieldAnnotations`` enabled and ``StrictData`` disabled, an
   unannotated field remains lazy. A field written ``~ty`` has the same
   semantics as an unannotated field ``ty``.
 * With ``StrictData`` enabled, behaviour is unchanged: unannotated fields are
-  strict, and ``~ty`` marks that field lazy.
-* With both extensions enabled, behaviour is the same as with ``StrictData``
-  alone.
-* ``Strict`` continues to imply ``StrictData``, and therefore also continues to
-  permit ``~`` field annotations.
+  strict. Because ``StrictData`` implies ``LazyFieldAnnotations``, ``~ty`` is
+  also accepted and marks that field lazy.
+* With ``StrictData`` enabled and ``LazyFieldAnnotations`` explicitly disabled
+  by a later ``NoLazyFieldAnnotations``, unannotated fields remain strict, but
+  ``~ty`` is rejected.
 
 ``LazyFieldAnnotations`` has no effect outside constructor-field types. In
 particular, it does not change the syntax or meaning of term-level irrefutable
@@ -168,14 +176,24 @@ With ``LazyFieldAnnotations`` alone, the default remains lazy::
 Both fields of ``A`` are lazy. The ``~`` on the first field is explicit but
 semantically redundant.
 
-With both ``LazyFieldAnnotations`` and ``StrictData``, the default remains the
-one from ``StrictData``::
+With ``StrictData``, which implies ``LazyFieldAnnotations``, the default
+remains the one from ``StrictData``::
 
-  {-# LANGUAGE LazyFieldAnnotations, StrictData #-}
+  {-# LANGUAGE StrictData #-}
 
   data B = B ~Int Bool
 
 The first field of ``B`` is lazy and the second is strict.
+
+The implied extension can still be disabled explicitly by listing
+``NoLazyFieldAnnotations`` later::
+
+  {-# LANGUAGE StrictData, NoLazyFieldAnnotations #-}
+
+  data C = C Int Bool
+
+Both fields of ``C`` are strict, and writing ``~Int`` in that module would be
+rejected.
 
 The extension also applies to record and GADT syntax::
 
@@ -202,8 +220,8 @@ This proposal addresses the motivating use cases directly:
 * Hand-written code gains a way to document that a field is intentionally lazy,
   symmetric with today's explicit ``!`` syntax.
 
-Interaction with ``StrictData`` is intentionally conservative. The behaviour of
-modules that already use ``StrictData`` or ``Strict`` is unchanged.
+Interaction with ``StrictData`` is intentionally conservative: existing
+``StrictData`` and ``Strict`` code is unchanged.
 
 The proposal does not solve every strictness-annotation issue. In particular,
 ``newtype`` constructors still reject strictness annotations, so generators that
@@ -241,9 +259,8 @@ Backward Compatibility
 This proposal has expected impact level 0 under the scale in the proposal
 template: no breakage.
 
-No existing program changes meaning unless it opts into
-``LazyFieldAnnotations``. With the extension enabled, strictly more programs
-are accepted. The meaning of existing ``StrictData`` code is unchanged.
+No existing program changes meaning. With ``LazyFieldAnnotations`` enabled,
+strictly more programs are accepted. Existing ``StrictData`` code is unchanged.
 
 There is no migration burden. Users and code generators may opt into the new
 extension when they want to write lazy field annotations explicitly.
@@ -305,6 +322,7 @@ No implementation commitment is required for the proposal to stand. The
 expected implementation work is modest:
 
 * adjust the existing extension guard for lazy field annotations;
+* make ``StrictData`` imply ``LazyFieldAnnotations``;
 * add parser and renamer/typechecker tests for H98, record, and GADT syntax;
 * update the Users' Guide documentation for constructor-field strictness.
 
