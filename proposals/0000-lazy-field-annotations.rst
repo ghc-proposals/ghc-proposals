@@ -195,8 +195,8 @@ Effect and Interactions
 
 This proposal addresses the motivating use cases directly:
 
-* Template Haskell code can generate a lazy field explicitly without also
-  requiring ``StrictData``.
+* Template Haskell code can generate explicit lazy fields in modules that
+  enable ``LazyFieldAnnotations``, without requiring ``StrictData``.
 * Other code generators, such as ``happy``, can emit explicit lazy field
   annotations uniformly instead of adapting their output to the ambient default.
 * Hand-written code gains a way to document that a field is intentionally lazy,
