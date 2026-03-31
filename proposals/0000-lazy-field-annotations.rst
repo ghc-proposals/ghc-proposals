@@ -53,7 +53,9 @@ This particularly affects generated declarations. Template Haskell already has
 ``StrictData`` is rejected for the same reason. As a result, generators must
 inspect the ambient extension set and emit either an explicit ``~`` annotation
 or a plain field type depending on whether ``StrictData`` is enabled. Similar
-issues arise for other source generators such as ``happy``.
+issues arise for other source generators such as ``happy``; see `this comment
+on haskell/happy issue #273
+<https://github.com/haskell/happy/issues/273#issuecomment-2004796051>`_.
 
 This proposal unbundles "allow the explicit ``~`` syntax" from "change the
 module-wide default for unannotated fields". It addresses a small but real gap
