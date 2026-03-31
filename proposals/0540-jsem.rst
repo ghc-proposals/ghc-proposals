@@ -333,9 +333,11 @@ dependency entirely.
 
 **``ghc --info`` version field.**
 GHC versions that ship ``semaphore-compat-2.x`` **must** include a
-``Semaphore version`` field in their ``ghc --info`` output (e.g.
-``("Semaphore version","2")``).  Older GHC releases (9.8–9.14) lack this
-field; jobservers treat the absence as protocol version 1.
+``Semaphore version`` field in their ``ghc --info`` output, reporting
+the value of ``semaphoreVersion`` (e.g. ``("Semaphore version","2")``
+on POSIX, ``("Semaphore version","1")`` on Windows).  Older GHC
+releases (9.8–9.14) lack this field; jobservers treat the absence as
+protocol version 1.
 
 **Compatibility matrix (POSIX).**
 
