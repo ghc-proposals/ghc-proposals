@@ -189,13 +189,12 @@ An identifier that lacks the ``v<N>-`` prefix is treated as protocol version 1
 (for backwards compatibility with ``semaphore-compat-1.0.0``, which predates
 the versioning scheme).
 
-Version compatibility is checked as follows:
-
-- On POSIX, only matching protocol versions are compatible, because different
-  versions use fundamentally different mechanisms (e.g. POSIX system semaphores
-  for v1, Unix domain sockets for v2).
-- On Windows, for now, all protocol versions are compatible, because both v1 and
-  v2 use the same Win32 named semaphore API.
+Version compatibility is checked by ``versionsAreCompatible``, which requires
+an exact match (``==``).  On platforms where the underlying mechanism hasn't
+changed (e.g. Win32 named semaphores), ``semaphoreVersion`` stays at the same
+value across library releases, so the check always succeeds.  If a future
+version changes the mechanism on a given platform, the version number bumps
+and old code correctly rejects the mismatch.
 
 *Jobclients* that receive an incompatible semaphore identifier **must** emit
 a warning and continue the build without requesting any additional tokens,
@@ -222,24 +221,42 @@ The core API is:
 
 .. code:: haskell
 
+  -- Protocol version
+  newtype SemaphoreProtocolVersion =
+    SemaphoreProtocolVersion { getSemaphoreProtocolVersion :: Int }
+
+  -- Semaphore name (protocol version + unversioned name)
+  data SemaphoreName = SemaphoreName
+    { semaphoreProtocolVersion       :: !SemaphoreProtocolVersion
+    , unversionedSemaphoreNameString :: !String
+    }
+
   -- Server-side
-  createSemaphore  :: String -> Int -> IO (Either SemaphoreError SemaphoreServer)
-  freshSemaphore   :: String -> Int -> IO (Either SemaphoreError SemaphoreServer)
-  destroySemaphoreServer :: SemaphoreServer -> IO ()
+  createSemaphore        :: String -> Int -> IO (Either SemaphoreError ServerSemaphore)
+  freshSemaphore         :: String -> Int -> IO (Either SemaphoreError ServerSemaphore)
+  destroySemaphoreServer :: ServerSemaphore -> IO ()
 
   -- Client-side
-  openSemaphore    :: SemaphoreName -> IO (Either SemaphoreError Semaphore)
-  destroySemaphore :: Semaphore -> IO ()
+  openSemaphore    :: String -> IO (Either SemaphoreError ClientSemaphore)
+  destroySemaphore :: ClientSemaphore -> IO ()
 
-  -- Token operations (both sides)
-  waitOnSemaphore    :: Semaphore -> IO ()      -- acquire a token (blocks)
-  tryWaitOnSemaphore :: Semaphore -> IO Bool     -- acquire without blocking
-  releaseSemaphore   :: Semaphore -> Int -> IO () -- release N tokens
+  -- Token operations
+  waitOnSemaphore       :: ClientSemaphore -> IO SemaphoreToken  -- acquire (blocks)
+  tryWaitOnSemaphore    :: ClientSemaphore -> IO (Maybe SemaphoreToken)
+  releaseSemaphoreToken :: SemaphoreToken -> IO ()
+  withSemaphoreToken    :: ClientSemaphore -> (SemaphoreToken -> IO a) -> IO a
+
+  -- Interruptible acquire (for GHC's jobserver)
+  forkWaitOnSemaphoreInterruptible
+    :: ClientSemaphore
+    -> (Either SomeException SemaphoreToken -> IO ())
+    -> IO WaitId
+  interruptWaitOnSemaphore :: WaitId -> IO ()
 
   -- Version negotiation
-  semaphoreVersion      :: Int
-  versionsAreCompatible :: Int -> Int -> Bool
-  parseSemaphoreName    :: String -> Maybe (Int, String)
+  semaphoreVersion      :: SemaphoreProtocolVersion  -- 2 on POSIX, 1 on Windows
+  versionsAreCompatible :: SemaphoreProtocolVersion -> SemaphoreProtocolVersion -> Bool
+  semaphoreIdentifier   :: SemaphoreName -> String   -- the -jsem identifier string
 
 ``semaphore-compat`` is free to implement the semaphore mechanism in any way it
 chooses, provided all releases within the same major version series are
@@ -336,12 +353,12 @@ field; jobservers treat the absence as protocol version 1.
 +---------------------+-----------------------+---------------------------------+
 
 **Compatibility on Windows.**
-On Windows, both v1 and v2 use the same Win32 named semaphore API.
-``semaphore-compat-2.x`` uses the full semaphore identifier (including
-any ``v<N>-`` prefix) as the Win32 object name, which matches the v1
-convention of using the identifier string as-is.  As a result, **all version
-combinations work on Windows without fallback**, including v2 Cabal + v1 GHC
-and v1 Cabal + v2 GHC.
+On Windows, the Win32 named semaphore mechanism is unchanged between v1
+and v2, so ``semaphoreVersion`` remains at 1 on Windows.  Because the
+version is 1, ``semaphoreIdentifier`` produces a bare name (no ``v<N>-``
+prefix), matching the format used by v1 clients.  As a result, **all
+version combinations work on Windows without fallback**, including
+library-v2 Cabal + v1 GHC and v1 Cabal + library-v2 GHC.
 
 **Graceful degradation.**
 When GHC falls back to sequential compilation (ignoring ``-jsem``), it uses
