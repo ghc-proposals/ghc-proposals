@@ -86,7 +86,7 @@ This proposal does not cover order-matter structures (including lists, tuples, c
 
 This proposal introduces the following syntactical changes to Haskell:
 
-1. **New extension**: Add language extension ``UnOrderedRedundantCommas``
+1. **New extension**: Add language extension ``UnorderedRedundantCommas``
 
 2. **UnOrdered Trailing Commas**: Allow a comma after the last element in place-unordered clauses:
 
@@ -168,6 +168,20 @@ The formal grammar changes for ``UnOrderedRedundantCommas`` :
         |	con { [,] fielddecl1 , ... , fielddecln [,] }	(records n>=0)  -- upd
         | ......
 
+These changes allow redundant commas in next unordered structures:
+
+- module export "lists"
+- module export sub-"lists"
+- module import lists
+- module import sub-"lists"
+- deriving clauses
+- record-like occurrences (declarations, patterns, constructions)
+
+This proposal does not include yet using redundant commas in next unordered structures:
+
+- fixity "lists"
+- default clauses
+
 
 Examples
 --------
@@ -182,7 +196,7 @@ None.
 Costs and Drawbacks
 -------------------
 
-We expect the implementation and maintenance costs of ``UnOrderedRedundantCommas`` has medium difficulty.
+We expect the implementation and maintenance costs of ``UnorderedRedundantCommas`` has medium difficulty.
 
 
 Backward Compatibility
