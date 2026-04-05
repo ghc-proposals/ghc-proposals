@@ -1,12 +1,14 @@
-.. author: Andreas Klebinger
-.. date-accepted: ""
-.. ticket-url: ""
-.. implemented: ""
-
-This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/691>`_.
-
 Introduce a new XLowLevelHaskell meta extension.
 =================================================
+
+.. author:: Andreas Klebinger
+.. date-accepted::
+.. ticket-url::
+.. implemented::
+.. highlight:: haskell
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/691>`_.
+.. sectnum::
+.. contents::
 
 When working with low level code and unboxed types there is a whole family of commonly used extensions.
 While it might not be desirable to have these be on by default it would be good to normalize a set
