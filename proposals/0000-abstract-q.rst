@@ -22,7 +22,7 @@ The list of primitive methods exposed from ``Q`` is defined by the ``Quasi m`` t
 Any change to the interface of ``Q`` / ``Quasi`` is a breaking change, which requires a new major release of ``template-haskell``,
 and this change cannot be made forwards or backwards compatible.
 
-The aim of this proposal is to allow modifying the implementation of this interface in a forwards and backwards compatible way.
+The aim of this proposal is to allow modifying the set of effects available in ``Q`` in a forwards and backwards compatible way, and to allow making such changes without requiring a new major version of ``template-haskell``.
 
 This will allow us to give greater stability guarantees for the very widely used ``template-haskell`` library, which has 13936 transitive reverse dependencies. Thus reducing the amount of upper bound updating required when a new version of GHC comes out is very valuable. Being able to change these interfaces more easily also opens the door to cleaning up historical issues in a non-breaking way.
 
@@ -276,7 +276,14 @@ How the implementation satisfies the motivation
 This new definition of ``Q`` achieves the goals we have set in
 `Motivation <#motivation>`_.
 
-If I wish to add a new method ``reifyCore :: Name -> Q Core`` that can be run in TemplateHaskell splices, then I need only make a change to the compiler. I add a new method to ``MetaHandlers`` in ``ghc-internal``, say ``mReifyCore :: Name -> IO Core`` and give a definition in the compiler. I can then release the compiler without requiring any change to ``template-haskell``. So ``GHC-2`` can be released which is compatible with ``template-haskell-0.1`` (re-using the version numbers from earlier). Then I can independently release ``template-haskell-0.2`` with the new method. Since these definitions are entirely internal to the compiler, I can also backport my patch without worrying about breaking previous versions of ``template-haskell``, so we could make the next minor release in the previous line, ``GHC-1.1`` compatible with the new major version of ``template-haskell``, ``template-haskell-0.2``.
+If I wish to add a new method ``reifyCore :: Name -> Q Core`` that can be run in TemplateHaskell splices, then I need only make a change to the compiler.
+I add a new method to ``MetaHandlers`` in ``ghc-internal``, say ``mReifyCore :: Name -> IO Core`` and give a definition in the compiler.
+I can then release the compiler without requiring any change to ``template-haskell``.
+So ``GHC-2`` can be released which is compatible with ``template-haskell-0.1`` (re-using the version numbers from earlier).
+Then I can independently release ``template-haskell-0.2`` with the new method.
+Since these definitions are entirely internal to the compiler, I can also backport my patch without worrying about breaking previous versions of ``template-haskell``, so we could make the next minor release in the previous line, ``GHC-1.1`` compatible with the new major version of ``template-haskell``, ``template-haskell-0.2``.
+
+Later on, I may wish to expose this new method from ``template-haskell``, I can then export a function ``reifyCore`` with only a minor version bump, as we no longer need to add the method to ``Quasi``. If a user wishes to lift the method into an arbitary instance of ``Quasi`` then they can simply use ``liftQ``.
 
 The same sorts of techniques can be used for removing methods from the interface of ``Q`` in ``template-haskell`` or for modifying methods (equivalent to adding and then removing methods).
 
