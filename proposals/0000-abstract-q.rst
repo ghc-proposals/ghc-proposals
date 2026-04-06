@@ -32,7 +32,7 @@ While this does lead to a breaking change to the interface, we try to keep the d
 
 In short, we propose to:
 
-* no longer export ``Q`` constructor
+* no longer export the ``Q`` constructor
 * add new ``qRunQ :: Quasi m => Q a -> m a`` method to the ``Quasi`` typeclass.
 
 
@@ -78,11 +78,11 @@ They could not update ``template-haskell`` first and ``GHC`` second or vice vers
 Other instances of Quasi
 ^^^^^^^^^^^^^^^^^^^^^^^^
 As we have exposed the ``Quasi`` typeclass, end users are free to give their own instances of it.
-For instance, the `th-orphans <https://hackage.haskell.org/package/th-orphans-0.13.16/docs/Language-Haskell-TH-Instances.html>`_ provides instances for certain monad transformers.
-Such instances are never used when running splices in the compiler, but they are useful in similar ways to how it is useful to place ``IO`` in monad transformer stacks and use ``MonadIO`` to lift ``IO`` operations into that.
+For instance, the `th-orphans <https://hackage.haskell.org/package/th-orphans-0.13.16/docs/Language-Haskell-TH-Instances.html>`_ package provides instances for certain monad transformers.
+Such instances are never used when running splices in the compiler, but they are useful in similar ways to how it is useful to place ``IO`` in monad transformer stacks and use ``MonadIO`` to lift ``IO`` operations.
 In practice, ``Quasi`` often functions equivalently to ``MonadIO`` for ``Q``.
 
-Concrete monad
+Concrete Monad
 ^^^^^^^^^^^^^^
 
 The use of an abstract ``Monad`` in the definition of ``Q`` means that the optimizer cannot inline the ``>>=``, which can be important for the performance of longer splices. Although for most users this is extremely unlikely to be an issue. Our design uses a concrete ``Monad`` to alleviate this.
@@ -104,7 +104,7 @@ We will return to the implementation details in `Implementation plan <#7implemen
 The interface of ``Language.Haskell.TH.Syntax`` (and ``Language.Haskell.TH``) will change from::
 
  -- Note: these is defined in ghc-internal:GHC.Internal.TH.Syntax
- -- and only re-exported from template-haskell. These are known key definitions for GHC.
+ -- and only re-exported from template-haskell. Q is a known key definition for GHC.
 
  newtype Q a = Q { unQ :: forall m. Quasi m => m a }
 
@@ -124,7 +124,7 @@ to::
  -- backwards compatibility function to shim over the removed record selector
  unQ :: Q a -> forall m. Quasi m => m a
 
- -- Note: Quasi is now defined in template-haskell. It is no longer known key.
+ -- Note: Quasi is now defined in template-haskell. It is no longer (transitively) known key.
 
  class (MonadIO m, MonadFail m) => Quasi m where
   qRunQ     :: Q a -> m a -- New method
