@@ -22,7 +22,7 @@ The list of primitive methods exposed from ``Q`` is defined by the ``Quasi m`` t
 Any change to the interface of ``Q`` / ``Quasi`` is a breaking change, which requires a new major release of ``template-haskell``,
 and this change cannot be made forwards or backwards compatible.
 
-The aim of this proposal is to allow modifying this interface in a forwards and backwards compatible way and to only require a minor release of ``template-haskell`` when such a change is made.
+The aim of this proposal is to allow modifying the implementation of this interface in a forwards and backwards compatible way.
 
 This will allow us to give greater stability guarantees for the very widely used ``template-haskell`` library, which has 13936 transitive reverse dependencies. Thus reducing the amount of upper bound updating required when a new version of GHC comes out is very valuable. Being able to change these interfaces more easily also opens the door to cleaning up historical issues in a non-breaking way.
 
@@ -52,7 +52,7 @@ Thus we can only rely on ``Quasi`` and derived operations when constructing our 
 
 This roundabout definition exists to solve a problem. Users of ``template-haskell`` do not wish to depend on the ``ghc`` library, but that is where the definitions of the methods of ``Quasi``, which are run when splices are executed, can be found. This definition allows us the invert this dependency. Rather than ``template-haskell`` depending on ``ghc``, ``ghc`` actually depends on the location where ``Quasi`` and ``Q`` are defined, ``ghc-internal``.
 
-To allow running splices. GHC provides a ``Quasi`` instance for the typechecking monad, ``TcM``, and then uses ``unQ`` specialized to ``Q a -> Quasi TcM => TcMa``. 
+To allow running splices. GHC provides a ``Quasi`` instance for the typechecking monad, ``TcM``, and then uses ``unQ`` specialized to ``Q a -> Quasi TcM => TcM a``. 
 
 Both ``Quasi`` and ``Q`` are defined in ``ghc-internal`` and then used by ``ghc`` and also re-exported by ``template-haskell``.
 
@@ -61,24 +61,23 @@ Adding a new method to splices
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Let's say we want to add ``reifyCore :: Name -> Q Core`` to the set of methods accessible from TemplateHaskell splices.
-We would modify the definition of ``Quasi`` in ``ghc-internal`` by adding a new ``qReifyCore :: Name -> m Core`` method.
-We would give a definition of that method for ``TcM`` in the compiler (and for the external interpreter).
+
+We add new ``qReifyCore :: Name -> m Core`` method to ``Quasi`` interface in ``ghc-internal``.
+Then we would implmement that method for ``TcM`` in the compiler (and for the external interpreter).
 Finally, we would create a utility function ``reifyCore nm = Q $ qReifyCore nm`` in ``template-haskell`` to lift this into ``Q``.
 
-As we've added a new method to a typeclass exposed from ``template-haskell`` we need to release a new major version as per the `PVP <https://pvp.haskell.org/>`_.
-Suppose that the previous version of GHC was ``GHC-1`` and that it ships with ``template-haskell-0.1.0``.
-Then ``GHC-2`` will need to ship with ``template-haskell-0.2.0``.
+Suppose that the previous version of GHC was ``GHC-1`` and that it ships with ``ghc-internal-1`` and that ``template-haskell-0.1.0`` requires exactly that version of ``ghc-internal``.
 
-Note that ``Quasi`` lives in ``ghc-internal``, so it must be versioned with GHC.
-This means that ``template-haskell-0.1`` cannot be made compatible with ``GHC-2`` and 
-``template-haskell-0.2`` cannot be made compatible with ``GHC-1``.
+As we've added a new method to an exposed typeclass, we need to release ``template-haskell-0.2.0``, a new major version, as per the `PVP <https://pvp.haskell.org/>`_.
+Then ``GHC-2`` will need to ship with ``ghc-internal-2`` and a new major version of ``template-haskell-0.2.0`` will only be compatible with ``ghc-internal-2``, as it re-exports the ``Quasi`` interface from ``ghc-internal``.
+So, ``template-haskell-0.1`` cannot be made compatible with ``ghc-internal-2`` and ``template-haskell-0.2`` cannot be made compatible with ``ghc-internal-1``.
 
 Any user of ``template-haskell`` is then forced to update their upper bound on ``template-haskell`` if they wish to upgrade to ``GHC-2``, and this must be done atomically.
 They could not update ``template-haskell`` first and ``GHC`` second or vice versa.
 
 Other instances of Quasi
 ^^^^^^^^^^^^^^^^^^^^^^^^
-As we have exposed this ``Quasi`` typeclass, end users are free to give their own instances of it.
+As we have exposed the ``Quasi`` typeclass, end users are free to give their own instances of it.
 For instance, the `th-orphans <https://hackage.haskell.org/package/th-orphans-0.13.16/docs/Language-Haskell-TH-Instances.html>`_ provides instances for certain monad transformers.
 Such instances are never used when running splices in the compiler, but they are useful in similar ways to how it is useful to place ``IO`` in monad transformer stacks and use ``MonadIO`` to lift ``IO`` operations into that.
 In practice, ``Quasi`` often functions equivalently to ``MonadIO`` for ``Q``.
@@ -143,7 +142,7 @@ A new ``qRunQ :: Quasi m => Q a -> m a`` method would be added to a ``Quasi``, s
 This is a breaking change.
 
 Adding the ``qRunQ`` method is crucial to ensure that users can still give meaningful instances of ``Quasi`` even if it is no longer tightly coupled to the implementation of ``Q``.
-``qRunQ`` is analgous to ``liftIO`` but we have chosen to avoid the term, since a ``runQ`` function with the correct type already existed in the ``template-haskell`` interface, and out of a worry that ``liftQ :: Quasi m => Q a -> m a`` could be confused with ``lift :: Lift a => a -> Q Exp``.
+``qRunQ`` is analgous to ``liftIO`` but we have chosen to avoid the term ``liftQ``, since a ``runQ`` function with the correct type already existed in the ``template-haskell`` interface, and out of a worry that ``liftQ :: Quasi m => Q a -> m a`` could be confused with ``lift :: Lift a => a -> Q Exp``.
 
 If a user gives a definition of ``runQ`` then all other methods except for ``qRecover`` can be implemented by lifting the method from the ``Q`` instance.
 Therefore we would also make all methods of ``Quasi`` except for ``qRunQ`` and ``qRecover`` optional.
@@ -227,9 +226,9 @@ We would make the following changes in ``Language.Haskell.TH.Syntax``::
   qNewName :: String -> m Name
   qNewName nm = qRunQ $ \handlers -> runInIO $ mNewName handlers nm -- we add default methods
   qReport  :: Bool -> String -> m ()
-  qReport severity msg = qRunQ $ \runInIO handlers -> runInIO $ mReport handlers severity msg -- we add default methods
+  qReport severity msg = qRunQ $ \handlers -> mReport handlers severity msg -- we add default methods
   qReify   :: Name -> m Info
-  qReify nm = qRunQ $ \runInIO handlers -> runInIO $ mReify handlers nm -- we add default methods
+  qReify nm = qRunQ $ \handlers -> mReify handlers nm -- we add default methods
   ... and so on
   {-# MINIMAL qRunQ qRecover #-}
 
@@ -256,7 +255,7 @@ To do so we would defined something like this::
     let
       runInIO :: forall x. TcM x -> IO x
       runInIO (IOEnv n) = n env
-    in m runInIO metaHandlersTcM
+    in m (metaHandlersTcM runInIO)
 
   metaHandlersTcM :: (forall a. TcM a -> IO a) -> MetaHandlers
   metaHandlersTcM runInIO = MetaHandlers
@@ -265,7 +264,9 @@ To do so we would defined something like this::
     ...
     }
 
-You might have noticed above that ``mRecover`` has type ``Q a -> Q a -> IO a`` rather than ``IO a -> IO a -> IO a``. This is because we have access to ``Q a -> TcM a`` when defining ``MetaHandlers TcM``, but we do not have access to ``TcM a -> Q a`` when defining the ``qRecover`` instance for ``Quasi`` in ``template-haskell``, since we are not allowed to depend on ``lib:ghc`` there.
+You might have noticed above that ``mRecover`` has type ``Q a -> Q a -> IO a`` rather than the simpler ``IO a -> IO a -> IO a``.
+This is because we have access to ``Q a -> TcM a`` when defining ``MetaHandlers`` in the ``lib:ghc``.
+But we do not have access to ``TcM a -> Q a`` when defining the ``qRecover`` instance for ``Quasi`` in ``template-haskell``, since we are not allowed to depend on ``lib:ghc`` there.
 
 We also have to modify the definition of the external interpreter, which simply proxies messages to the compiler. 
 
