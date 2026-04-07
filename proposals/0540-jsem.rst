@@ -234,24 +234,17 @@ The core API is:
   -- Server-side
   createSemaphore        :: String -> Int -> IO (Either SemaphoreError ServerSemaphore)
   freshSemaphore         :: String -> Int -> IO (Either SemaphoreError ServerSemaphore)
-  destroySemaphoreServer :: ServerSemaphore -> IO ()
+  destroyServerSemaphore :: ServerSemaphore -> IO ()
 
   -- Client-side
-  openSemaphore    :: String -> IO (Either SemaphoreError ClientSemaphore)
-  destroySemaphore :: ClientSemaphore -> IO ()
+  openSemaphore          :: String -> IO (Either SemaphoreError ClientSemaphore)
+  destroyClientSemaphore :: ClientSemaphore -> IO ()
 
   -- Token operations
-  waitOnSemaphore       :: ClientSemaphore -> IO SemaphoreToken  -- acquire (blocks)
+  waitOnSemaphore       :: ClientSemaphore -> IO SemaphoreToken  -- interruptible
   tryWaitOnSemaphore    :: ClientSemaphore -> IO (Maybe SemaphoreToken)
   releaseSemaphoreToken :: SemaphoreToken -> IO ()
   withSemaphoreToken    :: ClientSemaphore -> (SemaphoreToken -> IO a) -> IO a
-
-  -- Interruptible acquire (for GHC's jobserver)
-  forkWaitOnSemaphoreInterruptible
-    :: ClientSemaphore
-    -> (Either SomeException SemaphoreToken -> IO ())
-    -> IO WaitId
-  interruptWaitOnSemaphore :: WaitId -> IO ()
 
   -- Version negotiation
   semaphoreVersion      :: SemaphoreProtocolVersion  -- 2 on POSIX, 1 on Windows
