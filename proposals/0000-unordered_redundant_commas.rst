@@ -80,7 +80,7 @@ However, the tension in the Haskell community was so high that the duplicate of 
 and had never succeeded in the next 6 years.
 
 This proposal is an attempt to allow redundant commas where everyone agrees to have them - 
-in unordered structures (records, import and export "lists" and sublists, derivation clauses).
+in unordered structures (records, import and export "lists" and sublists, derivation and default clauses).
 
 This proposal does not cover order-matter structures (including lists, tuples, constraint tuples).
 
@@ -92,7 +92,7 @@ This proposal introduces the following syntactical changes to Haskell:
 
    - module export lists(already supported) and sub-lists
    - module import lists(already supported) and sub-lists
-   - deriving clauses
+   - deriving and default clauses
    - record-like occurrences (declarations, patterns, constructions)
 
    ::
@@ -119,11 +119,11 @@ This proposal introduces the following syntactical changes to Haskell:
        data instance URec Double   p = UDouble { uDouble# :: Double#, uInt# :: Int#, uFloat#  :: Float#, }
 
 	  
-9. **Qualified Leading Commas**: Allow a comma before the first element in place-unordered clauses:
+3. **Qualified Leading Commas**: Allow a comma before the first element in place-unordered clauses:
 
    - module export lists and sub-lists
    - module import lists and sub-lists
-   - deriving clauses
+   - deriving and default clauses
    - record-like occurrences (declarations, patterns, constructions)
 
    ::
@@ -145,27 +145,31 @@ Syntax
 
 The formal grammar changes for ``UnOrderedRedundantCommas`` :
 
-:: 
+.. code:: none
 
     export ::= qvar
         | qtycon[(..)| [,] (cname_1, ..., cname_n) [,]]  (n >= 0)     -- upd
         | qtycls[(..)| [,] (var_1, ..., var_n) [,]]      (n >= 0)     -- upd
         | module modid
-	    | ......
+        | ......
 
     import ::= qvar
         | qtycon[(..)| [,] (cname_1, ..., cname_n) [,]]  (n >= 0)     -- upd
         | qtycls[(..)| [,] (var_1, ..., var_n) [,]]      (n >= 0)     -- upd
-	    | ......
+        | ......
 
     deriving ::= deriving (
-              [,] dclass [,]                     -- upd
-	        | [,] (dclass1, ... , dclassn) [,]   -- upd
+              [,] dclass [,]                       -- upd
+            | [,] (dclass1, ... , dclassn) [,]     -- upd
         )
 
-    constr ::= con [!] atype1 ... [!] atypek	(arity con = k, k>=0)
-        |	(btype | ! atype) conop (btype | ! atype)	(infix conop)
-        |	con { [,] fielddecl1 , ... , fielddecln [,] }	(records n>=0)  -- upd
+    topdecl ::= type simpletype = type
+        | default ( [,] type1 , ... , typen [,] )  -- upd
+        | ......
+
+    constr ::= con [!] atype1 ... [!] atypek        (arity con = k, k>=0)
+        | (btype | ! atype) conop (btype | ! atype)         (infix conop)
+        | con { [,] fielddecl1 , ... , fielddecln [,] }    (records n>=0)  -- upd
         | ......
 
 These changes allow redundant commas in next unordered structures:
@@ -175,12 +179,12 @@ These changes allow redundant commas in next unordered structures:
 - module import lists
 - module import sub-"lists"
 - deriving clauses
+- default clauses
 - record-like occurrences (declarations, patterns, constructions)
 
 This proposal does not include yet using redundant commas in next unordered structures:
 
 - fixity "lists"
-- default clauses
 
 
 Examples
