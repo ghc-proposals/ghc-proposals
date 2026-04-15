@@ -202,6 +202,8 @@ Costs and Drawbacks
 
 We expect the implementation and maintenance costs of ``UnorderedRedundantCommas`` has medium difficulty.
 
+Second, all tooling which parses Haskell code will need to be updated to be compatible with the extended syntax.
+
 
 Backward Compatibility
 ---------------------------------
