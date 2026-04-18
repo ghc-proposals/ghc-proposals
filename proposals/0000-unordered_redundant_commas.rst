@@ -165,7 +165,7 @@ The formal grammar changes for ``UnOrderedRedundantCommas`` :
 
 .. code:: none
 
-    exports ::= ( {,} export1 , {,} ... , {,} exportn {,} )
+    exports ::= ( {,} export1 , {,} ... , {,} exportn {,} )                      -- upd
 
     export ::= qvar
         | qtycon[(..)| ( {,} cname_1, {,} ..., {,} cname_n {,} ) ]  (n >= 0)     -- upd
@@ -196,9 +196,9 @@ The formal grammar changes for ``UnOrderedRedundantCommas`` :
         | ......
 
     aexp ::= qvar     (variable)
-       | ......
-       | qcon { {,} fbind1 , {,} ... , {,} fbindn {,} }      (labeled construction, n ≥ 0)   -- upd
-       | aexp_(qcon) { {,} fbind1 , {,} ... , {,} fbindn {,} }   (labeled update, n  ≥  1)   -- upd
+        | ......
+        | qcon { {,} fbind1 , {,} ... , {,} fbindn {,} }      (labeled construction, n ≥ 0)   -- upd
+        | aexp_(qcon) { {,} fbind1 , {,} ... , {,} fbindn {,} }   (labeled update, n  ≥  1)   -- upd
 
 These changes allow redundant commas in next unordered structures:
 
