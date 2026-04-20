@@ -131,12 +131,19 @@ It is highly recommended that all types with ``IsString`` instances include a to
   instance S.IsString MyString where
     fromString = ...
 
-  -- Alternatively, this can be defined in aonther
+  -- Alternatively, this can be defined in another
   -- module like Data.MyString.Qualified
   fromString :: String -> MyString
   fromString = S.fromString
 
 Qualified multiline strings are only allowed if ``-XMultilineStrings`` is enabled. Qualified multiline strings are desugared to single line strings first, then desugared as a qualified string literal. See `Multiline Strings <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0569-multiline-strings.rst>`_ for more information.
+
+Laws
+~~~~
+
+If the following expression typechecks, it should hold:
+
+* ``Data.String.fromString "str" == M."str"``
 
 Lexical Structure
 ~~~~~~~~~~~~~~~~~
