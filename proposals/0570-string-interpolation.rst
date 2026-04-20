@@ -101,7 +101,17 @@ This proposal introduces the ``-XStringInterpolation`` extension, with support f
 High-level Overview
 ~~~~~~~~~~~~~~~~~~~
 
-``-XStringInterpolation`` enables the following syntax:
+At its core, this proposal proposes the following system:
+
+* The syntax ``s"age: ${age}"`` expands to a built-in implementation hardcoded to ``IsString`` and a new ``Interpolate`` type class with an ``interpolate :: a -> String`` function.
+
+* The syntax ``M.s"age: ${age}"`` expands to a user-defined implementation where the implementor of the module ``M`` has total control over the implementation
+
+    * Same technique as ``-XQualifiedStrings``
+
+* ``s"..."`` is exactly equivalent to ``Data.String.Interpolate.Experimental.s"..."``, where ``Data.String.Interpolate.Experimental`` is a new module in ``ghc-experimental``.
+
+Concretely, ``-XStringInterpolation`` enables the following syntax:
 
 ::
 
@@ -422,7 +432,7 @@ Alternatives
   * Pro: no more ``Interpolate`` class
   * Pro: more explicit, e.g. the way you have to explicitly convert before calling ``+``
   * Pro: less likely to encounter type inference issues
-  * Con: adds more noise to interpolate
+  * Con: adds more noise to interpolate non-string values
   * This is what ``neat-interpolation`` does
   * See *Section 10.1 Community Survey*
 
@@ -442,7 +452,7 @@ Alternatives
   * or like ``formatting``: ``s"a {text} b {int}" foo bar => (\x0 x1 -> "a " <> text x0 <> " b " <> int x1) foo bar``
   * This defeats the purpose of string interpolation making it easy to see the exact location a variable gets injected. If you're interpolating a lot of values into a large string (e.g. with multiline strings), it's extremely difficult to match up which expression to which interpolation position.
 
-* Allow passing a String representation of the interpolated expression to ``interpolate``, e.g. to support something like ``Dbg."foo | ${x + 1}"`` returning ``"foo | x + 1 = 11"``
+* Allow passing a String representation of the interpolated expression to ``interpolate``, e.g. to support something like ``Dbg.s"foo | ${x + 1}"`` returning ``"foo | x + 1 = 11"``
 
   * I don't think this has any uses outside of debugging; if it's just that one use-case, quasiquotation should be sufficient
   * https://github.com/brandonchinn178/ghc-string-interpolation-prototypes/issues/8
@@ -454,6 +464,8 @@ Alternatives
 
 Expansion-related Alternatives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Also see *Section 10.9 Alternative - Polymorphic interpolable expansion*
 
 * Hardcode to Monoid's ``mappend`` and ``mempty``
 
@@ -829,7 +841,7 @@ And be able to use it in interpolated strings:
   let n = BigDecimal 123456 3
   s"123456 / 10^3 = ${n}" == "123456 / 10^3 = 123.456"
 
-If ``text`` is implemented as described in *Section 10.2 Custom interpolator: Text*, ``BigDecimal`` can interpolate into ``Text`` for free.
+If ``text`` is implemented as described in *Section 10.4 Custom interpolator: Text*, ``BigDecimal`` can interpolate into ``Text`` for free.
 
 Format specifiers
 ~~~~~~~~~~~~~~~~~
@@ -868,3 +880,130 @@ Where these would return the strings:
 
   Points earned:   -13.20
   Current total:  +127.98
+
+Alternative - Polymorphic interpolable expansion
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Current proposal - built-in ``s"..."`` is hardcoded and is only polymorphic on ``IsString``:
+
+::
+
+    -- Desugared expression for M.s"age: ${age}"
+    --
+    -- s"..." is equivalent to Data.String.Interpolate.s"..."
+    M.interpolateString $ \convert raw append empty ->
+               raw "age: "
+      `append` convert age
+      `append` empty
+
+    {----- Data.String.Interpolate -----}
+
+    -- Conceptually, think of this as a more performant version of:
+    --   fromString $ raw "age: " <> convert age
+    interpolateString f = mconcat $ f convert raw (:) []
+      where
+        convert = fromString . interpolate
+        raw = id
+
+    -- One instance for all user-defined types; e.g. the `url` library
+    -- would just need to implement
+    --   Interpolate URL
+    class Interpolate a where
+      interpolate :: a -> String
+
+    {----- Text library: s"..." :: Text -----}
+
+    -- Doesn't have to do anything; built-in works for free.
+    -- Could optionally implement a more performant interpolation with
+    -- qualified interpolation.
+
+    {----- User-defined SimpleText: SimpleText.s"..." -----}
+
+    -- | Text, except only support interpolating Text values
+    newtype SimpleText = SimpleText Text
+
+    interpolateString f = f convert raw mappend mempty
+      where
+        convert = SimpleText
+        raw = SimpleText . Text.pack
+
+Built-in ``s"..."`` with polymorphic builder:
+
+::
+
+    -- Desugared expression for M.s"age: ${age}"
+    --
+    -- s"..." is equivalent to Data.String.Interpolate.s"..."
+    M.finalize
+      (            M.raw "age: "
+        `M.append` M.convert age
+        `M.append` M.empty
+      )
+
+    {----- Data.String.Interpolate -----}
+
+    class Interpolable s where
+      type Builder s
+      raw      :: String -> Builder s
+      append   :: Builder s -> Builder s -> Builder s
+      empty    :: Builder s
+      finalise :: Builder s -> s
+
+    class Interpolate a builder where
+      convert :: a -> builder
+
+    instance Interpolable String where
+      type Builder String = String
+      raw = id
+      append = (++)
+      empty = []
+      finalise = id
+
+    instance Interpolate String String where
+      convert = id
+    instance Interpolate Int String where
+      convert = show
+    -- ...
+
+    {----- Text library: s"..." :: Text -----}
+
+    instance Interpolable Text where
+      type Builder Text = TextBuilder
+      raw = Text.Builder.fromText
+      append = mappend
+      empty = mempty
+      finalise = Text.toStrict . Text.Builder.toLazyText
+
+    instance Interpolate String Text where
+      convert = Text.pack
+    instance Interpolate Int Text where
+      convert = Text.pack . show
+    -- ...
+
+    {----- User-defined SimpleText: SimpleText.s"..." -----}
+
+    -- | Text, except ONLY support interpolating Text values.
+    -- Avoid `Interpolate` class, since we can't forbid someone
+    -- from adding a new `Interpolate Foo SimpleText` instance.
+    newtype SimpleText = SimpleText Text
+
+    convert = Text.Builder.fromText
+    raw = Text.Builder.fromText
+    append = mappend
+    empty = mempty
+    finalize = SimpleText . Text.toStrict . Text.Builder.toLazyText
+
+Downsides of alternative approach:
+
+* All types that can be interpolated (e.g. a ``URL`` type) must have an instance for each string-like type it can be interpolated within:
+
+    * ``Interpolate URL String``
+    * ``Interpolate URL Text``
+    * ``Interpolate URL ByteString``
+    * ...
+
+  The current proposal only needs to implement one ``Interpolate URL``. May be less performant, since we're always going via ``String`` instead of a potentially more efficient conversion (e.g. going straight to ``Text``), but it's a good default.
+
+* All string-like types _must_ implement their own instance, e.g. ``Interpolable Text``, and _must_ implement ``Interpolate`` instances for all built-in types.
+
+  The current proposal will automatically work for any ``IsString`` type. Types _may_ implement their own custom interpolation with qualified string interpolation, but that's not a requirement (although recommended, to monomorphize the default interpolation).
