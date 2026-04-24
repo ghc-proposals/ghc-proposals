@@ -72,7 +72,8 @@ Adding trailing commas (and more rarely leading commas) is a frequently asked fe
 
 But this task is highly divisive in the Haskell community.
 
-Original Proposal #87 `ExtraCommas (was: Trailing and leading commas in sub-export lists) <https://github.com/ghc-proposals/ghc-proposals/pull/87>`__ 
+Original Proposal #87 
+`ExtraCommas (was: Trailing and leading commas in sub-export lists) <https://github.com/ghc-proposals/ghc-proposals/pull/87>`__ 
 was discussed several years and that discussion was so controversial,
 that author withdrawn own proposal just before the final Acceptation was received (with minor changes).
 
@@ -82,6 +83,7 @@ and had never succeeded in the next 6 years.
 This proposal is an attempt to allow redundant commas where everyone agrees to have them - 
 in unordered structures (records, import and export "lists" and sublists, derivation and default clauses).
 
+
 Proposed Change Specification
 -----------------------------
 
@@ -89,7 +91,8 @@ This proposal does not cover order-matter structures (including lists, tuples, c
 
 This proposal introduces the following syntactical changes to Haskell:
 
-1. **New extension**: Add language extension ``UnorderedRedundantCommas``
+1. **New extension**: Add language extension ``UnorderedRedundantCommas`` with a simple rule where
+   redundant commas are allowed: in unordered structures only.
 
 2. **Trailing Commas**: Allow a comma after the last element in place-unordered clauses:
 
@@ -172,7 +175,7 @@ The formal grammar changes for ``UnOrderedRedundantCommas`` :
         | qtycls[(..)| ( {,} var_1, {,} ..., {,} var_n {,} ) ]      (n >= 0)     -- upd
         | module modid
         | ......
-
+   
     impspec ::= ( {,} import1 , {,} ... , {,} importn {,} )         (n ≥ 0)      -- upd
         | hiding ( {,} import1 , {,} ... , {,} importn {,} )        (n ≥ 0)      -- upd
 
@@ -192,7 +195,7 @@ The formal grammar changes for ``UnOrderedRedundantCommas`` :
 
     constr ::= con [!] atype1 ... [!] atypek                (arity con = k, k>=0)
         | (btype | ! atype) conop (btype | ! atype)                 (infix conop)
-        | con { {,} fielddecl1 , {,} ... , {,} fielddecln {,} }    (records n>=0)  -- upd
+        | con { {,} fielddecl1 , {,} ... , {,} fielddecln {,} }    (records n>=0)             -- upd
         | ......
 
     aexp ::= qvar     (variable)
