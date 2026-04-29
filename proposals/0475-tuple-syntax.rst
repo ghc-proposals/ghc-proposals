@@ -173,43 +173,45 @@ Proposed Change Specification
 
 #. Export the following definitions from ``Data.Tuple.Experimental``::
 
-     type Length :: List a -> Nat   -- not exported
-     type family Length xs where
-       Length []     = 0
-       Length (_:xs) = 1 + Length xs
-
-     type TupleArgKind :: Type -> Nat -> Type
-     type family TupleArgKind t_or_c n = r | r -> n where
-       TupleArgKind _      0 = Unit
-       TupleArgKind t_or_c 1 = t_or_c       -- *not* Solo t; see Point 9 in "Effects and Interactions"
-       TupleArgKind t_or_c 2 = Tuple2 t_or_c t_or_c
-       TupleArgKind t_or_c 3 = Tuple3 t_or_c t_or_c t_or_c
-       TupleArgKind t_or_c 4 = Tuple4 t_or_c t_or_c t_or_c t_or_c
+     type TupleArgKind :: Nat -> Type
+     type family TupleArgKind n = r | r -> n where
+       TupleArgKind 0 = Unit
+       TupleArgKind 1 = Type       -- *not* Solo t; see Point 9 in "Effects and Interactions"
+       TupleArgKind 2 = Tuple2 Type Type
+       TupleArgKind 3 = Tuple3 Type Type Type
+       TupleArgKind 4 = Tuple4 Type Type Type Type
        -- ...
-       TupleArgKind t_or_c 64 = Tuple64 t_or_c ... t_or_c
-       TupleArgKind _      n  = TypeError (ShowType n :<>: Text " is too large; the maximum size for a tuple is 64.")
+       TupleArgKind 64 = Tuple64 Type ... Type
 
-     type Tuple :: forall (n :: Nat). TupleArgKind Type n -> Type
+     type Tuple :: forall (n :: Nat). TupleArgKind n -> Type
      type family Tuple ts where
        Tuple () = Unit
-       Tuple a = a    -- see Point 9 in "Effects and Interactions"
+       Tuple (a :: Type) = a    -- see Point 9 in "Effects and Interactions"
        Tuple (a, b) = Tuple2 a b
        Tuple (a, b, c) = Tuple3 a b c
        Tuple (a, b, c, d) = Tuple4 a b c d
        -- ...
        Tuple (a, b, ..., bk, bl) = Tuple64 a b ... bk bl
-       Tuple @n _ = TypeError (ShowType n :<>: Text " is too large; the maximum size for a tuple is 64.")
 
-     type Constraints :: forall (n :: Nat). TupleArgKind Constraint n -> Constraint
+     type ConstraintsArgKind :: Nat -> Type
+     type family ConstraintsArgKind n = r | r -> n where
+       ConstraintsArgKind 0 = Unit
+       ConstraintsArgKind 1 = Constraint       -- *not* CSolo t; see Point 9 in "Effects and Interactions"
+       ConstraintsArgKind 2 = Tuple2 Constraint Constraint
+       ConstraintsArgKind 3 = Tuple3 Constraint Constraint Constraint
+       ConstraintsArgKind 4 = Tuple4 Constraint Constraint Constraint Constraint
+       -- ...
+       ConstraintsArgKind 64 = Tuple64 Constraint ... Constraint
+
+     type Constraints :: forall (n :: Nat). ConstraintsArgKind n -> Constraint
      type family Constraints ts where
-       Constraints () = Unit
-       Constraints a = a    -- see Point 9 in "Effects and Interactions"
+       Constraints () = CUnit
+       Constraints (a :: Constraint) = a    -- see Point 9 in "Effects and Interactions"
        Constraints (a, b) = CTuple2 a b
        Constraints (a, b, c) = CTuple3 a b c
        Constraints (a, b, c, d) = CTuple4 a b c d
        -- ...
        Constraints (a, b, ..., bk, bl) = CTuple64 a b ... bk bl
-       Constraints @n _ = TypeError (ShowType n :<>: Text " is too large; the maximum size for a tuple is 64.")
 
      type TupleArgKind# :: List RuntimeRep -> Type
      type family TupleArgKind# reps where
@@ -219,7 +221,6 @@ Proposed Change Specification
        TupleArgKind# [r1, r2, r3] = Tuple3 (TYPE r1) (TYPE r2) (TYPE r3)
        -- ...
        TupleArgKind# [r1, ..., r64] = Tuple64 (TYPE r1) ... (TYPE r64)
-       TupleArgKind# other = TypeError (ShowType (Length other) :<>: Text " is too large; the maximum size of a tuple is 64.")
 
      type Tuple# :: forall (reps :: List RuntimeRep). TupleArgKind# reps -> TYPE (TupleRep reps)
      type family Tuple# ts where
@@ -229,7 +230,6 @@ Proposed Change Specification
        Tuple# (a, b, c) = Tuple3# a b c
        -- ...
        Tuple# (a, b, ..., bk, bl) = Tuple64# a b ... bk bl
-       Tuple# @reps _ = TypeError (ShowType (Length reps) :<>: Text " is too large; the maximum size of a tuple is 64.")
 
 #. Export the following definitions from ``Data.Sum.Experimental``::
 
@@ -240,8 +240,7 @@ Proposed Change Specification
        Sum# (a, b) = Sum2# a b
        Sum# (a, b, c) = Sum3# a b c
        -- ...
-       Sum# (a, b, ..., bk, bl) = Sum64# a b ... bk bl
-       Sum# @reps _ = TypeError (ShowType (Length reps) :<>: Text " is too large; the maximum size of a sum is 64.")
+       Sum# (a, b, ..., bj, bk) = Sum63# a b ... bj bk
 
 #. Change ``GHC.Types`` to have the following definition::
 
@@ -446,7 +445,7 @@ Effect and Interactions
 
    Handling singletons is a bit interesting:
 
-   ``TupleArgKind t_or_c 1`` is defined to be ``t_or_c``, *not* ``Solo t_or_c``, as you would
+   ``TupleArgKind 1`` is defined to be ``Type``, *not* ``Solo Type``, as you would
    otherwise expect. This is because we expect to see e.g. ``Tuple (Int)``, not ``Tuple (MkSolo Int)``.
    (Actually, we would probably not expect these at all, but the current design allows us to be forgiving
    during refactoring.)
