@@ -1,4 +1,4 @@
-Redundant commas in UnOrdered Structures
+Extra commas in UnOrdered Structures
 =========================================
 
 .. author:: Viktor WW
@@ -80,7 +80,7 @@ that author withdrawn own proposal just before the final Acceptation was receive
 However, the tension in the Haskell community was so high that the duplicate of that proposal was never proposed 
 and had never succeeded in the next 6 years.
 
-This proposal is an attempt to allow redundant commas where everyone agrees to have them - 
+This proposal is an attempt to allow extra commas where everyone agrees to have them - 
 in unordered structures (records, import and export "lists" and sublists, derivation and default clauses).
 
 
@@ -91,8 +91,8 @@ This proposal does not cover order-matter structures (including lists, tuples, c
 
 This proposal introduces the following syntactical changes to Haskell:
 
-1. **New extension**: Add language extension ``UnorderedRedundantCommas`` with a simple rule where
-   redundant commas are allowed: in unordered structures only.
+1. **New extension**: Add language extension ``UnorderedExtraCommas`` with a simple rule where
+   extra commas are allowed: in unordered structures only.
 
 2. **Trailing Commas**: Allow a comma after the last element in place-unordered clauses:
 
@@ -145,7 +145,7 @@ This proposal introduces the following syntactical changes to Haskell:
 		  , mkFoo
 		  ) where 
 
-4. **Extra Commas**: Allow multiple commas instead of one in place-unordered clauses:
+4. **Repetetive Commas**: Allow multiple commas instead of one in place-unordered clauses:
 
    - module export lists and sub-lists
    - module import lists and sub-lists
@@ -164,7 +164,7 @@ This proposal introduces the following syntactical changes to Haskell:
 Syntax
 ~~~~~~~~~~~~
 
-The formal grammar changes for ``UnOrderedRedundantCommas`` :
+The formal grammar changes for ``UnOrderedExtraCommas`` :
 
 .. code:: none
 
@@ -203,7 +203,7 @@ The formal grammar changes for ``UnOrderedRedundantCommas`` :
         | qcon { {,} fbind1 , {,} ... , {,} fbindn {,} }      (labeled construction, n ≥ 0)   -- upd
         | aexp_(qcon) { {,} fbind1 , {,} ... , {,} fbindn {,} }   (labeled update, n  ≥  1)   -- upd
 
-These changes allow redundant commas in next unordered structures:
+These changes allow extra commas in next unordered structures:
 
 - module export "lists"
 - module export sub-"lists"
@@ -213,7 +213,7 @@ These changes allow redundant commas in next unordered structures:
 - default clauses
 - record-like occurrences (declarations, patterns, constructions)
 
-This proposal does not include yet using redundant commas in next unordered structures:
+This proposal does not include yet using extra commas in next unordered structures:
 
 - fixity "lists"
 
@@ -231,7 +231,7 @@ None.
 Costs and Drawbacks
 -------------------
 
-We expect the implementation and maintenance costs of ``UnorderedRedundantCommas`` has medium difficulty.
+We expect the implementation and maintenance costs of ``UnorderedExtraCommas`` has medium difficulty.
 
 Second, all tooling which parses Haskell code will need to be updated to be compatible with the extended syntax.
 
