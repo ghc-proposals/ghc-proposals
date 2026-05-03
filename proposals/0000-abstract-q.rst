@@ -167,9 +167,12 @@ Effect and Interactions
 Costs and Drawbacks
 -------------------
 
-The main cost of this proposal is that it entails a breaking change to the ``template-haskell`` interface.
+* The main cost of this proposal is that it entails a breaking change to the ``template-haskell`` interface.
 The implementation should be relatively simple and if anything it should simplify things as an existential is being replaced with a common-or-garden record.
 
+* At present, ``Quasi`` fully enumerates the interface of ``Q``. This allows an end-user to give a full instance of ``Quasi`` for their own concrete monad, ``TestQ``, and use it for mocking their code that uses ``Q`` via ``runQ``. If this proposal is implemented, this workflow becomes more difficult. A user would then need to import ``MetaHandlers`` and the constructor for ``Q``, which are explicitly unstable interfaces. Note that in both cases a full implementation would require being able to run ``IO`` actions in ``TestQ`` as ``MonadIO`` is a superclass of ``Quasi``, and the new definition of ``Q`` contains ``IO``. This cost is fundamental to proposal as it is about moving the details of the implementation of ``Q`` out of the ``template-haskell`` interface.
+
+* We do not propose a wide ranging overhaul of the ``Q`` interface in this proposal. Although this proposal does make a complete redesign less painful and easier to do incrementally and with minimal breakge. It is our hope to work on this in the near future.
 
 Backward Compatibility
 ----------------------
