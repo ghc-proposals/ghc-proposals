@@ -2,11 +2,11 @@ Abstract Q
 ==============
 
 .. author:: Teo Camarasu
-.. date-accepted::
+.. date-accepted:: 2026-04-30
 .. ticket-url::
 .. implemented::
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/700>`_.
+.. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/700>`_.
 .. sectnum::
 .. contents::
 
@@ -39,7 +39,7 @@ In short, we propose to:
 Motivation
 ----------
 
-The definition of Q and Quasi 
+The definition of Q and Quasi
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The ``Q`` typeclass is defined as::
@@ -52,7 +52,7 @@ Thus we can only rely on ``Quasi`` and derived operations when constructing our 
 
 This roundabout definition exists to solve a problem. Users of ``template-haskell`` do not wish to depend on the ``ghc`` library, but that is where the definitions of the methods of ``Quasi``, which are run when splices are executed, can be found. This definition allows us the invert this dependency. Rather than ``template-haskell`` depending on ``ghc``, ``ghc`` actually depends on the location where ``Quasi`` and ``Q`` are defined, ``ghc-internal``.
 
-To allow running splices. GHC provides a ``Quasi`` instance for the typechecking monad, ``TcM``, and then uses ``unQ`` specialized to ``Q a -> Quasi TcM => TcM a``. 
+To allow running splices. GHC provides a ``Quasi`` instance for the typechecking monad, ``TcM``, and then uses ``unQ`` specialized to ``Q a -> Quasi TcM => TcM a``.
 
 Both ``Quasi`` and ``Q`` are defined in ``ghc-internal`` and then used by ``ghc`` and also re-exported by ``template-haskell``.
 
@@ -237,7 +237,7 @@ We would make the following changes in ``Language.Haskell.TH.Syntax``::
 
   instance Quasi Q where
     qRunQ = id
-    qRecover r k = Q $ \handlers -> mRecover handlers r k 
+    qRecover r k = Q $ \handlers -> mRecover handlers r k
     -- all other methods are just the default
 
   runQ :: Quasi m => Q a -> m a
@@ -254,7 +254,7 @@ To do so we would defined something like this::
 
   -- this replaces: runQuasi :: Quasi m => m a -> TcM a
   runQinTcM :: Q a -> TcM a
-  runQInTcM (Q m) = IOEnv $ \env -> 
+  runQInTcM (Q m) = IOEnv $ \env ->
     let
       runInIO :: forall x. TcM x -> IO x
       runInIO (IOEnv n) = n env
@@ -271,7 +271,7 @@ You might have noticed above that ``mRecover`` has type ``Q a -> Q a -> IO a`` r
 This is because we have access to ``Q a -> TcM a`` when defining ``MetaHandlers`` in the ``lib:ghc``.
 But we do not have access to ``TcM a -> Q a`` when defining the ``qRecover`` instance for ``Quasi`` in ``template-haskell``, since we are not allowed to depend on ``lib:ghc`` there.
 
-We also have to modify the definition of the external interpreter, which simply proxies messages to the compiler. 
+We also have to modify the definition of the external interpreter, which simply proxies messages to the compiler.
 
 How the implementation satisfies the motivation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
