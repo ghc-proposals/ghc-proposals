@@ -151,10 +151,39 @@ SHEPHERD_SUBJECT_PATTERNS = [
     re.compile(r"Shepherd.*?#(\d+)", re.IGNORECASE),
 ]
 
-# Patterns for shepherd name in email body
+# Patterns for shepherd name in email body. Each must capture the name in group 1.
+# We strip surrounding HTML/asterisks/whitespace afterwards, so patterns can be loose.
 SHEPHERD_BODY_PATTERNS = [
-    re.compile(r"nominate\s+\*?([^*\n]+?)\*?\s+as\s+(?:the\s+)?shepherd", re.IGNORECASE),
-    re.compile(r"shepherd\s+(?:will be|is|:)\s+\*?([^*\n,]+?)\*?\s*[.,\n]", re.IGNORECASE),
+    re.compile(r"nominate\s+([^.\n]{2,60}?)\s+as\s+(?:the\s+)?shepherd", re.IGNORECASE),
+    re.compile(r"nominating\s+([^.\n]{2,60}?)\s+as\s+(?:the\s+)?shepherd", re.IGNORECASE),
+    re.compile(r"([A-Z][^.\n,]{1,40}?)\s+(?:has\s+)?agreed\s+to\s+(?:be\s+(?:the\s+)?)?shepherd", re.IGNORECASE),
+    re.compile(r"([A-Z][^.\n,]{1,40}?)\s+will\s+(?:be\s+the\s+)?shepherd", re.IGNORECASE),
+    re.compile(r"shepherd\s+(?:will\s+be|is)\s+([^.\n,]{2,40})", re.IGNORECASE),
+    re.compile(r"assigning\s+([^.\n,]{2,40}?)\s+as\s+(?:the\s+)?shepherd", re.IGNORECASE),
+]
+
+# Known shepherd names (current + recent past committee members).
+# Format: (canonical_name, [aliases_for_matching]).
+# Aliases include first names so "nominate Matthias" matches the full name.
+COMMITTEE_MEMBERS = [
+    ("Simon Marlow",                ["Simon Marlow", "Simon M"]),
+    ("Simon Peyton Jones",          ["Simon Peyton Jones", "Simon Peyton-Jones", "Simon PJ", "SPJ"]),
+    ("Adam Gundry",                 ["Adam Gundry", "Adam G", "Adam"]),
+    ("Malte Ott",                   ["Malte Ott", "Malte"]),
+    ("Matthías Páll Gissurarson",   ["Matthías Páll Gissurarson", "Matthias Pall Gissurarson", "Matthías", "Matthias"]),
+    ("Erik de Castro Lopo",         ["Erik de Castro Lopo", "Erik D", "Erik"]),
+    ("Sebastian Graf",              ["Sebastian Graf", "Sebastian"]),
+    ("Jaro Reinders",               ["Jaro Reinders", "Jaro"]),
+    ("Jeff Young",                  ["Jeff Young", "Jeff"]),
+    ("Rodrigo Mesquita",            ["Rodrigo Mesquita", "Rodrigo"]),
+    # Past members who may appear as shepherds in older threads
+    ("Eric Seidel",                 ["Eric Seidel", "Eric S", "Eric"]),
+    ("Jakob Brünker",               ["Jakob Brünker", "Jakob Bruenker", "Jakob"]),
+    ("Moritz Angermann",            ["Moritz Angermann", "Moritz"]),
+    ("Arnaud Spiwack",              ["Arnaud Spiwack", "Arnaud"]),
+    ("Richard Eisenberg",           ["Richard Eisenberg", "Richard"]),
+    ("Chris Dornan",                ["Chris Dornan", "Chris"]),
+    ("Vladislav Zavialov",          ["Vladislav Zavialov", "Vlad Z", "Vlad"]),
 ]
 
 # Pattern for PR number references in subjects
@@ -280,10 +309,15 @@ def fetch_ml_month(year, month):
 
 def fetch_mailing_list(months=6):
     """Fetch mailing list threads for the last N months."""
+    return fetch_mailing_list_range(start=0, count=months)
+
+
+def fetch_mailing_list_range(start=0, count=6):
+    """Fetch mailing list threads for months [start, start+count) ago."""
     all_threads = []
     now = datetime.now()
     seen = set()
-    for i in range(months):
+    for i in range(start, start + count):
         dt = now - timedelta(days=i * 30)
         ym = (dt.year, dt.month)
         if ym in seen:
@@ -305,28 +339,91 @@ def is_shepherd_thread(subject):
     return None
 
 
+def strip_html_to_text(html):
+    """Strip HTML tags and decode common entities to get readable text."""
+    text = re.sub(r"<[^>]+>", " ", html)
+    text = text.replace("&nbsp;", " ").replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">").replace("&#x27;", "'").replace("&quot;", '"')
+    return text
+
+
+def normalize_candidate(name):
+    """Clean noise (asterisks, brackets, whitespace) from a captured name."""
+    # Strip surrounding whitespace and common emphasis markers
+    name = name.strip()
+    name = name.strip("*_~`'\"")
+    # Collapse internal whitespace
+    name = re.sub(r"\s+", " ", name).strip()
+    return name
+
+
+def match_committee_member(candidate):
+    """Match a captured candidate name against the committee list.
+
+    Returns the canonical name if a match is found, else None.
+    Matching is case-insensitive and works on prefix/whole-name basis.
+    """
+    if not candidate:
+        return None
+    cand_lower = candidate.lower()
+    # Exact alias match first (longest aliases beat first-name aliases)
+    best = None
+    best_len = 0
+    for canonical, aliases in COMMITTEE_MEMBERS:
+        for alias in aliases:
+            if alias.lower() == cand_lower or cand_lower.startswith(alias.lower() + " "):
+                if len(alias) > best_len:
+                    best = canonical
+                    best_len = len(alias)
+    if best:
+        return best
+    # First-token match: "Sebastian" inside "Sebastian Graf" candidate
+    first_token = candidate.split()[0].lower() if candidate.split() else ""
+    for canonical, aliases in COMMITTEE_MEMBERS:
+        for alias in aliases:
+            if alias.lower() == first_token:
+                return canonical
+    return None
+
+
 def fetch_shepherd_from_thread(thread_url):
-    """Fetch a thread page and extract the shepherd name from the email body."""
+    """Fetch a thread page and extract the shepherd name from the email body.
+
+    Returns (canonical_name, raw_match) where canonical_name is None if the
+    captured text didn't validate against the committee member list.
+    """
     url = f"https://mailman.haskell.org{thread_url}" if thread_url.startswith("/") else thread_url
     req = urllib.request.Request(url, headers={"User-Agent": "ghc-proposals-dashboard"})
     try:
         with urllib.request.urlopen(req) as resp:
             html = resp.read().decode("utf-8", errors="replace")
     except urllib.error.HTTPError:
-        return None
+        return None, None
+
+    # Strip HTML so emphasis markup (<strong>, <em>) doesn't fragment our matches.
+    text = strip_html_to_text(html)
 
     for pat in SHEPHERD_BODY_PATTERNS:
-        m = pat.search(html)
+        for m in pat.finditer(text):
+            raw = normalize_candidate(m.group(1))
+            canonical = match_committee_member(raw)
+            if canonical:
+                return canonical, raw
+    # No validated match. Return raw best-effort match for debugging.
+    for pat in SHEPHERD_BODY_PATTERNS:
+        m = pat.search(text)
         if m:
-            name = m.group(1).strip().rstrip(" *")
-            # Clean up any HTML remnants
-            name = re.sub(r"<[^>]+>", "", name).strip()
-            return name
-    return None
+            return None, normalize_candidate(m.group(1))
+    return None, None
 
 
 def enrich_with_ml(proposals, ml_threads):
-    """Enrich proposals with mailing list data."""
+    """Enrich proposals with mailing list data.
+
+    Returns the dict of pr_num -> raw_match for shepherd names that were
+    parsed from the mailing list but did not validate against the
+    COMMITTEE_MEMBERS list. Callers should treat a non-empty result as an
+    error condition (likely needs an addition to COMMITTEE_MEMBERS).
+    """
     # Build per-PR aggregation
     pr_threads = {}  # pr_number -> list of thread info
     shepherd_thread_urls = {}  # pr_number -> thread_url (for fetching shepherd name)
@@ -353,18 +450,24 @@ def enrich_with_ml(proposals, ml_threads):
 
     # Fetch shepherd names from assignment threads
     shepherds = {}
+    unverified = {}  # pr_num -> raw match that didn't validate
     if shepherd_thread_urls:
         print(f"  Fetching {len(shepherd_thread_urls)} shepherd assignment threads...", file=sys.stderr)
         for pr_num, thread_url in shepherd_thread_urls.items():
-            name = fetch_shepherd_from_thread(thread_url)
-            if name:
-                shepherds[pr_num] = name
+            canonical, raw = fetch_shepherd_from_thread(thread_url)
+            if canonical:
+                shepherds[pr_num] = canonical
+            elif raw:
+                unverified[pr_num] = raw
             time.sleep(0.3)
 
     # Apply to proposals
     for num, prop in proposals.items():
         if num in shepherds:
             prop["shepherd"] = shepherds[num]
+        elif num in unverified:
+            # Show raw match prefixed with ? so user knows it's unverified
+            prop["shepherd"] = f"?{unverified[num]}"
         threads = pr_threads.get(num, [])
         prop["ml_threads"] = len(threads)
         if threads:
@@ -372,6 +475,8 @@ def enrich_with_ml(proposals, ml_threads):
             if dates:
                 prop["ml_last_activity"] = max(dates)
             prop["ml_participants"] = max((t["participants"] for t in threads), default=0)
+
+    return unverified
 
 
 # ---------------------------------------------------------------------------
@@ -561,7 +666,7 @@ def main():
     parser.add_argument("--format", choices=["ascii", "csv", "html"], default="ascii", help="Output format")
     parser.add_argument("--output", type=str, default=None, help="Output file")
     parser.add_argument("--github-token", type=str, default=None, help="GitHub token")
-    parser.add_argument("--ml-months", type=int, default=6, help="Months of mailing list to scrape")
+    parser.add_argument("--ml-months", type=int, default=18, help="Months of mailing list to scrape (default: 18)")
     parser.add_argument("--no-ml", action="store_true", help="Skip mailing list scraping")
     args = parser.parse_args()
 
@@ -569,11 +674,36 @@ def main():
     proposals = fetch_proposals(token=token, closed_months=args.closed_months)
     print(f"Found {len(proposals)} proposals from GitHub.", file=sys.stderr)
 
+    unverified = {}
+    missing_pending = []
     if not args.no_ml:
         print("Scraping mailing list...", file=sys.stderr)
-        ml_threads = fetch_mailing_list(months=args.ml_months)
+        months = args.ml_months
+        ml_threads = fetch_mailing_list(months=months)
         print(f"Found {len(ml_threads)} mailing list threads.", file=sys.stderr)
-        enrich_with_ml(proposals, ml_threads)
+        unverified = enrich_with_ml(proposals, ml_threads)
+
+        # If proposals in pending states still have no shepherd, extend ML window.
+        # Pending Shepherd / Pending Committee always have an assigned shepherd in
+        # the mailing list — we just haven't scraped far enough back.
+        PENDING = {"Pending Shepherd", "Pending Committee"}
+        max_months = 60
+        while months < max_months:
+            missing_pending = [n for n, p in proposals.items() if p["status"] in PENDING and not p["shepherd"].lstrip("?")]
+            if not missing_pending:
+                break
+            extra = min(12, max_months - months)
+            print(f"\n  Extending mailing list scrape by {extra} more months to find missing shepherds...", file=sys.stderr)
+            new_threads = fetch_mailing_list_range(start=months, count=extra)
+            ml_threads.extend(new_threads)
+            months += extra
+            unverified = enrich_with_ml(proposals, ml_threads)
+
+        # Recompute final missing-pending after all extensions.
+        missing_pending = [
+            (n, p["status"]) for n, p in proposals.items()
+            if p["status"] in PENDING and not p["shepherd"]
+        ]
 
     if args.format == "ascii":
         output = format_ascii(proposals)
@@ -594,6 +724,25 @@ def main():
             print(f"Written to {default_out}", file=sys.stderr)
         else:
             sys.stdout.write(output)
+
+    # CI checks: report unverified shepherd names and pending-without-shepherd
+    # as errors so this script can be run in a pipeline to catch:
+    #   1. New committee members not yet added to COMMITTEE_MEMBERS
+    #   2. Proposals stuck in pending states without a shepherd assignment
+    exit_code = 0
+    if unverified:
+        print("\nERROR: shepherd-name validation failed for these proposals:", file=sys.stderr)
+        for pr_num, raw in sorted(unverified.items()):
+            print(f"    #{pr_num}: parsed name '{raw}' is not in COMMITTEE_MEMBERS", file=sys.stderr)
+        print("    Add the parsed name to COMMITTEE_MEMBERS, or fix the body parser.", file=sys.stderr)
+        exit_code = 1
+    if missing_pending:
+        print(f"\nERROR: {len(missing_pending)} proposal(s) in pending states have no shepherd:", file=sys.stderr)
+        for pr_num, status in sorted(missing_pending):
+            print(f"    #{pr_num} ({status})", file=sys.stderr)
+        print("    A shepherd is required for Pending Shepherd / Pending Committee statuses.", file=sys.stderr)
+        exit_code = 1
+    sys.exit(exit_code)
 
 
 if __name__ == "__main__":
