@@ -387,10 +387,10 @@ Alternatives
   :: 
    
    instance Big X where 
-    seperate instance Small X 
-  
-  This would allow for a refactor to continue again, but I couldn't think of a good syntax/design.
-  If this was chosen, I would remove ``%NoAssociatedInstances`` modifier.
+    hiding instance Small X 
+    
+  This would allow for a refactor to continue again.
+  If this is chosen, the ``%NoAssociatedInstances`` modifier might be removed.
 3. Proposal 597 is another option, but it requires the typechecker to help the renamer, 
     doesn't work with fancy type level machinery. e.g.
     ::
