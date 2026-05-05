@@ -14,7 +14,7 @@ Options:
   --format FORMAT      Output: ascii (default), csv, html
   --output FILE        Output file (default: stdout for ascii/csv, proposals.html for html)
   --github-token TOKEN Override GITHUB_TOKEN env var
-  --ml-months N        Months of mailing list to scrape (default: 6)
+  --ml-months N        Months of mailing list to scrape (default: 18)
   --no-ml              Skip mailing list scraping
 """
 
@@ -59,7 +59,13 @@ def github_headers(token=None):
 
 
 def github_search(query, token=None):
-    """Run a GitHub search query, paginating through all results."""
+    """Run a GitHub search query, paginating through all results.
+
+    The search API limits unauthenticated callers to 10 req/min (6 s window)
+    and authenticated callers to 30 req/min (2 s window). We sleep between
+    pages to stay under the limit.
+    """
+    page_sleep = 2 if token else 7
     items = []
     page = 1
     while True:
@@ -78,7 +84,7 @@ def github_search(query, token=None):
         if len(items) >= data.get("total_count", 0):
             break
         page += 1
-        time.sleep(1)  # be nice to the search API
+        time.sleep(page_sleep)
     return items
 
 
@@ -100,7 +106,7 @@ def fetch_proposals(token=None, closed_months=None):
         cutoff = (datetime.now(timezone.utc) - timedelta(days=closed_months * 30)).strftime("%Y-%m-%d")
         print(f"Fetching closed PRs since {cutoff}...", file=sys.stderr)
         # Unauthenticated search API: 10 req/min. Wait to avoid rate limit.
-        time.sleep(7)
+        time.sleep(2 if token else 7)
         for item in github_search(f"{base_q} is:closed closed:>{cutoff}", token):
             pr = parse_github_item(item)
             if pr["number"] not in proposals:
@@ -497,6 +503,12 @@ COLUMNS = [
 ]
 
 
+def display_title(prop):
+    """Return the title with an `[A] ` prefix if this proposal is an amendment."""
+    title = prop.get("title", "")
+    return f"[A] {title}" if prop.get("is_amendment") else title
+
+
 def sort_proposals(proposals):
     """Sort proposals: pending items first (by date), then needs revision, then rest."""
     status_order = {
@@ -529,6 +541,8 @@ def format_ascii(proposals):
             val = row.get(key, "")
             if key == "number":
                 val = f"#{val}"
+            elif key == "title":
+                val = display_title(row)
             val = str(val)
             if len(val) > width:
                 val = val[: width - 2] + ".."
@@ -558,10 +572,16 @@ def format_csv(proposals):
     writer = csv.writer(buf)
     writer.writerow([c[0] for c in COLUMNS] + ["URL"])
     for row in rows:
-        writer.writerow(
-            [f"#{row['number']}" if k == "number" else str(row.get(k, "")) for _, k, _ in COLUMNS]
-            + [row.get("gh_url", "")]
-        )
+        cells = []
+        for _, key, _ in COLUMNS:
+            if key == "number":
+                cells.append(f"#{row['number']}")
+            elif key == "title":
+                cells.append(display_title(row))
+            else:
+                cells.append(str(row.get(key, "")))
+        cells.append(row.get("gh_url", ""))
+        writer.writerow(cells)
     return buf.getvalue()
 
 
@@ -578,20 +598,20 @@ def format_html(proposals):
     for row in rows:
         cells = []
         for _, key, _ in COLUMNS:
-            val = row.get(key, "")
             if key == "number":
-                val = f'<a href="{esc(row.get("gh_url", ""))}" target="_blank">#{val}</a>'
-                cells.append(f"<td>{val}</td>")
+                cells.append(f'<td><a href="{esc(row.get("gh_url", ""))}" target="_blank">#{row["number"]}</a></td>')
+            elif key == "title":
+                cells.append(f"<td>{esc(display_title(row))}</td>")
             else:
-                cells.append(f"<td>{esc(val)}</td>")
+                cells.append(f"<td>{esc(row.get(key, ''))}</td>")
         status_attr = esc(row.get("status", ""))
         tbody_rows.append(f'<tr data-status="{status_attr}">{"".join(cells)}</tr>')
 
     # Collect unique statuses for filter buttons
     statuses = sorted(set(r.get("status", "") for r in rows))
-    filter_buttons = '<button class="filter-btn active" onclick="filterStatus(\'all\')">All</button>'
+    filter_buttons = '<button class="filter-btn active" onclick="filterStatus(event, \'all\')">All</button>'
     for s in statuses:
-        filter_buttons += f'<button class="filter-btn" onclick="filterStatus(\'{esc(s)}\')">{esc(s)}</button>'
+        filter_buttons += f'<button class="filter-btn" onclick="filterStatus(event, \'{esc(s)}\')">{esc(s)}</button>'
 
     generated = datetime.now().strftime("%Y-%m-%d %H:%M")
 
@@ -644,9 +664,9 @@ function sortTable(col) {{
   }});
   rows.forEach(r => tbody.appendChild(r));
 }}
-function filterStatus(status) {{
+function filterStatus(e, status) {{
   document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
-  event.target.classList.add("active");
+  e.target.classList.add("active");
   document.querySelectorAll("#proposals tbody tr").forEach(r => {{
     r.style.display = (status === "all" || r.dataset.status === status) ? "" : "none";
   }});
@@ -676,6 +696,11 @@ def main():
 
     unverified = {}
     missing_pending = []
+    if args.no_ml:
+        print(
+            "Note: --no-ml is set; CI validation (shepherd names, missing pending shepherds) is not active.",
+            file=sys.stderr,
+        )
     if not args.no_ml:
         print("Scraping mailing list...", file=sys.stderr)
         months = args.ml_months
