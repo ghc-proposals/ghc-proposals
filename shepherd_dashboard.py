@@ -880,11 +880,35 @@ def format_html(proposals):
   a:hover {{ text-decoration: underline; }}
   td:nth-child(2) {{ max-width: 300px; overflow: hidden; text-overflow: ellipsis; }}
   .sort-arrow {{ font-size: 0.7em; margin-left: 4px; }}
+  details.legend {{ background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 0.5em 0.8em; margin-bottom: 1em; font-size: 0.85em; }}
+  details.legend > summary {{ cursor: pointer; font-weight: 600; color: #0366d6; user-select: none; }}
+  details.legend > summary:hover {{ color: #024185; }}
+  details.legend dl {{ margin-top: 0.6em; display: grid; grid-template-columns: max-content 1fr; gap: 0.2em 1em; }}
+  details.legend dt {{ font-weight: 600; color: #333; }}
+  details.legend dd {{ color: #555; }}
+  details.legend p.note {{ margin-top: 0.6em; color: #666; font-style: italic; }}
 </style>
 </head>
 <body>
 <h1>GHC Proposals Dashboard</h1>
 <p class="meta">Generated {esc(generated)} &mdash; {len(rows)} proposals</p>
+<details class="legend">
+  <summary>Column reference</summary>
+  <dl>
+    <dt>PR #</dt><dd>GitHub PR number; click to open the PR.</dd>
+    <dt>Title</dt><dd>Short title from the PR. <code>[A]</code> prefix marks an Amendment to a previously-accepted proposal.</dd>
+    <dt>Status</dt><dd>Derived from GitHub labels: <em>Pending Shepherd</em>, <em>Pending Committee</em>, <em>Needs Revision</em>, <em>Accepted</em>, <em>Rejected</em>, <em>Dormant</em>, otherwise <em>Open</em> or <em>Merged</em>. Click a button above to filter.</dd>
+    <dt>Author</dt><dd>GitHub username of the proposal author.</dd>
+    <dt>Shepherd</dt><dd>Committee member assigned via the mailing list (parsed from "Assigning Shepherd" or "Please review" threads). A <code>?</code> prefix means a name was parsed but did not match the known committee list.</dd>
+    <dt>Inbox Date</dt><dd>When the PR was opened (proxy for "entered the committee inbox").</dd>
+    <dt>Last GH</dt><dd>Most recent activity on the GitHub PR.</dd>
+    <dt>ML#</dt><dd>Number of mailing-list messages in threads referencing this PR.</dd>
+    <dt>ML Last</dt><dd>Most recent date of mailing-list activity for this PR.</dd>
+    <dt>Ppl</dt><dd>Unique senders across the mailing-list messages for this PR.</dd>
+    <dt>Votes</dt><dd>Compact tally per category: <code>NA</code> = N accepts, <code>NR</code> = N rejects, <code>Nc</code> = N concerns, <code>Nx</code> = N recuses. Hover the cell for the per-member breakdown. Heuristic regex classifier &mdash; treat low-confidence cells as a hint, not ground truth.</dd>
+  </dl>
+  <p class="note">Click a column header to sort. Vote classification accuracy on historical labels: accept P=97% R=88%, others are noisier due to small sample sizes.</p>
+</details>
 <div class="filters">{filter_buttons}</div>
 <table id="proposals">
 <thead><tr>{thead}</tr></thead>
