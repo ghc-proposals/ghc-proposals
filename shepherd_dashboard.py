@@ -4,7 +4,10 @@ GHC Proposals Shepherd Dashboard
 
 Zero-dependency script that aggregates proposal status from:
   1. GitHub Search API (PR metadata, labels, dates)
-  2. HyperKitty mailing list archive (shepherd assignments, discussion activity)
+  2. ghc-steering-committee mailing list archive (mbox bulk download)
+
+Mbox files are downloaded once per month into ~/.cache/shepherd_dashboard/ ;
+past months are cached forever, the current month is always re-fetched.
 
 Usage:
   python3 shepherd_dashboard.py [OPTIONS]
@@ -14,23 +17,30 @@ Options:
   --format FORMAT      Output: ascii (default), csv, html
   --output FILE        Output file (default: stdout for ascii/csv, proposals.html for html)
   --github-token TOKEN Override GITHUB_TOKEN env var
-  --ml-months N        Months of mailing list to scrape (default: 18)
-  --no-ml              Skip mailing list scraping
+  --ml-months N        Months of mailing list to fetch (default: 18)
+  --no-ml              Skip mailing list download (also disables CI validation)
 """
 
 import argparse
 import csv
+import email
+import email.policy
+import email.utils
+import gzip
 import io
+import itertools
 import json
+import mailbox
 import os
 import re
+import shutil
 import sys
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
-from html.parser import HTMLParser
+from pathlib import Path
 
 
 # ---------------------------------------------------------------------------
@@ -145,10 +155,11 @@ def parse_github_item(item):
 
 
 # ---------------------------------------------------------------------------
-# Mailing List (HyperKitty)
+# Mailing List (mbox bulk download from HyperKitty)
 # ---------------------------------------------------------------------------
 
-ML_BASE = "https://mailman.haskell.org/archives/list/ghc-steering-committee@haskell.org"
+LIST_NAME = "ghc-steering-committee@haskell.org"
+ML_EXPORT_BASE = f"https://mailman.haskell.org/archives/list/{LIST_NAME}/export"
 
 # Patterns for shepherd assignment thread subjects
 SHEPHERD_SUBJECT_PATTERNS = [
@@ -158,7 +169,7 @@ SHEPHERD_SUBJECT_PATTERNS = [
 ]
 
 # Patterns for shepherd name in email body. Each must capture the name in group 1.
-# We strip surrounding HTML/asterisks/whitespace afterwards, so patterns can be loose.
+# We strip surrounding asterisks/whitespace afterwards, so patterns can be loose.
 SHEPHERD_BODY_PATTERNS = [
     re.compile(r"nominate\s+([^.\n]{2,60}?)\s+as\s+(?:the\s+)?shepherd", re.IGNORECASE),
     re.compile(r"nominating\s+([^.\n]{2,60}?)\s+as\s+(?:the\s+)?shepherd", re.IGNORECASE),
@@ -196,146 +207,6 @@ COMMITTEE_MEMBERS = [
 PR_REF_PATTERN = re.compile(r"#(\d+)")
 
 
-class ThreadBlockParser(HTMLParser):
-    """Simpler approach: extract threads by finding thread-title anchors and
-    nearby metadata using state machine parsing."""
-
-    def __init__(self):
-        super().__init__()
-        self.threads = []
-        self._state = "idle"
-        self._current = {}
-        self._buf = ""
-        self._badge_kind = None
-
-    def _flush(self):
-        if self._current.get("subject"):
-            self.threads.append(self._current)
-        self._current = {"subject": "", "author": "", "date": "", "participants": 0, "replies": 0, "thread_url": ""}
-
-    def handle_starttag(self, tag, attrs):
-        ad = dict(attrs)
-        cls = ad.get("class", "")
-
-        # New thread block
-        if tag == "div" and cls.strip() == "thread":
-            self._flush()
-
-        # Thread title link
-        if tag == "a" and "thread-title" in cls:
-            self._state = "title"
-            self._buf = ""
-            href = ad.get("href", "")
-            self._current["thread_url"] = href
-
-        # Sender name
-        if tag == "span" and "sender-name" in cls:
-            self._state = "sender"
-            self._buf = ""
-
-        # Thread date (date is in the title attribute)
-        if tag == "span" and "thread-date" in cls:
-            title = ad.get("title", "")
-            if title:
-                self._current["date"] = title
-
-        # Badge icons identify what the next badge number means
-        if tag == "i":
-            aria = ad.get("aria-label", "")
-            if aria == "participants":
-                self._badge_kind = "participants"
-            elif aria == "replies":
-                self._badge_kind = "replies"
-
-        # Badge span (contains the count number)
-        if tag == "span" and "badge" in cls:
-            self._state = "badge"
-            self._buf = ""
-
-    def handle_endtag(self, tag):
-        if self._state == "title" and tag == "a":
-            self._current["subject"] = self._buf.strip()
-            self._state = "idle"
-        elif self._state == "sender" and tag == "span":
-            author = self._buf.strip()
-            if author.startswith("by "):
-                author = author[3:]
-            self._current["author"] = author
-            self._state = "idle"
-        elif self._state == "badge" and tag == "span":
-            num = re.search(r"\d+", self._buf)
-            if num and self._badge_kind:
-                self._current[self._badge_kind] = int(num.group())
-            self._badge_kind = None
-            self._state = "idle"
-
-    def handle_data(self, data):
-        if self._state in ("title", "sender", "badge"):
-            self._buf += data
-
-    def close(self):
-        super().close()
-        self._flush()
-        # Remove the empty initial entry if present
-        self.threads = [t for t in self.threads if t.get("subject")]
-
-
-def parse_date(date_str):
-    """Parse dates like 'Monday, 4 May 2026 08:11:19' to YYYY-MM-DD."""
-    # Remove weekday prefix
-    m = re.search(r"(\d{1,2})\s+(\w+)\s+(\d{4})", date_str)
-    if m:
-        day, month_name, year = m.groups()
-        months = {
-            "January": 1, "February": 2, "March": 3, "April": 4,
-            "May": 5, "June": 6, "July": 7, "August": 8,
-            "September": 9, "October": 10, "November": 11, "December": 12,
-        }
-        month_num = months.get(month_name, 0)
-        if month_num:
-            return f"{year}-{month_num:02d}-{int(day):02d}"
-    return date_str
-
-
-def fetch_ml_month(year, month):
-    """Fetch and parse one month of mailing list threads."""
-    url = f"{ML_BASE}/{year}/{month}/"
-    req = urllib.request.Request(url, headers={"User-Agent": "ghc-proposals-dashboard"})
-    try:
-        with urllib.request.urlopen(req) as resp:
-            html = resp.read().decode("utf-8", errors="replace")
-    except urllib.error.HTTPError:
-        return []
-
-    parser = ThreadBlockParser()
-    parser.feed(html)
-    parser.close()
-    return parser.threads
-
-
-def fetch_mailing_list(months=6):
-    """Fetch mailing list threads for the last N months."""
-    return fetch_mailing_list_range(start=0, count=months)
-
-
-def fetch_mailing_list_range(start=0, count=6):
-    """Fetch mailing list threads for months [start, start+count) ago."""
-    all_threads = []
-    now = datetime.now()
-    seen = set()
-    for i in range(start, start + count):
-        dt = now - timedelta(days=i * 30)
-        ym = (dt.year, dt.month)
-        if ym in seen:
-            continue
-        seen.add(ym)
-        print(f"  Scraping mailing list {ym[0]}/{ym[1]:02d}...", file=sys.stderr)
-        threads = fetch_ml_month(ym[0], ym[1])
-        all_threads.extend(threads)
-        time.sleep(0.5)  # be polite
-    return all_threads
-
-
 def is_shepherd_thread(subject):
     """Check if a thread subject indicates a shepherd assignment. Returns PR number or None."""
     for pat in SHEPHERD_SUBJECT_PATTERNS:
@@ -346,7 +217,7 @@ def is_shepherd_thread(subject):
 
 
 def strip_html_to_text(html):
-    """Strip HTML tags and decode common entities to get readable text."""
+    """Strip HTML tags and decode common entities. Used for HTML-bodied messages."""
     text = re.sub(r"<[^>]+>", " ", html)
     text = text.replace("&nbsp;", " ").replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">").replace("&#x27;", "'").replace("&quot;", '"')
     return text
@@ -354,10 +225,8 @@ def strip_html_to_text(html):
 
 def normalize_candidate(name):
     """Clean noise (asterisks, brackets, whitespace) from a captured name."""
-    # Strip surrounding whitespace and common emphasis markers
     name = name.strip()
     name = name.strip("*_~`'\"")
-    # Collapse internal whitespace
     name = re.sub(r"\s+", " ", name).strip()
     return name
 
@@ -366,12 +235,10 @@ def match_committee_member(candidate):
     """Match a captured candidate name against the committee list.
 
     Returns the canonical name if a match is found, else None.
-    Matching is case-insensitive and works on prefix/whole-name basis.
     """
     if not candidate:
         return None
     cand_lower = candidate.lower()
-    # Exact alias match first (longest aliases beat first-name aliases)
     best = None
     best_len = 0
     for canonical, aliases in COMMITTEE_MEMBERS:
@@ -382,7 +249,6 @@ def match_committee_member(candidate):
                     best_len = len(alias)
     if best:
         return best
-    # First-token match: "Sebastian" inside "Sebastian Graf" candidate
     first_token = candidate.split()[0].lower() if candidate.split() else ""
     for canonical, aliases in COMMITTEE_MEMBERS:
         for alias in aliases:
@@ -391,30 +257,36 @@ def match_committee_member(candidate):
     return None
 
 
-def fetch_shepherd_from_thread(thread_url):
-    """Fetch a thread page and extract the shepherd name from the email body.
+_PRONOUN_SHEPHERD = re.compile(r"^(?:myself|me|I)$", re.IGNORECASE)
+
+
+def extract_shepherd_from_body(body, sender_name=None):
+    """Extract a shepherd name from a message body.
 
     Returns (canonical_name, raw_match) where canonical_name is None if the
     captured text didn't validate against the committee member list.
-    """
-    url = f"https://mailman.haskell.org{thread_url}" if thread_url.startswith("/") else thread_url
-    req = urllib.request.Request(url, headers={"User-Agent": "ghc-proposals-dashboard"})
-    try:
-        with urllib.request.urlopen(req) as resp:
-            html = resp.read().decode("utf-8", errors="replace")
-    except urllib.error.HTTPError:
-        return None, None
 
-    # Strip HTML so emphasis markup (<strong>, <em>) doesn't fragment our matches.
-    text = strip_html_to_text(html)
+    If `sender_name` is provided, pronouns like "myself"/"me"/"I" are
+    resolved to the sender (e.g., "I'd like to nominate myself as shepherd").
+    """
+    if not body:
+        return None, None
+    # Strip emphasis markers so they don't fragment regex matches
+    text = re.sub(r"[*_~`]", " ", body)
+    text = re.sub(r"\s+", " ", text)
+
+    def resolve(raw):
+        # Pronoun → sender
+        if sender_name and _PRONOUN_SHEPHERD.match(raw):
+            return match_committee_member(sender_name)
+        return match_committee_member(raw)
 
     for pat in SHEPHERD_BODY_PATTERNS:
         for m in pat.finditer(text):
             raw = normalize_candidate(m.group(1))
-            canonical = match_committee_member(raw)
+            canonical = resolve(raw)
             if canonical:
                 return canonical, raw
-    # No validated match. Return raw best-effort match for debugging.
     for pat in SHEPHERD_BODY_PATTERNS:
         m = pat.search(text)
         if m:
@@ -422,65 +294,288 @@ def fetch_shepherd_from_thread(thread_url):
     return None, None
 
 
-def enrich_with_ml(proposals, ml_threads):
-    """Enrich proposals with mailing list data.
+# --- mbox download / cache --------------------------------------------------
 
-    Returns the dict of pr_num -> raw_match for shepherd names that were
-    parsed from the mailing list but did not validate against the
-    COMMITTEE_MEMBERS list. Callers should treat a non-empty result as an
-    error condition (likely needs an addition to COMMITTEE_MEMBERS).
+
+def cache_dir():
+    """Local cache for mbox files."""
+    return Path(os.path.expanduser("~/.cache/shepherd_dashboard"))
+
+
+def iter_months_back(n):
+    """Yield (year, month) tuples for the last n months, current first."""
+    now = datetime.now()
+    y, m = now.year, now.month
+    for _ in range(n):
+        yield (y, m)
+        m -= 1
+        if m == 0:
+            y -= 1
+            m = 12
+
+
+def _mbox_url(year, month):
+    """Build the export URL for one calendar month."""
+    end_y, end_m = (year + 1, 1) if month == 12 else (year, month + 1)
+    return (
+        f"{ML_EXPORT_BASE}/{LIST_NAME}-{year}-{month:02d}.mbox.gz"
+        f"?start={year:04d}-{month:02d}-01"
+        f"&end={end_y:04d}-{end_m:02d}-01"
+    )
+
+
+def download_one_month(year, month, force=False):
+    """Download mbox for (year, month) into cache. Returns local mbox path or None.
+
+    Past months are cached forever (immutable archive). The current month is
+    re-downloaded each call to pick up recent traffic.
     """
-    # Build per-PR aggregation
-    pr_threads = {}  # pr_number -> list of thread info
-    shepherd_thread_urls = {}  # pr_number -> thread_url (for fetching shepherd name)
+    cache = cache_dir()
+    cache.mkdir(parents=True, exist_ok=True)
+    gz_path = cache / f"{LIST_NAME}-{year:04d}-{month:02d}.mbox.gz"
+    mbox_path = cache / f"{LIST_NAME}-{year:04d}-{month:02d}.mbox"
 
-    for thread in ml_threads:
-        subject = thread.get("subject", "")
-        date_str = parse_date(thread.get("date", ""))
-        participants = thread.get("participants", 0)
+    now = datetime.now()
+    is_current = (year, month) == (now.year, now.month)
+    needs_download = force or is_current or not gz_path.exists()
 
-        # Check for shepherd assignment thread
-        pr_num = is_shepherd_thread(subject)
-        if pr_num and thread.get("thread_url"):
-            shepherd_thread_urls[pr_num] = thread["thread_url"]
+    if needs_download:
+        url = _mbox_url(year, month)
+        req = urllib.request.Request(url, headers={"User-Agent": "ghc-proposals-dashboard"})
+        try:
+            with urllib.request.urlopen(req) as resp:
+                gz_path.write_bytes(resp.read())
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                # No traffic for this month
+                return None
+            raise
 
-        # Find all PR references in subject
-        for m in PR_REF_PATTERN.finditer(subject):
-            pr_num = int(m.group(1))
-            if pr_num not in pr_threads:
-                pr_threads[pr_num] = []
-            pr_threads[pr_num].append({
-                "date": date_str,
-                "participants": participants,
-            })
+    if needs_download or not mbox_path.exists():
+        # mailbox.mbox needs an uncompressed file. Decompress alongside.
+        with gzip.open(gz_path, "rb") as f_in, open(mbox_path, "wb") as f_out:
+            shutil.copyfileobj(f_in, f_out)
 
-    # Fetch shepherd names from assignment threads
+    return mbox_path
+
+
+def download_archive(months):
+    """Download up to `months` months back. Returns list of local mbox paths."""
+    paths = []
+    for y, m in iter_months_back(months):
+        try:
+            p = download_one_month(y, m)
+        except Exception as e:
+            print(f"  Warning: failed to download {y}/{m:02d}: {e}", file=sys.stderr)
+            continue
+        if p:
+            paths.append(p)
+        time.sleep(0.2)
+    return paths
+
+
+# --- mbox parsing -----------------------------------------------------------
+
+
+def _clean_subject(subject):
+    """Strip mailing-list prefix and Re: chains from a subject."""
+    s = (subject or "").replace("\n", " ").replace("\r", " ").strip()
+    s = re.sub(r"\[ghc-steering-committee\]\s*", "", s, flags=re.IGNORECASE)
+    s = re.sub(r"^(?:Re:\s*|Fwd:\s*)+", "", s, flags=re.IGNORECASE)
+    return re.sub(r"\s+", " ", s).strip()
+
+
+_ATTRIBUTION_RE = re.compile(
+    r"^(?:On\s+.+?(?:wrote|escreveu|napsal):|[A-Z][\w\s.,'-]{1,60}\s+(?:wrote|escreveu|napsal):)\s*$"
+)
+_LIST_FOOTER_RE = re.compile(r"_{5,}\s*\n.*?mailing\s+list", re.S | re.IGNORECASE)
+_SIG_DASH_RE = re.compile(r"^--\s*$", re.MULTILINE)
+
+
+def strip_quoted_text(body):
+    """Strip quoted reply text, attribution lines, footer, and signature.
+
+    Heuristics (tuned for this list):
+      - lines starting with `>` are quoted; cut at first such line.
+      - "On <date>, <name> wrote:" attribution → cut.
+      - "<Name> wrote:" attribution → cut.
+      - mailing list footer (`_______ ... mailing list`) → cut.
+      - signature dash line (`-- `) → cut.
+    """
+    if not body:
+        return ""
+    lines = body.splitlines()
+    cut = len(lines)
+    for i, line in enumerate(lines):
+        stripped = line.lstrip()
+        if stripped.startswith(">"):
+            cut = i
+            break
+        if _ATTRIBUTION_RE.match(stripped):
+            cut = i
+            break
+    text = "\n".join(lines[:cut])
+    text = _LIST_FOOTER_RE.split(text)[0]
+    sig = _SIG_DASH_RE.search(text)
+    if sig:
+        text = text[: sig.start()]
+    return text.strip()
+
+
+def _extract_plain_body(eml):
+    """Extract the text/plain body from an email.EmailMessage. Falls back to HTML→text."""
+    try:
+        body_part = eml.get_body(preferencelist=("plain",))
+        if body_part is not None:
+            return body_part.get_content()
+    except Exception:
+        pass
+    # Walk parts manually
+    if eml.is_multipart():
+        for part in eml.walk():
+            if part.get_content_type() == "text/plain":
+                try:
+                    return part.get_content()
+                except Exception:
+                    payload = part.get_payload(decode=True)
+                    if payload:
+                        return payload.decode(errors="replace")
+        # Last-ditch: HTML body
+        for part in eml.walk():
+            if part.get_content_type() == "text/html":
+                try:
+                    return strip_html_to_text(part.get_content())
+                except Exception:
+                    payload = part.get_payload(decode=True)
+                    if payload:
+                        return strip_html_to_text(payload.decode(errors="replace"))
+    payload = eml.get_payload(decode=True)
+    if isinstance(payload, bytes):
+        return payload.decode(errors="replace")
+    return str(payload or "")
+
+
+def parse_message(eml):
+    """Convert an email.EmailMessage to a Message dict, or None to skip."""
+    name, addr = email.utils.parseaddr(eml.get("From", "") or "")
+    subject = _clean_subject(eml.get("Subject", ""))
+    date_raw = eml.get("Date", "")
+    try:
+        dt = email.utils.parsedate_to_datetime(date_raw)
+    except (TypeError, ValueError):
+        return None
+    if dt is None:
+        return None
+    body = _extract_plain_body(eml)
+    pr_refs = sorted({int(m.group(1)) for m in PR_REF_PATTERN.finditer(subject)})
+    references = (eml.get("References") or "").split()
+    return {
+        "message_id": (eml.get("Message-ID") or "").strip(),
+        "in_reply_to": (eml.get("In-Reply-To") or "").strip(),
+        "references": references,
+        "from_name": name,
+        "from_email": addr.lower(),
+        "subject": subject,
+        "date": dt.strftime("%Y-%m-%d"),
+        "datetime": dt,
+        "body": body,
+        "clean_body": strip_quoted_text(body),
+        "pr_refs": pr_refs,
+    }
+
+
+def parse_archive(paths):
+    """Parse a list of mbox file paths into a flat list of Message dicts (sorted by date)."""
+    messages = []
+    for path in paths:
+        try:
+            mbox = mailbox.mbox(str(path))
+        except Exception as e:
+            print(f"  Warning: failed to open {path}: {e}", file=sys.stderr)
+            continue
+        for raw in mbox:
+            try:
+                eml = email.message_from_bytes(bytes(raw), policy=email.policy.default)
+                m = parse_message(eml)
+                if m:
+                    messages.append(m)
+            except Exception as e:
+                print(f"  Warning: failed to parse a message in {path.name}: {e}", file=sys.stderr)
+    # Aware/naive datetime mix can occur; normalise for sorting
+    def _sort_key(m):
+        dt = m["datetime"]
+        if dt.tzinfo is None:
+            return dt.replace(tzinfo=timezone.utc)
+        return dt
+    messages.sort(key=_sort_key)
+    return messages
+
+
+def enrich_with_ml(proposals, messages):
+    """Enrich proposals with mailing list data from parsed mbox messages.
+
+    Returns a dict of pr_num -> raw_match for shepherd names parsed from the
+    mailing list that did not validate against COMMITTEE_MEMBERS. Callers
+    should treat a non-empty result as an error condition.
+    """
+    by_msgid = {m["message_id"]: m for m in messages if m["message_id"]}
+
+    # PR-tagging: a message is "about" PR #N if its (cleaned) subject mentions #N,
+    # OR its parent (via In-Reply-To/References) is about #N. This catches replies
+    # whose subject was edited to drop the PR reference.
+    pr_messages = {}  # pr_number -> list of messages
+    shepherd_assignments = {}  # pr_number -> (datetime, body) of latest assignment thread root
+
+    def pr_refs_for(msg):
+        if msg["pr_refs"]:
+            return msg["pr_refs"]
+        parent = by_msgid.get(msg["in_reply_to"])
+        if parent:
+            return pr_refs_for(parent)
+        for ref in msg["references"]:
+            parent = by_msgid.get(ref)
+            if parent and parent["pr_refs"]:
+                return parent["pr_refs"]
+        return []
+
+    for msg in messages:
+        for pr_num in pr_refs_for(msg):
+            pr_messages.setdefault(pr_num, []).append(msg)
+
+        # Shepherd assignment: subject must match AND this is a thread root
+        # (no In-Reply-To). Replies don't carry the assignment body.
+        if not msg["in_reply_to"]:
+            pr = is_shepherd_thread(msg["subject"])
+            if pr is not None:
+                existing = shepherd_assignments.get(pr)
+                if not existing or msg["datetime"] > existing[0]:
+                    shepherd_assignments[pr] = (
+                        msg["datetime"],
+                        msg["clean_body"] or msg["body"],
+                        msg["from_name"],
+                    )
+
+    # Resolve shepherd names
     shepherds = {}
-    unverified = {}  # pr_num -> raw match that didn't validate
-    if shepherd_thread_urls:
-        print(f"  Fetching {len(shepherd_thread_urls)} shepherd assignment threads...", file=sys.stderr)
-        for pr_num, thread_url in shepherd_thread_urls.items():
-            canonical, raw = fetch_shepherd_from_thread(thread_url)
-            if canonical:
-                shepherds[pr_num] = canonical
-            elif raw:
-                unverified[pr_num] = raw
-            time.sleep(0.3)
+    unverified = {}
+    for pr_num, (_dt, body, from_name) in shepherd_assignments.items():
+        canonical, raw = extract_shepherd_from_body(body, sender_name=from_name)
+        if canonical:
+            shepherds[pr_num] = canonical
+        elif raw:
+            unverified[pr_num] = raw
 
-    # Apply to proposals
     for num, prop in proposals.items():
         if num in shepherds:
             prop["shepherd"] = shepherds[num]
         elif num in unverified:
-            # Show raw match prefixed with ? so user knows it's unverified
             prop["shepherd"] = f"?{unverified[num]}"
-        threads = pr_threads.get(num, [])
-        prop["ml_threads"] = len(threads)
-        if threads:
-            dates = [t["date"] for t in threads if t["date"]]
-            if dates:
-                prop["ml_last_activity"] = max(dates)
-            prop["ml_participants"] = max((t["participants"] for t in threads), default=0)
+        msgs = pr_messages.get(num, [])
+        prop["ml_threads"] = len(msgs)
+        if msgs:
+            prop["ml_last_activity"] = max(m["date"] for m in msgs)
+            unique_senders = {m["from_email"] for m in msgs if m["from_email"]}
+            prop["ml_participants"] = len(unique_senders)
 
     return unverified
 
@@ -702,27 +797,37 @@ def main():
             file=sys.stderr,
         )
     if not args.no_ml:
-        print("Scraping mailing list...", file=sys.stderr)
+        print("Downloading mailing list archive...", file=sys.stderr)
         months = args.ml_months
-        ml_threads = fetch_mailing_list(months=months)
-        print(f"Found {len(ml_threads)} mailing list threads.", file=sys.stderr)
-        unverified = enrich_with_ml(proposals, ml_threads)
+        paths = download_archive(months)
+        print(f"Have {len(paths)} cached mbox month(s). Parsing...", file=sys.stderr)
+        messages = parse_archive(paths)
+        print(f"Parsed {len(messages)} messages.", file=sys.stderr)
+        unverified = enrich_with_ml(proposals, messages)
 
-        # If proposals in pending states still have no shepherd, extend ML window.
-        # Pending Shepherd / Pending Committee always have an assigned shepherd in
-        # the mailing list — we just haven't scraped far enough back.
+        # Auto-extend window if pending proposals still have no shepherd.
         PENDING = {"Pending Shepherd", "Pending Committee"}
         max_months = 60
         while months < max_months:
-            missing_pending = [n for n, p in proposals.items() if p["status"] in PENDING and not p["shepherd"].lstrip("?")]
-            if not missing_pending:
+            missing_now = [n for n, p in proposals.items() if p["status"] in PENDING and not p["shepherd"].lstrip("?")]
+            if not missing_now:
                 break
             extra = min(12, max_months - months)
-            print(f"\n  Extending mailing list scrape by {extra} more months to find missing shepherds...", file=sys.stderr)
-            new_threads = fetch_mailing_list_range(start=months, count=extra)
-            ml_threads.extend(new_threads)
+            print(f"\n  Extending mbox archive by {extra} more months to find missing shepherds...", file=sys.stderr)
+            new_paths = []
+            for y, m in itertools.islice(iter_months_back(months + extra), months, None):
+                try:
+                    p = download_one_month(y, m)
+                except Exception as e:
+                    print(f"  Warning: failed to download {y}/{m:02d}: {e}", file=sys.stderr)
+                    continue
+                if p:
+                    new_paths.append(p)
+                time.sleep(0.2)
+            paths.extend(new_paths)
             months += extra
-            unverified = enrich_with_ml(proposals, ml_threads)
+            messages = parse_archive(paths)
+            unverified = enrich_with_ml(proposals, messages)
 
         # Recompute final missing-pending after all extensions.
         missing_pending = [
