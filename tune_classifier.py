@@ -158,9 +158,20 @@ def build_corpus(triples, messages):
             unaligned.append((pr, member, label))
             continue
         candidates.sort(key=lambda m: m["datetime"])
-        first = candidates[0]
-        body = first["clean_body"] or first["body"]
-        corpus.append((pr, member, label, body))
+        # Mirror the dashboard rule: the FIRST message whose body produces a
+        # non-unclear classification is what counts as the member's vote.
+        # If none do, fall back to the first message.
+        chosen = None
+        for m in candidates:
+            body = m["clean_body"] or m["body"]
+            pred, _ = sd.classify_vote(body)
+            if pred != "unclear":
+                chosen = body
+                break
+        if chosen is None:
+            first = candidates[0]
+            chosen = first["clean_body"] or first["body"]
+        corpus.append((pr, member, label, chosen))
     return corpus, unaligned
 
 

@@ -268,24 +268,31 @@ def match_committee_member(candidate):
 #   - Naive Bayes trained on the calibration corpus
 
 _VOTE_ACCEPT = re.compile(
-    r"\b(?:"
-    r"accept(?:ed|ing|s|able)?|"
-    r"approv(?:e|ed|al|es)|"
-    r"in\s+favou?r|"
-    r"no\s+objection(?:s)?|"
-    r"LGTM|SGTM|WFM|"
-    r"\+1"
-    r")\b",
+    r"(?:"
+    r"\baccept(?:ed|ing|s|able|ance)?\b|"
+    r"\bapprov(?:e|ed|al|es)\b|"
+    r"\bagree(?:d|s)?\b|"
+    r"\bin\s+favou?r\b|"
+    r"\bin\s+support\b|"
+    r"\bno\s+objection(?:s)?\b|"
+    r"\bhappy\s+(?:with|to\s+\w+|to\s+see)\b|"
+    r"\bfine\s+with\b|"
+    r"\bsupportive\b|"
+    r"\bI(?:\s+(?:will|would|also|too))?\s+support\b|"
+    r"\bsounds\s+(?:good|great|like\s+a\s+great)\b|"
+    r"\b(?:LGTM|SGTM|WFM)\b|"
+    r"(?<![\w-])\+1(?!\d)"
+    r")",
     re.IGNORECASE,
 )
 _VOTE_REJECT = re.compile(
-    r"\b(?:"
-    r"reject(?:ed|ing|s)?|"
-    r"oppose(?:d|s)?|"
-    r"vote\s+(?:against|no)|"
-    r"nack|"
-    r"-1"
-    r")\b",
+    r"(?:"
+    r"\breject(?:ed|ing|s|ion)?\b|"
+    r"\boppose(?:d|s)?\b|"
+    r"\bvote\s+(?:against|no)\b|"
+    r"\bnack\b|"
+    r"(?<![\w-])-1(?!\d)"
+    r")",
     re.IGNORECASE,
 )
 _VOTE_RECUSE = re.compile(
@@ -293,7 +300,7 @@ _VOTE_RECUSE = re.compile(
     re.IGNORECASE,
 )
 _VOTE_CONCERN = re.compile(
-    r"\b(?:concerns?|worried|hesitant|unconvinced|reservation(?:s)?)\b",
+    r"\b(?:concern(?:s|ed)?|worried|hesitant|unconvinced|reservation(?:s)?)\b",
     re.IGNORECASE,
 )
 
@@ -301,30 +308,43 @@ _VOTE_CONCERN = re.compile(
 def classify_vote(body):
     """Classify a message body as accept | reject | recuse | concern | unclear.
 
-    Returns (vote, confidence). Confidence is 1.0 for a single-category match,
-    0.7 when multiple categories matched (priority-resolved), 0.0 for unclear.
+    Returns (vote, confidence). Confidence is 1.0 for a single-category match
+    or unanimous multi-match; 0.7 when accept and reject both match and one
+    dominates by count; 0.0 for unclear.
 
-    Priority order when multiple categories match: RECUSE > REJECT > ACCEPT >
-    CONCERN. Recuse is unambiguous; reject is more deliberate than accept;
-    concern is the weakest signal.
+    Decision rule:
+      1. RECUSE keyword wins outright (strongest precision in the corpus).
+      2. ACCEPT vs REJECT: count occurrences. The one with more wins; ties go
+         to UNCLEAR (intentional — a tied message is a discussion, not a vote).
+      3. CONCERN keyword present without accept/reject → CONCERN.
     """
     if not body:
         return "unclear", 0.0
-    has_recuse = bool(_VOTE_RECUSE.search(body))
-    has_reject = bool(_VOTE_REJECT.search(body))
-    has_accept = bool(_VOTE_ACCEPT.search(body))
-    has_concern = bool(_VOTE_CONCERN.search(body))
-    matches = sum([has_recuse, has_reject, has_accept, has_concern])
-    if matches == 0:
-        return "unclear", 0.0
-    confidence = 1.0 if matches == 1 else 0.7
-    if has_recuse:
+    accept_n = len(_VOTE_ACCEPT.findall(body))
+    reject_n = len(_VOTE_REJECT.findall(body))
+    recuse_n = len(_VOTE_RECUSE.findall(body))
+    concern_n = len(_VOTE_CONCERN.findall(body))
+
+    if recuse_n > 0:
+        confidence = 1.0 if (accept_n + reject_n + concern_n) == 0 else 0.7
         return "recuse", confidence
-    if has_reject:
-        return "reject", confidence
-    if has_accept:
-        return "accept", confidence
-    return "concern", confidence
+
+    if accept_n > 0 and reject_n > 0:
+        if accept_n > reject_n:
+            return "accept", 0.7
+        if reject_n > accept_n:
+            return "reject", 0.7
+        return "unclear", 0.0  # tie
+
+    if accept_n > 0:
+        return "accept", 1.0 if concern_n == 0 else 0.7
+    if reject_n > 0:
+        return "reject", 1.0 if concern_n == 0 else 0.7
+
+    if concern_n > 0:
+        return "concern", 1.0
+
+    return "unclear", 0.0
 
 
 _PRONOUN_SHEPHERD = re.compile(r"^(?:myself|me|I)$", re.IGNORECASE)

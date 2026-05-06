@@ -1,0 +1,66 @@
+Fetching spreadsheet...
+  175 (PR, member, vote) labels
+Loading mbox cache...
+  60 cached mbox files
+  1849 messages parsed
+Building corpus...
+  141 aligned (label, body) pairs
+  34 unaligned (no message found for that member on that PR)
+
+Label distribution (after normalization):
+  accept      159
+  reject      10
+  recuse      5
+  concern     1
+  unclear     0
+
+Raw-label values dropped (top 20 by frequency, ≥2 occurrences):
+    4× 'B, A, C, D'
+
+==============================================================================
+Calibration corpus: 141 (PR, member) pairs with ground-truth labels.
+
+Confusion matrix (rows = true, cols = predicted):
+true\pred   accept    reject    recuse    concern   unclear   total
+-------------------------------------------------------------------
+accept      112       0         0         1         15        128
+reject      3         2         0         1         2         8
+recuse      1         0         2         0         1         4
+concern     0         0         0         1         0         1
+unclear     0         0         0         0         0         0
+
+Per-class precision / recall (excluding 'unclear' as a target class):
+  OK accept    P= 96.6%  R= 87.5%  (tp=112 fp=  4 fn= 16)
+     reject    P=100.0%  R= 25.0%  (tp=  2 fp=  0 fn=  6)
+     recuse    P=100.0%  R= 50.0%  (tp=  2 fp=  0 fn=  2)
+     concern   P= 33.3%  R=100.0%  (tp=  1 fp=  2 fn=  0)
+
+Top errors by (true → predicted):
+
+  accept → unclear  (15 cases)
+    #678 Adam Gundry: "Dear Committee,  Gergő Érdi proposes to amend his import shadowing proposal #652 to  clarify the behaviour of module re-exports:  https://github.com/ghc-proposals/ghc-proposals/pull/678  I'd like to nominate Erik de Castro Lopo as the shepherd, as he  shepherded the original proposal.  Please guide "
+    #609 Simon Marlow: "Looks to me like it would be a breaking change even when the extension is not enabled, because the grammar is not conditional on extensions. The usual trick of using keywords to enable extensions (because keywords can be conditionally enabled in the lexer) doesn't work in this case.  Cheers Simon  O"
+    #612 Eric Seidel: 'The change itself makes sense to me, non-accumulating semantics seem like a much better default.  I also think this is a case where users should be expected to read the Release Notes. Just highlight the change of default behavior at the top and move on.'
+    #631 Eric Seidel: "I don't feel strongly about this, but here's my vote  3a 4 that's it"
+
+  reject → accept  (3 cases)
+    #571 Eric Seidel: 'I agree with Chris and Simon M. I would probably support turning these warnings into errors as part of the next GHC20XX standard, but not as an isolated one-off change.'
+    #536 Simon Peyton Jones: "I'm content to accept this one.  Simon  On Mon, 6 Mar 2023 at 13:05, Vladislav Zavialov <vlad.z.4096(a)gmail.com> wrote:"
+    #536 Adam Gundry: 'Thanks for your comments Iavor, your input is appreciated.  The ongoing discussion on language extensions made me think about  proposal #536 again. With due respect to Richard, I still think we  should accept it, for the following reasons:    * We owe it to proposal authors to make decisions in a re'
+
+  reject → unclear  (2 cases)
+    #640 Adam Gundry: 'Dear Committee,  Vlad proposes to change the order of implicit quantification for type  variables occurring as type operators or in multiplicity annotations:  https://github.com/ghc-proposals/ghc-proposals/pull/640  https://github.com/int-index/ghc-proposals/blob/int-index/tyop-quantification-order/'
+    #641 Simon Marlow: 'What is the impact on Template Haskell? Is it a breaking API change?  On Wed, 27 Mar 2024 at 09:15, Simon Peyton Jones < simon.peytonjones(a)gmail.com> wrote:'
+
+  recuse → accept  (1 cases)
+    #624 Adam Gundry: "I haven't looked at this closely, but I'm happy to trust Arnaud and  Richard's judgment and accept, especially since LinearTypes is at a very  experimental stage.  Adam"
+
+  recuse → unclear  (1 cases)
+    #493 Simon Peyton Jones: "Eric, Joachim, Chris  You have not yet responded (I think) to Adam's recommendation.    RSVP!  https://docs.google.com/spreadsheets/d/1e6GdwHmAjeDEUhTvP-b18MDkpTfH3SMHhFu5F3nDIWc/edit?usp=sharing  Simon"
+
+  accept → concern  (1 cases)
+    #512 Adam Gundry: 'On 30/11/2022 16:22, Joachim Breitner wrote: > Am Mittwoch, dem 30.11.2022 um 14:08 +0300 schrieb Vladislav Zavialov: >> 4. The fourth reason is that an easy workaround is available. Just >> move declarations into a separate module with "NoFieldSelectors". I >> understand that it might be unsatisfac'
+
+  reject → concern  (1 cases)
+    #641 Simon Peyton Jones: "> > Do you worry about the implementation because of future maintenance costs? > Or because of the immediate cost of developing the feature?   Mostly the former.  It's just a bit more un-forced complexity.  As far as I can see, there aren't other objections to this design besides > the cost, right? "
+
