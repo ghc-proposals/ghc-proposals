@@ -164,7 +164,7 @@ def build_corpus(triples, messages):
         chosen = None
         for m in candidates:
             body = m["clean_body"] or m["body"]
-            pred, _ = sd.classify_vote(body)
+            pred = sd.classify_vote(body)
             if pred != "unclear":
                 chosen = body
                 break
@@ -181,7 +181,7 @@ CLASSES = ("accept", "reject", "recuse", "concern", "unclear")
 def confusion_matrix(corpus):
     matrix = {true: Counter() for true in CLASSES}
     for pr, member, true_label, body in corpus:
-        pred, _ = sd.classify_vote(body)
+        pred = sd.classify_vote(body)
         matrix[true_label][pred] += 1
     return matrix
 
@@ -216,7 +216,7 @@ def report(matrix, total):
 def show_errors(corpus, max_per_bucket=4):
     by_bucket = defaultdict(list)
     for pr, member, true_label, body in corpus:
-        pred, _ = sd.classify_vote(body)
+        pred = sd.classify_vote(body)
         if pred != true_label:
             by_bucket[(true_label, pred)].append((pr, member, body))
     print("Top errors by (true → predicted):")

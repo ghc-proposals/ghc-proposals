@@ -308,11 +308,7 @@ _VOTE_CONCERN = re.compile(
 
 
 def classify_vote(body):
-    """Classify a message body as accept | reject | recuse | concern | unclear.
-
-    Returns (vote, confidence). Confidence is 1.0 for a single-category match
-    or unanimous multi-match; 0.7 when accept and reject both match and one
-    dominates by count; 0.0 for unclear.
+    """Classify a message body as one of accept | reject | recuse | concern | unclear.
 
     Decision rule:
       1. RECUSE keyword wins outright (strongest precision in the corpus).
@@ -321,32 +317,23 @@ def classify_vote(body):
       3. CONCERN keyword present without accept/reject → CONCERN.
     """
     if not body:
-        return "unclear", 0.0
+        return "unclear"
     accept_n = len(_VOTE_ACCEPT.findall(body))
     reject_n = len(_VOTE_REJECT.findall(body))
     recuse_n = len(_VOTE_RECUSE.findall(body))
     concern_n = len(_VOTE_CONCERN.findall(body))
 
     if recuse_n > 0:
-        confidence = 1.0 if (accept_n + reject_n + concern_n) == 0 else 0.7
-        return "recuse", confidence
-
-    if accept_n > 0 and reject_n > 0:
-        if accept_n > reject_n:
-            return "accept", 0.7
-        if reject_n > accept_n:
-            return "reject", 0.7
-        return "unclear", 0.0  # tie
-
-    if accept_n > 0:
-        return "accept", 1.0 if concern_n == 0 else 0.7
-    if reject_n > 0:
-        return "reject", 1.0 if concern_n == 0 else 0.7
-
+        return "recuse"
+    if accept_n > reject_n:
+        return "accept"
+    if reject_n > accept_n:
+        return "reject"
+    if accept_n == reject_n and accept_n > 0:
+        return "unclear"  # genuine tie
     if concern_n > 0:
-        return "concern", 1.0
-
-    return "unclear", 0.0
+        return "concern"
+    return "unclear"
 
 
 _PRONOUN_SHEPHERD = re.compile(r"^(?:myself|me|I)$", re.IGNORECASE)
@@ -355,35 +342,33 @@ _PRONOUN_SHEPHERD = re.compile(r"^(?:myself|me|I)$", re.IGNORECASE)
 def extract_shepherd_from_body(body, sender_name=None):
     """Extract a shepherd name from a message body.
 
-    Returns (canonical_name, raw_match) where canonical_name is None if the
-    captured text didn't validate against the committee member list.
+    Returns (canonical_name, raw_match) where canonical_name is None if no
+    captured text validated against the committee member list. raw_match
+    is the first plausible name we found (validated or not), useful for
+    error reporting.
 
-    If `sender_name` is provided, pronouns like "myself"/"me"/"I" are
-    resolved to the sender (e.g., "I'd like to nominate myself as shepherd").
+    If `sender_name` is provided, pronouns ("myself"/"me"/"I") are
+    resolved to the sender (e.g., "I'd like to nominate myself").
     """
     if not body:
         return None, None
-    # Strip emphasis markers so they don't fragment regex matches
+    # Strip emphasis markers so they don't fragment regex matches.
     text = re.sub(r"[*_~`]", " ", body)
     text = re.sub(r"\s+", " ", text)
 
-    def resolve(raw):
-        # Pronoun → sender
-        if sender_name and _PRONOUN_SHEPHERD.match(raw):
-            return match_committee_member(sender_name)
-        return match_committee_member(raw)
-
+    first_raw = None
     for pat in SHEPHERD_BODY_PATTERNS:
         for m in pat.finditer(text):
             raw = normalize_candidate(m.group(1))
-            canonical = resolve(raw)
+            if first_raw is None:
+                first_raw = raw
+            if sender_name and _PRONOUN_SHEPHERD.match(raw):
+                canonical = match_committee_member(sender_name)
+            else:
+                canonical = match_committee_member(raw)
             if canonical:
                 return canonical, raw
-    for pat in SHEPHERD_BODY_PATTERNS:
-        m = pat.search(text)
-        if m:
-            return None, normalize_candidate(m.group(1))
-    return None, None
+    return None, first_raw
 
 
 # --- mbox download / cache --------------------------------------------------
@@ -416,31 +401,35 @@ def _mbox_url(year, month):
     )
 
 
-def download_one_month(year, month, force=False):
-    """Download mbox for (year, month) into cache. Returns local mbox path or None.
+def download_one_month(year, month):
+    """Download mbox for (year, month) into the cache.
+
+    Returns (mbox_path, downloaded) where mbox_path is None if the month has
+    no archive (404), and `downloaded` is True iff a network request was
+    made (callers can use this to throttle).
 
     Past months are cached forever (immutable archive). The current month is
     re-downloaded each call to pick up recent traffic.
     """
     cache = cache_dir()
     cache.mkdir(parents=True, exist_ok=True)
-    gz_path = cache / f"{LIST_NAME}-{year:04d}-{month:02d}.mbox.gz"
-    mbox_path = cache / f"{LIST_NAME}-{year:04d}-{month:02d}.mbox"
+    base = f"{LIST_NAME}-{year:04d}-{month:02d}"
+    gz_path = cache / f"{base}.mbox.gz"
+    mbox_path = cache / f"{base}.mbox"
 
-    now = datetime.now()
-    is_current = (year, month) == (now.year, now.month)
-    needs_download = force or is_current or not gz_path.exists()
+    is_current = (year, month) == (datetime.now().year, datetime.now().month)
+    needs_download = is_current or not gz_path.exists()
 
     if needs_download:
-        url = _mbox_url(year, month)
-        req = urllib.request.Request(url, headers={"User-Agent": "ghc-proposals-dashboard"})
+        req = urllib.request.Request(
+            _mbox_url(year, month), headers={"User-Agent": "ghc-proposals-dashboard"}
+        )
         try:
             with urllib.request.urlopen(req) as resp:
                 gz_path.write_bytes(resp.read())
         except urllib.error.HTTPError as e:
             if e.code == 404:
-                # No traffic for this month
-                return None
+                return None, True  # tried, but no archive for this month
             raise
 
     if needs_download or not mbox_path.exists():
@@ -448,28 +437,29 @@ def download_one_month(year, month, force=False):
         with gzip.open(gz_path, "rb") as f_in, open(mbox_path, "wb") as f_out:
             shutil.copyfileobj(f_in, f_out)
 
-    return mbox_path
+    return mbox_path, needs_download
 
 
-def download_archive(months):
-    """Download up to `months` months back. Returns list of local mbox paths."""
+def download_archive(months, skip=0):
+    """Download mbox files for months [skip, skip+months) back. Returns paths."""
     paths = []
-    for y, m in iter_months_back(months):
+    for y, m in itertools.islice(iter_months_back(skip + months), skip, None):
         try:
-            p = download_one_month(y, m)
+            p, downloaded = download_one_month(y, m)
         except Exception as e:
             print(f"  Warning: failed to download {y}/{m:02d}: {e}", file=sys.stderr)
             continue
         if p:
             paths.append(p)
-        time.sleep(0.2)
+        if downloaded:
+            time.sleep(0.2)  # only throttle when we actually hit the network
     return paths
 
 
 # --- mbox parsing -----------------------------------------------------------
 
 
-def _clean_subject(subject):
+def clean_subject(subject):
     """Strip mailing-list prefix and Re: chains from a subject."""
     s = (subject or "").replace("\n", " ").replace("\r", " ").strip()
     s = re.sub(r"\[ghc-steering-committee\]\s*", "", s, flags=re.IGNORECASE)
@@ -550,7 +540,7 @@ def _extract_plain_body(eml):
 def parse_message(eml):
     """Convert an email.EmailMessage to a Message dict, or None to skip."""
     name, addr = email.utils.parseaddr(eml.get("From", "") or "")
-    subject = _clean_subject(eml.get("Subject", ""))
+    subject = clean_subject(eml.get("Subject", ""))
     date_raw = eml.get("Date", "")
     try:
         dt = email.utils.parsedate_to_datetime(date_raw)
@@ -576,6 +566,12 @@ def parse_message(eml):
     }
 
 
+def _message_sort_key(msg):
+    """Sort key tolerant of mixed tz-aware / tz-naive Date headers."""
+    dt = msg["datetime"]
+    return dt if dt.tzinfo is not None else dt.replace(tzinfo=timezone.utc)
+
+
 def parse_archive(paths):
     """Parse a list of mbox file paths into a flat list of Message dicts (sorted by date)."""
     messages = []
@@ -593,13 +589,7 @@ def parse_archive(paths):
                     messages.append(m)
             except Exception as e:
                 print(f"  Warning: failed to parse a message in {path.name}: {e}", file=sys.stderr)
-    # Aware/naive datetime mix can occur; normalise for sorting
-    def _sort_key(m):
-        dt = m["datetime"]
-        if dt.tzinfo is None:
-            return dt.replace(tzinfo=timezone.utc)
-        return dt
-    messages.sort(key=_sort_key)
+    messages.sort(key=_message_sort_key)
     return messages
 
 
@@ -612,22 +602,30 @@ def enrich_with_ml(proposals, messages):
     """
     by_msgid = {m["message_id"]: m for m in messages if m["message_id"]}
 
-    # PR-tagging: a message is "about" PR #N if its (cleaned) subject mentions #N,
-    # OR its parent (via In-Reply-To/References) is about #N. This catches replies
-    # whose subject was edited to drop the PR reference.
+    # PR-tagging: a message is "about" PR #N if its (cleaned) subject mentions
+    # #N, OR its parent (via In-Reply-To / References) is about #N. Iterative
+    # walk with a visited set handles malformed self-referencing chains.
     pr_messages = {}  # pr_number -> list of messages
-    shepherd_assignments = {}  # pr_number -> (datetime, body) of latest assignment thread root
+    shepherd_assignments = {}  # pr_number -> (datetime, body, from_name) of latest root
 
     def pr_refs_for(msg):
         if msg["pr_refs"]:
             return msg["pr_refs"]
-        parent = by_msgid.get(msg["in_reply_to"])
-        if parent:
-            return pr_refs_for(parent)
-        for ref in msg["references"]:
-            parent = by_msgid.get(ref)
-            if parent and parent["pr_refs"]:
+        seen = set()
+        cur = msg
+        while cur["message_id"] not in seen:
+            seen.add(cur["message_id"])
+            parent = by_msgid.get(cur["in_reply_to"])
+            if parent is None:
+                # Fall back to any References ancestor that knows its PRs
+                for ref in cur["references"]:
+                    ancestor = by_msgid.get(ref)
+                    if ancestor and ancestor["pr_refs"]:
+                        return ancestor["pr_refs"]
+                return []
+            if parent["pr_refs"]:
                 return parent["pr_refs"]
+            cur = parent
         return []
 
     for msg in messages:
@@ -669,7 +667,7 @@ def enrich_with_ml(proposals, messages):
             if member in votes_for_pr:
                 continue  # first vote wins
             body = msg["clean_body"] or msg["body"]
-            vote, conf = classify_vote(body)
+            vote = classify_vote(body)
             if vote != "unclear":
                 votes_for_pr[member] = vote
         if votes_for_pr:
@@ -966,69 +964,48 @@ def main():
             "Note: --no-ml is set; CI validation (shepherd names, missing pending shepherds) is not active.",
             file=sys.stderr,
         )
-    if not args.no_ml:
+    else:
         print("Downloading mailing list archive...", file=sys.stderr)
         months = args.ml_months
         paths = download_archive(months)
-        print(f"Have {len(paths)} cached mbox month(s). Parsing...", file=sys.stderr)
         messages = parse_archive(paths)
-        print(f"Parsed {len(messages)} messages.", file=sys.stderr)
+        print(f"Parsed {len(messages)} messages from {len(paths)} month(s).", file=sys.stderr)
         unverified = enrich_with_ml(proposals, messages)
 
         # Auto-extend window if pending proposals still have no shepherd.
         PENDING = {"Pending Shepherd", "Pending Committee"}
-        max_months = 60
-        while months < max_months:
-            missing_now = [n for n, p in proposals.items() if p["status"] in PENDING and not p["shepherd"].lstrip("?")]
-            if not missing_now:
-                break
-            extra = min(12, max_months - months)
-            print(f"\n  Extending mbox archive by {extra} more months to find missing shepherds...", file=sys.stderr)
-            new_paths = []
-            for y, m in itertools.islice(iter_months_back(months + extra), months, None):
-                try:
-                    p = download_one_month(y, m)
-                except Exception as e:
-                    print(f"  Warning: failed to download {y}/{m:02d}: {e}", file=sys.stderr)
-                    continue
-                if p:
-                    new_paths.append(p)
-                time.sleep(0.2)
+        MAX_MONTHS = 60
+        while months < MAX_MONTHS and any(
+            p["status"] in PENDING and not p["shepherd"].lstrip("?")
+            for p in proposals.values()
+        ):
+            extra = min(12, MAX_MONTHS - months)
+            print(f"  Extending mbox archive by {extra} more months...", file=sys.stderr)
+            new_paths = download_archive(extra, skip=months)
             paths.extend(new_paths)
+            messages.extend(parse_archive(new_paths))
+            messages.sort(key=_message_sort_key)
             months += extra
-            messages = parse_archive(paths)
             unverified = enrich_with_ml(proposals, messages)
 
-        # Recompute final missing-pending after all extensions.
         missing_pending = [
             (n, p["status"]) for n, p in proposals.items()
             if p["status"] in PENDING and not p["shepherd"]
         ]
 
-    if args.format == "ascii":
-        output = format_ascii(proposals)
-    elif args.format == "csv":
-        output = format_csv(proposals)
-    elif args.format == "html":
-        output = format_html(proposals)
+    formatters = {"ascii": format_ascii, "csv": format_csv, "html": format_html}
+    output = formatters[args.format](proposals)
 
-    if args.output:
-        with open(args.output, "w") as f:
+    output_path = args.output or ("proposals.html" if args.format == "html" else None)
+    if output_path:
+        with open(output_path, "w") as f:
             f.write(output)
-        print(f"Written to {args.output}", file=sys.stderr)
+        print(f"Written to {output_path}", file=sys.stderr)
     else:
-        if args.format == "html" and not args.output:
-            default_out = "proposals.html"
-            with open(default_out, "w") as f:
-                f.write(output)
-            print(f"Written to {default_out}", file=sys.stderr)
-        else:
-            sys.stdout.write(output)
+        sys.stdout.write(output)
 
-    # CI checks: report unverified shepherd names and pending-without-shepherd
-    # as errors so this script can be run in a pipeline to catch:
-    #   1. New committee members not yet added to COMMITTEE_MEMBERS
-    #   2. Proposals stuck in pending states without a shepherd assignment
+    # CI checks: catch new committee members missing from COMMITTEE_MEMBERS,
+    # and proposals stuck in pending without a detected shepherd.
     exit_code = 0
     if unverified:
         print("\nERROR: shepherd-name validation failed for these proposals:", file=sys.stderr)

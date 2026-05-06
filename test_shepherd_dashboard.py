@@ -199,63 +199,63 @@ class TestIterMonthsBack(unittest.TestCase):
 class TestClassifyVote(unittest.TestCase):
 
     def test_accept_basic(self):
-        self.assertEqual(sd.classify_vote("I accept this proposal.")[0], "accept")
-        self.assertEqual(sd.classify_vote("LGTM")[0], "accept")
-        self.assertEqual(sd.classify_vote("+1 from me")[0], "accept")
-        self.assertEqual(sd.classify_vote(" +1")[0], "accept")  # the boundary-bug regression
+        self.assertEqual(sd.classify_vote("I accept this proposal."), "accept")
+        self.assertEqual(sd.classify_vote("LGTM"), "accept")
+        self.assertEqual(sd.classify_vote("+1 from me"), "accept")
+        self.assertEqual(sd.classify_vote(" +1"), "accept")  # the boundary-bug regression
 
     def test_accept_inflections(self):
-        self.assertEqual(sd.classify_vote("I'm accepting this.")[0], "accept")
-        self.assertEqual(sd.classify_vote("I have accepted it.")[0], "accept")
-        self.assertEqual(sd.classify_vote("This is acceptable.")[0], "accept")
-        self.assertEqual(sd.classify_vote("approved.")[0], "accept")
-        self.assertEqual(sd.classify_vote("agreed.")[0], "accept")
+        self.assertEqual(sd.classify_vote("I'm accepting this."), "accept")
+        self.assertEqual(sd.classify_vote("I have accepted it."), "accept")
+        self.assertEqual(sd.classify_vote("This is acceptable."), "accept")
+        self.assertEqual(sd.classify_vote("approved."), "accept")
+        self.assertEqual(sd.classify_vote("agreed."), "accept")
 
     def test_accept_phrases(self):
-        self.assertEqual(sd.classify_vote("I support this change.")[0], "accept")
-        self.assertEqual(sd.classify_vote("I will support it.")[0], "accept")
-        self.assertEqual(sd.classify_vote("I too support this.")[0], "accept")
-        self.assertEqual(sd.classify_vote("I'm in favor.")[0], "accept")
-        self.assertEqual(sd.classify_vote("In support.")[0], "accept")
-        self.assertEqual(sd.classify_vote("I have no objections.")[0], "accept")
-        self.assertEqual(sd.classify_vote("Sounds good to me.")[0], "accept")
-        self.assertEqual(sd.classify_vote("I'm fine with this.")[0], "accept")
-        self.assertEqual(sd.classify_vote("I'm happy to see this.")[0], "accept")
+        self.assertEqual(sd.classify_vote("I support this change."), "accept")
+        self.assertEqual(sd.classify_vote("I will support it."), "accept")
+        self.assertEqual(sd.classify_vote("I too support this."), "accept")
+        self.assertEqual(sd.classify_vote("I'm in favor."), "accept")
+        self.assertEqual(sd.classify_vote("In support."), "accept")
+        self.assertEqual(sd.classify_vote("I have no objections."), "accept")
+        self.assertEqual(sd.classify_vote("Sounds good to me."), "accept")
+        self.assertEqual(sd.classify_vote("I'm fine with this."), "accept")
+        self.assertEqual(sd.classify_vote("I'm happy to see this."), "accept")
 
     def test_reject_basic(self):
-        self.assertEqual(sd.classify_vote("I reject this.")[0], "reject")
-        self.assertEqual(sd.classify_vote("Vote against.")[0], "reject")
-        self.assertEqual(sd.classify_vote("-1 from me")[0], "reject")
-        self.assertEqual(sd.classify_vote("I oppose this.")[0], "reject")
+        self.assertEqual(sd.classify_vote("I reject this."), "reject")
+        self.assertEqual(sd.classify_vote("Vote against."), "reject")
+        self.assertEqual(sd.classify_vote("-1 from me"), "reject")
+        self.assertEqual(sd.classify_vote("I oppose this."), "reject")
 
     def test_recuse(self):
-        self.assertEqual(sd.classify_vote("I recuse myself.")[0], "recuse")
-        self.assertEqual(sd.classify_vote("I'll abstain on this.")[0], "recuse")
+        self.assertEqual(sd.classify_vote("I recuse myself."), "recuse")
+        self.assertEqual(sd.classify_vote("I'll abstain on this."), "recuse")
 
     def test_concern(self):
-        self.assertEqual(sd.classify_vote("I have concerns.")[0], "concern")
-        self.assertEqual(sd.classify_vote("I'm concerned about X.")[0], "concern")
-        self.assertEqual(sd.classify_vote("I have reservations.")[0], "concern")
+        self.assertEqual(sd.classify_vote("I have concerns."), "concern")
+        self.assertEqual(sd.classify_vote("I'm concerned about X."), "concern")
+        self.assertEqual(sd.classify_vote("I have reservations."), "concern")
 
     def test_unclear(self):
-        self.assertEqual(sd.classify_vote("Just asking a question here.")[0], "unclear")
-        self.assertEqual(sd.classify_vote("")[0], "unclear")
-        self.assertEqual(sd.classify_vote(None)[0], "unclear")
+        self.assertEqual(sd.classify_vote("Just asking a question here."), "unclear")
+        self.assertEqual(sd.classify_vote(""), "unclear")
+        self.assertEqual(sd.classify_vote(None), "unclear")
 
     def test_count_resolution(self):
         # accept appears twice, reject once → accept wins by count
         body = "I recommend we accept this. Otherwise the test would be rejected. Accept!"
-        self.assertEqual(sd.classify_vote(body)[0], "accept")
+        self.assertEqual(sd.classify_vote(body), "accept")
 
     def test_recuse_priority(self):
         # recuse should win even if other keywords appear
         body = "I'll recuse on this since I am the author. I'd otherwise accept."
-        self.assertEqual(sd.classify_vote(body)[0], "recuse")
+        self.assertEqual(sd.classify_vote(body), "recuse")
 
     def test_tied_accept_reject_unclear(self):
         # Equal accept/reject counts → unclear
         body = "I accept the premise but reject the implementation."
-        self.assertEqual(sd.classify_vote(body)[0], "unclear")
+        self.assertEqual(sd.classify_vote(body), "unclear")
 
 
 class TestFormatVoteSummary(unittest.TestCase):
@@ -276,19 +276,19 @@ class TestCleanSubject(unittest.TestCase):
 
     def test_strips_list_prefix(self):
         self.assertEqual(
-            sd._clean_subject("[ghc-steering-committee] Re: Foo bar"),
+            sd.clean_subject("[ghc-steering-committee] Re: Foo bar"),
             "Foo bar",
         )
 
     def test_strips_re_chain(self):
         self.assertEqual(
-            sd._clean_subject("Re: Re: Re: Foo"),
+            sd.clean_subject("Re: Re: Re: Foo"),
             "Foo",
         )
 
     def test_collapses_newlines(self):
         self.assertEqual(
-            sd._clean_subject("Long subject\n with continuation"),
+            sd.clean_subject("Long subject\n with continuation"),
             "Long subject with continuation",
         )
 
