@@ -257,6 +257,76 @@ def match_committee_member(candidate):
     return None
 
 
+# ---------------------------------------------------------------------------
+# Vote classification (minimal: inflection patterns + first-vote-per-member)
+# ---------------------------------------------------------------------------
+# FUTURE IMPROVEMENTS (deferred unless the calibration loop demonstrates need):
+#   - Negation handling within sentence scope ("I don't accept" → reject)
+#   - Sentence segmentation
+#   - First-person anchoring for ambiguous verbs (`\bI\s+support\b`)
+#   - Subject-line `recommendation: X` patterns for shepherd recs
+#   - Naive Bayes trained on the calibration corpus
+
+_VOTE_ACCEPT = re.compile(
+    r"\b(?:"
+    r"accept(?:ed|ing|s|able)?|"
+    r"approv(?:e|ed|al|es)|"
+    r"in\s+favou?r|"
+    r"no\s+objection(?:s)?|"
+    r"LGTM|SGTM|WFM|"
+    r"\+1"
+    r")\b",
+    re.IGNORECASE,
+)
+_VOTE_REJECT = re.compile(
+    r"\b(?:"
+    r"reject(?:ed|ing|s)?|"
+    r"oppose(?:d|s)?|"
+    r"vote\s+(?:against|no)|"
+    r"nack|"
+    r"-1"
+    r")\b",
+    re.IGNORECASE,
+)
+_VOTE_RECUSE = re.compile(
+    r"\b(?:recus(?:e|ed|ing)|abstain(?:ed|ing|s)?)\b",
+    re.IGNORECASE,
+)
+_VOTE_CONCERN = re.compile(
+    r"\b(?:concerns?|worried|hesitant|unconvinced|reservation(?:s)?)\b",
+    re.IGNORECASE,
+)
+
+
+def classify_vote(body):
+    """Classify a message body as accept | reject | recuse | concern | unclear.
+
+    Returns (vote, confidence). Confidence is 1.0 for a single-category match,
+    0.7 when multiple categories matched (priority-resolved), 0.0 for unclear.
+
+    Priority order when multiple categories match: RECUSE > REJECT > ACCEPT >
+    CONCERN. Recuse is unambiguous; reject is more deliberate than accept;
+    concern is the weakest signal.
+    """
+    if not body:
+        return "unclear", 0.0
+    has_recuse = bool(_VOTE_RECUSE.search(body))
+    has_reject = bool(_VOTE_REJECT.search(body))
+    has_accept = bool(_VOTE_ACCEPT.search(body))
+    has_concern = bool(_VOTE_CONCERN.search(body))
+    matches = sum([has_recuse, has_reject, has_accept, has_concern])
+    if matches == 0:
+        return "unclear", 0.0
+    confidence = 1.0 if matches == 1 else 0.7
+    if has_recuse:
+        return "recuse", confidence
+    if has_reject:
+        return "reject", confidence
+    if has_accept:
+        return "accept", confidence
+    return "concern", confidence
+
+
 _PRONOUN_SHEPHERD = re.compile(r"^(?:myself|me|I)$", re.IGNORECASE)
 
 
