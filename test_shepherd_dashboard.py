@@ -196,6 +196,82 @@ class TestIterMonthsBack(unittest.TestCase):
             self.assertGreater(prev[0] * 12 + prev[1], cur[0] * 12 + cur[1])
 
 
+class TestClassifyVote(unittest.TestCase):
+
+    def test_accept_basic(self):
+        self.assertEqual(sd.classify_vote("I accept this proposal.")[0], "accept")
+        self.assertEqual(sd.classify_vote("LGTM")[0], "accept")
+        self.assertEqual(sd.classify_vote("+1 from me")[0], "accept")
+        self.assertEqual(sd.classify_vote(" +1")[0], "accept")  # the boundary-bug regression
+
+    def test_accept_inflections(self):
+        self.assertEqual(sd.classify_vote("I'm accepting this.")[0], "accept")
+        self.assertEqual(sd.classify_vote("I have accepted it.")[0], "accept")
+        self.assertEqual(sd.classify_vote("This is acceptable.")[0], "accept")
+        self.assertEqual(sd.classify_vote("approved.")[0], "accept")
+        self.assertEqual(sd.classify_vote("agreed.")[0], "accept")
+
+    def test_accept_phrases(self):
+        self.assertEqual(sd.classify_vote("I support this change.")[0], "accept")
+        self.assertEqual(sd.classify_vote("I will support it.")[0], "accept")
+        self.assertEqual(sd.classify_vote("I too support this.")[0], "accept")
+        self.assertEqual(sd.classify_vote("I'm in favor.")[0], "accept")
+        self.assertEqual(sd.classify_vote("In support.")[0], "accept")
+        self.assertEqual(sd.classify_vote("I have no objections.")[0], "accept")
+        self.assertEqual(sd.classify_vote("Sounds good to me.")[0], "accept")
+        self.assertEqual(sd.classify_vote("I'm fine with this.")[0], "accept")
+        self.assertEqual(sd.classify_vote("I'm happy to see this.")[0], "accept")
+
+    def test_reject_basic(self):
+        self.assertEqual(sd.classify_vote("I reject this.")[0], "reject")
+        self.assertEqual(sd.classify_vote("Vote against.")[0], "reject")
+        self.assertEqual(sd.classify_vote("-1 from me")[0], "reject")
+        self.assertEqual(sd.classify_vote("I oppose this.")[0], "reject")
+
+    def test_recuse(self):
+        self.assertEqual(sd.classify_vote("I recuse myself.")[0], "recuse")
+        self.assertEqual(sd.classify_vote("I'll abstain on this.")[0], "recuse")
+
+    def test_concern(self):
+        self.assertEqual(sd.classify_vote("I have concerns.")[0], "concern")
+        self.assertEqual(sd.classify_vote("I'm concerned about X.")[0], "concern")
+        self.assertEqual(sd.classify_vote("I have reservations.")[0], "concern")
+
+    def test_unclear(self):
+        self.assertEqual(sd.classify_vote("Just asking a question here.")[0], "unclear")
+        self.assertEqual(sd.classify_vote("")[0], "unclear")
+        self.assertEqual(sd.classify_vote(None)[0], "unclear")
+
+    def test_count_resolution(self):
+        # accept appears twice, reject once → accept wins by count
+        body = "I recommend we accept this. Otherwise the test would be rejected. Accept!"
+        self.assertEqual(sd.classify_vote(body)[0], "accept")
+
+    def test_recuse_priority(self):
+        # recuse should win even if other keywords appear
+        body = "I'll recuse on this since I am the author. I'd otherwise accept."
+        self.assertEqual(sd.classify_vote(body)[0], "recuse")
+
+    def test_tied_accept_reject_unclear(self):
+        # Equal accept/reject counts → unclear
+        body = "I accept the premise but reject the implementation."
+        self.assertEqual(sd.classify_vote(body)[0], "unclear")
+
+
+class TestFormatVoteSummary(unittest.TestCase):
+
+    def test_empty(self):
+        self.assertEqual(sd.format_vote_summary({}), "")
+
+    def test_all_kinds(self):
+        votes = {"A": "accept", "B": "accept", "C": "reject", "D": "concern", "E": "recuse"}
+        self.assertEqual(sd.format_vote_summary(votes), "2A 1R 1c 1x")
+
+    def test_single_kind(self):
+        votes = {"A": "accept", "B": "accept", "C": "accept"}
+        self.assertEqual(sd.format_vote_summary(votes), "3A")
+
+
 class TestCleanSubject(unittest.TestCase):
 
     def test_strips_list_prefix(self):

@@ -151,6 +151,8 @@ def parse_github_item(item):
         "ml_threads": 0,
         "ml_last_activity": "",
         "ml_participants": 0,
+        "votes": {},
+        "votes_summary": "",
     }
 
 
@@ -655,6 +657,24 @@ def enrich_with_ml(proposals, messages):
         elif raw:
             unverified[pr_num] = raw
 
+    # Per-PR vote aggregation: first non-unclear classification per member wins.
+    pr_votes = {}  # pr_num -> {canonical_member: vote}
+    for pr_num, msgs in pr_messages.items():
+        votes_for_pr = {}
+        # Walk messages in chronological order (already sorted by parse_archive)
+        for msg in msgs:
+            member = match_committee_member(msg["from_name"])
+            if not member:
+                continue
+            if member in votes_for_pr:
+                continue  # first vote wins
+            body = msg["clean_body"] or msg["body"]
+            vote, conf = classify_vote(body)
+            if vote != "unclear":
+                votes_for_pr[member] = vote
+        if votes_for_pr:
+            pr_votes[pr_num] = votes_for_pr
+
     for num, prop in proposals.items():
         if num in shepherds:
             prop["shepherd"] = shepherds[num]
@@ -666,8 +686,34 @@ def enrich_with_ml(proposals, messages):
             prop["ml_last_activity"] = max(m["date"] for m in msgs)
             unique_senders = {m["from_email"] for m in msgs if m["from_email"]}
             prop["ml_participants"] = len(unique_senders)
+        prop["votes"] = pr_votes.get(num, {})
+        prop["votes_summary"] = format_vote_summary(prop["votes"])
 
     return unverified
+
+
+def format_vote_summary(votes):
+    """Compact summary like '5A 1R 1c 2x' for ASCII / CSV output.
+
+    Codes:  A = accept, R = reject, c = concern, x = recuse.
+    Empty string when no votes.
+    """
+    if not votes:
+        return ""
+    counts = {"accept": 0, "reject": 0, "concern": 0, "recuse": 0}
+    for v in votes.values():
+        if v in counts:
+            counts[v] += 1
+    parts = []
+    if counts["accept"]:
+        parts.append(f"{counts['accept']}A")
+    if counts["reject"]:
+        parts.append(f"{counts['reject']}R")
+    if counts["concern"]:
+        parts.append(f"{counts['concern']}c")
+    if counts["recuse"]:
+        parts.append(f"{counts['recuse']}x")
+    return " ".join(parts)
 
 
 # ---------------------------------------------------------------------------
@@ -685,6 +731,7 @@ COLUMNS = [
     ("ML#", "ml_threads", 3),
     ("ML Last", "ml_last_activity", 10),
     ("Ppl", "ml_participants", 3),
+    ("Votes", "votes_summary", 12),
 ]
 
 
@@ -751,11 +798,11 @@ def format_ascii(proposals):
 
 
 def format_csv(proposals):
-    """Format proposals as CSV."""
+    """Format proposals as CSV (includes a Votes_Detail column for per-member breakdown)."""
     rows = sort_proposals(proposals)
     buf = io.StringIO()
     writer = csv.writer(buf)
-    writer.writerow([c[0] for c in COLUMNS] + ["URL"])
+    writer.writerow([c[0] for c in COLUMNS] + ["Votes_Detail", "URL"])
     for row in rows:
         cells = []
         for _, key, _ in COLUMNS:
@@ -765,6 +812,8 @@ def format_csv(proposals):
                 cells.append(display_title(row))
             else:
                 cells.append(str(row.get(key, "")))
+        votes = row.get("votes", {}) or {}
+        cells.append(", ".join(f"{m}={v}" for m, v in sorted(votes.items())))
         cells.append(row.get("gh_url", ""))
         writer.writerow(cells)
     return buf.getvalue()
@@ -787,6 +836,13 @@ def format_html(proposals):
                 cells.append(f'<td><a href="{esc(row.get("gh_url", ""))}" target="_blank">#{row["number"]}</a></td>')
             elif key == "title":
                 cells.append(f"<td>{esc(display_title(row))}</td>")
+            elif key == "votes_summary":
+                votes = row.get("votes", {}) or {}
+                if votes:
+                    detail = "\n".join(f"{m}: {v}" for m, v in sorted(votes.items()))
+                    cells.append(f'<td title="{esc(detail)}">{esc(row.get(key, ""))}</td>')
+                else:
+                    cells.append(f"<td>{esc(row.get(key, ''))}</td>")
             else:
                 cells.append(f"<td>{esc(row.get(key, ''))}</td>")
         status_attr = esc(row.get("status", ""))
