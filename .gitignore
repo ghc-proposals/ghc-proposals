@@ -2,5 +2,4 @@ _build
 _venv
 __pycache__/
 *.pyc
-proposals.html
 dashboard.html
