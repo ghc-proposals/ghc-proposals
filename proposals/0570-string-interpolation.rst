@@ -813,6 +813,38 @@ And gain access to safe string interpolation with HTML escaping by default:
   Html.s"<h1>${title}</h1>${raw body}"
     == Html "<h1>Why is 1 &gt; 0?</h1><p>Hello world</p>"
 
+Custom interpolator: ShowS
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+String interpolation could also make it easier to implement `shows`, in a module potentially provided by `base`:
+
+::
+
+  module Data.ShowS.Interpolate (P (..), interpolateString) where
+
+  interpolateString ::
+    (  (forall a. Show a => a -> ShowS)
+      -> (String -> ShowS)
+      -> (ShowS -> ShowS -> ShowS)
+      -> ShowS
+      -> ShowS
+    )
+    -> ShowS
+  interpolateString f = f shows showString (.) id
+
+  data P a = P !Int !a
+  instance Show a => Show (P a) where
+    showsPrec _ (P p a) = showsPrec p a
+
+Users could then do
+
+::
+
+  instance Show a => Show (MyTree a) where
+    showsPrec d (MyTree l v r) =
+      showParen (d > 10) $
+        ShowS.s"MyTree ${ShowS.P 11 l} ${v} ${ShowS.P 11 r}"
+
 Custom interpolatable type: BigDecimal
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
