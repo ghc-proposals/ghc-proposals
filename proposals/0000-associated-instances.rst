@@ -380,51 +380,54 @@ To support version Lib(N-1), Lib(N),and Lib(N+1) simultaneously, just do nothing
 2. Version Lib(N+3), we deprecate the associated instance.
    To maintain compatibility for 3 versions, users can use ``hiding instance`` to hide the associated instance, and provide their own instance.
 3. When people have appropriatly migrated, remove the associated instance.
-
+4. Once the associated instance is removed long enough, users can remove the ``hiding instance`` declaration.
 
 - **Before this proposal**: 
-  Splitting a method into its own class would break code, 
-  All existing instances had to be updated.
-  Before the instance was added,
-  code couldn't prepare for the new method location, CPP was necessary.
-- **After this proposal**: Adding a new superclass to a class only requires adding a new associated 
-  instance. Existing code continues to work because the associated instance provides a default implementation.
-  After 2 versions, the associated instance can be deprecated and eventually removed.
+Splitting a method into its own class would break code, 
+All existing instances had to be updated.
+Before the instance was added,
+code couldn't prepare for the new method location, CPP was necessary.
+
+- **After this proposal**: 
+
+Adding a new superclass to a class only requires adding a new associated 
+instance. Existing code continues to work because the associated instance provides a default implementation.
+After a few versions, the associated instance can be deprecated and eventually removed.
 
 **Interactions with Existing Language Features:**
 
 1. **Constraint solving:**
-   Associated instances are solved in the renamer, they don't affect the constraint solver.
+Associated instances are solved in the renamer, they don't affect the constraint solver.
 
 2. **Instance Overlap:**
-   Associated instances follow the same overlap rules as normal instances. If multiple 
-   associated instances could match, the compiler reports an error unless one is clearly more 
-   specific. The compiler also suggests using ``hiding instance`` to resolve ambiguity.
-   An {-# OVERLAPs/Overlapping/Incoherent/Overlappable #-} pragma on a ``Parent class`` also applies to all of its 
-   ``Implicit Associated Instances``. 
-   ``Explicit Associated Instances`` require have their own pragmas.
+Associated instances follow the same overlap rules as normal instances. If multiple 
+associated instances could match, the compiler reports an error unless one is clearly more 
+specific. The compiler also suggests using ``hiding instance`` to resolve ambiguity.
+An {-# OVERLAPs/Overlapping/Incoherent/Overlappable #-} pragma on a ``Parent class`` also applies to all of its 
+``Implicit Associated Instances``. 
+``Explicit Associated Instances`` require have their own pragmas.
 
 3. **Imports of associated class methods:**
-   Something like this is legal:
-   ::
-    
-    import Data.Functor.Hierarchy (Monad((>>=)))
-  
-  This allows for users to ``import Data.Functor.Hierarchy (Monad((>>=)))`` even though it's been moved to the 
-  ``Bind`` class. If the ``Bind`` associated instance was deprecated, then users would get a warning on that import. 
+Something like this is legal:
+::
+ 
+ import Data.Functor.Hierarchy (Monad((>>=)))
+
+This allows for users to ``import Data.Functor.Hierarchy (Monad((>>=)))`` even though it's been moved to the 
+``Bind`` class. If the ``Bind`` associated instance was deprecated, then users would get a warning on that import. 
 
 4. **Exports of associated class methods:**
-   If an associated class is used only to provide default implementations,
-   then the module author may not want to export the associated class method.
-   e.g. 
-   :: 
+If an associated class is used only to provide default implementations,
+then the module author may not want to export the associated class method.
+e.g. 
+:: 
 
-    module Data.Functor.Hierarchy (Functor(fmap),Invariant(invmap),{- , everything else -}) where 
-    -- NOTE: import Data.Functor.Hierarchy Functor(invmap) is no longer legal
-    -- but import Data.Functor.Hierarchy (Invariant(invmap)) is legal
+ module Data.Functor.Hierarchy (Functor(fmap),Invariant(invmap),{- , everything else -}) where 
+ -- NOTE: import Data.Functor.Hierarchy Functor(invmap) is no longer legal
+ -- but import Data.Functor.Hierarchy (Invariant(invmap)) is legal
 5. **Deriving declarations**
-    Deriving from a ``Parent class`` will also try to derive the associated instances.
-    However, this is legal: ``data MyType = MyType Int deriving (Big hiding instance (Small MyType,Small2 MyType))``.
+Deriving from a ``Parent class`` will also try to derive the associated instances.
+However, this is legal: ``data MyType = MyType Int deriving (Big hiding instance (Small MyType,Small2 MyType))``.
 
 Costs and Drawbacks
 -------------------
@@ -445,33 +448,38 @@ Alternatives
 ------------
 1. Do nothing
 2. Proposal 597 is another option, but it requires the typechecker to help the renamer, 
-    doesn't work with fancy type level machinery. e.g.
-    ::
-     data Some c where Some :: c a => a -> Some c
-     type SomeNum = Some Num
-    This doesn't work if we turn Num into a type synonym as you can't have an unreduced type synonym.
-   This proposal also doesn't work specify how it works with equality and implicit parameter constraints. 
-3. The ``Class Aliases`` proposal which is similar
-    , but introduces more syntax, and focuses on making classes into synonyms, 
-    while this proposal allows them to be classes, just with associated instances.
-    I think this proposal focuses most on the renamer, which simplifies a lot of questions. 
-4. After writing this I found `default superclass instances <https://gitlab.haskell.org/ghc/ghc/-/wikis/default-superclass-instances>`_,
-    which is nearly identical to this proposal (even the syntax), despite being written independently.
-    However, it proposes using lots of Associated Instances, while this proposal focuses on 
-    getting rid of them and switching to normal instances (e.g. depreciation).
-5. Class polymorphism in ``Instance Declarations``
-    :: 
-      class (a, b) => C2 '(a,b) where 
-        instance a
-        instance b
+doesn't work with fancy type level machinery. e.g.
+::
+ data Some c where Some :: c a => a -> Some c
+ type SomeNum = Some Num
+This doesn't work if we turn Num into a type synonym as you can't have an unreduced type synonym.
+This proposal also doesn't work specify how it works with equality and implicit parameter constraints. 
 
-    This allows for definitions like this (which is very similar to ``#597``):
-    :: 
-      instance C2 '(Eq X, Ord X) where 
-        compare a b = ...
-        a == b = compare a b == EQ
-        
-    But this significantly complicates the implementation, so I think not.
+3. The ``Class Aliases`` proposal which is similar
+, but introduces more syntax, and focuses on making classes into synonyms, 
+while this proposal allows them to be classes, just with associated instances.
+I think this proposal focuses most on the renamer, which simplifies a lot of questions. 
+
+4. After writing this I found `default superclass instances <https://gitlab.haskell.org/ghc/ghc/-/wikis/default-superclass-instances>`_,
+which is nearly identical to this proposal (even the syntax), despite being written independently.
+However, it proposes using lots of Associated Instances (e.g. for code generation), while this proposal focuses on 
+getting rid of them and switching to normal instances (e.g. depreciation).
+
+5. Class polymorphism in ``Associated Instance Declarations``
+:: 
+
+  class (a, b) => C2 '(a,b) where 
+    instance a
+    instance b
+
+This allows for definitions like this (which is very similar to ``#597``):
+::
+
+  instance C2 '(Eq X, Ord X) where 
+    compare a b = ...
+    a == b = compare a b == EQ
+    
+But this significantly complicates the implementation, so I think not.
 
 
 Unresolved Questions
