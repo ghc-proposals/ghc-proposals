@@ -263,7 +263,10 @@ Examples
        module Foo
           ( -- * Types
             Foo,
-            Bar (C, D,),
+            Bar (
+                   C, 
+                   D,
+                 ),
             Baz,
             -- * Functions
             mkFoo,
@@ -275,7 +278,10 @@ Examples
        module Foo
           ( -- * Types
             , Foo
-            , Bar (, C, D)
+            , Bar (
+                  , C
+                  , D
+                  )
             , Baz
             -- * Functions
             , mkFoo
@@ -352,9 +358,9 @@ Alternative adding extra commas
    The main benefit of WITH-version - the maximum liberalisation of using extra commas. 
    Also more liberal version has almost the same parsing ::
 
-     lead_AND_trail_WITHOUT_repeats ::= ( [,] { elem_i , } elem_max [,] )
+     lead_AND_trail_WITHOUT_repeats ::=  [,] { elem_i , } elem_max [,] 
 
-     lead_AND_trail_WITH_repeats    ::= ( {,} { elem_i , {,} } elem_max {,} )
+     lead_AND_trail_WITH_repeats    ::=  {,} { elem_i , {,} } elem_max {,} 
 
 3. The proposal suggests to allow Extra Commas in **PURE** Code, but Committee could allow also Extra Commas in **Pragmas**.
 
