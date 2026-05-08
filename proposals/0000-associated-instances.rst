@@ -15,20 +15,46 @@ Associated Instances
 .. sectnum::
 .. contents::
 
-This proposal tries to allow for a ``instance`` declarations within a 
+This proposal allows for a ``instance`` declarations within a 
 parent ``class`` declaration, so that classes can be split up while 
-still preserving the 3 version policy.
+still preserving building with multiple versions (e.g. the ``base`` 3 version policy).
 
 
 Motivation
 ----------
-Haskell has had quite a few problems with old classes, particularly ``Monoid``, ``Num``, and ``Monad``.
+Haskell had, and still has quite a few problems with old classes, particularly ``Monoid``, ``Num``, and ``Monad``.
 While ``Monoid`` was refactored to be a superclass of ``Semigroup``
-, the other two classes, while poorly designed, can't be changed without breaking someone's code.
+, the other two classes, while imperfectly designed,
+can't be changed without breaking almost all haskell code. 
 
+This proposal is meant for classes to allow for associated instances, 
+so that instances of the parent class automatically get instances of the associated class.
+
+Associated instances should not be used for code generation. 
+The tool for that is already available: ``deriving via``, e.g. 
+``deriving Functor f via WrappedTraversable f``.
+If the boilerplate of writing ``data Wrapped___`` is too much,
+just write ``data Wrapped1 cls f a = Wrapped1 (f a)``, 
+and ``instance Traversable f => Functor (Wrapped1 Traversable f) where ...``.
+If that is insufficient, there are ways to make it easier to use value level haskell + typeclasses (i.d. ``Scrape your typeclasses``).
+
+1. ``@Noughtmare``'s idea for pattern bindings instance declarations. 
+2. ``@TysonZero``'s proposal for ``direct access to underlying class dictionaries``.
+3. No fancy stuff, just authors using one dictionary for their classes, rather than multiple methods. 
+
+Using value level haskell like this is far superiour than twisting this mechanism.
+``GHC`` code generation mechanisms are complicated enough: 
+``default methods``, ``deriving via``, ``Template Haskell``, ``deriving Generic`` and ``deriving Data``. 
+When coupled with the helper functions ``syb``, ``generics-sop``, ``Generically``, etc., form more than enough tools for code generation,  
+and people suggest things like autoderiving ``Functor`` via ``Traversable``, 
+or something related, which seems like it would be highly confusing to beginners. 
 
 Proposed Change Specification
 -----------------------------
+Allow for ``instance`` declarations within a class declaration.
+Allow for ``hiding instance`` and ``instance`` declarations within a class instance.
+A new ``-wspurious-hiding-instance`` warning is added for when a ``hiding instance`` declaration doesn't hide an instance.
+A new ``-XAssociatedInstances`` extension is added to enable all these features.
 
 Syntax
 ~~~~~~
@@ -43,13 +69,12 @@ This proposal adds another production to cls_decl
  
   <cls_decl>       ::= ... | <inst_decl>
 
-It also adds the two modifiers, ``%NoAssociatedInstances`` and ``%HadAssociatedInstances``,
-the former is used to disable ``implicit associated instance`` generation, 
+The former is used to disable ``implicit associated instance`` generation, 
 and the latter is used to disable warning generated when there are no associated instances.
 This proposal also adds a new production to inst_decl for ``Explicit Associated Instances``
 :: 
  
-  <inst_decl> ::= ... | <inst_decl>
+  <inst_decl> ::= ... | <inst_decl> | "hiding" <inst_decl>
 
 **Core Concept:**
 
@@ -96,43 +121,31 @@ This is an ``Implicit Associated Instance``. It is equivalent to:
  instance Big MyType where 
    -- lots of methods 
 
-**The %NoAssociatedInstances Modifier:**
+**Hiding instances:**
 
 If you want to declare the ``Seperate Instances``,
-use the ``%NoAssociatedInstances`` modifier to disable ``Implicit Associated Instances``.
+use the ``hiding instance`` keywords within the class to disable ``Implicit Associated Instances``.
 :: 
  
  instance Small String where 
   smallMethod1 x = x
- %NoAssociatedInstances
- instance Big String where 
+ instance Big String where
+  hiding instance Small String  
  -- lots of methods
 
-When applied to a class that has no ``Associated Instances``, 
-the ``%NoAssociatedInstances`` modifier emits a warning. ``-wunnecessary-no-associated-instances``.
+When hiding an instance that doesn't exist, a ``-wspurious-hiding-instance`` warning is raised.
+This warning will only be added to ``-Wall``, as a removed instance is unlikely to be readded, and 
+library authors would could not remove an deprecated instance without causing all useages of ``hiding instance``
+to be a warning. 
 
-**Explicit Associated Instances:**
-
-:: 
- 
- %NoAssociatedInstances -- This doesn't do anything here.
- instance Big String where 
-  instance Small String where 
-    smallMethod1 x = x
- -- lots of methods
-
-Since this is an ``Explicit Associated Instance``, 
-the ``%NoAssociatedInstances`` modifier does nothing,
-and this is equivalent to both of the above examples.
 
 **Default implementations:**
 
-You retain any class by using ``AssociatedInstances``, and can thus provide default
+You retain any features of an instance declaration or class declaration 
+by using ``AssociatedInstances``, and can thus provide a default
 implementation of associated instances, the same way you would in a class declaration.
-``Minimal`` pragmas include the associated instances, and if ``%NoAssociatedInstances`` is used, all instances that don't have 
-an explicit associated instance are assumed to be implemented, 
-the class coverage checker should assume that all methods from ``seperate instances`` 
-are implemented.
+``Minimal`` pragmas include the associated instances, and if an instance is hidden,
+the class coverage checker should assume that all its methods are implemented.
 
 ::
  
@@ -161,13 +174,42 @@ This satisfies the coverage check, and is equivalent to:
  instance Small String where 
   smallMetod2 = length x
   smallMethod1 x = show $ id x
- %NoAssociatedInstances
+
  instance Big String where 
+  hiding instance Small String
   bigMethod1 = id 
   -- lots of other methods 
 
 Since ``smallMethod2`` is defined in a ``seperate instance``,
 the class coverage checker assumes that it's implemented.
+
+**Explicit Associated Instances:**
+If the same method is used twice, as in this scenario 
+::
+
+  -- We will work with peano numbers and integers and doubles in this module
+  -- As such, we want a SumX class that works for all three
+  class SumX f x where 
+    sumX :: f x -> x 
+
+  class SumAny f where 
+    sumAny :: Num a => f a -> a
+    instance SumX f Integer where 
+      sumX = sumIntegral 
+    instance SumX f Peano where 
+      sumX = sumIntegral
+    instance SumX f Float where 
+      sumX = sumIntegral
+
+:: 
+ 
+ instance SumX [] where 
+  sumIntegral = sum 
+  instance SumX [] Peano where 
+    sumX x = foldr (+) 0 x 
+
+This feature exists for disambiguating names. While it might not be common, 
+it is better than such a thing simply being impossible.
 
 **Nested Associated Instances** 
 
@@ -191,21 +233,35 @@ defining a ``Small``, ``Medium``, and ``Big`` instance for ``String``.
   mediumMethod1 = id
   smallMethod1 = id
 
+**Constraints in Associated Instances:**
+Constraints in associated instances are legal, and work as you'd expect.
+::
+
+  class Show a where
+    show :: a -> String
+  class Show1 f where 
+    show1 :: (a -> String) f a -> String
+    instance Show a => Show (f a) where 
+      show = show1 show 
+
+This allows for anyone making a ``Show1`` instance to get a ``Show`` instance for free. 
+This class isn't actually a good idea, as something like ``Const`` doesn't 
+need a ``Show a`` instance to get ``Show (Const Int a)``, 
+but it shows how constraints work in associated instances. 
+
 **Deprecating Associated Instances:**
 If we want to refactor a class, eventually we will want to deprecate the associated instance.
 This works in the same way as any other instance. 
 ::
+ 
  class Big a where 
   instance {-# DEPRECATED "Use a seperate Small instance" #-} Small a 
 
 This will trigger on all ``Associated Instances``, explicit or implicit.
 The only way to supress it is with a ``Seperate Instance`` declaration. 
+Importing something like ``Big (smallMethod)`` will also trigger the warning, 
+but importing ``Small (smallMethod)`` will not.
 
-**Switching to a normal instance:**
-Assuming that the deprecation period has ended, users will still have 
-``%NoAssociatedInstances`` modifiers on the class instance. 
-As such we introduce another modifier, ``%HadAssociatedInstances``,
-which disables the warning on that class.
 Examples
 --------
 **Functor hierarchy:** 
@@ -251,8 +307,9 @@ Examples
     instance (Invariant f, Invariant g) => Invariant (Compose f g) where 
       invmap f g (Compose x) = Compose $ invmap (invmap f g) (invmap g f) x
     -- Normal functor instance.
-    %NoAssociatedInstances
+
     instance (Functor f, Functor g) => Functor (Compose f g) where 
+      hiding instance Invariant (Compose f g)
       fmap f (Compose x) = Compose $ fmap (fmap f) x
     
     -- Note: Imagine this module was created before the Apply class was introduced.
@@ -268,14 +325,15 @@ Examples
     
 
 1. We provided an explicit ``Invariant`` instance (not using automatic generation).
-2. We used ``%NoAssociatedInstances`` so ``Functor`` doesn't define the ``Invariant`` instance.
+2. We used ``hiding instance`` so ``Functor`` doesn't define the ``Invariant`` instance.
 3. For ``Applicative``, the compiler automatically generates the ``Apply`` instance.
 4. Our old code that was written before ``Apply`` was a superclass of ``Applicative`` continues to work.
 
 **Refactoring Num without breaking code**
 
-Previously, when people wanted to improve the ``Num`` class, no one could add new superclasses 
-because it would break all existing code that defines ``Num`` instances. With ``Associated Instances``:
+We currently cannot change the ``Num`` class,
+because it would break all existing code that defines ``Num`` instances. 
+With ``Associated Instances`` we can make it slightly better:
 
 ::
  
@@ -292,25 +350,19 @@ because it would break all existing code that defines ``Num`` instances. With ``
    -- No need for where as we don't have a custom implementation.
 
 This also works.
-**Adding Applicative to Monad**
 
-Before I started Haskell, ``Applicative`` was added as a superclass of ``Monad``. 
-With this proposal, backwards compatibility could be preserved:
-
+**Seperating local, ask, and reader from MonadReader**
+One of the reasons why Alexis King's automatic deriving of ``mtl`` class is not implemented is 
+because of the ``local`` method in ``MonadReader``.
 ::
- 
- class Applicative f where 
-   pure :: a -> f a
-   (<*>) :: f (a -> b) -> f a -> f b
- class Applicative f => Monad f where
-   (>>=) :: f a -> (a -> f b) -> f b
-   instance Applicative f where
-     pure = return
-     (<*>) = ap
-
-Existing code that provided ``Monad`` instances automatically would gain the new ``Applicative`` instances.
-
-
+  class MonadAsk where 
+    ask :: m r
+    ask = reader id
+    reader :: (r -> a) -> m a
+    reader f = f <$> ask
+  class MonadAsk => MonadReader r m where 
+   instance MonadAsk r m
+   local :: (r -> r) -> m a -> m a
 
 Effect and Interactions
 -----------------------
@@ -319,6 +371,16 @@ Effect and Interactions
 
 This proposal directly addresses the issue raised in the Motivation section by allowing class 
 hierarchies to evolve while respecting the 3-version policy:
+
+The three version policy states that Lib(N), Lib(N+1), and Lib(N+2) 
+must all be compatible, and that it should be possible to support all three versions 
+without warnings and without CPP. Here is a sketch for how to do that.
+1. Version Lib(N+1), we add a new superclass to the class, and add an associated instance for it.
+To support version Lib(N-1), Lib(N),and Lib(N+1) simultaneously, just do nothing.
+2. Version Lib(N+3), we deprecate the associated instance.
+   To maintain compatibility for 3 versions, users can use ``hiding instance`` to hide the associated instance, and provide their own instance.
+3. When people have appropriatly migrated, remove the associated instance.
+
 
 - **Before this proposal**: 
   Splitting a method into its own class would break code, 
@@ -337,7 +399,7 @@ hierarchies to evolve while respecting the 3-version policy:
 2. **Instance Overlap:**
    Associated instances follow the same overlap rules as normal instances. If multiple 
    associated instances could match, the compiler reports an error unless one is clearly more 
-   specific. The compiler also suggests using ``%NoAssociatedInstances`` to resolve ambiguity.
+   specific. The compiler also suggests using ``hiding instance`` to resolve ambiguity.
    An {-# OVERLAPs/Overlapping/Incoherent/Overlappable #-} pragma on a ``Parent class`` also applies to all of its 
    ``Implicit Associated Instances``. 
    ``Explicit Associated Instances`` require have their own pragmas.
@@ -347,6 +409,9 @@ hierarchies to evolve while respecting the 3-version policy:
    ::
     
     import Data.Functor.Hierarchy (Monad((>>=)))
+  
+  This allows for users to ``import Data.Functor.Hierarchy (Monad((>>=)))`` even though it's been moved to the 
+  ``Bind`` class. If the ``Bind`` associated instance was deprecated, then users would get a warning on that import. 
 
 4. **Exports of associated class methods:**
    If an associated class is used only to provide default implementations,
@@ -354,12 +419,12 @@ hierarchies to evolve while respecting the 3-version policy:
    e.g. 
    :: 
 
-    module Data.Functor.Hierarchy (Functor(fmap){- , everything else -}) where 
+    module Data.Functor.Hierarchy (Functor(fmap),Invariant(invmap),{- , everything else -}) where 
     -- NOTE: import Data.Functor.Hierarchy Functor(invmap) is no longer legal
-    -- but import Data.Functor.Hierarchy (Invariant(invmap)) is
+    -- but import Data.Functor.Hierarchy (Invariant(invmap)) is legal
 5. **Deriving declarations**
     Deriving from a ``Parent class`` will also try to derive the associated instances.
-    However, this is legal: ``data MyType = MyType Int deriving (%NoAssociatedInstances Big)``.
+    However, this is legal: ``data MyType = MyType Int deriving (Big hiding instance (Small MyType,Small2 MyType))``.
 
 Costs and Drawbacks
 -------------------
@@ -369,11 +434,7 @@ and the benefits are significant.
 It is also easy to understand what it does. 
 Since most of the costs are in the renamer, the implementation should be maintainable.
 
-However, this is a large 
-Give an estimate on development and maintenance costs. List how this affects
-learnability of the language for novice users. Define and list any remaining
-drawbacks that cannot be resolved.
-
+However, this is a large change, so the maintance burden is significant.
 
 Backward Compatibility
 ----------------------
@@ -383,40 +444,39 @@ Backward Compatibility
 Alternatives
 ------------
 1. Do nothing
-2. Adding a way to mark something as a seperate instance 
-  :: 
-   
-   instance Big X where 
-    hiding instance Small X 
-    
-  This would allow for a refactor to continue again.
-  If this is chosen, the ``%NoAssociatedInstances`` modifier might be removed.
-3. Proposal 597 is another option, but it requires the typechecker to help the renamer, 
+2. Proposal 597 is another option, but it requires the typechecker to help the renamer, 
     doesn't work with fancy type level machinery. e.g.
     ::
      data Some c where Some :: c a => a -> Some c
      type SomeNum = Some Num
     This doesn't work if we turn Num into a type synonym as you can't have an unreduced type synonym.
    This proposal also doesn't work specify how it works with equality and implicit parameter constraints. 
-4. The ``Class Aliases`` proposal which is similar
+3. The ``Class Aliases`` proposal which is similar
     , but introduces more syntax, and focuses on making classes into synonyms, 
     while this proposal allows them to be classes, just with associated instances.
     I think this proposal focuses most on the renamer, which simplifies a lot of questions. 
-5. After writing this I found `default superclass instances <https://gitlab.haskell.org/ghc/ghc/-/wikis/default-superclass-instances>`_,
+4. After writing this I found `default superclass instances <https://gitlab.haskell.org/ghc/ghc/-/wikis/default-superclass-instances>`_,
     which is nearly identical to this proposal (even the syntax), despite being written independently.
     However, it proposes using lots of Associated Instances, while this proposal focuses on 
     getting rid of them and switching to normal instances (e.g. depreciation).
-    
+5. Class polymorphism in ``Instance Declarations``
+    :: 
+      class (a, b) => C2 '(a,b) where 
+        instance a
+        instance b
+
+    This allows for definitions like this (which is very similar to ``#597``):
+    :: 
+      instance C2 '(Eq X, Ord X) where 
+        compare a b = ...
+        a == b = compare a b == EQ
+        
+    But this significantly complicates the implementation, so I think not.
+
 
 Unresolved Questions
 --------------------
-Explicitly list any remaining issues that remain in the conceptual design and
-specification. Be upfront and trust that the community will help. Please do
-not list *implementation* issues.
-
-Hopefully this section will be empty by the time the proposal is brought to
-the steering committee.
-
+N/A right now 
 
 Implementation Plan
 -------------------
