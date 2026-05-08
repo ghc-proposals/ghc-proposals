@@ -29,26 +29,23 @@ can't be changed without breaking almost all haskell code.
 
 This proposal is meant for classes to allow for associated instances, 
 so that instances of the parent class automatically get instances of the associated class.
+Another thing this helps with is long tedious class hierarchies, 
+like the ``Profunctor,Choice,Strong,Traversing,Closed,Mapping``. 
+While it's good for them to be seperate classes, class synonyms, like ``MappingAll``, could make bolierplate much easier.
 
-Associated instances should not be used for code generation. 
+**Code generation:**
+
+Associated instances should not be used for code generation of simple classes, like ``Functor``.
 The tool for that is already available: ``deriving via``, e.g. 
 ``deriving Functor f via WrappedTraversable f``.
+
 If the boilerplate of writing ``data Wrapped___`` is too much,
 just write ``data Wrapped1 cls f a = Wrapped1 (f a)``, 
 and ``instance Traversable f => Functor (Wrapped1 Traversable f) where ...``.
-If that is insufficient, there are ways to make it easier to use value level haskell + typeclasses (i.d. ``Scrape your typeclasses``).
 
-1. ``@Noughtmare``'s idea for pattern bindings instance declarations. 
-2. ``@TysonZero``'s proposal for ``direct access to underlying class dictionaries``.
-3. No fancy stuff, just authors using one dictionary for their classes, rather than multiple methods. 
-
-Using value level haskell like this is far superiour than twisting this mechanism.
 ``GHC`` code generation mechanisms are complicated enough: 
 ``default methods``, ``deriving via``, ``Template Haskell``, ``deriving Generic`` and ``deriving Data``. 
-When coupled with the helper functions ``syb``, ``generics-sop``, ``Generically``, etc., form more than enough tools for code generation,  
-and people suggest things like autoderiving ``Functor`` via ``Traversable``, 
-or something related, which seems like it would be highly confusing to beginners. 
-
+When coupled with the helper functions ``syb``, ``generics-sop``, ``Generically``, etc., form more than enough tools for code generation.
 Proposed Change Specification
 -----------------------------
 Allow for ``instance`` declarations within a class declaration.
