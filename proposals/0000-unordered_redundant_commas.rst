@@ -56,13 +56,17 @@ Given trailing and leading commas, one could instead write::
 This feature provides several benefits:
 
 1. **Improved Diff Quality**: When adding or removing items in a list, having a trailing comma means only
-the relevant lines are changed in version control systems, reducing the noise in diffs and making reviews easier.
+   the relevant lines are changed in version control systems, reducing the noise in diffs and making reviews easier.
   
 2. **Ease of Code Modification**: Developers can add new elements to the end of a list without having 
-to modify the previous last line, which reduces the likelihood of syntax errors.
+   to modify the previous last line, which reduces the likelihood of syntax errors.
 
 3. **Consistency in Formatting**: When generating code automatically or formatting lists in a specific way, 
-leading and trailing commas can simplify the process.
+   leading and trailing commas can simplify the process.
+
+4. **Use a different style of coding**: Extra commas allow for different styles to write code.
+
+5. **Simplicity of conditional meta-programming**: Extra commas allow to write much simpler code when conditional meta-programming is used.
 
 
 History
@@ -145,63 +149,50 @@ This proposal introduces the following syntactical changes to Haskell:
 		  , mkFoo
 		  ) where 
 
-4. **Repetetive Commas**: Allow multiple commas instead of one in place-unordered clauses:
+4. **Trailing AND Leading Commas**: Allow both Trailing AND Leading Commas in one structure.
 
-   - module export lists and sub-lists
-   - module import lists and sub-lists
-   - deriving and default clauses
-   - record-like occurrences (declarations, patterns, constructions)
-
-   ::
-   
-       module BarFoo
-		  ( 
-		  , -- Foo    -- temporary
-		  , -- Bar    -- temporary
-		  , BarFoo
-		  ) where 
 
 Syntax
 ~~~~~~~~~~~~
 
-The formal grammar changes for ``UnOrderedExtraCommas`` :
+The formal grammar changes for ``UnOrderedExtraCommas`` for Trailing AND Leading Commas WITHOUT Repetetive Commas:
 
 .. code:: none
 
-    exports ::= ( {,} export1 , {,} ... , {,} exportn {,} )                      -- upd
+    exports ::= ( [,] export1 , ... , exportn [,] )                       -- upd
 
     export ::= qvar
-        | qtycon[(..)| ( {,} cname_1, {,} ..., {,} cname_n {,} ) ]  (n >= 0)     -- upd
-        | qtycls[(..)| ( {,} var_1, {,} ..., {,} var_n {,} ) ]      (n >= 0)     -- upd
+        | qtycon[(..)| ( [,] cname_1, ... , cname_n [,] ) ]  (n >= 0)     -- upd
+        | qtycls[(..)| ( [,] var_1, ... , var_n [,] ) ]      (n >= 0)     -- upd
         | module modid
         | ......
    
-    impspec ::= ( {,} import1 , {,} ... , {,} importn {,} )         (n ≥ 0)      -- upd
-        | hiding ( {,} import1 , {,} ... , {,} importn {,} )        (n ≥ 0)      -- upd
+    impspec ::= ( [,] import1 , ... , importn [,] )         (n ≥ 0)       -- upd
+        | hiding ( [,] import1 , ... , importn [,] )        (n ≥ 0)       -- upd
 
     import ::= qvar
-        | qtycon[(..)| ( {,} cname_1, {,} ..., {,} cname_n {,} ) ]  (n >= 0)     -- upd
-        | qtycls[(..)| ( {,} var_1, {,} ..., {,} var_n {,} ) ]      (n >= 0)     -- upd
+        | qtycon[(..)| ( [,] cname_1, ... , cname_n [,] ) ]  (n >= 0)     -- upd
+        | qtycls[(..)| ( [,] var_1, ... , var_n [,] ) ]      (n >= 0)     -- upd
         | ......
 
-    deriving ::= deriving (
-              dclass
-            | ( {,} dclass1 , {,} ... , {,} dclassn {,} )    -- upd
-        )
+    deriving ::= deriving dclass
+            | deriving (  
+                 ( [,] dclass1 , ... , dclassn [,] )    -- upd
+              )
 
     topdecl ::= type simpletype = type
-        | default ( {,} type1 , {,} ... , {,} typen {,} )    -- upd
+        | default ( [,] type1 , ... , typen [,] )       -- upd
         | ......
 
     constr ::= con [!] atype1 ... [!] atypek                (arity con = k, k>=0)
         | (btype | ! atype) conop (btype | ! atype)                 (infix conop)
-        | con { {,} fielddecl1 , {,} ... , {,} fielddecln {,} }    (records n>=0)             -- upd
+        | con { [,] fielddecl1 , ... , fielddecln [,] }            (records n>=0)     -- upd
         | ......
 
-    aexp ::= qvar     (variable)
+    aexp ::= qvar                                                        (variable)
         | ......
-        | qcon { {,} fbind1 , {,} ... , {,} fbindn {,} }      (labeled construction, n ≥ 0)   -- upd
-        | aexp_(qcon) { {,} fbind1 , {,} ... , {,} fbindn {,} }   (labeled update, n  ≥  1)   -- upd
+        | qcon { [,] fbind1 , ... , fbindn [,] }      (labeled construction, n ≥ 0)   -- upd
+        | aexp_(qcon) { [,] fbind1 , ... , fbindn [,] }   (labeled update, n  ≥  1)   -- upd
 
 These changes allow extra commas in next unordered structures:
 
@@ -220,6 +211,77 @@ This proposal does not include yet using extra commas in next unordered structur
 
 Examples
 --------
+1. **Improved Diff Quality**:
+
+   Right adding or removing a thing often needs changing 2 lines of code
+
+   .. code-block:: diff
+
+     --- example.hs	2024-06-10 12:00:00 +0000
+     +++ example.hs	2024-06-10 12:01:00 +0000
+     @@ -2,5 +2,5 @@
+         baz1,
+         baz2,
+     -   foo
+     +   foo,
+     +   bar
+         ) where
+
+   insted of just 1 line
+
+   .. code-block:: diff
+
+     --- example.hs	2024-06-10 12:00:00 +0000
+     +++ example.hs	2024-06-10 12:01:00 +0000
+     @@ -2,5 +2,5 @@
+         baz1,
+         baz2,
+         foo,
+     +   bar,
+         ) where
+
+2. **Simplicity of conditional meta-programming**
+
+   We could simplify conditional meta-programming:
+   ::
+
+    module Foo (
+      Foo(
+    #ifdef TESTING
+        , Foo
+    #endif
+    #if USE_PATTERN_SYNONYMS
+        , Pat1
+        , Pat2
+    #endif
+    )
+
+3. **Use a different style of coding**
+   ::
+
+       -- style: comma after element
+       module Foo
+          ( -- * Types
+            Foo,
+            Bar (C, D,),
+            Baz,
+            -- * Functions
+            mkFoo,
+            mkBar,
+            mkBaz,
+          ) where 
+
+       -- style: comma before element
+       module Foo
+          ( -- * Types
+            , Foo
+            , Bar (, C, D)
+            , Baz
+            -- * Functions
+            , mkFoo
+            , mkBar
+            , mkBaz
+          ) where 
 
 
 Effect and Interactions
@@ -241,6 +303,7 @@ Backward Compatibility
 
 This change is backward compatible with existing Haskell code,
 as it introduces new syntactical permissiveness without altering the existing valid syntax.
+
 All current Haskell programs will remain valid and unchanged in their behavior.
 
 
@@ -249,6 +312,51 @@ Alternatives
 
 The primary alternative is "status quo".
 
+Alternative adding extra commas
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1. The proposal suggests to allow Trailing **AND** Leading Commas, but Committee could choose instead
+   Trailing **OR** Leading Commas, a bit stricter version of extra commas.
+
+   The main benefit of OR-version - Cabal already support such liberalisation.
+
+   The main disadvantage  of OR-version is disallowing to mix code-styles. 
+   Also stricter version has more complex parsing ::
+
+      lead_OR_trail  ::= ( , subList ) | ( subList [,] )
+
+      lead_AND_trail ::= [,] subList [,]
+
+2. The proposal suggests to allow Extra Commas **WITHOUT** Repetetive Commas, but Committee could choose instead
+   Extra Commas **WITH** Repetetive Commas, a much more liberal version of extra commas.
+
+   **Repetetive Commas**: Allow multiple commas instead of one in place-unordered clauses:
+
+   - module export lists and sub-lists
+   - module import lists and sub-lists
+   - deriving and default clauses
+   - record-like occurrences (declarations, patterns, constructions)
+
+   ::
+   
+       module BarFoo
+		  ( 
+		  , -- Foo    -- temporary
+		  , -- Bar    -- temporary
+		  , BarFoo
+		  ) where 
+
+   The main disadvantage of WITH-version is allowing to write very "dirty" code. 
+   Haskell is known as a language with "pretty looking code".
+
+   The main benefit of WITH-version - the maximum liberalisation of using extra commas. 
+   Also more liberal version has almost the same parsing ::
+
+     lead_AND_trail_WITHOUT_repeats ::= ( [,] { elem_i , } elem_max [,] )
+
+     lead_AND_trail_WITH_repeats    ::= ( {,} { elem_i , {,} } elem_max {,} )
+
+3. The proposal suggests to allow Extra Commas in **PURE** Code, but Committee could allow also Extra Commas in **Pragmas**.
 
 Unresolved Questions
 --------------------
@@ -259,7 +367,7 @@ None.
 Implementation Plan
 -------------------
 
-It is unclear.
+It is unclear. I cannot implement this plan.
 
 
 Acknowledgments
