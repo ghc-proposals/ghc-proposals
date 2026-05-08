@@ -401,8 +401,8 @@ Associated instances are solved in the renamer, they don't affect the constraint
 
 2. **Instance Overlap:**
 Associated instances follow the same overlap rules as normal instances. If multiple 
-associated instances could match, the compiler reports an error unless one is clearly more 
-specific. The compiler also suggests using ``hiding instance`` to resolve ambiguity.
+associated instances could match, the compiler gives an error between a manual and an automatic instance. 
+The compiler should also suggest using ``hiding instance`` to resolve the duplication.
 An {-# OVERLAPs/Overlapping/Incoherent/Overlappable #-} pragma on a ``Parent class`` also applies to all of its 
 ``Implicit Associated Instances``. 
 ``Explicit Associated Instances`` require have their own pragmas.
