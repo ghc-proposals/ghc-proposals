@@ -46,6 +46,7 @@ and ``instance Traversable f => Functor (Wrapped1 Traversable f) where ...``.
 ``GHC`` code generation mechanisms are complicated enough: 
 ``default methods``, ``deriving via``, ``Template Haskell``, ``deriving Generic`` and ``deriving Data``. 
 When coupled with the helper functions ``syb``, ``generics-sop``, ``Generically``, etc., form more than enough tools for code generation.
+
 Proposed Change Specification
 -----------------------------
 Allow for ``instance`` declarations within a class declaration.
