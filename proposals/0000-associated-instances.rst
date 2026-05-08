@@ -44,14 +44,20 @@ just write ``data Wrapped1 cls f a = Wrapped1 (f a)``,
 and ``instance Traversable f => Functor (Wrapped1 Traversable f) where ...``.
 
 ``GHC`` code generation mechanisms are complicated enough: 
+``GHC`` code generation mechanisms are complicated enough: 
 ``default methods``, ``deriving via``, ``Template Haskell``, ``deriving Generic`` and ``deriving Data``. 
+
 When coupled with the helper functions ``syb``, ``generics-sop``, ``Generically``, etc., form more than enough tools for code generation.
 
 Proposed Change Specification
 -----------------------------
+
 Allow for ``instance`` declarations within a class declaration.
+
 Allow for ``hiding instance`` and ``instance`` declarations within a class instance.
+
 A new ``-wspurious-hiding-instance`` warning is added for when a ``hiding instance`` declaration doesn't hide an instance.
+
 A new ``-XAssociatedInstances`` extension is added to enable all these features.
 
 Syntax
