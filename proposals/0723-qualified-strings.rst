@@ -141,7 +141,7 @@ Qualified multiline strings are only allowed if ``-XMultilineStrings`` is enable
 Laws
 ~~~~
 
-If the following expression typechecks, it should hold:
+If the following expression compiles, it should hold:
 
 * ``Data.String.fromString "str" == M."str"``
 
