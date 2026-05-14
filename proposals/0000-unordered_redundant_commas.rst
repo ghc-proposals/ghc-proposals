@@ -55,16 +55,16 @@ Given trailing and leading commas, one could instead write::
 
 This feature provides several benefits:
 
-1. **Improved Diff Quality**: When adding or removing items in a list, having a trailing comma means only
+1. **Improved Diff Quality**: When adding or removing items in a structure, having a trailing or leading comma means only
    the relevant lines are changed in version control systems, reducing the noise in diffs and making reviews easier.
   
-2. **Ease of Code Modification**: Developers can add new elements to the end of a list without having 
-   to modify the previous last line, which reduces the likelihood of syntax errors.
+2. **Ease of Code Modification**: Developers can add new elements to the end / beginnging of a structure without having 
+   to modify the previous last / first line, which reduces the likelihood of syntax errors.
 
-3. **Consistency in Formatting**: When generating code automatically or formatting lists in a specific way, 
+3. **Consistency in Formatting**: When generating code automatically or formatting structures in a specific way, 
    leading and trailing commas can simplify the process.
 
-4. **Use a different style of coding**: Extra commas allow for different styles to write code.
+4. **Use a different style of coding**: Extra commas allow for different styles to write a code.
 
 5. **Simplicity of conditional meta-programming**: Extra commas allow to write much simpler code when conditional meta-programming is used.
 
@@ -204,9 +204,15 @@ These changes allow extra commas in next unordered structures:
 - default clauses
 - record-like occurrences (declarations, patterns, constructions)
 
-This proposal does not include yet using extra commas in next unordered structures:
+This proposal **does not include yet** using extra commas in next unordered structures:
 
 - fixity "lists"
+
+This proposal also does not include extra commas in next **ordered structures**:
+
+- lists
+- tuples
+- costraint tuples
 
 
 Examples
