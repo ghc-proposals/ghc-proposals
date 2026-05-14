@@ -467,14 +467,21 @@ Delimiter-related Alternatives
   * Could reuse QuasiQuote syntax, e.g. ``[s|`` or ``[fmt|``, except it would be special and NOT use Template Haskell.
   * Could do ``''...''``, since ``''`` is invalid Haskell syntax today. However, code highlighters that aren't updated for ``-XStringInterpolation`` yet would not gracefully handle this.
 
-* No delimiter, always interpolate
+* No quote delimiter, always interpolate
 
   * Would require any use of ``${...}`` to be escaped.
   * No other language does this; even Bash has single quoted strings to avoid escaping
 
 * Different interpolation delimiter, e.g. ``#{foo}``
 
-  * Most languages use ``$``, and I see no reason to deviate
+  * ``${`` is familiar to most developers
+
+* No interpolation delimiter, e.g. ``{foo}``, like Python/Rust, escape with ``\{``
+
+  * One less character for the "common" case where interpolation typically doesn't happen in strings containing ``{``
+  * It would make interpolating into JSON, LaTeX, etc. more annoying
+  * It would make interpolating into code more annoying (e.g. shell, C-like languages, Haskell code with records)
+  * ``{`` is more likely to come up than ``${``
 
 * Allow custom delimiters, which could be defined with Template Haskell or some other approach
 
