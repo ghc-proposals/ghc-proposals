@@ -208,6 +208,8 @@ The following code will live in ``ghc-experimental`` under ``Data.String.Experim
   interpolateAppend :: Monoid s => s -> s -> s
   interpolateAppend = mappend
 
+  infixr 6 interpolateAppend -- matches (<>)
+
   interpolateEmpty :: Monoid s => s
   interpolateEmpty = mempty
 
@@ -292,7 +294,9 @@ Namely:
 
 * An ``istringExprOpen exp istringExprClose`` component expands to ``interpolateValue (<exp>)``
 
-* The right-associated list of ``istring`` components between ``istringBegin`` and ``istringEnd`` expands to the expansion of the components, with ``interpolateAppend`` as "list cons" and ``interpolateEmpty`` as "list nil".
+* The list of ``istring`` components between ``istringBegin`` and ``istringEnd`` expands to the expansion of the components, with ``interpolateAppend`` as "list cons" and ``interpolateEmpty`` as "list nil".
+
+  * ``interpolateAppend`` is explicitly inserted as an infix operation, so that qualified string interpolations can customize the fixity (see *Section 4.2 QualifiedStrings*)
 
 * The entire expression is explicitly typed as ``String``, to monomorphize the expression when ``-XOverloadedStrings`` is not enabled
 
@@ -429,6 +433,8 @@ When ``-XQualifiedStrings`` is enabled, you may qualify string interpolation:
     SQL.interpolateEmpty
 
 When ``-XQualifiedStrings`` is enabled, ``:: String`` is _not_ included.
+
+Qualified string interpolators should specify a fixity for ``interpolateAppend``, or else the default ``infixl 9`` fixity will be used.
 
 It's highly recommended that every string type with an ``IsString`` instance provides at least one string interpolator reusing the built-in ``Interpolate`` class. That way, there's always an option to use ``MyString.s"..."`` if the user does not wish to globally enable ``-XOverloadedStrings``. This interpolator should simply be a monomorphized version of the default interpolator:
 
@@ -642,6 +648,8 @@ As part of the feature, ``ghc-experimental`` will provide ``Data.String.Interpol
   interpolateEmpty = id
   interpolateFinalize = id
 
+  infixr 9 interpolateAppend
+
   data P a = P !Int !a
   instance Show a => Show (P a) where
     showsPrec _ (P p a) = showsPrec p a
@@ -674,6 +682,8 @@ However, the default interpolator forces primitive types to interpolate via ``St
     interpolateAppend = mappend
     interpolateEmpty = mempty
     interpolateFinalize = interpolate
+
+    infixr 6 interpolateAppend
 
     {----- Data.Text.Interpolate.Lazy; re-exports everything else from Builder -----}
 
@@ -757,6 +767,8 @@ The library would also define a module for use with ``-XStringInterpolation`` + 
   interpolateAppend = mappend
   interpolateEmpty = mempty
   interpolateFinalize = id
+
+  infixr 6 interpolateAppend
 
   class Interpolate a where
     interpolate :: a -> SqlQuery
@@ -855,6 +867,8 @@ That library could define the module:
   interpolateAppend = mappend
   interpolateEmpty = mempty
   interpolateFinalize = id
+
+  infixr 6 interpolateAppend
 
   class Interpolate a where
     interpolate :: a -> Html
