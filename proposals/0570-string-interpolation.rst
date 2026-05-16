@@ -121,9 +121,9 @@ Concretely, ``-XStringInterpolation`` enables the following syntax:
 
   -- Desugars to:
   interpolateFinalize $
-    interpolateRawString "a " `interpolateAppend` 
-    interpolateConvertValue (x + 1)  `interpolateAppend` 
-    interpolateRawString " b" `interpolateAppend` 
+    interpolateRaw "a "      `interpolateAppend`
+    interpolateValue (x + 1) `interpolateAppend`
+    interpolateRaw " b"      `interpolateAppend`
     interpolateEmpty
 
 These definitions will be provided by ``Data.String.Interpolate.Experimental``, which will be initially implemented in ``ghc-experimental``. See *Section 2.4 Machinery* for details.
@@ -199,11 +199,11 @@ The following code will live in ``ghc-experimental`` under ``Data.String.Interpo
 
 ::
 
-  interpolateRawString :: String -> ShowS
-  interpolateRawString = showString
+  interpolateRaw :: String -> ShowS
+  interpolateRaw = showString
 
-  interpolateConvertValue :: Interpolate a => a -> ShowS
-  interpolateConvertValue = interpolateS
+  interpolateValue :: Interpolate a => a -> ShowS
+  interpolateValue = interpolateS
 
   interpolateAppend :: ShowS -> ShowS -> ShowS
   interpolateAppend = (.)
@@ -255,21 +255,21 @@ With the machinery defined above, the following interpolated string desugars to 
 
   -- desugared, where D.S.I.E = Data.String.Interpolate.Experimental.
   D.S.I.E.interpolateFinalize $
-    D.S.I.E.interpolateRawString "foo "     `D.S.I.E.interpolateAppend`
-    D.S.I.E.interpolateConvertValue (f a b) `D.S.I.E.interpolateAppend`
-    D.S.I.E.interpolateRawString " bar "    `D.S.I.E.interpolateAppend`
-    D.S.I.E.interpolateConvertValue (g x)   `D.S.I.E.interpolateAppend`
-    D.S.I.E.interpolateRawString " baz "    `D.S.I.E.interpolateAppend`
-    D.S.I.E.interpolateConvertValue name    `D.S.I.E.interpolateAppend`
+    D.S.I.E.interpolateRaw "foo "    `D.S.I.E.interpolateAppend`
+    D.S.I.E.interpolateValue (f a b) `D.S.I.E.interpolateAppend`
+    D.S.I.E.interpolateRaw " bar "   `D.S.I.E.interpolateAppend`
+    D.S.I.E.interpolateValue (g x)   `D.S.I.E.interpolateAppend`
+    D.S.I.E.interpolateRaw " baz "   `D.S.I.E.interpolateAppend`
+    D.S.I.E.interpolateValue name    `D.S.I.E.interpolateAppend`
     D.S.I.E.interpolateEmpty
 
 Namely:
 
-* An ``istringRaw <str>`` component expands to ``interpolateRawString "<str>"``
+* An ``istringRaw <str>`` component expands to ``interpolateRaw "<str>"``
 
-    * The string literal passed to ``interpolateRawString`` is a strict ``String`` literal, unaffected by ``-XOverloadedStrings``
+    * The string literal passed to ``interpolateRaw`` is a strict ``String`` literal, unaffected by ``-XOverloadedStrings``
 
-* An ``istringExprOpen exp istringExprClose`` component expands to ``interpolateConvertValue (<exp>)``
+* An ``istringExprOpen exp istringExprClose`` component expands to ``interpolateValue (<exp>)``
 * The right-associated list of ``istring`` components between ``istringBegin`` and ``istringEnd`` expands to the expansion of the components, with ``interpolateAppend`` as "list cons" and ``interpolateEmpty`` as "list nil".
 
 Template Haskell
@@ -337,7 +337,7 @@ When ``-XQualifiedStrings`` is enabled, you may qualify string interpolation:
 
   -- Desugars to:
   Text.interpolateFinalize $
-    Text.interpolateRawString "hello world"
+    Text.interpolateRaw "hello world"
 
 ::
 
@@ -345,10 +345,10 @@ When ``-XQualifiedStrings`` is enabled, you may qualify string interpolation:
 
   -- Desugars to:
   SQL.interpolateFinalize $
-    SQL.interpolateRawString "select * from users where name = " `SQL.interpolateAppend`
-    SQL.interpolateConvertValue (Text.toUpper name)              `SQL.interpolateAppend`
-    SQL.interpolateRawString " and age = "                       `SQL.interpolateAppend`
-    SQL.interpolateConvertValue age                              `SQL.interpolateAppend`
+    SQL.interpolateRaw "select * from users where name = " `SQL.interpolateAppend`
+    SQL.interpolateValue (Text.toUpper name)               `SQL.interpolateAppend`
+    SQL.interpolateRaw " and age = "                       `SQL.interpolateAppend`
+    SQL.interpolateValue age                               `SQL.interpolateAppend`
     SQL.interpolateEmpty
 
 It's highly recommended that every string type with an ``IsString`` instance provides at least one string interpolator reusing the built-in ``Interpolate`` class. That way, there's always an option to use ``MyString.s"..."`` if the user does not wish to globally enable ``-XOverloadedStrings``. At the very least, such an implementation could simply re-export the functions from ``Data.String.Interpolate.Experimental``, except monomorphize ``interpolateFinalize`` as
@@ -365,11 +365,11 @@ But more likely, ``MyString`` would probably want to use a more performant build
     interpolateFinalize :: MyStringBuilder -> MyString
     interpolateFinalize = buildMyString
 
-    interpolateRawString :: String -> MyStringBuilder
-    interpolateRawString = fromString
+    interpolateRaw :: String -> MyStringBuilder
+    interpolateRaw = fromString
 
-    interpolateConvertValue :: D.S.I.E.Interpolate a => a -> MyStringBuilder
-    interpolateConvertValue = fromString . D.S.I.E.interpolate
+    interpolateValue :: D.S.I.E.Interpolate a => a -> MyStringBuilder
+    interpolateValue = fromString . D.S.I.E.interpolate
 
     interpolateAppend :: MyStringBuilder -> MyStringBuilder -> MyStringBuilder 
     interpolateAppend = mappend
@@ -475,7 +475,7 @@ Expansion-related Alternatives
   * While ``QualifiedStrings`` and ``StringInterpolation`` are closely related, and implementions *ought* to implement them consistently, the language feature should not enforce it, in the same way that typeclass laws are not enforced by the language
   * Even if we hardcoded ``fromString``, one could still devise a custom string interpolator that's inconsistent with ``M.fromString``; e.g. ``interpolateFinalize _ = "bad"``
 
-* Hardcode a wired-in ``Interpolate`` class with ``interpolateConvertValue`` (and potentially ``interpolateRawString``)
+* Hardcode a wired-in ``Interpolate`` class with ``interpolateValue`` (and potentially ``interpolateRaw``)
 
   * Redundant with the rebindable functionality with ``-XQualifiedStrings``
 
@@ -553,7 +553,7 @@ Text
 
 * How to interpolate values
 
-  * Reuse built-in ``Interpolate``: ``interpolateConvertValue = fromString . interpolate``
+  * Reuse built-in ``Interpolate``: ``interpolateValue = fromString . interpolate``
   * Provide a new ``Interpolate`` class with ``interpolate :: a -> Builder``
 
 Here's an example implementing the ``Builder`` + ``Text`` interpolators:
@@ -565,8 +565,8 @@ Here's an example implementing the ``Builder`` + ``Text`` interpolators:
   import Data.String.Interpolate.Experimental (interpolate)
 
   interpolateFinalize = id
-  interpolateConvertValue = fromString . interpolate
-  interpolateRawString = fromString
+  interpolateValue = fromString . interpolate
+  interpolateRaw = fromString
   interpolateAppend = mappend
   interpolateEmpty = mempty
 
@@ -577,8 +577,8 @@ Here's an example implementing the ``Builder`` + ``Text`` interpolators:
   import Data.Text.Interpolate.Builder qualified as B
 
   interpolateFinalize = toStrict . toLazyText
-  interpolateConvertValue = B.interpolateConvertValue
-  interpolateRawString = B.interpolateRawString
+  interpolateValue = B.interpolateValue
+  interpolateRaw = B.interpolateRaw
   interpolateAppend = B.interpolateAppend
   interpolateEmpty = B.interpolateEmpty
 
@@ -652,8 +652,8 @@ The library would also define a module for use with ``-XStringInterpolation`` + 
   import Data.String.Interpolate.Experimental qualified as S
 
   interpolateFinalize = id
-  interpolateConvertValue = interpolate
-  interpolateRawString = fromString
+  interpolateValue = interpolate
+  interpolateRaw = fromString
   interpolateAppend = mappend
   interpolateEmpty = mempty
 
@@ -750,8 +750,8 @@ That library could define the module:
   import Data.String.Interpolate.Experimental qualified as S
 
   interpolateFinalize = id
-  interpolateConvertValue = interpolate
-  interpolateRawString = HTML.raw
+  interpolateValue = interpolate
+  interpolateRaw = HTML.raw
   interpolateAppend = mappend
   interpolateEmpty = mempty
 
@@ -786,8 +786,8 @@ String interpolation could also make it easier to implement `shows`, in a module
   module Data.ShowS.Interpolate (P (..), interpolateString) where
 
   interpolateFinalize = id
-  interpolateConvertValue = shows
-  interpolateRawString = showString
+  interpolateValue = shows
+  interpolateRaw = showString
   interpolateAppend = (.)
   interpolateEmpty = id
 
