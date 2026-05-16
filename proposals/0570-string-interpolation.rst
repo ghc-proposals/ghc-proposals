@@ -111,7 +111,7 @@ At its core, this proposal proposes the following functionality:
 
   * Same technique as ``-XQualifiedStrings``
 
-* ``s"..."`` is exactly equivalent to ``Data.String.Interpolate.Experimental.s"..."``, where ``Data.String.Interpolate.Experimental`` is a new module in ``ghc-experimental``.
+* ``s"..."`` is exactly equivalent to ``Data.String.Experimental.s"..."``, where ``Data.String.Experimental`` is a new module in ``ghc-experimental``.
 
 Concretely, ``-XStringInterpolation`` enables the following syntax:
 
@@ -126,7 +126,7 @@ Concretely, ``-XStringInterpolation`` enables the following syntax:
     interpolateRaw " b"      `interpolateAppend`
     interpolateEmpty
 
-These definitions will be provided by ``Data.String.Interpolate.Experimental``, which will be initially implemented in ``ghc-experimental``. See *Section 2.4 Machinery* for details.
+These definitions will be provided by ``Data.String.Experimental``, which will be initially implemented in ``ghc-experimental``. See *Section 2.4 Machinery* for details.
 
 Lexical Structure
 ~~~~~~~~~~~~~~~~~
@@ -195,7 +195,7 @@ Update `Section 10.5 <https://www.haskell.org/onlinereport/haskell2010/haskellch
 Machinery
 ~~~~~~~~~
 
-The following code will live in ``ghc-experimental`` under ``Data.String.Interpolate.Experimental``. After the API has stablized, these might eventually live in ``Data.String`` alongside ``IsString``.
+The following code will live in ``ghc-experimental`` under ``Data.String.Experimental``. After the API has stablized, these might eventually live in ``Data.String`` alongside ``IsString``.
 
 ::
 
@@ -253,15 +253,15 @@ With the machinery defined above, the following interpolated string desugars to 
   -- original string
   s"foo ${f a b} bar ${g x} baz ${name}"
 
-  -- desugared, where D.S.I.E = Data.String.Interpolate.Experimental.
-  D.S.I.E.interpolateFinalize $
-    D.S.I.E.interpolateRaw "foo "    `D.S.I.E.interpolateAppend`
-    D.S.I.E.interpolateValue (f a b) `D.S.I.E.interpolateAppend`
-    D.S.I.E.interpolateRaw " bar "   `D.S.I.E.interpolateAppend`
-    D.S.I.E.interpolateValue (g x)   `D.S.I.E.interpolateAppend`
-    D.S.I.E.interpolateRaw " baz "   `D.S.I.E.interpolateAppend`
-    D.S.I.E.interpolateValue name    `D.S.I.E.interpolateAppend`
-    D.S.I.E.interpolateEmpty
+  -- desugared, where D.S.E = Data.String.Experimental.
+  D.S.E.interpolateFinalize $
+    D.S.E.interpolateRaw "foo "   `D.S.E.interpolateAppend`
+    D.S.E.interpolateValue (f a b)`D.S.E.interpolateAppend`
+    D.S.E.interpolateRaw " bar "  `D.S.E.interpolateAppend`
+    D.S.E.interpolateValue (g x)  `D.S.E.interpolateAppend`
+    D.S.E.interpolateRaw " baz "  `D.S.E.interpolateAppend`
+    D.S.E.interpolateValue name   `D.S.E.interpolateAppend`
+    D.S.E.interpolateEmpty
 
 Namely:
 
@@ -351,12 +351,12 @@ When ``-XQualifiedStrings`` is enabled, you may qualify string interpolation:
     SQL.interpolateValue age                               `SQL.interpolateAppend`
     SQL.interpolateEmpty
 
-It's highly recommended that every string type with an ``IsString`` instance provides at least one string interpolator reusing the built-in ``Interpolate`` class. That way, there's always an option to use ``MyString.s"..."`` if the user does not wish to globally enable ``-XOverloadedStrings``. At the very least, such an implementation could simply re-export the functions from ``Data.String.Interpolate.Experimental``, except monomorphize ``interpolateFinalize`` as
+It's highly recommended that every string type with an ``IsString`` instance provides at least one string interpolator reusing the built-in ``Interpolate`` class. That way, there's always an option to use ``MyString.s"..."`` if the user does not wish to globally enable ``-XOverloadedStrings``. At the very least, such an implementation could simply re-export the functions from ``Data.String.Experimental``, except monomorphize ``interpolateFinalize`` as
 
 ::
 
     interpolateFinalize :: ShowS -> MyString
-    interpolateFinalize = fromString . D.S.I.E.interpolateFinalize
+    interpolateFinalize = fromString . D.S.E.interpolateFinalize
 
 But more likely, ``MyString`` would probably want to use a more performant builder of some sort, such as:
 
@@ -368,8 +368,8 @@ But more likely, ``MyString`` would probably want to use a more performant build
     interpolateRaw :: String -> MyStringBuilder
     interpolateRaw = fromString
 
-    interpolateValue :: D.S.I.E.Interpolate a => a -> MyStringBuilder
-    interpolateValue = fromString . D.S.I.E.interpolate
+    interpolateValue :: D.S.E.Interpolate a => a -> MyStringBuilder
+    interpolateValue = fromString . D.S.E.interpolate
 
     interpolateAppend :: MyStringBuilder -> MyStringBuilder -> MyStringBuilder 
     interpolateAppend = mappend
@@ -377,7 +377,7 @@ But more likely, ``MyString`` would probably want to use a more performant build
     interpolateEmpty :: MyStringBuilder
     interpolateEmpty = mempty
 
-The only recommendation here is that ``MyString`` provide a module implementing string interpolation using the built-in ``Data.String.Interpolate.Experimental.Interpolate`` type class. Of course, ``MyString`` is free to implement more string interpolators, potentially using its own ``MyString.Interpolate`` type class for more performant interpolations than interpolating via ``String``.
+The only recommendation here is that ``MyString`` provide a module implementing string interpolation using the built-in ``Data.String.Experimental.Interpolate`` type class. Of course, ``MyString`` is free to implement more string interpolators, potentially using its own ``MyString.Interpolate`` type class for more performant interpolations than interpolating via ``String``.
 
 The following laws should hold, if the expression compiles:
 
@@ -562,7 +562,7 @@ Here's an example implementing the ``Builder`` + ``Text`` interpolators:
 
   module Data.Text.Interpolate.Builder where
 
-  import Data.String.Interpolate.Experimental (interpolate)
+  import Data.String.Experimental (interpolate)
 
   interpolateFinalize = id
   interpolateValue = fromString . interpolate
@@ -649,7 +649,7 @@ The library would also define a module for use with ``-XStringInterpolation`` + 
   module Data.SQL.Interpolate where
 
   import Data.String qualified as S
-  import Data.String.Interpolate.Experimental qualified as S
+  import Data.String.Experimental qualified as S
 
   interpolateFinalize = id
   interpolateValue = interpolate
@@ -747,7 +747,7 @@ That library could define the module:
   module Data.HTML.Interpolate where
 
   import Data.HTML as HTML
-  import Data.String.Interpolate.Experimental qualified as S
+  import Data.String.Experimental qualified as S
 
   interpolateFinalize = id
   interpolateValue = interpolate
