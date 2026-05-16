@@ -298,6 +298,29 @@ Namely:
 
   * Related: *Section 4.1 OverloadedStrings* and *Section 4.2 QualifiedStrings*
 
+``ghc-experimental`` modules
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This proposal would be adding the following modules to ``ghc-experimental``, which would potentially be promoted to a proper library like ``base`` once the feature is stablized.
+
+.. list-table::
+    :align: left
+
+    * - **Module**
+      - **Details**
+    * - ``Data.String.Experimental``
+      - Re-exports ``Data.String.Interpolate.Class.Experimental``
+    * - ``Data.String.Interpolate.Experimental``
+      - Re-exports ``Data.String.Interpolate.Class.Experimental`` and ``Data.String.Interpolate.Default.Experimental``
+    * - ``Data.String.Interpolate.Class.Experimental``
+      - Defines the ``Interpolate`` class and instances as written in *Section 2.4 Machinery*
+    * - ``Data.String.Interpolate.Default.Experimental``
+      - Defines the ``StringInterpolator`` class and the ``interpolate*`` functions for the default ``s"..."`` syntax, as written in *Section 2.4 Machinery*
+    * - ``Data.String.Interpolate.Explicit.Experimental``
+      - Defines an interpolator that's the same as the default except interpolates values directly without automatic conversion with ``Interpolate`` (See *Section 10.3 Provided interpolator: Explicit*)
+    * - ``Data.String.Interpolate.ShowS.Experimental``
+      - Defines an interpolator useful for implementing ``showsPrec`` (See *Section 10.4 Provided interpolator: ShowS*)
+
 Template Haskell
 ~~~~~~~~~~~~~~~~
 
@@ -578,6 +601,60 @@ Strings are notorious for O(n^2) concatenations, but the current proposal builds
 
 Benchmarks: https://github.com/brandonchinn178/ghc-string-interpolation-prototypes/tree/main/bench
 
+Provided interpolator: Explicit
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+As part of the feature, ``ghc-experimental`` will provide ``Data.String.Interpolate.Explicit.Experimental``, which provides an interpolator that does not implicitly convert values.
+
+::
+
+  module Data.String.Interpolate.Explicit.Experimental (
+    module X,
+    interpolateValue,
+  ) where
+
+  import Data.String.Interpolate.Default.Experimental as X hiding (interpolateValue)
+
+  interpolateValue = id
+
+This is particularly useful for ``Builder``, where users could explicitly convert values and avoid the penalty of going through ``String`` with the default ``Interpolate`` class.
+
+::
+
+  import Data.String.Interpolate.Explicit.Experimental qualified as I
+  import Data.Text.Lazy.Builder qualified as B
+
+  render :: Person -> B.Builder
+  render Person{..} = I.s"Person(name = ${B.fromLazyText name}, age = ${B.decimal age})"
+
+Provided interpolator: ShowS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+As part of the feature, ``ghc-experimental`` will provide ``Data.String.Interpolate.ShowS.Experimental``, which provides an interpolator that makes it easier to implement ``showsPrec``:
+
+::
+
+  module Data.String.Interpolate.ShowS.Experimental where
+
+  interpolateRaw = showString
+  interpolateValue = shows
+  interpolateAppend = (.)
+  interpolateEmpty = id
+  interpolateFinalize = id
+
+  data P a = P !Int !a
+  instance Show a => Show (P a) where
+    showsPrec _ (P p a) = showsPrec p a
+
+Users could then write:
+
+::
+
+  instance Show a => Show (MyTree a) where
+    showsPrec d (MyTree l v r) =
+      showParen (d > 10) $
+        ShowS.s"MyTree ${ShowS.P 11 l} ${v} ${ShowS.P 11 r}"
+
 Text
 ~~~~
 
@@ -799,34 +876,6 @@ And gain access to safe string interpolation with HTML escaping by default:
 
   Html.s"<h1>${title}</h1>${raw body}"
     == Html "<h1>Why is 1 &gt; 0?</h1><p>Hello world</p>"
-
-Custom interpolator: ShowS
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-String interpolation could also make it easier to implement `shows`, in a module potentially provided by `base`:
-
-::
-
-  module Data.ShowS.Interpolate (P (..), interpolateString) where
-
-  interpolateRaw = showString
-  interpolateValue = shows
-  interpolateAppend = (.)
-  interpolateEmpty = id
-  interpolateFinalize = id
-
-  data P a = P !Int !a
-  instance Show a => Show (P a) where
-    showsPrec _ (P p a) = showsPrec p a
-
-Users could then do
-
-::
-
-  instance Show a => Show (MyTree a) where
-    showsPrec d (MyTree l v r) =
-      showParen (d > 10) $
-        ShowS.s"MyTree ${ShowS.P 11 l} ${v} ${ShowS.P 11 r}"
 
 Custom interpolatable type: BigDecimal
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
