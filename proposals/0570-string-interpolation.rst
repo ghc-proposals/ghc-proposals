@@ -96,20 +96,20 @@ If Haskell had native string interpolation, it would have the benefit and safety
 Proposed Change Specification
 -----------------------------
 
-This proposal introduces the ``-XStringInterpolation`` extension, which includes syntax similar to ``-XQualifiedStrings`` (`proposal <https://github.com/ghc-proposals/ghc-proposals/pull/723>`_).
+This proposal introduces the ``-XStringInterpolation`` extension, which enables ``s"Name: ${name}"`` syntax. It synergizes well with ``-XOverloadedStrings``, ``-XMultilineStrings``, and ``-XQualifiedStrings``.
 
 High-level Overview
 ~~~~~~~~~~~~~~~~~~~
 
 At its core, this proposal proposes the following functionality:
 
-* The syntax ``s"age: ${age}"`` expands to a built-in implementation hardcoded to ``String`` and a new ``Interpolate`` type class with an ``interpolate :: a -> String`` function.
+* The syntax ``s"age: ${age}"`` expands to a built-in implementation using a new ``Interpolate`` type class with an ``interpolate :: a -> String`` function.
 
-    * ``-XOverloadedStrings`` does not affect this expression at all
+  * When ``-XOverloadedStrings`` is enabled, ``fromString`` is added at the very end.
 
 * The syntax ``M.s"age: ${age}"`` expands to a user-defined implementation where the implementor of the module ``M`` has total control over the implementation
 
-    * Same technique as ``-XQualifiedStrings``
+  * Same technique as ``-XQualifiedStrings``
 
 * ``s"..."`` is exactly equivalent to ``Data.String.Interpolate.Experimental.s"..."``, where ``Data.String.Interpolate.Experimental`` is a new module in ``ghc-experimental``.
 
@@ -272,38 +272,6 @@ Namely:
 * An ``istringExprOpen exp istringExprClose`` component expands to ``interpolateConvertValue (<exp>)``
 * The right-associated list of ``istring`` components between ``istringBegin`` and ``istringEnd`` expands to the expansion of the components, with ``interpolateAppend`` as "list cons" and ``interpolateEmpty`` as "list nil".
 
-Qualified string interpolation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Similar to ``-XQualifiedStrings``, you may qualify string interpolation:
-
-::
-
-  Text.s"hello world"
-
-  -- Desugars to:
-  Text.interpolateFinalize $
-    Text.interpolateRawString "hello world"
-
-::
-
-  SQL.s"select * from users where name = ${Text.toUpper name} and age = ${age}"
-
-  -- Desugars to:
-  SQL.interpolateFinalize $
-    SQL.interpolateRawString "select * from users where name = " `SQL.interpolateAppend`
-    SQL.interpolateConvertValue (Text.toUpper name)              `SQL.interpolateAppend`
-    SQL.interpolateRawString " and age = "                       `SQL.interpolateAppend`
-    SQL.interpolateConvertValue age                              `SQL.interpolateAppend`
-    SQL.interpolateEmpty
-
-This syntax does not require ``-XQualifiedStrings``, only ``-XStringInterpolation``. It doesn't enable ``-XQualifiedStrings`` for normal string literals, only interpolation strings. While asymmetrical, since ``s"..."`` only works with ``String``, it's highly likely that most uses will use qualified syntax, so we enable it with only ``-XStringInterpolation``.
-
-The following laws should hold, if the expression compiles:
-
-* ``M."str" == M.s"str"``
-* ``Data.String.fromString "str" == M.s"str"``
-
 Template Haskell
 ~~~~~~~~~~~~~~~~
 
@@ -349,6 +317,78 @@ Parsing
     * - ``s"a ${b -- asdf} c"``
       - The rest of the string is commented out
 
+Effect and Interactions
+-----------------------
+
+An existing program containing ``s"..."`` will break when ``-XStringInterpolation`` is enabled. While there's precedent for this (Template Haskell splices make ``$(...)`` different from ``$ (...)``), this is the first instance where whitespace matters for an alphanumeric identifier. But this is not a big deal:
+
+#. It's unlikely for someone to be naming a function as ``s`` in the first place
+#. Easily mitigatable: just add a space, which improves readability anyway
+#. Prefixing string literals like ``s"..."`` is common in other languages: Python, Scala, Javascript/Typescript, etc. so it shouldn't be a big hurdle for newcomers
+
+QualifiedStrings
+~~~~~~~~~~~~~~~~
+
+When ``-XQualifiedStrings`` is enabled, you may qualify string interpolation:
+
+::
+
+  Text.s"hello world"
+
+  -- Desugars to:
+  Text.interpolateFinalize $
+    Text.interpolateRawString "hello world"
+
+::
+
+  SQL.s"select * from users where name = ${Text.toUpper name} and age = ${age}"
+
+  -- Desugars to:
+  SQL.interpolateFinalize $
+    SQL.interpolateRawString "select * from users where name = " `SQL.interpolateAppend`
+    SQL.interpolateConvertValue (Text.toUpper name)              `SQL.interpolateAppend`
+    SQL.interpolateRawString " and age = "                       `SQL.interpolateAppend`
+    SQL.interpolateConvertValue age                              `SQL.interpolateAppend`
+    SQL.interpolateEmpty
+
+It's highly recommended that every string type with an ``IsString`` instance provides at least one string interpolator reusing the built-in ``Interpolate`` class. That way, there's always an option to use ``MyString.s"..."`` if the user does not wish to globally enable ``-XOverloadedStrings``. At the very least, such an implementation could simply re-export the functions from ``Data.String.Interpolate.Experimental``, except monomorphize ``interpolateFinalize`` as
+
+::
+
+    interpolateFinalize :: ShowS -> MyString
+    interpolateFinalize = fromString . D.S.I.E.interpolateFinalize
+
+But more likely, ``MyString`` would probably want to use a more performant builder of some sort, such as:
+
+::
+
+    interpolateFinalize :: MyStringBuilder -> MyString
+    interpolateFinalize = buildMyString
+
+    interpolateRawString :: String -> MyStringBuilder
+    interpolateRawString = fromString
+
+    interpolateConvertValue :: D.S.I.E.Interpolate a => a -> MyStringBuilder
+    interpolateConvertValue = fromString . D.S.I.E.interpolate
+
+    interpolateAppend :: MyStringBuilder -> MyStringBuilder -> MyStringBuilder 
+    interpolateAppend = mappend
+
+    interpolateEmpty :: MyStringBuilder
+    interpolateEmpty = mempty
+
+The only recommendation here is that ``MyString`` provide a module implementing string interpolation using the built-in ``Data.String.Interpolate.Experimental.Interpolate`` type class. Of course, ``MyString`` is free to implement more string interpolators, potentially using its own ``MyString.Interpolate`` type class for more performant interpolations than interpolating via ``String``.
+
+The following laws should hold, if the expression compiles:
+
+* ``M."str" == M.s"str"``
+* ``Data.String.fromString "str" == M.s"str"``
+
+OverloadedStrings
+~~~~~~~~~~~~~~~~~
+
+When ``-XOverloadedStrings`` is enabled, ``fromString`` is added at the end, only for ``s"..."`` (not ``M.s"..."``). ``fromString`` is rebindable with ``-XRebindableSyntax``, as usual.
+
 Multiline strings
 ~~~~~~~~~~~~~~~~~
 
@@ -371,19 +411,6 @@ When ``-XMultilineStrings`` is enabled, string interpolation may be used with mu
 
   -- resolve interpolation
   let str2 = "hello world\nworld hello\nhello world"
-
-Effect and Interactions
------------------------
-
-An existing program containing ``s"..."`` will break when ``-XStringInterpolation`` is enabled. While there's precedent for this (Template Haskell splices make ``$(...)`` different from ``$ (...)``), this is the first instance where whitespace matters for an alphanumeric identifier. But this is not a big deal:
-
-#. It's unlikely for someone to be naming a function as ``s`` in the first place
-#. Easily mitigatable: just add a space, which improves readability anyway
-#. Prefixing string literals like ``s"..."`` is common in other languages: Python, Scala, Javascript/Typescript, etc. so it shouldn't be a big hurdle for newcomers
-
-When ``-XStringInterpolation`` is enabled, ``M.s"..."`` syntax is enabled, as described above. This is enabled whether ``-XQualifiedStrings`` is enabled or not, but the two extensions should not conflict.
-
-Interpolation is also supported with ``-XMultilineStrings``, as described above.
 
 Costs and Drawbacks
 -------------------
@@ -615,7 +642,7 @@ Imagine a library implements a ``SqlQuery`` type like:
   instance ToSqlValue Int where
     toSqlValue = SqlInt
 
-The library would also define a module for use with qualified string interpolations:
+The library would also define a module for use with ``-XStringInterpolation`` + ``-XQualifiedStrings``:
 
 ::
 
@@ -805,7 +832,7 @@ And be able to use it in interpolated strings:
   let n = BigDecimal 123456 3
   s"123456 / 10^3 = ${n}" == "123456 / 10^3 = 123.456"
 
-If ``text`` is implemented as described in *Section 10.3 Custom interpolator: Text*, ``BigDecimal`` can interpolate into ``Text.s"..."`` for free.
+If ``text`` provided an interpolator using the built-in ``Interpolate`` class with ``Text.pack``, ``BigDecimal`` could interpolate into ``Text.s"..."`` for free.
 
 Format specifiers
 ~~~~~~~~~~~~~~~~~
@@ -862,20 +889,20 @@ Alternate 1: Built-in ``s"..."`` is hardcoded and is only polymorphic on ``IsStr
 
     {----- Data.String.Interpolate -----}
 
-    finalize :: Monoid s => [s] -> s
-    finalize = mconcat
-
-    raw :: IsString s => String -> s
-    raw = fromString
+    raw :: String -> ShowS
+    raw = showString
 
     convert :: Interpolate a => a -> s
-    convert x = fromString $ interpolateS x ""
+    convert = interpolateS
 
-    append :: s -> [s] -> [s]
-    append = (:)
+    append :: ShowS -> ShowS -> ShowS
+    append = (.)
 
-    empty :: [s]
-    empty = []
+    empty :: ShowS
+    empty = id
+
+    finalize :: ShowS -> String
+    finalize = ($ "")
 
     -- One instance for all user-defined types; e.g. the `url` library
     -- would just need to implement `Interpolate URL`
@@ -894,13 +921,11 @@ Alternate 1: Built-in ``s"..."`` is hardcoded and is only polymorphic on ``IsStr
     newtype SimpleText = SimpleText Text
       deriving newtype (Semigroup, Monoid)
 
-    convert :: Text -> SimpleText
-    convert = SimpleText
-
-    finalize = mconcat
-    raw = SimpleText . Text.pack
-    append = (:)
-    empty = []
+    convert = Text.Builder.fromText
+    raw = Text.Builder.fromText
+    append = mappend
+    empty = mempty
+    finalize = SimpleText . Text.toStrict . Text.Builder.toLazyText
 
 Alternate 2: Built-in ``s"..."`` with polymorphic builder:
 
@@ -921,7 +946,7 @@ Alternate 2: Built-in ``s"..."`` with polymorphic builder:
       raw      :: String -> Builder s
       append   :: Builder s -> Builder s -> Builder s
       empty    :: Builder s
-      finalise :: Builder s -> s
+      finalize :: Builder s -> s
 
     class Interpolate a builder where
       convert :: a -> builder
@@ -931,10 +956,10 @@ Alternate 2: Built-in ``s"..."`` with polymorphic builder:
       raw = fromString
       append = (.)
       empty = id
-      finalise = ($ "")
+      finalize = ($ "")
 
     instance Interpolate String ShowS where
-      convert = fromString
+      convert = showString
     instance Interpolate Int ShowS where
       convert = shows
     -- ...
@@ -946,7 +971,7 @@ Alternate 2: Built-in ``s"..."`` with polymorphic builder:
       raw = Text.Builder.fromText
       append = mappend
       empty = mempty
-      finalise = Text.toStrict . Text.Builder.toLazyText
+      finalize = Text.toStrict . Text.Builder.toLazyText
 
     instance Interpolate String Text.Builder where
       convert = Text.Builder.fromString
