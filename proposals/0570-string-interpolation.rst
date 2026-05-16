@@ -105,8 +105,6 @@ At its core, this proposal proposes the following functionality:
 
 * The syntax ``s"age: ${age}"`` expands to a built-in implementation using a new ``Interpolate`` type class with an ``interpolate :: a -> String`` function.
 
-  * When ``-XOverloadedStrings`` is enabled, ``fromString`` is added at the very end.
-
 * The syntax ``M.s"age: ${age}"`` expands to a user-defined implementation where the implementor of the module ``M`` has total control over the implementation
 
   * Same technique as ``-XQualifiedStrings``
@@ -201,20 +199,20 @@ The following code will live in ``ghc-experimental`` under ``Data.String.Experim
 
   {----- Implementation of s"..." -----}
 
-  interpolateRaw :: String -> ShowS
-  interpolateRaw = showString
+  interpolateRaw :: IsString s => String -> s
+  interpolateRaw = fromString
 
-  interpolateValue :: Interpolate a => a -> ShowS
-  interpolateValue = showString . interpolate
+  interpolateValue :: (Interpolate a, IsString s, Monoid s) => a -> s
+  interpolateValue = interpolate
 
-  interpolateAppend :: ShowS -> ShowS -> ShowS
-  interpolateAppend = (.)
+  interpolateAppend :: Monoid s => s -> s -> s
+  interpolateAppend = mappend
 
-  interpolateEmpty :: ShowS
-  interpolateEmpty = id
+  interpolateEmpty :: Monoid s => s
+  interpolateEmpty = mempty
 
-  interpolateFinalize :: ShowS -> String
-  interpolateFinalize f = f ""
+  interpolateFinalize :: s -> s
+  interpolateFinalize = id
 
   {----- Interpolation of values -----}
 
@@ -245,6 +243,8 @@ The following code will live in ``ghc-experimental`` under ``Data.String.Experim
       where
         paren s = if d > 10 then fromString "(" <> s <> fromString ")"
 
+Primitive types should typically implement ``interpolate`` using ``fromString``. Going through ``String`` is unavoidable without making ``Interpolate`` a multi param type class and introducing type ambiguity. But composite types will be able to avoid going through ``String``; see *Section 3.2 Composite types* for an example.
+
 Expansion
 ~~~~~~~~~
 
@@ -264,16 +264,21 @@ With the machinery defined above, the following interpolated string desugars to 
     D.S.E.interpolateRaw " baz "  `D.S.E.interpolateAppend`
     D.S.E.interpolateValue name   `D.S.E.interpolateAppend`
     D.S.E.interpolateEmpty
+    :: String
 
 Namely:
 
 * An ``istringRaw <str>`` component expands to ``interpolateRaw "<str>"``
 
-    * The string literal passed to ``interpolateRaw`` is a strict ``String`` literal, unaffected by ``-XOverloadedStrings``
+  * The string literal passed to ``interpolateRaw`` is a strict ``String`` literal, unaffected by ``-XOverloadedStrings``
 
 * An ``istringExprOpen exp istringExprClose`` component expands to ``interpolateValue (<exp>)``
 
 * The right-associated list of ``istring`` components between ``istringBegin`` and ``istringEnd`` expands to the expansion of the components, with ``interpolateAppend`` as "list cons" and ``interpolateEmpty`` as "list nil".
+
+* The entire expression is explicitly typed as ``String``, to monomorphize the expression when ``-XOverloadedStrings`` is not enabled
+
+  * Related: *Section 4.1 QualifiedStrings* and *Section 4.2 OverloadedStrings*
 
 Template Haskell
 ~~~~~~~~~~~~~~~~
@@ -320,6 +325,29 @@ Parsing
     * - ``s"a ${b -- asdf} c"``
       - The rest of the string is commented out
 
+Composite types
+~~~~~~~~~~~~~~~
+
+``Interpolate`` specifies a generic ``IsString s, Monoid s``, which allows composite types to stay within ``s``. If it were monomorphized to ``String``, instances that would only use ``fromString`` and ``<>`` would make unnecessary roundtrips through ``String``.
+
+::
+
+    data SrcLoc = SrcLoc
+      { file :: FilePath
+      , line :: Int
+      , col :: Int
+      }
+
+    instance Interpolate SrcLoc where
+      interpolate SrcLoc{..} = s"${file}:${line}:${col}"
+
+      -- desugars to
+      --   interpolate file <>
+      --   fromString ":" <>
+      --   interpolate line <>
+      --   fromString ":" <>
+      --   interpolate col
+
 Effect and Interactions
 -----------------------
 
@@ -354,24 +382,21 @@ When ``-XQualifiedStrings`` is enabled, you may qualify string interpolation:
     SQL.interpolateValue age                                 `SQL.interpolateAppend`
     SQL.interpolateEmpty
 
+When ``-XQualifiedStrings`` is enabled, ``:: String`` is _not_ included.
+
 It's highly recommended that every string type with an ``IsString`` instance provides at least one string interpolator reusing the built-in ``Interpolate`` class. That way, there's always an option to use ``MyString.s"..."`` if the user does not wish to globally enable ``-XOverloadedStrings``. This interpolator would probably be implemented as:
 
 ::
 
+    module Data.MyString (
+      module X,
+      interpolateFinalize,
+    ) where
+
+    import Data.String.Experimental as X hiding (interpolateFinalize)
+
     interpolateFinalize :: MyStringBuilder -> MyString
     interpolateFinalize = buildMyString
-
-    interpolateRaw :: String -> MyStringBuilder
-    interpolateRaw = fromString
-
-    interpolateValue :: D.S.E.Interpolate a => a -> MyStringBuilder
-    interpolateValue = D.S.E.interpolate
-
-    interpolateAppend :: MyStringBuilder -> MyStringBuilder -> MyStringBuilder 
-    interpolateAppend = mappend
-
-    interpolateEmpty :: MyStringBuilder
-    interpolateEmpty = mempty
 
 The only recommendation here is that ``MyString`` provide a module implementing string interpolation using the built-in ``Data.String.Experimental.Interpolate`` type class. Of course, ``MyString`` is free to implement more string interpolators, potentially using its own ``MyString.Interpolate`` type class for more performant interpolations.
 
@@ -383,10 +408,10 @@ The following laws should hold, if the expression compiles:
 OverloadedStrings
 ~~~~~~~~~~~~~~~~~
 
-When ``-XOverloadedStrings`` is enabled, ``fromString`` is added at the end, only for ``s"..."`` (not ``M.s"..."``). ``fromString`` is rebindable with ``-XRebindableSyntax``, as usual.
+When ``-XOverloadedStrings`` is enabled, ``:: String`` is _not_ included. Since the functions in ``Data.String.Experimental`` are polymorphic over ``(IsString s, Monoid s)``, it should automatically pick up the overloaded type.
 
-Multiline strings
-~~~~~~~~~~~~~~~~~
+MultilineStrings
+~~~~~~~~~~~~~~~~
 
 When ``-XMultilineStrings`` is enabled, string interpolation may be used with multiline strings. Multiline string interpolations resolve the multiline string first, then do the string interpolation. This means that qualified string interpolations work with multiline strings for free.
 
@@ -458,8 +483,6 @@ Alternatives
 
 Expansion-related Alternatives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-* Also see *Section 10.9 Alternative - Polymorphic interpolable expansion*
 
 * Hardcode to Monoid's ``mappend`` and ``mempty``
 
@@ -539,44 +562,22 @@ Benchmarks: https://github.com/brandonchinn178/ghc-string-interpolation-prototyp
 Text
 ~~~~
 
-``text`` has a few options for string interpolation, potentially even providing multiple modules for each variant of string interpolator. All the interpolators would probably be implemented with ``Builder``, for performance, but one could implement variants for:
-
-* The final type to return
-
-  * ``interpolateFinalize :: Builder -> Builder; interpolateFinalize = id``
-  * ``interpolateFinalize :: Builder -> LazyText; interpolateFinalize = toLazyText``
-  * ``interpolateFinalize :: Builder -> Text; interpolateFinalize = toStrict . toLazyText``
-
-* How to interpolate values
-
-  * Reuse built-in ``Interpolate``: ``interpolateValue = fromString . interpolate``
-  * Provide a new ``Interpolate`` class with ``interpolate :: a -> Builder``
-
-Here's an example implementing the ``Builder`` + ``Text`` interpolators:
+As mentioned in *Section 4.1 QualifiedStrings*, ``text`` should provide interpolator(s) using the built-in ``Interpolate`` class, but it may optionally also provide interpolator(s) with its own ``Interpolate`` class, if it wants an option to interpolate straight to ``Builder`` (e.g. ``interpolate @Int = Builder.decimal``). For all of these interpolators, whichever ``Interpolate`` class they want to use, they should probably always build with ``Builder``:
 
 ::
 
-  module Data.Text.Interpolate.Builder where
+    -- Data.Text.Interpolate.Builder
+    interpolateRaw = fromString
+    interpolateValue = interpolate -- Either built-in Interpolate or new Builder.Interpolate
+    interpolateAppend = mappend
+    interpolateEmpty = mempty
+    interpolateFinalize = id
 
-  import Data.String.Experimental (interpolate)
+    -- Data.Text.Interpolate.Lazy; re-exports everything else from Builder
+    interpolateFinalize = Builder.toLazyText
 
-  interpolateRaw = fromString
-  interpolateValue = interpolate
-  interpolateAppend = mappend
-  interpolateEmpty = mempty
-  interpolateFinalize = id
-
-::
-
-  module Data.Text.Interpolate where
-
-  import Data.Text.Interpolate.Builder qualified as B
-
-  interpolateFinalize = toStrict . toLazyText
-  interpolateValue = B.interpolateValue
-  interpolateRaw = B.interpolateRaw
-  interpolateAppend = B.interpolateAppend
-  interpolateEmpty = B.interpolateEmpty
+    -- Data.Text.Interpolate; re-exports everything else from Builder
+    interpolateFinalize = LazyText.toStrict . Builder.toLazyText
 
 With this support, users can write the following:
 
@@ -745,11 +746,11 @@ That library could define the module:
   import Data.HTML as HTML
   import Data.String.Experimental qualified as S
 
-  interpolateFinalize = id
-  interpolateValue = interpolate
   interpolateRaw = HTML.raw
+  interpolateValue = interpolate
   interpolateAppend = mappend
   interpolateEmpty = mempty
+  interpolateFinalize = id
 
   class Interpolate a where
     interpolate :: a -> Html
