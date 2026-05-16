@@ -195,15 +195,17 @@ Update `Section 10.5 <https://www.haskell.org/onlinereport/haskell2010/haskellch
 Machinery
 ~~~~~~~~~
 
-The following code will live in ``ghc-experimental`` under ``Data.String.Experimental``. After the API has stablized, these might eventually live in ``Data.String`` alongside ``IsString``.
+The following code will live in ``ghc-experimental`` under ``Data.String.Experimental``. After the API has stablized, these might eventually live in ``base`` under ``Data.String``, alongside ``IsString``.
 
 ::
+
+  {----- Implementation of s"..." -----}
 
   interpolateRaw :: String -> ShowS
   interpolateRaw = showString
 
   interpolateValue :: Interpolate a => a -> ShowS
-  interpolateValue = interpolateS
+  interpolateValue = showString . interpolate
 
   interpolateAppend :: ShowS -> ShowS -> ShowS
   interpolateAppend = (.)
@@ -214,34 +216,34 @@ The following code will live in ``ghc-experimental`` under ``Data.String.Experim
   interpolateFinalize :: ShowS -> String
   interpolateFinalize f = f ""
 
+  {----- Interpolation of values -----}
+
   class Interpolate a where
-    {-# MINIMAL interpolate | interpolateS #-}
+    {-# MINIMAL interpolate | interpolatePrec #-}
 
-    interpolate :: a -> String
-    interpolate x = interpolateS x ""
+    interpolate :: (IsString s, Monoid s) => a -> s
+    interpolate = interpolatePrec 0
 
-    interpolateS :: Int -> a -> ShowS
-    interpolateS _ x s = interpolate x <> s
-
-Instances will be provided as well, for example:
-
-::
+    interpolatePrec :: (IsString s, Monoid s) => Int -> a -> s
+    interpolatePrec _ = interpolate
 
   instance Interpolate String where
-    interpolateS _ = showString
+    interpolate = fromString
   instance Interpolate Char where
-    interpolateS _ = showChar
+    interpolate c = fromString [c]
 
   instance Interpolate Int where
-    interpolateS = showsPrec
+    interpolate = fromString . show
   instance Interpolate Double where
-    interpolateS = showsPrec
+    interpolate = fromString . show
   instance Interpolate Bool where
-    interpolateS = showsPrec
+    interpolate = fromString . show
 
   instance Interpolate a => Interpolate (Maybe a) where
-    interpolateS _ Nothing = showString "Nothing"
-    interpolateS d (Just a) = showString "Just " . showParen (d > 10) (interpolateS 11 a)
+    interpolatePrec _ Nothing = fromString "Nothing"
+    interpolatePrec d (Just a) = fromString "Just " <> paren (interpolatePrec 11 a)
+      where
+        paren s = if d > 10 then fromString "(" <> s <> fromString ")"
 
 Expansion
 ~~~~~~~~~
@@ -270,6 +272,7 @@ Namely:
     * The string literal passed to ``interpolateRaw`` is a strict ``String`` literal, unaffected by ``-XOverloadedStrings``
 
 * An ``istringExprOpen exp istringExprClose`` component expands to ``interpolateValue (<exp>)``
+
 * The right-associated list of ``istring`` components between ``istringBegin`` and ``istringEnd`` expands to the expansion of the components, with ``interpolateAppend`` as "list cons" and ``interpolateEmpty`` as "list nil".
 
 Template Haskell
@@ -345,20 +348,13 @@ When ``-XQualifiedStrings`` is enabled, you may qualify string interpolation:
 
   -- Desugars to:
   SQL.interpolateFinalize $
-    SQL.interpolateRaw "select * from users where name = " `SQL.interpolateAppend`
-    SQL.interpolateValue (Text.toUpper name)               `SQL.interpolateAppend`
-    SQL.interpolateRaw " and age = "                       `SQL.interpolateAppend`
-    SQL.interpolateValue age                               `SQL.interpolateAppend`
+    SQL.interpolateRaw   "select * from users where name = " `SQL.interpolateAppend`
+    SQL.interpolateValue (Text.toUpper name)                 `SQL.interpolateAppend`
+    SQL.interpolateRaw   " and age = "                       `SQL.interpolateAppend`
+    SQL.interpolateValue age                                 `SQL.interpolateAppend`
     SQL.interpolateEmpty
 
-It's highly recommended that every string type with an ``IsString`` instance provides at least one string interpolator reusing the built-in ``Interpolate`` class. That way, there's always an option to use ``MyString.s"..."`` if the user does not wish to globally enable ``-XOverloadedStrings``. At the very least, such an implementation could simply re-export the functions from ``Data.String.Experimental``, except monomorphize ``interpolateFinalize`` as
-
-::
-
-    interpolateFinalize :: ShowS -> MyString
-    interpolateFinalize = fromString . D.S.E.interpolateFinalize
-
-But more likely, ``MyString`` would probably want to use a more performant builder of some sort, such as:
+It's highly recommended that every string type with an ``IsString`` instance provides at least one string interpolator reusing the built-in ``Interpolate`` class. That way, there's always an option to use ``MyString.s"..."`` if the user does not wish to globally enable ``-XOverloadedStrings``. This interpolator would probably be implemented as:
 
 ::
 
@@ -369,7 +365,7 @@ But more likely, ``MyString`` would probably want to use a more performant build
     interpolateRaw = fromString
 
     interpolateValue :: D.S.E.Interpolate a => a -> MyStringBuilder
-    interpolateValue = fromString . D.S.E.interpolate
+    interpolateValue = D.S.E.interpolate
 
     interpolateAppend :: MyStringBuilder -> MyStringBuilder -> MyStringBuilder 
     interpolateAppend = mappend
@@ -377,7 +373,7 @@ But more likely, ``MyString`` would probably want to use a more performant build
     interpolateEmpty :: MyStringBuilder
     interpolateEmpty = mempty
 
-The only recommendation here is that ``MyString`` provide a module implementing string interpolation using the built-in ``Data.String.Experimental.Interpolate`` type class. Of course, ``MyString`` is free to implement more string interpolators, potentially using its own ``MyString.Interpolate`` type class for more performant interpolations than interpolating via ``String``.
+The only recommendation here is that ``MyString`` provide a module implementing string interpolation using the built-in ``Data.String.Experimental.Interpolate`` type class. Of course, ``MyString`` is free to implement more string interpolators, potentially using its own ``MyString.Interpolate`` type class for more performant interpolations.
 
 The following laws should hold, if the expression compiles:
 
@@ -438,10 +434,10 @@ Alternatives
 
   * The bulk of its API deals with format specifiers, which is not applicable to this proposal. ``Interpolate`` is much simpler
 
-* Define ``Interpolate`` as a multi param type class, instead of only going to ``String``.
+* Define ``Interpolate`` as a multi param type class
 
   * More complex
-  * Introduces n^2 instances problem
+  * Introduces M*N instances problem
   * ``-XQualifiedStrings`` is available for any more advanced use cases
 
 * Desugar to a function
@@ -564,11 +560,11 @@ Here's an example implementing the ``Builder`` + ``Text`` interpolators:
 
   import Data.String.Experimental (interpolate)
 
-  interpolateFinalize = id
-  interpolateValue = fromString . interpolate
   interpolateRaw = fromString
+  interpolateValue = interpolate
   interpolateAppend = mappend
   interpolateEmpty = mempty
+  interpolateFinalize = id
 
 ::
 
@@ -651,11 +647,11 @@ The library would also define a module for use with ``-XStringInterpolation`` + 
   import Data.String qualified as S
   import Data.String.Experimental qualified as S
 
-  interpolateFinalize = id
-  interpolateValue = interpolate
   interpolateRaw = fromString
+  interpolateValue = interpolate
   interpolateAppend = mappend
   interpolateEmpty = mempty
+  interpolateFinalize = id
 
   class Interpolate a where
     interpolate :: a -> SqlQuery
@@ -764,7 +760,7 @@ That library could define the module:
   instance Interpolate RawHtml where
     interpolate = Html . unRawHtml
   instance {-# OVERLAPPABLE #-} S.Interpolate a => Interpolate a where
-    interpolate = interpolate . S.interpolate
+    interpolate = interpolate @Text . S.interpolate
 
 And gain access to safe string interpolation with HTML escaping by default:
 
@@ -785,11 +781,11 @@ String interpolation could also make it easier to implement `shows`, in a module
 
   module Data.ShowS.Interpolate (P (..), interpolateString) where
 
-  interpolateFinalize = id
-  interpolateValue = shows
   interpolateRaw = showString
+  interpolateValue = shows
   interpolateAppend = (.)
   interpolateEmpty = id
+  interpolateFinalize = id
 
   data P a = P !Int !a
   instance Show a => Show (P a) where
@@ -813,10 +809,10 @@ Imagine a library implements a new ``BigDecimal`` type:
 
   data BigDecimal = BigDecimal Integer Int
 
-  renderBigDecimal :: BigDecimal -> String
+  renderBigDecimal :: (IsString s, Monoid s) => BigDecimal -> s
   renderBigDecimal (BigDecimal digits scale) =
     let (int, frac) = splitAt scale (show digits)
-     in int <> "." <> frac
+     in fromString $ int <> "." <> frac
 
 That library could define:
 
@@ -832,12 +828,12 @@ And be able to use it in interpolated strings:
   let n = BigDecimal 123456 3
   s"123456 / 10^3 = ${n}" == "123456 / 10^3 = 123.456"
 
-If ``text`` provided an interpolator using the built-in ``Interpolate`` class with ``Text.pack``, ``BigDecimal`` could interpolate into ``Text.s"..."`` for free.
+If ``text`` provided an interpolator using the built-in ``Interpolate`` class, ``BigDecimal`` could interpolate into ``Text.s"..."`` for free.
 
 Format specifiers
 ~~~~~~~~~~~~~~~~~
 
-Python is famous for being able to specify format specifiers when interpolating values:
+One notable feature Python supports in string interpolation is specifying format specifiers:
 
 .. code-block:: python
 
@@ -871,140 +867,3 @@ Where these would return the strings:
 
   Points earned:   -13.20
   Current total:  +127.98
-
-Alternative - Polymorphic interpolable expansion
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Alternate 1: Built-in ``s"..."`` is hardcoded and is only polymorphic on ``IsString``:
-
-::
-
-    -- Desugared expression for M.s"age: ${age}"
-    --
-    -- s"..." is equivalent to Data.String.Interpolate.s"..."
-    M.finalize $
-                 M.raw "age: "
-      `M.append` M.convert age
-      `M.append` M.empty
-
-    {----- Data.String.Interpolate -----}
-
-    raw :: String -> ShowS
-    raw = showString
-
-    convert :: Interpolate a => a -> s
-    convert = interpolateS
-
-    append :: ShowS -> ShowS -> ShowS
-    append = (.)
-
-    empty :: ShowS
-    empty = id
-
-    finalize :: ShowS -> String
-    finalize = ($ "")
-
-    -- One instance for all user-defined types; e.g. the `url` library
-    -- would just need to implement `Interpolate URL`
-    class Interpolate a where
-      interpolateS :: a -> ShowS
-
-    {----- Text library: s"..." :: Text -----}
-
-    -- Doesn't have to do anything; built-in works for free.
-    -- Could optionally implement a more performant interpolation with
-    -- qualified interpolation.
-
-    {----- User-defined SimpleText: SimpleText.s"..." -----}
-
-    -- | Text, except only support interpolating Text values
-    newtype SimpleText = SimpleText Text
-      deriving newtype (Semigroup, Monoid)
-
-    convert = Text.Builder.fromText
-    raw = Text.Builder.fromText
-    append = mappend
-    empty = mempty
-    finalize = SimpleText . Text.toStrict . Text.Builder.toLazyText
-
-Alternate 2: Built-in ``s"..."`` with polymorphic builder:
-
-::
-
-    -- Desugared expression for M.s"age: ${age}"
-    --
-    -- s"..." is equivalent to Data.String.Interpolate.s"..."
-    M.finalize $
-                 M.raw "age: "
-      `M.append` M.convert age
-      `M.append` M.empty
-
-    {----- Data.String.Interpolate -----}
-
-    class Interpolable s where
-      type Builder s = b | b -> s
-      raw      :: String -> Builder s
-      append   :: Builder s -> Builder s -> Builder s
-      empty    :: Builder s
-      finalize :: Builder s -> s
-
-    class Interpolate a builder where
-      convert :: a -> builder
-
-    instance Interpolable String where
-      type Builder String = ShowS
-      raw = fromString
-      append = (.)
-      empty = id
-      finalize = ($ "")
-
-    instance Interpolate String ShowS where
-      convert = showString
-    instance Interpolate Int ShowS where
-      convert = shows
-    -- ...
-
-    {----- Text library: s"..." :: Text -----}
-
-    instance Interpolable Text where
-      type Builder Text = Text.Builder
-      raw = Text.Builder.fromText
-      append = mappend
-      empty = mempty
-      finalize = Text.toStrict . Text.Builder.toLazyText
-
-    instance Interpolate String Text.Builder where
-      convert = Text.Builder.fromString
-    instance Interpolate Int Text.Builder where
-      convert = Text.Builder.decimal
-    -- ...
-
-    {----- User-defined SimpleText: SimpleText.s"..." -----}
-
-    -- | Text, except ONLY support interpolating Text values.
-    --
-    -- Avoid `Interpolate` class, since we can't forbid someone
-    -- from adding a new `Interpolate Foo SimpleText` instance.
-    newtype SimpleText = SimpleText Text
-      deriving newtype (Semigroup, Monoid)
-
-    convert = Text.Builder.fromText
-    raw = Text.Builder.fromText
-    append = mappend
-    empty = mempty
-    finalize = SimpleText . Text.toStrict . Text.Builder.toLazyText
-
-Downsides of Alternate 2 compared to Alternate 1:
-
-* All types that can be interpolated (e.g. a ``URL`` type) must have an instance for each string-like type it can be interpolated within:
-
-    * ``Interpolate URL String``
-    * ``Interpolate URL Text``
-    * ``Interpolate URL ByteString``
-    * ...
-
-  Alternate 1 only needs to implement one ``Interpolate URL``. May be less performant, since we're always going via ``String`` instead of a potentially more efficient conversion (e.g. going straight to ``Text``), but it's a good default.
-
-* All string-like types _must_ implement their own instance, e.g. ``Interpolable Text``, and _must_ implement ``Interpolate`` instances for all built-in types.
-
-  Alternate 1 will automatically work for any ``IsString`` type. Types _may_ implement their own custom interpolation with qualified string interpolation, but that's not a requirement (although recommended, to monomorphize the default interpolation).
