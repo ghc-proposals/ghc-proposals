@@ -258,10 +258,8 @@ The following code will live in ``ghc-experimental`` under ``Data.String.Experim
     interpolate = fromString . show
 
   instance Interpolate a => Interpolate (Maybe a) where
-    interpolatePrec _ Nothing = fromString "Nothing"
-    interpolatePrec d (Just a) = fromString "Just " <> paren (interpolatePrec 11 a)
-      where
-        paren s = if d > 10 then fromString "(" <> s <> fromString ")" else s
+    interpolate Nothing = fromString "Nothing"
+    interpolate (Just a) = interpolate a
 
 Primitive types should typically implement ``interpolate`` using ``fromString``. Going through ``String`` is unavoidable without making ``Interpolate`` a multi param type class and introducing type ambiguity. But composite types will be able to avoid going through ``String``; see *Section 3.2 Composite types* for an example.
 
