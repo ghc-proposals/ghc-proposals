@@ -273,15 +273,15 @@ With the machinery defined above, the following interpolated string desugars to 
   -- original string
   s"foo ${f a b} bar ${g x} baz ${name}"
 
-  -- desugared, where D.S.E = Data.String.Experimental.
-  D.S.E.interpolateFinalize $
-    D.S.E.interpolateRaw "foo "   `D.S.E.interpolateAppend`
-    D.S.E.interpolateValue (f a b)`D.S.E.interpolateAppend`
-    D.S.E.interpolateRaw " bar "  `D.S.E.interpolateAppend`
-    D.S.E.interpolateValue (g x)  `D.S.E.interpolateAppend`
-    D.S.E.interpolateRaw " baz "  `D.S.E.interpolateAppend`
-    D.S.E.interpolateValue name   `D.S.E.interpolateAppend`
-    D.S.E.interpolateEmpty
+  -- desugared
+  interpolateFinalize $
+    interpolateRaw "foo "   `interpolateAppend`
+    interpolateValue (f a b)`interpolateAppend`
+    interpolateRaw " bar "  `interpolateAppend`
+    interpolateValue (g x)  `interpolateAppend`
+    interpolateRaw " baz "  `interpolateAppend`
+    interpolateValue name   `interpolateAppend`
+    interpolateEmpty
     :: String
 
 Namely:
@@ -322,6 +322,85 @@ This proposal would be adding the following modules to ``ghc-experimental``, whi
       - Defines an interpolator that's the same as the default except interpolates values directly without automatic conversion with ``Interpolate`` (See *Section 10.3 Provided interpolator: Explicit*)
     * - ``Data.String.Interpolate.ShowS.Experimental``
       - Defines an interpolator useful for implementing ``showsPrec`` (See *Section 10.4 Provided interpolator: ShowS*)
+
+OverloadedStrings
+~~~~~~~~~~~~~~~~~
+
+When ``-XOverloadedStrings`` is enabled, ``:: String`` is _not_ included. The only requirement needed for string interpolation for working on a string type is adding a ``StringInterpolator`` instance.
+
+QualifiedStrings
+~~~~~~~~~~~~~~~~
+
+When ``-XQualifiedStrings`` is enabled, you may qualify string interpolation, where ``[modid.]s"..."`` desugars to the same expressions, except resolving the ``interpolate*`` functions as ``[modid.]interpolate*``. Some examples:
+
+::
+
+  Text.s"hello world"
+
+  -- Desugars to:
+  Text.interpolateFinalize $
+    Text.interpolateRaw "hello world"
+
+::
+
+  SQL.s"select * from users where name = ${Text.toUpper name} and age = ${age}"
+
+  -- Desugars to:
+  SQL.interpolateFinalize $
+    SQL.interpolateRaw   "select * from users where name = " `SQL.interpolateAppend`
+    SQL.interpolateValue (Text.toUpper name)                 `SQL.interpolateAppend`
+    SQL.interpolateRaw   " and age = "                       `SQL.interpolateAppend`
+    SQL.interpolateValue age                                 `SQL.interpolateAppend`
+    SQL.interpolateEmpty
+
+When ``-XQualifiedStrings`` is enabled, ``:: String`` is _not_ included.
+
+Qualified string interpolators should specify a fixity for ``interpolateAppend``, or else the default ``infixl 9`` fixity will be used.
+
+It's highly recommended that every string type with an ``IsString`` instance provides at least one string interpolator reusing the built-in ``Interpolate`` class. That way, there's always an option to use ``MyString.s"..."`` if the user does not wish to globally enable ``-XOverloadedStrings``. This interpolator should simply be a monomorphized version of the default interpolator:
+
+::
+
+    module Data.MyString (
+      module X,
+      interpolateFinalize,
+    ) where
+
+    import Data.String.Experimental as X hiding (interpolateFinalize)
+
+    -- MyString would already implement StringInterpolator for OverloadedStrings
+    interpolateFinalize :: MyStringBuilder -> MyString
+    interpolateFinalize = buildInterpolator
+
+The only recommendation here is that ``MyString`` provide a module implementing string interpolation using the built-in ``Data.String.Experimental.Interpolate`` type class. Of course, ``MyString`` is free to implement more string interpolators, potentially using its own ``MyString.Interpolate`` type class for more performant interpolations.
+
+The following laws should hold, if the expression compiles:
+
+* ``M."str" == M.s"str"``
+* ``Data.String.fromString "str" == M.s"str"``
+
+MultilineStrings
+~~~~~~~~~~~~~~~~
+
+When ``-XMultilineStrings`` is enabled, string interpolation may be used with multiline strings. Multiline string interpolations resolve the multiline string first, then do the string interpolation. This means that qualified string interpolations work with multiline strings for free.
+
+::
+
+  let x = "hello"
+
+  -- original string
+  let str0 =
+        s"""
+        ${x} world
+        world ${x}
+        ${x} world
+        """
+
+  -- resolve multiline string
+  let str1 = s"${x} world\nworld ${x}\n${x} world"
+
+  -- resolve interpolation
+  let str2 = "hello world\nworld hello\nhello world"
 
 Template Haskell
 ~~~~~~~~~~~~~~~~
@@ -400,84 +479,7 @@ An existing program containing ``s"..."`` will break when ``-XStringInterpolatio
 #. Easily mitigatable: just add a space, which improves readability anyway
 #. Prefixing string literals like ``s"..."`` is common in other languages: Python, Scala, Javascript/Typescript, etc. so it shouldn't be a big hurdle for newcomers
 
-OverloadedStrings
-~~~~~~~~~~~~~~~~~
-
-When ``-XOverloadedStrings`` is enabled, ``:: String`` is _not_ included. The only requirement needed for string interpolation for working on a string type is adding a ``StringInterpolator`` instance.
-
-QualifiedStrings
-~~~~~~~~~~~~~~~~
-
-When ``-XQualifiedStrings`` is enabled, you may qualify string interpolation:
-
-::
-
-  Text.s"hello world"
-
-  -- Desugars to:
-  Text.interpolateFinalize $
-    Text.interpolateRaw "hello world"
-
-::
-
-  SQL.s"select * from users where name = ${Text.toUpper name} and age = ${age}"
-
-  -- Desugars to:
-  SQL.interpolateFinalize $
-    SQL.interpolateRaw   "select * from users where name = " `SQL.interpolateAppend`
-    SQL.interpolateValue (Text.toUpper name)                 `SQL.interpolateAppend`
-    SQL.interpolateRaw   " and age = "                       `SQL.interpolateAppend`
-    SQL.interpolateValue age                                 `SQL.interpolateAppend`
-    SQL.interpolateEmpty
-
-When ``-XQualifiedStrings`` is enabled, ``:: String`` is _not_ included.
-
-Qualified string interpolators should specify a fixity for ``interpolateAppend``, or else the default ``infixl 9`` fixity will be used.
-
-It's highly recommended that every string type with an ``IsString`` instance provides at least one string interpolator reusing the built-in ``Interpolate`` class. That way, there's always an option to use ``MyString.s"..."`` if the user does not wish to globally enable ``-XOverloadedStrings``. This interpolator should simply be a monomorphized version of the default interpolator:
-
-::
-
-    module Data.MyString (
-      module X,
-      interpolateFinalize,
-    ) where
-
-    import Data.String.Experimental as X hiding (interpolateFinalize)
-
-    -- MyString would already implement StringInterpolator for OverloadedStrings
-    interpolateFinalize :: MyStringBuilder -> MyString
-    interpolateFinalize = buildInterpolator
-
-The only recommendation here is that ``MyString`` provide a module implementing string interpolation using the built-in ``Data.String.Experimental.Interpolate`` type class. Of course, ``MyString`` is free to implement more string interpolators, potentially using its own ``MyString.Interpolate`` type class for more performant interpolations.
-
-The following laws should hold, if the expression compiles:
-
-* ``M."str" == M.s"str"``
-* ``Data.String.fromString "str" == M.s"str"``
-
-MultilineStrings
-~~~~~~~~~~~~~~~~
-
-When ``-XMultilineStrings`` is enabled, string interpolation may be used with multiline strings. Multiline string interpolations resolve the multiline string first, then do the string interpolation. This means that qualified string interpolations work with multiline strings for free.
-
-::
-
-  let x = "hello"
-
-  -- original string
-  let str0 =
-        s"""
-        ${x} world
-        world ${x}
-        ${x} world
-        """
-
-  -- resolve multiline string
-  let str1 = s"${x} world\nworld ${x}\n${x} world"
-
-  -- resolve interpolation
-  let str2 = "hello world\nworld hello\nhello world"
+Interacts nicely with ``-XOverloadedStrings``, ``-XQualifiedStrings``, and ``-XMultilineStrings``. See *Section 2 Proposed Change Specification* above.
 
 Costs and Drawbacks
 -------------------
