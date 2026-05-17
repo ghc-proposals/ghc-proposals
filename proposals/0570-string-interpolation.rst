@@ -213,55 +213,76 @@ The following code will live in ``ghc-experimental`` under ``Data.String.Experim
   interpolateEmpty :: Monoid s => s
   interpolateEmpty = mempty
 
-  interpolateFinalize :: StringInterpolator s => InterpolatorBuilder s -> s
+  interpolateFinalize :: Interpolator s => InterpolatorBuilderFor s -> s
   interpolateFinalize = buildInterpolator
 
-  {----- String interpolator -----}
+  {----- Classes -----}
 
   class
-    ( IsString (InterpolatorBuilder s)
-    , Monoid (InterpolatorBuilder s)
-    ) => StringInterpolator s where
-    type InterpolatorBuilder s
-    buildInterpolator :: InterpolatorBuilder s -> s
+    ( InterpolatorBuilder (InterpolatorBuilderFor s)
+    ) => Interpolator s where
+    type InterpolatorBuilderFor s
+    buildInterpolator :: InterpolatorBuilderFor s -> s
+
+  class (IsString b, Monoid b, Interpolator b) => InterpolatorBuilder b where
+    interpolateString :: String -> b
+    interpolateString = fromString
+
+    interpolateIntegral :: (Integral a, Show a) => a -> b
+    interpolateIntegral = fromString . show
+
+    interpolateRealFloat :: (RealFloat a, Show a) => a -> b
+    interpolateRealFloat = fromString . show
+
+  class Interpolate a where
+    {-# MINIMAL interpolate | interpolatePrec #-}
+
+    interpolate :: (InterpolatorBuilder b) => a -> b
+    interpolate = interpolatePrec 0
+
+    interpolatePrec :: (InterpolatorBuilder b) => Int -> a -> b
+    interpolatePrec _ = interpolate
+
+  {----- StringBuilder -----}
 
   newtype StringBuilder = StringBuilder (Endo String)
     deriving newtype (Semigroup, Monoid)
   instance IsString StringBuilder where
     fromString s = StringBuilder (Endo (s <>))
 
-  instance StringInterpolator String where
-    type InterpolatorBuilder String = StringBuilder
+  instance Interpolator String where
+    type InterpolatorBuilderFor String = StringBuilder
     buildInterpolator (StringBuilder (Endo f)) = f ""
+
+  instance Interpolator StringBuilder where
+    type InterpolatorBuilderFor StringBuilder = StringBuilder
+    buildInterpolator = id
+
+  instance InterpolatorBuilder StringBuilder
 
   {----- Interpolation of values -----}
 
-  class Interpolate a where
-    {-# MINIMAL interpolate | interpolatePrec #-}
-
-    interpolate :: (IsString s, Monoid s) => a -> s
-    interpolate = interpolatePrec 0
-
-    interpolatePrec :: (IsString s, Monoid s) => Int -> a -> s
-    interpolatePrec _ = interpolate
-
   instance Interpolate String where
-    interpolate = fromString
+    interpolate = interpolateString
   instance Interpolate Char where
-    interpolate c = fromString [c]
+    interpolate c = interpolateString [c]
 
   instance Interpolate Int where
-    interpolate = fromString . show
+    interpolate = interpolateIntegral
+  instance Interpolate Word8 where
+    interpolate = interpolateIntegral
   instance Interpolate Double where
-    interpolate = fromString . show
+    interpolate = interpolateRealFloat
+  instance Interpolate Float where
+    interpolate = interpolateRealFloat
   instance Interpolate Bool where
-    interpolate = fromString . show
+    interpolate = interpolateString . show
 
   instance Interpolate a => Interpolate (Maybe a) where
-    interpolate Nothing = fromString "Nothing"
+    interpolate Nothing = interpolateString "Nothing"
     interpolate (Just a) = interpolate a
 
-Primitive types should typically implement ``interpolate`` using ``fromString``. Going through ``String`` is unavoidable without making ``Interpolate`` a multi param type class and introducing type ambiguity. But composite types will be able to avoid going through ``String``; see *Section 3.2 Composite types* for an example.
+Types may implement ``Interpolate`` either using the functions in ``InterpolatorBuilder``, ``Monoid``, or using ``s"..."`` itself; see *Section 3.2 Composite types* for an example.
 
 Expansion
 ~~~~~~~~~
@@ -317,7 +338,7 @@ This proposal would be adding the following modules to ``ghc-experimental``, whi
     * - ``Data.String.Interpolate.Class.Experimental``
       - Defines the ``Interpolate`` class and instances as written in *Section 2.4 Machinery*
     * - ``Data.String.Interpolate.Default.Experimental``
-      - Defines the ``StringInterpolator`` class and the ``interpolate*`` functions for the default ``s"..."`` syntax, as written in *Section 2.4 Machinery*
+      - Defines the classes and functions for the default ``s"..."`` syntax, as written in *Section 2.4 Machinery*
     * - ``Data.String.Interpolate.Explicit.Experimental``
       - Defines an interpolator that's the same as the default except interpolates values directly without automatic conversion with ``Interpolate`` (See *Section 10.3 Provided interpolator: Explicit*)
     * - ``Data.String.Interpolate.ShowS.Experimental``
@@ -326,7 +347,7 @@ This proposal would be adding the following modules to ``ghc-experimental``, whi
 OverloadedStrings
 ~~~~~~~~~~~~~~~~~
 
-When ``-XOverloadedStrings`` is enabled, ``:: String`` is _not_ included. The only requirement needed for string interpolation for working on a string type is adding a ``StringInterpolator`` instance.
+When ``-XOverloadedStrings`` is enabled, ``:: String`` is _not_ included. The only requirement needed for string interpolation for working on a string type is adding ``Interpolator`` + ``InterpolatorBuilder`` instances.
 
 QualifiedStrings
 ~~~~~~~~~~~~~~~~
@@ -368,7 +389,7 @@ It's highly recommended that every string type with an ``IsString`` instance pro
 
     import Data.String.Experimental as X hiding (interpolateFinalize)
 
-    -- MyString would already implement StringInterpolator for OverloadedStrings
+    -- MyString would already implement Interpolator for OverloadedStrings
     interpolateFinalize :: MyStringBuilder -> MyString
     interpolateFinalize = buildInterpolator
 
@@ -666,32 +687,26 @@ Users could then write:
 Text
 ~~~~
 
-After implementing ``StringInterpolator``, ``text`` should already have a decently performant interpolation using the default interpolation. As mentioned in *Section 4.2 QualifiedStrings*, ``text`` should provide interpolators that are simply the monomorphized versions of the default interpolator for ``Text``, ``LazyText``, and ``Builder``.
+After implementing ``Interpolator``, ``text`` should already have a decently performant interpolation using the default interpolation. As mentioned in *Section 4.2 QualifiedStrings*, ``text`` should provide interpolators that are simply the monomorphized versions of the default interpolator for ``Text``, ``LazyText``, and ``Builder``.
 
-However, the default interpolator forces primitive types to interpolate via ``String``, which might be inefficient. So ``text`` might be interested in providing additional interpolators using a new ``Text.Interpolate`` class providing ``interpolate :: a -> Builder``:
+``text`` would implement ``InterpolatorBuilder Text.Builder`` using builder functions, so it should be fairly performant:
 
 ::
 
-    {----- Data.Text.Interpolate.Builder -----}
+    instance Interpolator Text where
+      type InterpolatorBuilderFor Text = LazyText.Builder
+      buildInterpolator = LazyText.toStrict . LazyText.toLazyText
 
-    class Interpolate a where
-      interpolate :: a -> Builder
+    instance Interpolator LazyText.Builder where
+      type InterpolatorBuilderFor LazyText.Builder = LazyText.Builder
+      buildInterpolator = id
 
-    interpolateRaw = fromString
-    interpolateValue = interpolate
-    interpolateAppend = mappend
-    interpolateEmpty = mempty
-    interpolateFinalize = interpolate
+    instance InterpolatorBuilder LazyText.Builder where
+      interpolateIntegral = LazyText.decimal
+      interpolateRealFloat = LazyText.realFloat
 
-    infixr 6 interpolateAppend
-
-    {----- Data.Text.Interpolate.Lazy; re-exports everything else from Builder -----}
-
-    interpolateFinalize = Builder.toLazyText
-
-    {----- Data.Text.Interpolate; re-exports everything else from Builder -----}
-
-    interpolateFinalize = LazyText.toStrict . Builder.toLazyText
+    instance Interpolate Text where
+      interpolate = interpolateString . Text.unpack
 
 With this support, users can write the following:
 
@@ -900,10 +915,10 @@ Imagine a library implements a new ``BigDecimal`` type:
 
   data BigDecimal = BigDecimal Integer Int
 
-  renderBigDecimal :: (IsString s, Monoid s) => BigDecimal -> s
+  renderBigDecimal :: (InterpolatorBuilder s) => BigDecimal -> s
   renderBigDecimal (BigDecimal digits scale) =
     let (int, frac) = splitAt scale (show digits)
-     in fromString $ int <> "." <> frac
+     in interpolateString $ int <> "." <> frac
 
 That library could define:
 
