@@ -301,6 +301,20 @@ is insufficient:
 * it makes generated code depend on ambient extension settings in a less direct
   and less visible way.
 
+Add local modifiers for ``StrictData``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Another alternative is to add syntax for locally enabling or disabling
+``StrictData`` around a declaration, so that the default strictness is stated
+near the datatype rather than at module level. This would be useful beyond this
+proposal, and resembles previous discussions about local control of extensions
+or compiler flags.
+
+However, local extension modifiers are significantly more complicated to
+specify and implement. They would also control the default for unannotated
+fields rather than directly addressing the missing ability to write an explicit
+lazy annotation in lazy-by-default code.
+
 Require every field to be annotated
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
