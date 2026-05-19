@@ -149,7 +149,15 @@ This proposal introduces the following syntactical changes to Haskell:
 		  , mkFoo
 		  ) where 
 
-4. **Trailing AND Leading Commas**: Allow both Trailing AND Leading Commas in one structure.
+4. **Trailing AND Leading Commas**: Allow both Trailing AND Leading Commas in one structure. ::
+
+      data Example a = ....
+                 deriving (
+                        , Functor
+                        , Foldable,
+                          Applicative,
+                          Traversable,
+                 )
 
 
 Syntax
@@ -208,11 +216,8 @@ This proposal **does not include yet** using extra commas in next unordered stru
 
 - fixity "lists"
 
-This proposal also does not include extra commas in next **ordered structures**:
-
-- lists
-- tuples
-- costraint tuples
+This proposal does not cover structures in which the order of the elements matters, 
+such as lists, tuples, and constraint tuples.
 
 
 Examples
