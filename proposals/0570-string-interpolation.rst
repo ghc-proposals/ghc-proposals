@@ -202,13 +202,13 @@ The following code will live in ``ghc-experimental`` under ``Data.String.Experim
   interpolateRaw :: IsString s => String -> s
   interpolateRaw = fromString
 
-  interpolateValue :: (Interpolate a, IsString s, Monoid s) => a -> s
+  interpolateValue :: (Interpolate a, InterpolateBuilder b) => a -> b
   interpolateValue = interpolate
 
   interpolateAppend :: Monoid s => s -> s -> s
   interpolateAppend = mappend
 
-  infixr 6 interpolateAppend -- matches (<>)
+  infixr 6 `interpolateAppend` -- matches (<>)
 
   interpolateEmpty :: Monoid s => s
   interpolateEmpty = mempty
@@ -225,9 +225,6 @@ The following code will live in ``ghc-experimental`` under ``Data.String.Experim
     buildInterpolator :: InterpolatorBuilderFor s -> s
 
   class (IsString b, Monoid b, Interpolator b) => InterpolatorBuilder b where
-    interpolateString :: String -> b
-    interpolateString = fromString
-
     interpolateIntegral :: (Integral a, Show a) => a -> b
     interpolateIntegral = fromString . show
 
@@ -235,13 +232,7 @@ The following code will live in ``ghc-experimental`` under ``Data.String.Experim
     interpolateRealFloat = fromString . show
 
   class Interpolate a where
-    {-# MINIMAL interpolate | interpolatePrec #-}
-
-    interpolate :: (InterpolatorBuilder b) => a -> b
-    interpolate = interpolatePrec 0
-
-    interpolatePrec :: (InterpolatorBuilder b) => Int -> a -> b
-    interpolatePrec _ = interpolate
+    interpolate :: InterpolatorBuilder b => a -> b
 
   {----- StringBuilder -----}
 
@@ -263,9 +254,9 @@ The following code will live in ``ghc-experimental`` under ``Data.String.Experim
   {----- Interpolation of values -----}
 
   instance Interpolate String where
-    interpolate = interpolateString
+    interpolate = fromString
   instance Interpolate Char where
-    interpolate c = interpolateString [c]
+    interpolate c = fromString [c]
 
   instance Interpolate Int where
     interpolate = interpolateIntegral
@@ -276,11 +267,7 @@ The following code will live in ``ghc-experimental`` under ``Data.String.Experim
   instance Interpolate Float where
     interpolate = interpolateRealFloat
   instance Interpolate Bool where
-    interpolate = interpolateString . show
-
-  instance Interpolate a => Interpolate (Maybe a) where
-    interpolate Nothing = interpolateString "Nothing"
-    interpolate (Just a) = interpolate a
+    interpolate = fromString . show
 
 Types may implement ``Interpolate`` either using the functions in ``InterpolatorBuilder``, ``Monoid``, or using ``s"..."`` itself; see *Section 3.2 Composite types* for an example.
 
@@ -295,7 +282,7 @@ With the machinery defined above, the following interpolated string desugars to 
   s"foo ${f a b} bar ${g x} baz ${name}"
 
   -- desugared
-  interpolateFinalize $
+  interpolateFinalize @String $
     interpolateRaw "foo "   `interpolateAppend`
     interpolateValue (f a b)`interpolateAppend`
     interpolateRaw " bar "  `interpolateAppend`
@@ -303,7 +290,6 @@ With the machinery defined above, the following interpolated string desugars to 
     interpolateRaw " baz "  `interpolateAppend`
     interpolateValue name   `interpolateAppend`
     interpolateEmpty
-    :: String
 
 Namely:
 
@@ -347,7 +333,7 @@ This proposal would be adding the following modules to ``ghc-experimental``, whi
 OverloadedStrings
 ~~~~~~~~~~~~~~~~~
 
-When ``-XOverloadedStrings`` is enabled, ``:: String`` is _not_ included. The only requirement needed for string interpolation for working on a string type is adding ``Interpolator`` + ``InterpolatorBuilder`` instances.
+When ``-XOverloadedStrings`` is enabled, ``@String`` is *not* included. The only requirement needed for string interpolation for working on a string type is adding ``Interpolator`` + ``InterpolatorBuilder`` instances.
 
 QualifiedStrings
 ~~~~~~~~~~~~~~~~
@@ -374,7 +360,7 @@ When ``-XQualifiedStrings`` is enabled, you may qualify string interpolation, wh
     SQL.interpolateValue age                                 `SQL.interpolateAppend`
     SQL.interpolateEmpty
 
-When ``-XQualifiedStrings`` is enabled, ``:: String`` is _not_ included.
+When ``-XQualifiedStrings`` is enabled, ``@String`` is *not* included.
 
 Qualified string interpolators should specify a fixity for ``interpolateAppend``, or else the default ``infixl 9`` fixity will be used.
 
@@ -556,9 +542,9 @@ Expansion-related Alternatives
 * Hardcode to Monoid's ``mappend`` and ``mempty``
 
   * Would remove potential use-cases needing type-changing ``append``, e.g. ``a -> [a] -> [a]`` or ``f a -> f as -> f (a ': as)``
-  * It's likely that most custom ``interpolateString`` will use ``Monoid``, but we should avoid restricting the interface here
+  * It's likely that most custom interpolators will implement ``interpolateAppend``/``interpolateEmpty`` with ``Monoid``, but we should avoid restricting the interface here
 
-* Use ``M.fromString`` instead of ``interpolateStringRaw``, to more tightly connect ``StringInterpolation`` with ``QualifiedStrings``
+* Use ``M.fromString`` instead of ``interpolateRaw``, to more tightly connect ``StringInterpolation`` with ``QualifiedStrings``
 
   * While ``QualifiedStrings`` and ``StringInterpolation`` are closely related, and implementions *ought* to implement them consistently, the language feature should not enforce it, in the same way that typeclass laws are not enforced by the language
   * Even if we hardcoded ``fromString``, one could still devise a custom string interpolator that's inconsistent with ``M.fromString``; e.g. ``interpolateFinalize _ = "bad"``
@@ -669,7 +655,7 @@ As part of the feature, ``ghc-experimental`` will provide ``Data.String.Interpol
   interpolateEmpty = id
   interpolateFinalize = id
 
-  infixr 9 interpolateAppend
+  infixr 9 `interpolateAppend`
 
   data P a = P !Int !a
   instance Show a => Show (P a) where
@@ -706,7 +692,7 @@ After implementing ``Interpolator``, ``text`` should already have a decently per
       interpolateRealFloat = LazyText.realFloat
 
     instance Interpolate Text where
-      interpolate = interpolateString . Text.unpack
+      interpolate = fromString . Text.unpack
 
 With this support, users can write the following:
 
@@ -783,7 +769,7 @@ The library would also define a module for use with ``-XStringInterpolation`` + 
   interpolateEmpty = mempty
   interpolateFinalize = id
 
-  infixr 6 interpolateAppend
+  infixr 6 `interpolateAppend`
 
   class Interpolate a where
     interpolate :: a -> SqlQuery
@@ -883,7 +869,7 @@ That library could define the module:
   interpolateEmpty = mempty
   interpolateFinalize = id
 
-  infixr 6 interpolateAppend
+  infixr 6 `interpolateAppend`
 
   class Interpolate a where
     interpolate :: a -> Html
@@ -915,10 +901,10 @@ Imagine a library implements a new ``BigDecimal`` type:
 
   data BigDecimal = BigDecimal Integer Int
 
-  renderBigDecimal :: (InterpolatorBuilder s) => BigDecimal -> s
+  renderBigDecimal :: (IsString s) => BigDecimal -> s
   renderBigDecimal (BigDecimal digits scale) =
     let (int, frac) = splitAt scale (show digits)
-     in interpolateString $ int <> "." <> frac
+     in fromString $ int <> "." <> frac
 
 That library could define:
 
