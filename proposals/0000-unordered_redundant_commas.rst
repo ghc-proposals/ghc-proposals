@@ -149,7 +149,7 @@ This proposal introduces the following syntactical changes to Haskell:
 		  , mkFoo
 		  ) where 
 
-4. **Trailing AND Leading Commas**: Allow both Trailing AND Leading Commas in one structure. ::
+4. **Trailing AND Leading Commas**: Allow both Trailing (2) AND Leading (3) Commas simultaneously in a single structure. ::
 
       data Example a = ....
                  deriving (
