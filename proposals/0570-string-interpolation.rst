@@ -580,8 +580,9 @@ Delimiter-related Alternatives
 
 * No quote delimiter, always interpolate
 
-  * Would require any use of ``${...}`` to be escaped.
-  * No other language does this; even Bash has single quoted strings to avoid escaping
+  * e.g. if we switch the delimiter to `\{...}`, which is currently invalid in a string
+  * Used by `jq <https://jqlang.org/manual/#string-interpolation>`_
+  * Downside is that you have to parse the string before figuring out how it should be desugared
 
 * Different interpolation delimiter, e.g. ``#{foo}``
 
