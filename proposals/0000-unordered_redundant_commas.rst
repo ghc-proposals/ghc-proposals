@@ -16,7 +16,7 @@ in unordered structures (records, import and export lists and sublists, derivati
 This change aims to improve code readability and maintainability by allowing more flexibility 
 in formatting unordered structures (records, import and export lists and sublists, derivation and default clauses). 
 
-First of all, particularly important in scenarios involving version control, code reviews, and automated code generation.
+This is particularly helpful in scenarios involving version control, code reviews, and automated code generation.
 
 
 Motivation
@@ -25,7 +25,7 @@ Motivation
 In many programming languages, including JavaScript, Python, and Rust, trailing commas in lists
 (and other collection types) are a common feature.
 
-The problem code is repeated::
+This causes the problem that code needs to be repeated::
 
     module Foo (
     #ifdef TESTING
@@ -40,7 +40,7 @@ The problem code is repeated::
       Foo
     #endif
 
-Given trailing and leading commas, one could instead write::
+If trailing and leading commas were allowed, one could instead write::
 
     module Foo (
       Foo(
@@ -56,7 +56,7 @@ Given trailing and leading commas, one could instead write::
 This feature provides several benefits:
 
 1. **Improved Diff Quality**: When adding or removing items in a structure, having a trailing or leading comma means only
-   the relevant lines are changed in version control systems, reducing the noise in diffs and making reviews easier.
+   the relevant lines are changed, reducing the noise in diffs and making reviews easier.
   
 2. **Ease of Code Modification**: Developers can add new elements to the end / beginnging of a structure without having 
    to modify the previous last / first line, which reduces the likelihood of syntax errors.
@@ -64,7 +64,7 @@ This feature provides several benefits:
 3. **Consistency in Formatting**: When generating code automatically or formatting structures in a specific way, 
    leading and trailing commas can simplify the process.
 
-4. **Use a different style of coding**: Extra commas allow for different styles to write a code.
+4. **Use a different style of coding**: Extra commas allow for different styles to write code.
 
 5. **Simplicity of conditional meta-programming**: Extra commas allow to write much simpler code when conditional meta-programming is used.
 
@@ -72,17 +72,16 @@ This feature provides several benefits:
 History
 ~~~~~~~~~~~~
 
-Adding trailing commas (and more rarely leading commas) is a frequently asked feature to add in Haskell.
+Adding trailing commas (and more rarely leading commas) is a frequently asked for feature to add to Haskell.
 
-But this task is highly divisive in the Haskell community.
+But, this task is highly divisive in the Haskell community.
 
-Original Proposal #87 
+The original proposal #87 
 `ExtraCommas (was: Trailing and leading commas in sub-export lists) <https://github.com/ghc-proposals/ghc-proposals/pull/87>`__ 
-was discussed several years and that discussion was so controversial,
-that author withdrawn own proposal just before the final Acceptation was received (with minor changes).
+was discussed several years. The discussion was so controversial
+that the author withdrew the proposal just before the final acceptance (with minor changes).
 
-However, the tension in the Haskell community was so high that the duplicate of that proposal was never proposed 
-and had never succeeded in the next 6 years.
+However, the tension in the Haskell community was so high that a new attempt of that proposal has not been proposed in the following 6 years.
 
 This proposal is an attempt to allow extra commas where everyone agrees to have them - 
 in unordered structures (records, import and export "lists" and sublists, derivation and default clauses).
@@ -91,14 +90,13 @@ in unordered structures (records, import and export "lists" and sublists, deriva
 Proposed Change Specification
 -----------------------------
 
-This proposal does not cover order-matter structures (including lists, tuples, constraint tuples).
+This proposal does not cover structures in which order matters (including lists, tuples, constraint tuples).
 
 This proposal introduces the following syntactical changes to Haskell:
 
-1. **New extension**: Add language extension ``UnorderedExtraCommas`` with a simple rule where
-   extra commas are allowed: in unordered structures only.
+1. **New extension**: Add a new language extension ``UnorderedExtraCommas`` which allows leading and trailing commas in unordered structures.
 
-2. **Trailing Commas**: Allow a comma after the last element in place-unordered clauses:
+2. **Trailing Commas**: Allow a comma after the last element in enumeration clauses where order does not matter:
 
    - module export lists(already supported) and sub-lists
    - module import lists(already supported) and sub-lists
@@ -129,7 +127,7 @@ This proposal introduces the following syntactical changes to Haskell:
        data instance URec Double   p = UDouble { uDouble# :: Double#, uInt# :: Int#, uFloat#  :: Float#, }
 
 	  
-3. **Leading Commas**: Allow a comma before the first element in place-unordered clauses:
+3. **Leading Commas**: Allow a comma before the first element in enumeration clauses where order does not matter:
 
    - module export lists and sub-lists
    - module import lists and sub-lists
@@ -149,7 +147,7 @@ This proposal introduces the following syntactical changes to Haskell:
 		  , mkFoo
 		  ) where 
 
-4. **Trailing AND Leading Commas**: Allow both Trailing (2) AND Leading (3) Commas simultaneously in a single structure. ::
+4. **Trailing AND Leading Commas**: Allow both trailing (2) **and** leading (3) commas simultaneously in a single structure. ::
 
       data Example a = ....
                  deriving (
@@ -163,7 +161,7 @@ This proposal introduces the following syntactical changes to Haskell:
 Syntax
 ~~~~~~~~~~~~
 
-The formal grammar changes for ``UnOrderedExtraCommas`` for Trailing AND Leading Commas WITHOUT Repetetive Commas:
+The formal grammar changes for ``UnorderedExtraCommas`` for trailing **and** leading commas **without** repetitive commas:
 
 .. code:: none
 
@@ -202,7 +200,7 @@ The formal grammar changes for ``UnOrderedExtraCommas`` for Trailing AND Leading
         | qcon { [,] fbind1 , ... , fbindn [,] }      (labeled construction, n ≥ 0)   -- upd
         | aexp_(qcon) { [,] fbind1 , ... , fbindn [,] }   (labeled update, n  ≥  1)   -- upd
 
-These changes allow extra commas in next unordered structures:
+These changes allow extra commas in the following unordered structures:
 
 - module export "lists"
 - module export sub-"lists"
@@ -212,7 +210,7 @@ These changes allow extra commas in next unordered structures:
 - default clauses
 - record-like occurrences (declarations, patterns, constructions)
 
-This proposal **does not include yet** using extra commas in next unordered structures:
+This proposal **does not include yet** using extra commas in the following unordered structures:
 
 - fixity "lists"
 
@@ -224,7 +222,7 @@ Examples
 --------
 1. **Improved Diff Quality**:
 
-   Right adding or removing a thing often needs changing 2 lines of code
+   Adding or removing an element often requires changing 2 lines of code
 
    .. code-block:: diff
 
@@ -238,7 +236,7 @@ Examples
      +   bar
          ) where
 
-   insted of just 1 line
+   now we can do this in 1 line
 
    .. code-block:: diff
 
@@ -253,7 +251,7 @@ Examples
 
 2. **Simplicity of conditional meta-programming**
 
-   We could simplify conditional meta-programming:
+   This proposal would simplify conditional meta-programming like this:
    ::
 
     module Foo (
@@ -310,7 +308,7 @@ None.
 Costs and Drawbacks
 -------------------
 
-We expect the implementation and maintenance costs of ``UnorderedExtraCommas`` has medium difficulty.
+We expect the implementation and maintenance costs of ``UnorderedExtraCommas`` to have medium difficulty.
 
 Second, all tooling which parses Haskell code will need to be updated to be compatible with the extended syntax.
 
@@ -327,27 +325,27 @@ All current Haskell programs will remain valid and unchanged in their behavior.
 Alternatives
 ------------
 
-The primary alternative is "status quo".
+The primary alternative is the "status quo".
 
 Alternative adding extra commas
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-1. The proposal suggests to allow Trailing **AND** Leading Commas, but Committee could choose instead
-   Trailing **OR** Leading Commas, a bit stricter version of extra commas.
+1. The proposal suggests to allow trailing and leading commas at the same time, but the committee could choose instead to only allow one of
+   trailing or leading commas at the same time. This would be a bit stricter.
 
-   The main benefit of OR-version - Cabal already support such liberalisation.
+   The main benefit of the OR-version is that Cabal already supports this liberalisation.
 
-   The main disadvantage  of OR-version is disallowing to mix code-styles. 
-   Also stricter version has more complex parsing ::
+   The main disadvantage of the OR-version is disallowing the mixing of code-styles. 
+   Also, the stricter version needs more complex parsing:
 
       lead_OR_trail  ::= ( , subList ) | ( subList [,] )
 
       lead_AND_trail ::= [,] subList [,]
 
-2. The proposal suggests to allow Extra Commas **WITHOUT** Repetetive Commas, but Committee could choose instead
-   Extra Commas **WITH** Repetetive Commas, a much more liberal version of extra commas.
+2. The proposal suggests to allow extra commas **WITHOUT** repetitive commas, but the committee could choose instead to allow
+   extra commas **WITH** repetitive commas. This would be more lenient.
 
-   **Repetetive Commas**: Allow multiple commas instead of one in place-unordered clauses:
+   **Repetitive Commas**: Allow multiple commas instead of one in enumeration clauses where order does not matter:
 
    - module export lists and sub-lists
    - module import lists and sub-lists
@@ -363,17 +361,17 @@ Alternative adding extra commas
 		  , BarFoo
 		  ) where 
 
-   The main disadvantage of WITH-version is allowing to write very "dirty" code. 
+   The main disadvantage of the WITH-version is allowing to write very "dirty" code. 
    Haskell is known as a language with "pretty looking code".
 
-   The main benefit of WITH-version - the maximum liberalisation of using extra commas. 
-   Also more liberal version has almost the same parsing ::
+   The main benefit of the WITH-version is the maximum liberalisation of using extra commas. 
+   Also, the more lenient version has almost the same parsing ::
 
      lead_AND_trail_WITHOUT_repeats ::=  [,] { elem_i , } elem_max [,] 
 
      lead_AND_trail_WITH_repeats    ::=  {,} { elem_i , {,} } elem_max {,} 
 
-3. The proposal suggests to allow Extra Commas in **PURE** Code, but Committee could allow also Extra Commas in **Pragmas**.
+3. The proposal suggests to allow extra commas in code, but the committee could also allow extra commas in **pragmas**.
 
 Unresolved Questions
 --------------------
@@ -384,7 +382,7 @@ None.
 Implementation Plan
 -------------------
 
-It is unclear. I cannot implement this plan.
+Unclear. The author cannot implement this proposal.
 
 
 Acknowledgments
