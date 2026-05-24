@@ -304,6 +304,8 @@ Effect and Interactions
 
 None.
 
+This proposal purposefully dodges interacting with ``TupleSections`` extension.
+
 
 Costs and Drawbacks
 -------------------
@@ -336,7 +338,7 @@ Alternative adding extra commas
    The main benefit of the OR-version is that Cabal already supports this liberalisation.
 
    The main disadvantage of the OR-version is disallowing the mixing of code-styles. 
-   Also, the stricter version needs more complex parsing:
+   Also, the stricter version needs more complex parsing: ::
 
       lead_OR_trail  ::= ( , subList ) | ( subList [,] )
 
