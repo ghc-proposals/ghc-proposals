@@ -103,7 +103,7 @@ High-level Overview
 
 At its core, this proposal proposes the following functionality:
 
-* The syntax ``s"age: ${age}"`` expands to a built-in implementation using a new ``Interpolate`` type class with an ``interpolate :: a -> String`` function.
+* The syntax ``s"age: ${age}"`` expands to a built-in implementation using a new ``Interpolate`` type class to interpolate values such as ``age``
 
 * The syntax ``M.s"age: ${age}"`` expands to a user-defined implementation where the implementor of the module ``M`` has total control over the implementation
 
@@ -124,7 +124,7 @@ Concretely, ``-XStringInterpolation`` enables the following syntax:
     interpolateRaw " b"      `interpolateAppend`
     interpolateEmpty
 
-These definitions will be provided by ``Data.String.Experimental``, which will be initially implemented in ``ghc-experimental``. See *Section 2.4 Machinery* for details.
+These definitions will be provided by ``Data.String.Experimental``, which will be initially implemented in ``ghc-experimental``. See `Section 2.4 Machinery <#24machinery>`_ for details.
 
 Lexical Structure
 ~~~~~~~~~~~~~~~~~
@@ -166,7 +166,7 @@ Also add ``$`` to ``charesc``:
 
 With ``$`` added to ``charesc``, interpolation can be avoided by escaping the dollar sign; e.g. ``s"\${foo}" == "${foo}"``.
 
-This grammar enables interpolating expressions with nested braces. Concretely, ``istringExprOpen`` and ``istringExprClose`` are only lexed within the ``istring`` context, using Alex start codes. See *Section 3.1* for examples.
+This grammar enables interpolating expressions with nested braces. Concretely, ``istringExprOpen`` and ``istringExprClose`` are only lexed within the ``istring`` and ``istringMultiline`` grammar productions, using Alex start codes. See `Section 3.1 Parsing <#31parsing>`_ for examples.
 
 Context-Free Syntax
 ~~~~~~~~~~~~~~~~~~~
@@ -208,13 +208,11 @@ The following code will live in ``ghc-experimental`` under ``Data.String.Experim
   interpolateAppend :: StringBuilder -> StringBuilder -> StringBuilder
   interpolateAppend = mappend
 
-  infixr 6 `interpolateAppend` -- matches (<>)
-
   interpolateEmpty :: StringBuilder
   interpolateEmpty = mempty
 
-  interpolateFinalize :: IsString s => StringBuilder -> s
-  interpolateFinalize = fromString . buildString
+  interpolateFinalize :: StringBuilder -> String
+  interpolateFinalize = buildString
 
   {----- StringBuilder -----}
 
@@ -243,7 +241,7 @@ The following code will live in ``ghc-experimental`` under ``Data.String.Experim
   instance Interpolate Bool where
     interpolate = fromString . show
 
-Types may implement ``Interpolate`` using ``IsString`` or ``Monoid``; see *Section 3.2 Composite types* for an example.
+Types may implement ``Interpolate`` using ``IsString`` or ``Monoid``; see `Section 3.2 Composite types <#32composite-types>`_ for an example. The default interpolator will only ever use this as ``s ~ StringBuilder``, but this allows other qualified interpolators to reuse the built-in ``Interpolate`` class and avoid roundtripping through ``String`` in certain instances.
 
 Expansion
 ~~~~~~~~~
@@ -256,7 +254,7 @@ With the machinery defined above, the following interpolated string desugars to 
   s"foo ${f a b} bar ${g x} baz ${name}"
 
   -- desugared
-  interpolateFinalize @String $
+  interpolateFinalize $
     interpolateRaw "foo "   `interpolateAppend`
     interpolateValue (f a b)`interpolateAppend`
     interpolateRaw " bar "  `interpolateAppend`
@@ -267,7 +265,7 @@ With the machinery defined above, the following interpolated string desugars to 
 
 Namely:
 
-* An ``istringRaw <str>`` component expands to ``interpolateRaw "<str>"``
+* An ``istringRaw`` component expands to ``interpolateRaw "<istringRaw>"``
 
   * The string literal passed to ``interpolateRaw`` is a strict ``String`` literal, unaffected by ``-XOverloadedStrings``
 
@@ -275,11 +273,9 @@ Namely:
 
 * The list of ``istring`` components between ``istringBegin`` and ``istringEnd`` expands to the expansion of the components, with ``interpolateAppend`` as "list cons" and ``interpolateEmpty`` as "list nil".
 
-  * ``interpolateAppend`` is explicitly inserted as an infix operation, so that qualified string interpolations can customize the fixity (see *Section 4.2 QualifiedStrings*)
+  * ``interpolateAppend`` is always right-associative
 
-* ``interpolateFinalize`` is passed an explicit ``@String`` type application, to monomorphize the expression when ``-XOverloadedStrings`` is not enabled
-
-  * Related: *Section 4.1 OverloadedStrings* and *Section 4.2 QualifiedStrings*
+  * Related: `Section 2.7 OverloadedStrings <#27overloadedstrings>`_ and `Section 2.8 QualifiedStrings <#28qualifiedstrings>`_
 
 ``ghc-experimental`` modules
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -292,22 +288,20 @@ This proposal would be adding the following modules to ``ghc-experimental``, whi
     * - **Module**
       - **Details**
     * - ``Data.String.Experimental``
-      - Re-exports ``Data.String.Interpolate.Class.Experimental``
-    * - ``Data.String.Interpolate.Experimental``
       - Re-exports ``Data.String.Interpolate.Class.Experimental`` and ``Data.String.Interpolate.Default.Experimental``
     * - ``Data.String.Interpolate.Class.Experimental``
-      - Defines the ``Interpolate`` class and instances as written in *Section 2.4 Machinery*
+      - Defines the ``Interpolate`` class and instances as written in `Section 2.4 Machinery <#24machinery>`_
     * - ``Data.String.Interpolate.Default.Experimental``
-      - Defines the classes and functions for the default ``s"..."`` syntax, as written in *Section 2.4 Machinery*
-    * - ``Data.String.Interpolate.Explicit.Experimental``
-      - Defines an interpolator that's the same as the default except interpolates values directly without automatic conversion with ``Interpolate`` (See *Section 10.3 Provided interpolator: Explicit*)
+      - Defines the classes and functions for the default ``s"..."`` syntax, as written in `Section 2.4 Machinery <#24machinery>`_
+    * - ``Data.String.Interpolate.Basic.Experimental``
+      - Defines an interpolator that's the same as the default except interpolates values directly without automatic conversion with ``Interpolate`` (See `Section 10.3 Provided interpolator: Basic <#103provided-interpolator-basic>`_)
     * - ``Data.String.Interpolate.ShowS.Experimental``
-      - Defines an interpolator useful for implementing ``showsPrec`` (See *Section 10.4 Provided interpolator: ShowS*)
+      - Defines an interpolator useful for implementing ``showsPrec`` (See `Section 10.4 Provided interpolator: ShowS <#104provided-interpolator-shows>`_)
 
 OverloadedStrings
 ~~~~~~~~~~~~~~~~~
 
-When ``-XOverloadedStrings`` is enabled, ``@String`` is *not* included. Any ``IsString`` type may be built with string interpolation, which still builds via ``ShowS``/``String`` with a final ``fromString`` at the very end.
+When ``-XOverloadedStrings`` is enabled, a final ``fromString`` is added after the ``interpolateFinalize`` call. This still constructs the string with ``StringBuilder`` -> ``String``, so users might prefer using QualifiedStrings instead.
 
 QualifiedStrings
 ~~~~~~~~~~~~~~~~
@@ -333,10 +327,6 @@ When ``-XQualifiedStrings`` is enabled, you may qualify string interpolation, wh
     SQL.interpolateRaw   " and age = "                       `SQL.interpolateAppend`
     SQL.interpolateValue age                                 `SQL.interpolateAppend`
     SQL.interpolateEmpty
-
-When ``-XQualifiedStrings`` is enabled, ``@String`` is *not* included.
-
-Qualified string interpolators should specify a fixity for ``interpolateAppend``, or else the default ``infixl 9`` fixity will be used.
 
 It's highly recommended that every string type with an ``IsString`` instance provides at least one string interpolator reusing the built-in ``Interpolate`` class. That way, there's always an option to use ``MyString.s"..."`` if the user does not wish to globally enable ``-XOverloadedStrings``. This interpolator could simply be a monomorphized version of the default interpolator:
 
@@ -367,7 +357,6 @@ Or it could reuse the built-in ``Interpolate`` class using its own ``Builder`` t
 
     interpolateAppend :: MyStringBuilder -> MyStringBuilder -> MyStringBuilder
     interpolateAppend = mappend
-    infixr 6 `interpolateAppend`
 
     interpolateEmpty :: MyStringBuilder
     interpolateEmpty = mempty
@@ -480,7 +469,7 @@ An existing program containing ``s"..."`` will break when ``-XStringInterpolatio
 #. Easily mitigatable: just add a space, which improves readability anyway
 #. Prefixing string literals like ``s"..."`` is common in other languages: Python, Scala, Javascript/Typescript, etc. so it shouldn't be a big hurdle for newcomers
 
-Interacts nicely with ``-XOverloadedStrings``, ``-XQualifiedStrings``, and ``-XMultilineStrings``. See *Section 2 Proposed Change Specification* above.
+Interacts nicely with ``-XOverloadedStrings``, ``-XQualifiedStrings``, and ``-XMultilineStrings``. See `Section 2 Proposed Change Specification <#2proposed-change-specification>`_ above.
 
 Costs and Drawbacks
 -------------------
@@ -502,7 +491,7 @@ Alternatives
   * Pro: less likely to encounter type inference issues
   * Con: adds more noise to interpolate non-string values
   * This is what ``neat-interpolation`` does
-  * See *Section 10.1 Community Survey*
+  * See `Section 10.1 Community Survey <#101community-survey>`_
 
 * Reuse ``PrintfArg``
 
@@ -597,7 +586,7 @@ Delimiter-related Alternatives
 
 * Allow custom delimiters, which could be defined with Template Haskell or some other approach
 
-  * See *Section 10.1 Community Survey*
+  * See `Section 10.1 Community Survey <#101community-survey>`_
 
 Unresolved Questions
 --------------------
@@ -625,14 +614,14 @@ Strings are notorious for O(n^2) concatenations, but the current proposal builds
 
 Benchmarks: https://github.com/brandonchinn178/ghc-string-interpolation-prototypes/tree/main/bench
 
-Provided interpolator: Explicit
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Provided interpolator: Basic
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-As part of the feature, ``ghc-experimental`` will provide ``Data.String.Interpolate.Explicit.Experimental``, which provides an interpolator that does not implicitly convert values and stays in ``s`` the whole time.
+As part of the feature, ``ghc-experimental`` will provide ``Data.String.Interpolate.Basic.Experimental``, which provides an interpolator that does not implicitly convert values and stays in ``s`` the whole time.
 
 ::
 
-  module Data.String.Interpolate.Explicit.Experimental where
+  module Data.String.Interpolate.Basic.Experimental where
 
   interpolateRaw :: IsString s => String -> s
   interpolateRaw = fromString
@@ -642,7 +631,6 @@ As part of the feature, ``ghc-experimental`` will provide ``Data.String.Interpol
 
   interpolateAppend :: Monoid s => s -> s -> s
   interpolateAppend = mappend
-  infixr 6 `interpolateAppend`
 
   interpolateEmpty :: Monoid s => s
   interpolateEmpty = mempty
@@ -654,11 +642,11 @@ This is particularly useful for ``Builder``, where users could explicitly conver
 
 ::
 
-  import Data.String.Interpolate.Explicit.Experimental qualified as I
+  import Data.String.Interpolate.Basic.Experimental qualified as B
   import Data.Text.Lazy.Builder qualified as B
 
   render :: Person -> B.Builder
-  render Person{..} = I.s"Person(name = ${B.fromLazyText name}, age = ${B.decimal age})"
+  render Person{..} = B.s"Person(name = ${B.fromLazyText name}, age = ${B.decimal age})"
 
 Provided interpolator: ShowS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -674,8 +662,6 @@ As part of the feature, ``ghc-experimental`` will provide ``Data.String.Interpol
   interpolateAppend = (.)
   interpolateEmpty = id
   interpolateFinalize = id
-
-  infixr 9 `interpolateAppend`
 
   data P a = P !Int !a
   instance Show a => Show (P a) where
@@ -693,7 +679,7 @@ Users could then write:
 Text
 ~~~~
 
-When ``OverloadedStrings`` is enabled, the default interpolation builds up with ``ShowS`` then converts to ``Text`` with a final ``fromString``. As mentioned in *Section 4.2 QualifiedStrings*, ``text`` should provide interpolators that reuse the built-in ``Interpolate`` class, probably using ``Builder`` to be as performant as possible:
+When ``OverloadedStrings`` is enabled, the default interpolation builds up with ``StringBuilder`` then converts to ``Text`` with a final ``fromString``. As mentioned in `Section 2.8 QualifiedStrings <#28qualifiedstrings>`_, ``text`` should provide interpolators that reuse the built-in ``Interpolate`` class, probably using ``Builder`` to be as performant as possible:
 
 ::
 
@@ -778,8 +764,6 @@ The library would also define a module for use with ``-XStringInterpolation`` + 
   interpolateEmpty = mempty
   interpolateFinalize = id
 
-  infixr 6 `interpolateAppend`
-
   class Interpolate a where
     interpolate :: a -> SqlQuery
   instance Interpolate SqlQuery where
@@ -858,11 +842,6 @@ Imagine a library implements a new ``Html`` type like:
   escapeHtml :: Text -> Text
   escapeHtml = Text.replace "<" "&lt;" . Text.replace ">" "&gt;"
 
-  newtype RawHtml = RawHtml {unRawHtml :: Text}
-
-  raw :: Text -> RawHtml
-  raw = RawHtml
-
 That library could define the module:
 
 ::
@@ -872,22 +851,20 @@ That library could define the module:
   import Data.HTML as HTML
   import Data.String.Experimental qualified as S
 
-  interpolateRaw = HTML.raw
+  interpolateRaw = fromString
   interpolateValue = interpolate
   interpolateAppend = mappend
   interpolateEmpty = mempty
   interpolateFinalize = id
 
-  infixr 6 `interpolateAppend`
-
   class Interpolate a where
     interpolate :: a -> Html
+  instance Interpolate Html where
+    interpolate = id
   instance Interpolate String where
     interpolate = interpolate . T.pack
   instance Interpolate Text where
     interpolate = Html . escapeHtml
-  instance Interpolate RawHtml where
-    interpolate = Html . unRawHtml
   instance {-# OVERLAPPABLE #-} S.Interpolate a => Interpolate a where
     interpolate = interpolate @Text . S.interpolate
 
@@ -898,7 +875,7 @@ And gain access to safe string interpolation with HTML escaping by default:
   let title = "Why is 1 > 0?" :: Text
   let body = "<p>Hello world</p>" :: Text
 
-  Html.s"<h1>${title}</h1>${raw body}"
+  Html.s"<h1>${title}</h1>${Html.raw body}"
     == Html "<h1>Why is 1 &gt; 0?</h1><p>Hello world</p>"
 
 Custom interpolatable type: BigDecimal
