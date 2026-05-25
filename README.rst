@@ -513,7 +513,6 @@ Avatar           Full name                  GitHub handle                       
 |JakobBruenker|  Jakob Brünker              `@JakobBruenker <https://github.com/JakobBruenker>`_   2024/05  -        2027/05  member
 |sgraf812|       Sebastian Graf             `@sgraf812 <https://github.com/sgraf812>`_             2024/05  -        2027/05  member
 |noughtmare|     Jaro Reinders              `@noughtmare <https://github.com/noughtmare>`_         2025/12  -        2028/12  member
-|doyougnu|       Jeff Young                 `@doyougnu <https://github.com/doyougnu>`_             2025/12  -        2028/12  member
 |alt-romes|      Rodrigo Mesquita           `@alt-romes <https://github.com/alt-romes>`_           2025/12  -        2028/12  member
 ===============  =========================  =====================================================  =======  =======  =======  =========
 
@@ -530,7 +529,6 @@ Avatar           Full name                  GitHub handle                       
 .. |JakobBruenker| image:: https://github.com/JakobBruenker.png?size=24
 .. |sgraf812| image:: https://github.com/sgraf812.png?size=24
 .. |noughtmare| image:: https://github.com/noughtmare.png?size=24
-.. |doyougnu| image:: https://github.com/doyougnu.png?size=24
 .. |alt-romes| image:: https://github.com/alt-romes.png?size=24
 
 The committee members have committed to adhere to the
@@ -564,6 +562,7 @@ Chris Dornan            `@cdornan <https://github.com/cdornan>`_              20
 Eric Seidel             `@gridaphobe <https://github.com/gridaphobe>`_        2018/09 - 2025/05
 Arnaud Spiwack          `@aspiwack <https://github.com/aspiwack/>`_           2019/07 - 2025/10
 Moritz Angermann        `@angerman <https://github.com/angerman/>`_           2023/02 - 2025/12
+Jeff Young              `@doyougnu <https://github.com/doyougnu>`_            2025/12 - 2026/05
 ======================  ====================================================  =================
 
 
