@@ -101,7 +101,7 @@ This proposal introduces the following syntactical changes to Haskell:
    - module export lists(already supported) and sub-lists
    - module import lists(already supported) and sub-lists
    - deriving and default clauses
-   - record-like occurrences (declarations, patterns, constructions)
+   - record-like occurrences in terms and types (declarations, patterns, constructions)
 
    ::
    
@@ -132,7 +132,7 @@ This proposal introduces the following syntactical changes to Haskell:
    - module export lists and sub-lists
    - module import lists and sub-lists
    - deriving and default clauses
-   - record-like occurrences (declarations, patterns, constructions)
+   - record-like occurrences in terms and types (declarations, patterns, constructions)
 
    ::
    
@@ -208,11 +208,12 @@ These changes allow extra commas in the following unordered structures:
 - module import sub-"lists"
 - deriving clauses
 - default clauses
-- record-like occurrences (declarations, patterns, constructions)
+- record-like occurrences in terms and types (declarations, patterns, constructions)
 
 This proposal **does not include yet** using extra commas in the following unordered structures:
 
 - fixity "lists"
+- fundeps clauses
 
 This proposal does not cover structures in which the order of the elements matters, 
 such as lists, tuples, and constraint tuples.
@@ -332,7 +333,12 @@ The primary alternative is the "status quo".
 Alternative adding extra commas
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-1. The proposal suggests to allow trailing and leading commas at the same time, but the committee could choose instead to only allow one of
+1. The main non-controversial alternative of **Unordered** Extra Commas is **NonData** Extra Commas (allowing extra commas in non-data structures), 
+   which is in the same places as "Unordered" without records.
+
+   The author didn't see anyone against extra commas in records.
+
+2. The proposal suggests to allow trailing and leading commas at the same time, but the committee could choose instead to only allow one of
    trailing or leading commas at the same time. This would be a bit stricter.
 
    The main benefit of the OR-version is that Cabal already supports this liberalisation.
@@ -344,7 +350,7 @@ Alternative adding extra commas
 
       lead_AND_trail ::= [,] subList [,]
 
-2. The proposal suggests to allow extra commas **WITHOUT** repetitive commas, but the committee could choose instead to allow
+3. The proposal suggests to allow extra commas **WITHOUT** repetitive commas, but the committee could choose instead to allow
    extra commas **WITH** repetitive commas. This would be more lenient.
 
    **Repetitive Commas**: Allow multiple commas instead of one in enumeration clauses where order does not matter:
@@ -373,7 +379,8 @@ Alternative adding extra commas
 
      lead_AND_trail_WITH_repeats    ::=  {,} { elem_i , {,} } elem_max {,} 
 
-3. The proposal suggests to allow extra commas in code, but the committee could also allow extra commas in **pragmas**.
+4. The proposal suggests to allow extra commas in code, but the committee could also allow extra commas in **pragmas**.
+
 
 Unresolved Questions
 --------------------
