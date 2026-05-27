@@ -84,7 +84,7 @@ that the author withdrew the proposal just before the final acceptance (with min
 However, the tension in the Haskell community was so high that a new attempt of that proposal has not been proposed in the following 6 years.
 
 This proposal is an attempt to allow extra commas where everyone agrees to have them - 
-in unordered structures (records, import and export "lists" and sublists, derivation and default clauses).
+in unordered structures (records, import and export "lists" and sublists, derivation and default clauses, multi-name signatures).
 
 
 Proposed Change Specification
@@ -102,6 +102,7 @@ This proposal introduces the following syntactical changes to Haskell:
    - module import lists(already supported) and sub-lists
    - deriving and default clauses
    - record-like occurrences in terms and types (declarations, patterns, constructions)
+   - multi-name signatures (including nested in records)
 
    ::
    
@@ -133,6 +134,7 @@ This proposal introduces the following syntactical changes to Haskell:
    - module import lists and sub-lists
    - deriving and default clauses
    - record-like occurrences in terms and types (declarations, patterns, constructions)
+   - multi-name signatures (including nested in records)
 
    ::
    
@@ -195,10 +197,18 @@ The formal grammar changes for ``UnorderedExtraCommas`` for trailing **and** lea
         | con { [,] fielddecl1 , ... , fielddecln [,] }            (records n>=0)     -- upd
         | ......
 
+    fielddecl ::= vars :: (type | ! atype)
+
     aexp ::= qvar                                                        (variable)
         | ......
         | qcon { [,] fbind1 , ... , fbindn [,] }      (labeled construction, n ≥ 0)   -- upd
         | aexp_(qcon) { [,] fbind1 , ... , fbindn [,] }   (labeled update, n  ≥  1)   -- upd
+
+    gendecl ::= vars :: [context =>] type       (type signature)
+        | fixity [integer] ops	            (fixity declaration)
+        |                                    (empty declaration)
+
+    vars ::= [,] var1 , ... , varn [,]                   (n ≥ 1)        -- upd
 
 These changes allow extra commas in the following unordered structures:
 
@@ -209,6 +219,7 @@ These changes allow extra commas in the following unordered structures:
 - deriving clauses
 - default clauses
 - record-like occurrences in terms and types (declarations, patterns, constructions)
+- multi-name signatures (including nested in records)
 
 This proposal **does not include yet** using extra commas in the following unordered structures:
 
