@@ -14,7 +14,8 @@ This proposal suggests extending the Haskell syntax to support trailing and lead
 in unordered structures (records, import and export lists and sublists, derivation and default clauses).
 
 This change aims to improve code readability and maintainability by allowing more flexibility 
-in formatting unordered structures (records, import and export lists and sublists, derivation and default clauses). 
+in formatting all unordered structures (records, import and export lists and sublists, 
+derivation and default clauses, fixity and fundeps declaration). 
 
 This is particularly helpful in scenarios involving version control, code reviews, and automated code generation.
 
@@ -84,7 +85,7 @@ that the author withdrew the proposal just before the final acceptance (with min
 However, the tension in the Haskell community was so high that a new attempt of that proposal has not been proposed in the following 6 years.
 
 This proposal is an attempt to allow extra commas where everyone agrees to have them - 
-in unordered structures (records, import and export "lists" and sublists, derivation and default clauses, multi-name signatures).
+in all unordered structures (records, import and export "lists" and sublists, derivation and default clauses, multi-name signatures).
 
 
 Proposed Change Specification
@@ -103,6 +104,7 @@ This proposal introduces the following syntactical changes to Haskell:
    - deriving and default clauses
    - record-like occurrences in terms and types (declarations, patterns, constructions)
    - multi-name signatures (including nested in records)
+   - fixity and fundeps declaration
 
    ::
    
@@ -127,6 +129,10 @@ This proposal introduces the following syntactical changes to Haskell:
        data instance URec Char     p = UChar   { uChar#   :: Char#,   uInt# :: Int#, }
        data instance URec Double   p = UDouble { uDouble# :: Double#, uInt# :: Int#, uFloat#  :: Float#, }
 
+       infixr 5 (+), (-),
+
+       class C a b | a -> b, b -> a,  where ....
+
 	  
 3. **Leading Commas**: Allow a comma before the first element in enumeration clauses where order does not matter:
 
@@ -135,6 +141,7 @@ This proposal introduces the following syntactical changes to Haskell:
    - deriving and default clauses
    - record-like occurrences in terms and types (declarations, patterns, constructions)
    - multi-name signatures (including nested in records)
+   - fixity and fundeps declaration
 
    ::
    
@@ -159,6 +166,8 @@ This proposal introduces the following syntactical changes to Haskell:
                           Traversable,
                  )
 
+      ,f, g, h, :: Int -> Int
+
 
 Syntax
 ~~~~~~~~~~~~
@@ -167,50 +176,58 @@ The formal grammar changes for ``UnorderedExtraCommas`` for trailing **and** lea
 
 .. code:: none
 
-    exports ::= ( [,] export1 , ... , exportn [,] )                       -- upd
+    exports ::= ( [,] export1 , … , exportn [,] )                         -- upd
 
     export ::= qvar
-        | qtycon[(..)| ( [,] cname_1, ... , cname_n [,] ) ]  (n >= 0)     -- upd
-        | qtycls[(..)| ( [,] var_1, ... , var_n [,] ) ]      (n >= 0)     -- upd
+        | qtycon[(..)| ( [,] cname_1, … , cname_n [,] ) ]  (n >= 0)       -- upd
+        | qtycls[(..)| ( [,] var_1, … , var_n [,] ) ]      (n >= 0)       -- upd
         | module modid
-        | ......
+        | ……
    
-    impspec ::= ( [,] import1 , ... , importn [,] )         (n ≥ 0)       -- upd
-        | hiding ( [,] import1 , ... , importn [,] )        (n ≥ 0)       -- upd
+    impspec ::= ( [,] import1 , … , importn [,] )          (n ≥ 0)        -- upd
+        | hiding ( [,] import1 , … , importn [,] )         (n ≥ 0)        -- upd
 
     import ::= qvar
-        | qtycon[(..)| ( [,] cname_1, ... , cname_n [,] ) ]  (n >= 0)     -- upd
-        | qtycls[(..)| ( [,] var_1, ... , var_n [,] ) ]      (n >= 0)     -- upd
-        | ......
+        | qtycon[(..)| ( [,] cname_1, … , cname_n [,] ) ]  (n >= 0)       -- upd
+        | qtycls[(..)| ( [,] var_1, … , var_n [,] ) ]      (n >= 0)       -- upd
+        | ……
 
     deriving ::= deriving dclass
             | deriving (  
-                 ( [,] dclass1 , ... , dclassn [,] )    -- upd
+                 ( [,] dclass1 , … , dclassn [,] )                        -- upd
               )
 
     topdecl ::= type simpletype = type
-        | default ( [,] type1 , ... , typen [,] )       -- upd
-        | ......
+        | default ( [,] type1 , … , typen [,] )                                     -- upd
+        | class [scontext =>] tycls tyvar [fundep] [where cdecls]
+        | ……
 
-    constr ::= con [!] atype1 ... [!] atypek                (arity con = k, k>=0)
+    constr ::= con [!] atype1 … [!] atypek                  (arity con = k, k>=0)
         | (btype | ! atype) conop (btype | ! atype)                 (infix conop)
-        | con { [,] fielddecl1 , ... , fielddecln [,] }            (records n>=0)     -- upd
-        | ......
+        | con { [,] fielddecl1 , … , fielddecln [,] }              (records n>=0)   -- upd
+        | ……
 
     fielddecl ::= vars :: (type | ! atype)
 
     aexp ::= qvar                                                        (variable)
-        | ......
-        | qcon { [,] fbind1 , ... , fbindn [,] }      (labeled construction, n ≥ 0)   -- upd
-        | aexp_(qcon) { [,] fbind1 , ... , fbindn [,] }   (labeled update, n  ≥  1)   -- upd
+        | ……
+        | qcon { [,] fbind1 , … , fbindn [,] }      (labeled construction, n ≥ 0)   -- upd
+        | aexp_(qcon) { [,] fbind1 , … , fbindn [,] }   (labeled update, n  ≥  1)   -- upd
 
     gendecl ::= vars :: [context =>] type       (type signature)
         | fixity [integer] ops	            (fixity declaration)
         |                                    (empty declaration)
 
-    vars ::= [,] var1 , ... , varn [,]                   (n ≥ 1)        -- upd
+    vars ::= [,] var1 , … , varn [,]         (n ≥ 1)            -- upd
 
-These changes allow extra commas in the following unordered structures:
+    ops ::= [,] op1 , … , opn [,]            (n ≥ 1)            -- upd
+
+    fundep ::= | [,] fdp1 , … , fdp [,]      (n ≥ 1)            -- upd
+
+    fdp ::= tyvar1 … tyvarn -> tyvarm        (n ≥ 1)
+
+
+These changes allow extra commas in the all unordered structures:
 
 - module export "lists"
 - module export sub-"lists"
@@ -220,9 +237,6 @@ These changes allow extra commas in the following unordered structures:
 - default clauses
 - record-like occurrences in terms and types (declarations, patterns, constructions)
 - multi-name signatures (including nested in records)
-
-This proposal **does not include yet** using extra commas in the following unordered structures:
-
 - fixity "lists"
 - fundeps clauses
 
