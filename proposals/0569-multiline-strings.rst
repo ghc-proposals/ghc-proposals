@@ -142,7 +142,7 @@ BNF
 
 The BNF in `Section 10.2 <https://www.haskell.org/onlinereport/haskell2010/haskellch10.html#x17-17700010.2>`_ of the Haskell 2010 report is extended as follows::
 
-  literal             → integer | float | char | string | multiLineString
+  literal             → integer | float | char | string | multilineString
   multilineString     → """ {{whitechar} multilineStringLine} """
   multilineStringLine → {graphic⟨\ | """⟩ | space | escape | gap}
 

@@ -85,7 +85,7 @@ In brief all stages of the Reviewing process are shown in the table.
 |                              |                             |                |                      +---------------------------+-------------------------+
 |                              |                             |                |                      | Close request             | *Withdrawn*             |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
-| |st-withdrawn|_              | ‒ (|lbl-withdrawn|)         | (PR closed)    | ‒                    | ‒                         | ‒                       |
+| |st-withdrawn|_              | ‒ (|lbl-withdrawn|)         | ‒              | (PR closed)          | ‒                         | ‒                       |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
 | |st-shepherd-appointment|    | ‒                           | 1 week         | Secretary            | Assign shepherd           | Shepherd review         |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
@@ -103,7 +103,7 @@ In brief all stages of the Reviewing process are shown in the table.
 |                              |                             |                |                      +---------------------------+-------------------------+
 |                              |                             |                |                      | Close request             | *Withdrawn*             |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
-| |st-rejected|_               | |lbl-rejected|              | (PR closed)    | ‒                    | ‒                         | ‒                       |
+| |st-rejected|_               | |lbl-rejected|              | ‒              | (PR closed)          | ‒                         | ‒                       |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
 | |st-accepted|                | |lbl-accepted-open|         | 2 weeks        | | Author &           | Do final corrections      | Implementation          |
 |                              |                             |                | | Shepherd           |                           |                         |
@@ -111,9 +111,10 @@ In brief all stages of the Reviewing process are shown in the table.
 |                              |                             | 1 week         | | Shepherd /         | Merge                     |                         |
 |                              |                             |                | | Secretary          |                           |                         |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
-| |st-implementation|          | |lbl-accepted| (PR closed)  | Indefinite     | Unspecified          | Implement the proposal    | *Implemented*           |
+| |st-implementation|          | | |lbl-accepted|            | Indefinite     | Unspecified          | Implement the proposal    | *Implemented*           |
+|                              | | (PR closed)               |                |                      |                           |                         |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
-| |st-implemented|_            | |lbl-implemented|           | (PR closed)    | ‒                    | ‒                         | ‒                       |
+| |st-implemented|_            | |lbl-implemented|           | ‒              | (PR closed)          | ‒                         | ‒                       |
 +------------------------------+-----------------------------+----------------+----------------------+---------------------------+-------------------------+
 
 .. _st-withdrawn: #withdrawn
@@ -252,6 +253,7 @@ The stage is identified by a GitHub label, which is identified in the following 
    there are outstanding comments the author of the proposal needs to address before the shepherd can continue.
 
    * `Committee process <#committee-process-for-responding-to-a-proposal>`__
+   * `What is the role of the shepherd? <#what-is-the-role-of-the-shepherd>`__
    * `≡ List of proposals waiting for shepherd recommendation <https://github.com/ghc-proposals/ghc-proposals/pulls?q=is%3Aopen+is%3Apr+label%3A%22Pending+shepherd+recommendation%22>`_
 
 .. _committee-discussion:
@@ -392,7 +394,8 @@ in your branch. For instance,
     Types](http://research.microsoft.com/en-us/um/people/simonpj/papers/haskell-dynamic/index.htm)
     (Peyton Jones, _et al._ 2016).
 
-    [Rendered](https://github.com/bgamari/ghc-proposals/blob/typeable/proposals/0000-type-indexed-typeable.rst)
+    [Rendered\
+    ](https://github.com/bgamari/ghc-proposals/blob/typeable/proposals/0000-type-indexed-typeable.rst)
 
 
 How to amend an accepted proposal
@@ -480,7 +483,7 @@ When the discussion has ebbed down and the author thinks the proposal is ready, 
 2. Add a comment to the pull request, briefly summarizing the major points raised
    during the discussion period and stating your belief that the proposal is
    ready for review. In this comment, tag the committee secretary (currently
-   `@adamgundry <https://github.com/adamgundry/>`__).
+   `@simonmar <https://github.com/simonmar/>`__).
 
 `The secretary <#who-is-the-committee>`__ will then label the pull request with
 ``Pending shepherd recommendation`` and start the `committee process
@@ -490,7 +493,7 @@ ping the secretary or the committee.)
 Who is the committee?
 ---------------------
 You can reach the committee by email at ghc-steering-committee@haskell.org. This is a mailing list with
-`public archives <https://mail.haskell.org/cgi-bin/mailman/listinfo/ghc-steering-committee>`_.
+`public archives <https://mailman.haskell.org/archives/list/ghc-steering-committee@haskell.org/>`_.
 
 The current members
 ~~~~~~~~~~~~~~~~~~~~
@@ -499,18 +502,18 @@ The current members, including their GitHub handle, when they joined first,
 when their term last renewed, when their term expires and their role, are:
 
 ===============  =========================  =====================================================  =======  =======  =======  =========
-Avatar           Full name                  GitHub handle                                          Joined   Renewed  Expired  Role
+Avatar           Full name                  GitHub handle                                          Joined   Renewed  Expires  Role
 ===============  =========================  =====================================================  =======  =======  =======  =========
-|simonmar|       Simon Marlow               `@simonmar <https://github.com/simonmar>`_             2017/02  2024/02  2027/02  co-chair
+|simonmar|       Simon Marlow               `@simonmar <https://github.com/simonmar>`_             2017/02  2024/02  2027/02  co-chair/secretary
 |simonpj|        Simon Peyton-Jones         `@simonpj <https://github.com/simonpj>`_               2017/02  2024/02  2027/02  co-chair
-|aspiwack|       Arnaud Spiwack             `@aspiwack <https://github.com/aspiwack/>`_            2019/07  2022/10  2025/10  member
-|adamgundry|     Adam Gundry                `@adamgundry <https://github.com/adamgundry/>`_        2022/10  -        2025/10  secretary
-|angerman|       Moritz Angermann           `@angerman <https://github.com/angerman/>`_            2023/02  -        2026/02  member
+|adamgundry|     Adam Gundry                `@adamgundry <https://github.com/adamgundry/>`_        2022/10  2025/12  2028/12  member
 |maralorn|       Malte Ott                  `@maralorn <https://github.com/maralorn/>`_            2024/03  -        2027/03  member
 |Tritlo|         Matthías Páll Gissurarson  `@Tritlo <https://github.com/Tritlo>`_                 2024/03  -        2027/03  member
 |erikd|          Erik de Castro Lopo        `@erikd  <https://github.com/erikd>`_                  2024/05  -        2027/05  member
 |JakobBruenker|  Jakob Brünker              `@JakobBruenker <https://github.com/JakobBruenker>`_   2024/05  -        2027/05  member
 |sgraf812|       Sebastian Graf             `@sgraf812 <https://github.com/sgraf812>`_             2024/05  -        2027/05  member
+|noughtmare|     Jaro Reinders              `@noughtmare <https://github.com/noughtmare>`_         2025/12  -        2028/12  member
+|alt-romes|      Rodrigo Mesquita           `@alt-romes <https://github.com/alt-romes>`_           2025/12  -        2028/12  member
 ===============  =========================  =====================================================  =======  =======  =======  =========
 
 .. |adamgundry| image:: https://github.com/adamgundry.png?size=24
@@ -520,12 +523,13 @@ Avatar           Full name                  GitHub handle                       
 .. |nomeata| image:: https://github.com/nomeata.png?size=24
 .. |goldfirere| image:: https://github.com/goldfirere.png?size=24
 .. |int-index| image:: https://github.com/int-index.png?size=24
-.. |angerman| image:: https://github.com/angerman.png?size=24
 .. |maralorn| image:: https://github.com/maralorn.png?size=24
 .. |Tritlo| image:: https://github.com/Tritlo.png?size=24
 .. |erikd| image:: https://github.com/erikd.png?size=24
 .. |JakobBruenker| image:: https://github.com/JakobBruenker.png?size=24
 .. |sgraf812| image:: https://github.com/sgraf812.png?size=24
+.. |noughtmare| image:: https://github.com/noughtmare.png?size=24
+.. |alt-romes| image:: https://github.com/alt-romes.png?size=24
 
 The committee members have committed to adhere to the
 `Haskell committee guidelines for respectful communication <GRC.rst>`_
@@ -556,6 +560,9 @@ Richard Eisenberg       `@goldfirere <https://github.com/goldfirere>`_        20
 Vladislav Zavialov      `@int-index <https://github.com/int-index/>`_         2021/03 - 2024/03
 Chris Dornan            `@cdornan <https://github.com/cdornan>`_              2022/03 - 2024/06
 Eric Seidel             `@gridaphobe <https://github.com/gridaphobe>`_        2018/09 - 2025/05
+Arnaud Spiwack          `@aspiwack <https://github.com/aspiwack/>`_           2019/07 - 2025/10
+Moritz Angermann        `@angerman <https://github.com/angerman/>`_           2023/02 - 2025/12
+Jeff Young              `@doyougnu <https://github.com/doyougnu>`_            2025/12 - 2026/05
 ======================  ====================================================  =================
 
 
@@ -693,6 +700,29 @@ is a polite ping/enquiry.
       The proposal authors or other implementors are encouraged to update the
       accepted proposal with the implementation status (i.e. ticket URL and the
       first version of GHC implementing it.)
+
+
+What is the role of the shepherd?
+---------------------------------
+
+The shepherd does these things:
+
+- Makes a recommendation to the committee for whether to accept, reject, or send
+  back for revision, within two weeks of being appointed.
+- Actively facilitates the committee discussion, guiding us towards a decision,
+  within the target time frame of 4-5 weeks.
+- Maintains a list of votes on
+  `this spreadsheet <https://docs.google.com/spreadsheets/d/1e6GdwHmAjeDEUhTvP-b18MDkpTfH3SMHhFu5F3nDIWc/edit?gid=0#gid=0>`_.
+- Summarises the committee's thinking for the author's benefit, and works with
+  the author on next steps -- this may often take the form of revisions to the
+  proposal.
+- Reminds members (by name, not just general exhortation) who are silent that
+  they are highly encouraged to contribute.
+- If the discussion does not converge within 4-5 weeks, takes action to consult
+  the chairs or secretary to decide what to do.
+- Helps the author to make final corrections and follows the
+  `acceptance steps <https://github.com/ghc-proposals/ghc-proposals/blob/master/acceptance.rst>`_
+  to merge the PR if the proposal is accepted.
 
 
 What is a dormant proposal?
@@ -857,5 +887,5 @@ Questions?
 ----------
 
 Feel free to contact any of the members of the `GHC Steering Committee
-<#who-is-the-committee>`_ with questions. `Email <https://mail.haskell.org/cgi-bin/mailman/listinfo/ghc-steering-committee>`_
+<#who-is-the-committee>`_ with questions. `Email <https://mailman.haskell.org/archives/list/ghc-steering-committee@haskell.org/>`_
 and Matrix (`#ghc:matrix.org <https://matrix.to/#/#ghc:matrix.org>`_) are both good ways of accomplishing this.

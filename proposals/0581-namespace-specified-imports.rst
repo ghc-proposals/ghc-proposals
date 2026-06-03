@@ -209,8 +209,18 @@ namespace.  It is an error to use a namespace specifier if the identifier is not
 in scope in the given namespace.
 
 Moreover, a namespace specifier may be followed by a ``..`` wildcard instead of
-a single name. This is equivalent to importing or exporting all the available
-names in the corresponding namespace.
+a single name. A wildcard item ``type ..`` or ``data ..`` expands to a set of
+names as follows:
+
+- If the wildcard is a subordinate import/export item: all associated child
+  names (data constructors, field selectors, class methods, associated types),
+  filtered by the namespace specifier.
+
+- If the wildcard is a top-level import item: all names exported by the
+  imported module, filtered by the namespace specifier.
+
+- If the wildcard is a top-level export item: all names defined in the
+  current module, filtered by the namespace specifier.
 
 More precisely, the existing grammar of import/export items accepted by GHC is
 essentially the following (after some minor simplifications): ::
