@@ -4,7 +4,7 @@ Qualified Strings
 .. author:: Brandon Chinn
 .. date-accepted:: 2025-10-07
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/26503
-.. implemented::
+.. implemented:: 10.0.1
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/723>`_.
 .. sectnum::
