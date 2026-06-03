@@ -921,8 +921,9 @@ function sortTable(col) {{
   else {{ sortCol = col; sortAsc = true; }}
   rows.sort((a, b) => {{
     let va = a.cells[col].textContent.trim(), vb = b.cells[col].textContent.trim();
-    let na = parseFloat(va.replace('#','')), nb = parseFloat(vb.replace('#',''));
-    if (!isNaN(na) && !isNaN(nb)) return sortAsc ? na - nb : nb - na;
+    let sa = va.replace('#',''), sb = vb.replace('#','');
+    let na = Number(sa), nb = Number(sb);
+    if (sa !== '' && sb !== '' && !isNaN(na) && !isNaN(nb)) return sortAsc ? na - nb : nb - na;
     return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
   }});
   rows.forEach(r => tbody.appendChild(r));

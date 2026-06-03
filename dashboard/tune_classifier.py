@@ -59,7 +59,7 @@ def normalize_label(raw):
     if any(c in s for c in "=<>"):
         return None
     # Administrative annotations in vote-like cells
-    if s.startswith(("accepted ", "rejected ", "sent for revision", "12 feb", "author closes")):
+    if s.startswith(("accepted ", "rejected ", "sent for revision", "author closes")):
         return None
 
     # Canonical buckets
