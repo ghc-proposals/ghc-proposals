@@ -4,7 +4,7 @@ Visible `forall` in types of terms, and types in terms
 .. author:: Vladislav Zavialov
 .. date-accepted:: 2021-11-01, amended 2024-01-15
 .. ticket-url::
-.. implemented::
+.. implemented:: 9.10.1
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/281>`_ and `amended by #626 <https://github.com/ghc-proposals/ghc-proposals/pull/281>`_.
 .. sectnum::
