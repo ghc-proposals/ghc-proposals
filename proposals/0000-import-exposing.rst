@@ -12,7 +12,7 @@ Import Exposing
 .. sectnum::
 .. contents::
 
-An extension to allow qualified import lines to also perform unqualified import of specific identifiers.
+An extension allowing import declarations to selectively alias identifiers under multiple qualifiers (including unqualified).
 
 
 Motivation
@@ -104,7 +104,7 @@ Regarding development and maintenance: uncertain, feedback requested!
 
 Adding more syntax necessarily impacts learnability, but the keywords and positioning were chosen to hopefully be self-explanatory. Also, while the examples above are one-liners, real-world imports are often split over several lines, and the clause structure works well with that practice.
 
-One missing capability stands out, especially when considering potential default-qualified behavior: while this proposal allows multiple *inclusion* lists with different qualification, any *exclusion* must occur in the regular ``hiding`` clause, meaning you can't start with a whole-module import and selectively pare it down. But while this might sometimes be desirable (e.g. ``exposing`` *most* of a module at top level, with all of it available qualified; the second example could be shorter with this!) it seems unavoidable that the added complexity would heavily impact not only learnability, but readability even by experts. An option to address this is offered in Alternatives.
+One missing capability stands out, especially when considering potential default-qualified behavior: while this proposal allows multiple *inclusion* lists with different qualification, any *exclusion* must occur in the regular ``hiding`` clause, meaning you can't start with a whole-module import and selectively pare it down. But while this might sometimes be desirable (e.g. exposing *most* of a module ``as`` an alias, with *all* of it available via the base import; the final example could be shorter with this!) it seems unavoidable that the added complexity would heavily impact not only learnability, but readability even by experts. An option to address this is offered in Alternatives.
 
 
 Backward Compatibility
@@ -127,7 +127,7 @@ Another option considered for the keyword was ``opening``. This makes sense for 
 
 ``hiding as`` Clauses
 ^^^^^^^^^^^^^^^^^^^^^
-The noted inability to specify *subtractive* subsets of the base import could be addressed with a ``hiding as`` form of the ``exposing`` syntax. While the behavior of this could be made conceptually unambiguous, it introduces potentially non-obvious complications, not least of which being that unlike ``exposing`` there is already syntax for ``hiding`` *without* the ``as``, which belongs in a non-adjacent part of the import declaration! This could be obviated by using a different keyword, but that seems *more* confusing. The proposal felt stronger without it.
+The noted inability to specify *subtractive* subsets of the base import could be addressed with a ``hiding as`` form of the ``exposing`` syntax. While such behavior could be made unambiguous, it introduces potentially non-obvious complications, not least of which being that unlike ``exposing`` there is already syntax for ``hiding`` *without* the ``as``, which belongs in a non-adjacent part of the import declaration! This could be obviated by using a different keyword, but that seems *more* confusing. The proposal felt stronger without it.
 
 With this addition, the final example above could use:
 ::
