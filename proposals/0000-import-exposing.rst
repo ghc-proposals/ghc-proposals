@@ -28,9 +28,9 @@ Adds the ``ImportExposing`` extension, which revises `Haskell 2010 Report Sectio
 
 In 5.3.0, *impdecl* is extended with an optional ``exposing`` clause:
 
-  | *impdecl* 	→ 	``import`` [``qualified``] *modid* [``as`` *modid*] [*impspec*] [``exposing`` [``as`` *modid*] *uimpspec* …]
-
-  | *uimpspec* 	→ 	( *import*:subscript:`1` , … , *import*:subscript:`n` [ , ] ) 	    *(n ≥ 0)*
+  | *impdecl* 	→ 	``import`` [``qualified``] *modid* [``as`` *modid*] [*impspec*] [``exposing`` [``as`` *modid*] *eimpspec* …]
+  |
+  | *eimpspec* 	→ 	( *import*:subscript:`1` , … , *import*:subscript:`n` [ , ] ) 	    *(n ≥ 0)*
 
 The list of *varid* symbols in the final paragraph is updated to include ``exposing``.
 
