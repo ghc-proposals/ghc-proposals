@@ -4,7 +4,7 @@ Simplifying static forms
 .. author:: Simon Peyton Jones
 .. date-accepted:: 2025-12-18
 .. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/26556
-.. implemented::
+.. implemented:: 10.0.1
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/732>`_.
 .. sectnum::
