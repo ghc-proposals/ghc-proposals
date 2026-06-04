@@ -11,11 +11,12 @@ Extra commas in UnOrdered Structures
 .. contents::
 
 This proposal suggests extending the Haskell syntax to support trailing and leading commas 
-in unordered structures (records, import and export lists and sublists, derivation and default clauses).
+in unordered structures (records, import and export lists and sublists, derivation and default clauses,
+fixity, guards and fundeps declaration).
 
 This change aims to improve code readability and maintainability by allowing more flexibility 
 in formatting all unordered structures (records, import and export lists and sublists, 
-derivation and default clauses, fixity and fundeps declaration). 
+derivation and default clauses, fixity, guards and fundeps declaration). 
 
 This is particularly helpful in scenarios involving version control, code reviews, and automated code generation.
 
@@ -104,7 +105,7 @@ This proposal introduces the following syntactical changes to Haskell:
    - deriving and default clauses
    - record-like occurrences in terms and types (declarations, patterns, constructions)
    - multi-name signatures (including nested in records)
-   - fixity and fundeps declaration
+   - fixity, guards and fundeps declaration
 
    ::
    
@@ -141,7 +142,7 @@ This proposal introduces the following syntactical changes to Haskell:
    - deriving and default clauses
    - record-like occurrences in terms and types (declarations, patterns, constructions)
    - multi-name signatures (including nested in records)
-   - fixity and fundeps declaration
+   - fixity, guards and fundeps declaration
 
    ::
    
@@ -226,6 +227,8 @@ The formal grammar changes for ``UnorderedExtraCommas`` for trailing **and** lea
 
     fdp ::= tyvar1 … tyvarn -> tyvarm        (n ≥ 1)
 
+    guards ::= | [,] guard1, … , guardn [,]  (n ≥ 1)            -- upd
+
 
 These changes allow extra commas in the all unordered structures:
 
@@ -239,10 +242,22 @@ These changes allow extra commas in the all unordered structures:
 - multi-name signatures (including nested in records)
 - fixity "lists"
 - fundeps clauses
+- guard clauses
 
 This proposal does not cover structures in which the order of the elements matters, 
 such as lists, tuples, and constraint tuples.
 
+Pragmas
+~~~~~~~~~~~~
+
+This extension also affects Pragmas, which allow us to write sequences in them, such as
+
+- ``LANGUAGE``
+- ``INLINE``
+- ``NOINLINE``
+- ``SPECIALIZE``
+- ``COMPLETE``
+- ``ANN``
 
 Examples
 --------
@@ -404,7 +419,7 @@ Alternative adding extra commas
 
      lead_AND_trail_WITH_repeats    ::=  {,} { elem_i , {,} } elem_max {,} 
 
-4. The proposal suggests to allow extra commas in code, but the committee could also allow extra commas in **pragmas**.
+4. The proposal suggests to allow extra commas in code, but the committee could also allow or disallow extra commas in **pragmas**.
 
 
 Unresolved Questions
