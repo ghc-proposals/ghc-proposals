@@ -1,8 +1,8 @@
 ---
 author: Trevis Elser, Chris Dornan, David Thrane Christiansen
 date-accepted: 2024-06-04
-ticket-url: ""
-implemented: ""
+ticket-url: "N/A"
+implemented: "N/A"
 ---
 
 This proposal was [discussed at this pull request](https://github.com/ghc-proposals/ghc-proposals/pull/601).
