@@ -1,7 +1,7 @@
 ---
 author: Trevis Elser
 date-accepted: "2025-08-07"
-ticket-url: ""
+ticket-url: "https://gitlab.haskell.org/ghc/ghc/-/issues/27329"
 implemented: ""
 ---
 
