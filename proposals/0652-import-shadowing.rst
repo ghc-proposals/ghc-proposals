@@ -302,7 +302,7 @@ shadowing:
 
 * An entity is "available with qualified name ``M.e``" if it is
   defined in the current module ``M``, or imported qualified by some
-  import.
+  import of ``M``.
 
 Using this definition, we change the meaning of a module reexport
 ``module M`` to:
