@@ -175,59 +175,59 @@ Syntax
 
 The formal grammar changes for ``UnorderedExtraCommas`` for trailing **and** leading commas **without** repetitive commas:
 
-.. code:: none
+.. code:: abnf
 
-    exports ::= ( [,] export1 , … , exportn [,] )                         -- upd
+    exports ::= ( [,] export1 , … , exportn [,] )                         ;-- upd
 
-    export ::= qvar
-        | qtycon[(..)| ( [,] cname_1, … , cname_n [,] ) ]  (n >= 0)       -- upd
-        | qtycls[(..)| ( [,] var_1, … , var_n [,] ) ]      (n >= 0)       -- upd
+    export  ::= qvar
+        | qtycon[(..)| ( [,] cname_1, … , cname_n [,] ) ]  (n >= 0)       ;-- upd
+        | qtycls[(..)| ( [,] var_1, … , var_n [,] ) ]      (n >= 0)       ;-- upd
         | module modid
         | ……
    
-    impspec ::= ( [,] import1 , … , importn [,] )          (n ≥ 0)        -- upd
-        | hiding ( [,] import1 , … , importn [,] )         (n ≥ 0)        -- upd
+    impspec ::= ( [,] import1 , … , importn [,] )          (n ≥ 0)        ;-- upd
+        | hiding ( [,] import1 , … , importn [,] )         (n ≥ 0)        ;-- upd
 
-    import ::= qvar
-        | qtycon[(..)| ( [,] cname_1, … , cname_n [,] ) ]  (n >= 0)       -- upd
-        | qtycls[(..)| ( [,] var_1, … , var_n [,] ) ]      (n >= 0)       -- upd
+    import  ::= qvar
+        | qtycon[(..)| ( [,] cname_1, … , cname_n [,] ) ]  (n >= 0)       ;-- upd
+        | qtycls[(..)| ( [,] var_1, … , var_n [,] ) ]      (n >= 0)       ;-- upd
         | ……
 
     deriving ::= deriving dclass
             | deriving (  
-                 ( [,] dclass1 , … , dclassn [,] )                        -- upd
+                 ( [,] dclass1 , … , dclassn [,] )                        ;-- upd
               )
 
-    topdecl ::= type simpletype = type
-        | default ( [,] type1 , … , typen [,] )                                     -- upd
+    topdecl  ::= type simpletype = type
+        | default ( [,] type1 , … , typen [,] )                           ;-- upd
         | class [scontext =>] tycls tyvar [fundep] [where cdecls]
         | ……
 
     constr ::= con [!] atype1 … [!] atypek                  (arity con = k, k>=0)
         | (btype | ! atype) conop (btype | ! atype)                 (infix conop)
-        | con { [,] fielddecl1 , … , fielddecln [,] }              (records n>=0)   -- upd
+        | con { [,] fielddecl1 , … , fielddecln [,] }              (records n>=0)   ;-- upd
         | ……
 
     fielddecl ::= vars :: (type | ! atype)
 
-    aexp ::= qvar                                                        (variable)
+    aexp ::= qvar                                                      (variable)
         | ……
-        | qcon { [,] fbind1 , … , fbindn [,] }      (labeled construction, n ≥ 0)   -- upd
-        | aexp_(qcon) { [,] fbind1 , … , fbindn [,] }   (labeled update, n  ≥  1)   -- upd
+        | qcon { [,] fbind1 , … , fbindn [,] }      (labeled construction, n ≥ 0)   ;-- upd
+        | aexp_(qcon) { [,] fbind1 , … , fbindn [,] }   (labeled update, n  ≥  1)   ;-- upd
 
     gendecl ::= vars :: [context =>] type       (type signature)
         | fixity [integer] ops	            (fixity declaration)
         |                                    (empty declaration)
 
-    vars ::= [,] var1 , … , varn [,]         (n ≥ 1)            -- upd
+    vars ::= [,] var1 , … , varn [,]         (n ≥ 1)            ;-- upd
 
-    ops ::= [,] op1 , … , opn [,]            (n ≥ 1)            -- upd
+    ops  ::= [,] op1 , … , opn [,]           (n ≥ 1)            ;-- upd
 
-    fundep ::= | [,] fdp1 , … , fdp [,]      (n ≥ 1)            -- upd
+    fundep ::= | [,] fdp1 , … , fdpn [,]     (n ≥ 1)            ;-- upd
 
-    fdp ::= tyvar1 … tyvarn -> tyvarm        (n ≥ 1)
+    fdp    ::= tyvar1 … tyvarn -> tyvarm     (n ≥ 1)
 
-    guards ::= | [,] guard1, … , guardn [,]  (n ≥ 1)            -- upd
+    guards ::= | [,] guard1, … , guardn [,]  (n ≥ 1)            ;-- upd
 
 
 These changes allow extra commas in the all unordered structures:
