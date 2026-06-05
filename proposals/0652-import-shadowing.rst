@@ -274,7 +274,7 @@ In an export list, `Paragraph 5 of Section 5.2 of the Haskell 2010 report
 <https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1000005.2>`_
 specifies that the form ``module M`` names the set of all entities
 that are in scope with both an unqualified name ``e`` and a qualified
-name ``M.e``.  So in this example, *without* ``ImportShadowing``:
+name ``M.e``. Let's take the following example:
 
 ::
 
@@ -285,15 +285,35 @@ name ``M.e``.  So in this example, *without* ``ImportShadowing``:
 
  foo = True
 
-the ``module M`` exports ``M.foo`` because that entity is in scope
-both as ``M.foo`` and with unqualified name ``foo``.  The fact that
-``N.foo`` and ``A.foo`` are *also* in scope with unqualified name
-``foo`` does not matter.
+*Without* ``ImportShadowing``, the ``module M`` exports ``M.foo``
+because that entity is in scope both as ``M.foo`` and with unqualified
+name ``foo``.  The fact that ``N.foo`` and ``A.foo`` are *also* in
+scope with unqualified name ``foo`` does not matter.
 
-With ``ImportShadowing``, however, the local definition of ``A.foo``
-*completely hides* the unqualified imports of ``M.foo`` and ``N.foo``;
-so now ``M.foo`` is no longer in scope with unqualified name ``foo``;
-so the ``module M`` export list exports only ``M.wombat``.
+To keep ``ImportShadowing`` backwards-compatible, we change
+`Section 5.2
+<https://www.haskell.org/onlinereport/haskell2010/haskellch5.html#x11-1000005.2>`_
+to use a new property of being "available", that is unaffected by
+shadowing:
+
+* An entity is "available with unqualified name ``e``" if it is
+  defined in the current module, or imported unqualified by some
+  import.
+
+* An entity is "available with qualified name ``M.e``" if it is
+  defined in the current module ``M``, or imported qualified by some
+  import.
+
+Using this definition, we change the meaning of a module reexport
+``module M`` to:
+
+* The form ``module M`` names the set of all entities that are
+  available with both an unqualified name ``e`` and a qualified name
+  ``M.e``.
+
+This way, when ``ImportShadowing`` is enabled, references to ``foo``
+inside the module ``A`` are resolved unambiguously to ``A.foo``, but
+``M.foo`` is still exported intead of ``foo``.
 
 Conflicting exports
 ^^^^^^^^^^^^^^^^^^^
