@@ -338,10 +338,10 @@ Without ``ImportShadowing`` the export list would attempt to export
 to export ``M.wombat`` and ``N.wombat`` and would again report a
 conflict (assuming they are distinct entities).
 
-With ``ImportShadowing`` the ``wombat`` behaviour is unchanged
-(i.e. an export conflict is reported); but the exports ``module M``
-and ``foo`` do not conflict since module ``M`` no longer exports
-``M.foo`` (see :ref:`module-reexports` above).
+With ``ImportShadowing``, this behaviour is unchanged: since ``M.foo``
+is still available as both ``M.foo`` and ``foo`` (as per
+:ref:`module-reexports` above), it is conflicting with the export of
+``A.foo``.
 
 Warnings
 ~~~~~~~~
