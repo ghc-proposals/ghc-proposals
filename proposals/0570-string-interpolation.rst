@@ -59,6 +59,12 @@ Most non-trivial projects build strings at some point: printing out logs, render
   -- quasiquoters, e.g. `string-interpolate` using `haskell-src-exts`
   error [i|Expected: #{x + y}, got: #{result}|]
 
+  -- find-and-replace
+  error $
+    Text.replace "${x + y}" (show $ x + y) $
+    Text.replace "${result}" (show result) $
+    "Expected: ${x + y}, got: ${result}
+
 But each of these options leave much to be desired:
 
 * Manual interpolation (e.g. ``<>``, ``show``, ``unwords``, etc.) is annoying, especially for strings with a lot of interpolation. It's hard to see the overall structure of the string, especially when building up a ``Text``:
@@ -85,6 +91,8 @@ But each of these options leave much to be desired:
 * ``printf`` is partial and unsafe, which especially safety-conscious people might always stay away from anyway. Using a safer ``printf`` like ``formatting`` induces a third-party dependency, which is admittedly lightweight, but isn't as seamless of an integration as native string interpolation would be
 
 * Quasiquotes induces a dependency on Template Haskell, which a lot of people avoid out of principle. Most QuasiQuoters also add a dependency on ``haskell-src-exts`` to parse arbitrary Haskell expressions, which could technically be avoided by using something like ``ghc-meta`` (`repo <https://github.com/noughtmare/ghc-meta>`_, `GHC issue <https://gitlab.haskell.org/ghc/ghc/-/issues/20862>`_), but this isn't in wide use yet.
+
+* Find-and-replace is much more verbose and a bit less performant. It can also replace too much (e.g. ``Text.replace "${a}" a . Text.replace "${b}" "${a}" $ "${a}${b}"``), and it's possible to get out of sync (e.g. ``Text.replace "${a}" a "${a}${b}"``)
 
 If Haskell had native string interpolation, it would have the benefit and safety of the current third-party quasiquotes without the need for Template Haskell, and be able to take advantage of features like `multiline strings <https://github.com/ghc-proposals/ghc-proposals/pull/569>`_.
 ::
@@ -301,7 +309,7 @@ This proposal would be adding the following modules to ``ghc-experimental``, whi
 OverloadedStrings
 ~~~~~~~~~~~~~~~~~
 
-When ``-XOverloadedStrings`` is enabled, a final ``fromString`` is added after the ``interpolateFinalize`` call. This still constructs the string with ``StringBuilder`` -> ``String``, so users might prefer using QualifiedStrings instead.
+When ``-XOverloadedStrings`` is enabled, a final ``fromString`` is added after the ``interpolateFinalize`` call. This still constructs the string with ``StringBuilder`` -> ``String``, so users might prefer using ``-XQualifiedStrings`` instead.
 
 QualifiedStrings
 ~~~~~~~~~~~~~~~~
@@ -314,7 +322,8 @@ When ``-XQualifiedStrings`` is enabled, you may qualify string interpolation, wh
 
   -- Desugars to:
   Text.interpolateFinalize $
-    Text.interpolateRaw "hello world"
+    Text.interpolateRaw "hello world" `Text.interpolateAppend`
+    Text.interpolateEmpty
 
 ::
 
@@ -364,11 +373,14 @@ Or it could reuse the built-in ``Interpolate`` class using its own ``Builder`` t
     interpolateFinalize :: MyStringBuilder -> MyString
     interpolateFinalize = buildMyString
 
-The only recommendation here is that ``MyString`` provide a module implementing string interpolation using the built-in ``Interpolate`` type class. Of course, ``MyString`` is free to implement more string interpolators, potentially using its own ``MyString.Interpolate`` type class for more performant interpolations.
+The only requirement for this recommendation is that ``MyString`` provide a module implementing string interpolation using the built-in ``Interpolate`` type class. Of course, ``MyString`` is free to implement more string interpolators, potentially using its own ``MyString.Interpolate`` type class for more performant interpolations.
 
 The following laws should hold, if the expression compiles:
 
 * ``M."str" == M.s"str"``
+
+    * That is, a ``-XQualifiedStrings`` string literal and a ``-XStringInterpolation`` string expression with no interpolated values should be equivalent
+
 * ``Data.String.fromString "str" == M.s"str"``
 
 MultilineStrings
@@ -460,6 +472,13 @@ Composite types
         fromString ":" <>
         interpolate col
 
+The ``Basic`` interpolator would be useful here, to reuse string interpolation syntax (`Section 10.3 Provided interpolator: Basic <#103provided-interpolator-basic>`_):
+
+::
+
+    instance Interpolate SrcLoc where
+      interpolate SrcLoc{..} = Basic.s"${file}:${line}:${col}"
+
 Effect and Interactions
 -----------------------
 
@@ -528,6 +547,12 @@ Alternatives
 
   * Would be slightly slower for finally outputting ``String`` compared to ``ShowS``
   * Writing a byte array is pretty low-level, perhaps more low-level than we'd like here
+
+* Instead of string-specific logic, allow a general syntax for variadic functions
+
+  * String interpolation could then just be a variadic function that takes multiple arguments of type ``Interpolate a => a``
+  * Would be a nice language construct on its own, but its unfamiliarity would be a major loss for this feature
+  * Also doesn't compose well with other features e.g. with multiline strings
 
 Expansion-related Alternatives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
