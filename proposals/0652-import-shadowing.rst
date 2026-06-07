@@ -460,7 +460,7 @@ like:
 Unresolved Questions
 --------------------
 
-_None came up in the proposal discussion_
+*None came up in the proposal discussion*
 
 
 Implementation Plan
