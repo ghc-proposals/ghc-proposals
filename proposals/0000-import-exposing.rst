@@ -17,7 +17,7 @@ Motivation
 ----------
 Variants on this feature have been proposed a few times, going back to `before proposals moved to GitHub <https://gitlab.haskell.org/ghc/ghc/-/issues/10478>`_. Failure of prior proposals appears to be mostly due to them attempting to make too many changes at once, creating too much room for debate/bikeshedding, leading to loss of momentum/interest. This proposal hopes to avoid the morass by introducing a single keyworded feature which does not conflict with any existing syntax, and which further proposals can build around.
 
-More directly, this proposal grew out of a not-yet-submitted *default qualified imports* proposal (below, "the motivating proposal"). It seemed this proposal should stand on its own both to reduce the motivating proposal's footprint, and because this proposal's features are useful with or without the motivating proposal. (Furthermore, even "competing" proposals should benefit from having this part nailed down!)
+More directly, this proposal grew out the `Default Qualified Imports <https://github.com/ghc-proposals/ghc-proposals/pull/760>`_ proposal (henceforth "#760"). It seemed this proposal should stand on its own both to reduce #760's footprint, and because this proposal's features are useful with or without #760. (Furthermore, even "competing" proposals should benefit from having this part nailed down!)
 
 
 Proposed Change Specification
@@ -93,7 +93,7 @@ Effect and Interactions
 -----------------------
 Taken on its own, this proposal eliminates most cases where multiple imports of the same module are necessary, or simply attractive for ergonomics. It introduces one explicit error state, specifically to enforce Haskell 2010 syntax as taking precedence over the new mechanism; and reuses an existing warning in a way that mirrors current behavior (redundant imports from separate declarations trigger ``-Wunused-imports``).
 
-Beyond that, it lays groundwork for better ergonomics if imports are made qualified by default (e.g. as in the motivating proposal).
+Beyond that, it lays groundwork for better ergonomics if imports are made qualified by default (e.g. as in #760).
 
 
 Costs and Drawbacks
@@ -115,13 +115,13 @@ Alternatives
 
 No ``as`` Clauses
 ^^^^^^^^^^^^^^^^^
-The initial idea for this proposal, informed by the motivating proposal, was strictly a mechanism for adding identifiers to the top-level namespace from an otherwise-qualified import declaration. ``as`` clauses emerged during the write-up and seem to provide significant utility (even for unqualified imports) with reasonably low added complexity. If this opinion proves contentious, the initial motivation is still satisfied without them.
+The initial idea for this proposal, informed by #760, was strictly a mechanism for adding identifiers to the top-level namespace from an otherwise-qualified import declaration. ``as`` clauses emerged during the write-up and seem to provide significant utility (even for unqualified imports) with reasonably low added complexity. If this opinion proves contentious, the initial motivation is still satisfied without them.
 
 Bikeshedding
 ^^^^^^^^^^^^
 Another option considered for the keyword was ``opening``. This makes sense for top-level imports, less so with the addition of ``as`` clauses. However, if they are removed it may be worth considering.
 
-(N.b. in the motivating proposal an ``unqualified`` keyword is introduced, with ``open`` offered as a shorter alternative; thus, a matching alternative here.)
+(N.b. in #760 an ``unqualified`` keyword is introduced, with ``open`` offered as a shorter alternative; thus, a matching alternative here.)
 
 ``hiding as`` Clauses
 ^^^^^^^^^^^^^^^^^^^^^
