@@ -1,8 +1,28 @@
 """Unit tests for shepherd_dashboard.py pure functions."""
 
 import unittest
+from datetime import datetime, timezone
 
 import shepherd_dashboard as sd
+
+
+def _msg(from_name, body, day=1, **kw):
+    """Minimal Message dict for directive-scanning tests."""
+    m = {
+        "message_id": kw.get("message_id", f"<{from_name}-{day}>"),
+        "in_reply_to": "",
+        "references": [],
+        "from_name": from_name,
+        "from_email": kw.get("from_email", ""),
+        "subject": "",
+        "date": f"2026-01-{day:02d}",
+        "datetime": datetime(2026, 1, day, tzinfo=timezone.utc),
+        "body": body,
+        "clean_body": body,
+        "pr_refs": [],
+    }
+    m.update({k: v for k, v in kw.items() if k in m})
+    return m
 
 
 class TestMatchCommitteeMember(unittest.TestCase):
@@ -45,6 +65,120 @@ class TestMatchCommitteeMember(unittest.TestCase):
             sd.match_committee_member("Simon Peyton Jones"),
             "Simon Peyton Jones",
         )
+
+
+class TestFuzzyAndIdentifierMatch(unittest.TestCase):
+
+    def test_identifier_handle(self):
+        self.assertEqual(sd.match_committee_member("sgraf812"), "Sebastian Graf")
+        self.assertEqual(sd.match_committee_member("@sgraf812"), "Sebastian Graf")
+        self.assertEqual(sd.match_committee_member("Tritlo"), "Matthías Páll Gissurarson")
+
+    def test_identifier_with_trailing_paren_token(self):
+        self.assertEqual(sd.match_committee_member("sgraf812 (self)"), "Sebastian Graf")
+
+    def test_fuzzy_typo_resolves(self):
+        # opt-in only
+        self.assertIsNone(sd.match_committee_member("Sebstian"))
+        self.assertEqual(sd.match_committee_member("Sebstian", fuzzy=True), "Sebastian Graf")
+        self.assertEqual(sd.match_committee_member("Sebastian Graff", fuzzy=True), "Sebastian Graf")
+
+    def test_fuzzy_ambiguous_first_name_is_none(self):
+        # Two Simons share a first name → never resolves, even fuzzily.
+        self.assertIsNone(sd.match_committee_member("Simon", fuzzy=True))
+        self.assertIsNone(sd.match_committee_member("Siomn", fuzzy=True))
+
+    def test_fuzzy_unknown_is_none(self):
+        self.assertIsNone(sd.match_committee_member("Complete Outsider", fuzzy=True))
+
+    def test_fuzzy_does_not_overmatch_email(self):
+        self.assertIsNone(sd.match_committee_member("nobody@example.com", fuzzy=True))
+
+
+class TestParseStructuredVote(unittest.TestCase):
+
+    def test_synonyms(self):
+        self.assertEqual(sd.parse_structured_vote("accept"), "accept")
+        self.assertEqual(sd.parse_structured_vote("Approved"), "accept")
+        self.assertEqual(sd.parse_structured_vote("+1"), "accept")
+        self.assertEqual(sd.parse_structured_vote("reject"), "reject")
+        self.assertEqual(sd.parse_structured_vote("-1"), "reject")
+        self.assertEqual(sd.parse_structured_vote("abstain"), "recuse")
+        self.assertEqual(sd.parse_structured_vote("concern"), "concern")
+
+    def test_leading_token_only(self):
+        self.assertEqual(sd.parse_structured_vote("accept (reluctantly)"), "accept")
+        self.assertEqual(sd.parse_structured_vote("reject, see thread"), "reject")
+
+    def test_unknown(self):
+        self.assertIsNone(sd.parse_structured_vote("maybe"))
+        self.assertIsNone(sd.parse_structured_vote(""))
+
+
+class TestScanStructuredDirectives(unittest.TestCase):
+
+    def test_vote_attributed_to_sender(self):
+        msgs = [_msg("Sebastian Graf", "Vote #1234: accept")]
+        _shep, votes, _unv = sd.scan_structured_directives(msgs)
+        self.assertEqual(votes, {1234: {"Sebastian Graf": "accept"}})
+
+    def test_vote_last_wins(self):
+        msgs = [
+            _msg("Adam Gundry", "Vote #50: reject", day=1),
+            _msg("Adam Gundry", "Vote #50: accept", day=2),
+        ]
+        _shep, votes, _unv = sd.scan_structured_directives(msgs)
+        self.assertEqual(votes[50]["Adam Gundry"], "accept")
+
+    def test_vote_ignores_non_member_sender(self):
+        msgs = [_msg("Random Author", "Vote #1234: accept")]
+        _shep, votes, _unv = sd.scan_structured_directives(msgs)
+        self.assertEqual(votes, {})
+
+    def test_vote_ignored_in_quoted_text(self):
+        # scan reads clean_body, which has already had quoted lines stripped, so
+        # a vote that only appears quoted in a reply never reaches us.
+        msgs = [_msg("Adam Gundry", "I'm still thinking.")]
+        _shep, votes, _unv = sd.scan_structured_directives(msgs)
+        self.assertEqual(votes, {})
+
+    def test_shepherd_by_full_name(self):
+        msgs = [_msg("Adam Gundry", "Shepherd #77: Sebastian Graf")]
+        shep, _votes, unv = sd.scan_structured_directives(msgs)
+        self.assertEqual(shep, {77: "Sebastian Graf"})
+        self.assertEqual(unv, {})
+
+    def test_shepherd_by_handle(self):
+        shep, _v, _u = sd.scan_structured_directives([_msg("Adam Gundry", "Shepherd #1: sgraf812")])
+        self.assertEqual(shep[1], "Sebastian Graf")
+        shep, _v, _u = sd.scan_structured_directives([_msg("Adam Gundry", "Shepherd #2: @maralorn")])
+        self.assertEqual(shep[2], "Malte Ott")
+
+    def test_shepherd_typo_resolves(self):
+        shep, _v, unv = sd.scan_structured_directives([_msg("Adam Gundry", "Shepherd #3: Sebstian Graf")])
+        self.assertEqual(shep[3], "Sebastian Graf")
+        self.assertEqual(unv, {})
+
+    def test_shepherd_unresolved_is_flagged(self):
+        shep, _v, unv = sd.scan_structured_directives([_msg("Adam Gundry", "Shepherd #4: Complete Outsider")])
+        self.assertNotIn(4, shep)
+        self.assertEqual(unv[4], "Complete Outsider")
+
+    def test_shepherd_last_wins(self):
+        msgs = [
+            _msg("Adam Gundry", "Shepherd #5: Adam Gundry", day=1),
+            _msg("Simon Marlow", "Shepherd #5: Simon Marlow", day=2),
+        ]
+        shep, _v, _u = sd.scan_structured_directives(msgs)
+        self.assertEqual(shep[5], "Simon Marlow")
+
+
+class TestLevenshtein(unittest.TestCase):
+
+    def test_basic(self):
+        self.assertEqual(sd._levenshtein("kitten", "sitting"), 3)
+        self.assertEqual(sd._levenshtein("", "abc"), 3)
+        self.assertEqual(sd._levenshtein("abc", "abc"), 0)
 
 
 class TestNormalizeCandidate(unittest.TestCase):

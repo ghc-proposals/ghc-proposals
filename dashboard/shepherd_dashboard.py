@@ -182,27 +182,31 @@ SHEPHERD_BODY_PATTERNS = [
 ]
 
 # Known shepherd names (current + recent past committee members).
-# Format: (canonical_name, [aliases_for_matching]).
-# Aliases include first names so "nominate Matthias" matches the full name.
+# Format: (canonical_name, [name_aliases], [identifiers]).
+#   name_aliases  matched exactly or by Levenshtein (typo-tolerant); include
+#                 first names so "nominate Matthias" matches the full name.
+#   identifiers   GitHub handles and email addresses; matched exactly only.
+#                 Members: add or correct your own so `Shepherd #N: <handle>`
+#                 and `Shepherd #N: <email>` resolve to you.
 COMMITTEE_MEMBERS = [
-    ("Simon Marlow",                ["Simon Marlow", "Simon M"]),
-    ("Simon Peyton Jones",          ["Simon Peyton Jones", "Simon Peyton-Jones", "Simon PJ", "SPJ"]),
-    ("Adam Gundry",                 ["Adam Gundry", "Adam G", "Adam"]),
-    ("Malte Ott",                   ["Malte Ott", "Malte"]),
-    ("Matthías Páll Gissurarson",   ["Matthías Páll Gissurarson", "Matthias Pall Gissurarson", "Matthías", "Matthias"]),
-    ("Erik de Castro Lopo",         ["Erik de Castro Lopo", "Erik D", "Erik"]),
-    ("Sebastian Graf",              ["Sebastian Graf", "Sebastian"]),
-    ("Jaro Reinders",               ["Jaro Reinders", "Jaro"]),
-    ("Jeff Young",                  ["Jeff Young", "Jeff"]),
-    ("Rodrigo Mesquita",            ["Rodrigo Mesquita", "Rodrigo"]),
+    ("Simon Marlow",                ["Simon Marlow", "Simon M"],                                    ["simonmar"]),
+    ("Simon Peyton Jones",          ["Simon Peyton Jones", "Simon Peyton-Jones", "Simon PJ", "SPJ"], ["simonpj"]),
+    ("Adam Gundry",                 ["Adam Gundry", "Adam G", "Adam"],                              ["adamgundry"]),
+    ("Malte Ott",                   ["Malte Ott", "Malte"],                                         ["maralorn"]),
+    ("Matthías Páll Gissurarson",   ["Matthías Páll Gissurarson", "Matthias Pall Gissurarson", "Matthías", "Matthias"], ["Tritlo"]),
+    ("Erik de Castro Lopo",         ["Erik de Castro Lopo", "Erik D", "Erik"],                      ["erikd"]),
+    ("Sebastian Graf",              ["Sebastian Graf", "Sebastian"],                                ["sgraf812"]),
+    ("Jaro Reinders",               ["Jaro Reinders", "Jaro"],                                      ["noughtmare"]),
+    ("Jeff Young",                  ["Jeff Young", "Jeff"],                                         ["doyougnu"]),
+    ("Rodrigo Mesquita",            ["Rodrigo Mesquita", "Rodrigo"],                                ["alt-romes"]),
     # Past members who may appear as shepherds in older threads
-    ("Eric Seidel",                 ["Eric Seidel", "Eric S", "Eric"]),
-    ("Jakob Brünker",               ["Jakob Brünker", "Jakob Bruenker", "Jakob"]),
-    ("Moritz Angermann",            ["Moritz Angermann", "Moritz"]),
-    ("Arnaud Spiwack",              ["Arnaud Spiwack", "Arnaud"]),
-    ("Richard Eisenberg",           ["Richard Eisenberg", "Richard"]),
-    ("Chris Dornan",                ["Chris Dornan", "Chris"]),
-    ("Vladislav Zavialov",          ["Vladislav Zavialov", "Vlad Z", "Vlad"]),
+    ("Eric Seidel",                 ["Eric Seidel", "Eric S", "Eric"],                              ["gridaphobe"]),
+    ("Jakob Brünker",               ["Jakob Brünker", "Jakob Bruenker", "Jakob"],                   ["JakobBruenker"]),
+    ("Moritz Angermann",            ["Moritz Angermann", "Moritz"],                                 ["angerman"]),
+    ("Arnaud Spiwack",              ["Arnaud Spiwack", "Arnaud"],                                   ["aspiwack"]),
+    ("Richard Eisenberg",           ["Richard Eisenberg", "Richard"],                               ["goldfirere"]),
+    ("Chris Dornan",                ["Chris Dornan", "Chris"],                                      ["cdornan"]),
+    ("Vladislav Zavialov",          ["Vladislav Zavialov", "Vlad Z", "Vlad"],                       ["int-index"]),
 ]
 
 # Pattern for PR number references in subjects
@@ -233,29 +237,104 @@ def normalize_candidate(name):
     return name
 
 
-def match_committee_member(candidate):
+def _levenshtein(a, b):
+    """Iterative edit distance (zero-dependency)."""
+    if a == b:
+        return 0
+    if not a:
+        return len(b)
+    if not b:
+        return len(a)
+    prev = list(range(len(b) + 1))
+    for i, ca in enumerate(a, 1):
+        cur = [i]
+        for j, cb in enumerate(b, 1):
+            cur.append(min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (ca != cb)))
+        prev = cur
+    return prev[-1]
+
+
+def _fuzzy_member(cand_lower):
+    """Typo-tolerant name match. Returns the canonical name iff a single member
+    is the unique closest within an edit-distance budget; ambiguous or too-far
+    matches return None.
+
+    Compares the candidate against each alias and each alias's first word, so a
+    misspelled first name ("Sebstian") still resolves while a shared first name
+    ("Simon", two members) stays ambiguous.
+    """
+    budget = 1 if len(cand_lower) <= 5 else 2
+    best_dist = budget + 1
+    winners = set()
+    for canonical, aliases, _ids in COMMITTEE_MEMBERS:
+        for alias in aliases:
+            al = alias.lower()
+            names = {al, al.split()[0]} if al.split() else {al}
+            for name in names:
+                if abs(len(name) - len(cand_lower)) > budget:
+                    continue
+                d = _levenshtein(cand_lower, name)
+                if d < best_dist:
+                    best_dist, winners = d, {canonical}
+                elif d == best_dist:
+                    winners.add(canonical)
+    if best_dist <= budget and len(winners) == 1:
+        return next(iter(winners))
+    return None
+
+
+def match_committee_member(candidate, fuzzy=False):
     """Match a captured candidate name against the committee list.
 
-    Returns the canonical name if a match is found, else None.
+    Resolution order: identifier (GitHub handle / email, exact only) → exact
+    alias → unambiguous first name → Levenshtein fallback (only when
+    `fuzzy=True`). Returns the canonical name, or None if nothing resolves
+    unambiguously.
+
+    `fuzzy` is opt-in because the typo-tolerant pass is safe for an explicit
+    `Shepherd #N: <name>` directive but would mis-credit votes if applied to a
+    sender's display name.
     """
     if not candidate:
         return None
-    cand_lower = candidate.lower()
+    cand_lower = candidate.strip().lower()
+    if not cand_lower:
+        return None
+
+    # Identifier match (handle / email): exact, case-insensitive. Try the whole
+    # token and its first word so "sgraf812 (self)" still resolves.
+    tokens = cand_lower.split()
+    ident_tokens = {cand_lower.lstrip("@")}
+    if tokens:
+        ident_tokens.add(tokens[0].lstrip("@"))
+    for canonical, _aliases, identifiers in COMMITTEE_MEMBERS:
+        if any(t == i.lower() for t in ident_tokens for i in identifiers):
+            return canonical
+
+    # Exact alias: full alias, or alias as a leading word.
     best = None
     best_len = 0
-    for canonical, aliases in COMMITTEE_MEMBERS:
+    for canonical, aliases, _ids in COMMITTEE_MEMBERS:
         for alias in aliases:
-            if alias.lower() == cand_lower or cand_lower.startswith(alias.lower() + " "):
+            al = alias.lower()
+            if al == cand_lower or cand_lower.startswith(al + " "):
                 if len(alias) > best_len:
-                    best = canonical
-                    best_len = len(alias)
+                    best, best_len = canonical, len(alias)
     if best:
         return best
-    first_token = candidate.split()[0].lower() if candidate.split() else ""
-    for canonical, aliases in COMMITTEE_MEMBERS:
-        for alias in aliases:
-            if alias.lower() == first_token:
-                return canonical
+
+    # Unambiguous first name (e.g. "Sebastian" → Sebastian Graf).
+    first_token = tokens[0] if tokens else ""
+    if first_token:
+        hits = {c for c, aliases, _ in COMMITTEE_MEMBERS
+                for a in aliases if a.lower() == first_token}
+        if len(hits) == 1:
+            return next(iter(hits))
+        if len(hits) > 1:
+            return None  # shared first name, ambiguous
+
+    if fuzzy and "@" not in cand_lower:
+        return _fuzzy_member(cand_lower)
     return None
 
 
@@ -369,6 +448,83 @@ def extract_shepherd_from_body(body, sender_name=None):
             if canonical:
                 return canonical, raw
     return None, first_raw
+
+
+# ---------------------------------------------------------------------------
+# Structured convention (opt-in, for newer threads)
+# ---------------------------------------------------------------------------
+# Committee members may write either directive on its own line. Both carry the
+# PR number explicitly, so attribution does not depend on the subject or
+# thread:
+#     Vote #1234: accept           (vote attributed to the SENDER)
+#     Shepherd #1234: Sebastian    (shepherd attributed to the NAMED person)
+# These override the heuristics below for the same PR/member.
+
+_STRUCTURED_VOTE_RE = re.compile(r"^\s*Vote\s+#(\d+)\s*:\s*(.+?)\s*$", re.IGNORECASE | re.MULTILINE)
+_STRUCTURED_SHEPHERD_RE = re.compile(r"^\s*Shepherd\s+#(\d+)\s*:\s*(.+?)\s*$", re.IGNORECASE | re.MULTILINE)
+
+_STRUCTURED_VOTE_VOCAB = {
+    "accept": "accept", "accepted": "accept", "approve": "accept", "approved": "accept",
+    "+1": "accept", "yes": "accept",
+    "reject": "reject", "rejected": "reject", "oppose": "reject", "-1": "reject", "no": "reject",
+    "abstain": "recuse", "abstained": "recuse", "recuse": "recuse", "recused": "recuse",
+    "concern": "concern", "concerns": "concern", "concerned": "concern",
+}
+
+
+def parse_structured_vote(value):
+    """Map the text after `Vote #N:` to a canonical vote, or None if unknown.
+
+    Only the leading token matters, so "accept (reluctantly)" → accept.
+    """
+    token = re.split(r"[\s,;(]", value.strip(), maxsplit=1)[0].lower().strip(".")
+    return _STRUCTURED_VOTE_VOCAB.get(token)
+
+
+def scan_structured_directives(messages):
+    """Scan message bodies for the opt-in `Vote #N:` / `Shepherd #N:` lines.
+
+    Returns (shepherds, votes, unverified):
+      shepherds   pr -> canonical_name        (latest directive wins)
+      votes       pr -> {member: vote}         (latest directive per member wins)
+      unverified  pr -> raw_name               (Shepherd directive that did not
+                                                resolve to a committee member)
+    """
+    shep_dt = {}
+    shepherds = {}
+    unverified = {}
+    vote_dt = {}
+    votes = {}
+    for msg in messages:
+        body = msg["clean_body"] or msg["body"]
+        if not body:
+            continue
+        dt = msg["datetime"]
+        sender = match_committee_member(msg["from_name"])
+        if sender:
+            for m in _STRUCTURED_VOTE_RE.finditer(body):
+                vote = parse_structured_vote(m.group(2))
+                if not vote:
+                    continue
+                pr = int(m.group(1))
+                key = (pr, sender)
+                if key not in vote_dt or dt > vote_dt[key]:
+                    vote_dt[key] = dt
+                    votes.setdefault(pr, {})[sender] = vote
+        for m in _STRUCTURED_SHEPHERD_RE.finditer(body):
+            pr = int(m.group(1))
+            if pr in shep_dt and dt <= shep_dt[pr]:
+                continue
+            raw = normalize_candidate(re.sub(r"\s*\(.*\)\s*$", "", m.group(2)))
+            canonical = match_committee_member(raw, fuzzy=True)
+            shep_dt[pr] = dt
+            if canonical:
+                shepherds[pr] = canonical
+                unverified.pop(pr, None)
+            else:
+                unverified[pr] = raw
+                shepherds.pop(pr, None)
+    return shepherds, votes, unverified
 
 
 # --- mbox download / cache --------------------------------------------------
@@ -673,6 +829,19 @@ def enrich_with_ml(proposals, messages):
         if votes_for_pr:
             pr_votes[pr_num] = votes_for_pr
 
+    # Structured directives override the heuristics for the same PR / member.
+    s_shepherds, s_votes, s_unverified = scan_structured_directives(messages)
+    shepherds.update(s_shepherds)
+    for pr_num in s_shepherds:
+        unverified.pop(pr_num, None)
+    for pr_num, raw in s_unverified.items():
+        if pr_num not in shepherds:
+            unverified[pr_num] = raw
+    for pr_num, member_votes in s_votes.items():
+        merged = dict(pr_votes.get(pr_num, {}))
+        merged.update(member_votes)
+        pr_votes[pr_num] = merged
+
     for num, prop in proposals.items():
         if num in shepherds:
             prop["shepherd"] = shepherds[num]
@@ -897,15 +1066,15 @@ def format_html(proposals):
     <dt>Title</dt><dd>Short title from the PR. <code>[A]</code> prefix marks an Amendment to a previously-accepted proposal.</dd>
     <dt>Status</dt><dd>Derived from GitHub labels: <em>Pending Shepherd</em>, <em>Pending Committee</em>, <em>Needs Revision</em>, <em>Accepted</em>, <em>Rejected</em>, <em>Dormant</em>, otherwise <em>Open</em> or <em>Merged</em>. Click a button above to filter.</dd>
     <dt>Author</dt><dd>GitHub username of the proposal author.</dd>
-    <dt>Shepherd</dt><dd>Committee member assigned via the mailing list (parsed from "Assigning Shepherd" or "Please review" threads). A <code>?</code> prefix means a name was parsed but did not match the known committee list.</dd>
+    <dt>Shepherd</dt><dd>Committee member assigned via the mailing list. Resolved exactly from a <code>Shepherd #N: &lt;name&gt;</code> directive when present, otherwise parsed heuristically from "Assigning Shepherd" / "Please review" threads. A <code>?</code> prefix means a name was parsed but did not match the known committee list.</dd>
     <dt>Inbox Date</dt><dd>When the PR was opened (proxy for "entered the committee inbox").</dd>
     <dt>Last GH</dt><dd>Most recent activity on the GitHub PR.</dd>
     <dt>ML#</dt><dd>Number of mailing-list messages in threads referencing this PR.</dd>
     <dt>ML Last</dt><dd>Most recent date of mailing-list activity for this PR.</dd>
     <dt>Ppl</dt><dd>Unique senders across the mailing-list messages for this PR.</dd>
-    <dt>Votes</dt><dd>Compact tally per category: <code>NA</code> = N accepts, <code>NR</code> = N rejects, <code>Nc</code> = N concerns, <code>Nx</code> = N recuses. Hover the cell for the per-member breakdown. Heuristic regex classifier &mdash; treat low-confidence cells as a hint, not ground truth.</dd>
+    <dt>Votes</dt><dd>Compact tally per category: <code>NA</code> = N accepts, <code>NR</code> = N rejects, <code>Nc</code> = N concerns, <code>Nx</code> = N recuses. Hover the cell for the per-member breakdown. A <code>Vote #N: accept|reject|abstain|concern</code> line in a message is recorded exactly; everything else is a heuristic regex classifier &mdash; treat those cells as a hint, not ground truth.</dd>
   </dl>
-  <p class="note">Click a column header to sort. Vote classification accuracy on historical labels: accept P=97% R=88%, others are noisier due to small sample sizes.</p>
+  <p class="note">Click a column header to sort. To record a vote or shepherd unambiguously, put <code>Vote #1234: accept</code> or <code>Shepherd #1234: &lt;name&gt;</code> on its own line. Heuristic accuracy on historical labels is approximate (in-sample): accept ~P=97% R=88%, others noisier.</p>
 </details>
 <div class="filters">{filter_buttons}</div>
 <table id="proposals">
