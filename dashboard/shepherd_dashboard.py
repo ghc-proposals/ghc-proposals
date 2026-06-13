@@ -269,8 +269,7 @@ def _fuzzy_member(cand_lower):
     for canonical, aliases, _ids in COMMITTEE_MEMBERS:
         for alias in aliases:
             al = alias.lower()
-            names = {al, al.split()[0]} if al.split() else {al}
-            for name in names:
+            for name in {al, al.split()[0]}:
                 if abs(len(name) - len(cand_lower)) > budget:
                     continue
                 d = _levenshtein(cand_lower, name)
@@ -311,15 +310,14 @@ def match_committee_member(candidate, fuzzy=False):
         if any(t == i.lower() for t in ident_tokens for i in identifiers):
             return canonical
 
-    # Exact alias: full alias, or alias as a leading word.
+    # Exact alias: full alias, or alias as a leading word. Longest alias wins.
     best = None
     best_len = 0
     for canonical, aliases, _ids in COMMITTEE_MEMBERS:
         for alias in aliases:
             al = alias.lower()
-            if al == cand_lower or cand_lower.startswith(al + " "):
-                if len(alias) > best_len:
-                    best, best_len = canonical, len(alias)
+            if (al == cand_lower or cand_lower.startswith(al + " ")) and len(alias) > best_len:
+                best, best_len = canonical, len(alias)
     if best:
         return best
 
@@ -490,11 +488,10 @@ def scan_structured_directives(messages):
       unverified  pr -> raw_name               (Shepherd directive that did not
                                                 resolve to a committee member)
     """
-    shep_dt = {}
-    shepherds = {}
-    unverified = {}
-    vote_dt = {}
-    votes = {}
+    # Each value stores the directive's datetime alongside its payload so the
+    # latest directive wins without a parallel timestamp dict.
+    latest_shepherd = {}  # pr -> (datetime, canonical_or_None, raw)
+    latest_vote = {}      # pr -> {member: (datetime, vote)}
     for msg in messages:
         body = msg["clean_body"] or msg["body"]
         if not body:
@@ -506,24 +503,21 @@ def scan_structured_directives(messages):
                 vote = parse_structured_vote(m.group(2))
                 if not vote:
                     continue
-                pr = int(m.group(1))
-                key = (pr, sender)
-                if key not in vote_dt or dt > vote_dt[key]:
-                    vote_dt[key] = dt
-                    votes.setdefault(pr, {})[sender] = vote
+                member_votes = latest_vote.setdefault(int(m.group(1)), {})
+                prev = member_votes.get(sender)
+                if prev is None or dt > prev[0]:
+                    member_votes[sender] = (dt, vote)
         for m in _STRUCTURED_SHEPHERD_RE.finditer(body):
             pr = int(m.group(1))
-            if pr in shep_dt and dt <= shep_dt[pr]:
+            prev = latest_shepherd.get(pr)
+            if prev is not None and dt <= prev[0]:
                 continue
             raw = normalize_candidate(re.sub(r"\s*\(.*\)\s*$", "", m.group(2)))
-            canonical = match_committee_member(raw, fuzzy=True)
-            shep_dt[pr] = dt
-            if canonical:
-                shepherds[pr] = canonical
-                unverified.pop(pr, None)
-            else:
-                unverified[pr] = raw
-                shepherds.pop(pr, None)
+            latest_shepherd[pr] = (dt, match_committee_member(raw, fuzzy=True), raw)
+
+    shepherds = {pr: canonical for pr, (_dt, canonical, _raw) in latest_shepherd.items() if canonical}
+    unverified = {pr: raw for pr, (_dt, canonical, raw) in latest_shepherd.items() if not canonical}
+    votes = {pr: {member: vote for member, (_dt, vote) in mv.items()} for pr, mv in latest_vote.items()}
     return shepherds, votes, unverified
 
 
@@ -832,15 +826,10 @@ def enrich_with_ml(proposals, messages):
     # Structured directives override the heuristics for the same PR / member.
     s_shepherds, s_votes, s_unverified = scan_structured_directives(messages)
     shepherds.update(s_shepherds)
-    for pr_num in s_shepherds:
-        unverified.pop(pr_num, None)
-    for pr_num, raw in s_unverified.items():
-        if pr_num not in shepherds:
-            unverified[pr_num] = raw
+    unverified.update(s_unverified)
+    unverified = {pr_num: raw for pr_num, raw in unverified.items() if pr_num not in shepherds}
     for pr_num, member_votes in s_votes.items():
-        merged = dict(pr_votes.get(pr_num, {}))
-        merged.update(member_votes)
-        pr_votes[pr_num] = merged
+        pr_votes.setdefault(pr_num, {}).update(member_votes)
 
     for num, prop in proposals.items():
         if num in shepherds:
