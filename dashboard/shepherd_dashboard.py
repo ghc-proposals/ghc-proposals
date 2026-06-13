@@ -285,10 +285,10 @@ def _fuzzy_member(cand_lower):
 def match_committee_member(candidate, fuzzy=False):
     """Match a captured candidate name against the committee list.
 
-    Resolution order: identifier (GitHub handle / email, exact only) → exact
-    alias → unambiguous first name → Levenshtein fallback (only when
-    `fuzzy=True`). Returns the canonical name, or None if nothing resolves
-    unambiguously.
+    Resolution order: identifier (GitHub handle / email, exact only) → alias
+    (exact or as a leading word; first names are aliases) → Levenshtein
+    fallback (only when `fuzzy=True`). Returns the canonical name, or None if
+    nothing resolves unambiguously.
 
     `fuzzy` is opt-in because the typo-tolerant pass is safe for an explicit
     `Shepherd #N: <name>` directive but would mis-credit votes if applied to a
@@ -310,7 +310,7 @@ def match_committee_member(candidate, fuzzy=False):
         if any(t == i.lower() for t in ident_tokens for i in identifiers):
             return canonical
 
-    # Exact alias: full alias, or alias as a leading word. Longest alias wins.
+    # Alias match: full alias, or alias as a leading word. Longest alias wins.
     best = None
     best_len = 0
     for canonical, aliases, _ids in COMMITTEE_MEMBERS:
@@ -320,16 +320,6 @@ def match_committee_member(candidate, fuzzy=False):
                 best, best_len = canonical, len(alias)
     if best:
         return best
-
-    # Unambiguous first name (e.g. "Sebastian" → Sebastian Graf).
-    first_token = tokens[0] if tokens else ""
-    if first_token:
-        hits = {c for c, aliases, _ in COMMITTEE_MEMBERS
-                for a in aliases if a.lower() == first_token}
-        if len(hits) == 1:
-            return next(iter(hits))
-        if len(hits) > 1:
-            return None  # shared first name, ambiguous
 
     if fuzzy and "@" not in cand_lower:
         return _fuzzy_member(cand_lower)
