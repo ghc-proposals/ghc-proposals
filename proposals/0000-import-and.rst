@@ -1,12 +1,12 @@
-Import Exposing
-===============
+Import And
+==========
 
 .. author:: Akhra Mellivora Gannon
 .. date-accepted:: 
 .. ticket-url:: 
 .. implemented:: 
 .. highlight:: haskell
-.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/758>`_.
+.. header:: This proposal is `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/764>`_.
 .. sectnum::
 .. contents::
 
@@ -34,7 +34,7 @@ The list of *varid* symbols in the final paragraph is updated to include ``and``
 
 Examples
 --------
-(todo: more in-depth examples?)
+(todo: more in-depth?)
 
 Haskell 2010 + ``ImportQualifiedPost``:
 ::
