@@ -29,7 +29,7 @@ In 5.3, *impdecl* becomes:
 
 The list of *varid* symbols in the final paragraph is updated to include ``and``.
 
-``and`` serves as syntactic sugar, heralding an additional import declaration for the same *modid*. All clauses of the parent declaration other than *modid* are ignored.
+``and`` serves as syntactic sugar, heralding an additional import declaration for the same *modid*. No clauses of the parent declaration other than *modid* are reproduced.
 
 
 Examples
