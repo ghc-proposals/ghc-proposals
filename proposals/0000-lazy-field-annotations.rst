@@ -10,12 +10,12 @@ Lazy Field Annotations
 .. sectnum::
 .. contents::
 
-This proposal introduces ``-XLazyFieldAnnotations``. The extension enables the
+This proposal introduces ``-XLazyFieldAnnotations``. The extension allows the
 existing prefix ``~`` field annotation syntax in data and GADT constructor
-fields. ``-XStrictData`` would imply ``-XLazyFieldAnnotations``, while
-continuing to control the default strictness of unannotated fields. This allows
-users and source generators to write laziness explicitly without also changing
-that default.
+fields without having to enable ``-XStrictData``. ``-XStrictData`` would imply
+``-XLazyFieldAnnotations``, while continuing to control the default strictness
+of unannotated fields. This allows users and source generators to write
+laziness explicitly without also changing that default.
 
 See discussion in `GHC issue #24455 <https://gitlab.haskell.org/ghc/ghc/-/issues/24455>`_.
 
@@ -153,7 +153,11 @@ For example, this declaration remains invalid::
   newtype N = N ~Int
 
 Existing rules for ``{-# UNPACK #-}`` and ``{-# NOUNPACK #-}`` are unchanged.
-Any current warnings or restrictions involving those pragmas continue to apply.
+``{-# UNPACK #-}`` only takes effect on a strict field, so it has nothing to
+unpack on a field marked lazy with ``~``. As today, GHC ignores ``UNPACK`` on
+such a field and emits its usual warning; this proposal merely makes the ``~``
+annotation writable without ``StrictData``, and does not change how these
+pragmas behave.
 
 
 Proposed Library Change Specification
