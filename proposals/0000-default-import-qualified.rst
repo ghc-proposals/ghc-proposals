@@ -81,7 +81,7 @@ The specification excludes this (and any other) undeclared import.
 
 ``ImportAnd``
 ^^^^^^^^^^^^^
-`Proposal #763 <https://github.com/ghc-proposals/ghc-proposals/pull/758>`_ grew out of work on this proposal. Each can (and should) stand on its own, but their combined expressive power exceeds either alone. For instance, the following examples would be exactly equivalent.
+`Proposal #764 <https://github.com/ghc-proposals/ghc-proposals/pull/764>`_ grew out of work on this proposal. Each can (and should) stand on its own, but their combined expressive power exceeds either alone. For instance, the following examples would be exactly equivalent.
 
 Haskell 2010:
 ::
