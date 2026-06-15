@@ -126,6 +126,12 @@ These have been relegated to Alternatives for two reasons:
 1. Both can be accomplished by a linter. (That said, the option of ``-Werror`` is likely desirable for rigor during migration.)
 2. Mutually exclusive warnings might be unprecedented? If so, adding both would carry extra implementation cost.
 
+Bikeshedding
+^^^^^^^^^^^^
+``unqualified`` is a very long keyword. Other languages (and other proposals!) use ``open`` in a similar context, and it could be adopted here.
+
+``toplevel`` also seems viable, but gains less for the break from current language. (Plus it's one letter shorter than ``qualified``, so they wouldn't even line up nicely.)
+
 ``unqualified`` Without Extension
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Prior drafts of this proposal allowed ``unqualified`` without enabling an extension. A recent `comment <https://github.com/ghc-proposals/ghc-proposals/pull/748#issuecomment-4634935718>`_ by Adam Gundry on another proposal pointed out that this creates a break in what e.g. ``-XHaskell2010`` means: programs written with the new syntax could be incompatible with prior GHC versions despite no apparent difference in required language support.
@@ -135,12 +141,6 @@ Negative Extension Naming
 If support is strong enough that it's likely to become a future language default, ``DefaultImportQualified`` could instead be ``NoDefaultImportUnqualified``. When this proposal was first conceived (quite some time ago), this seemed reasonable to consider. More recently though, several proposals around qualified exports and localized imports have raised the possibility of such fundamental changes in import practices that cementing a new default seems unwise.
 
 Further, negative naming for ``ImportUnqualified`` doesn't really work; this alternative would likely require enabling it without an extension.
-
-Bikeshedding
-^^^^^^^^^^^^
-``unqualified`` is a very long keyword. Other languages (and other proposals!) use ``open`` in a similar context, and it could be adopted here.
-
-``toplevel`` also seems viable, but gains less for the break from current language. (Plus it's one letter shorter than ``qualified``, so they wouldn't even line up nicely.)
 
 
 Unresolved Questions
