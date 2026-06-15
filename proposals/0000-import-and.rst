@@ -88,7 +88,7 @@ Without permitting empty guards, this case can still be covered with a spurious 
 
 Import Exposing (#763)
 ^^^^^^^^^^^^^^^^^^^^^^
-Proposal `#763 <https://github.com/ghc-proposals/ghc-proposals/pull/763>`_ enables what may be the most common use case for this proposal, the combination of a fully qualified import with a specified set of top-level imports; and for that case, it is more concise. It also resembles `a much older proposal <https://gitlab.haskell.org/ghc/ghc/-/issues/10478>`_ which was initially popular but lost momentum due to conflicts with existing syntax, which #763 avoids.
+Proposal `#763 <https://github.com/ghc-proposals/ghc-proposals/pull/763>`_ enables what may be the most common use case for this proposal, the combination of a qualified import with a specified set of top-level imports; and for that case, it is more concise. It also resembles `a much older proposal <https://gitlab.haskell.org/ghc/ghc/-/issues/10478>`_ which was initially popular but lost momentum due to conflicts with existing syntax, which #763 avoids.
 
 Speaking as the author of both proposals: ``ImportAnd`` is more expressive, seems easier to implement, and doesn't smell of special-case. However, ``ImportExposing`` may be conceptually simpler for users, and received enough initial interest to justify leaving it open as an alternative pending further feedback on both.
 
