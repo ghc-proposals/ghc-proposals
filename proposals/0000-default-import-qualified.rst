@@ -79,9 +79,9 @@ This interaction is covered by the core specification, along with any similar ex
 ^^^^^^^^^^^^^^^^^^^
 The specification excludes this (and any other) undeclared import.
 
-``ImportExposing``
-^^^^^^^^^^^^^^^^^^
-`Proposal #758 <https://github.com/ghc-proposals/ghc-proposals/pull/758>`_ grew out of work on this proposal. Each can (and should) stand on its own, but their combined expressive power exceeds either alone. For instance, the following examples would be exactly equivalent.
+``ImportAnd``
+^^^^^^^^^^^^^
+`Proposal #763 <https://github.com/ghc-proposals/ghc-proposals/pull/758>`_ grew out of work on this proposal. Each can (and should) stand on its own, but their combined expressive power exceeds either alone. For instance, the following examples would be exactly equivalent.
 
 Haskell 2010:
 ::
@@ -92,9 +92,9 @@ Haskell 2010:
 
 Proposed:
 ::
-  {-# LANGUAGE DefaultImportQualified, ImportExposing, NoImplicitPrelude #-}
-  import unqualified MyCustomPrelude
-  import Data.Vector as Vec exposing ((!), (!?), (//))
+  {-# LANGUAGE DefaultImportQualified, ImportAnd, NoImplicitPrelude #-}
+  import MyCustomPrelude unqualified
+  import Data.Vector as Vec and ((!), (!?), (//))
 
 
 Costs and Drawbacks
