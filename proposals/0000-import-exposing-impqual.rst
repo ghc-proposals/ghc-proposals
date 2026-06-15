@@ -15,7 +15,7 @@ An extension allowing qualified import declarations to selectively expose top-le
 
 Motivation
 ----------
-This proposal hybridizes parts of `#758 Import Exposing <https://github.com/ghc-proposals/ghc-proposals/pull/758>`_ and `#760 Default Import Qualified <https://github.com/ghc-proposals/ghc-proposals/pull/760>`_, sharing core motivations with both but compromising toward streamlined impact. In particular, it posits that likely the most common point point of redundancy in imports is the pattern:
+This proposal hybridizes parts of (now closed) `#758 Import Exposing <https://github.com/ghc-proposals/ghc-proposals/pull/758>`_ and `#760 Default Import Qualified <https://github.com/ghc-proposals/ghc-proposals/pull/760>`_, sharing core motivations with both but compromising toward streamlined impact. In particular, it posits that likely the most common point point of redundancy in imports is the pattern:
 ::
   import Data.Map (Map)
   import qualified Data.Map as Map
@@ -45,14 +45,12 @@ Under this proposal, the example in the motivation can be expressed as:
 ::
   import Data.Map as Map exposing (Map)
 
-Notably this is very similar to `an older proposal <https://gitlab.haskell.org/ghc/ghc/-/issues/10478>`_ (also linked as motivation in `#758 <https://github.com/ghc-proposals/ghc-proposals/pull/758>`_), but does not suffer the same conflicts with existing syntax.
+Notably this is very similar to `an older proposal <https://gitlab.haskell.org/ghc/ghc/-/issues/10478>`_, but does not suffer the same conflicts with existing syntax.
 
 
 Costs and Drawbacks
 -------------------
 Special behavior obviating a separate clause of the import declaration (``qualified``) is unprecedented and may carry extra implementation cost, as well as being a unique pattern for users to learn.
-
-This proposal overlaps with, but is far less expressive than, `#758 <https://github.com/ghc-proposals/ghc-proposals/pull/758>`_. While names could be changed to avoid an actual conflict, it seems wise to choose one and rule out the other. The advantages here are simplicity, and additional (partial but significant) coverage of `#760 <https://github.com/ghc-proposals/ghc-proposals/pull/760>`_'s motivation.
 
 ``import M exposing ()`` becomes a synonym for ``import qualified M``. Despite being longer, this is likely desirable for consistent style when using the extension; but as above, it is another pattern to learn. It is also considerably worse than `#760 <https://github.com/ghc-proposals/ghc-proposals/pull/760>`_ for this case; this proposal presumes that the case it improves is more common (or at least more commonly irritating) than the one it doesn't.
 
@@ -67,9 +65,9 @@ Impact level 0: ``ImportExposing`` admits all existing programs with no change i
 Alternatives
 ------------
 
-#758+#760
+#760+#764
 ^^^^^^^^^
-In combination, these two proposals do everything this one does and more. However, each of them is far more heavyweight: `#758 <https://github.com/ghc-proposals/ghc-proposals/pull/758>`_ in spec complexity, and `#760 <https://github.com/ghc-proposals/ghc-proposals/pull/760>`_ in compatibility impact.
+In combination, these two proposals do everything this one does and more. However, `#760 <https://github.com/ghc-proposals/ghc-proposals/pull/760>`_ has level 5 compatibility impact. Meanwhile `#764 <https://github.com/ghc-proposals/ghc-proposals/pull/764>`_ is considerably more expressive, but less concise on its own for the ``ImportExposing`` use case.
 
 Warn for ``qualified``
 ^^^^^^^^^^^^^^^^^^^^^^
