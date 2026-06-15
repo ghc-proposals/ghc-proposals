@@ -108,7 +108,7 @@ Contextually, ``ImportUnqualified`` is a strict improvement for syntatic parity;
 
 Backward Compatibility
 ----------------------
-``DefaultImportQualified`` has level 5 impact: approximately *all* existing programs will break when it is enabled. However, this is the point! More importantly, ``ImportUnqualified`` has zero impact and serves as the migration solution: the keyword can be enabled and all imports annotated before any behavior is changed.
+``DefaultImportQualified`` has level 5 impact: approximately *all* existing programs will break when it is enabled. However, this is the point! It is intended as a local opt-in. More importantly, ``ImportUnqualified`` has zero impact and serves as the migration solution: the keyword can be enabled and all imports annotated before any behavior is changed.
 
 
 Alternatives
