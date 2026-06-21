@@ -383,7 +383,7 @@ by GHC:
   data Bool -- no conflict
 
 ------------------------------
-``-Wpun-bindings``, exmaple #5
+``-Wpun-bindings``, example #5
 ------------------------------
 
 This example shows the interaction with pattern signatures 
