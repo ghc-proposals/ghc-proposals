@@ -1,6 +1,6 @@
-=====================
-Support pun-free code
-=====================
+============
+Pun warnings
+============
 
 .. author:: Jaro Reinders, Artyom Kuznetsov
 .. date-accepted:: 
