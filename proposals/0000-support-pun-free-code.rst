@@ -397,7 +397,7 @@ This example shows the interaction with pattern signatures
 This will not produce a punning warning, because there are
 only two variables being bound, the first with ``@a`` and the second with 
 ``\(a :: ...) -> ...``.
-Note that the ``:: a`` is just a use of the type variable ``a`` that was bound 
+Note that the ``:: a`` is just a use of the variable bound 
 by the ``@a`` type abstraction.
 
 Renaming the second binding of ``a`` to ``x`` avoids shadowing:
