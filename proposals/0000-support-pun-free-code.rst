@@ -312,7 +312,7 @@ emitted.
 ``-Wpun-bindings``, example #1
 ------------------------------
 
-(This example uses `GHC Proposal #155 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0155-type-lambda.rst>`_).
+This example shows the interaction with ``TypeAbstractions``.
 
 ::
 
@@ -331,12 +331,16 @@ similar to conflicting definition error for ``f b b = ...``:
                   Test.hs:1:5
       • In an equation for 'f'
 
-On the contrary, the code below is fine, similarly to ``-Wpuns`` example #2, the ``a`` is shadowed instead:
+On the contrary, the code below is fine, similarly to ``-Wpuns`` example #2, 
+the ``a`` is shadowed instead:
 
 ::
 
   f :: t -> ()
   f @a = \a -> ()
+
+Note how there is no conflicting definition and instead it is just shadowing 
+if both were term variables: ``f b = \b -> ...``. 
 
 ------------------------------
 ``-Wpun-bindings``, example #2
@@ -377,6 +381,31 @@ by GHC:
 
   import Prelude (Bool)
   data Bool -- no conflict
+
+------------------------------
+``-Wpun-bindings``, exmaple #5
+------------------------------
+
+This example shows the interaction with pattern signatures 
+(part of ``ScopedTypeVariables``).
+
+::
+
+  f :: t -> t
+  f @a = \(a :: a) -> a
+
+This will not produce a punning warning, because there are
+only two variables being bound, the first with ``@a`` and the second with 
+``\(a :: ...) -> ...``.
+Note that the ``:: a`` is just a use of the type variable ``a`` that was bound 
+by the ``@a`` type abstraction.
+
+Renaming the second binding of ``a`` to ``x`` avoids shadowing:
+
+::
+
+  f :: t -> t
+  f @a = \(x :: a) -> x
 
 Effect and Interactions
 =======================
