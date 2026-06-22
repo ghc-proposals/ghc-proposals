@@ -102,9 +102,8 @@ Problem Statement
 As we step towards Dependent Haskell (with `#378 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0378-dependent-type-design.rst>`_)
 acceptance), the distinction between types and terms becomes blurrier and
 blurrier and the need arises to use terms and types interchangeably. Indeed,
-we can begin to see this need in `#281 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0281-visible-forall.rst>`_,
-which introduces "visible ``forall``" syntax that lets us write functions
-like this:
+we can begin to see this need with ``RequiredTypeArguments`` which lets us 
+write functions like this:
 
 ::
 
@@ -152,7 +151,7 @@ especially when things like ``()`` or ``[a]`` are used (`as seen in this StackOv
 Solution Overview
 -----------------
 
-We also propose to introduce two new warnings to GHC: ``-Wpuns`` and
+We propose to introduce two new warnings to GHC: ``-Wpuns`` and
 ``-Wpun-bindings``.
 
 * ``-Wpuns`` warns the user about the usage of punning at use sites.
