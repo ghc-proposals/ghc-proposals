@@ -276,7 +276,7 @@ warning is triggered.
   h = [a]   -- warning
   x = [a,b] -- no warning
 
-Since ``-XListTupleTypeSyntax`` is enabled by default, all of the cases except the
+Since ``-XListTuplePuns`` is enabled by default, all of the cases except the
 very last one will emit ``-Wpuns`` warning because in all of them it is not clear
 whether the data constructor or a type constructor is being referred to, except
 in the very last case.
@@ -297,7 +297,7 @@ in the very last case.
 Tuples in this case are very much the same as lists except they will emit a
 warning in all cases.
 
-Note that for both lists and tuples if ``-XListTupleTypeSyntax`` is disabled,
+Note that for both lists and tuples if ``-XListTuplePuns`` is disabled,
 the type constructors will not be in scope anymore and no warnings will be
 emitted.
 
