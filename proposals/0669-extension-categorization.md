@@ -98,6 +98,7 @@ The following table contains the language extension, the proposed categorization
 | StandaloneKindSignatures   | Stable         | Stable                  |
 | StrictData                 | Stable         | Stable                  |
 | TraditionalRecordSyntax    | Stable         | Stable                  |
+| TransformListComp          | Stable         | Stable                  |
 | TupleSections              | Stable         | Stable                  |
 | TypeApplications           | Stable         | Stable                  |
 | TypeData                   | Stable         | Stable                  |
@@ -124,6 +125,7 @@ The following are extensions that are to be categorized as `Deprecated` for both
 | OverlappingInstances              | Deprecated     | Deprecated              |
 | PackageImports                    | Deprecated     | Deprecated              |
 | ParallelArrays                    | Deprecated     | Deprecated              |
+| PatternSignatures                 | Deprecated     | Deprecated              |
 | PolymorphicComponents             | Deprecated     | Deprecated              |
 | Rank2Types                        | Deprecated     | Deprecated              |
 | RecordPuns                        | Deprecated     | Deprecated              |
@@ -156,7 +158,7 @@ The following table contains the language extension, the proposed categorization
 | NPlusKPatterns           | Legacy         | Stable                  |
 | OverloadedLists          | Legacy         | Stable                  |
 | StarIsType               | Legacy         | Stable                  |
-| TransformListComp        | Legacy         | Stable                  |
+
 
 #### 2.2.2 Experimental Extensions
 
@@ -177,11 +179,10 @@ The following table contains the language extension, the proposed categorization
 | IncoherentInstances    | Experimental   | Stable                  |
 | JavaScriptFFI          | Experimental   | Stable                  |
 | LinearTypes            | Experimental   | Stable                  |
-| ListTuplePuns          | Experimental   | Stable                  |
+| ListTuplePuns          | Stable         | Experimental            |
 | MultilineStrings       | Experimental   | Stable                  |
 | OrPatterns             | Experimental   | Stable                  |
 | OverloadedRecordUpdate | Experimental   | Stable                  |
-| PatternSignatures      | Experimental   | Stable                  |
 | QuantifiedConstraints  | Experimental   | Stable                  |
 | RequiredTypeArguments  | Experimental   | Stable                  |
 | StaticPointers         | Experimental   | Stable                  |
