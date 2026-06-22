@@ -167,10 +167,9 @@ uses punning.
 
 Note that the hypothetical single-namespace version of Haskell would still have
 name shadowing, so the ``-Wpun-bindings`` warnings does not trigger if a name
-is merely shadowed (i.e., redefined in a separate sub-scope).
-
-Furthermore, we include syntactic punning, for example using the ``[]`` or
-``()`` syntax will trigger a warning from ``-Wpuns``.
+is merely shadowed (i.e., redefined in a separate sub-scope). Furthermore, we
+include syntactic punning, for example using the ``[]`` or ``()`` syntax will
+trigger a warning from ``-Wpuns``.
 
 In summary, we propose the following two changes:
 
