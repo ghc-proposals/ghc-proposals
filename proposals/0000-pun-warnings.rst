@@ -147,12 +147,11 @@ punning can be a source of confusion for beginners. The difference between
 the terms namespace and the types namespace can be hard to understand at first,
 especially when things like ``()`` or ``[a]`` are used (`as seen in this StackOverflow question <https://stackoverflow.com/questions/16892570/what-is-in-haskell-exactly>`_).
 
------------------
-Solution Overview
------------------
+Proposed Change Specification
+=============================
 
 We propose to introduce two new warnings to GHC: ``-Wpuns`` and
-``-Wpun-bindings``.
+``-Wpun-bindings`` and add them both to ``-Weverything``.
 
 * ``-Wpuns`` warns the user about the usage of punning at use sites.
 
@@ -162,28 +161,24 @@ We propose to introduce two new warnings to GHC: ``-Wpuns`` and
 These warnings aim to help the user to avoid using punning in their codebase.
 
 To determine whether some binding or use site takes advantage of punning we
-ask the question: "If Haskell had a single unified namespace, would that change
-the lookup result?". If the answer is yes, then the code uses punning:
+ask the question: **"If Haskell had a single unified namespace, would that 
+change the meaning of the program?"**. If the answer is yes, then the code
+uses punning.
 
-::
+Note that the hypothetical single-namespace version of Haskell would still have
+name shadowing, so the ``-Wpun-bindings`` warnings does not trigger if a name
+is merely shadowed (i.e., redefined in a separate sub-scope).
 
-  data T = T -- with a single unified namespace, T the data would have a name clash with T the type.
+Furthermore, we include syntactic punning, for example using the ``[]`` or
+``()`` syntax will trigger a warning from ``-Wpuns``.
 
-  a = 15
-
-  f :: forall a. a -> a -- no warning, because with a single unified namespace 'forall a.' would shadow the top level 'a', so 'a' in 'a -> a' would still refer to the forall bound 'a'.
-
-
-There are more detailed examples in Examples section.
-
-Proposed Change Specification
-=============================
+In summary, we propose the following two changes:
 
 * Introduce a new warning, ``-Wpun-bindings`` and add it to ``-Weverything``.
   The warning is triggered by any name binding that would be rejected by the
-  compiler if Haskell had a single unified namespace. For instance, this would
-  include conflicting definitions, but exclude shadowing (for more examples, see
-  Examples section).
+  compiler if Haskell had a single unified namespace. The ``-Wpun-bindings`` 
+  warning includes conflicting definitions in the same scope, but it excludes
+  shadowing of names across scopes.
 
 * Introduce a new warning, ``-Wpuns`` and add it to ``-Weverything``. The warning is
   triggered by using an identifier that would be ambiguous or refer to another
