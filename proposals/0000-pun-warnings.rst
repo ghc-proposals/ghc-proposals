@@ -168,8 +168,10 @@ uses punning.
 Note that the hypothetical single-namespace version of Haskell would still have
 name shadowing, so the ``-Wpun-bindings`` warnings does not trigger if a name
 is merely shadowed (i.e., redefined in a separate sub-scope). Furthermore, we
-include syntactic punning, for example using the ``[]`` or ``()`` syntax will
-trigger a warning from ``-Wpuns``.
+include syntactic punning, for example using the ``[]`` or ``()`` syntax
+triggers a warning from ``-Wpuns`` unless ``NoTupleListPuns`` is used. Finally,
+the ``-Wterm-variable-capture`` will be a subset of ``-Wpuns`` so warnings from
+``-Wterm-variable-capture`` are suppressed when both are enabled.
 
 In summary, we propose the following two changes:
 
@@ -182,7 +184,8 @@ In summary, we propose the following two changes:
 * Introduce a new warning, ``-Wpuns`` and add it to ``-Weverything``. The warning is
   triggered by using an identifier that would be ambiguous or refer to another
   entity if Haskell had a single unified namespace. This includes syntactic puns
-  like ``[]`` and ``()``.
+  like ``[]`` and ``()``. The ``-Wpuns`` warnings take precedence over the
+  ``-Wterm-variable-capture`` warnings.
 
 Examples
 ========
@@ -242,6 +245,10 @@ On the contrary:
   f :: forall a. a -> a
 
 Does not use punning because if Haskell had a single unified namespace, explicitly bound type variable ``a`` would shadow the top-level ``a``.
+
+Note that this example is already covered by the ``-Wterm-variable-capture`` warning.
+If both ``-Wpuns`` and ``-Wterm-variable-capture`` are enabled the ``-Wpuns`` warnings
+take precedence and the ``-Wterm-variable-capture`` warnings are suppressed.
 
 ----------------------
 ``-Wpuns``, example #3
@@ -403,7 +410,10 @@ Renaming the second binding of ``a`` to ``x`` avoids shadowing:
 Effect and Interactions
 =======================
 
-* Users will be able to make sure their code is pun-free.
+The intended effect is that users will be able to make sure their code is pun-free.
+
+If ``-Wpuns`` is enabled then ``-Wterm-variable-capture`` warnings are suppressed,
+because that is a subset of ``-Wpuns`` (e.g., ``-Wpuns`` example #2).
 
 Costs and Drawbacks
 ===================
