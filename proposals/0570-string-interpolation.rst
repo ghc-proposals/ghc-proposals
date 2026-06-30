@@ -61,9 +61,9 @@ Most non-trivial projects build strings at some point: printing out logs, render
 
   -- find-and-replace
   error $
-    Text.replace "${x + y}" (show $ x + y) $
-    Text.replace "${result}" (show result) $
-    "Expected: ${x + y}, got: ${result}
+    Text.replace "${x + y}" (Text.show $ x + y) $
+    Text.replace "${result}" (Text.show result) $
+    "Expected: ${x + y}, got: ${result}"
 
 But each of these options leave much to be desired:
 
@@ -477,7 +477,11 @@ The ``Basic`` interpolator would be useful here, to reuse string interpolation s
 ::
 
     instance Interpolate SrcLoc where
-      interpolate SrcLoc{..} = Basic.s"${file}:${line}:${col}"
+      interpolate SrcLoc{..} = Basic.s"${file'}:${line'}:${col'}"
+        where
+          file' = interpolate file
+          line' = interpolate line
+          col' = interpolate col
 
 Effect and Interactions
 -----------------------
@@ -873,7 +877,7 @@ That library could define the module:
 
   module Data.HTML.Interpolate where
 
-  import Data.HTML as HTML
+  import Data.HTML
   import Data.String.Experimental qualified as S
 
   interpolateRaw = fromString
@@ -900,7 +904,7 @@ And gain access to safe string interpolation with HTML escaping by default:
   let title = "Why is 1 > 0?" :: Text
   let body = "<p>Hello world</p>" :: Text
 
-  Html.s"<h1>${title}</h1>${Html.raw body}"
+  HTML.s"<h1>${title}</h1>${HTML.raw body}"
     == Html "<h1>Why is 1 &gt; 0?</h1><p>Hello world</p>"
 
 Custom interpolatable type: BigDecimal
