@@ -184,7 +184,7 @@ Costs and Drawbacks
 Alternatives
 ------------
 
-* **Do nothing; rely on workarounds** — The status quo. There are ways to implement this in user-land, such as [Sylvain's workaround](https://gist.github.com/brandonchinn178/0a15b413f306e85f019b4fe9b2029f28), but without changing the language, there's no guarantee GHC (or another compiler) would respect the implementation.
+* **Do nothing; rely on workarounds** — The status quo. There are ways to implement this in user-land, such as `Sylvain's workaround <https://gist.github.com/brandonchinn178/0a15b413f306e85f019b4fe9b2029f28>`_, but without changing the language, there's no guarantee GHC (or another compiler) would respect the implementation.
 
 * Some other option documented in `Top-level mutable state <https://wiki.haskell.org/index.php?oldid=64612>`_
 
