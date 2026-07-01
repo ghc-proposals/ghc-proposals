@@ -3,8 +3,8 @@ Abstract Q
 
 .. author:: Teo Camarasu
 .. date-accepted:: 2026-04-30
-.. ticket-url::
-.. implemented::
+.. ticket-url:: https://gitlab.haskell.org/ghc/ghc/-/issues/27341
+.. implemented:: 10.2
 .. highlight:: haskell
 .. header:: This proposal was `discussed at this pull request <https://github.com/ghc-proposals/ghc-proposals/pull/700>`_.
 .. sectnum::
