@@ -11,7 +11,7 @@ Pun warnings
 .. sectnum::
 .. contents::
 
-This proposal introduces ``-Wpuns`` and ``-Wpun-bindings``.
+This proposal introduces ``-Wpun-uses`` and ``-Wpun-bindings``.
 
 These changes should help the users write pun-free code to take advantage of
 *Syntactic Unification Principle* described in `#378 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0378-dependent-type-design.rst>`_.
@@ -152,13 +152,15 @@ punning can be a source of confusion for beginners. The difference between
 the terms namespace and the types namespace can be hard to understand at first,
 especially when things like ``()`` or ``[a]`` are used (`as seen in this StackOverflow question <https://stackoverflow.com/questions/16892570/what-is-in-haskell-exactly>`_).
 
+.. _proposed-change-specification:
+
 Proposed Change Specification
 =============================
 
-We propose to introduce two new warnings to GHC: ``-Wpuns`` and
+We propose to introduce two new warnings to GHC: ``-Wpun-uses`` and
 ``-Wpun-bindings`` and add them both to ``-Weverything``.
 
-* ``-Wpuns`` warns the user about the usage of punning at use sites.
+* ``-Wpun-uses`` warns the user about the usage of punning at use sites.
 
 * ``-Wpun-bindings`` warns the user about the introduction of punning at binding
   sites.
@@ -170,13 +172,20 @@ ask the question: **"If Haskell had a single unified namespace, would that
 change the meaning of the program?"**. If the answer is yes, then the code
 uses punning.
 
-Note that the hypothetical single-namespace version of Haskell would still have
-name shadowing, so the ``-Wpun-bindings`` warnings does not trigger if a name
-is merely shadowed (i.e., redefined in a separate sub-scope). Furthermore, we
-include syntactic punning, for example using the ``[]`` or ``()`` syntax
-triggers a warning from ``-Wpuns`` unless ``NoTupleListPuns`` is used. Finally,
-the ``-Wterm-variable-capture`` will be a subset of ``-Wpuns`` so warnings from
-``-Wterm-variable-capture`` are suppressed when both are enabled.
+Wrinkles:
+
+* **W1** Note that the hypothetical single-namespace version of Haskell would still have
+  name shadowing, so the ``-Wpun-bindings`` warnings does not trigger if a name
+  would merely be shadowed (i.e., redefined in a separate sub-scope).
+
+* **W2** Furthermore, we include syntactic punning, for example using the ``[]`` or ``()`` syntax
+  triggers a warning from ``-Wpun-uses`` unless ``NoTupleListPuns`` is used. The proposal 
+  `#475 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0475-tuple-syntax.rst>`_ and 
+  `ListTuplePuns GHC documentation <https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/data_kinds.html#extension-ListTuplePuns>`_
+  describes how to avoid punning for the built-in lists and tuple syntax.
+
+* **W3** Finally, the ``-Wterm-variable-capture`` (`GHC documentation <https://downloads.haskell.org/~ghc/9.14.1/docs/users_guide/using-warnings.html#ghc-flag-Wterm-variable-capture>`_) warning will become a subset of ``-Wpun-uses`` so warnings from
+  ``-Wterm-variable-capture`` are suppressed when both are enabled.
 
 In summary, we propose the following two changes:
 
@@ -186,22 +195,22 @@ In summary, we propose the following two changes:
   warning includes conflicting definitions in the same scope, but it excludes
   shadowing of names across scopes.
 
-* Introduce a new warning, ``-Wpuns`` and add it to ``-Weverything``. The warning is
+* Introduce a new warning, ``-Wpun-uses`` and add it to ``-Weverything``. The warning is
   triggered by using an identifier that would be ambiguous or refer to another
   entity if Haskell had a single unified namespace. This includes syntactic puns
-  like ``[]`` and ``()``. The ``-Wpuns`` warnings take precedence over the
+  like ``[]`` and ``()``. The ``-Wpun-uses`` warnings take precedence over the
   ``-Wterm-variable-capture`` warnings.
 
 Examples
 ========
 
 Recall that ``-Wpun-bindings`` is triggered at definition sites that use punning,
-and ``-Wpuns`` is triggered at use sites. To see what qualifies as punning, we
+and ``-Wpun-uses`` is triggered at use sites. To see what qualifies as punning, we
 will look at the code that works today and analyze the breakage that would
 occur if Haskell had a single unified namespace.
 
 ----------------------
-``-Wpuns``, example #1
+``-Wpun-uses``, example #1
 ----------------------
 
 ::
@@ -214,7 +223,7 @@ occur if Haskell had a single unified namespace.
   import A
   import B
 
-  f = T -- -Wpuns warning
+  f = T -- -Wpun-uses warning
 
 If Haskell had a single unified namespace, referring to ``T`` would result in
 ambiguity (is it ``A.T`` or ``B.T``?), thus this should trigger the warning.
@@ -224,12 +233,12 @@ Same happens if you use ``T`` in the export list:
 ::
 
   module C(T) where
-      --  ^^^ -Wpuns warning
+      --  ^^^ -Wpun-uses warning
   import A
   import B
 
 ----------------------
-``-Wpuns``, example #2
+``-Wpun-uses``, example #2
 ----------------------
 
 ::
@@ -252,11 +261,11 @@ On the contrary:
 Does not use punning because if Haskell had a single unified namespace, explicitly bound type variable ``a`` would shadow the top-level ``a``.
 
 Note that the former example (without the explicit ``forall``) is already covered by the ``-Wterm-variable-capture`` warning.
-If both ``-Wpuns`` and ``-Wterm-variable-capture`` are enabled the ``-Wpuns`` warnings
+If both ``-Wpun-uses`` and ``-Wterm-variable-capture`` are enabled the ``-Wpun-uses`` warnings
 take precedence and the ``-Wterm-variable-capture`` warnings are suppressed.
 
 ----------------------
-``-Wpuns``, example #3
+``-Wpun-uses``, example #3
 ----------------------
 
 ::
@@ -277,7 +286,7 @@ Haskell had a single namespace it would refer to the term-level variable. Thus t
 warning is triggered.
 
 ----------------------
-``-Wpuns``, example #4
+``-Wpun-uses``, example #4
 ----------------------
 
 ::
@@ -289,12 +298,12 @@ warning is triggered.
   x = [a,b] -- no warning
 
 Since ``-XListTuplePuns`` is enabled by default, all of the cases except the
-very last one will emit ``-Wpuns`` warning because in all of them it is not clear
+very last one will emit ``-Wpun-uses`` warning because in all of them it is not clear
 whether the data constructor or a type constructor is being referred to, except
-in the very last case.
+in the very last case (see **W2** in :ref:`proposed-change-specification`).
 
 ----------------------
-``-Wpuns``, example #5
+``-Wpun-uses``, example #5
 ----------------------
 
 ::
@@ -311,7 +320,7 @@ warning in all cases.
 
 Note that for both lists and tuples if ``-XListTuplePuns`` is disabled,
 the type constructors will not be in scope anymore and no warnings will be
-emitted.
+emitted (see **W2** in :ref:`proposed-change-specification`).
 
 ------------------------------
 ``-Wpun-bindings``, example #1
@@ -336,7 +345,7 @@ similar to conflicting definition error for ``f b b = ...``:
                   Test.hs:1:5
       • In an equation for 'f'
 
-On the contrary, the code below is fine, similarly to ``-Wpuns`` example #2, 
+On the contrary, the code below is fine, similarly to ``-Wpun-uses`` example #2, 
 the ``a`` is shadowed instead:
 
 ::
@@ -433,8 +442,8 @@ Effect and Interactions
 
 The intended effect is that users will be able to make sure their code is pun-free.
 
-If ``-Wpuns`` is enabled then ``-Wterm-variable-capture`` warnings are suppressed,
-because that is a subset of ``-Wpuns`` (e.g., ``-Wpuns`` example #2).
+If ``-Wpun-uses`` is enabled then ``-Wterm-variable-capture`` warnings are suppressed,
+because that is a subset of ``-Wpun-uses`` (e.g., ``-Wpun-uses`` example #2).
 
 Costs and Drawbacks
 ===================
@@ -444,12 +453,12 @@ Costs and Drawbacks
 Alternatives
 ============
 
-* We could suppress ``-Wpuns`` warning for certain kinds of punning. For instance:
+* We could suppress ``-Wpun-uses`` warning for certain kinds of punning. For instance:
   we could suppress it for ``data Foo = Foo`` (when the data constructor is
   related to the type constructor, the most common use of punning) and let users
-  disambiguate with module aliases. Or we could suppress ``-Wpuns`` when punning
+  disambiguate with module aliases. Or we could suppress ``-Wpun-uses`` when punning
   is used for records ``Foo { ... }``. However, this doesn't help with backwards
-  compatibility much, introduces unintuitive ``-Wpuns`` warning behavior
+  compatibility much, introduces unintuitive ``-Wpun-uses`` warning behavior
   (sometimes it warns about puns and sometimes it doesn't)
 
 Unresolved Questions
@@ -462,5 +471,5 @@ Implementation Plan
 
 Jaro Reinders will implement the change.
 
-There's an (old) merge request with ``-Wpuns`` warning implementation: `!2044 <https://gitlab.haskell.org/ghc/ghc/merge_requests/2044>`_.
+There's an (old) merge request with ``-Wpun-uses`` warning implementation: `!2044 <https://gitlab.haskell.org/ghc/ghc/merge_requests/2044>`_.
 This will be rebased or if that is too much work it will be used as inspiration. 
