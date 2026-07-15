@@ -129,15 +129,20 @@ However, thanks to *Syntactic Unification Principle* (adhered by `#281 <https://
 the user chooses to not use punning, there is no need to use this syntactic
 marker, resulting in less context-dependent and syntax cluttered code.
 
-Unfortunately, GHC has no good support for such style of programming:
+With the acceptance of the namespace-specified imports proposal (`#581 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0581-namespace-specified-imports.rst>`_), we now also have
+the ability to specify which scope we want to import from: ::
 
-* There is no way for the user to know if some code uses punning without
-  manually reviewing it, in other words, usage of punning is silent.
+  {-# LANGUAGE ExplicitNamespaces #-}
 
-* There is no way to avoid punning if the user imports the code that makes the
-  use of it.
-  Consider this import statement: ``import Data.Proxy``. It is impossible to
-  distinguish between ``Proxy`` the type and ``Proxy`` the data constructor.
+  import qualified Data.Proxy as T (type Proxy)   -- import only the Proxy type
+  import qualified Data.Proxy as D (data Proxy)   -- import only the Proxy constructor
+
+So it is always possible to avoid punning.
+
+Unfortunately, GHC has no way for the user to know if some code uses punning
+without manually reviewing it, in other words, usage of punning is silent.
+This proposal addresses that problem: it lets users be confident their code
+is pun-free by enabling this warning.
 
 Beginner confusion
 ------------------
@@ -246,7 +251,7 @@ On the contrary:
 
 Does not use punning because if Haskell had a single unified namespace, explicitly bound type variable ``a`` would shadow the top-level ``a``.
 
-Note that this example is already covered by the ``-Wterm-variable-capture`` warning.
+Note that the former example (without the explicit ``forall``) is already covered by the ``-Wterm-variable-capture`` warning.
 If both ``-Wpuns`` and ``-Wterm-variable-capture`` are enabled the ``-Wpuns`` warnings
 take precedence and the ``-Wterm-variable-capture`` warnings are suppressed.
 
@@ -339,8 +344,8 @@ the ``a`` is shadowed instead:
   f :: t -> ()
   f @a = \a -> ()
 
-Note how there is no conflicting definition and instead it is just shadowing 
-if both were term variables: ``f b = \b -> ...``. 
+Note how there is no conflicting definition and instead it would just be
+shadowing if both were term variables: ``f b = \b -> ...``. 
 
 ------------------------------
 ``-Wpun-bindings``, example #2
@@ -394,13 +399,29 @@ This example shows the interaction with pattern signatures
   f :: t -> t
   f @a = \(a :: a) -> a
 
-This will not produce a punning warning, because there are
-only two variables being bound, the first with ``@a`` and the second with 
-``\(a :: ...) -> ...``.
-Note that the ``:: a`` is just a use of the variable bound 
-by the ``@a`` type abstraction.
+Currently, pattern signatures, like ``a :: a`` in this case, may or may not
+bind type variables depending on whether or not a variable with the same
+name was already bound. In this case, the type variable ``a`` was
+already bound by the ``@a`` type abstraction, so the pattern signature
+is a use of the variable ``a`` and does not bind it as a fresh variable.
 
-Renaming the second binding of ``a`` to ``x`` avoids shadowing:
+This will not produce a pun-use warning, because in the hypothetical pun-free
+Haskell, this would be a would simply first bind ``a`` to be the type that 
+``f`` operates on and subsequently shadows ``a`` to be the term argument to
+``f``. The scopes, uses, and binding are shown in this diagram:
+  
+::
+
+  --     ┌──────────────┐ scope of the type variable
+  --                  ┌─┐ scope of the term variable (shadowing)
+  f @a = \(a :: a) ->  a
+  -- ▴     ▴    ▴      ▴
+  -- │     │    │      └─ use of the term variable
+  -- │     │    └──────── use of the type variable
+  -- │     └───────────── binding of the term variable
+  -- └─────────────────── binding of the type variable
+
+Renaming the second binding of ``a`` to ``x`` avoids the hypothetical shadowing:
 
 ::
 
