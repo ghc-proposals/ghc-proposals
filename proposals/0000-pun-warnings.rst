@@ -152,7 +152,7 @@ punning can be a source of confusion for beginners. The difference between
 the terms namespace and the types namespace can be hard to understand at first,
 especially when things like ``()`` or ``[a]`` are used (`as seen in this StackOverflow question <https://stackoverflow.com/questions/16892570/what-is-in-haskell-exactly>`_).
 
-.. _proposed-change-specification:
+.. _Proposed Change Specification:
 
 Proposed Change Specification
 =============================
@@ -300,7 +300,7 @@ warning is triggered.
 Since ``-XListTuplePuns`` is enabled by default, all of the cases except the
 very last one will emit ``-Wpun-uses`` warning because in all of them it is not clear
 whether the data constructor or a type constructor is being referred to, except
-in the very last case (see **W2** in :ref:`proposed-change-specification`).
+in the very last case (see **W2** in the `Proposed Change Specification`_).
 
 ----------------------
 ``-Wpun-uses``, example #5
@@ -320,7 +320,7 @@ warning in all cases.
 
 Note that for both lists and tuples if ``-XListTuplePuns`` is disabled,
 the type constructors will not be in scope anymore and no warnings will be
-emitted (see **W2** in :ref:`proposed-change-specification`).
+emitted (see **W2** in the `Proposed Change Specification`_).
 
 ------------------------------
 ``-Wpun-bindings``, example #1
