@@ -122,7 +122,7 @@ But because of punning, this can result in ambiguity:
 We can't use the type of ``sizeOf`` to determine which ``T`` to use because of
 *Lexical Scoping Principle*.
 
-#281 tackles this issue by defaulting ``T`` to a data constructor in this case
+Proposal `#281 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0281-visible-forall.rst>`_ tackles this issue by defaulting ``T`` to a data constructor in this case
 (to keep compatibility with existing code) and introduces ``type`` syntactic marker.
 
 However, thanks to *Syntactic Unification Principle* (adhered by `#281 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0281-visible-forall.rst>`_), if
@@ -161,6 +161,18 @@ We propose to introduce two new warnings to GHC: ``-Wpun-uses`` and
 ``-Wpun-bindings`` and add them both to ``-Weverything``.
 
 * ``-Wpun-uses`` warns the user about the usage of punning at use sites.
+
+  This is useful in several situations where ``-Wpun-bindings`` is does not warn:
+
+  * Multiple different imports might individually be pun-free, but when combined they can
+    give rise to puns, see example 1.
+
+  * Some variables are bound implicitly, for example in type signatures without a ``forall``.
+    These can be puns even though there is no binding site, see example 2.
+
+  * Imported modules might simply not be pun-free.
+
+  * The built-in list and tuple syntax uses punning, see wrinkle **W2** below and also example 4 and 5. 
 
 * ``-Wpun-bindings`` warns the user about the introduction of punning at binding
   sites.
@@ -284,6 +296,8 @@ would be shadowed by explicitly bound type variable ``a``, and in the expression
 last case, however, currently, the ``a`` would refer to the type variable, but if
 Haskell had a single namespace it would refer to the term-level variable. Thus the
 warning is triggered.
+
+Note that the ``-Wpun-bindings`` warning also triggers for the ``\a -> ...`` binder.
 
 ----------------------
 ``-Wpun-uses``, example #4
