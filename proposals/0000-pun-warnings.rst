@@ -211,21 +211,21 @@ Although ``-Wpun-bindings`` covers many common cases of introducing puns,
 ``-Wpun-uses`` is still useful in several situations where ``-Wpun-bindings``
 does not warn:
 
-  * Imported modules might simply not be pun-free. We can still warn when such
-    puns are used.
+* Imported modules might simply not be pun-free. We can still warn when such
+  puns are used.
 
-  * Multiple different imported modules might individually be pun-free, but when
-    combined they can give rise to puns, see `example #1`_. Similar to name clashes,
-    we don't plan on checking this by going over all imported names, but instead
-    we only warn when a punned name is used.
+* Multiple different imported modules might individually be pun-free, but when
+  combined they can give rise to puns, see `example #1`_. Similar to name clashes,
+  we don't plan on checking this by going over all imported names, but instead
+  we only warn when a punned name is used.
 
-  * Some variables are bound implicitly, for example in type signatures without
-    a ``forall``.  These can be puns even though there is no binding site, see
-    `example #2`_.
+* Some variables are bound implicitly, for example in type signatures without
+  a ``forall``.  These can be puns even though there is no binding site, see
+  `example #2`_.
 
-  * The built-in list and tuple syntax uses punning, see wrinkle **W2** below
-    and also `example #4`_ and `example #5`_. The warning can suggest to enable
-    ``NoListTuplePuns``.
+* The built-in list and tuple syntax uses punning, see wrinkle **W2** below
+  and also `example #4`_ and `example #5`_. The warning can suggest to enable
+  ``NoListTuplePuns``.
 
 Examples
 ========
