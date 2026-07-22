@@ -69,7 +69,7 @@ Haskell makes heavy use of punning in its built-in syntax and common types:
   newtype ExceptT e m a = ExceptT (m (Either e a))
 
 However, as Haskell's type system evolves, the distinction between types and
-terms becomes blurry. For example, the ``-XDataKinds`` extension introduces the
+terms becomes blurry. For example, the ``DataKinds`` extension introduces the
 ``'`` syntax to select entities from the data namespace in a type-level context:
 
 ::
@@ -99,7 +99,7 @@ binding site, without involving the type system.
 Problem Statement
 -----------------
 
-As we step towards Dependent Haskell (with `#378 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0378-dependent-type-design.rst>`_)
+As we step towards Dependent Haskell (with `#378 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0378-dependent-type-design.rst>`_
 acceptance), the distinction between types and terms becomes blurrier and
 blurrier and the need arises to use terms and types interchangeably. Indeed,
 we can begin to see this need with ``RequiredTypeArguments`` which lets us 
@@ -144,15 +144,17 @@ without manually reviewing it, in other words, usage of punning is silent.
 This proposal addresses that problem: it lets users be confident their code
 is pun-free by enabling this warning.
 
-Beginner confusion
-------------------
+Punning as a source of confusion
+--------------------------------
 
 Even without Dependent Haskell, an argument can be made for pun-free code:
-punning can be a source of confusion for beginners. The difference between
-the terms namespace and the types namespace can be hard to understand at first,
-especially when things like ``()`` or ``[a]`` are used (`as seen in this StackOverflow question <https://stackoverflow.com/questions/16892570/what-is-in-haskell-exactly>`_).
+punning can be a source of confusion. It requires you to know whether something
+is used in a term or a type context before you can mentally resolve a name.
+Avoiding puns could slightly reduce the mental effort required to read code.
 
-.. _Proposed Change Specification:
+Newcomers are also not always aware that the same name may refer to two different 
+entities, for example in `this StackOverflow question
+<https://stackoverflow.com/questions/16892570/what-is-in-haskell-exactly>`_.
 
 Proposed Change Specification
 =============================
@@ -161,18 +163,6 @@ We propose to introduce two new warnings to GHC: ``-Wpun-uses`` and
 ``-Wpun-bindings`` and add them both to ``-Weverything``.
 
 * ``-Wpun-uses`` warns the user about the usage of punning at use sites.
-
-  This is useful in several situations where ``-Wpun-bindings`` is does not warn:
-
-  * Multiple different imports might individually be pun-free, but when combined they can
-    give rise to puns, see example 1.
-
-  * Some variables are bound implicitly, for example in type signatures without a ``forall``.
-    These can be puns even though there is no binding site, see example 2.
-
-  * Imported modules might simply not be pun-free.
-
-  * The built-in list and tuple syntax uses punning, see wrinkle **W2** below and also example 4 and 5. 
 
 * ``-Wpun-bindings`` warns the user about the introduction of punning at binding
   sites.
@@ -191,7 +181,7 @@ Wrinkles:
   would merely be shadowed (i.e., redefined in a separate sub-scope).
 
 * **W2** Furthermore, we include syntactic punning, for example using the ``[]`` or ``()`` syntax
-  triggers a warning from ``-Wpun-uses`` unless ``NoTupleListPuns`` is used. The proposal 
+  triggers a warning from ``-Wpun-uses`` unless ``NoListTuplePuns`` is used. The proposal 
   `#475 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0475-tuple-syntax.rst>`_ and 
   `ListTuplePuns GHC documentation <https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/data_kinds.html#extension-ListTuplePuns>`_
   describes how to avoid punning for the built-in lists and tuple syntax.
@@ -213,6 +203,30 @@ In summary, we propose the following two changes:
   like ``[]`` and ``()``. The ``-Wpun-uses`` warnings take precedence over the
   ``-Wterm-variable-capture`` warnings.
 
+-----------------------------
+Motivation for ``-Wpun-uses``
+-----------------------------
+
+Although ``-Wpun-bindings`` covers many common cases of introducing puns,
+``-Wpun-uses`` is still useful in several situations where ``-Wpun-bindings``
+does not warn:
+
+  * Imported modules might simply not be pun-free. We can still warn when such
+    puns are used.
+
+  * Multiple different imported modules might individually be pun-free, but when
+    combined they can give rise to puns, see `example #1`_. Similar to name clashes,
+    we don't plan on checking this by going over all imported names, but instead
+    we only warn when a punned name is used.
+
+  * Some variables are bound implicitly, for example in type signatures without
+    a ``forall``.  These can be puns even though there is no binding site, see
+    `example #2`_.
+
+  * The built-in list and tuple syntax uses punning, see wrinkle **W2** below
+    and also `example #4`_ and `example #5`_. The warning can suggest to enable
+    ``NoListTuplePuns``.
+
 Examples
 ========
 
@@ -221,9 +235,11 @@ and ``-Wpun-uses`` is triggered at use sites. To see what qualifies as punning, 
 will look at the code that works today and analyze the breakage that would
 occur if Haskell had a single unified namespace.
 
-----------------------
+.. _example #1:
+
+--------------------------
 ``-Wpun-uses``, example #1
-----------------------
+--------------------------
 
 ::
 
@@ -249,9 +265,11 @@ Same happens if you use ``T`` in the export list:
   import A
   import B
 
-----------------------
+.. _example #2:
+
+--------------------------
 ``-Wpun-uses``, example #2
-----------------------
+--------------------------
 
 ::
 
@@ -276,9 +294,9 @@ Note that the former example (without the explicit ``forall``) is already covere
 If both ``-Wpun-uses`` and ``-Wterm-variable-capture`` are enabled the ``-Wpun-uses`` warnings
 take precedence and the ``-Wterm-variable-capture`` warnings are suppressed.
 
-----------------------
+--------------------------
 ``-Wpun-uses``, example #3
-----------------------
+--------------------------
 
 ::
   
@@ -299,6 +317,8 @@ warning is triggered.
 
 Note that the ``-Wpun-bindings`` warning also triggers for the ``\a -> ...`` binder.
 
+.. _example #4:
+
 ----------------------
 ``-Wpun-uses``, example #4
 ----------------------
@@ -311,10 +331,12 @@ Note that the ``-Wpun-bindings`` warning also triggers for the ``\a -> ...`` bin
   h = [a]   -- warning
   x = [a,b] -- no warning
 
-Since ``-XListTuplePuns`` is enabled by default, all of the cases except the
+Since ``ListTuplePuns`` is enabled by default, all of the cases except the
 very last one will emit ``-Wpun-uses`` warning because in all of them it is not clear
 whether the data constructor or a type constructor is being referred to, except
 in the very last case (see **W2** in the `Proposed Change Specification`_).
+
+.. _example #5:
 
 ----------------------
 ``-Wpun-uses``, example #5
@@ -332,7 +354,7 @@ in the very last case (see **W2** in the `Proposed Change Specification`_).
 Tuples in this case are very much the same as lists except they will emit a
 warning in all cases.
 
-Note that for both lists and tuples if ``-XListTuplePuns`` is disabled,
+Note that for both lists and tuples if ``ListTuplePuns`` is disabled,
 the type constructors will not be in scope anymore and no warnings will be
 emitted (see **W2** in the `Proposed Change Specification`_).
 
@@ -429,9 +451,9 @@ already bound by the ``@a`` type abstraction, so the pattern signature
 is a use of the variable ``a`` and does not bind it as a fresh variable.
 
 This will not produce a pun-use warning, because in the hypothetical pun-free
-Haskell, this would be a would simply first bind ``a`` to be the type that 
-``f`` operates on and subsequently shadows ``a`` to be the term argument to
-``f``. The scopes, uses, and binding are shown in this diagram:
+Haskell, this would simply first bind ``a`` to be the type that ``f`` operates
+on and subsequently shadow ``a`` to be the term argument to ``f``. The scopes,
+uses, and binding are shown in this diagram:
   
 ::
 
