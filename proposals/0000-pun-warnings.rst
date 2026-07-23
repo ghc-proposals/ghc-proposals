@@ -17,7 +17,7 @@ These changes should help the users write pun-free code to take advantage of
 *Syntactic Unification Principle* described in `#378 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0378-dependent-type-design.rst>`_.
 
 The warnings introduced in this proposal are intended
-help programmers enforce a pun-free style of programming in their Haskell
+to help programmers enforce a pun-free style of programming in their Haskell
 projects if they so desire. It does not claim that one style of programming
 is strictly better than the other and acceptance or rejection of this proposal
 should not mean that one style is preferred over the other by GHC.
@@ -87,7 +87,7 @@ In the absence of punning, there is no difference between type-syntax and
 term-syntax.
 
 Syntactic Unification Principle implies that if the user is not using punning
-they can simply forget about the distinction between terms and types.
+they can simply forget about the distinction between terms and types for name resolution.
 
 Lexical Scoping Principle (from `#378 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0378-dependent-type-design.rst>`_)
 ----------------------------------------------------------------------------------------------------------------------------------------------
@@ -120,10 +120,10 @@ But because of punning, this can result in ambiguity:
   sizeOfT = sizeOf T -- is 'T' the data type or the data constructor?
 
 We can't use the type of ``sizeOf`` to determine which ``T`` to use because of
-*Lexical Scoping Principle*.
+the *Lexical Scoping Principle*.
 
 Proposal `#281 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0281-visible-forall.rst>`_ tackles this issue by defaulting ``T`` to a data constructor in this case
-(to keep compatibility with existing code) and introduces ``type`` syntactic marker.
+(to keep compatibility with existing code) and introduces the syntactic marker ``type``.
 
 However, thanks to *Syntactic Unification Principle* (adhered by `#281 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0281-visible-forall.rst>`_), if
 the user chooses to not use punning, there is no need to use this syntactic
