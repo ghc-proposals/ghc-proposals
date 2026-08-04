@@ -29,9 +29,9 @@ Motivation
 Background
 ----------
 
-Before we move on to laying out the problem statement there are 3 concepts
-that the reader is adviced to be familiar with: Punning, Syntactic
-Unification Principle and Lexical Scoping Principle.
+Before we move on to laying out the problem statement,
+let us review three background concepts: Punning, the Syntactic
+Unification Principle and the Lexical Scoping Principle.
 
 Punning
 -------
@@ -99,10 +99,10 @@ binding site, without involving the type system.
 Problem Statement
 -----------------
 
-As we step towards Dependent Haskell (with `#378 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0378-dependent-type-design.rst>`_
-acceptance), the distinction between types and terms becomes blurrier and
-blurrier and the need arises to use terms and types interchangeably. Indeed,
-we can begin to see this need with ``RequiredTypeArguments`` which lets us 
+As we step towards Dependent Haskell (with the acceptance of `#378 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0378-dependent-type-design.rst>`_),
+the distinction between types and terms becomes blurrier and
+blurrier, and the need arises to use terms and types interchangeably. Indeed,
+we can begin to see this need with ``RequiredTypeArguments``, which lets us 
 write functions like this:
 
 ::
@@ -127,7 +127,7 @@ Proposal `#281 <https://github.com/ghc-proposals/ghc-proposals/blob/master/propo
 
 However, thanks to *Syntactic Unification Principle* (adhered by `#281 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0281-visible-forall.rst>`_), if
 the user chooses to not use punning, there is no need to use this syntactic
-marker, resulting in less context-dependent and syntax cluttered code.
+marker, resulting in less context-dependent and syntax-cluttered code.
 
 With the acceptance of the namespace-specified imports proposal (`#581 <https://github.com/ghc-proposals/ghc-proposals/blob/master/proposals/0581-namespace-specified-imports.rst>`_), we now also have
 the ability to specify which scope we want to import from: ::
