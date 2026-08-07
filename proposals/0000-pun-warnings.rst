@@ -325,16 +325,28 @@ Note that the ``-Wpun-bindings`` warning also triggers for the ``\a -> ...`` bin
 
 ::
 
-  f :: [] a -- warning
-  g :: [a]  -- warning
-  g = []    -- warning
-  h = [a]   -- warning
-  x = [a,b] -- no warning
+  f :: [] a   -- warning
+  g :: [a]    -- warning
+  g = []      -- no warning
+  x = [a,b]   -- no warning
 
-Since ``ListTuplePuns`` is enabled by default, all of the cases except the
-very last one will emit ``-Wpun-uses`` warning because in all of them it is not clear
-whether the data constructor or a type constructor is being referred to, except
-in the very last case (see **W2** in the `Proposed Change Specification`_).
+  h :: (a, b) -- warning
+  h = (a, b)  -- no warning
+
+The ``ListTuplePuns`` extension (enabled by default) allows the punned use of
+list and tuple syntax at the type level. The `-Wpun-uses` warning will trigger
+whenever this happens (see **W2** in the `Proposed Change Specification`_). To
+fix this warning, use the non-punned names instead:
+
+::
+
+  import Data.List (List)
+  import Data.Tuple.Experimental (Tuple2)
+  
+  f :: List a
+  h :: Tuple2 a b
+
+
 
 .. _example #5:
 
