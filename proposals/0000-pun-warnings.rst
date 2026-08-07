@@ -356,9 +356,9 @@ Note that the ``-Wpun-bindings`` warning also triggers for the ``\a -> ...`` bin
 
 .. _example #4:
 
-----------------------
+--------------------------
 ``-Wpun-uses``, example #4
-----------------------
+--------------------------
 
 ::
 
@@ -399,7 +399,7 @@ Here, when term-level ``a`` is bound it would conflict with the type level ``a``
 Haskell had a single namespace, thus triggering the warning. This behavior is
 similar to conflicting definition error for ``f b b = ...``:
 
-::
+.. code:: none
 
   Test.hs:1:3: error:
       • Conflicting definitions for 'b'
