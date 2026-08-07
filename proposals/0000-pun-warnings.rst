@@ -169,10 +169,9 @@ We propose to introduce two new warnings to GHC: ``-Wpun-uses`` and
 
 These warnings aim to help the user to avoid using punning in their codebase.
 
-To determine whether some binding or use site takes advantage of punning we
-ask the question: **"If Haskell had a single unified namespace, would that 
-change the meaning of the program?"**. If the answer is yes, then the code
-uses punning.
+To determine whether some binding or use site takes advantage of punning we ask:
+**"If Haskell had a single unified namespace, would that change the meaning of
+the program?"**. If the answer is yes, then the code uses punning.
 
 Wrinkles:
 
@@ -223,9 +222,9 @@ does not warn:
   a ``forall``.  These can be puns even though there is no binding site, see
   `example #2`_.
 
-* The built-in list and tuple syntax uses punning, see wrinkle **W2** below
-  and also `example #4`_. The warning can suggest to enable
-  ``NoListTuplePuns``.
+* The built-in list and tuple syntax uses punning, see wrinkle **W2** above
+  and also `example #4`_. The warning can suggest enabling ``NoListTuplePuns``
+  and using non-punned names at the type level.
 
 Examples
 ========
@@ -307,13 +306,13 @@ take precedence and the ``-Wterm-variable-capture`` warnings are suppressed.
   f = \a -> (a :: a)
   --              ^ warning here
 
-In all of the ``a`` uses except for the last one there is no punning, because if
+In all the ``a`` uses except for the last one there is no punning, because if
 Haskell had a single unified namespace, in the type signature, top-level ``a``
 would be shadowed by explicitly bound type variable ``a``, and in the expression
 ``a`` variable bound in the lambda would shadow the type variable. In the very
-last case, however, currently, the ``a`` would refer to the type variable, but if
-Haskell had a single namespace it would refer to the term-level variable. Thus the
-warning is triggered.
+last case, however, currently, the ``a`` would refer to the type variable, but
+if Haskell had a single namespace it would refer to the term-level variable.
+Thus, the warning is triggered.
 
 Note that the ``-Wpun-bindings`` warning also triggers for the ``\a -> ...`` binder.
 
@@ -378,8 +377,8 @@ the ``a`` is shadowed instead:
   f :: t -> ()
   f @a = \a -> ()
 
-Note how there is no conflicting definition and instead it would just be
-shadowing if both were term variables: ``f b = \b -> ...``. 
+Note how there is no conflicting definition, instead it would just be shadowing
+if both were term variables: ``f b = \b -> ...``. 
 
 ------------------------------
 ``-Wpun-bindings``, example #2
@@ -433,11 +432,11 @@ This example shows the interaction with pattern signatures
   f :: t -> t
   f @a = \(a :: a) -> a
 
-Currently, pattern signatures, like ``a :: a`` in this case, may or may not
-bind type variables depending on whether or not a variable with the same
-name was already bound. In this case, the type variable ``a`` was
-already bound by the ``@a`` type abstraction, so the pattern signature
-is a use of the variable ``a`` and does not bind it as a fresh variable.
+Currently, pattern signatures, like ``a :: a`` in this case, may or may not bind
+type variables depending on whether a variable with the same name was already
+bound. In this case, the type variable ``a`` was already bound by the ``@a``
+type abstraction, so the pattern signature is a use of the variable ``a`` and
+does not bind it as a fresh variable.
 
 This will not produce a pun-use warning, because in the hypothetical pun-free
 Haskell, this would simply first bind ``a`` to be the type that ``f`` operates
