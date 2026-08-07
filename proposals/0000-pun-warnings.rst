@@ -224,7 +224,7 @@ does not warn:
   `example #2`_.
 
 * The built-in list and tuple syntax uses punning, see wrinkle **W2** below
-  and also `example #4`_ and `example #5`_. The warning can suggest to enable
+  and also `example #4`_. The warning can suggest to enable
   ``NoListTuplePuns``.
 
 Examples
@@ -346,29 +346,6 @@ fix this warning, use the non-punned names instead:
   f :: List a
   h :: Tuple2 a b
 
-
-
-.. _example #5:
-
-----------------------
-``-Wpun-uses``, example #5
-----------------------
-
-::
-
-  f :: ()      -- warning
-  f = ()       -- warning
-  g :: (a,b)   -- warning
-  g = (c,d)    -- warning
-  h :: (,) a b -- warning
-  h = (,) c d  -- warning
-
-Tuples in this case are very much the same as lists except they will emit a
-warning in all cases.
-
-Note that for both lists and tuples if ``ListTuplePuns`` is disabled,
-the type constructors will not be in scope anymore and no warnings will be
-emitted (see **W2** in the `Proposed Change Specification`_).
 
 ------------------------------
 ``-Wpun-bindings``, example #1
