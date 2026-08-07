@@ -226,6 +226,44 @@ does not warn:
   and also `example #4`_. The warning can suggest enabling ``NoListTuplePuns``
   and using non-punned names at the type level.
 
+----------------------
+Detailed Specification
+----------------------
+
+Here, we introduce a more detailed specification. 
+
+One aspect of a Haskell program is scoping. Each AST node has a scope. For most
+nodes this will be equal to the scope of the parent node, but some nodes (like
+lambdas or let bindings) introduce for their child nodes a separate scope which
+either include one or more new names, or shadow names making them refer to
+something else.
+
+Currently, every scope is split into two environments: one maps names to terms
+and the other maps names to types. Note that these include all kinds of names:
+top-level bindings, local bindings, constructors, type constructors, classes,
+etc. Some names are global and fixed, like ``[]``, ``()``, and ``(,)``, but that
+just means they occur in every scope and there is no way to shadow them.
+
+If the set of names in the term and type environments are disjoint, then the
+unified environment is simply the union of the term and type environments.
+At definition sites this is easy to check: every node that extends or shadows
+names in a scope we check that it does not modify the same name in both the term
+and type environments. If that does happen then ``-Wpun-bindings`` triggers.
+
+At use sites, it is more difficult to check for punning, because, even if the
+same name occurs in both the term and type environments, the name might simply
+be shadowed if we had a unified namespace. To track this we introduce a third
+unified environment. Whenever a name is modified (added or shadowed) in the term
+or type environments, the same modification is applied to the unified
+environment too. If the same name is modified in both the term and type
+environments we mark the name as conflicted in the unified environment. 
+
+Using this definition of the unified scopes, we can define the ``-Wpun-uses``
+warning as triggering when a variable is used for which looking it up in the
+unified environment yields a different result than looking it up normally. So,
+either when that variable has been shadowed in a different namespace or when it
+is marked as conflicted.
+
 Examples
 ========
 
