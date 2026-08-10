@@ -81,7 +81,8 @@ This proposal introduces the following syntactical changes to Haskell:
 
 2. Add language extension ``ExtraCommas`` which is just unification of 2 extensions: ``ExtraCommas = CommaTuples + ExtraNonTupleCommas``
 
-3. **Comma qualified tuples**: Allow to write ``data`` keyword after tuple close bracket `)` in tuples, 
+3. **Comma qualified tuples**: Allow to write ``data`` keyword after tuple 
+   (and tuple-like strucures) close bracket `)` in tuples, 
    unboxed-tuples, constraint tuples and class context at terms and types.
 
    Comma qualified tuples by meaning are indistinguishable from ordinary tuples, but they are different in syntax.
@@ -112,10 +113,17 @@ This proposal introduces the following syntactical changes to Haskell:
          myTuple3 :: (,Int, String, Char,) data
          myTuple3 = (,1, "2abc", 'd') data
 
-4. **Comma Qualified solo-tuples**: Allow to write solo-tuples with ``data`` keyword ::
+4. **Comma Qualified solo-tuples**: Allow to write solo-tuples 
+   (and tuple-like strucures) with ``data`` keyword ::
 
        mySoloTuple :: (Int) data
-       mySoloTuple  = (5) data
+       mySoloTuple  = (5,) data
+
+5. **Comma Qualified unit-tuples**: Allow to write unit-tuples 
+   (and tuple-like strucures) with ``data`` keyword and just 1 extra comma::
+
+       myUnitTuple :: (,) data
+       myUnitTuple  = (,) data
 
 
 Syntax
@@ -128,25 +136,29 @@ Syntax for tuples, unboxed tuples, constraint tuples:
 .. code:: abnf
     
     atype := gtycon
-        | tyvar                                                  ;-- kmax = if 'data' then 1 else 2
-        | '('  [','] type1 ',' … ',' typek [','] ')'  ['data']   (tuple type, k ≥ kmax)              ;-- upd
-        | '(#' [','] type1 ',' … ',' typek [','] '#)' ['data']   (unboxed tuple type, k ≥ 1)         ;-- upd
+        | tyvar                                                                  ;-- kmax = if 'data' then 1 else 2
+        | '('  ',' type1 ',' … ',' typek [',']  ')'  'data'                      (comma tuple type, k ≥ 1)          ;-- upd
+        | '('      type1 ',' … ',' typek (( ',' ')'  'data' )|( ')' ['data'] ))  (tuple type, k ≥ kmax)             ;-- new
+        | '(#' ',' type1 ',' … ',' typek [',']  '#)' 'data'                      (unboxed comma-tuple type, k ≥ 1)  ;-- upd
+        | '(#'     type1 ',' … ',' typek (( ',' '#)' 'data' )|( '#)' ['data'] )) (unboxed tuple type, k ≥ 1)        ;-- new
         | ……
 
     gtycon := qtycon
-        | '('   ')' ['data']             (unit type)             ;-- upd
-        | '(#' '#)' ['data']             (unlifted unit type)    ;-- upd
-        | '[' ']'                        (list constructor)
-        | '(' '->' ')'                   (function constructor)
-        | '(' ',' {','} ')'              (tupling constructors)
+        | '('   ')'    ['data']                    (unit type)                   ;-- upd
+        | '(' ',' ')'   'data'                     (unit type)                   ;-- new
+        | '(#' '#)'    ['data']                    (unlifted unit type)          ;-- upd
+        | '(#' ',' '#)' 'data'                     (unlifted unit type)          ;-- new
+        | '[' ']'                                  (list constructor)
+        | '(' '->' ')'                             (function constructor)
+        | '(' ',' {','} ')'                        (tupling constructors)
 
 Syntax for class content and class simplified content:
 
 .. code:: abnf
 
     topdecl := 'type' simpletype '=' type
-        | 'data'     [context '=>'] simpletype ['=' constrs] [deriving]
-        | 'newtype'  [context '=>'] simpletype '=' newconstr [deriving]
+        | 'data'     [context '=>']  simpletype  ['=' constrs] [deriving]
+        | 'newtype'  [context '=>']  simpletype  '=' newconstr [deriving]
         | 'class'    [scontext '=>'] tycls tyvar ['where' cdecls]
         | 'instance' [scontext '=>'] qtycls inst ['where' idecls]
         | ……
@@ -270,7 +282,7 @@ for ``BangPatterns``, ``AsPattern``, ``StrictPattern``,  ``Irrefutable Patterns`
     let ~(a,b,) data = expr in e0 a b
 
     -- Data declaration	vs function declaration
-	(a1, b1,) data `op` (a2, b2,) data = expr
+    (a1, b1,) data `op` (a2, b2,) data = expr
 
 Tuple Section
 ~~~~~~~~~~~~~~~~~~
