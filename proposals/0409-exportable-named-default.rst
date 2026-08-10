@@ -109,6 +109,24 @@ regardless of whether *N* and *M* are the same or different modules).
 The syntactic extension to exports would be enabled by the same ``{-# LANGUAGE NamedDefaults #-}`` pragma. The new
 semantics of imports would be enabled by default with no ``LANGUAGE`` extension required.
 
+`WARNING` pragma on export
+++++++++++++++++++++++++++
+
+As with regular export items, the user can attach a ``WARNING`` pragma to an export of a default: ::
+
+  {-# LANGUAGE NamedDefaults #-}
+  module M ({-# WARNING "This default is deprecated, use explicit type applications" #-} default MyClass)
+
+The warning would be triggered only if an importer actually uses the default to disambiguate a type. In other words,
+the pragma would replace a generic compiler warning about type defaults, enabled by ``-Wtype-defaults``, with a
+specific warning. The category of the warning is ``-Wdeprecations`` by default, but the pragma may also specify a
+user-defined warning category, as in::
+
+  {-# WARNING in "x-ambiguous-types" "Your code depends on defaults for disambiguation" #-}
+
+As usual, the ``WARNING`` pragma with no explicit class can be replaced with a ``DEPRECATED`` pragma that has the same
+effect.
+
 Subsumption
 ~~~~~~~~~~~
 
@@ -142,6 +160,8 @@ than one ``default`` declaration in scope, the conflict is resolved using the fo
    compiler may choose to emit a warning in this case, but no error would be triggered about the imports. Of course an
    error may be triggered in the body of the module if it contains an actual ambiguous type for the class with the
    conflicting imported defaults, as per the following subsection.
+
+Any warnings issued in the situations listed above would be in the ``-Wtype-defaults`` category.
 
 As a result, in any module each class has either one default declaration in scope (a locally-declared one, or an
 imported one that subsumes all other imported ones), or none. This single default is used to resolve ambiguity, as
