@@ -93,7 +93,7 @@ More precisely, this extension allows both leading and trailing commas
 - deriving clauses
 - default clauses
 - list-comprehensions 
-- literal list (expressions and patterns)
+- literal list (expressions and patterns) and empty lists
 - records in terms and types (declarations, patterns, constructions)
 - multi-name function signatures (including nested fields in records)
 - multi-name patten signatures
@@ -181,6 +181,12 @@ Grammar changes in records and lists, including expressions, patterns, declarati
         | ……
         | qcon '{' [','] fpat1 ',' … ',' fpatk [','] '}'              (labeled pattern, k ≥ 0)  ;-- upd
 
+    gtycon ::= var qtycon
+        | '(' ')'                                   (unit type)
+        | '[' [','] ']'                      (list constructor)  ;-- upd
+        | '(' '->' ')'                   (function constructor)
+        | '(' ',' {','} ')'              (tupling constructors)
+
 Grammar changes in fixity "lists", multi-name signatures, fundeps & guard clauses:
 
 .. code:: abnf
@@ -189,7 +195,7 @@ Grammar changes in fixity "lists", multi-name signatures, fundeps & guard clause
         | fixity [integer] ops                             (fixity declaration)
         |                                                   (empty declaration)
 
-    fixity ::= 'infixl' | 'infixr' | 'infix'
+    fixity  ::= 'infixl' | 'infixr' | 'infix'
 
     topdecl ::= 'type' simpletype '=' type            (simple type declaration)
         | 'type' qtycons '::' type                     (multi-type declaration)
@@ -341,11 +347,17 @@ Examples
               4,
             ]
 
+       lst2 :: [Int]
+       lst2 = [,]
+
+       lst3 :: [Int]
+       lst3 = 5 : 6 : 7: 8 : 9 : [,]
+
    A mix of styles also could be used:
    ::
 
       -- mix of styles
-      data Example a = ....
+      data Example4 a = ....
                  deriving (
                         , Functor
                         , Foldable,
@@ -353,8 +365,8 @@ Examples
                           Traversable,
                  )
 
-      lst :: [Int]
-      lst = [ , 1, 2, 3, 4, 5, 6, 7, 8, ]
+      lst4 :: [Int]
+      lst4 = [ , 1, 2, 3, 4, 5, 6, 7, 8, ]
 
 4. **Pragmas**
    ::
