@@ -134,61 +134,78 @@ The formal grammar changes for ``CommaTuples``:
 Syntax for tuples, unboxed tuples, constraint tuples:
 
 .. code:: abnf
-    
-    atype := gtycon
-        | tyvar                                                                  ;-- kmax = if 'data' then 1 else 2
-        | '('  ',' type1 ',' … ',' typek [',']  ')'  'data'                      (comma tuple type, k ≥ 1)          ;-- upd
-        | '('      type1 ',' … ',' typek (( ',' ')'  'data' )|( ')' ['data'] ))  (tuple type, k ≥ kmax)             ;-- new
-        | '(#' ',' type1 ',' … ',' typek [',']  '#)' 'data'                      (unboxed comma-tuple type, k ≥ 1)  ;-- upd
-        | '(#'     type1 ',' … ',' typek (( ',' '#)' 'data' )|( '#)' ['data'] )) (unboxed tuple type, k ≥ 1)        ;-- new
+
+    ;-- kmax = if 'data' then 1 else 2
+
+    atype ::= gtycon
+        | '(' [','] ')'   'data'                                                  (comma empty tuple type)           ;-- new
+        | '('  ',' type1 ',' … ',' typek [',']  ')'  'data'                       (comma tuple type, k ≥ 1)          ;-- upd
+        | '('      type1 ',' … ',' typek (( ',' ')'  'data' )|( ')' ['data'] ))   (tuple type, k ≥ kmax)             ;-- new
+        | '(#' [','] '#)'   'data'                                                (comma empty unboxed tuple type)   ;-- new
+        | '(#'  ',' type1 ',' … ',' typek [',']  '#)' 'data'                      (unboxed comma-tuple type, k ≥ 1)  ;-- upd
+        | '(#'      type1 ',' … ',' typek (( ',' '#)' 'data' )|( '#)' ['data'] )) (unboxed tuple type, k ≥ 1)        ;-- new
         | ……
 
-    gtycon := qtycon
-        | '('   ')'    ['data']                    (unit type)                   ;-- upd
-        | '(' ',' ')'   'data'                     (unit type)                   ;-- new
-        | '(#' '#)'    ['data']                    (unlifted unit type)          ;-- upd
-        | '(#' ',' '#)' 'data'                     (unlifted unit type)          ;-- new
-        | '[' ']'                                  (list constructor)
-        | '(' '->' ')'                             (function constructor)
-        | '(' ',' {','} ')'                        (tupling constructors)
+    aexp ::= qvar                                                                  (variable)
+        | ……
+        | '(' exp ')'                                                             (parenthesized expression)
+        | '(' [','] ')'   'data'                                                  (comma empty tuple)                ;-- new
+        | '('  ',' exp1 ',' … ',' expk [',']  ')'  'data'                         (comma tuple, k ≥ 1)               ;-- upd
+        | '('      exp1 ',' … ',' expk (( ',' ')'  'data' )|( ')' ['data'] ))     (tuple, k ≥ kmax)                  ;-- new
+        | '(#' [','] '#)'   'data'                                                (comma empty unboxed tuple)        ;-- new
+        | '(#'  ',' exp1 ',' … ',' expk [',']  '#)' 'data'                        (unboxed comma-tuple, k ≥ kmax)    ;-- upd
+        | '(#'      exp1 ',' … ',' expk (( ',' '#)' 'data' )|( '#)' ['data'] ))   (unboxed tuple, k ≥ 1)             ;-- new
+        | '(' infixexp qop ')'                                                    (left section)
+        | '(' qop⟨-⟩ infixexp ')'                                                  (right section)
+
+    apat ::= var [ @ apat]                                                        (as pattern)
+        | ……
+        | '(' pat ')'                                                             (parenthesized pattern)
+        | '(' [','] ')'   'data'                                                  (comma empty tuple pattern)             ;-- new
+        | '('  ',' pat1 ',' … ',' patk [',']  ')'  'data'                         (comma tuple pattern, k ≥ 1)            ;-- upd
+        | '('      pat1 ',' … ',' expk (( ',' ')'  'data' )|( ')' ['data'] ))     (tuple pattern, k ≥ kmax)               ;-- new
+        | '(#' [','] '#)'   'data'                                                (comma empty unboxed tuple pattern)     ;-- new
+        | '(#'  ',' pat1 ',' … ',' patk [',']  '#)' 'data'                        (unboxed comma-tuple, k ≥ kmax pattern) ;-- upd
+        | '(#'      pat1 ',' … ',' patk (( ',' '#)' 'data' )|( '#)' ['data'] ))   (unboxed tuple pattern, k ≥ 1)          ;-- new
+
 
 Syntax for class content and class simplified content:
 
 .. code:: abnf
 
-    topdecl := 'type' simpletype '=' type
+    topdecl ::= 'type' simpletype '=' type
         | 'data'     [context '=>']  simpletype  ['=' constrs] [deriving]
         | 'newtype'  [context '=>']  simpletype  '=' newconstr [deriving]
         | 'class'    [scontext '=>'] tycls tyvar ['where' cdecls]
         | 'instance' [scontext '=>'] qtycls inst ['where' idecls]
         | ……
 
-    gendecl := vars '::' [context '=>'] type                    (type signature)
+    gendecl ::= vars '::' [context '=>'] type                   (type signature)
         | fixity [integer] ops                                  (fixity declaration)
         |                                                       (empty declaration)
 
-    exp := infixexp '::' [context '=>'] type                    (expression type signature)
+    exp ::= infixexp '::' [context '=>'] type                   (expression type signature)
         | infixexp
 
-    context := class
+    context ::= class
         | '(' ',' cntclasses [','] ')' 'data'                             ;-- upd
         | '(' cntclasses ((')' ['data']) | (',' ')' 'data'))              ;-- upd
 
 
-    scontext := simpleclass
+    scontext ::= simpleclass
         | '(' ',' scntclasses [','] ')' 'data'                            ;-- upd
         | '(' scntclasses ((')' ['data']) | (',' ')' 'data'))             ;-- upd
 		
-    cntclasses := class1 ',' … ',' classn                        (n ≥ 0)  ;-- upd
+    cntclasses ::= class1 ',' … ',' classn                       (n ≥ 0)  ;-- upd
 
-    class := qtycls tyvar
+    class ::= qtycls tyvar
         | qtycls '(' tyvar atype1 … atypen ')'                   (n ≥ 1)
 
-    scntclasses := simpleclass1 ',' … ',' simpleclassn           (n ≥ 0)  ;-- upd
+    scntclasses ::= simpleclass1 ',' … ',' simpleclassn          (n ≥ 0)  ;-- upd
 
-    simpleclass := qtycls tyvar
+    simpleclass ::= qtycls tyvar
  
-    simpletype  := tycon tyvar1 … tyvark                         (k ≥ 0)
+    simpletype  ::= tycon tyvar1 … tyvark                        (k ≥ 0)
 
 
 These changes allow extra commas in the all comma-tuple-like structures:
@@ -199,7 +216,7 @@ These changes allow extra commas in the all comma-tuple-like structures:
 - class content
 - class simplified content
 
-This proposal does not cover multi-tupling constructors for obvious reasons.
+This proposal does not cover constructors for obvious reasons.
 
 
 Proposed Library Change Specification
