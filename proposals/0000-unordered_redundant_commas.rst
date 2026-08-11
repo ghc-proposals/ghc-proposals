@@ -94,7 +94,6 @@ More precisely, this extension allows both leading and trailing commas
 - default clauses
 - list-comprehensions 
 - literal list (expressions and patterns) 
-- empty list (expressions and patterns)
 - records in terms and types (declarations, patterns, constructions)
 - multi-name function signatures (including nested fields in records)
 - multi-name patten signatures
@@ -170,7 +169,6 @@ Grammar changes in records and lists, including expressions, patterns, declarati
 
     aexp ::= qvar                                                                   (variable)
         | ……
-        | '[' ',' ']'                                                            (list, k = 0)  ;-- new
         | '[' [','] exp1 ',' … ',' expk [','] ']'                                (list, k ≥ 1)  ;-- upd
         | '[' exp '|' [','] qual1 ',' … ',' qualn [','] ']'        (list comprehension, n ≥ 1)  ;-- upd
         | ……
@@ -179,7 +177,6 @@ Grammar changes in records and lists, including expressions, patterns, declarati
 
     apat ::= var [ '@' apat]                                                      (as pattern)
         | ……
-        | '[' ',' ']'                                              (empty list pattern, k = 0)  ;-- new
         | '[' [','] pat1 ',' … ',' patk [','] ']'                        (list pattern, k ≥ 1)  ;-- upd
         | ……
         | qcon '{' [','] fpat1 ',' … ',' fpatk [','] '}'              (labeled pattern, k ≥ 0)  ;-- upd
@@ -343,9 +340,6 @@ Examples
               3, 
               4,
             ]
-
-       lst2 :: [Int]
-       lst2 = [,]
 
    A mix of styles also could be used:
    ::
